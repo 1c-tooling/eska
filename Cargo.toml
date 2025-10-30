@@ -1,0 +1,13 @@
+[package]
+name = "eska"
+version = "0.1.0"
+edition = "2024"
+description = "Утилита для разработчиков 1С Enterprise"
+license = "Apache-2.0"
+repository = "https://github.com/1c-tooling/eska"
+readme = "README.md"
+keywords = ["1C Enterprise", "cli"]
+categories = ["command-line-utilities", "filesystem"]
+authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
+
+[dependencies]
