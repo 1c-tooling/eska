@@ -10,4 +10,19 @@ keywords = ["1c-enterpirse", "cli"]
 categories = ["command-line-utilities", "filesystem"]
 authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 
+[profile.dev]
+opt-level = 0 # No optimization for fast compile times
+debug = true  # Include debug symbols
+
+[profile.release]
+opt-level = 3 # Maximum optimization for performance
+debug = false # Exclude debug symbols for smaller binary size
+lto = true    # Link-Time Optimization for further size reduction
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
 [dependencies]
