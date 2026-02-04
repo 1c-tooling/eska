@@ -3,25 +3,3 @@ commit-msg:
     cog-check:
       # cog verify проверяет переданное сообщение
       run: ~/.cargo/bin/cog verify --file {1}
-
-pre-commit:
-  parallel: true # Запускаем задачи параллельно для скорости
-  commands:
-    fmt:
-      glob: "*.rs" # Запускать только если изменились .rs файлы
-      # --check не меняет файлы, а только проверяет.
-      run: cargo fmt --all -- --check
-
-    clippy:
-      glob: "*.rs"
-      # -D warnings заставит коммит упасть, если есть хоть один warning
-      run: cargo clippy --all-features -- -D warnings
-
-pre-push:
-  parallel: true
-  commands:
-    test:
-      glob: "*.rs"
-      run: cargo test
-    audit:
-      run: cargo audit

@@ -1,40 +1,76 @@
 pub mod commands;
 
 use crate::error::Result;
-use clap::{Parser, Subcommand};
+use clap::{ArgAction, Args, CommandFactory, Parser, Subcommand};
 
-/// Подкоманды приложения верхнего уровня
+const HELP_TEMPLATE: &str = "\
+{before-help}{name} {version}
+{about-with-newline}
+ИСПОЛЬЗОВАНИЕ:
+    {usage}
+
+КОМАНДЫ:
+{subcommands}
+
+ОПЦИИ:
+{options}
+{after-help}
+";
+
+#[derive(Args, Debug, PartialEq)]
+#[command(disable_help_flag = true)]
+#[command(disable_version_flag = true)]
+#[command(help_template = HELP_TEMPLATE)]
+pub struct InitArgs {
+    /// Показать справку
+    #[arg(long, short, action = ArgAction::Help)]
+    help: Option<bool>,
+}
+
 #[derive(Subcommand, Debug, PartialEq)]
 pub enum Commands {
     /// Инициализация проекта
-    Init,
+    Init(InitArgs),
+
+    /// Показать справку
+    Help,
 }
 
-/// Точка входа в приложение.
-/// Эта структура представляет полный интерфейс командной строки и синтаксический анализ команд верхнего уровня.
 #[derive(Parser, Debug, PartialEq)]
 #[command(name = "eska")]
 #[command(about = "Утилита для 1С Разработчиков")]
 #[command(version)]
+#[command(disable_help_flag = true)]
+#[command(disable_version_flag = true)]
+#[command(disable_help_subcommand = true)]
+#[command(help_template = HELP_TEMPLATE)]
 pub struct Cli {
     #[command(subcommand)]
     command: Commands,
+
+    /// Показать справку
+    #[arg(long, short, action = ArgAction::Help)]
+    help: Option<bool>,
+
+    /// Показать версию
+    #[arg(long, short = 'V', action = ArgAction::Version)]
+    version: Option<bool>,
 }
 
 impl Cli {
-    /// Отправляет обработанную CLI-команду соответствующему обработчику.
-    /// Возвращает результат в виде строки (выходное сообщение или ошибка).
     pub async fn run(self) -> Result<String> {
         match self.command {
-            Commands::Init => commands::init::run().await,
+            Commands::Init(_args) => commands::init::run().await,
+
+            Commands::Help => {
+                Self::command().print_help()?;
+                Ok(String::new())
+            }
         }
     }
 
-    /// Возвращает ссылку на проанализированную команду.
-    ///
-    /// Этот метод предоставляет доступ к команде, которая была проанализирована с помощью
-    /// аргументов командной строки. Полезно для тестирования и самоанализа.
-    pub fn get_command(&self) -> &Commands {
+    #[must_use]
+    pub const fn get_command(&self) -> &Commands {
         &self.command
     }
 }
