@@ -10,7 +10,8 @@
 
 - `DONE`: чистый минимальный Rust CLI;
 - `DONE`: локализация `ru-RU` / `en-US`, включая `--help`;
-- `NEXT`: `T01` — минимальная доменная модель проекта;
+- `DONE`: `T01` — минимальная доменная модель проекта;
+- `NEXT`: `T02` — схема и загрузка `eska.toml`;
 - прикладных команд, project config и VCS-функций пока нет.
 
 Перед началом любой задачи нужно сверять статус с фактическим кодом и менять его
@@ -30,8 +31,8 @@
 |---|---|---|---|
 | B00 | DONE | Clean baseline | [00-foundation.md](00-foundation.md) |
 | B01 | DONE | Локализация CLI | [00-foundation.md](00-foundation.md) |
-| T01 | NEXT | Доменная модель `Project` | [01-project-foundation.md](01-project-foundation.md) |
-| T02 | PLANNED | Схема и загрузка `eska.toml` | [01-project-foundation.md](01-project-foundation.md) |
+| T01 | DONE | Доменная модель `Project` | [01-project-foundation.md](01-project-foundation.md) |
+| T02 | NEXT | Схема и загрузка `eska.toml` | [01-project-foundation.md](01-project-foundation.md) |
 | T03 | PLANNED | Project discovery и validation | [01-project-foundation.md](01-project-foundation.md) |
 | T04 | PLANNED | `eska new` | [02-project-creation.md](02-project-creation.md) |
 | T05 | PLANNED | Built-in templates | [02-project-creation.md](02-project-creation.md) |
@@ -78,4 +79,3 @@
 3. После реализации выполнить общий Definition of Done.
 4. Пометить задачу `DONE`, записать принятые решения и сделать следующую
    разблокированную задачу `NEXT`.
-

@@ -2,7 +2,7 @@
 
 ## T01 — Доменная модель `Project`
 
-**Статус:** `NEXT`  
+**Статус:** `DONE`
 **Зависит от:** B01
 
 Создать минимальные locale-independent типы: `Project`, `ProjectType`
@@ -13,9 +13,15 @@
 **Готово, когда:** типы валидируют основные инварианты путей, имеют unit tests и не
 зависят от CLI/localization.
 
+**Результат:** добавлены locale-independent `Project`, `ProjectConfiguration`,
+`ProjectType` и `SourceFormat`. `Project` принимает абсолютные пути без `..` и
+гарантирует, что source находится внутри root; существование директорий намеренно
+оставлено discovery-слою T03. Нарушения представлены структурированным
+`ProjectPathError`, основные инварианты покрыты unit-тестами.
+
 ## T02 — Схема и загрузка `eska.toml`
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T01
 
 Добавить TOML parsing, компактные defaults и validation для `[project]`: type,
@@ -39,4 +45,3 @@ source, source format. Не стабилизировать заранее сек
 отсутствие/ошибки config имеют корректные exit codes и тексты на обоих языках.
 
 **Не входит во весь этап:** создание проектов, Git, XML object parsing, build, fmt.
-
