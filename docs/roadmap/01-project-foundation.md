@@ -21,7 +21,7 @@
 
 ## T02 — Схема и загрузка `eska.toml`
 
-**Статус:** `NEXT`
+**Статус:** `DONE`
 **Зависит от:** T01
 
 Добавить TOML parsing, компактные defaults и validation для `[project]`: type,
@@ -32,9 +32,17 @@ source, source format. Не стабилизировать заранее сек
 неизвестные enum values и некорректные пути представлены структурированными
 ошибками; defaults и serialization покрыты тестами.
 
+**Результат:** добавлена строгая схема `[project]`, чтение файла, parsing,
+validation и компактная serialization. Обязательное поле `type` принимает
+`configuration`, `extension`, `processing` или `report`; defaults — `source =
+"src"` и `source_format = "designer-xml"`. Source остаётся относительным путём
+внутри проекта, абсолютные/пустые пути и `..` отклоняются. Malformed TOML, I/O,
+неизвестные enum values, поля и нарушения путей представлены вариантами
+`ProjectConfigError`; locale и ещё не реализованные секции не принимаются.
+
 ## T03 — Project discovery и полная validation
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T02
 
 Искать ближайший `eska.toml` вверх от текущей или переданной директории, считать
