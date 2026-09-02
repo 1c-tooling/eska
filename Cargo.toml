@@ -27,8 +27,4 @@ nursery = { level = "warn", priority = -1 }
 cargo = { level = "warn", priority = -1 }
 
 [dependencies]
-clap = {version = "4.5.57", features = ["derive"]}
-thiserror = "2.0.18"
-tokio = {version = "1.49.0", features = ["full"]}
-tree-sitter = "0.26.5"
-tree-sitter-bsl = { git = "https://github.com/alkoleft/tree-sitter-bsl", branch = "master" }
+clap = { version = "4.5.57", features = ["derive"] }
