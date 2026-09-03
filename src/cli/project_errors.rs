@@ -26,6 +26,9 @@ pub(super) fn present(error: &DiscoveryError, localizer: &Localizer) -> String {
 
 fn config_message(localizer: &Localizer, path: &Path, error: &ProjectConfigError) -> String {
     match error {
+        ProjectConfigError::UnknownWorkflow { value } => {
+            value_message(localizer, "project-workflow-unknown", path, value)
+        }
         ProjectConfigError::Io { path, source } => io_message(localizer, path, source),
         // Parser/OS diagnostics are not translated. Do not leak their English
         // Display output into localized project diagnostics.

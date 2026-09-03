@@ -220,6 +220,16 @@ fn cli_localizes_config_errors_and_preserves_machine_values() {
         ("[project", "Некорректный TOML", "Invalid TOML"),
         ("[project]\ntype = 1", "Некорректный TOML", "Invalid TOML"),
         (
+            "[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'unsupported'",
+            "Неизвестный workflow",
+            "Unknown workflow",
+        ),
+        (
+            "[project]\ntype = 'report'\n[vcs.workflow]",
+            "Некорректный TOML",
+            "Invalid TOML",
+        ),
+        (
             "[project]\ntype = 'configuration'\nlocale = 'ru'",
             "Некорректный TOML",
             "Invalid TOML",

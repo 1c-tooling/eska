@@ -1,18 +1,18 @@
 app-about = Инструментарий разработки проектов 1С:Предприятие
 cli-usage = Использование
-cli-usage-syntax = eska [ПАРАМЕТРЫ]
+cli-usage-syntax = eska [ПАРАМЕТРЫ] [КОМАНДА]
 cli-options = Параметры
 cli-lang-help = Выбрать язык интерфейса
 cli-lang-value = ЛОКАЛЬ
 cli-help = Показать справку
 cli-version = Показать версию
-cli-project-dir-help = Искать проект из указанного каталога (по умолчанию — текущий)
+cli-project-dir-help = Искать проект из указанного каталога; для new — базовый каталог (по умолчанию — текущий)
 cli-project-dir-value = КАТАЛОГ
 project-not-found = Файл eska.toml не найден в каталоге { $path } и его родительских каталогах.
 project-start-not-directory = Начальный путь не является каталогом: { $path }.
 project-config-not-file = Файл конфигурации должен быть обычным файлом: { $path }.
 project-source-not-directory = Путь исходников не является каталогом: { $path }.
-project-config-invalid = Некорректный TOML или структура настроек в { $path }. Проверьте секцию [project], обязательное строковое поле type и отсутствие неизвестных полей.
+project-config-invalid = Некорректный TOML или структура настроек в { $path }. Проверьте [project].type, preset при наличии [vcs.workflow] и отсутствие неизвестных полей.
 project-type-unknown = Неизвестный тип проекта «{ $value }» в { $path }. Допустимы: configuration, extension, processing, report.
 project-format-unknown = Неизвестный формат исходников «{ $value }» в { $path }. Допустим: designer-xml.
 project-path-empty = Путь исходников не может быть пустым.
@@ -26,3 +26,38 @@ project-io-permission-denied = доступ запрещён
 project-io-invalid-data = файл не является корректным текстом UTF-8
 project-io-not-directory = компонент пути не является каталогом
 project-io-other = ошибка файловой системы
+cli-commands = Команды
+cli-arguments = Аргументы
+project-workflow-unknown = Неизвестный workflow «{ $value }» в { $path }. Допустимы: trunk, git-flow, github-flow, custom.
+new-about = Создать новый каркас проекта
+new-usage = eska new [ПАРАМЕТРЫ] <КАТАЛОГ>
+new-path-help = Новый каталог проекта (родительский каталог должен существовать)
+new-type-help = Тип проекта: configuration, extension, processing, report
+new-type-value = ТИП
+new-workflow-help = Выбор workflow: trunk, git-flow, github-flow, custom (пока только сохраняется)
+new-workflow-value = СТРАТЕГИЯ
+new-no-vcs-help = Не инициализировать Git
+new-type-invalid = Неизвестный тип проекта. Допустимы: configuration, extension, processing, report.
+new-workflow-invalid = Неизвестный workflow. Допустимы: trunk, git-flow, github-flow, custom.
+new-options-required = Без интерактивного терминала укажите оба параметра: --type и --workflow.
+new-type-menu = Выберите тип проекта:
+    1. Конфигурация (configuration)
+    2. Расширение (extension)
+    3. Внешняя обработка (processing)
+    4. Внешний отчёт (report)
+new-workflow-menu = Выберите workflow (пока только сохраняется):
+    1. Trunk-based (trunk)
+    2. Git Flow (git-flow)
+    3. GitHub Flow (github-flow)
+    4. Пользовательский (custom)
+new-choice-prompt = Введите номер или идентификатор:
+new-choice-invalid = Неизвестный вариант. Повторите выбор.
+new-cancelled = Создание отменено: ввод завершён. Файлы не созданы.
+new-prompt-error = Не удалось прочитать выбор или вывести приглашение. Файлы не созданы.
+new-created = Каркас проекта создан: { $path }.
+new-destination-invalid = Укажите новый каталог проекта без «..»: { $path }.
+new-destination-exists = Путь уже существует и не будет изменён: { $path }.
+new-io-error = Не удалось создать проект или записать файлы по пути { $path }. Проверьте родительский каталог и права доступа.
+new-template-error = Не удалось сформировать шаблон проекта.
+new-git-error = Не удалось инициализировать Git. Можно повторить с --no-vcs.
+new-rollback-error = { $reason } Откат не завершён; проверьте оставшиеся файлы в { $path }.

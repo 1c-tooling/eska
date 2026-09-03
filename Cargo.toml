@@ -29,6 +29,7 @@ cargo = { level = "warn", priority = -1 }
 [dependencies]
 clap = { version = "4.5.57", features = ["derive", "string"] }
 fluent = "0.17.0"
+gix = { version = "0.80.0", default-features = false, features = ["zlib-rs"] }
 serde = { version = "1.0.229", features = ["derive"] }
 sys-locale = "0.3.2"
 toml = { version = "1.1.4", default-features = false, features = ["display", "parse", "serde"] }

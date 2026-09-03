@@ -79,8 +79,12 @@ fn cli_locale_has_priority_over_environment() {
 #[test]
 fn usage_syntax_is_localized_for_both_help_flags() {
     for (locale, expected, unexpected) in [
-        ("ru", "Использование: eska [ПАРАМЕТРЫ]", "[OPTIONS]"),
-        ("en", "Usage: eska [OPTIONS]", "[ПАРАМЕТРЫ]"),
+        (
+            "ru",
+            "Использование: eska [ПАРАМЕТРЫ] [КОМАНДА]",
+            "[OPTIONS]",
+        ),
+        ("en", "Usage: eska [OPTIONS] [COMMAND]", "[ПАРАМЕТРЫ]"),
     ] {
         for flag in ["--help", "-h"] {
             let output = eska(&["--lang", locale, flag], None);

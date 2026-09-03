@@ -1,0 +1,5 @@
+# gix 0.80 requires winnow 0.7 and maybe-async/syn 2; the existing TOML
+# and derive dependencies require winnow 1 and syn 3. Optional defmt metadata
+# also requires bitflags 1 alongside rustix/bitflags 2. These incompatible
+# transitive versions cannot be unified in the application.
+allowed-duplicate-crates = ["bitflags", "syn", "winnow"]

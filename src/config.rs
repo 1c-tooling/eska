@@ -5,7 +5,9 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::project::{Project, ProjectConfiguration, ProjectPathError, ProjectType, SourceFormat};
+use crate::project::{
+    Project, ProjectConfiguration, ProjectPathError, ProjectType, SourceFormat, WorkflowPreset,
+};
 
 const DEFAULT_SOURCE: &str = "src";
 const DEFAULT_SOURCE_FORMAT: &str = "designer-xml";
@@ -25,6 +27,13 @@ impl ProjectConfig {
             source: default_source(),
             configuration: ProjectConfiguration::new(project_type, SourceFormat::DesignerXml),
         }
+    }
+
+    /// Adds a workflow selection without configuring its future execution policy.
+    #[must_use]
+    pub const fn with_workflow(mut self, workflow: WorkflowPreset) -> Self {
+        self.configuration = self.configuration.with_workflow(workflow);
+        self
     }
 
     /// Loads and validates an `eska.toml` file.
@@ -54,9 +63,16 @@ impl ProjectConfig {
 
         validate_source_path(&document.project.source)?;
 
+        let mut configuration = ProjectConfiguration::new(project_type, source_format);
+        if let Some(vcs) = document.vcs {
+            let value = vcs.workflow.preset;
+            let preset = WorkflowPreset::from_name(&value)
+                .ok_or(ProjectConfigError::UnknownWorkflow { value })?;
+            configuration = configuration.with_workflow(preset);
+        }
         Ok(Self {
             source: document.project.source,
-            configuration: ProjectConfiguration::new(project_type, source_format),
+            configuration,
         })
     }
 
@@ -75,6 +91,11 @@ impl ProjectConfig {
                 source,
                 source_format,
             },
+            vcs: self.configuration.workflow().map(|preset| SerializedVcs {
+                workflow: SerializedWorkflow {
+                    preset: preset.as_str(),
+                },
+            }),
         };
 
         toml::to_string_pretty(&document)
@@ -117,6 +138,9 @@ pub enum InvalidSourceReason {
 /// A structured project configuration error.
 #[derive(Debug)]
 pub enum ProjectConfigError {
+    UnknownWorkflow {
+        value: String,
+    },
     Io {
         path: PathBuf,
         source: io::Error,
@@ -139,6 +163,19 @@ pub enum ProjectConfigError {
 #[serde(deny_unknown_fields)]
 struct RawDocument {
     project: RawProject,
+    vcs: Option<RawVcs>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawVcs {
+    workflow: RawWorkflow,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawWorkflow {
+    preset: String,
 }
 
 #[derive(Deserialize)]
@@ -155,6 +192,18 @@ struct RawProject {
 #[derive(Serialize)]
 struct SerializedDocument<'a> {
     project: SerializedProject<'a>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    vcs: Option<SerializedVcs>,
+}
+
+#[derive(Serialize)]
+struct SerializedVcs {
+    workflow: SerializedWorkflow,
+}
+
+#[derive(Serialize)]
+struct SerializedWorkflow {
+    preset: &'static str,
 }
 
 #[derive(Serialize)]
@@ -175,7 +224,7 @@ fn default_source_format() -> String {
     DEFAULT_SOURCE_FORMAT.to_owned()
 }
 
-fn parse_project_type(value: String) -> Result<ProjectType, ProjectConfigError> {
+pub(crate) fn parse_project_type(value: String) -> Result<ProjectType, ProjectConfigError> {
     match value.as_str() {
         "configuration" => Ok(ProjectType::Configuration),
         "extension" => Ok(ProjectType::Extension),
@@ -238,7 +287,65 @@ mod tests {
     };
 
     use super::{InvalidSourceReason, ProjectConfig, ProjectConfigError};
-    use crate::project::{ProjectType, SourceFormat};
+    use crate::project::{ProjectType, SourceFormat, WorkflowPreset};
+
+    #[test]
+    fn workflow_selection_round_trips_without_policy_or_locale() {
+        for preset in [
+            WorkflowPreset::Trunk,
+            WorkflowPreset::GitFlow,
+            WorkflowPreset::GithubFlow,
+            WorkflowPreset::Custom,
+        ] {
+            let config = ProjectConfig::new(ProjectType::Report).with_workflow(preset);
+            let text = config.to_toml().expect("serialize workflow");
+            assert_eq!(
+                text,
+                format!(
+                    "[project]\ntype = \"report\"\n\n[vcs.workflow]\npreset = \"{}\"\n",
+                    preset.as_str()
+                )
+            );
+            let parsed = ProjectConfig::from_toml(&text).expect("parse workflow");
+            assert_eq!(parsed, config);
+            assert_eq!(
+                parsed
+                    .into_project(PathBuf::from("/work/demo"))
+                    .expect("project")
+                    .configuration()
+                    .workflow(),
+                Some(preset)
+            );
+        }
+        assert_eq!(
+            ProjectConfig::new(ProjectType::Report)
+                .configuration()
+                .workflow(),
+            None
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_or_incomplete_workflow_configuration() {
+        let prefix = "[project]\ntype = \"report\"\n";
+        let error =
+            ProjectConfig::from_toml(&format!("{prefix}[vcs.workflow]\npreset = \"unknown\"\n"))
+                .expect_err("unknown preset");
+        assert!(
+            matches!(error, ProjectConfigError::UnknownWorkflow { value } if value == "unknown")
+        );
+        for suffix in [
+            "[vcs]\n",
+            "[vcs.workflow]\n",
+            "[vcs]\nenabled = true\n",
+            "[vcs.workflow]\npreset = \"trunk\"\nbranch = \"main\"\n",
+        ] {
+            assert!(matches!(
+                ProjectConfig::from_toml(&format!("{prefix}{suffix}")),
+                Err(ProjectConfigError::Toml(_))
+            ));
+        }
+    }
 
     struct TempConfig {
         directory: PathBuf,

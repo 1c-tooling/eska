@@ -58,6 +58,7 @@ impl Project {
 pub struct ProjectConfiguration {
     project_type: ProjectType,
     source_format: SourceFormat,
+    workflow: Option<WorkflowPreset>,
 }
 
 impl ProjectConfiguration {
@@ -66,6 +67,7 @@ impl ProjectConfiguration {
         Self {
             project_type,
             source_format,
+            workflow: None,
         }
     }
 
@@ -77,6 +79,50 @@ impl ProjectConfiguration {
     #[must_use]
     pub const fn source_format(self) -> SourceFormat {
         self.source_format
+    }
+
+    /// Records a selection only; no workflow policy is executed yet.
+    #[must_use]
+    pub const fn with_workflow(mut self, workflow: WorkflowPreset) -> Self {
+        self.workflow = Some(workflow);
+        self
+    }
+
+    #[must_use]
+    pub const fn workflow(self) -> Option<WorkflowPreset> {
+        self.workflow
+    }
+}
+
+/// A saved workflow selection, not an executable workflow policy.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum WorkflowPreset {
+    Trunk,
+    GitFlow,
+    GithubFlow,
+    Custom,
+}
+
+impl WorkflowPreset {
+    #[must_use]
+    pub fn from_name(value: &str) -> Option<Self> {
+        match value {
+            "trunk" => Some(Self::Trunk),
+            "git-flow" => Some(Self::GitFlow),
+            "github-flow" => Some(Self::GithubFlow),
+            "custom" => Some(Self::Custom),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Trunk => "trunk",
+            Self::GitFlow => "git-flow",
+            Self::GithubFlow => "github-flow",
+            Self::Custom => "custom",
+        }
     }
 }
 

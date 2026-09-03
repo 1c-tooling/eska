@@ -2,22 +2,31 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use clap::{ArgAction, CommandFactory, FromArgMatches, Parser};
+use clap::{ArgAction, CommandFactory, FromArgMatches, Parser, Subcommand};
 
 use crate::localization::Localizer;
 
+mod new;
 mod project_errors;
 
 /// Command-line interface for eska.
 #[derive(Parser, Debug)]
-#[command(name = "eska", disable_help_flag = true, disable_version_flag = true)]
+#[command(
+    name = "eska",
+    disable_help_flag = true,
+    disable_version_flag = true,
+    disable_help_subcommand = true
+)]
 pub struct Cli {
     /// Selected UI locale.
     #[arg(long, global = true)]
     pub lang: Option<String>,
 
-    #[arg(long, default_value = ".")]
+    #[arg(long, global = true, default_value = ".")]
     project_dir: PathBuf,
+
+    #[command(subcommand)]
+    command: Option<Commands>,
 
     #[arg(short, long, action = ArgAction::Help)]
     help: Option<bool>,
@@ -26,9 +35,18 @@ pub struct Cli {
     version: Option<bool>,
 }
 
+#[derive(Debug, Subcommand)]
+enum Commands {
+    #[command(disable_help_flag = true)]
+    New(new::NewArgs),
+}
+
 impl Cli {
-    /// Validates the selected project and presents any failure in the UI locale.
+    /// Runs the selected command, or validates a project, in the UI locale.
     pub fn run(&self, localizer: &Localizer) -> ExitCode {
+        if let Some(Commands::New(args)) = &self.command {
+            return args.run(&self.project_dir, localizer);
+        }
         match crate::discovery::discover(&self.project_dir) {
             Ok(_) => ExitCode::SUCCESS,
             Err(error) => {
@@ -50,8 +68,9 @@ impl Cli {
 
     fn localized_command(localizer: &Localizer) -> clap::Command {
         let help_template = format!(
-            "{{before-help}}{{name}} {{version}}\n{{about-with-newline}}\n{}: {{usage}}\n\n{}:\n{{options}}{{after-help}}",
+            "{{before-help}}{{name}} {{version}}\n{{about-with-newline}}\n{}: {{usage}}\n\n{}:\n{{subcommands}}\n{}:\n{{options}}{{after-help}}",
             localizer.text("cli-usage"),
+            localizer.text("cli-commands"),
             localizer.text("cli-options"),
         );
 
@@ -71,5 +90,6 @@ impl Cli {
             })
             .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
             .mut_arg("version", |arg| arg.help(localizer.text("cli-version")))
+            .mut_subcommand("new", |command| new::localize(command, localizer))
     }
 }

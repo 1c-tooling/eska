@@ -26,6 +26,15 @@ impl Template {
     /// fails. The caller can render before making any filesystem changes.
     pub fn built_in(project_type: ProjectType) -> Result<Self, toml::ser::Error> {
         let config = ProjectConfig::new(project_type);
+        Self::from_config(&config)
+    }
+
+    /// Renders a scaffold using a validated config, including its saved workflow.
+    ///
+    /// # Errors
+    ///
+    /// Returns the configuration serializer's error if rendering fails.
+    pub fn from_config(config: &ProjectConfig) -> Result<Self, toml::ser::Error> {
         let source = config.source().to_path_buf();
         let contents = config.to_toml()?;
 
