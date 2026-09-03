@@ -51,7 +51,7 @@ ignored, конфликт, intent-to-add, повреждённый index и не
 
 ## T08 — Workflow policy model
 
-**Статус:** `NEXT`
+**Статус:** `IN-PROGRESS`
 **Зависит от:** T02, T07
 
 Модель определяет base branch, working branch policy, task naming, sync strategy,

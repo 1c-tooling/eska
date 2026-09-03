@@ -46,7 +46,9 @@ src/
     ├── git.rs                   # общее открытие и инициализация Git через gix
     ├── repository.rs            # discovery, HEAD, refs и ограниченная история
     ├── status.rs                # изменения HEAD/index/worktree и changed paths
-    └── workflow.rs              # сохранённые workflow presets
+    ├── workflow.rs              # выбор preset, custom overrides и разрешение policy
+    └── workflow/
+        └── policy.rs            # валидация policy и декларативный план задачи
 
 locales/{ru-RU,en-US}/main.ftl    # пользовательские тексты
 tests/
@@ -79,6 +81,7 @@ tests/
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
 | Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../src/vcs/repository.rs) |
 | Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../src/vcs/status.rs) |
+| Изменить workflow policy или план задачи | [`src/vcs/workflow/policy.rs`](../src/vcs/workflow/policy.rs) |
 | Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../src/cli/interactive/keyboard.rs) |
 | Изменить оформление меню | [`src/cli/interactive/render.rs`](../src/cli/interactive/render.rs) |
 | Изменить приоритет языка | [`src/cli/localization/locale.rs`](../src/cli/localization/locale.rs) |
@@ -100,8 +103,11 @@ tests/
   у `init` — только созданные этим запуском config и Git-метаданные.
 - Git находится в `vcs/`: `git.rs` открывает и инициализирует репозитории,
   `repository.rs` возвращает HEAD, refs и историю, `status.rs` сравнивает
-  HEAD/index/worktree. Состояние файлов не требует разбора Designer XML. `workflow.rs`
-  хранит только значения presets, без реализации будущих политик.
+  HEAD/index/worktree. Состояние файлов не требует разбора Designer XML.
+- `workflow.rs` хранит выбор preset и проверенные overrides; `workflow/policy.rs`
+  проверяет поля, применяет overrides и строит декларативный план задачи без
+  доступа к репозиторию. Готовые defaults пресетов добавляются в T09–T11;
+  планирование не выполняет Git-команды и не заменяет runtime preflight.
 - Unit-тесты находятся рядом с реализацией в `#[cfg(test)] mod tests`.
   Интеграционные сценарии сгруппированы по команде или операции проекта;
   тесты discovery/templates также проверяют соответствующий CLI-контракт.
