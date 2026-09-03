@@ -18,6 +18,15 @@ pub struct ProjectConfig {
 }
 
 impl ProjectConfig {
+    /// Creates a configuration with the default source directory and format.
+    #[must_use]
+    pub fn new(project_type: ProjectType) -> Self {
+        Self {
+            source: default_source(),
+            configuration: ProjectConfiguration::new(project_type, SourceFormat::DesignerXml),
+        }
+    }
+
     /// Loads and validates an `eska.toml` file.
     ///
     /// # Errors

@@ -6,15 +6,16 @@
 
 ## Текущее состояние
 
-Стадия проекта: **project foundation завершён**, далее — project creation.
+Стадия проекта: **project creation**, встроенный template layer готов.
 
 - `DONE`: чистый минимальный Rust CLI;
 - `DONE`: локализация `ru-RU` / `en-US`, включая `--help`;
 - `DONE`: `T01` — минимальная доменная модель проекта;
 - `DONE`: `T02` — схема и загрузка `eska.toml`;
 - `DONE`: `T03` — project discovery, проверка исходников и ошибки CLI;
-- `NEXT`: `T05` — встроенные templates, необходимые для T04 (`eska new`);
-- создание проектов и VCS-функции пока не реализованы.
+- `DONE`: `T05` — встроенные шаблоны для четырёх типов проектов;
+- `NEXT`: `T04` — `eska new`, создание проекта из шаблона;
+- CLI-создание проектов и VCS-функции пока не реализованы.
 
 Перед началом любой задачи нужно сверять статус с фактическим кодом и менять его
 на `DONE` только после выполнения критериев готовности.
@@ -36,8 +37,8 @@
 | T01 | DONE | Доменная модель `Project` | [01-project-foundation.md](01-project-foundation.md) |
 | T02 | DONE | Схема и загрузка `eska.toml` | [01-project-foundation.md](01-project-foundation.md) |
 | T03 | DONE | Project discovery и validation | [01-project-foundation.md](01-project-foundation.md) |
-| T04 | PLANNED | `eska new` | [02-project-creation.md](02-project-creation.md) |
-| T05 | NEXT | Built-in templates | [02-project-creation.md](02-project-creation.md) |
+| T04 | NEXT | `eska new` | [02-project-creation.md](02-project-creation.md) |
+| T05 | DONE | Built-in templates | [02-project-creation.md](02-project-creation.md) |
 | T06 | PLANNED | `eska init` | [02-project-creation.md](02-project-creation.md) |
 | T07 | PLANNED | Repository layer (`gix` + Git fallback) | [03-repository-workflow.md](03-repository-workflow.md) |
 | T08 | PLANNED | Workflow policy model | [03-repository-workflow.md](03-repository-workflow.md) |
