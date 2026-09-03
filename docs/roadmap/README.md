@@ -6,7 +6,7 @@
 
 ## Текущее состояние
 
-Стадия проекта: **workflow policy model завершён**, далее Trunk preset.
+Стадия проекта: **Trunk preset завершён**, далее Git Flow preset.
 
 - `DONE`: чистый минимальный Rust CLI;
 - `DONE`: локализация `ru-RU` / `en-US`, включая `--help`;
@@ -18,7 +18,8 @@
 - `DONE`: `T06` — `eska init`, подключение существующих исходников;
 - `DONE`: `T07` — repository layer: HEAD, refs, история, status и changed paths;
 - `DONE`: `T08` — workflow policy model, custom overrides и декларативный план;
-- `NEXT`: `T09` — Trunk preset;
+- `DONE`: `T09` — Trunk preset;
+- `NEXT`: `T10` — Git Flow preset;
 - VCS-команды и исполнение workflow policy пока не реализованы.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
@@ -52,8 +53,8 @@ TUI разделён на обработку клавиш, отрисовку и
 | T06 | DONE | `eska init` | [02-project-creation.md](02-project-creation.md) |
 | T07 | DONE | Repository layer (`gix`; Git fallback по мере необходимости) | [03-repository-workflow.md](03-repository-workflow.md) |
 | T08 | DONE | Workflow policy model | [03-repository-workflow.md](03-repository-workflow.md) |
-| T09 | NEXT | Trunk preset | [03-repository-workflow.md](03-repository-workflow.md) |
-| T10 | PLANNED | Git Flow preset | [03-repository-workflow.md](03-repository-workflow.md) |
+| T09 | DONE | Trunk preset | [03-repository-workflow.md](03-repository-workflow.md) |
+| T10 | NEXT | Git Flow preset | [03-repository-workflow.md](03-repository-workflow.md) |
 | T11 | PLANNED | GitHub Flow preset | [03-repository-workflow.md](03-repository-workflow.md) |
 | T12 | PLANNED | `eska status` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T13 | PLANNED | `eska start` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |

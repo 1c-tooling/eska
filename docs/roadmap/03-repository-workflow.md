@@ -100,15 +100,37 @@ config, а не через новый Rust enum на каждую компани
 
 ## T09 — Trunk preset
 
-**Статус:** `NEXT`
+**Статус:** `DONE`
 **Зависит от:** T08
 
 Short-lived task branch от `main`, rebase на `origin/main`, publish task branch,
 integration через MR. Direct-trunk оставить отложенным вариантом.
 
+**Реализовано:** встроенная policy `trunk` создаёт ветку `task/{task}` от `main`,
+синхронизирует её через rebase на `refs/remotes/origin/main`, публикует task-ветку
+и требует подтверждённой интеграции в `main` перед завершением. После интеграции
+разрешено удалить локальную task-ветку; remote-ветка не удаляется.
+
+**Решения и границы:**
+
+- `WorkflowSettings::resolve(None)` разрешает готовый Trunk preset и частичные
+  overrides `custom extends = "trunk"`; явное `false` продолжает сохраняться;
+- Git Flow и GitHub Flow по-прежнему требуют явно переданную базовую policy до
+  T10–T11; config не материализует встроенные defaults при сериализации;
+- plan остаётся чистым и декларативным: Git-команды, проверка репозитория,
+  создание MR и runtime preflight не добавлены;
+- direct-trunk не добавлен и остаётся в deferred scope; новых config-полей,
+  пользовательских строк, CLI-команд и dependencies нет.
+
+**Проверено:** `cargo fmt --check`, `cargo check --offline`, 62 unit-теста и 57
+integration-тестов в изолированном соседнем playground — успешно; 4 workflow
+integration-теста включают RU/EN CLI validation. Clippy по всем targets и features
+успешно проверил код; cargo lint `multiple_crate_versions` не удалось повторить
+без отсутствующих в локальном cache платформенных crates и доступа к crates.io.
+
 ## T10 — Git Flow preset
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T08
 
 `feature/*` от `develop`; заложить policy slots для будущих `release/*` и

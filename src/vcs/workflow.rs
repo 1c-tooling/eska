@@ -15,7 +15,7 @@ pub enum WorkflowPreset {
     Custom,
 }
 
-/// A validated selection and its explicit overrides; preset defaults are supplied by the caller.
+/// A validated selection and its explicit overrides.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WorkflowSettings {
     preset: WorkflowPreset,
@@ -89,8 +89,8 @@ impl WorkflowSettings {
         }
     }
 
-    /// Apply overrides to the explicitly supplied, matching preset policy.
-    /// Pass `None` for a fully specified standalone custom policy.
+    /// Apply overrides to a matching supplied policy or an available built-in preset.
+    /// Pass `None` to use built-in defaults or a fully specified standalone custom policy.
     ///
     /// # Errors
     /// Reports a missing/mismatched base or an incomplete/inconsistent resolved policy.
@@ -105,7 +105,11 @@ impl WorkflowSettings {
             (Some(expected), Some((actual, _))) => {
                 Err(PolicyError::PresetMismatch { expected, actual })
             }
-            (Some(preset), None) => Err(PolicyError::MissingPreset { preset }),
+            (Some(preset), None) => preset
+                .policy()
+                .map_or(Err(PolicyError::MissingPreset { preset }), |policy| {
+                    self.policy.resolve(Some(&policy))
+                }),
             (None, Some(_)) => Err(PolicyError::UnexpectedPreset),
             (None, None) => self.policy.resolve(None),
         }
@@ -113,6 +117,7 @@ impl WorkflowSettings {
 }
 
 impl WorkflowPreset {
+    /// Parse the stable machine-facing preset name.
     #[must_use]
     pub fn from_name(value: &str) -> Option<Self> {
         match value {
@@ -124,6 +129,7 @@ impl WorkflowPreset {
         }
     }
 
+    /// Return the stable machine-facing preset name.
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {

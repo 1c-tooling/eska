@@ -56,6 +56,27 @@ pub struct WorkflowPolicy {
     delete_local_branch: bool,
 }
 
+impl WorkflowPreset {
+    /// Return the built-in policy when the selected preset is implemented.
+    #[must_use]
+    pub fn policy(self) -> Option<WorkflowPolicy> {
+        match self {
+            Self::Trunk => Some(WorkflowPolicy {
+                base_branch: "main".into(),
+                working_branch: WorkingBranchPolicy::TaskBranch,
+                task_branch_template: "task/{task}".into(),
+                remote: "origin".into(),
+                sync_strategy: SyncStrategy::Rebase,
+                integration_target: "main".into(),
+                publish: PublishBehavior::PushTaskBranch,
+                finish: FinishRequirement::Integrated,
+                delete_local_branch: true,
+            }),
+            Self::GitFlow | Self::GithubFlow | Self::Custom => None,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PolicyField {
     BaseBranch,
@@ -427,13 +448,25 @@ mod tests {
     }
 
     #[test]
-    fn selection_does_not_invent_preset_defaults_or_accept_the_wrong_base() {
+    fn trunk_selection_uses_builtin_policy_and_accepts_matching_explicit_base() {
         let base = complete().resolve(None).unwrap();
-        for preset in [
-            WorkflowPreset::Trunk,
-            WorkflowPreset::GitFlow,
-            WorkflowPreset::GithubFlow,
-        ] {
+        let settings = WorkflowSettings::selection(WorkflowPreset::Trunk);
+        assert_eq!(
+            settings.resolve(None).unwrap(),
+            WorkflowPreset::Trunk.policy().unwrap()
+        );
+        assert_eq!(
+            settings
+                .resolve(Some((WorkflowPreset::Trunk, &base)))
+                .unwrap(),
+            base
+        );
+    }
+
+    #[test]
+    fn unavailable_presets_still_require_an_explicit_base() {
+        let base = complete().resolve(None).unwrap();
+        for preset in [WorkflowPreset::GitFlow, WorkflowPreset::GithubFlow] {
             let settings = WorkflowSettings::selection(preset);
             assert_eq!(
                 settings.resolve(None),
@@ -441,11 +474,20 @@ mod tests {
             );
             assert_eq!(settings.resolve(Some((preset, &base))).unwrap(), base);
         }
+    }
+
+    #[test]
+    fn explicit_base_must_match_the_selected_preset() {
+        let base = complete().resolve(None).unwrap();
         let settings = WorkflowSettings::selection(WorkflowPreset::Trunk);
         assert!(matches!(
             settings.resolve(Some((WorkflowPreset::GitFlow, &base))),
             Err(PolicyError::PresetMismatch { .. })
         ));
+    }
+
+    #[test]
+    fn only_custom_settings_can_override_or_extend_a_policy() {
         assert!(matches!(
             WorkflowSettings::new(WorkflowPreset::Trunk, None, complete()),
             Err(PolicyError::RequiresCustom)
@@ -458,6 +500,66 @@ mod tests {
             ),
             Err(PolicyError::CustomBase)
         ));
+    }
+
+    #[test]
+    fn trunk_plan_is_short_lived_rebased_published_and_integrated_into_main() {
+        let plan = WorkflowPreset::Trunk
+            .policy()
+            .unwrap()
+            .plan("FI-1234")
+            .unwrap();
+        assert_eq!(
+            plan,
+            TaskPlan {
+                base_branch: "main".into(),
+                working_branch: "task/FI-1234".into(),
+                sync_strategy: SyncStrategy::Rebase,
+                sync_reference: "refs/remotes/origin/main".into(),
+                integration_target: "main".into(),
+                publish: PublishPlan::PushTaskBranch {
+                    remote: "origin".into(),
+                    branch: "task/FI-1234".into(),
+                },
+                finish: FinishRequirement::Integrated,
+                delete_local_branch: true,
+            }
+        );
+    }
+
+    #[test]
+    fn custom_trunk_overrides_inherit_unspecified_builtin_fields() {
+        for (template, remote, delete_local_branch) in [
+            ("company/{task}", "team", false),
+            ("issue-{task}", "upstream", true),
+        ] {
+            let settings = WorkflowSettings::new(
+                WorkflowPreset::Custom,
+                Some(WorkflowPreset::Trunk),
+                PolicyOverrides {
+                    task_branch_template: Some(template.into()),
+                    remote: Some(remote.into()),
+                    delete_local_branch: Some(delete_local_branch),
+                    ..PolicyOverrides::default()
+                },
+            )
+            .unwrap();
+            let plan = settings.resolve(None).unwrap().plan("FI-9").unwrap();
+            assert_eq!(plan.base_branch, "main");
+            assert_eq!(plan.working_branch, template.replace("{task}", "FI-9"));
+            assert_eq!(plan.sync_strategy, SyncStrategy::Rebase);
+            assert_eq!(plan.sync_reference, format!("refs/remotes/{remote}/main"));
+            assert_eq!(plan.integration_target, "main");
+            assert_eq!(
+                plan.publish,
+                PublishPlan::PushTaskBranch {
+                    remote: remote.into(),
+                    branch: template.replace("{task}", "FI-9"),
+                }
+            );
+            assert_eq!(plan.finish, FinishRequirement::Integrated);
+            assert_eq!(plan.delete_local_branch, delete_local_branch);
+        }
     }
 
     #[test]

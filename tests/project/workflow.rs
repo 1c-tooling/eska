@@ -4,7 +4,11 @@ use std::{
     process::{Command, Output},
 };
 
-use eska::{config::ProjectConfig, project::discovery, vcs::workflow::SyncStrategy};
+use eska::{
+    config::ProjectConfig,
+    project::discovery,
+    vcs::workflow::{FinishRequirement, PublishPlan, SyncStrategy},
+};
 
 use crate::support::TestDir;
 
@@ -82,10 +86,70 @@ fn discovery_preserves_policy_and_cli_validation_does_not_modify_git() {
 }
 
 #[test]
-fn custom_overrides_can_be_loaded_before_builtin_defaults_are_available() {
+fn trunk_preset_and_custom_overrides_resolve_to_deterministic_plans() {
     let dir = TestDir::new();
     fs::create_dir(dir.0.join("src")).unwrap();
-    for preset in ["trunk", "git-flow", "github-flow"] {
+    for (workflow, expected_branch, expected_remote, delete_local_branch) in [
+        (
+            "[vcs.workflow]\npreset = 'trunk'\n",
+            "task/FI-9",
+            "origin",
+            true,
+        ),
+        (
+            "[vcs.workflow]\npreset = 'custom'\nextends = 'trunk'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{task}'\nremote = 'team'\ndelete_local_branch = false\n",
+            "company/FI-9",
+            "team",
+            false,
+        ),
+    ] {
+        let text = format!("[project]\ntype = 'report'\n{workflow}");
+        fs::write(dir.0.join("eska.toml"), &text).unwrap();
+        let config = ProjectConfig::load(&dir.0.join("eska.toml")).unwrap();
+        let plan = config
+            .configuration()
+            .workflow_settings()
+            .unwrap()
+            .resolve(None)
+            .unwrap()
+            .plan("FI-9")
+            .unwrap();
+        assert_eq!(plan.base_branch, "main");
+        assert_eq!(plan.working_branch, expected_branch);
+        assert_eq!(plan.sync_strategy, SyncStrategy::Rebase);
+        assert_eq!(
+            plan.sync_reference,
+            format!("refs/remotes/{expected_remote}/main")
+        );
+        assert_eq!(plan.integration_target, "main");
+        assert_eq!(
+            plan.publish,
+            PublishPlan::PushTaskBranch {
+                remote: expected_remote.into(),
+                branch: expected_branch.into(),
+            }
+        );
+        assert_eq!(plan.finish, FinishRequirement::Integrated);
+        assert_eq!(plan.delete_local_branch, delete_local_branch);
+        for locale in ["ru", "en"] {
+            let result = validate(&dir.0, locale);
+            assert!(
+                result.status.success(),
+                "{}",
+                String::from_utf8_lossy(&result.stderr)
+            );
+            assert!(result.stdout.is_empty() && result.stderr.is_empty());
+        }
+        assert_eq!(fs::read_to_string(dir.0.join("eska.toml")).unwrap(), text);
+        assert!(!dir.0.join(".git").exists());
+    }
+}
+
+#[test]
+fn custom_overrides_can_be_loaded_before_their_builtin_defaults_are_available() {
+    let dir = TestDir::new();
+    fs::create_dir(dir.0.join("src")).unwrap();
+    for preset in ["git-flow", "github-flow"] {
         let text = format!(
             "[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'custom'\nextends = '{preset}'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{{task}}'\ndelete_local_branch = false\n"
         );

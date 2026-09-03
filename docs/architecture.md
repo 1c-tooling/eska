@@ -106,9 +106,10 @@ tests/
 - Git находится в `vcs/`: `git.rs` открывает и инициализирует репозитории,
   `repository.rs` возвращает HEAD, refs и историю, `status.rs` сравнивает
   HEAD/index/worktree. Состояние файлов не требует разбора Designer XML.
-- `workflow.rs` хранит выбор preset и проверенные overrides; `workflow/policy.rs`
-  проверяет поля, применяет overrides и строит декларативный план задачи без
-  доступа к репозиторию. Готовые defaults пресетов добавляются в T09–T11;
+- `workflow.rs` хранит выбор preset, проверенные overrides и разрешает доступные
+  встроенные policies; `workflow/policy.rs` проверяет поля, содержит Trunk
+  defaults, применяет overrides и строит декларативный план задачи без доступа к
+  репозиторию. Defaults Git Flow и GitHub Flow добавляются в T10–T11;
   планирование не выполняет Git-команды и не заменяет runtime preflight.
 - Unit-тесты находятся рядом с реализацией в `#[cfg(test)] mod tests`.
   Интеграционные сценарии сгруппированы по команде или операции проекта;
