@@ -36,6 +36,16 @@ impl ProjectConfig {
         self
     }
 
+    /// Sets a validated relative source directory.
+    ///
+    /// # Errors
+    /// Returns [`ProjectConfigError::InvalidSource`] for an unsafe path.
+    pub fn with_source(mut self, source: PathBuf) -> Result<Self, ProjectConfigError> {
+        validate_source_path(&source)?;
+        self.source = source;
+        Ok(self)
+    }
+
     /// Loads and validates an `eska.toml` file.
     ///
     /// # Errors

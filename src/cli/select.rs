@@ -21,18 +21,27 @@ pub(super) enum PromptError {
     Io,
 }
 
+pub(super) const WORKFLOW_CHOICES: [(&str, &str); 4] = [
+    ("trunk", "new-workflow-trunk"),
+    ("git-flow", "new-workflow-git-flow"),
+    ("github-flow", "new-workflow-github-flow"),
+    ("custom", "new-workflow-custom"),
+];
+
 pub(super) struct Selector {
+    heading: &'static str,
     output: io::Stderr,
     active: bool,
     styled: bool,
 }
 
 impl Selector {
-    pub(super) fn start() -> Result<Self, PromptError> {
+    pub(super) fn start(heading: &'static str) -> Result<Self, PromptError> {
         terminal::enable_raw_mode().map_err(|_| PromptError::Io)?;
         // Construct the guard before any terminal writes, so partial setup and
         // unwinding restore the screen, cursor and terminal input mode too.
         let mut selector = Self {
+            heading,
             output: io::stderr(),
             active: true,
             styled: std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty()),
@@ -105,7 +114,7 @@ impl Selector {
         render(
             &mut frame,
             localizer,
-            title,
+            (self.heading, title),
             choices,
             selected,
             size,
@@ -209,7 +218,7 @@ fn fits((width, height): (u16, u16), count: usize) -> bool {
 fn render(
     output: &mut impl Write,
     localizer: &Localizer,
-    title: &str,
+    (heading, title): (&str, &str),
     choices: &[(&str, &str)],
     selected: usize,
     size: (u16, u16),
@@ -236,7 +245,7 @@ fn render(
     if styled {
         queue!(output, SetAttribute(Attribute::Bold))?;
     }
-    line(output, 1, &localizer.text("new-tui-title"), width, height)?;
+    line(output, 1, &localizer.text(heading), width, height)?;
     queue!(output, SetAttribute(Attribute::Reset))?;
     line(output, 3, &localizer.text(title), width, height)?;
     for (index, (value, label)) in choices.iter().enumerate() {
@@ -432,7 +441,7 @@ mod tests {
                 render(
                     &mut output,
                     &localizer,
-                    "new-type-menu",
+                    ("new-tui-title", "new-type-menu"),
                     &CHOICES,
                     1,
                     (80, 24),
@@ -464,7 +473,7 @@ mod tests {
             render(
                 &mut output,
                 &localizer,
-                "new-type-menu",
+                ("new-tui-title", "new-type-menu"),
                 &CHOICES,
                 0,
                 size,
@@ -499,7 +508,7 @@ mod tests {
             render(
                 &mut BrokenOutput,
                 &localizer,
-                "new-type-menu",
+                ("new-tui-title", "new-type-menu"),
                 &CHOICES,
                 0,
                 (80, 24),

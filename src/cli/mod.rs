@@ -6,6 +6,7 @@ use clap::{ArgAction, CommandFactory, FromArgMatches, Parser, Subcommand};
 
 use crate::localization::Localizer;
 
+mod init;
 mod new;
 mod project_errors;
 mod select;
@@ -40,13 +41,17 @@ pub struct Cli {
 enum Commands {
     #[command(disable_help_flag = true)]
     New(new::NewArgs),
+    #[command(disable_help_flag = true)]
+    Init(init::InitArgs),
 }
 
 impl Cli {
     /// Runs the selected command, or validates a project, in the UI locale.
     pub fn run(&self, localizer: &Localizer) -> ExitCode {
-        if let Some(Commands::New(args)) = &self.command {
-            return args.run(&self.project_dir, localizer);
+        match &self.command {
+            Some(Commands::New(args)) => return args.run(&self.project_dir, localizer),
+            Some(Commands::Init(args)) => return args.run(&self.project_dir, localizer),
+            None => {}
         }
         match crate::discovery::discover(&self.project_dir) {
             Ok(_) => ExitCode::SUCCESS,
@@ -92,5 +97,6 @@ impl Cli {
             .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
             .mut_arg("version", |arg| arg.help(localizer.text("cli-version")))
             .mut_subcommand("new", |command| new::localize(command, localizer))
+            .mut_subcommand("init", |command| init::localize(command, localizer))
     }
 }

@@ -2,7 +2,7 @@
 
 ## T07 — Repository layer
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T03
 
 Создать единый infrastructure layer. Через `gix` реализовать discovery, HEAD,
@@ -49,4 +49,3 @@ Short-lived branch от `main`, публикация ветки и PR/MR integra
 **Готовность workflow:** одинаковые входные данные дают детерминированный plan;
 presets и custom overrides покрыты table-driven tests, пока без выполнения команд
 повседневного UX.
-

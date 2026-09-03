@@ -145,12 +145,9 @@ pub enum CreationError {
 }
 
 #[cfg(test)]
-#[path = "../tests/support/mod.rs"]
-mod test_support;
-
-#[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support;
 
     #[test]
     fn failed_operation_removes_only_its_new_directory() {

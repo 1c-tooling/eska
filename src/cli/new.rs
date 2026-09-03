@@ -11,7 +11,7 @@ use crate::{
 };
 use clap::{ArgAction, Args};
 
-use super::select::{PromptError, Selector};
+use super::select::{PromptError, Selector, WORKFLOW_CHOICES};
 
 #[derive(Debug, Args)]
 pub(super) struct NewArgs {
@@ -58,7 +58,7 @@ impl NewArgs {
                 return ExitCode::from(2);
             }
             let result = (|| {
-                let mut selector = Selector::start()?;
+                let mut selector = Selector::start("new-tui-title")?;
                 if project_type.is_none() {
                     project_type = Some(selector.choose(
                         localizer,
@@ -72,16 +72,8 @@ impl NewArgs {
                     )?);
                 }
                 if workflow.is_none() {
-                    workflow = Some(selector.choose(
-                        localizer,
-                        "new-workflow-menu",
-                        &[
-                            ("trunk", "new-workflow-trunk"),
-                            ("git-flow", "new-workflow-git-flow"),
-                            ("github-flow", "new-workflow-github-flow"),
-                            ("custom", "new-workflow-custom"),
-                        ],
-                    )?);
+                    workflow =
+                        Some(selector.choose(localizer, "new-workflow-menu", &WORKFLOW_CHOICES)?);
                 }
                 selector.finish().map_err(|_| PromptError::Io)?;
                 Ok::<_, PromptError>(())
