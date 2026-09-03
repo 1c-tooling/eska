@@ -1,8 +1,14 @@
 use std::process::{Command, Output};
 
+mod support;
+
 fn eska(args: &[&str], eska_lang: Option<&str>) -> Output {
+    let directory = support::TestDir::new();
     let mut command = Command::new(env!("CARGO_BIN_EXE_eska"));
-    command.args(args).env_remove("ESKA_LANG");
+    command
+        .current_dir(&directory.0)
+        .args(args)
+        .env_remove("ESKA_LANG");
     if let Some(locale) = eska_lang {
         command.env("ESKA_LANG", locale);
     }

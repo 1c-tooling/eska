@@ -111,6 +111,13 @@
 
 ## Проверки и завершение задачи
 
+- Ручные проверки CLI (`new`, `init` и остальных команд) выполнять только внутри
+  `/home/kas/Projects/eska-playground`, в отдельных demo-каталогах. Не создавать
+  тестовые проекты внутри репозитория `eska`; существующие demo пользователя
+  не изменять без запроса. Для автоматических CLI-тестов на этой машине задавать
+  `ESKA_TEST_ROOT=/home/kas/Projects/eska-playground`; тесты создают и удаляют
+  только собственные уникальные подкаталоги. Если sandbox требует разрешения на
+  запись в playground, запрашивать его, а не переносить проверки в другое место.
 - Добавляй соразмерные unit- и integration-тесты. Для CLI проверяй exit code,
   stdout/stderr и оба языка; для JSON — стабильность схемы и независимость от
   locale; Git-сценарии при необходимости проверяй на небольших временных
@@ -121,7 +128,7 @@
   cargo fmt --check
   cargo check
   cargo clippy --all-targets --all-features -- -D warnings
-  cargo test
+  ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test
   ```
 
   Для промежуточного commit допустимы более узкие релевантные проверки, но не

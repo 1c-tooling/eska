@@ -1,32 +1,9 @@
-use std::{
-    fs,
-    path::PathBuf,
-    process::Command,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{fs, process::Command};
 
 use eska::{discovery::discover, project::ProjectType, templates::Template};
 
-struct Fixture(PathBuf);
-
-impl Fixture {
-    fn new() -> Self {
-        let unique = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("clock after Unix epoch")
-            .as_nanos();
-        let path =
-            std::env::temp_dir().join(format!("eska-templates-{}-{unique}", std::process::id()));
-        fs::create_dir(&path).expect("create fixture");
-        Self(fs::canonicalize(path).expect("canonical fixture path"))
-    }
-}
-
-impl Drop for Fixture {
-    fn drop(&mut self) {
-        fs::remove_dir_all(&self.0).expect("remove fixture");
-    }
-}
+mod support;
+use support::TestDir as Fixture;
 
 #[test]
 fn all_built_ins_materialize_into_projects_accepted_by_discovery_and_cli() {

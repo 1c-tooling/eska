@@ -2,7 +2,6 @@ use std::{
     fs,
     path::{Path, PathBuf},
     process::{Command, Output},
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 use eska::{
@@ -11,22 +10,10 @@ use eska::{
     project::ProjectType,
 };
 
-struct Fixture(PathBuf);
+mod support;
+use support::TestDir as Fixture;
 
 impl Fixture {
-    fn new() -> Self {
-        let unique = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("clock after Unix epoch")
-            .as_nanos();
-        let path = std::env::temp_dir().join(format!(
-            "eska-discovery-{}-{unique} каталог",
-            std::process::id()
-        ));
-        fs::create_dir(&path).expect("create fixture directory");
-        Self(fs::canonicalize(path).expect("canonical fixture path"))
-    }
-
     fn project(&self, name: &str) -> PathBuf {
         let root = self.0.join(name);
         fs::create_dir_all(root.join("src/CommonModules/Module/Ext")).expect("create sources");
@@ -36,12 +23,6 @@ impl Fixture {
         )
         .expect("write config");
         root
-    }
-}
-
-impl Drop for Fixture {
-    fn drop(&mut self) {
-        fs::remove_dir_all(&self.0).expect("remove fixture directory");
     }
 }
 
