@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    fs, io,
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -14,9 +14,20 @@ impl TestDir {
             .duration_since(UNIX_EPOCH)
             .expect("clock after Unix epoch")
             .as_nanos();
-        let path = base.join(format!("eska-test-{}-{unique} каталог", std::process::id()));
-        fs::create_dir(&path).expect("create isolated test directory");
-        Self(fs::canonicalize(path).expect("canonical test directory"))
+        // Clock resolution is not a uniqueness guarantee across parallel tests.
+        // Exclusively claim a path and retry collisions without touching it.
+        for attempt in 0..1024 {
+            let path = base.join(format!(
+                "eska-test-{}-{unique}-{attempt} каталог",
+                std::process::id()
+            ));
+            match fs::create_dir(&path) {
+                Ok(()) => return Self(fs::canonicalize(path).expect("canonical test directory")),
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
+                Err(error) => panic!("create isolated test directory: {error}"),
+            }
+        }
+        panic!("could not claim an isolated test directory after 1024 attempts");
     }
 }
 
