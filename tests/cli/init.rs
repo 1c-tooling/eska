@@ -25,10 +25,14 @@ fn command(root: &Path, locale: &str) -> Command {
 fn descriptor(directory: &Path, kind: &str) {
     fs::create_dir_all(directory).expect("source directory");
     let (tag, properties, name) = match kind {
-        "configuration" => ("Configuration", "", "Configuration.xml"),
+        "configuration" => (
+            "Configuration",
+            "<ConfigurationExtensionCompatibilityMode>Version8_3_27</ConfigurationExtensionCompatibilityMode>",
+            "Configuration.xml",
+        ),
         "extension" => (
             "Configuration",
-            "<ConfigurationExtensionPurpose>Customization</ConfigurationExtensionPurpose>",
+            "<ConfigurationExtensionPurpose>Customization</ConfigurationExtensionPurpose><ConfigurationExtensionCompatibilityMode>Version8_3_27</ConfigurationExtensionCompatibilityMode>",
             "Configuration.xml",
         ),
         "processing" => ("ExternalDataProcessor", "", "Обработка.xml"),

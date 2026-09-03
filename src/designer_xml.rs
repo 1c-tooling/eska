@@ -4,6 +4,7 @@ use crate::project::ProjectType;
 
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
 
+/// Detects the project type represented by a Designer XML root descriptor.
 pub fn project_type(input: &str) -> Result<Option<ProjectType>, roxmltree::Error> {
     let document = roxmltree::Document::parse_with_options(
         input,
@@ -29,10 +30,7 @@ pub fn project_type(input: &str) -> Result<Option<ProjectType>, roxmltree::Error
                 .children()
                 .filter(|node| node.has_tag_name((NAMESPACE, "Properties")))
                 .flat_map(|node| node.children())
-                .any(|node| {
-                    node.has_tag_name((NAMESPACE, "ConfigurationExtensionPurpose"))
-                        || node.has_tag_name((NAMESPACE, "ConfigurationExtensionCompatibilityMode"))
-                });
+                .any(|node| node.has_tag_name((NAMESPACE, "ConfigurationExtensionPurpose")));
             if extension {
                 ProjectType::Extension
             } else {
@@ -52,12 +50,16 @@ mod tests {
     use crate::project::ProjectType;
 
     #[test]
-    fn detects_all_types_with_namespaces_bom_and_comments() {
+    fn detects_all_types_with_namespaces_bom_comments_and_configuration_properties() {
         for (tag, properties, expected) in [
-            ("Configuration", "", ProjectType::Configuration),
             (
                 "Configuration",
-                "<m:ConfigurationExtensionPurpose>Patch</m:ConfigurationExtensionPurpose>",
+                "<m:ConfigurationExtensionCompatibilityMode>Version8_3_27</m:ConfigurationExtensionCompatibilityMode>",
+                ProjectType::Configuration,
+            ),
+            (
+                "Configuration",
+                "<m:ConfigurationExtensionPurpose>Patch</m:ConfigurationExtensionPurpose><m:ConfigurationExtensionCompatibilityMode>Version8_3_27</m:ConfigurationExtensionCompatibilityMode>",
                 ProjectType::Extension,
             ),
             ("ExternalDataProcessor", "", ProjectType::Processing),
@@ -84,6 +86,13 @@ mod tests {
         }
         let xml = format!(
             "<MetaDataObject xmlns=\"{NAMESPACE}\"><Configuration><ChildObjects><Properties><ConfigurationExtensionPurpose/></Properties></ChildObjects></Configuration></MetaDataObject>"
+        );
+        assert_eq!(
+            project_type(&xml).expect("XML"),
+            Some(ProjectType::Configuration)
+        );
+        let xml = format!(
+            "<MetaDataObject xmlns=\"{NAMESPACE}\" xmlns:x=\"urn:foreign\"><Configuration><Properties><x:ConfigurationExtensionPurpose/></Properties></Configuration></MetaDataObject>"
         );
         assert_eq!(
             project_type(&xml).expect("XML"),

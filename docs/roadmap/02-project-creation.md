@@ -119,8 +119,10 @@ rollback сценарии протестированы.
 дескрипторов в одном каталоге отклоняются. Ссылки разрешаются только внутри
 корня, конфигурация сохраняет нормализованный относительный source.
 
-Тип определяется из namespace-aware XML: `Configuration`, признаки расширения
-в его `Properties`, `ExternalDataProcessor` или `ExternalReport`. Корневой
+Тип определяется из namespace-aware XML: `Configuration`, расширение с
+`ConfigurationExtensionPurpose` в его `Properties`, `ExternalDataProcessor` или
+`ExternalReport`. `ConfigurationExtensionCompatibilityMode` не используется как
+признак расширения, поскольку встречается и в обычных конфигурациях. Корневой
 элемент — `MetaDataObject` в `http://v8.1c.ru/8.3/MDClasses`. Поэтому `--type`
 не требуется и не добавлен. В TTY запрашивается только неизвестный workflow;
 без TTY он обязателен через флаг. Общий selector получил параметр заголовка и

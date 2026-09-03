@@ -92,9 +92,11 @@ eska init existing-project --source sources/designer --workflow github-flow --no
 
 Команда ищет корневой XML-дескриптор непосредственно в корне проекта и в `src`,
 без рекурсивного обхода. Распознаются `Configuration` (конфигурация или расширение
-по свойствам расширения), `ExternalDataProcessor` и `ExternalReport` внутри
-`MetaDataObject` с пространством имён Designer XML. Тип определяется по содержимому,
-не по имени каталога; `--type` и отдельного меню типов у `init` нет.
+по наличию свойства `ConfigurationExtensionPurpose`), `ExternalDataProcessor` и
+`ExternalReport` внутри `MetaDataObject` с пространством имён Designer XML.
+Свойство `ConfigurationExtensionCompatibilityMode` само по себе не означает
+расширение: оно встречается и в обычных конфигурациях. Тип определяется по
+содержимому, не по имени каталога; `--type` и отдельного меню типов у `init` нет.
 
 Для другого расположения укажите `--source` — непустой относительный путь от
 корня проекта, без `..`; `--source .` выбирает сам корень. Ссылки разрешаются,
