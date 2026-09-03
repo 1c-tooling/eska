@@ -1,8 +1,12 @@
 use std::ffi::OsString;
+use std::path::PathBuf;
+use std::process::ExitCode;
 
 use clap::{ArgAction, CommandFactory, FromArgMatches, Parser};
 
 use crate::localization::Localizer;
+
+mod project_errors;
 
 /// Command-line interface for eska.
 #[derive(Parser, Debug)]
@@ -12,6 +16,9 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub lang: Option<String>,
 
+    #[arg(long, default_value = ".")]
+    project_dir: PathBuf,
+
     #[arg(short, long, action = ArgAction::Help)]
     help: Option<bool>,
 
@@ -20,6 +27,17 @@ pub struct Cli {
 }
 
 impl Cli {
+    /// Validates the selected project and presents any failure in the UI locale.
+    pub fn run(&self, localizer: &Localizer) -> ExitCode {
+        match crate::discovery::discover(&self.project_dir) {
+            Ok(_) => ExitCode::SUCCESS,
+            Err(error) => {
+                eprintln!("{}", project_errors::present(&error, localizer));
+                ExitCode::FAILURE
+            }
+        }
+    }
+
     /// Parses command-line arguments using localized help metadata.
     pub fn parse_localized<I, T>(args: I, localizer: &Localizer) -> Self
     where
@@ -45,6 +63,11 @@ impl Cli {
             .mut_arg("lang", |arg| {
                 arg.help(localizer.text("cli-lang-help"))
                     .value_name(localizer.text("cli-lang-value"))
+            })
+            .mut_arg("project_dir", |arg| {
+                arg.help(localizer.text("cli-project-dir-help"))
+                    .value_name(localizer.text("cli-project-dir-value"))
+                    .hide_default_value(true)
             })
             .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
             .mut_arg("version", |arg| arg.help(localizer.text("cli-version")))

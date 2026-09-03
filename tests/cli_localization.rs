@@ -27,6 +27,8 @@ fn russian_help_is_fully_localized() {
         "Параметры",
         "Показать справку",
         "Показать версию",
+        "--project-dir <КАТАЛОГ>",
+        "Искать проект из указанного каталога",
     ] {
         assert!(help.contains(expected), "missing `{expected}` in:\n{help}");
     }
@@ -42,7 +44,14 @@ fn russian_help_is_fully_localized() {
 fn english_help_is_fully_localized() {
     let help = stdout(&eska(&["--lang", "en", "--help"], None));
 
-    for expected in ["Usage", "Options", "Print help", "Print version"] {
+    for expected in [
+        "Usage",
+        "Options",
+        "Print help",
+        "Print version",
+        "--project-dir <DIRECTORY>",
+        "Search for a project from this directory",
+    ] {
         assert!(help.contains(expected), "missing `{expected}` in:\n{help}");
     }
     assert!(!help.contains("Использование"));
