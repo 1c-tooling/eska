@@ -51,16 +51,56 @@ ignored, конфликт, intent-to-add, повреждённый index и не
 
 ## T08 — Workflow policy model
 
-**Статус:** `IN-PROGRESS`
+**Статус:** `DONE`
 **Зависит от:** T02, T07
 
 Модель определяет base branch, working branch policy, task naming, sync strategy,
 integration target, publish и finish behavior. `custom` переопределяет preset через
 config, а не через новый Rust enum на каждую компанию.
 
+**Реализовано:** `vcs::workflow::WorkflowSettings`, `PolicyOverrides`,
+`WorkflowPolicy` и `TaskPlan`. Модель проверяет поля и сочетания настроек,
+применяет явные overrides к переданной базовой policy и строит детерминированный
+план без доступа к Git, файловой системе, времени или локали.
+
+**Решения и границы:**
+
+- Внешние TOML-поля остаются в `config/schema.rs`, преобразования policy —
+  в `config/workflow.rs`; доменная проверка и планирование — в
+  `vcs/workflow/policy.rs`. Новых dependencies нет.
+- `custom` наследует именованный preset через `extends` и частичные поля
+  `[vcs.workflow.policy]` либо задаёт все поля самостоятельно без `extends`.
+  Наследование от `custom` запрещено; переданная в `resolve` база должна
+  соответствовать выбранному preset. Готовые defaults остаются T09–T11.
+- Старый config с одним `preset`, включая `custom`, читается и записывается
+  в прежнем компактном виде. Ненастроенный `custom` не получает скрытых defaults;
+  попытка получить полную policy возвращает структурированную ошибку.
+- Модель содержит base branch, task branch policy и шаблон с одним `{task}`,
+  remote, sync strategy, integration target, publish, finish requirement и
+  локальную очистку. Task ID подставляется буквально; Git-имена проверяются
+  через имеющийся `gix`. Работа непосредственно в базовой ветке не добавлена.
+- `false` в overrides сохраняется; условия publish/finish перепроверяются
+  после наследования. Удаление локальной ветки требует подтверждения интеграции;
+  удаление remote-ветки не подразумевается.
+- `ProjectConfiguration` больше не `Copy`, getters принимают `&self`;
+  `workflow()` возвращает выбор, `workflow_settings()` — настройки. Discovery
+  сохраняет policy при построении проекта.
+- CLI проверяет policy и выводит ошибки на RU/EN. Новых команд и JSON-схем нет;
+  Git-операции не исполняются. Проверки существования веток, dirty state,
+  публикации и интеграции остаются runtime preflight будущих команд.
+
+**Проверено:** `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`,
+`ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test` — успешно
+(57 unit, 56 integration). Покрыты детерминированный план, inheritance и
+явное `false`, все строковые enum-значения, round-trip config, невалидные поля,
+имена веток, неполная policy, противоречия настроек, discovery и RU/EN diagnostics.
+В playground вручную проверены пример policy из README, ошибка `base_branch`,
+`new`/`init` на обоих языках и сохранность Git-метаданных.
+
 ## T09 — Trunk preset
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T08
 
 Short-lived task branch от `main`, rebase на `origin/main`, publish task branch,

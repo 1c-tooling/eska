@@ -27,6 +27,22 @@ pub(super) struct RawVcs {
 #[serde(deny_unknown_fields)]
 pub(super) struct RawWorkflow {
     pub(super) preset: String,
+    pub(super) extends: Option<String>,
+    pub(super) policy: Option<RawPolicy>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct RawPolicy {
+    pub(super) base_branch: Option<String>,
+    pub(super) working_branch: Option<String>,
+    pub(super) task_branch_template: Option<String>,
+    pub(super) remote: Option<String>,
+    pub(super) sync_strategy: Option<String>,
+    pub(super) integration_target: Option<String>,
+    pub(super) publish: Option<String>,
+    pub(super) finish: Option<String>,
+    pub(super) delete_local_branch: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -44,17 +60,43 @@ pub(super) struct RawProject {
 pub(super) struct SerializedDocument<'a> {
     pub(super) project: SerializedProject<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(super) vcs: Option<SerializedVcs>,
+    pub(super) vcs: Option<SerializedVcs<'a>>,
 }
 
 #[derive(Serialize)]
-pub(super) struct SerializedVcs {
-    pub(super) workflow: SerializedWorkflow,
+pub(super) struct SerializedVcs<'a> {
+    pub(super) workflow: SerializedWorkflow<'a>,
 }
 
 #[derive(Serialize)]
-pub(super) struct SerializedWorkflow {
+pub(super) struct SerializedWorkflow<'a> {
     pub(super) preset: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) extends: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) policy: Option<SerializedPolicy<'a>>,
+}
+
+#[derive(Serialize)]
+pub(super) struct SerializedPolicy<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) base_branch: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) working_branch: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) task_branch_template: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) remote: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) sync_strategy: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) integration_target: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) publish: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) finish: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) delete_local_branch: Option<bool>,
 }
 
 #[derive(Serialize)]

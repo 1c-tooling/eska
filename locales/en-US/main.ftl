@@ -15,6 +15,13 @@ project-source-not-directory = The source path is not a directory: { $path }.
 project-config-invalid = Invalid TOML or configuration structure in { $path }. Check [project].type, preset when [vcs.workflow] is present, and the absence of unknown fields.
 project-type-unknown = Unknown project type "{ $value }" in { $path }. Expected: configuration, extension, processing, report.
 project-format-unknown = Unknown source format "{ $value }" in { $path }. Expected: designer-xml.
+project-workflow-value-invalid = Invalid workflow policy value "{ $value }" for { $field } in { $path }. Check the documented values and branch naming rules.
+project-workflow-field-missing = Missing workflow policy field { $field } in { $path }. A standalone custom policy must specify all fields; use extends to inherit a preset.
+project-workflow-custom-required = Workflow overrides and extends require preset = "custom" in { $path }.
+project-workflow-custom-base = Workflow extends must name trunk, git-flow or github-flow, not custom, in { $path }.
+project-workflow-publish-required = finish = "require-published" is incompatible with publish = "disabled" in { $path }.
+project-workflow-integration-required = delete_local_branch = true requires finish = "require-integrated" in { $path }.
+project-workflow-invalid = Invalid workflow policy in { $path }.
 project-path-empty = The source path must not be empty.
 project-path-relative-required = The source path must be relative: { $path }.
 project-path-absolute-required = The project path must be absolute: { $path }.

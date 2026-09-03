@@ -2,6 +2,7 @@
 
 mod project;
 mod schema;
+mod workflow;
 
 pub use project::{InvalidSourceReason, ProjectConfig, ProjectConfigError};
 pub(crate) use schema::parse_project_type;

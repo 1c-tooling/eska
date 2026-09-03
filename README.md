@@ -57,9 +57,9 @@ type = "configuration"
 preset = "trunk"
 ```
 
-Секция `[vcs.workflow]` необязательна для ранее созданных проектов. Пока это
-только выбор preset, без исполняемой policy, создания workflow-веток и проверок
-их правил; `custom` также не запускает пользовательскую policy.
+Секция `[vcs.workflow]` необязательна для ранее созданных проектов. `new` и `init`
+сохраняют только выбранный preset. Расширенная policy настраивается в config,
+как описано ниже; создание workflow-веток и исполнение policy пока не добавлены.
 
 По умолчанию встроенная библиотека `gix` инициализирует Git с пустой веткой
 `main`, без первого commit и remote. Системный Git не требуется; пользовательские
@@ -197,6 +197,80 @@ ignored-файлы исключаются. Пути отсортированы �
 Git. Локальные атрибуты и фильтры обрабатывает `gix`; настроенный внешний фильтр
 может требовать отдельный executable. Исполнитель системного Git для сетевых
 и изменяющих операций, как и merge-base, будет добавлен при появлении потребителя.
+
+## Workflow policy
+
+T08 добавляет модель, проверку настроек и декларативный план задачи. Встроенные
+defaults `trunk`, `git-flow`, `github-flow` реализуются отдельно в T09–T11.
+Загрузка config не запускает Git-операции и не требует наличия репозитория.
+
+Чтобы переопределить типовой preset, укажите `custom`, `extends` и нужные поля:
+
+```toml
+[vcs.workflow]
+preset = "custom"
+extends = "trunk"
+
+[vcs.workflow.policy]
+task_branch_template = "company/{task}"
+delete_local_branch = false
+```
+
+Пропущенные поля наследуются, явное `false` сохраняется. Этот config уже можно
+загрузить и записать обратно без добавления defaults. Для получения полной policy
+нужно передать реализацию указанного базового пресета в `WorkflowSettings::resolve`;
+её встроенные значения появятся в соответствующем этапе. Чужой preset отклоняется.
+`extends = "custom"` запрещён; `extends` и непустые overrides доступны только
+при `preset = "custom"`.
+
+Самостоятельная custom policy без `extends` должна явно задать все поля:
+
+```toml
+[vcs.workflow]
+preset = "custom"
+
+[vcs.workflow.policy]
+base_branch = "main"
+working_branch = "task-branch"
+task_branch_template = "feature/{task}"
+remote = "origin"
+sync_strategy = "rebase"
+integration_target = "main"
+publish = "push-task-branch"
+finish = "require-integrated"
+delete_local_branch = true
+```
+
+| Поле | Значение |
+|---|---|
+| `base_branch` | Локальное имя базовой ветки, например `main` или `develop` |
+| `working_branch` | `task-branch`; работа напрямую в базовой ветке отложена |
+| `task_branch_template` | Корректное имя ветки с одним маркером `{task}` |
+| `remote` | Имя remote одним компонентом, например `origin`; не URL |
+| `sync_strategy` | `rebase`, `merge`, `fast-forward-only` |
+| `integration_target` | Локальное имя ветки для интеграции |
+| `publish` | `push-task-branch` или `disabled` |
+| `finish` | `require-published` или `require-integrated` |
+| `delete_local_branch` | `true` или `false`; удаление допустимо только при `require-integrated` |
+
+`require-published` несовместим с `publish = "disabled"`. Условия проверяются
+снова после применения overrides к базовой policy. Существующий config только
+с `preset = "custom"` остаётся допустимым выбором без настроек; попытка получить
+из него полную policy возвращает ошибку недостающего поля.
+
+В библиотеке настройки доступны через `ProjectConfiguration::workflow_settings()`.
+Для самостоятельной policy вызов `settings.resolve(None)?.plan("FI-1234")`
+получает план с веткой `feature/FI-1234`, sync ref `refs/remotes/origin/main`,
+integration target, намерением публикации и условиями завершения.
+План не зависит от локали, времени или состояния файлов.
+
+Task ID подставляется буквально одним компонентом пути, без преобразования
+пробелов или изменения регистра. Пустые и некорректные Git-имена, ведущий `-`,
+полные `refs/...`, дополнительные маркеры шаблона и совпадение рабочей ветки
+с базовой или integration target отклоняются. Проверки существующих веток,
+dirty state, публикации и интеграции относятся к будущему исполнителю команд.
+Удаление remote-ветки не подразумевается. CLI пока только проверяет config;
+ошибки policy выводятся на RU/EN в stderr с кодом `1`.
 
 ## Навигация по исходному коду
 

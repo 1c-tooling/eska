@@ -61,7 +61,7 @@ fn load_project(root: &Path, path: &Path) -> Result<Project, DiscoveryError> {
         });
     }
     let source = canonicalize(project.source())?;
-    Project::new(root.to_path_buf(), source, *project.configuration())
+    Project::new(root.to_path_buf(), source, project.configuration().clone())
         .map_err(ProjectConfigError::ProjectPath)
         .map_err(config_error)
 }

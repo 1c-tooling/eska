@@ -39,6 +39,7 @@ src/
 ├── config/
 │   ├── mod.rs                   # интерфейс config и имя eska.toml
 │   ├── project.rs               # ProjectConfig, загрузка и валидация
+│   ├── workflow.rs              # преобразование workflow-полей в доменную модель
 │   └── schema.rs                # TOML-поля, defaults и строковые значения
 ├── designer_xml.rs              # распознавание корневого XML-дескриптора
 └── vcs/
@@ -54,7 +55,7 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
 ├── cli/{init,new,localization}.rs
-├── project/{discovery,templates}.rs
+├── project/{discovery,templates,workflow}.rs
 ├── vcs/{repository,status,support}.rs # реальные Git-репозитории и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
@@ -97,7 +98,8 @@ tests/
 - Только `cli/interactive/terminal.rs` владеет переключением режимов терминала
   и их восстановлением. Обработка клавиш и отрисовка тестируются без TTY.
 - `config/schema.rs` описывает внешний TOML-формат; `config/project.rs` переводит
-  его в проверенные настройки. Модель проекта не зависит от TOML-парсера.
+  его в проверенные настройки, `config/workflow.rs` преобразует строковые значения
+  policy и сохраняет только явные overrides. Модель проекта не зависит от TOML-парсера.
 - `project/templates.rs` возвращает план файлов, но ничего не записывает.
   Запись и откат принадлежат конкретной операции: у `new` — новый каталог,
   у `init` — только созданные этим запуском config и Git-метаданные.
@@ -138,3 +140,8 @@ ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --test integration 
 `project::{Project, ProjectType, ...}` и `config::ProjectConfig` остаются точками
 доступа к основным типам. Команды, флаги, пользовательские тексты, exit codes и
 формат `eska.toml` при этом не изменены.
+
+В T08 `ProjectConfiguration` хранит `WorkflowSettings` со строковыми overrides,
+поэтому больше не реализует `Copy`; getters принимают `&self`.
+`workflow()` возвращает выбранный preset, `workflow_settings()` — все настройки.
+В discovery настройки клонируются при построении проекта с проверенным source.

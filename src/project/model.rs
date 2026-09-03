@@ -2,7 +2,7 @@
 
 use std::path::{Component, Path, PathBuf};
 
-use crate::vcs::workflow::WorkflowPreset;
+use crate::vcs::workflow::{WorkflowPreset, WorkflowSettings};
 
 /// A validated eska project.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -58,11 +58,11 @@ impl Project {
 }
 
 /// Project settings that come from the project configuration.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ProjectConfiguration {
     project_type: ProjectType,
     source_format: SourceFormat,
-    workflow: Option<WorkflowPreset>,
+    workflow: Option<WorkflowSettings>,
 }
 
 impl ProjectConfiguration {
@@ -76,25 +76,38 @@ impl ProjectConfiguration {
     }
 
     #[must_use]
-    pub const fn project_type(self) -> ProjectType {
+    pub const fn project_type(&self) -> ProjectType {
         self.project_type
     }
 
     #[must_use]
-    pub const fn source_format(self) -> SourceFormat {
+    pub const fn source_format(&self) -> SourceFormat {
         self.source_format
     }
 
-    /// Records a selection only; no workflow policy is executed yet.
+    /// Replace workflow settings with a compact preset selection.
     #[must_use]
-    pub const fn with_workflow(mut self, workflow: WorkflowPreset) -> Self {
+    pub fn with_workflow(self, workflow: WorkflowPreset) -> Self {
+        self.with_workflow_settings(WorkflowSettings::selection(workflow))
+    }
+
+    #[must_use]
+    pub fn with_workflow_settings(mut self, workflow: WorkflowSettings) -> Self {
         self.workflow = Some(workflow);
         self
     }
 
     #[must_use]
-    pub const fn workflow(self) -> Option<WorkflowPreset> {
-        self.workflow
+    pub const fn workflow(&self) -> Option<WorkflowPreset> {
+        match &self.workflow {
+            Some(settings) => Some(settings.preset()),
+            None => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn workflow_settings(&self) -> Option<&WorkflowSettings> {
+        self.workflow.as_ref()
     }
 }
 

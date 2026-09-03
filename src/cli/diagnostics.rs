@@ -7,6 +7,7 @@ use crate::{
     config::{InvalidSourceReason, ProjectConfigError},
     project::discovery::DiscoveryError,
     project::{InvalidPathReason, ProjectPathError},
+    vcs::workflow::PolicyError,
 };
 
 pub(super) fn present_project_error(error: &DiscoveryError, localizer: &Localizer) -> String {
@@ -28,6 +29,7 @@ pub(super) fn present_project_error(error: &DiscoveryError, localizer: &Localize
 
 fn config_message(localizer: &Localizer, path: &Path, error: &ProjectConfigError) -> String {
     match error {
+        ProjectConfigError::InvalidWorkflow(error) => workflow_message(localizer, path, error),
         ProjectConfigError::UnknownWorkflow { value } => {
             value_message(localizer, "project-workflow-unknown", path, value)
         }
@@ -65,6 +67,39 @@ fn config_message(localizer: &Localizer, path: &Path, error: &ProjectConfigError
                 ],
             ),
         },
+    }
+}
+
+fn workflow_message(localizer: &Localizer, path: &Path, error: &PolicyError) -> String {
+    match error {
+        PolicyError::InvalidValue { field, value } => localizer.format(
+            "project-workflow-value-invalid",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("field", LocalizationValue::Text(field.as_str())),
+                ("value", LocalizationValue::Text(value)),
+            ],
+        ),
+        PolicyError::MissingField { field } => localizer.format(
+            "project-workflow-field-missing",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("field", LocalizationValue::Text(field.as_str())),
+            ],
+        ),
+        error => path_message(
+            localizer,
+            match error {
+                PolicyError::RequiresCustom => "project-workflow-custom-required",
+                PolicyError::CustomBase => "project-workflow-custom-base",
+                PolicyError::PublishRequired => "project-workflow-publish-required",
+                PolicyError::IntegrationRequiredForDeletion => {
+                    "project-workflow-integration-required"
+                }
+                _ => "project-workflow-invalid",
+            },
+            path,
+        ),
     }
 }
 

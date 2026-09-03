@@ -15,6 +15,13 @@ project-source-not-directory = Путь исходников не являетс
 project-config-invalid = Некорректный TOML или структура настроек в { $path }. Проверьте [project].type, preset при наличии [vcs.workflow] и отсутствие неизвестных полей.
 project-type-unknown = Неизвестный тип проекта «{ $value }» в { $path }. Допустимы: configuration, extension, processing, report.
 project-format-unknown = Неизвестный формат исходников «{ $value }» в { $path }. Допустим: designer-xml.
+project-workflow-value-invalid = Неверное значение workflow policy «{ $value }» для { $field } в { $path }. Проверьте допустимые значения и правила именования веток в документации.
+project-workflow-field-missing = Не задано поле workflow policy { $field } в { $path }. Самостоятельная custom policy требует все поля; используйте extends для наследования пресета.
+project-workflow-custom-required = Переопределения workflow и extends требуют preset = "custom" в { $path }.
+project-workflow-custom-base = В extends укажите trunk, git-flow или github-flow; наследование от custom недопустимо: { $path }.
+project-workflow-publish-required = finish = "require-published" несовместим с publish = "disabled" в { $path }.
+project-workflow-integration-required = delete_local_branch = true требует finish = "require-integrated" в { $path }.
+project-workflow-invalid = Некорректная workflow policy в { $path }.
 project-path-empty = Путь исходников не может быть пустым.
 project-path-relative-required = Путь исходников должен быть относительным: { $path }.
 project-path-absolute-required = Путь проекта должен быть абсолютным: { $path }.

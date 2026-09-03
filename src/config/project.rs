@@ -11,8 +11,7 @@ use crate::vcs::workflow::WorkflowPreset;
 
 use super::schema::{
     DEFAULT_SOURCE, RawDocument, SerializedDocument, SerializedProject, SerializedVcs,
-    SerializedWorkflow, default_source, parse_project_type, parse_source_format, project_type_name,
-    source_format_name,
+    default_source, parse_project_type, parse_source_format, project_type_name, source_format_name,
 };
 
 /// The validated contents of an `eska.toml` file.
@@ -34,7 +33,7 @@ impl ProjectConfig {
 
     /// Adds a workflow selection without configuring its future execution policy.
     #[must_use]
-    pub const fn with_workflow(mut self, workflow: WorkflowPreset) -> Self {
+    pub fn with_workflow(mut self, workflow: WorkflowPreset) -> Self {
         self.configuration = self.configuration.with_workflow(workflow);
         self
     }
@@ -78,10 +77,8 @@ impl ProjectConfig {
 
         let mut configuration = ProjectConfiguration::new(project_type, source_format);
         if let Some(vcs) = document.vcs {
-            let value = vcs.workflow.preset;
-            let preset = WorkflowPreset::from_name(&value)
-                .ok_or(ProjectConfigError::UnknownWorkflow { value })?;
-            configuration = configuration.with_workflow(preset);
+            configuration =
+                configuration.with_workflow_settings(super::workflow::parse(vcs.workflow)?);
         }
         Ok(Self {
             source: document.project.source,
@@ -104,11 +101,12 @@ impl ProjectConfig {
                 source,
                 source_format,
             },
-            vcs: self.configuration.workflow().map(|preset| SerializedVcs {
-                workflow: SerializedWorkflow {
-                    preset: preset.as_str(),
-                },
-            }),
+            vcs: self
+                .configuration
+                .workflow_settings()
+                .map(|settings| SerializedVcs {
+                    workflow: super::workflow::serialize(settings),
+                }),
         };
 
         toml::to_string_pretty(&document)
@@ -151,6 +149,7 @@ pub enum InvalidSourceReason {
 /// A structured project configuration error.
 #[derive(Debug)]
 pub enum ProjectConfigError {
+    InvalidWorkflow(crate::vcs::workflow::PolicyError),
     UnknownWorkflow {
         value: String,
     },
