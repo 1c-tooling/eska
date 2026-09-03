@@ -6,6 +6,9 @@ use crate::config::{FILE_NAME, ProjectConfig};
 
 use super::ProjectType;
 
+const GIT_ATTRIBUTES: &str = include_str!("../../assets/project/.gitattributes");
+const GIT_IGNORE: &str = include_str!("../../assets/project/.gitignore");
+
 /// A project-relative file and directory plan for the project creation layer.
 ///
 /// Template selection is separate from filesystem writing. Future local template
@@ -45,6 +48,14 @@ impl Template {
                 TemplateFile {
                     path: PathBuf::from(FILE_NAME),
                     contents,
+                },
+                TemplateFile {
+                    path: PathBuf::from(".gitattributes"),
+                    contents: GIT_ATTRIBUTES.to_owned(),
+                },
+                TemplateFile {
+                    path: PathBuf::from(".gitignore"),
+                    contents: GIT_IGNORE.to_owned(),
                 },
                 // Git does not retain empty directories. Keep the source root
                 // discoverable after a checkout even before the first XML export.
@@ -94,7 +105,7 @@ impl TemplateFile {
 mod tests {
     use std::path::{Component, Path, PathBuf};
 
-    use super::Template;
+    use super::{GIT_ATTRIBUTES, GIT_IGNORE, Template};
     use crate::{
         config::ProjectConfig,
         project::{ProjectType, SourceFormat},
@@ -110,7 +121,7 @@ mod tests {
         ] {
             let template = Template::built_in(project_type).expect("render built-in");
             assert_eq!(template.directories(), &[PathBuf::from("src")]);
-            assert_eq!(template.files().len(), 2);
+            assert_eq!(template.files().len(), 4);
             let config_file = &template.files()[0];
             assert_eq!(config_file.path(), Path::new("eska.toml"));
             assert_eq!(
@@ -131,7 +142,34 @@ mod tests {
                 config_file.contents()
             );
 
-            let placeholder = &template.files()[1];
+            let attributes = &template.files()[1];
+            assert_eq!(attributes.path(), Path::new(".gitattributes"));
+            assert_eq!(attributes.contents(), GIT_ATTRIBUTES);
+            assert!(attributes.contents().starts_with("* text=auto\n"));
+            for pattern in [
+                "*.addin", "*.axdt", "*.bin", "*.cf", "*.cfe", "*.cfu", "*.dt", "*.epf", "*.erf",
+                "*.geo", "*.grs", "*.mxl", "*.bmp", "*.emf", "*.gif", "*.ico", "*.jpeg", "*.jpg",
+                "*.pdf", "*.png", "*.tif", "*.tiff", "*.wmf", "*.zip",
+            ] {
+                assert!(attributes.contents().lines().any(|line| {
+                    line == format!("{pattern} filter=lfs diff=lfs merge=lfs -text")
+                }));
+            }
+            assert!(!attributes.contents().contains("lockable"));
+
+            let ignore = &template.files()[2];
+            assert_eq!(ignore.path(), Path::new(".gitignore"));
+            assert_eq!(ignore.contents(), GIT_IGNORE);
+            for pattern in [
+                "/.vscode/",
+                "/build/",
+                "ConfigDumpInfo.xml",
+                "DumpFilesIndex.txt",
+            ] {
+                assert!(ignore.contents().lines().any(|line| line == pattern));
+            }
+
+            let placeholder = &template.files()[3];
             assert_eq!(placeholder.path(), Path::new("src/.gitkeep"));
             assert!(placeholder.contents().is_empty());
             assert_eq!(

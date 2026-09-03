@@ -52,6 +52,7 @@ src/
         └── policy.rs            # валидация policy и декларативный план задачи
 
 locales/{ru-RU,en-US}/main.ftl    # пользовательские тексты
+assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
 ├── cli/{init,new,localization}.rs

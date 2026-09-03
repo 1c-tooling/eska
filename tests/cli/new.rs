@@ -68,6 +68,8 @@ fn cli_creates_all_types_and_presets_in_both_locales() {
                 let root = fixture.0.join(&name);
                 assert!(text.contains(root.to_str().expect("UTF-8 path")));
                 assert!(root.join("src/.gitkeep").is_file());
+                assert!(root.join(".gitattributes").is_file());
+                assert!(root.join(".gitignore").is_file());
                 assert!(!root.join(".git").exists());
                 let config = ProjectConfig::load(&root.join("eska.toml")).expect("config");
                 assert_eq!(

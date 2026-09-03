@@ -29,7 +29,15 @@ fn all_built_ins_materialize_into_projects_accepted_by_discovery_and_cli() {
             fs::write(root.join(file.path()), file.contents()).expect("write template file");
         }
 
-        assert_eq!(fs::read_dir(&root).expect("read project root").count(), 2);
+        assert_eq!(fs::read_dir(&root).expect("read project root").count(), 4);
+        assert_eq!(
+            fs::read(root.join(".gitattributes")).expect("read attributes"),
+            include_bytes!("../../assets/project/.gitattributes")
+        );
+        assert_eq!(
+            fs::read(root.join(".gitignore")).expect("read ignore rules"),
+            include_bytes!("../../assets/project/.gitignore")
+        );
         assert_eq!(
             fs::read_dir(root.join("src"))
                 .expect("read sources")
