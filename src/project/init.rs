@@ -7,11 +7,14 @@ use std::{
 };
 
 use crate::{
-    config::{ProjectConfig, ProjectConfigError},
-    designer,
+    config::{FILE_NAME, ProjectConfig, ProjectConfigError},
+    designer_xml,
+    vcs::{git, workflow::WorkflowPreset},
+};
+
+use super::{
+    Project, ProjectType,
     discovery::{self, DiscoveryError},
-    project::{Project, ProjectType, WorkflowPreset},
-    vcs,
 };
 
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024 * 1024;
@@ -160,7 +163,7 @@ pub fn inspect(root: &Path, source: Option<&Path>) -> Result<InitPlan, InitError
 }
 
 fn ensure_no_config(root: &Path) -> Result<(), InitError> {
-    let path = root.join("eska.toml");
+    let path = root.join(FILE_NAME);
     match fs::symlink_metadata(&path) {
         Ok(_) => Err(InitError::ExistingConfig { path }),
         Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
@@ -206,10 +209,11 @@ fn detect_directory(directory: &Path, root: &Path) -> Result<Option<ProjectType>
         if input.len() as u64 > MAX_DESCRIPTOR_BYTES {
             return Err(InitError::DescriptorTooLarge { path });
         }
-        let detected = designer::project_type(&input).map_err(|source| InitError::InvalidXml {
-            path: path.clone(),
-            source,
-        })?;
+        let detected =
+            designer_xml::project_type(&input).map_err(|source| InitError::InvalidXml {
+                path: path.clone(),
+                source,
+            })?;
         if let Some(kind) = detected {
             if found.replace(kind).is_some() {
                 return Err(InitError::MultipleDescriptors {
@@ -240,16 +244,16 @@ pub fn apply(
         });
     }
     let create_git = initialize_vcs
-        && !vcs::exists(&plan.root).map_err(|error| {
+        && !git::exists(&plan.root).map_err(|error| {
             // Keep the repository boundary's diagnostic attached to an inspectable
             // error without exposing its potentially unlocalized text in the CLI.
             match error {
-                vcs::ExistingError::Io { path, source } => InitError::Io { path, source },
-                vcs::ExistingError::Open(error) => InitError::ExistingGit {
+                git::ExistingError::Io { path, source } => InitError::Io { path, source },
+                git::ExistingError::Open(error) => InitError::ExistingGit {
                     path: plan.root.clone(),
                     source: Some(error),
                 },
-                vcs::ExistingError::Bare => InitError::ExistingGit {
+                git::ExistingError::Bare => InitError::ExistingGit {
                     path: plan.root.clone(),
                     source: None,
                 },
@@ -272,7 +276,7 @@ fn write_project<T>(
     create_git: bool,
     validate: impl FnOnce() -> Result<T, InitError>,
 ) -> Result<T, InitError> {
-    let config = root.join("eska.toml");
+    let config = root.join(FILE_NAME);
     let mut file = OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -304,9 +308,9 @@ fn write_project<T>(
                 source,
             })?;
             owns_git = true;
-            vcs::initialize_reserved(&git).map_err(|error| match error {
-                vcs::InitializeError::Io { path, source } => InitError::Io { path, source },
-                vcs::InitializeError::Git(error) => InitError::Git(error),
+            git::initialize_reserved(&git).map_err(|error| match error {
+                git::InitializeError::Io { path, source } => InitError::Io { path, source },
+                git::InitializeError::Git(error) => InitError::Git(error),
             })?;
         }
         validate()

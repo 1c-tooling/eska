@@ -1,13 +1,15 @@
+//! Shared localized presentation of project discovery and configuration errors.
+
 use std::{io, path::Path};
 
 use crate::{
+    cli::localization::{LocalizationValue, Localizer},
     config::{InvalidSourceReason, ProjectConfigError},
-    discovery::DiscoveryError,
-    localization::{LocalizationValue, Localizer},
+    project::discovery::DiscoveryError,
     project::{InvalidPathReason, ProjectPathError},
 };
 
-pub(super) fn present(error: &DiscoveryError, localizer: &Localizer) -> String {
+pub(super) fn present_project_error(error: &DiscoveryError, localizer: &Localizer) -> String {
     match error {
         DiscoveryError::NotFound { start } => path_message(localizer, "project-not-found", start),
         DiscoveryError::Io { path, source } => io_message(localizer, path, source),
@@ -104,10 +106,10 @@ fn value_message(localizer: &Localizer, key: &str, path: &Path, value: &str) -> 
 mod tests {
     use std::{io, path::PathBuf};
 
-    use super::present;
+    use super::present_project_error;
     use crate::{
-        discovery::DiscoveryError,
-        localization::{Locale, Localizer},
+        cli::localization::{Locale, Localizer},
+        project::discovery::DiscoveryError,
     };
 
     #[test]
@@ -140,7 +142,7 @@ mod tests {
             };
             for (locale, expected) in [(Locale::RuRu, ru), (Locale::EnUs, en)] {
                 let localizer = Localizer::try_new(locale).expect("valid locale");
-                let message = present(&error, &localizer);
+                let message = present_project_error(&error, &localizer);
                 assert!(message.contains(expected), "{message}");
                 assert!(message.contains("fixture/eska.toml"), "{message}");
                 assert!(!message.contains("unlocalized operating system message"));

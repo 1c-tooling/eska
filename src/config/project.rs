@@ -1,16 +1,19 @@
+//! Validated project configuration: loading, serialization and source-path rules.
+
 use std::{
     fs, io,
     path::{Component, Path, PathBuf},
 };
 
-use serde::{Deserialize, Serialize};
+use crate::project::{Project, ProjectConfiguration, ProjectPathError, ProjectType, SourceFormat};
 
-use crate::project::{
-    Project, ProjectConfiguration, ProjectPathError, ProjectType, SourceFormat, WorkflowPreset,
+use crate::vcs::workflow::WorkflowPreset;
+
+use super::schema::{
+    DEFAULT_SOURCE, RawDocument, SerializedDocument, SerializedProject, SerializedVcs,
+    SerializedWorkflow, default_source, parse_project_type, parse_source_format, project_type_name,
+    source_format_name,
 };
-
-const DEFAULT_SOURCE: &str = "src";
-const DEFAULT_SOURCE_FORMAT: &str = "designer-xml";
 
 /// The validated contents of an `eska.toml` file.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -169,103 +172,6 @@ pub enum ProjectConfigError {
     ProjectPath(ProjectPathError),
 }
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct RawDocument {
-    project: RawProject,
-    vcs: Option<RawVcs>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct RawVcs {
-    workflow: RawWorkflow,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct RawWorkflow {
-    preset: String,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct RawProject {
-    #[serde(rename = "type")]
-    project_type: String,
-    #[serde(default = "default_source")]
-    source: PathBuf,
-    #[serde(default = "default_source_format")]
-    source_format: String,
-}
-
-#[derive(Serialize)]
-struct SerializedDocument<'a> {
-    project: SerializedProject<'a>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    vcs: Option<SerializedVcs>,
-}
-
-#[derive(Serialize)]
-struct SerializedVcs {
-    workflow: SerializedWorkflow,
-}
-
-#[derive(Serialize)]
-struct SerializedWorkflow {
-    preset: &'static str,
-}
-
-#[derive(Serialize)]
-struct SerializedProject<'a> {
-    #[serde(rename = "type")]
-    project_type: &'static str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    source: Option<&'a Path>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    source_format: Option<&'static str>,
-}
-
-fn default_source() -> PathBuf {
-    PathBuf::from(DEFAULT_SOURCE)
-}
-
-fn default_source_format() -> String {
-    DEFAULT_SOURCE_FORMAT.to_owned()
-}
-
-pub(crate) fn parse_project_type(value: String) -> Result<ProjectType, ProjectConfigError> {
-    match value.as_str() {
-        "configuration" => Ok(ProjectType::Configuration),
-        "extension" => Ok(ProjectType::Extension),
-        "processing" => Ok(ProjectType::Processing),
-        "report" => Ok(ProjectType::Report),
-        _ => Err(ProjectConfigError::UnknownProjectType { value }),
-    }
-}
-
-fn parse_source_format(value: String) -> Result<SourceFormat, ProjectConfigError> {
-    match value.as_str() {
-        DEFAULT_SOURCE_FORMAT => Ok(SourceFormat::DesignerXml),
-        _ => Err(ProjectConfigError::UnknownSourceFormat { value }),
-    }
-}
-
-const fn project_type_name(project_type: ProjectType) -> &'static str {
-    match project_type {
-        ProjectType::Configuration => "configuration",
-        ProjectType::Extension => "extension",
-        ProjectType::Processing => "processing",
-        ProjectType::Report => "report",
-    }
-}
-
-const fn source_format_name(source_format: SourceFormat) -> &'static str {
-    match source_format {
-        SourceFormat::DesignerXml => DEFAULT_SOURCE_FORMAT,
-    }
-}
-
 fn validate_source_path(path: &Path) -> Result<(), ProjectConfigError> {
     let reason = if path.as_os_str().is_empty() {
         Some(InvalidSourceReason::Empty)
@@ -297,7 +203,10 @@ mod tests {
     };
 
     use super::{InvalidSourceReason, ProjectConfig, ProjectConfigError};
-    use crate::project::{ProjectType, SourceFormat, WorkflowPreset};
+    use crate::{
+        project::{ProjectType, SourceFormat},
+        vcs::workflow::WorkflowPreset,
+    };
 
     #[test]
     fn workflow_selection_round_trips_without_policy_or_locale() {

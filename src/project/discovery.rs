@@ -5,9 +5,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{config::ProjectConfig, config::ProjectConfigError, project::Project};
+use crate::config::{FILE_NAME, ProjectConfig, ProjectConfigError};
 
-const CONFIG_FILE: &str = "eska.toml";
+use super::Project;
 
 /// Finds and validates the nearest project starting from a directory.
 ///
@@ -26,7 +26,7 @@ pub fn discover(start: &Path) -> Result<Project, DiscoveryError> {
     }
 
     for root in start.ancestors() {
-        let path = root.join(CONFIG_FILE);
+        let path = root.join(FILE_NAME);
         // A dangling link is a broken nearest config, not permission to fall back
         // to another project higher in the directory tree.
         match fs::symlink_metadata(&path) {

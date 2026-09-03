@@ -1,3 +1,5 @@
+//! Arguments, prompts, diagnostics and help for `eska new`.
+
 use std::{
     io::{self, IsTerminal},
     path::{Path, PathBuf},
@@ -5,16 +7,18 @@ use std::{
 };
 
 use crate::{
-    creation::{self, CreationError},
-    localization::{LocalizationValue, Localizer},
-    project::WorkflowPreset,
+    cli::{
+        diagnostics,
+        interactive::{PROJECT_TYPE_CHOICES, PromptError, Selector, WORKFLOW_CHOICES},
+        localization::{LocalizationValue, Localizer},
+    },
+    project::create::{self, CreationError},
+    vcs::workflow::WorkflowPreset,
 };
 use clap::{ArgAction, Args};
 
-use super::select::{PromptError, Selector, WORKFLOW_CHOICES};
-
 #[derive(Debug, Args)]
-pub(super) struct NewArgs {
+pub(in crate::cli) struct NewArgs {
     path: PathBuf,
     #[arg(long = "type")]
     project_type: Option<String>,
@@ -29,7 +33,7 @@ pub(super) struct NewArgs {
 impl NewArgs {
     pub(super) fn run(&self, base: &Path, localizer: &Localizer) -> ExitCode {
         let destination = base.join(&self.path);
-        let destination = match creation::resolve_destination(&destination) {
+        let destination = match create::resolve_destination(&destination) {
             Ok(path) => path,
             Err(error) => {
                 eprintln!("{}", present(&error, localizer));
@@ -60,16 +64,8 @@ impl NewArgs {
             let result = (|| {
                 let mut selector = Selector::start("new-tui-title")?;
                 if project_type.is_none() {
-                    project_type = Some(selector.choose(
-                        localizer,
-                        "new-type-menu",
-                        &[
-                            ("configuration", "new-type-configuration"),
-                            ("extension", "new-type-extension"),
-                            ("processing", "new-type-processing"),
-                            ("report", "new-type-report"),
-                        ],
-                    )?);
+                    project_type =
+                        Some(selector.choose(localizer, "new-type-menu", &PROJECT_TYPE_CHOICES)?);
                 }
                 if workflow.is_none() {
                     workflow =
@@ -99,7 +95,7 @@ impl NewArgs {
             eprintln!("{}", localizer.text("new-workflow-invalid"));
             return ExitCode::from(2);
         };
-        match creation::create(&destination, project_type, workflow, !self.no_vcs) {
+        match create::create(&destination, project_type, workflow, !self.no_vcs) {
             Ok(project) => {
                 println!(
                     "{}",
@@ -129,7 +125,7 @@ fn present(error: &CreationError, localizer: &Localizer) -> String {
         CreationError::Template(_) => return localizer.text("new-template-error"),
         CreationError::Git(_) => return localizer.text("new-git-error"),
         CreationError::Validation(error) => {
-            return super::project_errors::present(error, localizer);
+            return diagnostics::present_project_error(error, localizer);
         }
         CreationError::Rollback { path, original, .. } => {
             return localizer.format(

@@ -2,7 +2,9 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::{config::ProjectConfig, project::ProjectType};
+use crate::config::{FILE_NAME, ProjectConfig};
+
+use super::ProjectType;
 
 /// A project-relative file and directory plan for the project creation layer.
 ///
@@ -41,7 +43,7 @@ impl Template {
         Ok(Self {
             files: vec![
                 TemplateFile {
-                    path: PathBuf::from("eska.toml"),
+                    path: PathBuf::from(FILE_NAME),
                     contents,
                 },
                 // Git does not retain empty directories. Keep the source root

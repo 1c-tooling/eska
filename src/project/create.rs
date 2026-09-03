@@ -8,8 +8,12 @@ use std::{
 
 use crate::{
     config::ProjectConfig,
+    vcs::{git, workflow::WorkflowPreset},
+};
+
+use super::{
+    Project, ProjectType,
     discovery::{self, DiscoveryError},
-    project::{Project, ProjectType, WorkflowPreset},
     templates::Template,
 };
 
@@ -50,7 +54,7 @@ pub fn create(
                 .map_err(|source| CreationError::Io { path, source })?;
         }
         if initialize_vcs {
-            crate::vcs::initialize(root).map_err(CreationError::Git)?;
+            git::initialize(root).map_err(CreationError::Git)?;
         }
         discovery::discover(root).map_err(|error| CreationError::Validation(Box::new(error)))
     })
@@ -158,7 +162,7 @@ mod tests {
         let result = in_new_directory(&destination, |root| {
             fs::create_dir(root.join("src")).expect("partial source");
             fs::write(root.join("eska.toml"), "partial config").expect("partial config");
-            crate::vcs::initialize(root).expect("partial Git repository");
+            git::initialize(root).expect("partial Git repository");
             Err(CreationError::Io {
                 path: root.join("injected-error"),
                 source: io::Error::other("injected failure"),

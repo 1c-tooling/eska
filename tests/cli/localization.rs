@@ -1,6 +1,6 @@
 use std::process::{Command, Output};
 
-mod support;
+use crate::support;
 
 fn eska(args: &[&str], eska_lang: Option<&str>) -> Output {
     let directory = support::TestDir::new();

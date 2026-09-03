@@ -6,13 +6,13 @@ use std::{
 
 use eska::{
     config::ProjectConfig,
-    creation::{self, CreationError},
-    discovery,
-    project::{ProjectType, WorkflowPreset},
+    project::ProjectType,
+    project::create::{self, CreationError},
+    project::discovery,
+    vcs::workflow::WorkflowPreset,
 };
 
-mod support;
-use support::TestDir;
+use crate::support::TestDir;
 
 fn command(root: &Path, locale: &str) -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_eska"));
@@ -195,7 +195,7 @@ fn destination_symlinks_are_never_followed_or_replaced() {
         let link = fixture.0.join(name);
         symlink(&destination, &link).expect("symlink");
         assert!(matches!(
-            creation::create(&link, ProjectType::Report, WorkflowPreset::Trunk, true),
+            create::create(&link, ProjectType::Report, WorkflowPreset::Trunk, true),
             Err(CreationError::AlreadyExists { .. })
         ));
         assert_eq!(fs::read_link(&link).expect("unchanged link"), destination);

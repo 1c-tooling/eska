@@ -1,8 +1,9 @@
 use eska::{
     config::ProjectConfig,
-    discovery,
-    initialization::{self, InitError},
-    project::{ProjectType, WorkflowPreset},
+    project::ProjectType,
+    project::discovery,
+    project::init::{self, InitError},
+    vcs::workflow::WorkflowPreset,
 };
 use std::{
     fs,
@@ -10,8 +11,7 @@ use std::{
     process::{Command, Output},
 };
 
-mod support;
-use support::TestDir;
+use crate::support::TestDir;
 
 fn command(root: &Path, locale: &str) -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_eska"));
@@ -275,17 +275,16 @@ fn ambiguity_requires_explicit_source_and_multiple_exports_are_rejected() {
     descriptor(&fixture.0, "report");
     descriptor(&fixture.0.join("src"), "configuration");
     assert!(matches!(
-        initialization::inspect(&fixture.0, None),
+        init::inspect(&fixture.0, None),
         Err(InitError::AmbiguousSource { .. })
     ));
-    let plan =
-        initialization::inspect(&fixture.0, Some(Path::new("src"))).expect("explicit source");
+    let plan = init::inspect(&fixture.0, Some(Path::new("src"))).expect("explicit source");
     assert_eq!(plan.project_type(), ProjectType::Configuration);
     assert_eq!(plan.root(), fixture.0);
     assert_eq!(plan.source(), Path::new("src"));
     descriptor(&fixture.0.join("src"), "processing");
     assert!(matches!(
-        initialization::inspect(&fixture.0, Some(Path::new("src"))),
+        init::inspect(&fixture.0, Some(Path::new("src"))),
         Err(InitError::MultipleDescriptors { .. })
     ));
     assert!(!fixture.0.join("eska.toml").exists());
@@ -295,20 +294,20 @@ fn ambiguity_requires_explicit_source_and_multiple_exports_are_rejected() {
 fn rejects_missing_sources_unsafe_paths_and_changes_after_detection() {
     let fixture = TestDir::new();
     assert!(matches!(
-        initialization::inspect(&fixture.0, None),
+        init::inspect(&fixture.0, None),
         Err(InitError::MissingSource { .. })
     ));
     for path in [Path::new(""), Path::new("../outside"), fixture.0.as_path()] {
         assert!(matches!(
-            initialization::inspect(&fixture.0, Some(path)),
+            init::inspect(&fixture.0, Some(path)),
             Err(InitError::Config(_))
         ));
     }
     descriptor(&fixture.0.join("src"), "configuration");
-    let plan = initialization::inspect(&fixture.0, None).expect("plan");
+    let plan = init::inspect(&fixture.0, None).expect("plan");
     descriptor(&fixture.0.join("src"), "extension");
     assert!(matches!(
-        initialization::apply(&plan, WorkflowPreset::Trunk, true),
+        init::apply(&plan, WorkflowPreset::Trunk, true),
         Err(InitError::ChangedSource { .. })
     ));
     assert!(!fixture.0.join("eska.toml").exists());
@@ -320,7 +319,7 @@ fn rejects_unsupported_roots_config_directories_and_bare_repositories() {
     let xml = fixture.0.join("Configuration.xml");
     fs::write(&xml, "<Configuration/>").expect("not Designer XML");
     assert!(matches!(
-        initialization::inspect(&fixture.0, None),
+        init::inspect(&fixture.0, None),
         Err(InitError::InvalidDescriptor { .. })
     ));
     fs::remove_file(xml).expect("remove fixture");
@@ -328,7 +327,7 @@ fn rejects_unsupported_roots_config_directories_and_bare_repositories() {
     let config = fixture.0.join("eska.toml");
     fs::create_dir(&config).expect("collision");
     assert!(matches!(
-        initialization::inspect(&fixture.0, None),
+        init::inspect(&fixture.0, None),
         Err(InitError::ExistingConfig { .. })
     ));
     fs::remove_dir(config).expect("remove fixture");
@@ -336,9 +335,9 @@ fn rejects_unsupported_roots_config_directories_and_bare_repositories() {
     gix::init_bare(&bare).expect("bare repo");
     descriptor(&bare.join("src"), "report");
     let before = snapshot(&bare);
-    let plan = initialization::inspect(&bare, None).expect("XML");
+    let plan = init::inspect(&bare, None).expect("XML");
     assert!(matches!(
-        initialization::apply(&plan, WorkflowPreset::Trunk, true),
+        init::apply(&plan, WorkflowPreset::Trunk, true),
         Err(InitError::ExistingGit { .. })
     ));
     assert_eq!(snapshot(&bare), before);
@@ -351,9 +350,9 @@ fn internal_source_symlink_is_canonicalized_without_becoming_ambiguous() {
     let fixture = TestDir::new();
     descriptor(&fixture.0, "configuration");
     symlink(".", fixture.0.join("src")).expect("alias");
-    let plan = initialization::inspect(&fixture.0, None).expect("same source");
+    let plan = init::inspect(&fixture.0, None).expect("same source");
     assert_eq!(plan.source(), Path::new("."));
-    initialization::apply(&plan, WorkflowPreset::Trunk, false).expect("init");
+    init::apply(&plan, WorkflowPreset::Trunk, false).expect("init");
     assert_eq!(
         fs::read_link(fixture.0.join("src")).expect("unchanged alias"),
         Path::new(".")
@@ -371,12 +370,12 @@ fn descriptor_size_is_bounded_and_dump_index_is_not_parsed() {
         .set_len(64 * 1024 * 1024 + 1)
         .expect("size");
     assert!(matches!(
-        initialization::inspect(&fixture.0, None),
+        init::inspect(&fixture.0, None),
         Err(InitError::DescriptorTooLarge { .. })
     ));
     fs::rename(oversized, fixture.0.join("src/ConfigDumpInfo.xml")).expect("dump index");
     assert!(
-        initialization::inspect(&fixture.0, None).is_ok(),
+        init::inspect(&fixture.0, None).is_ok(),
         "no full dump index scan"
     );
 }
@@ -420,7 +419,7 @@ fn symlink_escapes_and_dangling_config_are_not_followed_for_writes() {
     let before = snapshot(&outside);
     symlink(&outside, root.join("src")).expect("source escape");
     assert!(matches!(
-        initialization::inspect(&root, None),
+        init::inspect(&root, None),
         Err(InitError::InvalidSource { .. })
     ));
     fs::remove_file(root.join("src")).expect("remove fixture link");
@@ -430,14 +429,14 @@ fn symlink_escapes_and_dangling_config_are_not_followed_for_writes() {
     )
     .expect("descriptor escape");
     assert!(matches!(
-        initialization::inspect(&root, None),
+        init::inspect(&root, None),
         Err(InitError::InvalidSource { .. })
     ));
     fs::remove_file(root.join("Configuration.xml")).expect("remove fixture link");
     descriptor(&root, "configuration");
     symlink(outside.join("missing"), root.join("eska.toml")).expect("dangling config");
     assert!(matches!(
-        initialization::inspect(&root, None),
+        init::inspect(&root, None),
         Err(InitError::ExistingConfig { .. })
     ));
     assert!(!outside.join("missing").exists());

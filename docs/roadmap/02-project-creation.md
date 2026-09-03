@@ -21,7 +21,7 @@ Preset `trunk`, `git-flow`, `github-flow` или `custom` сохраняется
 config остаётся валидным. Policy, дополнительные ветки и custom-настройки пока
 не исполняются. `Template::from_config` использует общую сериализацию T02.
 
-Core `creation` выполняет preflight и эксклюзивно создаёт только новый каталог
+Core `project::create` выполняет preflight и эксклюзивно создаёт только новый каталог
 с существующим родителем; любой существующий путь, включая пустой каталог и
 висячую ссылку, отклоняется. Файлы открываются с `create_new`. При ошибке записи,
 Git init или итоговой проверки T03 удаляется только созданный этим вызовом
@@ -29,7 +29,7 @@ Git init или итоговой проверки T03 удаляется тол�
 Аварийное завершение процесса и конкурентные внешние изменения не являются
 транзакционными сценариями.
 
-Узкий внутренний `vcs` helper инициализирует Git через `gix` без внешнего Git,
+Узкий внутренний `vcs::git` helper инициализирует Git через `gix` без внешнего Git,
 user/system config и перенаправляющих Git env. HEAD — `main` без commit, remote
 и workflow-веток; `--no-vcs` отключает init, не удаляя preset из config.
 Выбрана стабильная `gix 0.80` с выключенными default features и `zlib-rs`:
@@ -78,7 +78,7 @@ repeat/release и навигация русскими клавишами в RU/E
 Внутренняя граница должна позволить позже добавить custom/company templates, но
 remote registry сейчас запрещён.
 
-**Результат:** `templates::Template::built_in(ProjectType)` формирует
+**Результат:** `project::templates::Template::built_in(ProjectType)` формирует
 locale-independent план каталогов и файлов для всех четырёх типов. Каждый план
 содержит `eska.toml`, каталог `src/` и пустой `src/.gitkeep`, чтобы Git сохранял
 исходный каталог до первой выгрузки XML. Config генерируется сериализатором T02
@@ -127,7 +127,7 @@ rollback сценарии протестированы.
 единый список workflow, управление клавишами и fallback раскладки сохранены.
 RU/EN help, результат, отмена и структурированные ошибки локализованы.
 
-Core разделён на read-only `initialization::inspect` и `apply`; перед записью
+Core разделён на read-only `project::init::inspect` и `apply`; перед записью
 выбранные исходники проверяются повторно. Используется общая схема config,
 добавлен `ProjectConfig::with_source`, итог проверяется обычным discovery T03.
 Нет template-файлов или перемещения XML. Config создаётся с `create_new`;

@@ -1,19 +1,24 @@
+//! Arguments, prompts, diagnostics and help for `eska init`.
+
 use std::{
     io::{self, IsTerminal},
     path::{Path, PathBuf},
     process::ExitCode,
 };
 
-use super::select::{PromptError, Selector, WORKFLOW_CHOICES};
 use crate::{
-    initialization::{self, InitError},
-    localization::{LocalizationValue, Localizer},
-    project::WorkflowPreset,
+    cli::{
+        diagnostics,
+        interactive::{PromptError, Selector, WORKFLOW_CHOICES},
+        localization::{LocalizationValue, Localizer},
+    },
+    project::init::{self, InitError},
+    vcs::workflow::WorkflowPreset,
 };
 use clap::{ArgAction, Args};
 
 #[derive(Debug, Args)]
-pub(super) struct InitArgs {
+pub(in crate::cli) struct InitArgs {
     #[arg(default_value = ".")]
     path: PathBuf,
     #[arg(long)]
@@ -38,7 +43,7 @@ impl InitArgs {
             }
             None => None,
         };
-        let plan = match initialization::inspect(&base.join(&self.path), self.source.as_deref()) {
+        let plan = match init::inspect(&base.join(&self.path), self.source.as_deref()) {
             Ok(plan) => plan,
             Err(error) => {
                 eprintln!("{}", present(&error, localizer));
@@ -73,7 +78,7 @@ impl InitArgs {
         let Some(workflow) = workflow else {
             return ExitCode::from(2);
         };
-        match initialization::apply(&plan, workflow, !self.no_vcs) {
+        match init::apply(&plan, workflow, !self.no_vcs) {
             Ok(project) => {
                 println!(
                     "{}",
@@ -112,7 +117,9 @@ fn present(error: &InitError, localizer: &Localizer) -> String {
         InitError::Config(_) => return localizer.text("init-source-path-invalid"),
         InitError::Serialize(_) => return localizer.text("init-config-error"),
         InitError::Git(_) => return localizer.text("new-git-error"),
-        InitError::Validation(error) => return super::project_errors::present(error, localizer),
+        InitError::Validation(error) => {
+            return diagnostics::present_project_error(error, localizer);
+        }
         InitError::Rollback { paths, original } => {
             let paths = paths
                 .iter()

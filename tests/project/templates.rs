@@ -1,9 +1,8 @@
 use std::{fs, process::Command};
 
-use eska::{discovery::discover, project::ProjectType, templates::Template};
+use eska::project::{ProjectType, discovery::discover, templates::Template};
 
-mod support;
-use support::TestDir as Fixture;
+use crate::support::TestDir as Fixture;
 
 #[test]
 fn all_built_ins_materialize_into_projects_accepted_by_discovery_and_cli() {

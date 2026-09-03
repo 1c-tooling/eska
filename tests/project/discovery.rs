@@ -6,12 +6,11 @@ use std::{
 
 use eska::{
     config::ProjectConfigError,
-    discovery::{DiscoveryError, discover},
     project::ProjectType,
+    project::discovery::{DiscoveryError, discover},
 };
 
-mod support;
-use support::TestDir as Fixture;
+use crate::support::TestDir as Fixture;
 
 impl Fixture {
     fn project(&self, name: &str) -> PathBuf {
