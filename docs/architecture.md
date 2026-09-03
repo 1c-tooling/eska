@@ -45,6 +45,7 @@ src/
     ├── mod.rs                   # граница VCS
     ├── git.rs                   # общее открытие и инициализация Git через gix
     ├── repository.rs            # discovery, HEAD, refs и ограниченная история
+    ├── status.rs                # изменения HEAD/index/worktree и changed paths
     └── workflow.rs              # сохранённые workflow presets
 
 locales/{ru-RU,en-US}/main.ftl    # пользовательские тексты
@@ -52,7 +53,7 @@ tests/
 ├── integration.rs               # точка входа интеграционных тестов
 ├── cli/{init,new,localization}.rs
 ├── project/{discovery,templates}.rs
-├── vcs/{repository,support}.rs   # реальные Git-репозитории и fixture-команды
+├── vcs/{repository,status,support}.rs # реальные Git-репозитории и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
 
@@ -77,6 +78,7 @@ tests/
 | Изменить распознавание типа выгрузки | [`src/designer_xml.rs`](../src/designer_xml.rs) |
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
 | Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../src/vcs/repository.rs) |
+| Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../src/vcs/status.rs) |
 | Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../src/cli/interactive/keyboard.rs) |
 | Изменить оформление меню | [`src/cli/interactive/render.rs`](../src/cli/interactive/render.rs) |
 | Изменить приоритет языка | [`src/cli/localization/locale.rs`](../src/cli/localization/locale.rs) |
@@ -97,7 +99,8 @@ tests/
   Запись и откат принадлежат конкретной операции: у `new` — новый каталог,
   у `init` — только созданные этим запуском config и Git-метаданные.
 - Git находится в `vcs/`: `git.rs` открывает и инициализирует репозитории,
-  `repository.rs` возвращает структурированные данные чтения. `workflow.rs`
+  `repository.rs` возвращает HEAD, refs и историю, `status.rs` сравнивает
+  HEAD/index/worktree. Состояние файлов не требует разбора Designer XML. `workflow.rs`
   хранит только значения presets, без реализации будущих политик.
 - Unit-тесты находятся рядом с реализацией в `#[cfg(test)] mod tests`.
   Интеграционные сценарии сгруппированы по команде или операции проекта;
@@ -114,6 +117,7 @@ ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --test integration 
 ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --test integration cli::new
 ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --test integration project::discovery
 ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --lib cli::interactive
+ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --test integration vcs::
 ```
 
 Полный набор проверок и правила временных каталогов описаны в

@@ -1,10 +1,24 @@
-use std::{fs, path::Path, process::Command};
+use std::{
+    fs,
+    path::Path,
+    process::{Command, Output},
+};
 
 use gix::ObjectId;
 
 use crate::support::TestDir;
 
 pub fn git(root: &Path, args: &[&str]) -> Vec<u8> {
+    let output = git_output(root, args);
+    assert!(
+        output.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    output.stdout
+}
+
+pub fn git_output(root: &Path, args: &[&str]) -> Output {
     let mut command = Command::new("git");
     // Test fixture commands must not inherit developer Git configuration or redirects.
     for (key, _) in std::env::vars_os() {
@@ -12,7 +26,7 @@ pub fn git(root: &Path, args: &[&str]) -> Vec<u8> {
             command.env_remove(key);
         }
     }
-    let output = command
+    command
         .current_dir(root)
         .env("GIT_CONFIG_NOSYSTEM", "1")
         .env("GIT_CONFIG_GLOBAL", root.join("absent-global-config"))
@@ -25,13 +39,7 @@ pub fn git(root: &Path, args: &[&str]) -> Vec<u8> {
         .args(["-c", "core.hooksPath=", "-c", "commit.gpgsign=false"])
         .args(args)
         .output()
-        .expect("run Git fixture command");
-    assert!(
-        output.status.success(),
-        "git {args:?}: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    output.stdout
+        .expect("run Git fixture command")
 }
 
 pub fn repository() -> TestDir {

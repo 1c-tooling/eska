@@ -58,6 +58,7 @@ pub enum Operation {
     Head,
     References,
     History,
+    Status,
 }
 
 #[derive(Debug)]
@@ -70,6 +71,9 @@ pub enum Error {
         start: PathBuf,
     },
     NotDirectory {
+        path: PathBuf,
+    },
+    InvalidIndex {
         path: PathBuf,
     },
     Open(OpenError),

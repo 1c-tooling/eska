@@ -2,4 +2,7 @@
 # and derive dependencies require winnow 1 and syn 3. Optional defmt metadata
 # also requires bitflags 1 alongside rustix/bitflags 2. These incompatible
 # transitive versions cannot be unified in the application.
-allowed-duplicate-crates = ["bitflags", "syn", "winnow"]
+# gix status additionally needs dashmap/hashbrown 0.14 and
+# imara-diff/hashbrown 0.15/foldhash 0.1, while gix-hashtable uses
+# hashbrown 0.16/foldhash 0.2. Their version requirements do not overlap.
+allowed-duplicate-crates = ["bitflags", "foldhash", "hashbrown", "syn", "winnow"]
