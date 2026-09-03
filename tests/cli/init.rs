@@ -98,6 +98,14 @@ fn detects_all_types_locations_and_locales_without_touching_sources() {
                     "Project initialized"
                 }));
                 let config = ProjectConfig::load(&root.join("eska.toml")).expect("config");
+                assert_eq!(
+                    fs::read(root.join(".gitattributes")).expect("attributes"),
+                    include_bytes!("../../assets/project/.gitattributes")
+                );
+                assert_eq!(
+                    fs::read(root.join(".gitignore")).expect("ignore rules"),
+                    include_bytes!("../../assets/project/.gitignore")
+                );
                 assert_eq!(config.source(), Path::new(location));
                 assert_eq!(
                     config.configuration().workflow(),
@@ -113,10 +121,59 @@ fn detects_all_types_locations_and_locales_without_touching_sources() {
                 assert_eq!(project.root(), root);
                 assert_eq!(project.source(), fs::canonicalize(&source).expect("source"));
                 let mut after = snapshot(&root);
-                after.retain(|(name, _)| name != Path::new("eska.toml"));
+                after.retain(|(name, _)| {
+                    ![
+                        Path::new("eska.toml"),
+                        Path::new(".gitattributes"),
+                        Path::new(".gitignore"),
+                    ]
+                    .contains(&name.as_path())
+                });
                 assert_eq!(before, after, "all existing bytes preserved");
             }
         }
+    }
+}
+
+/// Existing Git files are authoritative; init fills only absent shared files.
+#[test]
+fn creates_only_missing_git_files_and_preserves_existing_files() {
+    let fixture = TestDir::new();
+    for (index, missing) in [None, Some(".gitattributes"), Some(".gitignore")]
+        .into_iter()
+        .enumerate()
+    {
+        let root = fixture.0.join(format!("existing-git-files-{index}"));
+        descriptor(&root.join("src"), "configuration");
+        fs::write(root.join(".gitattributes"), "user attributes\n").expect("attributes");
+        fs::write(root.join(".gitignore"), "user ignore rules\n").expect("ignore rules");
+        if let Some(path) = missing {
+            fs::remove_file(root.join(path)).expect("remove missing fixture file");
+        }
+
+        success(
+            &command(&root, "en")
+                .args(["--workflow", "trunk", "--no-vcs"])
+                .output()
+                .expect("init"),
+        );
+
+        assert_eq!(
+            fs::read(root.join(".gitattributes")).expect("attributes"),
+            if missing == Some(".gitattributes") {
+                include_bytes!("../../assets/project/.gitattributes").as_slice()
+            } else {
+                b"user attributes\n"
+            }
+        );
+        assert_eq!(
+            fs::read(root.join(".gitignore")).expect("ignore rules"),
+            if missing == Some(".gitignore") {
+                include_bytes!("../../assets/project/.gitignore").as_slice()
+            } else {
+                b"user ignore rules\n"
+            }
+        );
     }
 }
 

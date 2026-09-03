@@ -15,6 +15,7 @@ use crate::{
 use super::{
     Project, ProjectType,
     discovery::{self, DiscoveryError},
+    templates::{self, TemplateFile},
 };
 
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024 * 1024;
@@ -227,8 +228,8 @@ fn detect_directory(directory: &Path, root: &Path) -> Result<Option<ProjectType>
     Ok(found)
 }
 
-/// Write only a new config and, if requested and absent, a new Git repository.
-/// Existing source files and repository metadata are never rewritten.
+/// Write a new config, missing shared Git files and, when requested, a new repository.
+/// Existing source files, Git control files and repository metadata are never rewritten.
 ///
 /// # Errors
 /// Returns validation/I/O/VCS errors. Ordinary failures roll back only artifacts
@@ -265,7 +266,8 @@ pub fn apply(
         .with_workflow(workflow)
         .to_toml()
         .map_err(InitError::Serialize)?;
-    write_project(&plan.root, &contents, create_git, || {
+    let project_files = templates::built_in_git_files();
+    write_project(&plan.root, &contents, &project_files, create_git, || {
         discovery::discover(&plan.root).map_err(|error| InitError::Validation(Box::new(error)))
     })
 }
@@ -273,11 +275,12 @@ pub fn apply(
 fn write_project<T>(
     root: &Path,
     contents: &str,
+    project_files: &[TemplateFile],
     create_git: bool,
     validate: impl FnOnce() -> Result<T, InitError>,
 ) -> Result<T, InitError> {
     let config = root.join(FILE_NAME);
-    let mut file = OpenOptions::new()
+    let mut config_file = OpenOptions::new()
         .write(true)
         .create_new(true)
         .open(&config)
@@ -295,13 +298,16 @@ fn write_project<T>(
         })?;
     let git = root.join(".git");
     let mut owns_git = false;
+    let mut owned_project_files = Vec::new();
     let result = (|| {
-        file.write_all(contents.as_bytes())
-            .and_then(|()| file.sync_all())
+        config_file
+            .write_all(contents.as_bytes())
+            .and_then(|()| config_file.sync_all())
             .map_err(|source| InitError::Io {
                 path: config.clone(),
                 source,
             })?;
+        write_missing_project_files(root, project_files, &mut owned_project_files)?;
         if create_git {
             fs::create_dir(&git).map_err(|source| InitError::Io {
                 path: git.clone(),
@@ -315,13 +321,18 @@ fn write_project<T>(
         }
         validate()
     })();
-    drop(file); // Windows cannot remove an open config during rollback.
+    drop(config_file); // Windows cannot remove an open config during rollback.
     match result {
         Ok(value) => Ok(value),
         Err(original) => {
             let mut paths = Vec::new();
             if owns_git && fs::remove_dir_all(&git).is_err() {
                 paths.push(git);
+            }
+            for path in owned_project_files.into_iter().rev() {
+                if fs::remove_file(&path).is_err() {
+                    paths.push(path);
+                }
             }
             if fs::remove_file(&config).is_err() {
                 paths.push(config);
@@ -338,10 +349,31 @@ fn write_project<T>(
     }
 }
 
+/// Creates absent built-in project files while preserving every existing path.
+fn write_missing_project_files(
+    root: &Path,
+    project_files: &[TemplateFile],
+    owned_paths: &mut Vec<PathBuf>,
+) -> Result<(), InitError> {
+    for entry in project_files {
+        let path = root.join(entry.path());
+        let mut file = match OpenOptions::new().write(true).create_new(true).open(&path) {
+            Ok(file) => file,
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
+            Err(source) => return Err(InitError::Io { path, source }),
+        };
+        owned_paths.push(path.clone());
+        file.write_all(entry.contents().as_bytes())
+            .and_then(|()| file.sync_all())
+            .map_err(|source| InitError::Io { path, source })?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{InitError, write_project};
-    use crate::test_support::TestDir;
+    use crate::{project::templates, test_support::TestDir};
     use std::fs;
 
     #[test]
@@ -349,15 +381,17 @@ mod tests {
         for with_git in [true, false] {
             let fixture = TestDir::new();
             fs::write(fixture.0.join("source.xml"), "unchanged").expect("source");
-            let result = write_project::<()>(&fixture.0, "config", with_git, || {
-                if with_git {
-                    let repo = gix::open(&fixture.0).expect("initialized repo");
-                    assert_eq!(repo.workdir(), Some(fixture.0.as_path()));
-                }
-                Err(InitError::ChangedSource {
-                    path: fixture.0.clone(),
-                })
-            });
+            let project_files = templates::built_in_git_files();
+            let result =
+                write_project::<()>(&fixture.0, "config", &project_files, with_git, || {
+                    if with_git {
+                        let repo = gix::open(&fixture.0).expect("initialized repo");
+                        assert_eq!(repo.workdir(), Some(fixture.0.as_path()));
+                    }
+                    Err(InitError::ChangedSource {
+                        path: fixture.0.clone(),
+                    })
+                });
             assert!(matches!(result, Err(InitError::ChangedSource { .. })));
             assert_eq!(
                 fs::read(fixture.0.join("source.xml")).expect("source"),
@@ -371,13 +405,16 @@ mod tests {
     fn late_git_collision_preserves_existing_metadata_and_removes_new_config() {
         let fixture = TestDir::new();
         fs::write(fixture.0.join(".git"), "owned by user").expect("existing metadata");
-        let result = write_project(&fixture.0, "config", true, || Ok(()));
+        let project_files = templates::built_in_git_files();
+        let result = write_project(&fixture.0, "config", &project_files, true, || Ok(()));
         assert!(matches!(result, Err(InitError::Io { .. })));
         assert_eq!(
             fs::read(fixture.0.join(".git")).expect("metadata"),
             b"owned by user"
         );
         assert!(!fixture.0.join("eska.toml").exists());
+        assert!(!fixture.0.join(".gitattributes").exists());
+        assert!(!fixture.0.join(".gitignore").exists());
     }
 
     #[test]
@@ -385,7 +422,13 @@ mod tests {
         let fixture = TestDir::new();
         fs::write(fixture.0.join("eska.toml"), "user config").expect("config");
         assert!(matches!(
-            write_project(&fixture.0, "new", true, || Ok(())),
+            write_project(
+                &fixture.0,
+                "new",
+                &templates::built_in_git_files(),
+                true,
+                || Ok(())
+            ),
             Err(InitError::ExistingConfig { .. })
         ));
         assert_eq!(
@@ -400,7 +443,8 @@ mod tests {
     fn cleanup_failure_reports_remaining_artifact_and_original_error() {
         let fixture = TestDir::new();
         let config = fixture.0.join("eska.toml");
-        let result = write_project::<()>(&fixture.0, "config", true, || {
+        let project_files = templates::built_in_git_files();
+        let result = write_project::<()>(&fixture.0, "config", &project_files, true, || {
             fs::remove_file(&config).expect("inject cleanup failure");
             fs::create_dir(&config).expect("block removal as a file");
             Err(InitError::ChangedSource {
@@ -416,5 +460,7 @@ mod tests {
             !fixture.0.join(".git").exists(),
             "independent cleanup still runs"
         );
+        assert!(!fixture.0.join(".gitattributes").exists());
+        assert!(!fixture.0.join(".gitignore").exists());
     }
 }

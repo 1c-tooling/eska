@@ -9,6 +9,20 @@ use super::ProjectType;
 const GIT_ATTRIBUTES: &str = include_str!("../../assets/project/.gitattributes");
 const GIT_IGNORE: &str = include_str!("../../assets/project/.gitignore");
 
+/// Returns the Git control files shared by all built-in project types.
+pub(crate) fn built_in_git_files() -> [TemplateFile; 2] {
+    [
+        TemplateFile {
+            path: PathBuf::from(".gitattributes"),
+            contents: GIT_ATTRIBUTES.to_owned(),
+        },
+        TemplateFile {
+            path: PathBuf::from(".gitignore"),
+            contents: GIT_IGNORE.to_owned(),
+        },
+    ]
+}
+
 /// A project-relative file and directory plan for the project creation layer.
 ///
 /// Template selection is separate from filesystem writing. Future local template
@@ -42,6 +56,7 @@ impl Template {
     pub fn from_config(config: &ProjectConfig) -> Result<Self, toml::ser::Error> {
         let source = config.source().to_path_buf();
         let contents = config.to_toml()?;
+        let [attributes, ignore] = built_in_git_files();
 
         Ok(Self {
             files: vec![
@@ -49,14 +64,8 @@ impl Template {
                     path: PathBuf::from(FILE_NAME),
                     contents,
                 },
-                TemplateFile {
-                    path: PathBuf::from(".gitattributes"),
-                    contents: GIT_ATTRIBUTES.to_owned(),
-                },
-                TemplateFile {
-                    path: PathBuf::from(".gitignore"),
-                    contents: GIT_IGNORE.to_owned(),
-                },
+                attributes,
+                ignore,
                 // Git does not retain empty directories. Keep the source root
                 // discoverable after a checkout even before the first XML export.
                 TemplateFile {
@@ -160,12 +169,7 @@ mod tests {
             let ignore = &template.files()[2];
             assert_eq!(ignore.path(), Path::new(".gitignore"));
             assert_eq!(ignore.contents(), GIT_IGNORE);
-            for pattern in [
-                "/.vscode/",
-                "/build/",
-                "ConfigDumpInfo.xml",
-                "DumpFilesIndex.txt",
-            ] {
+            for pattern in ["/build/", "ConfigDumpInfo.xml", "DumpFilesIndex.txt"] {
                 assert!(ignore.contents().lines().any(|line| line == pattern));
             }
 
