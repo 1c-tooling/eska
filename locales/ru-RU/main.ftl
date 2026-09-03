@@ -40,20 +40,23 @@ new-no-vcs-help = Не инициализировать Git
 new-type-invalid = Неизвестный тип проекта. Допустимы: configuration, extension, processing, report.
 new-workflow-invalid = Неизвестный workflow. Допустимы: trunk, git-flow, github-flow, custom.
 new-options-required = Без интерактивного терминала укажите оба параметра: --type и --workflow.
-new-type-menu = Выберите тип проекта:
-    1. Конфигурация (configuration)
-    2. Расширение (extension)
-    3. Внешняя обработка (processing)
-    4. Внешний отчёт (report)
-new-workflow-menu = Выберите workflow (пока только сохраняется):
-    1. Trunk-based (trunk)
-    2. Git Flow (git-flow)
-    3. GitHub Flow (github-flow)
-    4. Пользовательский (custom)
-new-choice-prompt = Введите номер или идентификатор:
-new-choice-invalid = Неизвестный вариант. Повторите выбор.
-new-cancelled = Создание отменено: ввод завершён. Файлы не созданы.
-new-prompt-error = Не удалось прочитать выбор или вывести приглашение. Файлы не созданы.
+new-tui-title = eska · Новый проект
+new-type-menu = Тип проекта
+new-type-configuration = Конфигурация
+new-type-extension = Расширение
+new-type-processing = Внешняя обработка
+new-type-report = Внешний отчёт
+new-workflow-menu = Workflow · пока только сохраняется
+new-workflow-trunk = Trunk-based
+new-workflow-git-flow = Git Flow
+new-workflow-github-flow = GitHub Flow
+new-workflow-custom = Пользовательский
+select-navigation-hint = ↑/↓ · j/k — перемещение · Enter — выбрать
+select-digit-hint = Цифра строки — выбрать сразу
+select-cancel-hint = Esc · Ctrl+C · Ctrl+D — отменить
+select-resize = Увеличьте окно терминала (минимум 50×14)
+new-cancelled = Создание отменено. Файлы не созданы.
+new-prompt-error = Не удалось выполнить интерактивный выбор или восстановить терминал. Файлы не созданы.
 new-created = Каркас проекта создан: { $path }.
 new-destination-invalid = Укажите новый каталог проекта без «..»: { $path }.
 new-destination-exists = Путь уже существует и не будет изменён: { $path }.

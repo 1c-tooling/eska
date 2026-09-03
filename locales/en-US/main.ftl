@@ -40,20 +40,23 @@ new-no-vcs-help = Do not initialize Git
 new-type-invalid = Unknown project type. Expected: configuration, extension, processing, report.
 new-workflow-invalid = Unknown workflow. Expected: trunk, git-flow, github-flow, custom.
 new-options-required = Without an interactive terminal, provide both --type and --workflow.
-new-type-menu = Select the project type:
-    1. Configuration (configuration)
-    2. Extension (extension)
-    3. External processing (processing)
-    4. External report (report)
-new-workflow-menu = Select a workflow (only saved for now):
-    1. Trunk-based (trunk)
-    2. Git Flow (git-flow)
-    3. GitHub Flow (github-flow)
-    4. Custom (custom)
-new-choice-prompt = Enter a number or identifier:
-new-choice-invalid = Unknown choice. Please try again.
-new-cancelled = Creation cancelled: input ended. No files were created.
-new-prompt-error = Could not read the selection or write the prompt. No files were created.
+new-tui-title = eska · New project
+new-type-menu = Project type
+new-type-configuration = Configuration
+new-type-extension = Extension
+new-type-processing = External processing
+new-type-report = External report
+new-workflow-menu = Workflow · only saved for now
+new-workflow-trunk = Trunk-based
+new-workflow-git-flow = Git Flow
+new-workflow-github-flow = GitHub Flow
+new-workflow-custom = Custom
+select-navigation-hint = ↑/↓ · j/k — move · Enter — select
+select-digit-hint = Row number key — select immediately
+select-cancel-hint = Esc · Ctrl+C · Ctrl+D — cancel
+select-resize = Enlarge the terminal (minimum 50×14)
+new-cancelled = Creation cancelled. No files were created.
+new-prompt-error = Could not complete the interactive selection or restore the terminal. No files were created.
 new-created = Project scaffold created: { $path }.
 new-destination-invalid = Specify a new project directory without "..": { $path }.
 new-destination-exists = The path already exists and will not be changed: { $path }.

@@ -8,6 +8,7 @@ use crate::localization::Localizer;
 
 mod new;
 mod project_errors;
+mod select;
 
 /// Command-line interface for eska.
 #[derive(Parser, Debug)]

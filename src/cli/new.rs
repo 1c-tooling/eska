@@ -1,5 +1,5 @@
 use std::{
-    io::{self, BufRead, IsTerminal, Write},
+    io::{self, IsTerminal},
     path::{Path, PathBuf},
     process::ExitCode,
 };
@@ -10,6 +10,8 @@ use crate::{
     project::WorkflowPreset,
 };
 use clap::{ArgAction, Args};
+
+use super::select::{PromptError, Selector};
 
 #[derive(Debug, Args)]
 pub(super) struct NewArgs {
@@ -55,27 +57,33 @@ impl NewArgs {
                 eprintln!("{}", localizer.text("new-options-required"));
                 return ExitCode::from(2);
             }
-            let mut input = io::stdin().lock();
-            let mut output = io::stderr().lock();
             let result = (|| {
+                let mut selector = Selector::start()?;
                 if project_type.is_none() {
-                    project_type = Some(choose(
-                        &mut input,
-                        &mut output,
+                    project_type = Some(selector.choose(
                         localizer,
                         "new-type-menu",
-                        &["configuration", "extension", "processing", "report"],
+                        &[
+                            ("configuration", "new-type-configuration"),
+                            ("extension", "new-type-extension"),
+                            ("processing", "new-type-processing"),
+                            ("report", "new-type-report"),
+                        ],
                     )?);
                 }
                 if workflow.is_none() {
-                    workflow = Some(choose(
-                        &mut input,
-                        &mut output,
+                    workflow = Some(selector.choose(
                         localizer,
                         "new-workflow-menu",
-                        &["trunk", "git-flow", "github-flow", "custom"],
+                        &[
+                            ("trunk", "new-workflow-trunk"),
+                            ("git-flow", "new-workflow-git-flow"),
+                            ("github-flow", "new-workflow-github-flow"),
+                            ("custom", "new-workflow-custom"),
+                        ],
                     )?);
                 }
+                selector.finish().map_err(|_| PromptError::Io)?;
                 Ok::<_, PromptError>(())
             })();
             if let Err(error) = result {
@@ -118,44 +126,6 @@ impl NewArgs {
                 ExitCode::FAILURE
             }
         }
-    }
-}
-
-#[derive(Debug)]
-enum PromptError {
-    Cancelled,
-    Io,
-}
-
-fn choose(
-    input: &mut impl BufRead,
-    output: &mut impl Write,
-    localizer: &Localizer,
-    menu: &str,
-    choices: &[&str],
-) -> Result<String, PromptError> {
-    writeln!(output, "{}", localizer.text(menu)).map_err(|_| PromptError::Io)?;
-    loop {
-        write!(output, "{} ", localizer.text("new-choice-prompt")).map_err(|_| PromptError::Io)?;
-        output.flush().map_err(|_| PromptError::Io)?;
-        let mut line = String::new();
-        if input.read_line(&mut line).map_err(|_| PromptError::Io)? == 0 {
-            return Err(PromptError::Cancelled);
-        }
-        let value = line.trim();
-        if let Some(choice) = value
-            .parse::<usize>()
-            .ok()
-            .and_then(|index| index.checked_sub(1))
-            .and_then(|index| choices.get(index))
-        {
-            return Ok((*choice).to_owned());
-        }
-        if choices.contains(&value) {
-            return Ok(value.to_owned());
-        }
-        writeln!(output, "{}", localizer.text("new-choice-invalid"))
-            .map_err(|_| PromptError::Io)?;
     }
 }
 
@@ -212,47 +182,4 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         })
         .mut_arg("no_vcs", |arg| arg.help(localizer.text("new-no-vcs-help")))
         .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::localization::Locale;
-
-    #[test]
-    fn prompts_accept_numbers_and_names_retry_invalid_input_and_handle_eof() {
-        for locale in [Locale::RuRu, Locale::EnUs] {
-            let localizer = Localizer::try_new(locale).expect("valid locale");
-            for (input, expected) in [("0\n5\nwrong\n2\n", "extension"), ("report\n", "report")] {
-                let mut input = io::Cursor::new(input);
-                let mut output = Vec::new();
-                assert_eq!(
-                    choose(
-                        &mut input,
-                        &mut output,
-                        &localizer,
-                        "new-type-menu",
-                        &["configuration", "extension", "processing", "report"]
-                    )
-                    .expect("choice"),
-                    expected
-                );
-                assert!(
-                    String::from_utf8(output)
-                        .expect("UTF-8")
-                        .contains(&localizer.text("new-choice-prompt"))
-                );
-            }
-            assert!(matches!(
-                choose(
-                    &mut io::Cursor::new(""),
-                    &mut Vec::new(),
-                    &localizer,
-                    "new-type-menu",
-                    &["configuration"]
-                ),
-                Err(PromptError::Cancelled)
-            ));
-        }
-    }
 }

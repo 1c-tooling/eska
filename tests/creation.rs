@@ -25,6 +25,10 @@ fn command(root: &Path, locale: &str) -> Command {
 
 fn success(output: &Output) -> String {
     assert!(
+        !output.stdout.contains(&0x1b),
+        "no TUI escape sequences outside a terminal"
+    );
+    assert!(
         output.status.success(),
         "{}",
         String::from_utf8_lossy(&output.stderr)
