@@ -60,3 +60,20 @@ fn cli_locale_has_priority_over_environment() {
     assert!(help.contains("Использование"));
     assert!(!help.contains("Usage:"));
 }
+
+#[test]
+fn usage_syntax_is_localized_for_both_help_flags() {
+    for (locale, expected, unexpected) in [
+        ("ru", "Использование: eska [ПАРАМЕТРЫ]", "[OPTIONS]"),
+        ("en", "Usage: eska [OPTIONS]", "[ПАРАМЕТРЫ]"),
+    ] {
+        for flag in ["--help", "-h"] {
+            let output = eska(&["--lang", locale, flag], None);
+            let help = stdout(&output);
+
+            assert!(output.stderr.is_empty());
+            assert!(help.lines().any(|line| line == expected), "{help}");
+            assert!(!help.contains(unexpected), "{help}");
+        }
+    }
+}

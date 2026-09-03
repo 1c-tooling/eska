@@ -40,6 +40,7 @@ impl Cli {
         Self::command()
             .about(localizer.text("app-about"))
             .version(env!("CARGO_PKG_VERSION"))
+            .override_usage(localizer.text("cli-usage-syntax"))
             .help_template(help_template)
             .mut_arg("lang", |arg| {
                 arg.help(localizer.text("cli-lang-help"))

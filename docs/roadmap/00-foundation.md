@@ -20,5 +20,7 @@
 - bootstrap чтение `--lang` до полного parsing `clap`;
 - полностью локализованный help и CLI integration tests.
 
-Известная граница: diagnostics ошибок parsing пока формирует `clap` на английском.
+Строка использования в `--help` / `-h`: `eska [ПАРАМЕТРЫ]` для `ru-RU` и
+`eska [OPTIONS]` для `en-US`.
 
+Известная граница: diagnostics ошибок parsing пока формирует `clap` на английском.
