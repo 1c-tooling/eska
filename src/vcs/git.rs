@@ -1,4 +1,4 @@
-//! The narrow Git initialization boundary; repository workflows are not implemented.
+//! Isolated Git opening and initialization shared by project and repository operations.
 
 use std::{
     fs, io,
@@ -32,6 +32,11 @@ pub enum InitializeError {
 
 /// Inspect only on-disk repository markers, ignoring redirecting environment.
 pub fn exists(root: &Path) -> Result<bool, ExistingError> {
+    open_existing(root).map(|repository| repository.is_some())
+}
+
+/// Stop at the nearest marker, including a broken one: never silently select a parent repository.
+pub(super) fn open_existing(root: &Path) -> Result<Option<gix::Repository>, ExistingError> {
     for ancestor in root.ancestors() {
         let marker = ancestor.join(".git");
         let found = match fs::symlink_metadata(&marker) {
@@ -51,10 +56,10 @@ pub fn exists(root: &Path) -> Result<bool, ExistingError> {
             if repo.is_bare() {
                 return Err(ExistingError::Bare);
             }
-            return Ok(true);
+            return Ok(Some(repo));
         }
     }
-    Ok(false)
+    Ok(None)
 }
 
 /// Populate an empty `.git` directory exclusively owned by the caller.

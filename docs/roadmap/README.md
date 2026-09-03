@@ -16,7 +16,7 @@
 - `DONE`: `T05` — встроенные шаблоны для четырёх типов проектов;
 - `DONE`: `T04` — `eska new`, клавиатурный TUI, безопасное создание и минимальный Git init;
 - `DONE`: `T06` — `eska init`, подключение существующих исходников;
-- `NEXT`: `T07` — repository layer;
+- `IN-PROGRESS`: `T07` — repository layer;
 - VCS-команды и исполнение workflow policy пока не реализованы.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
@@ -48,7 +48,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T04 | DONE | `eska new` | [02-project-creation.md](02-project-creation.md) |
 | T05 | DONE | Built-in templates | [02-project-creation.md](02-project-creation.md) |
 | T06 | DONE | `eska init` | [02-project-creation.md](02-project-creation.md) |
-| T07 | NEXT | Repository layer (`gix` + Git fallback) | [03-repository-workflow.md](03-repository-workflow.md) |
+| T07 | IN-PROGRESS | Repository layer (`gix` + Git fallback) | [03-repository-workflow.md](03-repository-workflow.md) |
 | T08 | PLANNED | Workflow policy model | [03-repository-workflow.md](03-repository-workflow.md) |
 | T09 | PLANNED | Trunk preset | [03-repository-workflow.md](03-repository-workflow.md) |
 | T10 | PLANNED | Git Flow preset | [03-repository-workflow.md](03-repository-workflow.md) |

@@ -2,7 +2,7 @@
 
 ## T07 — Repository layer
 
-**Статус:** `NEXT`
+**Статус:** `IN-PROGRESS`
 **Зависит от:** T03
 
 Создать единый infrastructure layer. Через `gix` реализовать discovery, HEAD,

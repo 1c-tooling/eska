@@ -43,7 +43,8 @@ src/
 ├── designer_xml.rs              # распознавание корневого XML-дескриптора
 └── vcs/
     ├── mod.rs                   # граница VCS
-    ├── git.rs                   # изолированные операции с Git через gix
+    ├── git.rs                   # общее открытие и инициализация Git через gix
+    ├── repository.rs            # discovery, HEAD, refs и ограниченная история
     └── workflow.rs              # сохранённые workflow presets
 
 locales/{ru-RU,en-US}/main.ftl    # пользовательские тексты
@@ -51,12 +52,14 @@ tests/
 ├── integration.rs               # точка входа интеграционных тестов
 ├── cli/{init,new,localization}.rs
 ├── project/{discovery,templates}.rs
+├── vcs/{repository,support}.rs   # реальные Git-репозитории и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
 
 `validate.rs` — обработчик существующего запуска `eska` без подкоманды,
-а не новая команда `validate` или запланированная `check`. `vcs/git.rs` пока
-содержит только проверку наличия и инициализацию Git; workflow policy не исполняется.
+а не новая команда `validate` или запланированная `check`. `vcs/git.rs` содержит
+общее открытие и инициализацию Git; чтение репозитория находится в
+`vcs/repository.rs`. Workflow policy не исполняется.
 
 ## Что менять и где
 
@@ -73,6 +76,7 @@ tests/
 | Изменить схему `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
 | Изменить распознавание типа выгрузки | [`src/designer_xml.rs`](../src/designer_xml.rs) |
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
+| Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../src/vcs/repository.rs) |
 | Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../src/cli/interactive/keyboard.rs) |
 | Изменить оформление меню | [`src/cli/interactive/render.rs`](../src/cli/interactive/render.rs) |
 | Изменить приоритет языка | [`src/cli/localization/locale.rs`](../src/cli/localization/locale.rs) |
@@ -92,8 +96,9 @@ tests/
 - `project/templates.rs` возвращает план файлов, но ничего не записывает.
   Запись и откат принадлежат конкретной операции: у `new` — новый каталог,
   у `init` — только созданные этим запуском config и Git-метаданные.
-- Операции с Git сосредоточены в `vcs/git.rs`. `workflow.rs` хранит только
-  значения presets, без реализации будущих политик.
+- Git находится в `vcs/`: `git.rs` открывает и инициализирует репозитории,
+  `repository.rs` возвращает структурированные данные чтения. `workflow.rs`
+  хранит только значения presets, без реализации будущих политик.
 - Unit-тесты находятся рядом с реализацией в `#[cfg(test)] mod tests`.
   Интеграционные сценарии сгруппированы по команде или операции проекта;
   тесты discovery/templates также проверяют соответствующий CLI-контракт.

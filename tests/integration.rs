@@ -3,3 +3,4 @@
 mod cli;
 mod project;
 mod support;
+mod vcs;
