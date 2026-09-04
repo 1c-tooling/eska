@@ -136,7 +136,7 @@ tests/
   `cli/commands/diff.rs` группирует logical identities по типу метаданных и
   состоянию, оформляет TTY-заголовки и маркеры, отдельно формирует raw,
   workspace JSON версии 1 и revision JSON версии 2. Полная object model, mapping
-  всех путей объекта и semantic-анализ BSL/форм остаются задачами T22–T24.
+  всех путей объекта и semantic-анализ BSL/форм остаются задачами T19–T21.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   обновляет base только fast-forward и активирует новую task-ветку.
   `cli/commands/start.rs` отвечает только за аргументы и RU/EN presentation.

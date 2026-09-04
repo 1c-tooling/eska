@@ -7,8 +7,11 @@
 
 Создать единый infrastructure layer. Через `gix` реализовать discovery, HEAD,
 branch/refs, worktree/index status, changed paths, базовую историю и merge-base по
-мере реальной необходимости. System Git оставить fallback для network/mutating,
-credentials, signing и LFS операций. Не размазывать `Command::new("git")` по CLI.
+мере реальной необходимости. System Git допустим только как документированный
+capability fallback для ещё не покрытой orchestration worktree/index,
+hooks/editor/signing, LFS и отдельных transport/credential сценариев. Не
+размазывать `Command::new("git")` по CLI и не повторять им произвольную ошибку
+`gix`.
 
 **Готово, когда:** реальные временные repositories покрывают detached HEAD,
 unborn branch, dirty state и простой commit graph; core возвращает структурированные
@@ -36,9 +39,9 @@ Core не зависит от CLI, TTY или локализации. Имена
   атомарность относительно внешних изменений не обещается;
 - несовместимые транзитивные версии `bitflags`, `hashbrown` и `syn`
   задокументированы в адресных исключениях существующего `clippy.toml`;
-- merge-base и исполнитель системного Git отложены до конкретного потребителя;
-  network/mutating, credentials, signing и LFS-команды остаются будущими
-  операциями внутри `vcs/`; заготовки исполнителя не добавлены;
+- merge-base и исполнитель системного Git были отложены до конкретного
+  потребителя; последующие реализованные вызовы проходят отдельный аудит и
+  gix-first миграцию в T17;
 - CLI и config не менялись, новых пользовательских строк и JSON-схем нет.
 
 **Проверено:** `cargo fmt --check`, `cargo check`,

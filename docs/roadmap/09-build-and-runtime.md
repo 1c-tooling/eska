@@ -3,7 +3,7 @@
 ## T28 — Build subsystem через `ibcmd`
 
 **Статус:** `PLANNED`  
-**Зависит от:** T03, T22
+**Зависит от:** T03, T19
 
 `eska build` преобразует Designer XML через актуальные возможности `ibcmd` в
 artifact соответствующего project type. Перед реализацией заново исследовать
@@ -30,9 +30,8 @@ Credentials нельзя хранить открытым текстом в `eska
 ## T31 — `eska apply` / `eska run`
 
 **Статус:** `PLANNED`  
-**Зависит от:** T22, T23, T28, T30
+**Зависит от:** T19, T20, T28, T30
 
 `apply` определяет changed objects и выбирает минимально достаточный partial/full
 update с DB update при необходимости. `run` запускает 1С для активного environment;
 отдельный `designer` уточнить при проектировании CLI.
-

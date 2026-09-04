@@ -6,7 +6,7 @@
 
 ## Текущее состояние
 
-Стадия проекта: **`eska save` завершён**, далее `eska sync`.
+Стадия проекта: **`eska save` завершён**, далее `eska clone`.
 
 - `DONE`: чистый минимальный Rust CLI;
 - `DONE`: локализация `ru-RU` / `en-US`, включая `--help`;
@@ -25,8 +25,10 @@
 - `DONE`: `T13` — `eska start`;
 - `DONE`: `T14` — object-aware human-представление `eska diff`;
 - `DONE`: `T15` — `eska save`;
-- `NEXT`: `T16` — `eska sync`;
-- остальные изменяющие VCS-команды пока не реализованы.
+- `NEXT`: `T16` — `eska clone` через `gix`;
+- затем существующие VCS-операции переводятся на `gix` везде, где можно
+  сохранить их поведение; delivery-команды `sync` / `publish` / `finish`
+  намеренно отложены до более приоритетных read-only, semantic и quality-задач.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
 операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
@@ -57,7 +59,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T04 | DONE | `eska new` | [02-project-creation.md](02-project-creation.md) |
 | T05 | DONE | Built-in templates | [02-project-creation.md](02-project-creation.md) |
 | T06 | DONE | `eska init` | [02-project-creation.md](02-project-creation.md) |
-| T07 | DONE | Repository layer (`gix`; Git fallback по мере необходимости) | [03-repository-workflow.md](03-repository-workflow.md) |
+| T07 | DONE | Repository layer (`gix`; документированный Git capability fallback) | [03-repository-workflow.md](03-repository-workflow.md) |
 | T08 | DONE | Workflow policy model | [03-repository-workflow.md](03-repository-workflow.md) |
 | T09 | DONE | Trunk preset | [03-repository-workflow.md](03-repository-workflow.md) |
 | T10 | DONE | Git Flow preset | [03-repository-workflow.md](03-repository-workflow.md) |
@@ -66,27 +68,32 @@ TUI разделён на обработку клавиш, отрисовку и
 | T13 | DONE | `eska start` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T14 | DONE | `eska diff` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T15 | DONE | `eska save` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T16 | NEXT | `eska sync` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T17 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T18 | PLANNED | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T19 | PLANNED | `continue` / `abort` | [05-safe-vcs.md](05-safe-vcs.md) |
-| T20 | PLANNED | `switch` / shelves / history / restore | [05-safe-vcs.md](05-safe-vcs.md) |
-| T21 | PLANNED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
-| T22 | PLANNED | Designer XML object model | [06-locking-and-xml.md](06-locking-and-xml.md) |
-| T23 | PLANNED | Semantic `ChangeSet` | [07-semantic-changes.md](07-semantic-changes.md) |
-| T24 | PLANNED | Semantic diff | [07-semantic-changes.md](07-semantic-changes.md) |
-| T25 | PLANNED | Генератор commit message | [07-semantic-changes.md](07-semantic-changes.md) |
+| T16 | NEXT | `eska clone` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T17 | PLANNED | Gix-first миграция реализованных VCS-операций | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T18 | PLANNED | `eska history` | [05-safe-vcs.md](05-safe-vcs.md) |
+| T19 | PLANNED | Designer XML object model | [06-locking-and-xml.md](06-locking-and-xml.md) |
+| T20 | PLANNED | Semantic `ChangeSet` | [07-semantic-changes.md](07-semantic-changes.md) |
+| T21 | PLANNED | Semantic diff | [07-semantic-changes.md](07-semantic-changes.md) |
+| T22 | PLANNED | Генератор commit message | [07-semantic-changes.md](07-semantic-changes.md) |
+| T23 | PLANNED | Спецификация test backend | [08-quality.md](08-quality.md) |
+| T24 | PLANNED | `affected` analysis | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T25 | PLANNED | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T26 | PLANNED | `eska fmt` | [08-quality.md](08-quality.md) |
 | T27 | PLANNED | `eska check` | [08-quality.md](08-quality.md) |
 | T28 | PLANNED | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T29 | PLANNED | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T30 | PLANNED | Development environments | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T31 | PLANNED | `apply` / `run` | [09-build-and-runtime.md](09-build-and-runtime.md) |
-| T32 | PLANNED | `affected` analysis | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T33 | PLANNED | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T34 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T35 | PLANNED | CI integration | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T36 | PLANNED | VS Code extension | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T32 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T33 | PLANNED | CI integration | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T34 | PLANNED | `eska switch` | [05-safe-vcs.md](05-safe-vcs.md) |
+| T35 | PLANNED | `shelve` / `unshelve` / `shelves` | [05-safe-vcs.md](05-safe-vcs.md) |
+| T36 | PLANNED | `eska restore` | [05-safe-vcs.md](05-safe-vcs.md) |
+| T37 | PLANNED | `eska sync` / `continue` / `abort` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T38 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T39 | PLANNED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
+| T40 | PLANNED | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T41 | PLANNED | VS Code extension | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в

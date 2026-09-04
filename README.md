@@ -191,8 +191,8 @@ eska status --format json
 Human output локализован: подписи выровнены по колонке, а в TTY секции и состояния
 получают цветовые акценты. При перенаправлении ANSI-коды не выводятся; непустой
 `NO_COLOR` отключает оформление. JSON не зависит от локали, содержит
-`schema_version = 1` и считается стабильным API. До реализации locking в T21 поле
-`locks` явно содержит `available: false` и `count: null`. Команды `sync`,
+`schema_version = 1` и считается стабильным API. До реализации locking в T39 поле
+`locks` явно содержит `available: false` и `count: null`. Команды `clone`, `sync`,
 `publish`, `finish` и сборка пока не реализованы.
 
 ## Просмотр изменений
@@ -303,7 +303,7 @@ index; при ошибке staging, editor, hook или commit исходный 
 соблюдать repository config, editor и hooks. Техническая staging area остаётся
 внутренней деталью. Коды `save`: `0` — commit создан; `1` — ошибка preflight,
 Git или проекта; `2` — ошибка аргументов CLI. `--interactive`, `--auto` и
-генерация сообщения отложены до T25.
+генерация сообщения отложены до T22.
 
 ## Запуск задачи
 

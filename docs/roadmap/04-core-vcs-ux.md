@@ -92,7 +92,7 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
 - не-UTF-8 Git-пути не теряются: JSON использует обратимое percent-кодирование,
   human/raw — однострочное escaped-представление;
 - patch/hunks, методы BSL, элементы форм и полная semantic Designer XML model не
-  входят в эту доработку T14 и остаются в T22–T24.
+  входят в эту доработку T14 и остаются в T19–T21.
 
 **Проверено:** `cargo fmt --check`, `cargo check`,
 `cargo clippy --all-targets --all-features -- -D warnings`,
@@ -110,7 +110,7 @@ schemas, exit codes и ошибки репозитория. Ручные RU huma
 
 Сохранять точно выбранный ChangeSet. Поддержать `-m`; без него допустим configured
 editor. Не заставлять пользователя понимать staging и не анализировать изменения,
-которые не войдут в commit. Interactive/auto generation отложены до T25.
+которые не войдут в commit. Interactive/auto generation отложены до T22.
 
 Принятые границы T15:
 
@@ -135,26 +135,87 @@ RU/EN, `-m`, configured editor, пустой ChangeSet, detached HEAD, конф�
 byte-for-byte rollback index после отказа pre-commit hook. Ручные RU/EN сценарии
 выполнены в отдельном временном проекте playground.
 
-## T16 — `eska sync`
+## T16 — `eska clone`
 
 **Статус:** `NEXT`
-**Зависит от:** T13, T15
+**Зависит от:** T03, T07
 
-По policy выполнять fetch и rebase/merge на актуальную base. Конфликт переводит
-операцию в явное resumable state и сообщает `eska continue` / `eska abort`.
+Клонировать существующий готовый проект `eska` без требования установленного
+system Git:
 
-## T17 — `eska publish`
+```text
+eska clone <repository> [directory]
+```
+
+Границы первой версии:
+
+- clone, fetch объектов и checkout выполняются через `gix`;
+- поддерживаются URL и локальный путь, необязательный каталог назначения и
+  явное имя remote; по умолчанию remote называется `origin`;
+- каталог назначения должен отсутствовать: команда не смешивает clone с файлами
+  пользователя и не перезаписывает существующий repository;
+- после checkout проект проходит обычный discovery и validation `eska.toml`;
+  repository без валидного проекта `eska` отклоняется;
+- при ошибке удаляется только каталог, созданный текущим запуском;
+- `clone` не выполняет `init`, не исправляет чужую конфигурацию и не добавляет
+  shallow clone, выбор ветки или submodules без отдельной задачи;
+- локальные repositories покрываются integration-тестами; transport,
+  credentials, filters/LFS и безопасные diagnostics проверяются соразмерно
+  фактически поддержанной матрице.
+
+## T17 — Gix-first миграция реализованных VCS-операций
+
+**Статус:** `PLANNED`
+**Зависит от:** T13, T15, T16
+
+Проверить все production-вызовы system Git и перенести на `gix` каждую операцию,
+для которой сохраняются текущие safety guarantees и observable behavior.
+
+Минимальный обязательный scope:
+
+- вынести из T16 общий network/transport слой и выполнять fetch в `eska start`
+  через `gix`;
+- считать ancestry и обновлять неактивную base ref fast-forward через `gix`;
+- не выполнять fetch, если remote из workflow policy отсутствует в repository;
+  локальный старт продолжает использовать локальную base;
+- оставить system Git только для конкретно перечисленных capability gaps —
+  безопасной смены активного worktree/index, hooks, configured editor, signing,
+  LFS либо неподдержанного transport/credential сценария;
+- capability fallback не должен срабатывать как безусловный повтор после любой
+  ошибки `gix`; причина выбора fallback структурирована и тестируется;
+- system Git остаётся только в едином infrastructure layer, без parsing human
+  output. Итог задачи явно перечисляет все оставшиеся вызовы и причины.
+
+T17 не меняет публичный CLI и не расширяет поведение `start` / `save`.
+
+## T37 — `eska sync` / `eska continue` / `eska abort`
+
+**Статус:** `PLANNED`
+**Зависит от:** T13, T15, T17
+
+По policy синхронизировать текущую task branch с base. Если настроенный remote
+существует, сначала получить его состояние через gix-first слой T17. Если remote
+не настроен, не выполнять fetch и синхронизироваться с локальной base.
+
+`sync`, `continue` и `abort` реализуются одной задачей: конфликт не должен
+оставлять пользователя без штатного способа завершить или отменить операцию.
+Команды определяют реальное repository state, не хранят его ложную копию и явно
+показывают последствия abort. Rebase/merge и их продолжение допустимо выполнять
+system Git через изолированный infrastructure layer, пока `gix` не предоставляет
+равноценную безопасную orchestration worktree/index.
+
+## T38 — `eska publish`
 
 **Статус:** `PLANNED`  
-**Зависит от:** T16
+**Зависит от:** T37
 
 Preflight, требуемая policy синхронизация, push и настройка upstream. Создание
 MR/PR и provider integrations оставить следующей задачей.
 
-## T18 — `eska finish`
+## T40 — `eska finish`
 
 **Статус:** `PLANNED`  
-**Зависит от:** T17
+**Зависит от:** T38, T39
 
 Проверить отсутствие unsaved work и выполнение publish/integration policy; снять
 locks, перейти на base, обновить её, удалить локальную task branch и очистить task
