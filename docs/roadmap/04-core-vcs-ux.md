@@ -69,6 +69,9 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
 - команда читает текущие состояния HEAD → index и index → worktree через
   существующий `gix` repository layer, не запускает системный Git и ничего не
   изменяет;
+- optional revisions сравнивают локально доступные committed trees: одна revision
+  сравнивается с HEAD, две — друг с другом; `--since-branch-point` использует
+  merge base, не выполняя fetch и не включая изменения рабочей копии;
 - file-level результат ограничен корнем проекта, пути относительно проекта
   отсортированы детерминированно; workflow для diff не требуется;
 - human-режим локализован, распознанные пути сгруппированы по типу метаданных и
@@ -81,6 +84,8 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
 - raw использует две стабильные колонки состояний,
   JSON schema версии 1 содержит массив файлов с `path`, `path_encoding`, `index`
   и `worktree`, не зависит от locale и не меняется из-за human-проекции;
+- revision raw использует одну колонку состояния, а JSON schema версии 2 содержит
+  explicit comparison endpoints, strategy, resolved commit IDs и file `change`;
 - не-UTF-8 Git-пути не теряются: JSON использует обратимое percent-кодирование,
   human/raw — однострочное escaped-представление;
 - patch/hunks, методы BSL, элементы форм и полная semantic Designer XML model не
@@ -89,10 +94,11 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
 **Проверено:** `cargo fmt --check`, `cargo check`,
 `cargo clippy --all-targets --all-features -- -D warnings`,
 `ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test` — успешно
-(79 unit, 84 integration). CLI end-to-end проверяет RU/EN, чистый проект,
+(79 unit, 89 integration). CLI end-to-end проверяет RU/EN, чистый проект,
 staged/unstaged/untracked, вложенный project scope, отсутствие workflow,
-human/raw/JSON, стабильную JSON-схему, exit codes и ошибки репозитория. Ручные RU
-human и EN JSON/raw сценарии выполнены в отдельных временных проектах playground.
+human/raw/JSON, сравнение веток, тегов и commits, merge base, стабильные JSON
+schemas, exit codes и ошибки репозитория. Ручные RU human и EN JSON/raw сценарии
+выполнены в отдельных временных проектах playground.
 
 ## T15 — `eska save`
 

@@ -53,6 +53,7 @@ src/
     ├── mod.rs                   # граница VCS
     ├── git.rs                   # общее открытие и инициализация Git через gix
     ├── command.rs               # системный Git для network/mutating операций
+    ├── diff.rs                  # разрешение revisions и tree-to-tree diff через gix
     ├── repository.rs            # discovery, HEAD, refs и ограниченная история
     ├── status.rs                # изменения HEAD/index/worktree и changed paths
     ├── workflow.rs              # выбор preset, custom overrides и разрешение policy
@@ -65,7 +66,7 @@ tests/
 ├── integration.rs               # точка входа интеграционных тестов
 ├── cli/{diff,init,new,start,status,localization}.rs
 ├── project/{discovery,start,templates,workflow}.rs
-├── vcs/{repository,status,support}.rs # реальные Git-репозитории и fixture-команды
+├── vcs/{diff,repository,status,support}.rs # реальные Git-репозитории и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
 
@@ -119,19 +120,22 @@ tests/
   Запись и откат принадлежат конкретной операции: у `new` — новый каталог,
   у `init` — только созданные этим запуском config и Git-метаданные.
 - Git находится в `vcs/`: `git.rs` открывает и инициализирует репозитории,
-  `repository.rs` возвращает HEAD, refs, историю и ahead/behind, `status.rs` сравнивает
-  HEAD/index/worktree. Состояние файлов не требует разбора Designer XML.
+  `repository.rs` возвращает HEAD, refs, историю и ahead/behind, `status.rs`
+  сравнивает HEAD/index/worktree, а `diff.rs` разрешает commit-like revisions,
+  merge base и сравнивает committed trees. Состояние файлов не требует разбора
+  Designer XML.
 - `project/status.rs` объединяет configuration, workflow policy и read-only Git
   в снимок проекта. `cli/commands/status.rs` только локализует human presentation
   или сериализует стабильную JSON-схему версии 1.
 - `project/diff.rs` отбирает изменения внутри корня проекта и переводит пути в
-  project-relative вид, сохраняя отдельные состояния index и worktree.
+  project-relative вид: workspace сохраняет отдельные состояния index/worktree,
+  revision comparison — исходные и resolved endpoints и одно состояние файла.
   `project/metadata.rs` распознаёт Designer XML ownership для human-вывода,
   сворачивает служебные payload-файлы в ближайший узел Конфигуратора и сравнивает
   свойства дочерних объектов только в изменённых главных XML-файлах.
-  `cli/commands/diff.rs` группирует logical identities и отдельно формирует
-  неизменённые raw и стабильный JSON версии 1. Полная object model, mapping всех
-  путей объекта и semantic-анализ BSL/форм остаются задачами T22–T24.
+  `cli/commands/diff.rs` группирует logical identities и отдельно формирует raw,
+  workspace JSON версии 1 и revision JSON версии 2. Полная object model, mapping
+  всех путей объекта и semantic-анализ BSL/форм остаются задачами T22–T24.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   обновляет base только fast-forward и активирует новую task-ветку.
   `cli/commands/start.rs` отвечает только за аргументы и RU/EN presentation.
