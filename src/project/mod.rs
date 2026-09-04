@@ -4,6 +4,7 @@ pub mod create;
 pub mod discovery;
 pub mod init;
 pub mod model;
+pub mod status;
 pub mod templates;
 
 pub use model::{

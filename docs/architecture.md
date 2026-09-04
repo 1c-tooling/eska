@@ -17,6 +17,7 @@ src/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
+│   │   ├── status.rs            # eska status: human/JSON presentation
 │   │   └── validate.rs          # проверка при запуске без подкоманды
 │   ├── diagnostics.rs           # общие сообщения ошибок проекта и config
 │   ├── interactive/
@@ -35,6 +36,7 @@ src/
 │   ├── create.rs                # создание нового каталога и откат
 │   ├── init.rs                  # обнаружение выгрузки, подключение и откат
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
+│   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
 │   └── templates.rs             # план файлов встроенного каркаса
 ├── config/
 │   ├── mod.rs                   # интерфейс config и имя eska.toml
@@ -55,7 +57,7 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{init,new,localization}.rs
+├── cli/{init,new,status,localization}.rs
 ├── project/{discovery,templates,workflow}.rs
 ├── vcs/{repository,status,support}.rs # реальные Git-репозитории и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
@@ -72,12 +74,14 @@ tests/
 |---|---|
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
+| Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Подключить новую явно запрошенную команду | [`src/cli/commands/mod.rs`](../src/cli/commands/mod.rs) |
 | Изменить общий `--help`, `--lang`, `--project-dir` | [`src/cli/args.rs`](../src/cli/args.rs) |
 | Изменить подключение существующего проекта | [`src/project/init.rs`](../src/project/init.rs): `inspect` — без записи, `apply` — применение |
 | Изменить создание проекта или откат | [`src/project/create.rs`](../src/project/create.rs) |
 | Изменить состав создаваемых файлов | [`src/project/templates.rs`](../src/project/templates.rs) |
 | Изменить поиск корня и проверку исходников | [`src/project/discovery.rs`](../src/project/discovery.rs) |
+| Изменить расчёт состояния проекта и readiness | [`src/project/status.rs`](../src/project/status.rs) |
 | Изменить схему `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
 | Изменить распознавание типа выгрузки | [`src/designer_xml.rs`](../src/designer_xml.rs) |
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
@@ -105,8 +109,11 @@ tests/
   Запись и откат принадлежат конкретной операции: у `new` — новый каталог,
   у `init` — только созданные этим запуском config и Git-метаданные.
 - Git находится в `vcs/`: `git.rs` открывает и инициализирует репозитории,
-  `repository.rs` возвращает HEAD, refs и историю, `status.rs` сравнивает
+  `repository.rs` возвращает HEAD, refs, историю и ahead/behind, `status.rs` сравнивает
   HEAD/index/worktree. Состояние файлов не требует разбора Designer XML.
+- `project/status.rs` объединяет configuration, workflow policy и read-only Git
+  в снимок проекта. `cli/commands/status.rs` только локализует human presentation
+  или сериализует стабильную JSON-схему версии 1.
 - `workflow.rs` хранит выбор preset, проверенные overrides и разрешает доступные
   встроенные policies; `workflow/policy.rs` проверяет поля, содержит defaults
   Trunk, Git Flow и GitHub Flow, применяет overrides и строит декларативный план

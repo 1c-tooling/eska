@@ -5,15 +5,23 @@
 
 ## T12 — `eska status`
 
-**Статус:** `NEXT`
+**Статус:** `DONE`
 
 Показывать состояние проекта, workflow, task/branch/base, ChangeSet summary,
 ahead/behind, locks и readiness к save/publish. Это не копия `git status`.
 Обязателен `--format json` со schema tests.
 
+Принятые границы T12:
+
+- task определяется по точному совпадению текущей ветки с task-шаблоном policy;
+- ahead/behind считается относительно remote-tracking ref базовой ветки без fetch;
+- ChangeSet остаётся file-level и ограничивается корнем проекта внутри worktree;
+- отсутствующие remote base и locking представлены как недоступные данные, а не нули;
+- JSON schema версии 1 не локализуется и проверяется end-to-end в обеих локалях.
+
 ## T13 — `eska start <task>`
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T12
 
 Выполнять policy plan: fetch/update base, создать и переключить task branch,

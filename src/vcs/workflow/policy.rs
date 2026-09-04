@@ -4,6 +4,8 @@ use gix::bstr::ByteSlice;
 
 use super::WorkflowPreset;
 
+const TASK_PLACEHOLDER: &str = "{task}";
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum WorkingBranchPolicy {
     TaskBranch,
@@ -343,6 +345,32 @@ pub struct TaskPlan {
 }
 
 impl WorkflowPolicy {
+    /// Return the branch from which task work is based.
+    #[must_use]
+    pub fn base_branch(&self) -> &str {
+        &self.base_branch
+    }
+
+    /// Return the fully qualified remote-tracking reference for the base branch.
+    #[must_use]
+    pub fn remote_base_reference(&self) -> String {
+        format!("refs/remotes/{}/{}", self.remote, self.base_branch)
+    }
+
+    /// Extract a task ID only when the branch exactly matches this policy's task template.
+    #[must_use]
+    pub fn task_id<'a>(&self, branch: &'a str) -> Option<&'a str> {
+        let (prefix, suffix) = self.task_branch_template.split_once(TASK_PLACEHOLDER)?;
+        let task = branch.strip_prefix(prefix)?.strip_suffix(suffix)?;
+        if task.is_empty() || task.contains('/') {
+            return None;
+        }
+        self.plan(task)
+            .ok()
+            .filter(|plan| plan.working_branch == branch)
+            .map(|_| task)
+    }
+
     /// Resolve task naming and targets with no filesystem, clock, locale or Git mutations.
     /// Task IDs are literal single path components; no implicit slugification is performed.
     ///
@@ -425,6 +453,21 @@ mod tests {
         );
         assert_eq!(base.plan("FI-1234").unwrap(), plan);
         assert_eq!(base, original);
+    }
+
+    #[test]
+    fn task_id_requires_an_exact_task_branch_match() {
+        let policy = WorkflowPreset::GitFlow.policy().unwrap();
+
+        assert_eq!(policy.task_id("feature/FI-1234"), Some("FI-1234"));
+        assert_eq!(policy.task_id("develop"), None);
+        assert_eq!(policy.task_id("feature/team/FI-1234"), None);
+        assert_eq!(policy.task_id("feature/"), None);
+        assert_eq!(policy.base_branch(), "develop");
+        assert_eq!(
+            policy.remote_base_reference(),
+            "refs/remotes/origin/develop"
+        );
     }
 
     #[test]

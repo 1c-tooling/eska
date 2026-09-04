@@ -53,12 +53,20 @@ pub struct Commit {
     pub message: BString,
 }
 
+/// Commit counts unique to HEAD and to a comparison reference.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Divergence {
+    pub ahead: usize,
+    pub behind: usize,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operation {
     Head,
     References,
     History,
     Status,
+    Divergence,
 }
 
 #[derive(Debug)]
@@ -223,5 +231,45 @@ impl Repository {
                 })
             })
             .collect()
+    }
+
+    /// Count commits unique to HEAD and to a fully qualified comparison reference.
+    /// Missing references and unborn HEAD produce no comparison data.
+    ///
+    /// # Errors
+    /// Returns a HEAD error or `Operation::Divergence` for malformed refs or commit graphs.
+    pub fn divergence(&self, reference: &str) -> Result<Option<Divergence>, Error> {
+        let Some(head) = self.head()?.id() else {
+            return Ok(None);
+        };
+        let Some(mut reference) = self
+            .inner
+            .try_find_reference(reference)
+            .map_err(|source| Error::operation(Operation::Divergence, source))?
+        else {
+            return Ok(None);
+        };
+        let other = reference
+            .peel_to_commit()
+            .map_err(|source| Error::operation(Operation::Divergence, source))?
+            .id;
+
+        Ok(Some(Divergence {
+            ahead: self.unique_commit_count(head, other)?,
+            behind: self.unique_commit_count(other, head)?,
+        }))
+    }
+
+    fn unique_commit_count(&self, tip: ObjectId, hidden: ObjectId) -> Result<usize, Error> {
+        let mut walk = self
+            .inner
+            .rev_walk([tip])
+            .with_hidden([hidden])
+            .all()
+            .map_err(|source| Error::operation(Operation::Divergence, source))?;
+        walk.try_fold(0_usize, |count, item| {
+            item.map(|_| count + 1)
+                .map_err(|source| Error::operation(Operation::Divergence, source))
+        })
     }
 }

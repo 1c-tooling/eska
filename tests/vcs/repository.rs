@@ -1,6 +1,6 @@
 use std::fs;
 
-use eska::vcs::repository::{Error, Head, OpenError, ReferenceTarget, Repository};
+use eska::vcs::repository::{Divergence, Error, Head, OpenError, ReferenceTarget, Repository};
 
 use super::support::{commit, git, repository};
 use crate::support::TestDir;
@@ -94,6 +94,47 @@ fn bounded_history_traverses_both_merge_parents_once() {
     assert!(history[3].parents.is_empty());
     assert_eq!(repo.history(2).unwrap(), history[..2]);
     assert!(repo.history(0).unwrap().is_empty());
+}
+
+#[test]
+fn divergence_counts_commits_unique_to_both_sides() {
+    let dir = repository();
+    let base = commit(&dir.0, "base");
+    git(&dir.0, &["checkout", "-b", "remote-base"]);
+    let remote = commit(&dir.0, "remote");
+    git(
+        &dir.0,
+        &[
+            "update-ref",
+            "refs/remotes/origin/main",
+            &remote.to_string(),
+        ],
+    );
+    git(&dir.0, &["checkout", "main"]);
+    commit(&dir.0, "local one");
+    commit(&dir.0, "local two");
+
+    let repo = Repository::discover(&dir.0).unwrap();
+    assert_eq!(
+        repo.divergence("refs/remotes/origin/main").unwrap(),
+        Some(Divergence {
+            ahead: 2,
+            behind: 1
+        })
+    );
+    assert_eq!(
+        repo.divergence("refs/remotes/origin/missing").unwrap(),
+        None
+    );
+
+    git(&dir.0, &["reset", "--hard", &base.to_string()]);
+    assert_eq!(
+        repo.divergence("refs/remotes/origin/main").unwrap(),
+        Some(Divergence {
+            ahead: 0,
+            behind: 1
+        })
+    );
 }
 
 #[test]

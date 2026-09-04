@@ -113,7 +113,7 @@ mod tests {
                 .get_subcommands()
                 .map(clap::Command::get_name)
                 .collect();
-            assert_eq!(names, ["new", "init"]);
+            assert_eq!(names, ["new", "init", "status"]);
             command.debug_assert();
         }
     }
