@@ -550,10 +550,12 @@ remote templates
 eska clone <repository> [directory]
 ```
 
-Первая версия использует `gix` для clone/fetch/checkout, принимает URL или
-локальный путь и не требует установленного system Git. Каталог назначения должен
-отсутствовать. После checkout выполняются обычные discovery и validation
-`eska.toml`; при ошибке удаляется только каталог, созданный текущим запуском.
+Первая версия использует `gix` для clone/fetch/checkout и принимает URL или
+локальный путь. HTTP(S) transport встроен и не требует system Git; локальный и
+SSH transport наследуют фактическое поведение upstream `gix clone` и используют
+protocol helpers `git-upload-pack`/`ssh`. Каталог назначения должен отсутствовать.
+После checkout выполняются обычные discovery и validation `eska.toml`; при
+ошибке удаляется только каталог, созданный текущим запуском.
 
 `clone` не совмещается с `init`, не исправляет чужой проект и пока не добавляет
 shallow clone, выбор ветки и submodules. Имя remote по умолчанию — `origin`, с

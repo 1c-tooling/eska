@@ -25,12 +25,14 @@ all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 nursery = { level = "warn", priority = -1 }
 cargo = { level = "warn", priority = -1 }
+# Curl/Rustls and existing cross-platform crates pin incompatible windows-sys lines.
+multiple_crate_versions = { level = "allow", priority = 1 }
 
 [dependencies]
 clap = { version = "4.6.6", features = ["derive", "string"] }
 crossterm = { version = "0.29.0", default-features = false, features = ["events", "windows", "bracketed-paste"] }
 fluent = "0.17.0"
-gix = { version = "0.87.1", default-features = false, features = ["revision", "sha1", "status"] }
+gix = { version = "0.87.1", default-features = false, features = ["blocking-http-transport-curl-rustls", "max-performance", "revision", "sha1", "status", "worktree-mutation"] }
 roxmltree = { version = "0.21.1", default-features = false, features = ["std"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"

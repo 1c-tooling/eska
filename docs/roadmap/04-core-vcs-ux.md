@@ -137,11 +137,10 @@ byte-for-byte rollback index после отказа pre-commit hook. Ручны
 
 ## T16 — `eska clone`
 
-**Статус:** `NEXT`
+**Статус:** `DONE`
 **Зависит от:** T03, T07
 
-Клонировать существующий готовый проект `eska` без требования установленного
-system Git:
+Клонировать существующий готовый проект `eska` через transport `gix`:
 
 ```text
 eska clone <repository> [directory]
@@ -150,8 +149,11 @@ eska clone <repository> [directory]
 Границы первой версии:
 
 - clone, fetch объектов и checkout выполняются через `gix`;
+- для pack и checkout включена параллельная обработка `gix`;
 - поддерживаются URL и локальный путь, необязательный каталог назначения и
   явное имя remote; по умолчанию remote называется `origin`;
+- HTTP(S) не требует system Git; локальный и SSH transport используют внешние
+  protocol helpers `git-upload-pack`/`ssh`, как upstream `gix clone`;
 - каталог назначения должен отсутствовать: команда не смешивает clone с файлами
   пользователя и не перезаписывает существующий repository;
 - после checkout проект проходит обычный discovery и validation `eska.toml`;
@@ -163,9 +165,34 @@ eska clone <repository> [directory]
   credentials, filters/LFS и безопасные diagnostics проверяются соразмерно
   фактически поддержанной матрице.
 
+Решения T16:
+
+- production-путь повторяет upstream `gitoxide-core`: подготовка clone, fetch,
+  checkout и проверка outcome выполняются API `gix 0.87.1`;
+- `gix/max-performance` включает параллельные pack/index/checkout операции;
+  HTTP(S) использует Curl/Rustls без системного OpenSSL;
+- destination сначала захватывается эксклюзивным созданием каталога; при любой
+  обычной ошибке fetch, checkout или project validation удаляется только он;
+- непустые checkout collisions/errors считаются незавершённым checkout, даже
+  когда низкоуровневый вызов `gix` вернул `Ok`;
+- local/file и SSH сохраняют transport-семантику upstream и требуют доступный
+  `git-upload-pack`/`ssh`; отсутствие helper диагностируется без утечки URL и с
+  полным rollback;
+- `multiple_crate_versions` разрешён точечно: Curl/Rustls и существующие
+  cross-platform dependencies требуют несовместимые Windows-only линии
+  `windows-sys`, которые нельзя унифицировать из приложения.
+
+Проверки T16: `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`,
+`ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test` — успешно
+(82 unit, 102 integration). Clone-сценарии покрывают RU/EN, local path,
+`file://`, custom remote, существующий destination, невалидный `eska.toml`,
+отсутствующий protocol helper и rollback. Ручные RU/EN clone/status выполнены в
+отдельном временном каталоге playground.
+
 ## T17 — Gix-first миграция реализованных VCS-операций
 
-**Статус:** `PLANNED`
+**Статус:** `NEXT`
 **Зависит от:** T13, T15, T16
 
 Проверить все production-вызовы system Git и перенести на `gix` каждую операцию,

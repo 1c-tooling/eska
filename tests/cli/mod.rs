@@ -1,3 +1,4 @@
+mod clone;
 mod diff;
 mod init;
 mod localization;

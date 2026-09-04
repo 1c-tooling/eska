@@ -146,6 +146,25 @@ eska init existing-project --source sources/designer --workflow github-flow --no
 отмена, `2` — неверный/недостающий workflow либо ошибка синтаксиса CLI. Help,
 сообщения и TUI доступны на RU/EN; ошибки идут в stderr.
 
+## Клонирование проекта
+
+```bash
+eska clone https://example.org/team/project.git
+eska clone ../project.git working-copy --remote upstream
+```
+
+`clone` создаёт только новый каталог, получает repository и разворачивает рабочее
+дерево через `gix`, затем проверяет `eska.toml` обычным project discovery. Имя
+каталога по умолчанию берётся из адреса repository без `.git`, имя remote —
+`origin`. Существующий путь не изменяется. При ошибке удаляется только каталог,
+созданный текущим запуском.
+
+Для HTTP(S) используется встроенный Curl/Rustls transport. Параллельная обработка
+pack и checkout включена через `gix/max-performance`. Локальные пути и SSH
+используют protocol helpers `git-upload-pack`/`ssh`, как upstream `gix clone`;
+для этих transport соответствующая внешняя программа должна быть доступна в
+`PATH`. Shallow clone, выбор ветки и submodules пока не поддерживаются.
+
 ## Проверка проекта
 
 `eska` ищет ближайший `eska.toml` вверх от текущего каталога и проверяет настройки
@@ -192,7 +211,7 @@ Human output локализован: подписи выровнены по ко
 получают цветовые акценты. При перенаправлении ANSI-коды не выводятся; непустой
 `NO_COLOR` отключает оформление. JSON не зависит от локали, содержит
 `schema_version = 1` и считается стабильным API. До реализации locking в T39 поле
-`locks` явно содержит `available: false` и `count: null`. Команды `clone`, `sync`,
+`locks` явно содержит `available: false` и `count: null`. Команды `sync`,
 `publish`, `finish` и сборка пока не реализованы.
 
 ## Просмотр изменений
