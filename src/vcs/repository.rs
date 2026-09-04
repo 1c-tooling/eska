@@ -197,6 +197,12 @@ impl Repository {
         self.inner.git_dir()
     }
 
+    /// Return this worktree's effective index path, including linked worktrees.
+    #[must_use]
+    pub fn index_path(&self) -> PathBuf {
+        self.inner.index_path()
+    }
+
     /// Read HEAD and validate its commit target, distinguishing unborn and detached states.
     ///
     /// # Errors

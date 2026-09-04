@@ -15,6 +15,8 @@ pub enum Operation {
     Ancestry,
     UpdateBase,
     Switch,
+    Stage,
+    Commit,
 }
 
 pub enum Error {
@@ -125,6 +127,55 @@ impl<'a> Executor<'a> {
         )
     }
 
+    /// Stage all tracked and untracked changes below the executor directory.
+    ///
+    /// # Errors
+    /// Returns a structured process error when Git cannot update the index.
+    pub fn stage_all(&self) -> Result<(), Error> {
+        self.success(Operation::Stage, ["add", "--all", "--", "."])
+    }
+
+    /// Commit only paths below the executor directory, leaving staged sibling paths untouched.
+    ///
+    /// When `message` is absent Git opens its configured editor with terminal I/O inherited.
+    ///
+    /// # Errors
+    /// Returns a structured process error when Git cannot create the commit.
+    pub fn commit_only(&self, message: Option<&str>) -> Result<(), Error> {
+        if let Some(message) = message {
+            return self.success(
+                Operation::Commit,
+                [
+                    "commit",
+                    "--quiet",
+                    "--only",
+                    "--message",
+                    message,
+                    "--",
+                    ".",
+                ],
+            );
+        }
+
+        let mut command = self.command();
+        let status = command
+            .args(["commit", "--quiet", "--only", "--", "."])
+            .status()
+            .map_err(|source| Error::Spawn {
+                operation: Operation::Commit,
+                source,
+            })?;
+        if status.success() {
+            Ok(())
+        } else {
+            Err(Error::Failed {
+                operation: Operation::Commit,
+                status,
+                stderr: BString::default(),
+            })
+        }
+    }
+
     fn success<I, S>(&self, operation: Operation, args: I) -> Result<(), Error>
     where
         I: IntoIterator<Item = S>,
@@ -147,14 +198,18 @@ impl<'a> Executor<'a> {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let mut command = Command::new("git");
-        remove_repository_redirects(&mut command);
-        command
-            .current_dir(self.work_dir)
+        self.command()
             .env("LC_ALL", "C")
             .args(args)
             .output()
             .map_err(|source| Error::Spawn { operation, source })
+    }
+
+    fn command(&self) -> Command {
+        let mut command = Command::new("git");
+        remove_repository_redirects(&mut command);
+        command.current_dir(self.work_dir).env("LC_ALL", "C");
+        command
     }
 }
 

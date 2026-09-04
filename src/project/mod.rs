@@ -7,6 +7,7 @@ pub mod discovery;
 pub mod init;
 pub(crate) mod metadata;
 pub mod model;
+pub mod save;
 pub mod start;
 pub mod status;
 pub mod templates;

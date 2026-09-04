@@ -148,5 +148,6 @@ const fn command_error_key(error: &command::Error) -> &'static str {
         command::Operation::Ancestry => "start-ancestry-error",
         command::Operation::UpdateBase => "start-update-base-error",
         command::Operation::Switch => "start-switch-error",
+        command::Operation::Stage | command::Operation::Commit => "start-repository-error",
     }
 }
