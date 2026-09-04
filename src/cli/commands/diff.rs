@@ -9,8 +9,9 @@ use serde::Serialize;
 use crate::{
     cli::{diagnostics, localization::Localizer},
     project::{
-        diff::{self, DiffError, FileChange, ProjectDiff},
+        diff::{self, DiffError, DisplayChange, DisplayTarget, ProjectDiff},
         discovery,
+        metadata::MetadataPath,
     },
     vcs::status::Change,
 };
@@ -97,31 +98,60 @@ fn present_error(error: &DiffError, localizer: &Localizer) -> String {
 
 /// Render readable one-line descriptions while retaining index/worktree distinctions.
 fn render_human(diff: &ProjectDiff, localizer: &Localizer) -> String {
-    if diff.files.is_empty() {
+    if diff.display.is_empty() {
         return localizer.text("diff-clean");
     }
     let mut lines = vec![localizer.text("diff-files")];
-    lines.extend(diff.files.iter().map(|file| {
-        format!(
-            "  {}  {}",
-            human_states(file, localizer),
-            display_path(file.path.as_bstr())
-        )
-    }));
+    let mut groups: std::collections::BTreeMap<String, Vec<(String, &DisplayChange)>> =
+        std::collections::BTreeMap::new();
+    let mut other_files = Vec::new();
+    for change in &diff.display {
+        match &change.target {
+            DisplayTarget::Metadata(path) => groups
+                .entry(metadata_kind(path.group, localizer))
+                .or_default()
+                .push((render_metadata_path(path, localizer), change)),
+            DisplayTarget::File(path) => {
+                other_files.push((display_path(path.as_bstr()), change));
+            }
+        }
+    }
+    for (group, mut changes) in groups {
+        changes.sort_by(|left, right| left.0.cmp(&right.0));
+        lines.push(String::new());
+        lines.push(format!("{group}:"));
+        lines.extend(changes.into_iter().map(|(target, change)| {
+            format!(
+                "  {}  {target}",
+                human_states(change.index, change.worktree, localizer)
+            )
+        }));
+    }
+    if !other_files.is_empty() {
+        other_files.sort_by(|left, right| left.0.cmp(&right.0));
+        lines.push(String::new());
+        lines.push(format!("{}:", localizer.text("diff-other-files")));
+        lines.extend(other_files.into_iter().map(|(target, change)| {
+            format!(
+                "  {}  {target}",
+                human_states(change.index, change.worktree, localizer)
+            )
+        }));
+    }
     lines.join("\n")
 }
 
 /// Describe every populated comparison stage for one path.
-fn human_states(file: &FileChange, localizer: &Localizer) -> String {
+fn human_states(index: Option<Change>, worktree: Option<Change>, localizer: &Localizer) -> String {
     let mut states = Vec::with_capacity(2);
-    if let Some(change) = file.index {
+    if let Some(change) = index {
         states.push(format!(
             "{} ({})",
             localizer.text(change_key(change)),
             localizer.text("diff-index")
         ));
     }
-    if let Some(change) = file.worktree {
+    if let Some(change) = worktree {
         states.push(format!(
             "{} ({})",
             localizer.text(change_key(change)),
@@ -129,6 +159,25 @@ fn human_states(file: &FileChange, localizer: &Localizer) -> String {
         ));
     }
     states.join(", ")
+}
+
+/// Render a logical metadata identity in Configurator notation.
+fn render_metadata_path(path: &MetadataPath, localizer: &Localizer) -> String {
+    path.parts
+        .iter()
+        .map(|part| {
+            let kind = metadata_kind(part.kind, localizer);
+            part.name
+                .as_ref()
+                .map_or_else(|| kind.clone(), |name| format!("{kind}.{name}"))
+        })
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
+/// Resolve the localized Configurator name of a stable metadata kind.
+fn metadata_kind(kind: &str, localizer: &Localizer) -> String {
+    localizer.text(&format!("diff-metadata-{kind}"))
 }
 
 /// Render a compact locale-independent two-column representation.
@@ -278,9 +327,14 @@ const fn change_name(change: Change) -> &'static str {
 mod tests {
     use gix::bstr::{BString, ByteSlice};
 
-    use super::{change_name, display_path, json_path, raw_code, render_raw};
+    use super::{change_name, display_path, json_path, raw_code, render_human, render_raw};
     use crate::{
-        project::diff::{FileChange, ProjectDiff},
+        cli::localization::{Locale, Localizer},
+        project::{
+            ProjectType,
+            diff::{DisplayChange, DisplayTarget, FileChange, ProjectDiff},
+            metadata,
+        },
         vcs::status::Change,
     };
 
@@ -312,6 +366,7 @@ mod tests {
                 index: Some(Change::Modified),
                 worktree: Some(Change::Deleted),
             }],
+            display: Vec::new(),
         };
         assert_eq!(render_raw(&diff), "MD\tsrc/module.bsl\n");
     }
@@ -331,5 +386,52 @@ mod tests {
             json_path(b"raw-\xff".as_bstr()),
             ("%72%61%77%2D%FF".into(), "percent")
         );
+    }
+
+    /// Human output localizes Configurator identities, groups them and keeps other files last.
+    #[test]
+    fn human_output_groups_logical_metadata() {
+        let catalog = metadata::from_path(
+            ProjectType::Configuration,
+            "Catalogs/Контрагенты.xml".as_bytes().as_bstr(),
+        )
+        .unwrap()
+        .with_suffix(&[metadata::MetadataPart {
+            kind: "attribute",
+            name: Some("Реквизит1".to_owned()),
+        }]);
+        let diff = ProjectDiff {
+            files: Vec::new(),
+            display: vec![
+                DisplayChange {
+                    target: DisplayTarget::Metadata(catalog),
+                    index: None,
+                    worktree: Some(Change::Modified),
+                },
+                DisplayChange {
+                    target: DisplayTarget::File("notes.txt".into()),
+                    index: None,
+                    worktree: Some(Change::Modified),
+                },
+            ],
+        };
+
+        for (locale, logical, other) in [
+            (
+                Locale::RuRu,
+                "Справочник.Контрагенты.Реквизит.Реквизит1",
+                "Прочие файлы",
+            ),
+            (
+                Locale::EnUs,
+                "Catalog.Контрагенты.Attribute.Реквизит1",
+                "Other files",
+            ),
+        ] {
+            let localizer = Localizer::try_new(locale).unwrap();
+            let output = render_human(&diff, &localizer);
+            assert!(output.contains(logical), "{output}");
+            assert!(output.find(logical).unwrap() < output.find(other).unwrap());
+        }
     }
 }

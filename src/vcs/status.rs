@@ -33,6 +33,14 @@ pub struct Status {
     pub entries: Vec<PathStatus>,
 }
 
+/// Blob snapshots used to refine a changed metadata XML file without invoking Git.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FileVersions {
+    pub head: Option<Vec<u8>>,
+    pub index: Option<Vec<u8>>,
+    pub worktree: Option<Vec<u8>>,
+}
+
 impl Status {
     #[must_use]
     pub const fn is_dirty(&self) -> bool {
@@ -76,6 +84,81 @@ impl Repository {
         Ok(Status {
             entries: paths.into_values().collect(),
         })
+    }
+
+    /// Read HEAD, index and regular worktree file contents for one repository-relative path.
+    ///
+    /// # Errors
+    /// Returns `Operation::Status` when a Git object or index cannot be read, and `Error::Io`
+    /// when the worktree path cannot be inspected or read.
+    pub fn file_versions(&self, path: &BStr) -> Result<FileVersions, Error> {
+        self.check_index_size()?;
+        let head = self.head_blob(path)?;
+        let index = self.index_blob(path)?;
+        let worktree_path = self.work_dir().join(gix::path::from_bstr(path));
+        let worktree = match fs::symlink_metadata(&worktree_path) {
+            Ok(metadata) if metadata.file_type().is_file() => {
+                Some(fs::read(&worktree_path).map_err(|source| Error::Io {
+                    path: worktree_path.clone(),
+                    source,
+                })?)
+            }
+            Ok(_) => None,
+            Err(source) if source.kind() == io::ErrorKind::NotFound => None,
+            Err(source) => {
+                return Err(Error::Io {
+                    path: worktree_path,
+                    source,
+                });
+            }
+        };
+        Ok(FileVersions {
+            head,
+            index,
+            worktree,
+        })
+    }
+
+    /// Read a blob at HEAD, treating an unborn HEAD or absent path as no content.
+    fn head_blob(&self, path: &BStr) -> Result<Option<Vec<u8>>, Error> {
+        let Some(id) = self.head()?.id() else {
+            return Ok(None);
+        };
+        let commit = self
+            .inner
+            .find_commit(id)
+            .map_err(|source| Error::operation(Operation::Status, source))?;
+        let tree = commit
+            .tree()
+            .map_err(|source| Error::operation(Operation::Status, source))?;
+        let relative_path = gix::path::from_bstr(path);
+        let Some(entry) = tree
+            .lookup_entry_by_path(relative_path.as_ref())
+            .map_err(|source| Error::operation(Operation::Status, source))?
+        else {
+            return Ok(None);
+        };
+        let mut blob = self
+            .inner
+            .find_blob(entry.object_id())
+            .map_err(|source| Error::operation(Operation::Status, source))?;
+        Ok(Some(std::mem::take(&mut blob.data)))
+    }
+
+    /// Read a stage-zero or ours blob from the index, treating an absent path as no content.
+    fn index_blob(&self, path: &BStr) -> Result<Option<Vec<u8>>, Error> {
+        let index = self
+            .inner
+            .index_or_empty()
+            .map_err(|source| Error::operation(Operation::Status, source))?;
+        let Some(entry) = index.entry_by_path(path) else {
+            return Ok(None);
+        };
+        let mut blob = self
+            .inner
+            .find_blob(entry.id)
+            .map_err(|source| Error::operation(Operation::Status, source))?;
+        Ok(Some(std::mem::take(&mut blob.data)))
     }
 
     fn check_index_size(&self) -> Result<(), Error> {

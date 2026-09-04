@@ -5,6 +5,7 @@ mod designer_xml;
 pub mod diff;
 pub mod discovery;
 pub mod init;
+pub(crate) mod metadata;
 pub mod model;
 pub mod start;
 pub mod status;

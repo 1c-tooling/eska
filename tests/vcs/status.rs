@@ -4,6 +4,7 @@ use eska::vcs::{
     repository::{Error, Operation, Repository},
     status::{Change, Status},
 };
+use gix::bstr::ByteSlice;
 
 use super::support::{commit, git, git_output, repository};
 
@@ -13,6 +14,28 @@ fn changes(status: &Status) -> Vec<(String, Option<Change>, Option<Change>)> {
         .iter()
         .map(|entry| (entry.path.to_string(), entry.index, entry.worktree))
         .collect()
+}
+
+/// File versions expose the three semantic comparison snapshots without changing the index.
+#[test]
+fn file_versions_read_head_index_and_worktree() {
+    let dir = repository();
+    fs::write(dir.0.join("metadata.xml"), "head\n").unwrap();
+    git(&dir.0, &["add", "metadata.xml"]);
+    git(&dir.0, &["commit", "-m", "metadata"]);
+    fs::write(dir.0.join("metadata.xml"), "index\n").unwrap();
+    git(&dir.0, &["add", "metadata.xml"]);
+    fs::write(dir.0.join("metadata.xml"), "worktree\n").unwrap();
+    let index_before = fs::read(dir.0.join(".git/index")).unwrap();
+
+    let repo = Repository::discover(&dir.0).unwrap();
+    let versions = repo
+        .file_versions(b"metadata.xml".as_bstr())
+        .expect("read file versions");
+    assert_eq!(versions.head.as_deref(), Some(b"head\n".as_slice()));
+    assert_eq!(versions.index.as_deref(), Some(b"index\n".as_slice()));
+    assert_eq!(versions.worktree.as_deref(), Some(b"worktree\n".as_slice()));
+    assert_eq!(fs::read(dir.0.join(".git/index")).unwrap(), index_before);
 }
 
 #[test]

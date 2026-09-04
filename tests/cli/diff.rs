@@ -196,3 +196,105 @@ fn raw_and_format_cannot_be_combined() {
     assert!(output.stdout.is_empty());
     assert!(String::from_utf8_lossy(&output.stderr).contains("cannot be used with"));
 }
+
+/// Human output groups Configurator identities and falls back only for ordinary files.
+#[test]
+fn human_output_groups_metadata_and_detects_changed_attributes() {
+    let (_fixture, root) = project();
+    fs::create_dir_all(root.join("src/Catalogs")).expect("create catalogs");
+    fs::create_dir_all(root.join("src/CommonModules/ОбщийМодуль1/Ext"))
+        .expect("create common module");
+    fs::create_dir_all(root.join("src/Documents/Приход/Forms/ФормаДокумента/Ext/Form"))
+        .expect("create document form");
+    fs::write(
+        root.join("src/Catalogs/Контрагенты.xml"),
+        catalog_descriptor("Исходный"),
+    )
+    .expect("write catalog descriptor");
+    fs::write(
+        root.join("src/CommonModules/ОбщийМодуль1.xml"),
+        common_module_descriptor(),
+    )
+    .expect("write common module descriptor");
+    fs::write(
+        root.join("src/CommonModules/ОбщийМодуль1/Ext/Module.bsl"),
+        "Процедура Тест()\nКонецПроцедуры\n",
+    )
+    .expect("write common module");
+    fs::write(root.join("notes.txt"), "Исходный\n").expect("write ordinary file");
+    fs::write(
+        root.join("src/Documents/Приход/Forms/ФормаДокумента/Ext/Form/Module.bsl"),
+        "Процедура ПриОткрытии()\nКонецПроцедуры\n",
+    )
+    .expect("write form module");
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-m", "metadata"]);
+
+    fs::write(
+        root.join("src/Catalogs/Контрагенты.xml"),
+        catalog_descriptor("Изменённый"),
+    )
+    .expect("change attribute");
+    fs::write(
+        root.join("src/CommonModules/ОбщийМодуль1/Ext/Module.bsl"),
+        "Процедура Тест()\n    Возврат;\nКонецПроцедуры\n",
+    )
+    .expect("change module");
+    fs::write(root.join("notes.txt"), "Изменённый\n").expect("change ordinary file");
+    fs::write(
+        root.join("src/Documents/Приход/Forms/ФормаДокумента/Ext/Form/Module.bsl"),
+        "Процедура ПриОткрытии()\n    Возврат;\nКонецПроцедуры\n",
+    )
+    .expect("change form module");
+
+    for (locale, catalog, module, form, other) in [
+        (
+            "ru",
+            "Справочник.Контрагенты.Реквизит.Реквизит1",
+            "ОбщийМодуль.ОбщийМодуль1",
+            "Документ.Приход.Форма.ФормаДокумента",
+            "Прочие файлы",
+        ),
+        (
+            "en",
+            "Catalog.Контрагенты.Attribute.Реквизит1",
+            "CommonModule.ОбщийМодуль1",
+            "Document.Приход.Form.ФормаДокумента",
+            "Other files",
+        ),
+    ] {
+        let output = eska(&root, locale, &["diff"]);
+        assert!(output.status.success(), "{output:?}");
+        let text = String::from_utf8(output.stdout).expect("UTF-8 human diff");
+        for expected in [catalog, module, form, other, "notes.txt"] {
+            assert!(text.contains(expected), "missing `{expected}` in:\n{text}");
+        }
+        let other_position = text.find(other).unwrap();
+        assert!(text.find(catalog).unwrap() < other_position, "{text}");
+        assert!(text.find(module).unwrap() < other_position, "{text}");
+        assert!(text.find(form).unwrap() < other_position, "{text}");
+        assert!(!text.contains("src/Catalogs/Контрагенты.xml"), "{text}");
+        assert!(!text.contains("src/CommonModules"), "{text}");
+        assert!(!text.contains("src/Documents"), "{text}");
+    }
+
+    let json = eska(&root, "ru", &["diff", "--format", "json"]);
+    let document: Value = serde_json::from_slice(&json.stdout).expect("valid JSON diff");
+    assert_eq!(document["files"].as_array().unwrap().len(), 4);
+    assert_eq!(
+        document["files"][0]["path"], "notes.txt",
+        "JSON remains file-based and byte-order sorted"
+    );
+}
+
+/// Build a minimal catalog descriptor whose attribute property can change independently.
+fn catalog_descriptor(comment: &str) -> String {
+    format!(
+        r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><Catalog><Properties><Name>Контрагенты</Name></Properties><ChildObjects><Attribute><Properties><Name>Реквизит1</Name><Comment>{comment}</Comment></Properties></Attribute></ChildObjects></Catalog></MetaDataObject>"#
+    )
+}
+
+/// Build a minimal common module descriptor accepted by the metadata projection.
+const fn common_module_descriptor() -> &'static str {
+    r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><CommonModule><Properties><Name>ОбщийМодуль1</Name></Properties></CommonModule></MetaDataObject>"#
+}
