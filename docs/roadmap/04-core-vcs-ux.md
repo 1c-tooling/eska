@@ -32,8 +32,12 @@ ahead/behind, locks и readiness к save/publish. Это не копия `git st
 
 - task регистрируется активной веткой по policy, без отдельного state-файла;
 - preflight требует чистоты всего worktree и attached HEAD с первым commit;
-- fetch выполняется для remote из policy, локальная base обновляется только
-  fast-forward; локальная base впереди remote сохраняется, divergence отклоняется;
+- при настроенном remote из policy выполняется fetch, локальная base обновляется
+  только fast-forward; локальная base впереди remote сохраняется, divergence
+  отклоняется;
+- отсутствие remote не блокирует локальный старт: fetch пропускается, а task-ветка
+  создаётся от локальной base; ошибка доступа к настроенному remote содержит его
+  имя, безопасный URL и сохранённую причину Git;
 - уже существующая task-ветка не переиспользуется и не перезаписывается;
 - системный Git из единого infrastructure layer используется для network/mutating
   операций без разбора human output; Git credentials и transport environment
@@ -43,11 +47,13 @@ ahead/behind, locks и readiness к save/publish. Это не копия `git st
 **Проверено:** `cargo fmt --check`, `cargo check`,
 `cargo clippy --all-targets --all-features -- -D warnings`,
 `ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test` — успешно
-(69 unit, 71 integration). Реальные Git-сценарии покрывают актуальную, отстающую,
+(69 unit, 76 integration). Реальные Git-сценарии покрывают актуальную, отстающую,
 опережающую и разошедшуюся base, существующую task-ветку и dirty worktree.
 CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stderr и
-регистрацию task через последующий JSON `status`. Ручные Trunk RU и Git Flow EN
-сценарии выполнены в отдельных временных проектах playground.
+регистрацию task через последующий JSON `status`. Отдельно проверены локальный
+старт без remote, подробная ошибка недоступного remote и редактирование пароля
+в URL. Ручные Trunk RU и Git Flow EN сценарии выполнены в отдельных временных
+проектах playground.
 
 ## T14 — `eska diff`
 

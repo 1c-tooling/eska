@@ -61,6 +61,54 @@ fn fetches_fast_forwards_base_and_switches_to_policy_branch() {
 }
 
 #[test]
+fn starts_from_local_base_when_policy_remote_is_not_configured() {
+    let root = repository();
+    let local_tip = commit(&root.0, "initial.txt");
+
+    let result = start::execute(&project(&root.0, WorkflowPreset::Trunk), "LOCAL-1")
+        .expect("start without remote");
+
+    assert_eq!(result.remote, None);
+    assert!(!result.base_updated);
+    assert_eq!(result.branch, "task/LOCAL-1");
+    assert_eq!(
+        git(&root.0, &["rev-parse", "HEAD"]).trim_ascii(),
+        local_tip.to_string().as_bytes()
+    );
+}
+
+#[test]
+fn configured_inaccessible_remote_reports_name_url_and_git_reason() {
+    let root = repository();
+    commit(&root.0, "initial.txt");
+    let missing = root.0.join("missing-remote.git");
+    git(
+        &root.0,
+        &[
+            "remote",
+            "add",
+            "origin",
+            missing.to_str().expect("UTF-8 path"),
+        ],
+    );
+
+    let error = start::execute(&project(&root.0, WorkflowPreset::Trunk), "FI-9")
+        .expect_err("inaccessible remote must fail");
+
+    assert!(matches!(
+        error,
+        start::StartError::Fetch { remote, url, reason }
+            if remote == "origin"
+                && url == missing.to_string_lossy()
+                && reason.contains("does not appear to be a git repository")
+    ));
+    assert_eq!(
+        git(&root.0, &["rev-parse", "--abbrev-ref", "HEAD"]).trim_ascii(),
+        b"main"
+    );
+}
+
+#[test]
 fn keeps_a_clean_local_base_that_is_ahead_of_remote() {
     let root = repository();
     commit(&root.0, "initial.txt");

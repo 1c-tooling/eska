@@ -2,10 +2,12 @@
 
 use std::{
     ffi::OsStr,
-    io,
+    fmt, io,
     path::Path,
     process::{Command, ExitStatus, Output},
 };
+
+use gix::bstr::BString;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operation {
@@ -15,7 +17,6 @@ pub enum Operation {
     Switch,
 }
 
-#[derive(Debug)]
 pub enum Error {
     Spawn {
         operation: Operation,
@@ -24,7 +25,27 @@ pub enum Error {
     Failed {
         operation: Operation,
         status: ExitStatus,
+        stderr: BString,
     },
+}
+
+impl fmt::Debug for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Spawn { operation, source } => formatter
+                .debug_struct("Spawn")
+                .field("operation", operation)
+                .field("source", source)
+                .finish(),
+            Self::Failed {
+                operation, status, ..
+            } => formatter
+                .debug_struct("Failed")
+                .field("operation", operation)
+                .field("status", status)
+                .finish_non_exhaustive(),
+        }
+    }
 }
 
 /// System Git boundary for operations not implemented by the embedded repository layer.
@@ -64,6 +85,7 @@ impl<'a> Executor<'a> {
             _ => Err(Error::Failed {
                 operation: Operation::Ancestry,
                 status: output.status,
+                stderr: output.stderr.into(),
             }),
         }
     }
@@ -115,6 +137,7 @@ impl<'a> Executor<'a> {
             Err(Error::Failed {
                 operation,
                 status: output.status,
+                stderr: output.stderr.into(),
             })
         }
     }

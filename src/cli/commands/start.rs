@@ -36,10 +36,15 @@ impl StartArgs {
                 return ExitCode::FAILURE;
             }
         };
+        let key = if result.remote.is_some() {
+            "start-created"
+        } else {
+            "start-created-without-remote"
+        };
         println!(
             "{}",
             localizer.format(
-                "start-created",
+                key,
                 &[
                     ("task", LocalizationValue::Text(&result.task)),
                     ("branch", LocalizationValue::Text(&result.branch)),
@@ -90,9 +95,17 @@ fn present_error(error: &start::StartError, localizer: &Localizer) -> String {
             "start-base-missing",
             &[("branch", LocalizationValue::Text(branch))],
         ),
-        start::StartError::RemoteBaseMissing { reference } => localizer.format(
+        start::StartError::RemoteBaseMissing {
+            remote,
+            url,
+            reference,
+        } => localizer.format(
             "start-remote-base-missing",
-            &[("reference", LocalizationValue::Text(reference))],
+            &[
+                ("remote", LocalizationValue::Text(remote)),
+                ("url", LocalizationValue::Text(url)),
+                ("reference", LocalizationValue::Text(reference)),
+            ],
         ),
         start::StartError::TaskBranchExists { branch } => localizer.format(
             "start-branch-exists",
@@ -108,6 +121,18 @@ fn present_error(error: &start::StartError, localizer: &Localizer) -> String {
                 ("reference", LocalizationValue::Text(remote_reference)),
             ],
         ),
+        start::StartError::Fetch {
+            remote,
+            url,
+            reason,
+        } => localizer.format(
+            "start-fetch-error",
+            &[
+                ("remote", LocalizationValue::Text(remote)),
+                ("url", LocalizationValue::Text(url)),
+                ("reason", LocalizationValue::Text(reason)),
+            ],
+        ),
         start::StartError::Command(error) => localizer.text(command_error_key(error)),
     }
 }
@@ -119,7 +144,7 @@ const fn command_error_key(error: &command::Error) -> &'static str {
         }
     };
     match operation {
-        command::Operation::Fetch => "start-fetch-error",
+        command::Operation::Fetch => "start-fetch-command-error",
         command::Operation::Ancestry => "start-ancestry-error",
         command::Operation::UpdateBase => "start-update-base-error",
         command::Operation::Switch => "start-switch-error",

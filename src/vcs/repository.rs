@@ -1,11 +1,14 @@
 //! Read-only repository operations. Git names and messages retain their original bytes.
 
 use std::{
-    fs, io,
+    fmt, fs, io,
     path::{Path, PathBuf},
 };
 
-use gix::{ObjectId, bstr::BString};
+use gix::{
+    ObjectId,
+    bstr::{BString, ByteSlice},
+};
 
 pub use super::git::ExistingError as OpenError;
 
@@ -53,6 +56,56 @@ pub struct Commit {
     pub message: BString,
 }
 
+/// A configured fetch remote with a display-safe URL.
+#[derive(Clone, PartialEq, Eq)]
+pub struct Remote {
+    name: String,
+    url: String,
+    raw_url: BString,
+    password: Option<String>,
+}
+
+impl fmt::Debug for Remote {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("Remote")
+            .field("name", &self.name)
+            .field("url", &self.url)
+            .finish_non_exhaustive()
+    }
+}
+
+impl Remote {
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Return the fetch URL with a password redacted by `gix` formatting.
+    #[must_use]
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+
+    /// Preserve Git's diagnostic while replacing the configured URL with its safe form.
+    #[must_use]
+    pub fn sanitize_diagnostic(&self, diagnostic: &[u8]) -> String {
+        let diagnostic = String::from_utf8_lossy(diagnostic);
+        let raw_url = self.raw_url.to_str_lossy();
+        let mut diagnostic = if raw_url.is_empty() {
+            diagnostic.into_owned()
+        } else {
+            diagnostic.replace(raw_url.as_ref(), &self.url)
+        };
+        if let Some(password) = &self.password
+            && !password.is_empty()
+        {
+            diagnostic = diagnostic.replace(password, "redacted");
+        }
+        diagnostic.trim().to_owned()
+    }
+}
+
 /// Commit counts unique to HEAD and to a comparison reference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Divergence {
@@ -67,6 +120,7 @@ pub enum Operation {
     History,
     Status,
     Divergence,
+    Remotes,
 }
 
 #[derive(Debug)]
@@ -194,6 +248,29 @@ impl Repository {
         }
         refs.sort_by(|left, right| left.name.cmp(&right.name));
         Ok(refs)
+    }
+
+    /// Return a configured named remote and its fetch URL, or `None` when it is absent.
+    ///
+    /// # Errors
+    /// Returns `Operation::Remotes` for malformed remote configuration.
+    pub fn remote(&self, name: &str) -> Result<Option<Remote>, Error> {
+        let Some(remote) = self
+            .inner
+            .try_find_remote_without_url_rewrite(name.as_bytes().as_bstr())
+        else {
+            return Ok(None);
+        };
+        let remote = remote.map_err(|source| Error::operation(Operation::Remotes, source))?;
+        let url = remote
+            .url(gix::remote::Direction::Fetch)
+            .ok_or_else(|| Error::operation(Operation::Remotes, "fetch URL is not configured"))?;
+        Ok(Some(Remote {
+            name: name.to_owned(),
+            url: url.to_string(),
+            raw_url: url.to_bstring(),
+            password: url.password().map(str::to_owned),
+        }))
     }
 
     /// Read at most `limit` commits reachable from HEAD in breadth-first parent order.

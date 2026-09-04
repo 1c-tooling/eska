@@ -23,6 +23,35 @@ fn discovery_and_unborn_head() {
 }
 
 #[test]
+fn remote_url_and_diagnostics_redact_configured_password() {
+    let dir = repository();
+    git(
+        &dir.0,
+        &[
+            "remote",
+            "add",
+            "origin",
+            "https://user:secret@example.invalid/repository.git",
+        ],
+    );
+    let repository = Repository::discover(&dir.0).unwrap();
+
+    let remote = repository.remote("origin").unwrap().expect("remote");
+
+    assert_eq!(remote.name(), "origin");
+    assert_eq!(
+        remote.url(),
+        "https://user:redacted@example.invalid/repository.git"
+    );
+    assert!(!format!("{remote:?}").contains("secret"));
+    let diagnostic = remote.sanitize_diagnostic(
+        b"fatal: unable to access 'https://user:secret@example.invalid/repository.git/'",
+    );
+    assert!(!diagnostic.contains("secret"));
+    assert!(diagnostic.contains("https://user:redacted@example.invalid/repository.git/"));
+}
+
+#[test]
 fn attached_detached_and_packed_references() {
     let dir = repository();
     let id = commit(&dir.0, "первый файл");

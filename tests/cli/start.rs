@@ -42,7 +42,7 @@ fn git_ok(root: &Path, args: &[&str]) {
     );
 }
 
-fn project(workflow: &str) -> (TestDir, PathBuf, TestDir) {
+fn local_project(workflow: &str) -> (TestDir, PathBuf) {
     let fixture = TestDir::new();
     let output = eska(
         &fixture.0,
@@ -60,6 +60,14 @@ fn project(workflow: &str) -> (TestDir, PathBuf, TestDir) {
     let root = fixture.0.join("Billing");
     git_ok(&root, &["add", "."]);
     git_ok(&root, &["commit", "-m", "base"]);
+    if workflow == "git-flow" {
+        git_ok(&root, &["branch", "develop"]);
+    }
+    (fixture, root)
+}
+
+fn project(workflow: &str) -> (TestDir, PathBuf, TestDir) {
+    let (fixture, root) = local_project(workflow);
     let remote = TestDir::new();
     git_ok(
         &remote.0,
@@ -79,11 +87,52 @@ fn project(workflow: &str) -> (TestDir, PathBuf, TestDir) {
     } else {
         "main"
     };
-    if base == "develop" {
-        git_ok(&root, &["branch", "develop"]);
-    }
     git_ok(&root, &["push", "origin", base]);
     (fixture, root, remote)
+}
+
+#[test]
+fn starts_locally_without_a_configured_remote_in_both_locales() {
+    for (locale, expected) in [
+        ("ru", "Удалённый репозиторий не настроен"),
+        ("en", "No remote repository is configured"),
+    ] {
+        let (_fixture, root) = local_project("trunk");
+        let output = eska(&root, locale, &["start", "LOCAL-1"]);
+
+        assert!(output.status.success(), "{}", text(&output.stderr));
+        assert!(output.stderr.is_empty());
+        assert!(text(&output.stdout).contains(expected));
+        let head = git(&root, &["rev-parse", "--abbrev-ref", "HEAD"]);
+        assert_eq!(head.stdout.trim_ascii(), b"task/LOCAL-1");
+    }
+}
+
+#[test]
+fn inaccessible_remote_error_includes_remote_url_and_git_reason() {
+    for (locale, expected) in [
+        ("ru", "Не удалось получить изменения из репозитория origin"),
+        ("en", "Could not fetch changes from repository origin"),
+    ] {
+        let (_fixture, root) = local_project("trunk");
+        let missing = root.join("missing-remote.git");
+        let url = missing.to_str().expect("UTF-8 path");
+        git_ok(&root, &["remote", "add", "origin", url]);
+
+        let output = eska(&root, locale, &["start", "FI-9"]);
+
+        assert_eq!(output.status.code(), Some(1));
+        assert!(output.stdout.is_empty());
+        let error = text(&output.stderr);
+        assert!(error.contains(expected), "{error}");
+        assert!(error.contains(url), "{error}");
+        assert!(
+            error.contains("does not appear to be a git repository"),
+            "{error}"
+        );
+        let head = git(&root, &["rev-parse", "--abbrev-ref", "HEAD"]);
+        assert_eq!(head.stdout.trim_ascii(), b"main");
+    }
 }
 
 fn text(bytes: &[u8]) -> String {
