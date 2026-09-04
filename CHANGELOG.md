@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.2](https://github.com/1c-tooling/eska/compare/v0.1.1...v0.1.2) - 2026-09-04
+## [0.2.1](https://github.com/1c-tooling/eska/compare/v0.1.1...v0.2.1) - 2026-09-04
 
 ### Added
 
@@ -75,29 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - перевод help на Русский язык
 - изменил хуки
 - обновил зависимости
-
-## [0.2.0](https://github.com/1c-tooling/eska/compare/v0.1.1...v0.2.0) - 2026-02-09
-
-### Added
-
-- *(fmt)* интеграция tree-sitter-bsl и базовая архитектура форматтера
-- добавил команду fmt, удалил init
-
-### Other
-
-- перевод help на Русский язык
-- изменил хуки
-- обновил зависимости
-
-## [0.1.1](https://github.com/1c-tooling/eska/compare/v0.1.0...v0.1.1) - 2025-10-30
-
-### Added
-
-- *(cli)* добавить заглушку команды init
-
-### Other
-
-- добавить настройки оптимизации и clippy
 
 ## [0.1.0](https://github.com/1c-tooling/eska/releases/tag/v0.1.0) - 2025-10-30
 
