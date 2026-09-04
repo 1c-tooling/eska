@@ -57,7 +57,7 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
 
 ## T14 — `eska diff`
 
-**Статус:** `IN-PROGRESS`
+**Статус:** `DONE`
 **Зависит от:** T12
 
 Сначала file-level representation. Режимы: human, `--raw`, `--format json`.
@@ -75,6 +75,9 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
   показаны как Configurator identities; свойства изменённых дочерних объектов
   главного XML-дескриптора уточняются сравнением HEAD/index/worktree, а
   нераспознанные файлы сохраняют исходный project-relative путь;
+- служебные файлы Designer XML сворачиваются в ближайшего владельца метаданных:
+  поддержаны справка, команды, формы, макеты, картинки, XDTO/WS payload,
+  бинарные модули, вложенные подсистемы, нумераторы и корневой `Ext` конфигурации;
 - raw использует две стабильные колонки состояний,
   JSON schema версии 1 содержит массив файлов с `path`, `path_encoding`, `index`
   и `worktree`, не зависит от locale и не меняется из-за human-проекции;
@@ -86,14 +89,14 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
 **Проверено:** `cargo fmt --check`, `cargo check`,
 `cargo clippy --all-targets --all-features -- -D warnings`,
 `ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test` — успешно
-(73 unit, 81 integration). CLI end-to-end проверяет RU/EN, чистый проект,
+(79 unit, 84 integration). CLI end-to-end проверяет RU/EN, чистый проект,
 staged/unstaged/untracked, вложенный project scope, отсутствие workflow,
 human/raw/JSON, стабильную JSON-схему, exit codes и ошибки репозитория. Ручные RU
 human и EN JSON/raw сценарии выполнены в отдельных временных проектах playground.
 
 ## T15 — `eska save`
 
-**Статус:** `PLANNED`
+**Статус:** `NEXT`
 **Зависит от:** T14
 
 Сохранять точно выбранный ChangeSet. Поддержать `-m`; без него допустим configured
