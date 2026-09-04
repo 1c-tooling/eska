@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use gix::bstr::ByteSlice;
+use gix::{ObjectId, bstr::ByteSlice};
 
 use super::Project;
 use crate::vcs::{
@@ -77,12 +77,12 @@ pub fn execute(project: &Project, task: &str) -> Result<StartResult, StartError>
 
     let base_reference = format!("refs/heads/{}", plan.base_branch);
     let task_reference = format!("refs/heads/{}", plan.working_branch);
-    if !reference_exists(&repository, &base_reference)? {
+    if reference_id(&repository, &base_reference)?.is_none() {
         return Err(StartError::BaseBranchMissing {
             branch: plan.base_branch,
         });
     }
-    if reference_exists(&repository, &task_reference)? {
+    if reference_id(&repository, &task_reference)?.is_some() {
         return Err(StartError::TaskBranchExists {
             branch: plan.working_branch,
         });
@@ -95,13 +95,21 @@ pub fn execute(project: &Project, task: &str) -> Result<StartResult, StartError>
 
     // Fetch changes refs and the object database, so reopen before reading the result.
     let repository = Repository::discover(project.root()).map_err(StartError::Repository)?;
-    if !reference_exists(&repository, &plan.sync_reference)? {
+    let base_id = reference_id(&repository, &base_reference)?.ok_or_else(|| {
+        StartError::BaseBranchMissing {
+            branch: plan.base_branch.clone(),
+        }
+    })?;
+    let remote_id = reference_id(&repository, &plan.sync_reference)?;
+    let Some(remote_id) = remote_id else {
         return Err(StartError::RemoteBaseMissing {
             reference: plan.sync_reference,
         });
-    }
+    };
     let executor = Executor::new(repository.work_dir());
-    let base_updated = if executor
+    let base_updated = if base_id == remote_id {
+        false
+    } else if executor
         .is_ancestor(&base_reference, &plan.sync_reference)
         .map_err(StartError::Command)?
     {
@@ -163,13 +171,14 @@ fn ensure_attached_head(repository: &Repository, base_branch: &str) -> Result<bo
     }
 }
 
-fn reference_exists(repository: &Repository, name: &str) -> Result<bool, StartError> {
+fn reference_id(repository: &Repository, name: &str) -> Result<Option<ObjectId>, StartError> {
     Ok(repository
         .references()
         .map_err(StartError::Repository)?
         .into_iter()
-        .any(|reference| {
-            reference.name.as_bstr() == name.as_bytes()
-                && matches!(reference.target, ReferenceTarget::Object(_))
+        .find(|reference| reference.name.as_bstr() == name.as_bytes())
+        .and_then(|reference| match reference.target {
+            ReferenceTarget::Object(id) => Some(id),
+            ReferenceTarget::Symbolic(_) => None,
         }))
 }

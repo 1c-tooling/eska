@@ -80,6 +80,20 @@ fn keeps_a_clean_local_base_that_is_ahead_of_remote() {
 }
 
 #[test]
+fn reports_an_unchanged_base_when_local_and_remote_are_equal() {
+    let root = repository();
+    commit(&root.0, "initial.txt");
+    let remote = remote(&root.0);
+    git(&root.0, &["push", "origin", "main"]);
+
+    let result = start::execute(&project(&root.0, WorkflowPreset::Trunk), "FI-8")
+        .expect("start from equal base");
+
+    assert!(!result.base_updated);
+    drop(remote);
+}
+
+#[test]
 fn rejects_dirty_worktree_before_running_network_operations() {
     let root = repository();
     commit(&root.0, "initial.txt");
