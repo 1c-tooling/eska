@@ -1,40 +1,37 @@
-pub mod commands;
+//! CLI startup, command dispatch and human-facing presentation.
 
-use crate::error::Result;
-use clap::{Parser, Subcommand};
+use std::{env, process::ExitCode};
 
-/// Подкоманды приложения верхнего уровня
-#[derive(Subcommand, Debug, PartialEq)]
-pub enum Commands {
-    /// Инициализация проекта
-    Init,
-}
+mod args;
+mod commands;
+mod diagnostics;
+mod interactive;
+pub mod localization;
 
-/// Точка входа в приложение.
-/// Эта структура представляет полный интерфейс командной строки и синтаксический анализ команд верхнего уровня.
-#[derive(Parser, Debug, PartialEq)]
-#[command(name = "eska")]
-#[command(about = "Утилита для 1С Разработчиков")]
-#[command(version)]
-pub struct Cli {
-    #[command(subcommand)]
-    command: Commands,
+pub use args::Cli;
+
+use localization::{Localizer, resolve_locale_from_environment};
+
+/// Starts the CLI with the process arguments and selected UI locale.
+#[must_use]
+pub fn run() -> ExitCode {
+    let args: Vec<_> = env::args_os().collect();
+    let cli_locale = args::bootstrap_lang(&args);
+    let locale = resolve_locale_from_environment(cli_locale.as_deref());
+    let localizer = match Localizer::try_new(locale) {
+        Ok(localizer) => localizer,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
+
+    Cli::parse_localized(args, &localizer).run(&localizer)
 }
 
 impl Cli {
-    /// Отправляет обработанную CLI-команду соответствующему обработчику.
-    /// Возвращает результат в виде строки (выходное сообщение или ошибка).
-    pub async fn run(self) -> Result<String> {
-        match self.command {
-            Commands::Init => commands::init::run().await,
-        }
-    }
-
-    /// Возвращает ссылку на проанализированную команду.
-    ///
-    /// Этот метод предоставляет доступ к команде, которая была проанализирована с помощью
-    /// аргументов командной строки. Полезно для тестирования и самоанализа.
-    pub fn get_command(&self) -> &Commands {
-        &self.command
+    /// Runs the selected command, or validates a project, in the UI locale.
+    pub fn run(&self, localizer: &Localizer) -> ExitCode {
+        commands::run(self.command.as_ref(), &self.project_dir, localizer)
     }
 }
