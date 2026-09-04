@@ -191,6 +191,7 @@ diff-metadata-constant = Constant
 diff-metadata-data-processor = DataProcessor
 diff-metadata-defined-type = DefinedType
 diff-metadata-document-journal = DocumentJournal
+diff-metadata-document-numerator = DocumentNumerator
 diff-metadata-document = Document
 diff-metadata-enum = Enum
 diff-metadata-event-subscription = EventSubscription

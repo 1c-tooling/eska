@@ -191,6 +191,7 @@ diff-metadata-constant = Константа
 diff-metadata-data-processor = Обработка
 diff-metadata-defined-type = ОпределяемыйТип
 diff-metadata-document-journal = ЖурналДокументов
+diff-metadata-document-numerator = Нумератор
 diff-metadata-document = Документ
 diff-metadata-enum = Перечисление
 diff-metadata-event-subscription = ПодпискаНаСобытие

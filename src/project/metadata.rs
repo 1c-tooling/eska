@@ -135,7 +135,7 @@ fn root_path(kind: &'static str, name: Option<&str>) -> MetadataPath {
     }
 }
 
-/// Resolve known nested folders and module filenames, rejecting ambiguous leftovers.
+/// Resolve nested metadata collections and Designer-owned artifact files.
 fn nested_path(mut base: MetadataPath, components: &[&str]) -> Option<MetadataPath> {
     if components.is_empty() {
         return Some(base);
@@ -145,42 +145,44 @@ fn nested_path(mut base: MetadataPath, components: &[&str]) -> Option<MetadataPa
     } else {
         components
     };
-    match components {
-        [] => Some(base),
-        [file] => {
-            if has_extension(file, "xml") && base.parts.len() == 1 {
-                return Some(base);
-            }
-            let module = module_kind(file)?;
-            if !(base.group == "common-module" && module == "module") {
-                base.parts.push(MetadataPart {
-                    kind: module,
-                    name: None,
-                });
-            }
-            Some(base)
-        }
-        [collection, item] if has_extension(item, "xml") => {
-            append_named_collection(&mut base, collection, item)?;
-            Some(base)
-        }
-        [collection, item, "Ext", file] => {
-            append_named_collection(&mut base, collection, item)?;
-            if !matches!(*file, "Form.xml" | "Template.xml") {
-                let module = module_kind(file)?;
-                base.parts.push(MetadataPart {
-                    kind: module,
-                    name: None,
-                });
-            }
-            Some(base)
-        }
-        ["Forms", item, "Ext", "Form", "Module.bsl"] => {
-            append_named_collection(&mut base, "Forms", item)?;
-            Some(base)
-        }
-        _ => None,
+    if components.is_empty() {
+        return Some(base);
     }
+    if let [collection, item, rest @ ..] = components
+        && let Some(kind) = nested_collection_kind(base.group, collection)
+    {
+        base.parts.push(MetadataPart {
+            kind,
+            name: Some(item.strip_suffix(".xml").unwrap_or(item).to_owned()),
+        });
+        if has_extension(item, "xml") {
+            return rest.is_empty().then_some(base);
+        }
+        return nested_path(base, rest);
+    }
+    if let [file] = components
+        && let Some(module) = module_kind(file)
+    {
+        if !module_belongs_to_owner(&base, module) {
+            base.parts.push(MetadataPart {
+                kind: module,
+                name: None,
+            });
+        }
+        return Some(base);
+    }
+    is_owner_artifact(&base, components).then_some(base)
+}
+
+/// Resolve a nested collection to the Configurator node it introduces.
+fn nested_collection_kind(owner: &str, collection: &str) -> Option<&'static str> {
+    Some(match collection {
+        "Forms" => "form",
+        "Templates" => "template",
+        "Commands" => "command",
+        "Subsystems" if owner == "subsystem" => "subsystem",
+        _ => return None,
+    })
 }
 
 /// Compare a filename extension without imposing platform case sensitivity.
@@ -190,35 +192,74 @@ fn has_extension(file: &str, expected: &str) -> bool {
         .is_some_and(|extension| extension.eq_ignore_ascii_case(expected))
 }
 
-/// Append a form, template or command name taken from its Designer XML folder.
-fn append_named_collection(base: &mut MetadataPath, collection: &str, item: &str) -> Option<()> {
-    let kind = match collection {
-        "Forms" => "form",
-        "Templates" => "template",
-        "Commands" => "command",
-        _ => return None,
-    };
-    base.parts.push(MetadataPart {
-        kind,
-        name: Some(item.strip_suffix(".xml").unwrap_or(item).to_owned()),
-    });
-    Some(())
-}
-
 /// Translate a standard Designer XML module filename into a logical child kind.
 fn module_kind(file: &str) -> Option<&'static str> {
-    Some(match file {
-        "Module.bsl" => "module",
-        "ObjectModule.bsl" => "object-module",
-        "ManagerModule.bsl" => "manager-module",
-        "RecordSetModule.bsl" => "record-set-module",
-        "ValueManagerModule.bsl" => "value-manager-module",
-        "ManagedApplicationModule.bsl" => "managed-application-module",
-        "OrdinaryApplicationModule.bsl" => "ordinary-application-module",
-        "SessionModule.bsl" => "session-module",
-        "ExternalConnectionModule.bsl" => "external-connection-module",
+    let stem = file
+        .strip_suffix(".bsl")
+        .or_else(|| file.strip_suffix(".bin"))?;
+    Some(match stem {
+        "Module" => "module",
+        "ObjectModule" => "object-module",
+        "ManagerModule" => "manager-module",
+        "RecordSetModule" => "record-set-module",
+        "ValueManagerModule" => "value-manager-module",
+        "ManagedApplicationModule" => "managed-application-module",
+        "OrdinaryApplicationModule" => "ordinary-application-module",
+        "SessionModule" => "session-module",
+        "ExternalConnectionModule" => "external-connection-module",
         _ => return None,
     })
+}
+
+/// Tell whether a module file is implementation of the owner rather than a child node.
+fn module_belongs_to_owner(path: &MetadataPath, module: &str) -> bool {
+    (path.group == "common-module" || is_form_owner(path)) && module == "module"
+}
+
+/// Recognize Designer files whose logical identity is their existing metadata owner.
+fn is_owner_artifact(path: &MetadataPath, components: &[&str]) -> bool {
+    match components {
+        [file] if has_extension(file, "xml") => true,
+        ["Help", _rest @ ..] => true,
+        ["Form", _rest @ ..] if is_form_owner(path) => true,
+        ["Form.bin"] if is_form_owner(path) => true,
+        ["Template", _rest @ ..] if is_template_owner(path) => true,
+        [file] if is_template_owner(path) && file.starts_with("Template.") => true,
+        ["Picture", _rest @ ..] if path.group == "common-picture" => true,
+        ["Package.bin"] if path.group == "xdto-package" => true,
+        [file] if path.group == "ws-reference" && has_extension(file, "xsd") => true,
+        ["CommandModule.bsl"] if is_command_owner(path) => true,
+        components if path.group == "configuration" => is_configuration_artifact(components),
+        _ => false,
+    }
+}
+
+/// Forms own their module and embedded item resources in the Configurator tree.
+fn is_form_owner(path: &MetadataPath) -> bool {
+    path.group == "common-form" || path.parts.last().is_some_and(|part| part.kind == "form")
+}
+
+/// Template payload files belong to the named template node.
+fn is_template_owner(path: &MetadataPath) -> bool {
+    path.group == "common-template"
+        || path
+            .parts
+            .last()
+            .is_some_and(|part| part.kind == "template")
+}
+
+/// Command modules are implementation of the named command node.
+fn is_command_owner(path: &MetadataPath) -> bool {
+    path.group == "common-command" || path.parts.last().is_some_and(|part| part.kind == "command")
+}
+
+/// Recognize configuration payloads exported below the root `Ext` folder.
+fn is_configuration_artifact(components: &[&str]) -> bool {
+    matches!(
+        components,
+        ["MobileClientSignature.bin" | "ParentConfigurations.bin"]
+            | ["MainSectionPicture" | "Splash" | "ParentConfigurations", ..]
+    )
 }
 
 /// Map Designer XML top-level collection folders to stable metadata kind identifiers.
@@ -244,6 +285,7 @@ fn top_level_kind(folder: &str) -> Option<&'static str> {
         "DataProcessors" => "data-processor",
         "DefinedTypes" => "defined-type",
         "DocumentJournals" => "document-journal",
+        "DocumentNumerators" => "document-numerator",
         "Documents" => "document",
         "Enums" => "enum",
         "EventSubscriptions" => "event-subscription",
@@ -443,6 +485,87 @@ mod tests {
         assert!(from_path(ProjectType::Configuration, b"notes/readme.txt".as_bstr()).is_none());
     }
 
+    /// Designer payload files collapse into the same Configurator owner as their descriptor.
+    #[test]
+    fn resolves_owned_help_command_form_template_and_package_payloads() {
+        for (descriptor, payload) in [
+            (
+                "CommonCommands/Refresh.xml",
+                "CommonCommands/Refresh/Ext/CommandModule.bsl",
+            ),
+            (
+                "CommonForms/Choice.xml",
+                "CommonForms/Choice/Ext/Form/Module.bsl",
+            ),
+            (
+                "CommonPictures/Logo.xml",
+                "CommonPictures/Logo/Ext/Picture/Picture.svg",
+            ),
+            (
+                "CommonTemplates/Help.xml",
+                "CommonTemplates/Help/Ext/Template/ru.html",
+            ),
+            (
+                "Reports/Sales/Templates/Layout.xml",
+                "Reports/Sales/Templates/Layout/Ext/Template/Items/Logo/Picture.png",
+            ),
+            (
+                "Reports/Sales/Forms/Main.xml",
+                "Reports/Sales/Forms/Main/Ext/Help/_files/example.png",
+            ),
+            (
+                "XDTOPackages/Exchange.xml",
+                "XDTOPackages/Exchange/Ext/Package.bin",
+            ),
+            (
+                "WSReferences/Statistics.xml",
+                "WSReferences/Statistics/Ext/1.xsd",
+            ),
+        ] {
+            assert_eq!(
+                resolve(descriptor),
+                resolve(payload),
+                "payload `{payload}` must resolve to `{descriptor}`"
+            );
+        }
+        assert_eq!(
+            resolve("DataProcessors/Import/Ext/ObjectModule.bsl"),
+            resolve("DataProcessors/Import/Ext/ObjectModule.bin")
+        );
+    }
+
+    /// Recursive subsystems, numerators and root payloads retain their nearest logical owner.
+    #[test]
+    fn resolves_nested_subsystems_numerators_and_configuration_payloads() {
+        let subsystem = resolve("Subsystems/Accounting/Subsystems/Taxes.xml");
+        assert_eq!(subsystem.parts.len(), 2);
+        assert_eq!(subsystem.parts[1].kind, "subsystem");
+        assert_eq!(subsystem.parts[1].name.as_deref(), Some("Taxes"));
+        assert_eq!(
+            subsystem,
+            resolve("Subsystems/Accounting/Subsystems/Taxes/Ext/CommandInterface.xml")
+        );
+        assert_eq!(
+            resolve("Configuration.xml"),
+            resolve("Ext/ParentConfigurations/Base.cf")
+        );
+        assert_eq!(
+            resolve("Configuration.xml"),
+            resolve("Ext/MainSectionPicture/Picture.svg")
+        );
+
+        let numerator = resolve("DocumentNumerators/Invoices.xml");
+        assert_eq!(numerator.group, "document-numerator");
+        assert_eq!(numerator.parts[0].name.as_deref(), Some("Invoices"));
+        assert!(
+            from_path(
+                ProjectType::Configuration,
+                b"Catalogs/Partners/Ext/unknown.dat".as_bstr()
+            )
+            .is_none()
+        );
+    }
+
     /// Child comparison identifies a changed attribute and ignores formatting around elements.
     #[test]
     fn detects_changed_child_properties() {
@@ -460,5 +583,10 @@ mod tests {
             r#"<MetaDataObject xmlns="{MD}"><Catalog><Properties><Name>Partners</Name></Properties><ChildObjects><Attribute><Properties><Name>Code</Name><Comment>{comment}</Comment></Properties></Attribute></ChildObjects></Catalog></MetaDataObject>"#,
             MD = super::MD_NAMESPACE
         )
+    }
+
+    /// Resolve one UTF-8 fixture path for concise ownership comparisons.
+    fn resolve(path: &str) -> super::MetadataPath {
+        from_path(ProjectType::Configuration, path.as_bytes().as_bstr()).unwrap()
     }
 }

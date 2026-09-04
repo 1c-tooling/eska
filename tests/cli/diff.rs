@@ -287,6 +287,73 @@ fn human_output_groups_metadata_and_detects_changed_attributes() {
     );
 }
 
+/// Human output assigns Designer payload files to their nearest Configurator owner.
+#[test]
+fn human_output_collapses_designer_payloads_without_changing_json_paths() {
+    let (_fixture, root) = project();
+    let files = [
+        "src/CommonCommands/Обновить/Ext/CommandModule.bsl",
+        "src/DocumentNumerators/Счета.xml",
+        "src/Ext/Splash/Picture.png",
+        "src/Reports/Продажи/Templates/ОсновнаяСхема/Ext/Template/Items/Логотип/Picture.png",
+        "src/Subsystems/Учет/Subsystems/Продажи/Ext/CommandInterface.xml",
+        "src/WSReferences/Статистика/Ext/1.xsd",
+    ];
+    for path in files {
+        let path = root.join(path);
+        fs::create_dir_all(path.parent().unwrap()).expect("create payload parent");
+        fs::write(path, "payload").expect("write Designer payload");
+    }
+
+    for (locale, expected) in [
+        (
+            "ru",
+            [
+                "ОбщаяКоманда.Обновить",
+                "Нумератор.Счета",
+                "Конфигурация",
+                "Отчет.Продажи.Макет.ОсновнаяСхема",
+                "Подсистема.Учет.Подсистема.Продажи",
+                "WSСсылка.Статистика",
+            ],
+        ),
+        (
+            "en",
+            [
+                "CommonCommand.Обновить",
+                "DocumentNumerator.Счета",
+                "Configuration",
+                "Report.Продажи.Template.ОсновнаяСхема",
+                "Subsystem.Учет.Subsystem.Продажи",
+                "WSReference.Статистика",
+            ],
+        ),
+    ] {
+        let output = eska(&root, locale, &["diff"]);
+        assert!(output.status.success(), "{output:?}");
+        let text = String::from_utf8(output.stdout).expect("UTF-8 human diff");
+        for logical_path in expected {
+            assert!(
+                text.contains(logical_path),
+                "missing `{logical_path}` in:\n{text}"
+            );
+        }
+        assert!(!text.contains("Прочие файлы"), "{text}");
+        assert!(!text.contains("Other files"), "{text}");
+        assert!(!text.contains("src/"), "{text}");
+    }
+
+    let output = eska(&root, "ru", &["diff", "--format", "json"]);
+    let document: Value = serde_json::from_slice(&output.stdout).expect("valid JSON diff");
+    let actual_paths: Vec<_> = document["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|file| file["path"].as_str().unwrap())
+        .collect();
+    assert_eq!(actual_paths, files);
+}
+
 /// Build a minimal catalog descriptor whose attribute property can change independently.
 fn catalog_descriptor(comment: &str) -> String {
     format!(
