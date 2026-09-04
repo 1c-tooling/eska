@@ -75,8 +75,11 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
 - file-level результат ограничен корнем проекта, пути относительно проекта
   отсортированы детерминированно; workflow для diff не требуется;
 - human-режим локализован, распознанные пути сгруппированы по типу метаданных и
-  показаны как Configurator identities; свойства изменённых дочерних объектов
-  главного XML-дескриптора уточняются сравнением HEAD/index/worktree, а
+  внутри типа по точному состоянию; подгруппа содержит количество, а каждая
+  identity — одноколоночный state symbol. В TTY цветом выделяются только
+  заголовки и символы, `NO_COLOR` и redirect отключают ANSI. Свойства изменённых
+  дочерних объектов главного XML-дескриптора уточняются сравнением
+  HEAD/index/worktree, а
   нераспознанные файлы сохраняют исходный project-relative путь;
 - служебные файлы Designer XML сворачиваются в ближайшего владельца метаданных:
   поддержаны справка, команды, формы, макеты, картинки, XDTO/WS payload,
@@ -94,7 +97,7 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
 **Проверено:** `cargo fmt --check`, `cargo check`,
 `cargo clippy --all-targets --all-features -- -D warnings`,
 `ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test` — успешно
-(79 unit, 89 integration). CLI end-to-end проверяет RU/EN, чистый проект,
+(80 unit, 97 integration). CLI end-to-end проверяет RU/EN, чистый проект,
 staged/unstaged/untracked, вложенный project scope, отсутствие workflow,
 human/raw/JSON, сравнение веток, тегов и commits, merge base, стабильные JSON
 schemas, exit codes и ошибки репозитория. Ручные RU human и EN JSON/raw сценарии

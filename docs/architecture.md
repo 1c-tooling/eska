@@ -133,7 +133,8 @@ tests/
   `project/metadata.rs` распознаёт Designer XML ownership для human-вывода,
   сворачивает служебные payload-файлы в ближайший узел Конфигуратора и сравнивает
   свойства дочерних объектов только в изменённых главных XML-файлах.
-  `cli/commands/diff.rs` группирует logical identities и отдельно формирует raw,
+  `cli/commands/diff.rs` группирует logical identities по типу метаданных и
+  состоянию, оформляет TTY-заголовки и маркеры, отдельно формирует raw,
   workspace JSON версии 1 и revision JSON версии 2. Полная object model, mapping
   всех путей объекта и semantic-анализ BSL/форм остаются задачами T22–T24.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
