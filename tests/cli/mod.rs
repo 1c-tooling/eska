@@ -1,3 +1,4 @@
+mod diff;
 mod init;
 mod localization;
 mod new;

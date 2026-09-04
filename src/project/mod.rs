@@ -2,6 +2,7 @@
 
 pub mod create;
 mod designer_xml;
+pub mod diff;
 pub mod discovery;
 pub mod init;
 pub mod model;

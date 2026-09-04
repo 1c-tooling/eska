@@ -6,6 +6,7 @@ use clap::Subcommand;
 
 use super::localization::Localizer;
 
+mod diff;
 mod init;
 mod new;
 mod start;
@@ -18,6 +19,8 @@ pub(super) enum Commands {
     New(new::NewArgs),
     #[command(disable_help_flag = true)]
     Init(init::InitArgs),
+    #[command(disable_help_flag = true)]
+    Diff(diff::DiffArgs),
     #[command(disable_help_flag = true)]
     Start(start::StartArgs),
     #[command(disable_help_flag = true)]
@@ -32,6 +35,7 @@ pub(super) fn run(
     match command {
         Some(Commands::New(args)) => args.run(project_dir, localizer),
         Some(Commands::Init(args)) => args.run(project_dir, localizer),
+        Some(Commands::Diff(args)) => args.run(project_dir, localizer),
         Some(Commands::Start(args)) => args.run(project_dir, localizer),
         Some(Commands::Status(args)) => args.run(project_dir, localizer),
         None => validate::run(project_dir, localizer),
@@ -42,6 +46,7 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
     command
         .mut_subcommand("new", |command| new::localize(command, localizer))
         .mut_subcommand("init", |command| init::localize(command, localizer))
+        .mut_subcommand("diff", |command| diff::localize(command, localizer))
         .mut_subcommand("start", |command| start::localize(command, localizer))
         .mut_subcommand("status", |command| status::localize(command, localizer))
 }
