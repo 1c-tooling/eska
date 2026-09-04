@@ -17,6 +17,7 @@ src/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
+│   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
 │   │   └── validate.rs          # проверка при запуске без подкоманды
 │   ├── diagnostics.rs           # общие сообщения ошибок проекта и config
@@ -37,6 +38,7 @@ src/
 │   ├── init.rs                  # обнаружение выгрузки, подключение и откат
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
+│   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
 │   └── templates.rs             # план файлов встроенного каркаса
 ├── config/
@@ -47,6 +49,7 @@ src/
 └── vcs/
     ├── mod.rs                   # граница VCS
     ├── git.rs                   # общее открытие и инициализация Git через gix
+    ├── command.rs               # системный Git для network/mutating операций
     ├── repository.rs            # discovery, HEAD, refs и ограниченная история
     ├── status.rs                # изменения HEAD/index/worktree и changed paths
     ├── workflow.rs              # выбор preset, custom overrides и разрешение policy
@@ -57,8 +60,8 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{init,new,status,localization}.rs
-├── project/{discovery,templates,workflow}.rs
+├── cli/{init,new,start,status,localization}.rs
+├── project/{discovery,start,templates,workflow}.rs
 ├── vcs/{repository,status,support}.rs # реальные Git-репозитории и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
@@ -66,7 +69,8 @@ tests/
 `validate.rs` — обработчик существующего запуска `eska` без подкоманды,
 а не новая команда `validate` или запланированная `check`. `vcs/git.rs` содержит
 общее открытие и инициализацию Git; чтение репозитория находится в
-`vcs/repository.rs`. Workflow policy не исполняется.
+`vcs/repository.rs`. `project/start.rs` исполняет workflow plan через
+`vcs/command.rs`.
 
 ## Что менять и где
 
@@ -75,6 +79,7 @@ tests/
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
+| Изменить запуск задачи или его ошибки | [`src/cli/commands/start.rs`](../src/cli/commands/start.rs), затем [`src/project/start.rs`](../src/project/start.rs) |
 | Подключить новую явно запрошенную команду | [`src/cli/commands/mod.rs`](../src/cli/commands/mod.rs) |
 | Изменить общий `--help`, `--lang`, `--project-dir` | [`src/cli/args.rs`](../src/cli/args.rs) |
 | Изменить подключение существующего проекта | [`src/project/init.rs`](../src/project/init.rs): `inspect` — без записи, `apply` — применение |
@@ -85,6 +90,7 @@ tests/
 | Изменить схему `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
 | Изменить распознавание типа выгрузки | [`src/project/designer_xml.rs`](../src/project/designer_xml.rs) |
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
+| Изменить сетевое/изменяющее исполнение Git | [`src/vcs/command.rs`](../src/vcs/command.rs) |
 | Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../src/vcs/repository.rs) |
 | Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../src/vcs/status.rs) |
 | Изменить workflow policy или план задачи | [`src/vcs/workflow/policy.rs`](../src/vcs/workflow/policy.rs) |
@@ -114,6 +120,9 @@ tests/
 - `project/status.rs` объединяет configuration, workflow policy и read-only Git
   в снимок проекта. `cli/commands/status.rs` только локализует human presentation
   или сериализует стабильную JSON-схему версии 1.
+- `project/start.rs` выполняет locale-independent preflight всего worktree,
+  обновляет base только fast-forward и активирует новую task-ветку.
+  `cli/commands/start.rs` отвечает только за аргументы и RU/EN presentation.
 - `workflow.rs` хранит выбор preset, проверенные overrides и разрешает доступные
   встроенные policies; `workflow/policy.rs` проверяет поля, содержит defaults
   Trunk, Git Flow и GitHub Flow, применяет overrides и строит декларативный план

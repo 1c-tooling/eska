@@ -21,16 +21,37 @@ ahead/behind, locks и readiness к save/publish. Это не копия `git st
 
 ## T13 — `eska start <task>`
 
-**Статус:** `NEXT`
+**Статус:** `DONE`
 **Зависит от:** T12
 
 Выполнять policy plan: fetch/update base, создать и переключить task branch,
 зарегистрировать task. Dirty workspace не уничтожать; отказ или явно безопасный
 путь. `--kind hotfix` добавлять только вместе с готовой policy.
 
+Принятые границы T13:
+
+- task регистрируется активной веткой по policy, без отдельного state-файла;
+- preflight требует чистоты всего worktree и attached HEAD с первым commit;
+- fetch выполняется для remote из policy, локальная base обновляется только
+  fast-forward; локальная base впереди remote сохраняется, divergence отклоняется;
+- уже существующая task-ветка не переиспользуется и не перезаписывается;
+- системный Git из единого infrastructure layer используется для network/mutating
+  операций без разбора human output; Git credentials и transport environment
+  сохраняются, repository redirects удаляются;
+- `--kind hotfix`, shelve, JSON и отдельное task-state хранилище не добавлены.
+
+**Проверено:** `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`,
+`ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test` — успешно
+(69 unit, 71 integration). Реальные Git-сценарии покрывают актуальную, отстающую,
+опережающую и разошедшуюся base, существующую task-ветку и dirty worktree.
+CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stderr и
+регистрацию task через последующий JSON `status`. Ручные Trunk RU и Git Flow EN
+сценарии выполнены в отдельных временных проектах playground.
+
 ## T14 — `eska diff`
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T12
 
 Сначала file-level representation. Режимы: human, `--raw`, `--format json`.
