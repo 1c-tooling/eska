@@ -98,33 +98,24 @@ fn human_and_raw_modes_report_file_states() {
     fs::write(root.join("src/module.bsl"), "Изменено\n").expect("modify source");
     fs::write(root.join("src/new.bsl"), "Новый\n").expect("write untracked");
 
-    for (locale, heading, modified, worktree, untracked) in [
+    for (locale, heading, modified, untracked) in [
         (
             "ru",
             "Изменения файлов",
-            "изменён",
-            "рабочая копия",
-            "не отслеживается",
+            "Изменены — рабочая копия (1):\n    ✎ src/module.bsl",
+            "Не отслеживаются — рабочая копия (1):\n    ? src/new.bsl",
         ),
         (
             "en",
             "File changes",
-            "modified",
-            "working tree",
-            "untracked",
+            "Modified — working tree (1):\n    ✎ src/module.bsl",
+            "Untracked — working tree (1):\n    ? src/new.bsl",
         ),
     ] {
         let output = eska(&root, locale, &["diff"]);
         assert!(output.status.success(), "{output:?}");
         let text = String::from_utf8(output.stdout).expect("UTF-8 human diff");
-        for expected in [
-            heading,
-            modified,
-            worktree,
-            untracked,
-            "src/module.bsl",
-            "src/new.bsl",
-        ] {
+        for expected in [heading, modified, untracked] {
             assert!(text.contains(expected), "missing `{expected}` in:\n{text}");
         }
     }
@@ -382,16 +373,20 @@ fn revision_diff_supports_human_raw_and_versioned_json() {
     git(&root, &["commit", "-m", "metadata changes"]);
     fs::write(root.join("src/uncommitted.bsl"), "local\n").expect("write local-only file");
 
-    for (locale, heading, catalog, form) in [
+    for (locale, heading, modified, added, catalog, form) in [
         (
             "ru",
             "Изменения",
+            "Изменены (1):",
+            "Добавлены (1):",
             "Справочник.Контрагенты.Реквизит.Реквизит1",
             "Документ.Приход.Форма.ФормаДокумента",
         ),
         (
             "en",
             "Changes",
+            "Modified (1):",
+            "Added (1):",
             "Catalog.Контрагенты.Attribute.Реквизит1",
             "Document.Приход.Form.ФормаДокумента",
         ),
@@ -399,9 +394,20 @@ fn revision_diff_supports_human_raw_and_versioned_json() {
         let output = eska(&root, locale, &["diff", "baseline"]);
         assert!(output.status.success(), "{output:?}");
         let text = String::from_utf8(output.stdout).expect("UTF-8 revision diff");
-        for expected in [heading, "baseline", "HEAD", catalog, form, "notes.txt"] {
+        for expected in [
+            heading,
+            "baseline",
+            "HEAD",
+            modified,
+            added,
+            catalog,
+            form,
+            "notes.txt",
+        ] {
             assert!(text.contains(expected), "missing `{expected}` in:\n{text}");
         }
+        assert!(text.contains(&format!("✎ {catalog}")), "{text}");
+        assert!(text.contains(&format!("+ {form}")), "{text}");
         assert!(!text.contains("uncommitted.bsl"), "{text}");
     }
 
