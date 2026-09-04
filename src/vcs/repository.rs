@@ -119,6 +119,9 @@ pub enum Operation {
     References,
     History,
     Status,
+    Revision,
+    TreeDiff,
+    MergeBase,
     Divergence,
     Remotes,
 }

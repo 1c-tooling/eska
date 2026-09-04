@@ -5,6 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use gix::ObjectId;
 use gix::bstr::{BString, ByteSlice};
 
 use super::{
@@ -15,6 +16,8 @@ use crate::vcs::{
     repository::{Error as RepositoryError, Repository},
     status::Change,
 };
+
+use crate::vcs::diff::ResolvedCommit;
 
 /// File-level project diff. Object-aware details can be added without changing the command.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -46,10 +49,51 @@ pub struct FileChange {
     pub worktree: Option<Change>,
 }
 
+/// Requested and resolved endpoints of one committed revision comparison.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RevisionComparison {
+    pub from_revision: String,
+    pub to_revision: String,
+    pub from_commit: ObjectId,
+    pub to_commit: ObjectId,
+    pub merge_base_commit: Option<ObjectId>,
+}
+
+/// File-level revision diff with a separate contract from workspace stages.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RevisionProjectDiff {
+    pub comparison: RevisionComparison,
+    pub files: Vec<RevisionFileChange>,
+    pub display: Vec<RevisionDisplayChange>,
+}
+
+/// One changed path between two committed trees.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RevisionFileChange {
+    pub path: BString,
+    pub change: Change,
+}
+
+/// Aggregated state for one logical target between two committed trees.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RevisionDisplayChange {
+    pub target: DisplayTarget,
+    pub change: Change,
+}
+
 /// Errors produced while reading a project diff.
 #[derive(Debug)]
 pub enum DiffError {
     Repository(RepositoryError),
+    Revision {
+        revision: String,
+        source: RepositoryError,
+    },
+    MergeBase {
+        from: String,
+        to: String,
+        source: RepositoryError,
+    },
     ProjectOutsideRepository {
         project: PathBuf,
         repository: PathBuf,
@@ -130,6 +174,117 @@ pub fn inspect(project: &Project) -> Result<ProjectDiff, DiffError> {
     })
 }
 
+/// Compare two committed revisions, optionally using their merge base as the effective start.
+///
+/// # Errors
+/// Returns a structured error when revisions, history, trees or project scope cannot be read.
+pub fn compare(
+    project: &Project,
+    from_revision: &str,
+    to_revision: &str,
+    since_branch_point: bool,
+) -> Result<RevisionProjectDiff, DiffError> {
+    let repository = Repository::discover(project.root()).map_err(DiffError::Repository)?;
+    if !project.root().starts_with(repository.work_dir()) {
+        return Err(DiffError::ProjectOutsideRepository {
+            project: project.root().to_owned(),
+            repository: repository.work_dir().to_owned(),
+        });
+    }
+    let from = resolve_revision(&repository, from_revision)?;
+    let to = resolve_revision(&repository, to_revision)?;
+    let merge_base = since_branch_point
+        .then(|| {
+            repository
+                .merge_base_commit(from, to)
+                .map_err(|source| DiffError::MergeBase {
+                    from: from_revision.to_owned(),
+                    to: to_revision.to_owned(),
+                    source,
+                })
+        })
+        .transpose()?;
+    let effective_from = merge_base.unwrap_or(from);
+    let changes = repository
+        .diff_commits(effective_from, to)
+        .map_err(DiffError::Repository)?;
+    let mut files = Vec::new();
+    let mut display = BTreeMap::new();
+    for entry in changes {
+        let Some(path) =
+            project_relative_path(repository.work_dir(), project.root(), entry.path.as_bstr())
+        else {
+            continue;
+        };
+        let source_path = source_relative_path(project.root(), project.source(), path.as_bstr());
+        if let Some((base, source_path)) = source_path.and_then(|source_path| {
+            metadata::from_path(
+                project.configuration().project_type(),
+                source_path.as_bstr(),
+            )
+            .map(|base| (base, source_path))
+        }) {
+            let versions = if entry.change == Change::Modified
+                && metadata::is_main_descriptor(
+                    project.configuration().project_type(),
+                    source_path.as_bstr(),
+                ) {
+                entry.before.zip(entry.after).and_then(|(before, after)| {
+                    repository
+                        .blob(before)
+                        .ok()
+                        .zip(repository.blob(after).ok())
+                })
+            } else {
+                None
+            };
+            for metadata_path in refined_metadata_paths(
+                &base,
+                entry.change,
+                versions.as_ref().map(|value| value.0.as_slice()),
+                versions.as_ref().map(|value| value.1.as_slice()),
+            ) {
+                record_revision_display(
+                    &mut display,
+                    DisplayTarget::Metadata(metadata_path),
+                    entry.change,
+                );
+            }
+        } else {
+            record_revision_display(
+                &mut display,
+                DisplayTarget::File(path.clone()),
+                entry.change,
+            );
+        }
+        files.push(RevisionFileChange {
+            path,
+            change: entry.change,
+        });
+    }
+    Ok(RevisionProjectDiff {
+        comparison: RevisionComparison {
+            from_revision: from_revision.to_owned(),
+            to_revision: to_revision.to_owned(),
+            from_commit: from.id,
+            to_commit: to.id,
+            merge_base_commit: merge_base.map(|commit| commit.id),
+        },
+        files,
+        display: display.into_values().collect(),
+    })
+}
+
+/// Resolve one requested revision while retaining its original spelling in errors.
+fn resolve_revision(repository: &Repository, revision: &str) -> Result<ResolvedCommit, DiffError> {
+    repository
+        .resolve_commit(revision)
+        .map_err(|source| DiffError::Revision {
+            revision: revision.to_owned(),
+            source,
+        })
+}
+
 /// Convert a project-relative Git path into a path relative to the configured source root.
 fn source_relative_path(
     project_root: &Path,
@@ -153,24 +308,7 @@ fn record_metadata_stage(
     let Some(change) = change else {
         return;
     };
-    let paths = if change == Change::Modified {
-        before
-            .zip(after)
-            .and_then(|(before, after)| metadata::changed_children(before, after))
-            .filter(|paths| !paths.is_empty())
-            .map_or_else(
-                || vec![base.clone()],
-                |paths| {
-                    paths
-                        .iter()
-                        .map(|suffix| base.with_suffix(suffix))
-                        .collect()
-                },
-            )
-    } else {
-        vec![base.clone()]
-    };
-    for path in paths {
+    for path in refined_metadata_paths(base, change, before, after) {
         let (index_change, worktree_change) = if index {
             (Some(change), None)
         } else {
@@ -183,6 +321,43 @@ fn record_metadata_stage(
             worktree_change,
         );
     }
+}
+
+/// Refine a modified owner descriptor into exact changed children when both blobs parse.
+fn refined_metadata_paths(
+    base: &MetadataPath,
+    change: Change,
+    before: Option<&[u8]>,
+    after: Option<&[u8]>,
+) -> Vec<MetadataPath> {
+    if change != Change::Modified {
+        return vec![base.clone()];
+    }
+    before
+        .zip(after)
+        .and_then(|(before, after)| metadata::changed_children(before, after))
+        .filter(|paths| !paths.is_empty())
+        .map_or_else(
+            || vec![base.clone()],
+            |paths| {
+                paths
+                    .iter()
+                    .map(|suffix| base.with_suffix(suffix))
+                    .collect()
+            },
+        )
+}
+
+/// Merge backing files that represent one logical target in a revision comparison.
+fn record_revision_display(
+    display: &mut BTreeMap<DisplayTarget, RevisionDisplayChange>,
+    target: DisplayTarget,
+    change: Change,
+) {
+    let value = display
+        .entry(target.clone())
+        .or_insert(RevisionDisplayChange { target, change });
+    value.change = merge_change(Some(value.change), Some(change)).unwrap_or(change);
 }
 
 /// Merge multiple backing files that represent the same logical object.

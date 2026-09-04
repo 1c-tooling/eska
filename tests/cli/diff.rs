@@ -354,6 +354,143 @@ fn human_output_collapses_designer_payloads_without_changing_json_paths() {
     assert_eq!(actual_paths, files);
 }
 
+/// One revision compares committed trees with HEAD while preserving logical metadata output.
+#[test]
+fn revision_diff_supports_human_raw_and_versioned_json() {
+    let (_fixture, root) = project();
+    fs::create_dir_all(root.join("src/Catalogs")).expect("create catalogs");
+    fs::write(
+        root.join("src/Catalogs/Контрагенты.xml"),
+        catalog_descriptor("Исходный"),
+    )
+    .expect("write catalog descriptor");
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-m", "metadata base"]);
+    git(&root, &["tag", "-a", "baseline", "-m", "baseline"]);
+
+    fs::write(
+        root.join("src/Catalogs/Контрагенты.xml"),
+        catalog_descriptor("Изменённый"),
+    )
+    .expect("modify catalog descriptor");
+    let form_module = root.join("src/Documents/Приход/Forms/ФормаДокумента/Ext/Form/Module.bsl");
+    fs::create_dir_all(form_module.parent().unwrap()).expect("create form directory");
+    fs::write(&form_module, "Процедура ПриОткрытии()\nКонецПроцедуры\n")
+        .expect("write form module");
+    fs::write(root.join("notes.txt"), "committed\n").expect("write ordinary file");
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-m", "metadata changes"]);
+    fs::write(root.join("src/uncommitted.bsl"), "local\n").expect("write local-only file");
+
+    for (locale, heading, catalog, form) in [
+        (
+            "ru",
+            "Изменения",
+            "Справочник.Контрагенты.Реквизит.Реквизит1",
+            "Документ.Приход.Форма.ФормаДокумента",
+        ),
+        (
+            "en",
+            "Changes",
+            "Catalog.Контрагенты.Attribute.Реквизит1",
+            "Document.Приход.Form.ФормаДокумента",
+        ),
+    ] {
+        let output = eska(&root, locale, &["diff", "baseline"]);
+        assert!(output.status.success(), "{output:?}");
+        let text = String::from_utf8(output.stdout).expect("UTF-8 revision diff");
+        for expected in [heading, "baseline", "HEAD", catalog, form, "notes.txt"] {
+            assert!(text.contains(expected), "missing `{expected}` in:\n{text}");
+        }
+        assert!(!text.contains("uncommitted.bsl"), "{text}");
+    }
+
+    let raw = eska(&root, "ru", &["diff", "baseline", "HEAD", "--raw"]);
+    assert!(raw.status.success(), "{raw:?}");
+    assert_eq!(
+        String::from_utf8(raw.stdout).unwrap(),
+        concat!(
+            "A\tnotes.txt\n",
+            "M\tsrc/Catalogs/Контрагенты.xml\n",
+            "A\tsrc/Documents/Приход/Forms/ФормаДокумента/Ext/Form/Module.bsl\n"
+        )
+    );
+
+    let json = eska(&root, "en", &["diff", "baseline", "--format", "json"]);
+    assert!(json.status.success(), "{json:?}");
+    let document: Value = serde_json::from_slice(&json.stdout).expect("valid revision JSON");
+    assert_eq!(document["schema_version"], 2);
+    assert_eq!(document["comparison"]["kind"], "revisions");
+    assert_eq!(document["comparison"]["strategy"], "direct");
+    assert_eq!(document["comparison"]["from"]["revision"], "baseline");
+    assert_eq!(document["comparison"]["to"]["revision"], "HEAD");
+    assert_eq!(document["comparison"]["merge_base_commit"], Value::Null);
+    assert_eq!(document["files"].as_array().unwrap().len(), 3);
+    assert_eq!(document["files"][1]["change"], "modified");
+    assert!(document["files"][1].get("index").is_none());
+    assert!(document["files"][1].get("worktree").is_none());
+}
+
+/// Branch-point mode excludes changes made only on the comparison branch.
+#[test]
+fn revision_diff_can_start_at_the_branch_point() {
+    let (_fixture, root) = project();
+    git(&root, &["checkout", "-b", "feature"]);
+    fs::write(root.join("src/feature.bsl"), "feature\n").unwrap();
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-m", "feature"]);
+    git(&root, &["checkout", "main"]);
+    fs::write(root.join("src/main.bsl"), "main\n").unwrap();
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-m", "main"]);
+    git(&root, &["checkout", "feature"]);
+
+    let direct = eska(&root, "en", &["diff", "main", "--raw"]);
+    assert_eq!(
+        String::from_utf8(direct.stdout).unwrap(),
+        "A\tsrc/feature.bsl\nD\tsrc/main.bsl\n"
+    );
+    let branch = eska(
+        &root,
+        "en",
+        &["diff", "main", "--since-branch-point", "--raw"],
+    );
+    assert_eq!(
+        String::from_utf8(branch.stdout).unwrap(),
+        "A\tsrc/feature.bsl\n"
+    );
+
+    let json = eska(
+        &root,
+        "ru",
+        &["diff", "main", "--since-branch-point", "--format", "json"],
+    );
+    let document: Value = serde_json::from_slice(&json.stdout).expect("valid branch JSON");
+    assert_eq!(document["comparison"]["strategy"], "merge-base");
+    assert!(document["comparison"]["merge_base_commit"].is_string());
+}
+
+/// Invalid revisions and incomplete branch-point requests fail without Git mutation.
+#[test]
+fn revision_diff_errors_are_localized_and_usage_is_bounded() {
+    let (_fixture, root) = project();
+    for (locale, expected) in [
+        ("ru", "Не удалось разрешить Git-ревизию"),
+        ("en", "Could not resolve Git revision"),
+    ] {
+        let output = eska(&root, locale, &["diff", "missing"]);
+        assert_eq!(output.status.code(), Some(1), "{output:?}");
+        assert!(output.stdout.is_empty());
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stderr.contains(expected), "{stderr}");
+        assert!(stderr.contains("missing"), "{stderr}");
+    }
+    let missing_base = eska(&root, "en", &["diff", "--since-branch-point"]);
+    assert_eq!(missing_base.status.code(), Some(2), "{missing_base:?}");
+    let too_many = eska(&root, "en", &["diff", "HEAD", "HEAD", "HEAD"]);
+    assert_eq!(too_many.status.code(), Some(2), "{too_many:?}");
+}
+
 /// Build a minimal catalog descriptor whose attribute property can change independently.
 fn catalog_descriptor(comment: &str) -> String {
     format!(

@@ -7,9 +7,12 @@ use gix::bstr::{BStr, ByteSlice};
 use serde::Serialize;
 
 use crate::{
-    cli::{diagnostics, localization::Localizer},
+    cli::{
+        diagnostics,
+        localization::{LocalizationValue, Localizer},
+    },
     project::{
-        diff::{self, DiffError, DisplayChange, DisplayTarget, ProjectDiff},
+        diff::{self, DiffError, DisplayTarget, ProjectDiff, RevisionProjectDiff},
         discovery,
         metadata::MetadataPath,
     },
@@ -18,6 +21,12 @@ use crate::{
 
 #[derive(Debug, Args)]
 pub(in crate::cli) struct DiffArgs {
+    #[arg(value_name = "REVISION", num_args = 0..=2)]
+    revisions: Vec<String>,
+
+    #[arg(long, requires = "revisions")]
+    since_branch_point: bool,
+
     #[arg(long, conflicts_with = "format")]
     raw: bool,
 
@@ -45,31 +54,66 @@ impl DiffArgs {
                 return ExitCode::FAILURE;
             }
         };
-        let changes = match diff::inspect(&project) {
-            Ok(changes) => changes,
-            Err(error) => {
-                eprintln!("{}", present_error(&error, localizer));
-                return ExitCode::FAILURE;
-            }
-        };
-
-        if self.raw {
-            print!("{}", render_raw(&changes));
+        if self.revisions.is_empty() {
+            let changes = match diff::inspect(&project) {
+                Ok(changes) => changes,
+                Err(error) => return report_error(&error, localizer),
+            };
+            self.render_workspace(&changes, localizer)
         } else {
-            match self.format {
-                OutputFormat::Human => println!("{}", render_human(&changes, localizer)),
-                OutputFormat::Json => {
-                    let Ok(json) = serde_json::to_string_pretty(&DiffDocument::from(&changes))
-                    else {
-                        eprintln!("{}", localizer.text("diff-json-error"));
-                        return ExitCode::FAILURE;
-                    };
-                    println!("{json}");
-                }
-            }
+            let from = &self.revisions[0];
+            let to = self.revisions.get(1).map_or("HEAD", String::as_str);
+            let changes = match diff::compare(&project, from, to, self.since_branch_point) {
+                Ok(changes) => changes,
+                Err(error) => return report_error(&error, localizer),
+            };
+            self.render_revisions(&changes, localizer)
         }
-        ExitCode::SUCCESS
     }
+
+    /// Render the unchanged workspace comparison contract.
+    fn render_workspace(&self, changes: &ProjectDiff, localizer: &Localizer) -> ExitCode {
+        if self.raw {
+            print!("{}", render_raw(changes));
+            return ExitCode::SUCCESS;
+        }
+        match self.format {
+            OutputFormat::Human => {
+                println!("{}", render_human(changes, localizer));
+                ExitCode::SUCCESS
+            }
+            OutputFormat::Json => serialize_json(&DiffDocument::from(changes), localizer),
+        }
+    }
+
+    /// Render a committed revision comparison without workspace-stage terminology.
+    fn render_revisions(&self, changes: &RevisionProjectDiff, localizer: &Localizer) -> ExitCode {
+        if self.raw {
+            print!("{}", render_revision_raw(changes));
+            return ExitCode::SUCCESS;
+        }
+        match self.format {
+            OutputFormat::Human => {
+                println!("{}", render_revision_human(changes, localizer));
+                ExitCode::SUCCESS
+            }
+            OutputFormat::Json => serialize_json(&RevisionDiffDocument::from(changes), localizer),
+        }
+    }
+}
+
+/// Serialize one locale-independent document and report the shared failure.
+fn serialize_json(document: &impl Serialize, localizer: &Localizer) -> ExitCode {
+    serde_json::to_string_pretty(document).map_or_else(
+        |_| {
+            eprintln!("{}", localizer.text("diff-json-error"));
+            ExitCode::FAILURE
+        },
+        |json| {
+            println!("{json}");
+            ExitCode::SUCCESS
+        },
+    )
 }
 
 /// Apply localized help text after clap has parsed the bootstrap locale.
@@ -77,6 +121,14 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
     command
         .about(localizer.text("diff-about"))
         .override_usage(localizer.text("diff-usage"))
+        .mut_arg("revisions", |argument| {
+            argument
+                .help(localizer.text("diff-revisions-help"))
+                .value_name(localizer.text("diff-revisions-value"))
+        })
+        .mut_arg("since_branch_point", |argument| {
+            argument.help(localizer.text("diff-since-branch-point-help"))
+        })
         .mut_arg("raw", |argument| {
             argument.help(localizer.text("diff-raw-help"))
         })
@@ -90,10 +142,29 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
 
 /// Localize a structured diff error without leaking dependency diagnostics.
 fn present_error(error: &DiffError, localizer: &Localizer) -> String {
-    localizer.text(match error {
-        DiffError::Repository(_) => "diff-repository-error",
-        DiffError::ProjectOutsideRepository { .. } => "diff-project-outside-repository",
-    })
+    match error {
+        DiffError::Repository(_) => localizer.text("diff-repository-error"),
+        DiffError::Revision { revision, .. } => localizer.format(
+            "diff-revision-error",
+            &[("revision", LocalizationValue::Text(revision))],
+        ),
+        DiffError::MergeBase { from, to, .. } => localizer.format(
+            "diff-merge-base-error",
+            &[
+                ("from", LocalizationValue::Text(from)),
+                ("to", LocalizationValue::Text(to)),
+            ],
+        ),
+        DiffError::ProjectOutsideRepository { .. } => {
+            localizer.text("diff-project-outside-repository")
+        }
+    }
+}
+
+/// Print one localized diff error and return the standard runtime failure code.
+fn report_error(error: &DiffError, localizer: &Localizer) -> ExitCode {
+    eprintln!("{}", present_error(error, localizer));
+    ExitCode::FAILURE
 }
 
 /// Render readable one-line descriptions while retaining index/worktree distinctions.
@@ -101,18 +172,70 @@ fn render_human(diff: &ProjectDiff, localizer: &Localizer) -> String {
     if diff.display.is_empty() {
         return localizer.text("diff-clean");
     }
-    let mut lines = vec![localizer.text("diff-files")];
-    let mut groups: std::collections::BTreeMap<String, Vec<(String, &DisplayChange)>> =
+    render_grouped(
+        localizer.text("diff-files"),
+        diff.display.iter().map(|change| {
+            (
+                &change.target,
+                human_states(change.index, change.worktree, localizer),
+            )
+        }),
+        localizer,
+    )
+}
+
+/// Render one committed comparison with explicit resolved endpoints.
+fn render_revision_human(diff: &RevisionProjectDiff, localizer: &Localizer) -> String {
+    let comparison = &diff.comparison;
+    let from_commit = comparison
+        .merge_base_commit
+        .unwrap_or(comparison.from_commit)
+        .to_string();
+    let to_commit = comparison.to_commit.to_string();
+    let values = [
+        ("from", LocalizationValue::Text(&comparison.from_revision)),
+        ("to", LocalizationValue::Text(&comparison.to_revision)),
+        (
+            "from_commit",
+            LocalizationValue::Text(short_id(&from_commit)),
+        ),
+        ("to_commit", LocalizationValue::Text(short_id(&to_commit))),
+    ];
+    if diff.display.is_empty() {
+        return localizer.format("diff-revision-clean", &values);
+    }
+    let header = if comparison.merge_base_commit.is_some() {
+        localizer.format("diff-revision-branch-files", &values)
+    } else {
+        localizer.format("diff-revision-files", &values)
+    };
+    render_grouped(
+        header,
+        diff.display
+            .iter()
+            .map(|change| (&change.target, localizer.text(change_key(change.change)))),
+        localizer,
+    )
+}
+
+/// Group already-described logical changes by localized metadata type.
+fn render_grouped<'a>(
+    header: String,
+    changes: impl IntoIterator<Item = (&'a DisplayTarget, String)>,
+    localizer: &Localizer,
+) -> String {
+    let mut lines = vec![header];
+    let mut groups: std::collections::BTreeMap<String, Vec<(String, String)>> =
         std::collections::BTreeMap::new();
     let mut other_files = Vec::new();
-    for change in &diff.display {
-        match &change.target {
+    for (target, state) in changes {
+        match target {
             DisplayTarget::Metadata(path) => groups
                 .entry(metadata_kind(path.group, localizer))
                 .or_default()
-                .push((render_metadata_path(path, localizer), change)),
+                .push((render_metadata_path(path, localizer), state)),
             DisplayTarget::File(path) => {
-                other_files.push((display_path(path.as_bstr()), change));
+                other_files.push((display_path(path.as_bstr()), state));
             }
         }
     }
@@ -120,25 +243,28 @@ fn render_human(diff: &ProjectDiff, localizer: &Localizer) -> String {
         changes.sort_by(|left, right| left.0.cmp(&right.0));
         lines.push(String::new());
         lines.push(format!("{group}:"));
-        lines.extend(changes.into_iter().map(|(target, change)| {
-            format!(
-                "  {}  {target}",
-                human_states(change.index, change.worktree, localizer)
-            )
-        }));
+        lines.extend(
+            changes
+                .into_iter()
+                .map(|(target, state)| format!("  {state}  {target}")),
+        );
     }
     if !other_files.is_empty() {
         other_files.sort_by(|left, right| left.0.cmp(&right.0));
         lines.push(String::new());
         lines.push(format!("{}:", localizer.text("diff-other-files")));
-        lines.extend(other_files.into_iter().map(|(target, change)| {
-            format!(
-                "  {}  {target}",
-                human_states(change.index, change.worktree, localizer)
-            )
-        }));
+        lines.extend(
+            other_files
+                .into_iter()
+                .map(|(target, state)| format!("  {state}  {target}")),
+        );
     }
     lines.join("\n")
+}
+
+/// Keep human commit labels compact while JSON retains complete object IDs.
+fn short_id(id: &str) -> &str {
+    &id[..id.len().min(7)]
 }
 
 /// Describe every populated comparison stage for one path.
@@ -191,6 +317,23 @@ fn render_raw(diff: &ProjectDiff) -> String {
             "{}{}\t{}",
             raw_code(file.index),
             raw_code(file.worktree),
+            display_path(file.path.as_bstr())
+        )
+        .expect("writing to String cannot fail");
+    }
+    output
+}
+
+/// Render one stable status column for an exact revision comparison.
+fn render_revision_raw(diff: &RevisionProjectDiff) -> String {
+    use std::fmt::Write as _;
+
+    let mut output = String::new();
+    for file in &diff.files {
+        writeln!(
+            output,
+            "{}\t{}",
+            raw_code(Some(file.change)),
             display_path(file.path.as_bstr())
         )
         .expect("writing to String cannot fail");
@@ -254,6 +397,74 @@ impl From<&ProjectDiff> for DiffDocument {
                         path_encoding,
                         index: file.index.map(change_name),
                         worktree: file.worktree.map(change_name),
+                    }
+                })
+                .collect(),
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct RevisionDiffDocument<'a> {
+    schema_version: u8,
+    comparison: RevisionComparisonDocument<'a>,
+    files: Vec<RevisionFileDocument>,
+}
+
+#[derive(Serialize)]
+struct RevisionComparisonDocument<'a> {
+    kind: &'static str,
+    strategy: &'static str,
+    from: RevisionEndpointDocument<'a>,
+    to: RevisionEndpointDocument<'a>,
+    merge_base_commit: Option<String>,
+}
+
+#[derive(Serialize)]
+struct RevisionEndpointDocument<'a> {
+    revision: &'a str,
+    commit: String,
+}
+
+#[derive(Serialize)]
+struct RevisionFileDocument {
+    path: String,
+    path_encoding: &'static str,
+    change: &'static str,
+}
+
+impl<'a> From<&'a RevisionProjectDiff> for RevisionDiffDocument<'a> {
+    /// Build the explicit schema version 2 used only for revision comparisons.
+    fn from(diff: &'a RevisionProjectDiff) -> Self {
+        let comparison = &diff.comparison;
+        Self {
+            schema_version: 2,
+            comparison: RevisionComparisonDocument {
+                kind: "revisions",
+                strategy: if comparison.merge_base_commit.is_some() {
+                    "merge-base"
+                } else {
+                    "direct"
+                },
+                from: RevisionEndpointDocument {
+                    revision: &comparison.from_revision,
+                    commit: comparison.from_commit.to_string(),
+                },
+                to: RevisionEndpointDocument {
+                    revision: &comparison.to_revision,
+                    commit: comparison.to_commit.to_string(),
+                },
+                merge_base_commit: comparison.merge_base_commit.map(|id| id.to_string()),
+            },
+            files: diff
+                .files
+                .iter()
+                .map(|file| {
+                    let (path, path_encoding) = json_path(file.path.as_bstr());
+                    RevisionFileDocument {
+                        path,
+                        path_encoding,
+                        change: change_name(file.change),
                     }
                 })
                 .collect(),
