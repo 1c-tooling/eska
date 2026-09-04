@@ -32,9 +32,10 @@ Git init или итоговой проверки T03 удаляется тол�
 Узкий внутренний `vcs::git` helper инициализирует Git через `gix` без внешнего Git,
 user/system config и перенаправляющих Git env. HEAD — `main` без commit, remote
 и workflow-веток; `--no-vcs` отключает init, не удаляя preset из config.
-Выбрана стабильная `gix 0.80` с выключенными default features и `zlib-rs`:
-доступный registry не разрешил зависимости `0.87.1`. В `clippy.toml` разрешены
-только неизбежные транзитивные дубликаты `syn`, `winnow`, `bitflags`; причины
+Используется `gix 0.87.1` с выключенными default features и минимальным набором
+`revision`, `sha1`, `status`. SHA-1 выбран явно для существующего формата Git;
+zlib-rs подключается самим `gix` без отдельного feature. В `clippy.toml` разрешены
+только неизбежные транзитивные дубликаты `bitflags`, `syn` и `hashbrown`; причины
 указаны рядом, остальные проверки не ослаблены.
 
 Проверки: 32 сочетания type/preset/locale; Git без system Git и изоляция env;
