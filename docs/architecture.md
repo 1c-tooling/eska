@@ -64,8 +64,8 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{diff,init,new,start,status,localization}.rs
-├── project/{discovery,start,templates,workflow}.rs
+├── cli/{diff,init,new,save,start,status,localization}.rs
+├── project/{discovery,save,start,templates,workflow}.rs
 ├── vcs/{diff,repository,status,support}.rs # реальные Git-репозитории и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
@@ -139,6 +139,11 @@ tests/
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   обновляет base только fast-forward и активирует новую task-ветку.
   `cli/commands/start.rs` отвечает только за аргументы и RU/EN presentation.
+- `project/save.rs` выбирает все changed paths внутри корня проекта, отклоняет
+  конфликты и detached HEAD, сохраняет исходный index для rollback и поручает
+  staging/commit системному Git. `git commit --only` не включает подготовленные
+  sibling paths; `cli/commands/save.rs` отвечает за `-m`, configured editor и
+  локализованные сообщения.
 - `workflow.rs` хранит выбор preset, проверенные overrides и разрешает доступные
   встроенные policies; `workflow/policy.rs` проверяет поля, содержит defaults
   Trunk, Git Flow и GitHub Flow, применяет overrides и строит декларативный план

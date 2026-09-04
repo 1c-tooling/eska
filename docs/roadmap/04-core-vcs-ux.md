@@ -102,16 +102,39 @@ schemas, exit codes и ошибки репозитория. Ручные RU huma
 
 ## T15 — `eska save`
 
-**Статус:** `NEXT`
+**Статус:** `DONE`
 **Зависит от:** T14
 
 Сохранять точно выбранный ChangeSet. Поддержать `-m`; без него допустим configured
 editor. Не заставлять пользователя понимать staging и не анализировать изменения,
 которые не войдут в commit. Interactive/auto generation отложены до T25.
 
+Принятые границы T15:
+
+- текущий ChangeSet — все staged, unstaged, deleted и untracked paths внутри
+  корня проекта; ignored paths не входят;
+- вложенный проект сохраняется отдельно: изменения и staging sibling paths не
+  включаются в commit и остаются подготовленными;
+- технический staging выполняется системным Git через единый infrastructure
+  layer; при ошибке stage, editor, hook или commit исходный index восстанавливается
+  байт-в-байт, рабочие файлы не изменяются;
+- detached HEAD, пустой ChangeSet, пустое сообщение и конфликты проекта
+  отклоняются; первый commit в unborn repository поддерживается;
+- `-m` передаёт точное сообщение, без него используется configured Git editor;
+  interactive selection, auto generation, JSON и semantic-анализ не добавлены.
+
+**Проверено:** `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`,
+`ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test` — успешно
+(79 unit, 97 integration). Core-сценарии проверяют первый commit, project scope,
+полный worktree content и сохранение sibling staging. CLI end-to-end проверяет
+RU/EN, `-m`, configured editor, пустой ChangeSet, detached HEAD, конфликты и
+byte-for-byte rollback index после отказа pre-commit hook. Ручные RU/EN сценарии
+выполнены в отдельном временном проекте playground.
+
 ## T16 — `eska sync`
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T13, T15
 
 По policy выполнять fetch и rebase/merge на актуальную base. Конфликт переводит

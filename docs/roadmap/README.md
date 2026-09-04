@@ -6,7 +6,7 @@
 
 ## Текущее состояние
 
-Стадия проекта: **object-aware `eska diff` завершён**, далее `eska save`.
+Стадия проекта: **`eska save` завершён**, далее `eska sync`.
 
 - `DONE`: чистый минимальный Rust CLI;
 - `DONE`: локализация `ru-RU` / `en-US`, включая `--help`;
@@ -24,7 +24,8 @@
 - `DONE`: `T12` — `eska status`;
 - `DONE`: `T13` — `eska start`;
 - `DONE`: `T14` — object-aware human-представление `eska diff`;
-- `NEXT`: `T15` — `eska save`;
+- `DONE`: `T15` — `eska save`;
+- `NEXT`: `T16` — `eska sync`;
 - остальные изменяющие VCS-команды пока не реализованы.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
@@ -64,8 +65,8 @@ TUI разделён на обработку клавиш, отрисовку и
 | T12 | DONE | `eska status` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T13 | DONE | `eska start` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T14 | DONE | `eska diff` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T15 | NEXT | `eska save` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T16 | PLANNED | `eska sync` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T15 | DONE | `eska save` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T16 | NEXT | `eska sync` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T17 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T18 | PLANNED | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T19 | PLANNED | `continue` / `abort` | [05-safe-vcs.md](05-safe-vcs.md) |
