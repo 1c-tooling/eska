@@ -57,7 +57,7 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
 
 ## T14 — `eska diff`
 
-**Статус:** `DONE`
+**Статус:** `IN-PROGRESS`
 **Зависит от:** T12
 
 Сначала file-level representation. Режимы: human, `--raw`, `--format json`.
@@ -71,12 +71,17 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
   изменяет;
 - file-level результат ограничен корнем проекта, пути относительно проекта
   отсортированы детерминированно; workflow для diff не требуется;
-- human-режим локализован, raw использует две стабильные колонки состояний,
+- human-режим локализован, распознанные пути сгруппированы по типу метаданных и
+  показаны как Configurator identities; свойства изменённых дочерних объектов
+  главного XML-дескриптора уточняются сравнением HEAD/index/worktree, а
+  нераспознанные файлы сохраняют исходный project-relative путь;
+- raw использует две стабильные колонки состояний,
   JSON schema версии 1 содержит массив файлов с `path`, `path_encoding`, `index`
-  и `worktree` и не зависит от locale;
+  и `worktree`, не зависит от locale и не меняется из-за human-проекции;
 - не-UTF-8 Git-пути не теряются: JSON использует обратимое percent-кодирование,
   human/raw — однострочное escaped-представление;
-- содержимое файлов, patch/hunks и semantic Designer XML анализ не входят в T14.
+- patch/hunks, методы BSL, элементы форм и полная semantic Designer XML model не
+  входят в эту доработку T14 и остаются в T22–T24.
 
 **Проверено:** `cargo fmt --check`, `cargo check`,
 `cargo clippy --all-targets --all-features -- -D warnings`,
@@ -88,7 +93,7 @@ human и EN JSON/raw сценарии выполнены в отдельных �
 
 ## T15 — `eska save`
 
-**Статус:** `NEXT`
+**Статус:** `PLANNED`
 **Зависит от:** T14
 
 Сохранять точно выбранный ChangeSet. Поддержать `-m`; без него допустим configured

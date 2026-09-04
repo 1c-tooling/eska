@@ -40,6 +40,7 @@ src/
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
 │   ├── diff.rs                  # file-level изменения внутри корня проекта
+│   ├── metadata.rs              # human-проекция путей и XML-дочерних объектов
 │   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
 │   └── templates.rs             # план файлов встроенного каркаса
@@ -125,8 +126,11 @@ tests/
   или сериализует стабильную JSON-схему версии 1.
 - `project/diff.rs` отбирает изменения внутри корня проекта и переводит пути в
   project-relative вид, сохраняя отдельные состояния index и worktree.
-  `cli/commands/diff.rs` формирует human, raw и стабильный JSON версии 1; semantic
-  Designer XML анализ остаётся задачей T24.
+  `project/metadata.rs` распознаёт Designer XML ownership для human-вывода и
+  сравнивает свойства дочерних объектов только в изменённых главных XML-файлах.
+  `cli/commands/diff.rs` группирует logical identities и отдельно формирует
+  неизменённые raw и стабильный JSON версии 1. Полная object model, mapping всех
+  путей объекта и semantic-анализ BSL/форм остаются задачами T22–T24.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   обновляет base только fast-forward и активирует новую task-ветку.
   `cli/commands/start.rs` отвечает только за аргументы и RU/EN presentation.
