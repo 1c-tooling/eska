@@ -1,15 +1,16 @@
 //! Localized and stable JSON presentation of the read-only project status.
 
-use std::{path::Path, process::ExitCode};
+use std::{
+    io::{self, IsTerminal},
+    path::Path,
+    process::ExitCode,
+};
 
 use clap::{Args, ValueEnum};
 use serde::Serialize;
 
 use crate::{
-    cli::{
-        diagnostics,
-        localization::{LocalizationValue, Localizer},
-    },
+    cli::{diagnostics, localization::Localizer},
     project::{
         discovery,
         status::{self, ChangeSummary, HeadState, ProjectStatus, StatusError},
@@ -50,7 +51,9 @@ impl StatusArgs {
         };
 
         match self.format {
-            OutputFormat::Human => println!("{}", render_human(&status, localizer)),
+            OutputFormat::Human => {
+                println!("{}", render_human(&status, localizer, styling_enabled()));
+            }
             OutputFormat::Json => {
                 let Ok(json) = serde_json::to_string_pretty(&StatusDocument::from(&status)) else {
                     eprintln!("{}", localizer.text("status-json-error"));
@@ -84,62 +87,91 @@ fn present_error(error: &StatusError, localizer: &Localizer) -> String {
     })
 }
 
-fn render_human(status: &ProjectStatus, localizer: &Localizer) -> String {
-    let mut lines = vec![
-        field(localizer, "status-project", &project_name(&status.root)),
-        field(
-            localizer,
-            "status-project-type",
-            &localizer.text(project_type_key(status)),
-        ),
-        field(
-            localizer,
-            "status-workflow",
-            &localizer.text(workflow_key(status)),
-        ),
-        field(
-            localizer,
-            "status-task",
-            status.task.as_deref().unwrap_or("—"),
-        ),
-        field(
-            localizer,
-            "status-branch",
-            &status
-                .branch
-                .as_ref()
-                .map_or_else(|| "—".to_owned(), ToString::to_string),
-        ),
-        field(localizer, "status-base", &status.base_branch),
+fn render_human(status: &ProjectStatus, localizer: &Localizer, styled: bool) -> String {
+    let branch = status
+        .branch
+        .as_ref()
+        .map_or_else(|| "—".to_owned(), ToString::to_string);
+    let project_type = localizer.text(project_type_key(status));
+    let workflow = localizer.text(workflow_key(status));
+    let mut lines = render_fields(
+        &[
+            (localizer.text("status-project"), project_name(&status.root)),
+            (localizer.text("status-project-type"), project_type),
+            (localizer.text("status-workflow"), workflow),
+            (
+                localizer.text("status-task"),
+                status.task.as_deref().unwrap_or("—").to_owned(),
+            ),
+            (localizer.text("status-branch"), branch),
+            (localizer.text("status-base"), status.base_branch.clone()),
+        ],
+        "",
+        styled,
+    );
+    lines.extend([String::new(), section(localizer, "status-changes", styled)]);
+    append_changes(&mut lines, status.changes, localizer, styled);
+    lines.extend([
         String::new(),
-        localizer.text("status-changes"),
-    ];
-    append_changes(&mut lines, status.changes, localizer);
-    lines.extend([String::new(), localizer.text("status-synchronization")]);
+        section(localizer, "status-synchronization", styled),
+    ]);
     if let Some(synchronization) = status.synchronization {
-        lines.push(count(localizer, "status-ahead", synchronization.ahead));
-        lines.push(count(localizer, "status-behind", synchronization.behind));
+        lines.extend(render_fields(
+            &[
+                (
+                    localizer.text("status-ahead"),
+                    synchronization.ahead.to_string(),
+                ),
+                (
+                    localizer.text("status-behind"),
+                    synchronization.behind.to_string(),
+                ),
+            ],
+            "  ",
+            styled,
+        ));
     } else {
-        lines.push(indent(&localizer.text("status-unavailable")));
+        lines.extend(unavailable(localizer, styled));
+    }
+    lines.extend([String::new(), section(localizer, "status-locks", styled)]);
+    if status.locks.available {
+        lines.extend(render_fields(
+            &[(
+                localizer.text("status-objects"),
+                status.locks.count.unwrap_or_default().to_string(),
+            )],
+            "  ",
+            styled,
+        ));
+    } else {
+        lines.extend(unavailable(localizer, styled));
     }
     lines.extend([
         String::new(),
-        localizer.text("status-locks"),
-        indent(&if status.locks.available {
-            status.locks.count.unwrap_or_default().to_string()
-        } else {
-            localizer.text("status-unavailable")
-        }),
-        String::new(),
-        localizer.text("status-readiness"),
-        readiness(localizer, "status-ready-save", status.readiness.save),
-        readiness(localizer, "status-ready-publish", status.readiness.publish),
+        section(localizer, "status-readiness", styled),
+        readiness(
+            localizer,
+            "status-ready-save",
+            status.readiness.save,
+            styled,
+        ),
+        readiness(
+            localizer,
+            "status-ready-publish",
+            status.readiness.publish,
+            styled,
+        ),
     ]);
     lines.join("\n")
 }
 
-fn append_changes(lines: &mut Vec<String>, changes: ChangeSummary, localizer: &Localizer) {
-    lines.push(count(localizer, "status-files", changes.files));
+fn append_changes(
+    lines: &mut Vec<String>,
+    changes: ChangeSummary,
+    localizer: &Localizer,
+    styled: bool,
+) {
+    let mut fields = vec![(localizer.text("status-files"), changes.files.to_string())];
     for (key, value) in [
         ("status-added", changes.added),
         ("status-modified", changes.modified),
@@ -150,35 +182,67 @@ fn append_changes(lines: &mut Vec<String>, changes: ChangeSummary, localizer: &L
         ("status-conflicts", changes.conflicts),
     ] {
         if value > 0 {
-            lines.push(count(localizer, key, value));
+            fields.push((localizer.text(key), value.to_string()));
         }
+    }
+    lines.extend(render_fields(&fields, "  ", styled));
+}
+
+fn render_fields(fields: &[(String, String)], indent: &str, styled: bool) -> Vec<String> {
+    let width = fields
+        .iter()
+        .map(|(label, _)| label.chars().count() + 2)
+        .max()
+        .unwrap_or_default();
+    fields
+        .iter()
+        .map(|(label, value)| {
+            let label = format!("{label}:");
+            let padded = format!("{label:<width$}");
+            if styled {
+                format!("{indent}\x1b[1m{padded}\x1b[0m{value}")
+            } else {
+                format!("{indent}{padded}{value}")
+            }
+        })
+        .collect()
+}
+
+fn section(localizer: &Localizer, key: &str, styled: bool) -> String {
+    let title = localizer.text(key);
+    if styled {
+        format!("\x1b[1;36m{title}\x1b[0m")
+    } else {
+        title
     }
 }
 
-fn field(localizer: &Localizer, key: &str, value: &str) -> String {
-    localizer.format(key, &[("value", LocalizationValue::Text(value))])
-}
-
-fn count(localizer: &Localizer, key: &str, value: usize) -> String {
-    indent(&localizer.format(
-        key,
-        &[(
-            "count",
-            LocalizationValue::Number(i64::try_from(value).unwrap_or(i64::MAX)),
-        )],
-    ))
-}
-
-fn readiness(localizer: &Localizer, key: &str, ready: bool) -> String {
-    format!(
-        "  {} {}",
-        if ready { "✓" } else { "✗" },
-        localizer.text(key)
+fn unavailable(localizer: &Localizer, styled: bool) -> Vec<String> {
+    let value = localizer.text("status-unavailable");
+    let value = if styled {
+        format!("\x1b[1;33m{value}\x1b[0m")
+    } else {
+        value
+    };
+    render_fields(
+        &[(localizer.text("status-availability"), value)],
+        "  ",
+        styled,
     )
 }
 
-fn indent(value: &str) -> String {
-    format!("  {value}")
+fn readiness(localizer: &Localizer, key: &str, ready: bool, styled: bool) -> String {
+    let symbol = if ready { "✓" } else { "✗" };
+    let symbol = if styled {
+        format!("\x1b[1;{}m{symbol}\x1b[0m", if ready { "32" } else { "31" })
+    } else {
+        symbol.to_owned()
+    };
+    format!("  {symbol} {}", localizer.text(key))
+}
+
+fn styling_enabled() -> bool {
+    io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
 }
 
 fn project_name(root: &Path) -> String {
@@ -309,5 +373,30 @@ impl From<&ProjectStatus> for StatusDocument {
                 publish: status.readiness.publish,
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::render_fields;
+
+    #[test]
+    fn fields_are_aligned_and_style_only_the_labels() {
+        let fields = [
+            ("Тип".to_owned(), "Конфигурация".to_owned()),
+            ("Workflow".to_owned(), "Git Flow".to_owned()),
+        ];
+
+        assert_eq!(
+            render_fields(&fields, "", false),
+            ["Тип:      Конфигурация", "Workflow: Git Flow"]
+        );
+        assert_eq!(
+            render_fields(&fields, "  ", true),
+            [
+                "  \x1b[1mТип:      \x1b[0mКонфигурация",
+                "  \x1b[1mWorkflow: \x1b[0mGit Flow",
+            ]
+        );
     }
 }
