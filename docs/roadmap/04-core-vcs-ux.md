@@ -57,16 +57,38 @@ CLI end-to-end проверяет Trunk/Git Flow, RU/EN, exit code, stdout/stder
 
 ## T14 — `eska diff`
 
-**Статус:** `NEXT`
+**Статус:** `DONE`
 **Зависит от:** T12
 
 Сначала file-level representation. Режимы: human, `--raw`, `--format json`.
 Внутренний результат должен допускать последующее object-aware расширение без
 изменения назначения команды.
 
+Принятые границы T14:
+
+- команда читает текущие состояния HEAD → index и index → worktree через
+  существующий `gix` repository layer, не запускает системный Git и ничего не
+  изменяет;
+- file-level результат ограничен корнем проекта, пути относительно проекта
+  отсортированы детерминированно; workflow для diff не требуется;
+- human-режим локализован, raw использует две стабильные колонки состояний,
+  JSON schema версии 1 содержит массив файлов с `path`, `path_encoding`, `index`
+  и `worktree` и не зависит от locale;
+- не-UTF-8 Git-пути не теряются: JSON использует обратимое percent-кодирование,
+  human/raw — однострочное escaped-представление;
+- содержимое файлов, patch/hunks и semantic Designer XML анализ не входят в T14.
+
+**Проверено:** `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`,
+`ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test` — успешно
+(73 unit, 81 integration). CLI end-to-end проверяет RU/EN, чистый проект,
+staged/unstaged/untracked, вложенный project scope, отсутствие workflow,
+human/raw/JSON, стабильную JSON-схему, exit codes и ошибки репозитория. Ручные RU
+human и EN JSON/raw сценарии выполнены в отдельных временных проектах playground.
+
 ## T15 — `eska save`
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T14
 
 Сохранять точно выбранный ChangeSet. Поддержать `-m`; без него допустим configured

@@ -17,6 +17,7 @@ src/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
+│   │   ├── diff.rs              # eska diff: human/raw/JSON presentation
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
 │   │   └── validate.rs          # проверка при запуске без подкоманды
@@ -38,6 +39,7 @@ src/
 │   ├── init.rs                  # обнаружение выгрузки, подключение и откат
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
+│   ├── diff.rs                  # file-level изменения внутри корня проекта
 │   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
 │   └── templates.rs             # план файлов встроенного каркаса
@@ -60,7 +62,7 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{init,new,start,status,localization}.rs
+├── cli/{diff,init,new,start,status,localization}.rs
 ├── project/{discovery,start,templates,workflow}.rs
 ├── vcs/{repository,status,support}.rs # реальные Git-репозитории и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
@@ -79,6 +81,7 @@ tests/
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
+| Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
 | Изменить запуск задачи или его ошибки | [`src/cli/commands/start.rs`](../src/cli/commands/start.rs), затем [`src/project/start.rs`](../src/project/start.rs) |
 | Подключить новую явно запрошенную команду | [`src/cli/commands/mod.rs`](../src/cli/commands/mod.rs) |
 | Изменить общий `--help`, `--lang`, `--project-dir` | [`src/cli/args.rs`](../src/cli/args.rs) |
@@ -120,6 +123,10 @@ tests/
 - `project/status.rs` объединяет configuration, workflow policy и read-only Git
   в снимок проекта. `cli/commands/status.rs` только локализует human presentation
   или сериализует стабильную JSON-схему версии 1.
+- `project/diff.rs` отбирает изменения внутри корня проекта и переводит пути в
+  project-relative вид, сохраняя отдельные состояния index и worktree.
+  `cli/commands/diff.rs` формирует human, raw и стабильный JSON версии 1; semantic
+  Designer XML анализ остаётся задачей T24.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   обновляет base только fast-forward и активирует новую task-ветку.
   `cli/commands/start.rs` отвечает только за аргументы и RU/EN presentation.
