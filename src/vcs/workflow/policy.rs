@@ -351,6 +351,12 @@ impl WorkflowPolicy {
         &self.base_branch
     }
 
+    /// Return the remote used to synchronize the base branch.
+    #[must_use]
+    pub fn remote(&self) -> &str {
+        &self.remote
+    }
+
     /// Return the fully qualified remote-tracking reference for the base branch.
     #[must_use]
     pub fn remote_base_reference(&self) -> String {

@@ -1,3 +1,3 @@
 mod repository;
 mod status;
-mod support;
+pub mod support;
