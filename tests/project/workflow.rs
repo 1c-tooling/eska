@@ -86,18 +86,34 @@ fn discovery_preserves_policy_and_cli_validation_does_not_modify_git() {
 }
 
 #[test]
-fn trunk_preset_and_custom_overrides_resolve_to_deterministic_plans() {
+fn implemented_presets_and_custom_overrides_resolve_to_deterministic_plans() {
     let dir = TestDir::new();
     fs::create_dir(dir.0.join("src")).unwrap();
-    for (workflow, expected_branch, expected_remote, delete_local_branch) in [
+    for (workflow, expected_base, expected_branch, expected_remote, delete_local_branch) in [
         (
             "[vcs.workflow]\npreset = 'trunk'\n",
+            "main",
             "task/FI-9",
             "origin",
             true,
         ),
         (
             "[vcs.workflow]\npreset = 'custom'\nextends = 'trunk'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{task}'\nremote = 'team'\ndelete_local_branch = false\n",
+            "main",
+            "company/FI-9",
+            "team",
+            false,
+        ),
+        (
+            "[vcs.workflow]\npreset = 'git-flow'\n",
+            "develop",
+            "feature/FI-9",
+            "origin",
+            true,
+        ),
+        (
+            "[vcs.workflow]\npreset = 'custom'\nextends = 'git-flow'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{task}'\nremote = 'team'\ndelete_local_branch = false\n",
+            "develop",
             "company/FI-9",
             "team",
             false,
@@ -114,14 +130,14 @@ fn trunk_preset_and_custom_overrides_resolve_to_deterministic_plans() {
             .unwrap()
             .plan("FI-9")
             .unwrap();
-        assert_eq!(plan.base_branch, "main");
+        assert_eq!(plan.base_branch, expected_base);
         assert_eq!(plan.working_branch, expected_branch);
         assert_eq!(plan.sync_strategy, SyncStrategy::Rebase);
         assert_eq!(
             plan.sync_reference,
-            format!("refs/remotes/{expected_remote}/main")
+            format!("refs/remotes/{expected_remote}/{expected_base}")
         );
-        assert_eq!(plan.integration_target, "main");
+        assert_eq!(plan.integration_target, expected_base);
         assert_eq!(
             plan.publish,
             PublishPlan::PushTaskBranch {
@@ -146,23 +162,19 @@ fn trunk_preset_and_custom_overrides_resolve_to_deterministic_plans() {
 }
 
 #[test]
-fn custom_overrides_can_be_loaded_before_their_builtin_defaults_are_available() {
+fn custom_overrides_can_be_loaded_before_their_builtin_default_is_available() {
     let dir = TestDir::new();
     fs::create_dir(dir.0.join("src")).unwrap();
-    for preset in ["git-flow", "github-flow"] {
-        let text = format!(
-            "[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'custom'\nextends = '{preset}'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{{task}}'\ndelete_local_branch = false\n"
+    let text = "[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'custom'\nextends = 'github-flow'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{task}'\ndelete_local_branch = false\n";
+    fs::write(dir.0.join("eska.toml"), text).unwrap();
+    for locale in ["ru", "en"] {
+        let result = validate(&dir.0, locale);
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
         );
-        fs::write(dir.0.join("eska.toml"), &text).unwrap();
-        for locale in ["ru", "en"] {
-            let result = validate(&dir.0, locale);
-            assert!(
-                result.status.success(),
-                "{}",
-                String::from_utf8_lossy(&result.stderr)
-            );
-            assert!(result.stdout.is_empty() && result.stderr.is_empty());
-        }
+        assert!(result.stdout.is_empty() && result.stderr.is_empty());
     }
 }
 

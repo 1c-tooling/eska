@@ -215,14 +215,19 @@ Git. Локальные атрибуты и фильтры обрабатыва�
 
 ## Workflow policy
 
-Модель workflow проверяет настройки и строит декларативный план задачи. Встроен
-preset `trunk`; defaults `git-flow` и `github-flow` добавляются в T10–T11.
+Модель workflow проверяет настройки и строит декларативный план задачи. Встроены
+presets `trunk` и `git-flow`; defaults `github-flow` добавляются в T11.
 Загрузка config не запускает Git-операции и не требует наличия репозитория.
 
 `trunk` создаёт short-lived ветку `task/{task}` от `main`, синхронизирует её
 через rebase на `origin/main`, публикует task-ветку и требует её интеграции в
 `main` через MR перед завершением. После подтверждённой интеграции план разрешает
 удалить локальную task-ветку; удаление remote-ветки не подразумевается.
+
+`git-flow` создаёт `feature/{task}` от `develop`, синхронизирует её через rebase
+на `origin/develop`, публикует feature-ветку и требует интеграции обратно в
+`develop`. В policy зарезервированы ветки `release/{task}` от `develop` и
+`hotfix/{task}` от `main`, но их планирование и исполнение остаются отложенными.
 
 Чтобы переопределить типовой preset, укажите `custom`, `extends` и нужные поля:
 
@@ -237,11 +242,12 @@ delete_local_branch = false
 ```
 
 Пропущенные поля наследуются, явное `false` сохраняется. Этот config можно
-загрузить и записать обратно без материализации defaults. Для `trunk` вызов
-`WorkflowSettings::resolve(None)` использует встроенную policy. Для ещё не
-реализованных `git-flow` и `github-flow` можно явно передать соответствующую
-базовую policy. Чужой preset отклоняется. `extends = "custom"` запрещён;
-`extends` и непустые overrides доступны только при `preset = "custom"`.
+загрузить и записать обратно без материализации defaults. Для `trunk` и
+`git-flow` вызов `WorkflowSettings::resolve(None)` использует встроенную policy.
+Для ещё не реализованного `github-flow` можно явно передать соответствующую
+базовую policy.
+Чужой preset отклоняется. `extends = "custom"` запрещён; `extends` и непустые
+overrides доступны только при `preset = "custom"`.
 
 Самостоятельная custom policy без `extends` должна явно задать все поля:
 

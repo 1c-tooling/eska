@@ -130,15 +130,37 @@ integration-теста включают RU/EN CLI validation. Clippy по все
 
 ## T10 — Git Flow preset
 
-**Статус:** `NEXT`
+**Статус:** `DONE`
 **Зависит от:** T08
 
 `feature/*` от `develop`; заложить policy slots для будущих `release/*` и
 `hotfix/*` от `main`, не реализуя весь release flow заранее.
 
+**Реализовано:** встроенная policy `git-flow` создаёт `feature/{task}` от
+`develop`, синхронизирует её через rebase на `refs/remotes/origin/develop`,
+публикует feature-ветку и требует подтверждённой интеграции в `develop` перед
+локальным удалением. В policy сохранены отдельные внутренние slots для
+`release/{task}` от `develop` и `hotfix/{task}` от `main`.
+
+**Решения и границы:**
+
+- `WorkflowSettings::resolve(None)` разрешает Git Flow и частичные overrides
+  `custom extends = "git-flow"`, не материализуя defaults в config;
+- custom overrides обычной task policy наследуют зарезервированные release/hotfix
+  slots; их внешняя настройка появится только вместе с реальным потребителем;
+- `plan()` продолжает строить только план обычной задачи; `--kind`, release,
+  hotfix, Git-команды, MR и runtime preflight не добавлены;
+- новых config-полей, пользовательских строк и dependencies нет.
+
+**Проверено:** `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`, 65 unit-тестов и 58
+integration-тестов в изолированном соседнем playground — успешно. Workflow
+integration-тесты table-driven проверяют Trunk, Git Flow, custom overrides,
+детерминированные планы и RU/EN CLI validation.
+
 ## T11 — GitHub Flow preset
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T08
 
 Short-lived branch от `main`, публикация ветки и PR/MR integration policy.

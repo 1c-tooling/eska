@@ -108,9 +108,10 @@ tests/
   `repository.rs` возвращает HEAD, refs и историю, `status.rs` сравнивает
   HEAD/index/worktree. Состояние файлов не требует разбора Designer XML.
 - `workflow.rs` хранит выбор preset, проверенные overrides и разрешает доступные
-  встроенные policies; `workflow/policy.rs` проверяет поля, содержит Trunk
-  defaults, применяет overrides и строит декларативный план задачи без доступа к
-  репозиторию. Defaults Git Flow и GitHub Flow добавляются в T10–T11;
+  встроенные policies; `workflow/policy.rs` проверяет поля, содержит Trunk и Git
+  Flow defaults, применяет overrides и строит декларативный план задачи без
+  доступа к репозиторию. Git Flow также хранит внутренние slots будущих release-
+  и hotfix-веток; defaults GitHub Flow добавляются в T11;
   планирование не выполняет Git-команды и не заменяет runtime preflight.
 - Unit-тесты находятся рядом с реализацией в `#[cfg(test)] mod tests`.
   Интеграционные сценарии сгруппированы по команде или операции проекта;

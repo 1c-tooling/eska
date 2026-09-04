@@ -42,7 +42,7 @@ pub struct PolicyOverrides {
     pub delete_local_branch: Option<bool>,
 }
 
-/// Complete and validated policy; construct through `PolicyOverrides::resolve`.
+/// Complete and validated policy; construct through a preset or `PolicyOverrides::resolve`.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WorkflowPolicy {
     base_branch: String,
@@ -54,6 +54,15 @@ pub struct WorkflowPolicy {
     publish: PublishBehavior,
     finish: FinishRequirement,
     delete_local_branch: bool,
+    release_branch: Option<ReservedBranchPolicy>,
+    hotfix_branch: Option<ReservedBranchPolicy>,
+}
+
+/// Naming and source reserved for a future specialized branch workflow.
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct ReservedBranchPolicy {
+    base_branch: String,
+    branch_template: String,
 }
 
 impl WorkflowPreset {
@@ -71,8 +80,29 @@ impl WorkflowPreset {
                 publish: PublishBehavior::PushTaskBranch,
                 finish: FinishRequirement::Integrated,
                 delete_local_branch: true,
+                release_branch: None,
+                hotfix_branch: None,
             }),
-            Self::GitFlow | Self::GithubFlow | Self::Custom => None,
+            Self::GitFlow => Some(WorkflowPolicy {
+                base_branch: "develop".into(),
+                working_branch: WorkingBranchPolicy::TaskBranch,
+                task_branch_template: "feature/{task}".into(),
+                remote: "origin".into(),
+                sync_strategy: SyncStrategy::Rebase,
+                integration_target: "develop".into(),
+                publish: PublishBehavior::PushTaskBranch,
+                finish: FinishRequirement::Integrated,
+                delete_local_branch: true,
+                release_branch: Some(ReservedBranchPolicy {
+                    base_branch: "develop".into(),
+                    branch_template: "release/{task}".into(),
+                }),
+                hotfix_branch: Some(ReservedBranchPolicy {
+                    base_branch: "main".into(),
+                    branch_template: "hotfix/{task}".into(),
+                }),
+            }),
+            Self::GithubFlow | Self::Custom => None,
         }
     }
 }
@@ -227,6 +257,8 @@ impl PolicyOverrides {
                     .or_else(|| base.map(|p| p.delete_local_branch)),
                 PolicyField::DeleteLocalBranch,
             )?,
+            release_branch: base.and_then(|policy| policy.release_branch.clone()),
+            hotfix_branch: base.and_then(|policy| policy.hotfix_branch.clone()),
         };
         validate_finish(
             Some(policy.publish),
@@ -464,16 +496,15 @@ mod tests {
     }
 
     #[test]
-    fn unavailable_presets_still_require_an_explicit_base() {
+    fn unavailable_preset_still_requires_an_explicit_base() {
         let base = complete().resolve(None).unwrap();
-        for preset in [WorkflowPreset::GitFlow, WorkflowPreset::GithubFlow] {
-            let settings = WorkflowSettings::selection(preset);
-            assert_eq!(
-                settings.resolve(None),
-                Err(PolicyError::MissingPreset { preset })
-            );
-            assert_eq!(settings.resolve(Some((preset, &base))).unwrap(), base);
-        }
+        let preset = WorkflowPreset::GithubFlow;
+        let settings = WorkflowSettings::selection(preset);
+        assert_eq!(
+            settings.resolve(None),
+            Err(PolicyError::MissingPreset { preset })
+        );
+        assert_eq!(settings.resolve(Some((preset, &base))).unwrap(), base);
     }
 
     #[test]
@@ -560,6 +591,76 @@ mod tests {
             assert_eq!(plan.finish, FinishRequirement::Integrated);
             assert_eq!(plan.delete_local_branch, delete_local_branch);
         }
+    }
+
+    #[test]
+    fn git_flow_plan_uses_feature_branch_from_develop() {
+        let plan = WorkflowPreset::GitFlow
+            .policy()
+            .unwrap()
+            .plan("FI-1234")
+            .unwrap();
+        assert_eq!(
+            plan,
+            TaskPlan {
+                base_branch: "develop".into(),
+                working_branch: "feature/FI-1234".into(),
+                sync_strategy: SyncStrategy::Rebase,
+                sync_reference: "refs/remotes/origin/develop".into(),
+                integration_target: "develop".into(),
+                publish: PublishPlan::PushTaskBranch {
+                    remote: "origin".into(),
+                    branch: "feature/FI-1234".into(),
+                },
+                finish: FinishRequirement::Integrated,
+                delete_local_branch: true,
+            }
+        );
+    }
+
+    #[test]
+    fn git_flow_reserves_release_and_hotfix_branch_policies_without_planning_them() {
+        let policy = WorkflowPreset::GitFlow.policy().unwrap();
+        assert_eq!(
+            policy.release_branch,
+            Some(ReservedBranchPolicy {
+                base_branch: "develop".into(),
+                branch_template: "release/{task}".into(),
+            })
+        );
+        assert_eq!(
+            policy.hotfix_branch,
+            Some(ReservedBranchPolicy {
+                base_branch: "main".into(),
+                branch_template: "hotfix/{task}".into(),
+            })
+        );
+    }
+
+    #[test]
+    fn custom_git_flow_overrides_keep_reserved_branch_policies() {
+        let settings = WorkflowSettings::new(
+            WorkflowPreset::Custom,
+            Some(WorkflowPreset::GitFlow),
+            PolicyOverrides {
+                remote: Some("team".into()),
+                delete_local_branch: Some(false),
+                ..PolicyOverrides::default()
+            },
+        )
+        .unwrap();
+        let policy = settings.resolve(None).unwrap();
+        assert_eq!(
+            policy.release_branch,
+            WorkflowPreset::GitFlow.policy().unwrap().release_branch
+        );
+        assert_eq!(
+            policy.hotfix_branch,
+            WorkflowPreset::GitFlow.policy().unwrap().hotfix_branch
+        );
+        let plan = policy.plan("FI-10").unwrap();
+        assert_eq!(plan.sync_reference, "refs/remotes/team/develop");
+        assert!(!plan.delete_local_branch);
     }
 
     #[test]
