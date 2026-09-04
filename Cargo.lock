@@ -334,7 +334,7 @@ dependencies = [
 
 [[package]]
 name = "eska"
-version = "0.2.0"
+version = "0.1.2"
 dependencies = [
  "clap",
  "crossterm",
