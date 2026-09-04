@@ -216,7 +216,7 @@ Git. Локальные атрибуты и фильтры обрабатыва�
 ## Workflow policy
 
 Модель workflow проверяет настройки и строит декларативный план задачи. Встроены
-presets `trunk` и `git-flow`; defaults `github-flow` добавляются в T11.
+presets `trunk`, `git-flow` и `github-flow`.
 Загрузка config не запускает Git-операции и не требует наличия репозитория.
 
 `trunk` создаёт short-lived ветку `task/{task}` от `main`, синхронизирует её
@@ -228,6 +228,11 @@ presets `trunk` и `git-flow`; defaults `github-flow` добавляются в 
 на `origin/develop`, публикует feature-ветку и требует интеграции обратно в
 `develop`. В policy зарезервированы ветки `release/{task}` от `develop` и
 `hotfix/{task}` от `main`, но их планирование и исполнение остаются отложенными.
+
+`github-flow` создаёт short-lived ветку `feature/{task}` от `main`, выполняет
+rebase на `origin/main`, публикует ветку и требует подтверждённой интеграции через
+PR/MR в `main` перед локальным удалением. Создание PR/MR провайдером не входит в
+декларативный plan и остаётся отдельной задачей.
 
 Чтобы переопределить типовой preset, укажите `custom`, `extends` и нужные поля:
 
@@ -243,11 +248,9 @@ delete_local_branch = false
 
 Пропущенные поля наследуются, явное `false` сохраняется. Этот config можно
 загрузить и записать обратно без материализации defaults. Для `trunk` и
-`git-flow` вызов `WorkflowSettings::resolve(None)` использует встроенную policy.
-Для ещё не реализованного `github-flow` можно явно передать соответствующую
-базовую policy.
-Чужой preset отклоняется. `extends = "custom"` запрещён; `extends` и непустые
-overrides доступны только при `preset = "custom"`.
+`git-flow` и `github-flow` вызов `WorkflowSettings::resolve(None)` использует
+встроенную policy. Чужой preset отклоняется. `extends = "custom"` запрещён;
+`extends` и непустые overrides доступны только при `preset = "custom"`.
 
 Самостоятельная custom policy без `extends` должна явно задать все поля:
 

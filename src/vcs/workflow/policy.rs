@@ -102,7 +102,20 @@ impl WorkflowPreset {
                     branch_template: "hotfix/{task}".into(),
                 }),
             }),
-            Self::GithubFlow | Self::Custom => None,
+            Self::GithubFlow => Some(WorkflowPolicy {
+                base_branch: "main".into(),
+                working_branch: WorkingBranchPolicy::TaskBranch,
+                task_branch_template: "feature/{task}".into(),
+                remote: "origin".into(),
+                sync_strategy: SyncStrategy::Rebase,
+                integration_target: "main".into(),
+                publish: PublishBehavior::PushTaskBranch,
+                finish: FinishRequirement::Integrated,
+                delete_local_branch: true,
+                release_branch: None,
+                hotfix_branch: None,
+            }),
+            Self::Custom => None,
         }
     }
 }
@@ -496,15 +509,17 @@ mod tests {
     }
 
     #[test]
-    fn unavailable_preset_still_requires_an_explicit_base() {
-        let base = complete().resolve(None).unwrap();
-        let preset = WorkflowPreset::GithubFlow;
-        let settings = WorkflowSettings::selection(preset);
-        assert_eq!(
-            settings.resolve(None),
-            Err(PolicyError::MissingPreset { preset })
-        );
-        assert_eq!(settings.resolve(Some((preset, &base))).unwrap(), base);
+    fn all_named_presets_have_builtin_policies() {
+        for preset in [
+            WorkflowPreset::Trunk,
+            WorkflowPreset::GitFlow,
+            WorkflowPreset::GithubFlow,
+        ] {
+            assert_eq!(
+                WorkflowSettings::selection(preset).resolve(None).unwrap(),
+                preset.policy().unwrap()
+            );
+        }
     }
 
     #[test]
@@ -661,6 +676,31 @@ mod tests {
         let plan = policy.plan("FI-10").unwrap();
         assert_eq!(plan.sync_reference, "refs/remotes/team/develop");
         assert!(!plan.delete_local_branch);
+    }
+
+    #[test]
+    fn github_flow_plan_uses_published_feature_branch_integrated_into_main() {
+        let plan = WorkflowPreset::GithubFlow
+            .policy()
+            .unwrap()
+            .plan("FI-1234")
+            .unwrap();
+        assert_eq!(
+            plan,
+            TaskPlan {
+                base_branch: "main".into(),
+                working_branch: "feature/FI-1234".into(),
+                sync_strategy: SyncStrategy::Rebase,
+                sync_reference: "refs/remotes/origin/main".into(),
+                integration_target: "main".into(),
+                publish: PublishPlan::PushTaskBranch {
+                    remote: "origin".into(),
+                    branch: "feature/FI-1234".into(),
+                },
+                finish: FinishRequirement::Integrated,
+                delete_local_branch: true,
+            }
+        );
     }
 
     #[test]

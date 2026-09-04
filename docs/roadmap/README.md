@@ -6,7 +6,7 @@
 
 ## Текущее состояние
 
-Стадия проекта: **Git Flow preset завершён**, далее GitHub Flow preset.
+Стадия проекта: **workflow presets завершены**, далее `eska status`.
 
 - `DONE`: чистый минимальный Rust CLI;
 - `DONE`: локализация `ru-RU` / `en-US`, включая `--help`;
@@ -20,7 +20,8 @@
 - `DONE`: `T08` — workflow policy model, custom overrides и декларативный план;
 - `DONE`: `T09` — Trunk preset;
 - `DONE`: `T10` — Git Flow preset;
-- `NEXT`: `T11` — GitHub Flow preset;
+- `DONE`: `T11` — GitHub Flow preset;
+- `NEXT`: `T12` — `eska status`;
 - VCS-команды и исполнение workflow policy пока не реализованы.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
@@ -56,8 +57,8 @@ TUI разделён на обработку клавиш, отрисовку и
 | T08 | DONE | Workflow policy model | [03-repository-workflow.md](03-repository-workflow.md) |
 | T09 | DONE | Trunk preset | [03-repository-workflow.md](03-repository-workflow.md) |
 | T10 | DONE | Git Flow preset | [03-repository-workflow.md](03-repository-workflow.md) |
-| T11 | NEXT | GitHub Flow preset | [03-repository-workflow.md](03-repository-workflow.md) |
-| T12 | PLANNED | `eska status` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T11 | DONE | GitHub Flow preset | [03-repository-workflow.md](03-repository-workflow.md) |
+| T12 | NEXT | `eska status` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T13 | PLANNED | `eska start` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T14 | PLANNED | `eska diff` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T15 | PLANNED | `eska save` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |

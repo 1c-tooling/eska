@@ -160,10 +160,30 @@ integration-тесты table-driven проверяют Trunk, Git Flow, custom o
 
 ## T11 — GitHub Flow preset
 
-**Статус:** `NEXT`
+**Статус:** `DONE`
 **Зависит от:** T08
 
 Short-lived branch от `main`, публикация ветки и PR/MR integration policy.
+
+**Реализовано:** встроенная policy `github-flow` создаёт short-lived ветку
+`feature/{task}` от `main`, синхронизирует её через rebase на
+`refs/remotes/origin/main`, публикует ветку и требует подтверждённой интеграции в
+`main` перед локальным удалением.
+
+**Решения и границы:**
+
+- GitHub Flow использует provider-neutral план: требование PR/MR выражено через
+  публикацию task-ветки и `require-integrated`, без зависимости от GitHub API;
+- `WorkflowSettings::resolve(None)` разрешает preset и частичные overrides
+  `custom extends = "github-flow"`, не материализуя defaults в config;
+- создание PR/MR, Git-команды и runtime preflight остаются задачами основного VCS
+  UX; новых config-полей, пользовательских строк и dependencies нет.
+
+**Проверено:** `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`, 66 unit-тестов и 57
+integration-тестов в изолированном соседнем playground — успешно. Table-driven
+workflow integration-тест покрывает все три presets, их custom overrides,
+детерминированный plan и RU/EN CLI validation.
 
 **Готовность workflow:** одинаковые входные данные дают детерминированный plan;
 presets и custom overrides покрыты table-driven tests, пока без выполнения команд

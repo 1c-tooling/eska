@@ -118,6 +118,20 @@ fn implemented_presets_and_custom_overrides_resolve_to_deterministic_plans() {
             "team",
             false,
         ),
+        (
+            "[vcs.workflow]\npreset = 'github-flow'\n",
+            "main",
+            "feature/FI-9",
+            "origin",
+            true,
+        ),
+        (
+            "[vcs.workflow]\npreset = 'custom'\nextends = 'github-flow'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{task}'\nremote = 'team'\ndelete_local_branch = false\n",
+            "main",
+            "company/FI-9",
+            "team",
+            false,
+        ),
     ] {
         let text = format!("[project]\ntype = 'report'\n{workflow}");
         fs::write(dir.0.join("eska.toml"), &text).unwrap();
@@ -158,23 +172,6 @@ fn implemented_presets_and_custom_overrides_resolve_to_deterministic_plans() {
         }
         assert_eq!(fs::read_to_string(dir.0.join("eska.toml")).unwrap(), text);
         assert!(!dir.0.join(".git").exists());
-    }
-}
-
-#[test]
-fn custom_overrides_can_be_loaded_before_their_builtin_default_is_available() {
-    let dir = TestDir::new();
-    fs::create_dir(dir.0.join("src")).unwrap();
-    let text = "[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'custom'\nextends = 'github-flow'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{task}'\ndelete_local_branch = false\n";
-    fs::write(dir.0.join("eska.toml"), text).unwrap();
-    for locale in ["ru", "en"] {
-        let result = validate(&dir.0, locale);
-        assert!(
-            result.status.success(),
-            "{}",
-            String::from_utf8_lossy(&result.stderr)
-        );
-        assert!(result.stdout.is_empty() && result.stderr.is_empty());
     }
 }
 

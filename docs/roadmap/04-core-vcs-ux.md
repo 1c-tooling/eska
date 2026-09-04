@@ -5,7 +5,7 @@
 
 ## T12 — `eska status`
 
-**Статус:** `PLANNED`
+**Статус:** `NEXT`
 
 Показывать состояние проекта, workflow, task/branch/base, ChangeSet summary,
 ahead/behind, locks и readiness к save/publish. Это не копия `git status`.
@@ -62,4 +62,3 @@ MR/PR и provider integrations оставить следующей задаче�
 Проверить отсутствие unsaved work и выполнение publish/integration policy; снять
 locks, перейти на base, обновить её, удалить локальную task branch и очистить task
 state. Remote branch удаляется только по явной policy.
-
