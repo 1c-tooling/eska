@@ -35,6 +35,7 @@ src/
 │   ├── model.rs                 # Project, типы проекта, инварианты путей
 │   ├── create.rs                # создание нового каталога и откат
 │   ├── init.rs                  # обнаружение выгрузки, подключение и откат
+│   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
 │   └── templates.rs             # план файлов встроенного каркаса
@@ -43,7 +44,6 @@ src/
 │   ├── project.rs               # ProjectConfig, загрузка и валидация
 │   ├── workflow.rs              # преобразование workflow-полей в доменную модель
 │   └── schema.rs                # TOML-поля, defaults и строковые значения
-├── designer_xml.rs              # распознавание корневого XML-дескриптора
 └── vcs/
     ├── mod.rs                   # граница VCS
     ├── git.rs                   # общее открытие и инициализация Git через gix
@@ -83,7 +83,7 @@ tests/
 | Изменить поиск корня и проверку исходников | [`src/project/discovery.rs`](../src/project/discovery.rs) |
 | Изменить расчёт состояния проекта и readiness | [`src/project/status.rs`](../src/project/status.rs) |
 | Изменить схему `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
-| Изменить распознавание типа выгрузки | [`src/designer_xml.rs`](../src/designer_xml.rs) |
+| Изменить распознавание типа выгрузки | [`src/project/designer_xml.rs`](../src/project/designer_xml.rs) |
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
 | Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../src/vcs/repository.rs) |
 | Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../src/vcs/status.rs) |
@@ -98,7 +98,7 @@ tests/
   список команд и их диспетчеризация — в `commands/mod.rs`.
 - Каждый обработчик команды держит вместе свои аргументы, help, диалог и
   представление собственных ошибок. Общие ошибки проекта — в `diagnostics.rs`.
-- `project`, `config`, `designer_xml` и `vcs` не зависят от `cli`, `clap`,
+- `project`, `config` и `vcs` не зависят от `cli`, `clap`,
   терминала и локализованных строк. Они возвращают данные и структурированные ошибки.
 - Только `cli/interactive/terminal.rs` владеет переключением режимов терминала
   и их восстановлением. Обработка клавиш и отрисовка тестируются без TTY.
@@ -125,17 +125,18 @@ tests/
   тесты discovery/templates также проверяют соответствующий CLI-контракт.
 
 Для небольшой самостоятельной области достаточно одного файла, как
-`designer_xml.rs`. Подкаталог нужен, когда появляются несколько самостоятельных
+`project/designer_xml.rs`. Подкаталог нужен, когда появляются несколько самостоятельных
 обязанностей. Не добавляйте безымянные `utils`, `helpers` или пустые слои на будущее.
 
 ## Запуск конкретных тестов
 
 ```bash
-ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --test integration cli::init
-ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --test integration cli::new
-ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --test integration project::discovery
-ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --lib cli::interactive
-ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test --test integration vcs::
+export ESKA_TEST_ROOT="$(realpath ../eska-playground)"
+cargo test --test integration cli::init
+cargo test --test integration cli::new
+cargo test --test integration project::discovery
+cargo test --lib cli::interactive
+cargo test --test integration vcs::
 ```
 
 Полный набор проверок и правила временных каталогов описаны в

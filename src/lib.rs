@@ -5,7 +5,6 @@
 
 pub mod cli;
 pub mod config;
-mod designer_xml;
 pub mod project;
 pub mod vcs;
 

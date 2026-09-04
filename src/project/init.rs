@@ -8,12 +8,11 @@ use std::{
 
 use crate::{
     config::{FILE_NAME, ProjectConfig, ProjectConfigError},
-    designer_xml,
     vcs::{git, workflow::WorkflowPreset},
 };
 
 use super::{
-    Project, ProjectType,
+    Project, ProjectType, designer_xml,
     discovery::{self, DiscoveryError},
     templates::{self, TemplateFile},
 };

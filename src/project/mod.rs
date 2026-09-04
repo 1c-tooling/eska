@@ -1,6 +1,7 @@
 //! Locale-independent project model and filesystem operations.
 
 pub mod create;
+mod designer_xml;
 pub mod discovery;
 pub mod init;
 pub mod model;

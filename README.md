@@ -334,11 +334,11 @@ dirty state, публикации и интеграции относятся к 
 cargo fmt --check
 cargo check
 cargo clippy --all-targets --all-features -- -D warnings
-ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test
+ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test
 ```
 
-На этой машине все ручные запуски CLI выполняются только внутри
-`/home/kas/Projects/eska-playground`, в отдельных demo-проектах. Автоматические
+Все ручные запуски CLI выполняются только внутри соседнего каталога
+`eska-playground`, в отдельных demo-проектах. Автоматические
 CLI-тесты с `ESKA_TEST_ROOT` создают там уникальные временные подкаталоги и
 удаляют только их; существующие demo не изменяются. На других машинах и в CI
 без этой переменной тесты используют системный временный каталог.

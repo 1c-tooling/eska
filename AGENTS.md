@@ -1,4 +1,4 @@
-# Инструкция для Codex
+# Инструкции для агентов разработки
 
 Эти правила действуют для всех последующих задач в репозитории `eska`. Явное
 указание пользователя имеет приоритет; при сомнении сохраняй пользовательские
@@ -138,7 +138,7 @@
   cargo fmt --check
   cargo check
   cargo clippy --all-targets --all-features -- -D warnings
-  ESKA_TEST_ROOT=/home/kas/Projects/eska-playground cargo test
+  ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test
   ```
 
   Для промежуточного commit допустимы более узкие релевантные проверки, но не

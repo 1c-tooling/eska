@@ -1,6 +1,6 @@
 //! Root descriptor detection, not a semantic validator for an entire export.
 
-use crate::project::ProjectType;
+use super::ProjectType;
 
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
 
@@ -46,8 +46,8 @@ pub fn project_type(input: &str) -> Result<Option<ProjectType>, roxmltree::Error
 
 #[cfg(test)]
 mod tests {
+    use super::ProjectType;
     use super::{NAMESPACE, project_type};
-    use crate::project::ProjectType;
 
     #[test]
     fn detects_all_types_with_namespaces_bom_comments_and_configuration_properties() {
