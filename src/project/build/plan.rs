@@ -50,11 +50,13 @@ impl From<ProjectType> for ArtifactType {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BuildPlan {
+    project_root: PathBuf,
     artifact_type: ArtifactType,
     platform_version: PlatformVersion,
     source: PathBuf,
     artifacts_directory: PathBuf,
     output: PathBuf,
+    explicit_output: bool,
 }
 
 impl BuildPlan {
@@ -66,6 +68,7 @@ impl BuildPlan {
     /// # Errors
     /// Returns a structured error for a nameless project root or unsafe/mismatched output path.
     pub fn new(project: &Project, output: Option<&Path>) -> Result<Self, PlanError> {
+        let explicit_output = output.is_some();
         let artifact_type = ArtifactType::from(project.configuration().project_type());
         let artifacts_directory = project.root().join(
             project
@@ -78,6 +81,7 @@ impl BuildPlan {
             None => artifacts_directory.join(default_filename(project.root(), artifact_type)?),
         };
         Ok(Self {
+            project_root: project.root().to_owned(),
             artifact_type,
             platform_version: project
                 .configuration()
@@ -87,12 +91,18 @@ impl BuildPlan {
             source: project.source().to_owned(),
             artifacts_directory,
             output,
+            explicit_output,
         })
     }
 
     #[must_use]
     pub const fn artifact_type(&self) -> ArtifactType {
         self.artifact_type
+    }
+
+    #[must_use]
+    pub fn project_root(&self) -> &Path {
+        &self.project_root
     }
 
     #[must_use]
@@ -113,6 +123,11 @@ impl BuildPlan {
     #[must_use]
     pub fn output(&self) -> &Path {
         &self.output
+    }
+
+    #[must_use]
+    pub const fn has_explicit_output(&self) -> bool {
+        self.explicit_output
     }
 }
 

@@ -6,6 +6,7 @@ use clap::Subcommand;
 
 use super::localization::Localizer;
 
+mod build;
 mod clone;
 mod diff;
 mod finish;
@@ -20,6 +21,8 @@ mod validate;
 
 #[derive(Debug, Subcommand)]
 pub(super) enum Commands {
+    #[command(disable_help_flag = true)]
+    Build(build::BuildArgs),
     #[command(disable_help_flag = true)]
     Clone(clone::CloneArgs),
     #[command(disable_help_flag = true)]
@@ -48,6 +51,7 @@ pub(super) fn run(
     localizer: &Localizer,
 ) -> ExitCode {
     match command {
+        Some(Commands::Build(args)) => args.run(project_dir, localizer),
         Some(Commands::Clone(args)) => args.run(project_dir, localizer),
         Some(Commands::New(args)) => args.run(project_dir, localizer),
         Some(Commands::Init(args)) => args.run(project_dir, localizer),
@@ -64,6 +68,7 @@ pub(super) fn run(
 
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
     command
+        .mut_subcommand("build", |command| build::localize(command, localizer))
         .mut_subcommand("clone", |command| clone::localize(command, localizer))
         .mut_subcommand("new", |command| new::localize(command, localizer))
         .mut_subcommand("init", |command| init::localize(command, localizer))

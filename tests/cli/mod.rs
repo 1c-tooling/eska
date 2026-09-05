@@ -1,3 +1,4 @@
+mod build;
 mod clone;
 mod diff;
 mod finish;
