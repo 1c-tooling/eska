@@ -780,12 +780,12 @@ const fn semantic_event_change(kind: SemanticEventKind) -> Change {
 }
 
 /// Return the top-level metadata kind encoded in a stable semantic object ID.
-fn semantic_object_group(id: &str) -> &str {
+pub(super) fn semantic_object_group(id: &str) -> &str {
     id.split([':', '/']).next().unwrap_or(id)
 }
 
 /// Render every hierarchical `ObjectId` segment in localized Configurator notation.
-fn render_semantic_object(id: &str, localizer: &Localizer) -> String {
+pub(super) fn render_semantic_object(id: &str, localizer: &Localizer) -> String {
     id.split('/')
         .map(|segment| {
             segment.split_once(':').map_or_else(
@@ -811,7 +811,7 @@ fn unescape_object_name(name: &str) -> String {
 }
 
 /// Select a localized label for one semantic event kind.
-const fn semantic_event_key(kind: SemanticEventKind) -> &'static str {
+pub(super) const fn semantic_event_key(kind: SemanticEventKind) -> &'static str {
     match kind {
         SemanticEventKind::ObjectAdded => "diff-semantic-object-added",
         SemanticEventKind::ObjectRemoved => "diff-semantic-object-removed",
@@ -1043,7 +1043,7 @@ fn percent_encode(path: &BStr) -> String {
 }
 
 /// Quote paths only when control characters, quotes or arbitrary bytes require escaping.
-fn display_path(path: &BStr) -> String {
+pub(super) fn display_path(path: &BStr) -> String {
     if let Ok(path) = path.to_str()
         && path
             .chars()
