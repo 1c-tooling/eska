@@ -1,4 +1,4 @@
-//! Read-only repository operations. Git names and messages retain their original bytes.
+//! Embedded repository operations. Git names and messages retain their original bytes.
 
 use std::{
     fmt, fs, io,

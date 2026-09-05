@@ -192,7 +192,7 @@ eska clone <repository> [directory]
 
 ## T17 — Gix-first миграция реализованных VCS-операций
 
-**Статус:** `IN-PROGRESS`
+**Статус:** `DONE`
 **Зависит от:** T13, T15, T16
 
 Проверить все production-вызовы system Git и перенести на `gix` каждую операцию,
@@ -214,6 +214,37 @@ eska clone <repository> [directory]
   output. Итог задачи явно перечисляет все оставшиеся вызовы и причины.
 
 T17 не меняет публичный CLI и не расширяет поведение `start` / `save`.
+
+Решения T17:
+
+- `vcs::network` стал общей границей clone/fetch; обычные transport выполняются
+  через `gix`, пользовательская/system конфигурация доступна credentials и
+  transport настройкам;
+- system Git fetch выбирается до подключения только для remote-helper transport,
+  не поддерживаемого `gix 0.87.1`; причина `RemoteHelper { scheme }` сохраняется
+  и при успешном fallback, и в его ошибке;
+- ошибка connect/prepare/receive через `gix` возвращается напрямую и никогда не
+  повторяется system Git;
+- ancestry считается обходом commit graph через `gix`; неактивная base ref
+  обновляется только fast-forward, с compare-and-swap и проверкой main/linked
+  worktrees;
+- system Git остаётся для `git merge --ff-only` активной base и `git switch`
+  новой task-ветки: `gix` не даёт равноценной высокоуровневой orchestration,
+  согласованно меняющей HEAD, index и worktree;
+- `eska save` сохраняет `git add --all` и `git commit --only`: system Git нужен
+  для hooks, configured editor, signing, filters/LFS и существующей гарантии
+  byte-for-byte rollback index;
+- все system Git вызовы по-прежнему находятся только в `vcs::command`, human
+  output не разбирается.
+
+Проверки T17: `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`,
+`ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test` — успешно
+(84 unit, 108 integration). Network-сценарии проверяют gix fetch, отсутствие
+безусловного retry и структурированную причину remote-helper fallback;
+start/repository — active/inactive base, ancestry, compare-and-swap и запрет
+обновления branch из linked worktree. Ручные RU remote-fetch и EN local-start
+сценарии выполнены в отдельных временных проектах playground.
 
 ## T37 — `eska sync` / `eska continue` / `eska abort`
 
