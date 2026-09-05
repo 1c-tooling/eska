@@ -86,7 +86,7 @@ fn discovery_preserves_policy_and_cli_validation_does_not_modify_git() {
 }
 
 #[test]
-fn implemented_presets_and_custom_overrides_resolve_to_deterministic_plans() {
+fn implemented_presets_and_overrides_resolve_to_deterministic_plans() {
     let dir = TestDir::new();
     fs::create_dir(dir.0.join("src")).unwrap();
     for (workflow, expected_base, expected_branch, expected_remote, delete_local_branch) in [
@@ -94,6 +94,13 @@ fn implemented_presets_and_custom_overrides_resolve_to_deterministic_plans() {
             "[vcs.workflow]\npreset = 'trunk'\n",
             "main",
             "task/FI-9",
+            "origin",
+            true,
+        ),
+        (
+            "[vcs.workflow]\npreset = 'trunk'\n[vcs.workflow.policy]\nbase_branch = 'master'\ntask_branch_template = 'feature/{task}'\nintegration_target = 'master'\n",
+            "master",
+            "feature/FI-9",
             "origin",
             true,
         ),
@@ -186,7 +193,7 @@ fn policy_errors_are_localized_and_do_not_write_files() {
         (format!("{header}[vcs.workflow.policy]\nsync_strategy = 'reset-hard'"), "Неверное значение", "Invalid workflow policy value", "sync_strategy"),
         ("[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'custom'\n[vcs.workflow.policy]\nbase_branch = 'main'".into(), "Не задано поле", "Missing workflow policy field", "working_branch"),
         (header.replace("extends = 'trunk'", "extends = 'custom'"), "наследование от custom недопустимо", "not custom", "extends"),
-        (header.replace("preset = 'custom'", "preset = 'trunk'"), "Переопределения workflow", "Workflow overrides", "custom"),
+        ("[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'trunk'\nextends = 'git-flow'".into(), "только при preset", "requires preset", "custom"),
         (format!("{header}[vcs.workflow.policy]\npublish = 'disabled'\nfinish = 'require-published'"), "несовместим", "incompatible", "publish"),
         (format!("{header}[vcs.workflow.policy]\nfinish = 'require-published'\ndelete_local_branch = true"), "требует", "requires", "delete_local_branch"),
         (format!("{header}[vcs.workflow.policy]\ndelete_remote_branch = true"), "Некорректный TOML", "Invalid TOML", "eska.toml"),

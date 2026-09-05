@@ -73,9 +73,14 @@ config, а не через новый Rust enum на каждую компани
 - Внешние TOML-поля остаются в `config/schema.rs`, преобразования policy —
   в `config/workflow.rs`; доменная проверка и планирование — в
   `vcs/workflow/policy.rs`. Новых dependencies нет.
-- `custom` наследует именованный preset через `extends` и частичные поля
-  `[vcs.workflow.policy]` либо задаёт все поля самостоятельно без `extends`.
-  Наследование от `custom` запрещено; переданная в `resolve` база должна
+- Именованные presets принимают частичные overrides из
+  `[vcs.workflow.policy]`; это позволяет явно настроить `base_branch`,
+  `task_branch_template` и `integration_target` без смены preset на `custom`.
+  Для Trunk и GitHub Flow при переименовании общей базовой ветки нужно явно
+  изменить и base, и integration target.
+- `custom` наследует именованный preset через `extends` и те же частичные поля
+  либо задаёт все поля самостоятельно без `extends`. Наследование от `custom`
+  и `extends` у именованного preset запрещены; переданная в `resolve` база должна
   соответствовать выбранному preset. Готовые defaults остаются T09–T11.
 - Старый config с одним `preset`, включая `custom`, читается и записывается
   в прежнем компактном виде. Ненастроенный `custom` не получает скрытых defaults;
@@ -102,6 +107,12 @@ config, а не через новый Rust enum на каждую компани
 имена веток, неполная policy, противоречия настроек, discovery и RU/EN diagnostics.
 В playground вручную проверены пример policy из README, ошибка `base_branch`,
 `new`/`init` на обоих языках и сохранность Git-метаданных.
+
+**Дополнение:** частичные policy overrides разрешены непосредственно для
+`trunk`, `git-flow` и `github-flow`. Конфигурация `trunk` с
+`base_branch = "master"` и `integration_target = "master"` используется всеми
+потребителями общей policy, включая `status`, `start`, `switch`, `history` и
+будущий `finish`; старые compact и `custom extends` configs не изменились.
 
 ## T09 — Trunk preset
 

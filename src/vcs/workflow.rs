@@ -37,17 +37,15 @@ impl WorkflowSettings {
     /// Validate overrides without requiring builtin preset defaults to be available.
     ///
     /// # Errors
-    /// Rejects non-custom overrides, recursive inheritance and invalid policy fields.
+    /// Rejects inheritance on a named preset, recursive inheritance and invalid policy fields.
     /// A standalone custom policy must specify all fields if any are present.
     pub fn new(
         preset: WorkflowPreset,
         extends: Option<WorkflowPreset>,
         policy: PolicyOverrides,
     ) -> Result<Self, PolicyError> {
-        if preset != WorkflowPreset::Custom
-            && (extends.is_some() || policy != PolicyOverrides::default())
-        {
-            return Err(PolicyError::RequiresCustom);
+        if preset != WorkflowPreset::Custom && extends.is_some() {
+            return Err(PolicyError::ExtendsRequiresCustom);
         }
         if extends == Some(WorkflowPreset::Custom) {
             return Err(PolicyError::CustomBase);

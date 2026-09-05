@@ -82,6 +82,45 @@ fn switches_to_a_task_and_back_to_base_in_both_locales() {
 }
 
 #[test]
+fn uses_branch_names_overridden_on_the_trunk_preset() {
+    let fixture = TestDir::new();
+    let output = eska(
+        &fixture.0,
+        "en",
+        &[
+            "new",
+            "Billing",
+            "--type",
+            "configuration",
+            "--workflow",
+            "trunk",
+        ],
+    );
+    assert!(output.status.success(), "{output:?}");
+    let root = fixture.0.join("Billing");
+    let task_placeholder = ["{", "task", "}"].concat();
+    fs::write(
+        root.join("eska.toml"),
+        format!(
+            "[project]\ntype = \"configuration\"\n\n[vcs.workflow]\npreset = \"trunk\"\n\n[vcs.workflow.policy]\nbase_branch = \"master\"\ntask_branch_template = \"feature/{task_placeholder}\"\nintegration_target = \"master\"\n"
+        ),
+    )
+    .expect("configure branch names");
+    git_ok(&root, &["branch", "-m", "master"]);
+    git_ok(&root, &["add", "."]);
+    git_ok(&root, &["commit", "-m", "base"]);
+    git_ok(&root, &["branch", "feature/FI-34"]);
+
+    let task = eska(&root, "ru", &["switch", "FI-34"]);
+    assert!(task.status.success(), "{}", text(&task.stderr));
+    assert_eq!(current_branch(&root), b"feature/FI-34");
+
+    let base = eska(&root, "ru", &["switch", "--base"]);
+    assert!(base.status.success(), "{}", text(&base.stderr));
+    assert_eq!(current_branch(&root), b"master");
+}
+
+#[test]
 fn dirty_and_missing_task_errors_are_localized_and_preserve_head() {
     for (locale, dirty_message, missing_message) in [
         ("ru", "Выполните eska save", "Создайте её через eska start"),

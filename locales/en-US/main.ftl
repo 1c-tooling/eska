@@ -17,7 +17,7 @@ project-type-unknown = Unknown project type "{ $value }" in { $path }. Expected:
 project-format-unknown = Unknown source format "{ $value }" in { $path }. Expected: designer-xml.
 project-workflow-value-invalid = Invalid workflow policy value "{ $value }" for { $field } in { $path }. Check the documented values and branch naming rules.
 project-workflow-field-missing = Missing workflow policy field { $field } in { $path }. A standalone custom policy must specify all fields; use extends to inherit a preset.
-project-workflow-custom-required = Workflow overrides and extends require preset = "custom" in { $path }.
+project-workflow-custom-required = The extends field requires preset = "custom" in { $path }.
 project-workflow-custom-base = Workflow extends must name trunk, git-flow or github-flow, not custom, in { $path }.
 project-workflow-publish-required = finish = "require-published" is incompatible with publish = "disabled" in { $path }.
 project-workflow-integration-required = delete_local_branch = true requires finish = "require-integrated" in { $path }.

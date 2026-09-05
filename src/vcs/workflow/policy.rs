@@ -161,7 +161,7 @@ pub enum PolicyError {
         field: PolicyField,
         value: String,
     },
-    RequiresCustom,
+    ExtendsRequiresCustom,
     CustomBase,
     MissingPreset {
         preset: WorkflowPreset,
@@ -582,10 +582,26 @@ mod tests {
     }
 
     #[test]
-    fn only_custom_settings_can_override_or_extend_a_policy() {
+    fn named_presets_accept_overrides_but_only_custom_can_extend() {
+        let settings = WorkflowSettings::new(
+            WorkflowPreset::Trunk,
+            None,
+            PolicyOverrides {
+                base_branch: Some("master".into()),
+                integration_target: Some("master".into()),
+                ..PolicyOverrides::default()
+            },
+        )
+        .unwrap();
+        let policy = settings.resolve(None).unwrap();
+        assert_eq!(policy.base_branch(), "master");
         assert!(matches!(
-            WorkflowSettings::new(WorkflowPreset::Trunk, None, complete()),
-            Err(PolicyError::RequiresCustom)
+            WorkflowSettings::new(
+                WorkflowPreset::Trunk,
+                Some(WorkflowPreset::GitFlow),
+                PolicyOverrides::default()
+            ),
+            Err(PolicyError::ExtendsRequiresCustom)
         ));
         assert!(matches!(
             WorkflowSettings::new(

@@ -63,7 +63,7 @@ src/
     ├── diff.rs                  # разрешение revisions и tree-to-tree diff через gix
     ├── repository.rs            # discovery, HEAD, refs и ограниченная история
     ├── status.rs                # изменения HEAD/index/worktree и changed paths
-    ├── workflow.rs              # выбор preset, custom overrides и разрешение policy
+    ├── workflow.rs              # выбор preset, overrides и разрешение policy
     └── workflow/
         └── policy.rs            # валидация policy и декларативный план задачи
 

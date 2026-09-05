@@ -17,7 +17,7 @@
 - `DONE`: `T04` — `eska new`, клавиатурный TUI, безопасное создание и минимальный Git init;
 - `DONE`: `T06` — `eska init`, подключение существующих исходников;
 - `DONE`: `T07` — repository layer: HEAD, refs, история, status и changed paths;
-- `DONE`: `T08` — workflow policy model, custom overrides и декларативный план;
+- `DONE`: `T08` — workflow policy model, preset overrides и декларативный план;
 - `DONE`: `T09` — Trunk preset;
 - `DONE`: `T10` — Git Flow preset;
 - `DONE`: `T11` — GitHub Flow preset;

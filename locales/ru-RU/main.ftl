@@ -17,7 +17,7 @@ project-type-unknown = Неизвестный тип проекта «{ $value }
 project-format-unknown = Неизвестный формат исходников «{ $value }» в { $path }. Допустим: designer-xml.
 project-workflow-value-invalid = Неверное значение workflow policy «{ $value }» для { $field } в { $path }. Проверьте допустимые значения и правила именования веток в документации.
 project-workflow-field-missing = Не задано поле workflow policy { $field } в { $path }. Самостоятельная custom policy требует все поля; используйте extends для наследования пресета.
-project-workflow-custom-required = Переопределения workflow и extends требуют preset = "custom" в { $path }.
+project-workflow-custom-required = Поле extends доступно только при preset = "custom" в { $path }.
 project-workflow-custom-base = В extends укажите trunk, git-flow или github-flow; наследование от custom недопустимо: { $path }.
 project-workflow-publish-required = finish = "require-published" несовместим с publish = "disabled" в { $path }.
 project-workflow-integration-required = delete_local_branch = true требует finish = "require-integrated" в { $path }.

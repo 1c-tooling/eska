@@ -500,23 +500,30 @@ rebase на `origin/main`, публикует ветку и требует по�
 PR/MR в `main` перед локальным удалением. Создание PR/MR провайдером не входит в
 декларативный plan и остаётся отдельной задачей.
 
-Чтобы переопределить типовой preset, укажите `custom`, `extends` и нужные поля:
+Имена веток и другие отдельные правила можно переопределить прямо у выбранного
+preset. Например, Trunk с принятой в организации базовой веткой `master`:
 
 ```toml
 [vcs.workflow]
-preset = "custom"
-extends = "trunk"
+preset = "trunk"
 
 [vcs.workflow.policy]
-task_branch_template = "company/{task}"
-delete_local_branch = false
+base_branch = "master"
+task_branch_template = "task/{task}"
+integration_target = "master"
 ```
 
-Пропущенные поля наследуются, явное `false` сохраняется. Этот config можно
-загрузить и записать обратно без материализации defaults. Для `trunk` и
-`git-flow` и `github-flow` вызов `WorkflowSettings::resolve(None)` использует
-встроенную policy. Чужой preset отклоняется. `extends = "custom"` запрещён;
-`extends` и непустые overrides доступны только при `preset = "custom"`.
+`base_branch` определяет ветку для `start` и `switch --base`,
+`task_branch_template` — имена task-веток, `integration_target` — ветку, в
+которую задача должна быть интегрирована перед `finish`. Для Trunk и GitHub Flow
+`base_branch` и `integration_target` обычно совпадают, поэтому при переходе с
+`main` на `master` нужно изменить оба поля.
+
+Пропущенные поля наследуются от `trunk`, `git-flow` или `github-flow`, явное
+`false` сохраняется. Config загружается и записывается обратно без
+материализации остальных defaults. `custom` остаётся для самостоятельной policy
+или наследования через `extends`; у именованного preset поле `extends`
+запрещено.
 
 Самостоятельная custom policy без `extends` должна явно задать все поля:
 

@@ -90,7 +90,7 @@ fn workflow_message(localizer: &Localizer, path: &Path, error: &PolicyError) -> 
         error => path_message(
             localizer,
             match error {
-                PolicyError::RequiresCustom => "project-workflow-custom-required",
+                PolicyError::ExtendsRequiresCustom => "project-workflow-custom-required",
                 PolicyError::CustomBase => "project-workflow-custom-base",
                 PolicyError::PublishRequired => "project-workflow-publish-required",
                 PolicyError::IntegrationRequiredForDeletion => {
