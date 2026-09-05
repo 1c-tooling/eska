@@ -31,7 +31,7 @@
 - `DONE`: `T19` — Designer XML logical object model;
 - `DONE`: `T20` — reusable semantic `ChangeSet`;
 - `DONE`: `T21` — semantic diff;
-- `NEXT`: `T22` — генератор commit message.
+- `IN-PROGRESS`: `T22` — генератор commit message.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
 операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
@@ -77,7 +77,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T19 | DONE | Designer XML object model | [06-locking-and-xml.md](06-locking-and-xml.md) |
 | T20 | DONE | Semantic `ChangeSet` | [07-semantic-changes.md](07-semantic-changes.md) |
 | T21 | DONE | Semantic diff | [07-semantic-changes.md](07-semantic-changes.md) |
-| T22 | NEXT | Генератор commit message | [07-semantic-changes.md](07-semantic-changes.md) |
+| T22 | IN-PROGRESS | Генератор commit message | [07-semantic-changes.md](07-semantic-changes.md) |
 | T23 | PLANNED | Спецификация test backend | [08-quality.md](08-quality.md) |
 | T24 | PLANNED | `affected` analysis | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T25 | PLANNED | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |

@@ -54,7 +54,7 @@
 
 ## T22 — Генератор commit message
 
-**Статус:** `NEXT`
+**Статус:** `IN-PROGRESS`
 **Зависит от:** T15, T20
 
 Для точного сохраняемого ChangeSet построить deterministic semantic draft, открыть
