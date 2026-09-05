@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0](https://github.com/1c-tooling/eska/compare/v0.3.0...v0.4.0) - 2026-09-05
+
+### Added
+
+- *(build)* Реализована сборка нативных артефактов через ibcmd
+- *(build)* Добавлены настройки и план артефакта
+- *(finish)* Добавлено локальное завершение задачи
+
+### Fixed
+
+- *(build)* Восстановлен вывод диагностики ibcmd
+
+### Other
+
+- *(roadmap)* Завершена сборка через ibcmd
+- *(roadmap)* Начата реализация сборки через ibcmd
+- *(roadmap)* Завершена команда finish
+- *(cli)* Учтена команда finish в реестре
+
 ## [0.3.0](https://github.com/1c-tooling/eska/compare/v0.2.1...v0.3.0) - 2026-09-05
 
 ### Added
