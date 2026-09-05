@@ -28,7 +28,7 @@
 - `DONE`: `T16` — `eska clone` через `gix`;
 - `DONE`: `T17` — реализованные VCS-операции переведены на gix-first слой;
 - `DONE`: `T18` — локальная история commit/task без fetch и изменения repository;
-- `NEXT`: `T19` — Designer XML logical object model.
+- `IN-PROGRESS`: `T19` — Designer XML logical object model.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
 операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
@@ -71,7 +71,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T16 | DONE | `eska clone` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T17 | DONE | Gix-first миграция реализованных VCS-операций | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T18 | DONE | `eska history` | [05-safe-vcs.md](05-safe-vcs.md) |
-| T19 | NEXT | Designer XML object model | [06-locking-and-xml.md](06-locking-and-xml.md) |
+| T19 | IN-PROGRESS | Designer XML object model | [06-locking-and-xml.md](06-locking-and-xml.md) |
 | T20 | PLANNED | Semantic `ChangeSet` | [07-semantic-changes.md](07-semantic-changes.md) |
 | T21 | PLANNED | Semantic diff | [07-semantic-changes.md](07-semantic-changes.md) |
 | T22 | PLANNED | Генератор commit message | [07-semantic-changes.md](07-semantic-changes.md) |
