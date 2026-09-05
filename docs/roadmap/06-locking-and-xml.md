@@ -2,7 +2,7 @@
 
 ## T19 — Designer XML logical object model
 
-**Статус:** `PLANNED`
+**Статус:** `NEXT`
 **Зависит от:** T03
 
 Реализовать discovery объектов, стабильный `ObjectId`, metadata type/name,
