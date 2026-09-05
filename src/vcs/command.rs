@@ -3,7 +3,6 @@
 use std::{
     ffi::OsStr,
     fmt, io,
-    io::Write,
     path::Path,
     process::{Command, ExitStatus, Output},
 };
@@ -167,42 +166,26 @@ impl<'a> Executor<'a> {
         }
     }
 
-    /// Commit only paths below the executor directory after editing a generated draft template.
+    /// Commit only paths below the executor directory after editing a generated draft.
     ///
-    /// Git opens the configured editor with terminal I/O inherited. Leaving the template
-    /// unchanged aborts the commit; the final user-edited message remains subject to Git hooks.
+    /// Git receives the draft as a message and `--edit` opens the configured editor with
+    /// terminal I/O inherited. The final user-edited message remains subject to Git hooks.
     ///
     /// # Errors
-    /// Returns a structured process error when the template cannot be created or Git cannot
-    /// start the editor or create the commit.
-    pub fn commit_only_with_draft(&self, git_dir: &Path, draft: &str) -> Result<(), Error> {
-        let mut template = gix::tempfile::new(
-            git_dir,
-            gix::tempfile::ContainingDirectory::Exists,
-            gix::tempfile::AutoRemove::Tempfile,
-        )
-        .map_err(|source| Error::Spawn {
-            operation: Operation::Commit,
-            source,
-        })?;
-        template
-            .write_all(draft.as_bytes())
-            .and_then(|()| template.flush())
-            .map_err(|source| Error::Spawn {
-                operation: Operation::Commit,
-                source,
-            })?;
-        let template_path = template
-            .with_mut(|file| file.path().to_owned())
-            .map_err(|source| Error::Spawn {
-                operation: Operation::Commit,
-                source,
-            })?;
+    /// Returns a structured process error when Git cannot start the editor or create the commit.
+    pub fn commit_only_with_draft(&self, draft: &str) -> Result<(), Error> {
         let mut command = self.command();
         let status = command
-            .args(["commit", "--quiet", "--only", "--template"])
-            .arg(template_path)
-            .args(["--", "."])
+            .args([
+                "commit",
+                "--quiet",
+                "--only",
+                "--edit",
+                "--message",
+                draft,
+                "--",
+                ".",
+            ])
             .status()
             .map_err(|source| Error::Spawn {
                 operation: Operation::Commit,

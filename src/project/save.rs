@@ -127,7 +127,7 @@ fn execute_with_message(
     }
     let commit = match message {
         SaveMessage::Explicit(message) => executor.commit_only(message),
-        SaveMessage::Draft(draft) => executor.commit_only_with_draft(repository.git_dir(), draft),
+        SaveMessage::Draft(draft) => executor.commit_only_with_draft(draft),
     };
     if let Err(error) = commit.map_err(SaveError::Command) {
         return snapshot.restore_after(error);

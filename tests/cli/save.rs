@@ -259,32 +259,6 @@ fn generated_draft_editor_inherits_the_caller_locale() {
     assert!(output.status.success(), "{}", text(&output.stderr));
 }
 
-/// Leaving the generated template unchanged cancels the commit and restores prior staging.
-#[cfg(unix)]
-#[test]
-fn unchanged_generated_draft_cancels_the_commit() {
-    let (fixture, root) = project();
-    fs::write(fixture.0.join("outside.txt"), "staged outside\n").unwrap();
-    git_ok(&fixture.0, &["add", "outside.txt"]);
-    fs::write(root.join("src/module.bsl"), "changed\n").unwrap();
-    let original_head = git_ok(&fixture.0, &["rev-parse", "HEAD"]);
-    let original_index = fs::read(fixture.0.join(".git/index")).unwrap();
-    let editor = fixture.0.join("editor.sh");
-    fs::write(&editor, "#!/bin/sh\nexit 0\n").unwrap();
-    fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
-    let editor_command = format!("'{}'", editor.display());
-    git_ok(&fixture.0, &["config", "core.editor", &editor_command]);
-
-    let output = eska(&root, "ru", &["save"]);
-
-    assert_eq!(output.status.code(), Some(1), "{output:?}");
-    assert_eq!(git_ok(&fixture.0, &["rev-parse", "HEAD"]), original_head);
-    assert_eq!(
-        fs::read(fixture.0.join(".git/index")).unwrap(),
-        original_index
-    );
-}
-
 /// Semantic changes produce a localized Conventional Commit draft before the editor opens.
 #[cfg(unix)]
 #[test]
@@ -324,7 +298,7 @@ fn generated_draft_summarizes_semantic_changes_in_both_locales() {
         )
         .unwrap();
         let editor = fixture.0.join("editor.sh");
-        fs::write(&editor, "#!/bin/sh\nprintf '\naccepted\n' >> \"$1\"\n").unwrap();
+        fs::write(&editor, "#!/bin/sh\nexit 0\n").unwrap();
         fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
         let editor_command = format!("'{}'", editor.display());
         git_ok(&fixture.0, &["config", "core.editor", &editor_command]);

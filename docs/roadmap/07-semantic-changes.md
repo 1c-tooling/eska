@@ -65,8 +65,7 @@
 - нераспознанный или временно некорректный Designer XML деградирует только до
   точного file-level draft, не создавая недостоверные semantic events;
 - Fluent bidi-isolation удаляется из сохраняемого текста, после чего Git получает
-  draft как временный `--template` и открывает настроенный editor; выход без
-  изменения draft отменяет commit;
+  draft через `--edit --message` и открывает настроенный editor;
 - editor, hooks, project-only commit и byte-for-byte rollback исходного index
   сохраняют гарантии T15. `save -m` полностью обходит generator и editor;
 - `--auto` и AI refinement не входят в T22.
