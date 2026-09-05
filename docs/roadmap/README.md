@@ -34,7 +34,7 @@
 - `DONE`: `T22` — генератор commit message;
 - `DONE`: `T34` — безопасное переключение между существующими задачами;
 - `DONE`: `T40` — локальное завершение задачи;
-- `NEXT`: `T28` — сборка `.cf` через
+- `IN-PROGRESS`: `T28` — сборка `.cf` через
   настраиваемый `ibcmd`;
 - после базовой сборки: `T42` — отдельная спецификация patch-extension `.cfe`
   из разницы Git-веток;
@@ -113,7 +113,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T25 | PLANNED | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T26 | PLANNED | `eska fmt` | [08-quality.md](08-quality.md) |
 | T27 | PLANNED | `eska check` | [08-quality.md](08-quality.md) |
-| T28 | NEXT | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
+| T28 | IN-PROGRESS | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T29 | PLANNED | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T30 | PLANNED | Development environments | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T31 | PLANNED | `apply` / `run` | [09-build-and-runtime.md](09-build-and-runtime.md) |
