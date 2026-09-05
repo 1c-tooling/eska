@@ -3,6 +3,7 @@
 use std::{
     ffi::OsStr,
     fmt::Write as _,
+    io::{self, Write as _},
     path::{Path, PathBuf},
     process::ExitCode,
 };
@@ -88,6 +89,16 @@ impl BuildArgs {
                 return ExitCode::FAILURE;
             }
         };
+        if let Err(error) = write_tool_output(result.tool_output()) {
+            eprintln!(
+                "{}",
+                localizer.format(
+                    "build-output-write-error",
+                    &[("reason", LocalizationValue::Text(&error.to_string()))],
+                )
+            );
+            return ExitCode::FAILURE;
+        }
 
         match self.format {
             OutputFormat::Human => println!(
@@ -114,6 +125,19 @@ impl BuildArgs {
         }
         ExitCode::SUCCESS
     }
+}
+
+/// Forward successful ibcmd diagnostics to stderr without contaminating JSON stdout.
+fn write_tool_output(output: &[u8]) -> io::Result<()> {
+    if output.is_empty() {
+        return Ok(());
+    }
+    let mut stderr = io::stderr().lock();
+    stderr.write_all(output)?;
+    if !output.ends_with(b"\n") {
+        stderr.write_all(b"\n")?;
+    }
+    stderr.flush()
 }
 
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {

@@ -391,6 +391,7 @@ build-format-help = Output format
 build-format-value = human|json
 build-completed = Built { $artifact } with 1C platform { $version }
 build-json-error = Failed to serialize the build result.
+build-output-write-error = Failed to write ibcmd diagnostics: { $reason }
 build-project-name-missing = The project directory has no name for the default artifact.
 build-output-invalid = Invalid artifact path: { $path }
 build-output-extension = Artifact { $path } must have the .{ $extension } extension.

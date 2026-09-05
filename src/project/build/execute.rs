@@ -21,6 +21,7 @@ pub enum BuildStage {
 pub struct BuildResult {
     output: PathBuf,
     duration: Duration,
+    tool_output: Vec<u8>,
 }
 
 impl BuildResult {
@@ -32,6 +33,11 @@ impl BuildResult {
     #[must_use]
     pub const fn duration(&self) -> Duration {
         self.duration
+    }
+
+    #[must_use]
+    pub fn tool_output(&self) -> &[u8] {
+        &self.tool_output
     }
 }
 
@@ -94,7 +100,7 @@ pub fn execute(plan: &BuildPlan, ibcmd: &Ibcmd) -> Result<BuildResult, BuildErro
         .join(format!("artifact.{}", plan.artifact_type().extension()));
     let import_source = import_source(plan)?;
 
-    run(
+    let create_output = run(
         ibcmd,
         BuildStage::CreateInfobase,
         [
@@ -104,7 +110,7 @@ pub fn execute(plan: &BuildPlan, ibcmd: &Ibcmd) -> Result<BuildResult, BuildErro
         ],
         &pid_file,
     )?;
-    run(
+    let import_output = run(
         ibcmd,
         BuildStage::ImportSources,
         [
@@ -133,9 +139,15 @@ pub fn execute(plan: &BuildPlan, ibcmd: &Ibcmd) -> Result<BuildResult, BuildErro
     }
     publish(&artifact, plan.output())?;
     created_directories.keep();
+    let mut tool_output = Vec::new();
+    append_process_output(&mut tool_output, &create_output.stdout);
+    append_process_output(&mut tool_output, &create_output.stderr);
+    append_process_output(&mut tool_output, &import_output.stdout);
+    append_process_output(&mut tool_output, &import_output.stderr);
     Ok(BuildResult {
         output: plan.output().to_owned(),
         duration: started.elapsed(),
+        tool_output,
     })
 }
 
@@ -198,18 +210,29 @@ fn run<const N: usize>(
     stage: BuildStage,
     arguments: [OsString; N],
     pid_file: &Path,
-) -> Result<(), BuildError> {
+) -> Result<std::process::Output, BuildError> {
     let output = ibcmd
         .run_interruptible(arguments, pid_file)
         .map_err(|source| BuildError::Run { stage, source })?;
     if output.status.success() {
-        Ok(())
+        Ok(output)
     } else {
         Err(BuildError::CommandFailed {
             stage,
             stderr: String::from_utf8_lossy(&output.stderr).trim().to_owned(),
         })
     }
+}
+
+/// Append non-empty process output with a stable newline boundary between streams.
+fn append_process_output(target: &mut Vec<u8>, output: &[u8]) {
+    if output.is_empty() {
+        return;
+    }
+    if !target.is_empty() && !target.ends_with(b"\n") {
+        target.push(b'\n');
+    }
+    target.extend_from_slice(output);
 }
 
 /// Validate the nearest existing configured-output ancestor before creating directories.

@@ -88,6 +88,7 @@ if [ "$1" = "config" ] && [ "$2" = "import" ]; then
   for argument in "$@"; do
     case "$argument" in --out=*) printf 'native-artifact' > "${argument#--out=}";; esac
   done
+  echo "[WARN] fake build warning"
   exit 0
 fi
 exit 9
@@ -119,7 +120,10 @@ fn builds_all_native_artifact_types_with_locale_independent_json() {
                 "{}",
                 String::from_utf8_lossy(&output.stderr)
             );
-            assert!(output.stderr.is_empty());
+            assert_eq!(
+                String::from_utf8_lossy(&output.stderr),
+                "[WARN] fake build warning\n"
+            );
             let document: Value = serde_json::from_slice(&output.stdout).expect("valid JSON");
             assert_eq!(document["schema_version"], 1);
             assert_eq!(document["artifact"]["type"], artifact_type);
@@ -242,5 +246,6 @@ fn help_and_human_result_are_localized() {
         let output = eska(&root, locale, &ibcmd, &["build"], false);
         assert!(output.status.success(), "{output:?}");
         assert!(String::from_utf8_lossy(&output.stdout).contains(result_text));
+        assert!(String::from_utf8_lossy(&output.stderr).contains("[WARN] fake build warning"));
     }
 }

@@ -391,6 +391,7 @@ build-format-help = Формат вывода
 build-format-value = human|json
 build-completed = Собран { $artifact } платформой 1С { $version }
 build-json-error = Не удалось сериализовать результат сборки.
+build-output-write-error = Не удалось вывести диагностику ibcmd: { $reason }
 build-project-name-missing = Каталог проекта не имеет имени для артефакта по умолчанию.
 build-output-invalid = Недопустимый путь артефакта: { $path }
 build-output-extension = Артефакт { $path } должен иметь расширение .{ $extension }.
