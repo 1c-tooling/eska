@@ -2,7 +2,7 @@
 
 ## T18 — `eska history`
 
-**Статус:** `NEXT`
+**Статус:** `IN-PROGRESS`
 **Зависит от:** T07, T12, T17
 
 Показать локальную commit/task history через `gix`, без fetch и без изменения
