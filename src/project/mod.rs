@@ -9,6 +9,7 @@ pub mod history;
 pub mod init;
 pub(crate) mod metadata;
 pub mod model;
+pub mod object_model;
 pub mod save;
 pub mod start;
 pub mod status;

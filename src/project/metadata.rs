@@ -74,6 +74,43 @@ pub fn is_main_descriptor(project_type: ProjectType, path: &BStr) -> bool {
     }
 }
 
+/// Tell whether a path is a metadata descriptor represented as a logical object.
+pub fn is_object_descriptor(project_type: ProjectType, path: &BStr) -> bool {
+    let Ok(path) = path.to_str() else {
+        return false;
+    };
+    let components: Vec<_> = path.split('/').collect();
+    match project_type {
+        ProjectType::Configuration | ProjectType::Extension => match components.as_slice() {
+            ["Configuration.xml"] => true,
+            [collection, file]
+                if top_level_kind(collection).is_some() && has_extension(file, "xml") =>
+            {
+                true
+            }
+            [collection, _owner, nested @ ..] if top_level_kind(collection).is_some() => {
+                is_nested_descriptor(nested)
+            }
+            _ => false,
+        },
+        ProjectType::Processing | ProjectType::Report => match components.as_slice() {
+            [file] if has_extension(file, "xml") => true,
+            ["Forms" | "Templates" | "Commands", file] if has_extension(file, "xml") => true,
+            [_owner, nested @ ..] => is_nested_descriptor(nested),
+            _ => false,
+        },
+    }
+}
+
+/// Recognize a descriptor below a named nested metadata collection.
+fn is_nested_descriptor(components: &[&str]) -> bool {
+    match components {
+        ["Forms" | "Templates" | "Commands" | "Subsystems", file] => has_extension(file, "xml"),
+        ["Subsystems", _owner, nested @ ..] => is_nested_descriptor(nested),
+        _ => false,
+    }
+}
+
 /// Compare metadata child objects in two UTF-8 Designer XML descriptor snapshots.
 pub fn changed_children(before: &[u8], after: &[u8]) -> Option<Vec<Vec<MetadataPart>>> {
     let before = parse_children(before)?;
@@ -395,6 +432,63 @@ fn child_kind(tag: &str) -> Option<&'static str> {
         "Recalculation" => "recalculation",
         "Column" => "column",
         _ => return None,
+    })
+}
+
+/// Map a Designer XML object tag to its stable machine-facing metadata type.
+pub fn kind_from_tag(tag: &str) -> Option<&'static str> {
+    Some(match tag {
+        "Configuration" => "configuration",
+        "ExternalDataProcessor" | "DataProcessor" => "data-processor",
+        "ExternalReport" | "Report" => "report",
+        "AccountingRegister" => "accounting-register",
+        "AccumulationRegister" => "accumulation-register",
+        "Bot" => "bot",
+        "BusinessProcess" => "business-process",
+        "CalculationRegister" => "calculation-register",
+        "Catalog" => "catalog",
+        "ChartOfAccounts" => "chart-of-accounts",
+        "ChartOfCalculationTypes" => "chart-of-calculation-types",
+        "ChartOfCharacteristicTypes" => "chart-of-characteristic-types",
+        "CommandGroup" => "command-group",
+        "CommonAttribute" => "common-attribute",
+        "CommonCommand" => "common-command",
+        "CommonForm" => "common-form",
+        "CommonModule" => "common-module",
+        "CommonPicture" => "common-picture",
+        "CommonTemplate" => "common-template",
+        "Constant" => "constant",
+        "DefinedType" => "defined-type",
+        "Document" => "document",
+        "DocumentJournal" => "document-journal",
+        "DocumentNumerator" => "document-numerator",
+        "Enum" => "enum",
+        "EventSubscription" => "event-subscription",
+        "ExchangePlan" => "exchange-plan",
+        "ExternalDataSource" => "external-data-source",
+        "FilterCriterion" => "filter-criterion",
+        "FunctionalOption" => "functional-option",
+        "FunctionalOptionsParameter" => "functional-option-parameter",
+        "HTTPService" => "http-service",
+        "InformationRegister" => "information-register",
+        "IntegrationService" => "integration-service",
+        "Language" => "language",
+        "Role" => "role",
+        "ScheduledJob" => "scheduled-job",
+        "Sequence" => "sequence",
+        "SessionParameter" => "session-parameter",
+        "SettingsStorage" => "settings-storage",
+        "Style" => "style",
+        "StyleItem" => "style-item",
+        "Subsystem" => "subsystem",
+        "Task" => "task",
+        "WebService" => "web-service",
+        "WSReference" => "ws-reference",
+        "XDTOPackage" => "xdto-package",
+        "Form" => "form",
+        "Template" => "template",
+        "Command" => "command",
+        child => return child_kind(child),
     })
 }
 
