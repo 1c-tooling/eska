@@ -32,8 +32,9 @@
 - `DONE`: `T20` — reusable semantic `ChangeSet`;
 - `DONE`: `T21` — semantic diff;
 - `DONE`: `T22` — генератор commit message;
-- `IN-PROGRESS`: `T34` — безопасное переключение между существующими задачами;
-- затем: `T40` — локальное завершение задачи и `T28` — сборка `.cf` через
+- `DONE`: `T34` — безопасное переключение между существующими задачами;
+- `NEXT`: `T40` — локальное завершение задачи;
+- затем: `T28` — сборка `.cf` через
   настраиваемый `ibcmd`;
 - после базовой сборки: `T42` — отдельная спецификация patch-extension `.cfe`
   из разницы Git-веток;
@@ -54,8 +55,8 @@ start -> status/diff -> save -> switch/return -> finish
 | Создать и начать задачу | `eska start <task>` — `DONE` |
 | Увидеть изменённые файлы и объекты | `eska status`, `eska diff` — `DONE` |
 | Создать commit | `eska save` — `DONE` |
-| Переключиться и позднее вернуться | `eska switch` — `NEXT` |
-| Завершить задачу | `eska finish` — `PLANNED` после T34 |
+| Переключиться и позднее вернуться | `eska switch` — `DONE` |
+| Завершить задачу | `eska finish` — `NEXT` |
 | Собрать полную конфигурацию | `eska build` → `.cf` — `PLANNED` после T40 |
 | Собрать patch-extension из delta | `.cfe` — `NEEDS-SPEC` после T28 |
 
@@ -118,13 +119,13 @@ TUI разделён на обработку клавиш, отрисовку и
 | T31 | PLANNED | `apply` / `run` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T32 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T33 | PLANNED | CI integration | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T34 | IN-PROGRESS | `eska switch` | [05-safe-vcs.md](05-safe-vcs.md) |
+| T34 | DONE | `eska switch` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T35 | PLANNED | `shelve` / `unshelve` / `shelves` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T36 | PLANNED | `eska restore` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T37 | PLANNED | `eska sync` / `continue` / `abort` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T38 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T39 | DEFERRED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
-| T40 | PLANNED | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T40 | NEXT | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T41 | PLANNED | VS Code extension | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T42 | NEEDS-SPEC | Patch-extension `.cfe` из разницы веток | [09-build-and-runtime.md](09-build-and-runtime.md) |
 

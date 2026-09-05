@@ -272,7 +272,7 @@ MR/PR и provider integrations оставить следующей задаче�
 
 ## T40 — `eska finish`
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T13, T17, T34
 
 Первая версия замыкает локальный task workflow и не выполняет publish, merge или

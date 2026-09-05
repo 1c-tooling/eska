@@ -27,7 +27,7 @@ policy. Отсутствующий workflow или base, влитая истор
 
 ## T34 — `eska switch`
 
-**Статус:** `IN-PROGRESS`
+**Статус:** `DONE`
 **Зависит от:** T13, T15, T18
 
 Безопасно переключать текущую task/workspace по workflow policy:
@@ -48,6 +48,19 @@ shelve не создаётся. Отсутствующую task-ветку ну�
 Проверка refs выполняется через `gix`, а изменение worktree — через существующий
 изолированный system Git layer, пока `gix` не даёт равноценной orchestration
 HEAD/index/worktree.
+
+**Реализовано:** `eska switch <task>` активирует только существующую локальную
+task-ветку по workflow policy, а `eska switch --base` возвращает на локальную
+policy base без завершения задачи. Аргументы взаимоисключающие; fetch, создание
+веток и отдельное task state отсутствуют.
+
+Preflight через `gix` проверяет локальную ref и весь repository worktree, включая
+staged, unstaged, untracked и конфликтующие изменения вне вложенного проекта.
+Dirty state отклоняется с предложением выполнить `eska save`, отсутствующая
+task-ветка — с предложением `eska start`. Согласованное изменение HEAD, index и
+worktree выполняет существующий изолированный system Git layer командой switch
+с отключённым угадыванием remote-веток. Human output и ошибки локализованы для
+RU/EN; автоматический shelve не добавлен.
 
 ## T35 — `shelve` / `unshelve` / `shelves`
 
