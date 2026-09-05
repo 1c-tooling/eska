@@ -27,7 +27,7 @@ policy. Отсутствующий workflow или base, влитая истор
 
 ## T34 — `eska switch`
 
-**Статус:** `NEXT`
+**Статус:** `IN-PROGRESS`
 **Зависит от:** T13, T15, T18
 
 Безопасно переключать текущую task/workspace по workflow policy:

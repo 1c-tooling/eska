@@ -32,7 +32,7 @@
 - `DONE`: `T20` — reusable semantic `ChangeSet`;
 - `DONE`: `T21` — semantic diff;
 - `DONE`: `T22` — генератор commit message;
-- `NEXT`: `T34` — безопасное переключение между существующими задачами;
+- `IN-PROGRESS`: `T34` — безопасное переключение между существующими задачами;
 - затем: `T40` — локальное завершение задачи и `T28` — сборка `.cf` через
   настраиваемый `ibcmd`;
 - после базовой сборки: `T42` — отдельная спецификация patch-extension `.cfe`
@@ -118,7 +118,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T31 | PLANNED | `apply` / `run` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T32 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T33 | PLANNED | CI integration | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T34 | NEXT | `eska switch` | [05-safe-vcs.md](05-safe-vcs.md) |
+| T34 | IN-PROGRESS | `eska switch` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T35 | PLANNED | `shelve` / `unshelve` / `shelves` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T36 | PLANNED | `eska restore` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T37 | PLANNED | `eska sync` / `continue` / `abort` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
