@@ -724,10 +724,11 @@ publish
 finish
 ```
 
-`status`, `start`, `diff` и `save` уже образуют локальный baseline. Дальнейший
-порядок больше не повторяет этот список буквально: сначала добавляются `clone`,
-gix-first миграция существующих операций, history, semantic model и quality/build
-слои. `sync` / `publish` / `finish` возвращаются после них согласно разделу 14.
+`status`, `start`, `diff` и `save` уже образуют локальный baseline. `clone`,
+gix-first миграция, history и semantic model также завершены. Ближайший порядок
+теперь замыкает практический цикл через `switch`, локальный `finish` и `build`;
+`sync`, `publish`, locking и test backend возвращаются после проверки MVP
+согласно разделу 14.
 
 ---
 
@@ -1844,33 +1845,33 @@ cargo test
 
 Если необходимо сокращать scope, приоритет такой:
 
-```text
-P0
-eska clone
-gix-first миграция существующих VCS-операций
-history
+Текущий приоритет — получить небольшой CLI MVP, пригодный для ежедневной работы
+над реальными задачами:
 
-P1
-Designer XML model
-semantic ChangeSet
-semantic diff
-commit message generation
-test backend specification
-affected analysis
+```text
+P0 — замкнуть локальный workflow
+eska switch
+eska finish
+eska build -> .cf
+
+P1 — расширить delivery artifacts
+patch-extension .cfe из разницы веток (после feasibility specification)
 project versioning
 
-P2
+P2 — качество и автоматизация после проверки MVP
+test backend specification
+affected analysis
 fmt/check
-build
 doctor
 development environment
 apply/run
 release/CI helpers
 
-P3
-switch/shelves/restore
+P3 — командный remote workflow
+shelve/restore
 sync/continue/abort
-publish/locking/finish
+publish
+locking
 
 P4
 VS Code
@@ -1879,67 +1880,36 @@ standalone GUI
 advanced automation
 ```
 
-Критерий внутри одного уровня: сначала задачи, полностью решаемые через `gix`
-или без изменяющих Git-операций. System Git-heavy orchestration выполняется позже,
-если она не блокирует более ценный независимый слой.
+System Git orchestration допустима через существующий infrastructure layer для
+`switch` и `finish`, потому что без них локальный task lifecycle не замкнут.
+Test backend и locking не удалены из roadmap, но не блокируют проверку MVP.
 
 ---
 
 # 14. Ближайший порядок задач после текущего состояния
 
-Текущий baseline — задачи T01–T15 завершены:
+Текущий baseline — задачи T01–T22 завершены:
 
 ```text
 Project/config/discovery
 new/init/templates
 repository/workflow policies
-status/start/diff/save
+status/start/diff/save/history
+Designer XML model/semantic diff/commit draft
 ```
 
-Следующие задачи выполнять именно в таком порядке, если не принято новое решение:
+Ближайшие задачи выполнять в таком порядке, если не принято новое решение:
 
 ```text
-1. Project model
-2. eska.toml
-3. project discovery + validation
-4. eska new
-5. built-in templates
-6. eska init
-7. VCS repository layer (gix + Git fallback)
-8. workflow policy model
-9. trunk preset
-10. git-flow preset
-11. github-flow preset
-12. eska status
-13. eska start
-14. eska diff
-15. eska save
-16. eska clone
-17. gix-first миграция реализованных VCS-операций
-18. eska history
-19. Designer XML logical object model
-20. semantic ChangeSet
-21. semantic diff
-22. commit message generator
-23. test backend specification
-24. affected analysis
-25. project versioning
-26. fmt
-27. check
-28. build через ibcmd
-29. doctor
-30. dev environments
-31. apply/run
-32. release
-33. CI integration
-34. eska switch
-35. shelve/unshelve/shelves
-36. eska restore
-37. eska sync/continue/abort
-38. eska publish
-39. locking
-40. eska finish
-41. VS Code extension
+1. T34 — eska switch: существующая task branch и возврат на base
+2. T40 — eska finish: локальная проверка policy и cleanup task branch
+3. T28 — eska build: настраиваемая кроссплатформенная сборка .cf через ibcmd
+4. T42 — спецификация и feasibility patch-extension .cfe из разницы веток
+
+После практической проверки MVP вернуться к отложенной очереди:
+T23 test backend, T24 affected, T25 versioning, T26 fmt, T27 check,
+T29 doctor, T30 environments, T31 apply/run, T32 release, T33 CI,
+T35 shelves, T36 restore, T37 sync, T38 publish, T39 locking и T41 VS Code.
 ```
 
 Каждый пункт лучше реализовывать отдельной законченной задачей или небольшим связанным набором задач.

@@ -38,7 +38,7 @@ configuration/extension/processing/report fixtures.
 
 ## T39 — Locking конфликтных объектов
 
-**Статус:** `PLANNED`
+**Статус:** `DEFERRED`
 **Зависит от:** T07, T19, T38
 
 Команды `lock <ObjectId>`, `unlock <ObjectId>`, `locks`. Пользователь указывает
@@ -46,3 +46,7 @@ configuration/extension/processing/report fixtures.
 XML path. Первичный backend может использовать Git LFS/server locks, но backend не
 входит в public API. Designer XML не переводится в LFS storage только ради locks.
 Unlock при неопубликованных изменениях отказывает; `--force` явный.
+
+Задача отложена до проверки практического CLI MVP. Пока backend locking
+отсутствует, `finish` не имеет locks для освобождения; после T39 команда
+завершения должна получить соответствующие preflight и cleanup.

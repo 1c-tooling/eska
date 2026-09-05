@@ -273,8 +273,21 @@ MR/PR и provider integrations оставить следующей задаче�
 ## T40 — `eska finish`
 
 **Статус:** `PLANNED`  
-**Зависит от:** T38, T39
+**Зависит от:** T13, T17, T34
 
-Проверить отсутствие unsaved work и выполнение publish/integration policy; снять
-locks, перейти на base, обновить её, удалить локальную task branch и очистить task
-state. Remote branch удаляется только по явной policy.
+Первая версия замыкает локальный task workflow и не выполняет publish, merge или
+удаление remote branch. Команда должна:
+
+- определить текущую задачу по active branch и workflow policy;
+- отклонить unsaved work и опасные repository states;
+- при наличии remote безопасно получить и fast-forward обновить policy base по
+  тем же правилам, что `start`;
+- проверить фактическое условие `finish`: task tip уже опубликован или уже
+  является предком integration target;
+- перейти на base и удалить локальную task branch только при разрешающей policy.
+
+`finish` не зависит от реализации `eska publish`: пользователь может публиковать
+и интегрировать ветку существующими средствами, а команда только проверяет refs.
+Пока locking не реализован, снимать нечего; T39 позднее расширит preflight и
+cleanup существующих locks. Отдельный task state не создаётся. Remote branch не
+удаляется без будущей явной policy.

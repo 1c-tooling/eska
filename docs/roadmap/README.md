@@ -6,7 +6,7 @@
 
 ## Текущее состояние
 
-Стадия проекта: **semantic `ChangeSet` завершён**, далее semantic diff.
+Стадия проекта: **локальный VCS baseline готов**, далее практический CLI MVP.
 
 - `DONE`: чистый минимальный Rust CLI;
 - `DONE`: локализация `ru-RU` / `en-US`, включая `--help`;
@@ -32,7 +32,35 @@
 - `DONE`: `T20` — reusable semantic `ChangeSet`;
 - `DONE`: `T21` — semantic diff;
 - `DONE`: `T22` — генератор commit message;
-- `NEXT`: `T23` — спецификация test backend.
+- `NEXT`: `T34` — безопасное переключение между существующими задачами;
+- затем: `T40` — локальное завершение задачи и `T28` — сборка `.cf` через
+  настраиваемый `ibcmd`;
+- после базовой сборки: `T42` — отдельная спецификация patch-extension `.cfe`
+  из разницы Git-веток;
+- `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
+  работе.
+
+Практический MVP должен замкнуть основной пользовательский цикл без обязательных
+test backend, locking и публикации через `eska`:
+
+```text
+start -> status/diff -> save -> switch/return -> finish
+                                      |
+                                    build .cf
+```
+
+| Пользовательская потребность | Текущее покрытие |
+|---|---|
+| Создать и начать задачу | `eska start <task>` — `DONE` |
+| Увидеть изменённые файлы и объекты | `eska status`, `eska diff` — `DONE` |
+| Создать commit | `eska save` — `DONE` |
+| Переключиться и позднее вернуться | `eska switch` — `NEXT` |
+| Завершить задачу | `eska finish` — `PLANNED` после T34 |
+| Собрать полную конфигурацию | `eska build` → `.cf` — `PLANNED` после T40 |
+| Собрать patch-extension из delta | `.cfe` — `NEEDS-SPEC` после T28 |
+
+`shelve` не блокирует MVP: первая версия `switch` работает только с чистой
+рабочей копией и предлагает сначала выполнить `save`.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
 операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
@@ -79,7 +107,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T20 | DONE | Semantic `ChangeSet` | [07-semantic-changes.md](07-semantic-changes.md) |
 | T21 | DONE | Semantic diff | [07-semantic-changes.md](07-semantic-changes.md) |
 | T22 | DONE | Генератор commit message | [07-semantic-changes.md](07-semantic-changes.md) |
-| T23 | NEXT | Спецификация test backend | [08-quality.md](08-quality.md) |
+| T23 | DEFERRED | Спецификация test backend | [08-quality.md](08-quality.md) |
 | T24 | PLANNED | `affected` analysis | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T25 | PLANNED | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T26 | PLANNED | `eska fmt` | [08-quality.md](08-quality.md) |
@@ -90,14 +118,15 @@ TUI разделён на обработку клавиш, отрисовку и
 | T31 | PLANNED | `apply` / `run` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T32 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T33 | PLANNED | CI integration | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T34 | PLANNED | `eska switch` | [05-safe-vcs.md](05-safe-vcs.md) |
+| T34 | NEXT | `eska switch` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T35 | PLANNED | `shelve` / `unshelve` / `shelves` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T36 | PLANNED | `eska restore` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T37 | PLANNED | `eska sync` / `continue` / `abort` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T38 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T39 | PLANNED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
+| T39 | DEFERRED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
 | T40 | PLANNED | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T41 | PLANNED | VS Code extension | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T42 | NEEDS-SPEC | Patch-extension `.cfe` из разницы веток | [09-build-and-runtime.md](09-build-and-runtime.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в
