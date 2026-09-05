@@ -69,7 +69,16 @@ impl HistoryArgs {
 
         match self.format {
             OutputFormat::Human => {
-                println!("{}", render_human(&entries, localizer, styling_enabled()));
+                let interactive = io::stdout().is_terminal();
+                println!(
+                    "{}",
+                    render_human(
+                        &entries,
+                        localizer,
+                        styling_enabled(interactive),
+                        interactive,
+                    )
+                );
             }
             OutputFormat::Json => {
                 let Ok(json) =
@@ -113,20 +122,30 @@ fn present_error(error: &HistoryError, localizer: &Localizer) -> String {
 }
 
 /// Render newest commits as compact localized blocks.
-fn render_human(entries: &[HistoryEntry], localizer: &Localizer, styled: bool) -> String {
+fn render_human(
+    entries: &[HistoryEntry],
+    localizer: &Localizer,
+    styled: bool,
+    hyperlinks: bool,
+) -> String {
     if entries.is_empty() {
         return localizer.text("history-empty");
     }
 
     entries
         .iter()
-        .map(|entry| render_entry(entry, localizer, styled))
+        .map(|entry| render_entry(entry, localizer, styled, hyperlinks))
         .collect::<Vec<_>>()
         .join("\n\n")
 }
 
 /// Render one commit while keeping arbitrary Git text readable in a terminal.
-fn render_entry(entry: &HistoryEntry, localizer: &Localizer, styled: bool) -> String {
+fn render_entry(
+    entry: &HistoryEntry,
+    localizer: &Localizer,
+    styled: bool,
+    hyperlinks: bool,
+) -> String {
     let id = entry.commit.id.to_string();
     let id = short_id(&id);
     let id = if styled {
@@ -134,11 +153,8 @@ fn render_entry(entry: &HistoryEntry, localizer: &Localizer, styled: bool) -> St
     } else {
         id.to_owned()
     };
-    let author = format!(
-        "{} <{}>",
-        entry.commit.author.name.to_str_lossy(),
-        entry.commit.author.email.to_str_lossy()
-    );
+    let email = render_email(entry.commit.author.email.as_bstr(), hyperlinks);
+    let author = format!("{} <{email}>", entry.commit.author.name.to_str_lossy());
     let date = format_human_date(entry.commit.authored_at, localizer);
     let fields = [
         (localizer.text("history-author"), author),
@@ -159,6 +175,45 @@ fn render_entry(entry: &HistoryEntry, localizer: &Localizer, styled: bool) -> St
         format!("  {label:<width$}{value}")
     }));
     lines.join("\n")
+}
+
+/// Wrap a safely encoded email address in an OSC 8 mailto link for interactive output.
+fn render_email(email: &BStr, hyperlink: bool) -> String {
+    let label = display_email(email);
+    if !hyperlink {
+        return label;
+    }
+    let target = mailto_address(email);
+    format!("\x1b]8;;mailto:{target}\x1b\\{label}\x1b]8;;\x1b\\")
+}
+
+/// Escape terminal control characters while retaining readable Unicode text.
+fn display_email(email: &BStr) -> String {
+    let email = email.to_str_lossy();
+    let mut label = String::with_capacity(email.len());
+    for character in email.chars() {
+        if character.is_control() {
+            label.extend(character.escape_default());
+        } else {
+            label.push(character);
+        }
+    }
+    label
+}
+
+/// Percent-encode arbitrary Git bytes into a safe mailto address component.
+fn mailto_address(email: &BStr) -> String {
+    use std::fmt::Write as _;
+
+    let mut address = String::with_capacity(email.len());
+    for byte in email.as_bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'@') {
+            address.push(*byte as char);
+        } else {
+            write!(address, "%{byte:02X}").expect("writing to String cannot fail");
+        }
+    }
+    address
 }
 
 /// Format a Git timestamp in localized long-date order while retaining its UTC offset.
@@ -193,8 +248,8 @@ fn format_human_date(time: gix::date::Time, localizer: &Localizer) -> String {
 }
 
 /// Enable decoration only for an interactive terminal that permits color.
-fn styling_enabled() -> bool {
-    io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
+fn styling_enabled(interactive: bool) -> bool {
+    interactive && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
 }
 
 /// Return the conventional compact prefix of a hexadecimal object ID.
@@ -294,7 +349,9 @@ mod tests {
         bstr::{BStr, BString},
     };
 
-    use super::{HistoryDocument, encoded_text, format_human_date, short_id};
+    use super::{
+        HistoryDocument, encoded_text, format_human_date, mailto_address, render_email, short_id,
+    };
     use crate::{
         cli::localization::{Locale, Localizer},
         project::history::HistoryEntry,
@@ -372,5 +429,19 @@ mod tests {
             format_human_date(time, &english).replace(['\u{2068}', '\u{2069}'], ""),
             "August 25, 2026, 11:38:09 UTC+03:00"
         );
+    }
+
+    #[test]
+    fn interactive_email_is_a_safe_mailto_hyperlink() {
+        let email = BStr::new(b"user+tag@example.invalid");
+        assert_eq!(
+            render_email(email, true),
+            "\x1b]8;;mailto:user%2Btag@example.invalid\x1b\\user+tag@example.invalid\x1b]8;;\x1b\\"
+        );
+        assert_eq!(render_email(email, false), "user+tag@example.invalid");
+
+        let unsafe_email = BStr::new(b"user\x1b@example.invalid");
+        assert_eq!(mailto_address(unsafe_email), "user%1B@example.invalid");
+        assert!(render_email(unsafe_email, true).contains(r"user\u{1b}@example.invalid"));
     }
 }

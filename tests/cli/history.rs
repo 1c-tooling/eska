@@ -105,6 +105,7 @@ fn human_output_and_help_are_localized() {
         let text = String::from_utf8(output.stdout)
             .expect("UTF-8 human output")
             .replace(['\u{2068}', '\u{2069}'], "");
+        assert!(!text.contains('\x1b'), "redirected output contains escapes");
         assert!(text.contains("task.txt"), "{text}");
         assert!(!text.contains("base.txt"), "{text}");
         for fragment in &expected[1..] {
