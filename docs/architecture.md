@@ -46,6 +46,7 @@ src/
 │   ├── object_model.rs          # логические Designer XML objects и двусторонний path index
 │   ├── clone.rs                 # план clone, владение destination и validation
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
+│   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
 │   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
 │   └── templates.rs             # план файлов встроенного каркаса
@@ -153,6 +154,11 @@ tests/
   Designer может повторять его у разных объектов. Индекс связывает descriptors,
   inline children, формы, модули и payload paths в обоих направлениях, не создавая
   cache и не подключаясь автоматически к file-level командам.
+- `project/semantic.rs` нормализует workspace и revision file changes в общий
+  `ChangeSet`, сохраняя byte paths и comparison stage. `SemanticChangeAnalyzer`
+  проецирует пути через `ObjectModel` в детерминированный `ChangeSummary` с
+  object identity, path roles, state counts и не потерянными unowned changes.
+  Разбор содержимого и semantic events принадлежат T21.
 - `project/history.rs` получает ограниченную историю HEAD и связывает commit с
   задачей только при однозначной достижимости из одной локальной task-ветки вне
   base. `cli/commands/history.rs` локализует human-вывод и формирует стабильный
