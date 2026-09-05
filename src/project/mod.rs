@@ -14,6 +14,7 @@ pub mod save;
 pub mod semantic;
 pub mod start;
 pub mod status;
+pub mod switch;
 pub mod templates;
 
 pub use model::{

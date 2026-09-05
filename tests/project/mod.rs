@@ -4,5 +4,6 @@ mod object_model;
 mod save;
 mod semantic;
 mod start;
+mod switch;
 mod templates;
 mod workflow;

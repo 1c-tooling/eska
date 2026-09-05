@@ -7,3 +7,4 @@ mod new;
 mod save;
 mod start;
 mod status;
+mod switch;

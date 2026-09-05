@@ -14,6 +14,7 @@ mod new;
 mod save;
 mod start;
 mod status;
+mod switch;
 mod validate;
 
 #[derive(Debug, Subcommand)]
@@ -34,6 +35,8 @@ pub(super) enum Commands {
     Start(start::StartArgs),
     #[command(disable_help_flag = true)]
     Status(status::StatusArgs),
+    #[command(disable_help_flag = true)]
+    Switch(switch::SwitchArgs),
 }
 
 pub(super) fn run(
@@ -50,6 +53,7 @@ pub(super) fn run(
         Some(Commands::Save(args)) => args.run(project_dir, localizer),
         Some(Commands::Start(args)) => args.run(project_dir, localizer),
         Some(Commands::Status(args)) => args.run(project_dir, localizer),
+        Some(Commands::Switch(args)) => args.run(project_dir, localizer),
         None => validate::run(project_dir, localizer),
     }
 }
@@ -64,4 +68,5 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         .mut_subcommand("save", |command| save::localize(command, localizer))
         .mut_subcommand("start", |command| start::localize(command, localizer))
         .mut_subcommand("status", |command| status::localize(command, localizer))
+        .mut_subcommand("switch", |command| switch::localize(command, localizer))
 }

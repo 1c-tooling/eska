@@ -169,6 +169,11 @@ tests/
   task-ветку. System Git обновляет активную base и переключает worktree, потому
   что эти операции должны согласованно изменить HEAD, index и файлы.
   `cli/commands/start.rs` отвечает только за аргументы и RU/EN presentation.
+- `project/switch.rs` через `gix` проверяет workflow target, локальную ref и
+  чистоту всего worktree, не выполняя fetch и не создавая веток. Изолированный
+  system Git активирует существующую ветку с `--no-guess`, чтобы согласованно
+  изменить HEAD, index и файлы; `cli/commands/switch.rs` отвечает за выбор
+  task/base и RU/EN presentation.
 - `project/save.rs` выбирает все changed paths внутри корня проекта, отклоняет
   конфликты и detached HEAD, сохраняет исходный index для rollback и поручает
   staging/commit системному Git. `git commit --only` не включает подготовленные

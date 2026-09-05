@@ -117,6 +117,14 @@ impl<'a> Executor<'a> {
         )
     }
 
+    /// Switch to an existing local branch without guessing a remote branch.
+    ///
+    /// # Errors
+    /// Returns a structured process error when the existing branch cannot be checked out.
+    pub fn switch_existing_branch(&self, branch: &str) -> Result<(), Error> {
+        self.success(Operation::Switch, ["switch", "--no-guess", branch])
+    }
+
     /// Stage all tracked and untracked changes below the executor directory.
     ///
     /// # Errors
