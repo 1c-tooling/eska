@@ -166,6 +166,42 @@ impl<'a> Executor<'a> {
         }
     }
 
+    /// Commit only paths below the executor directory after editing a generated draft.
+    ///
+    /// Git receives the draft as a message and `--edit` opens the configured editor with
+    /// terminal I/O inherited. The final user-edited message remains subject to Git hooks.
+    ///
+    /// # Errors
+    /// Returns a structured process error when Git cannot start the editor or create the commit.
+    pub fn commit_only_with_draft(&self, draft: &str) -> Result<(), Error> {
+        let mut command = self.command();
+        let status = command
+            .args([
+                "commit",
+                "--quiet",
+                "--only",
+                "--edit",
+                "--message",
+                draft,
+                "--",
+                ".",
+            ])
+            .status()
+            .map_err(|source| Error::Spawn {
+                operation: Operation::Commit,
+                source,
+            })?;
+        if status.success() {
+            Ok(())
+        } else {
+            Err(Error::Failed {
+                operation: Operation::Commit,
+                status,
+                stderr: BString::default(),
+            })
+        }
+    }
+
     fn success<I, S>(&self, operation: Operation, args: I) -> Result<(), Error>
     where
         I: IntoIterator<Item = S>,
