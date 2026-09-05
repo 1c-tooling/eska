@@ -232,6 +232,33 @@ fn uses_the_configured_editor_when_message_is_omitted() {
     assert!(draft.contains("- File changed: src/module.bsl."), "{draft}");
 }
 
+/// The editor inherits the caller locale so it can render a UTF-8 generated draft.
+#[cfg(unix)]
+#[test]
+fn generated_draft_editor_inherits_the_caller_locale() {
+    let (fixture, root) = project();
+    fs::write(root.join("src/module.bsl"), "changed\n").unwrap();
+    let editor = fixture.0.join("editor.sh");
+    fs::write(
+        &editor,
+        "#!/bin/sh\n[ \"$LC_ALL\" = \"C.UTF-8\" ] || exit 77\nprintf 'message\n' > \"$1\"\n",
+    )
+    .unwrap();
+    fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
+    let editor_command = format!("'{}'", editor.display());
+    git_ok(&fixture.0, &["config", "core.editor", &editor_command]);
+
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env_remove("ESKA_LANG")
+        .env("LC_ALL", "C.UTF-8")
+        .args(["--lang", "ru", "save"])
+        .output()
+        .expect("run eska");
+
+    assert!(output.status.success(), "{}", text(&output.stderr));
+}
+
 /// Semantic changes produce a localized Conventional Commit draft before the editor opens.
 #[cfg(unix)]
 #[test]

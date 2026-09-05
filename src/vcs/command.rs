@@ -234,7 +234,7 @@ impl<'a> Executor<'a> {
     fn command(&self) -> Command {
         let mut command = Command::new("git");
         remove_repository_redirects(&mut command);
-        command.current_dir(self.work_dir).env("LC_ALL", "C");
+        command.current_dir(self.work_dir);
         command
     }
 }
