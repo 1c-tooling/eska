@@ -29,7 +29,7 @@
 - `DONE`: `T17` — реализованные VCS-операции переведены на gix-first слой;
 - `DONE`: `T18` — локальная история commit/task без fetch и изменения repository;
 - `DONE`: `T19` — Designer XML logical object model;
-- `NEXT`: `T20` — reusable semantic `ChangeSet`.
+- `IN-PROGRESS`: `T20` — reusable semantic `ChangeSet`.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
 операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
@@ -73,7 +73,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T17 | DONE | Gix-first миграция реализованных VCS-операций | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T18 | DONE | `eska history` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T19 | DONE | Designer XML object model | [06-locking-and-xml.md](06-locking-and-xml.md) |
-| T20 | NEXT | Semantic `ChangeSet` | [07-semantic-changes.md](07-semantic-changes.md) |
+| T20 | IN-PROGRESS | Semantic `ChangeSet` | [07-semantic-changes.md](07-semantic-changes.md) |
 | T21 | PLANNED | Semantic diff | [07-semantic-changes.md](07-semantic-changes.md) |
 | T22 | PLANNED | Генератор commit message | [07-semantic-changes.md](07-semantic-changes.md) |
 | T23 | PLANNED | Спецификация test backend | [08-quality.md](08-quality.md) |

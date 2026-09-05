@@ -2,7 +2,7 @@
 
 ## T20 — Semantic `ChangeSet`
 
-**Статус:** `NEXT`
+**Статус:** `IN-PROGRESS`
 **Зависит от:** T14, T19
 
 Ввести reusable pipeline `ChangeSet → SemanticChangeAnalyzer → ChangeSummary`.
