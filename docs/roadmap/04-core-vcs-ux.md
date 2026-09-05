@@ -272,7 +272,7 @@ MR/PR и provider integrations оставить следующей задаче�
 
 ## T40 — `eska finish`
 
-**Статус:** `IN-PROGRESS`
+**Статус:** `DONE`
 **Зависит от:** T13, T17, T34
 
 Первая версия замыкает локальный task workflow и не выполняет publish, merge или
@@ -291,3 +291,29 @@ MR/PR и provider integrations оставить следующей задаче�
 Пока locking не реализован, снимать нечего; T39 позднее расширит preflight и
 cleanup существующих locks. Отдельный task state не создаётся. Remote branch не
 удаляется без будущей явной policy.
+
+Решения T40:
+
+- задача определяется только по точному совпадению активной ветки с task-шаблоном
+  policy; отдельное task state не создаётся;
+- preflight проверяет весь worktree, attached HEAD, первый commit и отсутствие
+  незавершённых merge/rebase/cherry-pick/revert/apply-mailbox/bisect;
+- настроенный remote получается через gix-first слой T17; локальная base
+  fast-forward обновляется как неактивная ref с compare-and-swap, локальная base
+  впереди remote сохраняется, divergence отклоняется;
+- `require-integrated` проверяет достижимость task tip из свежей remote
+  integration target, а без настроенного remote — из локальной integration
+  target; `require-published` проверяет достижимость из remote task-ветки;
+- после успешной проверки system Git только переключает HEAD/index/worktree на
+  base; разрешённая policy локальная task ref удаляется через `gix` с проверкой
+  ожидаемого commit и linked worktrees;
+- publish, merge, удаление remote branch и locking cleanup не выполняются.
+
+Проверки T40: `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`,
+`ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test` — успешно
+(96 unit, 148 integration). Core/CLI-сценарии покрывают локальную и remote
+integration, fast-forward/divergence base, `require-published`, сохранение ветки
+по policy, недоступный remote, dirty/in-progress preflight, RU/EN help, ошибки и
+exit codes. Ручные RU/EN сценарии выполнены в отдельном временном каталоге
+playground: отказ до интеграции и успешное локальное завершение.
