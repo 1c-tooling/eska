@@ -101,14 +101,17 @@ en-US
 ```text
 eska
 ├── gix crate
-└── system Git как compatibility fallback
+└── system Git как документированный capability fallback
 ```
 
 `gix` подключается как Rust crate и входит в бинарник `eska`.
 
 Отдельная установка `gix` пользователю не требуется.
 
-В перспективе желательно постепенно уменьшать зависимость от внешнего `git`, если `gix` покрывает необходимые сценарии достаточно надёжно.
+Для каждой VCS-операции сначала использовать `gix`, если закреплённая версия
+сохраняет требуемые semantics и safety guarantees. System Git допустим только для
+конкретно зафиксированного пробела возможностей, а не как общий путь для всех
+network/mutating операций.
 
 Не ставить отказ от Git самоцелью.
 
@@ -127,6 +130,7 @@ eska git push
 Основной UX:
 
 ```text
+eska clone
 eska start
 eska status
 eska diff
@@ -431,7 +435,7 @@ designer-xml
 
 ---
 
-# Milestone 2 — `eska new`, `eska init` и templates
+# Milestone 2 — `eska new`, `eska init`, `eska clone` и templates
 
 Это первый пользовательски значимый milestone.
 
@@ -536,11 +540,33 @@ remote templates
 --no-vcs
 ```
 
+## 2.6. `eska clone`
+
+Назначение:
+
+> клонировать существующий готовый проект `eska` и сразу проверить его контракт.
+
+```text
+eska clone <repository> [directory]
+```
+
+Первая версия использует `gix` для clone/fetch/checkout и принимает URL или
+локальный путь. HTTP(S) transport встроен и не требует system Git; локальный и
+SSH transport наследуют фактическое поведение upstream `gix clone` и используют
+protocol helpers `git-upload-pack`/`ssh`. Каталог назначения должен отсутствовать.
+После checkout выполняются обычные discovery и validation `eska.toml`; при
+ошибке удаляется только каталог, созданный текущим запуском.
+
+`clone` не совмещается с `init`, не исправляет чужой проект и пока не добавляет
+shallow clone, выбор ветки и submodules. Имя remote по умолчанию — `origin`, с
+явной возможностью выбрать другое имя.
+
 ## Критерии готовности
 
 ```text
 eska new ...
 eska init ...
+eska clone ...
 ```
 
 создают валидный проект, который затем успешно загружается через Project model.
@@ -555,9 +581,12 @@ eska init ...
 
 ## Основной принцип
 
-`gix` использовать внутри бинарника для операций, где это зрелый и удобный путь.
+`gix` — основной backend каждой VCS-операции, для которой закреплённая версия
+сохраняет требуемое поведение и гарантии безопасности.
 
-System Git использовать как fallback для сложных/network/mutating операций, если текущий `gix` API пока менее надёжен.
+System Git использовать только как capability fallback для конкретно
+зафиксированной недостающей возможности. Не повторять им произвольную ошибку
+`gix` и не считать все network/mutating операции fallback-категорией.
 
 ## На первом этапе через `gix` желательно реализовать
 
@@ -568,24 +597,21 @@ System Git использовать как fallback для сложных/networ
 - worktree/index status;
 - changed paths;
 - commit history basics;
-- merge-base, если нужен следующему milestone.
+- merge-base, если нужен следующему milestone;
+- clone/fetch и безопасные ref updates по мере появления потребителя.
 
 ## System Git fallback
 
-Допустим для:
-
-- fetch;
-- push;
-- rebase;
-- merge;
-- credentials;
-- signing;
-- Git LFS;
-- редких compatibility cases.
+Допустим для пока не покрытой высокоуровневой orchestration worktree/index,
+rebase/merge/stash, hooks/editor/signing, Git LFS и конкретных неподдержанных
+transport/credential сценариев. Push оценивается заново в задаче `publish`.
 
 Прямые `Command::new("git")` не должны быть размазаны по commands.
 
 Сделать небольшой infrastructure layer.
+
+Каждая задача, оставляющая system Git, должна перечислить вызовы и объяснить,
+какой контракт пока нельзя равноценно сохранить через `gix`.
 
 ## Не делать
 
@@ -686,7 +712,7 @@ Custom config должен позволять переопределять ти�
 
 После этого milestone `eska` должна быть пригодна для повседневной командной разработки.
 
-Порядок реализации команд:
+Основной пользовательский цикл:
 
 ```text
 status
@@ -697,6 +723,12 @@ sync
 publish
 finish
 ```
+
+`status`, `start`, `diff` и `save` уже образуют локальный baseline. `clone`,
+gix-first миграция, history и semantic model также завершены. Ближайший порядок
+теперь замыкает практический цикл через `switch`, локальный `finish` и `build`;
+`sync`, `publish`, locking и test backend возвращаются после проверки MVP
+согласно разделу 14.
 
 ---
 
@@ -861,6 +893,10 @@ Commit message должен описывать **именно тот ChangeSet, 
 
 Пользователь не должен выбирать `fetch/rebase/merge` вручную для типового сценария.
 
+Если remote из workflow policy существует в repository, `sync` сначала получает
+его состояние через gix-first network layer. Если remote не настроен, fetch не
+выполняется: источником синхронизации служит локальная base.
+
 Пример Git Flow:
 
 ```text
@@ -889,6 +925,9 @@ Resolve and run:
 Cancel:
   eska abort
 ```
+
+`sync`, `continue` и `abort` реализуются одной задачей. Нельзя выпускать
+конфликтующий `sync` без штатного пути продолжить или отменить операцию.
 
 ---
 
@@ -944,8 +983,6 @@ clear task state
 Реализовать:
 
 ```text
-eska continue
-eska abort
 eska restore
 eska switch
 eska shelve
@@ -957,6 +994,8 @@ eska history
 ## `continue` / `abort`
 
 Унифицированное управление незавершённой workflow-операцией.
+
+Первая реализация поставляется вместе с `sync`, а не отдельной следующей задачей.
 
 Не заставлять пользователя помнить:
 
@@ -1806,31 +1845,33 @@ cargo test
 
 Если необходимо сокращать scope, приоритет такой:
 
+Текущий приоритет — получить небольшой CLI MVP, пригодный для ежедневной работы
+над реальными задачами:
+
 ```text
-P0
-Project model
-new/init/templates
-VCS workflow
-status/start/sync/save/publish/finish
+P0 — замкнуть локальный workflow
+eska switch
+eska finish
+eska build -> .cf
 
-P1
-locking
-Designer XML model
-semantic diff
-commit message generation
+P1 — расширить delivery artifacts
+patch-extension .cfe из разницы веток (после feasibility specification)
+project versioning
 
-P2
+P2 — качество и автоматизация после проверки MVP
+test backend specification
+affected analysis
 fmt/check
-build
 doctor
 development environment
 apply/run
+release/CI helpers
 
-P3
-affected
-version/release
-CI helpers
-workspace per task
+P3 — командный remote workflow
+shelve/restore
+sync/continue/abort
+publish
+locking
 
 P4
 VS Code
@@ -1839,57 +1880,36 @@ standalone GUI
 advanced automation
 ```
 
+System Git orchestration допустима через существующий infrastructure layer для
+`switch` и `finish`, потому что без них локальный task lifecycle не замкнут.
+Test backend и locking не удалены из roadmap, но не блокируют проверку MVP.
+
 ---
 
 # 14. Ближайший порядок задач после текущего состояния
 
-Текущий baseline:
+Текущий baseline — задачи T01–T22 завершены:
 
 ```text
-minimal CLI
-+
-ru-RU/en-US localization
+Project/config/discovery
+new/init/templates
+repository/workflow policies
+status/start/diff/save/history
+Designer XML model/semantic diff/commit draft
 ```
 
-Следующие задачи выполнять именно в таком порядке, если не принято новое решение:
+Ближайшие задачи выполнять в таком порядке, если не принято новое решение:
 
 ```text
-1. Project model
-2. eska.toml
-3. project discovery + validation
-4. eska new
-5. built-in templates
-6. eska init
-7. VCS repository layer (gix + Git fallback)
-8. workflow policy model
-9. trunk preset
-10. git-flow preset
-11. github-flow preset
-12. eska status
-13. eska start
-14. eska diff
-15. eska save
-16. eska sync
-17. eska publish
-18. eska finish
-19. continue/abort
-20. switch/shelve/history/restore
-21. locking
-22. Designer XML logical object model
-23. semantic ChangeSet
-24. semantic diff
-25. commit message generator
-26. fmt
-27. check
-28. build через ibcmd
-29. doctor
-30. dev environments
-31. apply/run
-32. affected analysis
-33. versioning
-34. release
-35. CI integration
-36. VS Code extension
+1. T34 — eska switch: существующая task branch и возврат на base
+2. T40 — eska finish: локальная проверка policy и cleanup task branch
+3. T28 — eska build: настраиваемая кроссплатформенная сборка .cf через ibcmd
+4. T42 — спецификация и feasibility patch-extension .cfe из разницы веток
+
+После практической проверки MVP вернуться к отложенной очереди:
+T23 test backend, T24 affected, T25 versioning, T26 fmt, T27 check,
+T29 doctor, T30 environments, T31 apply/run, T32 release, T33 CI,
+T35 shelves, T36 restore, T37 sync, T38 publish, T39 locking и T41 VS Code.
 ```
 
 Каждый пункт лучше реализовывать отдельной законченной задачей или небольшим связанным набором задач.
@@ -1950,7 +1970,7 @@ eska publish
 Идеальная onboarding-схема:
 
 ```text
-git clone ...
+eska clone ...
 cd project
 eska setup
 eska start TASK-123
@@ -1965,7 +1985,7 @@ eska start TASK-123
 Низкоуровневые механизмы могут со временем меняться:
 
 ```text
-Git CLI -> gix
+system Git fallback -> gix при эквивалентных гарантиях
 Git LFS locks -> другой lock backend
 старый ibcmd pipeline -> новые возможности 1С 8.5+
 ручной diff -> semantic diff

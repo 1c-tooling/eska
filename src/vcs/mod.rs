@@ -3,6 +3,7 @@
 pub mod command;
 pub mod diff;
 pub(crate) mod git;
+pub mod network;
 pub mod repository;
 pub mod status;
 pub mod workflow;

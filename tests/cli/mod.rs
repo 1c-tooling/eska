@@ -1,7 +1,10 @@
+mod clone;
 mod diff;
+mod history;
 mod init;
 mod localization;
 mod new;
 mod save;
 mod start;
 mod status;
+mod switch;

@@ -24,8 +24,14 @@
 - Не привязывать `status`, `diff` и `save` к полному parse конфигурации.
 - Сначала рассматривать changed paths и инкрементальную обработку; cache добавлять
   только по измеренной необходимости.
-- System Git вызывается через один infrastructure layer, без shell parsing и без
-  разбора локализованного human output.
+- Для каждой VCS-операции сначала проверяется возможность сохранить контракт и
+  safety guarantees через текущую закреплённую версию `gix`.
+- System Git допустим только как capability fallback через один infrastructure
+  layer: для отсутствующей высокоуровневой orchestration worktree/index,
+  hooks/editor/signing, LFS или конкретно неподдержанного transport/credential
+  сценария. Fallback не является безусловным повтором после любой ошибки `gix`.
+- Не использовать shell parsing и не разбирать локализованный human output Git;
+  оставшиеся system Git-вызовы перечислять и обосновывать в решениях задачи.
 
 ## Definition of Done
 
@@ -45,4 +51,3 @@
 10. удалить ставшие ненужными код и dependencies;
 11. обновить статусы и решения в этом трекере;
 12. не менять версию crate вручную — ей управляет release automation.
-

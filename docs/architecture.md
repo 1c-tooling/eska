@@ -18,6 +18,7 @@ src/
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
 │   │   ├── diff.rs              # eska diff: human/raw/JSON presentation
+│   │   ├── history.rs           # eska history: human/JSON presentation
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
 │   │   └── validate.rs          # проверка при запуске без подкоманды
@@ -40,7 +41,12 @@ src/
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
 │   ├── diff.rs                  # file-level изменения внутри корня проекта
+│   ├── history.rs               # локальная commit history и task attribution
 │   ├── metadata.rs              # human-проекция путей и XML-дочерних объектов
+│   ├── object_model.rs          # логические Designer XML objects и двусторонний path index
+│   ├── clone.rs                 # план clone, владение destination и validation
+│   ├── save.rs                  # project-scoped staging, commit и rollback index
+│   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
 │   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
 │   └── templates.rs             # план файлов встроенного каркаса
@@ -52,11 +58,12 @@ src/
 └── vcs/
     ├── mod.rs                   # граница VCS
     ├── git.rs                   # общее открытие и инициализация Git через gix
-    ├── command.rs               # системный Git для network/mutating операций
+    ├── command.rs               # единый system Git capability fallback
+    ├── network.rs               # clone/fetch через gix и transport fallback policy
     ├── diff.rs                  # разрешение revisions и tree-to-tree diff через gix
     ├── repository.rs            # discovery, HEAD, refs и ограниченная история
     ├── status.rs                # изменения HEAD/index/worktree и changed paths
-    ├── workflow.rs              # выбор preset, custom overrides и разрешение policy
+    ├── workflow.rs              # выбор preset, overrides и разрешение policy
     └── workflow/
         └── policy.rs            # валидация policy и декларативный план задачи
 
@@ -64,9 +71,9 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{diff,init,new,save,start,status,localization}.rs
-├── project/{discovery,save,start,templates,workflow}.rs
-├── vcs/{diff,repository,status,support}.rs # реальные Git-репозитории и fixture-команды
+├── cli/{diff,history,init,new,save,start,status,localization}.rs
+├── project/{discovery,history,save,start,templates,workflow}.rs
+├── vcs/{diff,network,repository,status,support}.rs # Git-сценарии и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
 
@@ -74,7 +81,7 @@ tests/
 а не новая команда `validate` или запланированная `check`. `vcs/git.rs` содержит
 общее открытие и инициализацию Git; чтение репозитория находится в
 `vcs/repository.rs`. `project/start.rs` исполняет workflow plan через
-`vcs/command.rs`.
+`vcs/network.rs`, `vcs/repository.rs` и узкий fallback в `vcs/command.rs`.
 
 ## Что менять и где
 
@@ -84,6 +91,7 @@ tests/
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
+| Изменить вывод или связь commit с task в `history` | [`src/cli/commands/history.rs`](../src/cli/commands/history.rs), затем [`src/project/history.rs`](../src/project/history.rs) |
 | Изменить запуск задачи или его ошибки | [`src/cli/commands/start.rs`](../src/cli/commands/start.rs), затем [`src/project/start.rs`](../src/project/start.rs) |
 | Подключить новую явно запрошенную команду | [`src/cli/commands/mod.rs`](../src/cli/commands/mod.rs) |
 | Изменить общий `--help`, `--lang`, `--project-dir` | [`src/cli/args.rs`](../src/cli/args.rs) |
@@ -95,7 +103,8 @@ tests/
 | Изменить схему `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
 | Изменить распознавание типа выгрузки | [`src/project/designer_xml.rs`](../src/project/designer_xml.rs) |
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
-| Изменить сетевое/изменяющее исполнение Git | [`src/vcs/command.rs`](../src/vcs/command.rs) |
+| Изменить clone/fetch или transport fallback policy | [`src/vcs/network.rs`](../src/vcs/network.rs) |
+| Изменить system Git capability fallback | [`src/vcs/command.rs`](../src/vcs/command.rs) |
 | Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../src/vcs/repository.rs) |
 | Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../src/vcs/status.rs) |
 | Изменить workflow policy или план задачи | [`src/vcs/workflow/policy.rs`](../src/vcs/workflow/policy.rs) |
@@ -122,7 +131,9 @@ tests/
 - Git находится в `vcs/`: `git.rs` открывает и инициализирует репозитории,
   `repository.rs` возвращает HEAD, refs, историю и ahead/behind, `status.rs`
   сравнивает HEAD/index/worktree, а `diff.rs` разрешает commit-like revisions,
-  merge base и сравнивает committed trees. Состояние файлов не требует разбора
+  merge base и сравнивает committed trees. `network.rs` выполняет clone/fetch
+  через `gix` и выбирает system Git fallback до сетевой попытки только для
+  неподдерживаемых remote-helper transport. Состояние файлов не требует разбора
   Designer XML.
 - `project/status.rs` объединяет configuration, workflow policy и read-only Git
   в снимок проекта. `cli/commands/status.rs` только локализует human presentation
@@ -135,11 +146,34 @@ tests/
   свойства дочерних объектов только в изменённых главных XML-файлах.
   `cli/commands/diff.rs` группирует logical identities по типу метаданных и
   состоянию, оформляет TTY-заголовки и маркеры, отдельно формирует raw,
-  workspace JSON версии 1 и revision JSON версии 2. Полная object model, mapping
-  всех путей объекта и semantic-анализ BSL/форм остаются задачами T22–T24.
+  workspace JSON версии 1 и revision JSON версии 2. Semantic-анализ BSL/форм
+  остаётся задачами T20–T21.
+- `project/object_model.rs` по явному вызову обходит Designer XML source и строит
+  read-only индекс логических объектов. Читаемый `ObjectId` формируется из
+  machine-facing metadata type/name и иерархии; UUID хранится отдельно, поскольку
+  Designer может повторять его у разных объектов. Индекс связывает descriptors,
+  inline children, формы, модули и payload paths в обоих направлениях, не создавая
+  cache и не подключаясь автоматически к file-level командам.
+- `project/semantic.rs` нормализует workspace и revision file changes в общий
+  `ChangeSet`, сохраняя byte paths и comparison stage. `SemanticChangeAnalyzer`
+  проецирует пути через `ObjectModel` в детерминированный `ChangeSummary` с
+  object identity, path roles, state counts и не потерянными unowned changes.
+  Разбор содержимого и semantic events принадлежат T21.
+- `project/history.rs` получает ограниченную историю HEAD и связывает commit с
+  задачей только при однозначной достижимости из одной локальной task-ветки вне
+  base. `cli/commands/history.rs` локализует human-вывод и формирует стабильный
+  JSON версии 1, сохраняя произвольные Git-байты через явную кодировку.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
-  обновляет base только fast-forward и активирует новую task-ветку.
+  получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
+  обновляет неактивную base ref транзакцией compare-and-swap и активирует новую
+  task-ветку. System Git обновляет активную base и переключает worktree, потому
+  что эти операции должны согласованно изменить HEAD, index и файлы.
   `cli/commands/start.rs` отвечает только за аргументы и RU/EN presentation.
+- `project/switch.rs` через `gix` проверяет workflow target, локальную ref и
+  чистоту всего worktree, не выполняя fetch и не создавая веток. Изолированный
+  system Git активирует существующую ветку с `--no-guess`, чтобы согласованно
+  изменить HEAD, index и файлы; `cli/commands/switch.rs` отвечает за выбор
+  task/base и RU/EN presentation.
 - `project/save.rs` выбирает все changed paths внутри корня проекта, отклоняет
   конфликты и detached HEAD, сохраняет исходный index для rollback и поручает
   staging/commit системному Git. `git commit --only` не включает подготовленные

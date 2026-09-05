@@ -164,9 +164,9 @@ impl Repository {
     fn check_index_size(&self) -> Result<(), Error> {
         let path = self.inner.index_path();
         match fs::metadata(&path) {
-            // gix-index 0.48 subtracts the checksum length before validating the header.
-            // Reject truncated files before that code can panic. Normal Git updates use rename;
-            // concurrent in-place corruption is outside the snapshot guarantees of gix.
+            // Reject files too short to contain an index header and object-hash checksum.
+            // Normal Git updates use rename; concurrent in-place corruption is outside the
+            // snapshot guarantees of gix.
             Ok(metadata)
                 if metadata.len() < 12 + self.inner.object_hash().len_in_bytes() as u64 =>
             {

@@ -80,6 +80,8 @@ fn saves_project_changes_with_an_explicit_message_in_both_locales() {
         let (fixture, root) = project();
         fs::write(root.join("src/module.bsl"), "changed\n").unwrap();
         fs::write(root.join("src/new.bsl"), "new\n").unwrap();
+        fs::create_dir_all(root.join("src/Catalogs")).unwrap();
+        fs::write(root.join("src/Catalogs/Broken.xml"), "not xml\n").unwrap();
         fs::write(fixture.0.join("outside.txt"), "outside\n").unwrap();
 
         let output = eska(&root, locale, &["save", "-m", "project changes"]);
@@ -93,7 +95,12 @@ fn saves_project_changes_with_an_explicit_message_in_both_locales() {
         );
         assert_eq!(
             git_ok(&fixture.0, &["show", "--format=", "--name-only", "HEAD"]),
-            b"workspace/Billing/src/module.bsl\nworkspace/Billing/src/new.bsl\n"
+            concat!(
+                "workspace/Billing/src/Catalogs/Broken.xml\n",
+                "workspace/Billing/src/module.bsl\n",
+                "workspace/Billing/src/new.bsl\n"
+            )
+            .as_bytes()
         );
         assert_eq!(
             git_ok(&fixture.0, &["status", "--short"]),
@@ -197,7 +204,15 @@ fn uses_the_configured_editor_when_message_is_omitted() {
     let (fixture, root) = project();
     fs::write(root.join("src/module.bsl"), "changed\n").unwrap();
     let editor = fixture.0.join("editor.sh");
-    fs::write(&editor, "#!/bin/sh\nprintf 'editor message\\n' > \"$1\"\n").unwrap();
+    let captured = fixture.0.join("generated-message.txt");
+    fs::write(
+        &editor,
+        format!(
+            "#!/bin/sh\ncp \"$1\" '{}'\nprintf 'editor message\\n' > \"$1\"\n",
+            captured.display()
+        ),
+    )
+    .unwrap();
     fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
     let editor_command = format!("'{}'", editor.display());
     git_ok(&fixture.0, &["config", "core.editor", &editor_command]);
@@ -209,6 +224,121 @@ fn uses_the_configured_editor_when_message_is_omitted() {
         git_ok(&fixture.0, &["log", "-1", "--format=%s"]),
         b"editor message\n"
     );
+    let draft = fs::read_to_string(captured).expect("captured generated draft");
+    assert!(
+        draft.starts_with("chore: Changes to project files\n\n"),
+        "{draft}"
+    );
+    assert!(draft.contains("- File changed: src/module.bsl."), "{draft}");
+}
+
+/// The editor inherits the caller locale so it can render a UTF-8 generated draft.
+#[cfg(unix)]
+#[test]
+fn generated_draft_editor_inherits_the_caller_locale() {
+    let (fixture, root) = project();
+    fs::write(root.join("src/module.bsl"), "changed\n").unwrap();
+    let editor = fixture.0.join("editor.sh");
+    fs::write(
+        &editor,
+        "#!/bin/sh\n[ \"$LC_ALL\" = \"C.UTF-8\" ] || exit 77\nprintf 'message\n' > \"$1\"\n",
+    )
+    .unwrap();
+    fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
+    let editor_command = format!("'{}'", editor.display());
+    git_ok(&fixture.0, &["config", "core.editor", &editor_command]);
+
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env_remove("ESKA_LANG")
+        .env("LC_ALL", "C.UTF-8")
+        .args(["--lang", "ru", "save"])
+        .output()
+        .expect("run eska");
+
+    assert!(output.status.success(), "{}", text(&output.stderr));
+}
+
+/// Semantic changes produce a localized Conventional Commit draft before the editor opens.
+#[cfg(unix)]
+#[test]
+fn generated_draft_summarizes_semantic_changes_in_both_locales() {
+    for (locale, subject, module, method) in [
+        (
+            "ru",
+            "feat(common-module): Изменения ОбщийМодуль.Обмен",
+            "- Изменён модуль: ОбщийМодуль.Обмен.",
+            "- Изменена процедура: ОбщийМодуль.Обмен — Выполнить.",
+        ),
+        (
+            "en",
+            "feat(common-module): Changes to CommonModule.Обмен",
+            "- Module changed: CommonModule.Обмен.",
+            "- Procedure changed: CommonModule.Обмен — Выполнить.",
+        ),
+    ] {
+        let (fixture, root) = project();
+        let module_path = root.join("src/CommonModules/Обмен/Ext/Module.bsl");
+        fs::create_dir_all(module_path.parent().unwrap()).unwrap();
+        fs::write(
+            root.join("src/CommonModules/Обмен.xml"),
+            r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><CommonModule uuid="11111111-1111-1111-1111-111111111111"><Properties><Name>Обмен</Name></Properties></CommonModule></MetaDataObject>"#,
+        )
+        .unwrap();
+        fs::write(
+            &module_path,
+            "Процедура Выполнить()\n    Возврат;\nКонецПроцедуры\n",
+        )
+        .unwrap();
+        git_ok(&fixture.0, &["add", "."]);
+        git_ok(&fixture.0, &["commit", "-m", "semantic base"]);
+        fs::write(
+            &module_path,
+            "Процедура Выполнить()\n    Сообщить(\"Готово\");\nКонецПроцедуры\n",
+        )
+        .unwrap();
+        let editor = fixture.0.join("editor.sh");
+        fs::write(&editor, "#!/bin/sh\nexit 0\n").unwrap();
+        fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
+        let editor_command = format!("'{}'", editor.display());
+        git_ok(&fixture.0, &["config", "core.editor", &editor_command]);
+
+        let output = eska(&root, locale, &["save"]);
+
+        assert!(output.status.success(), "{}", text(&output.stderr));
+        let message = String::from_utf8(git_ok(&fixture.0, &["log", "-1", "--format=%B"])).unwrap();
+        for expected in [subject, module, method] {
+            assert!(
+                message.contains(expected),
+                "missing `{expected}` in:\n{message}"
+            );
+        }
+    }
+}
+
+/// A failed generated-draft editor restores staging exactly like an explicit-message failure.
+#[cfg(unix)]
+#[test]
+fn generated_editor_failure_restores_existing_staging() {
+    let (fixture, root) = project();
+    fs::write(fixture.0.join("outside.txt"), "staged outside\n").unwrap();
+    git_ok(&fixture.0, &["add", "outside.txt"]);
+    fs::write(root.join("src/module.bsl"), "changed\n").unwrap();
+    let index = fixture.0.join(".git/index");
+    let original_index = fs::read(&index).unwrap();
+    let original_head = git_ok(&fixture.0, &["rev-parse", "HEAD"]);
+    let editor = fixture.0.join("editor.sh");
+    fs::write(&editor, "#!/bin/sh\nexit 1\n").unwrap();
+    fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
+    let editor_command = format!("'{}'", editor.display());
+    git_ok(&fixture.0, &["config", "core.editor", &editor_command]);
+
+    let output = eska(&root, "en", &["save"]);
+
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    assert!(text(&output.stderr).contains("Could not create a commit"));
+    assert_eq!(fs::read(index).unwrap(), original_index);
+    assert_eq!(git_ok(&fixture.0, &["rev-parse", "HEAD"]), original_head);
 }
 
 /// Help and empty-message validation are localized CLI behavior.

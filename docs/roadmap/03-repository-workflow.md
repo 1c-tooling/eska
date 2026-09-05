@@ -7,8 +7,11 @@
 
 Создать единый infrastructure layer. Через `gix` реализовать discovery, HEAD,
 branch/refs, worktree/index status, changed paths, базовую историю и merge-base по
-мере реальной необходимости. System Git оставить fallback для network/mutating,
-credentials, signing и LFS операций. Не размазывать `Command::new("git")` по CLI.
+мере реальной необходимости. System Git допустим только как документированный
+capability fallback для ещё не покрытой orchestration worktree/index,
+hooks/editor/signing, LFS и отдельных transport/credential сценариев. Не
+размазывать `Command::new("git")` по CLI и не повторять им произвольную ошибку
+`gix`.
 
 **Готово, когда:** реальные временные repositories покрывают detached HEAD,
 unborn branch, dirty state и простой commit graph; core возвращает структурированные
@@ -22,7 +25,8 @@ Core не зависит от CLI, TTY или локализации. Имена
 
 **Решения и границы:**
 
-- `gix 0.80.0` сохранён, включён только дополнительный feature `status`;
+- `gix` обновлён до `0.87.1`; при выключенных default features явно включены
+  только `revision`, `sha1` и `status`;
 - discovery учитывает `.git`-файлы и linked worktrees, отвергает bare и
   повреждённый ближайший Git; применяет только локальную конфигурацию репозитория;
 - refs отсортированы по полному имени, symbolic targets не теряются;
@@ -30,13 +34,14 @@ Core не зависит от CLI, TTY или локализации. Имена
   или парсинга вывода Git;
 - status не записывает index, игнорирует stat-only refresh и ignored-файлы;
   перемещения представлены удалением/добавлением без similarity scan;
-- добавлена защита от паники `gix-index 0.48` на усечённом основном index;
+- сохранена ранняя проверка минимального размера основного index, чтобы не
+  передавать заведомо усечённый файл парсеру;
   атомарность относительно внешних изменений не обещается;
-- несовместимые транзитивные версии `hashbrown`/`foldhash` задокументированы
-  в адресных исключениях существующего `clippy.toml`;
-- merge-base и исполнитель системного Git отложены до конкретного потребителя;
-  network/mutating, credentials, signing и LFS-команды остаются будущими
-  операциями внутри `vcs/`; заготовки исполнителя не добавлены;
+- несовместимые транзитивные версии `bitflags`, `hashbrown` и `syn`
+  задокументированы в адресных исключениях существующего `clippy.toml`;
+- merge-base и исполнитель системного Git были отложены до конкретного
+  потребителя; последующие реализованные вызовы проходят отдельный аудит и
+  gix-first миграцию в T17;
 - CLI и config не менялись, новых пользовательских строк и JSON-схем нет.
 
 **Проверено:** `cargo fmt --check`, `cargo check`,
@@ -68,9 +73,14 @@ config, а не через новый Rust enum на каждую компани
 - Внешние TOML-поля остаются в `config/schema.rs`, преобразования policy —
   в `config/workflow.rs`; доменная проверка и планирование — в
   `vcs/workflow/policy.rs`. Новых dependencies нет.
-- `custom` наследует именованный preset через `extends` и частичные поля
-  `[vcs.workflow.policy]` либо задаёт все поля самостоятельно без `extends`.
-  Наследование от `custom` запрещено; переданная в `resolve` база должна
+- Именованные presets принимают частичные overrides из
+  `[vcs.workflow.policy]`; это позволяет явно настроить `base_branch`,
+  `task_branch_template` и `integration_target` без смены preset на `custom`.
+  Для Trunk и GitHub Flow при переименовании общей базовой ветки нужно явно
+  изменить и base, и integration target.
+- `custom` наследует именованный preset через `extends` и те же частичные поля
+  либо задаёт все поля самостоятельно без `extends`. Наследование от `custom`
+  и `extends` у именованного preset запрещены; переданная в `resolve` база должна
   соответствовать выбранному preset. Готовые defaults остаются T09–T11.
 - Старый config с одним `preset`, включая `custom`, читается и записывается
   в прежнем компактном виде. Ненастроенный `custom` не получает скрытых defaults;
@@ -97,6 +107,12 @@ config, а не через новый Rust enum на каждую компани
 имена веток, неполная policy, противоречия настроек, discovery и RU/EN diagnostics.
 В playground вручную проверены пример policy из README, ошибка `base_branch`,
 `new`/`init` на обоих языках и сохранность Git-метаданных.
+
+**Дополнение:** частичные policy overrides разрешены непосредственно для
+`trunk`, `git-flow` и `github-flow`. Конфигурация `trunk` с
+`base_branch = "master"` и `integration_target = "master"` используется всеми
+потребителями общей policy, включая `status`, `start`, `switch`, `history` и
+будущий `finish`; старые compact и `custom extends` configs не изменились.
 
 ## T09 — Trunk preset
 

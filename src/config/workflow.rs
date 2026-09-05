@@ -158,6 +158,28 @@ delete_local_branch = true
     }
 
     #[test]
+    fn named_preset_branch_overrides_round_trip_without_custom_inheritance() {
+        let input = "[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'trunk'\n[vcs.workflow.policy]\nbase_branch = 'master'\ntask_branch_template = 'feature/{task}'\nintegration_target = 'master'\n";
+        let config = ProjectConfig::from_toml(input).unwrap();
+        let policy = config
+            .configuration()
+            .workflow_settings()
+            .unwrap()
+            .resolve(None)
+            .unwrap();
+        let plan = policy.plan("FI-9").unwrap();
+
+        assert_eq!(plan.base_branch, "master");
+        assert_eq!(plan.working_branch, "feature/FI-9");
+        assert_eq!(plan.integration_target, "master");
+        assert_eq!(plan.sync_reference, "refs/remotes/origin/master");
+        assert_eq!(
+            ProjectConfig::from_toml(&config.to_toml().unwrap()).unwrap(),
+            config
+        );
+    }
+
+    #[test]
     fn machine_values_round_trip_for_all_supported_strategies_and_behaviors() {
         for (value, strategy) in [
             ("rebase", SyncStrategy::Rebase),

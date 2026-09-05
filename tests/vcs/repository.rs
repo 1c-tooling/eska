@@ -116,6 +116,11 @@ fn bounded_history_traverses_both_merge_parents_once() {
     let history = repo.history(20).unwrap();
     assert_eq!(history.len(), 4);
     assert_eq!(history[0].parents, [main, feature]);
+    assert_eq!(history[0].author.name, "Eska Test");
+    assert_eq!(history[0].author.email, "eska@example.invalid");
+    assert_eq!(history[0].authored_at.seconds, 1_767_225_600);
+    assert_eq!(history[0].authored_at.offset, 0);
+    assert_eq!(history[0].subject, "merge");
     assert_eq!(history[0].message, "merge\n");
     assert_eq!(history[1].id, main);
     assert_eq!(history[2].id, feature);
@@ -163,6 +168,34 @@ fn divergence_counts_commits_unique_to_both_sides() {
             ahead: 0,
             behind: 1
         })
+    );
+}
+
+#[test]
+fn ancestry_and_inactive_reference_update_use_the_commit_graph() {
+    let dir = repository();
+    let base = commit(&dir.0, "base");
+    let tip = commit(&dir.0, "tip");
+    git(&dir.0, &["branch", "base-copy", &base.to_string()]);
+    git(&dir.0, &["checkout", "-b", "holding", &base.to_string()]);
+    let repo = Repository::discover(&dir.0).unwrap();
+
+    assert!(repo.is_ancestor(base, tip).unwrap());
+    assert!(!repo.is_ancestor(tip, base).unwrap());
+    repo.update_inactive_reference("refs/heads/base-copy", base, tip)
+        .unwrap();
+
+    assert_eq!(
+        git(&dir.0, &["rev-parse", "refs/heads/base-copy"]).trim_ascii(),
+        tip.to_string().as_bytes()
+    );
+    assert!(
+        repo.update_inactive_reference("refs/heads/base-copy", tip, base)
+            .is_err()
+    );
+    assert_eq!(
+        git(&dir.0, &["rev-parse", "refs/heads/base-copy"]).trim_ascii(),
+        tip.to_string().as_bytes()
     );
 }
 

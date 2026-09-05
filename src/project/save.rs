@@ -55,7 +55,40 @@ pub enum SaveError {
 /// Returns a structured error for invalid repository state, conflicts, empty changes, index I/O
 /// or a failed Git staging/commit operation.
 pub fn execute(project: &Project, message: Option<&str>) -> Result<SaveResult, SaveError> {
-    if message.is_some_and(|message| message.trim().is_empty()) {
+    execute_with_message(project, SaveMessage::Explicit(message))
+}
+
+/// Save every current project change after opening Git's editor with a generated draft.
+///
+/// # Errors
+/// Returns the same structured preflight, staging, editor, commit and rollback failures as
+/// [`execute`]. An empty generated draft is rejected before repository mutation.
+pub fn execute_with_draft(project: &Project, draft: &str) -> Result<SaveResult, SaveError> {
+    execute_with_message(project, SaveMessage::Draft(draft))
+}
+
+#[derive(Clone, Copy)]
+enum SaveMessage<'a> {
+    Explicit(Option<&'a str>),
+    Draft(&'a str),
+}
+
+impl SaveMessage<'_> {
+    /// Return whether the selected message source is empty before invoking Git.
+    fn is_empty(&self) -> bool {
+        match self {
+            Self::Explicit(message) => message.is_some_and(|message| message.trim().is_empty()),
+            Self::Draft(draft) => draft.trim().is_empty(),
+        }
+    }
+}
+
+/// Execute the shared project-scoped staging, commit and rollback transaction.
+fn execute_with_message(
+    project: &Project,
+    message: SaveMessage<'_>,
+) -> Result<SaveResult, SaveError> {
+    if message.is_empty() {
         return Err(SaveError::EmptyMessage);
     }
 
@@ -92,7 +125,11 @@ pub fn execute(project: &Project, message: Option<&str>) -> Result<SaveResult, S
     if let Err(error) = executor.stage_all().map_err(SaveError::Command) {
         return snapshot.restore_after(error);
     }
-    if let Err(error) = executor.commit_only(message).map_err(SaveError::Command) {
+    let commit = match message {
+        SaveMessage::Explicit(message) => executor.commit_only(message),
+        SaveMessage::Draft(draft) => executor.commit_only_with_draft(draft),
+    };
+    if let Err(error) = commit.map_err(SaveError::Command) {
         return snapshot.restore_after(error);
     }
 

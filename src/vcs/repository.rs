@@ -1,4 +1,4 @@
-//! Read-only repository operations. Git names and messages retain their original bytes.
+//! Embedded repository operations. Git names and messages retain their original bytes.
 
 use std::{
     fmt, fs, io,
@@ -53,7 +53,16 @@ pub struct Reference {
 pub struct Commit {
     pub id: ObjectId,
     pub parents: Vec<ObjectId>,
+    pub author: CommitAuthor,
+    pub authored_at: gix::date::Time,
+    pub subject: BString,
     pub message: BString,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommitAuthor {
+    pub name: BString,
+    pub email: BString,
 }
 
 /// A configured fetch remote with a display-safe URL.
@@ -124,6 +133,9 @@ pub enum Operation {
     MergeBase,
     Divergence,
     Remotes,
+    Ancestry,
+    Worktrees,
+    UpdateReference,
 }
 
 #[derive(Debug)]
@@ -282,9 +294,8 @@ impl Repository {
         }))
     }
 
-    /// Read at most `limit` commits reachable from HEAD in breadth-first parent order.
+    /// Read at most `limit` commits reachable from HEAD, newest commit time first.
     /// Unborn HEAD yields an empty history. Shallow boundaries are respected by `gix`.
-    /// This is not a chronological or topological `git log` ordering.
     ///
     /// # Errors
     /// Returns a HEAD error or `Operation::History` for unreadable commit graphs/objects.
@@ -298,6 +309,10 @@ impl Repository {
         let walk = self
             .inner
             .rev_walk([id])
+            .sorting(gix::revision::walk::Sorting::ByCommitTime(
+                gix::traverse::commit::simple::CommitTimeOrder::NewestFirst,
+            ))
+            .use_commit_graph(false)
             .all()
             .map_err(|source| Error::operation(Operation::History, source))?;
         walk.take(limit)
@@ -310,9 +325,21 @@ impl Repository {
                 let decoded = commit
                     .decode()
                     .map_err(|source| Error::operation(Operation::History, source))?;
+                let author = decoded
+                    .author()
+                    .map_err(|source| Error::operation(Operation::History, source))?;
+                let authored_at = author
+                    .time()
+                    .map_err(|source| Error::operation(Operation::History, source))?;
                 Ok(Commit {
                     id: info.id,
                     parents: info.parent_ids.iter().copied().collect(),
+                    author: CommitAuthor {
+                        name: author.name.to_owned(),
+                        email: author.email.to_owned(),
+                    },
+                    authored_at,
+                    subject: decoded.message().summary().into_owned(),
                     message: decoded.message.to_owned(),
                 })
             })
@@ -344,6 +371,105 @@ impl Repository {
             ahead: self.unique_commit_count(head, other)?,
             behind: self.unique_commit_count(other, head)?,
         }))
+    }
+
+    /// Return whether `ancestor` is reachable from `descendant` through commit parents.
+    ///
+    /// # Errors
+    /// Returns `Operation::Ancestry` when the commit graph or an object cannot be read.
+    pub fn is_ancestor(&self, ancestor: ObjectId, descendant: ObjectId) -> Result<bool, Error> {
+        if ancestor == descendant {
+            return Ok(true);
+        }
+        let walk = self
+            .inner
+            .rev_walk([descendant])
+            .all()
+            .map_err(|source| Error::operation(Operation::Ancestry, source))?;
+        for item in walk {
+            let info = item.map_err(|source| Error::operation(Operation::Ancestry, source))?;
+            if info.id == ancestor {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
+    /// Move an inactive direct reference with compare-and-swap protection.
+    ///
+    /// The update is rejected if the reference is checked out by any main or linked worktree.
+    /// The target must be a descendant of the expected current commit.
+    ///
+    /// # Errors
+    /// Returns a worktree inspection or reference transaction error.
+    pub fn update_inactive_reference(
+        &self,
+        name: &str,
+        expected: ObjectId,
+        target: ObjectId,
+    ) -> Result<(), Error> {
+        if !self.is_ancestor(expected, target)? {
+            return Err(Error::operation(
+                Operation::UpdateReference,
+                format!("reference {name} update is not a fast-forward"),
+            ));
+        }
+        if self.reference_is_checked_out(name)? {
+            return Err(Error::operation(
+                Operation::UpdateReference,
+                format!("reference {name} is checked out in a worktree"),
+            ));
+        }
+        let mut repository = self.inner.clone();
+        repository
+            .committer_or_set_generic_fallback()
+            .map_err(|source| Error::operation(Operation::UpdateReference, source))?;
+        let mut reference = repository
+            .find_reference(name)
+            .map_err(|source| Error::operation(Operation::UpdateReference, source))?;
+        if reference.id() != expected {
+            return Err(Error::operation(
+                Operation::UpdateReference,
+                format!("reference {name} changed before it could be updated"),
+            ));
+        }
+        reference
+            .set_target_id(target, "eska: fast-forward base")
+            .map_err(|source| Error::operation(Operation::UpdateReference, source))
+    }
+
+    /// Check the main and all linked worktrees for a branch reference.
+    fn reference_is_checked_out(&self, name: &str) -> Result<bool, Error> {
+        let points_to_name = |repository: &gix::Repository| {
+            repository
+                .head()
+                .map(|head| {
+                    head.referent_name()
+                        .is_some_and(|value| value.as_bstr() == name.as_bytes())
+                })
+                .map_err(|source| Error::operation(Operation::Worktrees, source))
+        };
+
+        let main = self
+            .inner
+            .main_repo()
+            .map_err(|source| Error::operation(Operation::Worktrees, source))?;
+        if points_to_name(&main)? {
+            return Ok(true);
+        }
+        let worktrees = self
+            .inner
+            .worktrees()
+            .map_err(|source| Error::operation(Operation::Worktrees, source))?;
+        for proxy in worktrees {
+            let repository = proxy
+                .into_repo_with_possibly_inaccessible_worktree()
+                .map_err(|source| Error::operation(Operation::Worktrees, source))?;
+            if points_to_name(&repository)? {
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 
     fn unique_commit_count(&self, tip: ObjectId, hidden: ObjectId) -> Result<usize, Error> {

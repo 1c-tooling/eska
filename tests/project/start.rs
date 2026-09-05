@@ -78,7 +78,7 @@ fn starts_from_local_base_when_policy_remote_is_not_configured() {
 }
 
 #[test]
-fn configured_inaccessible_remote_reports_name_url_and_git_reason() {
+fn configured_inaccessible_remote_reports_name_url_and_gix_reason() {
     let root = repository();
     commit(&root.0, "initial.txt");
     let missing = root.0.join("missing-remote.git");
@@ -95,17 +95,88 @@ fn configured_inaccessible_remote_reports_name_url_and_git_reason() {
     let error = start::execute(&project(&root.0, WorkflowPreset::Trunk), "FI-9")
         .expect_err("inaccessible remote must fail");
 
-    assert!(matches!(
-        error,
-        start::StartError::Fetch { remote, url, reason }
-            if remote == "origin"
-                && url == missing.to_string_lossy()
-                && reason.contains("does not appear to be a git repository")
-    ));
+    assert!(
+        matches!(
+            &error,
+            start::StartError::Fetch { remote, url, reason }
+                if remote == "origin"
+                    && url == &missing.to_string_lossy()
+                    && reason.contains("valid git directory")
+        ),
+        "{error:?}"
+    );
     assert_eq!(
         git(&root.0, &["rev-parse", "--abbrev-ref", "HEAD"]).trim_ascii(),
         b"main"
     );
+}
+
+#[test]
+fn fast_forwards_an_inactive_base_before_switching_to_the_task() {
+    let root = repository();
+    let initial = commit(&root.0, "initial.txt");
+    let remote = remote(&root.0);
+    git(&root.0, &["push", "origin", "main"]);
+    let remote_tip = commit(&root.0, "remote.txt");
+    git(&root.0, &["push", "origin", "main"]);
+    git(&root.0, &["reset", "--hard", &initial.to_string()]);
+    git(&root.0, &["checkout", "-b", "holding"]);
+
+    let result =
+        start::execute(&project(&root.0, WorkflowPreset::Trunk), "FI-17").expect("start task");
+
+    assert!(result.base_updated);
+    assert_eq!(
+        git(&root.0, &["rev-parse", "refs/heads/main"]).trim_ascii(),
+        remote_tip.to_string().as_bytes()
+    );
+    assert_eq!(
+        git(&root.0, &["rev-parse", "--abbrev-ref", "HEAD"]).trim_ascii(),
+        b"task/FI-17"
+    );
+    drop(remote);
+}
+
+#[test]
+fn refuses_to_move_a_base_checked_out_in_another_worktree() {
+    let root = repository();
+    let initial = commit(&root.0, "initial.txt");
+    let remote = remote(&root.0);
+    git(&root.0, &["push", "origin", "main"]);
+    commit(&root.0, "remote.txt");
+    git(&root.0, &["push", "origin", "main"]);
+    git(&root.0, &["reset", "--hard", &initial.to_string()]);
+    git(&root.0, &["checkout", "-b", "holding"]);
+    let linked_fixture = TestDir::new();
+    let linked = linked_fixture.0.join("worktree");
+    git(
+        &root.0,
+        &[
+            "worktree",
+            "add",
+            linked.to_str().expect("UTF-8 worktree path"),
+            "main",
+        ],
+    );
+
+    let error = start::execute(&project(&root.0, WorkflowPreset::Trunk), "FI-18")
+        .expect_err("checked-out base must not move");
+
+    assert!(
+        matches!(error, start::StartError::UpdateBase(_)),
+        "{error:?}"
+    );
+    assert_eq!(
+        git(&root.0, &["rev-parse", "refs/heads/main"]).trim_ascii(),
+        initial.to_string().as_bytes()
+    );
+    let branch_check = crate::vcs::support::git_output(
+        &root.0,
+        &["show-ref", "--verify", "--quiet", "refs/heads/task/FI-18"],
+    );
+    assert_eq!(branch_check.status.code(), Some(1));
+    drop(linked_fixture);
+    drop(remote);
 }
 
 #[test]

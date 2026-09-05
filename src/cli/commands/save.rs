@@ -1,15 +1,19 @@
-//! Localized presentation for saving the current project `ChangeSet`.
+//! Localized presentation and deterministic message drafts for saving a project `ChangeSet`.
 
-use std::{path::Path, process::ExitCode};
+use std::{collections::BTreeSet, path::Path, process::ExitCode};
 
 use clap::Args;
+use gix::bstr::ByteSlice;
 
 use crate::{
     cli::{
         diagnostics,
         localization::{LocalizationValue, Localizer},
     },
-    project::{discovery, save},
+    project::{
+        Project, diff, discovery, object_model, save,
+        semantic::{self, SemanticDiff},
+    },
     vcs::command,
 };
 
@@ -32,7 +36,19 @@ impl SaveArgs {
                 return ExitCode::FAILURE;
             }
         };
-        let result = match save::execute(&project, self.message.as_deref()) {
+        let result = if let Some(message) = self.message.as_deref() {
+            save::execute(&project, Some(message))
+        } else {
+            let draft = match generate_draft(&project, localizer) {
+                Ok(draft) => draft,
+                Err(error) => {
+                    eprintln!("{}", present_diff_error(&error, localizer));
+                    return ExitCode::FAILURE;
+                }
+            };
+            save::execute_with_draft(&project, &draft)
+        };
+        let result = match result {
             Ok(result) => result,
             Err(error) => {
                 eprintln!("{}", present_error(&error, localizer));
@@ -54,6 +70,101 @@ impl SaveArgs {
             )
         );
         ExitCode::SUCCESS
+    }
+}
+
+/// Build a locale-specific commit draft from the exact current file and semantic changes.
+fn generate_draft(project: &Project, localizer: &Localizer) -> Result<String, diff::DiffError> {
+    let files = diff::inspect(project)?;
+    let semantic = object_model::discover(project)
+        .ok()
+        .and_then(|objects| semantic::diff_workspace(project, &objects, &files).ok())
+        .unwrap_or_default();
+    Ok(render_draft(&files, &semantic, localizer))
+}
+
+/// Render a Conventional Commit title and deterministic semantic/file detail lines.
+fn render_draft(
+    files: &diff::ProjectDiff,
+    semantic: &SemanticDiff,
+    localizer: &Localizer,
+) -> String {
+    let objects: BTreeSet<_> = semantic
+        .events()
+        .iter()
+        .map(|event| event.object().id())
+        .collect();
+    let scopes: BTreeSet<_> = objects
+        .iter()
+        .map(|id| super::diff::semantic_object_group(id))
+        .collect();
+    let subject = if objects.len() == 1 {
+        draft_text(&localizer.format(
+            "save-draft-subject-object",
+            &[(
+                "object",
+                LocalizationValue::Text(&super::diff::render_semantic_object(
+                    objects.first().copied().unwrap_or_default(),
+                    localizer,
+                )),
+            )],
+        ))
+    } else if objects.is_empty() {
+        localizer.text("save-draft-subject-files")
+    } else {
+        localizer.text("save-draft-subject-objects")
+    };
+    let commit_type = if objects.is_empty() { "chore" } else { "feat" };
+    let scope = (scopes.len() == 1)
+        .then(|| scopes.first().copied())
+        .flatten()
+        .map(|scope| format!("({scope})"))
+        .unwrap_or_default();
+    let mut lines = vec![format!("{commit_type}{scope}: {subject}"), String::new()];
+
+    let mut details = BTreeSet::new();
+    let mut semantic_paths = BTreeSet::new();
+    for event in semantic.events() {
+        semantic_paths.insert(event.path().to_owned());
+        let member = event
+            .member()
+            .map(|member| format!(" — {member}"))
+            .unwrap_or_default();
+        details.insert(format!(
+            "- {}: {}{}.",
+            localizer.text(super::diff::semantic_event_key(event.kind())),
+            super::diff::render_semantic_object(event.object().id(), localizer),
+            member
+        ));
+    }
+    for file in &files.files {
+        if semantic_paths.contains(file.path.as_bstr()) {
+            continue;
+        }
+        let path = super::diff::display_path(file.path.as_bstr());
+        details.insert(draft_text(&localizer.format(
+            "save-draft-file-change",
+            &[("path", LocalizationValue::Text(&path))],
+        )));
+    }
+    lines.extend(details);
+    lines.join("\n")
+}
+
+/// Remove Fluent bidi-isolation controls from text persisted in Git history.
+fn draft_text(value: &str) -> String {
+    value.replace(['\u{2068}', '\u{2069}'], "")
+}
+
+/// Map draft-inspection failures onto the existing localized save diagnostics.
+fn present_diff_error(error: &diff::DiffError, localizer: &Localizer) -> String {
+    match error {
+        diff::DiffError::ProjectOutsideRepository { .. } => {
+            localizer.text("save-project-outside-repository")
+        }
+        diff::DiffError::Repository(_)
+        | diff::DiffError::Revision { .. }
+        | diff::DiffError::MergeBase { .. } => localizer.text("save-repository-error"),
     }
 }
 
