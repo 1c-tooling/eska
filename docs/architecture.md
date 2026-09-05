@@ -15,6 +15,7 @@ src/
 │   ├── args.rs                  # общие аргументы, bootstrap --lang, общий help
 │   ├── commands/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
+│   │   ├── build.rs             # eska build: аргументы, RU/EN и JSON result
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
 │   │   ├── diff.rs              # eska diff: human/raw/JSON presentation
@@ -50,7 +51,9 @@ src/
 │   ├── build/
 │   │   ├── mod.rs               # публичная граница build subsystem
 │   │   ├── settings.rs          # переносимые settings и версия платформы
-│   │   └── plan.rs              # тип и путь build artifact без запуска процессов
+│   │   ├── plan.rs              # тип и путь build artifact без запуска процессов
+│   │   ├── tool.rs              # поиск, version check и запуск ibcmd/Distrobox
+│   │   └── execute.rs           # временная база, import, cleanup и публикация
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
 │   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
 │   ├── start.rs                 # preflight и исполнение task plan
@@ -77,7 +80,7 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{diff,finish,history,init,new,save,start,status,localization}.rs
+├── cli/{build,diff,finish,history,init,new,save,start,status,localization}.rs
 ├── project/{discovery,finish,history,save,start,templates,workflow}.rs
 ├── vcs/{diff,network,repository,status,support}.rs # Git-сценарии и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
@@ -95,6 +98,7 @@ tests/
 |---|---|
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
+| Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`src/project/build/`](../src/project/build/) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
 | Изменить вывод или связь commit с task в `history` | [`src/cli/commands/history.rs`](../src/cli/commands/history.rs), затем [`src/project/history.rs`](../src/project/history.rs) |
@@ -169,6 +173,10 @@ tests/
   задачей только при однозначной достижимости из одной локальной task-ветки вне
   base. `cli/commands/history.rs` локализует human-вывод и формирует стабильный
   JSON версии 1, сохраняя произвольные Git-байты через явную кодировку.
+- `project/build/` отделяет переносимый план от machine-local обнаружения
+  `ibcmd` и исполнения. `execute.rs` владеет временной базой и безопасной
+  публикацией артефакта; `cli/commands/build.rs` локализует ошибки и формирует
+  JSON-схему версии 1.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую
