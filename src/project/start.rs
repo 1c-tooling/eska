@@ -7,6 +7,7 @@ use gix::{ObjectId, bstr::ByteSlice};
 use super::Project;
 use crate::vcs::{
     command::{Error as CommandError, Executor},
+    network,
     repository::{Error as RepositoryError, Head, ReferenceTarget, Remote, Repository},
     workflow::PolicyError,
 };
@@ -54,6 +55,8 @@ pub enum StartError {
         url: String,
         reason: String,
     },
+    Ancestry(RepositoryError),
+    UpdateBase(RepositoryError),
     Command(CommandError),
 }
 
@@ -113,9 +116,8 @@ pub fn execute(project: &Project, task: &str) -> Result<StartResult, StartError>
         });
     };
 
-    let executor = Executor::new(repository.work_dir());
-    if let Err(error) = executor.fetch(policy.remote()) {
-        return Err(fetch_error(&remote, error));
+    if let Err(error) = network::fetch(&repository, policy.remote()) {
+        return Err(fetch_error(&remote, &error));
     }
 
     // Fetch changes refs and the object database, so reopen before reading the result.
@@ -133,26 +135,26 @@ pub fn execute(project: &Project, task: &str) -> Result<StartResult, StartError>
             reference: plan.sync_reference,
         });
     };
-    let executor = Executor::new(repository.work_dir());
     let base_updated = if base_id == remote_id {
         false
-    } else if executor
-        .is_ancestor(&base_reference, &plan.sync_reference)
-        .map_err(StartError::Command)?
+    } else if repository
+        .is_ancestor(base_id, remote_id)
+        .map_err(StartError::Ancestry)?
     {
         if on_base {
+            let executor = Executor::new(repository.work_dir());
             executor
                 .fast_forward_current(&plan.sync_reference)
                 .map_err(StartError::Command)?;
         } else {
-            executor
-                .fast_forward_inactive(&plan.base_branch, &plan.sync_reference)
-                .map_err(StartError::Command)?;
+            repository
+                .update_inactive_reference(&base_reference, base_id, remote_id)
+                .map_err(StartError::UpdateBase)?;
         }
         true
-    } else if executor
-        .is_ancestor(&plan.sync_reference, &base_reference)
-        .map_err(StartError::Command)?
+    } else if repository
+        .is_ancestor(remote_id, base_id)
+        .map_err(StartError::Ancestry)?
     {
         false
     } else {
@@ -162,7 +164,7 @@ pub fn execute(project: &Project, task: &str) -> Result<StartResult, StartError>
         });
     };
 
-    executor
+    Executor::new(repository.work_dir())
         .switch_new_branch(&plan.working_branch, &base_reference)
         .map_err(StartError::Command)?;
 
@@ -175,18 +177,8 @@ pub fn execute(project: &Project, task: &str) -> Result<StartResult, StartError>
     })
 }
 
-fn fetch_error(remote: &Remote, error: CommandError) -> StartError {
-    let reason = match error {
-        CommandError::Spawn { source, .. } => source.to_string(),
-        CommandError::Failed { status, stderr, .. } => {
-            let diagnostic = remote.sanitize_diagnostic(&stderr);
-            if diagnostic.is_empty() {
-                status.to_string()
-            } else {
-                diagnostic
-            }
-        }
-    };
+fn fetch_error(remote: &Remote, error: &network::FetchError) -> StartError {
+    let reason = remote.sanitize_diagnostic(error.to_string().as_bytes());
     StartError::Fetch {
         remote: remote.name().to_owned(),
         url: remote.url().to_owned(),

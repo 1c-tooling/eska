@@ -167,6 +167,34 @@ fn divergence_counts_commits_unique_to_both_sides() {
 }
 
 #[test]
+fn ancestry_and_inactive_reference_update_use_the_commit_graph() {
+    let dir = repository();
+    let base = commit(&dir.0, "base");
+    let tip = commit(&dir.0, "tip");
+    git(&dir.0, &["branch", "base-copy", &base.to_string()]);
+    git(&dir.0, &["checkout", "-b", "holding", &base.to_string()]);
+    let repo = Repository::discover(&dir.0).unwrap();
+
+    assert!(repo.is_ancestor(base, tip).unwrap());
+    assert!(!repo.is_ancestor(tip, base).unwrap());
+    repo.update_inactive_reference("refs/heads/base-copy", base, tip)
+        .unwrap();
+
+    assert_eq!(
+        git(&dir.0, &["rev-parse", "refs/heads/base-copy"]).trim_ascii(),
+        tip.to_string().as_bytes()
+    );
+    assert!(
+        repo.update_inactive_reference("refs/heads/base-copy", tip, base)
+            .is_err()
+    );
+    assert_eq!(
+        git(&dir.0, &["rev-parse", "refs/heads/base-copy"]).trim_ascii(),
+        tip.to_string().as_bytes()
+    );
+}
+
+#[test]
 fn linked_worktree_uses_its_own_head_and_root() {
     let dir = repository();
     let id = commit(&dir.0, "base");

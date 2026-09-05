@@ -133,6 +133,8 @@ fn present_error(error: &start::StartError, localizer: &Localizer) -> String {
                 ("reason", LocalizationValue::Text(reason)),
             ],
         ),
+        start::StartError::Ancestry(_) => localizer.text("start-ancestry-error"),
+        start::StartError::UpdateBase(_) => localizer.text("start-update-base-error"),
         start::StartError::Command(error) => localizer.text(command_error_key(error)),
     }
 }
@@ -145,7 +147,6 @@ const fn command_error_key(error: &command::Error) -> &'static str {
     };
     match operation {
         command::Operation::Fetch => "start-fetch-command-error",
-        command::Operation::Ancestry => "start-ancestry-error",
         command::Operation::UpdateBase => "start-update-base-error",
         command::Operation::Switch => "start-switch-error",
         command::Operation::Stage | command::Operation::Commit => "start-repository-error",

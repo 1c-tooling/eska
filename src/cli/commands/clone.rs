@@ -79,8 +79,12 @@ fn present(error: &CloneError, localizer: &Localizer) -> String {
             path_message(localizer, "clone-destination-exists", path)
         }
         CloneError::Io { path, .. } => path_message(localizer, "clone-io-error", path),
-        CloneError::Prepare(_) | CloneError::Fetch(_) => localizer.text("clone-fetch-error"),
-        CloneError::Checkout(_) => localizer.text("clone-checkout-error"),
+        CloneError::Network(error) => match error {
+            crate::vcs::network::CloneError::Prepare(_)
+            | crate::vcs::network::CloneError::RemoteName(_)
+            | crate::vcs::network::CloneError::Fetch(_) => localizer.text("clone-fetch-error"),
+            crate::vcs::network::CloneError::Checkout(_) => localizer.text("clone-checkout-error"),
+        },
         CloneError::IncompleteCheckout { collisions, errors } => localizer.format(
             "clone-checkout-incomplete",
             &[

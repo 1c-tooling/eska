@@ -109,7 +109,7 @@ fn starts_locally_without_a_configured_remote_in_both_locales() {
 }
 
 #[test]
-fn inaccessible_remote_error_includes_remote_url_and_git_reason() {
+fn inaccessible_remote_error_includes_remote_url_and_gix_reason() {
     for (locale, expected) in [
         ("ru", "Не удалось получить изменения из репозитория origin"),
         ("en", "Could not fetch changes from repository origin"),
@@ -126,10 +126,7 @@ fn inaccessible_remote_error_includes_remote_url_and_git_reason() {
         let error = text(&output.stderr);
         assert!(error.contains(expected), "{error}");
         assert!(error.contains(url), "{error}");
-        assert!(
-            error.contains("does not appear to be a git repository"),
-            "{error}"
-        );
+        assert!(error.contains("valid git directory"), "{error}");
         let head = git(&root, &["rev-parse", "--abbrev-ref", "HEAD"]);
         assert_eq!(head.stdout.trim_ascii(), b"main");
     }

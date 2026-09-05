@@ -7,12 +7,11 @@ use std::{
     process::{Command, ExitStatus, Output},
 };
 
-use gix::bstr::BString;
+use gix::bstr::{BString, ByteSlice};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operation {
     Fetch,
-    Ancestry,
     UpdateBase,
     Switch,
     Stage,
@@ -50,6 +49,30 @@ impl fmt::Debug for Error {
     }
 }
 
+impl fmt::Display for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Spawn { operation, source } => {
+                write!(formatter, "could not start {operation:?}: {source}")
+            }
+            Self::Failed {
+                operation,
+                status,
+                stderr,
+            } => {
+                let diagnostic = stderr.to_str_lossy();
+                if diagnostic.trim().is_empty() {
+                    write!(formatter, "{operation:?} failed with {status}")
+                } else {
+                    formatter.write_str(diagnostic.trim())
+                }
+            }
+        }
+    }
+}
+
+impl std::error::Error for Error {}
+
 /// System Git boundary for operations not implemented by the embedded repository layer.
 pub struct Executor<'a> {
     work_dir: &'a Path,
@@ -72,26 +95,6 @@ impl<'a> Executor<'a> {
         )
     }
 
-    /// Test commit ancestry without parsing human-facing Git output.
-    ///
-    /// # Errors
-    /// Exit status 1 means `false`; every other nonzero status is an operation failure.
-    pub fn is_ancestor(&self, ancestor: &str, descendant: &str) -> Result<bool, Error> {
-        let output = self.output(
-            Operation::Ancestry,
-            ["merge-base", "--is-ancestor", ancestor, descendant],
-        )?;
-        match output.status.code() {
-            Some(0) => Ok(true),
-            Some(1) => Ok(false),
-            _ => Err(Error::Failed {
-                operation: Operation::Ancestry,
-                status: output.status,
-                stderr: output.stderr.into(),
-            }),
-        }
-    }
-
     /// Fast-forward the currently checked out base branch to its remote-tracking ref.
     ///
     /// # Errors
@@ -100,19 +103,6 @@ impl<'a> Executor<'a> {
         self.success(
             Operation::UpdateBase,
             ["merge", "--ff-only", remote_reference],
-        )
-    }
-
-    /// Fast-forward an inactive local branch without checking it out.
-    ///
-    /// Git itself rejects a branch checked out by another linked worktree.
-    ///
-    /// # Errors
-    /// Returns a structured process error when the protected branch update fails.
-    pub fn fast_forward_inactive(&self, branch: &str, remote_reference: &str) -> Result<(), Error> {
-        self.success(
-            Operation::UpdateBase,
-            ["branch", "--force", branch, remote_reference],
         )
     }
 

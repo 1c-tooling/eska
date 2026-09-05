@@ -4,7 +4,6 @@ use std::{
     ffi::{OsStr, OsString},
     fs, io,
     path::{Component, Path, PathBuf},
-    sync::atomic::AtomicBool,
 };
 
 use gix::bstr::ByteSlice;
@@ -13,6 +12,7 @@ use super::{
     Project,
     discovery::{self, DiscoveryError},
 };
+use crate::vcs::network;
 
 /// A validated clone request which has not changed the filesystem yet.
 pub struct ClonePlan {
@@ -95,21 +95,16 @@ pub fn execute(plan: ClonePlan) -> Result<Project, CloneError> {
 
 /// Perform the gix fetch and checkout, then apply normal eska discovery.
 fn clone_and_validate(plan: &ClonePlan) -> Result<Project, CloneError> {
-    let mut prepare = gix::prepare_clone(plan.repository.clone(), &plan.destination)
-        .map_err(|source| CloneError::Prepare(Box::new(source)))?
-        .with_remote_name(plan.remote_name.as_bytes())
-        .map_err(CloneError::RemoteName)?;
-    let interrupt = AtomicBool::new(false);
-    let (mut checkout, _) = prepare
-        .fetch_then_checkout(gix::progress::Discard, &interrupt)
-        .map_err(|source| CloneError::Fetch(Box::new(source)))?;
-    let (_repository, outcome) = checkout
-        .main_worktree(gix::progress::Discard, &interrupt)
-        .map_err(|source| CloneError::Checkout(Box::new(source)))?;
-    if !outcome.collisions.is_empty() || !outcome.errors.is_empty() {
+    let outcome = network::clone_checkout(
+        plan.repository.clone(),
+        &plan.destination,
+        &plan.remote_name,
+    )
+    .map_err(CloneError::Network)?;
+    if outcome.collisions != 0 || outcome.errors != 0 {
         return Err(CloneError::IncompleteCheckout {
-            collisions: outcome.collisions.len(),
-            errors: outcome.errors.len(),
+            collisions: outcome.collisions,
+            errors: outcome.errors,
         });
     }
     discovery::discover(&plan.destination)
@@ -214,9 +209,7 @@ pub enum CloneError {
         path: PathBuf,
         source: io::Error,
     },
-    Prepare(Box<gix::clone::Error>),
-    Fetch(Box<gix::clone::fetch::Error>),
-    Checkout(Box<gix::clone::checkout::main_worktree::Error>),
+    Network(network::CloneError),
     IncompleteCheckout {
         collisions: usize,
         errors: usize,
