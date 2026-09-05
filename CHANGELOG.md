@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/1c-tooling/eska/compare/v0.2.1...v0.3.0) - 2026-09-05
+
+### Added
+
+- *(vcs)* Добавлено переключение между задачами
+- *(save)* Добавлен deterministic semantic draft
+- *(save)* Добавлена передача draft в редактор
+- *(diff)* Добавлена группировка semantic diff
+- *(diff)* Добавлен режим semantic diff
+- *(semantic)* Добавлены события semantic diff
+- *(semantic)* Добавлен reusable ChangeSet pipeline
+- *(xml)* Добавлена логическая модель объектов Designer
+- *(history)* Email автора сделан кликабельным
+- *(cli)* Добавлена команда history
+- *(history)* Добавлена модель локальной истории
+- *(vcs)* Переведён запуск задачи на gix-first слой
+- *(project)* Добавлено клонирование проекта через gix
+
+### Fixed
+
+- *(workflow)* Разрешена настройка имён веток preset
+- *(save)* Добавлена отмена неизменённого draft
+- *(save)* Сохранена локаль редактора commit
+- *(history)* Изменён порядок полей
+- *(history)* Дата сделана человекочитаемой
+
+### Other
+
+- *(roadmap)* Начата реализация завершения задачи
+- *(roadmap)* Завершено переключение задач
+- *(roadmap)* Начата реализация переключения задач
+- *(roadmap)* Сформирован практический CLI MVP
+- Revert "fix(save): Добавлена отмена неизменённого draft"
+- *(roadmap)* Завершён генератор сообщений
+- *(roadmap)* Начата реализация генератора сообщений
+- *(roadmap)* Завершён semantic diff
+- *(roadmap)* Начата реализация semantic diff
+- *(roadmap)* Завершён semantic ChangeSet
+- *(roadmap)* Начата реализация semantic ChangeSet
+- *(roadmap)* Завершена модель Designer XML
+- *(roadmap)* Начата реализация модели Designer XML
+- *(roadmap)* Завершена реализация истории
+- *(roadmap)* Начата реализация истории
+- *(roadmap)* Завершена gix-first миграция VCS
+- *(roadmap)* Начата gix-first миграция VCS
+- *(roadmap)* Перестроен backlog с приоритетом gix
+- *(deps)* Обновлены зависимости Rust
+
 ## [0.2.1](https://github.com/1c-tooling/eska/compare/v0.1.1...v0.2.1) - 2026-09-04
 
 ### Added
