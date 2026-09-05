@@ -46,8 +46,10 @@
 - revision-анализ не зависит от текущего worktree. Для workspace T19
   `ObjectModel` даёт точные ownership и `ObjectId`, а удалённые объекты
   восстанавливаются из snapshot/path;
-- human output локализован для `ru-RU` и `en-US`; raw имеет стабильные пять
-  колонок; JSON schema version 3 отделена от неизменившихся file-level schemas 1/2;
+- human output локализован для `ru-RU` и `en-US`, сгруппирован по верхнему типу
+  метаданных, событию и comparison stage и использует TTY/`NO_COLOR`-aware
+  палитру обычного diff; raw имеет стабильные пять колонок; JSON schema version 3
+  отделена от неизменившихся file-level schemas 1/2;
 - three-way semantic merge и сравнение отдельных элементов формы не входят в T21.
 
 ## T22 — Генератор commit message

@@ -140,7 +140,10 @@ impl DiffArgs {
         }
         match self.format {
             OutputFormat::Human => {
-                println!("{}", render_semantic_human(changes, localizer));
+                println!(
+                    "{}",
+                    render_semantic_human(changes, localizer, styling_enabled())
+                );
                 ExitCode::SUCCESS
             }
             OutputFormat::Json => {
@@ -631,37 +634,180 @@ fn render_semantic_raw(diff: &SemanticDiff) -> String {
 }
 
 /// Render localized semantic event labels while retaining stable object identities.
-fn render_semantic_human(diff: &SemanticDiff, localizer: &Localizer) -> String {
+fn render_semantic_human(diff: &SemanticDiff, localizer: &Localizer, styled: bool) -> String {
     if diff.is_empty() {
         return localizer.text("diff-semantic-clean");
     }
-    let mut lines = vec![localizer.text("diff-semantic-events")];
+    let mut groups: std::collections::BTreeMap<
+        String,
+        std::collections::BTreeSet<SemanticHumanChange>,
+    > = std::collections::BTreeMap::new();
     for event in diff.events() {
-        let stage = localizer.text(match event.stage() {
-            semantic::ChangeStage::Index => "diff-index",
-            semantic::ChangeStage::Worktree => "diff-worktree",
-            semantic::ChangeStage::Revision => "diff-semantic-revision",
-        });
-        let label = localizer.text(semantic_event_key(event.kind()));
         let member = event
             .member()
             .map(|name| format!(" — {name}"))
             .unwrap_or_default();
-        let object = format!(
-            "{}.{}",
-            metadata_kind(event.object().metadata_type(), localizer),
-            event.object().name()
-        );
-        lines.push(format!(
-            "  {} {}: {}{}",
-            semantic_event_marker(event.kind()),
-            label,
-            object,
-            member
-        ));
-        lines.push(format!("      {stage} · {}", display_path(event.path())));
+        let group = semantic_object_group(event.object().id());
+        groups
+            .entry(metadata_kind(group, localizer))
+            .or_default()
+            .insert(SemanticHumanChange {
+                target: format!(
+                    "{}{}",
+                    render_semantic_object(event.object().id(), localizer),
+                    member
+                ),
+                kind: event.kind(),
+                stage: event.stage(),
+            });
+    }
+    let mut lines = vec![style_header(
+        &localizer.text("diff-semantic-events"),
+        styled,
+    )];
+    for (group, changes) in groups {
+        lines.push(String::new());
+        lines.push(style_metadata_group(&format!("{group}:"), styled));
+        append_semantic_event_groups(&mut lines, changes.into_iter().collect(), localizer, styled);
     }
     lines.join("\n")
+}
+
+#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct SemanticHumanChange {
+    target: String,
+    kind: SemanticEventKind,
+    stage: semantic::ChangeStage,
+}
+
+/// Append event/stage subgroups with the same hierarchy and styling as file-level diff.
+fn append_semantic_event_groups(
+    lines: &mut Vec<String>,
+    mut changes: Vec<SemanticHumanChange>,
+    localizer: &Localizer,
+    styled: bool,
+) {
+    changes.sort_by(|left, right| {
+        semantic_event_sort_key(left)
+            .cmp(&semantic_event_sort_key(right))
+            .then_with(|| left.target.cmp(&right.target))
+    });
+    let mut start = 0;
+    while start < changes.len() {
+        let kind = changes[start].kind;
+        let stage = changes[start].stage;
+        let end = changes[start..]
+            .iter()
+            .position(|candidate| candidate.kind != kind || candidate.stage != stage)
+            .map_or(changes.len(), |offset| start + offset);
+        let title = format!(
+            "{} — {}",
+            localizer.text(semantic_event_key(kind)),
+            localizer.text(semantic_stage_key(stage))
+        );
+        let change = semantic_event_change(kind);
+        lines.push(style_state_heading(&title, end - start, change, styled));
+        lines.extend(
+            changes[start..end]
+                .iter()
+                .map(|change| format_change(&change.target, semantic_event_change(kind), styled)),
+        );
+        start = end;
+    }
+}
+
+/// Sort modified, added and removed semantic events like ordinary diff states.
+const fn semantic_event_sort_key(change: &SemanticHumanChange) -> (u8, u8, u8) {
+    (
+        change_rank(semantic_event_change(change.kind)),
+        semantic_event_kind_rank(change.kind),
+        semantic_stage_rank(change.stage),
+    )
+}
+
+/// Keep related object, module and member event groups deterministic.
+const fn semantic_event_kind_rank(kind: SemanticEventKind) -> u8 {
+    match kind {
+        SemanticEventKind::ObjectChanged
+        | SemanticEventKind::ObjectAdded
+        | SemanticEventKind::ObjectRemoved => 0,
+        SemanticEventKind::MetadataAttributeChanged => 1,
+        SemanticEventKind::ModuleChanged => 2,
+        SemanticEventKind::MethodChanged
+        | SemanticEventKind::MethodAdded
+        | SemanticEventKind::MethodRemoved => 3,
+        SemanticEventKind::FunctionChanged
+        | SemanticEventKind::FunctionAdded
+        | SemanticEventKind::FunctionRemoved => 4,
+        SemanticEventKind::FormChanged => 5,
+    }
+}
+
+/// Keep workspace edges in index-to-worktree order; revisions form their own subgroup.
+const fn semantic_stage_rank(stage: semantic::ChangeStage) -> u8 {
+    match stage {
+        semantic::ChangeStage::Index => 0,
+        semantic::ChangeStage::Worktree => 1,
+        semantic::ChangeStage::Revision => 2,
+    }
+}
+
+/// Select the localized comparison-edge label used in a subgroup heading.
+const fn semantic_stage_key(stage: semantic::ChangeStage) -> &'static str {
+    match stage {
+        semantic::ChangeStage::Index => "diff-index",
+        semantic::ChangeStage::Worktree => "diff-worktree",
+        semantic::ChangeStage::Revision => "diff-semantic-revision",
+    }
+}
+
+/// Map semantic lifecycle to the existing diff color and marker palette.
+const fn semantic_event_change(kind: SemanticEventKind) -> Change {
+    match kind {
+        SemanticEventKind::ObjectAdded
+        | SemanticEventKind::MethodAdded
+        | SemanticEventKind::FunctionAdded => Change::Added,
+        SemanticEventKind::ObjectRemoved
+        | SemanticEventKind::MethodRemoved
+        | SemanticEventKind::FunctionRemoved => Change::Deleted,
+        SemanticEventKind::ObjectChanged
+        | SemanticEventKind::ModuleChanged
+        | SemanticEventKind::MethodChanged
+        | SemanticEventKind::FunctionChanged
+        | SemanticEventKind::FormChanged
+        | SemanticEventKind::MetadataAttributeChanged => Change::Modified,
+    }
+}
+
+/// Return the top-level metadata kind encoded in a stable semantic object ID.
+fn semantic_object_group(id: &str) -> &str {
+    id.split([':', '/']).next().unwrap_or(id)
+}
+
+/// Render every hierarchical `ObjectId` segment in localized Configurator notation.
+fn render_semantic_object(id: &str, localizer: &Localizer) -> String {
+    id.split('/')
+        .map(|segment| {
+            segment.split_once(':').map_or_else(
+                || metadata_kind(segment, localizer),
+                |(kind, name)| {
+                    format!(
+                        "{}.{}",
+                        metadata_kind(kind, localizer),
+                        unescape_object_name(name)
+                    )
+                },
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
+/// Decode only the three separators escaped by the stable `ObjectId` contract.
+fn unescape_object_name(name: &str) -> String {
+    name.replace("%2F", "/")
+        .replace("%3A", ":")
+        .replace("%25", "%")
 }
 
 /// Select a localized label for one semantic event kind.
@@ -679,24 +825,6 @@ const fn semantic_event_key(kind: SemanticEventKind) -> &'static str {
         SemanticEventKind::FunctionChanged => "diff-semantic-function-changed",
         SemanticEventKind::FormChanged => "diff-semantic-form-changed",
         SemanticEventKind::MetadataAttributeChanged => "diff-semantic-metadata-attribute-changed",
-    }
-}
-
-/// Select a compact human marker for one semantic event kind.
-const fn semantic_event_marker(kind: SemanticEventKind) -> char {
-    match kind {
-        SemanticEventKind::ObjectAdded
-        | SemanticEventKind::MethodAdded
-        | SemanticEventKind::FunctionAdded => '+',
-        SemanticEventKind::ObjectRemoved
-        | SemanticEventKind::MethodRemoved
-        | SemanticEventKind::FunctionRemoved => '−',
-        SemanticEventKind::ObjectChanged
-        | SemanticEventKind::ModuleChanged
-        | SemanticEventKind::MethodChanged
-        | SemanticEventKind::FunctionChanged
-        | SemanticEventKind::FormChanged
-        | SemanticEventKind::MetadataAttributeChanged => '✎',
     }
 }
 
@@ -962,8 +1090,9 @@ mod tests {
     use gix::bstr::{BString, ByteSlice};
 
     use super::{
-        HumanState, change_marker, change_name, display_path, human_state_title, json_path,
-        raw_code, render_human, render_raw,
+        HumanState, SemanticHumanChange, append_semantic_event_groups, change_marker, change_name,
+        display_path, human_state_title, json_path, raw_code, render_human, render_raw,
+        render_semantic_object,
     };
     use crate::{
         cli::localization::{Locale, Localizer},
@@ -971,6 +1100,7 @@ mod tests {
             ProjectType,
             diff::{DisplayChange, DisplayTarget, FileChange, ProjectDiff},
             metadata,
+            semantic::{ChangeStage, SemanticEventKind},
         },
         vcs::status::Change,
     };
@@ -1094,6 +1224,74 @@ mod tests {
             assert!(styled.contains("\x1b[1;36m"), "{styled:?}");
             assert!(styled.contains("\x1b[1;33m✎\x1b[0m"), "{styled:?}");
             assert!(styled.contains(logical), "{styled}");
+        }
+    }
+
+    /// Semantic groups reuse localized headings, counts, markers and the TTY color palette.
+    #[test]
+    fn semantic_groups_match_file_diff_presentation() {
+        let localizer = Localizer::try_new(Locale::RuRu).unwrap();
+        let changes = vec![
+            SemanticHumanChange {
+                target: "ОбщийМодуль.Обмен — Выполнить".to_owned(),
+                kind: SemanticEventKind::MethodChanged,
+                stage: ChangeStage::Worktree,
+            },
+            SemanticHumanChange {
+                target: "ОбщийМодуль.Новый".to_owned(),
+                kind: SemanticEventKind::ObjectAdded,
+                stage: ChangeStage::Index,
+            },
+        ];
+        let mut plain = Vec::new();
+        append_semantic_event_groups(&mut plain, changes, &localizer, false);
+        let plain = plain.join("\n");
+        assert!(
+            plain.contains(
+                "Изменена процедура — рабочая копия (1):\n    ✎ ОбщийМодуль.Обмен — Выполнить"
+            ),
+            "{plain}"
+        );
+        assert!(
+            plain.contains("Добавлен объект — индекс (1):\n    + ОбщийМодуль.Новый"),
+            "{plain}"
+        );
+        assert!(!plain.contains("\x1b["), "{plain:?}");
+
+        let mut styled = Vec::new();
+        append_semantic_event_groups(
+            &mut styled,
+            vec![SemanticHumanChange {
+                target: "ОбщийМодуль.Обмен — Выполнить".to_owned(),
+                kind: SemanticEventKind::MethodChanged,
+                stage: ChangeStage::Worktree,
+            }],
+            &localizer,
+            true,
+        );
+        let styled = styled.join("\n");
+        assert!(styled.contains("\x1b[1;33m"), "{styled:?}");
+        assert!(styled.contains("\x1b[1;33m✎\x1b[0m"), "{styled:?}");
+    }
+
+    /// Stable hierarchical IDs become localized Configurator-style object names.
+    #[test]
+    fn semantic_object_hierarchy_is_localized() {
+        for (locale, expected) in [
+            (
+                Locale::RuRu,
+                "Справочник.Контрагенты.Реквизит.Код/Артикул:1%",
+            ),
+            (Locale::EnUs, "Catalog.Контрагенты.Attribute.Код/Артикул:1%"),
+        ] {
+            let localizer = Localizer::try_new(locale).unwrap();
+            assert_eq!(
+                render_semantic_object(
+                    "catalog:Контрагенты/attribute:Код%2FАртикул%3A1%25",
+                    &localizer
+                ),
+                expected
+            );
         }
     }
 }

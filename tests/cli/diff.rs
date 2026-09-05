@@ -548,16 +548,30 @@ fn semantic_workspace_diff_reports_objects_modules_routines_forms_and_attributes
     assert_eq!(method["object"]["id"], "common-module:ОбщийМодуль1");
     assert_eq!(method["stage"], "worktree");
 
-    for (locale, header, method_label) in [
-        ("ru", "Семантические изменения", "Изменена процедура"),
-        ("en", "Semantic changes", "Procedure changed"),
+    for (locale, header, group, method_group, method) in [
+        (
+            "ru",
+            "Семантические изменения",
+            "ОбщийМодуль:",
+            "Изменена процедура — рабочая копия (1):",
+            "    ✎ ОбщийМодуль.ОбщийМодуль1 — Выполнить",
+        ),
+        (
+            "en",
+            "Semantic changes",
+            "CommonModule:",
+            "Procedure changed — working tree (1):",
+            "    ✎ CommonModule.ОбщийМодуль1 — Выполнить",
+        ),
     ] {
         let output = eska(&root, locale, &["diff", "--semantic"]);
         assert!(output.status.success(), "{output:?}");
         let text = String::from_utf8(output.stdout).expect("human semantic diff");
-        assert!(text.contains(header), "{text}");
-        assert!(text.contains(method_label), "{text}");
-        assert!(text.contains("Выполнить"), "{text}");
+        for expected in [header, group, method_group, method] {
+            assert!(text.contains(expected), "missing `{expected}` in:\n{text}");
+        }
+        assert!(!text.contains("\x1b["), "{text:?}");
+        assert!(!text.contains("src/CommonModules"), "{text}");
     }
 
     let raw = eska(&root, "ru", &["diff", "--semantic", "--raw"]);
