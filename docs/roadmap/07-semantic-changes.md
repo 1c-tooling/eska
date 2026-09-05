@@ -32,16 +32,27 @@
 
 ## T21 — Semantic diff
 
-**Статус:** `IN-PROGRESS`
+**Статус:** `DONE`
 **Зависит от:** T20
 
-Начать с надёжных событий: object added/removed/changed, module changed,
-method/function changed, form changed, metadata attribute changed. Добавить human,
-raw и стабильный JSON presentation. Three-way semantic merge не входит.
+Реализован opt-in режим `eska diff --semantic`:
+
+- exact snapshot pairs HEAD/index/worktree и blob-пары revisions превращаются в
+  deterministic events object added/removed/changed, module changed,
+  method/function added/removed/changed, form changed и metadata attribute changed;
+- Designer XML properties сравниваются структурно; форматирование вне значимых
+  узлов не создаёт события. BSL parser консервативно принимает только завершённые
+  русские и английские процедуры/функции, сохраняя module-level fallback;
+- revision-анализ не зависит от текущего worktree. Для workspace T19
+  `ObjectModel` даёт точные ownership и `ObjectId`, а удалённые объекты
+  восстанавливаются из snapshot/path;
+- human output локализован для `ru-RU` и `en-US`; raw имеет стабильные пять
+  колонок; JSON schema version 3 отделена от неизменившихся file-level schemas 1/2;
+- three-way semantic merge и сравнение отдельных элементов формы не входят в T21.
 
 ## T22 — Генератор commit message
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T15, T20
 
 Для точного сохраняемого ChangeSet построить deterministic semantic draft, открыть
