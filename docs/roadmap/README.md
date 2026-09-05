@@ -26,7 +26,7 @@
 - `DONE`: `T14` — object-aware human-представление `eska diff`;
 - `DONE`: `T15` — `eska save`;
 - `DONE`: `T16` — `eska clone` через `gix`;
-- `NEXT`: `T17` — существующие VCS-операции переводятся на `gix` везде, где можно
+- `IN-PROGRESS`: `T17` — существующие VCS-операции переводятся на `gix` везде, где можно
   сохранить их поведение; delivery-команды `sync` / `publish` / `finish`
   намеренно отложены до более приоритетных read-only, semantic и quality-задач.
 
@@ -69,7 +69,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T14 | DONE | `eska diff` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T15 | DONE | `eska save` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T16 | DONE | `eska clone` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T17 | NEXT | Gix-first миграция реализованных VCS-операций | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T17 | IN-PROGRESS | Gix-first миграция реализованных VCS-операций | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T18 | PLANNED | `eska history` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T19 | PLANNED | Designer XML object model | [06-locking-and-xml.md](06-locking-and-xml.md) |
 | T20 | PLANNED | Semantic `ChangeSet` | [07-semantic-changes.md](07-semantic-changes.md) |

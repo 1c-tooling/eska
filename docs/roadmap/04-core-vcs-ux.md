@@ -192,7 +192,7 @@ eska clone <repository> [directory]
 
 ## T17 — Gix-first миграция реализованных VCS-операций
 
-**Статус:** `NEXT`
+**Статус:** `IN-PROGRESS`
 **Зависит от:** T13, T15, T16
 
 Проверить все production-вызовы system Git и перенести на `gix` каждую операцию,
