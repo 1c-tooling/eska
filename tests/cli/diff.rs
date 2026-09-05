@@ -148,6 +148,15 @@ fn clean_output_and_help_are_localized() {
         let help = eska(&root, locale, &["diff", "--help"]);
         assert!(help.status.success(), "{help:?}");
         assert!(String::from_utf8_lossy(&help.stdout).contains(about));
+
+        let semantic = eska(&root, locale, &["diff", "--semantic"]);
+        assert!(semantic.status.success(), "{semantic:?}");
+        let expected = if locale == "ru" {
+            "Семантических изменений нет"
+        } else {
+            "No semantic changes"
+        };
+        assert!(String::from_utf8_lossy(&semantic.stdout).contains(expected));
     }
     let raw = eska(&root, "en", &["diff", "--raw"]);
     assert!(raw.status.success(), "{raw:?}");
@@ -495,6 +504,202 @@ fn revision_diff_errors_are_localized_and_usage_is_bounded() {
     assert_eq!(missing_base.status.code(), Some(2), "{missing_base:?}");
     let too_many = eska(&root, "en", &["diff", "HEAD", "HEAD", "HEAD"]);
     assert_eq!(too_many.status.code(), Some(2), "{too_many:?}");
+}
+
+/// Semantic mode exposes stable JSON events while human labels remain localized.
+#[test]
+fn semantic_workspace_diff_reports_objects_modules_routines_forms_and_attributes() {
+    let (_fixture, root) = semantic_project();
+    apply_semantic_changes(&root);
+
+    let mut documents = Vec::new();
+    for locale in ["ru", "en"] {
+        let output = eska(&root, locale, &["diff", "--semantic", "--format", "json"]);
+        assert!(output.status.success(), "{output:?}");
+        assert!(output.stderr.is_empty(), "{output:?}");
+        documents.push(serde_json::from_slice::<Value>(&output.stdout).expect("semantic JSON"));
+    }
+    assert_eq!(documents[0], documents[1]);
+    let document = &documents[0];
+    assert_eq!(document["schema_version"], 3);
+    assert_eq!(document["kind"], "semantic");
+    assert_eq!(document["comparison"]["kind"], "workspace");
+    let events = document["events"].as_array().expect("events");
+    let kinds: Vec<_> = events
+        .iter()
+        .map(|event| event["kind"].as_str().expect("event kind"))
+        .collect();
+    for kind in [
+        "object_added",
+        "object_changed",
+        "module_changed",
+        "method_changed",
+        "function_changed",
+        "form_changed",
+        "metadata_attribute_changed",
+    ] {
+        assert!(kinds.contains(&kind), "missing {kind}: {document}");
+    }
+    let method = events
+        .iter()
+        .find(|event| event["kind"] == "method_changed")
+        .expect("method event");
+    assert_eq!(method["member"], "Выполнить");
+    assert_eq!(method["object"]["id"], "common-module:ОбщийМодуль1");
+    assert_eq!(method["stage"], "worktree");
+
+    for (locale, header, method_label) in [
+        ("ru", "Семантические изменения", "Изменена процедура"),
+        ("en", "Semantic changes", "Procedure changed"),
+    ] {
+        let output = eska(&root, locale, &["diff", "--semantic"]);
+        assert!(output.status.success(), "{output:?}");
+        let text = String::from_utf8(output.stdout).expect("human semantic diff");
+        assert!(text.contains(header), "{text}");
+        assert!(text.contains(method_label), "{text}");
+        assert!(text.contains("Выполнить"), "{text}");
+    }
+
+    let raw = eska(&root, "ru", &["diff", "--semantic", "--raw"]);
+    assert!(raw.status.success(), "{raw:?}");
+    let raw = String::from_utf8(raw.stdout).expect("raw semantic diff");
+    assert!(
+        raw.contains(
+            "worktree\tmethod_changed\tcommon-module:ОбщийМодуль1\tВыполнить\tsrc/CommonModules/ОбщийМодуль1/Ext/Module.bsl"
+        ),
+        "{raw}"
+    );
+}
+
+/// Committed semantic comparison uses revision stages and explicit endpoints.
+#[test]
+fn semantic_revision_diff_has_a_separate_versioned_comparison() {
+    let (_fixture, root) = semantic_project();
+    apply_semantic_changes(&root);
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-m", "semantic changes"]);
+
+    let output = eska(
+        &root,
+        "en",
+        &["diff", "HEAD~1", "HEAD", "--semantic", "--format", "json"],
+    );
+    assert!(output.status.success(), "{output:?}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("semantic revision JSON");
+    assert_eq!(document["schema_version"], 3);
+    assert_eq!(document["comparison"]["kind"], "revisions");
+    assert_eq!(document["comparison"]["strategy"], "direct");
+    assert_eq!(document["comparison"]["from"]["revision"], "HEAD~1");
+    assert_eq!(document["comparison"]["to"]["revision"], "HEAD");
+    assert!(
+        document["events"]
+            .as_array()
+            .expect("events")
+            .iter()
+            .all(|event| event["stage"] == "revision")
+    );
+}
+
+/// Create committed Designer sources accepted by the logical object model.
+fn semantic_project() -> (TestDir, PathBuf) {
+    let (fixture, root) = project();
+    for directory in [
+        "src/Catalogs",
+        "src/CommonModules/ОбщийМодуль1/Ext",
+        "src/CommonForms/Основная/Ext",
+    ] {
+        fs::create_dir_all(root.join(directory)).expect("create semantic source directory");
+    }
+    fs::write(
+        root.join("src/Catalogs/Контрагенты.xml"),
+        semantic_catalog_descriptor("Исходный"),
+    )
+    .expect("write semantic catalog");
+    fs::write(
+        root.join("src/CommonModules/ОбщийМодуль1.xml"),
+        semantic_common_module_descriptor(),
+    )
+    .expect("write semantic common module descriptor");
+    fs::write(
+        root.join("src/CommonModules/ОбщийМодуль1/Ext/Module.bsl"),
+        concat!(
+            "Процедура Выполнить()\n    Сообщить(\"Исходный\");\nКонецПроцедуры\n",
+            "Функция ПолучитьЗначение()\n    Возврат 1;\nКонецФункции\n"
+        ),
+    )
+    .expect("write semantic module");
+    fs::write(
+        root.join("src/CommonForms/Основная.xml"),
+        semantic_common_form_descriptor(),
+    )
+    .expect("write semantic form descriptor");
+    fs::write(
+        root.join("src/CommonForms/Основная/Ext/Form.xml"),
+        "<Form><Title>Исходная</Title></Form>\n",
+    )
+    .expect("write semantic form");
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-m", "semantic base"]);
+    (fixture, root)
+}
+
+/// Apply representative uncommitted changes for every initial T21 event family.
+fn apply_semantic_changes(root: &Path) {
+    fs::write(
+        root.join("src/Catalogs/Контрагенты.xml"),
+        semantic_catalog_descriptor("Изменённый"),
+    )
+    .expect("change semantic catalog");
+    fs::write(
+        root.join("src/CommonModules/ОбщийМодуль1/Ext/Module.bsl"),
+        concat!(
+            "Процедура Выполнить()\n    Сообщить(\"Изменённый\");\nКонецПроцедуры\n",
+            "Функция ПолучитьЗначение()\n    Возврат 2;\nКонецФункции\n"
+        ),
+    )
+    .expect("change semantic module");
+    fs::write(
+        root.join("src/CommonForms/Основная/Ext/Form.xml"),
+        "<Form><Title>Изменённая</Title></Form>\n",
+    )
+    .expect("change semantic form");
+    fs::write(
+        root.join("src/Catalogs/Новый.xml"),
+        semantic_object_descriptor("Catalog", "Новый", "55555555-5555-5555-5555-555555555555"),
+    )
+    .expect("add semantic object");
+}
+
+/// Build a catalog with an independently addressable attribute.
+fn semantic_catalog_descriptor(comment: &str) -> String {
+    format!(
+        r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><Catalog uuid="11111111-1111-1111-1111-111111111111"><Properties><Name>Контрагенты</Name></Properties><ChildObjects><Attribute uuid="22222222-2222-2222-2222-222222222222"><Properties><Name>Реквизит1</Name><Comment>{comment}</Comment></Properties></Attribute></ChildObjects></Catalog></MetaDataObject>"#
+    )
+}
+
+/// Build a valid common-module descriptor for semantic fixtures.
+fn semantic_common_module_descriptor() -> String {
+    semantic_object_descriptor(
+        "CommonModule",
+        "ОбщийМодуль1",
+        "33333333-3333-3333-3333-333333333333",
+    )
+}
+
+/// Build a valid common-form descriptor for semantic fixtures.
+fn semantic_common_form_descriptor() -> String {
+    semantic_object_descriptor(
+        "CommonForm",
+        "Основная",
+        "44444444-4444-4444-4444-444444444444",
+    )
+}
+
+/// Build one minimal valid Designer metadata object descriptor.
+fn semantic_object_descriptor(kind: &str, name: &str, uuid: &str) -> String {
+    format!(
+        r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><{kind} uuid="{uuid}"><Properties><Name>{name}</Name></Properties></{kind}></MetaDataObject>"#
+    )
 }
 
 /// Build a minimal catalog descriptor whose attribute property can change independently.

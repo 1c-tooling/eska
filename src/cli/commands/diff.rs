@@ -19,6 +19,8 @@ use crate::{
         diff::{self, DiffError, DisplayTarget, ProjectDiff, RevisionProjectDiff},
         discovery,
         metadata::MetadataPath,
+        object_model,
+        semantic::{self, SemanticDiff, SemanticEvent, SemanticEventKind},
     },
     vcs::status::Change,
 };
@@ -33,6 +35,9 @@ pub(in crate::cli) struct DiffArgs {
 
     #[arg(long, conflicts_with = "format")]
     raw: bool,
+
+    #[arg(long)]
+    semantic: bool,
 
     #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
     format: OutputFormat,
@@ -63,6 +68,13 @@ impl DiffArgs {
                 Ok(changes) => changes,
                 Err(error) => return report_error(&error, localizer),
             };
+            if self.semantic {
+                let Some(changes) = analyze_workspace_semantics(&project, &changes, localizer)
+                else {
+                    return ExitCode::FAILURE;
+                };
+                return self.render_semantic(&changes, None, localizer);
+            }
             self.render_workspace(&changes, localizer)
         } else {
             let from = &self.revisions[0];
@@ -71,6 +83,13 @@ impl DiffArgs {
                 Ok(changes) => changes,
                 Err(error) => return report_error(&error, localizer),
             };
+            if self.semantic {
+                let Some(semantic) = analyze_revision_semantics(&project, &changes, localizer)
+                else {
+                    return ExitCode::FAILURE;
+                };
+                return self.render_semantic(&semantic, Some(&changes), localizer);
+            }
             self.render_revisions(&changes, localizer)
         }
     }
@@ -107,6 +126,58 @@ impl DiffArgs {
             OutputFormat::Json => serialize_json(&RevisionDiffDocument::from(changes), localizer),
         }
     }
+
+    /// Render semantic events through the selected human, raw or JSON contract.
+    fn render_semantic(
+        &self,
+        changes: &SemanticDiff,
+        revisions: Option<&RevisionProjectDiff>,
+        localizer: &Localizer,
+    ) -> ExitCode {
+        if self.raw {
+            print!("{}", render_semantic_raw(changes));
+            return ExitCode::SUCCESS;
+        }
+        match self.format {
+            OutputFormat::Human => {
+                println!("{}", render_semantic_human(changes, localizer));
+                ExitCode::SUCCESS
+            }
+            OutputFormat::Json => {
+                serialize_json(&SemanticDiffDocument::new(changes, revisions), localizer)
+            }
+        }
+    }
+}
+
+/// Discover the current logical model and analyze workspace snapshot pairs.
+fn analyze_workspace_semantics(
+    project: &crate::project::Project,
+    changes: &ProjectDiff,
+    localizer: &Localizer,
+) -> Option<SemanticDiff> {
+    let objects = object_model::discover(project).ok().or_else(|| {
+        eprintln!("{}", localizer.text("diff-semantic-error"));
+        None
+    })?;
+    semantic::diff_workspace(project, &objects, changes)
+        .ok()
+        .or_else(|| {
+            eprintln!("{}", localizer.text("diff-semantic-error"));
+            None
+        })
+}
+
+/// Analyze committed tree blob pairs independently of the current worktree contents.
+fn analyze_revision_semantics(
+    project: &crate::project::Project,
+    changes: &RevisionProjectDiff,
+    localizer: &Localizer,
+) -> Option<SemanticDiff> {
+    semantic::diff_revisions(project, changes).ok().or_else(|| {
+        eprintln!("{}", localizer.text("diff-semantic-error"));
+        None
+    })
 }
 
 /// Serialize one locale-independent document and report the shared failure.
@@ -138,6 +209,9 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         })
         .mut_arg("raw", |argument| {
             argument.help(localizer.text("diff-raw-help"))
+        })
+        .mut_arg("semantic", |argument| {
+            argument.help(localizer.text("diff-semantic-help"))
         })
         .mut_arg("format", |argument| {
             argument
@@ -533,6 +607,187 @@ const fn change_group_key(change: Change) -> &'static str {
         Change::Untracked => "diff-group-untracked",
         Change::IntentToAdd => "diff-group-intent-to-add",
         Change::Conflict => "diff-group-conflict",
+    }
+}
+
+/// Render one stable tab-separated semantic event per line.
+fn render_semantic_raw(diff: &SemanticDiff) -> String {
+    use std::fmt::Write as _;
+
+    let mut output = String::new();
+    for event in diff.events() {
+        writeln!(
+            output,
+            "{}\t{}\t{}\t{}\t{}",
+            event.stage().as_str(),
+            event.kind().as_str(),
+            event.object().id(),
+            event.member().unwrap_or("-"),
+            display_path(event.path())
+        )
+        .expect("writing to String cannot fail");
+    }
+    output
+}
+
+/// Render localized semantic event labels while retaining stable object identities.
+fn render_semantic_human(diff: &SemanticDiff, localizer: &Localizer) -> String {
+    if diff.is_empty() {
+        return localizer.text("diff-semantic-clean");
+    }
+    let mut lines = vec![localizer.text("diff-semantic-events")];
+    for event in diff.events() {
+        let stage = localizer.text(match event.stage() {
+            semantic::ChangeStage::Index => "diff-index",
+            semantic::ChangeStage::Worktree => "diff-worktree",
+            semantic::ChangeStage::Revision => "diff-semantic-revision",
+        });
+        let label = localizer.text(semantic_event_key(event.kind()));
+        let member = event
+            .member()
+            .map(|name| format!(" — {name}"))
+            .unwrap_or_default();
+        let object = format!(
+            "{}.{}",
+            metadata_kind(event.object().metadata_type(), localizer),
+            event.object().name()
+        );
+        lines.push(format!(
+            "  {} {}: {}{}",
+            semantic_event_marker(event.kind()),
+            label,
+            object,
+            member
+        ));
+        lines.push(format!("      {stage} · {}", display_path(event.path())));
+    }
+    lines.join("\n")
+}
+
+/// Select a localized label for one semantic event kind.
+const fn semantic_event_key(kind: SemanticEventKind) -> &'static str {
+    match kind {
+        SemanticEventKind::ObjectAdded => "diff-semantic-object-added",
+        SemanticEventKind::ObjectRemoved => "diff-semantic-object-removed",
+        SemanticEventKind::ObjectChanged => "diff-semantic-object-changed",
+        SemanticEventKind::ModuleChanged => "diff-semantic-module-changed",
+        SemanticEventKind::MethodAdded => "diff-semantic-method-added",
+        SemanticEventKind::MethodRemoved => "diff-semantic-method-removed",
+        SemanticEventKind::MethodChanged => "diff-semantic-method-changed",
+        SemanticEventKind::FunctionAdded => "diff-semantic-function-added",
+        SemanticEventKind::FunctionRemoved => "diff-semantic-function-removed",
+        SemanticEventKind::FunctionChanged => "diff-semantic-function-changed",
+        SemanticEventKind::FormChanged => "diff-semantic-form-changed",
+        SemanticEventKind::MetadataAttributeChanged => "diff-semantic-metadata-attribute-changed",
+    }
+}
+
+/// Select a compact human marker for one semantic event kind.
+const fn semantic_event_marker(kind: SemanticEventKind) -> char {
+    match kind {
+        SemanticEventKind::ObjectAdded
+        | SemanticEventKind::MethodAdded
+        | SemanticEventKind::FunctionAdded => '+',
+        SemanticEventKind::ObjectRemoved
+        | SemanticEventKind::MethodRemoved
+        | SemanticEventKind::FunctionRemoved => '−',
+        SemanticEventKind::ObjectChanged
+        | SemanticEventKind::ModuleChanged
+        | SemanticEventKind::MethodChanged
+        | SemanticEventKind::FunctionChanged
+        | SemanticEventKind::FormChanged
+        | SemanticEventKind::MetadataAttributeChanged => '✎',
+    }
+}
+
+#[derive(Serialize)]
+struct SemanticDiffDocument<'a> {
+    schema_version: u8,
+    kind: &'static str,
+    comparison: SemanticComparisonDocument<'a>,
+    events: Vec<SemanticEventDocument>,
+}
+
+#[derive(Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+enum SemanticComparisonDocument<'a> {
+    Workspace,
+    Revisions {
+        strategy: &'static str,
+        from: RevisionEndpointDocument<'a>,
+        to: RevisionEndpointDocument<'a>,
+        merge_base_commit: Option<String>,
+    },
+}
+
+#[derive(Serialize)]
+struct SemanticEventDocument {
+    kind: &'static str,
+    stage: &'static str,
+    object: SemanticObjectDocument,
+    member: Option<String>,
+    path: String,
+    path_encoding: &'static str,
+}
+
+#[derive(Serialize)]
+struct SemanticObjectDocument {
+    id: String,
+    metadata_type: &'static str,
+    name: String,
+}
+
+impl<'a> SemanticDiffDocument<'a> {
+    /// Build semantic schema version 3 without locale-dependent values.
+    fn new(diff: &SemanticDiff, revisions: Option<&'a RevisionProjectDiff>) -> Self {
+        let comparison = revisions.map_or(SemanticComparisonDocument::Workspace, |diff| {
+            let comparison = &diff.comparison;
+            SemanticComparisonDocument::Revisions {
+                strategy: if comparison.merge_base_commit.is_some() {
+                    "merge_base"
+                } else {
+                    "direct"
+                },
+                from: RevisionEndpointDocument {
+                    revision: &comparison.from_revision,
+                    commit: comparison.from_commit.to_string(),
+                },
+                to: RevisionEndpointDocument {
+                    revision: &comparison.to_revision,
+                    commit: comparison.to_commit.to_string(),
+                },
+                merge_base_commit: comparison.merge_base_commit.map(|id| id.to_string()),
+            }
+        });
+        Self {
+            schema_version: 3,
+            kind: "semantic",
+            comparison,
+            events: diff
+                .events()
+                .iter()
+                .map(SemanticEventDocument::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<&SemanticEvent> for SemanticEventDocument {
+    /// Preserve stable identities, event names and arbitrary Git path bytes.
+    fn from(event: &SemanticEvent) -> Self {
+        let (path, path_encoding) = json_path(event.path());
+        Self {
+            kind: event.kind().as_str(),
+            stage: event.stage().as_str(),
+            object: SemanticObjectDocument {
+                id: event.object().id().to_owned(),
+                metadata_type: event.object().metadata_type(),
+                name: event.object().name().to_owned(),
+            },
+            member: event.member().map(str::to_owned),
+            path,
+            path_encoding,
+        }
     }
 }
 
