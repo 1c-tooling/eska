@@ -47,6 +47,10 @@ src/
 │   ├── metadata.rs              # human-проекция путей и XML-дочерних объектов
 │   ├── object_model.rs          # логические Designer XML objects и двусторонний path index
 │   ├── clone.rs                 # план clone, владение destination и validation
+│   ├── build/
+│   │   ├── mod.rs               # публичная граница build subsystem
+│   │   ├── settings.rs          # переносимые settings и версия платформы
+│   │   └── plan.rs              # тип и путь build artifact без запуска процессов
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
 │   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
 │   ├── start.rs                 # preflight и исполнение task plan

@@ -22,6 +22,10 @@ project-workflow-custom-base = Workflow extends must name trunk, git-flow or git
 project-workflow-publish-required = finish = "require-published" is incompatible with publish = "disabled" in { $path }.
 project-workflow-integration-required = delete_local_branch = true requires finish = "require-integrated" in { $path }.
 project-workflow-invalid = Invalid workflow policy in { $path }.
+project-build-version-invalid = Invalid 1C platform version "{ $value }" in { $path }. Expected four numeric components, for example 8.3.27.2325.
+project-build-path-empty = The artifacts directory cannot be empty.
+project-build-path-relative-required = The artifacts directory must be a relative path: { $path }.
+project-build-path-parent-traversal = The artifacts directory must not contain "..": { $path }.
 project-path-empty = The source path must not be empty.
 project-path-relative-required = The source path must be relative: { $path }.
 project-path-absolute-required = The project path must be absolute: { $path }.

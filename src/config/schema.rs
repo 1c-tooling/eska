@@ -14,7 +14,15 @@ const DEFAULT_SOURCE_FORMAT: &str = "designer-xml";
 #[serde(deny_unknown_fields)]
 pub(super) struct RawDocument {
     pub(super) project: RawProject,
+    pub(super) build: Option<RawBuild>,
     pub(super) vcs: Option<RawVcs>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct RawBuild {
+    pub(super) platform_version: Option<String>,
+    pub(super) artifacts_directory: Option<PathBuf>,
 }
 
 #[derive(Deserialize)]
@@ -60,7 +68,17 @@ pub(super) struct RawProject {
 pub(super) struct SerializedDocument<'a> {
     pub(super) project: SerializedProject<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) build: Option<SerializedBuild<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) vcs: Option<SerializedVcs<'a>>,
+}
+
+#[derive(Serialize)]
+pub(super) struct SerializedBuild<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) platform_version: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) artifacts_directory: Option<&'a Path>,
 }
 
 #[derive(Serialize)]

@@ -182,6 +182,20 @@ eska --lang ru --project-dir /path/to/project/src/CommonModules
 type = "configuration"
 ```
 
+Настройки сборки необязательны. Для существующих проектов используются
+совместимые defaults `8.3.27.2325` и `build/`; явные переносимые overrides:
+
+```toml
+[build]
+platform_version = "8.3.27.2325"
+artifacts_directory = "build"
+```
+
+Версия содержит ровно четыре числовых компонента. Каталог artifacts задаётся
+относительно корня проекта, не может быть пустым, абсолютным или содержать `..`.
+Путь к `ibcmd`, архитектура платформы и Distrobox относятся к конкретной машине
+и в `eska.toml` не сохраняются.
+
 `type` обязателен: `configuration`, `extension`, `processing` или `report`.
 По умолчанию `source = "src"`, `source_format = "designer-xml"`; другие форматы
 пока не поддерживаются. Source — непустой относительный путь без `..`, допустимо

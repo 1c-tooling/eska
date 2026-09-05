@@ -22,6 +22,10 @@ project-workflow-custom-base = В extends укажите trunk, git-flow или 
 project-workflow-publish-required = finish = "require-published" несовместим с publish = "disabled" в { $path }.
 project-workflow-integration-required = delete_local_branch = true требует finish = "require-integrated" в { $path }.
 project-workflow-invalid = Некорректная workflow policy в { $path }.
+project-build-version-invalid = Неверная версия платформы 1С «{ $value }» в { $path }. Ожидается четыре числовых компонента, например 8.3.27.2325.
+project-build-path-empty = Каталог artifacts не может быть пустым.
+project-build-path-relative-required = Каталог artifacts должен быть относительным путём: { $path }.
+project-build-path-parent-traversal = Каталог artifacts не должен содержать «..»: { $path }.
 project-path-empty = Путь исходников не может быть пустым.
 project-path-relative-required = Путь исходников должен быть относительным: { $path }.
 project-path-absolute-required = Путь проекта должен быть абсолютным: { $path }.
