@@ -33,7 +33,7 @@
 - `DONE`: `T21` — semantic diff;
 - `DONE`: `T22` — генератор commit message;
 - `DONE`: `T34` — безопасное переключение между существующими задачами;
-- `NEXT`: `T40` — локальное завершение задачи;
+- `IN-PROGRESS`: `T40` — локальное завершение задачи;
 - затем: `T28` — сборка `.cf` через
   настраиваемый `ibcmd`;
 - после базовой сборки: `T42` — отдельная спецификация patch-extension `.cfe`
@@ -125,7 +125,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T37 | PLANNED | `eska sync` / `continue` / `abort` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T38 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T39 | DEFERRED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
-| T40 | NEXT | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T40 | IN-PROGRESS | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T41 | PLANNED | VS Code extension | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T42 | NEEDS-SPEC | Patch-extension `.cfe` из разницы веток | [09-build-and-runtime.md](09-build-and-runtime.md) |
 
