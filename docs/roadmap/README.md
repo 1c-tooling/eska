@@ -33,10 +33,10 @@
 - `DONE`: `T21` — semantic diff;
 - `DONE`: `T22` — генератор commit message;
 - `DONE`: `T34` — безопасное переключение между существующими задачами;
-- `IN-PROGRESS`: `T40` — локальное завершение задачи;
-- затем: `T28` — сборка `.cf` через
+- `DONE`: `T40` — локальное завершение задачи;
+- `DONE`: `T28` — сборка `.cf`, `.cfe`, `.epf`, `.erf` через
   настраиваемый `ibcmd`;
-- после базовой сборки: `T42` — отдельная спецификация patch-extension `.cfe`
+- `NEXT`: `T42` — отдельная спецификация patch-extension `.cfe`
   из разницы Git-веток;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
@@ -56,9 +56,9 @@ start -> status/diff -> save -> switch/return -> finish
 | Увидеть изменённые файлы и объекты | `eska status`, `eska diff` — `DONE` |
 | Создать commit | `eska save` — `DONE` |
 | Переключиться и позднее вернуться | `eska switch` — `DONE` |
-| Завершить задачу | `eska finish` — `NEXT` |
-| Собрать полную конфигурацию | `eska build` → `.cf` — `PLANNED` после T40 |
-| Собрать patch-extension из delta | `.cfe` — `NEEDS-SPEC` после T28 |
+| Завершить задачу | `eska finish` — `DONE` |
+| Собрать полный нативный артефакт | `eska build` → `.cf/.cfe/.epf/.erf` — `DONE` |
+| Собрать patch-extension из delta | `.cfe` — `NEXT`, сначала спецификация и feasibility |
 
 `shelve` не блокирует MVP: первая версия `switch` работает только с чистой
 рабочей копией и предлагает сначала выполнить `save`.
@@ -113,7 +113,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T25 | PLANNED | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T26 | PLANNED | `eska fmt` | [08-quality.md](08-quality.md) |
 | T27 | PLANNED | `eska check` | [08-quality.md](08-quality.md) |
-| T28 | PLANNED | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
+| T28 | DONE | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T29 | PLANNED | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T30 | PLANNED | Development environments | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T31 | PLANNED | `apply` / `run` | [09-build-and-runtime.md](09-build-and-runtime.md) |
@@ -125,9 +125,9 @@ TUI разделён на обработку клавиш, отрисовку и
 | T37 | PLANNED | `eska sync` / `continue` / `abort` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T38 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T39 | DEFERRED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
-| T40 | IN-PROGRESS | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T40 | DONE | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T41 | PLANNED | VS Code extension | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T42 | NEEDS-SPEC | Patch-extension `.cfe` из разницы веток | [09-build-and-runtime.md](09-build-and-runtime.md) |
+| T42 | NEXT | Patch-extension `.cfe` из разницы веток | [09-build-and-runtime.md](09-build-and-runtime.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в

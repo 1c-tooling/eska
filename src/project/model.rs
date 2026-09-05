@@ -2,7 +2,10 @@
 
 use std::path::{Component, Path, PathBuf};
 
-use crate::vcs::workflow::{WorkflowPreset, WorkflowSettings};
+use crate::{
+    project::build::BuildSettings,
+    vcs::workflow::{WorkflowPreset, WorkflowSettings},
+};
 
 /// A validated eska project.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -62,15 +65,17 @@ impl Project {
 pub struct ProjectConfiguration {
     project_type: ProjectType,
     source_format: SourceFormat,
+    build: BuildSettings,
     workflow: Option<WorkflowSettings>,
 }
 
 impl ProjectConfiguration {
     #[must_use]
-    pub const fn new(project_type: ProjectType, source_format: SourceFormat) -> Self {
+    pub fn new(project_type: ProjectType, source_format: SourceFormat) -> Self {
         Self {
             project_type,
             source_format,
+            build: BuildSettings::default(),
             workflow: None,
         }
     }
@@ -83,6 +88,17 @@ impl ProjectConfiguration {
     #[must_use]
     pub const fn source_format(&self) -> SourceFormat {
         self.source_format
+    }
+
+    #[must_use]
+    pub const fn build_settings(&self) -> &BuildSettings {
+        &self.build
+    }
+
+    #[must_use]
+    pub fn with_build_settings(mut self, build: BuildSettings) -> Self {
+        self.build = build;
+        self
     }
 
     /// Replace workflow settings with a compact preset selection.

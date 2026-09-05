@@ -6,7 +6,10 @@ use crate::{
     cli::localization::{LocalizationValue, Localizer},
     config::{InvalidSourceReason, ProjectConfigError},
     project::discovery::DiscoveryError,
-    project::{InvalidPathReason, ProjectPathError},
+    project::{
+        InvalidPathReason, ProjectPathError,
+        build::{BuildSettingsError, InvalidArtifactsDirectoryReason},
+    },
     vcs::workflow::PolicyError,
 };
 
@@ -29,6 +32,27 @@ pub(super) fn present_project_error(error: &DiscoveryError, localizer: &Localize
 
 fn config_message(localizer: &Localizer, path: &Path, error: &ProjectConfigError) -> String {
     match error {
+        ProjectConfigError::InvalidBuild(error) => match error {
+            BuildSettingsError::InvalidPlatformVersion { value } => localizer.format(
+                "project-build-version-invalid",
+                &[
+                    ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                    ("value", LocalizationValue::Text(value)),
+                ],
+            ),
+            BuildSettingsError::InvalidArtifactsDirectory { path, reason } => {
+                let key = match reason {
+                    InvalidArtifactsDirectoryReason::Empty => "project-build-path-empty",
+                    InvalidArtifactsDirectoryReason::Absolute => {
+                        "project-build-path-relative-required"
+                    }
+                    InvalidArtifactsDirectoryReason::ContainsParentTraversal => {
+                        "project-build-path-parent-traversal"
+                    }
+                };
+                path_message(localizer, key, path)
+            }
+        },
         ProjectConfigError::InvalidWorkflow(error) => workflow_message(localizer, path, error),
         ProjectConfigError::UnknownWorkflow { value } => {
             value_message(localizer, "project-workflow-unknown", path, value)

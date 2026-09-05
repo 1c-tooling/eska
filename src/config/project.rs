@@ -5,13 +5,17 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
-use crate::project::{Project, ProjectConfiguration, ProjectPathError, ProjectType, SourceFormat};
+use crate::project::{
+    Project, ProjectConfiguration, ProjectPathError, ProjectType, SourceFormat,
+    build::{BuildSettings, BuildSettingsError},
+};
 
 use crate::vcs::workflow::WorkflowPreset;
 
 use super::schema::{
-    DEFAULT_SOURCE, RawDocument, SerializedDocument, SerializedProject, SerializedVcs,
-    default_source, parse_project_type, parse_source_format, project_type_name, source_format_name,
+    DEFAULT_SOURCE, RawDocument, SerializedBuild, SerializedDocument, SerializedProject,
+    SerializedVcs, default_source, parse_project_type, parse_source_format, project_type_name,
+    source_format_name,
 };
 
 /// The validated contents of an `eska.toml` file.
@@ -35,6 +39,12 @@ impl ProjectConfig {
     #[must_use]
     pub fn with_workflow(mut self, workflow: WorkflowPreset) -> Self {
         self.configuration = self.configuration.with_workflow(workflow);
+        self
+    }
+
+    #[must_use]
+    pub fn with_build_settings(mut self, build: BuildSettings) -> Self {
+        self.configuration = self.configuration.with_build_settings(build);
         self
     }
 
@@ -75,7 +85,23 @@ impl ProjectConfig {
 
         validate_source_path(&document.project.source)?;
 
-        let mut configuration = ProjectConfiguration::new(project_type, source_format);
+        let default_build = BuildSettings::default();
+        let build = document.build.map_or_else(
+            || Ok(default_build.clone()),
+            |build| {
+                BuildSettings::new(
+                    build
+                        .platform_version
+                        .as_deref()
+                        .unwrap_or_else(|| default_build.platform_version().as_str()),
+                    build
+                        .artifacts_directory
+                        .unwrap_or_else(|| default_build.artifacts_directory().to_owned()),
+                )
+            },
+        )?;
+        let mut configuration =
+            ProjectConfiguration::new(project_type, source_format).with_build_settings(build);
         if let Some(vcs) = document.vcs {
             configuration =
                 configuration.with_workflow_settings(super::workflow::parse(vcs.workflow)?);
@@ -95,12 +121,22 @@ impl ProjectConfig {
         let source = (self.source != Path::new(DEFAULT_SOURCE)).then_some(self.source.as_path());
         let source_format = (self.configuration.source_format() != SourceFormat::DesignerXml)
             .then_some(source_format_name(self.configuration.source_format()));
+        let default_build = BuildSettings::default();
+        let build = self.configuration.build_settings();
+        let build = (build != &default_build).then(|| SerializedBuild {
+            platform_version: (build.platform_version() != default_build.platform_version())
+                .then(|| build.platform_version().as_str()),
+            artifacts_directory: (build.artifacts_directory()
+                != default_build.artifacts_directory())
+            .then(|| build.artifacts_directory()),
+        });
         let document = SerializedDocument {
             project: SerializedProject {
                 project_type: project_type_name(self.configuration.project_type()),
                 source,
                 source_format,
             },
+            build,
             vcs: self
                 .configuration
                 .workflow_settings()
@@ -149,6 +185,7 @@ pub enum InvalidSourceReason {
 /// A structured project configuration error.
 #[derive(Debug)]
 pub enum ProjectConfigError {
+    InvalidBuild(BuildSettingsError),
     InvalidWorkflow(crate::vcs::workflow::PolicyError),
     UnknownWorkflow {
         value: String,
@@ -169,6 +206,12 @@ pub enum ProjectConfigError {
         reason: InvalidSourceReason,
     },
     ProjectPath(ProjectPathError),
+}
+
+impl From<BuildSettingsError> for ProjectConfigError {
+    fn from(value: BuildSettingsError) -> Self {
+        Self::InvalidBuild(value)
+    }
 }
 
 fn validate_source_path(path: &Path) -> Result<(), ProjectConfigError> {
@@ -241,6 +284,65 @@ mod tests {
                 .workflow(),
             None
         );
+    }
+
+    #[test]
+    /// Preserve old configs while exposing deterministic build defaults.
+    fn build_defaults_keep_existing_configs_compact_and_compatible() {
+        let config = ProjectConfig::from_toml("[project]\ntype = 'configuration'\n")
+            .expect("legacy config remains valid");
+
+        assert_eq!(
+            config
+                .configuration()
+                .build_settings()
+                .platform_version()
+                .as_str(),
+            "8.3.27.2325"
+        );
+        assert_eq!(
+            config
+                .configuration()
+                .build_settings()
+                .artifacts_directory(),
+            Path::new("build")
+        );
+        assert_eq!(
+            config.to_toml().expect("serialize defaults"),
+            "[project]\ntype = \"configuration\"\n"
+        );
+    }
+
+    #[test]
+    /// Persist only explicit non-default build values in canonical TOML.
+    fn explicit_build_settings_round_trip_without_materializing_defaults() {
+        let config = ProjectConfig::from_toml(
+            "[project]\ntype = 'report'\n[build]\nplatform_version = '8.5.4.1000'\nartifacts_directory = 'dist/onec'\n",
+        )
+        .expect("valid build settings");
+
+        let text = config.to_toml().expect("serialize build settings");
+        assert!(text.contains("platform_version = \"8.5.4.1000\""));
+        assert!(text.contains("artifacts_directory = \"dist/onec\""));
+        assert_eq!(ProjectConfig::from_toml(&text).expect("round trip"), config);
+    }
+
+    #[test]
+    /// Report invalid build values through the existing structured config boundary.
+    fn invalid_build_settings_are_structured_config_errors() {
+        for suffix in [
+            "[build]\nplatform_version = '8.3'\n",
+            "[build]\nartifacts_directory = '../outside'\n",
+            "[build]\nunknown = true\n",
+        ] {
+            let error =
+                ProjectConfig::from_toml(&format!("[project]\ntype = 'configuration'\n{suffix}"))
+                    .expect_err("invalid build settings must fail");
+            assert!(matches!(
+                error,
+                ProjectConfigError::InvalidBuild(_) | ProjectConfigError::Toml(_)
+            ));
+        }
     }
 
     #[test]

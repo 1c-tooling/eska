@@ -165,6 +165,37 @@ pack и checkout включена через `gix/max-performance`. Локаль
 для этих transport соответствующая внешняя программа должна быть доступна в
 `PATH`. Shallow clone, выбор ветки и submodules пока не поддерживаются.
 
+## Сборка нативного артефакта
+
+```bash
+eska build
+eska build --output dist/application.cf
+eska build --distrobox 1c-ubuntu-env --format json
+```
+
+`build` собирает тип проекта в соответствующий нативный файл: `configuration` —
+`.cf`, `extension` — `.cfe`, `processing` — `.epf`, `report` — `.erf`. Для
+конфигурации и расширения в `ibcmd` передаётся каталог Designer XML, для внешней
+обработки и отчёта — единственный подходящий корневой XML-дескриптор.
+
+Версия `ibcmd` должна точно совпадать с `build.platform_version`. Поиск идёт по
+явному `--ibcmd` или `ESKA_IBCMD`, затем по `PATH` и стандартному пути установки.
+Архитектуру можно задать через `--platform-arch` / `ESKA_PLATFORM_ARCH`.
+Distrobox используется только при явном `--distrobox` / `ESKA_DISTROBOX` и только
+если подходящий host `ibcmd` не найден.
+
+Для `8.3.27.2325` команда создаёт управляемую временную файловую базу и выполняет
+`config import --out`. Временные данные удаляются после успеха, ошибки и
+прерывания; существующий артефакт сохраняется при неудачной сборке. Возможный
+прямой режим новых платформ 8.5 пока не включён: их фактическая справка в текущем
+окружении не проверена.
+
+Human-результат локализован. `--format json` выдаёт стабильную схему версии 1 с
+типом и обратимо закодированным путём артефакта, версией платформы и длительностью;
+диагностика `ibcmd`, включая `INFO` и `WARN`, остаётся в stderr и не загрязняет
+JSON stdout. Коды `build`: `0` — артефакт собран, `1` — ошибка проекта,
+инструмента или сборки, `2` — ошибка аргументов CLI.
+
 ## Проверка проекта
 
 `eska` ищет ближайший `eska.toml` вверх от текущего каталога и проверяет настройки
@@ -181,6 +212,20 @@ eska --lang ru --project-dir /path/to/project/src/CommonModules
 [project]
 type = "configuration"
 ```
+
+Настройки сборки необязательны. Для существующих проектов используются
+совместимые defaults `8.3.27.2325` и `build/`; явные переносимые overrides:
+
+```toml
+[build]
+platform_version = "8.3.27.2325"
+artifacts_directory = "build"
+```
+
+Версия содержит ровно четыре числовых компонента. Каталог artifacts задаётся
+относительно корня проекта, не может быть пустым, абсолютным или содержать `..`.
+Путь к `ibcmd`, архитектура платформы и Distrobox относятся к конкретной машине
+и в `eska.toml` не сохраняются.
 
 `type` обязателен: `configuration`, `extension`, `processing` или `report`.
 По умолчанию `source = "src"`, `source_format = "designer-xml"`; другие форматы
@@ -212,7 +257,7 @@ Human output локализован: подписи выровнены по ко
 `NO_COLOR` отключает оформление. JSON не зависит от локали, содержит
 `schema_version = 1` и считается стабильным API. До реализации locking в T39 поле
 `locks` явно содержит `available: false` и `count: null`. Команды `sync`,
-`publish`, `finish` и сборка пока не реализованы.
+`publish` пока не реализован.
 
 ## Просмотр изменений
 
@@ -439,6 +484,34 @@ worktree выполняется системным Git через единый i
 или проекта; `2` — отсутствующий либо конфликтующий target. Human output и
 ошибки доступны на RU/EN. Автоматический shelve пока не поддерживается.
 
+## Завершение задачи
+
+```bash
+eska finish
+```
+
+`finish` работает только из активной task-ветки, определённой текущей workflow
+policy. Команда отклоняет unsaved changes во всём worktree, detached/unborn HEAD
+и незавершённые merge, rebase, cherry-pick, revert, apply-mailbox или bisect.
+
+При настроенном policy remote сначала выполняется fetch и локальная base
+обновляется только fast-forward по тем же правилам, что у `start`. Для
+`require-integrated` текущий task commit должен быть достижим из свежей remote
+integration target; без настроенного remote проверяется локальная integration
+target. Для `require-published` task commit должен быть достижим из remote
+task-ветки. После успешной проверки команда переключается на локальную base и
+удаляет task-ветку только при `delete_local_branch = true`.
+
+Команда не публикует и не интегрирует изменения, не удаляет remote-ветку и не
+создаёт отдельное task state. Ссылки проверяются через `gix`; task-ветка
+удаляется compare-and-swap только после переключения и только если не изменилась.
+System Git используется лишь для согласованного переключения HEAD, index и
+worktree на base.
+
+Коды `finish`: `0` — policy выполнена и локальное завершение закончено; `1` —
+ошибка preflight, refs, fetch или переключения; `2` — ошибка синтаксиса CLI.
+Human output и ошибки доступны на RU/EN.
+
 ## Слой чтения Git-репозитория
 
 В библиотеке доступен `vcs::repository::Repository`: `discover`, `head`,
@@ -448,8 +521,9 @@ ancestry и защищённое обновление неактивной ref. 
 `project::history` консервативно связывает commits с task-ветками, а
 `project::start` исполняет проверенный task plan, `project::save` формирует
 project-scoped commit с восстановлением index при ошибке, `project::switch`
-проверяет и активирует существующую workflow-ветку. Остальные изменяющие
-VCS-команды ещё не добавлены.
+проверяет и активирует существующую workflow-ветку, а `project::finish` проверяет
+publication/integration refs и завершает локальный lifecycle задачи. Остальные
+изменяющие VCS-команды ещё не добавлены.
 
 Discovery ищет ближайший репозиторий вверх от существующего каталога, разрешает
 символические ссылки, поддерживает `.git`-файлы и linked worktrees. Bare и

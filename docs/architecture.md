@@ -15,9 +15,11 @@ src/
 │   ├── args.rs                  # общие аргументы, bootstrap --lang, общий help
 │   ├── commands/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
+│   │   ├── build.rs             # eska build: аргументы, RU/EN и JSON result
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
 │   │   ├── diff.rs              # eska diff: human/raw/JSON presentation
+│   │   ├── finish.rs            # eska finish: localized result и ошибки
 │   │   ├── history.rs           # eska history: human/JSON presentation
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
@@ -41,10 +43,17 @@ src/
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
 │   ├── diff.rs                  # file-level изменения внутри корня проекта
+│   ├── finish.rs                # preflight, policy refs и локальное завершение задачи
 │   ├── history.rs               # локальная commit history и task attribution
 │   ├── metadata.rs              # human-проекция путей и XML-дочерних объектов
 │   ├── object_model.rs          # логические Designer XML objects и двусторонний path index
 │   ├── clone.rs                 # план clone, владение destination и validation
+│   ├── build/
+│   │   ├── mod.rs               # публичная граница build subsystem
+│   │   ├── settings.rs          # переносимые settings и версия платформы
+│   │   ├── plan.rs              # тип и путь build artifact без запуска процессов
+│   │   ├── tool.rs              # поиск, version check и запуск ibcmd/Distrobox
+│   │   └── execute.rs           # временная база, import, cleanup и публикация
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
 │   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
 │   ├── start.rs                 # preflight и исполнение task plan
@@ -71,8 +80,8 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{diff,history,init,new,save,start,status,localization}.rs
-├── project/{discovery,history,save,start,templates,workflow}.rs
+├── cli/{build,diff,finish,history,init,new,save,start,status,localization}.rs
+├── project/{discovery,finish,history,save,start,templates,workflow}.rs
 ├── vcs/{diff,network,repository,status,support}.rs # Git-сценарии и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
@@ -89,6 +98,7 @@ tests/
 |---|---|
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
+| Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`src/project/build/`](../src/project/build/) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
 | Изменить вывод или связь commit с task в `history` | [`src/cli/commands/history.rs`](../src/cli/commands/history.rs), затем [`src/project/history.rs`](../src/project/history.rs) |
@@ -163,12 +173,22 @@ tests/
   задачей только при однозначной достижимости из одной локальной task-ветки вне
   base. `cli/commands/history.rs` локализует human-вывод и формирует стабильный
   JSON версии 1, сохраняя произвольные Git-байты через явную кодировку.
+- `project/build/` отделяет переносимый план от machine-local обнаружения
+  `ibcmd` и исполнения. `execute.rs` владеет временной базой и безопасной
+  публикацией артефакта; `cli/commands/build.rs` локализует ошибки и формирует
+  JSON-схему версии 1.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую
   task-ветку. System Git обновляет активную base и переключает worktree, потому
   что эти операции должны согласованно изменить HEAD, index и файлы.
   `cli/commands/start.rs` отвечает только за аргументы и RU/EN presentation.
+- `project/finish.rs` определяет задачу по активной ветке, отклоняет dirty и
+  незавершённые Git-операции, получает remote refs, fast-forward обновляет base и
+  проверяет publication/integration requirement. После системного переключения
+  worktree на base локальная task ref удаляется через `gix` с compare-and-swap;
+  publish, merge и удаление remote branch не выполняются. `cli/commands/finish.rs`
+  отвечает за RU/EN presentation.
 - `project/switch.rs` через `gix` проверяет workflow target, локальную ref и
   чистоту всего worktree, не выполняя fetch и не создавая веток. Изолированный
   system Git активирует существующую ветку с `--no-guess`, чтобы согласованно
