@@ -43,6 +43,7 @@ src/
 │   ├── diff.rs                  # file-level изменения внутри корня проекта
 │   ├── history.rs               # локальная commit history и task attribution
 │   ├── metadata.rs              # human-проекция путей и XML-дочерних объектов
+│   ├── object_model.rs          # логические Designer XML objects и двусторонний path index
 │   ├── clone.rs                 # план clone, владение destination и validation
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
 │   ├── start.rs                 # preflight и исполнение task plan
@@ -144,8 +145,14 @@ tests/
   свойства дочерних объектов только в изменённых главных XML-файлах.
   `cli/commands/diff.rs` группирует logical identities по типу метаданных и
   состоянию, оформляет TTY-заголовки и маркеры, отдельно формирует raw,
-  workspace JSON версии 1 и revision JSON версии 2. Полная object model, mapping
-  всех путей объекта и semantic-анализ BSL/форм остаются задачами T19–T21.
+  workspace JSON версии 1 и revision JSON версии 2. Semantic-анализ BSL/форм
+  остаётся задачами T20–T21.
+- `project/object_model.rs` по явному вызову обходит Designer XML source и строит
+  read-only индекс логических объектов. Читаемый `ObjectId` формируется из
+  machine-facing metadata type/name и иерархии; UUID хранится отдельно, поскольку
+  Designer может повторять его у разных объектов. Индекс связывает descriptors,
+  inline children, формы, модули и payload paths в обоих направлениях, не создавая
+  cache и не подключаясь автоматически к file-level командам.
 - `project/history.rs` получает ограниченную историю HEAD и связывает commit с
   задачей только при однозначной достижимости из одной локальной task-ветки вне
   base. `cli/commands/history.rs` локализует human-вывод и формирует стабильный
