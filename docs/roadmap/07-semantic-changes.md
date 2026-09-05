@@ -32,7 +32,7 @@
 
 ## T21 — Semantic diff
 
-**Статус:** `NEXT`
+**Статус:** `IN-PROGRESS`
 **Зависит от:** T20
 
 Начать с надёжных событий: object added/removed/changed, module changed,
