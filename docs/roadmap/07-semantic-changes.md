@@ -54,10 +54,18 @@
 
 ## T22 — Генератор commit message
 
-**Статус:** `IN-PROGRESS`
+**Статус:** `DONE`
 **Зависит от:** T15, T20
 
-Для точного сохраняемого ChangeSet построить deterministic semantic draft, открыть
-editor и затем commit. `save -m` обходит генератор; поздний `--auto` подтверждается
-отдельным UX-решением. AI необязателен и в будущем получает краткий structured
-summary, не огромный raw XML diff.
+Реализован deterministic generator для `eska save` без `-m`:
+
+- project-scoped file diff и T21 semantic events формируют локализованный
+  Conventional Commit draft; один верхний тип метаданных становится scope,
+  semantic events и оставшиеся file paths входят в body;
+- нераспознанный или временно некорректный Designer XML деградирует только до
+  точного file-level draft, не создавая недостоверные semantic events;
+- Fluent bidi-isolation удаляется из сохраняемого текста, после чего Git получает
+  draft через `--edit --message` и открывает настроенный editor;
+- editor, hooks, project-only commit и byte-for-byte rollback исходного index
+  сохраняют гарантии T15. `save -m` полностью обходит generator и editor;
+- `--auto` и AI refinement не входят в T22.
