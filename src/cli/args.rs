@@ -115,7 +115,9 @@ mod tests {
                 .collect();
             assert_eq!(
                 names,
-                ["clone", "new", "init", "diff", "save", "start", "status"]
+                [
+                    "clone", "new", "init", "diff", "history", "save", "start", "status"
+                ]
             );
             command.debug_assert();
         }

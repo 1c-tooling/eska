@@ -18,6 +18,7 @@ src/
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
 │   │   ├── diff.rs              # eska diff: human/raw/JSON presentation
+│   │   ├── history.rs           # eska history: human/JSON presentation
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
 │   │   └── validate.rs          # проверка при запуске без подкоманды
@@ -40,6 +41,7 @@ src/
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
 │   ├── diff.rs                  # file-level изменения внутри корня проекта
+│   ├── history.rs               # локальная commit history и task attribution
 │   ├── metadata.rs              # human-проекция путей и XML-дочерних объектов
 │   ├── clone.rs                 # план clone, владение destination и validation
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
@@ -67,8 +69,8 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{diff,init,new,save,start,status,localization}.rs
-├── project/{discovery,save,start,templates,workflow}.rs
+├── cli/{diff,history,init,new,save,start,status,localization}.rs
+├── project/{discovery,history,save,start,templates,workflow}.rs
 ├── vcs/{diff,network,repository,status,support}.rs # Git-сценарии и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
@@ -87,6 +89,7 @@ tests/
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
+| Изменить вывод или связь commit с task в `history` | [`src/cli/commands/history.rs`](../src/cli/commands/history.rs), затем [`src/project/history.rs`](../src/project/history.rs) |
 | Изменить запуск задачи или его ошибки | [`src/cli/commands/start.rs`](../src/cli/commands/start.rs), затем [`src/project/start.rs`](../src/project/start.rs) |
 | Подключить новую явно запрошенную команду | [`src/cli/commands/mod.rs`](../src/cli/commands/mod.rs) |
 | Изменить общий `--help`, `--lang`, `--project-dir` | [`src/cli/args.rs`](../src/cli/args.rs) |
@@ -143,6 +146,10 @@ tests/
   состоянию, оформляет TTY-заголовки и маркеры, отдельно формирует raw,
   workspace JSON версии 1 и revision JSON версии 2. Полная object model, mapping
   всех путей объекта и semantic-анализ BSL/форм остаются задачами T19–T21.
+- `project/history.rs` получает ограниченную историю HEAD и связывает commit с
+  задачей только при однозначной достижимости из одной локальной task-ветки вне
+  base. `cli/commands/history.rs` локализует human-вывод и формирует стабильный
+  JSON версии 1, сохраняя произвольные Git-байты через явную кодировку.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую

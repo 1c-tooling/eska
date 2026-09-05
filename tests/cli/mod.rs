@@ -1,5 +1,6 @@
 mod clone;
 mod diff;
+mod history;
 mod init;
 mod localization;
 mod new;
