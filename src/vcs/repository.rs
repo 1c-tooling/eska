@@ -53,7 +53,16 @@ pub struct Reference {
 pub struct Commit {
     pub id: ObjectId,
     pub parents: Vec<ObjectId>,
+    pub author: CommitAuthor,
+    pub authored_at: gix::date::Time,
+    pub subject: BString,
     pub message: BString,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommitAuthor {
+    pub name: BString,
+    pub email: BString,
 }
 
 /// A configured fetch remote with a display-safe URL.
@@ -285,9 +294,8 @@ impl Repository {
         }))
     }
 
-    /// Read at most `limit` commits reachable from HEAD in breadth-first parent order.
+    /// Read at most `limit` commits reachable from HEAD, newest commit time first.
     /// Unborn HEAD yields an empty history. Shallow boundaries are respected by `gix`.
-    /// This is not a chronological or topological `git log` ordering.
     ///
     /// # Errors
     /// Returns a HEAD error or `Operation::History` for unreadable commit graphs/objects.
@@ -301,6 +309,10 @@ impl Repository {
         let walk = self
             .inner
             .rev_walk([id])
+            .sorting(gix::revision::walk::Sorting::ByCommitTime(
+                gix::traverse::commit::simple::CommitTimeOrder::NewestFirst,
+            ))
+            .use_commit_graph(false)
             .all()
             .map_err(|source| Error::operation(Operation::History, source))?;
         walk.take(limit)
@@ -313,9 +325,21 @@ impl Repository {
                 let decoded = commit
                     .decode()
                     .map_err(|source| Error::operation(Operation::History, source))?;
+                let author = decoded
+                    .author()
+                    .map_err(|source| Error::operation(Operation::History, source))?;
+                let authored_at = author
+                    .time()
+                    .map_err(|source| Error::operation(Operation::History, source))?;
                 Ok(Commit {
                     id: info.id,
                     parents: info.parent_ids.iter().copied().collect(),
+                    author: CommitAuthor {
+                        name: author.name.to_owned(),
+                        email: author.email.to_owned(),
+                    },
+                    authored_at,
+                    subject: decoded.message().summary().into_owned(),
                     message: decoded.message.to_owned(),
                 })
             })
