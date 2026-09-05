@@ -8,6 +8,7 @@ use super::localization::Localizer;
 
 mod clone;
 mod diff;
+mod finish;
 mod history;
 mod init;
 mod new;
@@ -27,6 +28,8 @@ pub(super) enum Commands {
     Init(init::InitArgs),
     #[command(disable_help_flag = true)]
     Diff(diff::DiffArgs),
+    #[command(disable_help_flag = true)]
+    Finish(finish::FinishArgs),
     #[command(disable_help_flag = true)]
     History(history::HistoryArgs),
     #[command(disable_help_flag = true)]
@@ -49,6 +52,7 @@ pub(super) fn run(
         Some(Commands::New(args)) => args.run(project_dir, localizer),
         Some(Commands::Init(args)) => args.run(project_dir, localizer),
         Some(Commands::Diff(args)) => args.run(project_dir, localizer),
+        Some(Commands::Finish(_)) => finish::FinishArgs::run(project_dir, localizer),
         Some(Commands::History(args)) => args.run(project_dir, localizer),
         Some(Commands::Save(args)) => args.run(project_dir, localizer),
         Some(Commands::Start(args)) => args.run(project_dir, localizer),
@@ -64,6 +68,7 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         .mut_subcommand("new", |command| new::localize(command, localizer))
         .mut_subcommand("init", |command| init::localize(command, localizer))
         .mut_subcommand("diff", |command| diff::localize(command, localizer))
+        .mut_subcommand("finish", |command| finish::localize(command, localizer))
         .mut_subcommand("history", |command| history::localize(command, localizer))
         .mut_subcommand("save", |command| save::localize(command, localizer))
         .mut_subcommand("start", |command| start::localize(command, localizer))

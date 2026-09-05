@@ -136,6 +136,7 @@ pub enum Operation {
     Ancestry,
     Worktrees,
     UpdateReference,
+    DeleteReference,
 }
 
 #[derive(Debug)]
@@ -436,6 +437,41 @@ impl Repository {
         reference
             .set_target_id(target, "eska: fast-forward base")
             .map_err(|source| Error::operation(Operation::UpdateReference, source))
+    }
+
+    /// Delete an inactive direct reference with compare-and-swap protection.
+    ///
+    /// The update is rejected if the reference is checked out by any main or linked worktree,
+    /// does not point to `expected`, or changes before the transaction is committed.
+    ///
+    /// # Errors
+    /// Returns a worktree inspection or reference transaction error.
+    pub fn delete_inactive_reference(&self, name: &str, expected: ObjectId) -> Result<(), Error> {
+        if self.reference_is_checked_out(name)? {
+            return Err(Error::operation(
+                Operation::DeleteReference,
+                format!("reference {name} is checked out in a worktree"),
+            ));
+        }
+        let reference = self
+            .inner
+            .find_reference(name)
+            .map_err(|source| Error::operation(Operation::DeleteReference, source))?;
+        if reference.id() != expected {
+            return Err(Error::operation(
+                Operation::DeleteReference,
+                format!("reference {name} changed before it could be deleted"),
+            ));
+        }
+        reference
+            .delete()
+            .map_err(|source| Error::operation(Operation::DeleteReference, source))
+    }
+
+    /// Return whether Git reports a merge, rebase or another sequenced operation in progress.
+    #[must_use]
+    pub fn has_in_progress_operation(&self) -> bool {
+        self.inner.state().is_some()
     }
 
     /// Check the main and all linked worktrees for a branch reference.

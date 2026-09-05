@@ -2,7 +2,7 @@ use std::fs;
 
 use eska::vcs::repository::{Divergence, Error, Head, OpenError, ReferenceTarget, Repository};
 
-use super::support::{commit, git, repository};
+use super::support::{commit, git, git_output, repository};
 use crate::support::TestDir;
 
 #[test]
@@ -196,6 +196,37 @@ fn ancestry_and_inactive_reference_update_use_the_commit_graph() {
     assert_eq!(
         git(&dir.0, &["rev-parse", "refs/heads/base-copy"]).trim_ascii(),
         tip.to_string().as_bytes()
+    );
+}
+
+#[test]
+/// Delete only an inactive reference that still points to the expected commit.
+fn inactive_reference_deletion_is_compare_and_swap_protected() {
+    let dir = repository();
+    let base = commit(&dir.0, "base");
+    let tip = commit(&dir.0, "tip");
+    git(&dir.0, &["branch", "task", &base.to_string()]);
+    let repo = Repository::discover(&dir.0).unwrap();
+
+    assert!(
+        repo.delete_inactive_reference("refs/heads/task", tip)
+            .is_err()
+    );
+    assert_eq!(
+        git(&dir.0, &["rev-parse", "refs/heads/task"]).trim_ascii(),
+        base.to_string().as_bytes()
+    );
+
+    repo.delete_inactive_reference("refs/heads/task", base)
+        .unwrap();
+    assert_eq!(
+        git_output(
+            &dir.0,
+            &["show-ref", "--verify", "--quiet", "refs/heads/task"]
+        )
+        .status
+        .code(),
+        Some(1)
     );
 }
 

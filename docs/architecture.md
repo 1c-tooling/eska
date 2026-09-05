@@ -18,6 +18,7 @@ src/
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
 │   │   ├── diff.rs              # eska diff: human/raw/JSON presentation
+│   │   ├── finish.rs            # eska finish: localized result и ошибки
 │   │   ├── history.rs           # eska history: human/JSON presentation
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
@@ -41,6 +42,7 @@ src/
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
 │   ├── diff.rs                  # file-level изменения внутри корня проекта
+│   ├── finish.rs                # preflight, policy refs и локальное завершение задачи
 │   ├── history.rs               # локальная commit history и task attribution
 │   ├── metadata.rs              # human-проекция путей и XML-дочерних объектов
 │   ├── object_model.rs          # логические Designer XML objects и двусторонний path index
@@ -71,8 +73,8 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{diff,history,init,new,save,start,status,localization}.rs
-├── project/{discovery,history,save,start,templates,workflow}.rs
+├── cli/{diff,finish,history,init,new,save,start,status,localization}.rs
+├── project/{discovery,finish,history,save,start,templates,workflow}.rs
 ├── vcs/{diff,network,repository,status,support}.rs # Git-сценарии и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
@@ -169,6 +171,12 @@ tests/
   task-ветку. System Git обновляет активную base и переключает worktree, потому
   что эти операции должны согласованно изменить HEAD, index и файлы.
   `cli/commands/start.rs` отвечает только за аргументы и RU/EN presentation.
+- `project/finish.rs` определяет задачу по активной ветке, отклоняет dirty и
+  незавершённые Git-операции, получает remote refs, fast-forward обновляет base и
+  проверяет publication/integration requirement. После системного переключения
+  worktree на base локальная task ref удаляется через `gix` с compare-and-swap;
+  publish, merge и удаление remote branch не выполняются. `cli/commands/finish.rs`
+  отвечает за RU/EN presentation.
 - `project/switch.rs` через `gix` проверяет workflow target, локальную ref и
   чистоту всего worktree, не выполняя fetch и не создавая веток. Изолированный
   system Git активирует существующую ветку с `--no-guess`, чтобы согласованно

@@ -1,4 +1,5 @@
 mod discovery;
+mod finish;
 mod history;
 mod object_model;
 mod save;
