@@ -157,12 +157,12 @@ fn render_entry(
     let author = format!("{} <{email}>", entry.commit.author.name.to_str_lossy());
     let date = format_human_date(entry.commit.authored_at, localizer);
     let fields = [
-        (localizer.text("history-author"), author),
-        (localizer.text("history-date"), date),
         (
             localizer.text("history-task"),
             entry.task.as_deref().unwrap_or("—").to_owned(),
         ),
+        (localizer.text("history-author"), author),
+        (localizer.text("history-date"), date),
     ];
     let width = fields
         .iter()

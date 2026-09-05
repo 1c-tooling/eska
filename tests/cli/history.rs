@@ -78,9 +78,9 @@ fn human_output_and_help_are_localized() {
             "ru",
             [
                 "Показать локальную историю",
+                "Задача:",
                 "Автор:",
                 "Дата:",
-                "Задача:",
                 "1 января 2026, 00:00:00 UTC+00:00",
             ],
         ),
@@ -88,9 +88,9 @@ fn human_output_and_help_are_localized() {
             "en",
             [
                 "Show local commit history",
+                "Task:",
                 "Author:",
                 "Date:",
-                "Task:",
                 "January 1, 2026, 00:00:00 UTC+00:00",
             ],
         ),
@@ -111,6 +111,13 @@ fn human_output_and_help_are_localized() {
         for fragment in &expected[1..] {
             assert!(text.contains(fragment), "missing `{fragment}` in:\n{text}");
         }
+        let task = text.find(expected[1]).unwrap();
+        let author = text.find(expected[2]).unwrap();
+        let date = text.find(expected[3]).unwrap();
+        assert!(
+            task < author && author < date,
+            "unexpected field order:\n{text}"
+        );
     }
 }
 
