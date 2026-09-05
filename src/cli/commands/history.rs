@@ -11,7 +11,10 @@ use gix::bstr::{BStr, ByteSlice};
 use serde::Serialize;
 
 use crate::{
-    cli::{diagnostics, localization::Localizer},
+    cli::{
+        diagnostics,
+        localization::{LocalizationValue, Localizer},
+    },
     project::{
         discovery,
         history::{self, HistoryEntry, HistoryError},
@@ -136,10 +139,7 @@ fn render_entry(entry: &HistoryEntry, localizer: &Localizer, styled: bool) -> St
         entry.commit.author.name.to_str_lossy(),
         entry.commit.author.email.to_str_lossy()
     );
-    let date = entry
-        .commit
-        .authored_at
-        .format_or_unix(gix::date::time::format::ISO8601_STRICT);
+    let date = format_human_date(entry.commit.authored_at, localizer);
     let fields = [
         (localizer.text("history-author"), author),
         (localizer.text("history-date"), date),
@@ -159,6 +159,37 @@ fn render_entry(entry: &HistoryEntry, localizer: &Localizer, styled: bool) -> St
         format!("  {label:<width$}{value}")
     }));
     lines.join("\n")
+}
+
+/// Format a Git timestamp in localized long-date order while retaining its UTC offset.
+fn format_human_date(time: gix::date::Time, localizer: &Localizer) -> String {
+    let value = time.format_or_unix(gix::date::time::CustomFormat::new("%d|%m|%Y|%H:%M:%S|%:z"));
+    let parts: Vec<_> = value.split('|').collect();
+    let [day, month, year, clock, offset] = parts.as_slice() else {
+        return value;
+    };
+    let Ok(day_number) = day.parse::<u8>() else {
+        return value;
+    };
+    let Ok(month_number) = month.parse::<u8>() else {
+        return value;
+    };
+    if !(1..=12).contains(&month_number) {
+        return value;
+    }
+
+    let day = day_number.to_string();
+    let month = localizer.text(&format!("history-month-{month_number}"));
+    localizer.format(
+        "history-date-format",
+        &[
+            ("day", LocalizationValue::Text(&day)),
+            ("month", LocalizationValue::Text(&month)),
+            ("year", LocalizationValue::Text(year)),
+            ("time", LocalizationValue::Text(clock)),
+            ("offset", LocalizationValue::Text(offset)),
+        ],
+    )
 }
 
 /// Enable decoration only for an interactive terminal that permits color.
@@ -263,8 +294,9 @@ mod tests {
         bstr::{BStr, BString},
     };
 
-    use super::{HistoryDocument, encoded_text, short_id};
+    use super::{HistoryDocument, encoded_text, format_human_date, short_id};
     use crate::{
+        cli::localization::{Locale, Localizer},
         project::history::HistoryEntry,
         vcs::repository::{Commit, CommitAuthor},
     };
@@ -321,5 +353,24 @@ mod tests {
             ("%72%61%77%2D%FF".to_owned(), "percent")
         );
         assert_eq!(short_id("1234567890abcdef"), "1234567890ab");
+    }
+
+    #[test]
+    fn human_date_uses_localized_long_order_and_keeps_the_offset() {
+        let time = gix::date::Time {
+            seconds: 1_787_647_089,
+            offset: 10_800,
+        };
+        let russian = Localizer::try_new(Locale::RuRu).unwrap();
+        let english = Localizer::try_new(Locale::EnUs).unwrap();
+
+        assert_eq!(
+            format_human_date(time, &russian).replace(['\u{2068}', '\u{2069}'], ""),
+            "25 августа 2026, 11:38:09 UTC+03:00"
+        );
+        assert_eq!(
+            format_human_date(time, &english).replace(['\u{2068}', '\u{2069}'], ""),
+            "August 25, 2026, 11:38:09 UTC+03:00"
+        );
     }
 }

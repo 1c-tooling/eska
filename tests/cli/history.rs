@@ -76,11 +76,23 @@ fn human_output_and_help_are_localized() {
     for (locale, expected) in [
         (
             "ru",
-            ["Показать локальную историю", "Автор:", "Дата:", "Задача:"],
+            [
+                "Показать локальную историю",
+                "Автор:",
+                "Дата:",
+                "Задача:",
+                "1 января 2026, 00:00:00 UTC+00:00",
+            ],
         ),
         (
             "en",
-            ["Show local commit history", "Author:", "Date:", "Task:"],
+            [
+                "Show local commit history",
+                "Author:",
+                "Date:",
+                "Task:",
+                "January 1, 2026, 00:00:00 UTC+00:00",
+            ],
         ),
     ] {
         let help = eska(&fixture.0, locale, &["history", "--help"]);
@@ -90,7 +102,9 @@ fn human_output_and_help_are_localized() {
         let output = eska(&fixture.0, locale, &["history", "-n", "1"]);
         assert!(output.status.success(), "{output:?}");
         assert!(output.stderr.is_empty());
-        let text = String::from_utf8(output.stdout).expect("UTF-8 human output");
+        let text = String::from_utf8(output.stdout)
+            .expect("UTF-8 human output")
+            .replace(['\u{2068}', '\u{2069}'], "");
         assert!(text.contains("task.txt"), "{text}");
         assert!(!text.contains("base.txt"), "{text}");
         for fragment in &expected[1..] {
