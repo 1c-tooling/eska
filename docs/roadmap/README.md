@@ -37,8 +37,8 @@
 - `DONE`: `T28` — сборка `.cf`, `.cfe`, `.epf`, `.erf` через
   настраиваемый `ibcmd`, глобальный machine config и одноразовый выбор
   установленной платформы;
-- `NEXT`: `T42` — отдельная спецификация patch-extension `.cfe`
-  из разницы Git-веток;
+- `DONE`: `T42` — спецификация и feasibility-прототип patch-extension `.cfe`
+  из разницы Git-веток; production CLI ещё не реализован;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
@@ -59,7 +59,13 @@ start -> status/diff -> save -> switch/return -> finish
 | Переключиться и позднее вернуться | `eska switch` — `DONE` |
 | Завершить задачу | `eska finish` — `DONE` |
 | Собрать полный нативный артефакт | `eska build` → `.cf/.cfe/.epf/.erf` — `DONE` |
-| Собрать patch-extension из delta | `.cfe` — `NEXT`, сначала спецификация и feasibility |
+| Собрать patch-extension из delta | Спецификация и прототип — `DONE`; production scope требует решений |
+
+T42 подтвердил узкий сценарий замены метода общего модуля на 8.3.27.2325.
+Перед реализацией команды нужно согласовать allowlist и проверку BSL/acceptance:
+одного `ibcmd` оказалось недостаточно. Подробности и ограничения —
+[в результате T42](t42-patch-extension.md). Новая production-задача пока не
+помечена `NEXT`: её контракт зависит от этих решений.
 
 `shelve` не блокирует MVP: первая версия `switch` работает только с чистой
 рабочей копией и предлагает сначала выполнить `save`.
@@ -128,7 +134,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T39 | DEFERRED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
 | T40 | DONE | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T41 | PLANNED | VS Code extension | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T42 | NEXT | Patch-extension `.cfe` из разницы веток | [09-build-and-runtime.md](09-build-and-runtime.md) |
+| T42 | DONE | Спецификация и прототип patch-extension `.cfe` из разницы веток | [t42-patch-extension.md](t42-patch-extension.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в
