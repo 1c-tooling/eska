@@ -118,6 +118,23 @@ pub enum ProcessStream {
 }
 
 impl Ibcmd {
+    /// Run the matching Designer executable through the same interruptible runner.
+    pub(crate) fn run_designer(
+        &self,
+        arguments: Vec<OsString>,
+        pid_file: &Path,
+    ) -> Result<Output, RunError> {
+        let mut designer = self.clone();
+        let path = match &mut designer.runner {
+            Runner::Host(path) | Runner::Distrobox { path, .. } => path,
+        };
+        path.set_file_name(if path.extension() == Some(OsStr::new("exe")) {
+            "1cv8.exe"
+        } else {
+            "1cv8"
+        });
+        designer.run_interruptible(arguments, pid_file, &mut |_, _| {})
+    }
     /// Discover `ibcmd` and require the exact project platform version.
     ///
     /// Explicit CLI values take precedence over environment values. Distrobox is

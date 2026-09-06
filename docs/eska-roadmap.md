@@ -1905,6 +1905,7 @@ Designer XML model/semantic diff/commit draft
 2. T40 — eska finish: локальная проверка policy и cleanup task branch
 3. T28 — eska build: настраиваемая кроссплатформенная сборка .cf через ibcmd
 4. T42 — спецификация и feasibility patch-extension .cfe из разницы веток
+5. T43 — eska patch для ограниченного набора методов общих модулей
 
 После практической проверки MVP вернуться к отложенной очереди:
 T23 test backend, T24 affected, T25 versioning, T26 fmt, T27 check,
@@ -1912,11 +1913,10 @@ T29 doctor, T30 environments, T31 apply/run, T32 release, T33 CI,
 T35 shelves, T36 restore, T37 sync, T38 publish, T39 locking и T41 VS Code.
 ```
 
-Пункты T34, T40, T28 и исследовательская часть T42 завершены. T42 доказал
-узкий сценарий на 8.3.27.2325, но не добавил команду генерации патчей.
-Перед её реализацией нужно согласовать поддерживаемые изменения и обязательную
-проверку BSL/acceptance; [результаты T42](roadmap/t42-patch-extension.md)
-фиксируют ограничения `ibcmd` и safe mode.
+Пункты T34, T40, T28, T42 и T43 завершены. `eska patch` реализует доказанный
+узкий сценарий на 8.3.27.2325 и отклоняет неподдерживаемую delta до сборки.
+[Результаты T42/T43](roadmap/t42-patch-extension.md) фиксируют allowlist,
+обязательные проверки и ограничения safe mode.
 
 Каждый пункт лучше реализовывать отдельной законченной задачей или небольшим связанным набором задач.
 

@@ -345,6 +345,12 @@ pub struct TaskPlan {
 }
 
 impl WorkflowPolicy {
+    /// Return the local integration target used for committed patch comparisons.
+    #[must_use]
+    pub fn integration_target(&self) -> &str {
+        &self.integration_target
+    }
+
     /// Return the branch from which task work is based.
     #[must_use]
     pub fn base_branch(&self) -> &str {

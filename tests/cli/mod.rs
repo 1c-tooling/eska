@@ -7,6 +7,7 @@ mod history;
 mod init;
 mod localization;
 mod new;
+mod patch;
 mod platform;
 mod save;
 mod start;

@@ -25,6 +25,37 @@ pub struct TreeChange {
 }
 
 impl Repository {
+    /// List committed entries without checking them out or invoking filters.
+    pub(crate) fn snapshot_entries(
+        &self,
+        commit: ResolvedCommit,
+    ) -> Result<Vec<gix::traverse::tree::recorder::Entry>, Error> {
+        self.inner
+            .find_commit(commit.id)
+            .map_err(|source| Error::operation(Operation::TreeDiff, source))?
+            .tree()
+            .map_err(|source| Error::operation(Operation::TreeDiff, source))?
+            .traverse()
+            .breadthfirst
+            .files()
+            .map_err(|source| Error::operation(Operation::TreeDiff, source))
+    }
+
+    /// Return every best common ancestor so patch planning can reject ambiguity.
+    pub(crate) fn merge_bases(
+        &self,
+        left: ResolvedCommit,
+        right: ResolvedCommit,
+    ) -> Result<Vec<ResolvedCommit>, Error> {
+        self.inner
+            .merge_bases_many(left.id, &[right.id])
+            .map(|ids| {
+                ids.into_iter()
+                    .map(|id| ResolvedCommit { id: id.detach() })
+                    .collect()
+            })
+            .map_err(|source| Error::operation(Operation::MergeBase, source))
+    }
     /// Resolve a branch, tag, commit ID or revision expression and peel it to a commit.
     ///
     /// # Errors
