@@ -95,13 +95,15 @@ impl BuildPlan {
         Ok(Self {
             project_root: project.root().to_owned(),
             artifact_type,
-            platform_version: platform_version.unwrap_or_else(|| {
-                project
-                    .configuration()
-                    .build_settings()
-                    .platform_version()
-                    .clone()
-            }),
+            platform_version: platform_version
+                .or_else(|| {
+                    project
+                        .configuration()
+                        .build_settings()
+                        .platform_version()
+                        .cloned()
+                })
+                .ok_or(PlanError::PlatformVersionMissing)?,
             source: project.source().to_owned(),
             artifacts_directory,
             output,
@@ -148,6 +150,7 @@ impl BuildPlan {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PlanError {
     ProjectNameMissing,
+    PlatformVersionMissing,
     InvalidOutput {
         path: PathBuf,
     },
@@ -266,6 +269,7 @@ mod tests {
                 .configuration()
                 .build_settings()
                 .platform_version()
+                .expect("configured version")
                 .as_str(),
             "8.3.27.2325"
         );

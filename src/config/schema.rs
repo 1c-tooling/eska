@@ -75,8 +75,7 @@ pub(super) struct SerializedDocument<'a> {
 
 #[derive(Serialize)]
 pub(super) struct SerializedBuild<'a> {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(super) platform_version: Option<&'a str>,
+    pub(super) platform_version: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) artifacts_directory: Option<&'a Path>,
 }

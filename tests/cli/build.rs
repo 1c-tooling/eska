@@ -46,6 +46,16 @@ fn project(fixture: &TestDir, project_type: &str, name: &str) -> PathBuf {
         .expect("create project");
     assert!(output.status.success(), "{output:?}");
     let root = fixture.0.join(name);
+    let config_path = root.join("eska.toml");
+    let config = fs::read_to_string(&config_path).expect("read project config");
+    fs::write(
+        &config_path,
+        config.replace(
+            "platform_version = \"\"",
+            "platform_version = \"8.3.27.2325\"",
+        ),
+    )
+    .expect("configure build platform");
     if let Some(tag) = match project_type {
         "processing" => Some("ExternalDataProcessor"),
         "report" => Some("ExternalReport"),
@@ -145,6 +155,53 @@ fn platform_version_override_is_ephemeral() {
         fs::read_to_string(root.join("eska.toml")).expect("project config after build"),
         config_before
     );
+}
+
+#[test]
+/// Require an explicit project version before a normal build starts.
+fn unconfigured_platform_version_blocks_only_normal_build() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "configuration", "Unconfigured");
+    let config_path = root.join("eska.toml");
+    let config = fs::read_to_string(&config_path).expect("project config");
+    fs::write(
+        &config_path,
+        config.replace(
+            "platform_version = \"8.3.27.2325\"",
+            "platform_version = \"\"",
+        ),
+    )
+    .expect("clear platform version");
+
+    for (locale, message) in [
+        ("ru", "Заполните build.platform_version"),
+        ("en", "Fill in build.platform_version"),
+    ] {
+        let output = eska(&root, locale, &ibcmd, &["build"], false);
+        assert!(!output.status.success(), "{output:?}");
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(message),
+            "{output:?}"
+        );
+        assert!(!root.join("build").exists());
+    }
+
+    let override_build = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("ESKA_CONFIG_DIR", fixture.0.join("settings"))
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--platform-version",
+            "8.3.27.2325",
+            "--ibcmd",
+        ])
+        .arg(&ibcmd)
+        .output()
+        .expect("build with one-run version");
+    assert!(override_build.status.success(), "{override_build:?}");
 }
 
 #[test]
@@ -291,11 +348,7 @@ fn exact_platform_version_is_required() {
     let root = project(&fixture, "configuration", "Versioned");
     let config = root.join("eska.toml");
     let value = fs::read_to_string(&config).expect("config");
-    fs::write(
-        &config,
-        format!("{value}\n[build]\nplatform_version = \"8.3.26.1540\"\n"),
-    )
-    .expect("configure version");
+    fs::write(&config, value.replace("8.3.27.2325", "8.3.26.1540")).expect("configure version");
 
     let output = eska(&root, "en", &ibcmd, &["build"], false);
     assert_eq!(output.status.code(), Some(1));

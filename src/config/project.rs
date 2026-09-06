@@ -86,19 +86,12 @@ impl ProjectConfig {
         validate_source_path(&document.project.source)?;
 
         let default_build = BuildSettings::default();
-        let build = document.build.map_or_else(
-            || Ok(default_build.clone()),
-            |build| {
-                BuildSettings::new(
-                    build
-                        .platform_version
-                        .as_deref()
-                        .unwrap_or_else(|| default_build.platform_version().as_str()),
-                    build
-                        .artifacts_directory
-                        .unwrap_or_else(|| default_build.artifacts_directory().to_owned()),
-                )
-            },
+        let build = document.build.unwrap_or_default();
+        let build = BuildSettings::new(
+            build.platform_version.as_deref().unwrap_or_default(),
+            build
+                .artifacts_directory
+                .unwrap_or_else(|| default_build.artifacts_directory().to_owned()),
         )?;
         let mut configuration =
             ProjectConfiguration::new(project_type, source_format).with_build_settings(build);
@@ -123,9 +116,10 @@ impl ProjectConfig {
             .then_some(source_format_name(self.configuration.source_format()));
         let default_build = BuildSettings::default();
         let build = self.configuration.build_settings();
-        let build = (build != &default_build).then(|| SerializedBuild {
-            platform_version: (build.platform_version() != default_build.platform_version())
-                .then(|| build.platform_version().as_str()),
+        let build = Some(SerializedBuild {
+            platform_version: build
+                .platform_version()
+                .map_or("", crate::project::build::PlatformVersion::as_str),
             artifacts_directory: (build.artifacts_directory()
                 != default_build.artifacts_directory())
             .then(|| build.artifacts_directory()),
@@ -263,7 +257,7 @@ mod tests {
             assert_eq!(
                 text,
                 format!(
-                    "[project]\ntype = \"report\"\n\n[vcs.workflow]\npreset = \"{}\"\n",
+                    "[project]\ntype = \"report\"\n\n[build]\nplatform_version = \"\"\n\n[vcs.workflow]\npreset = \"{}\"\n",
                     preset.as_str()
                 )
             );
@@ -287,18 +281,14 @@ mod tests {
     }
 
     #[test]
-    /// Preserve old configs while exposing deterministic build defaults.
-    fn build_defaults_keep_existing_configs_compact_and_compatible() {
+    /// Treat a missing legacy version as explicitly unconfigured on serialization.
+    fn missing_build_version_is_unconfigured_and_materialized() {
         let config = ProjectConfig::from_toml("[project]\ntype = 'configuration'\n")
             .expect("legacy config remains valid");
 
         assert_eq!(
-            config
-                .configuration()
-                .build_settings()
-                .platform_version()
-                .as_str(),
-            "8.3.27.2325"
+            config.configuration().build_settings().platform_version(),
+            None
         );
         assert_eq!(
             config
@@ -309,7 +299,7 @@ mod tests {
         );
         assert_eq!(
             config.to_toml().expect("serialize defaults"),
-            "[project]\ntype = \"configuration\"\n"
+            "[project]\ntype = \"configuration\"\n\n[build]\nplatform_version = \"\"\n"
         );
     }
 
@@ -539,7 +529,10 @@ mod tests {
         .expect("valid config");
 
         let serialized = config.to_toml().expect("serializable config");
-        assert_eq!(serialized, "[project]\ntype = \"processing\"\n");
+        assert_eq!(
+            serialized,
+            "[project]\ntype = \"processing\"\n\n[build]\nplatform_version = \"\"\n"
+        );
         assert_eq!(
             ProjectConfig::from_toml(&serialized).expect("round-trip config"),
             config
@@ -554,7 +547,7 @@ mod tests {
 
         assert_eq!(
             config.to_toml().expect("serializable config"),
-            "[project]\ntype = \"report\"\nsource = \"designer\"\n"
+            "[project]\ntype = \"report\"\nsource = \"designer\"\n\n[build]\nplatform_version = \"\"\n"
         );
     }
 }

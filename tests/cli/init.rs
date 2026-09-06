@@ -97,6 +97,11 @@ fn detects_all_types_locations_and_locales_without_touching_sources() {
                 } else {
                     "Project initialized"
                 }));
+                assert!(
+                    fs::read_to_string(root.join("eska.toml"))
+                        .expect("project config text")
+                        .contains("platform_version = \"\"")
+                );
                 let config = ProjectConfig::load(&root.join("eska.toml")).expect("config");
                 assert_eq!(
                     fs::read(root.join(".gitattributes")).expect("attributes"),

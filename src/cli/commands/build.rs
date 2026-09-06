@@ -144,20 +144,23 @@ impl BuildArgs {
         let interactive = human && io::stderr().is_terminal();
         let styled = diagnostic_styling_enabled();
         let configured_version = project.configuration().build_settings().platform_version();
-        if human && plan.platform_version() != configured_version {
+        if human && configured_version != Some(plan.platform_version()) {
+            let key = if configured_version.is_some() {
+                "build-platform-override"
+            } else {
+                "build-platform-override-unconfigured"
+            };
+            let configured = configured_version.map_or("", PlatformVersion::as_str);
             eprintln!(
                 "{}",
                 localizer.format(
-                    "build-platform-override",
+                    key,
                     &[
                         (
                             "version",
                             LocalizationValue::Text(plan.platform_version().as_str())
                         ),
-                        (
-                            "configured",
-                            LocalizationValue::Text(configured_version.as_str())
-                        ),
+                        ("configured", LocalizationValue::Text(configured)),
                     ],
                 )
             );
@@ -675,6 +678,9 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
 fn present_plan_error(error: &PlanError, localizer: &Localizer) -> String {
     let (key, path) = match error {
         PlanError::ProjectNameMissing => return localizer.text("build-project-name-missing"),
+        PlanError::PlatformVersionMissing => {
+            return localizer.text("build-platform-version-missing");
+        }
         PlanError::InvalidOutput { path } => ("build-output-invalid", path),
         PlanError::UnexpectedExtension { path, expected } => {
             return localizer.format(
