@@ -27,19 +27,20 @@ use serde::Serialize;
 use crate::{
     cli::{
         diagnostics,
+        interactive::{PromptError, Selector},
         localization::{LocalizationValue, Localizer},
     },
     project::{
         Project,
         build::{
-            self, BuildError, BuildPlan, BuildStage, Ibcmd, PlanError, RunError, ToolError,
-            ToolOptions, ToolSource,
+            self, BuildError, BuildPlan, BuildSettingsError, BuildStage, Ibcmd, PlanError,
+            PlatformVersion, RunError, ToolError, ToolOptions, ToolSource,
         },
         discovery, metadata,
     },
 };
 
-use super::diff;
+use super::{diff, platform};
 
 #[derive(Debug, Args)]
 pub(in crate::cli) struct BuildArgs {
@@ -54,6 +55,12 @@ pub(in crate::cli) struct BuildArgs {
 
     #[arg(long)]
     distrobox: Option<String>,
+
+    #[arg(long, conflicts_with = "select_platform")]
+    platform_version: Option<String>,
+
+    #[arg(long, conflicts_with = "platform_version")]
+    select_platform: bool,
 
     #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
     format: OutputFormat,
@@ -72,26 +79,61 @@ enum OutputFormat {
 impl BuildArgs {
     /// Discover the project and exact ibcmd version, then publish one native artifact.
     pub(super) fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
+        let (project, plan, options) = match self.prepare(project_dir, localizer) {
+            Ok(prepared) => prepared,
+            Err(code) => return code,
+        };
+        self.execute(&project, &plan, &options, localizer)
+    }
+
+    /// Resolve the project, global runner settings and one-run build plan.
+    fn prepare(
+        &self,
+        project_dir: &Path,
+        localizer: &Localizer,
+    ) -> Result<(Project, BuildPlan, ToolOptions), ExitCode> {
         let project = match discovery::discover(project_dir) {
             Ok(project) => project,
             Err(error) => {
                 eprintln!("{}", diagnostics::present_project_error(&error, localizer));
-                return ExitCode::FAILURE;
+                return Err(ExitCode::FAILURE);
             }
         };
-        let plan = match BuildPlan::new(&project, self.output.as_deref()) {
-            Ok(plan) => plan,
-            Err(error) => {
-                eprintln!("{}", present_plan_error(&error, localizer));
-                return ExitCode::FAILURE;
-            }
-        };
-        let options = ToolOptions::new(
+        let options = match platform::tool_options(
             self.ibcmd.clone(),
             self.platform_arch.clone(),
             self.distrobox.clone(),
-        );
-        let ibcmd = match Ibcmd::discover(plan.platform_version(), &options) {
+        ) {
+            Ok(options) => options,
+            Err(error) => {
+                eprintln!("{}", super::config::present_error(&error, localizer));
+                return Err(ExitCode::FAILURE);
+            }
+        };
+        let platform_override = self.platform_override(&options, localizer)?;
+        let plan = match BuildPlan::with_platform_version(
+            &project,
+            self.output.as_deref(),
+            platform_override,
+        ) {
+            Ok(plan) => plan,
+            Err(error) => {
+                eprintln!("{}", present_plan_error(&error, localizer));
+                return Err(ExitCode::FAILURE);
+            }
+        };
+        Ok((project, plan, options))
+    }
+
+    /// Execute and present one fully resolved build plan.
+    fn execute(
+        &self,
+        project: &Project,
+        plan: &BuildPlan,
+        options: &ToolOptions,
+        localizer: &Localizer,
+    ) -> ExitCode {
+        let ibcmd = match Ibcmd::discover(plan.platform_version(), options) {
             Ok(ibcmd) => ibcmd,
             Err(error) => {
                 eprintln!("{}", present_tool_error(&error, localizer));
@@ -101,6 +143,25 @@ impl BuildArgs {
         let human = matches!(self.format, OutputFormat::Human);
         let interactive = human && io::stderr().is_terminal();
         let styled = diagnostic_styling_enabled();
+        let configured_version = project.configuration().build_settings().platform_version();
+        if human && plan.platform_version() != configured_version {
+            eprintln!(
+                "{}",
+                localizer.format(
+                    "build-platform-override",
+                    &[
+                        (
+                            "version",
+                            LocalizationValue::Text(plan.platform_version().as_str())
+                        ),
+                        (
+                            "configured",
+                            LocalizationValue::Text(configured_version.as_str())
+                        ),
+                    ],
+                )
+            );
+        }
         if human
             && let Err(error) = write_build_started(ibcmd.version().as_str(), localizer, styled)
         {
@@ -116,10 +177,10 @@ impl BuildArgs {
         let mut progress =
             interactive.then(|| ProgressLine::start(localizer.text("build-progress"), styled));
         let mut output_error = None;
-        let result = build::execute_streaming(&plan, &ibcmd, |_, _, line| {
+        let result = build::execute_streaming(plan, &ibcmd, |_, _, line| {
             if output_error.is_none()
                 && let Err(error) =
-                    write_diagnostic(line, &project, localizer, styled, progress.as_ref())
+                    write_diagnostic(line, project, localizer, styled, progress.as_ref())
             {
                 output_error = Some(error);
             }
@@ -149,7 +210,68 @@ impl BuildArgs {
             return ExitCode::FAILURE;
         }
 
-        write_build_result(self.format, &plan, &result, localizer)
+        write_build_result(self.format, plan, &result, localizer)
+    }
+
+    /// Resolve a one-run explicit or interactive platform override.
+    fn platform_override(
+        &self,
+        options: &ToolOptions,
+        localizer: &Localizer,
+    ) -> Result<Option<PlatformVersion>, ExitCode> {
+        if let Some(value) = &self.platform_version {
+            return PlatformVersion::parse(value).map(Some).map_err(|error| {
+                eprintln!("{}", present_platform_version_error(&error, localizer));
+                ExitCode::from(2)
+            });
+        }
+        if !self.select_platform {
+            return Ok(None);
+        }
+        if matches!(self.format, OutputFormat::Json)
+            || !io::stdin().is_terminal()
+            || !io::stderr().is_terminal()
+        {
+            eprintln!("{}", localizer.text("build-platform-select-terminal"));
+            return Err(ExitCode::from(2));
+        }
+        let installed = Ibcmd::installed(options).map_err(|error| {
+            eprintln!("{}", present_tool_error(&error, localizer));
+            ExitCode::FAILURE
+        })?;
+        if installed.is_empty() {
+            eprintln!("{}", localizer.text("platform-none"));
+            return Err(ExitCode::FAILURE);
+        }
+        let choices: Vec<_> = installed
+            .iter()
+            .map(|platform| {
+                let version = platform.version().as_str().to_owned();
+                (version.clone(), version)
+            })
+            .collect();
+        let selection = (|| {
+            let mut selector = Selector::start("build-platform-tui-title")?;
+            let value = selector.choose_values(localizer, "build-platform-menu", &choices)?;
+            selector.finish().map_err(|_| PromptError::Io)?;
+            Ok::<_, PromptError>(value)
+        })()
+        .map_err(|error| {
+            eprintln!(
+                "{}",
+                localizer.text(match error {
+                    PromptError::Cancelled => "build-platform-select-cancelled",
+                    PromptError::Io => "build-platform-select-error",
+                })
+            );
+            ExitCode::FAILURE
+        })?;
+        PlatformVersion::parse(&selection)
+            .map(Some)
+            .map_err(|error| {
+                eprintln!("{}", present_platform_version_error(&error, localizer));
+                ExitCode::FAILURE
+            })
     }
 }
 
@@ -535,6 +657,13 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
             arg.help(localizer.text("build-distrobox-help"))
                 .value_name(localizer.text("build-distrobox-value"))
         })
+        .mut_arg("platform_version", |arg| {
+            arg.help(localizer.text("build-platform-version-help"))
+                .value_name(localizer.text("build-platform-version-value"))
+        })
+        .mut_arg("select_platform", |arg| {
+            arg.help(localizer.text("build-select-platform-help"))
+        })
         .mut_arg("format", |arg| {
             arg.help(localizer.text("build-format-help"))
                 .value_name(localizer.text("build-format-value"))
@@ -564,7 +693,7 @@ fn present_plan_error(error: &PlanError, localizer: &Localizer) -> String {
 }
 
 /// Render discovery and exact-version failures with actionable machine-local settings.
-fn present_tool_error(error: &ToolError, localizer: &Localizer) -> String {
+pub(super) fn present_tool_error(error: &ToolError, localizer: &Localizer) -> String {
     match error {
         ToolError::InvalidArchitecture(value) => localizer.format(
             "build-arch-invalid",
@@ -577,6 +706,23 @@ fn present_tool_error(error: &ToolError, localizer: &Localizer) -> String {
         ToolError::InvalidExecutable(path) => localizer.format(
             "build-ibcmd-invalid",
             &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
+        ),
+        ToolError::DistroboxContainerRequired => {
+            localizer.text("build-distrobox-container-required")
+        }
+        ToolError::Scan { path, source } => localizer.format(
+            "platform-scan-error",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("reason", LocalizationValue::Text(&source.to_string())),
+            ],
+        ),
+        ToolError::ScanCommandFailed { container, stderr } => localizer.format(
+            "platform-scan-command-error",
+            &[
+                ("container", LocalizationValue::Text(container)),
+                ("reason", LocalizationValue::Text(stderr)),
+            ],
         ),
         ToolError::NotFound { expected, standard } => localizer.format(
             "build-ibcmd-missing",
@@ -612,6 +758,18 @@ fn present_tool_error(error: &ToolError, localizer: &Localizer) -> String {
                 ("source", LocalizationValue::Text(&tool_source(source))),
             ],
         ),
+    }
+}
+
+fn present_platform_version_error(error: &BuildSettingsError, localizer: &Localizer) -> String {
+    match error {
+        BuildSettingsError::InvalidPlatformVersion { value } => localizer.format(
+            "build-platform-version-invalid",
+            &[("value", LocalizationValue::Text(value))],
+        ),
+        BuildSettingsError::InvalidArtifactsDirectory { .. } => {
+            localizer.text("build-platform-version-error")
+        }
     }
 }
 

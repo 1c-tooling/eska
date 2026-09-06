@@ -1,4 +1,7 @@
-use std::path::{Component, Path, PathBuf};
+use std::{
+    cmp::Ordering,
+    path::{Component, Path, PathBuf},
+};
 
 pub const DEFAULT_PLATFORM_VERSION: &str = "8.3.27.2325";
 pub const DEFAULT_ARTIFACTS_DIRECTORY: &str = "build";
@@ -30,6 +33,26 @@ impl PlatformVersion {
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+
+impl Ord for PlatformVersion {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0
+            .split('.')
+            .map(|part| part.parse::<u32>().unwrap_or_default())
+            .cmp(
+                other
+                    .0
+                    .split('.')
+                    .map(|part| part.parse::<u32>().unwrap_or_default()),
+            )
+    }
+}
+
+impl PartialOrd for PlatformVersion {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -135,6 +158,15 @@ mod tests {
                 Err(BuildSettingsError::InvalidPlatformVersion { .. })
             ));
         }
+    }
+
+    #[test]
+    /// Sort version components numerically instead of lexicographically.
+    fn platform_versions_have_numeric_order() {
+        assert!(
+            PlatformVersion::parse("8.5.10.1").expect("version")
+                > PlatformVersion::parse("8.5.4.9999").expect("version")
+        );
     }
 
     #[test]

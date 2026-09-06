@@ -170,7 +170,10 @@ pack и checkout включена через `gix/max-performance`. Локаль
 ```bash
 eska build
 eska build --output dist/application.cf
+eska build --platform-version 8.5.4.1234
+eska build --select-platform
 eska build --distrobox 1c-ubuntu-env --format json
+eska platform list
 ```
 
 `build` собирает тип проекта в соответствующий нативный файл: `configuration` —
@@ -178,11 +181,32 @@ eska build --distrobox 1c-ubuntu-env --format json
 конфигурации и расширения в `ibcmd` передаётся каталог Designer XML, для внешней
 обработки и отчёта — единственный подходящий корневой XML-дескриптор.
 
-Версия `ibcmd` должна точно совпадать с `build.platform_version`. Поиск идёт по
-явному `--ibcmd` или `ESKA_IBCMD`, затем по `PATH` и стандартному пути установки.
-Архитектуру можно задать через `--platform-arch` / `ESKA_PLATFORM_ARCH`.
-Distrobox используется только при явном `--distrobox` / `ESKA_DISTROBOX` и только
-если подходящий host `ibcmd` не найден.
+Версия `ibcmd` должна точно совпадать с `build.platform_version`.
+`--platform-version` переопределяет её только для одного запуска, а
+`--select-platform` предлагает выбрать одну из найденных платформ и также ничего
+не записывает в проект или глобальный конфиг. `eska platform list` показывает
+все проверенные через `ibcmd --version` установки текущего раннера; `--format
+json` выдаёт схему версии 1.
+
+Параметры машины хранятся вне репозитория в системном пользовательском каталоге
+конфигурации. `eska config init` создаёт минимальный конфиг без перезаписи,
+`eska config edit` создаёт его при отсутствии, открывает временную копию через
+`ESKA_EDITOR`, `VISUAL`, `EDITOR` или редактор ОС, проверяет TOML и только после
+изменения сохраняет прежнюю версию рядом как `config.toml.backup-*`:
+
+```toml
+[build]
+runner = "auto" # auto | host | distrobox
+# container = "1c-ubuntu-env"
+# platform_arch = "x86_64"
+```
+
+Приоритет настроек: CLI, переменные `ESKA_IBCMD` / `ESKA_PLATFORM_ARCH` /
+`ESKA_DISTROBOX`, глобальный конфиг, автоматические значения. `auto` сразу ищет
+`ibcmd` в `PATH` и стандартном каталоге ОС: `/opt/1cv8/<arch>/<version>/ibcmd`
+в Linux или `%ProgramFiles%\\1cv8\\<version>\\bin\\ibcmd.exe` в Windows. Для
+`runner = "distrobox"` обязателен `container`; такой раннер применяется только
+на Linux-хосте с доступной командой Distrobox.
 
 Для `8.3.27.2325` команда создаёт управляемую временную файловую базу и выполняет
 `config import --out`. Временные данные удаляются после успеха, ошибки и

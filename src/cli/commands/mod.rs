@@ -8,11 +8,13 @@ use super::localization::Localizer;
 
 mod build;
 mod clone;
+mod config;
 mod diff;
 mod finish;
 mod history;
 mod init;
 mod new;
+mod platform;
 mod save;
 mod start;
 mod status;
@@ -26,9 +28,13 @@ pub(super) enum Commands {
     #[command(disable_help_flag = true)]
     Clone(clone::CloneArgs),
     #[command(disable_help_flag = true)]
+    Config(config::ConfigArgs),
+    #[command(disable_help_flag = true)]
     New(new::NewArgs),
     #[command(disable_help_flag = true)]
     Init(init::InitArgs),
+    #[command(disable_help_flag = true)]
+    Platform(platform::PlatformArgs),
     #[command(disable_help_flag = true)]
     Diff(diff::DiffArgs),
     #[command(disable_help_flag = true)]
@@ -53,8 +59,10 @@ pub(super) fn run(
     match command {
         Some(Commands::Build(args)) => args.run(project_dir, localizer),
         Some(Commands::Clone(args)) => args.run(project_dir, localizer),
+        Some(Commands::Config(args)) => args.run(localizer),
         Some(Commands::New(args)) => args.run(project_dir, localizer),
         Some(Commands::Init(args)) => args.run(project_dir, localizer),
+        Some(Commands::Platform(args)) => args.run(localizer),
         Some(Commands::Diff(args)) => args.run(project_dir, localizer),
         Some(Commands::Finish(_)) => finish::FinishArgs::run(project_dir, localizer),
         Some(Commands::History(args)) => args.run(project_dir, localizer),
@@ -70,8 +78,10 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
     command
         .mut_subcommand("build", |command| build::localize(command, localizer))
         .mut_subcommand("clone", |command| clone::localize(command, localizer))
+        .mut_subcommand("config", |command| config::localize(command, localizer))
         .mut_subcommand("new", |command| new::localize(command, localizer))
         .mut_subcommand("init", |command| init::localize(command, localizer))
+        .mut_subcommand("platform", |command| platform::localize(command, localizer))
         .mut_subcommand("diff", |command| diff::localize(command, localizer))
         .mut_subcommand("finish", |command| finish::localize(command, localizer))
         .mut_subcommand("history", |command| history::localize(command, localizer))

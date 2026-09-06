@@ -69,7 +69,7 @@ fn fake_ibcmd(fixture: &TestDir) -> PathBuf {
         &path,
         r#"#!/bin/sh
 if [ "$1" = "--version" ]; then
-  echo "1C ibcmd version 8.3.27.2325"
+  echo "1C ibcmd version ${FAKE_IBCMD_VERSION:-8.3.27.2325}"
   exit 0
 fi
 if [ "$1" = "infobase" ] && [ "$2" = "create" ]; then
@@ -111,6 +111,40 @@ exit 9
     permissions.set_mode(0o755);
     fs::set_permissions(&path, permissions).expect("make fake executable");
     path
+}
+
+#[test]
+/// Apply an exact platform override to one build without rewriting project settings.
+fn platform_version_override_is_ephemeral() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "configuration", "Override");
+    let config_before = fs::read_to_string(root.join("eska.toml")).expect("project config");
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("ESKA_CONFIG_DIR", fixture.0.join("settings"))
+        .env("FAKE_IBCMD_VERSION", "8.5.4.1234")
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--platform-version",
+            "8.5.4.1234",
+            "--ibcmd",
+        ])
+        .arg(&ibcmd)
+        .output()
+        .expect("build with override");
+    assert!(output.status.success(), "{output:?}");
+    let stderr = String::from_utf8(output.stderr).expect("stderr");
+    assert!(
+        stderr.contains("this selection applies only to this build"),
+        "{stderr}"
+    );
+    assert_eq!(
+        fs::read_to_string(root.join("eska.toml")).expect("project config after build"),
+        config_before
+    );
 }
 
 #[test]

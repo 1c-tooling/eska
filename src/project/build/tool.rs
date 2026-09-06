@@ -26,6 +26,15 @@ pub struct ToolOptions {
     ibcmd: Option<PathBuf>,
     platform_arch: Option<String>,
     distrobox: Option<String>,
+    runner: RunnerPreference,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum RunnerPreference {
+    #[default]
+    Auto,
+    Host,
+    Distrobox,
 }
 
 impl ToolOptions {
@@ -40,7 +49,26 @@ impl ToolOptions {
             ibcmd,
             platform_arch,
             distrobox,
+            runner: RunnerPreference::Auto,
         }
+    }
+
+    /// Add machine-local defaults loaded from the global config.
+    #[must_use]
+    pub fn with_machine_defaults(
+        mut self,
+        runner: RunnerPreference,
+        platform_arch: Option<String>,
+        distrobox: Option<String>,
+    ) -> Self {
+        self.runner = runner;
+        if self.platform_arch.is_none() && env::var_os(ARCH_ENV).is_none() {
+            self.platform_arch = platform_arch;
+        }
+        if self.distrobox.is_none() && env::var_os(DISTROBOX_ENV).is_none() {
+            self.distrobox = distrobox;
+        }
+        self
     }
 }
 
@@ -63,6 +91,24 @@ pub struct Ibcmd {
     runner: Runner,
     source: ToolSource,
     version: PlatformVersion,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InstalledPlatform {
+    version: PlatformVersion,
+    source: ToolSource,
+}
+
+impl InstalledPlatform {
+    #[must_use]
+    pub const fn version(&self) -> &PlatformVersion {
+        &self.version
+    }
+
+    #[must_use]
+    pub const fn source(&self) -> &ToolSource {
+        &self.source
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -92,24 +138,35 @@ impl Ibcmd {
             .ibcmd
             .clone()
             .or_else(|| env::var_os(IBCMD_ENV).map(PathBuf::from));
-        let distrobox = options
+        let distrobox_override = options
             .distrobox
             .clone()
             .or_else(|| env::var(DISTROBOX_ENV).ok());
 
+        let runner_preference =
+            if options.distrobox.is_some() || env::var_os(DISTROBOX_ENV).is_some() {
+                RunnerPreference::Distrobox
+            } else {
+                options.runner
+            };
+
         let (runner, source) = if let Some(path) = explicit {
             validate_executable(&path)?;
             (Runner::Host(path.clone()), ToolSource::Explicit(path))
-        } else if let Some(path) = find_on_path("ibcmd") {
+        } else if runner_preference != RunnerPreference::Distrobox
+            && let Some(path) = find_on_path("ibcmd")
+        {
             (Runner::Host(path.clone()), ToolSource::Path(path))
         } else {
             let standard = standard_path(&arch, expected);
-            if standard.is_file() {
+            if runner_preference != RunnerPreference::Distrobox && standard.is_file() {
                 (
                     Runner::Host(standard.clone()),
                     ToolSource::Standard(standard),
                 )
-            } else if let Some(container) = distrobox {
+            } else if runner_preference != RunnerPreference::Host
+                && let Some(container) = distrobox_override
+            {
                 validate_component(&container)
                     .map_err(|()| ToolError::InvalidContainer(container.clone()))?;
                 let path = PathBuf::from(format!("/opt/1cv8/{arch}/{}/ibcmd", expected.as_str()));
@@ -149,6 +206,55 @@ impl Ibcmd {
             source,
             version,
         })
+    }
+
+    /// Scan platform installations available through the effective runner.
+    ///
+    /// # Errors
+    /// Returns a structured error when the runner cannot be inspected or a candidate is invalid.
+    pub fn installed(options: &ToolOptions) -> Result<Vec<InstalledPlatform>, ToolError> {
+        let arch = options
+            .platform_arch
+            .clone()
+            .or_else(|| env::var(ARCH_ENV).ok())
+            .unwrap_or_else(default_architecture);
+        validate_component(&arch).map_err(|()| ToolError::InvalidArchitecture(arch.clone()))?;
+        if let Some(path) = options
+            .ibcmd
+            .clone()
+            .or_else(|| env::var_os(IBCMD_ENV).map(PathBuf::from))
+        {
+            validate_executable(&path)?;
+            return platform_from_runner(&Runner::Host(path.clone()), ToolSource::Explicit(path))
+                .map(|platform| vec![platform]);
+        }
+        let distrobox_override = options
+            .distrobox
+            .clone()
+            .or_else(|| env::var(DISTROBOX_ENV).ok());
+        let preference = if options.distrobox.is_some() || env::var_os(DISTROBOX_ENV).is_some() {
+            RunnerPreference::Distrobox
+        } else {
+            options.runner
+        };
+        let mut installed = if preference == RunnerPreference::Distrobox {
+            let container = distrobox_override.ok_or(ToolError::DistroboxContainerRequired)?;
+            scan_distrobox(&container, &arch)?
+        } else {
+            let host = scan_host(&arch)?;
+            if host.is_empty() && preference == RunnerPreference::Auto {
+                if let Some(container) = distrobox_override {
+                    scan_distrobox(&container, &arch)?
+                } else {
+                    host
+                }
+            } else {
+                host
+            }
+        };
+        installed.sort_by(|left, right| right.version.cmp(&left.version));
+        installed.dedup_by(|left, right| left.version == right.version);
+        Ok(installed)
     }
 
     #[must_use]
@@ -264,6 +370,15 @@ pub enum ToolError {
     InvalidArchitecture(String),
     InvalidContainer(String),
     InvalidExecutable(PathBuf),
+    DistroboxContainerRequired,
+    Scan {
+        path: PathBuf,
+        source: io::Error,
+    },
+    ScanCommandFailed {
+        container: String,
+        stderr: String,
+    },
     NotFound {
         expected: PlatformVersion,
         standard: PathBuf,
@@ -279,6 +394,120 @@ pub enum ToolError {
         actual: PlatformVersion,
         source: ToolSource,
     },
+}
+
+/// Inspect standard host installation directories and verify each discovered executable.
+fn scan_host(arch: &str) -> Result<Vec<InstalledPlatform>, ToolError> {
+    let mut installed = Vec::new();
+    for root in standard_roots(arch) {
+        let entries = match std::fs::read_dir(&root) {
+            Ok(entries) => entries,
+            Err(source) if source.kind() == io::ErrorKind::NotFound => continue,
+            Err(source) => return Err(ToolError::Scan { path: root, source }),
+        };
+        for entry in entries {
+            let entry = entry.map_err(|source| ToolError::Scan {
+                path: root.clone(),
+                source,
+            })?;
+            let Some(_) = entry
+                .file_name()
+                .to_str()
+                .and_then(|value| PlatformVersion::parse(value).ok())
+            else {
+                continue;
+            };
+            let path = standard_executable(&entry.path());
+            if path.is_file() {
+                installed.push(platform_from_runner(
+                    &Runner::Host(path.clone()),
+                    ToolSource::Standard(path),
+                )?);
+            }
+        }
+    }
+    if let Some(path) = find_on_path("ibcmd") {
+        installed.push(platform_from_runner(
+            &Runner::Host(path.clone()),
+            ToolSource::Path(path),
+        )?);
+    }
+    Ok(installed)
+}
+
+/// Enumerate standard Linux installations inside a Distrobox container.
+fn scan_distrobox(container: &str, arch: &str) -> Result<Vec<InstalledPlatform>, ToolError> {
+    validate_component(container)
+        .map_err(|()| ToolError::InvalidContainer(container.to_owned()))?;
+    let root = format!("/opt/1cv8/{arch}");
+    let output = Command::new("distrobox")
+        .args([
+            "enter",
+            "--name",
+            container,
+            "--",
+            "find",
+            &root,
+            "-mindepth",
+            "2",
+            "-maxdepth",
+            "2",
+            "-type",
+            "f",
+            "-name",
+            "ibcmd",
+        ])
+        .output()?;
+    if !output.status.success() {
+        return Err(ToolError::ScanCommandFailed {
+            container: container.to_owned(),
+            stderr: String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+        });
+    }
+    let mut installed = Vec::new();
+    for line in String::from_utf8_lossy(&output.stdout).lines() {
+        let path = PathBuf::from(line.trim());
+        let Some(version) = path
+            .parent()
+            .and_then(Path::file_name)
+            .and_then(OsStr::to_str)
+            .and_then(|value| PlatformVersion::parse(value).ok())
+        else {
+            continue;
+        };
+        let source = ToolSource::Distrobox {
+            container: container.to_owned(),
+            path: path.clone(),
+        };
+        let platform = platform_from_runner(
+            &Runner::Distrobox {
+                container: container.to_owned(),
+                path,
+            },
+            source,
+        )?;
+        if platform.version == version {
+            installed.push(platform);
+        }
+    }
+    Ok(installed)
+}
+
+/// Read and validate the version reported by one candidate executable.
+fn platform_from_runner(
+    runner: &Runner,
+    source: ToolSource,
+) -> Result<InstalledPlatform, ToolError> {
+    let output = run_runner(runner, [OsStr::new("--version")])?;
+    if !output.status.success() {
+        return Err(ToolError::VersionCommandFailed {
+            source,
+            stderr: String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+        });
+    }
+    let version = parse_version(&output.stdout, &output.stderr)
+        .ok_or_else(|| ToolError::VersionUnreadable(source.clone()))?;
+    Ok(InstalledPlatform { version, source })
 }
 
 /// Run either the host executable or Distrobox with values passed as distinct arguments.
@@ -469,16 +698,25 @@ const fn executable_name(name: &str) -> &str {
 #[cfg(windows)]
 /// Resolve the standard Windows 1C installation path.
 fn standard_path(arch: &str, version: &PlatformVersion) -> PathBuf {
+    standard_executable(&standard_roots(arch)[0].join(version.as_str()))
+}
+
+#[cfg(windows)]
+/// Return the native Windows installation root for the selected architecture.
+fn standard_roots(arch: &str) -> Vec<PathBuf> {
     let root = if arch == "i386" {
         env::var_os("ProgramFiles(x86)")
     } else {
         env::var_os("ProgramFiles")
     }
     .map_or_else(|| PathBuf::from(r"C:\Program Files"), PathBuf::from);
-    root.join("1cv8")
-        .join(version.as_str())
-        .join("bin")
-        .join("ibcmd.exe")
+    vec![root.join("1cv8")]
+}
+
+#[cfg(windows)]
+/// Append the Windows ibcmd location below a version directory.
+fn standard_executable(version_directory: &Path) -> PathBuf {
+    version_directory.join("bin").join("ibcmd.exe")
 }
 
 #[cfg(not(windows))]
@@ -488,6 +726,18 @@ fn standard_path(arch: &str, version: &PlatformVersion) -> PathBuf {
         .join(arch)
         .join(version.as_str())
         .join("ibcmd")
+}
+
+#[cfg(not(windows))]
+/// Return the standard Linux installation root for the selected architecture.
+fn standard_roots(arch: &str) -> Vec<PathBuf> {
+    vec![PathBuf::from("/opt/1cv8").join(arch)]
+}
+
+#[cfg(not(windows))]
+/// Append the Linux ibcmd location below a version directory.
+fn standard_executable(version_directory: &Path) -> PathBuf {
+    version_directory.join("ibcmd")
 }
 
 /// Map Rust target architectures to 1C distribution directory names.

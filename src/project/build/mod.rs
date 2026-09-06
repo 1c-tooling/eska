@@ -10,4 +10,7 @@ pub use plan::{ArtifactType, BuildPlan, PlanError};
 pub use settings::{
     BuildSettings, BuildSettingsError, InvalidArtifactsDirectoryReason, PlatformVersion,
 };
-pub use tool::{Ibcmd, ProcessStream, RunError, ToolError, ToolOptions, ToolSource};
+pub use tool::{
+    Ibcmd, InstalledPlatform, ProcessStream, RunError, RunnerPreference, ToolError, ToolOptions,
+    ToolSource,
+};
