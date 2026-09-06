@@ -149,13 +149,7 @@ impl BuildArgs {
             return ExitCode::FAILURE;
         }
 
-        write_build_result(
-            self.format,
-            &plan,
-            &result,
-            ibcmd.version().as_str(),
-            localizer,
-        )
+        write_build_result(self.format, &plan, &result, localizer)
     }
 }
 
@@ -428,24 +422,19 @@ fn write_build_result(
     format: OutputFormat,
     plan: &BuildPlan,
     result: &build::BuildResult,
-    version: &str,
     localizer: &Localizer,
 ) -> ExitCode {
     match format {
         OutputFormat::Human => {
-            let message = localizer.format(
-                "build-completed",
-                &[
-                    (
-                        "artifact",
-                        LocalizationValue::Text(&result.output().to_string_lossy()),
-                    ),
-                    ("version", LocalizationValue::Text(version)),
-                ],
-            );
+            let interactive = io::stdout().is_terminal();
             println!(
                 "{}",
-                decorate_status("✓", &message, result_styling_enabled(), "32")
+                render_build_success(
+                    result.output(),
+                    localizer,
+                    result_styling_enabled(),
+                    interactive,
+                )
             );
         }
         OutputFormat::Json => {
@@ -458,6 +447,72 @@ fn write_build_result(
         }
     }
     ExitCode::SUCCESS
+}
+
+/// Render a prominent label and link the visible artifact path to its directory.
+fn render_build_success(
+    artifact: &Path,
+    localizer: &Localizer,
+    styled: bool,
+    hyperlink: bool,
+) -> String {
+    let label = localizer.text("build-completed-label");
+    let label = if styled {
+        format!("\x1b[1m{label}\x1b[0m")
+    } else {
+        label
+    };
+    let artifact = render_artifact_link(artifact, hyperlink);
+    decorate_status("✓", &format!("{label} {artifact}"), styled, "32")
+}
+
+/// Link the artifact label to its parent directory in an interactive terminal.
+fn render_artifact_link(artifact: &Path, hyperlink: bool) -> String {
+    let label = display_path(artifact);
+    let Some(parent) = artifact.parent().filter(|_| hyperlink) else {
+        return label;
+    };
+    let target = file_uri(parent);
+    format!("\x1b]8;;{target}\x1b\\{label}\x1b]8;;\x1b\\")
+}
+
+/// Escape control characters without making a normal filesystem path less readable.
+fn display_path(path: &Path) -> String {
+    let mut display = String::new();
+    for character in path.to_string_lossy().chars() {
+        if character.is_control() {
+            display.extend(character.escape_default());
+        } else {
+            display.push(character);
+        }
+    }
+    display
+}
+
+/// Encode an absolute local directory as a safe file URI for an OSC 8 target.
+fn file_uri(path: &Path) -> String {
+    let normalized = path.to_string_lossy().replace('\\', "/");
+    let prefix = if normalized.starts_with("//") {
+        "file:"
+    } else if normalized.starts_with('/') {
+        "file://"
+    } else {
+        "file:///"
+    };
+    format!("{prefix}{}", percent_encode_uri_path(normalized.as_bytes()))
+}
+
+/// Percent-encode bytes that are not safe inside a hierarchical file URI path.
+fn percent_encode_uri_path(path: &[u8]) -> String {
+    let mut encoded = String::with_capacity(path.len());
+    for byte in path {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/' | b':') {
+            encoded.push(*byte as char);
+        } else {
+            write!(encoded, "%{byte:02X}").expect("writing to String cannot fail");
+        }
+    }
+    encoded
 }
 
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
@@ -661,7 +716,11 @@ fn tool_source(source: &ToolSource) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{decorate_status, diagnostic_path_tail, style_diagnostic_level};
+    use super::{
+        decorate_status, diagnostic_path_tail, render_build_success, style_diagnostic_level,
+    };
+    use crate::cli::localization::{Locale, Localizer};
+    use std::path::Path;
 
     #[test]
     /// Color only the recognized diagnostic prefix and preserve the message bytes.
@@ -715,6 +774,26 @@ mod tests {
         assert_eq!(
             decorate_status("✓", "Built artifact", true, "32"),
             "\x1b[1;32m✓\x1b[0m Built artifact"
+        );
+    }
+
+    #[test]
+    /// Link the visible artifact to its directory and bold only the result label.
+    fn build_result_links_to_artifact_directory() {
+        let localizer = Localizer::try_new(Locale::RuRu).expect("locale");
+        let artifact = Path::new("/tmp/build dir/demo.cf");
+        assert_eq!(
+            render_build_success(artifact, &localizer, true, true),
+            concat!(
+                "\x1b[1;32m✓\x1b[0m \x1b[1mСобран\x1b[0m ",
+                "\x1b]8;;file:///tmp/build%20dir\x1b\\",
+                "/tmp/build dir/demo.cf",
+                "\x1b]8;;\x1b\\"
+            )
+        );
+        assert_eq!(
+            render_build_success(artifact, &localizer, false, false),
+            "✓ Собран /tmp/build dir/demo.cf"
         );
     }
 }

@@ -333,6 +333,8 @@ fn help_and_human_result_are_localized() {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
         assert!(stdout.contains(&format!("✓ {result_text}")), "{stdout}");
+        assert!(!stdout.contains("8.3.27.2325"), "{stdout}");
+        assert!(!stdout.contains('\x1b'), "{stdout:?}");
         assert!(stderr.contains(started_text), "{stderr}");
         assert!(stderr.contains("[WARN] fake build warning"), "{stderr}");
         assert!(!stderr.contains('\x1b'), "{stderr:?}");
