@@ -411,6 +411,7 @@ build-filesystem-error = Ошибка файловой операции с ар�
 build-interrupted = Сборка прервана на этапе «{ $stage }»; временные данные удалены.
 build-process-error = Не удалось выполнить этап сборки «{ $stage }»: { $reason }
 build-command-failed = Этап сборки «{ $stage }» завершился ошибкой: { $reason }
+build-command-failed-streamed = Этап сборки «{ $stage }» завершился ошибкой.
 build-stage-create-infobase = создание временной базы
 build-stage-import-sources = загрузка Designer XML
 build-descriptor-invalid = Некорректный корневой дескриптор Designer XML: { $path }

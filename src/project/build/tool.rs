@@ -1,12 +1,13 @@
 use std::{
     env,
     ffi::{OsStr, OsString},
-    io::{self, Read},
+    io::{self, BufRead, BufReader},
     path::{Path, PathBuf},
     process::{Command, Output, Stdio},
     sync::{
         OnceLock,
         atomic::{AtomicBool, Ordering},
+        mpsc::{self, Receiver, Sender},
     },
     thread,
     time::Duration,
@@ -62,6 +63,12 @@ pub struct Ibcmd {
     runner: Runner,
     source: ToolSource,
     version: PlatformVersion,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProcessStream {
+    Stdout,
+    Stderr,
 }
 
 impl Ibcmd {
@@ -185,10 +192,16 @@ impl Ibcmd {
     ///
     /// # Errors
     /// Returns a structured error when the signal handler or process lifecycle fails.
-    pub fn run_interruptible<I, S>(&self, arguments: I, pid_file: &Path) -> Result<Output, RunError>
+    pub fn run_interruptible<I, S, F>(
+        &self,
+        arguments: I,
+        pid_file: &Path,
+        on_output: &mut F,
+    ) -> Result<Output, RunError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
+        F: FnMut(ProcessStream, &[u8]),
     {
         let arguments: Vec<_> = arguments
             .into_iter()
@@ -202,9 +215,15 @@ impl Ibcmd {
             .map_err(RunError::Io)?;
         let stdout = child.stdout.take().ok_or(RunError::MissingPipe)?;
         let stderr = child.stderr.take().ok_or(RunError::MissingPipe)?;
-        let stdout = thread::spawn(move || read_pipe(stdout));
-        let stderr = thread::spawn(move || read_pipe(stderr));
+        let (sender, receiver) = mpsc::channel();
+        let stdout_sender = sender.clone();
+        let stdout =
+            thread::spawn(move || read_pipe(stdout, ProcessStream::Stdout, &stdout_sender));
+        let stderr = thread::spawn(move || read_pipe(stderr, ProcessStream::Stderr, &sender));
+        let mut stdout_bytes = Vec::new();
+        let mut stderr_bytes = Vec::new();
         let (status, interrupted) = loop {
+            drain_output(&receiver, &mut stdout_bytes, &mut stderr_bytes, on_output);
             if INTERRUPTED.load(Ordering::SeqCst) {
                 terminate_distrobox_process(&self.runner, pid_file);
                 child.kill().map_err(RunError::Io)?;
@@ -215,10 +234,13 @@ impl Ibcmd {
             }
             thread::sleep(Duration::from_millis(25));
         };
+        join_reader(stdout)?;
+        join_reader(stderr)?;
+        drain_output(&receiver, &mut stdout_bytes, &mut stderr_bytes, on_output);
         let output = Output {
             status,
-            stdout: join_pipe(stdout)?,
-            stderr: join_pipe(stderr)?,
+            stdout: stdout_bytes,
+            stderr: stderr_bytes,
         };
         if interrupted {
             Err(RunError::Interrupted)
@@ -351,15 +373,50 @@ fn install_signal_handler() -> Result<(), RunError> {
         .map_err(RunError::SignalHandler)
 }
 
-/// Drain a child pipe concurrently so verbose ibcmd output cannot deadlock the process.
-fn read_pipe(mut pipe: impl Read) -> io::Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-    pipe.read_to_end(&mut bytes)?;
-    Ok(bytes)
+#[derive(Debug)]
+struct ProcessLine {
+    stream: ProcessStream,
+    bytes: Vec<u8>,
+}
+
+/// Read complete diagnostic lines without requiring UTF-8 or process completion.
+fn read_pipe(
+    pipe: impl io::Read,
+    stream: ProcessStream,
+    sender: &Sender<ProcessLine>,
+) -> io::Result<()> {
+    let mut reader = BufReader::new(pipe);
+    loop {
+        let mut bytes = Vec::new();
+        if reader.read_until(b'\n', &mut bytes)? == 0 {
+            return Ok(());
+        }
+        if sender.send(ProcessLine { stream, bytes }).is_err() {
+            return Ok(());
+        }
+    }
+}
+
+/// Deliver available lines and retain complete stdout/stderr for structured errors.
+fn drain_output<F>(
+    receiver: &Receiver<ProcessLine>,
+    stdout: &mut Vec<u8>,
+    stderr: &mut Vec<u8>,
+    on_output: &mut F,
+) where
+    F: FnMut(ProcessStream, &[u8]),
+{
+    for line in receiver.try_iter() {
+        match line.stream {
+            ProcessStream::Stdout => stdout.extend_from_slice(&line.bytes),
+            ProcessStream::Stderr => stderr.extend_from_slice(&line.bytes),
+        }
+        on_output(line.stream, &line.bytes);
+    }
 }
 
 /// Convert a pipe reader thread into a structured process error.
-fn join_pipe(handle: thread::JoinHandle<io::Result<Vec<u8>>>) -> Result<Vec<u8>, RunError> {
+fn join_reader(handle: thread::JoinHandle<io::Result<()>>) -> Result<(), RunError> {
     handle
         .join()
         .map_err(|_| RunError::ReaderPanicked)?

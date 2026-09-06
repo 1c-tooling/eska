@@ -411,6 +411,7 @@ build-filesystem-error = Artifact filesystem operation failed at { $path }: { $r
 build-interrupted = Build interrupted during { $stage }; temporary data was removed.
 build-process-error = Failed to run build stage { $stage }: { $reason }
 build-command-failed = Build stage { $stage } failed: { $reason }
+build-command-failed-streamed = Build stage { $stage } failed.
 build-stage-create-infobase = temporary infobase creation
 build-stage-import-sources = Designer XML import
 build-descriptor-invalid = Invalid root Designer XML descriptor: { $path }

@@ -2,6 +2,7 @@
 
 use std::{
     fs,
+    io::{BufRead, BufReader, Read},
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::{Command, Output, Stdio},
@@ -85,9 +86,20 @@ if [ "$1" = "config" ] && [ "$2" = "import" ]; then
     echo "fake import failure" >&2
     exit 7
   fi
+  output=
+  source=
   for argument in "$@"; do
-    case "$argument" in --out=*) printf 'native-artifact' > "${argument#--out=}";; esac
+    case "$argument" in
+      --out=*) output="${argument#--out=}";;
+      --*) ;;
+      *) source="$argument";;
+    esac
   done
+  if [ "$FAKE_IBCMD_STREAM" = "1" ]; then
+    echo "[INFO] File: $source/DataProcessors/РаботаСФайлами/Forms/ПрисоединенныйФайл/Ext/Help/ru.html, checking"
+    sleep 2
+  fi
+  printf 'native-artifact' > "$output"
   echo "[WARN] fake build warning"
   exit 0
 fi
@@ -99,6 +111,60 @@ exit 9
     permissions.set_mode(0o755);
     fs::set_permissions(&path, permissions).expect("make fake executable");
     path
+}
+
+#[test]
+/// Emit an ibcmd line before completion and project its source file to a metadata owner.
+fn streams_humanized_diagnostics_while_build_is_running() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "configuration", "Streaming");
+    let help =
+        root.join("src/DataProcessors/РаботаСФайлами/Forms/ПрисоединенныйФайл/Ext/Help/ru.html");
+    fs::create_dir_all(help.parent().expect("help parent")).expect("create help directory");
+    fs::write(&help, "help").expect("write help file");
+
+    let mut child = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("FAKE_IBCMD_STREAM", "1")
+        .env_remove("NO_COLOR")
+        .args(["--lang", "ru", "build", "--ibcmd"])
+        .arg(&ibcmd)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("start streaming build");
+    let mut stderr = BufReader::new(child.stderr.take().expect("build stderr"));
+    let mut first_line = String::new();
+    stderr
+        .read_line(&mut first_line)
+        .expect("read first diagnostic");
+
+    assert_eq!(
+        first_line,
+        "[INFO] File: Обработка.РаботаСФайлами.Форма.ПрисоединенныйФайл, checking\n"
+    );
+    assert!(
+        child.try_wait().expect("inspect running build").is_none(),
+        "build completed before its first diagnostic was observed"
+    );
+    assert!(!first_line.contains(root.to_string_lossy().as_ref()));
+
+    let mut remaining_stderr = String::new();
+    stderr
+        .read_to_string(&mut remaining_stderr)
+        .expect("read remaining diagnostics");
+    let mut stdout = String::new();
+    child
+        .stdout
+        .take()
+        .expect("build stdout")
+        .read_to_string(&mut stdout)
+        .expect("read build result");
+    let status = child.wait().expect("wait for streaming build");
+    assert!(status.success(), "{remaining_stderr}");
+    assert_eq!(remaining_stderr, "[WARN] fake build warning\n");
+    assert!(stdout.contains("Собран"), "{stdout}");
 }
 
 #[test]

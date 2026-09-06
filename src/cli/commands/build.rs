@@ -3,12 +3,13 @@
 use std::{
     ffi::OsStr,
     fmt::Write as _,
-    io::{self, Write as _},
+    io::{self, IsTerminal, Write as _},
     path::{Path, PathBuf},
     process::ExitCode,
 };
 
 use clap::{Args, ValueEnum};
+use gix::bstr::ByteSlice;
 use serde::Serialize;
 
 use crate::{
@@ -17,13 +18,16 @@ use crate::{
         localization::{LocalizationValue, Localizer},
     },
     project::{
+        Project,
         build::{
             self, BuildError, BuildPlan, BuildStage, Ibcmd, PlanError, RunError, ToolError,
             ToolOptions, ToolSource,
         },
-        discovery,
+        discovery, metadata,
     },
 };
+
+use super::diff;
 
 #[derive(Debug, Args)]
 pub(in crate::cli) struct BuildArgs {
@@ -82,14 +86,22 @@ impl BuildArgs {
                 return ExitCode::FAILURE;
             }
         };
-        let result = match build::execute(&plan, &ibcmd) {
+        let styled = diagnostic_styling_enabled();
+        let mut output_error = None;
+        let result = match build::execute_streaming(&plan, &ibcmd, |_, _, line| {
+            if output_error.is_none()
+                && let Err(error) = write_diagnostic(line, &project, localizer, styled)
+            {
+                output_error = Some(error);
+            }
+        }) {
             Ok(result) => result,
             Err(error) => {
-                eprintln!("{}", present_build_error(&error, localizer));
+                eprintln!("{}", present_streamed_build_error(&error, localizer));
                 return ExitCode::FAILURE;
             }
         };
-        if let Err(error) = write_tool_output(result.tool_output()) {
+        if let Some(error) = output_error {
             eprintln!(
                 "{}",
                 localizer.format(
@@ -127,17 +139,96 @@ impl BuildArgs {
     }
 }
 
-/// Forward successful ibcmd diagnostics to stderr without contaminating JSON stdout.
-fn write_tool_output(output: &[u8]) -> io::Result<()> {
-    if output.is_empty() {
-        return Ok(());
-    }
+/// Render and flush one ibcmd line as soon as it reaches the CLI layer.
+fn write_diagnostic(
+    line: &[u8],
+    project: &Project,
+    localizer: &Localizer,
+    styled: bool,
+) -> io::Result<()> {
     let mut stderr = io::stderr().lock();
-    stderr.write_all(output)?;
-    if !output.ends_with(b"\n") {
-        stderr.write_all(b"\n")?;
-    }
+    let Ok(line) = std::str::from_utf8(line) else {
+        stderr.write_all(line)?;
+        return stderr.flush();
+    };
+    let line = humanize_source_paths(line, project, localizer);
+    let line = style_diagnostic_level(&line, styled);
+    stderr.write_all(line.as_bytes())?;
     stderr.flush()
+}
+
+/// Replace absolute source files with their existing Configurator-style ownership.
+fn humanize_source_paths(message: &str, project: &Project, localizer: &Localizer) -> String {
+    let source = project.source();
+    let source_text = source.to_string_lossy();
+    let mut rendered = String::with_capacity(message.len());
+    let mut remaining = message;
+    while let Some(position) = remaining.find(source_text.as_ref()) {
+        rendered.push_str(&remaining[..position]);
+        let after_source = &remaining[position + source_text.len()..];
+        let Some((relative, consumed)) = existing_source_path(after_source, source) else {
+            rendered.push_str(&source_text);
+            remaining = after_source;
+            continue;
+        };
+        let normalized = relative.replace('\\', "/");
+        let display = metadata::from_path(
+            project.configuration().project_type(),
+            normalized.as_bytes().as_bstr(),
+        )
+        .map_or_else(
+            || normalized.clone(),
+            |path| diff::render_metadata_path(&path, localizer),
+        );
+        rendered.push_str(&display);
+        remaining = &after_source[consumed..];
+    }
+    rendered.push_str(remaining);
+    rendered
+}
+
+/// Find the longest existing path immediately below the configured source directory.
+fn existing_source_path<'a>(suffix: &'a str, source: &Path) -> Option<(&'a str, usize)> {
+    let separator_length = if suffix.starts_with('/') || suffix.starts_with('\\') {
+        1
+    } else {
+        return None;
+    };
+    let path = &suffix[separator_length..];
+    path.char_indices()
+        .map(|(index, _)| index)
+        .chain([path.len()])
+        .rev()
+        .find_map(|end| {
+            let relative = &path[..end];
+            (!relative.is_empty() && source.join(relative).exists())
+                .then_some((relative, separator_length + end))
+        })
+}
+
+/// Highlight a recognized ibcmd severity prefix while keeping its message unchanged.
+fn style_diagnostic_level(message: &str, styled: bool) -> String {
+    if !styled {
+        return message.to_owned();
+    }
+    for (level, color) in [
+        ("[TRACE]", "90"),
+        ("[DEBUG]", "34"),
+        ("[INFO]", "36"),
+        ("[WARN]", "33"),
+        ("[ERROR]", "31"),
+        ("[FATAL]", "35"),
+    ] {
+        if let Some(rest) = message.strip_prefix(level) {
+            return format!("\x1b[1;{color}m{level}\x1b[0m{rest}");
+        }
+    }
+    message.to_owned()
+}
+
+/// Enable diagnostic colors only for an interactive stderr that permits color.
+fn diagnostic_styling_enabled() -> bool {
+    io::stderr().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
 }
 
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
@@ -312,6 +403,21 @@ fn present_build_error(error: &BuildError, localizer: &Localizer) -> String {
     }
 }
 
+/// Avoid repeating process output that the streaming renderer has already emitted.
+fn present_streamed_build_error(error: &BuildError, localizer: &Localizer) -> String {
+    if let BuildError::CommandFailed { stage, .. } = error {
+        localizer.format(
+            "build-command-failed-streamed",
+            &[(
+                "stage",
+                LocalizationValue::Text(&stage_name(*stage, localizer)),
+            )],
+        )
+    } else {
+        present_build_error(error, localizer)
+    }
+}
+
 /// Return the selected executable location for diagnostics only.
 fn tool_source(source: &ToolSource) -> String {
     match source {
@@ -321,6 +427,40 @@ fn tool_source(source: &ToolSource) -> String {
         ToolSource::Distrobox { container, path } => {
             format!("{container}:{}", path.to_string_lossy())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::style_diagnostic_level;
+
+    #[test]
+    /// Color only the recognized diagnostic prefix and preserve the message bytes.
+    fn styles_known_diagnostic_levels() {
+        for (level, color) in [
+            ("TRACE", "90"),
+            ("DEBUG", "34"),
+            ("INFO", "36"),
+            ("WARN", "33"),
+            ("ERROR", "31"),
+            ("FATAL", "35"),
+        ] {
+            let message = format!("[{level}] diagnostic\n");
+            assert_eq!(
+                style_diagnostic_level(&message, true),
+                format!("\x1b[1;{color}m[{level}]\x1b[0m diagnostic\n")
+            );
+            assert_eq!(style_diagnostic_level(&message, false), message);
+        }
+    }
+
+    #[test]
+    /// Leave unknown prefixes unchanged even when terminal styling is enabled.
+    fn preserves_unknown_diagnostic_prefixes() {
+        assert_eq!(
+            style_diagnostic_level("plain diagnostic\n", true),
+            "plain diagnostic\n"
+        );
     }
 }
 
