@@ -138,11 +138,20 @@ fn streams_humanized_diagnostics_while_build_is_running() {
     let mut first_line = String::new();
     stderr
         .read_line(&mut first_line)
+        .expect("read build heading");
+    assert_eq!(
+        first_line.replace(['\u{2068}', '\u{2069}'], ""),
+        "▶ Начало сборки платформой 1С 8.3.27.2325\n"
+    );
+
+    first_line.clear();
+    stderr
+        .read_line(&mut first_line)
         .expect("read first diagnostic");
 
     assert_eq!(
         first_line,
-        "[INFO] File: Обработка.РаботаСФайлами.Форма.ПрисоединенныйФайл, checking\n"
+        "[INFO] File: Обработка.РаботаСФайлами.Форма.ПрисоединенныйФайл · Ext/Help/ru.html, checking\n"
     );
     assert!(
         child.try_wait().expect("inspect running build").is_none(),
@@ -164,7 +173,7 @@ fn streams_humanized_diagnostics_while_build_is_running() {
     let status = child.wait().expect("wait for streaming build");
     assert!(status.success(), "{remaining_stderr}");
     assert_eq!(remaining_stderr, "[WARN] fake build warning\n");
-    assert!(stdout.contains("Собран"), "{stdout}");
+    assert!(stdout.contains("✓ Собран"), "{stdout}");
 }
 
 #[test]
@@ -297,9 +306,19 @@ fn help_and_human_result_are_localized() {
     let fixture = TestDir::new();
     let ibcmd = fake_ibcmd(&fixture);
     let root = project(&fixture, "extension", "Localized");
-    for (locale, help_text, result_text) in [
-        ("ru", "Собрать нативный артефакт", "Собран"),
-        ("en", "Build a native 1C artifact", "Built"),
+    for (locale, help_text, started_text, result_text) in [
+        (
+            "ru",
+            "Собрать нативный артефакт",
+            "Начало сборки платформой 1С",
+            "Собран",
+        ),
+        (
+            "en",
+            "Build a native 1C artifact",
+            "Starting build with 1C platform",
+            "Built",
+        ),
     ] {
         let help = Command::new(env!("CARGO_BIN_EXE_eska"))
             .current_dir(&root)
@@ -311,7 +330,11 @@ fn help_and_human_result_are_localized() {
 
         let output = eska(&root, locale, &ibcmd, &["build"], false);
         assert!(output.status.success(), "{output:?}");
-        assert!(String::from_utf8_lossy(&output.stdout).contains(result_text));
-        assert!(String::from_utf8_lossy(&output.stderr).contains("[WARN] fake build warning"));
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stdout.contains(&format!("✓ {result_text}")), "{stdout}");
+        assert!(stderr.contains(started_text), "{stderr}");
+        assert!(stderr.contains("[WARN] fake build warning"), "{stderr}");
+        assert!(!stderr.contains('\x1b'), "{stderr:?}");
     }
 }

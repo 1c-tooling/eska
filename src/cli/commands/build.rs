@@ -6,9 +6,21 @@ use std::{
     io::{self, IsTerminal, Write as _},
     path::{Path, PathBuf},
     process::ExitCode,
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicUsize, Ordering},
+        mpsc::{self, Sender},
+    },
+    thread,
+    time::Duration,
 };
 
 use clap::{Args, ValueEnum};
+use crossterm::{
+    cursor::MoveToColumn,
+    queue,
+    terminal::{Clear, ClearType},
+};
 use gix::bstr::ByteSlice;
 use serde::Serialize;
 
@@ -86,15 +98,40 @@ impl BuildArgs {
                 return ExitCode::FAILURE;
             }
         };
+        let human = matches!(self.format, OutputFormat::Human);
+        let interactive = human && io::stderr().is_terminal();
         let styled = diagnostic_styling_enabled();
+        if human
+            && let Err(error) = write_build_started(ibcmd.version().as_str(), localizer, styled)
+        {
+            eprintln!(
+                "{}",
+                localizer.format(
+                    "build-output-write-error",
+                    &[("reason", LocalizationValue::Text(&error.to_string()))],
+                )
+            );
+            return ExitCode::FAILURE;
+        }
+        let mut progress =
+            interactive.then(|| ProgressLine::start(localizer.text("build-progress"), styled));
         let mut output_error = None;
-        let result = match build::execute_streaming(&plan, &ibcmd, |_, _, line| {
+        let result = build::execute_streaming(&plan, &ibcmd, |_, _, line| {
             if output_error.is_none()
-                && let Err(error) = write_diagnostic(line, &project, localizer, styled)
+                && let Err(error) =
+                    write_diagnostic(line, &project, localizer, styled, progress.as_ref())
             {
                 output_error = Some(error);
             }
-        }) {
+        });
+        if let Some(error) = progress
+            .as_mut()
+            .and_then(|progress| progress.finish().err())
+            && output_error.is_none()
+        {
+            output_error = Some(error);
+        }
+        let result = match result {
             Ok(result) => result,
             Err(error) => {
                 eprintln!("{}", present_streamed_build_error(&error, localizer));
@@ -112,30 +149,13 @@ impl BuildArgs {
             return ExitCode::FAILURE;
         }
 
-        match self.format {
-            OutputFormat::Human => println!(
-                "{}",
-                localizer.format(
-                    "build-completed",
-                    &[
-                        (
-                            "artifact",
-                            LocalizationValue::Text(&result.output().to_string_lossy()),
-                        ),
-                        ("version", LocalizationValue::Text(ibcmd.version().as_str()),),
-                    ],
-                )
-            ),
-            OutputFormat::Json => {
-                let document = BuildDocument::new(&plan, &result);
-                let Ok(json) = serde_json::to_string_pretty(&document) else {
-                    eprintln!("{}", localizer.text("build-json-error"));
-                    return ExitCode::FAILURE;
-                };
-                println!("{json}");
-            }
-        }
-        ExitCode::SUCCESS
+        write_build_result(
+            self.format,
+            &plan,
+            &result,
+            ibcmd.version().as_str(),
+            localizer,
+        )
     }
 }
 
@@ -145,15 +165,26 @@ fn write_diagnostic(
     project: &Project,
     localizer: &Localizer,
     styled: bool,
+    progress: Option<&ProgressLine>,
 ) -> io::Result<()> {
-    let mut stderr = io::stderr().lock();
     let Ok(line) = std::str::from_utf8(line) else {
-        stderr.write_all(line)?;
-        return stderr.flush();
+        return write_diagnostic_bytes(line, progress);
     };
     let line = humanize_source_paths(line, project, localizer);
     let line = style_diagnostic_level(&line, styled);
-    stderr.write_all(line.as_bytes())?;
+    write_diagnostic_bytes(line.as_bytes(), progress)
+}
+
+/// Write one diagnostic while keeping an interactive progress line at the bottom.
+fn write_diagnostic_bytes(line: &[u8], progress: Option<&ProgressLine>) -> io::Result<()> {
+    if let Some(progress) = progress {
+        return progress.write_diagnostic(line);
+    }
+    let mut stderr = io::stderr().lock();
+    stderr.write_all(line)?;
+    if !line.ends_with(b"\n") {
+        stderr.write_all(b"\n")?;
+    }
     stderr.flush()
 }
 
@@ -178,13 +209,24 @@ fn humanize_source_paths(message: &str, project: &Project, localizer: &Localizer
         )
         .map_or_else(
             || normalized.clone(),
-            |path| diff::render_metadata_path(&path, localizer),
+            |path| {
+                let owner = diff::render_metadata_path(&path, localizer);
+                diagnostic_path_tail(&normalized)
+                    .map_or_else(|| owner.clone(), |tail| format!("{owner} · {tail}"))
+            },
         );
         rendered.push_str(&display);
         remaining = &after_source[consumed..];
     }
     rendered.push_str(remaining);
     rendered
+}
+
+/// Retain the concrete help payload below its concise logical metadata owner.
+fn diagnostic_path_tail(relative: &str) -> Option<&str> {
+    relative
+        .find("/Ext/Help/")
+        .map(|position| &relative[position + 1..])
 }
 
 /// Find the longest existing path immediately below the configured source directory.
@@ -229,6 +271,193 @@ fn style_diagnostic_level(message: &str, styled: bool) -> String {
 /// Enable diagnostic colors only for an interactive stderr that permits color.
 fn diagnostic_styling_enabled() -> bool {
     io::stderr().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
+}
+
+/// Enable success styling only when its stdout destination is interactive.
+fn result_styling_enabled() -> bool {
+    io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
+}
+
+/// Print the stable build heading before the first tool stage starts.
+fn write_build_started(version: &str, localizer: &Localizer, styled: bool) -> io::Result<()> {
+    let message = localizer.format(
+        "build-started",
+        &[("version", LocalizationValue::Text(version))],
+    );
+    let message = decorate_status("▶", &message, styled, "36");
+    let mut stderr = io::stderr().lock();
+    writeln!(stderr, "{message}")?;
+    stderr.flush()
+}
+
+/// Add a stable marker and optionally color only that marker.
+fn decorate_status(marker: &str, message: &str, styled: bool, color: &str) -> String {
+    if styled {
+        format!("\x1b[1;{color}m{marker}\x1b[0m {message}")
+    } else {
+        format!("{marker} {message}")
+    }
+}
+
+const SPINNER_FRAMES: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+struct ProgressState {
+    output: Mutex<()>,
+    frame: AtomicUsize,
+    message: String,
+    styled: bool,
+}
+
+struct ProgressLine {
+    state: Arc<ProgressState>,
+    stop: Sender<()>,
+    worker: Option<thread::JoinHandle<io::Result<()>>>,
+    active: bool,
+}
+
+impl ProgressLine {
+    /// Start a terminal-owned spinner that remains below streamed diagnostics.
+    fn start(message: String, styled: bool) -> Self {
+        let state = Arc::new(ProgressState {
+            output: Mutex::new(()),
+            frame: AtomicUsize::new(0),
+            message,
+            styled,
+        });
+        let (stop, receiver) = mpsc::channel();
+        let worker_state = Arc::clone(&state);
+        let worker = thread::spawn(move || {
+            loop {
+                draw_progress(&worker_state)?;
+                match receiver.recv_timeout(Duration::from_millis(80)) {
+                    Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => return Ok(()),
+                    Err(mpsc::RecvTimeoutError::Timeout) => {
+                        worker_state.frame.fetch_add(1, Ordering::Relaxed);
+                    }
+                }
+            }
+        });
+        Self {
+            state,
+            stop,
+            worker: Some(worker),
+            active: true,
+        }
+    }
+
+    /// Clear the spinner, write one complete diagnostic line, then restore it.
+    fn write_diagnostic(&self, line: &[u8]) -> io::Result<()> {
+        let _guard = lock_progress_output(&self.state)?;
+        let mut stderr = io::stderr().lock();
+        clear_progress(&mut stderr)?;
+        stderr.write_all(line)?;
+        if !line.ends_with(b"\n") {
+            stderr.write_all(b"\n")?;
+        }
+        draw_progress_locked(&mut stderr, &self.state)?;
+        stderr.flush()
+    }
+
+    /// Stop animation and remove its final line before result presentation.
+    fn finish(&mut self) -> io::Result<()> {
+        if !self.active {
+            return Ok(());
+        }
+        self.active = false;
+        let _ = self.stop.send(());
+        let worker_result = self
+            .worker
+            .take()
+            .map(|worker| {
+                worker
+                    .join()
+                    .map_err(|_| io::Error::other("build progress thread panicked"))?
+            })
+            .transpose();
+        let clear_result = {
+            let _guard = lock_progress_output(&self.state)?;
+            let mut stderr = io::stderr().lock();
+            clear_progress(&mut stderr)?;
+            stderr.flush()
+        };
+        worker_result.and(clear_result)
+    }
+}
+
+impl Drop for ProgressLine {
+    fn drop(&mut self) {
+        let _ = self.finish();
+    }
+}
+
+/// Lock the multi-write terminal sequence shared with the animation thread.
+fn lock_progress_output(state: &ProgressState) -> io::Result<std::sync::MutexGuard<'_, ()>> {
+    state
+        .output
+        .lock()
+        .map_err(|_| io::Error::other("build progress output lock was poisoned"))
+}
+
+/// Draw the current animation frame while acquiring the shared terminal lock.
+fn draw_progress(state: &ProgressState) -> io::Result<()> {
+    let _guard = lock_progress_output(state)?;
+    let mut stderr = io::stderr().lock();
+    draw_progress_locked(&mut stderr, state)?;
+    stderr.flush()
+}
+
+/// Draw the current animation frame as the terminal's last line.
+fn draw_progress_locked(stderr: &mut impl io::Write, state: &ProgressState) -> io::Result<()> {
+    let frame = state.frame.load(Ordering::Relaxed) % SPINNER_FRAMES.len();
+    let message = decorate_status(SPINNER_FRAMES[frame], &state.message, state.styled, "36");
+    queue!(
+        stderr,
+        MoveToColumn(0),
+        Clear(ClearType::CurrentLine),
+        crossterm::style::Print(message)
+    )
+}
+
+/// Remove the transient progress line without affecting completed diagnostics.
+fn clear_progress(stderr: &mut impl io::Write) -> io::Result<()> {
+    queue!(stderr, MoveToColumn(0), Clear(ClearType::CurrentLine))
+}
+
+/// Present the successful build without changing the JSON result contract.
+fn write_build_result(
+    format: OutputFormat,
+    plan: &BuildPlan,
+    result: &build::BuildResult,
+    version: &str,
+    localizer: &Localizer,
+) -> ExitCode {
+    match format {
+        OutputFormat::Human => {
+            let message = localizer.format(
+                "build-completed",
+                &[
+                    (
+                        "artifact",
+                        LocalizationValue::Text(&result.output().to_string_lossy()),
+                    ),
+                    ("version", LocalizationValue::Text(version)),
+                ],
+            );
+            println!(
+                "{}",
+                decorate_status("✓", &message, result_styling_enabled(), "32")
+            );
+        }
+        OutputFormat::Json => {
+            let document = BuildDocument::new(plan, result);
+            let Ok(json) = serde_json::to_string_pretty(&document) else {
+                eprintln!("{}", localizer.text("build-json-error"));
+                return ExitCode::FAILURE;
+            };
+            println!("{json}");
+        }
+    }
+    ExitCode::SUCCESS
 }
 
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
@@ -432,7 +661,7 @@ fn tool_source(source: &ToolSource) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::style_diagnostic_level;
+    use super::{decorate_status, diagnostic_path_tail, style_diagnostic_level};
 
     #[test]
     /// Color only the recognized diagnostic prefix and preserve the message bytes.
@@ -460,6 +689,32 @@ mod tests {
         assert_eq!(
             style_diagnostic_level("plain diagnostic\n", true),
             "plain diagnostic\n"
+        );
+    }
+
+    #[test]
+    /// Preserve the concrete help file without restoring its absolute source path.
+    fn keeps_help_payload_tail_after_logical_owner() {
+        assert_eq!(
+            diagnostic_path_tail("DataProcessors/Files/Forms/AttachedFile/Ext/Help/ru.html"),
+            Some("Ext/Help/ru.html")
+        );
+        assert_eq!(
+            diagnostic_path_tail("DataProcessors/Files/Ext/ObjectModule.bsl"),
+            None
+        );
+    }
+
+    #[test]
+    /// Keep status markers in redirected output and color only the interactive marker.
+    fn decorates_build_status_without_changing_its_message() {
+        assert_eq!(
+            decorate_status("✓", "Built artifact", false, "32"),
+            "✓ Built artifact"
+        );
+        assert_eq!(
+            decorate_status("✓", "Built artifact", true, "32"),
+            "\x1b[1;32m✓\x1b[0m Built artifact"
         );
     }
 }
