@@ -533,7 +533,7 @@ fn styling_enabled() -> bool {
 }
 
 /// Render a logical metadata identity in Configurator notation.
-fn render_metadata_path(path: &MetadataPath, localizer: &Localizer) -> String {
+pub(super) fn render_metadata_path(path: &MetadataPath, localizer: &Localizer) -> String {
     path.parts
         .iter()
         .map(|part| {

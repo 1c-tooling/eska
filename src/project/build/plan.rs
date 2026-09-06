@@ -68,6 +68,18 @@ impl BuildPlan {
     /// # Errors
     /// Returns a structured error for a nameless project root or unsafe/mismatched output path.
     pub fn new(project: &Project, output: Option<&Path>) -> Result<Self, PlanError> {
+        Self::with_platform_version(project, output, None)
+    }
+
+    /// Resolve an artifact plan with an optional one-run platform override.
+    ///
+    /// # Errors
+    /// Returns a structured error for a nameless project root or unsafe/mismatched output path.
+    pub fn with_platform_version(
+        project: &Project,
+        output: Option<&Path>,
+        platform_version: Option<PlatformVersion>,
+    ) -> Result<Self, PlanError> {
         let explicit_output = output.is_some();
         let artifact_type = ArtifactType::from(project.configuration().project_type());
         let artifacts_directory = project.root().join(
@@ -83,11 +95,15 @@ impl BuildPlan {
         Ok(Self {
             project_root: project.root().to_owned(),
             artifact_type,
-            platform_version: project
-                .configuration()
-                .build_settings()
-                .platform_version()
-                .clone(),
+            platform_version: platform_version
+                .or_else(|| {
+                    project
+                        .configuration()
+                        .build_settings()
+                        .platform_version()
+                        .cloned()
+                })
+                .ok_or(PlanError::PlatformVersionMissing)?,
             source: project.source().to_owned(),
             artifacts_directory,
             output,
@@ -134,6 +150,7 @@ impl BuildPlan {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PlanError {
     ProjectNameMissing,
+    PlatformVersionMissing,
     InvalidOutput {
         path: PathBuf,
     },
@@ -237,5 +254,24 @@ mod tests {
             BuildPlan::new(&project, Some(Path::new("result.cfe"))),
             Err(PlanError::UnexpectedExtension { expected: "cf", .. })
         ));
+    }
+
+    #[test]
+    /// Keep a platform override inside the plan without changing project settings.
+    fn platform_override_is_plan_local() {
+        let project = project(ProjectType::Configuration, "/work/demo");
+        let override_version = PlatformVersion::parse("8.5.4.1234").expect("version");
+        let plan = BuildPlan::with_platform_version(&project, None, Some(override_version))
+            .expect("valid plan");
+        assert_eq!(plan.platform_version().as_str(), "8.5.4.1234");
+        assert_eq!(
+            project
+                .configuration()
+                .build_settings()
+                .platform_version()
+                .expect("configured version")
+                .as_str(),
+            "8.3.27.2325"
+        );
     }
 }

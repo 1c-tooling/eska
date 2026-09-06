@@ -1,11 +1,13 @@
 mod build;
 mod clone;
+mod config;
 mod diff;
 mod finish;
 mod history;
 mod init;
 mod localization;
 mod new;
+mod platform;
 mod save;
 mod start;
 mod status;

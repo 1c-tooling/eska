@@ -116,8 +116,8 @@ mod tests {
             assert_eq!(
                 names,
                 [
-                    "build", "clone", "new", "init", "diff", "finish", "history", "save", "start",
-                    "status", "switch"
+                    "build", "clone", "config", "new", "init", "platform", "diff", "finish",
+                    "history", "save", "start", "status", "switch"
                 ]
             );
             command.debug_assert();

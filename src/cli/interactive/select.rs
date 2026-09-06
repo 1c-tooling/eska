@@ -12,7 +12,7 @@ use crate::cli::localization::Localizer;
 use super::{
     PromptError,
     keyboard::{Action, action},
-    render::{fits, render},
+    render::{fits, render, render_values},
     terminal::Terminal,
 };
 
@@ -33,7 +33,7 @@ impl Selector {
         title: &str,
         choices: &[(&str, &str)],
     ) -> Result<String, PromptError> {
-        if choices.is_empty() || choices.len() > 9 {
+        if choices.is_empty() {
             return Err(PromptError::Io);
         }
         let mut selected = 0;
@@ -70,6 +70,46 @@ impl Selector {
         }
     }
 
+    pub(in crate::cli) fn choose_values(
+        &mut self,
+        localizer: &Localizer,
+        title: &str,
+        choices: &[(String, String)],
+    ) -> Result<String, PromptError> {
+        if choices.is_empty() {
+            return Err(PromptError::Io);
+        }
+        let mut selected = 0;
+        let mut size = terminal::size().map_err(|_| PromptError::Io)?;
+        self.draw_values(localizer, title, choices, selected, size)?;
+        loop {
+            match event::read().map_err(|_| PromptError::Io)? {
+                Event::Resize(width, height) => {
+                    size = (width, height);
+                    self.draw_values(localizer, title, choices, selected, size)?;
+                }
+                Event::Key(key) => {
+                    let action = action(key, selected, choices.len());
+                    if action == Action::Cancel {
+                        return Err(PromptError::Cancelled);
+                    }
+                    if !fits(size, choices.len()) {
+                        continue;
+                    }
+                    match action {
+                        Action::Move(index) => {
+                            selected = index;
+                            self.draw_values(localizer, title, choices, selected, size)?;
+                        }
+                        Action::Confirm(index) => return Ok(choices[index].0.clone()),
+                        Action::Ignore | Action::Cancel => {}
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
     fn draw(
         &mut self,
         localizer: &Localizer,
@@ -80,6 +120,28 @@ impl Selector {
     ) -> Result<(), PromptError> {
         let mut frame = Vec::new();
         render(
+            &mut frame,
+            localizer,
+            (self.heading, title),
+            choices,
+            selected,
+            size,
+            self.terminal.styled(),
+        )
+        .and_then(|()| self.terminal.write_frame(&frame))
+        .map_err(|_| PromptError::Io)
+    }
+
+    fn draw_values(
+        &mut self,
+        localizer: &Localizer,
+        title: &str,
+        choices: &[(String, String)],
+        selected: usize,
+        size: (u16, u16),
+    ) -> Result<(), PromptError> {
+        let mut frame = Vec::new();
+        render_values(
             &mut frame,
             localizer,
             (self.heading, title),

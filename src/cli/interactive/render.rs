@@ -26,6 +26,30 @@ pub(super) fn render(
     size: (u16, u16),
     styled: bool,
 ) -> io::Result<()> {
+    let choices: Vec<_> = choices
+        .iter()
+        .map(|(value, label)| ((*value).to_owned(), localizer.text(label)))
+        .collect();
+    render_values(
+        output,
+        localizer,
+        (heading, title),
+        &choices,
+        selected,
+        size,
+        styled,
+    )
+}
+
+pub(super) fn render_values(
+    output: &mut impl Write,
+    localizer: &Localizer,
+    (heading, title): (&str, &str),
+    choices: &[(String, String)],
+    selected: usize,
+    size: (u16, u16),
+    styled: bool,
+) -> io::Result<()> {
     queue!(
         output,
         ResetColor,
@@ -59,11 +83,7 @@ pub(super) fn render(
             )?;
         }
         let marker = if index == selected { "›" } else { " " };
-        let text = format!(
-            "{marker} {}  {} ({value})",
-            index + 1,
-            localizer.text(label)
-        );
+        let text = format!("{marker} {}  {} ({value})", index + 1, label);
         let row = u16::try_from(index).map_err(io::Error::other)? + 5;
         line(output, row, &text, width, height)?;
         queue!(output, ResetColor, SetAttribute(Attribute::Reset))?;

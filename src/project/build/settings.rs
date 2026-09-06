@@ -1,6 +1,8 @@
-use std::path::{Component, Path, PathBuf};
+use std::{
+    cmp::Ordering,
+    path::{Component, Path, PathBuf},
+};
 
-pub const DEFAULT_PLATFORM_VERSION: &str = "8.3.27.2325";
 pub const DEFAULT_ARTIFACTS_DIRECTORY: &str = "build";
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33,16 +35,36 @@ impl PlatformVersion {
     }
 }
 
+impl Ord for PlatformVersion {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0
+            .split('.')
+            .map(|part| part.parse::<u32>().unwrap_or_default())
+            .cmp(
+                other
+                    .0
+                    .split('.')
+                    .map(|part| part.parse::<u32>().unwrap_or_default()),
+            )
+    }
+}
+
+impl PartialOrd for PlatformVersion {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct BuildSettings {
-    platform_version: PlatformVersion,
+    platform_version: Option<PlatformVersion>,
     artifacts_directory: PathBuf,
 }
 
 impl Default for BuildSettings {
     fn default() -> Self {
         Self {
-            platform_version: PlatformVersion(DEFAULT_PLATFORM_VERSION.to_owned()),
+            platform_version: None,
             artifacts_directory: PathBuf::from(DEFAULT_ARTIFACTS_DIRECTORY),
         }
     }
@@ -52,12 +74,17 @@ impl BuildSettings {
     /// Validate portable project build settings.
     ///
     /// # Errors
-    /// Returns a structured error for an invalid platform version or unsafe artifacts path.
+    /// An empty version remains unconfigured. Returns a structured error for a malformed
+    /// non-empty platform version or unsafe artifacts path.
     pub fn new(
         platform_version: &str,
         artifacts_directory: PathBuf,
     ) -> Result<Self, BuildSettingsError> {
-        let platform_version = PlatformVersion::parse(platform_version)?;
+        let platform_version = if platform_version.is_empty() {
+            None
+        } else {
+            Some(PlatformVersion::parse(platform_version)?)
+        };
         validate_artifacts_directory(&artifacts_directory)?;
         Ok(Self {
             platform_version,
@@ -66,8 +93,8 @@ impl BuildSettings {
     }
 
     #[must_use]
-    pub const fn platform_version(&self) -> &PlatformVersion {
-        &self.platform_version
+    pub const fn platform_version(&self) -> Option<&PlatformVersion> {
+        self.platform_version.as_ref()
     }
 
     #[must_use]
@@ -135,6 +162,22 @@ mod tests {
                 Err(BuildSettingsError::InvalidPlatformVersion { .. })
             ));
         }
+    }
+
+    #[test]
+    /// Sort version components numerically instead of lexicographically.
+    fn platform_versions_have_numeric_order() {
+        assert!(
+            PlatformVersion::parse("8.5.10.1").expect("version")
+                > PlatformVersion::parse("8.5.4.9999").expect("version")
+        );
+    }
+
+    #[test]
+    /// Represent an empty project value as an unconfigured build version.
+    fn empty_build_version_is_unconfigured() {
+        let settings = BuildSettings::new("", PathBuf::from("build")).expect("settings");
+        assert_eq!(settings.platform_version(), None);
     }
 
     #[test]

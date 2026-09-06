@@ -135,7 +135,7 @@ mod tests {
             assert_eq!(config_file.path(), Path::new("eska.toml"));
             assert_eq!(
                 config_file.contents(),
-                format!("[project]\ntype = \"{name}\"\n")
+                format!("[project]\ntype = \"{name}\"\n\n[build]\nplatform_version = \"\"\n")
             );
 
             let config = ProjectConfig::from_toml(config_file.contents()).expect("valid config");

@@ -2,6 +2,7 @@
 
 use std::{
     fs,
+    io::{BufRead, BufReader, Read},
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::{Command, Output, Stdio},
@@ -45,6 +46,16 @@ fn project(fixture: &TestDir, project_type: &str, name: &str) -> PathBuf {
         .expect("create project");
     assert!(output.status.success(), "{output:?}");
     let root = fixture.0.join(name);
+    let config_path = root.join("eska.toml");
+    let config = fs::read_to_string(&config_path).expect("read project config");
+    fs::write(
+        &config_path,
+        config.replace(
+            "platform_version = \"\"",
+            "platform_version = \"8.3.27.2325\"",
+        ),
+    )
+    .expect("configure build platform");
     if let Some(tag) = match project_type {
         "processing" => Some("ExternalDataProcessor"),
         "report" => Some("ExternalReport"),
@@ -68,7 +79,7 @@ fn fake_ibcmd(fixture: &TestDir) -> PathBuf {
         &path,
         r#"#!/bin/sh
 if [ "$1" = "--version" ]; then
-  echo "1C ibcmd version 8.3.27.2325"
+  echo "1C ibcmd version ${FAKE_IBCMD_VERSION:-8.3.27.2325}"
   exit 0
 fi
 if [ "$1" = "infobase" ] && [ "$2" = "create" ]; then
@@ -85,9 +96,20 @@ if [ "$1" = "config" ] && [ "$2" = "import" ]; then
     echo "fake import failure" >&2
     exit 7
   fi
+  output=
+  source=
   for argument in "$@"; do
-    case "$argument" in --out=*) printf 'native-artifact' > "${argument#--out=}";; esac
+    case "$argument" in
+      --out=*) output="${argument#--out=}";;
+      --*) ;;
+      *) source="$argument";;
+    esac
   done
+  if [ "$FAKE_IBCMD_STREAM" = "1" ]; then
+    echo "[INFO] File: $source/DataProcessors/РаботаСФайлами/Forms/ПрисоединенныйФайл/Ext/Help/ru.html, checking"
+    sleep 2
+  fi
+  printf 'native-artifact' > "$output"
   echo "[WARN] fake build warning"
   exit 0
 fi
@@ -99,6 +121,150 @@ exit 9
     permissions.set_mode(0o755);
     fs::set_permissions(&path, permissions).expect("make fake executable");
     path
+}
+
+#[test]
+/// Apply an exact platform override to one build without rewriting project settings.
+fn platform_version_override_is_ephemeral() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "configuration", "Override");
+    let config_before = fs::read_to_string(root.join("eska.toml")).expect("project config");
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("ESKA_CONFIG_DIR", fixture.0.join("settings"))
+        .env("FAKE_IBCMD_VERSION", "8.5.4.1234")
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--platform-version",
+            "8.5.4.1234",
+            "--ibcmd",
+        ])
+        .arg(&ibcmd)
+        .output()
+        .expect("build with override");
+    assert!(output.status.success(), "{output:?}");
+    let stderr = String::from_utf8(output.stderr).expect("stderr");
+    assert!(
+        stderr.contains("this selection applies only to this build"),
+        "{stderr}"
+    );
+    assert_eq!(
+        fs::read_to_string(root.join("eska.toml")).expect("project config after build"),
+        config_before
+    );
+}
+
+#[test]
+/// Require an explicit project version before a normal build starts.
+fn unconfigured_platform_version_blocks_only_normal_build() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "configuration", "Unconfigured");
+    let config_path = root.join("eska.toml");
+    let config = fs::read_to_string(&config_path).expect("project config");
+    fs::write(
+        &config_path,
+        config.replace(
+            "platform_version = \"8.3.27.2325\"",
+            "platform_version = \"\"",
+        ),
+    )
+    .expect("clear platform version");
+
+    for (locale, message) in [
+        ("ru", "Заполните build.platform_version"),
+        ("en", "Fill in build.platform_version"),
+    ] {
+        let output = eska(&root, locale, &ibcmd, &["build"], false);
+        assert!(!output.status.success(), "{output:?}");
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(message),
+            "{output:?}"
+        );
+        assert!(!root.join("build").exists());
+    }
+
+    let override_build = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("ESKA_CONFIG_DIR", fixture.0.join("settings"))
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--platform-version",
+            "8.3.27.2325",
+            "--ibcmd",
+        ])
+        .arg(&ibcmd)
+        .output()
+        .expect("build with one-run version");
+    assert!(override_build.status.success(), "{override_build:?}");
+}
+
+#[test]
+/// Emit an ibcmd line before completion and project its source file to a metadata owner.
+fn streams_humanized_diagnostics_while_build_is_running() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "configuration", "Streaming");
+    let help =
+        root.join("src/DataProcessors/РаботаСФайлами/Forms/ПрисоединенныйФайл/Ext/Help/ru.html");
+    fs::create_dir_all(help.parent().expect("help parent")).expect("create help directory");
+    fs::write(&help, "help").expect("write help file");
+
+    let mut child = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("FAKE_IBCMD_STREAM", "1")
+        .env_remove("NO_COLOR")
+        .args(["--lang", "ru", "build", "--ibcmd"])
+        .arg(&ibcmd)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("start streaming build");
+    let mut stderr = BufReader::new(child.stderr.take().expect("build stderr"));
+    let mut first_line = String::new();
+    stderr
+        .read_line(&mut first_line)
+        .expect("read build heading");
+    assert_eq!(
+        first_line.replace(['\u{2068}', '\u{2069}'], ""),
+        "▶ Начало сборки платформой 1С 8.3.27.2325\n"
+    );
+
+    first_line.clear();
+    stderr
+        .read_line(&mut first_line)
+        .expect("read first diagnostic");
+
+    assert_eq!(
+        first_line,
+        "[INFO] File: Обработка.РаботаСФайлами.Форма.ПрисоединенныйФайл · Ext/Help/ru.html, checking\n"
+    );
+    assert!(
+        child.try_wait().expect("inspect running build").is_none(),
+        "build completed before its first diagnostic was observed"
+    );
+    assert!(!first_line.contains(root.to_string_lossy().as_ref()));
+
+    let mut remaining_stderr = String::new();
+    stderr
+        .read_to_string(&mut remaining_stderr)
+        .expect("read remaining diagnostics");
+    let mut stdout = String::new();
+    child
+        .stdout
+        .take()
+        .expect("build stdout")
+        .read_to_string(&mut stdout)
+        .expect("read build result");
+    let status = child.wait().expect("wait for streaming build");
+    assert!(status.success(), "{remaining_stderr}");
+    assert_eq!(remaining_stderr, "[WARN] fake build warning\n");
+    assert!(stdout.contains("✓ Собран"), "{stdout}");
 }
 
 #[test]
@@ -182,11 +348,7 @@ fn exact_platform_version_is_required() {
     let root = project(&fixture, "configuration", "Versioned");
     let config = root.join("eska.toml");
     let value = fs::read_to_string(&config).expect("config");
-    fs::write(
-        &config,
-        format!("{value}\n[build]\nplatform_version = \"8.3.26.1540\"\n"),
-    )
-    .expect("configure version");
+    fs::write(&config, value.replace("8.3.27.2325", "8.3.26.1540")).expect("configure version");
 
     let output = eska(&root, "en", &ibcmd, &["build"], false);
     assert_eq!(output.status.code(), Some(1));
@@ -231,9 +393,19 @@ fn help_and_human_result_are_localized() {
     let fixture = TestDir::new();
     let ibcmd = fake_ibcmd(&fixture);
     let root = project(&fixture, "extension", "Localized");
-    for (locale, help_text, result_text) in [
-        ("ru", "Собрать нативный артефакт", "Собран"),
-        ("en", "Build a native 1C artifact", "Built"),
+    for (locale, help_text, started_text, result_text) in [
+        (
+            "ru",
+            "Собрать нативный артефакт",
+            "Начало сборки платформой 1С",
+            "Собран",
+        ),
+        (
+            "en",
+            "Build a native 1C artifact",
+            "Starting build with 1C platform",
+            "Built",
+        ),
     ] {
         let help = Command::new(env!("CARGO_BIN_EXE_eska"))
             .current_dir(&root)
@@ -245,7 +417,13 @@ fn help_and_human_result_are_localized() {
 
         let output = eska(&root, locale, &ibcmd, &["build"], false);
         assert!(output.status.success(), "{output:?}");
-        assert!(String::from_utf8_lossy(&output.stdout).contains(result_text));
-        assert!(String::from_utf8_lossy(&output.stderr).contains("[WARN] fake build warning"));
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stdout.contains(&format!("✓ {result_text}")), "{stdout}");
+        assert!(!stdout.contains("8.3.27.2325"), "{stdout}");
+        assert!(!stdout.contains('\x1b'), "{stdout:?}");
+        assert!(stderr.contains(started_text), "{stderr}");
+        assert!(stderr.contains("[WARN] fake build warning"), "{stderr}");
+        assert!(!stderr.contains('\x1b'), "{stderr:?}");
     }
 }

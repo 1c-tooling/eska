@@ -6,7 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::{ArtifactType, BuildPlan, Ibcmd, RunError};
+use super::{ArtifactType, BuildPlan, Ibcmd, ProcessStream, RunError};
 use crate::project::{ProjectType, designer_xml};
 
 static WORKSPACE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -71,6 +71,21 @@ pub enum BuildError {
 /// Returns a structured error for unsafe output resolution, process failures,
 /// invalid generated artifacts, or publication failures.
 pub fn execute(plan: &BuildPlan, ibcmd: &Ibcmd) -> Result<BuildResult, BuildError> {
+    execute_streaming(plan, ibcmd, |_, _, _| {})
+}
+
+/// Build an artifact while reporting each complete ibcmd output line immediately.
+///
+/// # Errors
+/// Returns the same structured failures as [`execute`].
+pub fn execute_streaming<F>(
+    plan: &BuildPlan,
+    ibcmd: &Ibcmd,
+    mut on_output: F,
+) -> Result<BuildResult, BuildError>
+where
+    F: FnMut(BuildStage, ProcessStream, &[u8]),
+{
     let started = Instant::now();
     ibcmd
         .begin_interruptible_operation()
@@ -109,6 +124,7 @@ pub fn execute(plan: &BuildPlan, ibcmd: &Ibcmd) -> Result<BuildResult, BuildErro
             option("--data", &data),
         ],
         &pid_file,
+        &mut on_output,
     )?;
     let import_output = run(
         ibcmd,
@@ -121,6 +137,7 @@ pub fn execute(plan: &BuildPlan, ibcmd: &Ibcmd) -> Result<BuildResult, BuildErro
             import_source.into_os_string(),
         ],
         &pid_file,
+        &mut on_output,
     )?;
     if ibcmd.was_interrupted() {
         return Err(BuildError::Run {
@@ -205,14 +222,20 @@ fn import_source(plan: &BuildPlan) -> Result<PathBuf, BuildError> {
 }
 
 /// Run one ibcmd stage and retain only its stable stage plus diagnostic stderr.
-fn run<const N: usize>(
+fn run<const N: usize, F>(
     ibcmd: &Ibcmd,
     stage: BuildStage,
     arguments: [OsString; N],
     pid_file: &Path,
-) -> Result<std::process::Output, BuildError> {
+    on_output: &mut F,
+) -> Result<std::process::Output, BuildError>
+where
+    F: FnMut(BuildStage, ProcessStream, &[u8]),
+{
     let output = ibcmd
-        .run_interruptible(arguments, pid_file)
+        .run_interruptible(arguments, pid_file, &mut |stream, output| {
+            on_output(stage, stream, output);
+        })
         .map_err(|source| BuildError::Run { stage, source })?;
     if output.status.success() {
         Ok(output)

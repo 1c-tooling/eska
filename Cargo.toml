@@ -32,6 +32,7 @@ multiple_crate_versions = { level = "allow", priority = 1 }
 clap = { version = "4.6.6", features = ["derive", "string"] }
 crossterm = { version = "0.29.0", default-features = false, features = ["events", "windows", "bracketed-paste"] }
 ctrlc = { version = "3.5.2", features = ["termination"] }
+directories = "6.0.0"
 fluent = "0.17.0"
 gix = { version = "0.87.1", default-features = false, features = ["blocking-http-transport-curl-rustls", "max-performance", "revision", "sha1", "status", "worktree-mutation"] }
 roxmltree = { version = "0.21.1", default-features = false, features = ["std"] }

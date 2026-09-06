@@ -71,6 +71,11 @@ fn cli_creates_all_types_and_presets_in_both_locales() {
                 assert!(root.join(".gitattributes").is_file());
                 assert!(root.join(".gitignore").is_file());
                 assert!(!root.join(".git").exists());
+                assert!(
+                    fs::read_to_string(root.join("eska.toml"))
+                        .expect("project config text")
+                        .contains("platform_version = \"\"")
+                );
                 let config = ProjectConfig::load(&root.join("eska.toml")).expect("config");
                 assert_eq!(
                     config.configuration().workflow(),
