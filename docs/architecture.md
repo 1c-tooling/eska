@@ -168,8 +168,9 @@ tests/
 - `config/manifest.rs` различает взаимоисключающие `[project]` и `[workspace]`;
   `config/workspace.rs` проверяет корневые defaults и относительные member paths.
   `project/discovery.rs::discover_context` валидирует весь workspace, канонические
-  границы и наследование настроек. `build` и `version` используют общий selection;
-  старый `discover` остаётся одно-проектной границей остальных команд.
+  границы и наследование настроек. `build`, `version`, `status`, `diff` и `save`
+  используют общий selection; старый `discover` остаётся одно-проектной границей
+  команд без workspace-семантики.
 - `project/templates.rs` возвращает план файлов, но ничего не записывает.
   Запись и откат принадлежат конкретной операции: у `new` — новый каталог,
   у `init` — только созданные этим запуском config и Git-метаданные.
@@ -181,8 +182,9 @@ tests/
   неподдерживаемых remote-helper transport. Состояние файлов не требует разбора
   Designer XML.
 - `project/status.rs` объединяет configuration, workflow policy и read-only Git
-  в снимок проекта. `cli/commands/status.rs` только локализует human presentation
-  или сериализует стабильную JSON-схему версии 1.
+  в снимок проекта либо выбранной группы workspace из одного repository status.
+  `cli/commands/status.rs` сохраняет одиночную JSON v1 и формирует отдельную
+  aggregate JSON v1 с members и workspace-owned files.
 - `project/diff.rs` отбирает изменения внутри корня проекта и переводит пути в
   project-relative вид: workspace сохраняет отдельные состояния index/worktree,
   revision comparison — исходные и resolved endpoints и одно состояние файла.
@@ -191,8 +193,9 @@ tests/
   свойства дочерних объектов только в изменённых главных XML-файлах.
   `cli/commands/diff.rs` группирует logical identities по типу метаданных и
   состоянию, оформляет TTY-заголовки и маркеры, отдельно формирует raw,
-  workspace JSON версии 1 и revision JSON версии 2. Semantic-анализ BSL/форм
-  остаётся задачами T20–T21.
+  workspace JSON версии 1 и revision JSON версии 2. Для project workspace один
+  Git snapshot или tree comparison проецируется на selected members и корневые
+  файлы; aggregate semantic JSON сохраняет версию 3.
 - `project/object_model.rs` по явному вызову обходит Designer XML source и строит
   read-only индекс логических объектов. Читаемый `ObjectId` формируется из
   machine-facing metadata type/name и иерархии; UUID хранится отдельно, поскольку
@@ -224,6 +227,10 @@ tests/
   `project/selection.rs` разрешает standalone/current/named/all selection без
   зависимости от CLI. `cli/commands/version.rs` сохраняет JSON v1 одиночного
   проекта и формирует отдельный versioned документ для списка workspace members.
+- `project/save.rs` выполняет одну и ту же index snapshot/stage/commit/rollback
+  транзакцию для корня проекта или workspace. System Git получает точный cwd и
+  pathspec `.`, поэтому staged sibling paths большого репозитория не входят в
+  commit и сохраняются в index.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую

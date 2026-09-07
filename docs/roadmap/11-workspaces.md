@@ -223,7 +223,7 @@ JSON v1 со стабильными status/error codes.
 
 ## T47 — Workspace-aware `status`, `diff` и `save`
 
-**Статус:** `NEXT` · **Зависит от:** T12, T14, T15, T44
+**Статус:** `DONE` · **Зависит от:** T12, T14, T15, T44
 
 - из member каталога `status`, `diff` и `save` сохраняют project-scoped
   поведение;
@@ -238,9 +238,16 @@ JSON v1 со стабильными status/error codes.
 Workspace human output локализуется; aggregate JSON получает новые
 versioned documents и не меняет существующие single-project schemas.
 
+**Результат:** `status` и `diff` используют current/named/all selection,
+сохраняют одиночные схемы и из одного Git snapshot группируют members отдельно
+от workspace-owned files. Aggregate поддерживает human, JSON, raw, revision и
+semantic diff. `save -p` создаёт commit только для одного member; `save` из корня
+и `save --workspace` выполняют одну rollback-защищённую Git-транзакцию по всему
+workspace, не включая и не снимая staging с соседних путей repository.
+
 ## T48 — `new` и `init` для workspace members
 
-**Статус:** `PLANNED` · **Зависит от:** T04, T06, T44
+**Статус:** `NEXT` · **Зависит от:** T04, T06, T44
 
 Добавить member без создания вложенного Git repository и без member-level
 workflow. Операция до записи проверяет destination, descriptor, имя,
