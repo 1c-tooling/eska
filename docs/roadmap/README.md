@@ -37,8 +37,12 @@
 - `DONE`: `T28` — сборка `.cf`, `.cfe`, `.epf`, `.erf` через
   настраиваемый `ibcmd`, глобальный machine config и одноразовый выбор
   установленной платформы;
-- `NEXT`: `T42` — отдельная спецификация patch-extension `.cfe`
-  из разницы Git-веток;
+- `DONE`: `T42` — спецификация и feasibility-прототип patch-extension `.cfe`;
+- `DONE`: `T43` — production-команда `eska patch` для консервативного набора
+  изменений методов общих модулей;
+- `DONE`: `T25` — чтение и точечное изменение версии проекта 1С;
+- `PLANNED`: `T44–T48` — project workspaces для монорепозиториев
+  отчётов/обработок, их версионирования и сборки;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
@@ -59,7 +63,12 @@ start -> status/diff -> save -> switch/return -> finish
 | Переключиться и позднее вернуться | `eska switch` — `DONE` |
 | Завершить задачу | `eska finish` — `DONE` |
 | Собрать полный нативный артефакт | `eska build` → `.cf/.cfe/.epf/.erf` — `DONE` |
-| Собрать patch-extension из delta | `.cfe` — `NEXT`, сначала спецификация и feasibility |
+| Собрать patch-extension из delta | `eska patch` → `.cfe` — `DONE` для ограниченного набора методов |
+
+T42 подтвердил узкий сценарий замены метода общего модуля на 8.3.27.2325. T43
+зафиксировал консервативный allowlist и добавил отдельную команду с обязательной
+проверкой BSL и применимости пакетным Конфигуратором. Подробности и ограничения —
+[в результате T42/T43](t42-patch-extension.md).
 
 `shelve` не блокирует MVP: первая версия `switch` работает только с чистой
 рабочей копией и предлагает сначала выполнить `save`.
@@ -111,8 +120,8 @@ TUI разделён на обработку клавиш, отрисовку и
 | T22 | DONE | Генератор commit message | [07-semantic-changes.md](07-semantic-changes.md) |
 | T23 | DEFERRED | Спецификация test backend | [08-quality.md](08-quality.md) |
 | T24 | PLANNED | `affected` analysis | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T25 | PLANNED | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T26 | PLANNED | `eska fmt` | [08-quality.md](08-quality.md) |
+| T25 | DONE | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T26 | NEXT | `eska fmt` | [08-quality.md](08-quality.md) |
 | T27 | PLANNED | `eska check` | [08-quality.md](08-quality.md) |
 | T28 | DONE | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T29 | PLANNED | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
@@ -128,7 +137,13 @@ TUI разделён на обработку клавиш, отрисовку и
 | T39 | DEFERRED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
 | T40 | DONE | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T41 | PLANNED | VS Code extension | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T42 | NEXT | Patch-extension `.cfe` из разницы веток | [09-build-and-runtime.md](09-build-and-runtime.md) |
+| T42 | DONE | Спецификация и прототип patch-extension `.cfe` из разницы веток | [t42-patch-extension.md](t42-patch-extension.md) |
+| T43 | DONE | Генерация patch-extension для ограниченного набора методов | [t42-patch-extension.md](t42-patch-extension.md) |
+| T44 | PLANNED | Workspace config, model и discovery | [11-workspaces.md](11-workspaces.md) |
+| T45 | PLANNED | Versioning workspace members | [11-workspaces.md](11-workspaces.md) |
+| T46 | PLANNED | Build workspace members | [11-workspaces.md](11-workspaces.md) |
+| T47 | PLANNED | Workspace-aware `status`, `diff` и `save` | [11-workspaces.md](11-workspaces.md) |
+| T48 | PLANNED | `new` и `init` для workspace members | [11-workspaces.md](11-workspaces.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в

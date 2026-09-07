@@ -14,12 +14,14 @@ mod finish;
 mod history;
 mod init;
 mod new;
+mod patch;
 mod platform;
 mod save;
 mod start;
 mod status;
 mod switch;
 mod validate;
+mod version;
 
 #[derive(Debug, Subcommand)]
 pub(super) enum Commands {
@@ -36,6 +38,8 @@ pub(super) enum Commands {
     #[command(disable_help_flag = true)]
     Platform(platform::PlatformArgs),
     #[command(disable_help_flag = true)]
+    Patch(patch::PatchArgs),
+    #[command(disable_help_flag = true)]
     Diff(diff::DiffArgs),
     #[command(disable_help_flag = true)]
     Finish(finish::FinishArgs),
@@ -49,6 +53,8 @@ pub(super) enum Commands {
     Status(status::StatusArgs),
     #[command(disable_help_flag = true)]
     Switch(switch::SwitchArgs),
+    #[command(disable_help_flag = true)]
+    Version(version::VersionArgs),
 }
 
 pub(super) fn run(
@@ -63,6 +69,7 @@ pub(super) fn run(
         Some(Commands::New(args)) => args.run(project_dir, localizer),
         Some(Commands::Init(args)) => args.run(project_dir, localizer),
         Some(Commands::Platform(args)) => args.run(localizer),
+        Some(Commands::Patch(args)) => args.run(project_dir, localizer),
         Some(Commands::Diff(args)) => args.run(project_dir, localizer),
         Some(Commands::Finish(_)) => finish::FinishArgs::run(project_dir, localizer),
         Some(Commands::History(args)) => args.run(project_dir, localizer),
@@ -70,6 +77,7 @@ pub(super) fn run(
         Some(Commands::Start(args)) => args.run(project_dir, localizer),
         Some(Commands::Status(args)) => args.run(project_dir, localizer),
         Some(Commands::Switch(args)) => args.run(project_dir, localizer),
+        Some(Commands::Version(args)) => args.run(project_dir, localizer),
         None => validate::run(project_dir, localizer),
     }
 }
@@ -82,6 +90,7 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         .mut_subcommand("new", |command| new::localize(command, localizer))
         .mut_subcommand("init", |command| init::localize(command, localizer))
         .mut_subcommand("platform", |command| platform::localize(command, localizer))
+        .mut_subcommand("patch", |command| patch::localize(command, localizer))
         .mut_subcommand("diff", |command| diff::localize(command, localizer))
         .mut_subcommand("finish", |command| finish::localize(command, localizer))
         .mut_subcommand("history", |command| history::localize(command, localizer))
@@ -89,4 +98,5 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         .mut_subcommand("start", |command| start::localize(command, localizer))
         .mut_subcommand("status", |command| status::localize(command, localizer))
         .mut_subcommand("switch", |command| switch::localize(command, localizer))
+        .mut_subcommand("version", |command| version::localize(command, localizer))
 }

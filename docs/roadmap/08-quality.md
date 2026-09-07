@@ -18,7 +18,7 @@ tasks. Код команды, собственный test runner и новая d
 
 ## T26 — `eska fmt`
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T03, T19
 
 Режимы `fmt`, `fmt <scope>`, `fmt --check`; project/object-aware scope,

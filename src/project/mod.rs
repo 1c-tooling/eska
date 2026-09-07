@@ -12,12 +12,14 @@ pub mod init;
 pub(crate) mod metadata;
 pub mod model;
 pub mod object_model;
+pub mod patch;
 pub mod save;
 pub mod semantic;
 pub mod start;
 pub mod status;
 pub mod switch;
 pub mod templates;
+pub mod version;
 
 pub use model::{
     InvalidPathReason, Project, ProjectConfiguration, ProjectPath, ProjectPathError, ProjectType,

@@ -10,12 +10,24 @@
 
 ## T25 — Versioning проекта 1С
 
-**Статус:** `PLANNED`  
+**Статус:** `DONE`
 **Зависит от:** T03, T20
 
 `version`, `version bump patch|minor|major`; позднее `auto` по Conventional Commits,
 semantic changes и policy. Никогда не смешивать project version с версией бинарника
 `eska`.
+
+T25 реализована для всех поддерживаемых типов Designer XML. `version` читает
+четырёхкомпонентное значение корневого `Properties/Version`; `bump` сопоставляет
+major/minor/patch с revision/subrevision/version, сбрасывает младшие компоненты к
+начальным значениям и сохраняет ширину числовых частей.
+
+Запись не использует XML serializer: в исходном массиве байтов заменяется только
+текст единственного прямого тега `Properties/Version`. BOM, CRLF, пробелы,
+атрибуты, вложенные одноимённые теги и остальной XML сохраняются побайтно.
+Невалидный, неоднозначный или превышающий 64 МиБ descriptor отклоняется до записи.
+Human output локализован; JSON-схема версии 1 не зависит от locale. Git, build
+artifact и версия crate не изменяются. `auto` остаётся будущим расширением T32.
 
 ## T32 — Release pipeline
 

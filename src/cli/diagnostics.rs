@@ -1,14 +1,14 @@
-//! Shared localized presentation of project discovery and configuration errors.
+//! Shared localized presentation of project, configuration and platform errors.
 
 use std::{io, path::Path};
 
 use crate::{
     cli::localization::{LocalizationValue, Localizer},
-    config::{InvalidSourceReason, ProjectConfigError},
+    config::{GlobalConfigError, InvalidSourceReason, ProjectConfigError},
     project::discovery::DiscoveryError,
     project::{
         InvalidPathReason, ProjectPathError,
-        build::{BuildSettingsError, InvalidArtifactsDirectoryReason},
+        build::{BuildSettingsError, InvalidArtifactsDirectoryReason, ToolError, ToolSource},
     },
     vcs::workflow::PolicyError,
 };
@@ -27,6 +27,123 @@ pub(super) fn present_project_error(error: &DiscoveryError, localizer: &Localize
             path_message(localizer, "project-source-not-directory", path)
         }
         DiscoveryError::Config { path, source } => config_message(localizer, path, source),
+    }
+}
+
+/// Present machine-local config failures shared by config, build, platform and patch commands.
+pub(super) fn present_global_config_error(
+    error: &GlobalConfigError,
+    localizer: &Localizer,
+) -> String {
+    match error {
+        GlobalConfigError::LocationUnavailable => localizer.text("config-location-error"),
+        GlobalConfigError::Io { path, source } | GlobalConfigError::Replace { path, source } => {
+            localizer.format(
+                "config-io-error",
+                &[
+                    ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                    ("reason", LocalizationValue::Text(&source.to_string())),
+                ],
+            )
+        }
+        GlobalConfigError::Invalid { path, source } => localizer.format(
+            "config-invalid",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("reason", LocalizationValue::Text(&source.to_string())),
+            ],
+        ),
+        GlobalConfigError::DistroboxContainerMissing { path } => {
+            path_message(localizer, "config-distrobox-container-missing", path)
+        }
+        GlobalConfigError::HostContainerUnexpected { path } => {
+            path_message(localizer, "config-host-container-unexpected", path)
+        }
+        GlobalConfigError::Editor { source } => localizer.format(
+            "config-editor-error",
+            &[("reason", LocalizationValue::Text(&source.to_string()))],
+        ),
+        GlobalConfigError::EditorFailed => localizer.text("config-editor-failed"),
+    }
+}
+
+/// Present platform discovery and exact-version failures shared by platform consumers.
+pub(super) fn present_tool_error(error: &ToolError, localizer: &Localizer) -> String {
+    match error {
+        ToolError::InvalidArchitecture(value) => localizer.format(
+            "build-arch-invalid",
+            &[("value", LocalizationValue::Text(value))],
+        ),
+        ToolError::InvalidContainer(value) => localizer.format(
+            "build-distrobox-invalid",
+            &[("value", LocalizationValue::Text(value))],
+        ),
+        ToolError::InvalidExecutable(path) => localizer.format(
+            "build-ibcmd-invalid",
+            &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
+        ),
+        ToolError::DistroboxContainerRequired => {
+            localizer.text("build-distrobox-container-required")
+        }
+        ToolError::Scan { path, source } => localizer.format(
+            "platform-scan-error",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("reason", LocalizationValue::Text(&source.to_string())),
+            ],
+        ),
+        ToolError::ScanCommandFailed { container, stderr } => localizer.format(
+            "platform-scan-command-error",
+            &[
+                ("container", LocalizationValue::Text(container)),
+                ("reason", LocalizationValue::Text(stderr)),
+            ],
+        ),
+        ToolError::NotFound { expected, standard } => localizer.format(
+            "build-ibcmd-missing",
+            &[
+                ("version", LocalizationValue::Text(expected.as_str())),
+                ("path", LocalizationValue::Text(&standard.to_string_lossy())),
+            ],
+        ),
+        ToolError::Run(error) => localizer.format(
+            "build-ibcmd-run-error",
+            &[("reason", LocalizationValue::Text(&error.to_string()))],
+        ),
+        ToolError::VersionCommandFailed { source, stderr } => localizer.format(
+            "build-version-command-error",
+            &[
+                ("source", LocalizationValue::Text(&tool_source(source))),
+                ("reason", LocalizationValue::Text(stderr)),
+            ],
+        ),
+        ToolError::VersionUnreadable(source) => localizer.format(
+            "build-version-unreadable",
+            &[("source", LocalizationValue::Text(&tool_source(source)))],
+        ),
+        ToolError::VersionMismatch {
+            expected,
+            actual,
+            source,
+        } => localizer.format(
+            "build-version-mismatch",
+            &[
+                ("expected", LocalizationValue::Text(expected.as_str())),
+                ("actual", LocalizationValue::Text(actual.as_str())),
+                ("source", LocalizationValue::Text(&tool_source(source))),
+            ],
+        ),
+    }
+}
+
+fn tool_source(source: &ToolSource) -> String {
+    match source {
+        ToolSource::Explicit(path) | ToolSource::Path(path) | ToolSource::Standard(path) => {
+            path.to_string_lossy().into_owned()
+        }
+        ToolSource::Distrobox { container, path } => {
+            format!("{container}:{}", path.to_string_lossy())
+        }
     }
 }
 

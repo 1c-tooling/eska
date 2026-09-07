@@ -12,14 +12,16 @@ use serde::Serialize;
 
 use crate::{
     cli::{
+        changes::{
+            display_path, metadata_kind, render_metadata_path, render_semantic_object,
+            semantic_event_key, semantic_object_group,
+        },
         diagnostics,
         localization::{LocalizationValue, Localizer},
     },
     project::{
         diff::{self, DiffError, DisplayTarget, ProjectDiff, RevisionProjectDiff},
-        discovery,
-        metadata::MetadataPath,
-        object_model,
+        discovery, object_model,
         semantic::{self, SemanticDiff, SemanticEvent, SemanticEventKind},
     },
     vcs::status::Change,
@@ -532,25 +534,6 @@ fn styling_enabled() -> bool {
     io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
 }
 
-/// Render a logical metadata identity in Configurator notation.
-pub(super) fn render_metadata_path(path: &MetadataPath, localizer: &Localizer) -> String {
-    path.parts
-        .iter()
-        .map(|part| {
-            let kind = metadata_kind(part.kind, localizer);
-            part.name
-                .as_ref()
-                .map_or_else(|| kind.clone(), |name| format!("{kind}.{name}"))
-        })
-        .collect::<Vec<_>>()
-        .join(".")
-}
-
-/// Resolve the localized Configurator name of a stable metadata kind.
-fn metadata_kind(kind: &str, localizer: &Localizer) -> String {
-    localizer.text(&format!("diff-metadata-{kind}"))
-}
-
 /// Render a compact locale-independent two-column representation.
 fn render_raw(diff: &ProjectDiff) -> String {
     use std::fmt::Write as _;
@@ -779,55 +762,6 @@ const fn semantic_event_change(kind: SemanticEventKind) -> Change {
     }
 }
 
-/// Return the top-level metadata kind encoded in a stable semantic object ID.
-pub(super) fn semantic_object_group(id: &str) -> &str {
-    id.split([':', '/']).next().unwrap_or(id)
-}
-
-/// Render every hierarchical `ObjectId` segment in localized Configurator notation.
-pub(super) fn render_semantic_object(id: &str, localizer: &Localizer) -> String {
-    id.split('/')
-        .map(|segment| {
-            segment.split_once(':').map_or_else(
-                || metadata_kind(segment, localizer),
-                |(kind, name)| {
-                    format!(
-                        "{}.{}",
-                        metadata_kind(kind, localizer),
-                        unescape_object_name(name)
-                    )
-                },
-            )
-        })
-        .collect::<Vec<_>>()
-        .join(".")
-}
-
-/// Decode only the three separators escaped by the stable `ObjectId` contract.
-fn unescape_object_name(name: &str) -> String {
-    name.replace("%2F", "/")
-        .replace("%3A", ":")
-        .replace("%25", "%")
-}
-
-/// Select a localized label for one semantic event kind.
-pub(super) const fn semantic_event_key(kind: SemanticEventKind) -> &'static str {
-    match kind {
-        SemanticEventKind::ObjectAdded => "diff-semantic-object-added",
-        SemanticEventKind::ObjectRemoved => "diff-semantic-object-removed",
-        SemanticEventKind::ObjectChanged => "diff-semantic-object-changed",
-        SemanticEventKind::ModuleChanged => "diff-semantic-module-changed",
-        SemanticEventKind::MethodAdded => "diff-semantic-method-added",
-        SemanticEventKind::MethodRemoved => "diff-semantic-method-removed",
-        SemanticEventKind::MethodChanged => "diff-semantic-method-changed",
-        SemanticEventKind::FunctionAdded => "diff-semantic-function-added",
-        SemanticEventKind::FunctionRemoved => "diff-semantic-function-removed",
-        SemanticEventKind::FunctionChanged => "diff-semantic-function-changed",
-        SemanticEventKind::FormChanged => "diff-semantic-form-changed",
-        SemanticEventKind::MetadataAttributeChanged => "diff-semantic-metadata-attribute-changed",
-    }
-}
-
 #[derive(Serialize)]
 struct SemanticDiffDocument<'a> {
     schema_version: u8,
@@ -1042,36 +976,6 @@ fn percent_encode(path: &BStr) -> String {
     encoded
 }
 
-/// Quote paths only when control characters, quotes or arbitrary bytes require escaping.
-pub(super) fn display_path(path: &BStr) -> String {
-    if let Ok(path) = path.to_str()
-        && path
-            .chars()
-            .all(|character| !character.is_control() && character != '\\' && character != '"')
-    {
-        return path.to_owned();
-    }
-
-    let mut escaped = String::with_capacity(path.len() + 2);
-    escaped.push('"');
-    for byte in path.as_bytes() {
-        match byte {
-            b'\\' => escaped.push_str("\\\\"),
-            b'"' => escaped.push_str("\\\""),
-            b'\n' => escaped.push_str("\\n"),
-            b'\r' => escaped.push_str("\\r"),
-            b'\t' => escaped.push_str("\\t"),
-            0x20..=0x7e => escaped.push(char::from(*byte)),
-            _ => {
-                use std::fmt::Write as _;
-                write!(escaped, "\\x{byte:02X}").expect("writing to String cannot fail");
-            }
-        }
-    }
-    escaped.push('"');
-    escaped
-}
-
 /// Map a state to its stable JSON value.
 const fn change_name(change: Change) -> &'static str {
     match change {
@@ -1091,8 +995,7 @@ mod tests {
 
     use super::{
         HumanState, SemanticHumanChange, append_semantic_event_groups, change_marker, change_name,
-        display_path, human_state_title, json_path, raw_code, render_human, render_raw,
-        render_semantic_object,
+        human_state_title, json_path, raw_code, render_human, render_raw,
     };
     use crate::{
         cli::localization::{Locale, Localizer},
@@ -1156,13 +1059,9 @@ mod tests {
         assert_eq!(change_marker(super::marker_change(state)), '✎');
     }
 
-    /// Path presentation remains one-line and JSON retains arbitrary Git bytes.
+    /// JSON retains arbitrary Git bytes with an explicit reversible encoding.
     #[test]
     fn path_encodings_are_unambiguous() {
-        assert_eq!(
-            display_path(b"src/line\nname".as_bstr()),
-            "\"src/line\\nname\""
-        );
         assert_eq!(
             json_path("src/модуль.bsl".as_bytes().as_bstr()),
             ("src/модуль.bsl".into(), "utf-8")
@@ -1272,26 +1171,5 @@ mod tests {
         let styled = styled.join("\n");
         assert!(styled.contains("\x1b[1;33m"), "{styled:?}");
         assert!(styled.contains("\x1b[1;33m✎\x1b[0m"), "{styled:?}");
-    }
-
-    /// Stable hierarchical IDs become localized Configurator-style object names.
-    #[test]
-    fn semantic_object_hierarchy_is_localized() {
-        for (locale, expected) in [
-            (
-                Locale::RuRu,
-                "Справочник.Контрагенты.Реквизит.Код/Артикул:1%",
-            ),
-            (Locale::EnUs, "Catalog.Контрагенты.Attribute.Код/Артикул:1%"),
-        ] {
-            let localizer = Localizer::try_new(locale).unwrap();
-            assert_eq!(
-                render_semantic_object(
-                    "catalog:Контрагенты/attribute:Код%2FАртикул%3A1%25",
-                    &localizer
-                ),
-                expected
-            );
-        }
     }
 }
