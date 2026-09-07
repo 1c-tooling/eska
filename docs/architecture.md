@@ -30,7 +30,7 @@ src/
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
 │   │   ├── switch.rs            # eska switch: выбор цели и presentation
-│   │   ├── version.rs           # eska version: RU/EN и JSON v1
+│   │   ├── version.rs           # version одного проекта или списка workspace members
 │   │   └── validate.rs          # проверка при запуске без подкоманды
 │   ├── diagnostics.rs           # общие ошибки project/config/platform
 │   ├── interactive/
@@ -72,6 +72,7 @@ src/
 │   │   ├── extension.rs         # запись Designer XML/BSL с BOM и CRLF
 │   │   └── execute.rs           # временная ИБ, platform checks и публикация
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
+│   ├── selection.rs             # общий выбор current/named/all workspace projects
 │   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
 │   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
@@ -218,7 +219,9 @@ tests/
 - `project/version.rs` находит единственный корневой Designer XML descriptor,
   валидирует четырёхкомпонентную версию и при bump заменяет только диапазон
   текста прямого `Properties/Version` без повторной сериализации XML.
-  `cli/commands/version.rs` локализует human-вывод и формирует JSON-схему версии 1.
+  `project/selection.rs` разрешает standalone/current/named/all selection без
+  зависимости от CLI. `cli/commands/version.rs` сохраняет JSON v1 одиночного
+  проекта и формирует отдельный versioned документ для списка workspace members.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую

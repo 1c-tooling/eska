@@ -14,6 +14,7 @@ pub mod model;
 pub mod object_model;
 pub mod patch;
 pub mod save;
+pub mod selection;
 pub mod semantic;
 pub mod start;
 pub mod status;

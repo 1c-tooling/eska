@@ -346,6 +346,22 @@ eska version bump minor  # 1.0.2.01 -> 1.1.1.01
 eska version bump major  # 1.0.2.01 -> 2.0.1.01
 ```
 
+В workspace команда из корня показывает версии всех участников, а из каталога
+участника — только его версию:
+
+```bash
+eska version
+eska version -p sales-report
+eska version --workspace --format json
+eska version -p sales-report bump patch
+```
+
+Несколько `-p` можно передать только при чтении. Из корня workspace изменение
+версии требует ровно одного `--project`; массовый bump не выполняется. JSON
+одного проекта сохраняет прежнюю схему, а список возвращает отдельный документ
+`{"schema_version": 1, "projects": [...]}` с именем, типом, версией и
+относительным путём дескриптора каждого участника.
+
 После увеличения младшие компоненты начинают отсчёт заново: subrevision — с 0,
 version и build — с 1. Ширина исходных компонентов сохраняется, поэтому `01`
 не превращается в `1`.
@@ -512,7 +528,7 @@ eska build --ibcmd /path/to/ibcmd
 | `finish` | Проверить условия завершения и закрыть локальную задачу |
 | `build` | Собрать полный нативный файл |
 | `patch` | Собрать ограниченный patch-extension из Git delta |
-| `version` / `version bump <patch|minor|major>` | Показать или изменить версию проекта 1С |
+| `version` / `version bump <patch|minor|major>` | Показать или точечно изменить версии проектов 1С |
 | `platform list` | Найти установки платформы |
 | `config init` / `config edit` | Настроить локальное окружение |
 
