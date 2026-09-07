@@ -4,6 +4,7 @@ use crate::{
     cli::{
         diagnostics,
         localization::{LocalizationValue, Localizer},
+        platform,
     },
     project::{
         build::{Ibcmd, PlatformVersion},
@@ -154,7 +155,7 @@ impl PatchArgs {
             .platform_version
             .as_ref()
             .ok_or_else(|| self.fail("platform", "", localizer))?;
-        let options = super::platform::tool_options(
+        let options = platform::tool_options(
             self.ibcmd.clone(),
             self.platform_arch.clone(),
             self.distrobox.clone(),
@@ -162,14 +163,14 @@ impl PatchArgs {
         .map_err(|e| {
             self.fail(
                 "tool",
-                &super::config::present_error(&e, localizer),
+                &diagnostics::present_global_config_error(&e, localizer),
                 localizer,
             )
         })?;
         let tool = Ibcmd::discover(version, &options).map_err(|e| {
             self.fail(
                 "tool",
-                &super::build::present_tool_error(&e, localizer),
+                &diagnostics::present_tool_error(&e, localizer),
                 localizer,
             )
         })?;

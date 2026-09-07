@@ -7,7 +7,7 @@ use gix::bstr::ByteSlice;
 
 use crate::{
     cli::{
-        diagnostics,
+        changes, diagnostics,
         localization::{LocalizationValue, Localizer},
     },
     project::{
@@ -96,14 +96,14 @@ fn render_draft(
         .collect();
     let scopes: BTreeSet<_> = objects
         .iter()
-        .map(|id| super::diff::semantic_object_group(id))
+        .map(|id| changes::semantic_object_group(id))
         .collect();
     let subject = if objects.len() == 1 {
         draft_text(&localizer.format(
             "save-draft-subject-object",
             &[(
                 "object",
-                LocalizationValue::Text(&super::diff::render_semantic_object(
+                LocalizationValue::Text(&changes::render_semantic_object(
                     objects.first().copied().unwrap_or_default(),
                     localizer,
                 )),
@@ -132,8 +132,8 @@ fn render_draft(
             .unwrap_or_default();
         details.insert(format!(
             "- {}: {}{}.",
-            localizer.text(super::diff::semantic_event_key(event.kind())),
-            super::diff::render_semantic_object(event.object().id(), localizer),
+            localizer.text(changes::semantic_event_key(event.kind())),
+            changes::render_semantic_object(event.object().id(), localizer),
             member
         ));
     }
@@ -141,7 +141,7 @@ fn render_draft(
         if semantic_paths.contains(file.path.as_bstr()) {
             continue;
         }
-        let path = super::diff::display_path(file.path.as_bstr());
+        let path = changes::display_path(file.path.as_bstr());
         details.insert(draft_text(&localizer.format(
             "save-draft-file-change",
             &[("path", LocalizationValue::Text(&path))],

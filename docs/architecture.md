@@ -13,18 +13,25 @@ src/
 ├── cli/
 │   ├── mod.rs                   # запуск CLI и выбор локали
 │   ├── args.rs                  # общие аргументы, bootstrap --lang, общий help
+│   ├── changes.rs               # общее представление путей и semantic changes
+│   ├── platform.rs              # общие machine-local настройки запуска 1С
 │   ├── commands/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
 │   │   ├── build.rs             # eska build: аргументы, RU/EN и JSON result
+│   │   ├── config.rs            # eska config: init/edit глобальных настроек
+│   │   ├── platform.rs          # eska platform list: human/JSON presentation
+│   │   ├── patch.rs             # eska patch: аргументы, preview и JSON result
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
 │   │   ├── diff.rs              # eska diff: human/raw/JSON presentation
 │   │   ├── finish.rs            # eska finish: localized result и ошибки
 │   │   ├── history.rs           # eska history: human/JSON presentation
+│   │   ├── save.rs              # eska save: draft сообщения и presentation
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
+│   │   ├── switch.rs            # eska switch: выбор цели и presentation
 │   │   └── validate.rs          # проверка при запуске без подкоманды
-│   ├── diagnostics.rs           # общие сообщения ошибок проекта и config
+│   ├── diagnostics.rs           # общие ошибки project/config/platform
 │   ├── interactive/
 │   │   ├── mod.rs               # общие варианты выбора и ошибки prompts
 │   │   ├── select.rs            # цикл событий и подтверждение выбора
@@ -54,6 +61,14 @@ src/
 │   │   ├── plan.rs              # тип и путь build artifact без запуска процессов
 │   │   ├── tool.rs              # поиск, version check и запуск ibcmd/Distrobox
 │   │   └── execute.rs           # временная база, import, cleanup и публикация
+│   ├── patch/
+│   │   ├── mod.rs               # публичная граница patch subsystem
+│   │   ├── model.rs             # PatchPlan, изменения, модули и ошибки
+│   │   ├── plan.rs              # immutable Git endpoints и классификация delta
+│   │   ├── methods.rs           # консервативный разбор и замена BSL-методов
+│   │   ├── descriptor.rs        # проверка и adoption CommonModule.xml
+│   │   ├── extension.rs         # запись Designer XML/BSL с BOM и CRLF
+│   │   └── execute.rs           # временная ИБ, platform checks и публикация
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
 │   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
 │   ├── start.rs                 # preflight и исполнение task plan
@@ -99,6 +114,9 @@ tests/
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
 | Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`src/project/build/`](../src/project/build/) |
+| Изменить план или генерацию patch-extension | [`src/cli/commands/patch.rs`](../src/cli/commands/patch.rs), затем [`src/project/patch/`](../src/project/patch/) |
+| Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`src/project/build/tool.rs`](../src/project/build/tool.rs) |
+| Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
 | Изменить вывод или связь commit с task в `history` | [`src/cli/commands/history.rs`](../src/cli/commands/history.rs), затем [`src/project/history.rs`](../src/project/history.rs) |
@@ -127,7 +145,11 @@ tests/
 - `main.rs` только передаёт управление CLI. Общие аргументы находятся в `args.rs`;
   список команд и их диспетчеризация — в `commands/mod.rs`.
 - Каждый обработчик команды держит вместе свои аргументы, help, диалог и
-  представление собственных ошибок. Общие ошибки проекта — в `diagnostics.rs`.
+  представление специфичных для команды ошибок. Общие ошибки проекта, global
+  config и платформы находятся в `diagnostics.rs`; общие machine-local options —
+  в `platform.rs`, представление путей и semantic identities — в `changes.rs`.
+- Обработчики команд не используют внутренние функции соседних команд. Общий
+  код сначала поднимается из `commands/` в соответствующий модуль `cli/`.
 - `project`, `config` и `vcs` не зависят от `cli`, `clap`,
   терминала и локализованных строк. Они возвращают данные и структурированные ошибки.
 - Только `cli/interactive/terminal.rs` владеет переключением режимов терминала
@@ -165,10 +187,14 @@ tests/
   inline children, формы, модули и payload paths в обоих направлениях, не создавая
   cache и не подключаясь автоматически к file-level командам.
 - `project/semantic.rs` нормализует workspace и revision file changes в общий
-  `ChangeSet`, сохраняя byte paths и comparison stage. `SemanticChangeAnalyzer`
-  проецирует пути через `ObjectModel` в детерминированный `ChangeSummary` с
-  object identity, path roles, state counts и не потерянными unowned changes.
-  Разбор содержимого и semantic events принадлежат T21.
+  `ChangeSet`, проецирует пути через `ObjectModel` и сравнивает BSL routines,
+  формы и свойства metadata descriptors. Результат — детерминированные semantic
+  events со стабильной object identity, byte paths и comparison stage.
+- `project/patch/plan.rs` читает только committed Git snapshots и формирует
+  полный allowlist-план. `methods.rs` отвечает только за доказуемо безопасные
+  замены BSL-методов, `descriptor.rs` — за adoption существующих общих модулей,
+  `extension.rs` — за Designer XML/BSL representation, а `execute.rs` — за
+  изолированную временную ИБ, platform validation и публикацию нового `.cfe`.
 - `project/history.rs` получает ограниченную историю HEAD и связывает commit с
   задачей только при однозначной достижимости из одной локальной task-ветки вне
   base. `cli/commands/history.rs` локализует human-вывод и формирует стабильный

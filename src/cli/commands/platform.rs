@@ -6,12 +6,9 @@ use clap::{Args, Subcommand, ValueEnum};
 use serde::Serialize;
 
 use crate::{
-    cli::localization::Localizer,
-    config::{GlobalConfigError, RunnerKind, load_global},
-    project::build::{Ibcmd, RunnerPreference, ToolOptions, ToolSource},
+    cli::{diagnostics, localization::Localizer, platform},
+    project::build::{Ibcmd, ToolSource},
 };
-
-use super::{build::present_tool_error, config::present_error as present_config_error};
 
 #[derive(Debug, Args)]
 pub(in crate::cli) struct PlatformArgs {
@@ -77,21 +74,24 @@ impl PlatformArgs {
 impl PlatformListArgs {
     /// Print every verified platform visible through the selected runner.
     fn run(&self, localizer: &Localizer) -> ExitCode {
-        let options = match tool_options(
+        let options = match platform::tool_options(
             self.ibcmd.clone(),
             self.platform_arch.clone(),
             self.distrobox.clone(),
         ) {
             Ok(options) => options,
             Err(error) => {
-                eprintln!("{}", present_config_error(&error, localizer));
+                eprintln!(
+                    "{}",
+                    diagnostics::present_global_config_error(&error, localizer)
+                );
                 return ExitCode::FAILURE;
             }
         };
         let platforms = match Ibcmd::installed(&options) {
             Ok(platforms) => platforms,
             Err(error) => {
-                eprintln!("{}", present_tool_error(&error, localizer));
+                eprintln!("{}", diagnostics::present_tool_error(&error, localizer));
                 return ExitCode::FAILURE;
             }
         };
@@ -128,30 +128,6 @@ impl PlatformListArgs {
             }
         }
         ExitCode::SUCCESS
-    }
-}
-
-/// Merge command-line runner values with the machine-local global config.
-pub(super) fn tool_options(
-    ibcmd: Option<PathBuf>,
-    platform_arch: Option<String>,
-    distrobox: Option<String>,
-) -> Result<ToolOptions, GlobalConfigError> {
-    let (_, config) = load_global()?;
-    Ok(
-        ToolOptions::new(ibcmd, platform_arch, distrobox).with_machine_defaults(
-            runner_preference(config.build.runner),
-            config.build.platform_arch,
-            config.build.container,
-        ),
-    )
-}
-
-const fn runner_preference(runner: RunnerKind) -> RunnerPreference {
-    match runner {
-        RunnerKind::Auto => RunnerPreference::Auto,
-        RunnerKind::Host => RunnerPreference::Host,
-        RunnerKind::Distrobox => RunnerPreference::Distrobox,
     }
 }
 

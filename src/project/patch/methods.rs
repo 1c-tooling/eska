@@ -1,4 +1,4 @@
-//! Conservative, lossless method extraction for the initial patch allowlist.
+//! Conservative, lossless BSL method extraction for the initial patch allowlist.
 
 use std::{collections::BTreeMap, ops::Range};
 

@@ -9,7 +9,10 @@ use std::{
 use clap::{Args, Subcommand};
 
 use crate::{
-    cli::localization::{LocalizationValue, Localizer},
+    cli::{
+        diagnostics,
+        localization::{LocalizationValue, Localizer},
+    },
     config::{
         GlobalConfigEditOutcome, GlobalConfigError, GlobalConfigInitOutcome, config_path,
         edit_global_at, init_global_at,
@@ -123,41 +126,11 @@ fn path_message(key: &str, path: &Path, localizer: &Localizer) -> String {
 }
 
 fn fail(error: &GlobalConfigError, localizer: &Localizer) -> ExitCode {
-    eprintln!("{}", present_error(error, localizer));
+    eprintln!(
+        "{}",
+        diagnostics::present_global_config_error(error, localizer)
+    );
     ExitCode::FAILURE
-}
-
-pub(super) fn present_error(error: &GlobalConfigError, localizer: &Localizer) -> String {
-    match error {
-        GlobalConfigError::LocationUnavailable => localizer.text("config-location-error"),
-        GlobalConfigError::Io { path, source } | GlobalConfigError::Replace { path, source } => {
-            localizer.format(
-                "config-io-error",
-                &[
-                    ("path", LocalizationValue::Text(&path.to_string_lossy())),
-                    ("reason", LocalizationValue::Text(&source.to_string())),
-                ],
-            )
-        }
-        GlobalConfigError::Invalid { path, source } => localizer.format(
-            "config-invalid",
-            &[
-                ("path", LocalizationValue::Text(&path.to_string_lossy())),
-                ("reason", LocalizationValue::Text(&source.to_string())),
-            ],
-        ),
-        GlobalConfigError::DistroboxContainerMissing { path } => {
-            path_message("config-distrobox-container-missing", path, localizer)
-        }
-        GlobalConfigError::HostContainerUnexpected { path } => {
-            path_message("config-host-container-unexpected", path, localizer)
-        }
-        GlobalConfigError::Editor { source } => localizer.format(
-            "config-editor-error",
-            &[("reason", LocalizationValue::Text(&source.to_string()))],
-        ),
-        GlobalConfigError::EditorFailed => localizer.text("config-editor-failed"),
-    }
 }
 
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {

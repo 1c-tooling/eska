@@ -3,10 +3,12 @@
 use std::{env, process::ExitCode};
 
 mod args;
+mod changes;
 mod commands;
 mod diagnostics;
 mod interactive;
 pub mod localization;
+mod platform;
 
 pub use args::Cli;
 

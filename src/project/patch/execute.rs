@@ -1,10 +1,9 @@
 //! Isolated patch generation; only a checked candidate can become a final artifact.
 
-use super::{MD, PatchError, PatchPlan, error};
+use super::{PatchError, PatchPlan, extension};
 use crate::{project::build::Ibcmd, vcs::repository::Repository};
 use std::{
     ffi::OsString,
-    fmt::Write as _,
     fs,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
@@ -27,35 +26,35 @@ pub fn execute(plan: &PatchPlan, tool: &Ibcmd, output: &Path) -> Result<(), Patc
     validate_output(plan, tool, output)?;
     let parent = output
         .parent()
-        .ok_or_else(|| error("output", output.display().to_string()))?;
-    fs::create_dir_all(parent).map_err(|e| error("io", e.to_string()))?;
+        .ok_or_else(|| PatchError::new("output", output.display().to_string()))?;
+    fs::create_dir_all(parent).map_err(|e| PatchError::new("io", e.to_string()))?;
     let workspace = workspace(parent)?;
     tool.begin_interruptible_operation()
-        .map_err(|e| error("tool", format!("{e:?}")))?;
+        .map_err(|e| PatchError::new("tool", format!("{e:?}")))?;
     let base = stage_base(plan, &workspace)?;
     let candidate = build_candidate(plan, tool, &workspace, &base)?;
     if tool.was_interrupted() {
-        return Err(error("tool", "interrupted"));
+        return Err(PatchError::new("tool", "interrupted"));
     }
-    fs::hard_link(candidate, output).map_err(|e| error("output", e.to_string()))
+    fs::hard_link(candidate, output).map_err(|e| PatchError::new("output", e.to_string()))
 }
 
 /// Reject unsupported plans and unsafe publication paths before any write.
 fn validate_output(plan: &PatchPlan, tool: &Ibcmd, output: &Path) -> Result<(), PatchError> {
     if plan.modules.is_empty() {
-        return Err(error("empty", ""));
+        return Err(PatchError::new("empty", ""));
     }
     if tool.version().as_str() != "8.3.27.2325" {
-        return Err(error("platform", tool.version().as_str()));
+        return Err(PatchError::new("platform", tool.version().as_str()));
     }
     if output.extension() != Some(std::ffi::OsStr::new("cfe")) || output.exists() {
-        return Err(error("output", output.display().to_string()));
+        return Err(PatchError::new("output", output.display().to_string()));
     }
     for ancestor in output.ancestors() {
         if let Ok(metadata) = fs::symlink_metadata(ancestor)
             && metadata.file_type().is_symlink()
         {
-            return Err(error("output", ancestor.display().to_string()));
+            return Err(PatchError::new("output", ancestor.display().to_string()));
         }
     }
     Ok(())
@@ -64,20 +63,20 @@ fn validate_output(plan: &PatchPlan, tool: &Ibcmd, output: &Path) -> Result<(), 
 /// Materialize the exact merge-base source tree in the owned workspace.
 fn stage_base(plan: &PatchPlan, workspace: &Workspace) -> Result<PathBuf, PatchError> {
     let repository = Repository::discover(&plan.repository_root)
-        .map_err(|e| error("repository", format!("{e:?}")))?;
+        .map_err(|e| PatchError::new("repository", format!("{e:?}")))?;
     let base = workspace.0.join("base");
     for (path, id) in &plan.source_files {
         let contents = repository
             .blob(*id)
-            .map_err(|e| error("repository", format!("{e:?}")))?;
+            .map_err(|e| PatchError::new("repository", format!("{e:?}")))?;
         if contents.starts_with(b"version https://git-lfs.github.com/spec/v1") {
-            return Err(error("unsupported", path));
+            return Err(PatchError::new("unsupported", path));
         }
         let target = base.join(path);
         if let Some(parent) = target.parent() {
-            fs::create_dir_all(parent).map_err(|e| error("io", e.to_string()))?;
+            fs::create_dir_all(parent).map_err(|e| PatchError::new("io", e.to_string()))?;
         }
-        fs::write(target, contents).map_err(|e| error("io", e.to_string()))?;
+        fs::write(target, contents).map_err(|e| PatchError::new("io", e.to_string()))?;
     }
     Ok(base)
 }
@@ -106,11 +105,11 @@ fn build_candidate(
     )?;
     save_candidate(tool, workspace, &data_arg, &extension_arg, &candidate)?;
     if fs::metadata(&candidate)
-        .map_err(|e| error("io", e.to_string()))?
+        .map_err(|e| PatchError::new("io", e.to_string()))?
         .len()
         == 0
     {
-        return Err(error("empty", ""));
+        return Err(PatchError::new("empty", ""));
     }
     Ok(candidate)
 }
@@ -181,7 +180,7 @@ fn create_extension(
             extension.as_os_str().to_owned(),
         ],
     )?;
-    write_extension(plan, extension)?;
+    extension::write(plan, extension)?;
     run(
         tool,
         workspace,
@@ -271,7 +270,7 @@ fn save_candidate(
 fn workspace(parent: &Path) -> Result<Workspace, PatchError> {
     let time = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map_err(|e| error("io", e.to_string()))?
+        .map_err(|e| PatchError::new("io", e.to_string()))?
         .as_nanos();
     for attempt in 0..32 {
         let path = parent.join(format!(
@@ -281,10 +280,10 @@ fn workspace(parent: &Path) -> Result<Workspace, PatchError> {
         match fs::create_dir(&path) {
             Ok(()) => return Ok(Workspace(path)),
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
-            Err(e) => return Err(error("io", e.to_string())),
+            Err(e) => return Err(PatchError::new("io", e.to_string())),
         }
     }
-    Err(error("io", parent.display().to_string()))
+    Err(PatchError::new("io", parent.display().to_string()))
 }
 
 /// Run one platform stage and retain diagnostic output on failure.
@@ -296,9 +295,9 @@ fn run(
 ) -> Result<(), PatchError> {
     let result = tool
         .run_interruptible(args, &workspace.0.join("process.pid"), &mut |_, _| {})
-        .map_err(|e| error("tool", format!("{stage}: {e:?}")))?;
+        .map_err(|e| PatchError::new("tool", format!("{stage}: {e:?}")))?;
     if !result.status.success() {
-        return Err(error(
+        return Err(PatchError::new(
             "tool",
             format!(
                 "{stage}: {}{}",
@@ -336,7 +335,7 @@ fn designer(
     args.extend(["-Extension".into(), name.into()]);
     let output = tool
         .run_designer(args, &workspace.0.join("process.pid"))
-        .map_err(|e| error("tool", format!("{e:?}")))?;
+        .map_err(|e| PatchError::new("tool", format!("{e:?}")))?;
     if !output.status.success()
         || fs::read_to_string(result_file)
             .unwrap_or_default()
@@ -344,62 +343,13 @@ fn designer(
             .trim()
             != "0"
     {
-        return Err(error(
+        return Err(PatchError::new(
             "validation",
             fs::read_to_string(log)
                 .unwrap_or_else(|_| String::from_utf8_lossy(&output.stderr).into_owned()),
         ));
     }
     Ok(())
-}
-
-/// Add generated module descriptors and bodies to a platform-created extension skeleton.
-fn write_extension(plan: &PatchPlan, directory: &Path) -> Result<(), PatchError> {
-    let path = directory.join("Configuration.xml");
-    let mut xml = fs::read_to_string(&path).map_err(|e| error("io", e.to_string()))?;
-    let document =
-        roxmltree::Document::parse(&xml).map_err(|e| error("descriptor", e.to_string()))?;
-    let child = document
-        .descendants()
-        .find(|n| n.has_tag_name((MD, "ChildObjects")))
-        .ok_or_else(|| error("descriptor", "ChildObjects"))?;
-    let end = child.range().end;
-    let closing = xml[..end]
-        .rfind("</")
-        .ok_or_else(|| error("descriptor", "ChildObjects"))?;
-    let mut children = String::new();
-    for module in &plan.modules {
-        write!(
-            children,
-            "<CommonModule xmlns=\"{MD}\">{}</CommonModule>",
-            module.name
-        )
-        .expect("writing to String cannot fail");
-        write_source(
-            &directory.join(format!("CommonModules/{}.xml", module.name)),
-            &module.descriptor,
-        )?;
-        write_source(
-            &directory.join(format!("CommonModules/{}/Ext/Module.bsl", module.name)),
-            &module.code,
-        )?;
-    }
-    xml.insert_str(closing, &children);
-    write_source(&path, &xml)
-}
-
-/// Keep generated 1C sources in their native BOM/CRLF representation.
-fn write_source(path: &Path, text: &str) -> Result<(), PatchError> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| error("io", e.to_string()))?;
-    }
-    let text = format!(
-        "\u{feff}{}",
-        text.trim_start_matches('\u{feff}')
-            .replace("\r\n", "\n")
-            .replace('\n', "\r\n")
-    );
-    fs::write(path, text).map_err(|e| error("io", e.to_string()))
 }
 
 /// Preserve arbitrary filesystem bytes as a single option value.

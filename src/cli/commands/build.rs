@@ -26,21 +26,20 @@ use serde::Serialize;
 
 use crate::{
     cli::{
-        diagnostics,
+        changes, diagnostics,
         interactive::{PromptError, Selector},
         localization::{LocalizationValue, Localizer},
+        platform,
     },
     project::{
         Project,
         build::{
             self, BuildError, BuildPlan, BuildSettingsError, BuildStage, Ibcmd, PlanError,
-            PlatformVersion, RunError, ToolError, ToolOptions, ToolSource,
+            PlatformVersion, RunError, ToolOptions,
         },
         discovery, metadata,
     },
 };
-
-use super::{diff, platform};
 
 #[derive(Debug, Args)]
 pub(in crate::cli) struct BuildArgs {
@@ -106,7 +105,10 @@ impl BuildArgs {
         ) {
             Ok(options) => options,
             Err(error) => {
-                eprintln!("{}", super::config::present_error(&error, localizer));
+                eprintln!(
+                    "{}",
+                    diagnostics::present_global_config_error(&error, localizer)
+                );
                 return Err(ExitCode::FAILURE);
             }
         };
@@ -136,7 +138,7 @@ impl BuildArgs {
         let ibcmd = match Ibcmd::discover(plan.platform_version(), options) {
             Ok(ibcmd) => ibcmd,
             Err(error) => {
-                eprintln!("{}", present_tool_error(&error, localizer));
+                eprintln!("{}", diagnostics::present_tool_error(&error, localizer));
                 return ExitCode::FAILURE;
             }
         };
@@ -239,7 +241,7 @@ impl BuildArgs {
             return Err(ExitCode::from(2));
         }
         let installed = Ibcmd::installed(options).map_err(|error| {
-            eprintln!("{}", present_tool_error(&error, localizer));
+            eprintln!("{}", diagnostics::present_tool_error(&error, localizer));
             ExitCode::FAILURE
         })?;
         if installed.is_empty() {
@@ -329,7 +331,7 @@ fn humanize_source_paths(message: &str, project: &Project, localizer: &Localizer
         .map_or_else(
             || normalized.clone(),
             |path| {
-                let owner = diff::render_metadata_path(&path, localizer);
+                let owner = changes::render_metadata_path(&path, localizer);
                 diagnostic_path_tail(&normalized)
                     .map_or_else(|| owner.clone(), |tail| format!("{owner} · {tail}"))
             },
@@ -698,75 +700,6 @@ fn present_plan_error(error: &PlanError, localizer: &Localizer) -> String {
     )
 }
 
-/// Render discovery and exact-version failures with actionable machine-local settings.
-pub(super) fn present_tool_error(error: &ToolError, localizer: &Localizer) -> String {
-    match error {
-        ToolError::InvalidArchitecture(value) => localizer.format(
-            "build-arch-invalid",
-            &[("value", LocalizationValue::Text(value))],
-        ),
-        ToolError::InvalidContainer(value) => localizer.format(
-            "build-distrobox-invalid",
-            &[("value", LocalizationValue::Text(value))],
-        ),
-        ToolError::InvalidExecutable(path) => localizer.format(
-            "build-ibcmd-invalid",
-            &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
-        ),
-        ToolError::DistroboxContainerRequired => {
-            localizer.text("build-distrobox-container-required")
-        }
-        ToolError::Scan { path, source } => localizer.format(
-            "platform-scan-error",
-            &[
-                ("path", LocalizationValue::Text(&path.to_string_lossy())),
-                ("reason", LocalizationValue::Text(&source.to_string())),
-            ],
-        ),
-        ToolError::ScanCommandFailed { container, stderr } => localizer.format(
-            "platform-scan-command-error",
-            &[
-                ("container", LocalizationValue::Text(container)),
-                ("reason", LocalizationValue::Text(stderr)),
-            ],
-        ),
-        ToolError::NotFound { expected, standard } => localizer.format(
-            "build-ibcmd-missing",
-            &[
-                ("version", LocalizationValue::Text(expected.as_str())),
-                ("path", LocalizationValue::Text(&standard.to_string_lossy())),
-            ],
-        ),
-        ToolError::Run(error) => localizer.format(
-            "build-ibcmd-run-error",
-            &[("reason", LocalizationValue::Text(&error.to_string()))],
-        ),
-        ToolError::VersionCommandFailed { source, stderr } => localizer.format(
-            "build-version-command-error",
-            &[
-                ("source", LocalizationValue::Text(&tool_source(source))),
-                ("reason", LocalizationValue::Text(stderr)),
-            ],
-        ),
-        ToolError::VersionUnreadable(source) => localizer.format(
-            "build-version-unreadable",
-            &[("source", LocalizationValue::Text(&tool_source(source)))],
-        ),
-        ToolError::VersionMismatch {
-            expected,
-            actual,
-            source,
-        } => localizer.format(
-            "build-version-mismatch",
-            &[
-                ("expected", LocalizationValue::Text(expected.as_str())),
-                ("actual", LocalizationValue::Text(actual.as_str())),
-                ("source", LocalizationValue::Text(&tool_source(source))),
-            ],
-        ),
-    }
-}
-
 fn present_platform_version_error(error: &BuildSettingsError, localizer: &Localizer) -> String {
     match error {
         BuildSettingsError::InvalidPlatformVersion { value } => localizer.format(
@@ -863,18 +796,6 @@ fn present_streamed_build_error(error: &BuildError, localizer: &Localizer) -> St
         )
     } else {
         present_build_error(error, localizer)
-    }
-}
-
-/// Return the selected executable location for diagnostics only.
-fn tool_source(source: &ToolSource) -> String {
-    match source {
-        ToolSource::Explicit(path) | ToolSource::Path(path) | ToolSource::Standard(path) => {
-            path.to_string_lossy().into_owned()
-        }
-        ToolSource::Distrobox { container, path } => {
-            format!("{container}:{}", path.to_string_lossy())
-        }
     }
 }
 
