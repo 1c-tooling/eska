@@ -8,4 +8,5 @@ mod semantic;
 mod start;
 mod switch;
 mod templates;
+mod version;
 mod workflow;

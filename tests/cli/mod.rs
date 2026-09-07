@@ -13,3 +13,4 @@ mod save;
 mod start;
 mod status;
 mod switch;
+mod version;

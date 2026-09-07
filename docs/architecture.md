@@ -30,6 +30,7 @@ src/
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
 │   │   ├── switch.rs            # eska switch: выбор цели и presentation
+│   │   ├── version.rs           # eska version: RU/EN и JSON v1
 │   │   └── validate.rs          # проверка при запуске без подкоманды
 │   ├── diagnostics.rs           # общие ошибки project/config/platform
 │   ├── interactive/
@@ -73,6 +74,7 @@ src/
 │   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
 │   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
+│   ├── version.rs               # точечное чтение и замена Properties/Version
 │   └── templates.rs             # план файлов встроенного каркаса
 ├── config/
 │   ├── mod.rs                   # интерфейс config и имя eska.toml
@@ -95,8 +97,8 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{build,diff,finish,history,init,new,save,start,status,localization}.rs
-├── project/{discovery,finish,history,save,start,templates,workflow}.rs
+├── cli/{build,diff,finish,history,init,new,save,start,status,version,localization}.rs
+├── project/{discovery,finish,history,save,start,templates,version,workflow}.rs
 ├── vcs/{diff,network,repository,status,support}.rs # Git-сценарии и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
 ```
@@ -118,6 +120,7 @@ tests/
 | Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`src/project/build/tool.rs`](../src/project/build/tool.rs) |
 | Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
+| Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`src/project/version.rs`](../src/project/version.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
 | Изменить вывод или связь commit с task в `history` | [`src/cli/commands/history.rs`](../src/cli/commands/history.rs), затем [`src/project/history.rs`](../src/project/history.rs) |
 | Изменить запуск задачи или его ошибки | [`src/cli/commands/start.rs`](../src/cli/commands/start.rs), затем [`src/project/start.rs`](../src/project/start.rs) |
@@ -203,6 +206,10 @@ tests/
   `ibcmd` и исполнения. `execute.rs` владеет временной базой и безопасной
   публикацией артефакта; `cli/commands/build.rs` локализует ошибки и формирует
   JSON-схему версии 1.
+- `project/version.rs` находит единственный корневой Designer XML descriptor,
+  валидирует четырёхкомпонентную версию и при bump заменяет только диапазон
+  текста прямого `Properties/Version` без повторной сериализации XML.
+  `cli/commands/version.rs` локализует human-вывод и формирует JSON-схему версии 1.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую

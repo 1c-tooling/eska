@@ -19,6 +19,7 @@ pub mod start;
 pub mod status;
 pub mod switch;
 pub mod templates;
+pub mod version;
 
 pub use model::{
     InvalidPathReason, Project, ProjectConfiguration, ProjectPath, ProjectPathError, ProjectType,

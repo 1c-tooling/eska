@@ -40,6 +40,7 @@
 - `DONE`: `T42` — спецификация и feasibility-прототип patch-extension `.cfe`;
 - `DONE`: `T43` — production-команда `eska patch` для консервативного набора
   изменений методов общих модулей;
+- `DONE`: `T25` — чтение и точечное изменение версии проекта 1С;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
@@ -117,8 +118,8 @@ TUI разделён на обработку клавиш, отрисовку и
 | T22 | DONE | Генератор commit message | [07-semantic-changes.md](07-semantic-changes.md) |
 | T23 | DEFERRED | Спецификация test backend | [08-quality.md](08-quality.md) |
 | T24 | PLANNED | `affected` analysis | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T25 | NEXT | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T26 | PLANNED | `eska fmt` | [08-quality.md](08-quality.md) |
+| T25 | DONE | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T26 | NEXT | `eska fmt` | [08-quality.md](08-quality.md) |
 | T27 | PLANNED | `eska check` | [08-quality.md](08-quality.md) |
 | T28 | DONE | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T29 | PLANNED | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
