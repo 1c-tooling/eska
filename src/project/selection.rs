@@ -6,6 +6,7 @@ use super::{Project, ProjectName, ProjectNameError, discovery::DiscoveryContext}
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SelectionIntent {
     ReadOnly,
+    MultipleMutation,
     SingleMutation,
 }
 
