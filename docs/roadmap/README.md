@@ -45,7 +45,8 @@
 - `DONE`: `T45` — версионирование workspace members;
 - `DONE`: `T46` — сборка workspace members;
 - `DONE`: `T47` — VCS UX workspace members;
-- `NEXT`: `T48` — onboarding workspace members;
+- `DONE`: `T48` — onboarding workspace members;
+- `NEXT`: `T26` — `eska fmt`;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
@@ -146,7 +147,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T45 | DONE | Versioning workspace members | [11-workspaces.md](11-workspaces.md) |
 | T46 | DONE | Build workspace members | [11-workspaces.md](11-workspaces.md) |
 | T47 | DONE | Workspace-aware `status`, `diff` и `save` | [11-workspaces.md](11-workspaces.md) |
-| T48 | NEXT | `new` и `init` для workspace members | [11-workspaces.md](11-workspaces.md) |
+| T48 | DONE | `new` и `init` для workspace members | [11-workspaces.md](11-workspaces.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в

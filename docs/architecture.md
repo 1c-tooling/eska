@@ -174,6 +174,11 @@ tests/
 - `project/templates.rs` возвращает план файлов, но ничего не записывает.
   Запись и откат принадлежат конкретной операции: у `new` — новый каталог,
   у `init` — только созданные этим запуском config и Git-метаданные.
+- `project/onboarding.rs` готовит добавление пути в `workspace.members`, сохраняет
+  TOML-комментарии через syntax-aware edit и публикует manifest только при
+  совпадении проверенных байтов. Workspace-потоки `new` и `init` используют эту
+  транзакцию без member-level Git/workflow; поздняя ошибка возвращает точные
+  исходные байты root manifest и удаляет только созданные текущим запуском пути.
 - Git находится в `vcs/`: `git.rs` открывает и инициализирует репозитории,
   `repository.rs` возвращает HEAD, refs, историю и ahead/behind, `status.rs`
   сравнивает HEAD/index/worktree, а `diff.rs` разрешает commit-like revisions,

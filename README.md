@@ -467,6 +467,29 @@ type = "report"
 source = "."
 ```
 
+Новый member создаётся из корня workspace или каталога любого существующего
+member. В workspace нужен только тип проекта: workflow и Git принадлежат корню.
+
+```bash
+eska new my-orders --type processing
+```
+
+Команда создаст `src/my-orders`, запишет туда member `eska.toml` и автоматически
+добавит `src/my-orders` в корневой `workspace.members`. Комментарии и остальное
+форматирование корневого TOML сохраняются.
+
+Чтобы подключить уже скопированную Designer XML выгрузку:
+
+```bash
+cd src/my-orders
+eska init
+```
+
+Тип определяется по XML, а имя — по каталогу. Если каталог не подходит под
+переносимый формат `[a-z0-9][a-z0-9_-]*`, укажите `eska init --name my-orders`.
+Вложенный Git repository, `.gitignore`, `.gitattributes` и member-level workflow
+не создаются. `--workflow` в workspace отклоняется как корневая настройка.
+
 `eska` без подкоманды проверяет корневой manifest, все явно перечисленные
 каталоги, уникальность имён, границы путей и наследование общих настроек. Участник
 может переопределить только `[build].platform_version`; workflow и каталог
