@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0](https://github.com/1c-tooling/eska/compare/v0.5.2...v0.6.0) - 2026-09-07
+
+### Added
+
+- *(init)* Добавлено подключение workspace members
+- *(new)* Добавлено создание workspace members
+- *(save)* Добавлено сохранение изменений workspace
+- *(diff)* Добавлена группировка изменений workspace
+- *(status)* Добавлено состояние workspace
+- *(build)* Добавлена сборка проектов workspace
+- *(version)* Добавлена работа с версиями workspace
+- *(project)* Добавлена модель workspace и discovery
+
+### Other
+
+- *(roadmap)* Завершён onboarding workspace members
+- *(roadmap)* Завершён VCS UX workspace members
+- *(roadmap)* Завершена сборка workspace members
+- *(roadmap)* Завершено версионирование workspace members
+- *(version)* Расширено покрытие выбора workspace members
+- *(roadmap)* Завершена основа project workspaces
+
 ## [0.5.2](https://github.com/1c-tooling/eska/compare/v0.5.1...v0.5.2) - 2026-09-07
 
 ### Added
