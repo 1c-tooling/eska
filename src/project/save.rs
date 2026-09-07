@@ -4,7 +4,7 @@ use std::{fs, io, path::PathBuf};
 
 use gix::{ObjectId, bstr::ByteSlice};
 
-use super::Project;
+use super::{Project, Workspace};
 use crate::vcs::{
     command::{Error as CommandError, Executor},
     repository::{Error as RepositoryError, Head, Repository},
@@ -55,7 +55,7 @@ pub enum SaveError {
 /// Returns a structured error for invalid repository state, conflicts, empty changes, index I/O
 /// or a failed Git staging/commit operation.
 pub fn execute(project: &Project, message: Option<&str>) -> Result<SaveResult, SaveError> {
-    execute_with_message(project, SaveMessage::Explicit(message))
+    execute_scope(project.root(), SaveMessage::Explicit(message))
 }
 
 /// Save every current project change after opening Git's editor with a generated draft.
@@ -64,7 +64,29 @@ pub fn execute(project: &Project, message: Option<&str>) -> Result<SaveResult, S
 /// Returns the same structured preflight, staging, editor, commit and rollback failures as
 /// [`execute`]. An empty generated draft is rejected before repository mutation.
 pub fn execute_with_draft(project: &Project, draft: &str) -> Result<SaveResult, SaveError> {
-    execute_with_message(project, SaveMessage::Draft(draft))
+    execute_scope(project.root(), SaveMessage::Draft(draft))
+}
+
+/// Save every current change inside a workspace while preserving repository siblings.
+///
+/// # Errors
+/// Returns the same structured preflight, staging, commit and rollback failures as [`execute`].
+pub fn execute_workspace(
+    workspace: &Workspace,
+    message: Option<&str>,
+) -> Result<SaveResult, SaveError> {
+    execute_scope(workspace.root(), SaveMessage::Explicit(message))
+}
+
+/// Save every current workspace change after opening Git's editor with a generated draft.
+///
+/// # Errors
+/// Returns the same structured failures as [`execute_workspace`].
+pub fn execute_workspace_with_draft(
+    workspace: &Workspace,
+    draft: &str,
+) -> Result<SaveResult, SaveError> {
+    execute_scope(workspace.root(), SaveMessage::Draft(draft))
 }
 
 #[derive(Clone, Copy)]
@@ -84,16 +106,16 @@ impl SaveMessage<'_> {
 }
 
 /// Execute the shared project-scoped staging, commit and rollback transaction.
-fn execute_with_message(
-    project: &Project,
+fn execute_scope(
+    root: &std::path::Path,
     message: SaveMessage<'_>,
 ) -> Result<SaveResult, SaveError> {
     if message.is_empty() {
         return Err(SaveError::EmptyMessage);
     }
 
-    let repository = Repository::discover(project.root()).map_err(SaveError::Repository)?;
-    ensure_project_in_repository(project, &repository)?;
+    let repository = Repository::discover(root).map_err(SaveError::Repository)?;
+    ensure_scope_in_repository(root, &repository)?;
     if matches!(
         repository.head().map_err(SaveError::Repository)?,
         Head::Detached { .. }
@@ -105,7 +127,7 @@ fn execute_with_message(
     let changes: Vec<_> = status
         .entries
         .iter()
-        .filter(|entry| belongs_to_project(&repository, project, entry))
+        .filter(|entry| belongs_to_scope(&repository, root, entry))
         .collect();
     if changes.is_empty() {
         return Err(SaveError::NoChanges);
@@ -121,7 +143,7 @@ fn execute_with_message(
     }
 
     let snapshot = IndexSnapshot::capture(repository.index_path())?;
-    let executor = Executor::new(project.root());
+    let executor = Executor::new(root);
     if let Err(error) = executor.stage_all().map_err(SaveError::Command) {
         return snapshot.restore_after(error);
     }
@@ -133,7 +155,7 @@ fn execute_with_message(
         return snapshot.restore_after(error);
     }
 
-    let repository = Repository::discover(project.root()).map_err(SaveError::Repository)?;
+    let repository = Repository::discover(root).map_err(SaveError::Repository)?;
     let commit = repository
         .head()
         .map_err(SaveError::Repository)?
@@ -145,26 +167,26 @@ fn execute_with_message(
     })
 }
 
-fn ensure_project_in_repository(
-    project: &Project,
+fn ensure_scope_in_repository(
+    root: &std::path::Path,
     repository: &Repository,
 ) -> Result<(), SaveError> {
-    if project.root().starts_with(repository.work_dir()) {
+    if root.starts_with(repository.work_dir()) {
         Ok(())
     } else {
         Err(SaveError::ProjectOutsideRepository {
-            project: project.root().to_owned(),
+            project: root.to_owned(),
             repository: repository.work_dir().to_owned(),
         })
     }
 }
 
-fn belongs_to_project(repository: &Repository, project: &Project, entry: &PathStatus) -> bool {
-    project.root() == repository.work_dir()
+fn belongs_to_scope(repository: &Repository, root: &std::path::Path, entry: &PathStatus) -> bool {
+    root == repository.work_dir()
         || repository
             .work_dir()
             .join(gix::path::from_bstr(entry.path.as_bstr()).as_ref())
-            .starts_with(project.root())
+            .starts_with(root)
 }
 
 struct IndexSnapshot {

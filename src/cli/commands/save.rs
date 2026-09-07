@@ -11,7 +11,10 @@ use crate::{
         localization::{LocalizationValue, Localizer},
     },
     project::{
-        Project, diff, discovery, object_model, save,
+        Project, Workspace, diff,
+        discovery::{self, DiscoveryContext},
+        object_model, save,
+        selection::{SelectionIntent, select_projects},
         semantic::{self, SemanticDiff},
     },
     vcs::command,
@@ -22,6 +25,12 @@ pub(in crate::cli) struct SaveArgs {
     #[arg(short, long, value_name = "MESSAGE")]
     message: Option<String>,
 
+    #[arg(short = 'p', long)]
+    project: Vec<String>,
+
+    #[arg(long)]
+    workspace: bool,
+
     #[arg(short, long, action = clap::ArgAction::Help)]
     help: Option<bool>,
 }
@@ -29,48 +38,107 @@ pub(in crate::cli) struct SaveArgs {
 impl SaveArgs {
     /// Discover the project and save its complete current `ChangeSet`.
     pub(super) fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
-        let project = match discovery::discover(project_dir) {
-            Ok(project) => project,
+        let context = match discovery::discover_context(project_dir) {
+            Ok(context) => context,
             Err(error) => {
-                eprintln!("{}", diagnostics::present_project_error(&error, localizer));
+                eprintln!("{}", diagnostics::present_context_error(&error, localizer));
                 return ExitCode::FAILURE;
             }
         };
+        let selection = match select_projects(
+            &context,
+            &self.project,
+            self.workspace,
+            SelectionIntent::ReadOnly,
+        ) {
+            Ok(selection) => selection,
+            Err(error) => {
+                eprintln!(
+                    "{}",
+                    diagnostics::present_selection_error(&error, localizer)
+                );
+                return ExitCode::FAILURE;
+            }
+        };
+        let workspace_scope = match &context {
+            DiscoveryContext::Workspace { current_member, .. } => {
+                self.workspace || (self.project.is_empty() && current_member.is_none())
+            }
+            DiscoveryContext::Standalone(_) => false,
+        };
+        if workspace_scope {
+            let DiscoveryContext::Workspace { workspace, .. } = &context else {
+                eprintln!("{}", localizer.text("project-selector-standalone"));
+                return ExitCode::FAILURE;
+            };
+            return self.save_workspace(workspace, localizer);
+        }
+        if selection.projects().len() != 1 {
+            eprintln!("{}", localizer.text("save-single-project-required"));
+            return ExitCode::FAILURE;
+        }
+        self.save_project(selection.projects()[0].project(), localizer)
+    }
+
+    fn save_project(&self, project: &Project, localizer: &Localizer) -> ExitCode {
         let result = if let Some(message) = self.message.as_deref() {
-            save::execute(&project, Some(message))
+            save::execute(project, Some(message))
         } else {
-            let draft = match generate_draft(&project, localizer) {
+            let draft = match generate_draft(project, localizer) {
                 Ok(draft) => draft,
                 Err(error) => {
                     eprintln!("{}", present_diff_error(&error, localizer));
                     return ExitCode::FAILURE;
                 }
             };
-            save::execute_with_draft(&project, &draft)
+            save::execute_with_draft(project, &draft)
         };
-        let result = match result {
-            Ok(result) => result,
-            Err(error) => {
-                eprintln!("{}", present_error(&error, localizer));
-                return ExitCode::FAILURE;
-            }
-        };
-        let commit = result.commit.to_string();
-        println!(
-            "{}",
-            localizer.format(
-                "save-created",
-                &[
-                    (
-                        "files",
-                        LocalizationValue::Number(i64::try_from(result.files).unwrap_or(i64::MAX)),
-                    ),
-                    ("commit", LocalizationValue::Text(short_id(&commit))),
-                ],
-            )
-        );
-        ExitCode::SUCCESS
+        present_result(result, localizer)
     }
+
+    fn save_workspace(&self, workspace: &Workspace, localizer: &Localizer) -> ExitCode {
+        let result = if let Some(message) = self.message.as_deref() {
+            save::execute_workspace(workspace, Some(message))
+        } else {
+            let draft = match generate_workspace_draft(workspace, localizer) {
+                Ok(draft) => draft,
+                Err(error) => {
+                    eprintln!("{}", present_diff_error(&error, localizer));
+                    return ExitCode::FAILURE;
+                }
+            };
+            save::execute_workspace_with_draft(workspace, &draft)
+        };
+        present_result(result, localizer)
+    }
+}
+
+fn present_result(
+    result: Result<save::SaveResult, save::SaveError>,
+    localizer: &Localizer,
+) -> ExitCode {
+    let result = match result {
+        Ok(result) => result,
+        Err(error) => {
+            eprintln!("{}", present_error(&error, localizer));
+            return ExitCode::FAILURE;
+        }
+    };
+    let commit = result.commit.to_string();
+    println!(
+        "{}",
+        localizer.format(
+            "save-created",
+            &[
+                (
+                    "files",
+                    LocalizationValue::Number(i64::try_from(result.files).unwrap_or(i64::MAX)),
+                ),
+                ("commit", LocalizationValue::Text(short_id(&commit))),
+            ],
+        )
+    );
+    ExitCode::SUCCESS
 }
 
 /// Build a locale-specific commit draft from the exact current file and semantic changes.
@@ -81,6 +149,134 @@ fn generate_draft(project: &Project, localizer: &Localizer) -> Result<String, di
         .and_then(|objects| semantic::diff_workspace(project, &objects, &files).ok())
         .unwrap_or_default();
     Ok(render_draft(&files, &semantic, localizer))
+}
+
+fn generate_workspace_draft(
+    workspace: &Workspace,
+    localizer: &Localizer,
+) -> Result<String, diff::DiffError> {
+    let members = workspace.members().iter().collect::<Vec<_>>();
+    let changes = diff::inspect_workspace(workspace, &members, true)?;
+    let projects = changes
+        .projects
+        .iter()
+        .zip(&members)
+        .map(|(changes, member)| {
+            let semantic = object_model::discover(member.project())
+                .ok()
+                .and_then(|objects| {
+                    semantic::diff_workspace(member.project(), &objects, &changes.diff).ok()
+                })
+                .unwrap_or_default();
+            WorkspaceDraftProject {
+                name: changes.name.as_str(),
+                files: &changes.diff,
+                semantic,
+            }
+        })
+        .collect::<Vec<_>>();
+    Ok(render_workspace_draft(
+        &projects,
+        changes.workspace_files.as_ref(),
+        localizer,
+    ))
+}
+
+struct WorkspaceDraftProject<'a> {
+    name: &'a str,
+    files: &'a diff::ProjectDiff,
+    semantic: SemanticDiff,
+}
+
+fn render_workspace_draft(
+    projects: &[WorkspaceDraftProject<'_>],
+    workspace_files: Option<&diff::ProjectDiff>,
+    localizer: &Localizer,
+) -> String {
+    let objects = projects
+        .iter()
+        .flat_map(|project| {
+            project
+                .semantic
+                .events()
+                .iter()
+                .map(move |event| (project.name, event.object().id()))
+        })
+        .collect::<BTreeSet<_>>();
+    let scopes = objects
+        .iter()
+        .map(|(_, id)| changes::semantic_object_group(id))
+        .collect::<BTreeSet<_>>();
+    let subject = if objects.len() == 1 {
+        let (_, id) = objects.first().copied().unwrap_or_default();
+        draft_text(&localizer.format(
+            "save-draft-subject-object",
+            &[(
+                "object",
+                LocalizationValue::Text(&changes::render_semantic_object(id, localizer)),
+            )],
+        ))
+    } else if objects.is_empty() {
+        localizer.text("save-draft-subject-workspace-files")
+    } else {
+        localizer.text("save-draft-subject-objects")
+    };
+    let commit_type = if objects.is_empty() { "chore" } else { "feat" };
+    let scope = (scopes.len() == 1)
+        .then(|| scopes.first().copied())
+        .flatten()
+        .map(|scope| format!("({scope})"))
+        .unwrap_or_default();
+    let mut lines = vec![format!("{commit_type}{scope}: {subject}"), String::new()];
+    let mut details = BTreeSet::new();
+    for project in projects {
+        let semantic_paths = project
+            .semantic
+            .events()
+            .iter()
+            .map(|event| event.path().to_owned())
+            .collect::<BTreeSet<_>>();
+        for event in project.semantic.events() {
+            let member = event
+                .member()
+                .map(|member| format!(" — {member}"))
+                .unwrap_or_default();
+            details.insert(format!(
+                "- {}: {}{} — {}.",
+                localizer.text(changes::semantic_event_key(event.kind())),
+                changes::render_semantic_object(event.object().id(), localizer),
+                member,
+                project.name,
+            ));
+        }
+        for file in &project.files.files {
+            if semantic_paths.contains(file.path.as_bstr()) {
+                continue;
+            }
+            let path = format!(
+                "{}/{}",
+                project.name,
+                changes::display_path(file.path.as_bstr())
+            );
+            details.insert(draft_text(&localizer.format(
+                "save-draft-file-change",
+                &[("path", LocalizationValue::Text(&path))],
+            )));
+        }
+    }
+    if let Some(files) = workspace_files {
+        details.extend(files.files.iter().map(|file| {
+            draft_text(&localizer.format(
+                "save-draft-file-change",
+                &[(
+                    "path",
+                    LocalizationValue::Text(&changes::display_path(file.path.as_bstr())),
+                )],
+            ))
+        }));
+    }
+    lines.extend(details);
+    lines.join("\n")
 }
 
 /// Render a Conventional Commit title and deterministic semantic/file detail lines.
@@ -177,6 +373,14 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
             argument
                 .help(localizer.text("save-message-help"))
                 .value_name(localizer.text("save-message-value"))
+        })
+        .mut_arg("project", |argument| {
+            argument
+                .help(localizer.text("save-project-help"))
+                .value_name(localizer.text("save-project-value"))
+        })
+        .mut_arg("workspace", |argument| {
+            argument.help(localizer.text("save-workspace-help"))
         })
         .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
 }
