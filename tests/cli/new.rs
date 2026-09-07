@@ -5,7 +5,7 @@ use std::{
 };
 
 use eska::{
-    config::ProjectConfig,
+    config::{ProjectConfig, WorkspaceConfig},
     project::ProjectType,
     project::create::{self, CreationError},
     project::discovery,
@@ -35,6 +35,129 @@ fn success(output: &Output) -> String {
     );
     assert!(output.stderr.is_empty());
     String::from_utf8(output.stdout.clone()).expect("UTF-8")
+}
+
+/// Creates an empty workspace whose root formatting must survive enrollment.
+fn empty_workspace() -> TestDir {
+    let fixture = TestDir::new();
+    fs::write(
+        fixture.0.join("eska.toml"),
+        "# root comment\n[workspace]\nmembers = [] # keep members comment\n\n[build]\nplatform_version = \"8.3.27.2325\"\n\n[vcs.workflow]\npreset = \"trunk\"\n",
+    )
+    .expect("workspace manifest");
+    fixture
+}
+
+#[test]
+fn workspace_new_creates_src_member_and_updates_manifest_in_both_locales() {
+    for locale in ["ru", "en"] {
+        let fixture = empty_workspace();
+        let output = command(&fixture.0, locale)
+            .args(["new", "my-orders", "--type", "processing"])
+            .output()
+            .expect("workspace new");
+        let text = success(&output);
+        assert!(text.contains(if locale == "ru" {
+            "добавлен в members"
+        } else {
+            "added to members"
+        }));
+        let member = fixture.0.join("src/my-orders");
+        assert!(member.join("src/.gitkeep").is_file());
+        assert!(!member.join(".git").exists());
+        assert!(!member.join(".gitignore").exists());
+        assert!(!member.join(".gitattributes").exists());
+        let member_manifest = fs::read_to_string(member.join("eska.toml")).unwrap();
+        assert!(member_manifest.contains("name = \"my-orders\""));
+        assert!(member_manifest.contains("type = \"processing\""));
+        assert!(!member_manifest.contains("[build]"));
+        assert!(!member_manifest.contains("[vcs"));
+        let root_manifest = fs::read_to_string(fixture.0.join("eska.toml")).unwrap();
+        assert!(root_manifest.starts_with("# root comment\n"));
+        assert!(root_manifest.contains("# keep members comment"));
+        let config = WorkspaceConfig::from_toml(&root_manifest).unwrap();
+        assert_eq!(
+            config.members(),
+            &[std::path::PathBuf::from("src/my-orders")]
+        );
+        let context = discovery::discover_context(&member).unwrap();
+        let discovery::DiscoveryContext::Workspace {
+            workspace,
+            current_member,
+        } = context
+        else {
+            panic!("workspace member");
+        };
+        assert_eq!(workspace.members().len(), 1);
+        assert_eq!(current_member.unwrap().as_str(), "my-orders");
+    }
+}
+
+#[test]
+fn workspace_new_from_member_creates_a_sibling() {
+    let fixture = empty_workspace();
+    success(
+        &command(&fixture.0, "en")
+            .args(["new", "first", "--type", "report"])
+            .output()
+            .expect("first member"),
+    );
+    let first = fixture.0.join("src/first");
+    success(
+        &command(&first, "en")
+            .args(["new", "second", "--type", "extension", "--no-vcs"])
+            .output()
+            .expect("sibling member"),
+    );
+    assert!(fixture.0.join("src/second/eska.toml").is_file());
+    assert!(!first.join("second").exists());
+    let config = WorkspaceConfig::load(&fixture.0.join("eska.toml")).unwrap();
+    assert_eq!(
+        config.members(),
+        &[
+            std::path::PathBuf::from("src/first"),
+            std::path::PathBuf::from("src/second")
+        ]
+    );
+}
+
+#[test]
+fn workspace_new_rejects_paths_workflow_and_collisions_before_writing() {
+    for locale in ["ru", "en"] {
+        for (name, extra) in [
+            ("nested/member", Vec::new()),
+            ("Uppercase", Vec::new()),
+            ("valid", vec!["--workflow", "trunk"]),
+        ] {
+            let fixture = empty_workspace();
+            let before = fs::read(fixture.0.join("eska.toml")).unwrap();
+            let output = command(&fixture.0, locale)
+                .args(["new", name, "--type", "report"])
+                .args(extra)
+                .output()
+                .expect("invalid workspace new");
+            assert_eq!(output.status.code(), Some(2));
+            assert!(output.stdout.is_empty());
+            assert!(!output.stderr.is_empty());
+            assert_eq!(fs::read(fixture.0.join("eska.toml")).unwrap(), before);
+            assert!(!fixture.0.join("src").exists());
+        }
+    }
+
+    let fixture = empty_workspace();
+    fs::create_dir_all(fixture.0.join("src/taken")).unwrap();
+    fs::write(fixture.0.join("src/taken/user.txt"), "preserved").unwrap();
+    let root_before = fs::read(fixture.0.join("eska.toml")).unwrap();
+    let output = command(&fixture.0, "en")
+        .args(["new", "taken", "--type", "report"])
+        .output()
+        .expect("destination collision");
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(fs::read(fixture.0.join("eska.toml")).unwrap(), root_before);
+    assert_eq!(
+        fs::read_to_string(fixture.0.join("src/taken/user.txt")).unwrap(),
+        "preserved"
+    );
 }
 
 #[test]

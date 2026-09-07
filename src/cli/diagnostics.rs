@@ -12,10 +12,55 @@ use crate::{
     project::{
         InvalidPathReason, ProjectPathError,
         build::{BuildSettingsError, InvalidArtifactsDirectoryReason, ToolError, ToolSource},
+        onboarding::WorkspaceEnrollmentError,
         selection::SelectionError,
     },
     vcs::workflow::PolicyError,
 };
+
+pub(super) fn present_workspace_enrollment_error(
+    error: &WorkspaceEnrollmentError,
+    localizer: &Localizer,
+) -> String {
+    match error {
+        WorkspaceEnrollmentError::Io { path, source } => io_message(localizer, path, source),
+        WorkspaceEnrollmentError::Config(_)
+        | WorkspaceEnrollmentError::TomlEdit(_)
+        | WorkspaceEnrollmentError::MembersNotArray => {
+            localizer.text("workspace-onboarding-config-invalid")
+        }
+        WorkspaceEnrollmentError::NonUtf8MemberPath { path } => {
+            path_message(localizer, "workspace-onboarding-path-utf8", path)
+        }
+        WorkspaceEnrollmentError::OutsideWorkspace { workspace, member } => localizer.format(
+            "workspace-member-outside-root",
+            &[
+                (
+                    "workspace",
+                    LocalizationValue::Text(&workspace.to_string_lossy()),
+                ),
+                ("member", LocalizationValue::Text(&member.to_string_lossy())),
+            ],
+        ),
+        WorkspaceEnrollmentError::DuplicateMember { path } => {
+            path_message(localizer, "workspace-member-duplicate", path)
+        }
+        WorkspaceEnrollmentError::NestedMembers { first, second } => localizer.format(
+            "workspace-members-nested",
+            &[
+                ("first", LocalizationValue::Text(&first.to_string_lossy())),
+                ("second", LocalizationValue::Text(&second.to_string_lossy())),
+            ],
+        ),
+        WorkspaceEnrollmentError::DuplicateName { name } => localizer.format(
+            "workspace-member-name-duplicate",
+            &[("name", LocalizationValue::Text(name.as_str()))],
+        ),
+        WorkspaceEnrollmentError::ManifestChanged { path } => {
+            path_message(localizer, "workspace-onboarding-manifest-changed", path)
+        }
+    }
+}
 
 pub(super) fn present_selection_error(error: &SelectionError, localizer: &Localizer) -> String {
     match error {

@@ -12,6 +12,7 @@ pub mod init;
 pub(crate) mod metadata;
 pub mod model;
 pub mod object_model;
+pub mod onboarding;
 pub mod patch;
 pub mod save;
 pub mod selection;

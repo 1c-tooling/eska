@@ -159,19 +159,34 @@ impl ProjectConfig {
     ///
     /// Returns an error if a path cannot be represented by the TOML serializer.
     pub fn to_toml(&self) -> Result<String, toml::ser::Error> {
+        self.serialize(false)
+    }
+
+    /// Serializes a member manifest without workspace-owned workflow and defaults.
+    ///
+    /// Callers construct member configs without workflow or artifact overrides;
+    /// only an explicit platform override is retained.
+    pub(crate) fn to_workspace_member_toml(&self) -> Result<String, toml::ser::Error> {
+        self.serialize(true)
+    }
+
+    fn serialize(&self, workspace_member: bool) -> Result<String, toml::ser::Error> {
         let source = (self.source != Path::new(DEFAULT_SOURCE)).then_some(self.source.as_path());
         let source_format = (self.configuration.source_format() != SourceFormat::DesignerXml)
             .then_some(source_format_name(self.configuration.source_format()));
         let default_build = BuildSettings::default();
         let build = self.configuration.build_settings();
-        let build = Some(SerializedBuild {
-            platform_version: build
-                .platform_version()
-                .map_or("", crate::project::build::PlatformVersion::as_str),
-            artifacts_directory: (build.artifacts_directory()
-                != default_build.artifacts_directory())
-            .then(|| build.artifacts_directory()),
-        });
+        let build =
+            (!workspace_member || self.build_overrides.platform_version.is_some()).then(|| {
+                SerializedBuild {
+                    platform_version: build
+                        .platform_version()
+                        .map_or("", crate::project::build::PlatformVersion::as_str),
+                    artifacts_directory: (!workspace_member
+                        && build.artifacts_directory() != default_build.artifacts_directory())
+                    .then(|| build.artifacts_directory()),
+                }
+            });
         let document = SerializedDocument {
             project: SerializedProject {
                 name: self.name.as_ref().map(ProjectName::as_str),
@@ -180,9 +195,9 @@ impl ProjectConfig {
                 source_format,
             },
             build,
-            vcs: self
-                .configuration
-                .workflow_settings()
+            vcs: (!workspace_member)
+                .then(|| self.configuration.workflow_settings())
+                .flatten()
                 .map(|settings| SerializedVcs {
                     workflow: super::workflow::serialize(settings),
                 }),
@@ -340,6 +355,16 @@ mod tests {
                 .configuration()
                 .workflow(),
             None
+        );
+    }
+
+    #[test]
+    fn workspace_member_serialization_omits_root_owned_settings() {
+        let config = ProjectConfig::new(ProjectType::Processing)
+            .with_name(crate::project::ProjectName::parse("my-orders".to_owned()).unwrap());
+        assert_eq!(
+            config.to_workspace_member_toml().unwrap(),
+            "[project]\nname = \"my-orders\"\ntype = \"processing\"\n"
         );
     }
 

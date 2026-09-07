@@ -48,6 +48,32 @@ impl Template {
         Self::from_config(&config)
     }
 
+    /// Renders a workspace member without repository-owned Git or workflow files.
+    ///
+    /// # Errors
+    /// Returns the configuration serializer's error if rendering `eska.toml`
+    /// fails.
+    pub fn workspace_member(
+        name: super::ProjectName,
+        project_type: ProjectType,
+    ) -> Result<Self, toml::ser::Error> {
+        let config = ProjectConfig::new(project_type).with_name(name);
+        let source = config.source().to_path_buf();
+        Ok(Self {
+            files: vec![
+                TemplateFile {
+                    path: PathBuf::from(FILE_NAME),
+                    contents: config.to_workspace_member_toml()?,
+                },
+                TemplateFile {
+                    path: source.join(".gitkeep"),
+                    contents: String::new(),
+                },
+            ],
+            directories: vec![source],
+        })
+    }
+
     /// Renders a scaffold using a validated config, including its saved workflow.
     ///
     /// # Errors
@@ -207,5 +233,29 @@ mod tests {
                 assert!(seen.insert(path), "duplicate path: {path:?}");
             }
         }
+    }
+
+    #[test]
+    fn workspace_member_template_contains_only_member_owned_files() {
+        let template = Template::workspace_member(
+            crate::project::ProjectName::parse("my-orders".to_owned()).unwrap(),
+            ProjectType::Processing,
+        )
+        .unwrap();
+        assert_eq!(template.directories(), &[PathBuf::from("src")]);
+        assert_eq!(template.files().len(), 2);
+        assert_eq!(template.files()[0].path(), Path::new("eska.toml"));
+        assert_eq!(template.files()[1].path(), Path::new("src/.gitkeep"));
+        let manifest = template.files()[0].contents();
+        assert!(manifest.contains("name = \"my-orders\""));
+        assert!(manifest.contains("type = \"processing\""));
+        assert!(!manifest.contains("[build]"));
+        assert!(!manifest.contains("[vcs"));
+        assert!(
+            template
+                .files()
+                .iter()
+                .all(|file| !matches!(file.path().to_str(), Some(".gitignore" | ".gitattributes")))
+        );
     }
 }
