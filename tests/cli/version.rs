@@ -121,21 +121,23 @@ fn workspace_version_selects_current_named_or_all_members() {
     let fixture = workspace("1.2.3.4", "2.3.4.5");
     let report = fixture.0.join("src/sales-report");
 
-    let current = eska(&report, "en", &["version"]);
-    assert!(current.status.success(), "{current:?}");
-    assert_eq!(String::from_utf8_lossy(&current.stdout).trim(), "1.2.3.4");
+    for locale in ["ru", "en"] {
+        let current = eska(&report, locale, &["version"]);
+        assert!(current.status.success(), "{current:?}");
+        assert_eq!(String::from_utf8_lossy(&current.stdout).trim(), "1.2.3.4");
 
-    let selected = eska(
-        &fixture.0,
-        "en",
-        &["version", "-p", "import-orders", "--format", "json"],
-    );
-    assert!(selected.status.success(), "{selected:?}");
-    let document: Value = serde_json::from_slice(&selected.stdout).expect("JSON");
-    assert_eq!(document["schema_version"], 1);
-    assert_eq!(document["version"], "2.3.4.5");
-    assert_eq!(document["descriptor"], "ImportOrders.xml");
-    assert!(document.get("projects").is_none());
+        let selected = eska(
+            &fixture.0,
+            locale,
+            &["version", "-p", "import-orders", "--format", "json"],
+        );
+        assert!(selected.status.success(), "{selected:?}");
+        let document: Value = serde_json::from_slice(&selected.stdout).expect("JSON");
+        assert_eq!(document["schema_version"], 1);
+        assert_eq!(document["version"], "2.3.4.5");
+        assert_eq!(document["descriptor"], "ImportOrders.xml");
+        assert!(document.get("projects").is_none());
+    }
 
     let all = eska(&report, "en", &["version", "--workspace"]);
     assert!(all.status.success(), "{all:?}");
