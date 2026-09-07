@@ -1,5 +1,5 @@
 use eska::{
-    config::ProjectConfig,
+    config::{ProjectConfig, WorkspaceConfig},
     project::ProjectType,
     project::discovery,
     project::init::{self, InitError},
@@ -69,6 +69,137 @@ fn failure(output: &Output, code: i32, locale: &str) -> String {
         assert!(!error.contains("Не удалось"));
     }
     error
+}
+
+/// Creates an empty workspace whose comments must survive member enrollment.
+fn empty_workspace() -> TestDir {
+    let fixture = TestDir::new();
+    fs::write(
+        fixture.0.join("eska.toml"),
+        "# root comment\n[workspace]\nmembers = [] # members comment\n\n[build]\nplatform_version = \"8.3.27.2325\"\n\n[vcs.workflow]\npreset = \"trunk\"\n",
+    )
+    .expect("workspace manifest");
+    fixture
+}
+
+#[test]
+fn workspace_init_enrolls_a_copied_export_without_workflow_or_git_files() {
+    for locale in ["ru", "en"] {
+        let fixture = empty_workspace();
+        let member = fixture.0.join("src/my-orders");
+        descriptor(&member, "processing");
+        let before_source = snapshot(&member);
+        let output = command(&member, locale).output().expect("workspace init");
+        let text = success(&output);
+        assert!(text.contains(if locale == "ru" {
+            "добавлен в workspace.members"
+        } else {
+            "added to workspace.members"
+        }));
+        let manifest = fs::read_to_string(member.join("eska.toml")).unwrap();
+        assert!(manifest.contains("name = \"my-orders\""));
+        assert!(manifest.contains("type = \"processing\""));
+        assert!(manifest.contains("source = \".\""));
+        assert!(!manifest.contains("[build]"));
+        assert!(!manifest.contains("[vcs"));
+        assert!(!member.join(".git").exists());
+        assert!(!member.join(".gitignore").exists());
+        assert!(!member.join(".gitattributes").exists());
+        let mut after_source = snapshot(&member);
+        after_source.retain(|(path, _)| path != Path::new("eska.toml"));
+        assert_eq!(after_source, before_source);
+        let root_manifest = fs::read_to_string(fixture.0.join("eska.toml")).unwrap();
+        assert!(root_manifest.starts_with("# root comment\n"));
+        assert!(root_manifest.contains("# members comment"));
+        assert_eq!(
+            WorkspaceConfig::from_toml(&root_manifest)
+                .unwrap()
+                .members(),
+            &[std::path::PathBuf::from("src/my-orders")]
+        );
+        let context = discovery::discover_context(&member).unwrap();
+        let discovery::DiscoveryContext::Workspace { current_member, .. } = context else {
+            panic!("workspace member");
+        };
+        assert_eq!(current_member.unwrap().as_str(), "my-orders");
+    }
+}
+
+#[test]
+fn workspace_init_accepts_an_explicit_portable_name() {
+    let fixture = empty_workspace();
+    let member = fixture.0.join("src/Скопированный отчёт");
+    descriptor(&member.join("src"), "report");
+    success(
+        &command(&member, "en")
+            .args(["--name", "sales-report", "--no-vcs"])
+            .output()
+            .expect("workspace init with name"),
+    );
+    let config = ProjectConfig::load(&member.join("eska.toml")).unwrap();
+    assert_eq!(config.name().unwrap().as_str(), "sales-report");
+    assert_eq!(config.source(), Path::new("src"));
+    assert_eq!(
+        WorkspaceConfig::load(&fixture.0.join("eska.toml"))
+            .unwrap()
+            .members(),
+        &[std::path::PathBuf::from("src/Скопированный отчёт")]
+    );
+}
+
+#[test]
+fn workspace_init_rejects_workspace_owned_workflow_without_writing() {
+    for locale in ["ru", "en"] {
+        let fixture = empty_workspace();
+        let member = fixture.0.join("src/my-orders");
+        descriptor(&member, "processing");
+        let root_before = fs::read(fixture.0.join("eska.toml")).unwrap();
+        let member_before = snapshot(&member);
+        let output = command(&member, locale)
+            .args(["--workflow", "trunk"])
+            .output()
+            .expect("workspace workflow rejection");
+        failure(&output, 2, locale);
+        assert_eq!(fs::read(fixture.0.join("eska.toml")).unwrap(), root_before);
+        assert_eq!(snapshot(&member), member_before);
+    }
+}
+
+#[test]
+fn workspace_init_rejects_nested_members_and_duplicate_names_before_writing() {
+    let fixture = TestDir::new();
+    let existing = fixture.0.join("src/existing");
+    descriptor(&existing.join("src"), "report");
+    fs::write(
+        existing.join("eska.toml"),
+        "[project]\nname = \"existing\"\ntype = \"report\"\n",
+    )
+    .unwrap();
+    fs::write(
+        fixture.0.join("eska.toml"),
+        "[workspace]\nmembers = [\"src/existing\"]\n",
+    )
+    .unwrap();
+
+    let nested = existing.join("copied");
+    descriptor(&nested, "processing");
+    let root_before = fs::read(fixture.0.join("eska.toml")).unwrap();
+    let nested_before = snapshot(&nested);
+    let output = command(&nested, "en").output().expect("nested member");
+    failure(&output, 1, "en");
+    assert_eq!(fs::read(fixture.0.join("eska.toml")).unwrap(), root_before);
+    assert_eq!(snapshot(&nested), nested_before);
+
+    let duplicate = fixture.0.join("src/duplicate");
+    descriptor(&duplicate, "processing");
+    let duplicate_before = snapshot(&duplicate);
+    let output = command(&duplicate, "en")
+        .args(["--name", "existing"])
+        .output()
+        .expect("duplicate name");
+    failure(&output, 1, "en");
+    assert_eq!(fs::read(fixture.0.join("eska.toml")).unwrap(), root_before);
+    assert_eq!(snapshot(&duplicate), duplicate_before);
 }
 
 #[test]
@@ -526,6 +657,7 @@ fn localized_help_and_global_base_work_with_default_path() {
         }));
         for option in [
             "--source",
+            "--name",
             "--workflow",
             "--no-vcs",
             "--project-dir",
@@ -534,6 +666,14 @@ fn localized_help_and_global_base_work_with_default_path() {
             assert!(help.contains(option));
         }
     }
+    let standalone = fixture.0.join("standalone");
+    descriptor(&standalone.join("src"), "report");
+    let output = command(&standalone, "en")
+        .args(["--name", "report", "--workflow", "trunk", "--no-vcs"])
+        .output()
+        .expect("standalone name rejection");
+    failure(&output, 2, "en");
+    assert!(!standalone.join("eska.toml").exists());
     let root = fixture.0.join("base");
     descriptor(&root.join("src"), "report");
     success(
