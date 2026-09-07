@@ -4,14 +4,87 @@ use std::{io, path::Path};
 
 use crate::{
     cli::localization::{LocalizationValue, Localizer},
-    config::{GlobalConfigError, InvalidSourceReason, ProjectConfigError},
-    project::discovery::DiscoveryError,
+    config::{
+        GlobalConfigError, InvalidMemberPathReason, InvalidSourceReason, ManifestConfigError,
+        ProjectConfigError, WorkspaceConfigError,
+    },
+    project::discovery::{ContextDiscoveryError, DiscoveryError},
     project::{
         InvalidPathReason, ProjectPathError,
         build::{BuildSettingsError, InvalidArtifactsDirectoryReason, ToolError, ToolSource},
+        onboarding::WorkspaceEnrollmentError,
+        selection::SelectionError,
     },
     vcs::workflow::PolicyError,
 };
+
+pub(super) fn present_workspace_enrollment_error(
+    error: &WorkspaceEnrollmentError,
+    localizer: &Localizer,
+) -> String {
+    match error {
+        WorkspaceEnrollmentError::Io { path, source } => io_message(localizer, path, source),
+        WorkspaceEnrollmentError::Config(_)
+        | WorkspaceEnrollmentError::TomlEdit(_)
+        | WorkspaceEnrollmentError::MembersNotArray => {
+            localizer.text("workspace-onboarding-config-invalid")
+        }
+        WorkspaceEnrollmentError::NonUtf8MemberPath { path } => {
+            path_message(localizer, "workspace-onboarding-path-utf8", path)
+        }
+        WorkspaceEnrollmentError::OutsideWorkspace { workspace, member } => localizer.format(
+            "workspace-member-outside-root",
+            &[
+                (
+                    "workspace",
+                    LocalizationValue::Text(&workspace.to_string_lossy()),
+                ),
+                ("member", LocalizationValue::Text(&member.to_string_lossy())),
+            ],
+        ),
+        WorkspaceEnrollmentError::DuplicateMember { path } => {
+            path_message(localizer, "workspace-member-duplicate", path)
+        }
+        WorkspaceEnrollmentError::NestedMembers { first, second } => localizer.format(
+            "workspace-members-nested",
+            &[
+                ("first", LocalizationValue::Text(&first.to_string_lossy())),
+                ("second", LocalizationValue::Text(&second.to_string_lossy())),
+            ],
+        ),
+        WorkspaceEnrollmentError::DuplicateName { name } => localizer.format(
+            "workspace-member-name-duplicate",
+            &[("name", LocalizationValue::Text(name.as_str()))],
+        ),
+        WorkspaceEnrollmentError::ManifestChanged { path } => {
+            path_message(localizer, "workspace-onboarding-manifest-changed", path)
+        }
+    }
+}
+
+pub(super) fn present_selection_error(error: &SelectionError, localizer: &Localizer) -> String {
+    match error {
+        SelectionError::InvalidName(error) => localizer.format(
+            "project-selector-name-invalid",
+            &[("name", LocalizationValue::Text(error.value()))],
+        ),
+        SelectionError::DuplicateSelector { name } => localizer.format(
+            "project-selector-duplicate",
+            &[("name", LocalizationValue::Text(name.as_str()))],
+        ),
+        SelectionError::UnknownProject { name } => localizer.format(
+            "project-selector-unknown",
+            &[("name", LocalizationValue::Text(name.as_str()))],
+        ),
+        SelectionError::WorkspaceSelectorForStandalone => {
+            localizer.text("project-selector-standalone")
+        }
+        SelectionError::ConflictingSelectors => localizer.text("project-selector-conflict"),
+        SelectionError::ExplicitProjectRequired | SelectionError::SingleProjectRequired => {
+            localizer.text("project-selector-single-required")
+        }
+    }
+}
 
 pub(super) fn present_project_error(error: &DiscoveryError, localizer: &Localizer) -> String {
     match error {
@@ -27,6 +100,115 @@ pub(super) fn present_project_error(error: &DiscoveryError, localizer: &Localize
             path_message(localizer, "project-source-not-directory", path)
         }
         DiscoveryError::Config { path, source } => config_message(localizer, path, source),
+    }
+}
+
+pub(super) fn present_context_error(
+    error: &ContextDiscoveryError,
+    localizer: &Localizer,
+) -> String {
+    match error {
+        ContextDiscoveryError::Project(error) => present_project_error(error, localizer),
+        ContextDiscoveryError::Manifest { path, source } => {
+            manifest_message(localizer, path, source)
+        }
+        ContextDiscoveryError::MemberNotDirectory { path } => {
+            path_message(localizer, "workspace-member-not-directory", path)
+        }
+        ContextDiscoveryError::MemberOutsideWorkspace { workspace, member } => localizer.format(
+            "workspace-member-outside-root",
+            &[
+                (
+                    "workspace",
+                    LocalizationValue::Text(&workspace.to_string_lossy()),
+                ),
+                ("member", LocalizationValue::Text(&member.to_string_lossy())),
+            ],
+        ),
+        ContextDiscoveryError::DuplicateMember { path } => {
+            path_message(localizer, "workspace-member-duplicate", path)
+        }
+        ContextDiscoveryError::NestedMembers { first, second } => localizer.format(
+            "workspace-members-nested",
+            &[
+                ("first", LocalizationValue::Text(&first.to_string_lossy())),
+                ("second", LocalizationValue::Text(&second.to_string_lossy())),
+            ],
+        ),
+        ContextDiscoveryError::MemberManifestNotProject { path } => {
+            path_message(localizer, "workspace-member-project-required", path)
+        }
+        ContextDiscoveryError::MemberNameMissing { path } => {
+            path_message(localizer, "workspace-member-name-required", path)
+        }
+        ContextDiscoveryError::DuplicateName { name } => localizer.format(
+            "workspace-member-name-duplicate",
+            &[("name", LocalizationValue::Text(name.as_str()))],
+        ),
+        ContextDiscoveryError::MemberWorkflowUnsupported { path } => {
+            path_message(localizer, "workspace-member-workflow-unsupported", path)
+        }
+        ContextDiscoveryError::MemberArtifactsDirectoryUnsupported { path } => path_message(
+            localizer,
+            "workspace-member-artifacts-directory-unsupported",
+            path,
+        ),
+        ContextDiscoveryError::UnlistedProject { project, workspace } => localizer.format(
+            "workspace-project-unlisted",
+            &[
+                (
+                    "project",
+                    LocalizationValue::Text(&project.to_string_lossy()),
+                ),
+                (
+                    "workspace",
+                    LocalizationValue::Text(&workspace.to_string_lossy()),
+                ),
+            ],
+        ),
+        ContextDiscoveryError::ResolvedBuild(_) => localizer.text("workspace-build-invalid"),
+    }
+}
+
+fn manifest_message(localizer: &Localizer, path: &Path, error: &ManifestConfigError) -> String {
+    match error {
+        ManifestConfigError::Io { path, source } => io_message(localizer, path, source),
+        ManifestConfigError::Toml(_) => path_message(localizer, "project-config-invalid", path),
+        ManifestConfigError::KindMissing => path_message(localizer, "manifest-kind-missing", path),
+        ManifestConfigError::KindAmbiguous => {
+            path_message(localizer, "manifest-kind-ambiguous", path)
+        }
+        ManifestConfigError::Project(error) => config_message(localizer, path, error),
+        ManifestConfigError::Workspace(error) => workspace_config_message(localizer, path, error),
+    }
+}
+
+fn workspace_config_message(
+    localizer: &Localizer,
+    manifest_path: &Path,
+    error: &WorkspaceConfigError,
+) -> String {
+    match error {
+        WorkspaceConfigError::Io { path, source } => io_message(localizer, path, source),
+        WorkspaceConfigError::Toml(_) => {
+            path_message(localizer, "workspace-config-invalid", manifest_path)
+        }
+        WorkspaceConfigError::InvalidBuild(_) => {
+            path_message(localizer, "workspace-build-invalid", manifest_path)
+        }
+        WorkspaceConfigError::InvalidWorkflow(error) => {
+            config_message(localizer, manifest_path, error)
+        }
+        WorkspaceConfigError::InvalidMemberPath { path, reason } => {
+            let key = match reason {
+                InvalidMemberPathReason::Empty => "workspace-member-path-empty",
+                InvalidMemberPathReason::Absolute => "workspace-member-path-relative-required",
+                InvalidMemberPathReason::ContainsParentTraversal => {
+                    "workspace-member-path-parent-traversal"
+                }
+            };
+            path_message(localizer, key, path)
+        }
     }
 }
 
@@ -149,6 +331,13 @@ fn tool_source(source: &ToolSource) -> String {
 
 fn config_message(localizer: &Localizer, path: &Path, error: &ProjectConfigError) -> String {
     match error {
+        ProjectConfigError::InvalidName(error) => localizer.format(
+            "project-name-invalid",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("value", LocalizationValue::Text(error.value())),
+            ],
+        ),
         ProjectConfigError::InvalidBuild(error) => match error {
             BuildSettingsError::InvalidPlatformVersion { value } => localizer.format(
                 "project-build-version-invalid",

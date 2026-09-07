@@ -1656,11 +1656,15 @@ eska build -p sales-report         # один member
 eska build --workspace             # все members из вложенного каталога
 eska version -p sales-report
 eska version -p sales-report bump patch
+eska new import-orders --type processing
+cd src/legacy-orders && eska init   # для уже скопированной выгрузки
 ```
 
-Build/version работают с выбранным `Project`; repository workflow
-остаётся общим. Массовый version bump без явного флага запрещён.
-Существующие single-project CLI и JSON contracts сохраняются.
+Project-команды работают с выбранными members; repository workflow остаётся
+общим. `new` создаёт `src/<name>`, а `init` подключает существующий каталог и обе
+команды обновляют явный список `workspace.members`. Массовый version bump без
+явного флага запрещён. Существующие single-project CLI и JSON contracts
+сохраняются.
 
 Этот workspace не связан с isolated Git worktree для отдельной задачи из
 Milestone 16. Детальная декомпозиция T44–T48:

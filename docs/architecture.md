@@ -30,7 +30,7 @@ src/
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
 │   │   ├── switch.rs            # eska switch: выбор цели и presentation
-│   │   ├── version.rs           # eska version: RU/EN и JSON v1
+│   │   ├── version.rs           # version одного проекта или списка workspace members
 │   │   └── validate.rs          # проверка при запуске без подкоманды
 │   ├── diagnostics.rs           # общие ошибки project/config/platform
 │   ├── interactive/
@@ -50,6 +50,7 @@ src/
 │   ├── init.rs                  # обнаружение выгрузки, подключение и откат
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
+│   ├── workspace.rs             # Workspace, members и переносимые имена проектов
 │   ├── diff.rs                  # file-level изменения внутри корня проекта
 │   ├── finish.rs                # preflight, policy refs и локальное завершение задачи
 │   ├── history.rs               # локальная commit history и task attribution
@@ -71,6 +72,7 @@ src/
 │   │   ├── extension.rs         # запись Designer XML/BSL с BOM и CRLF
 │   │   └── execute.rs           # временная ИБ, platform checks и публикация
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
+│   ├── selection.rs             # общий выбор current/named/all workspace projects
 │   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
 │   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
@@ -79,6 +81,8 @@ src/
 ├── config/
 │   ├── mod.rs                   # интерфейс config и имя eska.toml
 │   ├── project.rs               # ProjectConfig, загрузка и валидация
+│   ├── manifest.rs              # различение строгих project/workspace manifests
+│   ├── workspace.rs             # WorkspaceConfig и проверка member paths
 │   ├── workflow.rs              # преобразование workflow-полей в доменную модель
 │   └── schema.rs                # TOML-поля, defaults и строковые значения
 └── vcs/
@@ -129,9 +133,10 @@ tests/
 | Изменить подключение существующего проекта | [`src/project/init.rs`](../src/project/init.rs): `inspect` — без записи, `apply` — применение |
 | Изменить создание проекта или откат | [`src/project/create.rs`](../src/project/create.rs) |
 | Изменить состав создаваемых файлов | [`src/project/templates.rs`](../src/project/templates.rs) |
-| Изменить поиск корня и проверку исходников | [`src/project/discovery.rs`](../src/project/discovery.rs) |
+| Изменить поиск project/workspace и проверку исходников | [`src/project/discovery.rs`](../src/project/discovery.rs) |
 | Изменить расчёт состояния проекта и readiness | [`src/project/status.rs`](../src/project/status.rs) |
-| Изменить схему `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
+| Изменить схему project `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
+| Изменить схему workspace `eska.toml` | [`src/config/workspace.rs`](../src/config/workspace.rs), затем [`src/project/discovery.rs`](../src/project/discovery.rs) |
 | Изменить распознавание типа выгрузки | [`src/project/designer_xml.rs`](../src/project/designer_xml.rs) |
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
 | Изменить clone/fetch или transport fallback policy | [`src/vcs/network.rs`](../src/vcs/network.rs) |
@@ -160,9 +165,20 @@ tests/
 - `config/schema.rs` описывает внешний TOML-формат; `config/project.rs` переводит
   его в проверенные настройки, `config/workflow.rs` преобразует строковые значения
   policy и сохраняет только явные overrides. Модель проекта не зависит от TOML-парсера.
+- `config/manifest.rs` различает взаимоисключающие `[project]` и `[workspace]`;
+  `config/workspace.rs` проверяет корневые defaults и относительные member paths.
+  `project/discovery.rs::discover_context` валидирует весь workspace, канонические
+  границы и наследование настроек. `build`, `version`, `status`, `diff` и `save`
+  используют общий selection; старый `discover` остаётся одно-проектной границей
+  команд без workspace-семантики.
 - `project/templates.rs` возвращает план файлов, но ничего не записывает.
   Запись и откат принадлежат конкретной операции: у `new` — новый каталог,
   у `init` — только созданные этим запуском config и Git-метаданные.
+- `project/onboarding.rs` готовит добавление пути в `workspace.members`, сохраняет
+  TOML-комментарии через syntax-aware edit и публикует manifest только при
+  совпадении проверенных байтов. Workspace-потоки `new` и `init` используют эту
+  транзакцию без member-level Git/workflow; поздняя ошибка возвращает точные
+  исходные байты root manifest и удаляет только созданные текущим запуском пути.
 - Git находится в `vcs/`: `git.rs` открывает и инициализирует репозитории,
   `repository.rs` возвращает HEAD, refs, историю и ahead/behind, `status.rs`
   сравнивает HEAD/index/worktree, а `diff.rs` разрешает commit-like revisions,
@@ -171,8 +187,9 @@ tests/
   неподдерживаемых remote-helper transport. Состояние файлов не требует разбора
   Designer XML.
 - `project/status.rs` объединяет configuration, workflow policy и read-only Git
-  в снимок проекта. `cli/commands/status.rs` только локализует human presentation
-  или сериализует стабильную JSON-схему версии 1.
+  в снимок проекта либо выбранной группы workspace из одного repository status.
+  `cli/commands/status.rs` сохраняет одиночную JSON v1 и формирует отдельную
+  aggregate JSON v1 с members и workspace-owned files.
 - `project/diff.rs` отбирает изменения внутри корня проекта и переводит пути в
   project-relative вид: workspace сохраняет отдельные состояния index/worktree,
   revision comparison — исходные и resolved endpoints и одно состояние файла.
@@ -181,8 +198,9 @@ tests/
   свойства дочерних объектов только в изменённых главных XML-файлах.
   `cli/commands/diff.rs` группирует logical identities по типу метаданных и
   состоянию, оформляет TTY-заголовки и маркеры, отдельно формирует raw,
-  workspace JSON версии 1 и revision JSON версии 2. Semantic-анализ BSL/форм
-  остаётся задачами T20–T21.
+  workspace JSON версии 1 и revision JSON версии 2. Для project workspace один
+  Git snapshot или tree comparison проецируется на selected members и корневые
+  файлы; aggregate semantic JSON сохраняет версию 3.
 - `project/object_model.rs` по явному вызову обходит Designer XML source и строит
   read-only индекс логических объектов. Читаемый `ObjectId` формируется из
   machine-facing metadata type/name и иерархии; UUID хранится отдельно, поскольку
@@ -203,13 +221,21 @@ tests/
   base. `cli/commands/history.rs` локализует human-вывод и формирует стабильный
   JSON версии 1, сохраняя произвольные Git-байты через явную кодировку.
 - `project/build/` отделяет переносимый план от machine-local обнаружения
-  `ibcmd` и исполнения. `execute.rs` владеет временной базой и безопасной
-  публикацией артефакта; `cli/commands/build.rs` локализует ошибки и формирует
-  JSON-схему версии 1.
+  `ibcmd` и исполнения. `BuildPlan` разделяет source root участника и output scope
+  workspace; `execute.rs` предоставляет read-only preflight, владеет временной
+  базой и безопасной публикацией артефакта. `cli/commands/build.rs` сначала
+  проверяет всю выбранную группу, затем последовательно выполняет планы,
+  сохраняя одиночный JSON v1 и отдельный aggregate JSON v1.
 - `project/version.rs` находит единственный корневой Designer XML descriptor,
   валидирует четырёхкомпонентную версию и при bump заменяет только диапазон
   текста прямого `Properties/Version` без повторной сериализации XML.
-  `cli/commands/version.rs` локализует human-вывод и формирует JSON-схему версии 1.
+  `project/selection.rs` разрешает standalone/current/named/all selection без
+  зависимости от CLI. `cli/commands/version.rs` сохраняет JSON v1 одиночного
+  проекта и формирует отдельный versioned документ для списка workspace members.
+- `project/save.rs` выполняет одну и ту же index snapshot/stage/commit/rollback
+  транзакцию для корня проекта или workspace. System Git получает точный cwd и
+  pathspec `.`, поэтому staged sibling paths большого репозитория не входят в
+  commit и сохраняются в index.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую

@@ -87,6 +87,7 @@ where
     F: FnMut(BuildStage, ProcessStream, &[u8]),
 {
     let started = Instant::now();
+    preflight(plan)?;
     ibcmd
         .begin_interruptible_operation()
         .map_err(|source| BuildError::Run {
@@ -98,15 +99,10 @@ where
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
         .ok_or_else(|| BuildError::OutputParentMissing(plan.output().to_owned()))?;
-    if !plan.has_explicit_output() {
-        ensure_existing_output_ancestor_is_inside_project(plan, parent)?;
-    }
     let mut created_directories = CreatedDirectories::create(parent)?;
     if !plan.has_explicit_output() {
         ensure_configured_output_is_inside_project(plan, parent)?;
     }
-    validate_existing_output(plan.output())?;
-
     let workspace = Workspace::create(parent)?;
     let data = workspace.path.join("data");
     let pid_file = workspace.path.join("ibcmd.pid");
@@ -168,12 +164,33 @@ where
     })
 }
 
+/// Validate every filesystem input and output invariant without creating files or invoking ibcmd.
+///
+/// # Errors
+/// Returns a structured source, descriptor, or output error.
+pub fn preflight(plan: &BuildPlan) -> Result<(), BuildError> {
+    let parent = plan
+        .output()
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .ok_or_else(|| BuildError::OutputParentMissing(plan.output().to_owned()))?;
+    if !plan.has_explicit_output() {
+        ensure_existing_output_ancestor_is_inside_project(plan, parent)?;
+    }
+    validate_existing_output(plan.output())?;
+    import_source(plan).map(|_| ())
+}
+
 /// Resolve the source argument expected by ibcmd for each native artifact kind.
 fn import_source(plan: &BuildPlan) -> Result<PathBuf, BuildError> {
     if matches!(
         plan.artifact_type(),
         ArtifactType::Configuration | ArtifactType::Extension
     ) {
+        fs::read_dir(plan.source()).map_err(|source| BuildError::DescriptorDirectory {
+            path: plan.source().to_owned(),
+            source,
+        })?;
         return Ok(plan.source().to_owned());
     }
     let expected = match plan.artifact_type() {
@@ -263,11 +280,12 @@ fn ensure_existing_output_ancestor_is_inside_project(
     plan: &BuildPlan,
     parent: &Path,
 ) -> Result<(), BuildError> {
-    let root =
-        fs::canonicalize(plan.project_root()).map_err(|source| BuildError::CreateDirectory {
-            path: plan.project_root().to_owned(),
+    let root = fs::canonicalize(plan.output_scope_root()).map_err(|source| {
+        BuildError::CreateDirectory {
+            path: plan.output_scope_root().to_owned(),
             source,
-        })?;
+        }
+    })?;
     let mut ancestor = parent;
     while !ancestor.exists() {
         ancestor = ancestor
@@ -301,11 +319,12 @@ fn ensure_configured_output_is_inside_project(
     plan: &BuildPlan,
     parent: &Path,
 ) -> Result<(), BuildError> {
-    let root =
-        fs::canonicalize(plan.project_root()).map_err(|source| BuildError::CreateDirectory {
-            path: plan.project_root().to_owned(),
+    let root = fs::canonicalize(plan.output_scope_root()).map_err(|source| {
+        BuildError::CreateDirectory {
+            path: plan.output_scope_root().to_owned(),
             source,
-        })?;
+        }
+    })?;
     let parent = fs::canonicalize(parent).map_err(|source| BuildError::CreateDirectory {
         path: parent.to_owned(),
         source,

@@ -61,6 +61,49 @@ fn project() -> (TestDir, PathBuf) {
     (fixture, root)
 }
 
+fn workspace() -> (TestDir, PathBuf, PathBuf) {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("tools");
+    let report = root.join("src/sales-report");
+    let processing = root.join("src/import-orders");
+    fs::create_dir_all(&report).expect("report member");
+    fs::create_dir_all(&processing).expect("processing member");
+    fs::write(
+        root.join("eska.toml"),
+        "[workspace]\nmembers = ['src/sales-report', 'src/import-orders']\n",
+    )
+    .expect("workspace config");
+    fs::write(
+        report.join("eska.toml"),
+        "[project]\nname = 'sales-report'\ntype = 'report'\nsource = '.'\n",
+    )
+    .expect("report config");
+    fs::write(
+        report.join("SalesReport.xml"),
+        r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><ExternalReport uuid="00000000-0000-0000-0000-000000000001"><Properties><Name>SalesReport</Name></Properties></ExternalReport></MetaDataObject>"#,
+    )
+    .expect("report source");
+    fs::write(
+        processing.join("eska.toml"),
+        "[project]\nname = 'import-orders'\ntype = 'processing'\nsource = '.'\n",
+    )
+    .expect("processing config");
+    fs::write(
+        processing.join("ImportOrders.xml"),
+        r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><ExternalDataProcessor uuid="00000000-0000-0000-0000-000000000002"><Properties><Name>ImportOrders</Name></Properties></ExternalDataProcessor></MetaDataObject>"#,
+    )
+    .expect("processing source");
+    fs::write(root.join("README.md"), "base\n").expect("workspace file");
+    fs::write(fixture.0.join("outside.txt"), "base\n").expect("repository sibling");
+    git(
+        &fixture.0,
+        &["init", "--initial-branch=main", "--template="],
+    );
+    git(&fixture.0, &["add", "."]);
+    git(&fixture.0, &["commit", "-m", "base"]);
+    (fixture, root, report)
+}
+
 /// JSON is stable across locales and excludes changes outside the project root.
 #[test]
 fn json_is_locale_independent_and_project_scoped() {
@@ -89,6 +132,72 @@ fn json_is_locale_independent_and_project_scoped() {
         let actual: Value = serde_json::from_slice(&output.stdout).expect("valid JSON diff");
         assert_eq!(actual, expected);
     }
+}
+
+#[test]
+fn workspace_diff_groups_members_and_workspace_files_in_every_output_mode() {
+    let (fixture, root, report) = workspace();
+    fs::write(report.join("module.bsl"), "new\n").expect("report change");
+    fs::write(root.join("src/import-orders/new.bsl"), "new\n").expect("processing change");
+    fs::write(root.join("README.md"), "changed\n").expect("workspace change");
+    fs::write(fixture.0.join("outside.txt"), "changed\n").expect("outside change");
+
+    for locale in ["ru", "en"] {
+        let output = eska(&root, locale, &["diff", "--format", "json"]);
+        assert!(output.status.success(), "{output:?}");
+        assert!(output.stderr.is_empty(), "{output:?}");
+        let document: Value = serde_json::from_slice(&output.stdout).expect("workspace JSON");
+        assert_eq!(document["schema_version"], 1);
+        assert_eq!(document["projects"][0]["name"], "sales-report");
+        assert_eq!(document["projects"][0]["files"][0]["path"], "module.bsl");
+        assert_eq!(document["projects"][1]["name"], "import-orders");
+        assert_eq!(document["workspace_files"][0]["path"], "README.md");
+        assert!(!String::from_utf8_lossy(&output.stdout).contains("outside.txt"));
+    }
+
+    let raw = eska(&root, "en", &["diff", "--raw"]);
+    assert!(raw.status.success(), "{raw:?}");
+    let raw = String::from_utf8(raw.stdout).expect("raw output");
+    assert!(raw.contains("sales-report\t.?\tmodule.bsl\n"), "{raw}");
+    assert!(raw.contains("import-orders\t.?\tnew.bsl\n"), "{raw}");
+    assert!(raw.contains("-\t.M\tREADME.md\n"), "{raw}");
+
+    let human = eska(&root, "ru", &["diff"]);
+    let human = String::from_utf8(human.stdout)
+        .expect("human output")
+        .replace(['\u{2068}', '\u{2069}'], "");
+    assert!(human.contains("Проект «sales-report»"), "{human}");
+    assert!(human.contains("Файлы workspace"), "{human}");
+}
+
+#[test]
+fn workspace_diff_preserves_single_json_and_supports_revisions_and_semantics() {
+    let (_fixture, root, report) = workspace();
+    fs::write(report.join("module.bsl"), "new\n").expect("report change");
+    fs::write(root.join("README.md"), "changed\n").expect("workspace change");
+
+    let single = eska(&report, "en", &["diff", "--format", "json"]);
+    assert!(single.status.success(), "{single:?}");
+    let document: Value = serde_json::from_slice(&single.stdout).expect("single JSON");
+    assert!(document.get("projects").is_none());
+    assert_eq!(document["files"][0]["path"], "module.bsl");
+
+    let semantic = eska(&root, "en", &["diff", "--semantic", "--format", "json"]);
+    assert!(semantic.status.success(), "{semantic:?}");
+    let document: Value = serde_json::from_slice(&semantic.stdout).expect("semantic JSON");
+    assert_eq!(document["schema_version"], 3);
+    assert_eq!(document["kind"], "semantic_workspace");
+    assert_eq!(document["projects"][0]["name"], "sales-report");
+    assert_eq!(document["workspace_files"]["kind"], "workspace");
+
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-m", "workspace changes"]);
+    let revisions = eska(&root, "en", &["diff", "HEAD^", "HEAD", "--format", "json"]);
+    assert!(revisions.status.success(), "{revisions:?}");
+    let document: Value = serde_json::from_slice(&revisions.stdout).expect("revision JSON");
+    assert_eq!(document["schema_version"], 2);
+    assert_eq!(document["projects"][0]["name"], "sales-report");
+    assert_eq!(document["workspace_files"][0]["path"], "README.md");
 }
 
 /// Human output is localized, while raw output stays compact and stable.

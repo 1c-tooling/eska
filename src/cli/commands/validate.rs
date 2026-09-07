@@ -8,10 +8,10 @@ use crate::{
 };
 
 pub(super) fn run(project_dir: &Path, localizer: &Localizer) -> ExitCode {
-    match discovery::discover(project_dir) {
+    match discovery::discover_context(project_dir) {
         Ok(_) => ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("{}", diagnostics::present_project_error(&error, localizer));
+            eprintln!("{}", diagnostics::present_context_error(&error, localizer));
             ExitCode::FAILURE
         }
     }

@@ -6,7 +6,8 @@ use std::{
 };
 
 use crate::project::{
-    Project, ProjectConfiguration, ProjectPathError, ProjectType, SourceFormat,
+    Project, ProjectConfiguration, ProjectName, ProjectNameError, ProjectPathError, ProjectType,
+    SourceFormat,
     build::{BuildSettings, BuildSettingsError},
 };
 
@@ -19,10 +20,28 @@ use super::schema::{
 };
 
 /// The validated contents of an `eska.toml` file.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct ProjectConfig {
+    name: Option<ProjectName>,
     source: PathBuf,
     configuration: ProjectConfiguration,
+    build_overrides: ProjectBuildOverrides,
+}
+
+impl PartialEq for ProjectConfig {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+            && self.source == other.source
+            && self.configuration == other.configuration
+    }
+}
+
+impl Eq for ProjectConfig {}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+struct ProjectBuildOverrides {
+    platform_version: Option<String>,
+    artifacts_directory: Option<PathBuf>,
 }
 
 impl ProjectConfig {
@@ -30,8 +49,10 @@ impl ProjectConfig {
     #[must_use]
     pub fn new(project_type: ProjectType) -> Self {
         Self {
+            name: None,
             source: default_source(),
             configuration: ProjectConfiguration::new(project_type, SourceFormat::DesignerXml),
+            build_overrides: ProjectBuildOverrides::default(),
         }
     }
 
@@ -44,7 +65,22 @@ impl ProjectConfig {
 
     #[must_use]
     pub fn with_build_settings(mut self, build: BuildSettings) -> Self {
+        self.build_overrides = ProjectBuildOverrides {
+            platform_version: Some(
+                build
+                    .platform_version()
+                    .map_or_else(String::new, |version| version.as_str().to_owned()),
+            ),
+            artifacts_directory: Some(build.artifacts_directory().to_owned()),
+        };
         self.configuration = self.configuration.with_build_settings(build);
+        self
+    }
+
+    /// Sets the portable name required when this project is a workspace member.
+    #[must_use]
+    pub fn with_name(mut self, name: ProjectName) -> Self {
+        self.name = Some(name);
         self
     }
 
@@ -80,6 +116,12 @@ impl ProjectConfig {
     /// values, unknown fields, or an invalid source path.
     pub fn from_toml(input: &str) -> Result<Self, ProjectConfigError> {
         let document: RawDocument = toml::from_str(input).map_err(ProjectConfigError::Toml)?;
+        let name = document
+            .project
+            .name
+            .map(ProjectName::parse)
+            .transpose()
+            .map_err(ProjectConfigError::InvalidName)?;
         let project_type = parse_project_type(document.project.project_type)?;
         let source_format = parse_source_format(document.project.source_format)?;
 
@@ -87,6 +129,10 @@ impl ProjectConfig {
 
         let default_build = BuildSettings::default();
         let build = document.build.unwrap_or_default();
+        let build_overrides = ProjectBuildOverrides {
+            platform_version: build.platform_version.clone(),
+            artifacts_directory: build.artifacts_directory.clone(),
+        };
         let build = BuildSettings::new(
             build.platform_version.as_deref().unwrap_or_default(),
             build
@@ -100,8 +146,10 @@ impl ProjectConfig {
                 configuration.with_workflow_settings(super::workflow::parse(vcs.workflow)?);
         }
         Ok(Self {
+            name,
             source: document.project.source,
             configuration,
+            build_overrides,
         })
     }
 
@@ -111,29 +159,45 @@ impl ProjectConfig {
     ///
     /// Returns an error if a path cannot be represented by the TOML serializer.
     pub fn to_toml(&self) -> Result<String, toml::ser::Error> {
+        self.serialize(false)
+    }
+
+    /// Serializes a member manifest without workspace-owned workflow and defaults.
+    ///
+    /// Callers construct member configs without workflow or artifact overrides;
+    /// only an explicit platform override is retained.
+    pub(crate) fn to_workspace_member_toml(&self) -> Result<String, toml::ser::Error> {
+        self.serialize(true)
+    }
+
+    fn serialize(&self, workspace_member: bool) -> Result<String, toml::ser::Error> {
         let source = (self.source != Path::new(DEFAULT_SOURCE)).then_some(self.source.as_path());
         let source_format = (self.configuration.source_format() != SourceFormat::DesignerXml)
             .then_some(source_format_name(self.configuration.source_format()));
         let default_build = BuildSettings::default();
         let build = self.configuration.build_settings();
-        let build = Some(SerializedBuild {
-            platform_version: build
-                .platform_version()
-                .map_or("", crate::project::build::PlatformVersion::as_str),
-            artifacts_directory: (build.artifacts_directory()
-                != default_build.artifacts_directory())
-            .then(|| build.artifacts_directory()),
-        });
+        let build =
+            (!workspace_member || self.build_overrides.platform_version.is_some()).then(|| {
+                SerializedBuild {
+                    platform_version: build
+                        .platform_version()
+                        .map_or("", crate::project::build::PlatformVersion::as_str),
+                    artifacts_directory: (!workspace_member
+                        && build.artifacts_directory() != default_build.artifacts_directory())
+                    .then(|| build.artifacts_directory()),
+                }
+            });
         let document = SerializedDocument {
             project: SerializedProject {
+                name: self.name.as_ref().map(ProjectName::as_str),
                 project_type: project_type_name(self.configuration.project_type()),
                 source,
                 source_format,
             },
             build,
-            vcs: self
-                .configuration
-                .workflow_settings()
+            vcs: (!workspace_member)
+                .then(|| self.configuration.workflow_settings())
+                .flatten()
                 .map(|settings| SerializedVcs {
                     workflow: super::workflow::serialize(settings),
                 }),
@@ -166,6 +230,19 @@ impl ProjectConfig {
     pub const fn configuration(&self) -> &ProjectConfiguration {
         &self.configuration
     }
+
+    #[must_use]
+    pub const fn name(&self) -> Option<&ProjectName> {
+        self.name.as_ref()
+    }
+
+    pub(crate) fn platform_version_override(&self) -> Option<&str> {
+        self.build_overrides.platform_version.as_deref()
+    }
+
+    pub(crate) const fn overrides_artifacts_directory(&self) -> bool {
+        self.build_overrides.artifacts_directory.is_some()
+    }
 }
 
 /// The reason a configured source path was rejected.
@@ -179,6 +256,7 @@ pub enum InvalidSourceReason {
 /// A structured project configuration error.
 #[derive(Debug)]
 pub enum ProjectConfigError {
+    InvalidName(ProjectNameError),
     InvalidBuild(BuildSettingsError),
     InvalidWorkflow(crate::vcs::workflow::PolicyError),
     UnknownWorkflow {
@@ -277,6 +355,16 @@ mod tests {
                 .configuration()
                 .workflow(),
             None
+        );
+    }
+
+    #[test]
+    fn workspace_member_serialization_omits_root_owned_settings() {
+        let config = ProjectConfig::new(ProjectType::Processing)
+            .with_name(crate::project::ProjectName::parse("my-orders".to_owned()).unwrap());
+        assert_eq!(
+            config.to_workspace_member_toml().unwrap(),
+            "[project]\nname = \"my-orders\"\ntype = \"processing\"\n"
         );
     }
 
@@ -549,5 +637,18 @@ mod tests {
             config.to_toml().expect("serializable config"),
             "[project]\ntype = \"report\"\nsource = \"designer\"\n\n[build]\nplatform_version = \"\"\n"
         );
+    }
+
+    #[test]
+    fn project_name_round_trips_without_changing_unnamed_configs() {
+        let named = ProjectConfig::from_toml(
+            "[project]\nname = 'sales-report'\ntype = 'report'\nsource = '.'\n",
+        )
+        .expect("named project config");
+        assert_eq!(named.name().unwrap().as_str(), "sales-report");
+        assert!(named.to_toml().unwrap().contains("name = \"sales-report\""));
+
+        let unnamed = ProjectConfig::new(ProjectType::Report);
+        assert!(!unnamed.to_toml().unwrap().contains("name"));
     }
 }

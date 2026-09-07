@@ -9,13 +9,15 @@ use gix::ObjectId;
 use gix::bstr::{BString, ByteSlice};
 
 use super::{
-    Project,
+    Project, ProjectName, Workspace, WorkspaceMember,
     metadata::{self, MetadataPath},
 };
 use crate::vcs::{
     repository::{Error as RepositoryError, Repository},
     status::Change,
 };
+
+use crate::vcs::{diff::TreeChange, status::PathStatus};
 
 use crate::vcs::diff::ResolvedCommit;
 
@@ -24,6 +26,19 @@ use crate::vcs::diff::ResolvedCommit;
 pub struct ProjectDiff {
     pub files: Vec<FileChange>,
     pub display: Vec<DisplayChange>,
+}
+
+/// Current changes grouped by selected workspace member and optional workspace-owned files.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct WorkspaceDiff {
+    pub projects: Vec<WorkspaceProjectDiff>,
+    pub workspace_files: Option<ProjectDiff>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceProjectDiff {
+    pub name: ProjectName,
+    pub diff: ProjectDiff,
 }
 
 /// Human-facing target that is either a logical metadata object or an unchanged file path.
@@ -65,6 +80,20 @@ pub struct RevisionProjectDiff {
     pub comparison: RevisionComparison,
     pub files: Vec<RevisionFileChange>,
     pub display: Vec<RevisionDisplayChange>,
+}
+
+/// Committed changes grouped by selected workspace member and optional workspace-owned files.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceRevisionDiff {
+    pub comparison: RevisionComparison,
+    pub projects: Vec<WorkspaceRevisionProjectDiff>,
+    pub workspace_files: Option<RevisionProjectDiff>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceRevisionProjectDiff {
+    pub name: ProjectName,
+    pub diff: RevisionProjectDiff,
 }
 
 /// One changed path between two committed trees.
@@ -114,9 +143,48 @@ pub fn inspect(project: &Project) -> Result<ProjectDiff, DiffError> {
     }
 
     let status = repository.status().map_err(DiffError::Repository)?;
+    Ok(inspect_status_entries(
+        project,
+        &repository,
+        &status.entries,
+    ))
+}
+
+/// Inspect selected workspace members from one read-only repository snapshot.
+///
+/// # Errors
+/// Returns a structured error when the repository cannot be read or contain the workspace.
+pub fn inspect_workspace(
+    workspace: &Workspace,
+    selected: &[&WorkspaceMember],
+    include_workspace_files: bool,
+) -> Result<WorkspaceDiff, DiffError> {
+    let repository = Repository::discover(workspace.root()).map_err(DiffError::Repository)?;
+    ensure_root_in_repository(workspace.root(), &repository)?;
+    let status = repository.status().map_err(DiffError::Repository)?;
+    let projects = selected
+        .iter()
+        .map(|member| WorkspaceProjectDiff {
+            name: member.name().clone(),
+            diff: inspect_status_entries(member.project(), &repository, &status.entries),
+        })
+        .collect();
+    let workspace_files = include_workspace_files
+        .then(|| workspace_status_files(workspace, &repository, &status.entries));
+    Ok(WorkspaceDiff {
+        projects,
+        workspace_files,
+    })
+}
+
+fn inspect_status_entries(
+    project: &Project,
+    repository: &Repository,
+    entries: &[PathStatus],
+) -> ProjectDiff {
     let mut files = Vec::new();
     let mut display = BTreeMap::new();
-    for entry in status.entries {
+    for entry in entries {
         let Some(path) =
             project_relative_path(repository.work_dir(), project.root(), entry.path.as_bstr())
         else {
@@ -168,10 +236,51 @@ pub fn inspect(project: &Project) -> Result<ProjectDiff, DiffError> {
             worktree: entry.worktree,
         });
     }
-    Ok(ProjectDiff {
+    ProjectDiff {
         files,
         display: display.into_values().collect(),
-    })
+    }
+}
+
+fn workspace_status_files(
+    workspace: &Workspace,
+    repository: &Repository,
+    entries: &[PathStatus],
+) -> ProjectDiff {
+    let files = entries
+        .iter()
+        .filter(|entry| {
+            let absolute = repository
+                .work_dir()
+                .join(gix::path::from_bstr(entry.path.as_bstr()));
+            absolute.starts_with(workspace.root())
+                && !workspace
+                    .members()
+                    .iter()
+                    .any(|member| absolute.starts_with(member.root()))
+        })
+        .filter_map(|entry| {
+            project_relative_path(
+                repository.work_dir(),
+                workspace.root(),
+                entry.path.as_bstr(),
+            )
+            .map(|path| FileChange {
+                path,
+                index: entry.index,
+                worktree: entry.worktree,
+            })
+        })
+        .collect::<Vec<_>>();
+    let display = files
+        .iter()
+        .map(|file| DisplayChange {
+            target: DisplayTarget::File(file.path.clone()),
+            index: file.index,
+            worktree: file.worktree,
+        })
+        .collect();
+    ProjectDiff { files, display }
 }
 
 /// Compare two committed revisions, optionally using their merge base as the effective start.
@@ -185,14 +294,62 @@ pub fn compare(
     since_branch_point: bool,
 ) -> Result<RevisionProjectDiff, DiffError> {
     let repository = Repository::discover(project.root()).map_err(DiffError::Repository)?;
-    if !project.root().starts_with(repository.work_dir()) {
-        return Err(DiffError::ProjectOutsideRepository {
-            project: project.root().to_owned(),
-            repository: repository.work_dir().to_owned(),
-        });
-    }
-    let from = resolve_revision(&repository, from_revision)?;
-    let to = resolve_revision(&repository, to_revision)?;
+    ensure_root_in_repository(project.root(), &repository)?;
+    let (comparison, changes) =
+        compare_entries(&repository, from_revision, to_revision, since_branch_point)?;
+    Ok(revision_diff_from_entries(
+        project,
+        &repository,
+        &changes,
+        comparison,
+    ))
+}
+
+/// Compare revisions once and group their changes by selected workspace scopes.
+///
+/// # Errors
+/// Returns a structured error when revisions, history, trees or workspace scope cannot be read.
+pub fn compare_workspace(
+    workspace: &Workspace,
+    selected: &[&WorkspaceMember],
+    include_workspace_files: bool,
+    from_revision: &str,
+    to_revision: &str,
+    since_branch_point: bool,
+) -> Result<WorkspaceRevisionDiff, DiffError> {
+    let repository = Repository::discover(workspace.root()).map_err(DiffError::Repository)?;
+    ensure_root_in_repository(workspace.root(), &repository)?;
+    let (comparison, changes) =
+        compare_entries(&repository, from_revision, to_revision, since_branch_point)?;
+    let projects = selected
+        .iter()
+        .map(|member| WorkspaceRevisionProjectDiff {
+            name: member.name().clone(),
+            diff: revision_diff_from_entries(
+                member.project(),
+                &repository,
+                &changes,
+                comparison.clone(),
+            ),
+        })
+        .collect();
+    let workspace_files = include_workspace_files
+        .then(|| workspace_revision_files(workspace, &repository, &changes, comparison.clone()));
+    Ok(WorkspaceRevisionDiff {
+        comparison,
+        projects,
+        workspace_files,
+    })
+}
+
+fn compare_entries(
+    repository: &Repository,
+    from_revision: &str,
+    to_revision: &str,
+    since_branch_point: bool,
+) -> Result<(RevisionComparison, Vec<TreeChange>), DiffError> {
+    let from = resolve_revision(repository, from_revision)?;
+    let to = resolve_revision(repository, to_revision)?;
     let merge_base = since_branch_point
         .then(|| {
             repository
@@ -208,6 +365,24 @@ pub fn compare(
     let changes = repository
         .diff_commits(effective_from, to)
         .map_err(DiffError::Repository)?;
+    Ok((
+        RevisionComparison {
+            from_revision: from_revision.to_owned(),
+            to_revision: to_revision.to_owned(),
+            from_commit: from.id,
+            to_commit: to.id,
+            merge_base_commit: merge_base.map(|commit| commit.id),
+        },
+        changes,
+    ))
+}
+
+fn revision_diff_from_entries(
+    project: &Project,
+    repository: &Repository,
+    changes: &[TreeChange],
+    comparison: RevisionComparison,
+) -> RevisionProjectDiff {
     let mut files = Vec::new();
     let mut display = BTreeMap::new();
     for entry in changes {
@@ -262,17 +437,66 @@ pub fn compare(
             change: entry.change,
         });
     }
-    Ok(RevisionProjectDiff {
-        comparison: RevisionComparison {
-            from_revision: from_revision.to_owned(),
-            to_revision: to_revision.to_owned(),
-            from_commit: from.id,
-            to_commit: to.id,
-            merge_base_commit: merge_base.map(|commit| commit.id),
-        },
+    RevisionProjectDiff {
+        comparison,
         files,
         display: display.into_values().collect(),
-    })
+    }
+}
+
+fn workspace_revision_files(
+    workspace: &Workspace,
+    repository: &Repository,
+    changes: &[TreeChange],
+    comparison: RevisionComparison,
+) -> RevisionProjectDiff {
+    let files = changes
+        .iter()
+        .filter(|entry| {
+            let absolute = repository
+                .work_dir()
+                .join(gix::path::from_bstr(entry.path.as_bstr()));
+            absolute.starts_with(workspace.root())
+                && !workspace
+                    .members()
+                    .iter()
+                    .any(|member| absolute.starts_with(member.root()))
+        })
+        .filter_map(|entry| {
+            project_relative_path(
+                repository.work_dir(),
+                workspace.root(),
+                entry.path.as_bstr(),
+            )
+            .map(|path| RevisionFileChange {
+                path,
+                change: entry.change,
+            })
+        })
+        .collect::<Vec<_>>();
+    let display = files
+        .iter()
+        .map(|file| RevisionDisplayChange {
+            target: DisplayTarget::File(file.path.clone()),
+            change: file.change,
+        })
+        .collect();
+    RevisionProjectDiff {
+        comparison,
+        files,
+        display,
+    }
+}
+
+fn ensure_root_in_repository(root: &Path, repository: &Repository) -> Result<(), DiffError> {
+    if root.starts_with(repository.work_dir()) {
+        Ok(())
+    } else {
+        Err(DiffError::ProjectOutsideRepository {
+            project: root.to_owned(),
+            repository: repository.work_dir().to_owned(),
+        })
+    }
 }
 
 /// Resolve one requested revision while retaining its original spelling in errors.

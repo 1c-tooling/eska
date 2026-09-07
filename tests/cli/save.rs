@@ -69,6 +69,46 @@ fn project() -> (TestDir, PathBuf) {
     (fixture, root)
 }
 
+fn workspace() -> (TestDir, PathBuf, PathBuf, PathBuf) {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("tools");
+    let report = root.join("src/sales-report");
+    let processing = root.join("src/import-orders");
+    fs::create_dir_all(&report).expect("report member");
+    fs::create_dir_all(&processing).expect("processing member");
+    fs::write(
+        root.join("eska.toml"),
+        "[workspace]\nmembers = ['src/sales-report', 'src/import-orders']\n",
+    )
+    .expect("workspace config");
+    fs::write(
+        report.join("eska.toml"),
+        "[project]\nname = 'sales-report'\ntype = 'report'\nsource = '.'\n",
+    )
+    .expect("report config");
+    fs::write(report.join("Report.xml"), "base\n").expect("report source");
+    fs::write(
+        processing.join("eska.toml"),
+        "[project]\nname = 'import-orders'\ntype = 'processing'\nsource = '.'\n",
+    )
+    .expect("processing config");
+    fs::write(processing.join("Processing.xml"), "base\n").expect("processing source");
+    fs::write(root.join("README.md"), "base\n").expect("workspace file");
+    fs::write(fixture.0.join("outside.txt"), "base\n").expect("repository sibling");
+    git_ok(
+        &fixture.0,
+        &["init", "--initial-branch=main", "--template="],
+    );
+    git_ok(&fixture.0, &["config", "user.name", "Eska Test"]);
+    git_ok(
+        &fixture.0,
+        &["config", "user.email", "eska@example.invalid"],
+    );
+    git_ok(&fixture.0, &["add", "."]);
+    git_ok(&fixture.0, &["commit", "-m", "base"]);
+    (fixture, root, report, processing)
+}
+
 fn text(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).replace(['\u{2068}', '\u{2069}'], "")
 }
@@ -107,6 +147,148 @@ fn saves_project_changes_with_an_explicit_message_in_both_locales() {
             b" M outside.txt\n"
         );
     }
+}
+
+#[test]
+fn save_from_workspace_root_commits_its_full_scope_and_preserves_repository_siblings() {
+    for locale in ["ru", "en"] {
+        let (fixture, root, report, processing) = workspace();
+        fs::write(report.join("Report.xml"), "changed\n").expect("report change");
+        fs::write(processing.join("new.bsl"), "new\n").expect("processing change");
+        fs::write(root.join("README.md"), "changed\n").expect("workspace change");
+        fs::write(fixture.0.join("outside.txt"), "staged outside\n").expect("outside change");
+        git_ok(&fixture.0, &["add", "outside.txt"]);
+
+        let output = eska(&root, locale, &["save", "-m", "workspace changes"]);
+        assert!(output.status.success(), "{}", text(&output.stderr));
+        assert_eq!(
+            git_ok(&fixture.0, &["show", "--format=", "--name-only", "HEAD"]),
+            concat!(
+                "tools/README.md\n",
+                "tools/src/import-orders/new.bsl\n",
+                "tools/src/sales-report/Report.xml\n"
+            )
+            .as_bytes()
+        );
+        assert_eq!(
+            git_ok(&fixture.0, &["status", "--short"]),
+            b"M  outside.txt\n"
+        );
+    }
+}
+
+#[test]
+fn save_project_selector_commits_only_one_workspace_member() {
+    let (fixture, root, report, processing) = workspace();
+    fs::write(report.join("Report.xml"), "changed\n").expect("report change");
+    fs::write(processing.join("Processing.xml"), "changed\n").expect("processing change");
+    fs::write(root.join("README.md"), "changed\n").expect("workspace change");
+
+    let output = eska(
+        &root,
+        "en",
+        &["save", "-p", "sales-report", "-m", "report only"],
+    );
+    assert!(output.status.success(), "{}", text(&output.stderr));
+    assert_eq!(
+        git_ok(&fixture.0, &["show", "--format=", "--name-only", "HEAD"]),
+        b"tools/src/sales-report/Report.xml\n"
+    );
+    assert_eq!(
+        git_ok(&fixture.0, &["status", "--short"]),
+        concat!(
+            " M tools/README.md\n",
+            " M tools/src/import-orders/Processing.xml\n"
+        )
+        .as_bytes()
+    );
+}
+
+#[test]
+fn save_from_member_without_selector_remains_project_scoped() {
+    let (fixture, root, report, processing) = workspace();
+    fs::write(report.join("Report.xml"), "changed\n").expect("report change");
+    fs::write(processing.join("Processing.xml"), "changed\n").expect("processing change");
+    fs::write(root.join("README.md"), "changed\n").expect("workspace change");
+
+    let output = eska(&report, "en", &["save", "-m", "current member"]);
+    assert!(output.status.success(), "{}", text(&output.stderr));
+    assert_eq!(
+        git_ok(&fixture.0, &["show", "--format=", "--name-only", "HEAD"]),
+        b"tools/src/sales-report/Report.xml\n"
+    );
+}
+
+#[test]
+fn save_workspace_selector_from_member_and_multiple_project_rejection_are_safe() {
+    let (fixture, root, report, processing) = workspace();
+    fs::write(report.join("Report.xml"), "changed\n").expect("report change");
+    fs::write(processing.join("Processing.xml"), "changed\n").expect("processing change");
+
+    let rejected = eska(
+        &root,
+        "en",
+        &[
+            "save",
+            "-p",
+            "sales-report",
+            "-p",
+            "import-orders",
+            "-m",
+            "invalid",
+        ],
+    );
+    assert_eq!(rejected.status.code(), Some(1), "{rejected:?}");
+    assert!(text(&rejected.stderr).contains("Select one project"));
+    assert_eq!(git_ok(&fixture.0, &["log", "-1", "--format=%s"]), b"base\n");
+
+    let output = eska(
+        &report,
+        "en",
+        &["save", "--workspace", "-m", "all workspace"],
+    );
+    assert!(output.status.success(), "{}", text(&output.stderr));
+    assert_eq!(
+        git_ok(&fixture.0, &["show", "--format=", "--name-only", "HEAD"]),
+        concat!(
+            "tools/src/import-orders/Processing.xml\n",
+            "tools/src/sales-report/Report.xml\n"
+        )
+        .as_bytes()
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn workspace_generated_draft_names_member_and_workspace_paths() {
+    let (fixture, root, report, _processing) = workspace();
+    fs::write(report.join("new.bsl"), "new\n").expect("member change");
+    fs::write(root.join("README.md"), "changed\n").expect("workspace change");
+    let editor = fixture.0.join("editor.sh");
+    let captured = fixture.0.join("workspace-draft.txt");
+    fs::write(
+        &editor,
+        format!(
+            "#!/bin/sh\ncp \"$1\" '{}'\nprintf 'workspace draft\n' > \"$1\"\n",
+            captured.display()
+        ),
+    )
+    .expect("editor");
+    fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).expect("editor permissions");
+    git_ok(
+        &fixture.0,
+        &["config", "core.editor", &format!("'{}'", editor.display())],
+    );
+
+    let output = eska(&root, "en", &["save"]);
+    assert!(output.status.success(), "{}", text(&output.stderr));
+    let draft = fs::read_to_string(captured).expect("captured draft");
+    assert!(
+        draft.starts_with("chore: Changes to workspace files\n\n"),
+        "{draft}"
+    );
+    assert!(draft.contains("sales-report/new.bsl"), "{draft}");
+    assert!(draft.contains("README.md"), "{draft}");
 }
 
 /// Empty and detached states fail with localized diagnostics and no new commit.

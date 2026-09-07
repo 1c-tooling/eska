@@ -12,7 +12,11 @@ use crate::{
         interactive::{PromptError, Selector, WORKFLOW_CHOICES},
         localization::{LocalizationValue, Localizer},
     },
-    project::init::{self, InitError},
+    project::{
+        ProjectName,
+        init::{self, InitError},
+        onboarding,
+    },
     vcs::workflow::WorkflowPreset,
 };
 use clap::{ArgAction, Args};
@@ -24,6 +28,8 @@ pub(in crate::cli) struct InitArgs {
     #[arg(long)]
     source: Option<PathBuf>,
     #[arg(long)]
+    name: Option<String>,
+    #[arg(long)]
     workflow: Option<String>,
     #[arg(long)]
     no_vcs: bool,
@@ -33,6 +39,36 @@ pub(in crate::cli) struct InitArgs {
 
 impl InitArgs {
     pub(super) fn run(&self, base: &Path, localizer: &Localizer) -> ExitCode {
+        if self
+            .workflow
+            .as_deref()
+            .is_some_and(|value| WorkflowPreset::from_name(value).is_none())
+        {
+            eprintln!("{}", localizer.text("new-workflow-invalid"));
+            return ExitCode::from(2);
+        }
+        let plan = match init::inspect(&base.join(&self.path), self.source.as_deref()) {
+            Ok(plan) => plan,
+            Err(error) => {
+                eprintln!("{}", present(&error, localizer));
+                return ExitCode::FAILURE;
+            }
+        };
+        let workspace = match onboarding::find_workspace(plan.root()) {
+            Ok(workspace) => workspace,
+            Err(error) => {
+                eprintln!("{}", diagnostics::present_context_error(&error, localizer));
+                return ExitCode::FAILURE;
+            }
+        };
+        if let Some(workspace) = workspace {
+            return self.run_workspace(plan, &workspace, localizer);
+        }
+        self.run_standalone(&plan, localizer)
+    }
+
+    /// Completes the legacy standalone initialization flow.
+    fn run_standalone(&self, plan: &init::InitPlan, localizer: &Localizer) -> ExitCode {
         let mut workflow = match self.workflow.as_deref() {
             Some(value) => {
                 let Some(preset) = WorkflowPreset::from_name(value) else {
@@ -43,13 +79,10 @@ impl InitArgs {
             }
             None => None,
         };
-        let plan = match init::inspect(&base.join(&self.path), self.source.as_deref()) {
-            Ok(plan) => plan,
-            Err(error) => {
-                eprintln!("{}", present(&error, localizer));
-                return ExitCode::FAILURE;
-            }
-        };
+        if self.name.is_some() {
+            eprintln!("{}", localizer.text("init-name-workspace-only"));
+            return ExitCode::from(2);
+        }
         if workflow.is_none() {
             if !io::stdin().is_terminal() || !io::stderr().is_terminal() {
                 eprintln!("{}", localizer.text("init-options-required"));
@@ -78,12 +111,67 @@ impl InitArgs {
         let Some(workflow) = workflow else {
             return ExitCode::from(2);
         };
-        match init::apply(&plan, workflow, !self.no_vcs) {
+        match init::apply(plan, workflow, !self.no_vcs) {
             Ok(project) => {
                 println!(
                     "{}",
                     localizer.format(
                         "init-created",
+                        &[(
+                            "path",
+                            LocalizationValue::Text(&project.root().to_string_lossy())
+                        )]
+                    )
+                );
+                ExitCode::SUCCESS
+            }
+            Err(error) => {
+                eprintln!("{}", present(&error, localizer));
+                ExitCode::FAILURE
+            }
+        }
+    }
+
+    /// Attaches one copied export to its containing workspace without a prompt.
+    fn run_workspace(
+        &self,
+        plan: init::InitPlan,
+        workspace: &crate::project::Workspace,
+        localizer: &Localizer,
+    ) -> ExitCode {
+        if self.workflow.is_some() {
+            eprintln!("{}", localizer.text("workspace-onboarding-workflow-owned"));
+            return ExitCode::from(2);
+        }
+        let inferred = plan
+            .root()
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default();
+        let raw_name = self.name.as_deref().unwrap_or(inferred);
+        let Ok(name) = ProjectName::parse(raw_name.to_owned()) else {
+            eprintln!(
+                "{}",
+                localizer.format(
+                    "init-member-name-invalid",
+                    &[("name", LocalizationValue::Text(raw_name))]
+                )
+            );
+            return ExitCode::from(2);
+        };
+        let plan = match init::prepare_workspace_member(plan, workspace, name) {
+            Ok(plan) => plan,
+            Err(error) => {
+                eprintln!("{}", present(&error, localizer));
+                return ExitCode::FAILURE;
+            }
+        };
+        match init::apply_workspace_member(&plan) {
+            Ok(project) => {
+                println!(
+                    "{}",
+                    localizer.format(
+                        "init-member-created",
                         &[(
                             "path",
                             LocalizationValue::Text(&project.root().to_string_lossy())
@@ -119,6 +207,18 @@ fn present(error: &InitError, localizer: &Localizer) -> String {
         InitError::Git(_) => return localizer.text("new-git-error"),
         InitError::Validation(error) => {
             return diagnostics::present_project_error(error, localizer);
+        }
+        InitError::Workspace(error) => {
+            return diagnostics::present_workspace_enrollment_error(error, localizer);
+        }
+        InitError::WorkspaceValidation(error) => {
+            return diagnostics::present_context_error(error, localizer);
+        }
+        InitError::WorkspaceMemberMissing { name } => {
+            return localizer.format(
+                "workspace-onboarding-member-missing",
+                &[("name", LocalizationValue::Text(name.as_str()))],
+            );
         }
         InitError::Rollback { paths, original } => {
             let paths = paths
@@ -162,6 +262,10 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         .mut_arg("source", |arg| {
             arg.help(localizer.text("init-source-help"))
                 .value_name(localizer.text("cli-project-dir-value"))
+        })
+        .mut_arg("name", |arg| {
+            arg.help(localizer.text("init-name-help"))
+                .value_name(localizer.text("init-name-value"))
         })
         .mut_arg("workflow", |arg| {
             arg.help(localizer.text("new-workflow-help"))

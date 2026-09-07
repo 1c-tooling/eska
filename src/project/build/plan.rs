@@ -1,5 +1,5 @@
 use std::{
-    ffi::OsString,
+    ffi::{OsStr, OsString},
     path::{Component, Path, PathBuf},
 };
 
@@ -51,6 +51,7 @@ impl From<ProjectType> for ArtifactType {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BuildPlan {
     project_root: PathBuf,
+    output_scope_root: PathBuf,
     artifact_type: ArtifactType,
     platform_version: PlatformVersion,
     source: PathBuf,
@@ -94,6 +95,53 @@ impl BuildPlan {
         };
         Ok(Self {
             project_root: project.root().to_owned(),
+            output_scope_root: project.root().to_owned(),
+            artifact_type,
+            platform_version: platform_version
+                .or_else(|| {
+                    project
+                        .configuration()
+                        .build_settings()
+                        .platform_version()
+                        .cloned()
+                })
+                .ok_or(PlanError::PlatformVersionMissing)?,
+            source: project.source().to_owned(),
+            artifacts_directory,
+            output,
+            explicit_output,
+        })
+    }
+
+    /// Resolve an artifact plan for one workspace member.
+    ///
+    /// Default and relative explicit outputs belong to the workspace root, while the source
+    /// remains scoped to the member project. The stable member name defines the artifact name.
+    ///
+    /// # Errors
+    /// Returns a structured error for an unsafe/mismatched output path or missing platform.
+    pub fn for_workspace_member(
+        project: &Project,
+        workspace_root: &Path,
+        member_name: &str,
+        output: Option<&Path>,
+        platform_version: Option<PlatformVersion>,
+    ) -> Result<Self, PlanError> {
+        let explicit_output = output.is_some();
+        let artifact_type = ArtifactType::from(project.configuration().project_type());
+        let artifacts_directory = workspace_root.join(
+            project
+                .configuration()
+                .build_settings()
+                .artifacts_directory(),
+        );
+        let output = match output {
+            Some(output) => resolve_explicit_output(workspace_root, output, artifact_type)?,
+            None => artifacts_directory.join(named_filename(member_name, artifact_type)?),
+        };
+        Ok(Self {
+            project_root: project.root().to_owned(),
+            output_scope_root: workspace_root.to_owned(),
             artifact_type,
             platform_version: platform_version
                 .or_else(|| {
@@ -119,6 +167,11 @@ impl BuildPlan {
     #[must_use]
     pub fn project_root(&self) -> &Path {
         &self.project_root
+    }
+
+    #[must_use]
+    pub fn output_scope_root(&self) -> &Path {
+        &self.output_scope_root
     }
 
     #[must_use]
@@ -158,15 +211,47 @@ pub enum PlanError {
         path: PathBuf,
         expected: &'static str,
     },
+    OutputCollision {
+        path: PathBuf,
+    },
+}
+
+/// Reject a group in which multiple plans would publish the same artifact.
+///
+/// # Errors
+/// Returns the first duplicate output path in plan order.
+pub fn validate_unique_outputs(plans: &[&BuildPlan]) -> Result<(), PlanError> {
+    for (index, plan) in plans.iter().enumerate() {
+        if plans[..index]
+            .iter()
+            .any(|existing| existing.output() == plan.output())
+        {
+            return Err(PlanError::OutputCollision {
+                path: plan.output().to_owned(),
+            });
+        }
+    }
+    Ok(())
 }
 
 /// Derive the native artifact filename from the project directory name.
 fn default_filename(root: &Path, artifact_type: ArtifactType) -> Result<OsString, PlanError> {
-    let mut filename = root
+    let name = root
         .file_name()
         .filter(|name| !name.is_empty())
-        .ok_or(PlanError::ProjectNameMissing)?
-        .to_os_string();
+        .ok_or(PlanError::ProjectNameMissing)?;
+    named_filename(name, artifact_type)
+}
+
+fn named_filename(
+    name: impl AsRef<OsStr>,
+    artifact_type: ArtifactType,
+) -> Result<OsString, PlanError> {
+    let name = name.as_ref();
+    if name.is_empty() {
+        return Err(PlanError::ProjectNameMissing);
+    }
+    let mut filename = name.to_os_string();
     filename.push(".");
     filename.push(artifact_type.extension());
     Ok(filename)
@@ -273,5 +358,35 @@ mod tests {
                 .as_str(),
             "8.3.27.2325"
         );
+    }
+
+    #[test]
+    /// Place workspace artifacts under the shared build directory using stable member names.
+    fn workspace_member_uses_workspace_output_scope() {
+        let project = project(ProjectType::Report, "/work/src/report-directory");
+        let plan = BuildPlan::for_workspace_member(
+            &project,
+            Path::new("/work"),
+            "sales-report",
+            None,
+            None,
+        )
+        .expect("valid workspace plan");
+        assert_eq!(plan.project_root(), Path::new("/work/src/report-directory"));
+        assert_eq!(plan.output_scope_root(), Path::new("/work"));
+        assert_eq!(plan.output(), Path::new("/work/artifacts/sales-report.erf"));
+    }
+
+    #[test]
+    /// Reject duplicate publication targets before any build can start.
+    fn grouped_plans_reject_output_collisions() {
+        let project = project(ProjectType::Report, "/work/src/report");
+        let plan =
+            BuildPlan::for_workspace_member(&project, Path::new("/work"), "report", None, None)
+                .expect("valid workspace plan");
+        assert!(matches!(
+            validate_unique_outputs(&[&plan, &plan]),
+            Err(PlanError::OutputCollision { .. })
+        ));
     }
 }

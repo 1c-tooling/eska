@@ -12,8 +12,9 @@ use crate::{
 };
 
 use super::{
-    Project, ProjectType, designer_xml,
-    discovery::{self, DiscoveryError},
+    Project, ProjectName, ProjectType, Workspace, designer_xml,
+    discovery::{self, ContextDiscoveryError, DiscoveryContext, DiscoveryError},
+    onboarding::{self, WorkspaceEnrollmentError, WorkspaceMemberEnrollment},
     templates::{self, TemplateFile},
 };
 
@@ -25,6 +26,15 @@ pub struct InitPlan {
     root: PathBuf,
     source: PathBuf,
     project_type: ProjectType,
+}
+
+/// A fully preflighted attachment of an existing directory to a workspace.
+#[derive(Debug)]
+pub struct WorkspaceInitPlan {
+    detected: InitPlan,
+    name: ProjectName,
+    config: String,
+    enrollment: WorkspaceMemberEnrollment,
 }
 
 impl InitPlan {
@@ -88,10 +98,124 @@ pub enum InitError {
         path: PathBuf,
     },
     Validation(Box<DiscoveryError>),
+    Workspace(WorkspaceEnrollmentError),
+    WorkspaceValidation(Box<ContextDiscoveryError>),
+    WorkspaceMemberMissing {
+        name: ProjectName,
+    },
     Rollback {
         paths: Vec<PathBuf>,
         original: Box<Self>,
     },
+}
+
+/// Prepares a member manifest and root enrollment without writing either file.
+///
+/// # Errors
+/// Returns serialization, workspace-layout, duplicate-name, or manifest errors.
+pub fn prepare_workspace_member(
+    plan: InitPlan,
+    workspace: &Workspace,
+    name: ProjectName,
+) -> Result<WorkspaceInitPlan, InitError> {
+    let member_path = plan
+        .root
+        .strip_prefix(workspace.root())
+        .map_err(|_| {
+            InitError::Workspace(WorkspaceEnrollmentError::OutsideWorkspace {
+                workspace: workspace.root().to_path_buf(),
+                member: plan.root.clone(),
+            })
+        })?
+        .to_path_buf();
+    let config = ProjectConfig::new(plan.project_type)
+        .with_name(name.clone())
+        .with_source(plan.source.clone())
+        .map_err(InitError::Config)?
+        .to_workspace_member_toml()
+        .map_err(InitError::Serialize)?;
+    let enrollment = onboarding::prepare(workspace, plan.root.clone(), member_path, &name)
+        .map_err(InitError::Workspace)?;
+    Ok(WorkspaceInitPlan {
+        detected: plan,
+        name,
+        config,
+        enrollment,
+    })
+}
+
+/// Attaches an existing export and enrolls it without nested Git or workflow files.
+///
+/// # Errors
+/// Rolls back the new member manifest and exact root manifest bytes on failure.
+pub fn apply_workspace_member(plan: &WorkspaceInitPlan) -> Result<Project, InitError> {
+    if inspect(&plan.detected.root, Some(&plan.detected.source))? != plan.detected {
+        return Err(InitError::ChangedSource {
+            path: plan.detected.root.clone(),
+        });
+    }
+    let config_path = plan.detected.root.join(FILE_NAME);
+    let mut config_file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&config_path)
+        .map_err(|source| {
+            if source.kind() == io::ErrorKind::AlreadyExists {
+                InitError::ExistingConfig {
+                    path: config_path.clone(),
+                }
+            } else {
+                InitError::Io {
+                    path: config_path.clone(),
+                    source,
+                }
+            }
+        })?;
+    let mut manifest_published = false;
+    let result = (|| {
+        config_file
+            .write_all(plan.config.as_bytes())
+            .and_then(|()| config_file.sync_all())
+            .map_err(|source| InitError::Io {
+                path: config_path.clone(),
+                source,
+            })?;
+        plan.enrollment.publish().map_err(InitError::Workspace)?;
+        manifest_published = true;
+        let context = discovery::discover_context(plan.enrollment.workspace_root())
+            .map_err(|error| InitError::WorkspaceValidation(Box::new(error)))?;
+        let DiscoveryContext::Workspace { workspace, .. } = context else {
+            return Err(InitError::WorkspaceMemberMissing {
+                name: plan.name.clone(),
+            });
+        };
+        workspace
+            .member(&plan.name)
+            .map(|member| member.project().clone())
+            .ok_or_else(|| InitError::WorkspaceMemberMissing {
+                name: plan.name.clone(),
+            })
+    })();
+    drop(config_file);
+    if let Ok(project) = result {
+        return Ok(project);
+    }
+    let original = result.expect_err("handled successful result");
+    let mut paths = Vec::new();
+    if manifest_published && plan.enrollment.restore().is_err() {
+        paths.push(plan.enrollment.workspace_root().join(FILE_NAME));
+    }
+    if fs::remove_file(&config_path).is_err() {
+        paths.push(config_path);
+    }
+    if paths.is_empty() {
+        Err(original)
+    } else {
+        Err(InitError::Rollback {
+            paths,
+            original: Box::new(original),
+        })
+    }
 }
 
 /// Detect a single root descriptor in `.` or `src`, or in an explicit source.
@@ -371,8 +495,17 @@ fn write_missing_project_files(
 
 #[cfg(test)]
 mod tests {
-    use super::{InitError, write_project};
-    use crate::{project::templates, test_support::TestDir};
+    use super::{
+        InitError, apply_workspace_member, inspect, prepare_workspace_member, write_project,
+    };
+    use crate::{
+        project::{
+            ProjectName,
+            discovery::{DiscoveryContext, discover_context},
+            templates,
+        },
+        test_support::TestDir,
+    };
     use std::fs;
 
     #[test]
@@ -435,6 +568,50 @@ mod tests {
             b"user config"
         );
         assert!(!fixture.0.join(".git").exists());
+    }
+
+    #[test]
+    fn workspace_validation_failure_restores_both_manifests_only() {
+        let fixture = TestDir::new();
+        let existing = fixture.0.join("src/existing");
+        fs::create_dir_all(existing.join("src")).unwrap();
+        fs::write(
+            existing.join("eska.toml"),
+            "[project]\nname = \"existing\"\ntype = \"report\"\n",
+        )
+        .unwrap();
+        let target = fixture.0.join("src/copied");
+        fs::create_dir_all(target.join("src")).unwrap();
+        let descriptor = target.join("src/Обработка.xml");
+        fs::write(
+            &descriptor,
+            "<?xml version=\"1.0\"?><MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><ExternalDataProcessor uuid=\"12345678-1234-1234-1234-123456789012\"><Properties><Name>Copied</Name></Properties><ChildObjects/></ExternalDataProcessor></MetaDataObject>",
+        )
+        .unwrap();
+        let manifest = fixture.0.join("eska.toml");
+        let original = b"# preserved\n[workspace]\nmembers = [\"src/existing\"]\n";
+        fs::write(&manifest, original).unwrap();
+        let DiscoveryContext::Workspace { workspace, .. } = discover_context(&fixture.0).unwrap()
+        else {
+            panic!("workspace");
+        };
+        let detected = inspect(&target, None).unwrap();
+        let plan = prepare_workspace_member(
+            detected,
+            &workspace,
+            ProjectName::parse("copied".to_owned()).unwrap(),
+        )
+        .unwrap();
+        fs::remove_dir(existing.join("src")).unwrap();
+
+        assert!(matches!(
+            apply_workspace_member(&plan),
+            Err(InitError::WorkspaceValidation(_))
+        ));
+        assert_eq!(fs::read(manifest).unwrap(), original);
+        assert!(!target.join("eska.toml").exists());
+        assert!(descriptor.is_file());
+        assert!(existing.join("eska.toml").is_file());
     }
 
     #[cfg(unix)]

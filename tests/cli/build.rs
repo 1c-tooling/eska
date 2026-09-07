@@ -72,12 +72,56 @@ fn project(fixture: &TestDir, project_type: &str, name: &str) -> PathBuf {
     root
 }
 
+/// Create a workspace with one report and one processing in manifest order.
+fn workspace() -> TestDir {
+    let fixture = TestDir::new();
+    let report = fixture.0.join("src/sales-report");
+    let processing = fixture.0.join("src/import-orders");
+    fs::create_dir_all(&report).expect("report member");
+    fs::create_dir_all(&processing).expect("processing member");
+    fs::write(
+        fixture.0.join("eska.toml"),
+        concat!(
+            "[workspace]\n",
+            "members = ['src/sales-report', 'src/import-orders']\n\n",
+            "[build]\n",
+            "platform_version = '8.3.27.2325'\n",
+            "artifacts_directory = 'build'\n",
+        ),
+    )
+    .expect("workspace config");
+    fs::write(
+        report.join("eska.toml"),
+        "[project]\nname = 'sales-report'\ntype = 'report'\nsource = '.'\n",
+    )
+    .expect("report config");
+    fs::write(
+        processing.join("eska.toml"),
+        "[project]\nname = 'import-orders'\ntype = 'processing'\nsource = '.'\n",
+    )
+    .expect("processing config");
+    fs::write(
+        report.join("SalesReport.xml"),
+        r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><ExternalReport/></MetaDataObject>"#,
+    )
+    .expect("report descriptor");
+    fs::write(
+        processing.join("ImportOrders.xml"),
+        r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><ExternalDataProcessor/></MetaDataObject>"#,
+    )
+    .expect("processing descriptor");
+    fixture
+}
+
 /// Install an executable fake that implements the verified ibcmd calls.
 fn fake_ibcmd(fixture: &TestDir) -> PathBuf {
     let path = fixture.0.join("ibcmd");
     fs::write(
         &path,
         r#"#!/bin/sh
+if [ -n "$FAKE_IBCMD_LOG" ]; then
+  printf '%s\n' "$*" >> "$FAKE_IBCMD_LOG"
+fi
 if [ "$1" = "--version" ]; then
   echo "1C ibcmd version ${FAKE_IBCMD_VERSION:-8.3.27.2325}"
   exit 0
@@ -92,10 +136,6 @@ if [ "$1" = "config" ] && [ "$2" = "import" ]; then
   if [ "$FAKE_IBCMD_SLOW_IMPORT" = "1" ]; then
     exec sleep 30
   fi
-  if [ "$FAKE_IBCMD_FAIL_IMPORT" = "1" ]; then
-    echo "fake import failure" >&2
-    exit 7
-  fi
   output=
   source=
   for argument in "$@"; do
@@ -105,6 +145,17 @@ if [ "$1" = "config" ] && [ "$2" = "import" ]; then
       *) source="$argument";;
     esac
   done
+  if [ "$FAKE_IBCMD_FAIL_IMPORT" = "1" ]; then
+    echo "fake import failure" >&2
+    exit 7
+  fi
+  case "$source" in
+    *"$FAKE_IBCMD_FAIL_SOURCE_CONTAINS"*)
+      if [ -n "$FAKE_IBCMD_FAIL_SOURCE_CONTAINS" ]; then
+        echo "fake selective import failure" >&2
+        exit 7
+      fi;;
+  esac
   if [ "$FAKE_IBCMD_STREAM" = "1" ]; then
     echo "[INFO] File: $source/DataProcessors/РаботаСФайлами/Forms/ПрисоединенныйФайл/Ext/Help/ru.html, checking"
     sleep 2
@@ -426,4 +477,196 @@ fn help_and_human_result_are_localized() {
         assert!(stderr.contains("[WARN] fake build warning"), "{stderr}");
         assert!(!stderr.contains('\x1b'), "{stderr:?}");
     }
+}
+
+#[test]
+/// Build a workspace in manifest order and keep single-member JSON backward compatible.
+fn workspace_build_uses_shared_outputs_and_distinct_json_shapes() {
+    let fixture = workspace();
+    let ibcmd = fake_ibcmd(&fixture);
+    let output = eska(
+        &fixture.0,
+        "en",
+        &ibcmd,
+        &["build", "--format", "json"],
+        false,
+    );
+    assert!(output.status.success(), "{output:?}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("workspace JSON");
+    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["projects"][0]["name"], "sales-report");
+    assert_eq!(document["projects"][0]["status"], "success");
+    assert_eq!(document["projects"][0]["artifact"]["type"], "report");
+    assert_eq!(document["projects"][1]["name"], "import-orders");
+    assert_eq!(document["projects"][1]["status"], "success");
+    assert_eq!(document["projects"][1]["artifact"]["type"], "processing");
+    assert_eq!(
+        fs::read(fixture.0.join("build/sales-report.erf")).expect("report artifact"),
+        b"native-artifact"
+    );
+    assert_eq!(
+        fs::read(fixture.0.join("build/import-orders.epf")).expect("processing artifact"),
+        b"native-artifact"
+    );
+
+    let member = fixture.0.join("src/sales-report");
+    let output = eska(&member, "en", &ibcmd, &["build", "--format", "json"], false);
+    assert!(output.status.success(), "{output:?}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("single JSON");
+    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["artifact"]["type"], "report");
+    assert!(document.get("projects").is_none());
+}
+
+#[test]
+/// Honor named, repeated and whole-workspace selectors from root and member directories.
+fn workspace_build_selectors_choose_the_requested_members() {
+    let fixture = workspace();
+    let ibcmd = fake_ibcmd(&fixture);
+    let named = eska(
+        &fixture.0,
+        "en",
+        &ibcmd,
+        &["build", "-p", "import-orders", "--format", "json"],
+        false,
+    );
+    assert!(named.status.success(), "{named:?}");
+    let document: Value = serde_json::from_slice(&named.stdout).expect("named JSON");
+    assert_eq!(document["artifact"]["type"], "processing");
+    assert!(document.get("projects").is_none());
+    assert!(!fixture.0.join("build/sales-report.erf").exists());
+
+    let repeated = eska(
+        &fixture.0,
+        "en",
+        &ibcmd,
+        &[
+            "build",
+            "-p",
+            "import-orders",
+            "-p",
+            "sales-report",
+            "--format",
+            "json",
+        ],
+        false,
+    );
+    assert!(repeated.status.success(), "{repeated:?}");
+    let document: Value = serde_json::from_slice(&repeated.stdout).expect("repeated JSON");
+    assert_eq!(document["projects"][0]["name"], "import-orders");
+    assert_eq!(document["projects"][1]["name"], "sales-report");
+
+    let from_member = eska(
+        &fixture.0.join("src/import-orders"),
+        "en",
+        &ibcmd,
+        &["build", "--workspace", "--format", "json"],
+        false,
+    );
+    assert!(from_member.status.success(), "{from_member:?}");
+    let document: Value = serde_json::from_slice(&from_member.stdout).expect("workspace JSON");
+    assert_eq!(document["projects"].as_array().map(Vec::len), Some(2));
+}
+
+#[test]
+/// Resolve every required platform before the first member build stage starts.
+fn workspace_platform_mismatch_blocks_all_build_stages() {
+    let fixture = workspace();
+    let ibcmd = fake_ibcmd(&fixture);
+    let manifest = fixture.0.join("src/import-orders/eska.toml");
+    let config = fs::read_to_string(&manifest).expect("member config");
+    fs::write(
+        &manifest,
+        format!("{config}\n[build]\nplatform_version = '8.3.26.1540'\n"),
+    )
+    .expect("override member platform");
+    let log = fixture.0.join("ibcmd.log");
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&fixture.0)
+        .env("FAKE_IBCMD_LOG", &log)
+        .args(["--lang", "en", "build", "--ibcmd"])
+        .arg(&ibcmd)
+        .output()
+        .expect("run workspace build");
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    let invocations = fs::read_to_string(log).expect("ibcmd log");
+    assert_eq!(
+        invocations.lines().collect::<Vec<_>>(),
+        ["--version", "--version"]
+    );
+    assert!(!fixture.0.join("build").exists());
+}
+
+#[test]
+/// Reject every group during preflight when one member source is invalid.
+fn workspace_preflight_blocks_all_ibcmd_invocations() {
+    let fixture = workspace();
+    let ibcmd = fake_ibcmd(&fixture);
+    fs::write(
+        fixture.0.join("src/sales-report/SalesReport.xml"),
+        "<not-designer-xml/>",
+    )
+    .expect("break report descriptor");
+    let log = fixture.0.join("ibcmd.log");
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&fixture.0)
+        .env("FAKE_IBCMD_LOG", &log)
+        .args(["--lang", "en", "build", "--ibcmd"])
+        .arg(&ibcmd)
+        .output()
+        .expect("run workspace build");
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("sales-report"),
+        "{output:?}"
+    );
+    assert!(!log.exists(), "ibcmd ran before group preflight completed");
+    assert!(!fixture.0.join("build").exists());
+}
+
+#[test]
+/// Continue later members after a runtime failure and report stable aggregate error data.
+fn workspace_runtime_failure_does_not_stop_later_members() {
+    let fixture = workspace();
+    let ibcmd = fake_ibcmd(&fixture);
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&fixture.0)
+        .env("FAKE_IBCMD_FAIL_IMPORT", "0")
+        .env("FAKE_IBCMD_FAIL_SOURCE_CONTAINS", "SalesReport")
+        .args(["--lang", "en", "build", "--format", "json", "--ibcmd"])
+        .arg(&ibcmd)
+        .output()
+        .expect("run workspace build");
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("aggregate JSON");
+    assert_eq!(document["projects"][0]["status"], "failed");
+    assert_eq!(document["projects"][0]["error"]["code"], "command-failed");
+    assert_eq!(document["projects"][0]["error"]["stage"], "import-sources");
+    assert_eq!(document["projects"][1]["status"], "success");
+    assert!(!fixture.0.join("build/sales-report.erf").exists());
+    assert_eq!(
+        fs::read(fixture.0.join("build/import-orders.epf")).expect("later artifact"),
+        b"native-artifact"
+    );
+}
+
+#[test]
+/// Require exactly one selected member before accepting a custom output.
+fn workspace_output_requires_one_member_before_ibcmd_discovery() {
+    let fixture = workspace();
+    let ibcmd = fake_ibcmd(&fixture);
+    let log = fixture.0.join("ibcmd.log");
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&fixture.0)
+        .env("FAKE_IBCMD_LOG", &log)
+        .args(["--lang", "en", "build", "--output", "custom.erf", "--ibcmd"])
+        .arg(&ibcmd)
+        .output()
+        .expect("run workspace build");
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("exactly one selected project"),
+        "{output:?}"
+    );
+    assert!(!log.exists());
 }

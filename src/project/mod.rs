@@ -12,16 +12,20 @@ pub mod init;
 pub(crate) mod metadata;
 pub mod model;
 pub mod object_model;
+pub mod onboarding;
 pub mod patch;
 pub mod save;
+pub mod selection;
 pub mod semantic;
 pub mod start;
 pub mod status;
 pub mod switch;
 pub mod templates;
 pub mod version;
+mod workspace;
 
 pub use model::{
     InvalidPathReason, Project, ProjectConfiguration, ProjectPath, ProjectPathError, ProjectType,
     SourceFormat,
 };
+pub use workspace::{ProjectName, ProjectNameError, Workspace, WorkspaceMember};

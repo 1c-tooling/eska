@@ -7,7 +7,10 @@ use std::{
 use eska::{
     config::ProjectConfigError,
     project::ProjectType,
-    project::discovery::{DiscoveryError, discover},
+    project::discovery::{
+        ContextDiscoveryError, DiscoveryContext, DiscoveryError, discover, discover_context,
+    },
+    vcs::workflow::WorkflowPreset,
 };
 
 use crate::support::TestDir as Fixture;
@@ -22,6 +25,33 @@ impl Fixture {
         )
         .expect("write config");
         root
+    }
+
+    fn workspace(&self) -> (PathBuf, PathBuf, PathBuf) {
+        let root = self.0.join("workspace");
+        let report = root.join("src/sales-report");
+        let processing = root.join("src/import-orders");
+        fs::create_dir_all(&report).expect("create report member");
+        fs::create_dir_all(&processing).expect("create processing member");
+        fs::write(
+            root.join("eska.toml"),
+            "[workspace]\nmembers = ['src/sales-report', 'src/import-orders']\n\
+             [build]\nplatform_version = '8.3.27.2325'\nartifacts_directory = 'dist'\n\
+             [vcs.workflow]\npreset = 'trunk'\n",
+        )
+        .expect("write workspace config");
+        fs::write(
+            report.join("eska.toml"),
+            "[project]\nname = 'sales-report'\ntype = 'report'\nsource = '.'\n",
+        )
+        .expect("write report config");
+        fs::write(
+            processing.join("eska.toml"),
+            "[project]\nname = 'import-orders'\ntype = 'processing'\nsource = '.'\n\
+             [build]\nplatform_version = '8.5.4.1000'\n",
+        )
+        .expect("write processing config");
+        (root, report, processing)
     }
 }
 
@@ -62,6 +92,191 @@ fn discovers_from_root_and_deep_descendants() {
             ProjectType::Configuration
         );
     }
+}
+
+#[test]
+fn discovers_workspace_root_and_current_member_with_resolved_settings() {
+    let fixture = Fixture::new();
+    let (root, report, processing) = fixture.workspace();
+
+    let DiscoveryContext::Workspace {
+        workspace,
+        current_member,
+    } = discover_context(&root).expect("workspace root")
+    else {
+        panic!("expected workspace context");
+    };
+    assert_eq!(workspace.root(), root);
+    assert_eq!(current_member, None);
+    assert_eq!(workspace.members().len(), 2);
+    assert_eq!(workspace.members()[0].name().as_str(), "sales-report");
+    assert_eq!(
+        workspace.members()[0]
+            .project()
+            .configuration()
+            .project_type(),
+        ProjectType::Report
+    );
+    assert_eq!(
+        workspace.members()[0]
+            .project()
+            .configuration()
+            .build_settings()
+            .platform_version()
+            .unwrap()
+            .as_str(),
+        "8.3.27.2325"
+    );
+    assert_eq!(
+        workspace.members()[1]
+            .project()
+            .configuration()
+            .build_settings()
+            .platform_version()
+            .unwrap()
+            .as_str(),
+        "8.5.4.1000"
+    );
+    assert_eq!(
+        workspace.members()[0]
+            .project()
+            .configuration()
+            .build_settings()
+            .artifacts_directory(),
+        Path::new("dist")
+    );
+    assert_eq!(
+        workspace.members()[0].project().configuration().workflow(),
+        Some(WorkflowPreset::Trunk)
+    );
+
+    let DiscoveryContext::Workspace { current_member, .. } =
+        discover_context(&processing).expect("current workspace member")
+    else {
+        panic!("expected workspace member context");
+    };
+    assert_eq!(current_member.unwrap().as_str(), "import-orders");
+
+    // Legacy command discovery remains member-local until workspace selectors land.
+    assert_eq!(
+        discover(&report)
+            .expect("legacy member discovery")
+            .configuration()
+            .build_settings()
+            .platform_version(),
+        None
+    );
+    for locale in ["ru", "en"] {
+        success(&cli(&root, locale, &[]));
+        success(&cli(&processing, locale, &[]));
+    }
+}
+
+#[test]
+fn rejects_unlisted_and_invalid_workspace_members() {
+    let fixture = Fixture::new();
+    let (root, report, _) = fixture.workspace();
+    let unlisted = root.join("src/unlisted");
+    fs::create_dir_all(&unlisted).expect("create unlisted member");
+    fs::write(
+        unlisted.join("eska.toml"),
+        "[project]\nname = 'unlisted'\ntype = 'report'\nsource = '.'\n",
+    )
+    .expect("write unlisted config");
+    assert!(matches!(
+        discover_context(&unlisted),
+        Err(ContextDiscoveryError::UnlistedProject { .. })
+    ));
+
+    fs::write(
+        report.join("eska.toml"),
+        "[project]\ntype = 'report'\nsource = '.'\n",
+    )
+    .expect("remove member name");
+    assert!(matches!(
+        discover_context(&root),
+        Err(ContextDiscoveryError::MemberNameMissing { .. })
+    ));
+    for (locale, expected) in [
+        ("ru", "должен быть задан [project].name"),
+        ("en", "must define [project].name"),
+    ] {
+        failure(&cli(&root, locale, &[]), expected);
+    }
+}
+
+#[test]
+fn rejects_member_level_repository_and_artifact_settings() {
+    let fixture = Fixture::new();
+    let (root, report, _) = fixture.workspace();
+    fs::write(
+        report.join("eska.toml"),
+        "[project]\nname = 'sales-report'\ntype = 'report'\nsource = '.'\n\
+         [vcs.workflow]\npreset = 'trunk'\n",
+    )
+    .expect("write member workflow");
+    assert!(matches!(
+        discover_context(&root),
+        Err(ContextDiscoveryError::MemberWorkflowUnsupported { .. })
+    ));
+
+    fs::write(
+        report.join("eska.toml"),
+        "[project]\nname = 'sales-report'\ntype = 'report'\nsource = '.'\n\
+         [build]\nartifacts_directory = 'member-build'\n",
+    )
+    .expect("write member artifact path");
+    assert!(matches!(
+        discover_context(&root),
+        Err(ContextDiscoveryError::MemberArtifactsDirectoryUnsupported { .. })
+    ));
+}
+
+#[test]
+fn rejects_duplicate_names_and_nested_member_roots() {
+    let fixture = Fixture::new();
+    let (root, _, processing) = fixture.workspace();
+    fs::write(
+        processing.join("eska.toml"),
+        "[project]\nname = 'sales-report'\ntype = 'processing'\nsource = '.'\n",
+    )
+    .expect("duplicate member name");
+    assert!(matches!(
+        discover_context(&root),
+        Err(ContextDiscoveryError::DuplicateName { .. })
+    ));
+
+    fs::write(
+        root.join("eska.toml"),
+        "[workspace]\nmembers = ['src/sales-report', 'src']\n",
+    )
+    .expect("nested member list");
+    assert!(matches!(
+        discover_context(&root),
+        Err(ContextDiscoveryError::NestedMembers { .. })
+    ));
+}
+
+#[cfg(unix)]
+#[test]
+fn rejects_workspace_member_symlinks_outside_workspace() {
+    use std::os::unix::fs::symlink;
+
+    let fixture = Fixture::new();
+    let (root, _, _) = fixture.workspace();
+    let outside = fixture.0.join("outside-member");
+    fs::create_dir(&outside).expect("outside member directory");
+    symlink(&outside, root.join("src/outside")).expect("outside member link");
+    fs::write(
+        root.join("eska.toml"),
+        "[workspace]\nmembers = ['src/outside']\n",
+    )
+    .expect("outside member config");
+
+    assert!(matches!(
+        discover_context(&root),
+        Err(ContextDiscoveryError::MemberOutsideWorkspace { .. })
+    ));
 }
 
 #[test]

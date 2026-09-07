@@ -137,7 +137,7 @@ build fields. Raw overrides с `Option` сливаются с workspace defaults
 
 ## T44 — Workspace config, model и discovery
 
-**Статус:** `PLANNED` · **Зависит от:** T03, T07
+**Статус:** `DONE` · **Зависит от:** T03, T07
 
 Добавить strict root/member schemas, locale-independent `Workspace` и
 `WorkspaceMember`, inheritance build defaults, path/name validation и discovery context.
@@ -149,9 +149,16 @@ T44 не меняет поведение `build`, `version`, `status`, `diff` и
 без команды из workspace root валидирует root manifest и все members
 без полного semantic parse XML.
 
+**Результат:** добавлены взаимоисключающие strict schemas `[project]` и
+`[workspace]`, переносимые `ProjectName`, `Workspace` и `WorkspaceMember`, а также
+`discover_context`. Workspace discovery проверяет явный список members,
+канонические границы и пересечения путей, уникальность имён, member-only
+ограничения и наследование build/workflow. Запуск `eska` без команды использует
+новый контекст; существующий `discover` и одно-проектные команды не изменены.
+
 ## T45 — Versioning workspace members
 
-**Статус:** `PLANNED` · **Зависит от:** T25, T44
+**Статус:** `DONE` · **Зависит от:** T25, T44
 
 Целевой CLI:
 
@@ -169,9 +176,16 @@ member. Из workspace root `bump` без ровно одного `--project`
 Для списка версий вводится отдельный versioned JSON document с именем,
 типом, версией и project-relative descriptor каждого member.
 
+**Результат:** `version` использует общий locale-independent selection
+current/named/all. Из корня читаются все members, `-p` поддерживает один или
+несколько проектов для чтения, а `--workspace` явно выбирает весь workspace из
+member-каталога. Одиночный human/JSON v1 сохранён; список получил отдельный JSON
+v1 с `projects[]`. `bump` до записи требует текущего member или ровно один `-p`
+и меняет только выбранный descriptor.
+
 ## T46 — Build workspace members
 
-**Статус:** `PLANNED` · **Зависит от:** T28, T44
+**Статус:** `DONE` · **Зависит от:** T28, T44
 
 Целевой CLI:
 
@@ -198,9 +212,18 @@ Default outputs: `<workspace>/build/<project.name>.<native-extension>`. `--outpu
 из T28 сохраняется; aggregate build получает отдельный versioned
 JSON document с результатом каждого member и стабильными error codes.
 
+**Результат:** `build` использует общий current/named/all selection и формирует
+все планы до запуска сборочных стадий. Read-only preflight проверяет исходники,
+descriptor, output scope и коллизии; требуемые версии `ibcmd` разрешаются для
+всей группы заранее. Members выполняются последовательно, runtime-ошибка не
+останавливает следующие сборки, а прерывание пользователя оставляет их
+не запущенными. Default artifacts публикуются атомарно в общем каталоге под
+именем `project.name`; одиночный JSON v1 сохранён, aggregate получил отдельный
+JSON v1 со стабильными status/error codes.
+
 ## T47 — Workspace-aware `status`, `diff` и `save`
 
-**Статус:** `PLANNED` · **Зависит от:** T12, T14, T15, T44
+**Статус:** `DONE` · **Зависит от:** T12, T14, T15, T44
 
 - из member каталога `status`, `diff` и `save` сохраняют project-scoped
   поведение;
@@ -215,17 +238,32 @@ JSON document с результатом каждого member и стабиль�
 Workspace human output локализуется; aggregate JSON получает новые
 versioned documents и не меняет существующие single-project schemas.
 
+**Результат:** `status` и `diff` используют current/named/all selection,
+сохраняют одиночные схемы и из одного Git snapshot группируют members отдельно
+от workspace-owned files. Aggregate поддерживает human, JSON, raw, revision и
+semantic diff. `save -p` создаёт commit только для одного member; `save` из корня
+и `save --workspace` выполняют одну rollback-защищённую Git-транзакцию по всему
+workspace, не включая и не снимая staging с соседних путей repository.
+
 ## T48 — `new` и `init` для workspace members
 
-**Статус:** `PLANNED` · **Зависит от:** T04, T06, T44
+**Статус:** `DONE` · **Зависит от:** T04, T06, T44
 
 Добавить member без создания вложенного Git repository и без member-level
 workflow. Операция до записи проверяет destination, descriptor, имя,
 коллизии и root manifest. При ошибке восстанавливается исходный
 root manifest и удаляются только созданные текущим вызовом пути.
 
-Точный CLI утверждается в T48 после проверки foundation; не добавлять
-отдельный onboarding namespace заранее.
+**Результат:** `eska new <name>` из workspace создаёт `src/<name>` и запрашивает
+только тип проекта; запуск из member создаёт соседний member. `eska init` из
+скопированного каталога определяет тип по Designer XML и имя по каталогу, а
+`--name` позволяет задать переносимое имя явно. Обе команды автоматически
+добавляют относительный путь в `workspace.members`, сохраняют комментарии и
+форматирование root TOML, не создают вложенные Git metadata и member-level
+workflow. Preflight отклоняет коллизии, повторные имена и вложенные members;
+compare-before-replace защищает от конкурентного изменения manifest. После
+поздней ошибки manifest восстанавливается byte-for-byte, а rollback удаляет
+только созданные текущим запуском пути.
 
 ## Общие критерии готовности
 

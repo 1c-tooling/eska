@@ -56,6 +56,7 @@ pub(super) struct RawPolicy {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct RawProject {
+    pub(super) name: Option<String>,
     #[serde(rename = "type")]
     pub(super) project_type: String,
     #[serde(default = "default_source")]
@@ -118,6 +119,8 @@ pub(super) struct SerializedPolicy<'a> {
 
 #[derive(Serialize)]
 pub(super) struct SerializedProject<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) name: Option<&'a str>,
     #[serde(rename = "type")]
     pub(super) project_type: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]

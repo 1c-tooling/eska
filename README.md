@@ -212,6 +212,21 @@ eska diff v1.0.0 v1.1.0                # Между двумя существу�
 
 Сравнение версий читает локальную историю и не включает несохранённые файлы.
 
+В workspace команды из корня группируют данные по проектам и отдельно показывают
+файлы самого workspace. Один или несколько members можно выбрать через `-p`, а
+`--workspace` из каталога member возвращает полный обзор:
+
+```bash
+eska status -p sales-report
+eska diff -p sales-report -p import-orders
+eska diff --workspace --semantic
+```
+
+Один выбранный member сохраняет прежние JSON-схемы. Aggregate `status` и `diff`
+используют отдельные versioned-документы с `projects[]` и `workspace_files`.
+В aggregate `diff --raw` первая колонка содержит имя проекта или `-` для файла
+workspace.
+
 ### 3. Сохранить изменения
 
 ```bash
@@ -230,6 +245,17 @@ eska history --limit 20
 `save` включает **все неигнорируемые изменения внутри проекта**, в том числе новые
 и удалённые файлы. Если проект вложен в большой репозиторий, изменения соседних
 проектов в коммит не попадут. Пустое сообщение или конфликт блокируют сохранение.
+
+Из корня workspace `save` создаёт один commit со всеми изменениями members и
+корневых файлов workspace, но не включает соседние каталоги репозитория.
+Точечное сохранение и явный полный scope доступны из любого member:
+
+```bash
+eska save -p sales-report
+eska save --workspace -m "fix: Обновлены внешние инструменты"
+```
+
+Несколько `-p` для `save` запрещены: выберите один member или весь workspace.
 
 ### 4. Переключиться и вернуться
 
@@ -303,6 +329,24 @@ eska build --output build/application.cf
 своего типа. Существующий файл заменяется только после успешной сборки.
 Временная база очищается после завершения, ошибки или прерывания.
 
+Из корня workspace команда без selectors последовательно собирает все проекты в
+порядке `members`. Можно выбрать один или несколько проектов либо явно собрать
+весь workspace из каталога участника:
+
+```bash
+eska build -p sales-report
+eska build -p sales-report -p import-orders
+eska build --workspace
+```
+
+Общие артефакты записываются как `build/<project.name>.<расширение>`. До первой
+сборки проверяются планы, исходники, пути результатов и все требуемые версии
+`ibcmd`; ошибка preflight блокирует всю группу. Ошибка уже запущенной сборки не
+мешает собрать следующие проекты, но команда завершится с ненулевым кодом.
+`--output` доступен только при выборе ровно одного проекта. Для одного проекта
+сохраняется прежний JSON v1, для группы JSON v1 содержит `projects[]` со статусом,
+артефактом или стабильным кодом ошибки каждого участника.
+
 ### Собрать патч из изменений ветки
 
 Для проекта `configuration` доступна отдельная команда:
@@ -346,6 +390,22 @@ eska version bump minor  # 1.0.2.01 -> 1.1.1.01
 eska version bump major  # 1.0.2.01 -> 2.0.1.01
 ```
 
+В workspace команда из корня показывает версии всех участников, а из каталога
+участника — только его версию:
+
+```bash
+eska version
+eska version -p sales-report
+eska version --workspace --format json
+eska version -p sales-report bump patch
+```
+
+Несколько `-p` можно передать только при чтении. Из корня workspace изменение
+версии требует ровно одного `--project`; массовый bump не выполняется. JSON
+одного проекта сохраняет прежнюю схему, а список возвращает отдельный документ
+`{"schema_version": 1, "projects": [...]}` с именем, типом, версией и
+относительным путём дескриптора каждого участника.
+
 После увеличения младшие компоненты начинают отсчёт заново: subrevision — с 0,
 version и build — с 1. Ширина исходных компонентов сохраняется, поэтому `01`
 не превращается в `1`.
@@ -381,6 +441,63 @@ preset = "trunk"
 ```bash
 eska --project-dir /path/to/my_configuration status
 ```
+
+### Workspace: несколько проектов в одном репозитории
+
+Корневой `eska.toml` может перечислять независимые проекты:
+
+```toml
+[workspace]
+members = ["src/sales-report", "src/import-orders"]
+
+[build]
+platform_version = "8.3.27.2325"
+artifacts_directory = "build"
+
+[vcs.workflow]
+preset = "trunk"
+```
+
+У каждого участника свой `eska.toml`; имя обязательно и уникально:
+
+```toml
+[project]
+name = "sales-report"
+type = "report"
+source = "."
+```
+
+Новый member создаётся из корня workspace или каталога любого существующего
+member. В workspace нужен только тип проекта: workflow и Git принадлежат корню.
+
+```bash
+eska new my-orders --type processing
+```
+
+Команда создаст `src/my-orders`, запишет туда member `eska.toml` и автоматически
+добавит `src/my-orders` в корневой `workspace.members`. Комментарии и остальное
+форматирование корневого TOML сохраняются.
+
+Чтобы подключить уже скопированную Designer XML выгрузку:
+
+```bash
+cd src/my-orders
+eska init
+```
+
+Тип определяется по XML, а имя — по каталогу. Если каталог не подходит под
+переносимый формат `[a-z0-9][a-z0-9_-]*`, укажите `eska init --name my-orders`.
+Вложенный Git repository, `.gitignore`, `.gitattributes` и member-level workflow
+не создаются. `--workflow` в workspace отклоняется как корневая настройка.
+
+`eska` без подкоманды проверяет корневой manifest, все явно перечисленные
+каталоги, уникальность имён, границы путей и наследование общих настроек. Участник
+может переопределить только `[build].platform_version`; workflow и каталог
+артефактов задаются в корне. `build`, `version`, `status`, `diff` и `save`
+поддерживают current/named/all selection через `-p` и `--workspace` в пределах
+семантики каждой команды. Repository-wide команды `start`, `switch`, `finish` и
+`history` не делятся по members.
+Полный контракт: [project workspaces](docs/roadmap/11-workspaces.md).
 
 ### Правила работы с Git
 
@@ -479,7 +596,7 @@ eska build --ibcmd /path/to/ibcmd
 | `finish` | Проверить условия завершения и закрыть локальную задачу |
 | `build` | Собрать полный нативный файл |
 | `patch` | Собрать ограниченный patch-extension из Git delta |
-| `version` / `version bump <patch|minor|major>` | Показать или изменить версию проекта 1С |
+| `version` / `version bump <patch|minor|major>` | Показать или точечно изменить версии проектов 1С |
 | `platform list` | Найти установки платформы |
 | `config init` / `config edit` | Настроить локальное окружение |
 

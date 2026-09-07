@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use gix::bstr::{BString, ByteSlice};
 
-use super::{Project, ProjectType};
+use super::{Project, ProjectName, ProjectType, Workspace, WorkspaceMember};
 use crate::vcs::{
     repository::{Divergence, Error as RepositoryError, Head, Repository},
     status::{Change, PathStatus},
@@ -24,6 +24,32 @@ pub struct ProjectStatus {
     pub changes: ChangeSummary,
     pub synchronization: Option<Divergence>,
     pub locks: LockSummary,
+    pub readiness: Readiness,
+}
+
+/// One workspace status assembled from a single repository snapshot.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceStatus {
+    pub root: PathBuf,
+    pub workflow: WorkflowPreset,
+    pub task: Option<String>,
+    pub head: HeadState,
+    pub branch: Option<BString>,
+    pub base_branch: String,
+    pub projects: Vec<WorkspaceProjectStatus>,
+    pub workspace_changes: Option<ChangeSummary>,
+    pub synchronization: Option<Divergence>,
+    pub locks: LockSummary,
+    pub readiness: Readiness,
+}
+
+/// Status of one selected workspace member.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceProjectStatus {
+    pub name: ProjectName,
+    pub root: PathBuf,
+    pub project_type: ProjectType,
+    pub changes: ChangeSummary,
     pub readiness: Readiness,
 }
 
@@ -130,6 +156,98 @@ pub fn inspect(project: &Project) -> Result<ProjectStatus, StatusError> {
     })
 }
 
+/// Inspect selected members and optional workspace-owned files from one repository snapshot.
+///
+/// # Errors
+/// Returns a structured error when workflow policy or repository data cannot be read.
+pub fn inspect_workspace(
+    workspace: &Workspace,
+    selected: &[&WorkspaceMember],
+    include_workspace_files: bool,
+) -> Result<WorkspaceStatus, StatusError> {
+    let settings = workspace
+        .workflow_settings()
+        .ok_or(StatusError::WorkflowNotConfigured)?;
+    let policy = settings.resolve(None).map_err(StatusError::Policy)?;
+    let repository = Repository::discover(workspace.root()).map_err(StatusError::Repository)?;
+    if !workspace.root().starts_with(repository.work_dir()) {
+        return Err(StatusError::ProjectOutsideRepository {
+            project: workspace.root().to_owned(),
+            repository: repository.work_dir().to_owned(),
+        });
+    }
+
+    let head = repository.head().map_err(StatusError::Repository)?;
+    let (head_state, branch) = head_state(&head);
+    let task = branch
+        .as_ref()
+        .and_then(|name| name.to_str().ok())
+        .and_then(|name| policy.task_id(name))
+        .map(str::to_owned);
+    let status = repository.status().map_err(StatusError::Repository)?;
+    let projects = selected
+        .iter()
+        .map(|member| {
+            let changes = summarize(
+                status
+                    .entries
+                    .iter()
+                    .filter(|entry| belongs_to_project(&repository, member.root(), entry)),
+            );
+            WorkspaceProjectStatus {
+                name: member.name().clone(),
+                root: member.root().to_owned(),
+                project_type: member.project().configuration().project_type(),
+                changes,
+                readiness: Readiness {
+                    save: changes.files > 0 && changes.conflicts == 0,
+                    publish: false,
+                },
+            }
+        })
+        .collect::<Vec<_>>();
+    let workspace_changes = include_workspace_files.then(|| {
+        summarize(status.entries.iter().filter(|entry| {
+            belongs_to_project(&repository, workspace.root(), entry)
+                && !workspace
+                    .members()
+                    .iter()
+                    .any(|member| belongs_to_project(&repository, member.root(), entry))
+        }))
+    });
+    let changes = projects
+        .iter()
+        .fold(workspace_changes.unwrap_or_default(), |total, project| {
+            total + project.changes
+        });
+    let synchronization = repository
+        .divergence(&policy.remote_base_reference())
+        .map_err(StatusError::Repository)?;
+    let publish = changes.files == 0
+        && task.is_some()
+        && synchronization.is_some_and(|state| state.behind == 0 && state.ahead > 0);
+
+    Ok(WorkspaceStatus {
+        root: workspace.root().to_owned(),
+        workflow: settings.preset(),
+        task,
+        head: head_state,
+        branch,
+        base_branch: policy.base_branch().to_owned(),
+        projects,
+        workspace_changes,
+        synchronization,
+        locks: LockSummary {
+            available: false,
+            count: None,
+        },
+        readiness: Readiness {
+            save: changes.files > 0 && changes.conflicts == 0,
+            publish,
+        },
+    })
+}
+
 fn head_state(head: &Head) -> (HeadState, Option<BString>) {
     match head {
         Head::Attached { reference, .. } => (
@@ -181,4 +299,22 @@ fn summarize<'a>(entries: impl Iterator<Item = &'a PathStatus>) -> ChangeSummary
         }
     }
     summary
+}
+
+impl std::ops::Add for ChangeSummary {
+    type Output = Self;
+
+    /// Add disjoint path summaries from workspace scopes.
+    fn add(self, other: Self) -> Self {
+        Self {
+            files: self.files + other.files,
+            added: self.added + other.added,
+            modified: self.modified + other.modified,
+            deleted: self.deleted + other.deleted,
+            type_changed: self.type_changed + other.type_changed,
+            untracked: self.untracked + other.untracked,
+            intent_to_add: self.intent_to_add + other.intent_to_add,
+            conflicts: self.conflicts + other.conflicts,
+        }
+    }
 }
