@@ -50,6 +50,7 @@ src/
 │   ├── init.rs                  # обнаружение выгрузки, подключение и откат
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
+│   ├── workspace.rs             # Workspace, members и переносимые имена проектов
 │   ├── diff.rs                  # file-level изменения внутри корня проекта
 │   ├── finish.rs                # preflight, policy refs и локальное завершение задачи
 │   ├── history.rs               # локальная commit history и task attribution
@@ -79,6 +80,8 @@ src/
 ├── config/
 │   ├── mod.rs                   # интерфейс config и имя eska.toml
 │   ├── project.rs               # ProjectConfig, загрузка и валидация
+│   ├── manifest.rs              # различение строгих project/workspace manifests
+│   ├── workspace.rs             # WorkspaceConfig и проверка member paths
 │   ├── workflow.rs              # преобразование workflow-полей в доменную модель
 │   └── schema.rs                # TOML-поля, defaults и строковые значения
 └── vcs/
@@ -129,9 +132,10 @@ tests/
 | Изменить подключение существующего проекта | [`src/project/init.rs`](../src/project/init.rs): `inspect` — без записи, `apply` — применение |
 | Изменить создание проекта или откат | [`src/project/create.rs`](../src/project/create.rs) |
 | Изменить состав создаваемых файлов | [`src/project/templates.rs`](../src/project/templates.rs) |
-| Изменить поиск корня и проверку исходников | [`src/project/discovery.rs`](../src/project/discovery.rs) |
+| Изменить поиск project/workspace и проверку исходников | [`src/project/discovery.rs`](../src/project/discovery.rs) |
 | Изменить расчёт состояния проекта и readiness | [`src/project/status.rs`](../src/project/status.rs) |
-| Изменить схему `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
+| Изменить схему project `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
+| Изменить схему workspace `eska.toml` | [`src/config/workspace.rs`](../src/config/workspace.rs), затем [`src/project/discovery.rs`](../src/project/discovery.rs) |
 | Изменить распознавание типа выгрузки | [`src/project/designer_xml.rs`](../src/project/designer_xml.rs) |
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
 | Изменить clone/fetch или transport fallback policy | [`src/vcs/network.rs`](../src/vcs/network.rs) |
@@ -160,6 +164,11 @@ tests/
 - `config/schema.rs` описывает внешний TOML-формат; `config/project.rs` переводит
   его в проверенные настройки, `config/workflow.rs` преобразует строковые значения
   policy и сохраняет только явные overrides. Модель проекта не зависит от TOML-парсера.
+- `config/manifest.rs` различает взаимоисключающие `[project]` и `[workspace]`;
+  `config/workspace.rs` проверяет корневые defaults и относительные member paths.
+  `project/discovery.rs::discover_context` валидирует весь workspace, канонические
+  границы и наследование настроек. Старый `discover` остаётся одно-проектной
+  границей готовых команд до появления selectors.
 - `project/templates.rs` возвращает план файлов, но ничего не записывает.
   Запись и откат принадлежат конкретной операции: у `new` — новый каталог,
   у `init` — только созданные этим запуском config и Git-метаданные.

@@ -382,6 +382,39 @@ preset = "trunk"
 eska --project-dir /path/to/my_configuration status
 ```
 
+### Workspace: несколько проектов в одном репозитории
+
+Корневой `eska.toml` может перечислять независимые проекты:
+
+```toml
+[workspace]
+members = ["src/sales-report", "src/import-orders"]
+
+[build]
+platform_version = "8.3.27.2325"
+artifacts_directory = "build"
+
+[vcs.workflow]
+preset = "trunk"
+```
+
+У каждого участника свой `eska.toml`; имя обязательно и уникально:
+
+```toml
+[project]
+name = "sales-report"
+type = "report"
+source = "."
+```
+
+`eska` без подкоманды проверяет корневой manifest, все явно перечисленные
+каталоги, уникальность имён, границы путей и наследование общих настроек. Участник
+может переопределить только `[build].platform_version`; workflow и каталог
+артефактов задаются в корне. Из каталога участника команды сборки, версий и VCS
+пока продолжают работать с одним ближайшим `[project]`; из корня workspace эти
+команды станут доступны после добавления selectors в следующих этапах.
+Полный контракт: [project workspaces](docs/roadmap/11-workspaces.md).
+
 ### Правила работы с Git
 
 | Preset | Базовая ветка | Ветка задачи | Цель интеграции |

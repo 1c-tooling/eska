@@ -20,8 +20,10 @@ pub mod status;
 pub mod switch;
 pub mod templates;
 pub mod version;
+mod workspace;
 
 pub use model::{
     InvalidPathReason, Project, ProjectConfiguration, ProjectPath, ProjectPathError, ProjectType,
     SourceFormat,
 };
+pub use workspace::{ProjectName, ProjectNameError, Workspace, WorkspaceMember};
