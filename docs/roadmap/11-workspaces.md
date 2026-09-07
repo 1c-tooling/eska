@@ -185,7 +185,7 @@ v1 с `projects[]`. `bump` до записи требует текущего mem
 
 ## T46 — Build workspace members
 
-**Статус:** `NEXT` · **Зависит от:** T28, T44
+**Статус:** `DONE` · **Зависит от:** T28, T44
 
 Целевой CLI:
 
@@ -212,9 +212,18 @@ Default outputs: `<workspace>/build/<project.name>.<native-extension>`. `--outpu
 из T28 сохраняется; aggregate build получает отдельный versioned
 JSON document с результатом каждого member и стабильными error codes.
 
+**Результат:** `build` использует общий current/named/all selection и формирует
+все планы до запуска сборочных стадий. Read-only preflight проверяет исходники,
+descriptor, output scope и коллизии; требуемые версии `ibcmd` разрешаются для
+всей группы заранее. Members выполняются последовательно, runtime-ошибка не
+останавливает следующие сборки, а прерывание пользователя оставляет их
+не запущенными. Default artifacts публикуются атомарно в общем каталоге под
+именем `project.name`; одиночный JSON v1 сохранён, aggregate получил отдельный
+JSON v1 со стабильными status/error codes.
+
 ## T47 — Workspace-aware `status`, `diff` и `save`
 
-**Статус:** `PLANNED` · **Зависит от:** T12, T14, T15, T44
+**Статус:** `NEXT` · **Зависит от:** T12, T14, T15, T44
 
 - из member каталога `status`, `diff` и `save` сохраняют project-scoped
   поведение;
