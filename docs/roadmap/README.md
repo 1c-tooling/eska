@@ -41,8 +41,9 @@
 - `DONE`: `T43` — production-команда `eska patch` для консервативного набора
   изменений методов общих модулей;
 - `DONE`: `T25` — чтение и точечное изменение версии проекта 1С;
-- `PLANNED`: `T44–T48` — project workspaces для монорепозиториев
-  отчётов/обработок, их версионирования и сборки;
+- `DONE`: `T44` — workspace config, model и discovery;
+- `NEXT`: `T45` — версионирование workspace members;
+- `PLANNED`: `T46–T48` — сборка, VCS UX и onboarding workspace members;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
@@ -139,8 +140,8 @@ TUI разделён на обработку клавиш, отрисовку и
 | T41 | PLANNED | VS Code extension | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T42 | DONE | Спецификация и прототип patch-extension `.cfe` из разницы веток | [t42-patch-extension.md](t42-patch-extension.md) |
 | T43 | DONE | Генерация patch-extension для ограниченного набора методов | [t42-patch-extension.md](t42-patch-extension.md) |
-| T44 | PLANNED | Workspace config, model и discovery | [11-workspaces.md](11-workspaces.md) |
-| T45 | PLANNED | Versioning workspace members | [11-workspaces.md](11-workspaces.md) |
+| T44 | DONE | Workspace config, model и discovery | [11-workspaces.md](11-workspaces.md) |
+| T45 | NEXT | Versioning workspace members | [11-workspaces.md](11-workspaces.md) |
 | T46 | PLANNED | Build workspace members | [11-workspaces.md](11-workspaces.md) |
 | T47 | PLANNED | Workspace-aware `status`, `diff` и `save` | [11-workspaces.md](11-workspaces.md) |
 | T48 | PLANNED | `new` и `init` для workspace members | [11-workspaces.md](11-workspaces.md) |

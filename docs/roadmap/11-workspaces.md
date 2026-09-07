@@ -137,7 +137,7 @@ build fields. Raw overrides с `Option` сливаются с workspace defaults
 
 ## T44 — Workspace config, model и discovery
 
-**Статус:** `PLANNED` · **Зависит от:** T03, T07
+**Статус:** `DONE` · **Зависит от:** T03, T07
 
 Добавить strict root/member schemas, locale-independent `Workspace` и
 `WorkspaceMember`, inheritance build defaults, path/name validation и discovery context.
@@ -149,9 +149,16 @@ T44 не меняет поведение `build`, `version`, `status`, `diff` и
 без команды из workspace root валидирует root manifest и все members
 без полного semantic parse XML.
 
+**Результат:** добавлены взаимоисключающие strict schemas `[project]` и
+`[workspace]`, переносимые `ProjectName`, `Workspace` и `WorkspaceMember`, а также
+`discover_context`. Workspace discovery проверяет явный список members,
+канонические границы и пересечения путей, уникальность имён, member-only
+ограничения и наследование build/workflow. Запуск `eska` без команды использует
+новый контекст; существующий `discover` и одно-проектные команды не изменены.
+
 ## T45 — Versioning workspace members
 
-**Статус:** `PLANNED` · **Зависит от:** T25, T44
+**Статус:** `NEXT` · **Зависит от:** T25, T44
 
 Целевой CLI:
 
