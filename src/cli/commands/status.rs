@@ -12,8 +12,9 @@ use serde::Serialize;
 use crate::{
     cli::{diagnostics, localization::Localizer},
     project::{
-        discovery,
-        status::{self, ChangeSummary, HeadState, ProjectStatus, StatusError},
+        discovery::{self, DiscoveryContext},
+        selection::{SelectionIntent, select_projects},
+        status::{self, ChangeSummary, HeadState, ProjectStatus, StatusError, WorkspaceStatus},
     },
 };
 
@@ -21,6 +22,12 @@ use crate::{
 pub(in crate::cli) struct StatusArgs {
     #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
     format: OutputFormat,
+
+    #[arg(short = 'p', long)]
+    project: Vec<String>,
+
+    #[arg(long)]
+    workspace: bool,
 
     #[arg(short, long, action = clap::ArgAction::Help)]
     help: Option<bool>,
@@ -35,27 +42,98 @@ enum OutputFormat {
 
 impl StatusArgs {
     pub(super) fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
-        let project = match discovery::discover(project_dir) {
-            Ok(project) => project,
+        let context = match discovery::discover_context(project_dir) {
+            Ok(context) => context,
             Err(error) => {
-                eprintln!("{}", diagnostics::present_project_error(&error, localizer));
+                eprintln!("{}", diagnostics::present_context_error(&error, localizer));
                 return ExitCode::FAILURE;
             }
         };
-        let status = match status::inspect(&project) {
+        let selection = match select_projects(
+            &context,
+            &self.project,
+            self.workspace,
+            SelectionIntent::ReadOnly,
+        ) {
+            Ok(selection) => selection,
+            Err(error) => {
+                eprintln!(
+                    "{}",
+                    diagnostics::present_selection_error(&error, localizer)
+                );
+                return ExitCode::FAILURE;
+            }
+        };
+        if !selection.is_aggregate() {
+            let Some(selected) = selection.projects().first() else {
+                eprintln!("{}", localizer.text("project-selector-single-required"));
+                return ExitCode::FAILURE;
+            };
+            let status = match status::inspect(selected.project()) {
+                Ok(status) => status,
+                Err(error) => {
+                    eprintln!("{}", present_error(&error, localizer));
+                    return ExitCode::FAILURE;
+                }
+            };
+            return self.render_project(&status, localizer);
+        }
+
+        let DiscoveryContext::Workspace {
+            workspace,
+            current_member,
+        } = &context
+        else {
+            eprintln!("{}", localizer.text("project-selector-single-required"));
+            return ExitCode::FAILURE;
+        };
+        let selected = selection
+            .projects()
+            .iter()
+            .filter_map(|project| project.name().and_then(|name| workspace.member(name)))
+            .collect::<Vec<_>>();
+        if selected.len() != selection.projects().len() {
+            eprintln!("{}", localizer.text("project-selector-single-required"));
+            return ExitCode::FAILURE;
+        }
+        let include_workspace_files =
+            self.workspace || (self.project.is_empty() && current_member.is_none());
+        let status = match status::inspect_workspace(workspace, &selected, include_workspace_files)
+        {
             Ok(status) => status,
             Err(error) => {
                 eprintln!("{}", present_error(&error, localizer));
                 return ExitCode::FAILURE;
             }
         };
+        self.render_workspace(&status, localizer)
+    }
 
+    fn render_project(&self, status: &ProjectStatus, localizer: &Localizer) -> ExitCode {
         match self.format {
             OutputFormat::Human => {
-                println!("{}", render_human(&status, localizer, styling_enabled()));
+                println!("{}", render_human(status, localizer, styling_enabled()));
             }
             OutputFormat::Json => {
-                let Ok(json) = serde_json::to_string_pretty(&StatusDocument::from(&status)) else {
+                let Ok(json) = serde_json::to_string_pretty(&StatusDocument::from(status)) else {
+                    eprintln!("{}", localizer.text("status-json-error"));
+                    return ExitCode::FAILURE;
+                };
+                println!("{json}");
+            }
+        }
+        ExitCode::SUCCESS
+    }
+
+    fn render_workspace(&self, status: &WorkspaceStatus, localizer: &Localizer) -> ExitCode {
+        match self.format {
+            OutputFormat::Human => println!(
+                "{}",
+                render_workspace_human(status, localizer, styling_enabled())
+            ),
+            OutputFormat::Json => {
+                let Ok(json) = serde_json::to_string_pretty(&WorkspaceStatusDocument::from(status))
+                else {
                     eprintln!("{}", localizer.text("status-json-error"));
                     return ExitCode::FAILURE;
                 };
@@ -75,6 +153,14 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
                 .help(localizer.text("status-format-help"))
                 .value_name(localizer.text("status-format-value"))
         })
+        .mut_arg("project", |argument| {
+            argument
+                .help(localizer.text("status-project-help"))
+                .value_name(localizer.text("status-project-value"))
+        })
+        .mut_arg("workspace", |argument| {
+            argument.help(localizer.text("status-workspace-help"))
+        })
         .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
 }
 
@@ -92,8 +178,8 @@ fn render_human(status: &ProjectStatus, localizer: &Localizer, styled: bool) -> 
         .branch
         .as_ref()
         .map_or_else(|| "—".to_owned(), ToString::to_string);
-    let project_type = localizer.text(project_type_key(status));
-    let workflow = localizer.text(workflow_key(status));
+    let project_type = localizer.text(project_type_key(status.project_type.as_str()));
+    let workflow = localizer.text(workflow_key(status.workflow.as_str()));
     let mut lines = render_fields(
         &[
             (localizer.text("status-project"), project_name(&status.root)),
@@ -165,6 +251,97 @@ fn render_human(status: &ProjectStatus, localizer: &Localizer, styled: bool) -> 
     lines.join("\n")
 }
 
+fn render_workspace_human(status: &WorkspaceStatus, localizer: &Localizer, styled: bool) -> String {
+    let branch = status
+        .branch
+        .as_ref()
+        .map_or_else(|| "—".to_owned(), ToString::to_string);
+    let mut lines = render_fields(
+        &[
+            (
+                localizer.text("status-workspace"),
+                project_name(&status.root),
+            ),
+            (
+                localizer.text("status-workflow"),
+                localizer.text(workflow_key(status.workflow.as_str())),
+            ),
+            (
+                localizer.text("status-task"),
+                status.task.as_deref().unwrap_or("—").to_owned(),
+            ),
+            (localizer.text("status-branch"), branch),
+            (localizer.text("status-base"), status.base_branch.clone()),
+        ],
+        "",
+        styled,
+    );
+    lines.extend([String::new(), section(localizer, "status-changes", styled)]);
+    for project in &status.projects {
+        lines.push(String::new());
+        lines.push(style_subsection(
+            &localizer.format(
+                "status-workspace-project",
+                &[(
+                    "name",
+                    crate::cli::localization::LocalizationValue::Text(project.name.as_str()),
+                )],
+            ),
+            styled,
+        ));
+        append_changes(&mut lines, project.changes, localizer, styled);
+    }
+    if let Some(changes) = status.workspace_changes {
+        lines.push(String::new());
+        lines.push(style_subsection(
+            &localizer.text("status-workspace-files"),
+            styled,
+        ));
+        append_changes(&mut lines, changes, localizer, styled);
+    }
+    lines.extend([
+        String::new(),
+        section(localizer, "status-synchronization", styled),
+    ]);
+    if let Some(synchronization) = status.synchronization {
+        lines.extend(render_fields(
+            &[
+                (
+                    localizer.text("status-ahead"),
+                    synchronization.ahead.to_string(),
+                ),
+                (
+                    localizer.text("status-behind"),
+                    synchronization.behind.to_string(),
+                ),
+            ],
+            "  ",
+            styled,
+        ));
+    } else {
+        lines.extend(unavailable(localizer, styled));
+    }
+    lines.extend([String::new(), section(localizer, "status-locks", styled)]);
+    lines.extend(unavailable(localizer, styled));
+    lines.extend([
+        String::new(),
+        section(localizer, "status-readiness", styled),
+        readiness(
+            localizer,
+            "status-ready-save",
+            status.readiness.save,
+            styled,
+        ),
+        readiness(
+            localizer,
+            "status-ready-publish",
+            status.readiness.publish,
+            styled,
+        ),
+    ]);
+    lines.join("\n")
+}
+
 fn append_changes(
     lines: &mut Vec<String>,
     changes: ChangeSummary,
@@ -217,6 +394,14 @@ fn section(localizer: &Localizer, key: &str, styled: bool) -> String {
     }
 }
 
+fn style_subsection(title: &str, styled: bool) -> String {
+    if styled {
+        format!("  \x1b[1m{title}\x1b[0m")
+    } else {
+        format!("  {title}")
+    }
+}
+
 fn unavailable(localizer: &Localizer, styled: bool) -> Vec<String> {
     let value = localizer.text("status-unavailable");
     let value = if styled {
@@ -252,8 +437,8 @@ fn project_name(root: &Path) -> String {
         .into_owned()
 }
 
-fn project_type_key(status: &ProjectStatus) -> &'static str {
-    match status.project_type.as_str() {
+fn project_type_key(project_type: &str) -> &'static str {
+    match project_type {
         "configuration" => "new-type-configuration",
         "extension" => "new-type-extension",
         "processing" => "new-type-processing",
@@ -262,8 +447,8 @@ fn project_type_key(status: &ProjectStatus) -> &'static str {
     }
 }
 
-fn workflow_key(status: &ProjectStatus) -> &'static str {
-    match status.workflow.as_str() {
+fn workflow_key(workflow: &str) -> &'static str {
+    match workflow {
         "trunk" => "new-workflow-trunk",
         "git-flow" => "new-workflow-git-flow",
         "github-flow" => "new-workflow-github-flow",
@@ -280,6 +465,33 @@ struct StatusDocument {
     changes: ChangeDocument,
     synchronization: Option<SynchronizationDocument>,
     locks: LockDocument,
+    readiness: ReadinessDocument,
+}
+
+#[derive(Serialize)]
+struct WorkspaceStatusDocument {
+    schema_version: u8,
+    workspace: WorkspaceDocument,
+    workflow: WorkflowDocument,
+    projects: Vec<WorkspaceProjectDocument>,
+    workspace_changes: Option<ChangeDocument>,
+    synchronization: Option<SynchronizationDocument>,
+    locks: LockDocument,
+    readiness: ReadinessDocument,
+}
+
+#[derive(Serialize)]
+struct WorkspaceDocument {
+    root: String,
+}
+
+#[derive(Serialize)]
+struct WorkspaceProjectDocument {
+    name: String,
+    root: String,
+    #[serde(rename = "type")]
+    project_type: &'static str,
+    changes: ChangeDocument,
     readiness: ReadinessDocument,
 }
 
@@ -344,22 +556,9 @@ impl From<&ProjectStatus> for StatusDocument {
                 task: status.task.clone(),
                 branch: status.branch.as_ref().map(ToString::to_string),
                 base: status.base_branch.clone(),
-                head: match status.head {
-                    HeadState::Attached => "attached",
-                    HeadState::Detached => "detached",
-                    HeadState::Unborn => "unborn",
-                },
+                head: head_name(status.head),
             },
-            changes: ChangeDocument {
-                files: status.changes.files,
-                added: status.changes.added,
-                modified: status.changes.modified,
-                deleted: status.changes.deleted,
-                type_changed: status.changes.type_changed,
-                untracked: status.changes.untracked,
-                intent_to_add: status.changes.intent_to_add,
-                conflicts: status.changes.conflicts,
-            },
+            changes: ChangeDocument::from(status.changes),
             synchronization: status.synchronization.map(|state| SynchronizationDocument {
                 ahead: state.ahead,
                 behind: state.behind,
@@ -373,6 +572,74 @@ impl From<&ProjectStatus> for StatusDocument {
                 publish: status.readiness.publish,
             },
         }
+    }
+}
+
+impl From<&WorkspaceStatus> for WorkspaceStatusDocument {
+    fn from(status: &WorkspaceStatus) -> Self {
+        Self {
+            schema_version: 1,
+            workspace: WorkspaceDocument {
+                root: status.root.to_string_lossy().into_owned(),
+            },
+            workflow: WorkflowDocument {
+                preset: status.workflow.as_str(),
+                task: status.task.clone(),
+                branch: status.branch.as_ref().map(ToString::to_string),
+                base: status.base_branch.clone(),
+                head: head_name(status.head),
+            },
+            projects: status
+                .projects
+                .iter()
+                .map(|project| WorkspaceProjectDocument {
+                    name: project.name.as_str().to_owned(),
+                    root: project.root.to_string_lossy().into_owned(),
+                    project_type: project.project_type.as_str(),
+                    changes: ChangeDocument::from(project.changes),
+                    readiness: ReadinessDocument {
+                        save: project.readiness.save,
+                        publish: project.readiness.publish,
+                    },
+                })
+                .collect(),
+            workspace_changes: status.workspace_changes.map(ChangeDocument::from),
+            synchronization: status.synchronization.map(|state| SynchronizationDocument {
+                ahead: state.ahead,
+                behind: state.behind,
+            }),
+            locks: LockDocument {
+                available: status.locks.available,
+                count: status.locks.count,
+            },
+            readiness: ReadinessDocument {
+                save: status.readiness.save,
+                publish: status.readiness.publish,
+            },
+        }
+    }
+}
+
+impl From<ChangeSummary> for ChangeDocument {
+    fn from(changes: ChangeSummary) -> Self {
+        Self {
+            files: changes.files,
+            added: changes.added,
+            modified: changes.modified,
+            deleted: changes.deleted,
+            type_changed: changes.type_changed,
+            untracked: changes.untracked,
+            intent_to_add: changes.intent_to_add,
+            conflicts: changes.conflicts,
+        }
+    }
+}
+
+const fn head_name(head: HeadState) -> &'static str {
+    match head {
+        HeadState::Attached => "attached",
+        HeadState::Detached => "detached",
+        HeadState::Unborn => "unborn",
     }
 }
 

@@ -12,9 +12,34 @@ use crate::{
     project::{
         InvalidPathReason, ProjectPathError,
         build::{BuildSettingsError, InvalidArtifactsDirectoryReason, ToolError, ToolSource},
+        selection::SelectionError,
     },
     vcs::workflow::PolicyError,
 };
+
+pub(super) fn present_selection_error(error: &SelectionError, localizer: &Localizer) -> String {
+    match error {
+        SelectionError::InvalidName(error) => localizer.format(
+            "project-selector-name-invalid",
+            &[("name", LocalizationValue::Text(error.value()))],
+        ),
+        SelectionError::DuplicateSelector { name } => localizer.format(
+            "project-selector-duplicate",
+            &[("name", LocalizationValue::Text(name.as_str()))],
+        ),
+        SelectionError::UnknownProject { name } => localizer.format(
+            "project-selector-unknown",
+            &[("name", LocalizationValue::Text(name.as_str()))],
+        ),
+        SelectionError::WorkspaceSelectorForStandalone => {
+            localizer.text("project-selector-standalone")
+        }
+        SelectionError::ConflictingSelectors => localizer.text("project-selector-conflict"),
+        SelectionError::ExplicitProjectRequired | SelectionError::SingleProjectRequired => {
+            localizer.text("project-selector-single-required")
+        }
+    }
+}
 
 pub(super) fn present_project_error(error: &DiscoveryError, localizer: &Localizer) -> String {
     match error {

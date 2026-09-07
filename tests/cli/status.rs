@@ -73,6 +73,51 @@ fn project() -> (TestDir, PathBuf) {
     (fixture, root)
 }
 
+fn workspace() -> (TestDir, PathBuf, PathBuf) {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("tools");
+    let report = root.join("src/sales-report");
+    let processing = root.join("src/import-orders");
+    fs::create_dir_all(&report).expect("report member");
+    fs::create_dir_all(&processing).expect("processing member");
+    fs::write(
+        root.join("eska.toml"),
+        concat!(
+            "[workspace]\n",
+            "members = ['src/sales-report', 'src/import-orders']\n\n",
+            "[vcs.workflow]\n",
+            "preset = 'trunk'\n",
+        ),
+    )
+    .expect("workspace config");
+    fs::write(
+        report.join("eska.toml"),
+        "[project]\nname = 'sales-report'\ntype = 'report'\nsource = '.'\n",
+    )
+    .expect("report config");
+    fs::write(report.join("Report.xml"), "base\n").expect("report source");
+    fs::write(
+        processing.join("eska.toml"),
+        "[project]\nname = 'import-orders'\ntype = 'processing'\nsource = '.'\n",
+    )
+    .expect("processing config");
+    fs::write(processing.join("Processing.xml"), "base\n").expect("processing source");
+    fs::write(root.join("README.md"), "base\n").expect("workspace file");
+    fs::write(fixture.0.join("outside.txt"), "base\n").expect("repository sibling");
+    git(
+        &fixture.0,
+        &["init", "--initial-branch=main", "--template="],
+    );
+    git(&fixture.0, &["add", "."]);
+    git(&fixture.0, &["commit", "-m", "base"]);
+    git(
+        &fixture.0,
+        &["update-ref", "refs/remotes/origin/main", "HEAD"],
+    );
+    git(&fixture.0, &["checkout", "-b", "task/WS-1"]);
+    (fixture, root, report)
+}
+
 #[test]
 fn json_output_has_a_stable_locale_independent_schema() {
     let (_fixture, root) = project();
@@ -239,4 +284,70 @@ fn changes_are_scoped_to_the_project_inside_an_ancestor_repository() {
     assert_eq!(actual["changes"]["files"], 1);
     assert_eq!(actual["changes"]["modified"], 1);
     assert_eq!(actual["workflow"]["task"], "FI-42");
+}
+
+#[test]
+fn workspace_status_groups_members_root_files_and_excludes_repository_siblings() {
+    let (fixture, root, report) = workspace();
+    fs::write(report.join("Report.xml"), "changed\n").expect("report change");
+    fs::write(root.join("src/import-orders/new.bsl"), "new\n").expect("processing change");
+    fs::write(root.join("README.md"), "changed\n").expect("workspace change");
+    fs::write(fixture.0.join("outside.txt"), "changed\n").expect("outside change");
+
+    for locale in ["ru", "en"] {
+        let output = eska(&root, locale, &["status", "--format", "json"]);
+        assert!(output.status.success(), "{output:?}");
+        assert!(output.stderr.is_empty(), "{output:?}");
+        let document: Value = serde_json::from_slice(&output.stdout).expect("workspace JSON");
+        assert_eq!(document["schema_version"], 1);
+        assert_eq!(document["workflow"]["task"], "WS-1");
+        assert_eq!(document["projects"][0]["name"], "sales-report");
+        assert_eq!(document["projects"][0]["changes"]["modified"], 1);
+        assert_eq!(document["projects"][1]["name"], "import-orders");
+        assert_eq!(document["projects"][1]["changes"]["untracked"], 1);
+        assert_eq!(document["workspace_changes"]["modified"], 1);
+        assert_eq!(document["readiness"]["save"], true);
+        let serialized = String::from_utf8_lossy(&output.stdout);
+        assert!(!serialized.contains("outside.txt"), "{serialized}");
+    }
+}
+
+#[test]
+fn workspace_status_preserves_single_shape_and_supports_all_selection_from_member() {
+    let (_fixture, root, report) = workspace();
+    fs::write(report.join("Report.xml"), "changed\n").expect("report change");
+    fs::write(root.join("README.md"), "changed\n").expect("workspace change");
+
+    let single = eska(&report, "en", &["status", "--format", "json"]);
+    assert!(single.status.success(), "{single:?}");
+    let document: Value = serde_json::from_slice(&single.stdout).expect("single JSON");
+    assert_eq!(document["project"]["name"], "sales-report");
+    assert!(document.get("projects").is_none());
+
+    let all = eska(
+        &report,
+        "en",
+        &["status", "--workspace", "--format", "json"],
+    );
+    assert!(all.status.success(), "{all:?}");
+    let document: Value = serde_json::from_slice(&all.stdout).expect("workspace JSON");
+    assert_eq!(document["projects"].as_array().map(Vec::len), Some(2));
+    assert_eq!(document["workspace_changes"]["modified"], 1);
+
+    let selected = eska(
+        &root,
+        "en",
+        &[
+            "status",
+            "-p",
+            "sales-report",
+            "-p",
+            "import-orders",
+            "--format",
+            "json",
+        ],
+    );
+    assert!(selected.status.success(), "{selected:?}");
+    let document: Value = serde_json::from_slice(&selected.stdout).expect("selected JSON");
+    assert!(document["workspace_changes"].is_null());
 }
