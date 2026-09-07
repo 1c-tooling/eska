@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1](https://github.com/1c-tooling/eska/compare/v0.5.0...v0.5.1) - 2026-09-07
+
+### Added
+
+- *(version)* Добавлено версионирование проектов 1С
+- *(patch)* Добавлена генерация patch-extension из Git delta
+
+### Other
+
+- *(roadmap)* Добавлен план монорепозиториев проектов
+- *(structure)* Разделены общие обязанности модулей
+- Уточнено пользовательское руководство CLI
+- Переписано руководство CLI и проверены лицензии зависимостей
+- *(build)* Проверена реализуемость patch-extension из Git delta
+
 ## [0.5.0](https://github.com/1c-tooling/eska/compare/v0.4.0...v0.5.0) - 2026-09-06
 
 ### Added
