@@ -42,8 +42,9 @@
   изменений методов общих модулей;
 - `DONE`: `T25` — чтение и точечное изменение версии проекта 1С;
 - `DONE`: `T44` — workspace config, model и discovery;
-- `NEXT`: `T45` — версионирование workspace members;
-- `PLANNED`: `T46–T48` — сборка, VCS UX и onboarding workspace members;
+- `DONE`: `T45` — версионирование workspace members;
+- `NEXT`: `T46` — сборка workspace members;
+- `PLANNED`: `T47–T48` — VCS UX и onboarding workspace members;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
@@ -141,8 +142,8 @@ TUI разделён на обработку клавиш, отрисовку и
 | T42 | DONE | Спецификация и прототип patch-extension `.cfe` из разницы веток | [t42-patch-extension.md](t42-patch-extension.md) |
 | T43 | DONE | Генерация patch-extension для ограниченного набора методов | [t42-patch-extension.md](t42-patch-extension.md) |
 | T44 | DONE | Workspace config, model и discovery | [11-workspaces.md](11-workspaces.md) |
-| T45 | NEXT | Versioning workspace members | [11-workspaces.md](11-workspaces.md) |
-| T46 | PLANNED | Build workspace members | [11-workspaces.md](11-workspaces.md) |
+| T45 | DONE | Versioning workspace members | [11-workspaces.md](11-workspaces.md) |
+| T46 | NEXT | Build workspace members | [11-workspaces.md](11-workspaces.md) |
 | T47 | PLANNED | Workspace-aware `status`, `diff` и `save` | [11-workspaces.md](11-workspaces.md) |
 | T48 | PLANNED | `new` и `init` для workspace members | [11-workspaces.md](11-workspaces.md) |
 

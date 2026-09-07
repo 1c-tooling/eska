@@ -158,7 +158,7 @@ T44 не меняет поведение `build`, `version`, `status`, `diff` и
 
 ## T45 — Versioning workspace members
 
-**Статус:** `NEXT` · **Зависит от:** T25, T44
+**Статус:** `DONE` · **Зависит от:** T25, T44
 
 Целевой CLI:
 
@@ -176,9 +176,16 @@ member. Из workspace root `bump` без ровно одного `--project`
 Для списка версий вводится отдельный versioned JSON document с именем,
 типом, версией и project-relative descriptor каждого member.
 
+**Результат:** `version` использует общий locale-independent selection
+current/named/all. Из корня читаются все members, `-p` поддерживает один или
+несколько проектов для чтения, а `--workspace` явно выбирает весь workspace из
+member-каталога. Одиночный human/JSON v1 сохранён; список получил отдельный JSON
+v1 с `projects[]`. `bump` до записи требует текущего member или ровно один `-p`
+и меняет только выбранный descriptor.
+
 ## T46 — Build workspace members
 
-**Статус:** `PLANNED` · **Зависит от:** T28, T44
+**Статус:** `NEXT` · **Зависит от:** T28, T44
 
 Целевой CLI:
 
