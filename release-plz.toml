@@ -1,0 +1,3 @@
+[workspace]
+# dist publishes the GitHub Release only after every binary artifact is ready.
+git_release_enable = false

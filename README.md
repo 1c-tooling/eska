@@ -1,6 +1,7 @@
 # eska
 
-[![CI](https://github.com/1c-tooling/eska/actions/workflows/release.yml/badge.svg)](https://github.com/1c-tooling/eska/actions/workflows/release.yml)
+[![Release-plz](https://github.com/1c-tooling/eska/actions/workflows/release-plz.yml/badge.svg)](https://github.com/1c-tooling/eska/actions/workflows/release-plz.yml)
+[![Binaries](https://github.com/1c-tooling/eska/actions/workflows/release.yml/badge.svg)](https://github.com/1c-tooling/eska/actions/workflows/release.yml)
 [![crates.io](https://img.shields.io/crates/v/eska.svg)](https://crates.io/crates/eska)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
@@ -21,15 +22,32 @@
 
 ## Установка
 
-Для установки нужны актуальный стабильный Rust с Cargo и инструменты сборки ОС.
-Нативные зависимости могут потребовать C/C++ toolchain и CMake.
+Linux и macOS:
 
-Опубликованная версия:
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://1c-tooling.github.io/eska/install | sh
+```
+
+Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://1c-tooling.github.io/eska/install.ps1 | iex"
+```
+
+Установщик выберет готовый бинарный файл для текущей ОС и архитектуры и добавит
+`~/.eska/bin` в `PATH`. После первой установки откройте новый терминал, затем
+проверьте CLI:
+
+```bash
+eska --version
+eska --help
+```
+
+Поддерживаются Linux и macOS на x86-64 и ARM64, а также Windows x86-64. Для
+сборки из исходников по-прежнему можно использовать Rust и Cargo:
 
 ```bash
 cargo install eska --locked
-eska --version
-eska --help
 ```
 
 ### Необходимые программы
