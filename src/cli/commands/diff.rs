@@ -20,8 +20,14 @@ use crate::{
         localization::{LocalizationValue, Localizer},
     },
     project::{
-        diff::{self, DiffError, DisplayTarget, ProjectDiff, RevisionProjectDiff},
-        discovery, object_model,
+        Project, ProjectName, WorkspaceMember,
+        diff::{
+            self, DiffError, DisplayTarget, ProjectDiff, RevisionProjectDiff, WorkspaceDiff,
+            WorkspaceRevisionDiff,
+        },
+        discovery::{self, DiscoveryContext},
+        object_model,
+        selection::{SelectionIntent, select_projects},
         semantic::{self, SemanticDiff, SemanticEvent, SemanticEventKind},
     },
     vcs::status::Change,
@@ -44,8 +50,20 @@ pub(in crate::cli) struct DiffArgs {
     #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
     format: OutputFormat,
 
+    #[command(flatten)]
+    selectors: DiffSelectors,
+
     #[arg(short, long, action = clap::ArgAction::Help)]
     help: Option<bool>,
+}
+
+#[derive(Debug, Args)]
+struct DiffSelectors {
+    #[arg(short = 'p', long)]
+    project: Vec<String>,
+
+    #[arg(long)]
+    workspace: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, ValueEnum)]
@@ -58,20 +76,87 @@ enum OutputFormat {
 impl DiffArgs {
     /// Discover the project, inspect its file changes and select one presentation.
     pub(super) fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
-        let project = match discovery::discover(project_dir) {
-            Ok(project) => project,
+        let context = match discovery::discover_context(project_dir) {
+            Ok(context) => context,
             Err(error) => {
-                eprintln!("{}", diagnostics::present_project_error(&error, localizer));
+                eprintln!("{}", diagnostics::present_context_error(&error, localizer));
                 return ExitCode::FAILURE;
             }
         };
+        let selection = match select_projects(
+            &context,
+            &self.selectors.project,
+            self.selectors.workspace,
+            SelectionIntent::ReadOnly,
+        ) {
+            Ok(selection) => selection,
+            Err(error) => {
+                eprintln!(
+                    "{}",
+                    diagnostics::present_selection_error(&error, localizer)
+                );
+                return ExitCode::FAILURE;
+            }
+        };
+        if !selection.is_aggregate() {
+            let Some(selected) = selection.projects().first() else {
+                eprintln!("{}", localizer.text("project-selector-single-required"));
+                return ExitCode::FAILURE;
+            };
+            return self.run_project(selected.project(), localizer);
+        }
+        let DiscoveryContext::Workspace {
+            workspace,
+            current_member,
+        } = &context
+        else {
+            eprintln!("{}", localizer.text("project-selector-single-required"));
+            return ExitCode::FAILURE;
+        };
+        let selected = selection
+            .projects()
+            .iter()
+            .filter_map(|project| project.name().and_then(|name| workspace.member(name)))
+            .collect::<Vec<_>>();
+        if selected.len() != selection.projects().len() {
+            eprintln!("{}", localizer.text("project-selector-single-required"));
+            return ExitCode::FAILURE;
+        }
+        let include_workspace_files = self.selectors.workspace
+            || (self.selectors.project.is_empty() && current_member.is_none());
         if self.revisions.is_empty() {
-            let changes = match diff::inspect(&project) {
+            let changes =
+                match diff::inspect_workspace(workspace, &selected, include_workspace_files) {
+                    Ok(changes) => changes,
+                    Err(error) => return report_error(&error, localizer),
+                };
+            self.render_workspace_group(&changes, &selected, localizer)
+        } else {
+            let from = &self.revisions[0];
+            let to = self.revisions.get(1).map_or("HEAD", String::as_str);
+            let changes = match diff::compare_workspace(
+                workspace,
+                &selected,
+                include_workspace_files,
+                from,
+                to,
+                self.since_branch_point,
+            ) {
+                Ok(changes) => changes,
+                Err(error) => return report_error(&error, localizer),
+            };
+            self.render_workspace_revisions(&changes, &selected, localizer)
+        }
+    }
+
+    fn run_project(&self, project: &Project, localizer: &Localizer) -> ExitCode {
+        if self.revisions.is_empty() {
+            let changes = match diff::inspect(project) {
                 Ok(changes) => changes,
                 Err(error) => return report_error(&error, localizer),
             };
             if self.semantic {
-                let Some(changes) = analyze_workspace_semantics(&project, &changes, localizer)
+                let Some(changes) = analyze_workspace_semantics(project, &changes, localizer)
                 else {
                     return ExitCode::FAILURE;
                 };
@@ -81,12 +166,12 @@ impl DiffArgs {
         } else {
             let from = &self.revisions[0];
             let to = self.revisions.get(1).map_or("HEAD", String::as_str);
-            let changes = match diff::compare(&project, from, to, self.since_branch_point) {
+            let changes = match diff::compare(project, from, to, self.since_branch_point) {
                 Ok(changes) => changes,
                 Err(error) => return report_error(&error, localizer),
             };
             if self.semantic {
-                let Some(semantic) = analyze_revision_semantics(&project, &changes, localizer)
+                let Some(semantic) = analyze_revision_semantics(project, &changes, localizer)
                 else {
                     return ExitCode::FAILURE;
                 };
@@ -153,6 +238,94 @@ impl DiffArgs {
             }
         }
     }
+
+    fn render_workspace_group(
+        &self,
+        changes: &WorkspaceDiff,
+        selected: &[&WorkspaceMember],
+        localizer: &Localizer,
+    ) -> ExitCode {
+        if self.semantic {
+            let Some(semantic) = analyze_workspace_group(changes, selected, localizer) else {
+                return ExitCode::FAILURE;
+            };
+            return render_workspace_semantic(
+                self,
+                &semantic,
+                changes
+                    .workspace_files
+                    .as_ref()
+                    .map(WorkspaceFileDiff::Current),
+                None,
+                localizer,
+            );
+        }
+        if self.raw {
+            print!("{}", render_workspace_raw(changes));
+            return ExitCode::SUCCESS;
+        }
+        match self.format {
+            OutputFormat::Human => {
+                println!(
+                    "{}",
+                    render_workspace_human(changes, localizer, styling_enabled())
+                );
+                ExitCode::SUCCESS
+            }
+            OutputFormat::Json => serialize_json(&WorkspaceDiffDocument::from(changes), localizer),
+        }
+    }
+
+    fn render_workspace_revisions(
+        &self,
+        changes: &WorkspaceRevisionDiff,
+        selected: &[&WorkspaceMember],
+        localizer: &Localizer,
+    ) -> ExitCode {
+        if self.semantic {
+            let Some(semantic) = analyze_workspace_revision_group(changes, selected, localizer)
+            else {
+                return ExitCode::FAILURE;
+            };
+            return render_workspace_semantic(
+                self,
+                &semantic,
+                changes
+                    .workspace_files
+                    .as_ref()
+                    .map(WorkspaceFileDiff::Revisions),
+                Some(&changes.comparison),
+                localizer,
+            );
+        }
+        if self.raw {
+            print!("{}", render_workspace_revision_raw(changes));
+            return ExitCode::SUCCESS;
+        }
+        match self.format {
+            OutputFormat::Human => {
+                println!(
+                    "{}",
+                    render_workspace_revision_human(changes, localizer, styling_enabled())
+                );
+                ExitCode::SUCCESS
+            }
+            OutputFormat::Json => {
+                serialize_json(&WorkspaceRevisionDiffDocument::from(changes), localizer)
+            }
+        }
+    }
+}
+
+struct NamedSemanticDiff {
+    name: ProjectName,
+    diff: SemanticDiff,
+}
+
+#[derive(Clone, Copy)]
+enum WorkspaceFileDiff<'a> {
+    Current(&'a ProjectDiff),
+    Revisions(&'a RevisionProjectDiff),
 }
 
 /// Discover the current logical model and analyze workspace snapshot pairs.
@@ -183,6 +356,222 @@ fn analyze_revision_semantics(
         eprintln!("{}", localizer.text("diff-semantic-error"));
         None
     })
+}
+
+fn analyze_workspace_group(
+    changes: &WorkspaceDiff,
+    selected: &[&WorkspaceMember],
+    localizer: &Localizer,
+) -> Option<Vec<NamedSemanticDiff>> {
+    changes
+        .projects
+        .iter()
+        .zip(selected)
+        .map(|(changes, member)| {
+            analyze_workspace_semantics(member.project(), &changes.diff, localizer).map(|diff| {
+                NamedSemanticDiff {
+                    name: changes.name.clone(),
+                    diff,
+                }
+            })
+        })
+        .collect()
+}
+
+fn analyze_workspace_revision_group(
+    changes: &WorkspaceRevisionDiff,
+    selected: &[&WorkspaceMember],
+    localizer: &Localizer,
+) -> Option<Vec<NamedSemanticDiff>> {
+    changes
+        .projects
+        .iter()
+        .zip(selected)
+        .map(|(changes, member)| {
+            analyze_revision_semantics(member.project(), &changes.diff, localizer).map(|diff| {
+                NamedSemanticDiff {
+                    name: changes.name.clone(),
+                    diff,
+                }
+            })
+        })
+        .collect()
+}
+
+fn render_workspace_human(changes: &WorkspaceDiff, localizer: &Localizer, styled: bool) -> String {
+    let mut sections = changes
+        .projects
+        .iter()
+        .map(|project| {
+            format!(
+                "{}\n{}",
+                workspace_project_heading(project.name.as_str(), localizer, styled),
+                render_human(&project.diff, localizer, styled)
+            )
+        })
+        .collect::<Vec<_>>();
+    if let Some(files) = &changes.workspace_files {
+        sections.push(format!(
+            "{}\n{}",
+            style_header(&localizer.text("diff-workspace-files"), styled),
+            render_human(files, localizer, styled)
+        ));
+    }
+    sections.join("\n\n")
+}
+
+fn render_workspace_revision_human(
+    changes: &WorkspaceRevisionDiff,
+    localizer: &Localizer,
+    styled: bool,
+) -> String {
+    let mut sections = changes
+        .projects
+        .iter()
+        .map(|project| {
+            format!(
+                "{}\n{}",
+                workspace_project_heading(project.name.as_str(), localizer, styled),
+                render_revision_human(&project.diff, localizer, styled)
+            )
+        })
+        .collect::<Vec<_>>();
+    if let Some(files) = &changes.workspace_files {
+        sections.push(format!(
+            "{}\n{}",
+            style_header(&localizer.text("diff-workspace-files"), styled),
+            render_revision_human(files, localizer, styled)
+        ));
+    }
+    sections.join("\n\n")
+}
+
+fn workspace_project_heading(name: &str, localizer: &Localizer, styled: bool) -> String {
+    style_header(
+        &localizer.format(
+            "diff-workspace-project",
+            &[("name", LocalizationValue::Text(name))],
+        ),
+        styled,
+    )
+}
+
+fn render_workspace_raw(changes: &WorkspaceDiff) -> String {
+    use std::fmt::Write as _;
+    let mut output = String::new();
+    for project in &changes.projects {
+        for line in render_raw(&project.diff).lines() {
+            writeln!(output, "{}\t{line}", project.name).expect("writing to String cannot fail");
+        }
+    }
+    if let Some(files) = &changes.workspace_files {
+        for line in render_raw(files).lines() {
+            writeln!(output, "-\t{line}").expect("writing to String cannot fail");
+        }
+    }
+    output
+}
+
+fn render_workspace_revision_raw(changes: &WorkspaceRevisionDiff) -> String {
+    use std::fmt::Write as _;
+    let mut output = String::new();
+    for project in &changes.projects {
+        for line in render_revision_raw(&project.diff).lines() {
+            writeln!(output, "{}\t{line}", project.name).expect("writing to String cannot fail");
+        }
+    }
+    if let Some(files) = &changes.workspace_files {
+        for line in render_revision_raw(files).lines() {
+            writeln!(output, "-\t{line}").expect("writing to String cannot fail");
+        }
+    }
+    output
+}
+
+fn render_workspace_semantic(
+    arguments: &DiffArgs,
+    semantic: &[NamedSemanticDiff],
+    workspace_files: Option<WorkspaceFileDiff<'_>>,
+    comparison: Option<&diff::RevisionComparison>,
+    localizer: &Localizer,
+) -> ExitCode {
+    if arguments.raw {
+        print!(
+            "{}",
+            render_workspace_semantic_raw(semantic, workspace_files)
+        );
+        return ExitCode::SUCCESS;
+    }
+    match arguments.format {
+        OutputFormat::Human => println!(
+            "{}",
+            render_workspace_semantic_human(
+                semantic,
+                workspace_files,
+                localizer,
+                styling_enabled(),
+            )
+        ),
+        OutputFormat::Json => {
+            return serialize_json(
+                &WorkspaceSemanticDiffDocument::new(semantic, workspace_files, comparison),
+                localizer,
+            );
+        }
+    }
+    ExitCode::SUCCESS
+}
+
+fn render_workspace_semantic_raw(
+    semantic: &[NamedSemanticDiff],
+    workspace_files: Option<WorkspaceFileDiff<'_>>,
+) -> String {
+    use std::fmt::Write as _;
+    let mut output = String::new();
+    for project in semantic {
+        for line in render_semantic_raw(&project.diff).lines() {
+            writeln!(output, "{}\t{line}", project.name).expect("writing to String cannot fail");
+        }
+    }
+    if let Some(files) = workspace_files {
+        let rendered = match files {
+            WorkspaceFileDiff::Current(files) => render_raw(files),
+            WorkspaceFileDiff::Revisions(files) => render_revision_raw(files),
+        };
+        for line in rendered.lines() {
+            writeln!(output, "-\t{line}").expect("writing to String cannot fail");
+        }
+    }
+    output
+}
+
+fn render_workspace_semantic_human(
+    semantic: &[NamedSemanticDiff],
+    workspace_files: Option<WorkspaceFileDiff<'_>>,
+    localizer: &Localizer,
+    styled: bool,
+) -> String {
+    let mut sections = semantic
+        .iter()
+        .map(|project| {
+            format!(
+                "{}\n{}",
+                workspace_project_heading(project.name.as_str(), localizer, styled),
+                render_semantic_human(&project.diff, localizer, styled)
+            )
+        })
+        .collect::<Vec<_>>();
+    if let Some(files) = workspace_files {
+        let rendered = match files {
+            WorkspaceFileDiff::Current(files) => render_human(files, localizer, styled),
+            WorkspaceFileDiff::Revisions(files) => render_revision_human(files, localizer, styled),
+        };
+        sections.push(format!(
+            "{}\n{rendered}",
+            style_header(&localizer.text("diff-workspace-files"), styled),
+        ));
+    }
+    sections.join("\n\n")
 }
 
 /// Serialize one locale-independent document and report the shared failure.
@@ -222,6 +611,14 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
             argument
                 .help(localizer.text("diff-format-help"))
                 .value_name(localizer.text("diff-format-value"))
+        })
+        .mut_arg("project", |argument| {
+            argument
+                .help(localizer.text("diff-project-help"))
+                .value_name(localizer.text("diff-project-value"))
+        })
+        .mut_arg("workspace", |argument| {
+            argument.help(localizer.text("diff-workspace-help"))
         })
         .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
 }
@@ -771,6 +1168,28 @@ struct SemanticDiffDocument<'a> {
 }
 
 #[derive(Serialize)]
+struct WorkspaceSemanticDiffDocument<'a> {
+    schema_version: u8,
+    kind: &'static str,
+    comparison: SemanticComparisonDocument<'a>,
+    projects: Vec<WorkspaceSemanticProjectDocument>,
+    workspace_files: Option<WorkspaceSemanticFilesDocument>,
+}
+
+#[derive(Serialize)]
+struct WorkspaceSemanticProjectDocument {
+    name: String,
+    events: Vec<SemanticEventDocument>,
+}
+
+#[derive(Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+enum WorkspaceSemanticFilesDocument {
+    Workspace { files: Vec<FileDocument> },
+    Revisions { files: Vec<RevisionFileDocument> },
+}
+
+#[derive(Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum SemanticComparisonDocument<'a> {
     Workspace,
@@ -834,6 +1253,63 @@ impl<'a> SemanticDiffDocument<'a> {
     }
 }
 
+impl<'a> WorkspaceSemanticDiffDocument<'a> {
+    fn new(
+        semantic: &[NamedSemanticDiff],
+        workspace_files: Option<WorkspaceFileDiff<'_>>,
+        comparison: Option<&'a diff::RevisionComparison>,
+    ) -> Self {
+        Self {
+            schema_version: 3,
+            kind: "semantic_workspace",
+            comparison: semantic_comparison(comparison),
+            projects: semantic
+                .iter()
+                .map(|project| WorkspaceSemanticProjectDocument {
+                    name: project.name.as_str().to_owned(),
+                    events: project
+                        .diff
+                        .events()
+                        .iter()
+                        .map(SemanticEventDocument::from)
+                        .collect(),
+                })
+                .collect(),
+            workspace_files: workspace_files.map(|files| match files {
+                WorkspaceFileDiff::Current(files) => WorkspaceSemanticFilesDocument::Workspace {
+                    files: file_documents(files),
+                },
+                WorkspaceFileDiff::Revisions(files) => WorkspaceSemanticFilesDocument::Revisions {
+                    files: revision_file_documents(files),
+                },
+            }),
+        }
+    }
+}
+
+fn semantic_comparison(
+    comparison: Option<&diff::RevisionComparison>,
+) -> SemanticComparisonDocument<'_> {
+    comparison.map_or(SemanticComparisonDocument::Workspace, |comparison| {
+        SemanticComparisonDocument::Revisions {
+            strategy: if comparison.merge_base_commit.is_some() {
+                "merge_base"
+            } else {
+                "direct"
+            },
+            from: RevisionEndpointDocument {
+                revision: &comparison.from_revision,
+                commit: comparison.from_commit.to_string(),
+            },
+            to: RevisionEndpointDocument {
+                revision: &comparison.to_revision,
+                commit: comparison.to_commit.to_string(),
+            },
+            merge_base_commit: comparison.merge_base_commit.map(|id| id.to_string()),
+        }
+    })
+}
+
 impl From<&SemanticEvent> for SemanticEventDocument {
     /// Preserve stable identities, event names and arbitrary Git path bytes.
     fn from(event: &SemanticEvent) -> Self {
@@ -860,6 +1336,19 @@ struct DiffDocument {
 }
 
 #[derive(Serialize)]
+struct WorkspaceDiffDocument {
+    schema_version: u8,
+    projects: Vec<WorkspaceFileProjectDocument>,
+    workspace_files: Option<Vec<FileDocument>>,
+}
+
+#[derive(Serialize)]
+struct WorkspaceFileProjectDocument {
+    name: String,
+    files: Vec<FileDocument>,
+}
+
+#[derive(Serialize)]
 struct FileDocument {
     path: String,
     path_encoding: &'static str,
@@ -872,27 +1361,61 @@ impl From<&ProjectDiff> for DiffDocument {
     fn from(diff: &ProjectDiff) -> Self {
         Self {
             schema_version: 1,
-            files: diff
-                .files
-                .iter()
-                .map(|file| {
-                    let (path, path_encoding) = json_path(file.path.as_bstr());
-                    FileDocument {
-                        path,
-                        path_encoding,
-                        index: file.index.map(change_name),
-                        worktree: file.worktree.map(change_name),
-                    }
-                })
-                .collect(),
+            files: file_documents(diff),
         }
     }
+}
+
+impl From<&WorkspaceDiff> for WorkspaceDiffDocument {
+    fn from(diff: &WorkspaceDiff) -> Self {
+        Self {
+            schema_version: 1,
+            projects: diff
+                .projects
+                .iter()
+                .map(|project| WorkspaceFileProjectDocument {
+                    name: project.name.as_str().to_owned(),
+                    files: file_documents(&project.diff),
+                })
+                .collect(),
+            workspace_files: diff.workspace_files.as_ref().map(file_documents),
+        }
+    }
+}
+
+fn file_documents(diff: &ProjectDiff) -> Vec<FileDocument> {
+    diff.files
+        .iter()
+        .map(|file| {
+            let (path, path_encoding) = json_path(file.path.as_bstr());
+            FileDocument {
+                path,
+                path_encoding,
+                index: file.index.map(change_name),
+                worktree: file.worktree.map(change_name),
+            }
+        })
+        .collect()
 }
 
 #[derive(Serialize)]
 struct RevisionDiffDocument<'a> {
     schema_version: u8,
     comparison: RevisionComparisonDocument<'a>,
+    files: Vec<RevisionFileDocument>,
+}
+
+#[derive(Serialize)]
+struct WorkspaceRevisionDiffDocument<'a> {
+    schema_version: u8,
+    comparison: RevisionComparisonDocument<'a>,
+    projects: Vec<WorkspaceRevisionProjectDocument>,
+    workspace_files: Option<Vec<RevisionFileDocument>>,
+}
+
+#[derive(Serialize)]
+struct WorkspaceRevisionProjectDocument {
+    name: String,
     files: Vec<RevisionFileDocument>,
 }
 
@@ -924,37 +1447,64 @@ impl<'a> From<&'a RevisionProjectDiff> for RevisionDiffDocument<'a> {
         let comparison = &diff.comparison;
         Self {
             schema_version: 2,
-            comparison: RevisionComparisonDocument {
-                kind: "revisions",
-                strategy: if comparison.merge_base_commit.is_some() {
-                    "merge-base"
-                } else {
-                    "direct"
-                },
-                from: RevisionEndpointDocument {
-                    revision: &comparison.from_revision,
-                    commit: comparison.from_commit.to_string(),
-                },
-                to: RevisionEndpointDocument {
-                    revision: &comparison.to_revision,
-                    commit: comparison.to_commit.to_string(),
-                },
-                merge_base_commit: comparison.merge_base_commit.map(|id| id.to_string()),
-            },
-            files: diff
-                .files
-                .iter()
-                .map(|file| {
-                    let (path, path_encoding) = json_path(file.path.as_bstr());
-                    RevisionFileDocument {
-                        path,
-                        path_encoding,
-                        change: change_name(file.change),
-                    }
-                })
-                .collect(),
+            comparison: revision_comparison_document(comparison),
+            files: revision_file_documents(diff),
         }
     }
+}
+
+impl<'a> From<&'a WorkspaceRevisionDiff> for WorkspaceRevisionDiffDocument<'a> {
+    fn from(diff: &'a WorkspaceRevisionDiff) -> Self {
+        Self {
+            schema_version: 2,
+            comparison: revision_comparison_document(&diff.comparison),
+            projects: diff
+                .projects
+                .iter()
+                .map(|project| WorkspaceRevisionProjectDocument {
+                    name: project.name.as_str().to_owned(),
+                    files: revision_file_documents(&project.diff),
+                })
+                .collect(),
+            workspace_files: diff.workspace_files.as_ref().map(revision_file_documents),
+        }
+    }
+}
+
+fn revision_comparison_document(
+    comparison: &diff::RevisionComparison,
+) -> RevisionComparisonDocument<'_> {
+    RevisionComparisonDocument {
+        kind: "revisions",
+        strategy: if comparison.merge_base_commit.is_some() {
+            "merge-base"
+        } else {
+            "direct"
+        },
+        from: RevisionEndpointDocument {
+            revision: &comparison.from_revision,
+            commit: comparison.from_commit.to_string(),
+        },
+        to: RevisionEndpointDocument {
+            revision: &comparison.to_revision,
+            commit: comparison.to_commit.to_string(),
+        },
+        merge_base_commit: comparison.merge_base_commit.map(|id| id.to_string()),
+    }
+}
+
+fn revision_file_documents(diff: &RevisionProjectDiff) -> Vec<RevisionFileDocument> {
+    diff.files
+        .iter()
+        .map(|file| {
+            let (path, path_encoding) = json_path(file.path.as_bstr());
+            RevisionFileDocument {
+                path,
+                path_encoding,
+                change: change_name(file.change),
+            }
+        })
+        .collect()
 }
 
 /// Keep valid UTF-8 paths exact and encode arbitrary Git bytes without data loss.
