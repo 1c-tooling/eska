@@ -262,6 +262,25 @@ Project
 └── workflow
 ```
 
+`Project` остаётся одной независимо собираемой и версионируемой
+единицей: конфигурацией, расширением, внешней обработкой или
+отчётом. Не добавлять в него несколько `source`.
+
+Для монорепозитория над проектами вводится отдельная сущность
+`Workspace`:
+
+```text
+Git repository
+└── Workspace
+    ├── Project: report
+    ├── Project: processing
+    └── Project: processing
+```
+
+Workspace управляет составом проектов, общими build defaults и
+repository-wide workflow. Каждый member сохраняет собственный `Project`
+и корневой Designer XML descriptor.
+
 ## 4.1. Типы проектов
 
 Поддержать:
@@ -334,6 +353,12 @@ line_width = 120
 ```
 
 Не считать этот пример окончательной схемой — API config следует стабилизировать постепенно.
+
+Будущий workspace использует virtual root manifest с `[workspace]` и
+отдельные `eska.toml` у members. Секции `[project]` и `[workspace]` в
+одном manifest в первой версии взаимоисключающие. Одиночный
+существующий `[project]` остаётся валидным без миграции. Полный
+контракт зафиксирован в [workspace roadmap](roadmap/11-workspaces.md).
 
 ---
 
@@ -1617,6 +1642,32 @@ Extension должна быть тонкой.
 
 ---
 
+# Milestone 22 — Project workspaces и монорепозиторий
+
+Поддержать один Git-репозиторий с несколькими независимыми
+проектами 1С. Основной сценарий — набор внешних отчётов и
+обработок в каталогах `src/<member>`.
+
+Целевой UX:
+
+```text
+eska build                         # все members из workspace root
+eska build -p sales-report         # один member
+eska build --workspace             # все members из вложенного каталога
+eska version -p sales-report
+eska version -p sales-report bump patch
+```
+
+Build/version работают с выбранным `Project`; repository workflow
+остаётся общим. Массовый version bump без явного флага запрещён.
+Существующие single-project CLI и JSON contracts сохраняются.
+
+Этот workspace не связан с isolated Git worktree для отдельной задачи из
+Milestone 16. Детальная декомпозиция T44–T48:
+[project workspaces](roadmap/11-workspaces.md).
+
+---
+
 # 7. Дополнительные команды и поведение
 
 ## `eska doctor`
@@ -1866,7 +1917,8 @@ P1 — расширить delivery artifacts
 patch-extension .cfe из разницы веток (после feasibility specification)
 project versioning
 
-P2 — качество и автоматизация после проверки MVP
+P2 — качество, масштабирование и автоматизация после проверки MVP
+project workspaces для монорепозиториев отчётов/обработок
 test backend specification
 affected analysis
 fmt/check
@@ -1918,7 +1970,8 @@ Designer XML model/semantic diff/commit draft
 После практической проверки MVP вернуться к отложенной очереди:
 T23 test backend, T24 affected, T25 versioning, T26 fmt, T27 check,
 T29 doctor, T30 environments, T31 apply/run, T32 release, T33 CI,
-T35 shelves, T36 restore, T37 sync, T38 publish, T39 locking и T41 VS Code.
+T35 shelves, T36 restore, T37 sync, T38 publish, T39 locking, T41 VS Code
+и T44–T48 project workspaces.
 ```
 
 Пункты T34, T40, T28, T42 и T43 завершены. `eska patch` реализует доказанный
@@ -1963,6 +2016,14 @@ eska check
 eska build
 eska publish
 eska finish
+```
+
+Для монорепозитория внешних отчётов и обработок:
+
+```text
+eska version -p sales-report bump patch
+eska build -p sales-report
+eska build
 ```
 
 В будущем быстрый локальный цикл:
