@@ -74,6 +74,7 @@ src/
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
 │   ├── selection.rs             # общий выбор current/named/all workspace projects
 │   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
+│   ├── semantic/routines.rs     # потоковое чтение BSL routine snapshots
 │   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
 │   ├── version.rs               # точечное чтение и замена Properties/Version
@@ -311,3 +312,12 @@ reader не создаётся. Файлы worktree читаются по одн
 Следующая операция заново получает HEAD и индекс; публичный
 `Repository::file_versions` сохраняет чтение одного файла. Атомарный снимок
 worktree при параллельном редактировании не гарантируется.
+
+`project/semantic/routines.rs` содержит консервативный parser процедур и функций.
+Он читает строки через iterator и собирает только нормализованные тела методов,
+без копии всего модуля для замены CRLF и без массивов строк. Сопоставление
+snapshot-пар и создание событий остаются в `project/semantic.rs`.
+XML-сигнатуры строятся в одном буфере без промежуточных строк поддеревьев;
+правила нормализации не изменены.
+
+Условия и результаты локальных замеров: [performance.md](performance.md).

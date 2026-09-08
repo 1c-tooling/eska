@@ -20,6 +20,10 @@ use crate::vcs::{
     status::Change,
 };
 
+mod routines;
+
+use routines::{RoutineKind, parse_routines};
+
 const MD_NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
 
 /// The comparison edge represented by one file change.
@@ -1018,9 +1022,14 @@ fn collect_descriptor_snapshots(
 
 /// Build a formatting-independent signature of one XML subtree.
 fn xml_signature(node: roxmltree::Node<'_, '_>) -> String {
-    use std::fmt::Write as _;
-
     let mut signature = String::new();
+    append_xml_signature(node, &mut signature);
+    signature
+}
+
+/// Append directly to one buffer so ancestors do not copy their descendants' signatures.
+fn append_xml_signature(node: roxmltree::Node<'_, '_>, signature: &mut String) {
+    use std::fmt::Write as _;
     if node.is_element() {
         signature.push('<');
         signature.push_str(node.tag_name().name());
@@ -1035,14 +1044,13 @@ fn xml_signature(node: roxmltree::Node<'_, '_>) -> String {
         signature.push_str(text.trim());
     }
     for child in node.children() {
-        signature.push_str(&xml_signature(child));
+        append_xml_signature(child, signature);
     }
     if node.is_element() {
         signature.push_str("</");
         signature.push_str(node.tag_name().name());
         signature.push('>');
     }
-    signature
 }
 
 /// Convert one current object-model entry into a presentation-neutral identity.
@@ -1099,19 +1107,6 @@ fn escape_id_name(name: &str) -> String {
         .replace(':', "%3A")
 }
 
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-enum RoutineKind {
-    Method,
-    Function,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct RoutineSnapshot {
-    kind: RoutineKind,
-    name: String,
-    body: String,
-}
-
 /// Compare top-level BSL procedures and functions when both endpoint modules are UTF-8.
 fn analyze_routines(
     before: Option<&[u8]>,
@@ -1153,88 +1148,6 @@ fn analyze_routines(
             path.clone(),
         );
     }
-}
-
-/// Parse only unambiguous top-level BSL declarations and their complete bodies.
-fn parse_routines(contents: &[u8]) -> Option<BTreeMap<(RoutineKind, String), RoutineSnapshot>> {
-    let text = std::str::from_utf8(contents).ok()?.replace("\r\n", "\n");
-    let lines: Vec<_> = text.lines().collect();
-    let mut routines = BTreeMap::new();
-    let mut index = 0;
-    while index < lines.len() {
-        let Some((kind, name)) = routine_declaration(lines[index]) else {
-            index += 1;
-            continue;
-        };
-        let start = index;
-        index += 1;
-        while index < lines.len() && !routine_end(lines[index], kind) {
-            index += 1;
-        }
-        if index == lines.len() {
-            return None;
-        }
-        let body = lines[start..=index]
-            .iter()
-            .map(|line| line.trim_end())
-            .collect::<Vec<_>>()
-            .join("\n");
-        let key = (kind, name.to_lowercase());
-        if routines
-            .insert(key, RoutineSnapshot { kind, name, body })
-            .is_some()
-        {
-            return None;
-        }
-        index += 1;
-    }
-    Some(routines)
-}
-
-/// Recognize Russian and English BSL declaration keywords at the start of a line.
-fn routine_declaration(line: &str) -> Option<(RoutineKind, String)> {
-    let trimmed = line.trim_start();
-    if trimmed.starts_with("//") {
-        return None;
-    }
-    let lowered = trimmed.to_lowercase();
-    let async_prefix = ["асинх ", "async "]
-        .into_iter()
-        .find(|prefix| lowered.starts_with(prefix));
-    let declaration = async_prefix.map_or(trimmed, |prefix| &trimmed[prefix.len()..]);
-    let lowered = declaration.to_lowercase();
-    let (kind, keyword) = [
-        (RoutineKind::Method, "процедура "),
-        (RoutineKind::Method, "procedure "),
-        (RoutineKind::Function, "функция "),
-        (RoutineKind::Function, "function "),
-    ]
-    .into_iter()
-    .find(|(_, keyword)| lowered.starts_with(keyword))?;
-    let remainder = &declaration[keyword.len()..];
-    let name = remainder.split_once('(')?.0.trim();
-    (!name.is_empty()
-        && name
-            .chars()
-            .all(|value| value == '_' || value.is_alphanumeric()))
-    .then(|| (kind, name.to_owned()))
-}
-
-/// Recognize the matching Russian or English end keyword.
-fn routine_end(line: &str, kind: RoutineKind) -> bool {
-    let lowered = line.trim_start().to_lowercase();
-    let keyword = match kind {
-        RoutineKind::Method => ["конецпроцедуры", "endprocedure"],
-        RoutineKind::Function => ["конецфункции", "endfunction"],
-    };
-    keyword.iter().any(|keyword| {
-        lowered.strip_prefix(keyword).is_some_and(|suffix| {
-            suffix.is_empty()
-                || suffix.starts_with(char::is_whitespace)
-                || suffix.starts_with(';')
-                || suffix.starts_with("//")
-        })
-    })
 }
 
 /// Map a routine kind and lifecycle state to its stable event kind.
@@ -1319,9 +1232,7 @@ fn merge_change(current: Change, incoming: Change) -> Change {
 mod tests {
     use gix::bstr::ByteSlice;
 
-    use super::{
-        ChangeSet, ChangeStage, RoutineKind, SemanticEventKind, descriptor_objects, parse_routines,
-    };
+    use super::{ChangeSet, ChangeStage, SemanticEventKind, descriptor_objects};
     use crate::{
         project::{
             ProjectType,
@@ -1359,26 +1270,6 @@ mod tests {
         assert_eq!(changes.changes()[2].path(), b"src/B.bsl".as_bstr());
     }
 
-    /// BSL parsing distinguishes procedure and function lifecycle without matching comments.
-    #[test]
-    fn parses_complete_russian_and_english_routines() {
-        let routines = parse_routines(
-            "// Процедура Ложная()\nПроцедура Выполнить()\nКонецПроцедуры\nFunction Value()\n    Return 1;\nEndFunction\n"
-                .as_bytes(),
-        )
-        .expect("valid routines");
-
-        assert!(routines.contains_key(&(RoutineKind::Method, "выполнить".to_owned())));
-        assert!(routines.contains_key(&(RoutineKind::Function, "value".to_owned())));
-        assert_eq!(routines.len(), 2);
-    }
-
-    /// Incomplete BSL is rejected so callers retain only the reliable module event.
-    #[test]
-    fn rejects_incomplete_routine_body() {
-        assert!(parse_routines("Процедура Выполнить()\n".as_bytes()).is_none());
-    }
-
     /// Descriptor parsing assigns independent stable identities to inline metadata objects.
     #[test]
     fn parses_descriptor_objects_and_property_signatures() {
@@ -1398,6 +1289,23 @@ mod tests {
                 .properties
                 .contains("value")
         );
+    }
+
+    /// Signatures preserve nested content and normalize attribute ordering and whitespace.
+    #[test]
+    fn xml_signatures_preserve_nested_structure() {
+        let before = roxmltree::Document::parse(
+            r#"<Properties b="2" a="1"><Name> Value </Name><Type><Kind>String</Kind></Type></Properties>"#,
+        ).unwrap();
+        let after = roxmltree::Document::parse(
+            "<Properties a=\"1\" b=\"2\">\n<Name>Value</Name>\n<Type><Kind>String</Kind></Type>\n</Properties>",
+        ).unwrap();
+        let expected = "<Properties a=\"1\" b=\"2\"><Name>Value</Name><Type><Kind>String</Kind></Type></Properties>";
+        assert_eq!(super::xml_signature(before.root_element()), expected);
+        assert_eq!(super::xml_signature(after.root_element()), expected);
+        let changed =
+            roxmltree::Document::parse("<Properties><Type>String</Type></Properties>").unwrap();
+        assert_ne!(super::xml_signature(changed.root_element()), expected);
     }
 
     /// Every event kind has an explicit stable machine name.
