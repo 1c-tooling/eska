@@ -1,6 +1,7 @@
 //! Localized presentation of the read-only project environment diagnosis.
 
 use std::{
+    io::{self, IsTerminal},
     path::{Path, PathBuf},
     process::ExitCode,
 };
@@ -255,7 +256,10 @@ impl DoctorArgs {
         localizer: &Localizer,
     ) -> ExitCode {
         match self.format {
-            OutputFormat::Human => println!("{}", render_human(report, details, localizer)),
+            OutputFormat::Human => println!(
+                "{}",
+                render_human(report, details, localizer, styling_enabled())
+            ),
             OutputFormat::Json => {
                 let document = DoctorDocument {
                     schema_version: 1,
@@ -316,15 +320,15 @@ fn scope(context: &DiscoveryContext, aggregate: bool, projects: &[String]) -> Sc
 }
 
 /// Render checks in a compact table with an actionable line for every warning or failure.
-fn render_human(report: &Report, details: &[Option<String>], localizer: &Localizer) -> String {
+fn render_human(
+    report: &Report,
+    details: &[Option<String>],
+    localizer: &Localizer,
+    styled: bool,
+) -> String {
     let mut lines = vec![localizer.text("doctor-title")];
     for (check, detail) in report.checks().iter().zip(details) {
-        let marker = match check.status {
-            CheckStatus::Pass => "✓",
-            CheckStatus::Warning => "!",
-            CheckStatus::Fail => "✗",
-            CheckStatus::Skipped => "–",
-        };
+        let marker = style_marker(check.status, styled);
         let label = localizer.text(&format!("doctor-check-{}", check.id.replace('.', "-")));
         let message = detail
             .clone()
@@ -354,6 +358,26 @@ fn render_human(report: &Report, details: &[Option<String>], localizer: &Localiz
         ],
     ));
     lines.join("\n")
+}
+
+/// Color the status marker while keeping labels and diagnostics easy to copy.
+fn style_marker(status: CheckStatus, styled: bool) -> String {
+    let (marker, color) = match status {
+        CheckStatus::Pass => ("✓", "1;32"),
+        CheckStatus::Warning => ("!", "1;33"),
+        CheckStatus::Fail => ("✗", "1;31"),
+        CheckStatus::Skipped => ("–", "2;90"),
+    };
+    if styled {
+        format!("\x1b[{color}m{marker}\x1b[0m")
+    } else {
+        marker.to_owned()
+    }
+}
+
+/// Enable colors only for an interactive stdout that permits terminal styling.
+fn styling_enabled() -> bool {
+    io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
 }
 
 /// Format the stable check code with locale-specific explanatory text.
@@ -407,4 +431,44 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
             arg.help(localizer.text("doctor-workspace-help"))
         })
         .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Check, CheckStatus, Localizer, Report, render_human};
+    use crate::cli::localization::Locale;
+
+    #[test]
+    /// Color every status marker without changing copied or redirected report text.
+    fn human_report_styles_status_markers_and_preserves_plain_output() {
+        let localizer = Localizer::try_new(Locale::EnUs).expect("locale");
+        let mut report = Report::default();
+        let mut details = Vec::new();
+        for status in [
+            CheckStatus::Pass,
+            CheckStatus::Warning,
+            CheckStatus::Fail,
+            CheckStatus::Skipped,
+        ] {
+            report.push(Check::new("machine.config", status, "valid", &["doctor"]));
+            details.push(None);
+        }
+
+        let plain = render_human(&report, &details, &localizer, false);
+        let styled = render_human(&report, &details, &localizer, true);
+
+        assert!(!plain.contains('\x1b'), "{plain:?}");
+        for sequence in ["\x1b[1;32m✓", "\x1b[1;33m!", "\x1b[1;31m✗", "\x1b[2;90m–"] {
+            assert!(styled.contains(sequence), "{styled:?}");
+        }
+        assert_eq!(
+            styled
+                .replace("\x1b[1;32m", "")
+                .replace("\x1b[1;33m", "")
+                .replace("\x1b[1;31m", "")
+                .replace("\x1b[2;90m", "")
+                .replace("\x1b[0m", ""),
+            plain
+        );
+    }
 }
