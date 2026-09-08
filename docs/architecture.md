@@ -205,9 +205,12 @@ tests/
   состоянию, оформляет TTY-заголовки и маркеры, отдельно формирует raw,
   workspace JSON версии 1 и revision JSON версии 2. Для project workspace один
   Git snapshot или tree comparison проецируется на selected members и корневые
-  файлы; aggregate semantic JSON сохраняет версию 3.
-- `project/object_model.rs` по явному вызову обходит Designer XML source и строит
-  read-only индекс логических объектов. Читаемый `ObjectId` формируется из
+  файлы; aggregate semantic JSON использует версию 4 и явно описывает полноту
+  анализа каждого member.
+- `project/object_model.rs` строит read-only индекс логических объектов Designer
+  XML. Полный обход остаётся доступен явным библиотечным вызовом; `diff` и draft
+  `save` выводят набор нужных дескрипторов из changed paths и не индексируют
+  неизменённые members. Читаемый `ObjectId` формируется из
   machine-facing metadata type/name и иерархии; UUID хранится отдельно, поскольку
   Designer может повторять его у разных объектов. Индекс связывает descriptors,
   inline children, формы, модули и payload paths в обоих направлениях, не создавая
@@ -215,7 +218,9 @@ tests/
 - `project/semantic.rs` нормализует workspace и revision file changes в общий
   `ChangeSet`, проецирует пути через `ObjectModel` и сравнивает BSL routines,
   формы и свойства metadata descriptors. Результат — детерминированные semantic
-  events со стабильной object identity, byte paths и comparison stage.
+  events со стабильной object identity, byte paths и comparison stage. Ошибка
+  отдельного дескриптора или консервативного BSL parser сохраняется как точный
+  file-level fallback и не отменяет независимые объекты.
 - `project/patch/plan.rs` читает только committed Git snapshots и формирует
   полный allowlist-план. `methods.rs` отвечает только за доказуемо безопасные
   замены BSL-методов, `descriptor.rs` — за adoption существующих общих модулей,

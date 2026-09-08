@@ -1,8 +1,8 @@
-use std::{fs, path::Path};
+use std::{fs, path::Path, time::Instant};
 
 use eska::project::{
     Project, ProjectConfiguration, ProjectType, SourceFormat,
-    object_model::{ObjectModel, ObjectModelError, discover},
+    object_model::{ObjectModel, ObjectModelError, discover, discover_affected},
 };
 
 use crate::support::TestDir;
@@ -245,6 +245,105 @@ fn keeps_object_ids_unique_when_designer_uuids_are_reused() {
         .collect::<Vec<_>>();
 
     assert_eq!(ids, ["catalog:First", "catalog:Second"]);
+}
+
+/// Affected discovery reads only owner ancestry and ignores unrelated broken descriptors.
+#[test]
+fn discovers_only_descriptors_owning_changed_paths() {
+    let fixture = fixture(ProjectType::Configuration);
+    write_descriptor(
+        &fixture.source,
+        "Catalogs/Partners.xml",
+        "Catalog",
+        "50000000-0000-0000-0000-000000000001",
+        "Partners",
+        "",
+    );
+    write_descriptor(
+        &fixture.source,
+        "Catalogs/Partners/Forms/Item.xml",
+        "Form",
+        "50000000-0000-0000-0000-000000000002",
+        "Item",
+        "",
+    );
+    write_file(&fixture.source, "Catalogs/Unrelated.xml", "<broken>");
+
+    let changed = vec![Path::new("Catalogs/Partners/Forms/Item/Ext/Form/Module.bsl").into()];
+    let affected = discover_affected(&fixture.project, &changed).expect("affected objects");
+
+    assert_eq!(affected.descriptors_read(), 2);
+    assert!(affected.issues().is_empty());
+    assert_eq!(
+        ids(affected.model().objects_for_changed_path(Path::new(
+            "Catalogs/Partners/Forms/Item/Ext/Form/Module.bsl"
+        ))),
+        ["50000000-0000-0000-0000-000000000002"]
+    );
+}
+
+/// External modules retain their descriptor identity while a sibling descriptor fails.
+#[test]
+fn affected_external_discovery_keeps_standalone_identity_with_local_issues() {
+    let fixture = fixture(ProjectType::Processing);
+    write_descriptor(
+        &fixture.source,
+        "ExternalDataProcessor.xml",
+        "ExternalDataProcessor",
+        "60000000-0000-0000-0000-000000000001",
+        "ImportData",
+        "",
+    );
+    write_file(&fixture.source, "Broken.xml", "<broken>");
+
+    let changed = vec![Path::new("Ext/ObjectModule.bsl").into()];
+    let affected = discover_affected(&fixture.project, &changed).expect("affected external object");
+
+    assert_eq!(affected.descriptors_read(), 2);
+    assert_eq!(affected.issues().len(), 1);
+    assert_eq!(
+        ids(affected
+            .model()
+            .objects_for_changed_path(Path::new("Ext/ObjectModule.bsl"))),
+        ["60000000-0000-0000-0000-000000000001"]
+    );
+}
+
+/// Compare full and affected discovery on the same synthetic large source tree.
+#[test]
+#[ignore = "manual semantic performance protocol"]
+fn benchmarks_full_and_affected_descriptor_discovery() {
+    const DESCRIPTORS: usize = 2_000;
+
+    let fixture = fixture(ProjectType::Configuration);
+    for index in 0..DESCRIPTORS {
+        write_descriptor(
+            &fixture.source,
+            &format!("Catalogs/Object{index}.xml"),
+            "Catalog",
+            &format!("70000000-0000-0000-0000-{index:012}"),
+            &format!("Object{index}"),
+            "",
+        );
+    }
+    let mode = std::env::var("ESKA_SEMANTIC_BENCH_MODE").unwrap_or_else(|_| "affected".to_owned());
+    let started = Instant::now();
+    let (descriptors_read, objects) = if mode == "full" {
+        let model = discover(&fixture.project).expect("full benchmark discovery");
+        (DESCRIPTORS, model.objects().count())
+    } else {
+        let changed = vec![Path::new("Catalogs/Object1999/Ext/ObjectModule.bsl").into()];
+        let affected =
+            discover_affected(&fixture.project, &changed).expect("affected benchmark discovery");
+        (
+            affected.descriptors_read(),
+            affected.model().objects().count(),
+        )
+    };
+    println!(
+        "mode={mode} descriptors_read={descriptors_read} objects={objects} elapsed_ms={}",
+        started.elapsed().as_millis()
+    );
 }
 
 struct Fixture {

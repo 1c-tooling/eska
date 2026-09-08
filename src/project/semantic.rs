@@ -12,7 +12,7 @@ use super::{
     Project,
     diff::{ProjectDiff, RevisionProjectDiff},
     metadata::{self, MetadataPart, MetadataPath},
-    object_model::{LogicalObject, ObjectId, ObjectModel},
+    object_model::{LogicalObject, ObjectId, ObjectModel, ObjectModelError},
 };
 use crate::vcs::{
     diff::ResolvedCommit,
@@ -487,6 +487,7 @@ impl SemanticObject {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct SemanticDiff {
     events: Vec<SemanticEvent>,
+    fallbacks: Vec<SemanticFallback>,
 }
 
 impl SemanticDiff {
@@ -501,12 +502,75 @@ impl SemanticDiff {
     pub const fn is_empty(&self) -> bool {
         self.events.is_empty()
     }
+
+    /// Return paths whose semantic details were conservatively reduced to file-level data.
+    #[must_use]
+    pub fn fallbacks(&self) -> &[SemanticFallback] {
+        &self.fallbacks
+    }
+
+    /// Return whether every changed object was analyzed at the most specific reliable level.
+    #[must_use]
+    pub const fn is_complete(&self) -> bool {
+        self.fallbacks.is_empty()
+    }
+}
+
+/// Stable reason why one changed path needs file-level fallback presentation.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum SemanticFallbackReason {
+    DescriptorParse,
+    RoutineParse,
+    OwnerInferred,
+    OwnerUnresolved,
+}
+
+impl SemanticFallbackReason {
+    /// Return the locale-independent machine code.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::DescriptorParse => "descriptor-parse",
+            Self::RoutineParse => "routine-parse",
+            Self::OwnerInferred => "owner-inferred",
+            Self::OwnerUnresolved => "owner-unresolved",
+        }
+    }
+}
+
+/// One non-fatal semantic-analysis fallback for an exact comparison edge and path.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct SemanticFallback {
+    reason: SemanticFallbackReason,
+    stage: ChangeStage,
+    path: BString,
+}
+
+impl SemanticFallback {
+    /// Return the stable fallback reason.
+    #[must_use]
+    pub const fn reason(&self) -> SemanticFallbackReason {
+        self.reason
+    }
+
+    /// Return the comparison edge whose semantic analysis was incomplete.
+    #[must_use]
+    pub const fn stage(&self) -> ChangeStage {
+        self.stage
+    }
+
+    /// Return the exact project-relative path requiring file-level presentation.
+    #[must_use]
+    pub fn path(&self) -> &BStr {
+        self.path.as_bstr()
+    }
 }
 
 /// Failures while loading exact before/after snapshots for semantic analysis.
 #[derive(Debug)]
 pub enum SemanticDiffError {
     Repository(RepositoryError),
+    ObjectModel(ObjectModelError),
     ProjectOutsideRepository {
         project: PathBuf,
         repository: PathBuf,
@@ -518,6 +582,7 @@ impl fmt::Display for SemanticDiffError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Repository(_) => formatter.write_str("repository operation failed"),
+            Self::ObjectModel(error) => write!(formatter, "object model failed: {error}"),
             Self::ProjectOutsideRepository {
                 project,
                 repository,
@@ -535,9 +600,31 @@ impl std::error::Error for SemanticDiffError {
     /// Preserve repository causes for diagnostics.
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
+            Self::ObjectModel(error) => Some(error),
             Self::Repository(_) | Self::ProjectOutsideRepository { .. } => None,
         }
     }
+}
+
+/// Analyze current changes after indexing only descriptors that own changed paths.
+///
+/// # Errors
+/// Returns a structured error when the source root, repository or snapshots cannot be read.
+pub fn diff_workspace_affected(
+    project: &Project,
+    diff: &ProjectDiff,
+) -> Result<SemanticDiff, SemanticDiffError> {
+    if diff.files.is_empty() {
+        return Ok(SemanticDiff::default());
+    }
+    let source_paths = diff
+        .files
+        .iter()
+        .filter_map(|file| source_relative_path(project, file.path.as_bstr()))
+        .collect::<Vec<_>>();
+    let affected = super::object_model::discover_affected(project, &source_paths)
+        .map_err(SemanticDiffError::ObjectModel)?;
+    diff_workspace(project, affected.model(), diff)
 }
 
 /// Analyze current index and worktree edges from exact Git/file snapshots.
@@ -553,6 +640,7 @@ pub fn diff_workspace(
     let prefix = repository_project_prefix(&repository, project);
     let mut versions_reader = None;
     let mut events = BTreeSet::new();
+    let mut fallbacks = BTreeSet::new();
     for file in &diff.files {
         let source_path = source_relative_path(project, file.path.as_bstr());
         let Some(source_path) = source_path else {
@@ -579,7 +667,13 @@ pub fn diff_workspace(
                 before: versions.head.as_deref(),
                 after: versions.index.as_deref(),
             };
-            analyze_snapshots(project, Some(objects), &snapshot, &mut events);
+            analyze_snapshots(
+                project,
+                Some(objects),
+                &snapshot,
+                &mut events,
+                &mut fallbacks,
+            );
         }
         if let Some(change) = file.worktree {
             let snapshot = SnapshotChange {
@@ -590,11 +684,18 @@ pub fn diff_workspace(
                 before: versions.index.as_deref(),
                 after: versions.worktree.as_deref(),
             };
-            analyze_snapshots(project, Some(objects), &snapshot, &mut events);
+            analyze_snapshots(
+                project,
+                Some(objects),
+                &snapshot,
+                &mut events,
+                &mut fallbacks,
+            );
         }
     }
     Ok(SemanticDiff {
         events: events.into_iter().collect(),
+        fallbacks: fallbacks.into_iter().collect(),
     })
 }
 
@@ -620,6 +721,7 @@ pub fn diff_revisions(
         )
         .map_err(SemanticDiffError::Repository)?;
     let mut events = BTreeSet::new();
+    let mut fallbacks = BTreeSet::new();
     for change in changes {
         let Some(project_path) = project_relative_path(&repository, project, change.path.as_bstr())
         else {
@@ -638,10 +740,11 @@ pub fn diff_revisions(
             before: before.as_deref(),
             after: after.as_deref(),
         };
-        analyze_snapshots(project, None, &snapshot, &mut events);
+        analyze_snapshots(project, None, &snapshot, &mut events, &mut fallbacks);
     }
     Ok(SemanticDiff {
         events: events.into_iter().collect(),
+        fallbacks: fallbacks.into_iter().collect(),
     })
 }
 
@@ -725,6 +828,7 @@ fn analyze_snapshots(
     objects: Option<&ObjectModel>,
     snapshot: &SnapshotChange<'_>,
     events: &mut BTreeSet<SemanticEvent>,
+    fallbacks: &mut BTreeSet<SemanticFallback>,
 ) {
     let owners = objects
         .map(|objects| objects.objects_for_changed_path(snapshot.source_path))
@@ -735,14 +839,28 @@ fn analyze_snapshots(
         gix::path::to_unix_separators_on_windows(gix::path::into_bstr(snapshot.source_path));
 
     if metadata::is_object_descriptor(project_type, source_bytes.as_ref()) {
-        analyze_descriptor(project_type, source_bytes.as_ref(), snapshot, owner, events);
+        analyze_descriptor(
+            project_type,
+            source_bytes.as_ref(),
+            snapshot,
+            owner,
+            events,
+            fallbacks,
+        );
         return;
     }
 
-    let Some(object) = owner.or_else(|| fallback_object(project_type, source_bytes.as_ref(), None))
-    else {
+    let inferred = fallback_object(project_type, source_bytes.as_ref(), None);
+    let Some(object) = owner.or(inferred) else {
+        record_fallback(fallbacks, SemanticFallbackReason::OwnerUnresolved, snapshot);
         return;
     };
+    if owners.is_empty()
+        && (objects.is_some()
+            || owner_identity_requires_descriptor(project_type, source_bytes.as_ref()))
+    {
+        record_fallback(fallbacks, SemanticFallbackReason::OwnerInferred, snapshot);
+    }
     let is_module = is_module_path(snapshot.source_path);
     if is_module {
         emit(
@@ -753,14 +871,16 @@ fn analyze_snapshots(
             None,
             snapshot.project_path.clone(),
         );
-        analyze_routines(
+        if !analyze_routines(
             snapshot.before,
             snapshot.after,
             snapshot.stage,
             &object,
             &snapshot.project_path,
             events,
-        );
+        ) {
+            record_fallback(fallbacks, SemanticFallbackReason::RoutineParse, snapshot);
+        }
     } else if object.metadata_type == "form" || is_form_artifact(snapshot.source_path) {
         emit(
             events,
@@ -780,6 +900,7 @@ fn analyze_descriptor(
     snapshot: &SnapshotChange<'_>,
     fallback: Option<SemanticObject>,
     events: &mut BTreeSet<SemanticEvent>,
+    fallbacks: &mut BTreeSet<SemanticFallback>,
 ) {
     let base = metadata::from_path(project_type, source_path);
     let before_objects = base.as_ref().and_then(|base| {
@@ -792,6 +913,11 @@ fn analyze_descriptor(
             .after
             .and_then(|contents| descriptor_objects(contents, base))
     });
+    if snapshot.before.is_some() && before_objects.is_none()
+        || snapshot.after.is_some() && after_objects.is_none()
+    {
+        record_fallback(fallbacks, SemanticFallbackReason::DescriptorParse, snapshot);
+    }
 
     if let (Some(before), Some(after)) = (&before_objects, &after_objects) {
         compare_descriptor_objects(before, after, snapshot, events);
@@ -1078,6 +1204,32 @@ fn fallback_object(
     semantic_object_from_path(&path)
 }
 
+/// Tell whether path-only identity omits a descriptor-defined root name.
+fn owner_identity_requires_descriptor(
+    project_type: super::ProjectType,
+    source_path: &BStr,
+) -> bool {
+    match project_type {
+        super::ProjectType::Configuration | super::ProjectType::Extension => {
+            source_path.starts_with(b"Ext/")
+        }
+        super::ProjectType::Processing | super::ProjectType::Report => true,
+    }
+}
+
+/// Retain a deterministic non-fatal fallback for later CLI presentation.
+fn record_fallback(
+    fallbacks: &mut BTreeSet<SemanticFallback>,
+    reason: SemanticFallbackReason,
+    snapshot: &SnapshotChange<'_>,
+) {
+    fallbacks.insert(SemanticFallback {
+        reason,
+        stage: snapshot.stage,
+        path: snapshot.project_path.clone(),
+    });
+}
+
 /// Construct the same readable segment format used by the logical object model.
 fn semantic_object_from_path(path: &MetadataPath) -> Option<SemanticObject> {
     let last = path.parts.last()?;
@@ -1115,11 +1267,12 @@ fn analyze_routines(
     object: &SemanticObject,
     path: &BString,
     events: &mut BTreeSet<SemanticEvent>,
-) {
-    let before = before.and_then(parse_routines);
-    let after = after.and_then(parse_routines);
+) -> bool {
     let (Some(before), Some(after)) = (before, after) else {
-        return;
+        return true;
+    };
+    let (Some(before), Some(after)) = (parse_routines(before), parse_routines(after)) else {
+        return false;
     };
     let mut keys: BTreeSet<_> = before.keys().cloned().collect();
     keys.extend(after.keys().cloned());
@@ -1148,6 +1301,7 @@ fn analyze_routines(
             path.clone(),
         );
     }
+    true
 }
 
 /// Map a routine kind and lifecycle state to its stable event kind.

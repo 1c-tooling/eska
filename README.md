@@ -653,8 +653,18 @@ eska diff --raw
 JSON доступен у `status`, `diff`, `history`, `doctor`, `build`, `patch`, `version`,
 `platform list`;
 он не зависит от языка. Диагностика идёт в stderr. У `diff` схема JSON зависит
-от режима: workspace — 1, revisions — 2, semantic — 3.
+от режима: workspace — 1, revisions — 2, semantic — 4.
 `--raw` и `--format` у `diff` взаимоисключающие.
+
+Успешный semantic JSON v4 содержит `analysis.complete`. При значении `false`
+массив `analysis.fallbacks` перечисляет точные `path`, `path_encoding`, `stage`
+и стабильную `reason`; команда сохраняет exit code 0, а пояснение выводит в
+stderr. Поддерживаются причины `descriptor-parse`, `routine-parse`,
+`owner-inferred` и `owner-unresolved`. Ошибка самого semantic-анализа после
+получения файлового diff возвращает exit code 1 и документ
+`{"schema_version":4,"kind":"semantic","status":"error","error":{"code":"…"}}`;
+для workspace значение `kind` равно `semantic_workspace`. Коды ошибок:
+`repository`, `object-model` и `project-outside-repository`.
 
 `status --format json` использует schema 2. Значения UTF-8 сохранены без
 изменений и помечены `utf-8` в `root_encoding`, `name_encoding` и

@@ -13,9 +13,9 @@ use crate::{
     project::{
         Project, Workspace, diff,
         discovery::{self, DiscoveryContext},
-        object_model, save,
+        save,
         selection::{SelectionIntent, select_projects},
-        semantic::{self, SemanticDiff},
+        semantic::{self, SemanticDiff, SemanticDiffError},
     },
     vcs::command,
 };
@@ -144,10 +144,7 @@ fn present_result(
 /// Build a locale-specific commit draft from the exact current file and semantic changes.
 fn generate_draft(project: &Project, localizer: &Localizer) -> Result<String, diff::DiffError> {
     let files = diff::inspect(project)?;
-    let semantic = object_model::discover(project)
-        .ok()
-        .and_then(|objects| semantic::diff_workspace(project, &objects, &files).ok())
-        .unwrap_or_default();
+    let semantic = draft_semantics(project, &files, None, localizer);
     Ok(render_draft(&files, &semantic, localizer))
 }
 
@@ -162,12 +159,12 @@ fn generate_workspace_draft(
         .iter()
         .zip(&members)
         .map(|(changes, member)| {
-            let semantic = object_model::discover(member.project())
-                .ok()
-                .and_then(|objects| {
-                    semantic::diff_workspace(member.project(), &objects, &changes.diff).ok()
-                })
-                .unwrap_or_default();
+            let semantic = draft_semantics(
+                member.project(),
+                &changes.diff,
+                Some(changes.name.as_str()),
+                localizer,
+            );
             WorkspaceDraftProject {
                 name: changes.name.as_str(),
                 files: &changes.diff,
@@ -180,6 +177,69 @@ fn generate_workspace_draft(
         changes.workspace_files.as_ref(),
         localizer,
     ))
+}
+
+/// Analyze one draft scope while retaining exact files and explaining every fallback.
+fn draft_semantics(
+    project: &Project,
+    files: &diff::ProjectDiff,
+    member: Option<&str>,
+    localizer: &Localizer,
+) -> SemanticDiff {
+    match semantic::diff_workspace_affected(project, files) {
+        Ok(semantic) => {
+            for fallback in semantic.fallbacks() {
+                let path = changes::display_path(fallback.path());
+                let path = member.map_or_else(|| path.clone(), |member| format!("{member}/{path}"));
+                let reason = localizer.text(changes::semantic_fallback_key(fallback.reason()));
+                eprintln!(
+                    "{}",
+                    localizer.format(
+                        "semantic-fallback",
+                        &[
+                            ("path", LocalizationValue::Text(&path)),
+                            ("reason", LocalizationValue::Text(&reason)),
+                        ],
+                    )
+                );
+            }
+            semantic
+        }
+        Err(error) => {
+            let scope = member.map_or_else(
+                || {
+                    project
+                        .root()
+                        .file_name()
+                        .unwrap_or_else(|| project.root().as_os_str())
+                        .to_string_lossy()
+                        .into_owned()
+                },
+                str::to_owned,
+            );
+            let reason = localizer.text(semantic_error_key(&error));
+            eprintln!(
+                "{}",
+                localizer.format(
+                    "semantic-unavailable",
+                    &[
+                        ("scope", LocalizationValue::Text(&scope)),
+                        ("reason", LocalizationValue::Text(&reason)),
+                    ],
+                )
+            );
+            SemanticDiff::default()
+        }
+    }
+}
+
+/// Select a localized high-level reason for a semantic-analysis error.
+const fn semantic_error_key(error: &SemanticDiffError) -> &'static str {
+    match error {
+        SemanticDiffError::Repository(_) => "semantic-unavailable-repository",
+        SemanticDiffError::ObjectModel(_) => "semantic-unavailable-object-model",
+        SemanticDiffError::ProjectOutsideRepository { .. } => "semantic-unavailable-scope",
+    }
 }
 
 struct WorkspaceDraftProject<'a> {
@@ -230,10 +290,17 @@ fn render_workspace_draft(
     let mut lines = vec![format!("{commit_type}{scope}: {subject}"), String::new()];
     let mut details = BTreeSet::new();
     for project in projects {
+        let fallback_paths = project
+            .semantic
+            .fallbacks()
+            .iter()
+            .map(|fallback| fallback.path().to_owned())
+            .collect::<BTreeSet<_>>();
         let semantic_paths = project
             .semantic
             .events()
             .iter()
+            .filter(|event| !fallback_paths.contains(event.path()))
             .map(|event| event.path().to_owned())
             .collect::<BTreeSet<_>>();
         for event in project.semantic.events() {
@@ -319,9 +386,16 @@ fn render_draft(
     let mut lines = vec![format!("{commit_type}{scope}: {subject}"), String::new()];
 
     let mut details = BTreeSet::new();
+    let fallback_paths = semantic
+        .fallbacks()
+        .iter()
+        .map(|fallback| fallback.path().to_owned())
+        .collect::<BTreeSet<_>>();
     let mut semantic_paths = BTreeSet::new();
     for event in semantic.events() {
-        semantic_paths.insert(event.path().to_owned());
+        if !fallback_paths.contains(event.path()) {
+            semantic_paths.insert(event.path().to_owned());
+        }
         let member = event
             .member()
             .map(|member| format!(" — {member}"))

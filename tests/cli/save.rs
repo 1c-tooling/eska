@@ -498,6 +498,64 @@ fn generated_draft_summarizes_semantic_changes_in_both_locales() {
     }
 }
 
+/// A reduced semantic draft warns on stderr and keeps diagnostics out of the commit message.
+#[cfg(unix)]
+#[test]
+fn generated_draft_keeps_file_fallback_and_excludes_warning_from_commit() {
+    for (locale, warning) in [
+        ("ru", "BSL-модуль не удалось надёжно разобрать"),
+        ("en", "the BSL module could not be parsed reliably"),
+    ] {
+        let (fixture, root) = project();
+        let module_path = root.join("src/CommonModules/Обмен/Ext/Module.bsl");
+        fs::create_dir_all(module_path.parent().expect("module parent")).unwrap();
+        fs::write(
+            root.join("src/CommonModules/Обмен.xml"),
+            r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><CommonModule uuid="11111111-1111-1111-1111-111111111111"><Properties><Name>Обмен</Name></Properties></CommonModule></MetaDataObject>"#,
+        )
+        .unwrap();
+        fs::write(&module_path, "Процедура Выполнить()\nКонецПроцедуры\n").unwrap();
+        git_ok(&fixture.0, &["add", "."]);
+        git_ok(&fixture.0, &["commit", "-m", "semantic base"]);
+        fs::write(&module_path, "Процедура Выполнить()\n").unwrap();
+
+        let captured = fixture.0.join(format!("draft-{locale}.txt"));
+        let editor = fixture.0.join(format!("editor-{locale}.sh"));
+        fs::write(
+            &editor,
+            format!(
+                "#!/bin/sh\ncp \"$1\" '{}'\nprintf 'fallback commit\\n' > \"$1\"\n",
+                captured.display()
+            ),
+        )
+        .unwrap();
+        fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
+        git_ok(
+            &fixture.0,
+            &["config", "core.editor", &format!("'{}'", editor.display())],
+        );
+
+        let output = eska(&root, locale, &["save"]);
+
+        assert!(output.status.success(), "{}", text(&output.stderr));
+        let stderr = text(&output.stderr);
+        assert!(stderr.contains(warning), "{stderr}");
+        assert!(
+            stderr.contains("src/CommonModules/Обмен/Ext/Module.bsl"),
+            "{stderr}"
+        );
+        let draft = fs::read_to_string(captured).expect("captured fallback draft");
+        assert!(
+            draft.contains("src/CommonModules/Обмен/Ext/Module.bsl"),
+            "{draft}"
+        );
+        assert!(!draft.contains(warning), "{draft}");
+        let message = String::from_utf8(git_ok(&fixture.0, &["log", "-1", "--format=%B"]))
+            .expect("commit message");
+        assert_eq!(message, "fallback commit\n\n");
+    }
+}
+
 /// A failed generated-draft editor restores staging exactly like an explicit-message failure.
 #[cfg(unix)]
 #[test]

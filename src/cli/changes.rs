@@ -2,7 +2,10 @@
 
 use crate::{
     cli::localization::Localizer,
-    project::{metadata::MetadataPath, semantic::SemanticEventKind},
+    project::{
+        metadata::MetadataPath,
+        semantic::{SemanticEventKind, SemanticFallbackReason},
+    },
 };
 use gix::bstr::{BStr, ByteSlice};
 
@@ -64,6 +67,16 @@ pub(super) const fn semantic_event_key(kind: SemanticEventKind) -> &'static str 
         SemanticEventKind::FunctionChanged => "diff-semantic-function-changed",
         SemanticEventKind::FormChanged => "diff-semantic-form-changed",
         SemanticEventKind::MetadataAttributeChanged => "diff-semantic-metadata-attribute-changed",
+    }
+}
+
+/// Select a localized explanation for one non-fatal semantic fallback.
+pub(super) const fn semantic_fallback_key(reason: SemanticFallbackReason) -> &'static str {
+    match reason {
+        SemanticFallbackReason::DescriptorParse => "semantic-fallback-descriptor-parse",
+        SemanticFallbackReason::RoutineParse => "semantic-fallback-routine-parse",
+        SemanticFallbackReason::OwnerInferred => "semantic-fallback-owner-inferred",
+        SemanticFallbackReason::OwnerUnresolved => "semantic-fallback-owner-unresolved",
     }
 }
 

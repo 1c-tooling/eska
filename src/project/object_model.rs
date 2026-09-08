@@ -112,6 +112,34 @@ pub struct ObjectModel {
     by_source_path: BTreeMap<PathBuf, BTreeSet<ObjectId>>,
 }
 
+/// Partial object index built only for owners of changed source paths.
+#[derive(Debug)]
+pub struct AffectedObjectModel {
+    model: ObjectModel,
+    descriptors_read: usize,
+    issues: Vec<ObjectModelError>,
+}
+
+impl AffectedObjectModel {
+    /// Return the partial model used by semantic ownership analysis.
+    #[must_use]
+    pub const fn model(&self) -> &ObjectModel {
+        &self.model
+    }
+
+    /// Return how many descriptor files were opened while building this index.
+    #[must_use]
+    pub const fn descriptors_read(&self) -> usize {
+        self.descriptors_read
+    }
+
+    /// Return descriptor-specific failures retained for explicit fallback reporting.
+    #[must_use]
+    pub fn issues(&self) -> &[ObjectModelError] {
+        &self.issues
+    }
+}
+
 impl ObjectModel {
     /// Return discovered objects in deterministic `ObjectId` order.
     #[must_use]
@@ -236,60 +264,18 @@ pub fn discover(project: &Project) -> Result<ObjectModel, ObjectModelError> {
     let mut by_source_path: BTreeMap<PathBuf, BTreeSet<ObjectId>> = BTreeMap::new();
 
     for file in &files {
-        let Some(relative) = file.relative.to_str() else {
-            continue;
-        };
-        let relative_bytes = relative.as_bytes().as_bstr();
-        if !metadata::is_object_descriptor(project_type, relative_bytes) {
-            continue;
-        }
-        let logical =
-            logical_path_for_source(project_type, Path::new(relative)).ok_or_else(|| {
-                ObjectModelError::InvalidDescriptor {
-                    path: file.relative.clone(),
-                    reason: "descriptor path has no logical owner",
-                }
-            })?;
-        let contents = read_descriptor(file)?;
-        let parent = nearest_logical_owner(&logical, &by_logical_path).cloned();
-        let drafts = parse_descriptor(&file.relative, &contents, &logical, parent)?;
-        for draft in drafts {
-            by_source_path
-                .entry(file.relative.clone())
-                .or_default()
-                .insert(draft.object.id.clone());
-            if let Some(existing) = objects.get_mut(&draft.object.id) {
-                if by_logical_path.get(&draft.logical_path) != Some(&draft.object.id)
-                    || existing.uuid != draft.object.uuid
-                {
-                    return Err(ObjectModelError::DuplicateObjectId {
-                        id: draft.object.id,
-                        path: file.relative.clone(),
-                    });
-                }
-                existing.paths.extend(draft.object.paths);
-                if draft.standalone {
-                    existing.descriptor_path = draft.object.descriptor_path;
-                    existing.metadata_type = draft.object.metadata_type;
-                    existing.name = draft.object.name;
-                }
-                continue;
-            }
-            if by_logical_path
-                .insert(draft.logical_path.clone(), draft.object.id.clone())
-                .is_some()
-            {
-                return Err(ObjectModelError::DuplicateLogicalPath {
-                    path: file.relative.clone(),
-                });
-            }
-            objects.insert(draft.object.id.clone(), draft.object);
-        }
+        index_descriptor(
+            project_type,
+            file,
+            &mut objects,
+            &mut by_logical_path,
+            &mut by_source_path,
+        )?;
     }
 
     assign_source_paths(
         project_type,
-        &files,
+        files.iter().map(|file| file.relative.as_path()),
         &by_logical_path,
         &mut by_source_path,
         &mut objects,
@@ -302,6 +288,216 @@ pub fn discover(project: &Project) -> Result<ObjectModel, ObjectModelError> {
         by_logical_path,
         by_source_path,
     })
+}
+
+/// Discover only descriptors needed to own the supplied source-relative paths.
+///
+/// Malformed affected descriptors are retained as issues so other independent
+/// objects remain analyzable. Source-root failures still abort the operation.
+///
+/// # Errors
+/// Returns an error when the source root itself cannot be resolved or enumerated.
+pub fn discover_affected(
+    project: &Project,
+    source_paths: &[PathBuf],
+) -> Result<AffectedObjectModel, ObjectModelError> {
+    let source =
+        fs::canonicalize(project.source()).map_err(|source_error| ObjectModelError::Io {
+            path: project.source().to_owned(),
+            source: source_error,
+        })?;
+    let project_type = project.configuration().project_type();
+    let candidates = affected_descriptor_paths(project_type, &source, source_paths)?;
+    let mut objects = BTreeMap::new();
+    let mut by_logical_path = BTreeMap::new();
+    let mut by_source_path = BTreeMap::new();
+    let mut descriptors_read = 0;
+    let mut issues = Vec::new();
+
+    for relative in candidates {
+        let file = match resolve_source_file(&source, &relative) {
+            Ok(Some(file)) => file,
+            Ok(None) => continue,
+            Err(error) => {
+                issues.push(error);
+                continue;
+            }
+        };
+        descriptors_read += 1;
+        if let Err(error) = index_descriptor(
+            project_type,
+            &file,
+            &mut objects,
+            &mut by_logical_path,
+            &mut by_source_path,
+        ) {
+            issues.push(error);
+        }
+    }
+    assign_source_paths(
+        project_type,
+        source_paths.iter().map(PathBuf::as_path),
+        &by_logical_path,
+        &mut by_source_path,
+        &mut objects,
+    );
+    assign_form_paths(&mut objects);
+    Ok(AffectedObjectModel {
+        model: ObjectModel {
+            project_type,
+            objects,
+            by_logical_path,
+            by_source_path,
+        },
+        descriptors_read,
+        issues,
+    })
+}
+
+/// Resolve the minimal descriptor ancestry needed to identify changed paths.
+fn affected_descriptor_paths(
+    project_type: super::ProjectType,
+    source: &Path,
+    source_paths: &[PathBuf],
+) -> Result<BTreeSet<PathBuf>, ObjectModelError> {
+    let mut descriptors = BTreeSet::new();
+    let external_root = matches!(
+        project_type,
+        super::ProjectType::Processing | super::ProjectType::Report
+    )
+    .then(|| external_root_descriptors(project_type, source))
+    .transpose()?;
+    for path in source_paths {
+        let path_bytes = gix::path::to_unix_separators_on_windows(gix::path::into_bstr(path));
+        let Ok(path_text) = path_bytes.to_str() else {
+            continue;
+        };
+        let components = path_text.split('/').collect::<Vec<_>>();
+        match project_type {
+            super::ProjectType::Configuration | super::ProjectType::Extension => {
+                if metadata::from_path(project_type, path_bytes.as_ref()).is_some() {
+                    configuration_descriptor_ancestry(&components, &mut descriptors);
+                }
+            }
+            super::ProjectType::Processing | super::ProjectType::Report => {
+                descriptors.extend(external_root.iter().flatten().cloned());
+                external_descriptor_ancestry(&components, &mut descriptors);
+            }
+        }
+    }
+    Ok(descriptors)
+}
+
+/// Add root and nested descriptors for one configuration source path.
+fn configuration_descriptor_ancestry(components: &[&str], output: &mut BTreeSet<PathBuf>) {
+    let Some(first) = components.first() else {
+        return;
+    };
+    if matches!(*first, "Configuration.xml" | "Ext") {
+        output.insert(PathBuf::from("Configuration.xml"));
+        return;
+    }
+    let Some(owner) = components.get(1) else {
+        return;
+    };
+    let owner = owner.strip_suffix(".xml").unwrap_or(owner);
+    let mut base = PathBuf::from(first).join(owner);
+    output.insert(base.with_extension("xml"));
+    nested_descriptor_ancestry(&mut base, &components[2..], output);
+}
+
+/// Add the nested descriptor chain for forms, templates, commands and subsystems.
+fn nested_descriptor_ancestry(
+    base: &mut PathBuf,
+    components: &[&str],
+    output: &mut BTreeSet<PathBuf>,
+) {
+    let mut index = usize::from(components.first() == Some(&"Ext"));
+    while let (Some(collection), Some(item)) = (components.get(index), components.get(index + 1)) {
+        if !matches!(
+            *collection,
+            "Forms" | "Templates" | "Commands" | "Subsystems"
+        ) {
+            break;
+        }
+        let item = item.strip_suffix(".xml").unwrap_or(item);
+        *base = base.join(collection).join(item);
+        output.insert(base.with_extension("xml"));
+        index += 2;
+        if components.get(index) == Some(&"Ext") {
+            index += 1;
+        }
+    }
+}
+
+/// Add nested descriptors below the single root object of an external project.
+fn external_descriptor_ancestry(components: &[&str], output: &mut BTreeSet<PathBuf>) {
+    let Some(collection) = components.first() else {
+        return;
+    };
+    if !matches!(*collection, "Forms" | "Templates" | "Commands") {
+        return;
+    }
+    let Some(item) = components.get(1) else {
+        return;
+    };
+    let item = item.strip_suffix(".xml").unwrap_or(item);
+    let mut base = PathBuf::from(collection).join(item);
+    output.insert(base.with_extension("xml"));
+    nested_descriptor_ancestry(&mut base, &components[2..], output);
+}
+
+/// Enumerate only immediate root descriptor candidates for an external project.
+fn external_root_descriptors(
+    project_type: super::ProjectType,
+    source: &Path,
+) -> Result<BTreeSet<PathBuf>, ObjectModelError> {
+    let entries = fs::read_dir(source).map_err(|source_error| ObjectModelError::Io {
+        path: source.to_owned(),
+        source: source_error,
+    })?;
+    let mut descriptors = BTreeSet::new();
+    for entry in entries {
+        let entry = entry.map_err(|source_error| ObjectModelError::Io {
+            path: source.to_owned(),
+            source: source_error,
+        })?;
+        let relative = PathBuf::from(entry.file_name());
+        let Some(value) = relative.to_str() else {
+            continue;
+        };
+        if metadata::is_object_descriptor(project_type, value.as_bytes().as_bstr()) {
+            descriptors.insert(relative);
+        }
+    }
+    Ok(descriptors)
+}
+
+/// Resolve one existing descriptor without following a source-tree escape.
+fn resolve_source_file(
+    source: &Path,
+    relative: &Path,
+) -> Result<Option<SourceFile>, ObjectModelError> {
+    let path = source.join(relative);
+    let resolved = match fs::canonicalize(&path) {
+        Ok(resolved) => resolved,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(source_error) => {
+            return Err(ObjectModelError::Io {
+                path: relative.to_owned(),
+                source: source_error,
+            });
+        }
+    };
+    if !resolved.starts_with(source) {
+        return Err(ObjectModelError::PathOutsideSource {
+            path: relative.to_owned(),
+        });
+    }
+    Ok(resolved.is_file().then(|| SourceFile {
+        relative: relative.to_owned(),
+        physical: resolved,
+    }))
 }
 
 #[derive(Debug)]
@@ -402,6 +598,94 @@ fn read_descriptor(file: &SourceFile) -> Result<String, ObjectModelError> {
         });
     }
     Ok(contents)
+}
+
+/// Parse and merge one descriptor into an object index.
+fn index_descriptor(
+    project_type: super::ProjectType,
+    file: &SourceFile,
+    objects: &mut BTreeMap<ObjectId, LogicalObject>,
+    by_logical_path: &mut BTreeMap<metadata::MetadataPath, ObjectId>,
+    by_source_path: &mut BTreeMap<PathBuf, BTreeSet<ObjectId>>,
+) -> Result<(), ObjectModelError> {
+    let Some(relative) = file.relative.to_str() else {
+        return Ok(());
+    };
+    if !metadata::is_object_descriptor(project_type, relative.as_bytes().as_bstr()) {
+        return Ok(());
+    }
+    let logical = logical_path_for_source(project_type, Path::new(relative)).ok_or_else(|| {
+        ObjectModelError::InvalidDescriptor {
+            path: file.relative.clone(),
+            reason: "descriptor path has no logical owner",
+        }
+    })?;
+    let contents = read_descriptor(file)?;
+    let parent = nearest_logical_owner(&logical, by_logical_path).cloned();
+    let drafts = parse_descriptor(&file.relative, &contents, &logical, parent)?;
+    let mut pending_objects: BTreeMap<ObjectId, (metadata::MetadataPath, String)> = BTreeMap::new();
+    let mut pending_logical = BTreeMap::new();
+    for draft in &drafts {
+        if let Some(existing) = objects.get(&draft.object.id) {
+            if by_logical_path.get(&draft.logical_path) != Some(&draft.object.id)
+                || existing.uuid != draft.object.uuid
+            {
+                return Err(ObjectModelError::DuplicateObjectId {
+                    id: draft.object.id.clone(),
+                    path: file.relative.clone(),
+                });
+            }
+            continue;
+        }
+        if let Some((logical_path, uuid)) = pending_objects.get(&draft.object.id) {
+            if logical_path != &draft.logical_path || uuid != &draft.object.uuid {
+                return Err(ObjectModelError::DuplicateObjectId {
+                    id: draft.object.id.clone(),
+                    path: file.relative.clone(),
+                });
+            }
+            continue;
+        }
+        if by_logical_path.contains_key(&draft.logical_path)
+            || pending_logical
+                .insert(draft.logical_path.clone(), draft.object.id.clone())
+                .is_some()
+        {
+            return Err(ObjectModelError::DuplicateLogicalPath {
+                path: file.relative.clone(),
+            });
+        }
+        pending_objects.insert(
+            draft.object.id.clone(),
+            (draft.logical_path.clone(), draft.object.uuid.clone()),
+        );
+    }
+    for draft in drafts {
+        by_source_path
+            .entry(file.relative.clone())
+            .or_default()
+            .insert(draft.object.id.clone());
+        if let Some(existing) = objects.get_mut(&draft.object.id) {
+            if by_logical_path.get(&draft.logical_path) != Some(&draft.object.id)
+                || existing.uuid != draft.object.uuid
+            {
+                return Err(ObjectModelError::DuplicateObjectId {
+                    id: draft.object.id,
+                    path: file.relative.clone(),
+                });
+            }
+            existing.paths.extend(draft.object.paths);
+            if draft.standalone {
+                existing.descriptor_path = draft.object.descriptor_path;
+                existing.metadata_type = draft.object.metadata_type;
+                existing.name = draft.object.name;
+            }
+            continue;
+        }
+        by_logical_path.insert(draft.logical_path.clone(), draft.object.id.clone());
+        objects.insert(draft.object.id.clone(), draft.object);
+    }
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -593,15 +877,15 @@ fn nearest_logical_owner<'a>(
 }
 
 /// Associate every recognized source artifact with its nearest logical owner.
-fn assign_source_paths(
+fn assign_source_paths<'a>(
     project_type: super::ProjectType,
-    files: &[SourceFile],
+    paths: impl IntoIterator<Item = &'a Path>,
     by_logical_path: &BTreeMap<metadata::MetadataPath, ObjectId>,
     by_source_path: &mut BTreeMap<PathBuf, BTreeSet<ObjectId>>,
     objects: &mut BTreeMap<ObjectId, LogicalObject>,
 ) {
-    for file in files {
-        let Some(mut logical) = logical_path_for_source(project_type, &file.relative) else {
+    for path in paths {
+        let Some(mut logical) = logical_path_for_source(project_type, path) else {
             continue;
         };
         let owner = loop {
@@ -616,13 +900,13 @@ fn assign_source_paths(
             continue;
         };
         by_source_path
-            .entry(file.relative.clone())
+            .entry(path.to_owned())
             .or_default()
             .insert(owner.clone());
         if let Some(object) = objects.get_mut(&owner) {
-            object.paths.insert(file.relative.clone());
-            if is_module_path(&file.relative) {
-                object.module_paths.insert(file.relative.clone());
+            object.paths.insert(path.to_owned());
+            if is_module_path(path) {
+                object.module_paths.insert(path.to_owned());
             }
         }
     }
