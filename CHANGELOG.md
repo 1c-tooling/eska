@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1](https://github.com/1c-tooling/eska/compare/v0.6.0...v0.6.1) - 2026-09-08
+
+### Other
+
+- *(semantic)* Сокращены выделения памяти при анализе XML и BSL
+- *(vcs)* Устранено повторное чтение HEAD и проверки индекса при diff
+- *(roadmap)* Форматирование перенесено в конец очереди
+- *(roadmap)* Начата реализация форматирования
+
 ## [0.6.0](https://github.com/1c-tooling/eska/compare/v0.5.2...v0.6.0) - 2026-09-07
 
 ### Added
