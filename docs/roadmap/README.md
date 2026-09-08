@@ -47,7 +47,7 @@
 - `DONE`: `T46` — сборка workspace members;
 - `DONE`: `T47` — VCS UX workspace members;
 - `DONE`: `T48` — onboarding workspace members;
-- `NEXT`: `T29` — `eska doctor`;
+- `IN-PROGRESS`: `T29` — `eska doctor`;
 - `PLANNED`: `T49`–`T52`, `T54`–`T55` — JSON, semantic-анализ,
   предварительный просмотр `save`/`build`, паспорт артефакта и переносимые проверки;
 - `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
@@ -164,7 +164,7 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T26 | PLANNED | `eska fmt` (последняя задача текущей очереди) | [08-quality.md](08-quality.md) |
 | T27 | PLANNED | `eska check` | [08-quality.md](08-quality.md) |
 | T28 | DONE | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
-| T29 | NEXT | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
+| T29 | IN-PROGRESS | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T30 | PLANNED | Development environments | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T31 | PLANNED | `apply` / `run` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T32 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
