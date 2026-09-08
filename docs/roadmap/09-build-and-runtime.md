@@ -131,7 +131,7 @@ dirty worktree блокируются до запуска платформы.
 
 ## T29 — `eska doctor`
 
-**Статус:** `IN-PROGRESS`
+**Статус:** `DONE`
 **Зависит от:** T03, T07, T28, T44
 
 Собрать диагностику уже работающих сценариев за один read-only запуск:
@@ -164,6 +164,23 @@ Locking и development environments не реализуются ради `doctor
 или несовместимые tools, optional remote/LFS и RU/EN JSON. Исходники, config,
 index/refs, artifacts и базы остаются неизменными. Успешный `doctor` не объявляется
 доказательством успешной сборки или корректного выполнения приложения 1С.
+
+Принятые решения:
+
+- результат представлен упорядоченными независимыми checks со статусами
+  `pass`, `warning`, `fail`, `skipped`; exit code 1 определяется только наличием
+  `fail`, поэтому предупреждение пустого scaffold само по себе не блокирует CLI;
+- JSON schema 1 не зависит от локали и содержит стабильные check ID/code,
+  affected commands, expected/actual values, runner, remediation и summary;
+- Designer XML проверяется ограниченным чтением корневого descriptor без полной
+  проверки XML/BSL; build и patch получают отдельные prerequisites;
+- repository, workflow, operation и remote читаются локально через VCS layer без
+  сетевых операций; системный Git проверяется через единый capability boundary,
+  а Git LFS — только при фактическом `filter=lfs` в attributes;
+- workspace использует существующий selection contract. Интеграционные сценарии
+  покрывают RU/EN, scaffold, повреждённые config/descriptor, members,
+  отсутствующие/несовместимые tools, optional remote/LFS и побайтовую
+  неизменность исходников, config, index и refs.
 
 ## T30 — Development environments
 
