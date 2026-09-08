@@ -1676,32 +1676,20 @@ Milestone 16. Детальная декомпозиция T44–T48:
 
 ## `eska doctor`
 
-Команда диагностики окружения.
+Следующая задача T29 — read-only диагностика текущего CLI. За один запуск
+проверять project/workspace config, source и корневой Designer XML descriptor,
+требуемую и установленную платформу, `ibcmd`, runner, repository/workflow и Git.
+Требование `1cv8` относится к `patch`, Git LFS — к реально использующим его
+attributes; отсутствие remote допустимо для локального workflow.
 
-В перспективе:
+Собирать независимые результаты после ошибок, объяснять пропущенные проверки и
+давать конкретный способ исправления с указанием затронутой команды. Human output
+доступен на RU/EN, JSON имеет стабильные check IDs, статусы и коды ошибок.
+Проверка наличия descriptor не подменяет сборку и проверку BSL платформой.
 
-```text
-Project
-  configuration        ✓
-  source               ✓
-
-1C
-  required             8.5.x
-  installed            ✓
-  ibcmd                ✓
-
-VCS
-  repository           ✓
-  remote               ✓
-  locking              ✓
-
-Environment
-  development database ✓
-```
-
-Должна появиться относительно рано после VCS/build prerequisites.
-
-`doctor` не должен менять систему без явного режима fix/setup.
+Locking, development databases, установка инструментов и `fix/setup` не входят
+в первый `doctor`. Он не выполняет fetch/push и не меняет config, source или
+repository. Детальные границы и приёмка: [T29](roadmap/09-build-and-runtime.md).
 
 ---
 
@@ -1775,13 +1763,19 @@ git ...
 
 ## 8.4. Dry run
 
-Для сложных будущих операций желательно единообразно поддерживать:
+Для текущих `save` и `build` запланированы отдельные задачи T51 и T52:
 
 ```text
---dry-run
+eska save --dry-run
+eska build --dry-run
 ```
 
-если команда меняет множество состояний.
+`save` должен показывать точный scope и сообщение без staging, editor/hooks и
+commit. `build` — план проектов, platforms/runners и outputs без создания базы
+или artifacts; чтение версии инструмента допускается. Preview использует общую
+с исполнением подготовку, но не заменяет повторный preflight при следующем
+запуске. Эти режимы пока не реализованы; работающий `patch --dry-run` сохраняется.
+Для остальных сложных операций также оценивать единообразный `--dry-run`.
 
 ---
 
@@ -1906,53 +1900,44 @@ cargo test
 
 # 13. Приоритеты roadmap
 
-Если необходимо сокращать scope, приоритет такой:
-
-Текущий приоритет — получить небольшой CLI MVP, пригодный для ежедневной работы
-над реальными задачами:
+Локальный CLI MVP, версия проекта и workspace уже реализованы. После анализа
+текущего функционала от 2026-09-08 приоритет — диагностика, сохранность machine
+contracts, масштабирование semantic-анализа и предсказуемость сборки:
 
 ```text
-P0 — замкнуть локальный workflow
-eska switch
-eska finish
-eska build -> .cf
+P0 — надёжность существующего CLI
+T29 doctor
+T49 JSON-ошибки и обратимые пути
+T50 анализ затронутых объектов и явный fallback
 
-P1 — расширить delivery artifacts
-patch-extension .cfe из разницы веток (после feasibility specification)
-project versioning
+P1 — управляемость текущих операций
+T51 save --dry-run
+T52 build --dry-run
+T53 finish после squash/rebase: сначала спецификация
+T54 паспорт артефакта и фактический снимок исходников
+T55 переносимые проверки сборки
 
-P2 — качество, масштабирование и автоматизация после проверки MVP
-project workspaces для монорепозиториев отчётов/обработок
-test backend specification
-affected analysis
-fmt/check
-doctor
-development environment
-apply/run
-release/CI helpers
+P2 — следующее крупное расширение VCS
+T37 sync / continue / abort одной задачей
 
-P3 — командный remote workflow
-shelve/restore
-sync/continue/abort
-publish
-locking
-
-P4
-VS Code
-EDT/other source formats
-standalone GUI
-advanced automation
+После P0–P2, последней в текущей очереди
+T26 fmt
 ```
 
-System Git orchestration допустима через существующий infrastructure layer для
-`switch` и `finish`, потому что без них локальный task lifecycle не замкнут.
-Test backend и locking не удалены из roadmap, но не блокируют проверку MVP.
+Остальной backlog сохраняется: affected/check, environments, apply/run,
+release/CI helpers, shelve/restore, publish и VS Code. T23 test backend и T39
+locking остаются `DEFERRED`; новые source formats и GUI не входят в текущий scope.
+У `check`, release и CI сохраняются собственные зависимости от quality-этапов.
+
+System Git orchestration остаётся capability fallback через существующий
+infrastructure layer. Исправления текущего CLI не разрешают изменять GitHub
+Actions, publication pipeline или добавлять соседние возможности без задачи.
 
 ---
 
 # 14. Ближайший порядок задач после текущего состояния
 
-Текущий baseline — задачи T01–T22 завершены:
+Текущий baseline — завершены T01–T22, T25, T28, T34, T40, T42–T48:
 
 ```text
 Project/config/discovery
@@ -1960,30 +1945,35 @@ new/init/templates
 repository/workflow policies
 status/start/diff/save/history
 Designer XML model/semantic diff/commit draft
+switch/finish
+build .cf/.cfe/.epf/.erf и ограниченный patch-extension
+project versioning и workspace members
 ```
 
 Ближайшие задачи выполнять в таком порядке, если не принято новое решение:
 
 ```text
-1. T34 — eska switch: существующая task branch и возврат на base
-2. T40 — eska finish: локальная проверка policy и cleanup task branch
-3. T28 — eska build: настраиваемая кроссплатформенная сборка .cf через ibcmd
-4. T42 — спецификация и feasibility patch-extension .cfe из разницы веток
-5. T43 — eska patch для ограниченного набора методов общих модулей
-
-После практической проверки MVP вернуться к отложенной очереди:
-T23 test backend, T24 affected, T25 versioning, T26 fmt, T27 check,
-T29 doctor, T30 environments, T31 apply/run, T32 release, T33 CI,
-T35 shelves, T36 restore, T37 sync, T38 publish, T39 locking, T41 VS Code
-и T44–T48 project workspaces.
+1. T29 — doctor, NEXT
+2. T49 — стабильные JSON-ошибки и обратимые пути
+3. T50 — анализ затронутых объектов и явный fallback
+4. T51 — предварительный просмотр save
+5. T52 — предварительный просмотр build
+6. T53 — finish после squash/rebase, NEEDS-SPEC до реализации
+7. T54 — паспорт собранного артефакта
+8. T55 — переносимые проверки сборки
+9. T37 — sync / continue / abort
+10. T26 — fmt, последняя задача текущей очереди
 ```
 
-Пункты T34, T40, T28, T42 и T43 завершены. `eska patch` реализует доказанный
-узкий сценарий на 8.3.27.2325 и отклоняет неподдерживаемую delta до сборки.
-[Результаты T42/T43](roadmap/t42-patch-extension.md) фиксируют allowlist,
-обязательные проверки и ограничения safe mode.
+Новые контракты, зависимости и критерии готовности приведены в
+[T49–T55](roadmap/12-current-functionality.md), общий реестр — в
+[трекере](roadmap/README.md). T53 сначала требует спецификации доказательств
+интеграции и сохранения ветки; её уточнение не блокирует независимые T54–T55.
+Завершённый `finish` до этого сохраняет консервативную ancestry-проверку.
 
-Каждый пункт лучше реализовывать отдельной законченной задачей или небольшим связанным набором задач.
+Каждый пункт выполняется только в отдельно запрошенном scope. Обновление roadmap
+не запускает реализацию очереди. Один законченный пользовательский результат —
+отдельное логическое изменение с релевантными проверками.
 
 ---
 

@@ -16,6 +16,7 @@
 | `hooks install` / `prepare-commit-msg` | DEFERRED | После T22 |
 | AI refinement commit messages | DEFERRED | После deterministic T22 |
 | `eska setup` onboarding | NEEDS-SPEC | После doctor + environments + build |
+| Завершение задачи после squash/rebase | NEEDS-SPEC | Приоритет и контракт в [T53](12-current-functionality.md); уточнение до изменения T40 |
 | Реализация самостоятельной команды `eska test` | DEFERRED | Отдельная задача после спецификации T23; поставить перед T33, если backend выбран |
 | EDT / `1cedtcli` source format | DEFERRED | После зрелой Designer XML модели |
 | Standalone GUI | DEFERRED | После VS Code и стабильного protocol |
