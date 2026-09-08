@@ -46,7 +46,8 @@
 - `DONE`: `T46` — сборка workspace members;
 - `DONE`: `T47` — VCS UX workspace members;
 - `DONE`: `T48` — onboarding workspace members;
-- `IN-PROGRESS`: `T26` — `eska fmt`;
+- `NEXT`: `T29` — `eska doctor`;
+- `PLANNED`: `T26` — `eska fmt`, выполняется последней в текущей очереди;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
@@ -125,10 +126,10 @@ TUI разделён на обработку клавиш, отрисовку и
 | T23 | DEFERRED | Спецификация test backend | [08-quality.md](08-quality.md) |
 | T24 | PLANNED | `affected` analysis | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T25 | DONE | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T26 | IN-PROGRESS | `eska fmt` | [08-quality.md](08-quality.md) |
+| T26 | PLANNED | `eska fmt` (последняя задача текущей очереди) | [08-quality.md](08-quality.md) |
 | T27 | PLANNED | `eska check` | [08-quality.md](08-quality.md) |
 | T28 | DONE | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
-| T29 | PLANNED | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
+| T29 | NEXT | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T30 | PLANNED | Development environments | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T31 | PLANNED | `apply` / `run` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T32 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |

@@ -131,7 +131,7 @@ dirty worktree блокируются до запуска платформы.
 
 ## T29 — `eska doctor`
 
-**Статус:** `PLANNED`  
+**Статус:** `NEXT`
 **Зависит от:** T07, T28
 
 Диагностировать config/source, требуемую и установленную 1С, `ibcmd`, repository,
