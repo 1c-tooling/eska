@@ -1953,7 +1953,7 @@ project versioning и workspace members
 Ближайшие задачи выполнять в таком порядке, если не принято новое решение:
 
 ```text
-1. T50 — анализ затронутых объектов и явный fallback, NEXT
+1. T50 — анализ затронутых объектов и явный fallback, IN-PROGRESS
 2. T51 — предварительный просмотр save
 3. T52 — предварительный просмотр build
 4. T53 — finish после squash/rebase, NEEDS-SPEC до реализации

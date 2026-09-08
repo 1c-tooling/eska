@@ -49,7 +49,7 @@
 - `DONE`: `T48` — onboarding workspace members;
 - `DONE`: `T29` — `eska doctor`;
 - `DONE`: `T49` — стабильные JSON-ошибки и обратимые пути;
-- `NEXT`: `T50` — анализ только затронутых объектов и явный fallback;
+- `IN-PROGRESS`: `T50` — анализ только затронутых объектов и явный fallback;
 - `PLANNED`: `T51`–`T52`, `T54`–`T55` —
   предварительный просмотр `save`/`build`, паспорт артефакта и переносимые проверки;
 - `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
@@ -185,7 +185,7 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T47 | DONE | Workspace-aware `status`, `diff` и `save` | [11-workspaces.md](11-workspaces.md) |
 | T48 | DONE | `new` и `init` для workspace members | [11-workspaces.md](11-workspaces.md) |
 | T49 | DONE | Стабильные JSON-ошибки и обратимые пути | [12-current-functionality.md](12-current-functionality.md) |
-| T50 | NEXT | Анализ затронутых объектов и явный fallback | [12-current-functionality.md](12-current-functionality.md) |
+| T50 | IN-PROGRESS | Анализ затронутых объектов и явный fallback | [12-current-functionality.md](12-current-functionality.md) |
 | T51 | PLANNED | Предварительный просмотр `save` | [12-current-functionality.md](12-current-functionality.md) |
 | T52 | PLANNED | Предварительный просмотр `build` | [12-current-functionality.md](12-current-functionality.md) |
 | T53 | NEEDS-SPEC | Завершение задачи после squash/rebase | [12-current-functionality.md](12-current-functionality.md) |
