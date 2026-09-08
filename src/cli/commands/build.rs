@@ -35,7 +35,7 @@ use crate::{
         Project, ProjectName,
         build::{
             self, BuildError, BuildPlan, BuildSettingsError, BuildStage, Ibcmd, PlanError,
-            PlatformVersion, RunError, ToolOptions,
+            PlatformVersion, RunError, ToolError, ToolOptions,
         },
         discovery::{self, DiscoveryContext},
         metadata,
@@ -100,8 +100,15 @@ impl BuildArgs {
         let context = match discovery::discover_context(project_dir) {
             Ok(context) => context,
             Err(error) => {
-                eprintln!("{}", diagnostics::present_context_error(&error, localizer));
-                return ExitCode::FAILURE;
+                let detail = diagnostics::present_context_error(&error, localizer);
+                return self.fail(
+                    "project-discovery",
+                    Some("discovery"),
+                    None,
+                    &detail,
+                    localizer,
+                    ExitCode::FAILURE,
+                );
             }
         };
         let selection = match select_projects(
@@ -111,27 +118,21 @@ impl BuildArgs {
             SelectionIntent::MultipleMutation,
         ) {
             Ok(selection) => selection,
-            Err(error) => {
-                return fail_selection(&error, localizer);
-            }
+            Err(error) => return self.fail_selection(&error, localizer),
         };
         if self.output.is_some() && selection.projects().len() != 1 {
-            eprintln!("{}", localizer.text("build-output-single-project"));
-            return ExitCode::FAILURE;
+            return self.fail(
+                "output-requires-single-project",
+                Some("selection"),
+                None,
+                &localizer.text("build-output-single-project"),
+                localizer,
+                ExitCode::FAILURE,
+            );
         }
-        let options = match platform::tool_options(
-            self.ibcmd.clone(),
-            self.platform_arch.clone(),
-            self.distrobox.clone(),
-        ) {
+        let options = match self.tool_options(localizer) {
             Ok(options) => options,
-            Err(error) => {
-                eprintln!(
-                    "{}",
-                    diagnostics::present_global_config_error(&error, localizer)
-                );
-                return ExitCode::FAILURE;
-            }
+            Err(code) => return code,
         };
         let platform_override = match self.platform_override(&options, localizer) {
             Ok(platform_override) => platform_override,
@@ -151,7 +152,9 @@ impl BuildArgs {
             ) {
                 Ok(plan) => plan,
                 Err(error) => {
-                    return fail_project(
+                    return self.fail_project(
+                        plan_error_code(&error),
+                        Some("plan"),
                         selected.name(),
                         &present_plan_error(&error, localizer),
                         localizer,
@@ -164,10 +167,10 @@ impl BuildArgs {
                 plan,
             });
         }
-        if let Err(code) = preflight_group(&prepared, localizer) {
+        if let Err(code) = preflight_group(self.format, &prepared, localizer) {
             return code;
         }
-        let tools = match discover_tools(&prepared, &options, localizer) {
+        let tools = match discover_tools(self.format, &prepared, &options, localizer) {
             Ok(tools) => tools,
             Err(code) => return code,
         };
@@ -176,9 +179,35 @@ impl BuildArgs {
         } else if let (Some(prepared), Some(ibcmd)) = (prepared.first(), tools.first()) {
             self.execute_single(prepared, ibcmd, localizer)
         } else {
-            eprintln!("{}", localizer.text("build-selection-invalid"));
-            ExitCode::FAILURE
+            self.fail(
+                "project-selection-invalid",
+                Some("selection"),
+                None,
+                &localizer.text("build-selection-invalid"),
+                localizer,
+                ExitCode::FAILURE,
+            )
         }
+    }
+
+    /// Resolve machine-local tool settings through the selected output contract.
+    fn tool_options(&self, localizer: &Localizer) -> Result<ToolOptions, ExitCode> {
+        platform::tool_options(
+            self.ibcmd.clone(),
+            self.platform_arch.clone(),
+            self.distrobox.clone(),
+        )
+        .map_err(|error| {
+            let detail = diagnostics::present_global_config_error(&error, localizer);
+            self.fail(
+                "machine-config",
+                Some("configuration"),
+                None,
+                &detail,
+                localizer,
+                ExitCode::FAILURE,
+            )
+        })
     }
 
     /// Execute and present one project with the original single-project JSON contract.
@@ -191,18 +220,21 @@ impl BuildArgs {
         match self.execute_plan(prepared, ibcmd, localizer) {
             Ok(result) => write_build_result(self.format, &prepared.plan, &result, localizer),
             Err(BuildExecutionError::Build(error)) => {
-                eprintln!("{}", present_streamed_build_error(&error, localizer));
-                ExitCode::FAILURE
+                let machine_error = BuildExecutionError::Build(error);
+                self.fail_project(
+                    execution_error_code(&machine_error),
+                    execution_error_stage(&machine_error),
+                    prepared.name,
+                    &execution_error_message(&machine_error, localizer),
+                    localizer,
+                )
             }
             Err(BuildExecutionError::Output(error)) => {
-                eprintln!(
-                    "{}",
-                    localizer.format(
-                        "build-output-write-error",
-                        &[("reason", LocalizationValue::Text(&error.to_string()))],
-                    )
+                let detail = localizer.format(
+                    "build-output-write-error",
+                    &[("reason", LocalizationValue::Text(&error.to_string()))],
                 );
-                ExitCode::FAILURE
+                self.fail_project("output-write", None, prepared.name, &detail, localizer)
             }
         }
     }
@@ -218,8 +250,14 @@ impl BuildArgs {
         let mut failed = false;
         for (index, (item, ibcmd)) in prepared.iter().zip(tools).enumerate() {
             let Some(name) = item.name else {
-                eprintln!("{}", localizer.text("build-selection-invalid"));
-                return ExitCode::FAILURE;
+                return self.fail(
+                    "project-selection-invalid",
+                    Some("selection"),
+                    None,
+                    &localizer.text("build-selection-invalid"),
+                    localizer,
+                    ExitCode::FAILURE,
+                );
             };
             if matches!(self.format, OutputFormat::Human) {
                 eprintln!(
@@ -243,7 +281,13 @@ impl BuildArgs {
                     let interrupted = execution_was_interrupted(&error);
                     if matches!(self.format, OutputFormat::Human) {
                         let detail = execution_error_message(&error, localizer);
-                        let _ = fail_project(Some(name), &detail, localizer);
+                        let _ = self.fail_project(
+                            execution_error_code(&error),
+                            execution_error_stage(&error),
+                            Some(name),
+                            &detail,
+                            localizer,
+                        );
                     }
                     entries.push(WorkspaceBuildEntry::failure(name, &item.plan, &error));
                     if interrupted {
@@ -330,6 +374,87 @@ impl BuildArgs {
         Ok(result)
     }
 
+    /// Present one selection failure through the human and machine contracts.
+    fn fail_selection(&self, error: &SelectionError, localizer: &Localizer) -> ExitCode {
+        let message = match error {
+            SelectionError::InvalidName(error) => localizer.format(
+                "build-project-name-invalid",
+                &[("name", LocalizationValue::Text(error.value()))],
+            ),
+            SelectionError::DuplicateSelector { name } => localizer.format(
+                "build-project-duplicate",
+                &[("name", LocalizationValue::Text(name.as_str()))],
+            ),
+            SelectionError::UnknownProject { name } => localizer.format(
+                "build-project-unknown",
+                &[("name", LocalizationValue::Text(name.as_str()))],
+            ),
+            SelectionError::WorkspaceSelectorForStandalone => {
+                localizer.text("build-selector-standalone")
+            }
+            SelectionError::ConflictingSelectors => localizer.text("build-selector-conflict"),
+            SelectionError::ExplicitProjectRequired | SelectionError::SingleProjectRequired => {
+                localizer.text("build-selection-invalid")
+            }
+        };
+        self.fail(
+            selection_error_code(error),
+            Some("selection"),
+            None,
+            &message,
+            localizer,
+            ExitCode::FAILURE,
+        )
+    }
+
+    /// Add optional project context before presenting a failed project stage.
+    fn fail_project(
+        &self,
+        code: &'static str,
+        stage: Option<&'static str>,
+        name: Option<&ProjectName>,
+        detail: &str,
+        localizer: &Localizer,
+    ) -> ExitCode {
+        let message = name.map_or_else(
+            || detail.to_owned(),
+            |name| {
+                localizer.format(
+                    "build-member-error",
+                    &[
+                        ("name", LocalizationValue::Text(name.as_str())),
+                        ("reason", LocalizationValue::Text(detail)),
+                    ],
+                )
+            },
+        );
+        self.fail(
+            code,
+            stage,
+            name.map(ProjectName::as_str),
+            &message,
+            localizer,
+            ExitCode::FAILURE,
+        )
+    }
+
+    /// Emit stable JSON on stdout and localized detail on stderr after argument parsing.
+    fn fail(
+        &self,
+        code: &'static str,
+        stage: Option<&'static str>,
+        project: Option<&str>,
+        detail: &str,
+        localizer: &Localizer,
+        exit_code: ExitCode,
+    ) -> ExitCode {
+        if matches!(self.format, OutputFormat::Json) {
+            write_build_error(code, stage, project, localizer);
+        }
+        eprintln!("{detail}");
+        exit_code
+    }
+
     /// Resolve a one-run explicit or interactive platform override.
     fn platform_override(
         &self,
@@ -338,8 +463,14 @@ impl BuildArgs {
     ) -> Result<Option<PlatformVersion>, ExitCode> {
         if let Some(value) = &self.platform_version {
             return PlatformVersion::parse(value).map(Some).map_err(|error| {
-                eprintln!("{}", present_platform_version_error(&error, localizer));
-                ExitCode::from(2)
+                self.fail(
+                    "platform-version-invalid",
+                    Some("platform-selection"),
+                    None,
+                    &present_platform_version_error(&error, localizer),
+                    localizer,
+                    ExitCode::from(2),
+                )
             });
         }
         if !self.select_platform {
@@ -349,16 +480,34 @@ impl BuildArgs {
             || !io::stdin().is_terminal()
             || !io::stderr().is_terminal()
         {
-            eprintln!("{}", localizer.text("build-platform-select-terminal"));
-            return Err(ExitCode::from(2));
+            return Err(self.fail(
+                "platform-selection-requires-terminal",
+                Some("platform-selection"),
+                None,
+                &localizer.text("build-platform-select-terminal"),
+                localizer,
+                ExitCode::from(2),
+            ));
         }
         let installed = Ibcmd::installed(options).map_err(|error| {
-            eprintln!("{}", diagnostics::present_tool_error(&error, localizer));
-            ExitCode::FAILURE
+            self.fail(
+                tool_error_code(&error),
+                Some("tool-discovery"),
+                None,
+                &diagnostics::present_tool_error(&error, localizer),
+                localizer,
+                ExitCode::FAILURE,
+            )
         })?;
         if installed.is_empty() {
-            eprintln!("{}", localizer.text("platform-none"));
-            return Err(ExitCode::FAILURE);
+            return Err(self.fail(
+                "platform-not-found",
+                Some("tool-discovery"),
+                None,
+                &localizer.text("platform-none"),
+                localizer,
+                ExitCode::FAILURE,
+            ));
         }
         let choices: Vec<_> = installed
             .iter()
@@ -386,8 +535,14 @@ impl BuildArgs {
         PlatformVersion::parse(&selection)
             .map(Some)
             .map_err(|error| {
-                eprintln!("{}", present_platform_version_error(&error, localizer));
-                ExitCode::FAILURE
+                self.fail(
+                    "platform-version-invalid",
+                    Some("platform-selection"),
+                    None,
+                    &present_platform_version_error(&error, localizer),
+                    localizer,
+                    ExitCode::FAILURE,
+                )
             })
     }
 }
@@ -411,17 +566,32 @@ fn build_plan(
     }
 }
 
-fn preflight_group(prepared: &[PreparedBuild<'_>], localizer: &Localizer) -> Result<(), ExitCode> {
+fn preflight_group(
+    format: OutputFormat,
+    prepared: &[PreparedBuild<'_>],
+    localizer: &Localizer,
+) -> Result<(), ExitCode> {
     let plans: Vec<_> = prepared.iter().map(|item| &item.plan).collect();
     if let Err(error) = build::validate_unique_outputs(&plans) {
-        eprintln!("{}", present_plan_error(&error, localizer));
+        write_failure(
+            format,
+            plan_error_code(&error),
+            Some("preflight"),
+            None,
+            &present_plan_error(&error, localizer),
+            localizer,
+        );
         return Err(ExitCode::FAILURE);
     }
     for item in prepared {
         if let Err(error) = build::preflight(&item.plan) {
-            return Err(fail_project(
+            let machine_error = BuildExecutionError::Build(error);
+            return Err(write_project_failure(
+                format,
+                execution_error_code(&machine_error),
+                Some("preflight"),
                 item.name,
-                &present_build_error(&error, localizer),
+                &execution_error_message(&machine_error, localizer),
                 localizer,
             ));
         }
@@ -430,6 +600,7 @@ fn preflight_group(prepared: &[PreparedBuild<'_>], localizer: &Localizer) -> Res
 }
 
 fn discover_tools(
+    format: OutputFormat,
     prepared: &[PreparedBuild<'_>],
     options: &ToolOptions,
     localizer: &Localizer,
@@ -439,7 +610,10 @@ fn discover_tools(
         match Ibcmd::discover(item.plan.platform_version(), options) {
             Ok(ibcmd) => tools.push(ibcmd),
             Err(error) => {
-                return Err(fail_project(
+                return Err(write_project_failure(
+                    format,
+                    tool_error_code(&error),
+                    Some("tool-discovery"),
                     item.name,
                     &diagnostics::present_tool_error(&error, localizer),
                     localizer,
@@ -450,36 +624,18 @@ fn discover_tools(
     Ok(tools)
 }
 
-fn fail_selection(error: &SelectionError, localizer: &Localizer) -> ExitCode {
-    let message = match error {
-        SelectionError::InvalidName(error) => localizer.format(
-            "build-project-name-invalid",
-            &[("name", LocalizationValue::Text(error.value()))],
-        ),
-        SelectionError::DuplicateSelector { name } => localizer.format(
-            "build-project-duplicate",
-            &[("name", LocalizationValue::Text(name.as_str()))],
-        ),
-        SelectionError::UnknownProject { name } => localizer.format(
-            "build-project-unknown",
-            &[("name", LocalizationValue::Text(name.as_str()))],
-        ),
-        SelectionError::WorkspaceSelectorForStandalone => {
-            localizer.text("build-selector-standalone")
-        }
-        SelectionError::ConflictingSelectors => localizer.text("build-selector-conflict"),
-        SelectionError::ExplicitProjectRequired | SelectionError::SingleProjectRequired => {
-            localizer.text("build-selection-invalid")
-        }
-    };
-    eprintln!("{message}");
-    ExitCode::FAILURE
-}
-
-fn fail_project(name: Option<&ProjectName>, detail: &str, localizer: &Localizer) -> ExitCode {
-    if let Some(name) = name {
-        eprintln!(
-            "{}",
+/// Present a project-scoped failure outside the command implementation.
+fn write_project_failure(
+    format: OutputFormat,
+    code: &'static str,
+    stage: Option<&'static str>,
+    name: Option<&ProjectName>,
+    detail: &str,
+    localizer: &Localizer,
+) -> ExitCode {
+    let message = name.map_or_else(
+        || detail.to_owned(),
+        |name| {
             localizer.format(
                 "build-member-error",
                 &[
@@ -487,11 +643,32 @@ fn fail_project(name: Option<&ProjectName>, detail: &str, localizer: &Localizer)
                     ("reason", LocalizationValue::Text(detail)),
                 ],
             )
-        );
-    } else {
-        eprintln!("{detail}");
-    }
+        },
+    );
+    write_failure(
+        format,
+        code,
+        stage,
+        name.map(ProjectName::as_str),
+        &message,
+        localizer,
+    );
     ExitCode::FAILURE
+}
+
+/// Emit a machine error when requested and always retain the localized stderr diagnostic.
+fn write_failure(
+    format: OutputFormat,
+    code: &'static str,
+    stage: Option<&'static str>,
+    project: Option<&str>,
+    detail: &str,
+    localizer: &Localizer,
+) {
+    if matches!(format, OutputFormat::Json) {
+        write_build_error(code, stage, project, localizer);
+    }
+    eprintln!("{detail}");
 }
 
 fn execution_error_message(error: &BuildExecutionError, localizer: &Localizer) -> String {
@@ -1154,6 +1331,22 @@ struct BuildFailureDocument {
 }
 
 #[derive(Serialize)]
+struct BuildErrorDetailDocument {
+    code: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stage: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    project: Option<String>,
+}
+
+#[derive(Serialize)]
+struct BuildErrorDocument {
+    schema_version: u8,
+    status: &'static str,
+    error: BuildErrorDetailDocument,
+}
+
+#[derive(Serialize)]
 struct ArtifactDocument {
     r#type: &'static str,
     path: String,
@@ -1236,6 +1429,68 @@ impl WorkspaceBuildEntry {
                 stage: None,
             }),
         }
+    }
+}
+
+/// Serialize one post-parse failure through the stable top-level error envelope.
+fn write_build_error(
+    code: &'static str,
+    stage: Option<&'static str>,
+    project: Option<&str>,
+    localizer: &Localizer,
+) {
+    let document = BuildErrorDocument {
+        schema_version: 1,
+        status: "error",
+        error: BuildErrorDetailDocument {
+            code,
+            stage,
+            project: project.map(str::to_owned),
+        },
+    };
+    match serde_json::to_string_pretty(&document) {
+        Ok(json) => println!("{json}"),
+        Err(_) => eprintln!("{}", localizer.text("build-json-error")),
+    }
+}
+
+/// Map selector failures to stable machine-facing codes.
+const fn selection_error_code(error: &SelectionError) -> &'static str {
+    match error {
+        SelectionError::InvalidName(_) => "project-name-invalid",
+        SelectionError::DuplicateSelector { .. } => "project-selector-duplicate",
+        SelectionError::UnknownProject { .. } => "project-not-found",
+        SelectionError::WorkspaceSelectorForStandalone => "workspace-selector-for-standalone",
+        SelectionError::ConflictingSelectors => "project-selectors-conflict",
+        SelectionError::ExplicitProjectRequired => "project-selector-required",
+        SelectionError::SingleProjectRequired => "single-project-required",
+    }
+}
+
+/// Map immutable plan failures to stable machine-facing codes.
+const fn plan_error_code(error: &PlanError) -> &'static str {
+    match error {
+        PlanError::ProjectNameMissing => "project-name-missing",
+        PlanError::PlatformVersionMissing => "platform-version-missing",
+        PlanError::InvalidOutput { .. } => "output-invalid",
+        PlanError::UnexpectedExtension { .. } => "output-extension-invalid",
+        PlanError::OutputCollision { .. } => "output-collision",
+    }
+}
+
+/// Map tool discovery failures to stable machine-facing codes.
+const fn tool_error_code(error: &ToolError) -> &'static str {
+    match error {
+        ToolError::InvalidArchitecture(_) => "platform-architecture-invalid",
+        ToolError::InvalidContainer(_) => "distrobox-container-invalid",
+        ToolError::InvalidExecutable(_) => "ibcmd-executable-invalid",
+        ToolError::DistroboxContainerRequired => "distrobox-container-required",
+        ToolError::Scan { .. } | ToolError::ScanCommandFailed { .. } => "platform-scan-failed",
+        ToolError::NotFound { .. } => "ibcmd-not-found",
+        ToolError::Run(_) => "ibcmd-run-failed",
+        ToolError::VersionCommandFailed { .. } => "ibcmd-version-command-failed",
+        ToolError::VersionUnreadable(_) => "ibcmd-version-unreadable",
+        ToolError::VersionMismatch { .. } => "ibcmd-version-mismatch",
     }
 }
 

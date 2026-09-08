@@ -225,6 +225,7 @@ fn unconfigured_platform_version_blocks_only_normal_build() {
     )
     .expect("clear platform version");
 
+    let mut json_errors = Vec::new();
     for (locale, message) in [
         ("ru", "Заполните build.platform_version"),
         ("en", "Fill in build.platform_version"),
@@ -236,7 +237,20 @@ fn unconfigured_platform_version_blocks_only_normal_build() {
             "{output:?}"
         );
         assert!(!root.join("build").exists());
+
+        let output = eska(&root, locale, &ibcmd, &["build", "--format", "json"], false);
+        assert_eq!(output.status.code(), Some(1), "{output:?}");
+        assert!(String::from_utf8_lossy(&output.stderr).contains(message));
+        assert!(!output.stdout.contains(&b'\x1b'));
+        let document: Value = serde_json::from_slice(&output.stdout).expect("build error JSON");
+        assert_eq!(document["schema_version"], 1);
+        assert_eq!(document["status"], "error");
+        assert_eq!(document["error"]["code"], "platform-version-missing");
+        assert_eq!(document["error"]["stage"], "plan");
+        assert!(document["error"].get("project").is_none());
+        json_errors.push(document);
     }
+    assert_eq!(json_errors[0], json_errors[1]);
 
     let override_build = Command::new(env!("CARGO_BIN_EXE_eska"))
         .current_dir(&root)
@@ -370,6 +384,7 @@ fn failed_build_preserves_existing_artifact_and_cleans_workspace() {
     let artifact = build.join("Billing.cf");
     fs::write(&artifact, "previous").expect("old artifact");
 
+    let mut json_errors = Vec::new();
     for (locale, expected) in [("ru", "завершился ошибкой"), ("en", "failed")] {
         let output = eska(&root, locale, &ibcmd, &["build"], true);
         assert_eq!(output.status.code(), Some(1));
@@ -388,7 +403,20 @@ fn failed_build_preserves_existing_artifact_and_cleans_workspace() {
             leftovers.is_empty(),
             "temporary paths remain: {leftovers:?}"
         );
+
+        let output = eska(&root, locale, &ibcmd, &["build", "--format", "json"], true);
+        assert_eq!(output.status.code(), Some(1), "{output:?}");
+        assert!(String::from_utf8_lossy(&output.stderr).contains(expected));
+        assert!(!output.stdout.contains(&b'\x1b'));
+        let document: Value = serde_json::from_slice(&output.stdout).expect("build error JSON");
+        assert_eq!(document["schema_version"], 1);
+        assert_eq!(document["status"], "error");
+        assert_eq!(document["error"]["code"], "command-failed");
+        assert_eq!(document["error"]["stage"], "import-sources");
+        assert!(document["error"].get("project").is_none());
+        json_errors.push(document);
     }
+    assert_eq!(json_errors[0], json_errors[1]);
 }
 
 #[test]
@@ -401,11 +429,14 @@ fn exact_platform_version_is_required() {
     let value = fs::read_to_string(&config).expect("config");
     fs::write(&config, value.replace("8.3.27.2325", "8.3.26.1540")).expect("configure version");
 
-    let output = eska(&root, "en", &ibcmd, &["build"], false);
+    let output = eska(&root, "en", &ibcmd, &["build", "--format", "json"], false);
     assert_eq!(output.status.code(), Some(1));
     let error = String::from_utf8_lossy(&output.stderr);
     assert!(error.contains("8.3.27.2325"), "{error}");
     assert!(error.contains("8.3.26.1540"), "{error}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("tool error JSON");
+    assert_eq!(document["error"]["code"], "ibcmd-version-mismatch");
+    assert_eq!(document["error"]["stage"], "tool-discovery");
     assert!(!root.join("build").exists());
 }
 
@@ -611,7 +642,7 @@ fn workspace_preflight_blocks_all_ibcmd_invocations() {
     let output = Command::new(env!("CARGO_BIN_EXE_eska"))
         .current_dir(&fixture.0)
         .env("FAKE_IBCMD_LOG", &log)
-        .args(["--lang", "en", "build", "--ibcmd"])
+        .args(["--lang", "en", "build", "--format", "json", "--ibcmd"])
         .arg(&ibcmd)
         .output()
         .expect("run workspace build");
@@ -620,6 +651,10 @@ fn workspace_preflight_blocks_all_ibcmd_invocations() {
         String::from_utf8_lossy(&output.stderr).contains("sales-report"),
         "{output:?}"
     );
+    let document: Value = serde_json::from_slice(&output.stdout).expect("preflight error JSON");
+    assert_eq!(document["error"]["code"], "descriptor-missing");
+    assert_eq!(document["error"]["stage"], "preflight");
+    assert_eq!(document["error"]["project"], "sales-report");
     assert!(!log.exists(), "ibcmd ran before group preflight completed");
     assert!(!fixture.0.join("build").exists());
 }
@@ -642,6 +677,7 @@ fn workspace_runtime_failure_does_not_stop_later_members() {
     assert_eq!(document["projects"][0]["status"], "failed");
     assert_eq!(document["projects"][0]["error"]["code"], "command-failed");
     assert_eq!(document["projects"][0]["error"]["stage"], "import-sources");
+    assert!(document["projects"][0]["error"].get("project").is_none());
     assert_eq!(document["projects"][1]["status"], "success");
     assert!(!fixture.0.join("build/sales-report.erf").exists());
     assert_eq!(
@@ -659,7 +695,16 @@ fn workspace_output_requires_one_member_before_ibcmd_discovery() {
     let output = Command::new(env!("CARGO_BIN_EXE_eska"))
         .current_dir(&fixture.0)
         .env("FAKE_IBCMD_LOG", &log)
-        .args(["--lang", "en", "build", "--output", "custom.erf", "--ibcmd"])
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--output",
+            "custom.erf",
+            "--format",
+            "json",
+            "--ibcmd",
+        ])
         .arg(&ibcmd)
         .output()
         .expect("run workspace build");
@@ -668,5 +713,31 @@ fn workspace_output_requires_one_member_before_ibcmd_discovery() {
         String::from_utf8_lossy(&output.stderr).contains("exactly one selected project"),
         "{output:?}"
     );
+    let document: Value = serde_json::from_slice(&output.stdout).expect("selection error JSON");
+    assert_eq!(document["error"]["code"], "output-requires-single-project");
+    assert_eq!(document["error"]["stage"], "selection");
     assert!(!log.exists());
+}
+
+#[test]
+/// Return the same discovery error document in both supported locales.
+fn json_discovery_error_is_locale_independent() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let mut errors = Vec::new();
+    for locale in ["ru", "en"] {
+        let output = eska(
+            &fixture.0,
+            locale,
+            &ibcmd,
+            &["build", "--format", "json"],
+            false,
+        );
+        assert_eq!(output.status.code(), Some(1), "{output:?}");
+        let document: Value = serde_json::from_slice(&output.stdout).expect("discovery JSON");
+        assert_eq!(document["error"]["code"], "project-discovery");
+        assert_eq!(document["error"]["stage"], "discovery");
+        errors.push(document);
+    }
+    assert_eq!(errors[0], errors[1]);
 }
