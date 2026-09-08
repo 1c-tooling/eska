@@ -48,8 +48,9 @@
 - `DONE`: `T47` — VCS UX workspace members;
 - `DONE`: `T48` — onboarding workspace members;
 - `DONE`: `T29` — `eska doctor`;
-- `IN-PROGRESS`: `T49` — стабильные JSON-ошибки и обратимые пути;
-- `PLANNED`: `T50`–`T52`, `T54`–`T55` — semantic-анализ,
+- `DONE`: `T49` — стабильные JSON-ошибки и обратимые пути;
+- `NEXT`: `T50` — анализ только затронутых объектов и явный fallback;
+- `PLANNED`: `T51`–`T52`, `T54`–`T55` —
   предварительный просмотр `save`/`build`, паспорт артефакта и переносимые проверки;
 - `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
 - `PLANNED`: `T37` — следующий крупный VCS-этап: `sync` / `continue` / `abort`;
@@ -109,15 +110,14 @@ TUI разделён на обработку клавиш, отрисовку и
 
 | Порядок | ID | Результат |
 |---|---|---|
-| 1 | T49 | Машиночитаемые ошибки сборки и обратимые пути `status` |
-| 2 | T50 | Анализ затронутых объектов и объяснение file-level fallback |
-| 3 | T51 | `save --dry-run` с точным scope и сообщением |
-| 4 | T52 | `build --dry-run` для одного проекта и workspace |
-| 5 | T53 | Сначала контракт `finish` после squash/rebase, затем его реализация |
-| 6 | T54 | Паспорт артефакта, связанный с фактическим снимком исходников |
-| 7 | T55 | Переносимые проверки build и протокол приёмки на поддерживаемых ОС |
-| 8 | T37 | Синхронизация задачи и штатные продолжение/отмена при конфликтах |
-| 9 | T26 | Форматирование; последняя задача текущей очереди |
+| 1 | T50 | Анализ затронутых объектов и объяснение file-level fallback |
+| 2 | T51 | `save --dry-run` с точным scope и сообщением |
+| 3 | T52 | `build --dry-run` для одного проекта и workspace |
+| 4 | T53 | Сначала контракт `finish` после squash/rebase, затем его реализация |
+| 5 | T54 | Паспорт артефакта, связанный с фактическим снимком исходников |
+| 6 | T55 | Переносимые проверки build и протокол приёмки на поддерживаемых ОС |
+| 7 | T37 | Синхронизация задачи и штатные продолжение/отмена при конфликтах |
+| 8 | T26 | Форматирование; последняя задача текущей очереди |
 
 T53 нельзя начинать с ослабления проверки интеграции: сначала снимается
 `NEEDS-SPEC`. Уточнение её контракта не блокирует независимые T54–T55.
@@ -184,8 +184,8 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T46 | DONE | Build workspace members | [11-workspaces.md](11-workspaces.md) |
 | T47 | DONE | Workspace-aware `status`, `diff` и `save` | [11-workspaces.md](11-workspaces.md) |
 | T48 | DONE | `new` и `init` для workspace members | [11-workspaces.md](11-workspaces.md) |
-| T49 | IN-PROGRESS | Стабильные JSON-ошибки и обратимые пути | [12-current-functionality.md](12-current-functionality.md) |
-| T50 | PLANNED | Анализ затронутых объектов и явный fallback | [12-current-functionality.md](12-current-functionality.md) |
+| T49 | DONE | Стабильные JSON-ошибки и обратимые пути | [12-current-functionality.md](12-current-functionality.md) |
+| T50 | NEXT | Анализ затронутых объектов и явный fallback | [12-current-functionality.md](12-current-functionality.md) |
 | T51 | PLANNED | Предварительный просмотр `save` | [12-current-functionality.md](12-current-functionality.md) |
 | T52 | PLANNED | Предварительный просмотр `build` | [12-current-functionality.md](12-current-functionality.md) |
 | T53 | NEEDS-SPEC | Завершение задачи после squash/rebase | [12-current-functionality.md](12-current-functionality.md) |
