@@ -656,6 +656,12 @@ JSON доступен у `status`, `diff`, `history`, `doctor`, `build`, `patch`
 от режима: workspace — 1, revisions — 2, semantic — 3.
 `--raw` и `--format` у `diff` взаимоисключающие.
 
+`status --format json` использует schema 2. Значения UTF-8 сохранены без
+изменений и помечены `utf-8` в `root_encoding`, `name_encoding` и
+`branch_encoding`. Произвольные байты Unix-путей и Git-веток представлены как
+последовательность `%HH` с encoding `percent`; не-Unicode Windows-пути — как
+последовательность UTF-16 units `%HHHH` с encoding `utf-16-percent`.
+
 После успешного разбора аргументов ошибка `build --format json` возвращается в
 stdout как `{"schema_version":1,"status":"error","error":{"code":"…"}}`.
 В `error` также присутствуют `stage` и `project`, когда этап и workspace member

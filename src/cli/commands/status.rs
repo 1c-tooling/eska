@@ -1,12 +1,15 @@
 //! Localized and stable JSON presentation of the read-only project status.
 
 use std::{
+    ffi::OsStr,
+    fmt::Write as _,
     io::{self, IsTerminal},
     path::Path,
     process::ExitCode,
 };
 
 use clap::{Args, ValueEnum};
+use gix::bstr::{BStr, ByteSlice};
 use serde::Serialize;
 
 use crate::{
@@ -483,12 +486,14 @@ struct WorkspaceStatusDocument {
 #[derive(Serialize)]
 struct WorkspaceDocument {
     root: String,
+    root_encoding: &'static str,
 }
 
 #[derive(Serialize)]
 struct WorkspaceProjectDocument {
     name: String,
     root: String,
+    root_encoding: &'static str,
     #[serde(rename = "type")]
     project_type: &'static str,
     changes: ChangeDocument,
@@ -498,7 +503,9 @@ struct WorkspaceProjectDocument {
 #[derive(Serialize)]
 struct ProjectDocument {
     name: String,
+    name_encoding: &'static str,
     root: String,
+    root_encoding: &'static str,
     #[serde(rename = "type")]
     project_type: &'static str,
 }
@@ -508,6 +515,7 @@ struct WorkflowDocument {
     preset: &'static str,
     task: Option<String>,
     branch: Option<String>,
+    branch_encoding: Option<&'static str>,
     base: String,
     head: &'static str,
 }
@@ -544,17 +552,23 @@ struct ReadinessDocument {
 
 impl From<&ProjectStatus> for StatusDocument {
     fn from(status: &ProjectStatus) -> Self {
+        let (name, name_encoding) = json_project_name(&status.root);
+        let (root, root_encoding) = json_path(status.root.as_os_str());
+        let (branch, branch_encoding) = json_branch(status.branch.as_ref());
         Self {
-            schema_version: 1,
+            schema_version: 2,
             project: ProjectDocument {
-                name: project_name(&status.root),
-                root: status.root.to_string_lossy().into_owned(),
+                name,
+                name_encoding,
+                root,
+                root_encoding,
                 project_type: status.project_type.as_str(),
             },
             workflow: WorkflowDocument {
                 preset: status.workflow.as_str(),
                 task: status.task.clone(),
-                branch: status.branch.as_ref().map(ToString::to_string),
+                branch,
+                branch_encoding,
                 base: status.base_branch.clone(),
                 head: head_name(status.head),
             },
@@ -577,30 +591,38 @@ impl From<&ProjectStatus> for StatusDocument {
 
 impl From<&WorkspaceStatus> for WorkspaceStatusDocument {
     fn from(status: &WorkspaceStatus) -> Self {
+        let (root, root_encoding) = json_path(status.root.as_os_str());
+        let (branch, branch_encoding) = json_branch(status.branch.as_ref());
         Self {
-            schema_version: 1,
+            schema_version: 2,
             workspace: WorkspaceDocument {
-                root: status.root.to_string_lossy().into_owned(),
+                root,
+                root_encoding,
             },
             workflow: WorkflowDocument {
                 preset: status.workflow.as_str(),
                 task: status.task.clone(),
-                branch: status.branch.as_ref().map(ToString::to_string),
+                branch,
+                branch_encoding,
                 base: status.base_branch.clone(),
                 head: head_name(status.head),
             },
             projects: status
                 .projects
                 .iter()
-                .map(|project| WorkspaceProjectDocument {
-                    name: project.name.as_str().to_owned(),
-                    root: project.root.to_string_lossy().into_owned(),
-                    project_type: project.project_type.as_str(),
-                    changes: ChangeDocument::from(project.changes),
-                    readiness: ReadinessDocument {
-                        save: project.readiness.save,
-                        publish: project.readiness.publish,
-                    },
+                .map(|project| {
+                    let (root, root_encoding) = json_path(project.root.as_os_str());
+                    WorkspaceProjectDocument {
+                        name: project.name.as_str().to_owned(),
+                        root,
+                        root_encoding,
+                        project_type: project.project_type.as_str(),
+                        changes: ChangeDocument::from(project.changes),
+                        readiness: ReadinessDocument {
+                            save: project.readiness.save,
+                            publish: project.readiness.publish,
+                        },
+                    }
                 })
                 .collect(),
             workspace_changes: status.workspace_changes.map(ChangeDocument::from),
@@ -618,6 +640,62 @@ impl From<&WorkspaceStatus> for WorkspaceStatusDocument {
             },
         }
     }
+}
+
+/// Preserve a project directory name as a reversible OS string.
+fn json_project_name(root: &Path) -> (String, &'static str) {
+    json_path(root.file_name().unwrap_or(root.as_os_str()))
+}
+
+/// Preserve a valid Git branch verbatim and encode arbitrary bytes otherwise.
+fn json_branch(branch: Option<&gix::bstr::BString>) -> (Option<String>, Option<&'static str>) {
+    branch.map_or((None, None), |branch| {
+        let (value, encoding) = json_git_text(branch.as_bstr());
+        (Some(value), Some(encoding))
+    })
+}
+
+/// Keep valid UTF-8 Git text exact and percent-encode arbitrary bytes.
+fn json_git_text(value: &BStr) -> (String, &'static str) {
+    value.to_str().map_or_else(
+        |_| (percent_encode_bytes(value), "percent"),
+        |value| (value.to_owned(), "utf-8"),
+    )
+}
+
+/// Preserve a UTF-8 path directly and use a reversible platform encoding otherwise.
+fn json_path(path: &OsStr) -> (String, &'static str) {
+    path.to_str()
+        .map_or_else(|| encoded_path(path), |value| (value.to_owned(), "utf-8"))
+}
+
+#[cfg(unix)]
+/// Percent-encode every raw Unix path byte when it is not valid UTF-8.
+fn encoded_path(path: &OsStr) -> (String, &'static str) {
+    use std::os::unix::ffi::OsStrExt;
+
+    (percent_encode_bytes(path.as_bytes()), "percent")
+}
+
+#[cfg(windows)]
+/// Percent-encode every UTF-16 code unit when a Windows path is not Unicode scalar text.
+fn encoded_path(path: &OsStr) -> (String, &'static str) {
+    use std::os::windows::ffi::OsStrExt;
+
+    let mut encoded = String::new();
+    for unit in path.encode_wide() {
+        write!(encoded, "%{unit:04X}").expect("writing to String cannot fail");
+    }
+    (encoded, "utf-16-percent")
+}
+
+/// Percent-encode every byte so arbitrary Unix or Git text remains reversible.
+fn percent_encode_bytes(value: &[u8]) -> String {
+    let mut encoded = String::with_capacity(value.len() * 3);
+    for byte in value {
+        write!(encoded, "%{byte:02X}").expect("writing to String cannot fail");
+    }
+    encoded
 }
 
 impl From<ChangeSummary> for ChangeDocument {
