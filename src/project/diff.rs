@@ -182,6 +182,7 @@ fn inspect_status_entries(
     repository: &Repository,
     entries: &[PathStatus],
 ) -> ProjectDiff {
+    let mut versions_reader = None;
     let mut files = Vec::new();
     let mut display = BTreeMap::new();
     for entry in entries {
@@ -202,7 +203,13 @@ fn inspect_status_entries(
                 project.configuration().project_type(),
                 source_path.as_bstr(),
             )
-            .then(|| repository.file_versions(entry.path.as_bstr()).ok())
+            .then(|| {
+                versions_reader
+                    .get_or_insert_with(|| repository.file_version_reader())
+                    .as_ref()
+                    .ok()
+                    .and_then(|reader| reader.read(entry.path.as_bstr()).ok())
+            })
             .flatten();
             record_metadata_stage(
                 &mut display,

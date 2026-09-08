@@ -74,6 +74,7 @@ src/
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
 │   ├── selection.rs             # общий выбор current/named/all workspace projects
 │   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
+│   ├── semantic/routines.rs     # потоковое чтение BSL routine snapshots
 │   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
 │   ├── version.rs               # точечное чтение и замена Properties/Version
@@ -92,6 +93,7 @@ src/
     ├── network.rs               # clone/fetch через gix и transport fallback policy
     ├── diff.rs                  # разрешение revisions и tree-to-tree diff через gix
     ├── repository.rs            # discovery, HEAD, refs и ограниченная история
+    ├── snapshot.rs              # общий HEAD/index reader на время анализа файлов
     ├── status.rs                # изменения HEAD/index/worktree и changed paths
     ├── workflow.rs              # выбор preset, overrides и разрешение policy
     └── workflow/
@@ -300,3 +302,22 @@ cargo test --test integration vcs::
 поэтому больше не реализует `Copy`; getters принимают `&self`.
 `workflow()` возвращает выбранный preset, `workflow_settings()` — все настройки.
 В discovery настройки клонируются при построении проекта с проверенным source.
+
+## Чтение изменённых файлов
+
+`vcs/snapshot.rs` отделяет чтение содержимого от расчёта Git status.
+`FileVersionReader` удерживает HEAD tree и index snapshot на время одного
+file-level или semantic анализа. Инициализация ленивая: если содержимое не нужно,
+reader не создаётся. Файлы worktree читаются по одному, без накопления всех blobs.
+Следующая операция заново получает HEAD и индекс; публичный
+`Repository::file_versions` сохраняет чтение одного файла. Атомарный снимок
+worktree при параллельном редактировании не гарантируется.
+
+`project/semantic/routines.rs` содержит консервативный parser процедур и функций.
+Он читает строки через iterator и собирает только нормализованные тела методов,
+без копии всего модуля для замены CRLF и без массивов строк. Сопоставление
+snapshot-пар и создание событий остаются в `project/semantic.rs`.
+XML-сигнатуры строятся в одном буфере без промежуточных строк поддеревьев;
+правила нормализации не изменены.
+
+Условия и результаты локальных замеров: [performance.md](performance.md).
