@@ -48,7 +48,7 @@
 - `DONE`: `T47` — VCS UX workspace members;
 - `DONE`: `T48` — onboarding workspace members;
 - `DONE`: `T29` — `eska doctor`;
-- `NEXT`: `T49` — стабильные JSON-ошибки и обратимые пути;
+- `IN-PROGRESS`: `T49` — стабильные JSON-ошибки и обратимые пути;
 - `PLANNED`: `T50`–`T52`, `T54`–`T55` — semantic-анализ,
   предварительный просмотр `save`/`build`, паспорт артефакта и переносимые проверки;
 - `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
@@ -184,7 +184,7 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T46 | DONE | Build workspace members | [11-workspaces.md](11-workspaces.md) |
 | T47 | DONE | Workspace-aware `status`, `diff` и `save` | [11-workspaces.md](11-workspaces.md) |
 | T48 | DONE | `new` и `init` для workspace members | [11-workspaces.md](11-workspaces.md) |
-| T49 | NEXT | Стабильные JSON-ошибки и обратимые пути | [12-current-functionality.md](12-current-functionality.md) |
+| T49 | IN-PROGRESS | Стабильные JSON-ошибки и обратимые пути | [12-current-functionality.md](12-current-functionality.md) |
 | T50 | PLANNED | Анализ затронутых объектов и явный fallback | [12-current-functionality.md](12-current-functionality.md) |
 | T51 | PLANNED | Предварительный просмотр `save` | [12-current-functionality.md](12-current-functionality.md) |
 | T52 | PLANNED | Предварительный просмотр `build` | [12-current-functionality.md](12-current-functionality.md) |
