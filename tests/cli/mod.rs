@@ -2,6 +2,7 @@ mod build;
 mod clone;
 mod config;
 mod diff;
+mod doctor;
 mod finish;
 mod history;
 mod init;

@@ -80,6 +80,17 @@ pub enum ToolSource {
     Distrobox { container: String, path: PathBuf },
 }
 
+impl ToolSource {
+    /// Return the stable runner kind represented by this discovered tool source.
+    #[must_use]
+    pub const fn runner_kind(&self) -> &'static str {
+        match self {
+            Self::Explicit(_) | Self::Path(_) | Self::Standard(_) => "host",
+            Self::Distrobox { .. } => "distrobox",
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Runner {
     Host(PathBuf),
@@ -118,6 +129,35 @@ pub enum ProcessStream {
 }
 
 impl Ibcmd {
+    /// Return the stable kind of runner used for this platform installation.
+    #[must_use]
+    pub const fn runner_kind(&self) -> &'static str {
+        self.source.runner_kind()
+    }
+
+    /// Check whether the matching Designer executable required by `eska patch` exists.
+    ///
+    /// # Errors
+    /// Returns an I/O error when the configured Distrobox runner cannot be inspected.
+    pub fn designer_available(&self) -> Result<bool, io::Error> {
+        let mut path = match &self.runner {
+            Runner::Host(path) | Runner::Distrobox { path, .. } => path.clone(),
+        };
+        path.set_file_name(if path.extension() == Some(OsStr::new("exe")) {
+            "1cv8.exe"
+        } else {
+            "1cv8"
+        });
+        match &self.runner {
+            Runner::Host(_) => Ok(path.is_file()),
+            Runner::Distrobox { container, .. } => Command::new("distrobox")
+                .args(["enter", "--name", container, "--", "test", "-f"])
+                .arg(path)
+                .output()
+                .map(|output| output.status.success()),
+        }
+    }
+
     /// Run the matching Designer executable through the same interruptible runner.
     pub(crate) fn run_designer(
         &self,

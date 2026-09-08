@@ -19,6 +19,7 @@ src/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
 │   │   ├── build.rs             # eska build: аргументы, RU/EN и JSON result
 │   │   ├── config.rs            # eska config: init/edit глобальных настроек
+│   │   ├── doctor.rs            # eska doctor: selectors, RU/EN и versioned JSON
 │   │   ├── platform.rs          # eska platform list: human/JSON presentation
 │   │   ├── patch.rs             # eska patch: аргументы, preview и JSON result
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
@@ -50,6 +51,7 @@ src/
 │   ├── init.rs                  # обнаружение выгрузки, подключение и откат
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
+│   ├── doctor.rs                # read-only проверки project/build/VCS окружения
 │   ├── workspace.rs             # Workspace, members и переносимые имена проектов
 │   ├── diff.rs                  # file-level изменения внутри корня проекта
 │   ├── finish.rs                # preflight, policy refs и локальное завершение задачи
@@ -103,7 +105,7 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{build,diff,finish,history,init,new,save,start,status,version,localization}.rs
+├── cli/{build,diff,doctor,finish,history,init,new,save,start,status,version,localization}.rs
 ├── project/{discovery,finish,history,save,start,templates,version,workflow}.rs
 ├── vcs/{diff,network,repository,status,support}.rs # Git-сценарии и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
@@ -124,6 +126,7 @@ tests/
 | Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`src/project/build/`](../src/project/build/) |
 | Изменить план или генерацию patch-extension | [`src/cli/commands/patch.rs`](../src/cli/commands/patch.rs), затем [`src/project/patch/`](../src/project/patch/) |
 | Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`src/project/build/tool.rs`](../src/project/build/tool.rs) |
+| Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
 | Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`src/project/version.rs`](../src/project/version.rs) |
