@@ -38,6 +38,58 @@ fn file_versions_read_head_index_and_worktree() {
     assert_eq!(fs::read(dir.0.join(".git/index")).unwrap(), index_before);
 }
 
+/// Independent reads must observe new commits and index replacements on the same repository.
+#[test]
+fn file_versions_refresh_between_operations() {
+    let dir = repository();
+    let repo = Repository::discover(&dir.0).unwrap();
+    let path = b"metadata.xml".as_bstr();
+    fs::write(dir.0.join("metadata.xml"), "untracked").unwrap();
+    let versions = repo.file_versions(path).unwrap();
+    assert!(versions.head.is_none());
+    assert!(versions.index.is_none());
+    assert_eq!(versions.worktree.as_deref(), Some(b"untracked".as_slice()));
+    assert!(!repo.index_path().exists());
+
+    git(&dir.0, &["add", "."]);
+    git(&dir.0, &["commit", "-m", "first"]);
+    assert_eq!(repo.file_versions(path).unwrap().head, versions.worktree);
+
+    fs::write(dir.0.join("metadata.xml"), "replacement").unwrap();
+    git(&dir.0, &["add", "."]);
+    git(&dir.0, &["commit", "-m", "second"]);
+    let versions = repo.file_versions(path).unwrap();
+    assert_eq!(versions.head.as_deref(), Some(b"replacement".as_slice()));
+    assert_eq!(versions.head, versions.index);
+
+    git(&dir.0, &["rm", "metadata.xml"]);
+    let versions = repo.file_versions(path).unwrap();
+    assert_eq!(versions.head.as_deref(), Some(b"replacement".as_slice()));
+    assert!(versions.index.is_none());
+    assert!(versions.worktree.is_none());
+    fs::write(repo.index_path(), "broken").unwrap();
+    assert!(matches!(
+        repo.file_versions(path),
+        Err(Error::InvalidIndex { .. })
+    ));
+}
+
+/// Snapshot reads must not follow worktree symlinks to unrelated content.
+#[cfg(unix)]
+#[test]
+fn file_versions_ignore_worktree_symlinks() {
+    let dir = repository();
+    commit(&dir.0, "metadata.xml");
+    fs::write(dir.0.join("target"), "unrelated").unwrap();
+    fs::remove_file(dir.0.join("metadata.xml")).unwrap();
+    std::os::unix::fs::symlink("target", dir.0.join("metadata.xml")).unwrap();
+    let repo = Repository::discover(&dir.0).unwrap();
+    let versions = repo.file_versions(b"metadata.xml".as_bstr()).unwrap();
+    assert_eq!(versions.head.as_deref(), Some(b"metadata.xml\n".as_slice()));
+    assert_eq!(versions.head, versions.index);
+    assert!(versions.worktree.is_none());
+}
+
 #[test]
 fn missing_index_stays_missing_and_stat_only_changes_stay_clean() {
     let dir = repository();

@@ -92,6 +92,7 @@ src/
     ├── network.rs               # clone/fetch через gix и transport fallback policy
     ├── diff.rs                  # разрешение revisions и tree-to-tree diff через gix
     ├── repository.rs            # discovery, HEAD, refs и ограниченная история
+    ├── snapshot.rs              # общий HEAD/index reader на время анализа файлов
     ├── status.rs                # изменения HEAD/index/worktree и changed paths
     ├── workflow.rs              # выбор preset, overrides и разрешение policy
     └── workflow/
@@ -300,3 +301,13 @@ cargo test --test integration vcs::
 поэтому больше не реализует `Copy`; getters принимают `&self`.
 `workflow()` возвращает выбранный preset, `workflow_settings()` — все настройки.
 В discovery настройки клонируются при построении проекта с проверенным source.
+
+## Чтение изменённых файлов
+
+`vcs/snapshot.rs` отделяет чтение содержимого от расчёта Git status.
+`FileVersionReader` удерживает HEAD tree и index snapshot на время одного
+file-level или semantic анализа. Инициализация ленивая: если содержимое не нужно,
+reader не создаётся. Файлы worktree читаются по одному, без накопления всех blobs.
+Следующая операция заново получает HEAD и индекс; публичный
+`Repository::file_versions` сохраняет чтение одного файла. Атомарный снимок
+worktree при параллельном редактировании не гарантируется.

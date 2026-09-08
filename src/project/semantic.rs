@@ -547,6 +547,7 @@ pub fn diff_workspace(
 ) -> Result<SemanticDiff, SemanticDiffError> {
     let repository = semantic_repository(project)?;
     let prefix = repository_project_prefix(&repository, project);
+    let mut versions_reader = None;
     let mut events = BTreeSet::new();
     for file in &diff.files {
         let source_path = source_relative_path(project, file.path.as_bstr());
@@ -554,8 +555,16 @@ pub fn diff_workspace(
             continue;
         };
         let repository_path = join_git_path(prefix.as_bstr(), file.path.as_bstr());
-        let versions = repository
-            .file_versions(repository_path.as_bstr())
+        let reader = match &versions_reader {
+            Some(reader) => reader,
+            None => versions_reader.insert(
+                repository
+                    .file_version_reader()
+                    .map_err(SemanticDiffError::Repository)?,
+            ),
+        };
+        let versions = reader
+            .read(repository_path.as_bstr())
             .map_err(SemanticDiffError::Repository)?;
         if let Some(change) = file.index {
             let snapshot = SnapshotChange {
