@@ -1,0 +1,12 @@
+[package]
+name = "eska-test-ibcmd"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }

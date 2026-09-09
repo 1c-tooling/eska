@@ -1,11 +1,9 @@
-#![cfg(unix)]
-
 use std::{
     fs,
     io::{BufRead, BufReader, Read},
-    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::{Command, Output, Stdio},
+    sync::OnceLock,
     thread,
     time::Duration,
 };
@@ -13,6 +11,8 @@ use std::{
 use serde_json::Value;
 
 use crate::support::TestDir;
+
+static IBCMD_FIXTURE: OnceLock<PathBuf> = OnceLock::new();
 
 /// Run eska with an isolated locale and optional fake import failure.
 fn eska(current_dir: &Path, locale: &str, ibcmd: &Path, args: &[&str], fail: bool) -> Output {
@@ -115,75 +115,28 @@ fn workspace() -> TestDir {
     fixture
 }
 
-/// Install an executable fake that implements the verified ibcmd calls.
-fn fake_ibcmd(fixture: &TestDir) -> PathBuf {
-    let path = fixture.0.join("ibcmd");
-    fs::write(
-        &path,
-        r#"#!/bin/sh
-if [ -n "$FAKE_IBCMD_LOG" ]; then
-  printf '%s\n' "$*" >> "$FAKE_IBCMD_LOG"
-fi
-if [ "$1" = "--version" ]; then
-  echo "1C ibcmd version ${FAKE_IBCMD_VERSION:-8.3.27.2325}"
-  exit 0
-fi
-if [ "$1" = "infobase" ] && [ "$2" = "create" ]; then
-  for argument in "$@"; do
-    case "$argument" in --data=*) mkdir -p "${argument#--data=}";; esac
-  done
-  exit 0
-fi
-if [ "$1" = "config" ] && [ "$2" = "import" ]; then
-  if [ "$FAKE_IBCMD_SLOW_IMPORT" = "1" ]; then
-    exec sleep 30
-  fi
-  output=
-  source=
-  for argument in "$@"; do
-    case "$argument" in
-      --out=*) output="${argument#--out=}";;
-      --*) ;;
-      *) source="$argument";;
-    esac
-  done
-  if [ "$FAKE_IBCMD_FAIL_IMPORT" = "1" ]; then
-    echo "fake import failure" >&2
-    exit 7
-  fi
-  case "$source" in
-    *"$FAKE_IBCMD_FAIL_SOURCE_CONTAINS"*)
-      if [ -n "$FAKE_IBCMD_FAIL_SOURCE_CONTAINS" ]; then
-        echo "fake selective import failure" >&2
-        exit 7
-      fi;;
-  esac
-  if [ -n "$FAKE_IBCMD_IMPORT_READY" ]; then
-    : > "$FAKE_IBCMD_IMPORT_READY"
-    while [ ! -f "$FAKE_IBCMD_IMPORT_CONTINUE" ]; do sleep 0.05; done
-  fi
-  if [ "$FAKE_IBCMD_STREAM" = "1" ]; then
-    echo "[INFO] File: $source/DataProcessors/РаботаСФайлами/Forms/ПрисоединенныйФайл/Ext/Help/ru.html, checking"
-    sleep 2
-  fi
-  if [ -n "$FAKE_IBCMD_ARTIFACT_SOURCE_FILE" ]; then
-    source_root="$source"
-    if [ -f "$source" ]; then source_root="${source%/*}"; fi
-    cat "$source_root/$FAKE_IBCMD_ARTIFACT_SOURCE_FILE" > "$output"
-  else
-    printf 'native-artifact' > "$output"
-  fi
-  echo "[WARN] fake build warning"
-  exit 0
-fi
-exit 9
-"#,
-    )
-    .expect("write fake ibcmd");
-    let mut permissions = fs::metadata(&path).expect("fake metadata").permissions();
-    permissions.set_mode(0o755);
-    fs::set_permissions(&path, permissions).expect("make fake executable");
-    path
+/// Return the native portable process fixture shared by build scenarios.
+fn fake_ibcmd(_fixture: &TestDir) -> PathBuf {
+    IBCMD_FIXTURE
+        .get_or_init(|| {
+            let repository = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+            let manifest = repository.join("tests/fixtures/ibcmd/Cargo.toml");
+            let target = repository.join("target/test-fixtures/ibcmd");
+            let status = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()))
+                .args(["build", "--quiet", "--locked", "--manifest-path"])
+                .arg(&manifest)
+                .arg("--target-dir")
+                .arg(&target)
+                .status()
+                .expect("build portable ibcmd fixture");
+            assert!(status.success(), "portable ibcmd fixture build failed");
+            let executable = target
+                .join("debug")
+                .join(format!("eska-test-ibcmd{}", std::env::consts::EXE_SUFFIX));
+            assert!(executable.is_file(), "portable ibcmd fixture is missing");
+            executable
+        })
+        .clone()
 }
 
 /// Capture directory names and file bytes without following links.
@@ -720,6 +673,7 @@ fn exact_platform_version_is_required() {
 }
 
 #[test]
+#[cfg(unix)]
 /// Terminate the active child and remove the temporary infobase after SIGTERM.
 fn interrupted_build_cleans_all_owned_paths() {
     let fixture = TestDir::new();
@@ -1270,6 +1224,7 @@ fn manifested_build_records_clean_and_dirty_git_state() {
 }
 
 #[test]
+#[cfg(unix)]
 /// Reject links from a manifested snapshot while retaining ordinary build behavior.
 fn manifested_build_rejects_source_links_without_changing_ordinary_build() {
     use std::os::unix::fs::symlink;
