@@ -242,10 +242,11 @@ tests/
   `project/selection.rs` разрешает standalone/current/named/all selection без
   зависимости от CLI. `cli/commands/version.rs` сохраняет JSON v1 одиночного
   проекта и формирует отдельный versioned документ для списка workspace members.
-- `project/save.rs` выполняет одну и ту же index snapshot/stage/commit/rollback
-  транзакцию для корня проекта или workspace. System Git получает точный cwd и
-  pathspec `.`, поэтому staged sibling paths большого репозитория не входят в
-  commit и сохраняются в index.
+- `project/save.rs` строит read-only `SavePlan` с точными scope-relative paths и
+  состояниями index/worktree для корня проекта или workspace. Исполнение заново
+  проходит ту же подготовку, затем выполняет index snapshot/stage/commit/rollback.
+  System Git получает точный cwd и pathspec `.`, поэтому staged sibling paths
+  большого репозитория не входят в commit и сохраняются в index.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую
@@ -264,10 +265,11 @@ tests/
   изменить HEAD, index и файлы; `cli/commands/switch.rs` отвечает за выбор
   task/base и RU/EN presentation.
 - `project/save.rs` выбирает все changed paths внутри корня проекта, отклоняет
-  конфликты и detached HEAD, сохраняет исходный index для rollback и поручает
-  staging/commit системному Git. `git commit --only` не включает подготовленные
-  sibling paths; `cli/commands/save.rs` отвечает за `-m`, configured editor и
-  локализованные сообщения.
+  конфликты и detached HEAD и предоставляет тот же preflight через `SavePlan`
+  для `save --dry-run`. При исполнении модуль сохраняет исходный index для
+  rollback и поручает staging/commit системному Git. `git commit --only` не
+  включает подготовленные sibling paths; `cli/commands/save.rs` отвечает за
+  `-m`, preview, configured editor и локализованные сообщения.
 - `workflow.rs` хранит выбор preset, проверенные overrides и разрешает доступные
   встроенные policies; `workflow/policy.rs` проверяет поля, содержит defaults
   Trunk, Git Flow и GitHub Flow, применяет overrides и строит декларативный план

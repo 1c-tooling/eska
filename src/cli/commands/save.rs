@@ -31,6 +31,9 @@ pub(in crate::cli) struct SaveArgs {
     #[arg(long)]
     workspace: bool,
 
+    #[arg(long)]
+    dry_run: bool,
+
     #[arg(short, long, action = clap::ArgAction::Help)]
     help: Option<bool>,
 }
@@ -77,10 +80,23 @@ impl SaveArgs {
             eprintln!("{}", localizer.text("save-single-project-required"));
             return ExitCode::FAILURE;
         }
-        self.save_project(selection.projects()[0].project(), localizer)
+        let selected = selection.projects()[0];
+        self.save_project(
+            selected.project(),
+            selected.name().map(crate::project::ProjectName::as_str),
+            localizer,
+        )
     }
 
-    fn save_project(&self, project: &Project, localizer: &Localizer) -> ExitCode {
+    fn save_project(
+        &self,
+        project: &Project,
+        name: Option<&str>,
+        localizer: &Localizer,
+    ) -> ExitCode {
+        if self.dry_run {
+            return self.preview_project(project, name, localizer);
+        }
         let result = if let Some(message) = self.message.as_deref() {
             save::execute(project, Some(message))
         } else {
@@ -97,6 +113,9 @@ impl SaveArgs {
     }
 
     fn save_workspace(&self, workspace: &Workspace, localizer: &Localizer) -> ExitCode {
+        if self.dry_run {
+            return self.preview_workspace(workspace, localizer);
+        }
         let result = if let Some(message) = self.message.as_deref() {
             save::execute_workspace(workspace, Some(message))
         } else {
@@ -111,6 +130,170 @@ impl SaveArgs {
         };
         present_result(result, localizer)
     }
+
+    fn preview_project(
+        &self,
+        project: &Project,
+        name: Option<&str>,
+        localizer: &Localizer,
+    ) -> ExitCode {
+        if let Some(message) = self.message.as_deref()
+            && let Err(error) = save::validate_message(message)
+        {
+            return present_failure(&error, localizer);
+        }
+        let plan = match save::plan(project) {
+            Ok(plan) => plan,
+            Err(error) => return present_failure(&error, localizer),
+        };
+        let message = match self.message.as_deref() {
+            Some(message) => message.to_owned(),
+            None => match generate_draft(project, localizer) {
+                Ok(draft) => draft,
+                Err(error) => {
+                    eprintln!("{}", present_diff_error(&error, localizer));
+                    return ExitCode::FAILURE;
+                }
+            },
+        };
+        present_preview(
+            &plan,
+            PreviewScope::Project {
+                name,
+                root: project.root(),
+            },
+            &message,
+            localizer,
+        )
+    }
+
+    fn preview_workspace(&self, workspace: &Workspace, localizer: &Localizer) -> ExitCode {
+        if let Some(message) = self.message.as_deref()
+            && let Err(error) = save::validate_message(message)
+        {
+            return present_failure(&error, localizer);
+        }
+        let plan = match save::plan_workspace(workspace) {
+            Ok(plan) => plan,
+            Err(error) => return present_failure(&error, localizer),
+        };
+        let message = match self.message.as_deref() {
+            Some(message) => message.to_owned(),
+            None => match generate_workspace_draft(workspace, localizer) {
+                Ok(draft) => draft,
+                Err(error) => {
+                    eprintln!("{}", present_diff_error(&error, localizer));
+                    return ExitCode::FAILURE;
+                }
+            },
+        };
+        present_preview(
+            &plan,
+            PreviewScope::Workspace {
+                root: workspace.root(),
+            },
+            &message,
+            localizer,
+        )
+    }
+}
+
+#[derive(Clone, Copy)]
+enum PreviewScope<'a> {
+    Project {
+        name: Option<&'a str>,
+        root: &'a Path,
+    },
+    Workspace {
+        root: &'a Path,
+    },
+}
+
+fn present_preview(
+    plan: &save::SavePlan,
+    scope: PreviewScope<'_>,
+    message: &str,
+    localizer: &Localizer,
+) -> ExitCode {
+    println!("{}", localizer.text("save-preview-title"));
+    match scope {
+        PreviewScope::Project {
+            name: Some(name),
+            root,
+        } => println!(
+            "{}",
+            localizer.format(
+                "save-preview-scope-member",
+                &[
+                    ("project", LocalizationValue::Text(name)),
+                    ("path", LocalizationValue::Text(&root.to_string_lossy())),
+                ],
+            )
+        ),
+        PreviewScope::Project { name: None, root } => println!(
+            "{}",
+            localizer.format(
+                "save-preview-scope-project",
+                &[("path", LocalizationValue::Text(&root.to_string_lossy()))],
+            )
+        ),
+        PreviewScope::Workspace { root } => println!(
+            "{}",
+            localizer.format(
+                "save-preview-scope-workspace",
+                &[("path", LocalizationValue::Text(&root.to_string_lossy()))],
+            )
+        ),
+    }
+    println!(
+        "{}",
+        localizer.format(
+            "save-preview-files",
+            &[(
+                "files",
+                LocalizationValue::Number(i64::try_from(plan.files().len()).unwrap_or(i64::MAX)),
+            )],
+        )
+    );
+    for file in plan.files() {
+        let path = changes::display_path(file.path());
+        let index = localizer.text(save_state_key(file.index()));
+        let worktree = localizer.text(save_state_key(file.worktree()));
+        println!(
+            "{}",
+            localizer.format(
+                "save-preview-file",
+                &[
+                    ("path", LocalizationValue::Text(&path)),
+                    ("index", LocalizationValue::Text(&index)),
+                    ("worktree", LocalizationValue::Text(&worktree)),
+                ],
+            )
+        );
+    }
+    println!("{}", localizer.text("save-preview-message"));
+    println!("{message}");
+    ExitCode::SUCCESS
+}
+
+const fn save_state_key(change: Option<crate::vcs::status::Change>) -> &'static str {
+    use crate::vcs::status::Change;
+
+    match change {
+        None => "save-preview-state-unchanged",
+        Some(Change::Added) => "save-preview-state-added",
+        Some(Change::Modified) => "save-preview-state-modified",
+        Some(Change::Deleted) => "save-preview-state-deleted",
+        Some(Change::TypeChanged) => "save-preview-state-type-changed",
+        Some(Change::Untracked) => "save-preview-state-untracked",
+        Some(Change::IntentToAdd) => "save-preview-state-intent-to-add",
+        Some(Change::Conflict) => "save-preview-state-conflict",
+    }
+}
+
+fn present_failure(error: &save::SaveError, localizer: &Localizer) -> ExitCode {
+    eprintln!("{}", present_error(error, localizer));
+    ExitCode::FAILURE
 }
 
 fn present_result(
@@ -455,6 +638,9 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         })
         .mut_arg("workspace", |argument| {
             argument.help(localizer.text("save-workspace-help"))
+        })
+        .mut_arg("dry_run", |argument| {
+            argument.help(localizer.text("save-dry-run-help"))
         })
         .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
 }

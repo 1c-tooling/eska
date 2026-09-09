@@ -2,7 +2,10 @@
 
 use std::{fs, io, path::PathBuf};
 
-use gix::{ObjectId, bstr::ByteSlice};
+use gix::{
+    ObjectId,
+    bstr::{BStr, BString, ByteSlice},
+};
 
 use super::{Project, Workspace};
 use crate::vcs::{
@@ -16,6 +19,44 @@ use crate::vcs::{
 pub struct SaveResult {
     pub commit: ObjectId,
     pub files: usize,
+}
+
+/// Exact read-only snapshot of files that one save would include.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SavePlan {
+    files: Vec<SaveFile>,
+}
+
+impl SavePlan {
+    #[must_use]
+    pub fn files(&self) -> &[SaveFile] {
+        &self.files
+    }
+}
+
+/// One scope-relative path and its staged and unstaged states.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SaveFile {
+    path: BString,
+    index: Option<Change>,
+    worktree: Option<Change>,
+}
+
+impl SaveFile {
+    #[must_use]
+    pub fn path(&self) -> &BStr {
+        self.path.as_bstr()
+    }
+
+    #[must_use]
+    pub const fn index(&self) -> Option<Change> {
+        self.index
+    }
+
+    #[must_use]
+    pub const fn worktree(&self) -> Option<Change> {
+        self.worktree
+    }
 }
 
 /// Errors that leave the worktree unchanged and restore prior staging when possible.
@@ -43,6 +84,35 @@ pub enum SaveError {
         original: Box<Self>,
     },
     CommitNotCreated,
+}
+
+/// Prepare an exact project save snapshot without changing repository state.
+///
+/// # Errors
+/// Returns the same repository, scope, HEAD, empty-scope and conflict preflight
+/// failures as [`execute`].
+pub fn plan(project: &Project) -> Result<SavePlan, SaveError> {
+    prepare_scope(project.root()).map(|prepared| prepared.plan)
+}
+
+/// Prepare an exact workspace save snapshot without changing repository state.
+///
+/// # Errors
+/// Returns the same preflight failures as [`execute_workspace`].
+pub fn plan_workspace(workspace: &Workspace) -> Result<SavePlan, SaveError> {
+    prepare_scope(workspace.root()).map(|prepared| prepared.plan)
+}
+
+/// Validate a supplied commit message before preparing or executing a save.
+///
+/// # Errors
+/// Returns [`SaveError::EmptyMessage`] when the message contains only whitespace.
+pub fn validate_message(message: &str) -> Result<(), SaveError> {
+    if message.trim().is_empty() {
+        Err(SaveError::EmptyMessage)
+    } else {
+        Ok(())
+    }
 }
 
 /// Save every current change below the project root in one commit.
@@ -99,8 +169,10 @@ impl SaveMessage<'_> {
     /// Return whether the selected message source is empty before invoking Git.
     fn is_empty(&self) -> bool {
         match self {
-            Self::Explicit(message) => message.is_some_and(|message| message.trim().is_empty()),
-            Self::Draft(draft) => draft.trim().is_empty(),
+            Self::Explicit(None) => false,
+            Self::Explicit(Some(message)) | Self::Draft(message) => {
+                validate_message(message).is_err()
+            }
         }
     }
 }
@@ -114,33 +186,8 @@ fn execute_scope(
         return Err(SaveError::EmptyMessage);
     }
 
-    let repository = Repository::discover(root).map_err(SaveError::Repository)?;
-    ensure_scope_in_repository(root, &repository)?;
-    if matches!(
-        repository.head().map_err(SaveError::Repository)?,
-        Head::Detached { .. }
-    ) {
-        return Err(SaveError::DetachedHead);
-    }
-
-    let status = repository.status().map_err(SaveError::Repository)?;
-    let changes: Vec<_> = status
-        .entries
-        .iter()
-        .filter(|entry| belongs_to_scope(&repository, root, entry))
-        .collect();
-    if changes.is_empty() {
-        return Err(SaveError::NoChanges);
-    }
-    let conflicts = changes
-        .iter()
-        .filter(|entry| {
-            entry.index == Some(Change::Conflict) || entry.worktree == Some(Change::Conflict)
-        })
-        .count();
-    if conflicts > 0 {
-        return Err(SaveError::Conflicts { files: conflicts });
-    }
+    let PreparedSave { repository, plan } = prepare_scope(root)?;
+    let files = plan.files.len();
 
     let snapshot = IndexSnapshot::capture(repository.index_path())?;
     let executor = Executor::new(root);
@@ -161,9 +208,47 @@ fn execute_scope(
         .map_err(SaveError::Repository)?
         .id()
         .ok_or(SaveError::CommitNotCreated)?;
-    Ok(SaveResult {
-        commit,
-        files: changes.len(),
+    Ok(SaveResult { commit, files })
+}
+
+struct PreparedSave {
+    repository: Repository,
+    plan: SavePlan,
+}
+
+/// Read and validate every repository input that determines the save scope.
+fn prepare_scope(root: &std::path::Path) -> Result<PreparedSave, SaveError> {
+    let repository = Repository::discover(root).map_err(SaveError::Repository)?;
+    ensure_scope_in_repository(root, &repository)?;
+    if matches!(
+        repository.head().map_err(SaveError::Repository)?,
+        Head::Detached { .. }
+    ) {
+        return Err(SaveError::DetachedHead);
+    }
+
+    let status = repository.status().map_err(SaveError::Repository)?;
+    let files = status
+        .entries
+        .iter()
+        .filter_map(|entry| save_file(&repository, root, entry))
+        .collect::<Vec<_>>();
+    if files.is_empty() {
+        return Err(SaveError::NoChanges);
+    }
+    let conflicts = files
+        .iter()
+        .filter(|file| {
+            file.index == Some(Change::Conflict) || file.worktree == Some(Change::Conflict)
+        })
+        .count();
+    if conflicts > 0 {
+        return Err(SaveError::Conflicts { files: conflicts });
+    }
+
+    Ok(PreparedSave {
+        repository,
+        plan: SavePlan { files },
     })
 }
 
@@ -181,12 +266,22 @@ fn ensure_scope_in_repository(
     }
 }
 
-fn belongs_to_scope(repository: &Repository, root: &std::path::Path, entry: &PathStatus) -> bool {
-    root == repository.work_dir()
-        || repository
-            .work_dir()
-            .join(gix::path::from_bstr(entry.path.as_bstr()).as_ref())
-            .starts_with(root)
+fn save_file(
+    repository: &Repository,
+    root: &std::path::Path,
+    entry: &PathStatus,
+) -> Option<SaveFile> {
+    let absolute = repository
+        .work_dir()
+        .join(gix::path::from_bstr(entry.path.as_bstr()).as_ref());
+    let relative = absolute.strip_prefix(root).ok()?;
+    let path =
+        gix::path::to_unix_separators_on_windows(gix::path::into_bstr(relative)).into_owned();
+    Some(SaveFile {
+        path,
+        index: entry.index,
+        worktree: entry.worktree,
+    })
 }
 
 struct IndexSnapshot {

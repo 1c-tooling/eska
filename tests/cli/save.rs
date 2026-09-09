@@ -54,6 +54,8 @@ fn project() -> (TestDir, PathBuf) {
     )
     .unwrap();
     fs::write(root.join("src/module.bsl"), "base\n").unwrap();
+    fs::write(root.join("src/deleted.bsl"), "base\n").unwrap();
+    fs::write(root.join(".gitignore"), "src/ignored.bsl\n").unwrap();
     fs::write(fixture.0.join("outside.txt"), "base\n").unwrap();
     git_ok(
         &fixture.0,
@@ -67,6 +69,232 @@ fn project() -> (TestDir, PathBuf) {
     git_ok(&fixture.0, &["add", "."]);
     git_ok(&fixture.0, &["commit", "-m", "base"]);
     (fixture, root)
+}
+
+/// Preview reports exact staged and unstaged states without touching Git or running hooks.
+#[cfg(unix)]
+#[test]
+fn dry_run_matches_the_subsequent_commit_and_is_byte_read_only() {
+    for (locale, title, scope, included, deleted, modified, untracked, message_label) in [
+        (
+            "ru",
+            "Предварительный просмотр save",
+            "Область: проект",
+            "Включено файлов: 3.",
+            "- src/deleted.bsl — index: без изменений; рабочее дерево: удалён",
+            "- src/module.bsl — index: изменён; рабочее дерево: изменён",
+            "- src/new.bsl — index: без изменений; рабочее дерево: не отслеживается",
+            "Сообщение commit:",
+        ),
+        (
+            "en",
+            "Save preview",
+            "Scope: project",
+            "Included files: 3.",
+            "- src/deleted.bsl — index: unchanged; working tree: deleted",
+            "- src/module.bsl — index: modified; working tree: modified",
+            "- src/new.bsl — index: unchanged; working tree: untracked",
+            "Commit message:",
+        ),
+    ] {
+        let (fixture, root) = project();
+        fs::write(fixture.0.join("outside.txt"), "staged outside\n").unwrap();
+        git_ok(&fixture.0, &["add", "outside.txt"]);
+        fs::write(root.join("src/module.bsl"), "staged project\n").unwrap();
+        git_ok(&fixture.0, &["add", "workspace/Billing/src/module.bsl"]);
+        fs::write(root.join("src/module.bsl"), "worktree project\n").unwrap();
+        fs::remove_file(root.join("src/deleted.bsl")).unwrap();
+        fs::write(root.join("src/new.bsl"), "new\n").unwrap();
+        fs::write(root.join("src/ignored.bsl"), "ignored\n").unwrap();
+
+        let marker = fixture.0.join("hook-called");
+        let hook = fixture.0.join(".git/hooks/pre-commit");
+        fs::create_dir_all(hook.parent().unwrap()).unwrap();
+        fs::write(
+            &hook,
+            format!("#!/bin/sh\ntouch '{}'\nexit 1\n", marker.display()),
+        )
+        .unwrap();
+        fs::set_permissions(&hook, fs::Permissions::from_mode(0o755)).unwrap();
+        let index = fixture.0.join(".git/index");
+        let head = fixture.0.join(".git/HEAD");
+        let branch = fixture.0.join(".git/refs/heads/main");
+        let status_before = git_ok(&fixture.0, &["status", "--short"]);
+        let index_before = fs::read(&index).unwrap();
+        let head_before = fs::read(&head).unwrap();
+        let branch_before = fs::read(&branch).unwrap();
+        let worktree_before = fs::read(root.join("src/module.bsl")).unwrap();
+
+        let output = eska(
+            &root,
+            locale,
+            &["save", "--dry-run", "-m", "fix: preview scope"],
+        );
+
+        assert!(output.status.success(), "{}", text(&output.stderr));
+        assert!(output.stderr.is_empty());
+        let stdout = text(&output.stdout);
+        for expected in [title, scope, included, deleted, modified, untracked] {
+            assert!(
+                stdout.contains(expected),
+                "missing `{expected}` in:\n{stdout}"
+            );
+        }
+        assert!(
+            stdout.ends_with(&format!("{message_label}\nfix: preview scope\n")),
+            "{stdout}"
+        );
+        assert!(!stdout.contains("outside.txt"), "{stdout}");
+        assert!(!stdout.contains("ignored.bsl"), "{stdout}");
+        assert!(!marker.exists());
+        assert_eq!(fs::read(&index).unwrap(), index_before);
+        assert_eq!(fs::read(&head).unwrap(), head_before);
+        assert_eq!(fs::read(&branch).unwrap(), branch_before);
+        assert_eq!(
+            fs::read(root.join("src/module.bsl")).unwrap(),
+            worktree_before
+        );
+        assert_eq!(git_ok(&fixture.0, &["status", "--short"]), status_before);
+
+        fs::remove_file(&hook).unwrap();
+        let saved = eska(&root, locale, &["save", "-m", "fix: preview scope"]);
+        assert!(saved.status.success(), "{}", text(&saved.stderr));
+        assert_eq!(
+            git_ok(&fixture.0, &["show", "--format=", "--name-only", "HEAD"]),
+            concat!(
+                "workspace/Billing/src/deleted.bsl\n",
+                "workspace/Billing/src/module.bsl\n",
+                "workspace/Billing/src/new.bsl\n"
+            )
+            .as_bytes()
+        );
+        assert_eq!(
+            git_ok(&fixture.0, &["status", "--short"]),
+            b"M  outside.txt\n"
+        );
+    }
+}
+
+/// A generated preview prints the draft and never opens the configured editor.
+#[cfg(unix)]
+#[test]
+fn dry_run_generates_a_draft_without_opening_the_editor() {
+    let (fixture, root) = project();
+    fs::write(root.join("src/module.bsl"), "changed\n").unwrap();
+    let marker = fixture.0.join("editor-called");
+    let editor = fixture.0.join("editor.sh");
+    fs::write(
+        &editor,
+        format!("#!/bin/sh\ntouch '{}'\nexit 1\n", marker.display()),
+    )
+    .unwrap();
+    fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
+    git_ok(
+        &fixture.0,
+        &["config", "core.editor", &format!("'{}'", editor.display())],
+    );
+    let head_before = git_ok(&fixture.0, &["rev-parse", "HEAD"]);
+
+    let output = eska(&root, "en", &["save", "--dry-run"]);
+
+    assert!(output.status.success(), "{}", text(&output.stderr));
+    let stdout = text(&output.stdout);
+    assert!(
+        stdout.contains("chore: Changes to project files\n\n"),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains("- File changed: src/module.bsl."),
+        "{stdout}"
+    );
+    assert!(!marker.exists());
+    assert_eq!(git_ok(&fixture.0, &["rev-parse", "HEAD"]), head_before);
+}
+
+/// Dry-run keeps project selectors and full workspace scope distinct.
+#[test]
+fn dry_run_preserves_project_and_workspace_selection() {
+    let (fixture, root, report, processing) = workspace();
+    fs::write(report.join("Report.xml"), "changed\n").expect("report change");
+    fs::write(processing.join("Processing.xml"), "changed\n").expect("processing change");
+    fs::write(root.join("README.md"), "changed\n").expect("workspace change");
+
+    let project_output = eska(
+        &root,
+        "en",
+        &[
+            "save",
+            "--dry-run",
+            "-p",
+            "sales-report",
+            "-m",
+            "report only",
+        ],
+    );
+    assert!(
+        project_output.status.success(),
+        "{}",
+        text(&project_output.stderr)
+    );
+    let project_stdout = text(&project_output.stdout);
+    assert!(project_stdout.contains("Scope: project sales-report"));
+    assert!(project_stdout.contains("- Report.xml"));
+    assert!(!project_stdout.contains("Processing.xml"));
+    assert!(!project_stdout.contains("README.md"));
+
+    let workspace_output = eska(
+        &report,
+        "en",
+        &["save", "--dry-run", "--workspace", "-m", "all"],
+    );
+    assert!(
+        workspace_output.status.success(),
+        "{}",
+        text(&workspace_output.stderr)
+    );
+    let workspace_stdout = text(&workspace_output.stdout);
+    assert!(workspace_stdout.contains("Scope: workspace"));
+    for path in [
+        "README.md",
+        "src/import-orders/Processing.xml",
+        "src/sales-report/Report.xml",
+    ] {
+        assert!(workspace_stdout.contains(path), "{workspace_stdout}");
+    }
+    assert_eq!(git_ok(&fixture.0, &["log", "-1", "--format=%s"]), b"base\n");
+}
+
+/// Preview supports an unborn branch without creating an index or commit.
+#[test]
+fn dry_run_supports_an_unborn_head_in_both_locales() {
+    for (locale, included) in [("ru", "Включено файлов: 2."), ("en", "Included files: 2.")]
+    {
+        let fixture = TestDir::new();
+        fs::create_dir_all(fixture.0.join("src")).unwrap();
+        fs::write(
+            fixture.0.join("eska.toml"),
+            "[project]\ntype = 'configuration'\n",
+        )
+        .unwrap();
+        fs::write(fixture.0.join("src/module.bsl"), "initial\n").unwrap();
+        git_ok(
+            &fixture.0,
+            &["init", "--initial-branch=main", "--template="],
+        );
+        let head_path = fixture.0.join(".git/HEAD");
+        let head_before = fs::read(&head_path).unwrap();
+
+        let output = eska(&fixture.0, locale, &["save", "--dry-run", "-m", "initial"]);
+
+        assert!(output.status.success(), "{}", text(&output.stderr));
+        let stdout = text(&output.stdout);
+        assert!(stdout.contains(included), "{stdout}");
+        assert!(stdout.contains("eska.toml"), "{stdout}");
+        assert!(stdout.contains("src/module.bsl"), "{stdout}");
+        assert_eq!(fs::read(&head_path).unwrap(), head_before);
+        assert!(!fixture.0.join(".git/index").exists());
+        assert!(!fixture.0.join(".git/refs/heads/main").exists());
+    }
 }
 
 fn workspace() -> (TestDir, PathBuf, PathBuf, PathBuf) {
@@ -311,12 +539,18 @@ fn preflight_errors_are_localized() {
         let clean = eska(&root, locale, &["save", "-m", "unused"]);
         assert_eq!(clean.status.code(), Some(1));
         assert!(text(&clean.stderr).contains(no_changes));
+        let clean_preview = eska(&root, locale, &["save", "--dry-run", "-m", "unused"]);
+        assert_eq!(clean_preview.status.code(), Some(1));
+        assert!(text(&clean_preview.stderr).contains(no_changes));
 
         git_ok(&fixture.0, &["checkout", "--detach"]);
         fs::write(root.join("src/module.bsl"), "changed\n").unwrap();
         let output = eska(&root, locale, &["save", "-m", "detached"]);
         assert_eq!(output.status.code(), Some(1));
         assert!(text(&output.stderr).contains(detached));
+        let preview = eska(&root, locale, &["save", "--dry-run", "-m", "detached"]);
+        assert_eq!(preview.status.code(), Some(1));
+        assert!(text(&preview.stderr).contains(detached));
         assert_eq!(git_ok(&fixture.0, &["rev-parse", "HEAD"]), initial_head);
     }
 }
@@ -346,6 +580,9 @@ fn conflicts_are_rejected_in_both_locales() {
 
         assert_eq!(output.status.code(), Some(1));
         assert!(text(&output.stderr).contains(expected));
+        let preview = eska(&root, locale, &["save", "--dry-run", "-m", "conflict"]);
+        assert_eq!(preview.status.code(), Some(1));
+        assert!(text(&preview.stderr).contains(expected));
         assert_eq!(git_ok(&fixture.0, &["rev-parse", "HEAD"]), head);
         assert_eq!(git_ok(&fixture.0, &["status", "--short"]), before);
     }
@@ -584,26 +821,32 @@ fn generated_editor_failure_restores_existing_staging() {
 /// Help and empty-message validation are localized CLI behavior.
 #[test]
 fn help_and_empty_message_are_localized() {
-    for (locale, help, empty) in [
+    for (locale, help, dry_run, empty) in [
         (
             "ru",
             "Сохранить текущие изменения проекта",
+            "Показать точный план сохранения",
             "Сообщение commit не может быть пустым",
         ),
         (
             "en",
             "Save current project changes",
+            "Show the exact save plan",
             "The commit message cannot be empty",
         ),
     ] {
         let help_output = eska(Path::new("."), locale, &["save", "--help"]);
         assert!(help_output.status.success());
         assert!(text(&help_output.stdout).contains(help));
+        assert!(text(&help_output.stdout).contains(dry_run));
 
         let (_fixture, root) = project();
         fs::write(root.join("src/module.bsl"), "changed\n").unwrap();
         let output = eska(&root, locale, &["save", "-m", "   "]);
         assert_eq!(output.status.code(), Some(1));
         assert!(text(&output.stderr).contains(empty));
+        let preview = eska(&root, locale, &["save", "--dry-run", "-m", "   "]);
+        assert_eq!(preview.status.code(), Some(1));
+        assert!(text(&preview.stderr).contains(empty));
     }
 }
