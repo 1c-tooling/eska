@@ -14,7 +14,7 @@ use crate::{
     cli::{
         changes::{
             display_path, metadata_kind, render_metadata_path, render_semantic_object,
-            semantic_event_key, semantic_object_group,
+            semantic_event_key, semantic_fallback_key, semantic_object_group,
         },
         diagnostics,
         localization::{LocalizationValue, Localizer},
@@ -26,9 +26,11 @@ use crate::{
             WorkspaceRevisionDiff,
         },
         discovery::{self, DiscoveryContext},
-        object_model,
         selection::{SelectionIntent, select_projects},
-        semantic::{self, SemanticDiff, SemanticEvent, SemanticEventKind},
+        semantic::{
+            self, SemanticDiff, SemanticDiffError, SemanticEvent, SemanticEventKind,
+            SemanticFallback,
+        },
     },
     vcs::status::Change,
 };
@@ -156,9 +158,9 @@ impl DiffArgs {
                 Err(error) => return report_error(&error, localizer),
             };
             if self.semantic {
-                let Some(changes) = analyze_workspace_semantics(project, &changes, localizer)
-                else {
-                    return ExitCode::FAILURE;
+                let changes = match analyze_workspace_semantics(project, &changes, localizer) {
+                    Ok(changes) => changes,
+                    Err(error) => return self.report_semantic_error(&error, "semantic", localizer),
                 };
                 return self.render_semantic(&changes, None, localizer);
             }
@@ -171,9 +173,9 @@ impl DiffArgs {
                 Err(error) => return report_error(&error, localizer),
             };
             if self.semantic {
-                let Some(semantic) = analyze_revision_semantics(project, &changes, localizer)
-                else {
-                    return ExitCode::FAILURE;
+                let semantic = match analyze_revision_semantics(project, &changes, localizer) {
+                    Ok(changes) => changes,
+                    Err(error) => return self.report_semantic_error(&error, "semantic", localizer),
                 };
                 return self.render_semantic(&semantic, Some(&changes), localizer);
             }
@@ -246,8 +248,11 @@ impl DiffArgs {
         localizer: &Localizer,
     ) -> ExitCode {
         if self.semantic {
-            let Some(semantic) = analyze_workspace_group(changes, selected, localizer) else {
-                return ExitCode::FAILURE;
+            let semantic = match analyze_workspace_group(changes, selected, localizer) {
+                Ok(changes) => changes,
+                Err(error) => {
+                    return self.report_semantic_error(&error, "semantic_workspace", localizer);
+                }
             };
             return render_workspace_semantic(
                 self,
@@ -283,9 +288,11 @@ impl DiffArgs {
         localizer: &Localizer,
     ) -> ExitCode {
         if self.semantic {
-            let Some(semantic) = analyze_workspace_revision_group(changes, selected, localizer)
-            else {
-                return ExitCode::FAILURE;
+            let semantic = match analyze_workspace_revision_group(changes, selected, localizer) {
+                Ok(changes) => changes,
+                Err(error) => {
+                    return self.report_semantic_error(&error, "semantic_workspace", localizer);
+                }
             };
             return render_workspace_semantic(
                 self,
@@ -315,6 +322,30 @@ impl DiffArgs {
             }
         }
     }
+
+    /// Report a failed semantic operation while preserving a stable JSON error envelope.
+    fn report_semantic_error(
+        &self,
+        error: &SemanticDiffError,
+        kind: &'static str,
+        localizer: &Localizer,
+    ) -> ExitCode {
+        eprintln!("{}", localizer.text("diff-semantic-error"));
+        if !self.raw && matches!(self.format, OutputFormat::Json) {
+            let document = SemanticErrorDocument {
+                schema_version: 4,
+                kind,
+                status: "error",
+                error: SemanticErrorDetailDocument {
+                    code: semantic_error_code(error),
+                },
+            };
+            if serialize_json(&document, localizer) == ExitCode::FAILURE {
+                return ExitCode::FAILURE;
+            }
+        }
+        ExitCode::FAILURE
+    }
 }
 
 struct NamedSemanticDiff {
@@ -333,17 +364,10 @@ fn analyze_workspace_semantics(
     project: &crate::project::Project,
     changes: &ProjectDiff,
     localizer: &Localizer,
-) -> Option<SemanticDiff> {
-    let objects = object_model::discover(project).ok().or_else(|| {
-        eprintln!("{}", localizer.text("diff-semantic-error"));
-        None
-    })?;
-    semantic::diff_workspace(project, &objects, changes)
-        .ok()
-        .or_else(|| {
-            eprintln!("{}", localizer.text("diff-semantic-error"));
-            None
-        })
+) -> Result<SemanticDiff, SemanticDiffError> {
+    let diff = semantic::diff_workspace_affected(project, changes)?;
+    report_semantic_fallbacks(&diff, None, localizer);
+    Ok(diff)
 }
 
 /// Analyze committed tree blob pairs independently of the current worktree contents.
@@ -351,28 +375,27 @@ fn analyze_revision_semantics(
     project: &crate::project::Project,
     changes: &RevisionProjectDiff,
     localizer: &Localizer,
-) -> Option<SemanticDiff> {
-    semantic::diff_revisions(project, changes).ok().or_else(|| {
-        eprintln!("{}", localizer.text("diff-semantic-error"));
-        None
-    })
+) -> Result<SemanticDiff, SemanticDiffError> {
+    let diff = semantic::diff_revisions(project, changes)?;
+    report_semantic_fallbacks(&diff, None, localizer);
+    Ok(diff)
 }
 
 fn analyze_workspace_group(
     changes: &WorkspaceDiff,
     selected: &[&WorkspaceMember],
     localizer: &Localizer,
-) -> Option<Vec<NamedSemanticDiff>> {
+) -> Result<Vec<NamedSemanticDiff>, SemanticDiffError> {
     changes
         .projects
         .iter()
         .zip(selected)
         .map(|(changes, member)| {
-            analyze_workspace_semantics(member.project(), &changes.diff, localizer).map(|diff| {
-                NamedSemanticDiff {
-                    name: changes.name.clone(),
-                    diff,
-                }
+            let diff = semantic::diff_workspace_affected(member.project(), &changes.diff)?;
+            report_semantic_fallbacks(&diff, Some(changes.name.as_str()), localizer);
+            Ok(NamedSemanticDiff {
+                name: changes.name.clone(),
+                diff,
             })
         })
         .collect()
@@ -382,20 +405,39 @@ fn analyze_workspace_revision_group(
     changes: &WorkspaceRevisionDiff,
     selected: &[&WorkspaceMember],
     localizer: &Localizer,
-) -> Option<Vec<NamedSemanticDiff>> {
+) -> Result<Vec<NamedSemanticDiff>, SemanticDiffError> {
     changes
         .projects
         .iter()
         .zip(selected)
         .map(|(changes, member)| {
-            analyze_revision_semantics(member.project(), &changes.diff, localizer).map(|diff| {
-                NamedSemanticDiff {
-                    name: changes.name.clone(),
-                    diff,
-                }
+            let diff = semantic::diff_revisions(member.project(), &changes.diff)?;
+            report_semantic_fallbacks(&diff, Some(changes.name.as_str()), localizer);
+            Ok(NamedSemanticDiff {
+                name: changes.name.clone(),
+                diff,
             })
         })
         .collect()
+}
+
+/// Explain every non-fatal reduction while leaving machine events locale-independent.
+fn report_semantic_fallbacks(diff: &SemanticDiff, project: Option<&str>, localizer: &Localizer) {
+    for fallback in diff.fallbacks() {
+        let path = display_path(fallback.path());
+        let path = project.map_or_else(|| path.clone(), |project| format!("{project}/{path}"));
+        let reason = localizer.text(semantic_fallback_key(fallback.reason()));
+        eprintln!(
+            "{}",
+            localizer.format(
+                "semantic-fallback",
+                &[
+                    ("path", LocalizationValue::Text(&path)),
+                    ("reason", LocalizationValue::Text(&reason)),
+                ],
+            )
+        );
+    }
 }
 
 fn render_workspace_human(changes: &WorkspaceDiff, localizer: &Localizer, styled: bool) -> String {
@@ -1165,6 +1207,7 @@ struct SemanticDiffDocument<'a> {
     kind: &'static str,
     comparison: SemanticComparisonDocument<'a>,
     events: Vec<SemanticEventDocument>,
+    analysis: SemanticAnalysisDocument,
 }
 
 #[derive(Serialize)]
@@ -1180,6 +1223,7 @@ struct WorkspaceSemanticDiffDocument<'a> {
 struct WorkspaceSemanticProjectDocument {
     name: String,
     events: Vec<SemanticEventDocument>,
+    analysis: SemanticAnalysisDocument,
 }
 
 #[derive(Serialize)]
@@ -1218,8 +1262,44 @@ struct SemanticObjectDocument {
     name: String,
 }
 
+#[derive(Serialize)]
+struct SemanticAnalysisDocument {
+    complete: bool,
+    fallbacks: Vec<SemanticFallbackDocument>,
+}
+
+#[derive(Serialize)]
+struct SemanticFallbackDocument {
+    reason: &'static str,
+    stage: &'static str,
+    path: String,
+    path_encoding: &'static str,
+}
+
+#[derive(Serialize)]
+struct SemanticErrorDocument {
+    schema_version: u8,
+    kind: &'static str,
+    status: &'static str,
+    error: SemanticErrorDetailDocument,
+}
+
+#[derive(Serialize)]
+struct SemanticErrorDetailDocument {
+    code: &'static str,
+}
+
+/// Map semantic operation failures to locale-independent machine codes.
+const fn semantic_error_code(error: &SemanticDiffError) -> &'static str {
+    match error {
+        SemanticDiffError::Repository(_) => "repository",
+        SemanticDiffError::ObjectModel(_) => "object-model",
+        SemanticDiffError::ProjectOutsideRepository { .. } => "project-outside-repository",
+    }
+}
+
 impl<'a> SemanticDiffDocument<'a> {
-    /// Build semantic schema version 3 without locale-dependent values.
+    /// Build semantic schema version 4 with explicit analysis completeness.
     fn new(diff: &SemanticDiff, revisions: Option<&'a RevisionProjectDiff>) -> Self {
         let comparison = revisions.map_or(SemanticComparisonDocument::Workspace, |diff| {
             let comparison = &diff.comparison;
@@ -1241,7 +1321,7 @@ impl<'a> SemanticDiffDocument<'a> {
             }
         });
         Self {
-            schema_version: 3,
+            schema_version: 4,
             kind: "semantic",
             comparison,
             events: diff
@@ -1249,6 +1329,7 @@ impl<'a> SemanticDiffDocument<'a> {
                 .iter()
                 .map(SemanticEventDocument::from)
                 .collect(),
+            analysis: SemanticAnalysisDocument::from(diff),
         }
     }
 }
@@ -1260,7 +1341,7 @@ impl<'a> WorkspaceSemanticDiffDocument<'a> {
         comparison: Option<&'a diff::RevisionComparison>,
     ) -> Self {
         Self {
-            schema_version: 3,
+            schema_version: 4,
             kind: "semantic_workspace",
             comparison: semantic_comparison(comparison),
             projects: semantic
@@ -1273,6 +1354,7 @@ impl<'a> WorkspaceSemanticDiffDocument<'a> {
                         .iter()
                         .map(SemanticEventDocument::from)
                         .collect(),
+                    analysis: SemanticAnalysisDocument::from(&project.diff),
                 })
                 .collect(),
             workspace_files: workspace_files.map(|files| match files {
@@ -1323,6 +1405,31 @@ impl From<&SemanticEvent> for SemanticEventDocument {
                 name: event.object().name().to_owned(),
             },
             member: event.member().map(str::to_owned),
+            path,
+            path_encoding,
+        }
+    }
+}
+
+impl From<&SemanticDiff> for SemanticAnalysisDocument {
+    fn from(diff: &SemanticDiff) -> Self {
+        Self {
+            complete: diff.is_complete(),
+            fallbacks: diff
+                .fallbacks()
+                .iter()
+                .map(SemanticFallbackDocument::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<&SemanticFallback> for SemanticFallbackDocument {
+    fn from(fallback: &SemanticFallback) -> Self {
+        let (path, path_encoding) = json_path(fallback.path());
+        Self {
+            reason: fallback.reason().as_str(),
+            stage: fallback.stage().as_str(),
             path,
             path_encoding,
         }
@@ -1544,8 +1651,9 @@ mod tests {
     use gix::bstr::{BString, ByteSlice};
 
     use super::{
-        HumanState, SemanticHumanChange, append_semantic_event_groups, change_marker, change_name,
-        human_state_title, json_path, raw_code, render_human, render_raw,
+        HumanState, SemanticErrorDetailDocument, SemanticErrorDocument, SemanticHumanChange,
+        append_semantic_event_groups, change_marker, change_name, human_state_title, json_path,
+        raw_code, render_human, render_raw, semantic_error_code,
     };
     use crate::{
         cli::localization::{Locale, Localizer},
@@ -1553,7 +1661,7 @@ mod tests {
             ProjectType,
             diff::{DisplayChange, DisplayTarget, FileChange, ProjectDiff},
             metadata,
-            semantic::{ChangeStage, SemanticEventKind},
+            semantic::{ChangeStage, SemanticDiffError, SemanticEventKind},
         },
         vcs::status::Change,
     };
@@ -1576,6 +1684,33 @@ mod tests {
             assert_eq!(change_marker(change), marker);
         }
         assert_eq!(raw_code(None), '.');
+    }
+
+    /// Fatal semantic JSON remains distinct from a successful incomplete analysis.
+    #[test]
+    fn semantic_error_document_has_a_stable_machine_code() {
+        let error = SemanticDiffError::ProjectOutsideRepository {
+            project: "/project".into(),
+            repository: "/repository".into(),
+        };
+        let document = SemanticErrorDocument {
+            schema_version: 4,
+            kind: "semantic",
+            status: "error",
+            error: SemanticErrorDetailDocument {
+                code: semantic_error_code(&error),
+            },
+        };
+
+        assert_eq!(
+            serde_json::to_value(document).expect("semantic error JSON"),
+            serde_json::json!({
+                "schema_version": 4,
+                "kind": "semantic",
+                "status": "error",
+                "error": {"code": "project-outside-repository"}
+            })
+        );
     }
 
     /// Raw output keeps both comparison stages and deterministic path order.

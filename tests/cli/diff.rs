@@ -88,11 +88,8 @@ fn workspace() -> (TestDir, PathBuf, PathBuf) {
         "[project]\nname = 'import-orders'\ntype = 'processing'\nsource = '.'\n",
     )
     .expect("processing config");
-    fs::write(
-        processing.join("ImportOrders.xml"),
-        r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><ExternalDataProcessor uuid="00000000-0000-0000-0000-000000000002"><Properties><Name>ImportOrders</Name></Properties></ExternalDataProcessor></MetaDataObject>"#,
-    )
-    .expect("processing source");
+    // This unchanged member must never reach object-model parsing in semantic workspace mode.
+    fs::write(processing.join("ImportOrders.xml"), "<broken>").expect("processing source");
     fs::write(root.join("README.md"), "base\n").expect("workspace file");
     fs::write(fixture.0.join("outside.txt"), "base\n").expect("repository sibling");
     git(
@@ -185,9 +182,14 @@ fn workspace_diff_preserves_single_json_and_supports_revisions_and_semantics() {
     let semantic = eska(&root, "en", &["diff", "--semantic", "--format", "json"]);
     assert!(semantic.status.success(), "{semantic:?}");
     let document: Value = serde_json::from_slice(&semantic.stdout).expect("semantic JSON");
-    assert_eq!(document["schema_version"], 3);
+    assert_eq!(document["schema_version"], 4);
     assert_eq!(document["kind"], "semantic_workspace");
     assert_eq!(document["projects"][0]["name"], "sales-report");
+    assert_eq!(document["projects"][0]["analysis"]["complete"], true);
+    assert_eq!(document["projects"][0]["analysis"]["fallbacks"], json!([]));
+    assert_eq!(document["projects"][1]["analysis"]["complete"], true);
+    assert_eq!(document["projects"][1]["analysis"]["fallbacks"], json!([]));
+    assert!(semantic.stderr.is_empty(), "{semantic:?}");
     assert_eq!(document["workspace_files"]["kind"], "workspace");
 
     git(&root, &["add", "."]);
@@ -630,9 +632,11 @@ fn semantic_workspace_diff_reports_objects_modules_routines_forms_and_attributes
     }
     assert_eq!(documents[0], documents[1]);
     let document = &documents[0];
-    assert_eq!(document["schema_version"], 3);
+    assert_eq!(document["schema_version"], 4);
     assert_eq!(document["kind"], "semantic");
     assert_eq!(document["comparison"]["kind"], "workspace");
+    assert_eq!(document["analysis"]["complete"], true);
+    assert_eq!(document["analysis"]["fallbacks"], json!([]));
     let events = document["events"].as_array().expect("events");
     let kinds: Vec<_> = events
         .iter()
@@ -694,6 +698,121 @@ fn semantic_workspace_diff_reports_objects_modules_routines_forms_and_attributes
     );
 }
 
+/// One malformed descriptor degrades only its exact path and preserves independent events.
+#[test]
+fn semantic_json_reports_descriptor_fallback_without_cancelling_other_objects() {
+    let (_fixture, root) = semantic_project();
+    fs::write(
+        root.join("src/Catalogs/Контрагенты.xml"),
+        "<MetaDataObject>",
+    )
+    .expect("break catalog descriptor");
+    fs::write(
+        root.join("src/CommonModules/ОбщийМодуль1/Ext/Module.bsl"),
+        concat!(
+            "Процедура Выполнить()\n    Сообщить(\"Изменённый\");\nКонецПроцедуры\n",
+            "Функция ПолучитьЗначение()\n    Возврат 1;\nКонецФункции\n"
+        ),
+    )
+    .expect("change independent module");
+
+    let mut documents = Vec::new();
+    for (locale, warning) in [
+        ("ru", "дескриптор не удалось разобрать"),
+        ("en", "the descriptor could not be parsed"),
+    ] {
+        let output = eska(&root, locale, &["diff", "--semantic", "--format", "json"]);
+        assert!(output.status.success(), "{output:?}");
+        let stderr = String::from_utf8_lossy(&output.stderr).replace(['\u{2068}', '\u{2069}'], "");
+        assert!(stderr.contains(warning), "{stderr}");
+        assert!(stderr.contains("src/Catalogs/Контрагенты.xml"), "{stderr}");
+        documents.push(serde_json::from_slice::<Value>(&output.stdout).expect("semantic JSON"));
+    }
+
+    assert_eq!(documents[0], documents[1]);
+    let document = &documents[0];
+    assert_eq!(document["analysis"]["complete"], false);
+    assert_eq!(
+        document["analysis"]["fallbacks"],
+        json!([{
+            "reason": "descriptor-parse",
+            "stage": "worktree",
+            "path": "src/Catalogs/Контрагенты.xml",
+            "path_encoding": "utf-8"
+        }])
+    );
+    let events = document["events"].as_array().expect("events");
+    assert!(events.iter().any(|event| {
+        event["kind"] == "method_changed" && event["object"]["id"] == "common-module:ОбщийМодуль1"
+    }));
+    assert!(events.iter().any(|event| {
+        event["kind"] == "object_changed" && event["object"]["id"] == "catalog:Контрагенты"
+    }));
+}
+
+/// An incomplete BSL routine keeps the module event and exposes its exact fallback.
+#[test]
+fn semantic_json_reports_incomplete_bsl_at_module_level() {
+    let (_fixture, root) = semantic_project();
+    fs::write(
+        root.join("src/CommonModules/ОбщийМодуль1/Ext/Module.bsl"),
+        "Процедура Выполнить()\n",
+    )
+    .expect("write incomplete BSL");
+
+    let output = eska(&root, "en", &["diff", "--semantic", "--format", "json"]);
+    assert!(output.status.success(), "{output:?}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("semantic JSON");
+    assert_eq!(document["analysis"]["complete"], false);
+    assert_eq!(
+        document["analysis"]["fallbacks"][0]["reason"],
+        "routine-parse"
+    );
+    assert_eq!(
+        document["analysis"]["fallbacks"][0]["path"],
+        "src/CommonModules/ОбщийМодуль1/Ext/Module.bsl"
+    );
+    assert!(
+        document["events"]
+            .as_array()
+            .expect("events")
+            .iter()
+            .any(|event| event["kind"] == "module_changed")
+    );
+}
+
+/// Descriptor deletion and move preserve inline and standalone object identities.
+#[test]
+fn semantic_diff_preserves_identities_across_descriptor_deletion_and_move() {
+    let (_fixture, root) = semantic_project();
+    fs::remove_file(root.join("src/Catalogs/Контрагенты.xml")).expect("delete catalog descriptor");
+    fs::rename(
+        root.join("src/CommonForms/Основная.xml"),
+        root.join("src/CommonForms/Перемещённая.xml"),
+    )
+    .expect("move standalone form descriptor");
+
+    let output = eska(&root, "en", &["diff", "--semantic", "--format", "json"]);
+    assert!(output.status.success(), "{output:?}");
+    assert!(output.stderr.is_empty(), "{output:?}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("semantic JSON");
+    assert_eq!(document["analysis"]["complete"], true);
+    let events = document["events"].as_array().expect("events");
+    for (kind, id) in [
+        ("object_removed", "catalog:Контрагенты"),
+        ("object_removed", "catalog:Контрагенты/attribute:Реквизит1"),
+        ("object_removed", "common-form:Основная"),
+        ("object_added", "common-form:Основная"),
+    ] {
+        assert!(
+            events
+                .iter()
+                .any(|event| event["kind"] == kind && event["object"]["id"] == id),
+            "missing {kind} for {id}: {document}"
+        );
+    }
+}
+
 /// Committed semantic comparison uses revision stages and explicit endpoints.
 #[test]
 fn semantic_revision_diff_has_a_separate_versioned_comparison() {
@@ -709,8 +828,9 @@ fn semantic_revision_diff_has_a_separate_versioned_comparison() {
     );
     assert!(output.status.success(), "{output:?}");
     let document: Value = serde_json::from_slice(&output.stdout).expect("semantic revision JSON");
-    assert_eq!(document["schema_version"], 3);
+    assert_eq!(document["schema_version"], 4);
     assert_eq!(document["comparison"]["kind"], "revisions");
+    assert_eq!(document["analysis"]["complete"], true);
     assert_eq!(document["comparison"]["strategy"], "direct");
     assert_eq!(document["comparison"]["from"]["revision"], "HEAD~1");
     assert_eq!(document["comparison"]["to"]["revision"], "HEAD");

@@ -6,8 +6,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::{ArtifactType, BuildPlan, Ibcmd, ProcessStream, RunError};
-use crate::project::{ProjectType, designer_xml};
+use super::{ArtifactType, BuildPlan, Ibcmd, ManifestError, ProcessStream, RunError, manifest};
+use crate::project::{Project, ProjectType, designer_xml};
 
 static WORKSPACE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
@@ -20,6 +20,7 @@ pub enum BuildStage {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BuildResult {
     output: PathBuf,
+    manifest: Option<PathBuf>,
     duration: Duration,
     tool_output: Vec<u8>,
 }
@@ -28,6 +29,11 @@ impl BuildResult {
     #[must_use]
     pub fn output(&self) -> &Path {
         &self.output
+    }
+
+    #[must_use]
+    pub fn manifest(&self) -> Option<&Path> {
+        self.manifest.as_deref()
     }
 
     #[must_use]
@@ -59,6 +65,7 @@ pub enum BuildError {
     DescriptorInvalid { path: PathBuf },
     DescriptorMissing(PathBuf),
     DescriptorsMultiple(PathBuf),
+    Manifest(ManifestError),
 }
 
 /// Build a native 1C artifact through an isolated temporary file infobase.
@@ -86,8 +93,45 @@ pub fn execute_streaming<F>(
 where
     F: FnMut(BuildStage, ProcessStream, &[u8]),
 {
+    execute_streaming_inner(plan, ibcmd, None, &mut on_output)
+}
+
+/// Build from an immutable source snapshot and publish its artifact manifest as one pair.
+///
+/// # Errors
+/// Returns a structured failure without replacing either previous result unless both new files
+/// can be published.
+pub fn execute_streaming_with_manifest<F>(
+    plan: &BuildPlan,
+    project: &Project,
+    project_name: Option<&str>,
+    ibcmd: &Ibcmd,
+    mut on_output: F,
+) -> Result<BuildResult, BuildError>
+where
+    F: FnMut(BuildStage, ProcessStream, &[u8]),
+{
+    execute_streaming_inner(plan, ibcmd, Some((project, project_name)), &mut on_output)
+}
+
+/// Share the verified platform pipeline between ordinary and manifested builds.
+fn execute_streaming_inner<F>(
+    plan: &BuildPlan,
+    ibcmd: &Ibcmd,
+    manifest_request: Option<(&Project, Option<&str>)>,
+    on_output: &mut F,
+) -> Result<BuildResult, BuildError>
+where
+    F: FnMut(BuildStage, ProcessStream, &[u8]),
+{
     let started = Instant::now();
-    preflight(plan)?;
+    if manifest_request.is_some() {
+        preflight_manifest(plan)?;
+    } else {
+        preflight(plan)?;
+    }
+    let manifest_seed =
+        manifest_request.map(|(project, name)| manifest::ManifestSeed::capture(project, name));
     ibcmd
         .begin_interruptible_operation()
         .map_err(|source| BuildError::Run {
@@ -109,7 +153,15 @@ where
     let artifact = workspace
         .path
         .join(format!("artifact.{}", plan.artifact_type().extension()));
-    let import_source = import_source(plan)?;
+    let snapshot = manifest_request
+        .map(|(project, _)| manifest::capture_source(project, plan, &workspace.path))
+        .transpose()
+        .map_err(BuildError::Manifest)?;
+    let effective_plan = snapshot.as_ref().map_or_else(
+        || plan.clone(),
+        |snapshot| plan.with_snapshot_source(snapshot.source().to_owned()),
+    );
+    let import_source = import_source(&effective_plan)?;
 
     let create_output = run(
         ibcmd,
@@ -120,7 +172,7 @@ where
             option("--data", &data),
         ],
         &pid_file,
-        &mut on_output,
+        on_output,
     )?;
     let import_output = run(
         ibcmd,
@@ -133,7 +185,7 @@ where
             import_source.into_os_string(),
         ],
         &pid_file,
-        &mut on_output,
+        on_output,
     )?;
     if ibcmd.was_interrupted() {
         return Err(BuildError::Run {
@@ -150,7 +202,14 @@ where
     if metadata.len() == 0 {
         return Err(BuildError::ArtifactEmpty(artifact));
     }
-    publish(&artifact, plan.output())?;
+    let manifest_path = publish_result(
+        plan,
+        ibcmd,
+        &workspace.path,
+        &artifact,
+        manifest_seed,
+        snapshot.as_ref(),
+    )?;
     created_directories.keep();
     let mut tool_output = Vec::new();
     append_process_output(&mut tool_output, &create_output.stdout);
@@ -159,9 +218,38 @@ where
     append_process_output(&mut tool_output, &import_output.stderr);
     Ok(BuildResult {
         output: plan.output().to_owned(),
+        manifest: manifest_path,
         duration: started.elapsed(),
         tool_output,
     })
+}
+
+/// Publish either one ordinary artifact or one checksummed artifact/manifest pair.
+fn publish_result(
+    plan: &BuildPlan,
+    ibcmd: &Ibcmd,
+    workspace: &Path,
+    artifact: &Path,
+    manifest_seed: Option<manifest::ManifestSeed>,
+    snapshot: Option<&manifest::SourceSnapshot>,
+) -> Result<Option<PathBuf>, BuildError> {
+    let Some((seed, snapshot)) = manifest_seed.zip(snapshot) else {
+        publish(artifact, plan.output())?;
+        return Ok(None);
+    };
+    let staged = workspace.join("artifact.manifest.json");
+    manifest::write(
+        &staged,
+        artifact,
+        plan.artifact_type(),
+        ibcmd.version().as_str(),
+        seed,
+        snapshot,
+    )
+    .map_err(BuildError::Manifest)?;
+    let destination = manifest::path_for_artifact(plan.output());
+    publish_pair(artifact, plan.output(), &staged, &destination)?;
+    Ok(Some(destination))
 }
 
 /// Validate every filesystem input and output invariant without creating files or invoking ibcmd.
@@ -179,6 +267,15 @@ pub fn preflight(plan: &BuildPlan) -> Result<(), BuildError> {
     }
     validate_existing_output(plan.output())?;
     import_source(plan).map(|_| ())
+}
+
+/// Validate both destinations required by a manifested build without creating files.
+///
+/// # Errors
+/// Returns the same output errors as execution for either the artifact or its manifest.
+pub fn preflight_manifest(plan: &BuildPlan) -> Result<(), BuildError> {
+    preflight(plan)?;
+    validate_existing_output(&manifest::path_for_artifact(plan.output()))
 }
 
 /// Resolve the source argument expected by ibcmd for each native artifact kind.
@@ -389,6 +486,113 @@ fn publish(artifact: &Path, output: &Path) -> Result<(), BuildError> {
     })
 }
 
+/// Publish an artifact and manifest together, restoring the previous pair on failure.
+fn publish_pair(
+    artifact: &Path,
+    output: &Path,
+    staged_manifest: &Path,
+    manifest: &Path,
+) -> Result<(), BuildError> {
+    let output_backup = optional_backup(output)?;
+    let manifest_backup = match optional_backup(manifest) {
+        Ok(backup) => backup,
+        Err(error) => {
+            remove_backup(output_backup.as_deref());
+            return Err(error);
+        }
+    };
+    if let Err(error) = remove_existing(output).and_then(|()| remove_existing(manifest)) {
+        restore_pair(
+            output,
+            output_backup.as_deref(),
+            manifest,
+            manifest_backup.as_deref(),
+        )?;
+        return Err(error);
+    }
+    if let Err(source) = fs::hard_link(artifact, output) {
+        restore_pair(
+            output,
+            output_backup.as_deref(),
+            manifest,
+            manifest_backup.as_deref(),
+        )?;
+        return Err(BuildError::Publish {
+            path: output.to_owned(),
+            source,
+        });
+    }
+    if let Err(source) = fs::hard_link(staged_manifest, manifest) {
+        restore_pair(
+            output,
+            output_backup.as_deref(),
+            manifest,
+            manifest_backup.as_deref(),
+        )?;
+        return Err(BuildError::Publish {
+            path: manifest.to_owned(),
+            source,
+        });
+    }
+    let _ = fs::remove_file(artifact);
+    let _ = fs::remove_file(staged_manifest);
+    remove_backup(output_backup.as_deref());
+    remove_backup(manifest_backup.as_deref());
+    Ok(())
+}
+
+/// Back up a regular destination by hard link while leaving missing paths absent.
+fn optional_backup(path: &Path) -> Result<Option<PathBuf>, BuildError> {
+    if path.exists() {
+        create_backup_link(path).map(Some)
+    } else {
+        Ok(None)
+    }
+}
+
+/// Remove one destination that preflight established as regular or absent.
+fn remove_existing(path: &Path) -> Result<(), BuildError> {
+    match fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(source) => Err(BuildError::Publish {
+            path: path.to_owned(),
+            source,
+        }),
+    }
+}
+
+/// Remove partial new files and restore every destination that existed before publication.
+fn restore_pair(
+    output: &Path,
+    output_backup: Option<&Path>,
+    manifest: &Path,
+    manifest_backup: Option<&Path>,
+) -> Result<(), BuildError> {
+    let _ = fs::remove_file(output);
+    let _ = fs::remove_file(manifest);
+    restore_optional(output_backup, output)?;
+    restore_optional(manifest_backup, manifest)
+}
+
+fn restore_optional(backup: Option<&Path>, destination: &Path) -> Result<(), BuildError> {
+    let Some(backup) = backup else {
+        return Ok(());
+    };
+    fs::hard_link(backup, destination).map_err(|source| BuildError::Restore {
+        path: destination.to_owned(),
+        source,
+    })?;
+    let _ = fs::remove_file(backup);
+    Ok(())
+}
+
+fn remove_backup(backup: Option<&Path>) {
+    if let Some(backup) = backup {
+        let _ = fs::remove_file(backup);
+    }
+}
+
 /// Reserve a collision-free hard-link backup without replacing unrelated files.
 fn create_backup_link(output: &Path) -> Result<PathBuf, BuildError> {
     for _ in 0..32 {
@@ -497,5 +701,37 @@ impl Drop for Workspace {
     /// Remove the complete temporary infobase and any unpublished artifact.
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.path);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    /// Leave both previous destinations untouched when the manifest cannot be backed up.
+    fn pair_publication_preserves_previous_results_on_failure() {
+        let root = std::env::temp_dir().join(format!(
+            "eska-pair-publication-{}-{}",
+            std::process::id(),
+            WORKSPACE_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir(&root).expect("test directory");
+        let artifact = root.join("staged.cf");
+        let staged_manifest = root.join("staged.json");
+        let output = root.join("result.cf");
+        let manifest = root.join("result.cf.manifest.json");
+        fs::write(&artifact, b"new artifact").expect("staged artifact");
+        fs::write(&staged_manifest, b"new manifest").expect("staged manifest");
+        fs::write(&output, b"old artifact").expect("old artifact");
+        fs::create_dir(&manifest).expect("invalid manifest target");
+
+        assert!(publish_pair(&artifact, &output, &staged_manifest, &manifest).is_err());
+        assert_eq!(
+            fs::read(&output).expect("preserved artifact"),
+            b"old artifact"
+        );
+        assert!(manifest.is_dir());
+        fs::remove_dir_all(root).expect("remove test directory");
     }
 }

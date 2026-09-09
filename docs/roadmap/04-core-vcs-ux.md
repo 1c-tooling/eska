@@ -262,6 +262,13 @@ start/repository — active/inactive base, ancestry, compare-and-swap и зап�
 system Git через изолированный infrastructure layer, пока `gix` не предоставляет
 равноценную безопасную orchestration worktree/index.
 
+После улучшений текущего функционала T29/T49–T55 это следующий крупный VCS-этап;
+`publish` и provider integrations не включать. Приёмка должна покрыть локальную
+base без fetch, configured remote, fast-forward и divergence, конфликты при
+merge/rebase, повторный запуск после перезапуска CLI и штатные `continue`/`abort`.
+Проверить полный dirty-worktree preflight, сохранность исходной работы и RU/EN
+диагностику; hidden shelve и отдельная копия состояния Git запрещены.
+
 ## T38 — `eska publish`
 
 **Статус:** `PLANNED`  
@@ -317,3 +324,7 @@ integration, fast-forward/divergence base, `require-published`, сохранен
 по policy, недоступный remote, dirty/in-progress preflight, RU/EN help, ошибки и
 exit codes. Ручные RU/EN сценарии выполнены в отдельном временном каталоге
 playground: отказ до интеграции и успешное локальное завершение.
+
+Расширение для squash/rebase выделено в
+[T53](12-current-functionality.md). До принятия и реализации его контракта
+проверка ancestry и правила удаления T40 остаются прежними.

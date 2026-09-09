@@ -84,6 +84,24 @@ impl<'a> Executor<'a> {
         Self { work_dir }
     }
 
+    /// Check whether the system Git executable required by capability fallbacks is available.
+    #[must_use]
+    pub fn git_available(&self) -> bool {
+        self.probe(["--version"])
+    }
+
+    /// Check whether Git can resolve the effective author used by `git commit`.
+    #[must_use]
+    pub fn author_configured(&self) -> bool {
+        self.probe(["var", "GIT_AUTHOR_IDENT"])
+    }
+
+    /// Check whether Git LFS is installed for attributes that select its filter.
+    #[must_use]
+    pub fn git_lfs_available(&self) -> bool {
+        self.probe(["lfs", "version"])
+    }
+
     /// Fetch configured refs from one validated remote without recursing into submodules.
     ///
     /// # Errors
@@ -237,6 +255,19 @@ impl<'a> Executor<'a> {
             .args(args)
             .output()
             .map_err(|source| Error::Spawn { operation, source })
+    }
+
+    /// Run a read-only capability probe without exposing localized process output.
+    fn probe<I, S>(&self, args: I) -> bool
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        self.command()
+            .env("LC_ALL", "C")
+            .args(args)
+            .output()
+            .is_ok_and(|output| output.status.success())
     }
 
     fn command(&self) -> Command {

@@ -117,7 +117,7 @@ mod tests {
                 names,
                 [
                     "build", "clone", "config", "new", "init", "platform", "patch", "diff",
-                    "finish", "history", "save", "start", "status", "switch", "version"
+                    "doctor", "finish", "history", "save", "start", "status", "switch", "version"
                 ]
             );
             command.debug_assert();

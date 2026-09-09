@@ -131,12 +131,56 @@ dirty worktree блокируются до запуска платформы.
 
 ## T29 — `eska doctor`
 
-**Статус:** `NEXT`
-**Зависит от:** T07, T28
+**Статус:** `DONE`
+**Зависит от:** T03, T07, T28, T44
 
-Диагностировать config/source, требуемую и установленную 1С, `ibcmd`, repository,
-remote/locking и development environment. По умолчанию read-only; fix/setup только
-явным отдельным режимом.
+Собрать диагностику уже работающих сценариев за один read-only запуск:
+
+- config/source: discovery standalone/workspace, members, наличие и корректность
+  корневого Designer XML descriptor; отличать пустой scaffold после `new` от
+  исходников для сборки, не обещая полной проверки XML/BSL без платформы;
+- 1С: требуемая и найденная версия, выбранный host/Distrobox runner, `ibcmd`;
+  наличие совместимого `1cv8` показывать как требование именно `patch`;
+- VCS: repository/workflow, author identity для `save`, незавершённые операции,
+  наличие Git для команд с capability fallback; Git LFS проверять, когда
+  реальные attributes требуют его;
+- remote: показывать настройку без fetch/push и обязательного сетевого запроса;
+  отсутствие remote допустимо для локального workflow.
+
+Независимые проверки продолжаются после ошибки, зависимые явно пропускаются с
+причиной. Каждый результат указывает затронутую команду, статус и конкретный
+способ исправления. Отсутствие build tools не означает недоступность локальных
+VCS-команд. Поддержать RU/EN и versioned JSON со стабильными check IDs, статусами,
+кодами и документированными exit codes; selectors следуют существующим правилам
+выбора workspace members.
+
+Locking и development environments не реализуются ради `doctor` и не считаются
+неисправностью до T39/T30. Установка программ, изменение config, создание базы,
+`fix` и `setup` не входят в T29. Проверки используют текущие discovery/tool/VCS
+модули, а не параллельный механизм поиска и настройки.
+
+**Готово, когда:** один запуск собирает доступные результаты и объясняет пропуски;
+проверены scaffold, неверный config/descriptor, несколько members, отсутствующие
+или несовместимые tools, optional remote/LFS и RU/EN JSON. Исходники, config,
+index/refs, artifacts и базы остаются неизменными. Успешный `doctor` не объявляется
+доказательством успешной сборки или корректного выполнения приложения 1С.
+
+Принятые решения:
+
+- результат представлен упорядоченными независимыми checks со статусами
+  `pass`, `warning`, `fail`, `skipped`; exit code 1 определяется только наличием
+  `fail`, поэтому предупреждение пустого scaffold само по себе не блокирует CLI;
+- JSON schema 1 не зависит от локали и содержит стабильные check ID/code,
+  affected commands, expected/actual values, runner, remediation и summary;
+- Designer XML проверяется ограниченным чтением корневого descriptor без полной
+  проверки XML/BSL; build и patch получают отдельные prerequisites;
+- repository, workflow, operation и remote читаются локально через VCS layer без
+  сетевых операций; системный Git проверяется через единый capability boundary,
+  а Git LFS — только при фактическом `filter=lfs` в attributes;
+- workspace использует существующий selection contract. Интеграционные сценарии
+  покрывают RU/EN, scaffold, повреждённые config/descriptor, members,
+  отсутствующие/несовместимые tools, optional remote/LFS и побайтовую
+  неизменность исходников, config, index и refs.
 
 ## T30 — Development environments
 

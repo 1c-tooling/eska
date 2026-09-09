@@ -198,6 +198,13 @@ impl BuildPlan {
     pub const fn has_explicit_output(&self) -> bool {
         self.explicit_output
     }
+
+    /// Replace only the source passed to ibcmd with an isolated snapshot.
+    pub(super) fn with_snapshot_source(&self, source: PathBuf) -> Self {
+        let mut plan = self.clone();
+        plan.source = source;
+        plan
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

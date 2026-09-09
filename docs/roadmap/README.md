@@ -6,7 +6,8 @@
 
 ## Текущее состояние
 
-Стадия проекта: **локальный VCS baseline готов**, далее практический CLI MVP.
+Стадия проекта: **локальный CLI MVP и workspace готовы**. Текущий фокус —
+диагностика, надёжность существующих команд и работа с большими выгрузками.
 
 - `DONE`: чистый минимальный Rust CLI;
 - `DONE`: локализация `ru-RU` / `en-US`, включая `--help`;
@@ -46,12 +47,20 @@
 - `DONE`: `T46` — сборка workspace members;
 - `DONE`: `T47` — VCS UX workspace members;
 - `DONE`: `T48` — onboarding workspace members;
-- `NEXT`: `T29` — `eska doctor`;
+- `DONE`: `T29` — `eska doctor`;
+- `DONE`: `T49` — стабильные JSON-ошибки и обратимые пути;
+- `DONE`: `T50` — анализ только затронутых объектов и явный fallback;
+- `DONE`: `T51` — предварительный просмотр `save`;
+- `DONE`: `T52` — предварительный просмотр `build`;
+- `DONE`: `T54` — паспорт собранного артефакта;
+- `NEXT`: `T55` — переносимые проверки сборки;
+- `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
+- `PLANNED`: `T37` — следующий крупный VCS-этап: `sync` / `continue` / `abort`;
 - `PLANNED`: `T26` — `eska fmt`, выполняется последней в текущей очереди;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
-Практический MVP должен замкнуть основной пользовательский цикл без обязательных
+Практический MVP замыкает основной пользовательский цикл без обязательных
 test backend, locking и публикации через `eska`:
 
 ```text
@@ -95,7 +104,30 @@ TUI разделён на обработку клавиш, отрисовку и
 - `DEFERRED` — намеренно отложенная возможность;
 - `NEEDS-SPEC` — идея зафиксирована, но перед реализацией нужна отдельная спецификация.
 
-## Очередь реализации
+## Ближайший порядок выполнения
+
+Порядок скорректирован по анализу кода и CLI от 2026-09-08. Завершённые этапы
+сохраняют `DONE`; найденные ограничения оформлены как отдельные расширения.
+Таблица содержит только ещё не завершённые задачи, доступные без уточнения T53.
+
+| Порядок | ID | Результат |
+|---|---|---|
+| 1 | T55 | Переносимые проверки build и протокол приёмки на поддерживаемых ОС |
+| 2 | T37 | Синхронизация задачи и штатные продолжение/отмена при конфликтах |
+| 3 | T26 | Форматирование; последняя задача текущей очереди |
+
+T53 нельзя начинать с ослабления проверки интеграции: сначала снимается
+`NEEDS-SPEC`. Уточнение её контракта не блокирует независимые T54–T55.
+`publish`, environments, `apply/run` и остальные плановые этапы остаются в backlog;
+T23 test backend и T39 locking сохраняют `DEFERRED`.
+
+Детальные контракты улучшений: [T49–T55](12-current-functionality.md).
+Этот план разрешает только отдельно запрошенную задачу, не автоматический запуск
+всей очереди.
+
+## Реестр задач
+
+Таблица сохраняет порядок ID; фактическая очередь приведена выше.
 
 | ID | Статус | Задача | Подробности |
 |---|---|---|---|
@@ -129,7 +161,7 @@ TUI разделён на обработку клавиш, отрисовку и
 | T26 | PLANNED | `eska fmt` (последняя задача текущей очереди) | [08-quality.md](08-quality.md) |
 | T27 | PLANNED | `eska check` | [08-quality.md](08-quality.md) |
 | T28 | DONE | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
-| T29 | NEXT | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
+| T29 | DONE | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T30 | PLANNED | Development environments | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T31 | PLANNED | `apply` / `run` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T32 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
@@ -149,6 +181,13 @@ TUI разделён на обработку клавиш, отрисовку и
 | T46 | DONE | Build workspace members | [11-workspaces.md](11-workspaces.md) |
 | T47 | DONE | Workspace-aware `status`, `diff` и `save` | [11-workspaces.md](11-workspaces.md) |
 | T48 | DONE | `new` и `init` для workspace members | [11-workspaces.md](11-workspaces.md) |
+| T49 | DONE | Стабильные JSON-ошибки и обратимые пути | [12-current-functionality.md](12-current-functionality.md) |
+| T50 | DONE | Анализ затронутых объектов и явный fallback | [12-current-functionality.md](12-current-functionality.md) |
+| T51 | DONE | Предварительный просмотр `save` | [12-current-functionality.md](12-current-functionality.md) |
+| T52 | DONE | Предварительный просмотр `build` | [12-current-functionality.md](12-current-functionality.md) |
+| T53 | NEEDS-SPEC | Завершение задачи после squash/rebase | [12-current-functionality.md](12-current-functionality.md) |
+| T54 | DONE | Паспорт собранного артефакта | [12-current-functionality.md](12-current-functionality.md) |
+| T55 | NEXT | Переносимые проверки сборки | [12-current-functionality.md](12-current-functionality.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в

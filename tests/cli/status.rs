@@ -4,6 +4,12 @@ use std::{
     process::{Command, Output},
 };
 
+#[cfg(unix)]
+use std::{
+    ffi::OsString,
+    os::unix::ffi::{OsStrExt, OsStringExt},
+};
+
 use serde_json::{Value, json};
 
 use crate::support::TestDir;
@@ -133,16 +139,19 @@ fn json_output_has_a_stable_locale_independent_schema() {
         assert_eq!(
             actual,
             json!({
-                "schema_version": 1,
+                "schema_version": 2,
                 "project": {
                     "name": "Billing",
+                    "name_encoding": "utf-8",
                     "root": root,
+                    "root_encoding": "utf-8",
                     "type": "configuration"
                 },
                 "workflow": {
                     "preset": "git-flow",
                     "task": "FI-1234",
                     "branch": "feature/FI-1234",
+                    "branch_encoding": "utf-8",
                     "base": "develop",
                     "head": "attached"
                 },
@@ -299,9 +308,12 @@ fn workspace_status_groups_members_root_files_and_excludes_repository_siblings()
         assert!(output.status.success(), "{output:?}");
         assert!(output.stderr.is_empty(), "{output:?}");
         let document: Value = serde_json::from_slice(&output.stdout).expect("workspace JSON");
-        assert_eq!(document["schema_version"], 1);
+        assert_eq!(document["schema_version"], 2);
+        assert_eq!(document["workspace"]["root_encoding"], "utf-8");
+        assert_eq!(document["workflow"]["branch_encoding"], "utf-8");
         assert_eq!(document["workflow"]["task"], "WS-1");
         assert_eq!(document["projects"][0]["name"], "sales-report");
+        assert_eq!(document["projects"][0]["root_encoding"], "utf-8");
         assert_eq!(document["projects"][0]["changes"]["modified"], 1);
         assert_eq!(document["projects"][1]["name"], "import-orders");
         assert_eq!(document["projects"][1]["changes"]["untracked"], 1);
@@ -310,6 +322,70 @@ fn workspace_status_groups_members_root_files_and_excludes_repository_siblings()
         let serialized = String::from_utf8_lossy(&output.stdout);
         assert!(!serialized.contains("outside.txt"), "{serialized}");
     }
+}
+
+#[cfg(unix)]
+#[test]
+fn json_output_preserves_non_utf8_project_and_branch_bytes() {
+    let fixture = TestDir::new();
+    let root = fixture.0.join(OsString::from_vec(b"Billing-\x80".to_vec()));
+    fs::create_dir_all(root.join("src")).expect("project sources");
+    fs::write(
+        root.join("eska.toml"),
+        "[project]\ntype = 'configuration'\nsource = 'src'\n[vcs.workflow]\npreset = 'trunk'\n",
+    )
+    .expect("project config");
+    fs::write(root.join("src/Configuration.xml"), "base\n").expect("project source");
+    git(&root, &["init", "--initial-branch=main", "--template="]);
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-m", "base"]);
+    git(&root, &["update-ref", "refs/remotes/origin/main", "HEAD"]);
+
+    let commit = Command::new("git")
+        .current_dir(&root)
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .expect("read fixture commit");
+    assert!(commit.status.success(), "{commit:?}");
+    let branch = b"task/T49-\x80";
+    let branch_path = root
+        .join(".git/refs/heads")
+        .join(OsString::from_vec(branch.to_vec()));
+    fs::create_dir_all(branch_path.parent().expect("branch parent")).expect("branch directory");
+    fs::write(&branch_path, &commit.stdout).expect("branch reference");
+    let mut head = b"ref: refs/heads/".to_vec();
+    head.extend_from_slice(branch);
+    head.push(b'\n');
+    fs::write(root.join(".git/HEAD"), head).expect("attach invalid UTF-8 branch");
+
+    let output = eska(&root, "en", &["status", "--format", "json"]);
+    assert!(output.status.success(), "{output:?}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("status JSON");
+    assert_eq!(document["schema_version"], 2);
+    assert_eq!(document["project"]["name_encoding"], "percent");
+    assert_eq!(
+        document["project"]["name"],
+        percent_encoded(root.file_name().expect("project name").as_bytes())
+    );
+    assert_eq!(document["project"]["root_encoding"], "percent");
+    assert_eq!(
+        document["project"]["root"],
+        percent_encoded(root.as_os_str().as_bytes())
+    );
+    assert_eq!(document["workflow"]["branch_encoding"], "percent");
+    assert_eq!(document["workflow"]["branch"], percent_encoded(branch));
+    assert!(document["workflow"]["task"].is_null());
+}
+
+#[cfg(unix)]
+fn percent_encoded(value: &[u8]) -> String {
+    use std::fmt::Write as _;
+
+    let mut encoded = String::with_capacity(value.len() * 3);
+    for byte in value {
+        write!(encoded, "%{byte:02X}").expect("encode bytes");
+    }
+    encoded
 }
 
 #[test]

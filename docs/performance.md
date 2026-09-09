@@ -41,6 +41,27 @@ XML теперь дописывается в один буфер. BSL parser ч�
 human/raw/JSON, RU/EN, обычный и semantic diff совпали побайтово; при
 перенаправлении с `NO_COLOR` escape-последовательностей нет.
 
-Полное обнаружение ObjectModel в workspace semantic diff сохранено.
+Этот исторический замер выполнялся до T50 и включал полное обнаружение
+`ObjectModel` в workspace semantic diff.
+
+## T50: выборочное обнаружение затронутых объектов
+
+Сравнение выполнено 2026-09-09 на одной синтетической Designer XML-выгрузке:
+2 000 независимых справочников, delta из одного `ObjectModule.bsl`. Release test
+binary запускался отдельно для полного и выборочного режима через
+`/usr/bin/time -v`; создание одинаковой выгрузки происходило до внутреннего
+таймера, но входит в wall time и peak RSS процесса.
+
+| Режим | Прочитано descriptors | Время discovery | Wall time процесса | Peak RSS |
+| --- | ---: | ---: | ---: | ---: |
+| Полный `discover` | 2 000 | 37 мс | 140 мс | 9 864 KiB |
+| `discover_affected` | 1 | < 1 мс | 110 мс | 6 460 KiB |
+
+Воспроизводимый сценарий находится в ignored-тесте
+`project::object_model::benchmarks_full_and_affected_descriptor_discovery`.
+После `cargo test --release --test integration --no-run` оба режима запускаются
+одним и тем же test binary с `ESKA_SEMANTIC_BENCH_MODE=full` и `affected`.
+Числа синтетические и показывают стоимость индексирования при малой delta; это
+не замер полной пользовательской команды на production-выгрузке.
 Эти замеры не оценивают production release-сборку, полный обход реальной
 конфигурации или стоимость вызовов платформы 1С.

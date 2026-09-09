@@ -19,6 +19,7 @@ src/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
 │   │   ├── build.rs             # eska build: аргументы, RU/EN и JSON result
 │   │   ├── config.rs            # eska config: init/edit глобальных настроек
+│   │   ├── doctor.rs            # eska doctor: selectors, RU/EN и versioned JSON
 │   │   ├── platform.rs          # eska platform list: human/JSON presentation
 │   │   ├── patch.rs             # eska patch: аргументы, preview и JSON result
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
@@ -50,6 +51,7 @@ src/
 │   ├── init.rs                  # обнаружение выгрузки, подключение и откат
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source
+│   ├── doctor.rs                # read-only проверки project/build/VCS окружения
 │   ├── workspace.rs             # Workspace, members и переносимые имена проектов
 │   ├── diff.rs                  # file-level изменения внутри корня проекта
 │   ├── finish.rs                # preflight, policy refs и локальное завершение задачи
@@ -62,6 +64,7 @@ src/
 │   │   ├── settings.rs          # переносимые settings и версия платформы
 │   │   ├── plan.rs              # тип и путь build artifact без запуска процессов
 │   │   ├── tool.rs              # поиск, version check и запуск ibcmd/Distrobox
+│   │   ├── manifest.rs          # снимок source, SHA-256 и паспорт артефакта
 │   │   └── execute.rs           # временная база, import, cleanup и публикация
 │   ├── patch/
 │   │   ├── mod.rs               # публичная граница patch subsystem
@@ -103,7 +106,7 @@ locales/{ru-RU,en-US}/main.ftl    # пользовательские текст�
 assets/project/                    # встроенные .gitattributes и .gitignore для new
 tests/
 ├── integration.rs               # точка входа интеграционных тестов
-├── cli/{build,diff,finish,history,init,new,save,start,status,version,localization}.rs
+├── cli/{build,diff,doctor,finish,history,init,new,save,start,status,version,localization}.rs
 ├── project/{discovery,finish,history,save,start,templates,version,workflow}.rs
 ├── vcs/{diff,network,repository,status,support}.rs # Git-сценарии и fixture-команды
 └── support/mod.rs               # общий изолированный временный каталог
@@ -124,6 +127,7 @@ tests/
 | Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`src/project/build/`](../src/project/build/) |
 | Изменить план или генерацию patch-extension | [`src/cli/commands/patch.rs`](../src/cli/commands/patch.rs), затем [`src/project/patch/`](../src/project/patch/) |
 | Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`src/project/build/tool.rs`](../src/project/build/tool.rs) |
+| Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
 | Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`src/project/version.rs`](../src/project/version.rs) |
@@ -202,9 +206,12 @@ tests/
   состоянию, оформляет TTY-заголовки и маркеры, отдельно формирует raw,
   workspace JSON версии 1 и revision JSON версии 2. Для project workspace один
   Git snapshot или tree comparison проецируется на selected members и корневые
-  файлы; aggregate semantic JSON сохраняет версию 3.
-- `project/object_model.rs` по явному вызову обходит Designer XML source и строит
-  read-only индекс логических объектов. Читаемый `ObjectId` формируется из
+  файлы; aggregate semantic JSON использует версию 4 и явно описывает полноту
+  анализа каждого member.
+- `project/object_model.rs` строит read-only индекс логических объектов Designer
+  XML. Полный обход остаётся доступен явным библиотечным вызовом; `diff` и draft
+  `save` выводят набор нужных дескрипторов из changed paths и не индексируют
+  неизменённые members. Читаемый `ObjectId` формируется из
   machine-facing metadata type/name и иерархии; UUID хранится отдельно, поскольку
   Designer может повторять его у разных объектов. Индекс связывает descriptors,
   inline children, формы, модули и payload paths в обоих направлениях, не создавая
@@ -212,7 +219,9 @@ tests/
 - `project/semantic.rs` нормализует workspace и revision file changes в общий
   `ChangeSet`, проецирует пути через `ObjectModel` и сравнивает BSL routines,
   формы и свойства metadata descriptors. Результат — детерминированные semantic
-  events со стабильной object identity, byte paths и comparison stage.
+  events со стабильной object identity, byte paths и comparison stage. Ошибка
+  отдельного дескриптора или консервативного BSL parser сохраняется как точный
+  file-level fallback и не отменяет независимые объекты.
 - `project/patch/plan.rs` читает только committed Git snapshots и формирует
   полный allowlist-план. `methods.rs` отвечает только за доказуемо безопасные
   замены BSL-методов, `descriptor.rs` — за adoption существующих общих модулей,
@@ -225,19 +234,29 @@ tests/
 - `project/build/` отделяет переносимый план от machine-local обнаружения
   `ibcmd` и исполнения. `BuildPlan` разделяет source root участника и output scope
   workspace; `execute.rs` предоставляет read-only preflight, владеет временной
-  базой и безопасной публикацией артефакта. `cli/commands/build.rs` сначала
-  проверяет всю выбранную группу, затем последовательно выполняет планы,
-  сохраняя одиночный JSON v1 и отдельный aggregate JSON v1.
+  базой и безопасной публикацией артефакта. `manifest.rs` создаёт ограниченный
+  снимок Designer XML, вычисляет SHA-256 и формирует паспорт без локальных путей;
+  `execute.rs` публикует artifact/manifest как одну восстанавливаемую пару.
+  `cli/commands/build.rs` сначала
+  проверяет всю выбранную группу и обнаруживает подходящие runners. Обычный режим
+  затем последовательно выполняет планы, сохраняя одиночный JSON v1 и отдельный
+  aggregate JSON v1; `--dry-run` останавливается до исполнения и возвращает
+  единый JSON-документ плана v1 с project/workspace scope.
+- `tests/fixtures/ibcmd` предоставляет отдельный нативный Rust-процесс для
+  переносимых интеграционных проверок host runner. Он воспроизводит только
+  используемый command contract `ibcmd`; приёмка с настоящей платформой 1С и
+  Linux-сценарии Distrobox ведутся отдельно.
 - `project/version.rs` находит единственный корневой Designer XML descriptor,
   валидирует четырёхкомпонентную версию и при bump заменяет только диапазон
   текста прямого `Properties/Version` без повторной сериализации XML.
   `project/selection.rs` разрешает standalone/current/named/all selection без
   зависимости от CLI. `cli/commands/version.rs` сохраняет JSON v1 одиночного
   проекта и формирует отдельный versioned документ для списка workspace members.
-- `project/save.rs` выполняет одну и ту же index snapshot/stage/commit/rollback
-  транзакцию для корня проекта или workspace. System Git получает точный cwd и
-  pathspec `.`, поэтому staged sibling paths большого репозитория не входят в
-  commit и сохраняются в index.
+- `project/save.rs` строит read-only `SavePlan` с точными scope-relative paths и
+  состояниями index/worktree для корня проекта или workspace. Исполнение заново
+  проходит ту же подготовку, затем выполняет index snapshot/stage/commit/rollback.
+  System Git получает точный cwd и pathspec `.`, поэтому staged sibling paths
+  большого репозитория не входят в commit и сохраняются в index.
 - `project/start.rs` выполняет locale-independent preflight всего worktree,
   получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую
@@ -256,10 +275,11 @@ tests/
   изменить HEAD, index и файлы; `cli/commands/switch.rs` отвечает за выбор
   task/base и RU/EN presentation.
 - `project/save.rs` выбирает все changed paths внутри корня проекта, отклоняет
-  конфликты и detached HEAD, сохраняет исходный index для rollback и поручает
-  staging/commit системному Git. `git commit --only` не включает подготовленные
-  sibling paths; `cli/commands/save.rs` отвечает за `-m`, configured editor и
-  локализованные сообщения.
+  конфликты и detached HEAD и предоставляет тот же preflight через `SavePlan`
+  для `save --dry-run`. При исполнении модуль сохраняет исходный index для
+  rollback и поручает staging/commit системному Git. `git commit --only` не
+  включает подготовленные sibling paths; `cli/commands/save.rs` отвечает за
+  `-m`, preview, configured editor и локализованные сообщения.
 - `workflow.rs` хранит выбор preset, проверенные overrides и разрешает доступные
   встроенные policies; `workflow/policy.rs` проверяет поля, содержит defaults
   Trunk, Git Flow и GitHub Flow, применяет overrides и строит декларативный план
