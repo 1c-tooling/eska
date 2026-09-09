@@ -65,13 +65,15 @@ pub enum BuildError {
     DescriptorInvalid { path: PathBuf },
     DescriptorMissing(PathBuf),
     DescriptorsMultiple(PathBuf),
+    BaseConfigurationRead { path: PathBuf, source: io::Error },
+    BaseConfigurationInvalid(PathBuf),
     Manifest(ManifestError),
 }
 
 /// Build a native 1C artifact through an isolated temporary file infobase.
 ///
-/// The verified pipeline is identical for `.cf`, `.cfe`, `.epf`, and `.erf`:
-/// create a file infobase, then import Designer XML with `config import --out`.
+/// The pipeline creates a file infobase, optionally loads a base `.cf`, then imports the
+/// Designer XML directory with `infobase config import --out`.
 /// The destination is replaced only after `ibcmd` produced a non-empty file.
 ///
 /// # Errors
@@ -162,15 +164,15 @@ where
         |snapshot| plan.with_snapshot_source(snapshot.source().to_owned()),
     );
     let import_source = import_source(&effective_plan)?;
-
-    let create_output = run(
+    let effective_base_configuration = prepare_base_configuration(
+        plan.base_configuration(),
+        manifest_request.is_some(),
+        &workspace.path,
+    )?;
+    let create_output = create_infobase(
         ibcmd,
-        BuildStage::CreateInfobase,
-        [
-            OsString::from("infobase"),
-            OsString::from("create"),
-            option("--data", &data),
-        ],
+        &data,
+        effective_base_configuration.as_deref(),
         &pid_file,
         on_output,
     )?;
@@ -178,6 +180,7 @@ where
         ibcmd,
         BuildStage::ImportSources,
         [
+            OsString::from("infobase"),
             OsString::from("config"),
             OsString::from("import"),
             option("--data", &data),
@@ -209,6 +212,7 @@ where
         &artifact,
         manifest_seed,
         snapshot.as_ref(),
+        effective_base_configuration.as_deref(),
     )?;
     created_directories.keep();
     let mut tool_output = Vec::new();
@@ -224,6 +228,57 @@ where
     })
 }
 
+/// Copy the base CF into a manifested build snapshot and otherwise retain its verified path.
+fn prepare_base_configuration(
+    source: Option<&Path>,
+    manifested: bool,
+    workspace: &Path,
+) -> Result<Option<PathBuf>, BuildError> {
+    if !manifested {
+        return Ok(source.map(Path::to_path_buf));
+    }
+    source
+        .map(|source| {
+            let target = workspace.join("base.cf");
+            match fs::copy(source, &target) {
+                Ok(_) => Ok(target),
+                Err(source) => Err(BuildError::Manifest(ManifestError::SnapshotIo {
+                    path: target,
+                    source,
+                })),
+            }
+        })
+        .transpose()
+}
+
+/// Create the isolated infobase and optionally load the external artifact context.
+fn create_infobase<F>(
+    ibcmd: &Ibcmd,
+    data: &Path,
+    base_configuration: Option<&Path>,
+    pid_file: &Path,
+    on_output: &mut F,
+) -> Result<std::process::Output, BuildError>
+where
+    F: FnMut(BuildStage, ProcessStream, &[u8]),
+{
+    let mut arguments = vec![
+        OsString::from("infobase"),
+        OsString::from("create"),
+        option("--data", data),
+    ];
+    if let Some(base_configuration) = base_configuration {
+        arguments.push(option("--load", base_configuration));
+    }
+    run(
+        ibcmd,
+        BuildStage::CreateInfobase,
+        arguments,
+        pid_file,
+        on_output,
+    )
+}
+
 /// Publish either one ordinary artifact or one checksummed artifact/manifest pair.
 fn publish_result(
     plan: &BuildPlan,
@@ -232,6 +287,7 @@ fn publish_result(
     artifact: &Path,
     manifest_seed: Option<manifest::ManifestSeed>,
     snapshot: Option<&manifest::SourceSnapshot>,
+    base_configuration: Option<&Path>,
 ) -> Result<Option<PathBuf>, BuildError> {
     let Some((seed, snapshot)) = manifest_seed.zip(snapshot) else {
         publish(artifact, plan.output())?;
@@ -245,6 +301,7 @@ fn publish_result(
         ibcmd.version().as_str(),
         seed,
         snapshot,
+        base_configuration,
     )
     .map_err(BuildError::Manifest)?;
     let destination = manifest::path_for_artifact(plan.output());
@@ -266,6 +323,19 @@ pub fn preflight(plan: &BuildPlan) -> Result<(), BuildError> {
         ensure_existing_output_ancestor_is_inside_project(plan, parent)?;
     }
     validate_existing_output(plan.output())?;
+    if let Some(path) = plan.base_configuration() {
+        let metadata = fs::metadata(path).map_err(|source| BuildError::BaseConfigurationRead {
+            path: path.to_owned(),
+            source,
+        })?;
+        let has_cf_extension = path
+            .extension()
+            .and_then(OsStr::to_str)
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("cf"));
+        if !metadata.is_file() || !has_cf_extension {
+            return Err(BuildError::BaseConfigurationInvalid(path.to_owned()));
+        }
+    }
     import_source(plan).map(|_| ())
 }
 
@@ -329,21 +399,23 @@ fn import_source(plan: &BuildPlan) -> Result<PathBuf, BuildError> {
         }
     }
     match descriptors.as_slice() {
-        [descriptor] => Ok(descriptor.clone()),
+        [_descriptor] => Ok(plan.source().to_owned()),
         [] => Err(BuildError::DescriptorMissing(plan.source().to_owned())),
         _ => Err(BuildError::DescriptorsMultiple(plan.source().to_owned())),
     }
 }
 
 /// Run one ibcmd stage and retain only its stable stage plus diagnostic stderr.
-fn run<const N: usize, F>(
+fn run<I, S, F>(
     ibcmd: &Ibcmd,
     stage: BuildStage,
-    arguments: [OsString; N],
+    arguments: I,
     pid_file: &Path,
     on_output: &mut F,
 ) -> Result<std::process::Output, BuildError>
 where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
     F: FnMut(BuildStage, ProcessStream, &[u8]),
 {
     let output = ibcmd

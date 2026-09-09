@@ -55,6 +55,7 @@ pub struct BuildPlan {
     artifact_type: ArtifactType,
     platform_version: PlatformVersion,
     source: PathBuf,
+    base_configuration: Option<PathBuf>,
     artifacts_directory: PathBuf,
     output: PathBuf,
     explicit_output: bool,
@@ -107,6 +108,7 @@ impl BuildPlan {
                 })
                 .ok_or(PlanError::PlatformVersionMissing)?,
             source: project.source().to_owned(),
+            base_configuration: None,
             artifacts_directory,
             output,
             explicit_output,
@@ -153,6 +155,7 @@ impl BuildPlan {
                 })
                 .ok_or(PlanError::PlatformVersionMissing)?,
             source: project.source().to_owned(),
+            base_configuration: None,
             artifacts_directory,
             output,
             explicit_output,
@@ -185,6 +188,11 @@ impl BuildPlan {
     }
 
     #[must_use]
+    pub fn base_configuration(&self) -> Option<&Path> {
+        self.base_configuration.as_deref()
+    }
+
+    #[must_use]
     pub fn artifacts_directory(&self) -> &Path {
         &self.artifacts_directory
     }
@@ -197,6 +205,26 @@ impl BuildPlan {
     #[must_use]
     pub const fn has_explicit_output(&self) -> bool {
         self.explicit_output
+    }
+
+    /// Add the base configuration context required by an external processor or report.
+    ///
+    /// # Errors
+    /// Returns a structured error when this input is used for an unsupported artifact type.
+    pub fn with_base_configuration(
+        mut self,
+        base_configuration: Option<PathBuf>,
+    ) -> Result<Self, PlanError> {
+        if base_configuration.is_some()
+            && !matches!(
+                self.artifact_type,
+                ArtifactType::Processing | ArtifactType::Report
+            )
+        {
+            return Err(PlanError::BaseConfigurationUnsupported);
+        }
+        self.base_configuration = base_configuration;
+        Ok(self)
     }
 
     /// Replace only the source passed to ibcmd with an isolated snapshot.
@@ -221,6 +249,7 @@ pub enum PlanError {
     OutputCollision {
         path: PathBuf,
     },
+    BaseConfigurationUnsupported,
 }
 
 /// Reject a group in which multiple plans would publish the same artifact.

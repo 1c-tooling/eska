@@ -49,6 +49,9 @@ pub(in crate::cli) struct BuildArgs {
     output: Option<PathBuf>,
 
     #[arg(long)]
+    base_configuration: Option<PathBuf>,
+
+    #[arg(long)]
     ibcmd: Option<PathBuf>,
 
     #[arg(long)]
@@ -150,10 +153,8 @@ impl BuildArgs {
             Ok(platform_override) => platform_override,
             Err(code) => return code,
         };
-        let workspace_root = match &context {
-            DiscoveryContext::Standalone(_) => None,
-            DiscoveryContext::Workspace { workspace, .. } => Some(workspace.root()),
-        };
+        let workspace_root = workspace_root(&context);
+        let base_configuration = self.resolved_base_configuration(&context);
         let mut prepared = Vec::with_capacity(selection.projects().len());
         for selected in selection.projects() {
             let plan = match build_plan(
@@ -161,6 +162,7 @@ impl BuildArgs {
                 workspace_root,
                 self.output.as_deref(),
                 platform_override.clone(),
+                base_configuration.clone(),
             ) {
                 Ok(plan) => plan,
                 Err(error) => {
@@ -209,6 +211,13 @@ impl BuildArgs {
                 ExitCode::FAILURE,
             )
         }
+    }
+
+    /// Resolve the optional base CF once so every selected plan uses the same host path.
+    fn resolved_base_configuration(&self, context: &DiscoveryContext) -> Option<PathBuf> {
+        self.base_configuration
+            .as_deref()
+            .map(|path| resolve_base_configuration(path, context))
     }
 
     /// Resolve machine-local tool settings through the selected output contract.
@@ -583,14 +592,35 @@ impl BuildArgs {
     }
 }
 
+/// Return the shared output scope only when discovery selected a workspace.
+fn workspace_root(context: &DiscoveryContext) -> Option<&Path> {
+    match context {
+        DiscoveryContext::Standalone(_) => None,
+        DiscoveryContext::Workspace { workspace, .. } => Some(workspace.root()),
+    }
+}
+
+/// Resolve a CLI input from the stable project or workspace root before crossing runners.
+fn resolve_base_configuration(path: &Path, context: &DiscoveryContext) -> PathBuf {
+    if path.is_absolute() {
+        return path.to_owned();
+    }
+    let root = match context {
+        DiscoveryContext::Standalone(project) => project.root(),
+        DiscoveryContext::Workspace { workspace, .. } => workspace.root(),
+    };
+    root.join(path)
+}
+
 /// Resolve a standalone or workspace-scoped plan without touching the filesystem.
 fn build_plan(
     selected: SelectedProject<'_>,
     workspace_root: Option<&Path>,
     output: Option<&Path>,
     platform_version: Option<PlatformVersion>,
+    base_configuration: Option<PathBuf>,
 ) -> Result<BuildPlan, PlanError> {
-    match (selected.name(), workspace_root) {
+    let plan = match (selected.name(), workspace_root) {
         (Some(name), Some(root)) => BuildPlan::for_workspace_member(
             selected.project(),
             root,
@@ -599,7 +629,8 @@ fn build_plan(
             platform_version,
         ),
         _ => BuildPlan::with_platform_version(selected.project(), output, platform_version),
-    }
+    }?;
+    plan.with_base_configuration(base_configuration)
 }
 
 fn preflight_group(
@@ -739,6 +770,13 @@ fn write_human_build_preview(
             &display_path(item.plan.source()),
             localizer,
         );
+        if let Some(path) = item.plan.base_configuration() {
+            write_build_preview_field(
+                "build-preview-base-configuration",
+                &display_path(path),
+                localizer,
+            );
+        }
         write_build_preview_field(
             "build-preview-artifact-type",
             &localizer.text(artifact_type_key(item.plan.artifact_type())),
@@ -1244,6 +1282,10 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
             arg.help(localizer.text("build-output-help"))
                 .value_name(localizer.text("build-output-value"))
         })
+        .mut_arg("base_configuration", |arg| {
+            arg.help(localizer.text("build-base-configuration-help"))
+                .value_name(localizer.text("build-base-configuration-value"))
+        })
         .mut_arg("ibcmd", |arg| {
             arg.help(localizer.text("build-ibcmd-help"))
                 .value_name(localizer.text("build-ibcmd-value"))
@@ -1301,6 +1343,9 @@ fn present_plan_error(error: &PlanError, localizer: &Localizer) -> String {
             );
         }
         PlanError::OutputCollision { path } => ("build-output-collision", path),
+        PlanError::BaseConfigurationUnsupported => {
+            return localizer.text("build-base-configuration-unsupported");
+        }
     };
     localizer.format(
         key,
@@ -1388,6 +1433,17 @@ fn present_build_error(error: &BuildError, localizer: &Localizer) -> String {
         BuildError::DescriptorsMultiple(path) => localizer.format(
             "build-descriptors-multiple",
             &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
+        ),
+        BuildError::BaseConfigurationInvalid(path) => localizer.format(
+            "build-base-configuration-invalid",
+            &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
+        ),
+        BuildError::BaseConfigurationRead { path, source } => localizer.format(
+            "build-base-configuration-read",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("reason", LocalizationValue::Text(&source.to_string())),
+            ],
         ),
         BuildError::Manifest(error) => present_manifest_error(error, localizer),
     }
@@ -1549,6 +1605,8 @@ struct BuildPlanEntryDocument {
     name: Option<String>,
     root: BuildPlanPathDocument,
     source: BuildPlanPathDocument,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    base_configuration: Option<BuildPlanPathDocument>,
     artifact: BuildPlanArtifactDocument,
     platform: BuildPlanPlatformDocument,
 }
@@ -1668,6 +1726,10 @@ impl BuildPlanEntryDocument {
             name: prepared.name.map(|name| name.as_str().to_owned()),
             root: BuildPlanPathDocument::new(prepared.plan.project_root()),
             source: BuildPlanPathDocument::new(prepared.plan.source()),
+            base_configuration: prepared
+                .plan
+                .base_configuration()
+                .map(BuildPlanPathDocument::new),
             artifact: BuildPlanArtifactDocument {
                 r#type: prepared.plan.artifact_type().as_str(),
                 path: artifact_path,
@@ -1792,6 +1854,7 @@ const fn plan_error_code(error: &PlanError) -> &'static str {
         PlanError::InvalidOutput { .. } => "output-invalid",
         PlanError::UnexpectedExtension { .. } => "output-extension-invalid",
         PlanError::OutputCollision { .. } => "output-collision",
+        PlanError::BaseConfigurationUnsupported => "base-configuration-unsupported",
     }
 }
 
@@ -1849,6 +1912,8 @@ const fn execution_error_code(error: &BuildExecutionError) -> &'static str {
         BuildError::DescriptorInvalid { .. } => "descriptor-invalid",
         BuildError::DescriptorMissing(_) => "descriptor-missing",
         BuildError::DescriptorsMultiple(_) => "descriptors-multiple",
+        BuildError::BaseConfigurationRead { .. } => "base-configuration-read",
+        BuildError::BaseConfigurationInvalid(_) => "base-configuration-invalid",
         BuildError::Manifest(ManifestError::SnapshotIo { .. }) => "snapshot-io",
         BuildError::Manifest(ManifestError::SnapshotEntryUnsupported(_)) => {
             "snapshot-entry-unsupported"

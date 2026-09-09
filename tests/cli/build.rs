@@ -389,10 +389,78 @@ fn dry_run_matches_the_subsequent_build_plan() {
     assert_eq!(
         invocations
             .lines()
-            .filter(|line| line.starts_with("config import"))
+            .filter(|line| line.starts_with("infobase config import"))
             .count(),
         1
     );
+}
+
+#[test]
+/// Load a base CF into the temporary infobase and pass the complete external source directory.
+fn external_build_uses_base_configuration_context_and_source_directory() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "processing", "Contextual");
+    let base = fixture.0.join("base.cf");
+    fs::write(&base, b"base configuration").expect("base configuration");
+    let log = fixture.0.join("ibcmd.log");
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("FAKE_IBCMD_LOG", &log)
+        .args(["--lang", "en", "build", "--base-configuration"])
+        .arg(&base)
+        .args(["--ibcmd"])
+        .arg(&ibcmd)
+        .output()
+        .expect("build external processor with base configuration");
+    assert!(output.status.success(), "{output:?}");
+
+    let invocations = fs::read_to_string(log).expect("ibcmd invocations");
+    let create = invocations
+        .lines()
+        .find(|line| line.starts_with("infobase create"))
+        .expect("create invocation");
+    assert!(
+        create.contains(&format!("--load={}", base.display())),
+        "{create}"
+    );
+    let import = invocations
+        .lines()
+        .find(|line| line.starts_with("infobase config import"))
+        .expect("import invocation");
+    assert!(
+        import.ends_with(root.join("src").to_string_lossy().as_ref()),
+        "{import}"
+    );
+}
+
+#[test]
+/// Reject a base configuration for artifact types that do not use external context.
+fn base_configuration_is_limited_to_external_artifacts() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "configuration", "Application");
+    let base = fixture.0.join("base.cf");
+    fs::write(&base, b"base configuration").expect("base configuration");
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--format",
+            "json",
+            "--base-configuration",
+        ])
+        .arg(&base)
+        .args(["--ibcmd"])
+        .arg(&ibcmd)
+        .output()
+        .expect("reject base configuration");
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    let error: Value = serde_json::from_slice(&output.stdout).expect("error JSON");
+    assert_eq!(error["error"]["code"], "base-configuration-unsupported");
+    assert_eq!(error["error"]["stage"], "plan");
 }
 
 #[test]
@@ -1081,6 +1149,45 @@ fn manifested_build_records_artifact_snapshot_platform_version_and_absent_git() 
     );
     assert!(russian.status.success(), "{russian:?}");
     assert_eq!(fs::read(manifest_path).expect("Russian manifest"), bytes);
+}
+
+#[test]
+/// Record the exact base CF bytes used for a manifested external build.
+fn manifested_external_build_records_base_configuration_checksum() {
+    let fixture = TestDir::new();
+    let root = project(&fixture, "processing", "context-manifest");
+    let base = fixture.0.join("base.cf");
+    fs::write(&base, b"base configuration").expect("base configuration");
+    let ibcmd = fake_ibcmd(&fixture);
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--manifest",
+            "--base-configuration",
+        ])
+        .arg(&base)
+        .args(["--ibcmd"])
+        .arg(&ibcmd)
+        .output()
+        .expect("manifested external build");
+    assert!(output.status.success(), "{output:?}");
+
+    let manifest: Value = serde_json::from_slice(
+        &fs::read(root.join("build/context-manifest.epf.manifest.json"))
+            .expect("artifact manifest"),
+    )
+    .expect("manifest JSON");
+    assert_eq!(
+        manifest["source"]["base_configuration"]["algorithm"],
+        "sha256"
+    );
+    assert_eq!(
+        manifest["source"]["base_configuration"]["value"],
+        "1117fcf870d65e3232dfc0becd68afd98035b4e72ebb3573c9d21b4212c93e9e"
+    );
 }
 
 #[test]
