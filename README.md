@@ -341,6 +341,54 @@ eska build --output build/application.cf
 своего типа. Существующий файл заменяется только после успешной сборки.
 Временная база очищается после завершения, ошибки или прерывания.
 
+До запуска сборки можно проверить полный план:
+
+```bash
+eska build --dry-run
+eska build --dry-run --format json
+```
+
+Preview выполняет обычные selection, построение `BuildPlan`, group preflight,
+поиск `ibcmd` и проверку его версии. Он показывает проекты в порядке исполнения,
+source, тип и путь артефакта, наличие заменяемого результата, требуемую и
+найденную платформу и runner. Команда не создаёт каталог артефактов и временную
+базу и не запускает import. Обычный `build` повторяет preflight для актуального
+состояния и может получить другой результат, если после preview изменились файлы.
+Успешный preview не гарантирует, что платформа 1С примет XML/BSL при импорте.
+
+Успешный `build --dry-run --format json` возвращает отдельный документ плана:
+
+```json
+{
+  "schema_version": 1,
+  "kind": "build-plan",
+  "scope": "project",
+  "projects": [
+    {
+      "name": null,
+      "root": { "path": "/work/demo", "path_encoding": "utf-8" },
+      "source": { "path": "/work/demo/src", "path_encoding": "utf-8" },
+      "artifact": {
+        "type": "configuration",
+        "path": "/work/demo/build/demo.cf",
+        "path_encoding": "utf-8",
+        "replaces_existing": false
+      },
+      "platform": {
+        "required_version": "8.3.27.2325",
+        "found_version": "8.3.27.2325",
+        "runner": "host"
+      }
+    }
+  ]
+}
+```
+
+`scope` принимает `project` или `workspace`; `projects[]` всегда сохраняет
+порядок будущего исполнения. У workspace member поле `name` содержит его
+стабильное имя. Пути используют тот же обратимый `path_encoding`, что и результат
+обычной сборки. Ошибки сохраняют общий JSON error envelope сборки версии 1.
+
 Из корня workspace команда без selectors последовательно собирает все проекты в
 порядке `members`. Можно выбрать один или несколько проектов либо явно собрать
 весь workspace из каталога участника:
@@ -641,7 +689,7 @@ eska doctor --workspace
 | `doctor` | Проверить готовность окружения для текущих команд |
 | `switch <task>` / `switch --base` | Перейти к задаче или базовой ветке |
 | `finish` | Проверить условия завершения и закрыть локальную задачу |
-| `build` | Собрать полный нативный файл |
+| `build [--dry-run]` | Просмотреть план или собрать полный нативный файл |
 | `patch` | Собрать ограниченный patch-extension из Git delta |
 | `version` / `version bump <patch|minor|major>` | Показать или точечно изменить версии проектов 1С |
 | `platform list` | Найти установки платформы |

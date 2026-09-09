@@ -174,6 +174,262 @@ exit 9
     path
 }
 
+/// Capture directory names and file bytes without following links.
+fn tree_snapshot(root: &Path) -> Vec<(PathBuf, Option<Vec<u8>>)> {
+    let mut entries = Vec::new();
+    collect_tree_snapshot(root, root, &mut entries);
+    entries
+}
+
+/// Append one directory subtree in deterministic path order.
+fn collect_tree_snapshot(
+    root: &Path,
+    directory: &Path,
+    entries: &mut Vec<(PathBuf, Option<Vec<u8>>)>,
+) {
+    let mut paths = fs::read_dir(directory)
+        .expect("snapshot directory")
+        .map(|entry| entry.expect("snapshot entry").path())
+        .collect::<Vec<_>>();
+    paths.sort();
+    for path in paths {
+        let relative = path.strip_prefix(root).expect("snapshot path").to_owned();
+        let file_type = fs::symlink_metadata(&path)
+            .expect("snapshot metadata")
+            .file_type();
+        if file_type.is_dir() {
+            entries.push((relative, None));
+            collect_tree_snapshot(root, &path, entries);
+        } else {
+            entries.push((relative, Some(fs::read(&path).expect("snapshot file"))));
+        }
+    }
+}
+
+#[test]
+/// Show a localized single-project plan and preserve every filesystem entry byte-for-byte.
+fn dry_run_human_is_localized_and_does_not_change_the_filesystem() {
+    for (locale, title, source, artifact_type, replaces, required, found, runner) in [
+        (
+            "ru",
+            "Предварительный просмотр build",
+            "Исходники:",
+            "Тип артефакта: конфигурация (.cf)",
+            "Заменит существующий артефакт: да",
+            "Требуемая платформа: 8.3.27.2325",
+            "Найденная платформа: 8.3.27.2325",
+            "Среда запуска: хост",
+        ),
+        (
+            "en",
+            "Build preview",
+            "Source:",
+            "Artifact type: configuration (.cf)",
+            "Replaces existing artifact: yes",
+            "Required platform: 8.3.27.2325",
+            "Found platform: 8.3.27.2325",
+            "Runner: host",
+        ),
+    ] {
+        let fixture = TestDir::new();
+        let ibcmd = fake_ibcmd(&fixture);
+        let root = project(&fixture, "configuration", "Preview");
+        fs::create_dir(root.join("build")).expect("build directory");
+        fs::write(root.join("build/Preview.cf"), "existing artifact").expect("existing artifact");
+        let before = tree_snapshot(&fixture.0);
+
+        let output = eska(&root, locale, &ibcmd, &["build", "--dry-run"], false);
+
+        assert!(output.status.success(), "{output:?}");
+        assert!(output.stderr.is_empty(), "{output:?}");
+        let stdout = String::from_utf8_lossy(&output.stdout).replace(['\u{2068}', '\u{2069}'], "");
+        for expected in [
+            title,
+            "1.",
+            source,
+            artifact_type,
+            replaces,
+            required,
+            found,
+            runner,
+        ] {
+            assert!(
+                stdout.contains(expected),
+                "missing `{expected}` in:\n{stdout}"
+            );
+        }
+        assert!(stdout.contains(root.join("src").to_string_lossy().as_ref()));
+        assert!(stdout.contains(root.join("build/Preview.cf").to_string_lossy().as_ref()));
+        assert!(!stdout.contains('\x1b'));
+        assert_eq!(tree_snapshot(&fixture.0), before);
+    }
+}
+
+#[test]
+/// Keep the dry-run JSON schema locale-independent and preserve manifest execution order.
+fn dry_run_workspace_json_is_stable_and_ordered() {
+    let fixture = workspace();
+    let ibcmd = fake_ibcmd(&fixture);
+    let before = tree_snapshot(&fixture.0);
+    let mut documents = Vec::new();
+
+    for locale in ["ru", "en"] {
+        let output = eska(
+            &fixture.0,
+            locale,
+            &ibcmd,
+            &["build", "--dry-run", "--format", "json"],
+            false,
+        );
+        assert!(output.status.success(), "{output:?}");
+        assert!(output.stderr.is_empty(), "{output:?}");
+        let document: Value = serde_json::from_slice(&output.stdout).expect("build plan JSON");
+        assert_eq!(document["schema_version"], 1);
+        assert_eq!(document["kind"], "build-plan");
+        assert_eq!(document["scope"], "workspace");
+        assert_eq!(document["projects"][0]["name"], "sales-report");
+        assert_eq!(document["projects"][0]["artifact"]["type"], "report");
+        assert_eq!(document["projects"][1]["name"], "import-orders");
+        assert_eq!(document["projects"][1]["artifact"]["type"], "processing");
+        for project in document["projects"].as_array().expect("projects") {
+            assert_eq!(project["root"]["path_encoding"], "utf-8");
+            assert_eq!(project["source"]["path_encoding"], "utf-8");
+            assert_eq!(project["artifact"]["path_encoding"], "utf-8");
+            assert_eq!(project["artifact"]["replaces_existing"], false);
+            assert_eq!(project["platform"]["required_version"], "8.3.27.2325");
+            assert_eq!(project["platform"]["found_version"], "8.3.27.2325");
+            assert_eq!(project["platform"]["runner"], "host");
+        }
+        documents.push(document);
+    }
+
+    assert_eq!(documents[0], documents[1]);
+    assert_eq!(tree_snapshot(&fixture.0), before);
+    assert!(!fixture.0.join("build").exists());
+}
+
+#[test]
+/// Use selectors and a one-run platform override in the preview without changing config.
+fn dry_run_honors_selector_and_platform_override() {
+    let fixture = workspace();
+    let ibcmd = fake_ibcmd(&fixture);
+    let manifest = fixture.0.join("eska.toml");
+    let config_before = fs::read(&manifest).expect("workspace config");
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&fixture.0)
+        .env("FAKE_IBCMD_VERSION", "8.5.4.1234")
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--dry-run",
+            "-p",
+            "import-orders",
+            "--platform-version",
+            "8.5.4.1234",
+            "--format",
+            "json",
+            "--ibcmd",
+        ])
+        .arg(&ibcmd)
+        .output()
+        .expect("preview selected member");
+
+    assert!(output.status.success(), "{output:?}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("selected plan JSON");
+    assert_eq!(document["scope"], "project");
+    assert_eq!(document["projects"].as_array().map(Vec::len), Some(1));
+    assert_eq!(document["projects"][0]["name"], "import-orders");
+    assert_eq!(
+        document["projects"][0]["platform"]["required_version"],
+        "8.5.4.1234"
+    );
+    assert_eq!(
+        document["projects"][0]["platform"]["found_version"],
+        "8.5.4.1234"
+    );
+    assert_eq!(
+        fs::read(&manifest).expect("workspace config"),
+        config_before
+    );
+    assert!(!fixture.0.join("build").exists());
+}
+
+#[test]
+/// Reuse the exact preview artifact, type and platform in the subsequent normal build.
+fn dry_run_matches_the_subsequent_build_plan() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "processing", "Planned");
+    let log = fixture.0.join("ibcmd.log");
+    let preview = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("FAKE_IBCMD_LOG", &log)
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--dry-run",
+            "--format",
+            "json",
+            "--ibcmd",
+        ])
+        .arg(&ibcmd)
+        .output()
+        .expect("preview build");
+    assert!(preview.status.success(), "{preview:?}");
+    let plan: Value = serde_json::from_slice(&preview.stdout).expect("plan JSON");
+    assert_eq!(
+        fs::read_to_string(&log).expect("version invocation"),
+        "--version\n"
+    );
+    assert!(!root.join("build").exists());
+
+    let built = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("FAKE_IBCMD_LOG", &log)
+        .args(["--lang", "en", "build", "--format", "json", "--ibcmd"])
+        .arg(&ibcmd)
+        .output()
+        .expect("execute build");
+    assert!(built.status.success(), "{built:?}");
+    let result: Value = serde_json::from_slice(&built.stdout).expect("result JSON");
+    assert_eq!(
+        plan["projects"][0]["artifact"]["type"],
+        result["artifact"]["type"]
+    );
+    assert_eq!(
+        plan["projects"][0]["artifact"]["path"],
+        result["artifact"]["path"]
+    );
+    assert_eq!(
+        plan["projects"][0]["platform"]["required_version"],
+        result["platform"]["version"]
+    );
+    let invocations = fs::read_to_string(log).expect("build invocations");
+    assert_eq!(
+        invocations
+            .lines()
+            .filter(|line| *line == "--version")
+            .count(),
+        2
+    );
+    assert_eq!(
+        invocations
+            .lines()
+            .filter(|line| line.starts_with("infobase create"))
+            .count(),
+        1
+    );
+    assert_eq!(
+        invocations
+            .lines()
+            .filter(|line| line.starts_with("config import"))
+            .count(),
+        1
+    );
+}
+
 #[test]
 /// Apply an exact platform override to one build without rewriting project settings.
 fn platform_version_override_is_ephemeral() {
@@ -248,6 +504,17 @@ fn unconfigured_platform_version_blocks_only_normal_build() {
         assert_eq!(document["error"]["code"], "platform-version-missing");
         assert_eq!(document["error"]["stage"], "plan");
         assert!(document["error"].get("project").is_none());
+        let preview = eska(
+            &root,
+            locale,
+            &ibcmd,
+            &["build", "--dry-run", "--format", "json"],
+            false,
+        );
+        assert_eq!(preview.status.code(), Some(1), "{preview:?}");
+        let preview_document: Value =
+            serde_json::from_slice(&preview.stdout).expect("preview error JSON");
+        assert_eq!(preview_document, document);
         json_errors.push(document);
     }
     assert_eq!(json_errors[0], json_errors[1]);
@@ -496,6 +763,13 @@ fn help_and_human_result_are_localized() {
             .expect("build help");
         assert!(help.status.success());
         assert!(String::from_utf8_lossy(&help.stdout).contains(help_text));
+        assert!(
+            String::from_utf8_lossy(&help.stdout).contains(if locale == "ru" {
+                "Показать полностью проверенный план сборки"
+            } else {
+                "Show the fully preflighted build plan"
+            })
+        );
 
         let output = eska(&root, locale, &ibcmd, &["build"], false);
         assert!(output.status.success(), "{output:?}");
@@ -656,6 +930,28 @@ fn workspace_preflight_blocks_all_ibcmd_invocations() {
     assert_eq!(document["error"]["stage"], "preflight");
     assert_eq!(document["error"]["project"], "sales-report");
     assert!(!log.exists(), "ibcmd ran before group preflight completed");
+    assert!(!fixture.0.join("build").exists());
+
+    let preview = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&fixture.0)
+        .env("FAKE_IBCMD_LOG", &log)
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--dry-run",
+            "--format",
+            "json",
+            "--ibcmd",
+        ])
+        .arg(&ibcmd)
+        .output()
+        .expect("preview invalid workspace");
+    assert_eq!(preview.status.code(), Some(1), "{preview:?}");
+    let preview_document: Value =
+        serde_json::from_slice(&preview.stdout).expect("preview preflight error JSON");
+    assert_eq!(preview_document, document);
+    assert!(!log.exists(), "ibcmd ran after failed preview preflight");
     assert!(!fixture.0.join("build").exists());
 }
 

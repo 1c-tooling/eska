@@ -35,7 +35,7 @@ use crate::{
         Project, ProjectName,
         build::{
             self, BuildError, BuildPlan, BuildSettingsError, BuildStage, Ibcmd, PlanError,
-            PlatformVersion, RunError, ToolError, ToolOptions,
+            PlatformVersion, RunError, ToolError, ToolOptions, ToolSource,
         },
         discovery::{self, DiscoveryContext},
         metadata,
@@ -71,6 +71,9 @@ pub(in crate::cli) struct BuildArgs {
 
     #[arg(long)]
     workspace: bool,
+
+    #[arg(long)]
+    dry_run: bool,
 
     #[arg(short, long, action = clap::ArgAction::Help)]
     help: Option<bool>,
@@ -174,6 +177,15 @@ impl BuildArgs {
             Ok(tools) => tools,
             Err(code) => return code,
         };
+        if self.dry_run {
+            return write_build_preview(
+                self.format,
+                &prepared,
+                &tools,
+                selection.is_aggregate(),
+                localizer,
+            );
+        }
         if selection.is_aggregate() {
             self.execute_aggregate(&prepared, &tools, localizer)
         } else if let (Some(prepared), Some(ibcmd)) = (prepared.first(), tools.first()) {
@@ -622,6 +634,150 @@ fn discover_tools(
         }
     }
     Ok(tools)
+}
+
+/// Present a fully preflighted plan without starting any build stage.
+fn write_build_preview(
+    format: OutputFormat,
+    prepared: &[PreparedBuild<'_>],
+    tools: &[Ibcmd],
+    aggregate: bool,
+    localizer: &Localizer,
+) -> ExitCode {
+    match format {
+        OutputFormat::Human => write_human_build_preview(prepared, tools, aggregate, localizer),
+        OutputFormat::Json => {
+            let document = BuildPlanDocument::new(prepared, tools, aggregate);
+            let Ok(json) = serde_json::to_string_pretty(&document) else {
+                eprintln!("{}", localizer.text("build-json-error"));
+                return ExitCode::FAILURE;
+            };
+            println!("{json}");
+        }
+    }
+    ExitCode::SUCCESS
+}
+
+fn write_human_build_preview(
+    prepared: &[PreparedBuild<'_>],
+    tools: &[Ibcmd],
+    aggregate: bool,
+    localizer: &Localizer,
+) {
+    println!("{}", localizer.text("build-preview-title"));
+    println!(
+        "{}",
+        localizer.text(if aggregate {
+            "build-preview-scope-workspace"
+        } else {
+            "build-preview-scope-project"
+        })
+    );
+    println!(
+        "{}",
+        localizer.format(
+            "build-preview-projects",
+            &[(
+                "projects",
+                LocalizationValue::Number(i64::try_from(prepared.len()).unwrap_or(i64::MAX)),
+            )],
+        )
+    );
+    for (index, (item, tool)) in prepared.iter().zip(tools).enumerate() {
+        let position = i64::try_from(index + 1).unwrap_or(i64::MAX);
+        let name = item.name.map_or_else(
+            || project_display_name(item.project),
+            |name| name.as_str().to_owned(),
+        );
+        println!(
+            "{}",
+            localizer.format(
+                "build-preview-project",
+                &[
+                    ("position", LocalizationValue::Number(position)),
+                    ("name", LocalizationValue::Text(&name)),
+                ],
+            )
+        );
+        write_build_preview_field(
+            "build-preview-root",
+            &display_path(item.plan.project_root()),
+            localizer,
+        );
+        write_build_preview_field(
+            "build-preview-source",
+            &display_path(item.plan.source()),
+            localizer,
+        );
+        write_build_preview_field(
+            "build-preview-artifact-type",
+            &localizer.text(artifact_type_key(item.plan.artifact_type())),
+            localizer,
+        );
+        write_build_preview_field(
+            "build-preview-artifact-path",
+            &display_path(item.plan.output()),
+            localizer,
+        );
+        write_build_preview_field(
+            "build-preview-replaces-existing",
+            &localizer.text(if item.plan.output().is_file() {
+                "build-preview-yes"
+            } else {
+                "build-preview-no"
+            }),
+            localizer,
+        );
+        write_build_preview_field(
+            "build-preview-required-platform",
+            item.plan.platform_version().as_str(),
+            localizer,
+        );
+        write_build_preview_field(
+            "build-preview-found-platform",
+            tool.version().as_str(),
+            localizer,
+        );
+        write_build_preview_field(
+            "build-preview-runner",
+            &localizer.text(runner_key(tool.source())),
+            localizer,
+        );
+    }
+}
+
+fn write_build_preview_field(key: &str, value: &str, localizer: &Localizer) {
+    println!(
+        "{}",
+        localizer.format(key, &[("value", LocalizationValue::Text(value))])
+    );
+}
+
+fn project_display_name(project: &Project) -> String {
+    project
+        .root()
+        .file_name()
+        .unwrap_or_else(|| project.root().as_os_str())
+        .to_string_lossy()
+        .into_owned()
+}
+
+const fn artifact_type_key(artifact_type: build::ArtifactType) -> &'static str {
+    match artifact_type {
+        build::ArtifactType::Configuration => "build-preview-type-configuration",
+        build::ArtifactType::Extension => "build-preview-type-extension",
+        build::ArtifactType::Processing => "build-preview-type-processing",
+        build::ArtifactType::Report => "build-preview-type-report",
+    }
+}
+
+const fn runner_key(source: &ToolSource) -> &'static str {
+    match source {
+        ToolSource::Explicit(_) | ToolSource::Path(_) | ToolSource::Standard(_) => {
+            "build-preview-runner-host"
+        }
+        ToolSource::Distrobox { .. } => "build-preview-runner-distrobox",
+    }
 }
 
 /// Present a project-scoped failure outside the command implementation.
@@ -1081,6 +1237,9 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         .mut_arg("workspace", |arg| {
             arg.help(localizer.text("build-workspace-help"))
         })
+        .mut_arg("dry_run", |arg| {
+            arg.help(localizer.text("build-dry-run-help"))
+        })
         .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
 }
 
@@ -1309,6 +1468,44 @@ struct BuildDocument {
 }
 
 #[derive(Serialize)]
+struct BuildPlanDocument {
+    schema_version: u8,
+    kind: &'static str,
+    scope: &'static str,
+    projects: Vec<BuildPlanEntryDocument>,
+}
+
+#[derive(Serialize)]
+struct BuildPlanEntryDocument {
+    name: Option<String>,
+    root: BuildPlanPathDocument,
+    source: BuildPlanPathDocument,
+    artifact: BuildPlanArtifactDocument,
+    platform: BuildPlanPlatformDocument,
+}
+
+#[derive(Serialize)]
+struct BuildPlanPathDocument {
+    path: String,
+    path_encoding: &'static str,
+}
+
+#[derive(Serialize)]
+struct BuildPlanArtifactDocument {
+    r#type: &'static str,
+    path: String,
+    path_encoding: &'static str,
+    replaces_existing: bool,
+}
+
+#[derive(Serialize)]
+struct BuildPlanPlatformDocument {
+    required_version: String,
+    found_version: String,
+    runner: &'static str,
+}
+
+#[derive(Serialize)]
 struct WorkspaceBuildDocument {
     schema_version: u8,
     projects: Vec<WorkspaceBuildEntry>,
@@ -1373,6 +1570,57 @@ impl BuildDocument {
                 version: plan.platform_version().as_str().to_owned(),
             },
             duration_ms: result.duration().as_millis(),
+        }
+    }
+}
+
+impl BuildPlanDocument {
+    /// Build a locale-independent dry-run document in execution order.
+    fn new(prepared: &[PreparedBuild<'_>], tools: &[Ibcmd], aggregate: bool) -> Self {
+        let projects = prepared
+            .iter()
+            .zip(tools)
+            .map(|(item, tool)| BuildPlanEntryDocument::new(item, tool))
+            .collect();
+        Self {
+            schema_version: 1,
+            kind: "build-plan",
+            scope: if aggregate { "workspace" } else { "project" },
+            projects,
+        }
+    }
+}
+
+impl BuildPlanEntryDocument {
+    /// Serialize one preflighted plan and discovered runner without localized values.
+    fn new(prepared: &PreparedBuild<'_>, tool: &Ibcmd) -> Self {
+        let (artifact_path, artifact_path_encoding) = json_path(prepared.plan.output().as_os_str());
+        Self {
+            name: prepared.name.map(|name| name.as_str().to_owned()),
+            root: BuildPlanPathDocument::new(prepared.plan.project_root()),
+            source: BuildPlanPathDocument::new(prepared.plan.source()),
+            artifact: BuildPlanArtifactDocument {
+                r#type: prepared.plan.artifact_type().as_str(),
+                path: artifact_path,
+                path_encoding: artifact_path_encoding,
+                replaces_existing: prepared.plan.output().is_file(),
+            },
+            platform: BuildPlanPlatformDocument {
+                required_version: prepared.plan.platform_version().as_str().to_owned(),
+                found_version: tool.version().as_str().to_owned(),
+                runner: tool.runner_kind(),
+            },
+        }
+    }
+}
+
+impl BuildPlanPathDocument {
+    /// Preserve one plan path with the existing reversible build encoding.
+    fn new(path: &Path) -> Self {
+        let (path, path_encoding) = json_path(path.as_os_str());
+        Self {
+            path,
+            path_encoding,
         }
     }
 }
