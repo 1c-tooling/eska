@@ -64,6 +64,7 @@ src/
 │   │   ├── settings.rs          # переносимые settings и версия платформы
 │   │   ├── plan.rs              # тип и путь build artifact без запуска процессов
 │   │   ├── tool.rs              # поиск, version check и запуск ibcmd/Distrobox
+│   │   ├── manifest.rs          # снимок source, SHA-256 и паспорт артефакта
 │   │   └── execute.rs           # временная база, import, cleanup и публикация
 │   ├── patch/
 │   │   ├── mod.rs               # публичная граница patch subsystem
@@ -233,7 +234,10 @@ tests/
 - `project/build/` отделяет переносимый план от machine-local обнаружения
   `ibcmd` и исполнения. `BuildPlan` разделяет source root участника и output scope
   workspace; `execute.rs` предоставляет read-only preflight, владеет временной
-  базой и безопасной публикацией артефакта. `cli/commands/build.rs` сначала
+  базой и безопасной публикацией артефакта. `manifest.rs` создаёт ограниченный
+  снимок Designer XML, вычисляет SHA-256 и формирует паспорт без локальных путей;
+  `execute.rs` публикует artifact/manifest как одну восстанавливаемую пару.
+  `cli/commands/build.rs` сначала
   проверяет всю выбранную группу и обнаруживает подходящие runners. Обычный режим
   затем последовательно выполняет планы, сохраняя одиночный JSON v1 и отдельный
   aggregate JSON v1; `--dry-run` останавливается до исполнения и возвращает

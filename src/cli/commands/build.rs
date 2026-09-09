@@ -34,8 +34,8 @@ use crate::{
     project::{
         Project, ProjectName,
         build::{
-            self, BuildError, BuildPlan, BuildSettingsError, BuildStage, Ibcmd, PlanError,
-            PlatformVersion, RunError, ToolError, ToolOptions, ToolSource,
+            self, BuildError, BuildPlan, BuildSettingsError, BuildStage, Ibcmd, ManifestError,
+            PlanError, PlatformVersion, RunError, ToolError, ToolOptions, ToolSource,
         },
         discovery::{self, DiscoveryContext},
         metadata,
@@ -72,11 +72,20 @@ pub(in crate::cli) struct BuildArgs {
     #[arg(long)]
     workspace: bool,
 
-    #[arg(long)]
-    dry_run: bool,
+    #[command(flatten)]
+    mode: BuildModeArgs,
 
     #[arg(short, long, action = clap::ArgAction::Help)]
     help: Option<bool>,
+}
+
+#[derive(Debug, Args)]
+struct BuildModeArgs {
+    #[arg(long)]
+    dry_run: bool,
+
+    #[arg(long, conflicts_with = "dry_run")]
+    manifest: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, ValueEnum)]
@@ -170,14 +179,14 @@ impl BuildArgs {
                 plan,
             });
         }
-        if let Err(code) = preflight_group(self.format, &prepared, localizer) {
+        if let Err(code) = preflight_group(self.format, &prepared, self.mode.manifest, localizer) {
             return code;
         }
         let tools = match discover_tools(self.format, &prepared, &options, localizer) {
             Ok(tools) => tools,
             Err(code) => return code,
         };
-        if self.dry_run {
+        if self.mode.dry_run {
             return write_build_preview(
                 self.format,
                 &prepared,
@@ -364,14 +373,29 @@ impl BuildArgs {
         let mut progress =
             interactive.then(|| ProgressLine::start(localizer.text("build-progress"), styled));
         let mut output_error = None;
-        let result = build::execute_streaming(plan, ibcmd, |_, _, line| {
+        let mut on_output = |_: BuildStage, _: build::ProcessStream, line: &[u8]| {
             if output_error.is_none()
                 && let Err(error) =
                     write_diagnostic(line, project, localizer, styled, progress.as_ref())
             {
                 output_error = Some(error);
             }
-        });
+        };
+        let result = if self.mode.manifest {
+            let project_name = prepared
+                .name
+                .map(ProjectName::as_str)
+                .or_else(|| project.root().file_name().and_then(std::ffi::OsStr::to_str));
+            build::execute_streaming_with_manifest(
+                plan,
+                project,
+                project_name,
+                ibcmd,
+                &mut on_output,
+            )
+        } else {
+            build::execute_streaming(plan, ibcmd, &mut on_output)
+        };
         if let Some(error) = progress
             .as_mut()
             .and_then(|progress| progress.finish().err())
@@ -581,6 +605,7 @@ fn build_plan(
 fn preflight_group(
     format: OutputFormat,
     prepared: &[PreparedBuild<'_>],
+    manifest: bool,
     localizer: &Localizer,
 ) -> Result<(), ExitCode> {
     let plans: Vec<_> = prepared.iter().map(|item| &item.plan).collect();
@@ -596,7 +621,12 @@ fn preflight_group(
         return Err(ExitCode::FAILURE);
     }
     for item in prepared {
-        if let Err(error) = build::preflight(&item.plan) {
+        let result = if manifest {
+            build::preflight_manifest(&item.plan)
+        } else {
+            build::preflight(&item.plan)
+        };
+        if let Err(error) = result {
             let machine_error = BuildExecutionError::Build(error);
             return Err(write_project_failure(
                 format,
@@ -1120,6 +1150,13 @@ fn write_build_result(
                     interactive,
                 )
             );
+            if let Some(manifest) = result.manifest() {
+                println!(
+                    "{} {}",
+                    localizer.text("build-manifest-completed-label"),
+                    render_artifact_link(manifest, interactive),
+                );
+            }
         }
         OutputFormat::Json => {
             let document = BuildDocument::new(plan, result);
@@ -1240,6 +1277,9 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         .mut_arg("dry_run", |arg| {
             arg.help(localizer.text("build-dry-run-help"))
         })
+        .mut_arg("manifest", |arg| {
+            arg.help(localizer.text("build-manifest-help"))
+        })
         .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
 }
 
@@ -1349,6 +1389,35 @@ fn present_build_error(error: &BuildError, localizer: &Localizer) -> String {
             "build-descriptors-multiple",
             &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
         ),
+        BuildError::Manifest(error) => present_manifest_error(error, localizer),
+    }
+}
+
+/// Render source-snapshot and manifest failures without adding localized text to core.
+fn present_manifest_error(error: &ManifestError, localizer: &Localizer) -> String {
+    match error {
+        ManifestError::SnapshotIo { path, source } => localizer.format(
+            "build-manifest-filesystem-error",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("reason", LocalizationValue::Text(&source.to_string())),
+            ],
+        ),
+        ManifestError::SnapshotEntryUnsupported(path) => localizer.format(
+            "build-manifest-entry-unsupported",
+            &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
+        ),
+        ManifestError::SnapshotProject(_) => localizer.text("build-manifest-snapshot-invalid"),
+        ManifestError::ArtifactRead { path, source } | ManifestError::Write { path, source } => {
+            localizer.format(
+                "build-manifest-filesystem-error",
+                &[
+                    ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                    ("reason", LocalizationValue::Text(&source.to_string())),
+                ],
+            )
+        }
+        ManifestError::Serialize(_) => localizer.text("build-manifest-serialize-error"),
     }
 }
 
@@ -1780,6 +1849,14 @@ const fn execution_error_code(error: &BuildExecutionError) -> &'static str {
         BuildError::DescriptorInvalid { .. } => "descriptor-invalid",
         BuildError::DescriptorMissing(_) => "descriptor-missing",
         BuildError::DescriptorsMultiple(_) => "descriptors-multiple",
+        BuildError::Manifest(ManifestError::SnapshotIo { .. }) => "snapshot-io",
+        BuildError::Manifest(ManifestError::SnapshotEntryUnsupported(_)) => {
+            "snapshot-entry-unsupported"
+        }
+        BuildError::Manifest(ManifestError::SnapshotProject(_)) => "snapshot-invalid",
+        BuildError::Manifest(ManifestError::ArtifactRead { .. }) => "artifact-checksum",
+        BuildError::Manifest(ManifestError::Write { .. }) => "manifest-write",
+        BuildError::Manifest(ManifestError::Serialize(_)) => "manifest-serialize",
     }
 }
 
@@ -1791,6 +1868,12 @@ const fn execution_error_stage(error: &BuildExecutionError) -> Option<&'static s
             BuildStage::CreateInfobase => "create-infobase",
             BuildStage::ImportSources => "import-sources",
         }),
+        BuildExecutionError::Build(BuildError::Manifest(
+            ManifestError::ArtifactRead { .. }
+            | ManifestError::Write { .. }
+            | ManifestError::Serialize(_),
+        )) => Some("manifest"),
+        BuildExecutionError::Build(BuildError::Manifest(_)) => Some("snapshot"),
         BuildExecutionError::Build(_) | BuildExecutionError::Output(_) => None,
     }
 }

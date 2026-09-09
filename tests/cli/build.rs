@@ -6,6 +6,8 @@ use std::{
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::{Command, Output, Stdio},
+    thread,
+    time::Duration,
 };
 
 use serde_json::Value;
@@ -156,11 +158,21 @@ if [ "$1" = "config" ] && [ "$2" = "import" ]; then
         exit 7
       fi;;
   esac
+  if [ -n "$FAKE_IBCMD_IMPORT_READY" ]; then
+    : > "$FAKE_IBCMD_IMPORT_READY"
+    while [ ! -f "$FAKE_IBCMD_IMPORT_CONTINUE" ]; do sleep 0.05; done
+  fi
   if [ "$FAKE_IBCMD_STREAM" = "1" ]; then
     echo "[INFO] File: $source/DataProcessors/РаботаСФайлами/Forms/ПрисоединенныйФайл/Ext/Help/ru.html, checking"
     sleep 2
   fi
-  printf 'native-artifact' > "$output"
+  if [ -n "$FAKE_IBCMD_ARTIFACT_SOURCE_FILE" ]; then
+    source_root="$source"
+    if [ -f "$source" ]; then source_root="${source%/*}"; fi
+    cat "$source_root/$FAKE_IBCMD_ARTIFACT_SOURCE_FILE" > "$output"
+  else
+    printf 'native-artifact' > "$output"
+  fi
   echo "[WARN] fake build warning"
   exit 0
 fi
@@ -742,18 +754,20 @@ fn help_and_human_result_are_localized() {
     let fixture = TestDir::new();
     let ibcmd = fake_ibcmd(&fixture);
     let root = project(&fixture, "extension", "Localized");
-    for (locale, help_text, started_text, result_text) in [
+    for (locale, help_text, started_text, result_text, manifest_text) in [
         (
             "ru",
             "Собрать нативный артефакт",
             "Начало сборки платформой 1С",
             "Собран",
+            "Паспорт:",
         ),
         (
             "en",
             "Build a native 1C artifact",
             "Starting build with 1C platform",
             "Built",
+            "Manifest:",
         ),
     ] {
         let help = Command::new(env!("CARGO_BIN_EXE_eska"))
@@ -770,6 +784,13 @@ fn help_and_human_result_are_localized() {
                 "Show the fully preflighted build plan"
             })
         );
+        assert!(
+            String::from_utf8_lossy(&help.stdout).contains(if locale == "ru" {
+                "Собрать артефакт из зафиксированного снимка"
+            } else {
+                "Build from a fixed source snapshot"
+            })
+        );
 
         let output = eska(&root, locale, &ibcmd, &["build"], false);
         assert!(output.status.success(), "{output:?}");
@@ -781,6 +802,13 @@ fn help_and_human_result_are_localized() {
         assert!(stderr.contains(started_text), "{stderr}");
         assert!(stderr.contains("[WARN] fake build warning"), "{stderr}");
         assert!(!stderr.contains('\x1b'), "{stderr:?}");
+
+        let manifested = eska(&root, locale, &ibcmd, &["build", "--manifest"], false);
+        assert!(manifested.status.success(), "{manifested:?}");
+        let stdout = String::from_utf8_lossy(&manifested.stdout);
+        assert!(stdout.contains(manifest_text), "{stdout}");
+        assert!(stdout.contains("Localized.cfe.manifest.json"), "{stdout}");
+        assert!(!stdout.contains('\x1b'), "{stdout:?}");
     }
 }
 
@@ -1036,4 +1064,282 @@ fn json_discovery_error_is_locale_independent() {
         errors.push(document);
     }
     assert_eq!(errors[0], errors[1]);
+}
+
+#[test]
+/// Write a locale-independent passport while retaining the existing build JSON contract.
+fn manifested_build_records_artifact_snapshot_platform_version_and_absent_git() {
+    let fixture = TestDir::new();
+    let root = project(&fixture, "configuration", "manifest-demo");
+    fs::write(
+        root.join("src/Configuration.xml"),
+        r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><Configuration><Properties><Version>1.2.3.4</Version></Properties></Configuration></MetaDataObject>"#,
+    )
+    .expect("versioned descriptor");
+    let ibcmd = fake_ibcmd(&fixture);
+    let output = eska(
+        &root,
+        "en",
+        &ibcmd,
+        &["build", "--manifest", "--format", "json"],
+        false,
+    );
+    assert!(output.status.success(), "{output:?}");
+
+    let build: Value = serde_json::from_slice(&output.stdout).expect("build JSON");
+    assert_eq!(build["schema_version"], 1);
+    assert_eq!(build["artifact"]["type"], "configuration");
+    assert!(build.get("manifest").is_none(), "build v1 changed: {build}");
+
+    let manifest_path = root.join("build/manifest-demo.cf.manifest.json");
+    let bytes = fs::read(&manifest_path).expect("artifact manifest");
+    let manifest: Value = serde_json::from_slice(&bytes).expect("manifest JSON");
+    assert_eq!(manifest["schema_version"], 1);
+    assert_eq!(manifest["kind"], "artifact-manifest");
+    assert_eq!(manifest["project"]["name"], "manifest-demo");
+    assert_eq!(manifest["project"]["version"]["status"], "available");
+    assert_eq!(manifest["project"]["version"]["value"], "1.2.3.4");
+    assert_eq!(manifest["artifact"]["type"], "configuration");
+    assert_eq!(manifest["artifact"]["checksum"]["algorithm"], "sha256");
+    assert_eq!(
+        manifest["artifact"]["checksum"]["value"],
+        "5e994f33c0e7a8698cd9aa625e8de021fdedcf06cb9bcd174500651882d70f50"
+    );
+    assert_eq!(manifest["platform"]["version"], "8.3.27.2325");
+    assert_eq!(manifest["source"]["git"]["status"], "absent");
+    assert_eq!(manifest["source"]["git"]["commit"], Value::Null);
+    assert_eq!(manifest["source"]["git"]["dirty"], Value::Null);
+    assert!(
+        manifest["source"]["snapshot_id"]
+            .as_str()
+            .is_some_and(|id| id.starts_with("sha256:") && id.len() == 71)
+    );
+    assert!(
+        !String::from_utf8_lossy(&bytes).contains(&root.to_string_lossy().into_owned()),
+        "manifest leaked an absolute project path"
+    );
+    let russian = eska(
+        &root,
+        "ru",
+        &ibcmd,
+        &["build", "--manifest", "--format", "json"],
+        false,
+    );
+    assert!(russian.status.success(), "{russian:?}");
+    assert_eq!(fs::read(manifest_path).expect("Russian manifest"), bytes);
+}
+
+#[test]
+/// Build from copied bytes even when the original source changes during ibcmd execution.
+fn manifested_build_uses_the_captured_source_snapshot() {
+    let fixture = TestDir::new();
+    let root = project(&fixture, "processing", "snapshot-demo");
+    let ibcmd = fake_ibcmd(&fixture);
+    let payload = root.join("src/payload.txt");
+    fs::write(&payload, b"captured bytes").expect("initial payload");
+    let ready = fixture.0.join("import.ready");
+    let proceed = fixture.0.join("import.continue");
+    let mut child = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("FAKE_IBCMD_IMPORT_READY", &ready)
+        .env("FAKE_IBCMD_IMPORT_CONTINUE", &proceed)
+        .env("FAKE_IBCMD_ARTIFACT_SOURCE_FILE", "payload.txt")
+        .args(["--lang", "en", "build", "--manifest", "--ibcmd"])
+        .arg(&ibcmd)
+        .spawn()
+        .expect("start manifested build");
+    for _ in 0..500 {
+        if ready.exists() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert!(ready.exists(), "fake ibcmd did not reach import");
+    fs::write(&payload, b"changed during build").expect("change original source");
+    fs::write(&proceed, b"").expect("continue import");
+    assert!(child.wait().expect("wait for build").success());
+    assert_eq!(
+        fs::read(root.join("build/snapshot-demo.epf")).expect("artifact"),
+        b"captured bytes"
+    );
+    let first: Value = serde_json::from_slice(
+        &fs::read(root.join("build/snapshot-demo.epf.manifest.json")).expect("manifest"),
+    )
+    .expect("manifest JSON");
+    assert_eq!(first["project"]["version"]["status"], "unavailable");
+
+    let second = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&root)
+        .env("FAKE_IBCMD_ARTIFACT_SOURCE_FILE", "payload.txt")
+        .args(["--lang", "en", "build", "--manifest", "--ibcmd"])
+        .arg(&ibcmd)
+        .output()
+        .expect("repeat manifested build");
+    assert!(second.status.success(), "{second:?}");
+    assert_eq!(
+        fs::read(root.join("build/snapshot-demo.epf")).expect("updated artifact"),
+        b"changed during build"
+    );
+    let second: Value = serde_json::from_slice(
+        &fs::read(root.join("build/snapshot-demo.epf.manifest.json")).expect("updated manifest"),
+    )
+    .expect("updated manifest JSON");
+    assert_ne!(
+        first["source"]["snapshot_id"],
+        second["source"]["snapshot_id"]
+    );
+}
+
+#[test]
+/// Exclude in-source result files and the temporary workspace from the snapshot identity.
+fn manifested_build_excludes_its_own_results_from_the_source_snapshot() {
+    let fixture = TestDir::new();
+    let root = project(&fixture, "configuration", "in-source-demo");
+    let ibcmd = fake_ibcmd(&fixture);
+    let args = ["build", "--manifest", "--output", "src/result.cf"];
+    let first = eska(&root, "en", &ibcmd, &args, false);
+    assert!(first.status.success(), "{first:?}");
+    let manifest_path = root.join("src/result.cf.manifest.json");
+    let first: Value = serde_json::from_slice(&fs::read(&manifest_path).expect("manifest"))
+        .expect("manifest JSON");
+    let second = eska(&root, "en", &ibcmd, &args, false);
+    assert!(second.status.success(), "{second:?}");
+    let second: Value =
+        serde_json::from_slice(&fs::read(manifest_path).expect("manifest")).expect("manifest JSON");
+    assert_eq!(
+        first["source"]["snapshot_id"],
+        second["source"]["snapshot_id"]
+    );
+    assert!(
+        fs::read_dir(root.join("src"))
+            .expect("source directory")
+            .all(|entry| !entry
+                .expect("source entry")
+                .file_name()
+                .to_string_lossy()
+                .contains("eska-work"))
+    );
+}
+
+#[test]
+/// Record one stable Git commit and distinguish clean from dirty worktrees.
+fn manifested_build_records_clean_and_dirty_git_state() {
+    let fixture = TestDir::new();
+    let root = project(&fixture, "configuration", "git-demo");
+    fs::write(
+        root.join("src/Configuration.xml"),
+        r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><Configuration><Properties><Version>1.0.0.1</Version></Properties></Configuration></MetaDataObject>"#,
+    )
+    .expect("descriptor");
+    let git = |arguments: &[&str]| {
+        Command::new("git")
+            .current_dir(&root)
+            .env("GIT_AUTHOR_NAME", "Test")
+            .env("GIT_AUTHOR_EMAIL", "test@example.com")
+            .env("GIT_COMMITTER_NAME", "Test")
+            .env("GIT_COMMITTER_EMAIL", "test@example.com")
+            .args(arguments)
+            .output()
+            .expect("run git")
+    };
+    assert!(git(&["init", "-q"]).status.success());
+    assert!(git(&["add", "."]).status.success());
+    assert!(git(&["commit", "-qm", "fixture"]).status.success());
+    let commit = String::from_utf8(git(&["rev-parse", "HEAD"]).stdout)
+        .expect("commit UTF-8")
+        .trim()
+        .to_owned();
+    let ibcmd = fake_ibcmd(&fixture);
+
+    let clean = eska(&root, "en", &ibcmd, &["build", "--manifest"], false);
+    assert!(clean.status.success(), "{clean:?}");
+    let manifest_path = root.join("build/git-demo.cf.manifest.json");
+    let clean: Value = serde_json::from_slice(&fs::read(&manifest_path).expect("clean manifest"))
+        .expect("clean JSON");
+    assert_eq!(clean["source"]["git"]["status"], "available");
+    assert_eq!(clean["source"]["git"]["commit"], commit);
+    assert_eq!(clean["source"]["git"]["dirty"], false);
+
+    fs::write(root.join("src/dirty.txt"), b"dirty").expect("dirty source");
+    let dirty = eska(&root, "en", &ibcmd, &["build", "--manifest"], false);
+    assert!(dirty.status.success(), "{dirty:?}");
+    let dirty: Value = serde_json::from_slice(&fs::read(manifest_path).expect("dirty manifest"))
+        .expect("dirty JSON");
+    assert_eq!(dirty["source"]["git"]["commit"], commit);
+    assert_eq!(dirty["source"]["git"]["dirty"], true);
+}
+
+#[test]
+/// Reject links from a manifested snapshot while retaining ordinary build behavior.
+fn manifested_build_rejects_source_links_without_changing_ordinary_build() {
+    use std::os::unix::fs::symlink;
+
+    let fixture = TestDir::new();
+    let root = project(&fixture, "configuration", "linked-demo");
+    let ibcmd = fake_ibcmd(&fixture);
+    fs::write(root.join("target.txt"), b"outside source").expect("link target");
+    symlink("../target.txt", root.join("src/link.txt")).expect("source link");
+    let manifested = eska(
+        &root,
+        "en",
+        &ibcmd,
+        &["build", "--manifest", "--format", "json"],
+        false,
+    );
+    assert_eq!(manifested.status.code(), Some(1), "{manifested:?}");
+    let error: Value = serde_json::from_slice(&manifested.stdout).expect("error JSON");
+    assert_eq!(error["error"]["code"], "snapshot-entry-unsupported");
+    assert_eq!(error["error"]["stage"], "snapshot");
+    assert!(!root.join("build/linked-demo.cf").exists());
+
+    let ordinary = eska(&root, "en", &ibcmd, &["build"], false);
+    assert!(ordinary.status.success(), "{ordinary:?}");
+}
+
+#[test]
+/// Publish successful workspace pairs and preserve the failed member's previous pair.
+fn workspace_manifest_keeps_each_member_transaction_independent() {
+    let fixture = workspace();
+    let ibcmd = fake_ibcmd(&fixture);
+    fs::create_dir(fixture.0.join("build")).expect("build directory");
+    fs::write(fixture.0.join("build/import-orders.epf"), b"old artifact").expect("old artifact");
+    fs::write(
+        fixture.0.join("build/import-orders.epf.manifest.json"),
+        b"old manifest",
+    )
+    .expect("old manifest");
+    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&fixture.0)
+        .env("FAKE_IBCMD_FAIL_IMPORT", "0")
+        .env("FAKE_IBCMD_FAIL_SOURCE_CONTAINS", "ImportOrders")
+        .args([
+            "--lang",
+            "en",
+            "build",
+            "--manifest",
+            "--format",
+            "json",
+            "--ibcmd",
+        ])
+        .arg(&ibcmd)
+        .output()
+        .expect("workspace manifested build");
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("workspace JSON");
+    assert_eq!(document["projects"][0]["status"], "success");
+    assert_eq!(document["projects"][1]["status"], "failed");
+    let first_manifest: Value = serde_json::from_slice(
+        &fs::read(fixture.0.join("build/sales-report.erf.manifest.json")).expect("first manifest"),
+    )
+    .expect("first manifest JSON");
+    assert_eq!(first_manifest["project"]["name"], "sales-report");
+    assert_eq!(
+        fs::read(fixture.0.join("build/import-orders.epf")).expect("preserved artifact"),
+        b"old artifact"
+    );
+    assert_eq!(
+        fs::read(fixture.0.join("build/import-orders.epf.manifest.json"))
+            .expect("preserved manifest"),
+        b"old manifest"
+    );
 }
