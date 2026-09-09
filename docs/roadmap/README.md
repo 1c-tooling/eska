@@ -50,9 +50,9 @@
 - `DONE`: `T29` — `eska doctor`;
 - `DONE`: `T49` — стабильные JSON-ошибки и обратимые пути;
 - `DONE`: `T50` — анализ только затронутых объектов и явный fallback;
-- `IN-PROGRESS`: `T51` — предварительный просмотр `save`;
-- `PLANNED`: `T52`, `T54`–`T55` —
-  предварительный просмотр `build`, паспорт артефакта и переносимые проверки;
+- `DONE`: `T51` — предварительный просмотр `save`;
+- `NEXT`: `T52` — предварительный просмотр `build`;
+- `PLANNED`: `T54`–`T55` — паспорт артефакта и переносимые проверки;
 - `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
 - `PLANNED`: `T37` — следующий крупный VCS-этап: `sync` / `continue` / `abort`;
 - `PLANNED`: `T26` — `eska fmt`, выполняется последней в текущей очереди;
@@ -111,13 +111,12 @@ TUI разделён на обработку клавиш, отрисовку и
 
 | Порядок | ID | Результат |
 |---|---|---|
-| 1 | T51 | `save --dry-run` с точным scope и сообщением |
-| 2 | T52 | `build --dry-run` для одного проекта и workspace |
-| 3 | T53 | Сначала контракт `finish` после squash/rebase, затем его реализация |
-| 4 | T54 | Паспорт артефакта, связанный с фактическим снимком исходников |
-| 5 | T55 | Переносимые проверки build и протокол приёмки на поддерживаемых ОС |
-| 6 | T37 | Синхронизация задачи и штатные продолжение/отмена при конфликтах |
-| 7 | T26 | Форматирование; последняя задача текущей очереди |
+| 1 | T52 | `build --dry-run` для одного проекта и workspace |
+| 2 | T53 | Сначала контракт `finish` после squash/rebase, затем его реализация |
+| 3 | T54 | Паспорт артефакта, связанный с фактическим снимком исходников |
+| 4 | T55 | Переносимые проверки build и протокол приёмки на поддерживаемых ОС |
+| 5 | T37 | Синхронизация задачи и штатные продолжение/отмена при конфликтах |
+| 6 | T26 | Форматирование; последняя задача текущей очереди |
 
 T53 нельзя начинать с ослабления проверки интеграции: сначала снимается
 `NEEDS-SPEC`. Уточнение её контракта не блокирует независимые T54–T55.
@@ -186,8 +185,8 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T48 | DONE | `new` и `init` для workspace members | [11-workspaces.md](11-workspaces.md) |
 | T49 | DONE | Стабильные JSON-ошибки и обратимые пути | [12-current-functionality.md](12-current-functionality.md) |
 | T50 | DONE | Анализ затронутых объектов и явный fallback | [12-current-functionality.md](12-current-functionality.md) |
-| T51 | IN-PROGRESS | Предварительный просмотр `save` | [12-current-functionality.md](12-current-functionality.md) |
-| T52 | PLANNED | Предварительный просмотр `build` | [12-current-functionality.md](12-current-functionality.md) |
+| T51 | DONE | Предварительный просмотр `save` | [12-current-functionality.md](12-current-functionality.md) |
+| T52 | NEXT | Предварительный просмотр `build` | [12-current-functionality.md](12-current-functionality.md) |
 | T53 | NEEDS-SPEC | Завершение задачи после squash/rebase | [12-current-functionality.md](12-current-functionality.md) |
 | T54 | PLANNED | Паспорт собранного артефакта | [12-current-functionality.md](12-current-functionality.md) |
 | T55 | PLANNED | Переносимые проверки сборки | [12-current-functionality.md](12-current-functionality.md) |
