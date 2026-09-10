@@ -27,7 +27,9 @@ fn run(arguments: &[OsString]) -> Result<(), String> {
         [group, command, rest @ ..] if group == "infobase" && command == "create" => {
             create_infobase(rest);
         }
-        [group, command, rest @ ..] if group == "config" && command == "import" => {
+        [group, subgroup, command, rest @ ..]
+            if group == "infobase" && subgroup == "config" && command == "import" =>
+        {
             import_configuration(rest);
         }
         _ => process::exit(9),
@@ -87,11 +89,7 @@ fn import_configuration(arguments: &[OsString]) {
     }
     if env::var_os("FAKE_IBCMD_FAIL_SOURCE_CONTAINS")
         .filter(|needle| !needle.is_empty())
-        .is_some_and(|needle| {
-            source
-                .to_string_lossy()
-                .contains(needle.to_string_lossy().as_ref())
-        })
+        .is_some_and(|needle| source_contains(&source, &needle))
     {
         eprintln!("fake selective import failure");
         process::exit(7);
@@ -104,6 +102,20 @@ fn import_configuration(arguments: &[OsString]) {
         process::exit(9);
     }
     println!("[WARN] fake build warning");
+}
+
+/// Match either the source path or an immediate descriptor name inside a source directory.
+fn source_contains(source: &Path, needle: &OsStr) -> bool {
+    let needle = needle.to_string_lossy();
+    source.to_string_lossy().contains(needle.as_ref())
+        || fs::read_dir(source).is_ok_and(|entries| {
+            entries.filter_map(Result::ok).any(|entry| {
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .contains(needle.as_ref())
+            })
+        })
 }
 
 /// Coordinate a source mutation with the manifested-build scenario.

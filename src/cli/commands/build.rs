@@ -34,8 +34,9 @@ use crate::{
     project::{
         Project, ProjectName,
         build::{
-            self, BuildError, BuildPlan, BuildSettingsError, BuildStage, Ibcmd, ManifestError,
-            PlanError, PlatformVersion, RunError, ToolError, ToolOptions, ToolSource,
+            self, BuildError, BuildPlan, BuildSettingsError, BuildStage, Ibcmd,
+            ManagedInfobaseError, ManifestError, PlanError, PlatformVersion, RunError, ToolError,
+            ToolOptions, ToolSource,
         },
         discovery::{self, DiscoveryContext},
         metadata,
@@ -47,6 +48,12 @@ use crate::{
 pub(in crate::cli) struct BuildArgs {
     #[arg(long)]
     output: Option<PathBuf>,
+
+    #[arg(long)]
+    base_configuration: Option<PathBuf>,
+
+    #[arg(long)]
+    recreate_infobase: bool,
 
     #[arg(long)]
     ibcmd: Option<PathBuf>,
@@ -150,10 +157,8 @@ impl BuildArgs {
             Ok(platform_override) => platform_override,
             Err(code) => return code,
         };
-        let workspace_root = match &context {
-            DiscoveryContext::Standalone(_) => None,
-            DiscoveryContext::Workspace { workspace, .. } => Some(workspace.root()),
-        };
+        let workspace_root = workspace_root(&context);
+        let base_configuration = self.resolved_base_configuration(&context);
         let mut prepared = Vec::with_capacity(selection.projects().len());
         for selected in selection.projects() {
             let plan = match build_plan(
@@ -161,6 +166,8 @@ impl BuildArgs {
                 workspace_root,
                 self.output.as_deref(),
                 platform_override.clone(),
+                base_configuration.clone(),
+                self.recreate_infobase,
             ) {
                 Ok(plan) => plan,
                 Err(error) => {
@@ -209,6 +216,13 @@ impl BuildArgs {
                 ExitCode::FAILURE,
             )
         }
+    }
+
+    /// Resolve the optional base CF once so every selected plan uses the same host path.
+    fn resolved_base_configuration(&self, context: &DiscoveryContext) -> Option<PathBuf> {
+        self.base_configuration
+            .as_deref()
+            .map(|path| resolve_base_configuration(path, context))
     }
 
     /// Resolve machine-local tool settings through the selected output contract.
@@ -583,14 +597,36 @@ impl BuildArgs {
     }
 }
 
+/// Return the shared output scope only when discovery selected a workspace.
+fn workspace_root(context: &DiscoveryContext) -> Option<&Path> {
+    match context {
+        DiscoveryContext::Standalone(_) => None,
+        DiscoveryContext::Workspace { workspace, .. } => Some(workspace.root()),
+    }
+}
+
+/// Resolve a CLI input from the stable project or workspace root before crossing runners.
+fn resolve_base_configuration(path: &Path, context: &DiscoveryContext) -> PathBuf {
+    if path.is_absolute() {
+        return path.to_owned();
+    }
+    let root = match context {
+        DiscoveryContext::Standalone(project) => project.root(),
+        DiscoveryContext::Workspace { workspace, .. } => workspace.root(),
+    };
+    root.join(path)
+}
+
 /// Resolve a standalone or workspace-scoped plan without touching the filesystem.
 fn build_plan(
     selected: SelectedProject<'_>,
     workspace_root: Option<&Path>,
     output: Option<&Path>,
     platform_version: Option<PlatformVersion>,
+    base_configuration: Option<PathBuf>,
+    recreate_infobase: bool,
 ) -> Result<BuildPlan, PlanError> {
-    match (selected.name(), workspace_root) {
+    let plan = match (selected.name(), workspace_root) {
         (Some(name), Some(root)) => BuildPlan::for_workspace_member(
             selected.project(),
             root,
@@ -599,7 +635,9 @@ fn build_plan(
             platform_version,
         ),
         _ => BuildPlan::with_platform_version(selected.project(), output, platform_version),
-    }
+    }?;
+    plan.with_base_configuration(base_configuration)
+        .map(|plan| plan.with_recreate_infobase(recreate_infobase))
 }
 
 fn preflight_group(
@@ -737,6 +775,27 @@ fn write_human_build_preview(
         write_build_preview_field(
             "build-preview-source",
             &display_path(item.plan.source()),
+            localizer,
+        );
+        if let Some(path) = item.plan.base_configuration() {
+            write_build_preview_field(
+                "build-preview-base-configuration",
+                &display_path(path),
+                localizer,
+            );
+        }
+        write_build_preview_field(
+            "build-preview-infobase",
+            &display_path(item.plan.infobase_root()),
+            localizer,
+        );
+        write_build_preview_field(
+            "build-preview-infobase-mode",
+            &localizer.text(if item.plan.recreates_infobase() {
+                "build-preview-infobase-recreate"
+            } else {
+                "build-preview-infobase-reuse"
+            }),
             localizer,
         );
         write_build_preview_field(
@@ -1244,6 +1303,13 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
             arg.help(localizer.text("build-output-help"))
                 .value_name(localizer.text("build-output-value"))
         })
+        .mut_arg("base_configuration", |arg| {
+            arg.help(localizer.text("build-base-configuration-help"))
+                .value_name(localizer.text("build-base-configuration-value"))
+        })
+        .mut_arg("recreate_infobase", |arg| {
+            arg.help(localizer.text("build-recreate-infobase-help"))
+        })
         .mut_arg("ibcmd", |arg| {
             arg.help(localizer.text("build-ibcmd-help"))
                 .value_name(localizer.text("build-ibcmd-value"))
@@ -1301,6 +1367,9 @@ fn present_plan_error(error: &PlanError, localizer: &Localizer) -> String {
             );
         }
         PlanError::OutputCollision { path } => ("build-output-collision", path),
+        PlanError::BaseConfigurationUnsupported => {
+            return localizer.text("build-base-configuration-unsupported");
+        }
     };
     localizer.format(
         key,
@@ -1389,6 +1458,20 @@ fn present_build_error(error: &BuildError, localizer: &Localizer) -> String {
             "build-descriptors-multiple",
             &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
         ),
+        BuildError::BaseConfigurationInvalid(path) => localizer.format(
+            "build-base-configuration-invalid",
+            &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
+        ),
+        BuildError::BaseConfigurationRead { path, source } => localizer.format(
+            "build-base-configuration-read",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("reason", LocalizationValue::Text(&source.to_string())),
+            ],
+        ),
+        BuildError::ManagedInfobase(error) => {
+            diagnostics::present_managed_infobase_error(error, localizer)
+        }
         BuildError::Manifest(error) => present_manifest_error(error, localizer),
     }
 }
@@ -1549,6 +1632,10 @@ struct BuildPlanEntryDocument {
     name: Option<String>,
     root: BuildPlanPathDocument,
     source: BuildPlanPathDocument,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    base_configuration: Option<BuildPlanPathDocument>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    infobase: Option<BuildPlanInfobaseDocument>,
     artifact: BuildPlanArtifactDocument,
     platform: BuildPlanPlatformDocument,
 }
@@ -1565,6 +1652,12 @@ struct BuildPlanArtifactDocument {
     path: String,
     path_encoding: &'static str,
     replaces_existing: bool,
+}
+
+#[derive(Serialize)]
+struct BuildPlanInfobaseDocument {
+    root: BuildPlanPathDocument,
+    mode: &'static str,
 }
 
 #[derive(Serialize)]
@@ -1668,6 +1761,17 @@ impl BuildPlanEntryDocument {
             name: prepared.name.map(|name| name.as_str().to_owned()),
             root: BuildPlanPathDocument::new(prepared.plan.project_root()),
             source: BuildPlanPathDocument::new(prepared.plan.source()),
+            base_configuration: prepared
+                .plan
+                .base_configuration()
+                .map(BuildPlanPathDocument::new),
+            infobase: prepared
+                .plan
+                .recreates_infobase()
+                .then(|| BuildPlanInfobaseDocument {
+                    root: BuildPlanPathDocument::new(prepared.plan.infobase_root()),
+                    mode: "recreate",
+                }),
             artifact: BuildPlanArtifactDocument {
                 r#type: prepared.plan.artifact_type().as_str(),
                 path: artifact_path,
@@ -1792,6 +1896,7 @@ const fn plan_error_code(error: &PlanError) -> &'static str {
         PlanError::InvalidOutput { .. } => "output-invalid",
         PlanError::UnexpectedExtension { .. } => "output-extension-invalid",
         PlanError::OutputCollision { .. } => "output-collision",
+        PlanError::BaseConfigurationUnsupported => "base-configuration-unsupported",
     }
 }
 
@@ -1849,6 +1954,15 @@ const fn execution_error_code(error: &BuildExecutionError) -> &'static str {
         BuildError::DescriptorInvalid { .. } => "descriptor-invalid",
         BuildError::DescriptorMissing(_) => "descriptor-missing",
         BuildError::DescriptorsMultiple(_) => "descriptors-multiple",
+        BuildError::BaseConfigurationRead { .. } => "base-configuration-read",
+        BuildError::BaseConfigurationInvalid(_) => "base-configuration-invalid",
+        BuildError::ManagedInfobase(ManagedInfobaseError::Io { .. }) => "infobase-io",
+        BuildError::ManagedInfobase(ManagedInfobaseError::Locked { .. }) => "infobase-locked",
+        BuildError::ManagedInfobase(ManagedInfobaseError::Unowned { .. }) => "infobase-unowned",
+        BuildError::ManagedInfobase(ManagedInfobaseError::OutsideScope { .. }) => {
+            "infobase-outside-scope"
+        }
+        BuildError::ManagedInfobase(ManagedInfobaseError::StateSerialize(_)) => "infobase-state",
         BuildError::Manifest(ManifestError::SnapshotIo { .. }) => "snapshot-io",
         BuildError::Manifest(ManifestError::SnapshotEntryUnsupported(_)) => {
             "snapshot-entry-unsupported"

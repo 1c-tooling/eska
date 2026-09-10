@@ -18,6 +18,7 @@ src/
 │   ├── commands/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
 │   │   ├── build.rs             # eska build: аргументы, RU/EN и JSON result
+│   │   ├── clean.rs             # удаление управляемых build-баз
 │   │   ├── config.rs            # eska config: init/edit глобальных настроек
 │   │   ├── doctor.rs            # eska doctor: selectors, RU/EN и versioned JSON
 │   │   ├── platform.rs          # eska platform list: human/JSON presentation
@@ -65,7 +66,8 @@ src/
 │   │   ├── plan.rs              # тип и путь build artifact без запуска процессов
 │   │   ├── tool.rs              # поиск, version check и запуск ibcmd/Distrobox
 │   │   ├── manifest.rs          # снимок source, SHA-256 и паспорт артефакта
-│   │   └── execute.rs           # временная база, import, cleanup и публикация
+│   │   ├── infobase.rs          # хранение, валидация и очистка служебных баз
+│   │   └── execute.rs           # import, staging cleanup и публикация
 │   ├── patch/
 │   │   ├── mod.rs               # публичная граница patch subsystem
 │   │   ├── model.rs             # PatchPlan, изменения, модули и ошибки
@@ -233,8 +235,10 @@ tests/
   JSON версии 1, сохраняя произвольные Git-байты через явную кодировку.
 - `project/build/` отделяет переносимый план от machine-local обнаружения
   `ibcmd` и исполнения. `BuildPlan` разделяет source root участника и output scope
-  workspace; `execute.rs` предоставляет read-only preflight, владеет временной
-  базой и безопасной публикацией артефакта. `manifest.rs` создаёт ограниченный
+  workspace; `infobase.rs` повторно использует совместимую служебную базу,
+  блокирует конкурентный доступ и удаляет только помеченные eska каталоги;
+  `execute.rs` предоставляет read-only preflight и безопасную публикацию
+  артефакта. `manifest.rs` создаёт ограниченный
   снимок Designer XML, вычисляет SHA-256 и формирует паспорт без локальных путей;
   `execute.rs` публикует artifact/manifest как одну восстанавливаемую пару.
   `cli/commands/build.rs` сначала

@@ -7,6 +7,7 @@ use clap::Subcommand;
 use super::localization::Localizer;
 
 mod build;
+mod clean;
 mod clone;
 mod config;
 mod diff;
@@ -28,6 +29,8 @@ mod version;
 pub(super) enum Commands {
     #[command(disable_help_flag = true)]
     Build(build::BuildArgs),
+    #[command(disable_help_flag = true)]
+    Clean(clean::CleanArgs),
     #[command(disable_help_flag = true)]
     Clone(clone::CloneArgs),
     #[command(disable_help_flag = true)]
@@ -67,6 +70,7 @@ pub(super) fn run(
 ) -> ExitCode {
     match command {
         Some(Commands::Build(args)) => args.run(project_dir, localizer),
+        Some(Commands::Clean(args)) => args.run(project_dir, localizer),
         Some(Commands::Clone(args)) => args.run(project_dir, localizer),
         Some(Commands::Config(args)) => args.run(localizer),
         Some(Commands::New(args)) => args.run(project_dir, localizer),
@@ -89,6 +93,7 @@ pub(super) fn run(
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
     command
         .mut_subcommand("build", |command| build::localize(command, localizer))
+        .mut_subcommand("clean", |command| clean::localize(command, localizer))
         .mut_subcommand("clone", |command| clone::localize(command, localizer))
         .mut_subcommand("config", |command| config::localize(command, localizer))
         .mut_subcommand("new", |command| new::localize(command, localizer))

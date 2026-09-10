@@ -30,12 +30,15 @@ cargo test --test integration cli::build
 | Контракт | Сценарий |
 |---|---|
 | `.cf`, `.cfe`, `.epf`, `.erf` и JSON | `builds_all_native_artifact_types_with_locale_independent_json` |
+| контекст основной конфигурации для `.epf`/`.erf` | `external_build_uses_base_configuration_context_and_source_directory` |
+| повторное использование и принудительное пересоздание служебной базы | `repeated_build_reuses_managed_infobase` |
+| пересоздание при изменении базового `.cf` | `changed_base_configuration_invalidates_managed_infobase` |
 | точное совпадение версии платформы | `exact_platform_version_is_required` |
 | workspace, selectors и aggregate JSON | `workspace_build_uses_shared_outputs_and_distinct_json_shapes` |
 | dry-run и отсутствие побочных эффектов | `dry_run_human_is_localized_and_does_not_change_the_filesystem` |
 | паспорт и зафиксированный снимок исходников | `manifested_build_uses_the_captured_source_snapshot` |
-| безопасная замена и очистка после ошибки | `failed_build_preserves_existing_artifact_and_cleans_workspace` |
-| прерывание и очистка временной ИБ | `interrupted_build_cleans_all_owned_paths` |
+| безопасная замена и сохранение служебной базы после ошибки | `failed_build_preserves_existing_artifact_and_managed_infobase` |
+| прерывание, сохранение базы и очистка staging | `interrupted_build_preserves_managed_infobase` |
 
 Сценарий прерывания пока посылает POSIX `SIGTERM`, поэтому исполняется только на
 Unix. Проверка отказа и cleanup переносима, но не заменяет проверку Ctrl+C на
@@ -45,7 +48,8 @@ Windows. Проверка символических ссылок также о�
 
 | Дата | Host | Rust | Переносимый стенд | Настоящая 1С |
 |---|---|---|---|---|
-| 2026-09-09 | Fedora Linux 44, x86_64 | 1.98.1 | `PASS`: 25/25, включая SIGTERM и symlink | `UNVERIFIED`: `ibcmd` отсутствует |
+| 2026-09-09 | Fedora Linux 44, x86_64 | 1.98.1 | `PASS`: 28/28, включая SIGTERM и symlink | `UNVERIFIED`: `ibcmd` отсутствует |
+| 2026-09-09 | Fedora Linux 44 + Distrobox `1c-ubuntu-env`, x86_64 | 1.98.1 | — | `PARTIAL`: `.epf` с базовым `.cf` на 8.3.27.2325 |
 | — | Windows, x86_64 | — | `UNVERIFIED`: host-runner недоступен | `UNVERIFIED` |
 | — | macOS, x86_64/aarch64 | — | `UNVERIFIED`: host-runner недоступен | `UNVERIFIED` |
 
@@ -61,8 +65,9 @@ Windows. Проверка символических ссылок также о�
 - exit code, stdout и stderr каждой команды;
 - размеры и SHA-256 файлов `.cf`, `.cfe`, `.epf`, `.erf` и их паспортов;
 - результат повторной сборки поверх существующего артефакта;
-- результат Ctrl+C во время import: прежний артефакт сохранён, временная ИБ и
+- результат Ctrl+C во время import: прежний артефакт и служебная ИБ сохранены,
   staging-файлы удалены;
+- результат `eska clean`: служебная ИБ удалена, опубликованный артефакт сохранён;
 - дату проверки и имя исполнителя.
 
 Минимальная последовательность для каждого из четырёх типов проекта:

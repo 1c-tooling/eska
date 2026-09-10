@@ -1541,7 +1541,9 @@ Auto strategy может учитывать:
 компоненты заново; build начинается с 1. XML не сериализуется: меняются только
 байты значения версии, остальной файл сохраняется побайтно. Human output
 локализован, JSON использует стабильную схему версии 1. Автоматический выбор bump
-остаётся частью будущего release pipeline.
+выделен в T56: команда анализирует commits от последнего project release tag,
+формирует provider-neutral план и готовит точное изменение XML для Release
+PR/MR. Полный changelog/tag/build/publish остаётся T32.
 
 ---
 
@@ -1917,15 +1919,24 @@ T53 finish после squash/rebase: сначала спецификация
 T54 паспорт артефакта и фактический снимок исходников
 T55 переносимые проверки сборки
 
-P2 — следующее крупное расширение VCS
+P2 — удобное переключение незавершённых задач
+T35 shelve / unshelve / shelves и автоматическое восстановление при switch
+
+P3 — автоматическая подготовка релиза 1С
+T56 version bump auto и Release PR/MR
+
+P4 — обновление установленного CLI
+T57 eska update до последнего стабильного release
+
+P5 — следующее крупное расширение VCS
 T37 sync / continue / abort одной задачей
 
-После P0–P2, последней в текущей очереди
+После P0–P5, последней в текущей очереди
 T26 fmt
 ```
 
 Остальной backlog сохраняется: affected/check, environments, apply/run,
-release/CI helpers, shelve/restore, publish и VS Code. T23 test backend и T39
+release/CI helpers, restore, publish и VS Code. T23 test backend и T39
 locking остаются `DEFERRED`; новые source formats и GUI не входят в текущий scope.
 У `check`, release и CI сохраняются собственные зависимости от quality-этапов.
 
@@ -1953,14 +1964,24 @@ project versioning и workspace members
 Ближайшие задачи выполнять в таком порядке, если не принято новое решение:
 
 ```text
-1. T55 — переносимые проверки сборки, NEXT
-2. T37 — sync / continue / abort
-3. T26 — fmt, последняя задача текущей очереди
+1. T35 — shelve и автоматическое восстановление при switch, NEXT
+2. T56 — version bump auto и подготовка Release PR/MR
+3. T57 — update установленного eska до последнего стабильного release
+4. T37 — sync / continue / abort
+5. T55 — завершение внешних Windows/macOS и реальных 1С-проверок при доступном runner
+6. T26 — fmt, последняя задача текущей очереди
 ```
+
+T55 можно завершить раньше T37, если станет доступна требуемая ОС; ожидание
+внешнего runner не блокирует T35, T56, T57 и T37 на текущей системе.
 
 Новые контракты, зависимости и критерии готовности приведены в
 [T49–T55](roadmap/12-current-functionality.md), общий реестр — в
-[трекере](roadmap/README.md). T51–T52 и T54 завершены. T53 сначала требует спецификации
+[трекере](roadmap/README.md). Контракт автоматической подготовки версии релиза
+описан в [T56](roadmap/10-delivery-and-integrations.md), обновления установленного
+CLI — в [T57](roadmap/10-delivery-and-integrations.md). T51–T52 и T54 завершены;
+основа T55 реализована,
+но внешняя приёмка ожидает доступных host runner. T53 сначала требует спецификации
 доказательств интеграции и сохранения ветки; её уточнение не блокирует T54–T55.
 Завершённый `finish` до этого сохраняет консервативную ancestry-проверку.
 

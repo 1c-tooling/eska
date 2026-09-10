@@ -121,6 +121,7 @@ pub(super) fn write(
     platform_version: &str,
     seed: ManifestSeed,
     snapshot: &SourceSnapshot,
+    base_configuration: Option<&Path>,
 ) -> Result<(), ManifestError> {
     let document = ArtifactManifestDocument {
         schema_version: 1,
@@ -139,6 +140,10 @@ pub(super) fn write(
         source: SourceDocument {
             snapshot_id: snapshot.id.clone(),
             git: seed.git,
+            base_configuration: base_configuration
+                .map(file_checksum)
+                .transpose()?
+                .map(ChecksumDocument::sha256),
         },
     };
     let bytes = serde_json::to_vec_pretty(&document).map_err(ManifestError::Serialize)?;
@@ -401,6 +406,8 @@ struct PlatformDocument {
 struct SourceDocument {
     snapshot_id: String,
     git: GitDocument,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    base_configuration: Option<ChecksumDocument>,
 }
 
 #[derive(Serialize)]

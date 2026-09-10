@@ -1,4 +1,5 @@
 mod build;
+mod clean;
 mod clone;
 mod config;
 mod diff;

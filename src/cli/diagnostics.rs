@@ -11,7 +11,10 @@ use crate::{
     project::discovery::{ContextDiscoveryError, DiscoveryError},
     project::{
         InvalidPathReason, ProjectPathError,
-        build::{BuildSettingsError, InvalidArtifactsDirectoryReason, ToolError, ToolSource},
+        build::{
+            BuildSettingsError, InvalidArtifactsDirectoryReason, ManagedInfobaseError, ToolError,
+            ToolSource,
+        },
         onboarding::WorkspaceEnrollmentError,
         selection::SelectionError,
     },
@@ -315,6 +318,38 @@ pub(super) fn present_tool_error(error: &ToolError, localizer: &Localizer) -> St
                 ("source", LocalizationValue::Text(&tool_source(source))),
             ],
         ),
+    }
+}
+
+/// Present managed build-infobase failures shared by build and clean commands.
+pub(super) fn present_managed_infobase_error(
+    error: &ManagedInfobaseError,
+    localizer: &Localizer,
+) -> String {
+    match error {
+        ManagedInfobaseError::Io { path, source } => localizer.format(
+            "managed-infobase-io",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("reason", LocalizationValue::Text(&source.to_string())),
+            ],
+        ),
+        ManagedInfobaseError::Locked { path } => localizer.format(
+            "managed-infobase-locked",
+            &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
+        ),
+        ManagedInfobaseError::Unowned { path } => localizer.format(
+            "managed-infobase-unowned",
+            &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
+        ),
+        ManagedInfobaseError::OutsideScope { root, scope } => localizer.format(
+            "managed-infobase-outside-scope",
+            &[
+                ("path", LocalizationValue::Text(&root.to_string_lossy())),
+                ("scope", LocalizationValue::Text(&scope.to_string_lossy())),
+            ],
+        ),
+        ManagedInfobaseError::StateSerialize(_) => localizer.text("managed-infobase-state"),
     }
 }
 
