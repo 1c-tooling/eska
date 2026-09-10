@@ -30,7 +30,7 @@ fn eska(current_dir: &Path, locale: &str, ibcmd: &Path, args: &[&str], fail: boo
 }
 
 /// Create a minimal project through its public CLI.
-fn project(fixture: &TestDir, project_type: &str, name: &str) -> PathBuf {
+pub(super) fn project(fixture: &TestDir, project_type: &str, name: &str) -> PathBuf {
     let output = Command::new(env!("CARGO_BIN_EXE_eska"))
         .current_dir(&fixture.0)
         .args([
@@ -75,7 +75,7 @@ fn project(fixture: &TestDir, project_type: &str, name: &str) -> PathBuf {
 }
 
 /// Create a workspace with one report and one processing in manifest order.
-fn workspace() -> TestDir {
+pub(super) fn workspace() -> TestDir {
     let fixture = TestDir::new();
     let report = fixture.0.join("src/sales-report");
     let processing = fixture.0.join("src/import-orders");
@@ -116,7 +116,7 @@ fn workspace() -> TestDir {
 }
 
 /// Return the native portable process fixture shared by build scenarios.
-fn fake_ibcmd(_fixture: &TestDir) -> PathBuf {
+pub(super) fn fake_ibcmd(_fixture: &TestDir) -> PathBuf {
     IBCMD_FIXTURE
         .get_or_init(|| {
             let repository = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -264,6 +264,7 @@ fn dry_run_workspace_json_is_stable_and_ordered() {
             assert_eq!(project["platform"]["required_version"], "8.3.27.2325");
             assert_eq!(project["platform"]["found_version"], "8.3.27.2325");
             assert_eq!(project["platform"]["runner"], "host");
+            assert!(project.get("infobase").is_none());
         }
         documents.push(document);
     }
@@ -271,6 +272,83 @@ fn dry_run_workspace_json_is_stable_and_ordered() {
     assert_eq!(documents[0], documents[1]);
     assert_eq!(tree_snapshot(&fixture.0), before);
     assert!(!fixture.0.join("build").exists());
+}
+
+#[test]
+/// Reuse one managed infobase and recreate it only when explicitly requested.
+fn repeated_build_reuses_managed_infobase() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "configuration", "Reusable");
+    let log = fixture.0.join("ibcmd.log");
+
+    for arguments in [
+        vec!["build"],
+        vec!["build"],
+        vec!["build", "--recreate-infobase"],
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&root)
+            .env("FAKE_IBCMD_LOG", &log)
+            .args(["--lang", "en"])
+            .args(arguments)
+            .args(["--ibcmd"])
+            .arg(&ibcmd)
+            .output()
+            .expect("build with managed infobase");
+        assert!(output.status.success(), "{output:?}");
+    }
+
+    let invocations = fs::read_to_string(log).expect("ibcmd invocations");
+    assert_eq!(
+        invocations
+            .lines()
+            .filter(|line| line.starts_with("infobase create"))
+            .count(),
+        2
+    );
+    assert_eq!(
+        invocations
+            .lines()
+            .filter(|line| line.starts_with("infobase config import"))
+            .count(),
+        3
+    );
+    assert!(root.join("build/.eska/infobases/Reusable.cf/data").is_dir());
+}
+
+#[test]
+/// Recreate a managed infobase when the base configuration bytes change.
+fn changed_base_configuration_invalidates_managed_infobase() {
+    let fixture = TestDir::new();
+    let ibcmd = fake_ibcmd(&fixture);
+    let root = project(&fixture, "processing", "ContextCache");
+    let base = fixture.0.join("base.cf");
+    let log = fixture.0.join("ibcmd.log");
+    fs::write(&base, b"base version one").expect("base configuration");
+
+    for contents in [b"base version one".as_slice(), b"base version two"] {
+        fs::write(&base, contents).expect("update base configuration");
+        let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&root)
+            .env("FAKE_IBCMD_LOG", &log)
+            .args(["--lang", "en", "build", "--base-configuration"])
+            .arg(&base)
+            .args(["--ibcmd"])
+            .arg(&ibcmd)
+            .output()
+            .expect("build with base configuration");
+        assert!(output.status.success(), "{output:?}");
+    }
+
+    let invocations = fs::read_to_string(log).expect("ibcmd invocations");
+    assert_eq!(
+        invocations
+            .lines()
+            .filter(|line| line.starts_with("infobase create"))
+            .count(),
+        2
+    );
 }
 
 #[test]
@@ -292,6 +370,7 @@ fn dry_run_honors_selector_and_platform_override() {
             "import-orders",
             "--platform-version",
             "8.5.4.1234",
+            "--recreate-infobase",
             "--format",
             "json",
             "--ibcmd",
@@ -313,6 +392,7 @@ fn dry_run_honors_selector_and_platform_override() {
         document["projects"][0]["platform"]["found_version"],
         "8.5.4.1234"
     );
+    assert_eq!(document["projects"][0]["infobase"]["mode"], "recreate");
     assert_eq!(
         fs::read(&manifest).expect("workspace config"),
         config_before
@@ -674,8 +754,8 @@ fn builds_all_native_artifact_types_with_locale_independent_json() {
 }
 
 #[test]
-/// Keep an existing artifact and remove all owned temporary data after ibcmd failure.
-fn failed_build_preserves_existing_artifact_and_cleans_workspace() {
+/// Keep an existing artifact and remove only ephemeral staging data after an ibcmd failure.
+fn failed_build_preserves_existing_artifact_and_managed_infobase() {
     let fixture = TestDir::new();
     let ibcmd = fake_ibcmd(&fixture);
     let root = project(&fixture, "configuration", "Billing");
@@ -742,8 +822,8 @@ fn exact_platform_version_is_required() {
 
 #[test]
 #[cfg(unix)]
-/// Terminate the active child and remove the temporary infobase after SIGTERM.
-fn interrupted_build_cleans_all_owned_paths() {
+/// Terminate the active child, preserve the managed infobase, and remove staging paths.
+fn interrupted_build_preserves_managed_infobase() {
     let fixture = TestDir::new();
     let ibcmd = fake_ibcmd(&fixture);
     let root = project(&fixture, "configuration", "Interrupted");
@@ -767,7 +847,16 @@ fn interrupted_build_cleans_all_owned_paths() {
         .expect("wait for interrupted build");
     assert_eq!(output.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&output.stderr).contains("Build interrupted"));
-    assert!(!root.join("build").exists());
+    assert!(
+        root.join("build/.eska/infobases/Interrupted.cf/data")
+            .is_dir()
+    );
+    let leftovers = fs::read_dir(root.join("build"))
+        .expect("build directory")
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_name().to_string_lossy().contains(".eska-"))
+        .collect::<Vec<_>>();
+    assert!(leftovers.is_empty(), "staging paths remain: {leftovers:?}");
 }
 
 #[test]
@@ -804,6 +893,13 @@ fn help_and_human_result_are_localized() {
                 "Показать полностью проверенный план сборки"
             } else {
                 "Show the fully preflighted build plan"
+            })
+        );
+        assert!(
+            String::from_utf8_lossy(&help.stdout).contains(if locale == "ru" {
+                "Всегда пересоздавать служебную базу"
+            } else {
+                "Always recreate the managed infobase"
             })
         );
         assert!(

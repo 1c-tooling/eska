@@ -6,7 +6,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::{ArtifactType, BuildPlan, Ibcmd, ManifestError, ProcessStream, RunError, manifest};
+use super::{
+    ArtifactType, BuildPlan, Ibcmd, ManagedInfobaseError, ManifestError, ProcessStream, RunError,
+    infobase::ManagedInfobase, manifest,
+};
 use crate::project::{Project, ProjectType, designer_xml};
 
 static WORKSPACE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -67,13 +70,14 @@ pub enum BuildError {
     DescriptorsMultiple(PathBuf),
     BaseConfigurationRead { path: PathBuf, source: io::Error },
     BaseConfigurationInvalid(PathBuf),
+    ManagedInfobase(ManagedInfobaseError),
     Manifest(ManifestError),
 }
 
-/// Build a native 1C artifact through an isolated temporary file infobase.
+/// Build a native 1C artifact through a reusable managed file infobase.
 ///
-/// The pipeline creates a file infobase, optionally loads a base `.cf`, then imports the
-/// Designer XML directory with `infobase config import --out`.
+/// The pipeline reuses a compatible file infobase or creates one with an optional base `.cf`,
+/// then imports the Designer XML directory with `infobase config import --out`.
 /// The destination is replaced only after `ibcmd` produced a non-empty file.
 ///
 /// # Errors
@@ -150,7 +154,6 @@ where
         ensure_configured_output_is_inside_project(plan, parent)?;
     }
     let workspace = Workspace::create(parent)?;
-    let data = workspace.path.join("data");
     let pid_file = workspace.path.join("ibcmd.pid");
     let artifact = workspace
         .path
@@ -169,13 +172,21 @@ where
         manifest_request.is_some(),
         &workspace.path,
     )?;
-    let create_output = create_infobase(
-        ibcmd,
-        &data,
-        effective_base_configuration.as_deref(),
-        &pid_file,
-        on_output,
-    )?;
+    let infobase = ManagedInfobase::prepare(plan, effective_base_configuration.as_deref())
+        .map_err(BuildError::ManagedInfobase)?;
+    let create_output = if infobase.needs_creation() {
+        let output = create_infobase(
+            ibcmd,
+            infobase.data(),
+            effective_base_configuration.as_deref(),
+            &pid_file,
+            on_output,
+        )?;
+        infobase.mark_ready().map_err(BuildError::ManagedInfobase)?;
+        Some(output)
+    } else {
+        None
+    };
     let import_output = run(
         ibcmd,
         BuildStage::ImportSources,
@@ -183,7 +194,7 @@ where
             OsString::from("infobase"),
             OsString::from("config"),
             OsString::from("import"),
-            option("--data", &data),
+            option("--data", infobase.data()),
             option("--out", &artifact),
             import_source.into_os_string(),
         ],
@@ -216,8 +227,10 @@ where
     )?;
     created_directories.keep();
     let mut tool_output = Vec::new();
-    append_process_output(&mut tool_output, &create_output.stdout);
-    append_process_output(&mut tool_output, &create_output.stderr);
+    if let Some(output) = create_output {
+        append_process_output(&mut tool_output, &output.stdout);
+        append_process_output(&mut tool_output, &output.stderr);
+    }
     append_process_output(&mut tool_output, &import_output.stdout);
     append_process_output(&mut tool_output, &import_output.stderr);
     Ok(BuildResult {
@@ -323,6 +336,11 @@ pub fn preflight(plan: &BuildPlan) -> Result<(), BuildError> {
         ensure_existing_output_ancestor_is_inside_project(plan, parent)?;
     }
     validate_existing_output(plan.output())?;
+    let infobase_parent = plan
+        .infobase_root()
+        .parent()
+        .ok_or_else(|| BuildError::OutputParentMissing(plan.infobase_root().to_owned()))?;
+    ensure_existing_output_ancestor_is_inside_project(plan, infobase_parent)?;
     if let Some(path) = plan.base_configuration() {
         let metadata = fs::metadata(path).map_err(|source| BuildError::BaseConfigurationRead {
             path: path.to_owned(),
@@ -770,7 +788,7 @@ impl Workspace {
 }
 
 impl Drop for Workspace {
-    /// Remove the complete temporary infobase and any unpublished artifact.
+    /// Remove snapshots and unpublished artifacts while retaining the managed infobase.
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.path);
     }

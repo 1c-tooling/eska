@@ -34,8 +34,9 @@ use crate::{
     project::{
         Project, ProjectName,
         build::{
-            self, BuildError, BuildPlan, BuildSettingsError, BuildStage, Ibcmd, ManifestError,
-            PlanError, PlatformVersion, RunError, ToolError, ToolOptions, ToolSource,
+            self, BuildError, BuildPlan, BuildSettingsError, BuildStage, Ibcmd,
+            ManagedInfobaseError, ManifestError, PlanError, PlatformVersion, RunError, ToolError,
+            ToolOptions, ToolSource,
         },
         discovery::{self, DiscoveryContext},
         metadata,
@@ -50,6 +51,9 @@ pub(in crate::cli) struct BuildArgs {
 
     #[arg(long)]
     base_configuration: Option<PathBuf>,
+
+    #[arg(long)]
+    recreate_infobase: bool,
 
     #[arg(long)]
     ibcmd: Option<PathBuf>,
@@ -163,6 +167,7 @@ impl BuildArgs {
                 self.output.as_deref(),
                 platform_override.clone(),
                 base_configuration.clone(),
+                self.recreate_infobase,
             ) {
                 Ok(plan) => plan,
                 Err(error) => {
@@ -619,6 +624,7 @@ fn build_plan(
     output: Option<&Path>,
     platform_version: Option<PlatformVersion>,
     base_configuration: Option<PathBuf>,
+    recreate_infobase: bool,
 ) -> Result<BuildPlan, PlanError> {
     let plan = match (selected.name(), workspace_root) {
         (Some(name), Some(root)) => BuildPlan::for_workspace_member(
@@ -631,6 +637,7 @@ fn build_plan(
         _ => BuildPlan::with_platform_version(selected.project(), output, platform_version),
     }?;
     plan.with_base_configuration(base_configuration)
+        .map(|plan| plan.with_recreate_infobase(recreate_infobase))
 }
 
 fn preflight_group(
@@ -777,6 +784,20 @@ fn write_human_build_preview(
                 localizer,
             );
         }
+        write_build_preview_field(
+            "build-preview-infobase",
+            &display_path(item.plan.infobase_root()),
+            localizer,
+        );
+        write_build_preview_field(
+            "build-preview-infobase-mode",
+            &localizer.text(if item.plan.recreates_infobase() {
+                "build-preview-infobase-recreate"
+            } else {
+                "build-preview-infobase-reuse"
+            }),
+            localizer,
+        );
         write_build_preview_field(
             "build-preview-artifact-type",
             &localizer.text(artifact_type_key(item.plan.artifact_type())),
@@ -1286,6 +1307,9 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
             arg.help(localizer.text("build-base-configuration-help"))
                 .value_name(localizer.text("build-base-configuration-value"))
         })
+        .mut_arg("recreate_infobase", |arg| {
+            arg.help(localizer.text("build-recreate-infobase-help"))
+        })
         .mut_arg("ibcmd", |arg| {
             arg.help(localizer.text("build-ibcmd-help"))
                 .value_name(localizer.text("build-ibcmd-value"))
@@ -1445,6 +1469,9 @@ fn present_build_error(error: &BuildError, localizer: &Localizer) -> String {
                 ("reason", LocalizationValue::Text(&source.to_string())),
             ],
         ),
+        BuildError::ManagedInfobase(error) => {
+            diagnostics::present_managed_infobase_error(error, localizer)
+        }
         BuildError::Manifest(error) => present_manifest_error(error, localizer),
     }
 }
@@ -1607,6 +1634,8 @@ struct BuildPlanEntryDocument {
     source: BuildPlanPathDocument,
     #[serde(skip_serializing_if = "Option::is_none")]
     base_configuration: Option<BuildPlanPathDocument>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    infobase: Option<BuildPlanInfobaseDocument>,
     artifact: BuildPlanArtifactDocument,
     platform: BuildPlanPlatformDocument,
 }
@@ -1623,6 +1652,12 @@ struct BuildPlanArtifactDocument {
     path: String,
     path_encoding: &'static str,
     replaces_existing: bool,
+}
+
+#[derive(Serialize)]
+struct BuildPlanInfobaseDocument {
+    root: BuildPlanPathDocument,
+    mode: &'static str,
 }
 
 #[derive(Serialize)]
@@ -1730,6 +1765,13 @@ impl BuildPlanEntryDocument {
                 .plan
                 .base_configuration()
                 .map(BuildPlanPathDocument::new),
+            infobase: prepared
+                .plan
+                .recreates_infobase()
+                .then(|| BuildPlanInfobaseDocument {
+                    root: BuildPlanPathDocument::new(prepared.plan.infobase_root()),
+                    mode: "recreate",
+                }),
             artifact: BuildPlanArtifactDocument {
                 r#type: prepared.plan.artifact_type().as_str(),
                 path: artifact_path,
@@ -1914,6 +1956,13 @@ const fn execution_error_code(error: &BuildExecutionError) -> &'static str {
         BuildError::DescriptorsMultiple(_) => "descriptors-multiple",
         BuildError::BaseConfigurationRead { .. } => "base-configuration-read",
         BuildError::BaseConfigurationInvalid(_) => "base-configuration-invalid",
+        BuildError::ManagedInfobase(ManagedInfobaseError::Io { .. }) => "infobase-io",
+        BuildError::ManagedInfobase(ManagedInfobaseError::Locked { .. }) => "infobase-locked",
+        BuildError::ManagedInfobase(ManagedInfobaseError::Unowned { .. }) => "infobase-unowned",
+        BuildError::ManagedInfobase(ManagedInfobaseError::OutsideScope { .. }) => {
+            "infobase-outside-scope"
+        }
+        BuildError::ManagedInfobase(ManagedInfobaseError::StateSerialize(_)) => "infobase-state",
         BuildError::Manifest(ManifestError::SnapshotIo { .. }) => "snapshot-io",
         BuildError::Manifest(ManifestError::SnapshotEntryUnsupported(_)) => {
             "snapshot-entry-unsupported"

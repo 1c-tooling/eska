@@ -57,8 +57,10 @@ pub struct BuildPlan {
     source: PathBuf,
     base_configuration: Option<PathBuf>,
     artifacts_directory: PathBuf,
+    infobase_root: PathBuf,
     output: PathBuf,
     explicit_output: bool,
+    recreate_infobase: bool,
 }
 
 impl BuildPlan {
@@ -90,9 +92,10 @@ impl BuildPlan {
                 .build_settings()
                 .artifacts_directory(),
         );
+        let artifact_name = default_filename(project.root(), artifact_type)?;
         let output = match output {
             Some(output) => resolve_explicit_output(project.root(), output, artifact_type)?,
-            None => artifacts_directory.join(default_filename(project.root(), artifact_type)?),
+            None => artifacts_directory.join(&artifact_name),
         };
         Ok(Self {
             project_root: project.root().to_owned(),
@@ -109,9 +112,11 @@ impl BuildPlan {
                 .ok_or(PlanError::PlatformVersionMissing)?,
             source: project.source().to_owned(),
             base_configuration: None,
+            infobase_root: infobase_root(&artifacts_directory, &artifact_name),
             artifacts_directory,
             output,
             explicit_output,
+            recreate_infobase: false,
         })
     }
 
@@ -137,9 +142,10 @@ impl BuildPlan {
                 .build_settings()
                 .artifacts_directory(),
         );
+        let artifact_name = named_filename(member_name, artifact_type)?;
         let output = match output {
             Some(output) => resolve_explicit_output(workspace_root, output, artifact_type)?,
-            None => artifacts_directory.join(named_filename(member_name, artifact_type)?),
+            None => artifacts_directory.join(&artifact_name),
         };
         Ok(Self {
             project_root: project.root().to_owned(),
@@ -156,9 +162,11 @@ impl BuildPlan {
                 .ok_or(PlanError::PlatformVersionMissing)?,
             source: project.source().to_owned(),
             base_configuration: None,
+            infobase_root: infobase_root(&artifacts_directory, &artifact_name),
             artifacts_directory,
             output,
             explicit_output,
+            recreate_infobase: false,
         })
     }
 
@@ -198,6 +206,11 @@ impl BuildPlan {
     }
 
     #[must_use]
+    pub fn infobase_root(&self) -> &Path {
+        &self.infobase_root
+    }
+
+    #[must_use]
     pub fn output(&self) -> &Path {
         &self.output
     }
@@ -205,6 +218,11 @@ impl BuildPlan {
     #[must_use]
     pub const fn has_explicit_output(&self) -> bool {
         self.explicit_output
+    }
+
+    #[must_use]
+    pub const fn recreates_infobase(&self) -> bool {
+        self.recreate_infobase
     }
 
     /// Add the base configuration context required by an external processor or report.
@@ -227,12 +245,51 @@ impl BuildPlan {
         Ok(self)
     }
 
+    /// Force creation of a fresh managed infobase for this build.
+    #[must_use]
+    pub const fn with_recreate_infobase(mut self, recreate: bool) -> Self {
+        self.recreate_infobase = recreate;
+        self
+    }
+
     /// Replace only the source passed to ibcmd with an isolated snapshot.
     pub(super) fn with_snapshot_source(&self, source: PathBuf) -> Self {
         let mut plan = self.clone();
         plan.source = source;
         plan
     }
+}
+
+/// Resolve the managed infobase root without requiring a configured platform version.
+///
+/// # Errors
+/// Returns an error when a standalone project has no usable directory name.
+pub fn managed_infobase_root(
+    project: &Project,
+    workspace: Option<(&Path, &str)>,
+) -> Result<PathBuf, PlanError> {
+    let artifact_type = ArtifactType::from(project.configuration().project_type());
+    let (scope_root, artifact_name) = match workspace {
+        Some((root, name)) => (root, named_filename(name, artifact_type)?),
+        None => (
+            project.root(),
+            default_filename(project.root(), artifact_type)?,
+        ),
+    };
+    let artifacts_directory = scope_root.join(
+        project
+            .configuration()
+            .build_settings()
+            .artifacts_directory(),
+    );
+    Ok(infobase_root(&artifacts_directory, &artifact_name))
+}
+
+fn infobase_root(artifacts_directory: &Path, artifact_name: &OsStr) -> PathBuf {
+    artifacts_directory
+        .join(".eska")
+        .join("infobases")
+        .join(artifact_name)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
