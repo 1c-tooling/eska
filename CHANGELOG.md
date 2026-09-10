@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0](https://github.com/1c-tooling/eska/compare/v0.7.0...v0.8.0) - 2026-09-10
+
+### Added
+
+- Добавлена команда clean
+
+### Fixed
+
+- *(build)* Сборка EPF и ERF использует базовую конфигурацию
+
+### Other
+
+- *(agents)* Исключены проверки Rust для документации
+- *(roadmap)* Определён контракт команды eska update
+- *(roadmap)* Добавлена автоматическая подготовка версии релиза 1С
+- *(roadmap)* T35 уточнён для восстановления состояния задач
+
 ## [0.7.0](https://github.com/1c-tooling/eska/compare/v0.6.1...v0.7.0) - 2026-09-09
 
 ### Added
