@@ -1,7 +1,6 @@
 //! Localized build command with a locale-independent JSON result contract.
 
 use std::{
-    ffi::OsStr,
     fmt::Write as _,
     io::{self, IsTerminal, Write as _},
     path::{Path, PathBuf},
@@ -27,6 +26,7 @@ use serde::Serialize;
 use crate::{
     cli::{
         changes, diagnostics,
+        encoding::json_path,
         interactive::{PromptError, Selector},
         localization::{LocalizationValue, Localizer},
         platform,
@@ -2010,32 +2010,4 @@ const fn execution_was_interrupted(error: &BuildExecutionError) -> bool {
             ..
         })
     )
-}
-
-/// Preserve a UTF-8 path directly and use a reversible platform encoding otherwise.
-fn json_path(path: &OsStr) -> (String, &'static str) {
-    path.to_str()
-        .map_or_else(|| encoded_path(path), |value| (value.to_owned(), "utf-8"))
-}
-
-#[cfg(unix)]
-/// Percent-encode every raw Unix path byte when it is not valid UTF-8.
-fn encoded_path(path: &OsStr) -> (String, &'static str) {
-    use std::os::unix::ffi::OsStrExt;
-    let mut encoded = String::with_capacity(path.as_bytes().len() * 3);
-    for byte in path.as_bytes() {
-        write!(encoded, "%{byte:02X}").expect("writing to String cannot fail");
-    }
-    (encoded, "percent")
-}
-
-#[cfg(windows)]
-/// Percent-encode every UTF-16 code unit when a Windows path is not Unicode scalar text.
-fn encoded_path(path: &OsStr) -> (String, &'static str) {
-    use std::os::windows::ffi::OsStrExt;
-    let mut encoded = String::new();
-    for unit in path.encode_wide() {
-        write!(encoded, "%{unit:04X}").expect("writing to String cannot fail");
-    }
-    (encoded, "utf-16-percent")
 }

@@ -14,6 +14,7 @@ src/
 │   ├── mod.rs                   # запуск CLI и выбор локали
 │   ├── args.rs                  # общие аргументы, bootstrap --lang, общий help
 │   ├── changes.rs               # общее представление путей и semantic changes
+│   ├── encoding.rs              # обратимые JSON-пути и Git byte strings
 │   ├── platform.rs              # общие machine-local настройки запуска 1С
 │   ├── commands/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
@@ -131,6 +132,7 @@ tests/
 | Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`src/project/build/tool.rs`](../src/project/build/tool.rs) |
 | Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
 | Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
+| Изменить обратимое кодирование JSON-путей и Git-строк | [`src/cli/encoding.rs`](../src/cli/encoding.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`src/project/version.rs`](../src/project/version.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
@@ -163,7 +165,8 @@ tests/
 - Каждый обработчик команды держит вместе свои аргументы, help, диалог и
   представление специфичных для команды ошибок. Общие ошибки проекта, global
   config и платформы находятся в `diagnostics.rs`; общие machine-local options —
-  в `platform.rs`, представление путей и semantic identities — в `changes.rs`.
+  в `platform.rs`, представление путей и semantic identities — в `changes.rs`,
+  обратимые JSON-пути и Git byte strings — в `encoding.rs`.
 - Обработчики команд не используют внутренние функции соседних команд. Общий
   код сначала поднимается из `commands/` в соответствующий модуль `cli/`.
 - `project`, `config` и `vcs` не зависят от `cli`, `clap`,

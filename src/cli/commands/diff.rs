@@ -7,7 +7,7 @@ use std::{
 };
 
 use clap::{Args, ValueEnum};
-use gix::bstr::{BStr, ByteSlice};
+use gix::bstr::ByteSlice;
 use serde::Serialize;
 
 use crate::{
@@ -18,6 +18,7 @@ use crate::{
             semantic_object_group,
         },
         diagnostics,
+        encoding::json_git_text,
         localization::{LocalizationValue, Localizer},
     },
     project::{
@@ -1510,7 +1511,7 @@ fn semantic_comparison(
 impl From<&SemanticEvent> for SemanticEventDocument {
     /// Preserve stable identities, event names and arbitrary Git path bytes.
     fn from(event: &SemanticEvent) -> Self {
-        let (path, path_encoding) = json_path(event.path());
+        let (path, path_encoding) = json_git_text(event.path());
         Self {
             kind: event.kind().as_str(),
             stage: event.stage().as_str(),
@@ -1541,7 +1542,7 @@ impl From<&SemanticDiff> for SemanticAnalysisDocument {
 
 impl From<&SemanticFallback> for SemanticFallbackDocument {
     fn from(fallback: &SemanticFallback) -> Self {
-        let (path, path_encoding) = json_path(fallback.path());
+        let (path, path_encoding) = json_git_text(fallback.path());
         Self {
             reason: fallback.reason().as_str(),
             stage: fallback.stage().as_str(),
@@ -1609,7 +1610,7 @@ fn file_documents(diff: &ProjectDiff) -> Vec<FileDocument> {
     diff.files
         .iter()
         .map(|file| {
-            let (path, path_encoding) = json_path(file.path.as_bstr());
+            let (path, path_encoding) = json_git_text(file.path.as_bstr());
             FileDocument {
                 path,
                 path_encoding,
@@ -1719,7 +1720,7 @@ fn revision_file_documents(diff: &RevisionProjectDiff) -> Vec<RevisionFileDocume
     diff.files
         .iter()
         .map(|file| {
-            let (path, path_encoding) = json_path(file.path.as_bstr());
+            let (path, path_encoding) = json_git_text(file.path.as_bstr());
             RevisionFileDocument {
                 path,
                 path_encoding,
@@ -1727,25 +1728,6 @@ fn revision_file_documents(diff: &RevisionProjectDiff) -> Vec<RevisionFileDocume
             }
         })
         .collect()
-}
-
-/// Keep valid UTF-8 paths exact and encode arbitrary Git bytes without data loss.
-fn json_path(path: &BStr) -> (String, &'static str) {
-    path.to_str().map_or_else(
-        |_| (percent_encode(path), "percent"),
-        |path| (path.to_owned(), "utf-8"),
-    )
-}
-
-/// Percent-encode every byte so a non-UTF-8 path remains reversible.
-fn percent_encode(path: &BStr) -> String {
-    use std::fmt::Write as _;
-
-    let mut encoded = String::with_capacity(path.len() * 3);
-    for byte in path.as_bytes() {
-        write!(encoded, "%{byte:02X}").expect("writing to String cannot fail");
-    }
-    encoded
 }
 
 /// Map a state to its stable JSON value.
@@ -1768,7 +1750,7 @@ mod tests {
     use super::{
         HumanState, SemanticErrorDetailDocument, SemanticErrorDocument, SemanticHumanChange,
         SemanticHumanStage, append_semantic_event_groups, change_marker, change_name,
-        human_state_title, json_path, raw_code, render_human, render_raw, semantic_error_code,
+        human_state_title, raw_code, render_human, render_raw, semantic_error_code,
     };
     use crate::{
         cli::localization::{Locale, Localizer},
@@ -1857,19 +1839,6 @@ mod tests {
             assert_eq!(human_state_title(state, &localizer), expected);
         }
         assert_eq!(change_marker(super::marker_change(state)), '✎');
-    }
-
-    /// JSON retains arbitrary Git bytes with an explicit reversible encoding.
-    #[test]
-    fn path_encodings_are_unambiguous() {
-        assert_eq!(
-            json_path("src/модуль.bsl".as_bytes().as_bstr()),
-            ("src/модуль.bsl".into(), "utf-8")
-        );
-        assert_eq!(
-            json_path(b"raw-\xff".as_bstr()),
-            ("%72%61%77%2D%FF".into(), "percent")
-        );
     }
 
     /// Human output localizes Configurator identities, groups them and keeps other files last.
