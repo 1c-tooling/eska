@@ -1923,7 +1923,7 @@ P2 — точная настройка Git Flow
 T58 основная production-ветка main/master отдельно от develop
 
 P3 — читаемость текущего CLI
-T59 понятные подписи, устранение дублей и порядок Конфигуратора в semantic diff
+T59 методы с сигнатурами и строками, устранение дублей и порядок semantic diff
 
 P4 — удобное переключение незавершённых задач
 T35 shelve / unshelve / shelves и автоматическое восстановление при switch
@@ -1971,7 +1971,7 @@ project versioning и workspace members
 
 ```text
 1. T58 — настройка основной production-ветки Git Flow, NEXT
-2. T59 — читаемый semantic diff без дублей и с порядком Конфигуратора
+2. T59 — читаемый semantic diff с координатами методов, без дублей и по порядку Конфигуратора
 3. T35 — shelve и автоматическое восстановление при switch
 4. T56 — version bump auto и подготовка Release PR/MR
 5. T57 — update установленного eska до последнего стабильного release
