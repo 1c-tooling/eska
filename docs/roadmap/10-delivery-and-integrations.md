@@ -124,8 +124,18 @@ logic; `eska` не становится CI server.
 ## T41 — VS Code extension
 
 **Статус:** `PLANNED`  
-**Зависит от:** стабильных T12–T18, T21, T27, T37–T39 и JSON protocol
+**Зависит от:** T70 для первого read-only дерева; T12–T18, T21, T27, T37–T39
+для соответствующих последующих VCS/diagnostics/locking возможностей
 
-Тонкий frontend: status, start/sync/publish, locking, diagnostics, command palette,
-status bar. Не реализовывать VCS повторно в TypeScript; все операции идут через
-стабильный core/CLI protocol.
+Первый scope будущего тонкого frontend — дерево Конфигуратора, свойства и
+переход к XML/BSL через постоянный read-only protocol `eska`. Клиент отображает
+schema/узлы от core, не сканирует Designer XML и не запускает CLI заново для
+каждого раскрытия. Серверная подготовка вынесена в [T60–T70](13-metadata-and-ide.md)
+и не включает разработку extension; VCS и locking не блокируют read-only дерево.
+
+Status, start/sync/publish, locking, diagnostics, command palette и status bar
+добавляются только после соответствующих backend-задач. Не реализовывать VCS
+повторно в TypeScript; все операции идут через стабильный core/CLI protocol.
+Редактирование существующих свойств возможно после T73 через логический
+`metadata/updateProperty`, структурные операции — только после T74. Клиент не
+редактирует XML самостоятельно; визуальный редактор форм сюда не входит.

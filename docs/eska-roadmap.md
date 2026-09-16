@@ -1140,6 +1140,41 @@ CommonModule.ИдентификацияПлатежей
 
 Кэш не хранится в VCS.
 
+## Развитие: metadata workspace и дерево Конфигуратора
+
+T19 уже реализует logical objects, `ObjectId` и mapping файлов; T50 добавляет
+выборочный discovery по changed paths. Следующие этапы развивают эту основу
+в собственный слой метаданных, независимый от XML/путей, без `bsl-analyzer` или
+`bsl-metadata`. Поддерживаются конфигурации, расширения, внешние отчёты и
+обработки только в стандартном Designer XML.
+
+| Milestone | Задачи | Результат |
+|---|---|---|
+| Metadata V0.1 — Core model | T60–T62 | Модель и identity, Designer resolver, fixtures |
+| Metadata V0.2 — Designer XML parser | T63–T64 | Выбор XML parsing и разбор объектов/свойств |
+| Metadata V0.3 — Configurator tree | T65–T66 | Схемы типов, golden tests, read-only API |
+| Metadata V0.4 — Incremental workspace | T67–T68 | Lazy loading, cache/invalidation, benchmarks |
+| IDE V0.1 — Read-only protocol | T69–T70 | Постоянный процесс для IDE-клиента |
+| Metadata V0.5 — Existing object editing | T71–T73 | Safe XML patching существующих свойств/элементов |
+| Metadata V0.6 — Structural editing | T74 | Отложенные создание, удаление и переименование |
+
+`ConfiguratorSchema` задаёт дерево типов и коллекций как в Конфигураторе,
+а не повторяет каталоги. Metadata workspace предоставляет `root`,
+`children(node)`, `object(id)`, `properties(id)`, `source(id)`. Первое открытие
+читает основную структуру, отдельные объекты разбираются по запросу; нет полного
+recursive scan/parse на каждый запрос и чтения ненужных BSL-модулей.
+
+Первые дерево/API и IDE protocol полностью read-only. Последующее
+`metadata/updateProperty` передаёт логическую операцию в `eska`: клиент не
+редактирует XML. Patch меняет минимальные диапазоны, повторно проверяет XML и
+безопасно публикует файл. Rename, как и add/remove, относится только к T74.
+EDT, MCP, AI, собственный BSL LSP и визуальный редактор форм сюда не входят.
+
+Это последовательность внутри backlog-направления, не смена текущего `NEXT`.
+Декомпозиция, performance acceptance criteria и открытые решения —
+[T60–T74](roadmap/13-metadata-and-ide.md); существующие CLI/JSON contracts
+сохраняются. Сам VS Code extension остаётся отдельной T41.
+
 ---
 
 # Milestone 9 — Semantic change model
@@ -1614,13 +1649,27 @@ CI config должен содержать минимум business logic.
 
 После стабилизации CLI и JSON protocol.
 
+## Подготовка на стороне `eska`
+
+[IDE V0.1, T69–T70](roadmap/13-metadata-and-ide.md) определяет и реализует
+постоянный `eska ide --stdio`: один процесс на IDE workspace, общий metadata
+cache и read-only методы `project/info`, `metadata/root`, `metadata/children`,
+`metadata/get`, `metadata/properties`, `metadata/source`, `metadata/refresh`.
+Рассматривается JSON-RPC 2.0; framing, lifecycle, versioning и error contract
+фиксируются до реализации. Это protocol метаданных, не BSL language server.
+
 ## VS Code
 
-Первый GUI frontend.
+Первый GUI frontend, отдельная задача T41 после T70. Серверные metadata/IDE
+milestones не включают разработку extension.
 
 Extension должна быть тонкой.
 
-Возможности:
+Первый результат — read-only дерево Конфигуратора, свойства и переход к XML/BSL
+через один постоянный процесс. Клиент не выводит структуру из каталогов, не
+парсит/правит Designer XML и не запускает процесс на каждый запрос.
+
+Следующие возможности зависят от готовности соответствующих backend-задач:
 
 - project status;
 - start/sync/publish;
@@ -1631,6 +1680,8 @@ Extension должна быть тонкой.
 - status bar.
 
 Не создавать отдельную VCS implementation в TypeScript.
+Редактирование существующих элементов доступно после T73, структурное — после
+T74. VCS/locking не являются обязательной зависимостью первого read-only дерева.
 
 ## EDT
 
@@ -1942,8 +1993,11 @@ T26 fmt
 ```
 
 Остальной backlog сохраняется: affected/check, environments, apply/run,
-release/CI helpers, restore, publish и VS Code. T23 test backend и T39
-locking остаются `DEFERRED`; новые source formats и GUI не входят в текущий scope.
+release/CI helpers, restore, publish, metadata/IDE T60–T74 и VS Code. T23 test
+backend и T39 locking остаются `DEFERRED`; новые source formats и GUI не входят
+в текущий scope.
+Metadata/IDE milestones выполняются в последовательности Milestone 8, сохраняя
+текущую очередь CLI; T74 и фоновый prefetch остаются отложенными.
 У `check`, release и CI сохраняются собственные зависимости от quality-этапов.
 
 System Git orchestration остаётся capability fallback через существующий

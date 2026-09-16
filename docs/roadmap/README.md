@@ -68,6 +68,10 @@
 - `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
 - `PLANNED`: `T37` — `sync` / `continue` / `abort` после T57;
 - `PLANNED`: `T26` — `eska fmt`, выполняется последней в текущей очереди;
+- `PLANNED`: `T60–T73` — развитие собственной Designer XML модели до read-only
+  дерева, постоянного IDE protocol и отдельного этапа редактирования существующих
+  элементов; `T74` structural editing — `DEFERRED`. Направление находится в
+  backlog и не меняет текущий `NEXT`;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
@@ -150,6 +154,27 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 Этот план разрешает только отдельно запрошенную задачу, не автоматический запуск
 всей очереди.
 
+## Последовательность metadata / IDE
+
+Детальные контракты: [метаданные Designer XML и IDE protocol](13-metadata-and-ide.md).
+Это развитие T19/T50 с переиспользованием существующих `ObjectId`, discovery и
+mapping, а не повторная реализация завершённых задач. Внутренний порядок
+направления не меняет ближайшую очередь CLI выше.
+
+| Milestone | Задачи | Результат |
+|---|---|---|
+| Metadata V0.1 — Core model | T60–T62 | Модель, logical identity, resolver, fixtures |
+| Metadata V0.2 — Designer XML parser | T63–T64 | Стратегия parsing и parser четырёх типов проектов |
+| Metadata V0.3 — Configurator tree | T65–T66 | Schema, golden tests и read-only API |
+| Metadata V0.4 — Incremental workspace | T67–T68 | Lazy loading, cache, invalidation, benchmarks |
+| IDE V0.1 — Read-only protocol | T69–T70 | Спецификация и постоянный `eska ide --stdio` |
+| Metadata V0.5 — Existing object editing | T71–T73 | Safe XML patching и изменение существующих элементов |
+| Metadata V0.6 — Structural editing | T74 | Отложенные add/remove/rename и согласованная запись файлов |
+
+Первый функциональный milestone и IDE V0.1 полностью read-only. T41 остаётся
+отдельной будущей задачей клиента VS Code после T70. EDT, MCP, AI, собственный
+BSL LSP и визуальный редактор форм в это направление не входят.
+
 ## Реестр задач
 
 Таблица сохраняет порядок ID; фактическая очередь приведена выше.
@@ -217,6 +242,21 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T57 | PLANNED | Обновление установленного `eska` | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T58 | NEXT | Настраиваемая основная production-ветка Git Flow | [03-repository-workflow.md](03-repository-workflow.md) |
 | T59 | PLANNED | Читаемый semantic-вывод `eska diff` с координатами методов | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T60 | PLANNED | Модель метаданных и логическая identity | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T61 | PLANNED | Designer path resolver | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T62 | PLANNED | Набор Designer XML fixtures | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T63 | PLANNED | Выбор стратегии XML parsing | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T64 | PLANNED | Разбор Designer XML в модель метаданных | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T65 | PLANNED | ConfiguratorSchema и ConfiguratorTree | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T66 | PLANNED | Read-only metadata workspace API | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T67 | PLANNED | Lazy index, cache и инкрементальное обновление | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T68 | PLANNED | Производительность metadata workspace | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T69 | PLANNED | Спецификация постоянного IDE protocol | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T70 | PLANNED | Постоянный read-only IDE процесс | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T71 | PLANNED | Архитектура safe XML patching | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T72 | PLANNED | Точечный XML patch и безопасная запись | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T73 | PLANNED | Редактирование существующих элементов | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T74 | DEFERRED | Структурные изменения метаданных | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в

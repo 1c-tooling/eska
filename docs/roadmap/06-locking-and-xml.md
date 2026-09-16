@@ -36,6 +36,13 @@ configuration/extension/processing/report fixtures.
   Дополнительно полная реальная configuration выгрузка успешно построила модель
   из 8 013 объектов.
 
+Граница завершённой T19 — discovery, identity и ownership файлов. Модель
+свойств, отдельный Designer resolver, дерево Конфигуратора и долгоживущий lazy
+workspace развиваются в [T60–T68](13-metadata-and-ide.md), переиспользуя эту
+основу и выборочный discovery T50. T19 остаётся `DONE`; новый план не разрешает
+менять существующие CLI/JSON identities или возвращать обязательный полный
+обход в `status`/`diff`/`save`.
+
 ## T39 — Locking конфликтных объектов
 
 **Статус:** `DEFERRED`
