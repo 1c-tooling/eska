@@ -752,87 +752,97 @@ fn write_human_build_preview(
         )
     );
     for (index, (item, tool)) in prepared.iter().zip(tools).enumerate() {
-        let position = i64::try_from(index + 1).unwrap_or(i64::MAX);
-        let name = item.name.map_or_else(
-            || project_display_name(item.project),
-            |name| name.as_str().to_owned(),
-        );
-        println!(
-            "{}",
-            localizer.format(
-                "build-preview-project",
-                &[
-                    ("position", LocalizationValue::Number(position)),
-                    ("name", LocalizationValue::Text(&name)),
-                ],
-            )
-        );
+        write_project_build_preview(index, item, tool, localizer);
+    }
+}
+
+/// Render one already validated project from an aggregate or standalone preview.
+fn write_project_build_preview(
+    index: usize,
+    item: &PreparedBuild<'_>,
+    tool: &Ibcmd,
+    localizer: &Localizer,
+) {
+    let position = i64::try_from(index + 1).unwrap_or(i64::MAX);
+    let name = item.name.map_or_else(
+        || project_display_name(item.project),
+        |name| name.as_str().to_owned(),
+    );
+    println!(
+        "{}",
+        localizer.format(
+            "build-preview-project",
+            &[
+                ("position", LocalizationValue::Number(position)),
+                ("name", LocalizationValue::Text(&name)),
+            ],
+        )
+    );
+    write_build_preview_field(
+        "build-preview-root",
+        &display_path(item.plan.project_root()),
+        localizer,
+    );
+    write_build_preview_field(
+        "build-preview-source",
+        &display_path(item.plan.source()),
+        localizer,
+    );
+    if let Some(path) = item.plan.base_configuration() {
         write_build_preview_field(
-            "build-preview-root",
-            &display_path(item.plan.project_root()),
-            localizer,
-        );
-        write_build_preview_field(
-            "build-preview-source",
-            &display_path(item.plan.source()),
-            localizer,
-        );
-        if let Some(path) = item.plan.base_configuration() {
-            write_build_preview_field(
-                "build-preview-base-configuration",
-                &display_path(path),
-                localizer,
-            );
-        }
-        write_build_preview_field(
-            "build-preview-infobase",
-            &display_path(item.plan.infobase_root()),
-            localizer,
-        );
-        write_build_preview_field(
-            "build-preview-infobase-mode",
-            &localizer.text(if item.plan.recreates_infobase() {
-                "build-preview-infobase-recreate"
-            } else {
-                "build-preview-infobase-reuse"
-            }),
-            localizer,
-        );
-        write_build_preview_field(
-            "build-preview-artifact-type",
-            &localizer.text(artifact_type_key(item.plan.artifact_type())),
-            localizer,
-        );
-        write_build_preview_field(
-            "build-preview-artifact-path",
-            &display_path(item.plan.output()),
-            localizer,
-        );
-        write_build_preview_field(
-            "build-preview-replaces-existing",
-            &localizer.text(if item.plan.output().is_file() {
-                "build-preview-yes"
-            } else {
-                "build-preview-no"
-            }),
-            localizer,
-        );
-        write_build_preview_field(
-            "build-preview-required-platform",
-            item.plan.platform_version().as_str(),
-            localizer,
-        );
-        write_build_preview_field(
-            "build-preview-found-platform",
-            tool.version().as_str(),
-            localizer,
-        );
-        write_build_preview_field(
-            "build-preview-runner",
-            &localizer.text(runner_key(tool.source())),
+            "build-preview-base-configuration",
+            &display_path(path),
             localizer,
         );
     }
+    write_build_preview_field(
+        "build-preview-infobase",
+        &display_path(item.plan.infobase_root()),
+        localizer,
+    );
+    write_build_preview_field(
+        "build-preview-infobase-mode",
+        &localizer.text(if item.plan.recreates_infobase() {
+            "build-preview-infobase-recreate"
+        } else {
+            "build-preview-infobase-reuse"
+        }),
+        localizer,
+    );
+    write_build_preview_field(
+        "build-preview-artifact-type",
+        &localizer.text(artifact_type_key(item.plan.artifact_type())),
+        localizer,
+    );
+    write_build_preview_field(
+        "build-preview-artifact-path",
+        &display_path(item.plan.output()),
+        localizer,
+    );
+    write_build_preview_field(
+        "build-preview-replaces-existing",
+        &localizer.text(if item.plan.output().is_file() {
+            "build-preview-yes"
+        } else {
+            "build-preview-no"
+        }),
+        localizer,
+    );
+    write_build_preview_field(
+        "build-preview-required-platform",
+        item.plan.platform_version().as_str(),
+        localizer,
+    );
+    write_build_preview_field(
+        "build-preview-found-platform",
+        tool.version().as_str(),
+        localizer,
+    );
+    write_build_preview_field(
+        "build-preview-runner",
+        &localizer.text(runner_key(tool.source())),
+        localizer,
+    );
 }
 
 fn write_build_preview_field(key: &str, value: &str, localizer: &Localizer) {
