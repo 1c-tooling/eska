@@ -755,6 +755,47 @@ fn semantic_method_lifecycle_reports_declaration_kind_and_coordinates() {
     }
 }
 
+/// Changed methods follow source coordinates instead of declaration names.
+#[test]
+fn semantic_methods_follow_source_order() {
+    let (_fixture, root) = semantic_project_with_module(concat!(
+        "Функция ЯПервая()\n    Возврат 1;\nКонецФункции\n",
+        "Процедура АВторая()\n    Сообщить(\"Исходный\");\nКонецПроцедуры\n"
+    ));
+    let module = root.join("src/CommonModules/ОбщийМодуль1/Ext/Module.bsl");
+    fs::write(
+        module,
+        concat!(
+            "Функция ЯПервая()\n    Возврат 2;\nКонецФункции\n",
+            "Процедура АВторая()\n    Сообщить(\"Изменённый\");\nКонецПроцедуры\n"
+        ),
+    )
+    .expect("change methods in ordering fixture");
+
+    for (locale, first, second) in [
+        (
+            "ru",
+            "ОбщийМодуль.ОбщийМодуль1 — Функция.ЯПервая (1, 1)",
+            "ОбщийМодуль.ОбщийМодуль1 — Процедура.АВторая (4, 1)",
+        ),
+        (
+            "en",
+            "CommonModule.ОбщийМодуль1 — Function.ЯПервая (1, 1)",
+            "CommonModule.ОбщийМодуль1 — Procedure.АВторая (4, 1)",
+        ),
+    ] {
+        let output = eska(&root, locale, &["diff", "--semantic"]);
+        assert!(output.status.success(), "{output:?}");
+        let text = String::from_utf8(output.stdout).expect("semantic human output");
+        let first = text.find(first).expect("first method in output");
+        let second = text.find(second).expect("second method in output");
+        assert!(
+            first < second,
+            "methods do not follow source order:\n{text}"
+        );
+    }
+}
+
 /// Equal index/worktree events share one compact human subgroup without changing JSON events.
 #[test]
 fn semantic_human_combines_identical_index_and_worktree_events() {
@@ -1047,6 +1088,14 @@ fn semantic_revision_diff_has_a_separate_versioned_comparison() {
 
 /// Create committed Designer sources accepted by the logical object model.
 fn semantic_project() -> (TestDir, PathBuf) {
+    semantic_project_with_module(concat!(
+        "Процедура Выполнить()\n    Сообщить(\"Исходный\");\nКонецПроцедуры\n",
+        "Функция ПолучитьЗначение()\n    Возврат 1;\nКонецФункции\n"
+    ))
+}
+
+/// Create committed Designer sources with a caller-provided common module.
+fn semantic_project_with_module(module_source: &str) -> (TestDir, PathBuf) {
     let (fixture, root) = project();
     for directory in [
         "src/Catalogs",
@@ -1067,10 +1116,7 @@ fn semantic_project() -> (TestDir, PathBuf) {
     .expect("write semantic common module descriptor");
     fs::write(
         root.join("src/CommonModules/ОбщийМодуль1/Ext/Module.bsl"),
-        concat!(
-            "Процедура Выполнить()\n    Сообщить(\"Исходный\");\nКонецПроцедуры\n",
-            "Функция ПолучитьЗначение()\n    Возврат 1;\nКонецФункции\n"
-        ),
+        module_source,
     )
     .expect("write semantic module");
     fs::write(

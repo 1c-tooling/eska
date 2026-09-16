@@ -1064,17 +1064,20 @@ fn render_semantic_human(diff: &SemanticDiff, localizer: &Localizer, styled: boo
     let mut aggregated = std::collections::BTreeMap::new();
     for event in diff.events() {
         let group = semantic_object_group(event.object().id()).to_owned();
-        let target = semantic_event_target(event, localizer);
+        let object = render_semantic_object(event.object().id(), localizer);
+        let target = semantic_event_target(event, &object, localizer);
         aggregated
-            .entry((group, target, event.kind()))
+            .entry((group, object, target, event.kind(), event.location()))
             .and_modify(|stage: &mut SemanticHumanStage| stage.merge(event.stage()))
             .or_insert_with(|| SemanticHumanStage::from(event.stage()));
     }
     let mut groups: std::collections::BTreeMap<String, Vec<SemanticHumanChange>> =
         std::collections::BTreeMap::new();
-    for ((group, target, kind), stage) in aggregated {
+    for ((group, object, target, kind, location), stage) in aggregated {
         groups.entry(group).or_default().push(SemanticHumanChange {
+            object,
             target,
+            location,
             kind,
             stage,
         });
@@ -1101,10 +1104,9 @@ fn render_semantic_human(diff: &SemanticDiff, localizer: &Localizer, styled: boo
 }
 
 /// Render a semantic target, adding declaration kind and coordinates only for routines.
-fn semantic_event_target(event: &SemanticEvent, localizer: &Localizer) -> String {
-    let object = render_semantic_object(event.object().id(), localizer);
+fn semantic_event_target(event: &SemanticEvent, object: &str, localizer: &Localizer) -> String {
     let Some(member) = event.member() else {
-        return object;
+        return object.to_owned();
     };
     let declaration = if matches!(
         event.kind(),
@@ -1129,7 +1131,9 @@ fn semantic_event_target(event: &SemanticEvent, localizer: &Localizer) -> String
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct SemanticHumanChange {
+    object: String,
     target: String,
+    location: Option<semantic::SourceLocation>,
     kind: SemanticEventKind,
     stage: SemanticHumanStage,
 }
@@ -1176,6 +1180,11 @@ fn append_semantic_event_groups(
     changes.sort_by(|left, right| {
         semantic_event_sort_key(left)
             .cmp(&semantic_event_sort_key(right))
+            .then_with(|| left.object.cmp(&right.object))
+            .then_with(|| location_sort_key(left.location).cmp(&location_sort_key(right.location)))
+            .then_with(|| {
+                semantic_declaration_rank(left.kind).cmp(&semantic_declaration_rank(right.kind))
+            })
             .then_with(|| left.target.cmp(&right.target))
     });
     let mut start = 0;
@@ -1205,16 +1214,23 @@ fn append_semantic_event_groups(
 }
 
 /// Sort modified, added and removed semantic events like ordinary diff states.
-const fn semantic_event_sort_key(change: &SemanticHumanChange) -> (u8, u8, u8, u8) {
+const fn semantic_event_sort_key(change: &SemanticHumanChange) -> (u8, u8, u8) {
     (
         change_rank(semantic_event_change(change.kind)),
         semantic_event_kind_rank(semantic_event_group_kind(change.kind)),
         semantic_stage_rank(change.stage),
-        semantic_declaration_rank(change.kind),
     )
 }
 
-/// Keep procedures before functions inside one method lifecycle subgroup.
+/// Keep routines in their declaration order inside one metadata object.
+const fn location_sort_key(location: Option<semantic::SourceLocation>) -> (usize, usize) {
+    match location {
+        Some(location) => (location.line, location.column),
+        None => (usize::MAX, usize::MAX),
+    }
+}
+
+/// Break ties deterministically when routine coordinates are unavailable or equal.
 const fn semantic_declaration_rank(kind: SemanticEventKind) -> u8 {
     match kind {
         SemanticEventKind::FunctionAdded
@@ -1760,7 +1776,7 @@ mod tests {
             ProjectType,
             diff::{DisplayChange, DisplayTarget, FileChange, ProjectDiff},
             metadata,
-            semantic::{SemanticDiffError, SemanticEventKind},
+            semantic::{SemanticDiffError, SemanticEventKind, SourceLocation},
         },
         vcs::status::Change,
     };
@@ -1916,17 +1932,23 @@ mod tests {
         let localizer = Localizer::try_new(Locale::RuRu).unwrap();
         let changes = vec![
             SemanticHumanChange {
+                object: "ОбщийМодуль.Обмен".to_owned(),
                 target: "ОбщийМодуль.Обмен — Процедура.Выполнить (4, 2)".to_owned(),
+                location: Some(SourceLocation { line: 4, column: 2 }),
                 kind: SemanticEventKind::MethodChanged,
                 stage: SemanticHumanStage::Worktree,
             },
             SemanticHumanChange {
+                object: "ОбщийМодуль.Обмен".to_owned(),
                 target: "ОбщийМодуль.Обмен — Функция.Значение (9, 1)".to_owned(),
+                location: Some(SourceLocation { line: 9, column: 1 }),
                 kind: SemanticEventKind::FunctionChanged,
                 stage: SemanticHumanStage::Worktree,
             },
             SemanticHumanChange {
+                object: "ОбщийМодуль.Новый".to_owned(),
                 target: "ОбщийМодуль.Новый".to_owned(),
+                location: None,
                 kind: SemanticEventKind::ObjectAdded,
                 stage: SemanticHumanStage::Index,
             },
@@ -1950,7 +1972,9 @@ mod tests {
         append_semantic_event_groups(
             &mut styled,
             vec![SemanticHumanChange {
+                object: "ОбщийМодуль.Обмен".to_owned(),
                 target: "ОбщийМодуль.Обмен — Процедура.Выполнить (4, 2)".to_owned(),
+                location: Some(SourceLocation { line: 4, column: 2 }),
                 kind: SemanticEventKind::MethodChanged,
                 stage: SemanticHumanStage::Worktree,
             }],
