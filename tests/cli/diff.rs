@@ -19,6 +19,18 @@ fn eska(current_dir: &Path, locale: &str, args: &[&str]) -> Output {
         .expect("run eska")
 }
 
+/// Run redirected semantic output with explicit color suppression.
+fn eska_no_color(current_dir: &Path, locale: &str, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(current_dir)
+        .env_remove("ESKA_LANG")
+        .env("NO_COLOR", "1")
+        .args(["--lang", locale])
+        .args(args)
+        .output()
+        .expect("run eska without color")
+}
+
 /// Run Git with deterministic identity and without user configuration.
 fn git(root: &Path, args: &[&str]) {
     let output = Command::new("git")
@@ -660,21 +672,29 @@ fn semantic_workspace_diff_reports_objects_modules_routines_forms_and_attributes
     assert_eq!(method["member"], "Выполнить");
     assert_eq!(method["object"]["id"], "common-module:ОбщийМодуль1");
     assert_eq!(method["stage"], "worktree");
+    assert!(
+        method.get("line").is_none(),
+        "JSON schema must stay unchanged"
+    );
+    assert!(
+        method.get("column").is_none(),
+        "JSON schema must stay unchanged"
+    );
 
     for (locale, header, group, method_group, method) in [
         (
             "ru",
             "Семантические изменения",
             "ОбщийМодуль:",
-            "Изменена процедура — рабочая копия (1):",
-            "    ✎ ОбщийМодуль.ОбщийМодуль1 — Выполнить",
+            "Изменён метод — в рабочей копии (2):",
+            "    ✎ ОбщийМодуль.ОбщийМодуль1 — Процедура.Выполнить (1, 1)",
         ),
         (
             "en",
             "Semantic changes",
             "CommonModule:",
-            "Procedure changed — working tree (1):",
-            "    ✎ CommonModule.ОбщийМодуль1 — Выполнить",
+            "Method changed — in working tree (2):",
+            "    ✎ CommonModule.ОбщийМодуль1 — Procedure.Выполнить (1, 1)",
         ),
     ] {
         let output = eska(&root, locale, &["diff", "--semantic"]);
@@ -696,6 +716,176 @@ fn semantic_workspace_diff_reports_objects_modules_routines_forms_and_attributes
         ),
         "{raw}"
     );
+
+    let no_color = eska_no_color(&root, "ru", &["diff", "--semantic"]);
+    assert!(no_color.status.success(), "{no_color:?}");
+    assert!(!no_color.stdout.contains(&b'\x1b'), "{no_color:?}");
+}
+
+/// Added and removed methods use coordinates from their respective source snapshots.
+#[test]
+fn semantic_method_lifecycle_reports_declaration_kind_and_coordinates() {
+    let (_fixture, root) = semantic_project();
+    fs::write(
+        root.join("src/CommonModules/ОбщийМодуль1/Ext/Module.bsl"),
+        concat!(
+            "Процедура Выполнить()\n    Сообщить(\"Исходный\");\nКонецПроцедуры\n",
+            "  Процедура Добавить()\nКонецПроцедуры\n"
+        ),
+    )
+    .expect("change routine lifecycle");
+
+    for (locale, added, removed) in [
+        (
+            "ru",
+            "Добавлен метод — в рабочей копии (1):\n    + ОбщийМодуль.ОбщийМодуль1 — Процедура.Добавить (4, 3)",
+            "Удалён метод — в рабочей копии (1):\n    − ОбщийМодуль.ОбщийМодуль1 — Функция.ПолучитьЗначение (4, 1)",
+        ),
+        (
+            "en",
+            "Method added — in working tree (1):\n    + CommonModule.ОбщийМодуль1 — Procedure.Добавить (4, 3)",
+            "Method removed — in working tree (1):\n    − CommonModule.ОбщийМодуль1 — Function.ПолучитьЗначение (4, 1)",
+        ),
+    ] {
+        let output = eska(&root, locale, &["diff", "--semantic"]);
+        assert!(output.status.success(), "{output:?}");
+        let text = String::from_utf8(output.stdout).expect("semantic human output");
+        assert!(text.contains(added), "missing `{added}` in:\n{text}");
+        assert!(text.contains(removed), "missing `{removed}` in:\n{text}");
+    }
+}
+
+/// Equal index/worktree events share one compact human subgroup without changing JSON events.
+#[test]
+fn semantic_human_combines_identical_index_and_worktree_events() {
+    let (_fixture, root) = semantic_project();
+    let module = root.join("src/CommonModules/ОбщийМодуль1/Ext/Module.bsl");
+    fs::write(
+        &module,
+        "Процедура Выполнить()\n    Сообщить(\"Индекс\");\nКонецПроцедуры\nФункция ПолучитьЗначение()\n    Возврат 1;\nКонецФункции\n",
+    )
+    .expect("write index version");
+    git(
+        &root,
+        &["add", "src/CommonModules/ОбщийМодуль1/Ext/Module.bsl"],
+    );
+    fs::write(
+        module,
+        "Процедура Выполнить()\n    Сообщить(\"Рабочая копия\");\nКонецПроцедуры\nФункция ПолучитьЗначение()\n    Возврат 1;\nКонецФункции\n",
+    )
+    .expect("write worktree version");
+
+    let human = eska(&root, "ru", &["diff", "--semantic"]);
+    assert!(human.status.success(), "{human:?}");
+    let text = String::from_utf8(human.stdout).expect("semantic human output");
+    assert!(
+        text.contains("Изменён метод — в индексе и рабочей копии (1):"),
+        "{text}"
+    );
+
+    let json = eska(&root, "en", &["diff", "--semantic", "--format", "json"]);
+    let document: Value = serde_json::from_slice(&json.stdout).expect("semantic JSON");
+    assert_eq!(
+        document["events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|event| event["kind"] == "method_changed")
+            .count(),
+        2
+    );
+}
+
+/// Object lifecycle suppresses derived module/form events only for the exact same identity.
+#[test]
+fn semantic_added_form_suppresses_derived_events_for_that_form() {
+    let (_fixture, root) = semantic_project();
+    let form = root.join("src/Documents/Возврат/Forms/ФормаСписка");
+    fs::create_dir_all(form.join("Ext/Form")).expect("create form source");
+    fs::write(
+        form.with_extension("xml"),
+        semantic_object_descriptor(
+            "Form",
+            "ФормаСписка",
+            "66666666-6666-6666-6666-666666666666",
+        ),
+    )
+    .expect("write form descriptor");
+    fs::write(form.join("Ext/Form.xml"), "<Form/>\n").expect("write managed form");
+    fs::write(
+        form.join("Ext/Form/Module.bsl"),
+        "Процедура ПриОткрытии()\nКонецПроцедуры\n",
+    )
+    .expect("write form module");
+
+    let output = eska(&root, "en", &["diff", "--semantic", "--format", "json"]);
+    assert!(output.status.success(), "{output:?}");
+    let document: Value = serde_json::from_slice(&output.stdout).expect("semantic JSON");
+    let events = document["events"].as_array().expect("events");
+    let form_events = events
+        .iter()
+        .filter(|event| event["object"]["id"] == "document:Возврат/form:ФормаСписка")
+        .collect::<Vec<_>>();
+    assert_eq!(form_events.len(), 1, "{document}");
+    assert_eq!(form_events[0]["kind"], "object_added");
+}
+
+/// Semantic sections follow Configurator order rather than localized alphabetical order.
+#[test]
+fn semantic_groups_follow_configurator_order_in_both_locales() {
+    let (_fixture, root) = semantic_project();
+    apply_semantic_changes(&root);
+    for (directory, file, tag, name, uuid) in [
+        (
+            "Constants",
+            "Организация.xml",
+            "Constant",
+            "Организация",
+            "77777777-7777-7777-7777-777777777777",
+        ),
+        (
+            "Documents",
+            "Заказ.xml",
+            "Document",
+            "Заказ",
+            "88888888-8888-8888-8888-888888888888",
+        ),
+    ] {
+        fs::create_dir_all(root.join("src").join(directory)).expect("create metadata directory");
+        fs::write(
+            root.join("src").join(directory).join(file),
+            semantic_object_descriptor(tag, name, uuid),
+        )
+        .expect("write metadata descriptor");
+    }
+
+    for (locale, groups) in [
+        (
+            "ru",
+            [
+                "ОбщийМодуль:",
+                "ОбщаяФорма:",
+                "Константа:",
+                "Справочник:",
+                "Документ:",
+            ],
+        ),
+        (
+            "en",
+            [
+                "CommonModule:",
+                "CommonForm:",
+                "Constant:",
+                "Catalog:",
+                "Document:",
+            ],
+        ),
+    ] {
+        let output = eska(&root, locale, &["diff", "--semantic"]);
+        let text = String::from_utf8(output.stdout).expect("semantic human output");
+        let positions = groups.map(|group| text.find(group).unwrap_or_else(|| panic!("{text}")));
+        assert!(positions.windows(2).all(|pair| pair[0] < pair[1]), "{text}");
+    }
 }
 
 /// One malformed descriptor degrades only its exact path and preserves independent events.
@@ -841,6 +1031,18 @@ fn semantic_revision_diff_has_a_separate_versioned_comparison() {
             .iter()
             .all(|event| event["stage"] == "revision")
     );
+
+    for (locale, expected) in [
+        ("ru", "Изменён метод — между Git-ревизиями (2):"),
+        ("en", "Method changed — between Git revisions (2):"),
+    ] {
+        let output = eska(&root, locale, &["diff", "HEAD~1", "HEAD", "--semantic"]);
+        assert!(output.status.success(), "{output:?}");
+        let text = String::from_utf8(output.stdout).expect("semantic human output");
+        assert!(text.contains(expected), "missing `{expected}` in:\n{text}");
+        assert!(!text.contains(" — revisions"), "{text}");
+        assert!(!text.contains(" — ревизии"), "{text}");
+    }
 }
 
 /// Create committed Designer sources accepted by the logical object model.
