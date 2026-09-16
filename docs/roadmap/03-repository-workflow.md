@@ -204,3 +204,60 @@ workflow integration-тест покрывает все три presets, их cus
 **Готовность workflow:** одинаковые входные данные дают детерминированный plan;
 presets и custom overrides покрыты table-driven tests, пока без выполнения команд
 повседневного UX.
+
+## T58 — Настраиваемая основная ветка Git Flow
+
+**Статус:** `DONE`
+**Зависит от:** T08, T10, T12
+
+Позволить проекту с `preset = "git-flow"` явно указать имя основной production-
+ветки, например `master` вместо встроенной `main`, не меняя базу обычных задач:
+`feature/{task}` по-прежнему создаётся от `develop` и интегрируется в `develop`.
+
+Контракт конфигурации:
+
+```toml
+[vcs.workflow]
+preset = "git-flow"
+
+[vcs.workflow.policy]
+main_branch = "master"
+```
+
+**Готово, когда:**
+
+- `main_branch` наследует `main` из стандартного Git Flow и допускает безопасное
+  имя локальной Git-ветки в partial policy override;
+- настройка не подменяет `base_branch` или `integration_target`: `eska start`
+  продолжает создавать feature-ветку от `develop`;
+- effective policy и `eska status` показывают настроенную основную ветку в human
+  RU/EN и JSON без зависимости machine-readable значений от locale;
+- зарезервированная policy будущих `hotfix/*` использует настроенную основную
+  ветку вместо жёстко заданной `main`;
+- `new` и `init` не переименовывают существующие ветки и не изменяют HEAD
+  неявно; настройка описывает policy уже подготовленного репозитория;
+- документация различает основную production-ветку (`main_branch`), базу обычной
+  задачи (`base_branch`) и цель её интеграции (`integration_target`);
+- unit- и integration-тесты покрывают default `main`, override `master`, ошибочное
+  имя ветки и неизменный старт feature-ветки от `develop`.
+
+В задачу не входят создание `hotfix/*`, переименование Git-веток, миграция remote
+или реализация полного release flow.
+
+**Реализовано:** `main_branch` добавлена как отдельная настройка effective
+workflow policy. Git Flow по умолчанию использует `main`, а partial override
+может задать `master`, не меняя `base_branch = "develop"` и
+`integration_target = "develop"`. Для standalone custom policy без нового поля
+сохранена совместимость: основная ветка наследуется от разрешённой базовой.
+
+`eska status` показывает основную ветку в human RU/EN и в JSON schema 3.
+Зарезервированная hotfix-policy использует разрешённую основную ветку. `new`,
+`init` и `start` не переименовывают refs и не переключают production-ветку;
+ручной сценарий подтвердил создание `feature/P1C-3558` от `develop` при
+`main_branch = "master"`.
+
+**Проверено:** `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`, 145 unit-тестов и
+249 integration-тестов в соседнем playground — успешно; один платформенный тест
+остался штатно ignored. Дополнительно проверены RU human, EN JSON, отсутствие
+ANSI при redirect и совпадение merge base feature-ветки с `develop`.

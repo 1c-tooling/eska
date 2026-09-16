@@ -13,22 +13,26 @@ pub(super) struct RoutineSnapshot {
     pub(super) kind: RoutineKind,
     pub(super) name: String,
     pub(super) body: String,
+    pub(super) line: usize,
+    pub(super) column: usize,
 }
 
 /// Parse only unambiguous top-level BSL declarations and their complete bodies.
 pub(super) fn parse_routines(
     contents: &[u8],
 ) -> Option<BTreeMap<(RoutineKind, String), RoutineSnapshot>> {
-    let text = std::str::from_utf8(contents).ok()?;
-    let mut lines = text.lines();
+    let text = std::str::from_utf8(contents)
+        .ok()?
+        .trim_start_matches('\u{feff}');
+    let mut lines = text.lines().enumerate();
     let mut routines = BTreeMap::new();
-    while let Some(line) = lines.next() {
-        let Some((kind, name)) = routine_declaration(line) else {
+    while let Some((line_index, line)) = lines.next() {
+        let Some((kind, name, column)) = routine_declaration(line) else {
             continue;
         };
         let mut body = line.trim_end().to_owned();
         loop {
-            let line = lines.next()?;
+            let (_, line) = lines.next()?;
             body.push('\n');
             body.push_str(line.trim_end());
             if routine_end(line, kind) {
@@ -37,7 +41,16 @@ pub(super) fn parse_routines(
         }
         let key = (kind, name.to_lowercase());
         if routines
-            .insert(key, RoutineSnapshot { kind, name, body })
+            .insert(
+                key,
+                RoutineSnapshot {
+                    kind,
+                    name,
+                    body,
+                    line: line_index + 1,
+                    column,
+                },
+            )
             .is_some()
         {
             return None;
@@ -47,7 +60,7 @@ pub(super) fn parse_routines(
 }
 
 /// Recognize Russian and English BSL declaration keywords at the start of a line.
-fn routine_declaration(line: &str) -> Option<(RoutineKind, String)> {
+fn routine_declaration(line: &str) -> Option<(RoutineKind, String, usize)> {
     let trimmed = line.trim_start();
     if trimmed.starts_with("//") {
         return None;
@@ -72,7 +85,11 @@ fn routine_declaration(line: &str) -> Option<(RoutineKind, String)> {
         && name
             .chars()
             .all(|value| value == '_' || value.is_alphanumeric()))
-    .then(|| (kind, name.to_owned()))
+    .then(|| {
+        let indentation = line.chars().count() - trimmed.chars().count();
+        let async_width = async_prefix.map_or(0, |prefix| prefix.chars().count());
+        (kind, name.to_owned(), indentation + async_width + 1)
+    })
 }
 
 /// Recognize the matching Russian or English end keyword.
@@ -128,6 +145,27 @@ mod tests {
             parse_routines(source.replace("    Return", "  Return").as_bytes()).unwrap(),
             expected
         );
+    }
+
+    /// Declaration coordinates are one-based and point to the procedure/function keyword.
+    #[test]
+    fn records_keyword_coordinates_for_lf_crlf_and_async_declarations() {
+        let lf = parse_routines(
+            "// heading\n  Асинх Функция Значение()\nКонецФункции\n\tProcedure Run()\nEndProcedure"
+                .as_bytes(),
+        )
+        .unwrap();
+        let crlf = parse_routines(
+            "// heading\r\n  Асинх Функция Значение()\r\nКонецФункции\r\n\tProcedure Run()\r\nEndProcedure\r\n"
+                .as_bytes(),
+        )
+        .unwrap();
+
+        assert_eq!(lf, crlf);
+        let function = &lf[&(RoutineKind::Function, "значение".to_owned())];
+        assert_eq!((function.line, function.column), (2, 9));
+        let procedure = &lf[&(RoutineKind::Method, "run".to_owned())];
+        assert_eq!((procedure.line, procedure.column), (4, 2));
     }
 
     /// Ambiguous names and malformed input retain the module-level fallback.

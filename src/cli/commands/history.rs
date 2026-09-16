@@ -13,6 +13,7 @@ use serde::Serialize;
 use crate::{
     cli::{
         diagnostics,
+        encoding::json_git_text,
         localization::{LocalizationValue, Localizer},
     },
     project::{
@@ -295,9 +296,9 @@ impl From<&[HistoryEntry]> for HistoryDocument {
 impl From<&HistoryEntry> for CommitDocument {
     /// Preserve arbitrary Git identity and subject bytes without lossy JSON conversion.
     fn from(entry: &HistoryEntry) -> Self {
-        let (name, name_encoding) = encoded_text(entry.commit.author.name.as_bstr());
-        let (email, email_encoding) = encoded_text(entry.commit.author.email.as_bstr());
-        let (subject, subject_encoding) = encoded_text(entry.commit.subject.as_bstr());
+        let (name, name_encoding) = json_git_text(entry.commit.author.name.as_bstr());
+        let (email, email_encoding) = json_git_text(entry.commit.author.email.as_bstr());
+        let (subject, subject_encoding) = json_git_text(entry.commit.subject.as_bstr());
         Self {
             id: entry.commit.id.to_string(),
             parents: entry
@@ -323,25 +324,6 @@ impl From<&HistoryEntry> for CommitDocument {
     }
 }
 
-/// Keep valid UTF-8 exact and encode arbitrary Git bytes without data loss.
-fn encoded_text(value: &BStr) -> (String, &'static str) {
-    value.to_str().map_or_else(
-        |_| (percent_encode(value), "percent"),
-        |value| (value.to_owned(), "utf-8"),
-    )
-}
-
-/// Percent-encode every byte so non-UTF-8 Git text remains reversible.
-fn percent_encode(value: &BStr) -> String {
-    use std::fmt::Write as _;
-
-    let mut encoded = String::with_capacity(value.len() * 3);
-    for byte in value.as_bytes() {
-        write!(encoded, "%{byte:02X}").expect("writing to String cannot fail");
-    }
-    encoded
-}
-
 #[cfg(test)]
 mod tests {
     use gix::{
@@ -349,9 +331,7 @@ mod tests {
         bstr::{BStr, BString},
     };
 
-    use super::{
-        HistoryDocument, encoded_text, format_human_date, mailto_address, render_email, short_id,
-    };
+    use super::{HistoryDocument, format_human_date, mailto_address, render_email, short_id};
     use crate::{
         cli::localization::{Locale, Localizer},
         project::history::HistoryEntry,
@@ -404,11 +384,8 @@ mod tests {
     }
 
     #[test]
-    fn arbitrary_bytes_have_an_explicit_reversible_encoding() {
-        assert_eq!(
-            encoded_text(BStr::new(b"raw-\xFF")),
-            ("%72%61%77%2D%FF".to_owned(), "percent")
-        );
+    /// Human commit IDs keep their existing twelve-character abbreviation.
+    fn human_commit_id_is_abbreviated() {
         assert_eq!(short_id("1234567890abcdef"), "1234567890ab");
     }
 

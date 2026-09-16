@@ -43,6 +43,7 @@ pub(super) struct RawWorkflow {
 #[serde(deny_unknown_fields)]
 pub(super) struct RawPolicy {
     pub(super) base_branch: Option<String>,
+    pub(super) main_branch: Option<String>,
     pub(super) working_branch: Option<String>,
     pub(super) task_branch_template: Option<String>,
     pub(super) remote: Option<String>,
@@ -99,6 +100,8 @@ pub(super) struct SerializedWorkflow<'a> {
 pub(super) struct SerializedPolicy<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) base_branch: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) main_branch: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) working_branch: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
