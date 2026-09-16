@@ -18,7 +18,12 @@ src/
 │   ├── platform.rs              # общие machine-local настройки запуска 1С
 │   ├── commands/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
-│   │   ├── build.rs             # eska build: аргументы, RU/EN и JSON result
+│   │   ├── build.rs             # eska build: аргументы, selection, preflight и запуск
+│   │   ├── build/
+│   │   │   ├── errors.rs        # RU/EN ошибки и стабильные machine-facing codes
+│   │   │   ├── json.rs          # версии JSON-схем preview, result и error
+│   │   │   ├── output.rs        # preview, streaming diagnostics и результат
+│   │   │   └── output/progress.rs # lifecycle spinner и синхронизация stderr
 │   │   ├── clean.rs             # удаление управляемых build-баз
 │   │   ├── config.rs            # eska config: init/edit глобальных настроек
 │   │   ├── doctor.rs            # eska doctor: selectors, RU/EN и versioned JSON
@@ -128,6 +133,7 @@ tests/
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
 | Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`src/project/build/`](../src/project/build/) |
+| Изменить вывод, JSON или ошибки сборки | [`src/cli/commands/build/output.rs`](../src/cli/commands/build/output.rs), [`json.rs`](../src/cli/commands/build/json.rs), [`errors.rs`](../src/cli/commands/build/errors.rs) |
 | Изменить план или генерацию patch-extension | [`src/cli/commands/patch.rs`](../src/cli/commands/patch.rs), затем [`src/project/patch/`](../src/project/patch/) |
 | Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`src/project/build/tool.rs`](../src/project/build/tool.rs) |
 | Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
@@ -169,6 +175,10 @@ tests/
   обратимые JSON-пути и Git byte strings — в `encoding.rs`.
 - Обработчики команд не используют внутренние функции соседних команд. Общий
   код сначала поднимается из `commands/` в соответствующий модуль `cli/`.
+- `commands/build.rs` управляет выбором, preflight и последовательным выполнением.
+  Его внутренние модули отвечают за ошибки, JSON и вывод; `output/progress.rs`
+  владеет потоком spinner и синхронизацией записи в stderr. Эти детали закрыты
+  границами команды и не входят в публичный API.
 - `project`, `config` и `vcs` не зависят от `cli`, `clap`,
   терминала и локализованных строк. Они возвращают данные и структурированные ошибки.
 - Только `cli/interactive/terminal.rs` владеет переключением режимов терминала
