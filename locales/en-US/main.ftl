@@ -355,6 +355,7 @@ status-workflow = Workflow
 status-task = Task
 status-branch = Branch
 status-base = Base
+status-main-branch = Main branch
 status-changes = Changes
 status-files = Files
 status-added = Added

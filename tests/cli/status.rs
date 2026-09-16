@@ -62,6 +62,10 @@ fn project() -> (TestDir, PathBuf) {
     );
     assert!(output.status.success(), "{output:?}");
     let root = fixture.0.join("Billing");
+    let config_path = root.join("eska.toml");
+    let mut config = fs::read_to_string(&config_path).expect("read project config");
+    config.push_str("\n[vcs.workflow.policy]\nmain_branch = 'master'\n");
+    fs::write(config_path, config).expect("configure production branch");
     git(&root, &["add", "."]);
     git(&root, &["commit", "-m", "base"]);
     git(
@@ -139,7 +143,7 @@ fn json_output_has_a_stable_locale_independent_schema() {
         assert_eq!(
             actual,
             json!({
-                "schema_version": 2,
+                "schema_version": 3,
                 "project": {
                     "name": "Billing",
                     "name_encoding": "utf-8",
@@ -153,6 +157,7 @@ fn json_output_has_a_stable_locale_independent_schema() {
                     "branch": "feature/FI-1234",
                     "branch_encoding": "utf-8",
                     "base": "develop",
+                    "main_branch": "master",
                     "head": "attached"
                 },
                 "changes": {
@@ -183,12 +188,13 @@ fn human_output_localizes_changes_and_conservative_readiness() {
         (
             "ru",
             [
-                "Проект:   Billing",
-                "Тип:      Конфигурация",
-                "Workflow: Git Flow",
-                "Задача:   FI-1234",
-                "Ветка:    feature/FI-1234",
-                "База:     develop",
+                "Проект:         Billing",
+                "Тип:            Конфигурация",
+                "Workflow:       Git Flow",
+                "Задача:         FI-1234",
+                "Ветка:          feature/FI-1234",
+                "База:           develop",
+                "Основная ветка: master",
                 "Файлов:",
                 "Изменено:",
                 "Не отслеживается:",
@@ -200,12 +206,13 @@ fn human_output_localizes_changes_and_conservative_readiness() {
         (
             "en",
             [
-                "Project:  Billing",
-                "Type:     Configuration",
-                "Workflow: Git Flow",
-                "Task:     FI-1234",
-                "Branch:   feature/FI-1234",
-                "Base:     develop",
+                "Project:     Billing",
+                "Type:        Configuration",
+                "Workflow:    Git Flow",
+                "Task:        FI-1234",
+                "Branch:      feature/FI-1234",
+                "Base:        develop",
+                "Main branch: master",
                 "Files:",
                 "Modified:",
                 "Untracked:",
@@ -308,7 +315,8 @@ fn workspace_status_groups_members_root_files_and_excludes_repository_siblings()
         assert!(output.status.success(), "{output:?}");
         assert!(output.stderr.is_empty(), "{output:?}");
         let document: Value = serde_json::from_slice(&output.stdout).expect("workspace JSON");
-        assert_eq!(document["schema_version"], 2);
+        assert_eq!(document["schema_version"], 3);
+        assert_eq!(document["workflow"]["main_branch"], "main");
         assert_eq!(document["workspace"]["root_encoding"], "utf-8");
         assert_eq!(document["workflow"]["branch_encoding"], "utf-8");
         assert_eq!(document["workflow"]["task"], "WS-1");
@@ -361,7 +369,8 @@ fn json_output_preserves_non_utf8_project_and_branch_bytes() {
     let output = eska(&root, "en", &["status", "--format", "json"]);
     assert!(output.status.success(), "{output:?}");
     let document: Value = serde_json::from_slice(&output.stdout).expect("status JSON");
-    assert_eq!(document["schema_version"], 2);
+    assert_eq!(document["schema_version"], 3);
+    assert_eq!(document["workflow"]["main_branch"], "main");
     assert_eq!(document["project"]["name_encoding"], "percent");
     assert_eq!(
         document["project"]["name"],

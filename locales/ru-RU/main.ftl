@@ -355,6 +355,7 @@ status-workflow = Workflow
 status-task = Задача
 status-branch = Ветка
 status-base = База
+status-main-branch = Основная ветка
 status-changes = Изменения
 status-files = Файлов
 status-added = Добавлено

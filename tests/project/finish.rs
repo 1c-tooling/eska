@@ -137,6 +137,7 @@ fn published_requirement_preserves_branch_when_policy_disables_cleanup() {
         None,
         PolicyOverrides {
             base_branch: Some("main".into()),
+            main_branch: None,
             working_branch: Some(WorkingBranchPolicy::TaskBranch),
             task_branch_template: Some("task/{task}".into()),
             remote: Some("origin".into()),

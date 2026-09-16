@@ -194,6 +194,10 @@ fn render_human(status: &ProjectStatus, localizer: &Localizer, styled: bool) -> 
             ),
             (localizer.text("status-branch"), branch),
             (localizer.text("status-base"), status.base_branch.clone()),
+            (
+                localizer.text("status-main-branch"),
+                status.main_branch.clone(),
+            ),
         ],
         "",
         styled,
@@ -275,6 +279,10 @@ fn render_workspace_human(status: &WorkspaceStatus, localizer: &Localizer, style
             ),
             (localizer.text("status-branch"), branch),
             (localizer.text("status-base"), status.base_branch.clone()),
+            (
+                localizer.text("status-main-branch"),
+                status.main_branch.clone(),
+            ),
         ],
         "",
         styled,
@@ -517,6 +525,7 @@ struct WorkflowDocument {
     branch: Option<String>,
     branch_encoding: Option<&'static str>,
     base: String,
+    main_branch: String,
     head: &'static str,
 }
 
@@ -556,7 +565,7 @@ impl From<&ProjectStatus> for StatusDocument {
         let (root, root_encoding) = json_path(status.root.as_os_str());
         let (branch, branch_encoding) = json_branch(status.branch.as_ref());
         Self {
-            schema_version: 2,
+            schema_version: 3,
             project: ProjectDocument {
                 name,
                 name_encoding,
@@ -570,6 +579,7 @@ impl From<&ProjectStatus> for StatusDocument {
                 branch,
                 branch_encoding,
                 base: status.base_branch.clone(),
+                main_branch: status.main_branch.clone(),
                 head: head_name(status.head),
             },
             changes: ChangeDocument::from(status.changes),
@@ -594,7 +604,7 @@ impl From<&WorkspaceStatus> for WorkspaceStatusDocument {
         let (root, root_encoding) = json_path(status.root.as_os_str());
         let (branch, branch_encoding) = json_branch(status.branch.as_ref());
         Self {
-            schema_version: 2,
+            schema_version: 3,
             workspace: WorkspaceDocument {
                 root,
                 root_encoding,
@@ -605,6 +615,7 @@ impl From<&WorkspaceStatus> for WorkspaceStatusDocument {
                 branch,
                 branch_encoding,
                 base: status.base_branch.clone(),
+                main_branch: status.main_branch.clone(),
                 head: head_name(status.head),
             },
             projects: status

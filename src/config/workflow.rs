@@ -15,6 +15,7 @@ pub(super) fn parse(raw: RawWorkflow) -> Result<WorkflowSettings, ProjectConfigE
     let fields = raw.policy.unwrap_or_default();
     let policy = PolicyOverrides {
         base_branch: fields.base_branch,
+        main_branch: fields.main_branch,
         working_branch: parse_choice(fields.working_branch, PolicyField::WorkingBranch, |value| {
             match value {
                 "task-branch" => Some(WorkingBranchPolicy::TaskBranch),
@@ -72,6 +73,7 @@ pub(super) fn serialize(settings: &WorkflowSettings) -> SerializedWorkflow<'_> {
         extends: settings.extends().map(WorkflowPreset::as_str),
         policy: (fields != &PolicyOverrides::default()).then(|| SerializedPolicy {
             base_branch: fields.base_branch.as_deref(),
+            main_branch: fields.main_branch.as_deref(),
             working_branch: fields.working_branch.map(|value| match value {
                 WorkingBranchPolicy::TaskBranch => "task-branch",
             }),
@@ -159,7 +161,7 @@ delete_local_branch = true
 
     #[test]
     fn named_preset_branch_overrides_round_trip_without_custom_inheritance() {
-        let input = "[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'trunk'\n[vcs.workflow.policy]\nbase_branch = 'master'\ntask_branch_template = 'feature/{task}'\nintegration_target = 'master'\n";
+        let input = "[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'trunk'\n[vcs.workflow.policy]\nmain_branch = 'master'\nbase_branch = 'master'\ntask_branch_template = 'feature/{task}'\nintegration_target = 'master'\n";
         let config = ProjectConfig::from_toml(input).unwrap();
         let policy = config
             .configuration()
@@ -169,6 +171,7 @@ delete_local_branch = true
             .unwrap();
         let plan = policy.plan("FI-9").unwrap();
 
+        assert_eq!(policy.main_branch(), "master");
         assert_eq!(plan.base_branch, "master");
         assert_eq!(plan.working_branch, "feature/FI-9");
         assert_eq!(plan.integration_target, "master");
@@ -177,6 +180,27 @@ delete_local_branch = true
             ProjectConfig::from_toml(&config.to_toml().unwrap()).unwrap(),
             config
         );
+    }
+
+    #[test]
+    fn git_flow_main_branch_round_trips_without_changing_task_targets() {
+        let input = "[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'git-flow'\n[vcs.workflow.policy]\nmain_branch = 'master'\n";
+        let config = ProjectConfig::from_toml(input).unwrap();
+        let policy = config
+            .configuration()
+            .workflow_settings()
+            .unwrap()
+            .resolve(None)
+            .unwrap();
+        let plan = policy.plan("FI-58").unwrap();
+        let canonical = config.to_toml().unwrap();
+
+        assert_eq!(policy.main_branch(), "master");
+        assert_eq!(plan.base_branch, "develop");
+        assert_eq!(plan.integration_target, "develop");
+        assert_eq!(plan.working_branch, "feature/FI-58");
+        assert!(canonical.contains("main_branch = \"master\""));
+        assert_eq!(ProjectConfig::from_toml(&canonical).unwrap(), config);
     }
 
     #[test]
@@ -233,6 +257,7 @@ delete_local_branch = true
             ("publish", "force-push", PolicyField::Publish),
             ("finish", "delete-remote", PolicyField::Finish),
             ("base_branch", "../main", PolicyField::BaseBranch),
+            ("main_branch", "../main", PolicyField::MainBranch),
             ("integration_target", "HEAD", PolicyField::IntegrationTarget),
             (
                 "remote",

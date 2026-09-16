@@ -207,7 +207,7 @@ presets и custom overrides покрыты table-driven tests, пока без �
 
 ## T58 — Настраиваемая основная ветка Git Flow
 
-**Статус:** `NEXT`
+**Статус:** `DONE`
 **Зависит от:** T08, T10, T12
 
 Позволить проекту с `preset = "git-flow"` явно указать имя основной production-
@@ -243,3 +243,21 @@ main_branch = "master"
 
 В задачу не входят создание `hotfix/*`, переименование Git-веток, миграция remote
 или реализация полного release flow.
+
+**Реализовано:** `main_branch` добавлена как отдельная настройка effective
+workflow policy. Git Flow по умолчанию использует `main`, а partial override
+может задать `master`, не меняя `base_branch = "develop"` и
+`integration_target = "develop"`. Для standalone custom policy без нового поля
+сохранена совместимость: основная ветка наследуется от разрешённой базовой.
+
+`eska status` показывает основную ветку в human RU/EN и в JSON schema 3.
+Зарезервированная hotfix-policy использует разрешённую основную ветку. `new`,
+`init` и `start` не переименовывают refs и не переключают production-ветку;
+ручной сценарий подтвердил создание `feature/P1C-3558` от `develop` при
+`main_branch = "master"`.
+
+**Проверено:** `cargo fmt --check`, `cargo check`,
+`cargo clippy --all-targets --all-features -- -D warnings`, 145 unit-тестов и
+249 integration-тестов в соседнем playground — успешно; один платформенный тест
+остался штатно ignored. Дополнительно проверены RU human, EN JSON, отсутствие
+ANSI при redirect и совпадение merge base feature-ветки с `develop`.

@@ -642,30 +642,45 @@ eska init
 
 ### Правила работы с Git
 
-| Preset | Базовая ветка | Ветка задачи | Цель интеграции |
-|---|---|---|---|
-| `trunk` | `main` | `task/{task}` | `main` |
-| `github-flow` | `main` | `feature/{task}` | `main` |
-| `git-flow` | `develop` | `feature/{task}` | `develop` |
+| Preset | Основная ветка | Базовая ветка | Ветка задачи | Цель интеграции |
+|---|---|---|---|---|
+| `trunk` | `main` | `main` | `task/{task}` | `main` |
+| `github-flow` | `main` | `main` | `feature/{task}` | `main` |
+| `git-flow` | `main` | `develop` | `feature/{task}` | `develop` |
 
 Базовая ветка должна существовать и иметь первый коммит. `new` создаёт пустую
 `main` независимо от preset; для Git Flow подготовьте `develop` средствами Git.
 `custom` требует полной policy или наследования от стандартного preset.
 Ветки release/hotfix Git Flow пока не создаются командами `eska`.
 
-Чтобы использовать `master` вместо `main`:
+Чтобы использовать `master` как основную production-ветку Git Flow, сохранив
+создание и интеграцию feature-веток через `develop`:
+
+```toml
+[vcs.workflow]
+preset = "git-flow"
+
+[vcs.workflow.policy]
+main_branch = "master"
+```
+
+Чтобы использовать `master` как общую базу и цель интеграции Trunk:
 
 ```toml
 [vcs.workflow]
 preset = "trunk"
 
 [vcs.workflow.policy]
+main_branch = "master"
 base_branch = "master"
 integration_target = "master"
 task_branch_template = "task/{task}"
 ```
 
-Настройки управляют выбором и именованием веток, но не переименовывают их.
+`main_branch`, `base_branch` и `integration_target` — разные роли. Настройки
+описывают уже подготовленный репозиторий, но не переименовывают ветки и не меняют
+HEAD. В частности, `eska start` использует `base_branch`, поэтому приведённый
+Git Flow override продолжает создавать `feature/*` от `develop`.
 Подробнее: [модель workflow](docs/roadmap/03-repository-workflow.md).
 
 ### Машина: платформа и Distrobox
@@ -807,7 +822,8 @@ stderr. Поддерживаются причины `descriptor-parse`, `routine
 для workspace значение `kind` равно `semantic_workspace`. Коды ошибок:
 `repository`, `object-model` и `project-outside-repository`.
 
-`status --format json` использует schema 2. Значения UTF-8 сохранены без
+`status --format json` использует schema 3; `workflow.main_branch` содержит
+эффективную основную production-ветку. Значения UTF-8 сохранены без
 изменений и помечены `utf-8` в `root_encoding`, `name_encoding` и
 `branch_encoding`. Произвольные байты Unix-путей и Git-веток представлены как
 последовательность `%HH` с encoding `percent`; не-Unicode Windows-пути — как
