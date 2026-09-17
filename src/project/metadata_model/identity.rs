@@ -82,6 +82,8 @@ pub enum CollectionKind {
     Metadata(MetadataKind),
     Modules,
     Common,
+    /// Unsupported or malformed fragments are visible rather than silently discarded.
+    Unsupported,
 }
 
 /// Identity of one tree node within a project; display text is never a key.

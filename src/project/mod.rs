@@ -33,3 +33,5 @@ pub use model::{
     SourceFormat,
 };
 pub use workspace::{ProjectName, ProjectNameError, Workspace, WorkspaceMember};
+
+pub mod configurator;

@@ -1,3 +1,4 @@
+mod configurator;
 mod designer_fixtures;
 mod designer_source;
 mod discovery;

@@ -1,0 +1,535 @@
+{
+  "data-processor": {
+    "tag": "DataProcessor",
+    "collections": [
+      "attribute",
+      "tabular-section",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "object",
+      "manager"
+    ]
+  },
+  "report": {
+    "tag": "Report",
+    "collections": [
+      "attribute",
+      "tabular-section",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "object",
+      "manager"
+    ]
+  },
+  "accounting-register": {
+    "tag": "AccountingRegister",
+    "collections": [
+      "dimension",
+      "resource",
+      "attribute",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "manager",
+      "record-set"
+    ]
+  },
+  "accumulation-register": {
+    "tag": "AccumulationRegister",
+    "collections": [
+      "dimension",
+      "resource",
+      "attribute",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "manager",
+      "record-set"
+    ]
+  },
+  "bot": {
+    "tag": "Bot",
+    "collections": [],
+    "modules": [
+      "module"
+    ]
+  },
+  "business-process": {
+    "tag": "BusinessProcess",
+    "collections": [
+      "attribute",
+      "tabular-section",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "object",
+      "manager"
+    ]
+  },
+  "calculation-register": {
+    "tag": "CalculationRegister",
+    "collections": [
+      "dimension",
+      "resource",
+      "attribute",
+      "recalculation",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "manager",
+      "record-set"
+    ]
+  },
+  "catalog": {
+    "tag": "Catalog",
+    "collections": [
+      "attribute",
+      "tabular-section",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "object",
+      "manager"
+    ]
+  },
+  "chart-of-accounts": {
+    "tag": "ChartOfAccounts",
+    "collections": [
+      "attribute",
+      "tabular-section",
+      "accounting-flag",
+      "ext-dimension-accounting-flag",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "object",
+      "manager"
+    ]
+  },
+  "chart-of-calculation-types": {
+    "tag": "ChartOfCalculationTypes",
+    "collections": [
+      "attribute",
+      "tabular-section",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "object",
+      "manager"
+    ]
+  },
+  "chart-of-characteristic-types": {
+    "tag": "ChartOfCharacteristicTypes",
+    "collections": [
+      "attribute",
+      "tabular-section",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "object",
+      "manager"
+    ]
+  },
+  "command-group": {
+    "tag": "CommandGroup",
+    "collections": [],
+    "modules": []
+  },
+  "common-attribute": {
+    "tag": "CommonAttribute",
+    "collections": [],
+    "modules": []
+  },
+  "common-command": {
+    "tag": "CommonCommand",
+    "collections": [],
+    "modules": [
+      "command"
+    ]
+  },
+  "common-form": {
+    "tag": "CommonForm",
+    "collections": [],
+    "modules": [
+      "module"
+    ]
+  },
+  "common-module": {
+    "tag": "CommonModule",
+    "collections": [],
+    "modules": [
+      "module"
+    ]
+  },
+  "common-picture": {
+    "tag": "CommonPicture",
+    "collections": [],
+    "modules": []
+  },
+  "common-template": {
+    "tag": "CommonTemplate",
+    "collections": [],
+    "modules": []
+  },
+  "constant": {
+    "tag": "Constant",
+    "collections": [],
+    "modules": [
+      "value-manager",
+      "manager"
+    ]
+  },
+  "defined-type": {
+    "tag": "DefinedType",
+    "collections": [],
+    "modules": []
+  },
+  "document": {
+    "tag": "Document",
+    "collections": [
+      "attribute",
+      "tabular-section",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "object",
+      "manager"
+    ]
+  },
+  "document-journal": {
+    "tag": "DocumentJournal",
+    "collections": [
+      "column",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "manager"
+    ]
+  },
+  "document-numerator": {
+    "tag": "DocumentNumerator",
+    "collections": [],
+    "modules": []
+  },
+  "enum": {
+    "tag": "Enum",
+    "collections": [
+      "enum-value",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "manager"
+    ]
+  },
+  "event-subscription": {
+    "tag": "EventSubscription",
+    "collections": [],
+    "modules": []
+  },
+  "exchange-plan": {
+    "tag": "ExchangePlan",
+    "collections": [
+      "attribute",
+      "tabular-section",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "object",
+      "manager"
+    ]
+  },
+  "external-data-source": {
+    "tag": "ExternalDataSource",
+    "collections": [],
+    "modules": [],
+    "limitation": "Table, cube and function descendants remain explicit unsupported fragments until their Designer XML vocabulary and source layout are verified."
+  },
+  "filter-criterion": {
+    "tag": "FilterCriterion",
+    "collections": [
+      "form",
+      "command"
+    ],
+    "modules": [
+      "manager"
+    ]
+  },
+  "functional-option": {
+    "tag": "FunctionalOption",
+    "collections": [],
+    "modules": []
+  },
+  "functional-option-parameter": {
+    "tag": "FunctionalOptionsParameter",
+    "collections": [],
+    "modules": []
+  },
+  "http-service": {
+    "tag": "HTTPService",
+    "collections": [
+      "url-template"
+    ],
+    "modules": [
+      "module"
+    ],
+    "direct": true
+  },
+  "information-register": {
+    "tag": "InformationRegister",
+    "collections": [
+      "dimension",
+      "resource",
+      "attribute",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "manager",
+      "record-set"
+    ]
+  },
+  "integration-service": {
+    "tag": "IntegrationService",
+    "collections": [
+      "integration-service-channel"
+    ],
+    "modules": [
+      "module"
+    ],
+    "direct": true
+  },
+  "language": {
+    "tag": "Language",
+    "collections": [],
+    "modules": []
+  },
+  "role": {
+    "tag": "Role",
+    "collections": [],
+    "modules": []
+  },
+  "scheduled-job": {
+    "tag": "ScheduledJob",
+    "collections": [],
+    "modules": []
+  },
+  "sequence": {
+    "tag": "Sequence",
+    "collections": [
+      "dimension"
+    ],
+    "modules": [
+      "record-set"
+    ],
+    "direct": true
+  },
+  "session-parameter": {
+    "tag": "SessionParameter",
+    "collections": [],
+    "modules": []
+  },
+  "settings-storage": {
+    "tag": "SettingsStorage",
+    "collections": [
+      "form"
+    ],
+    "modules": [
+      "manager"
+    ]
+  },
+  "style": {
+    "tag": "Style",
+    "collections": [],
+    "modules": []
+  },
+  "style-item": {
+    "tag": "StyleItem",
+    "collections": [],
+    "modules": []
+  },
+  "subsystem": {
+    "tag": "Subsystem",
+    "collections": [
+      "subsystem"
+    ],
+    "modules": [],
+    "direct": true
+  },
+  "task": {
+    "tag": "Task",
+    "collections": [
+      "attribute",
+      "tabular-section",
+      "addressing-attribute",
+      "form",
+      "command",
+      "template"
+    ],
+    "modules": [
+      "object",
+      "manager"
+    ]
+  },
+  "web-service": {
+    "tag": "WebService",
+    "collections": [
+      "operation"
+    ],
+    "modules": [
+      "module"
+    ],
+    "direct": true
+  },
+  "ws-reference": {
+    "tag": "WSReference",
+    "collections": [],
+    "modules": []
+  },
+  "xdto-package": {
+    "tag": "XDTOPackage",
+    "collections": [],
+    "modules": []
+  },
+  "form": {
+    "tag": "Form",
+    "collections": [],
+    "modules": [
+      "module"
+    ]
+  },
+  "template": {
+    "tag": "Template",
+    "collections": [],
+    "modules": []
+  },
+  "command": {
+    "tag": "Command",
+    "collections": [],
+    "modules": [
+      "command"
+    ]
+  },
+  "addressing-attribute": {
+    "tag": "AddressingAttribute",
+    "collections": [],
+    "modules": []
+  },
+  "attribute": {
+    "tag": "Attribute",
+    "collections": [],
+    "modules": []
+  },
+  "tabular-section": {
+    "tag": "TabularSection",
+    "collections": [
+      "attribute"
+    ],
+    "modules": [],
+    "direct": true
+  },
+  "dimension": {
+    "tag": "Dimension",
+    "collections": [],
+    "modules": []
+  },
+  "resource": {
+    "tag": "Resource",
+    "collections": [],
+    "modules": []
+  },
+  "requisite": {
+    "tag": "Requisite",
+    "collections": [],
+    "modules": []
+  },
+  "enum-value": {
+    "tag": "EnumValue",
+    "collections": [],
+    "modules": []
+  },
+  "accounting-flag": {
+    "tag": "AccountingFlag",
+    "collections": [],
+    "modules": []
+  },
+  "ext-dimension-accounting-flag": {
+    "tag": "ExtDimensionAccountingFlag",
+    "collections": [],
+    "modules": []
+  },
+  "recalculation": {
+    "tag": "Recalculation",
+    "collections": [
+      "dimension"
+    ],
+    "modules": [],
+    "direct": true
+  },
+  "column": {
+    "tag": "Column",
+    "collections": [],
+    "modules": []
+  },
+  "url-template": {
+    "tag": "URLTemplate",
+    "collections": [
+      "method"
+    ],
+    "modules": [],
+    "direct": true
+  },
+  "method": {
+    "tag": "Method",
+    "collections": [],
+    "modules": []
+  },
+  "operation": {
+    "tag": "Operation",
+    "collections": [
+      "parameter"
+    ],
+    "modules": [],
+    "direct": true
+  },
+  "parameter": {
+    "tag": "Parameter",
+    "collections": [],
+    "modules": []
+  },
+  "integration-service-channel": {
+    "tag": "IntegrationServiceChannel",
+    "collections": [],
+    "modules": []
+  }
+}

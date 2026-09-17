@@ -95,6 +95,7 @@ metadata_kinds! {
     Form => ("form", ["Form"], ""),
     Template => ("template", ["Template"], ""),
     Command => ("command", ["Command"], ""),
+    AddressingAttribute => ("addressing-attribute", ["AddressingAttribute"], ""),
     Attribute => ("attribute", ["Attribute"], ""),
     TabularSection => ("tabular-section", ["TabularSection"], ""),
     Dimension => ("dimension", ["Dimension"], ""),

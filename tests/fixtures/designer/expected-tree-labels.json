@@ -1,0 +1,318 @@
+{
+  "tree-collection-configuration": {
+    "ru-RU": "Конфигурация",
+    "en-US": "Configuration"
+  },
+  "tree-collection-accounting-register": {
+    "ru-RU": "Регистры бухгалтерии",
+    "en-US": "Accounting registers"
+  },
+  "tree-collection-accumulation-register": {
+    "ru-RU": "Регистры накопления",
+    "en-US": "Accumulation registers"
+  },
+  "tree-collection-bot": {
+    "ru-RU": "Боты",
+    "en-US": "Bots"
+  },
+  "tree-collection-business-process": {
+    "ru-RU": "Бизнес-процессы",
+    "en-US": "Business processes"
+  },
+  "tree-collection-calculation-register": {
+    "ru-RU": "Регистры расчёта",
+    "en-US": "Calculation registers"
+  },
+  "tree-collection-catalog": {
+    "ru-RU": "Справочники",
+    "en-US": "Catalogs"
+  },
+  "tree-collection-chart-of-accounts": {
+    "ru-RU": "Планы счетов",
+    "en-US": "Charts of accounts"
+  },
+  "tree-collection-chart-of-calculation-types": {
+    "ru-RU": "Планы видов расчёта",
+    "en-US": "Charts of calculation types"
+  },
+  "tree-collection-chart-of-characteristic-types": {
+    "ru-RU": "Планы видов характеристик",
+    "en-US": "Charts of characteristic types"
+  },
+  "tree-collection-command-group": {
+    "ru-RU": "Группы команд",
+    "en-US": "Command groups"
+  },
+  "tree-collection-common-attribute": {
+    "ru-RU": "Общие реквизиты",
+    "en-US": "Common attributes"
+  },
+  "tree-collection-common-command": {
+    "ru-RU": "Общие команды",
+    "en-US": "Common commands"
+  },
+  "tree-collection-common-form": {
+    "ru-RU": "Общие формы",
+    "en-US": "Common forms"
+  },
+  "tree-collection-common-module": {
+    "ru-RU": "Общие модули",
+    "en-US": "Common modules"
+  },
+  "tree-collection-common-picture": {
+    "ru-RU": "Общие картинки",
+    "en-US": "Common pictures"
+  },
+  "tree-collection-common-template": {
+    "ru-RU": "Общие макеты",
+    "en-US": "Common templates"
+  },
+  "tree-collection-constant": {
+    "ru-RU": "Константы",
+    "en-US": "Constants"
+  },
+  "tree-collection-data-processor": {
+    "ru-RU": "Обработки",
+    "en-US": "Data processors"
+  },
+  "tree-collection-defined-type": {
+    "ru-RU": "Определяемые типы",
+    "en-US": "Defined types"
+  },
+  "tree-collection-document-journal": {
+    "ru-RU": "Журналы документов",
+    "en-US": "Document journals"
+  },
+  "tree-collection-document-numerator": {
+    "ru-RU": "Нумераторы",
+    "en-US": "Numerators"
+  },
+  "tree-collection-document": {
+    "ru-RU": "Документы",
+    "en-US": "Documents"
+  },
+  "tree-collection-enum": {
+    "ru-RU": "Перечисления",
+    "en-US": "Enums"
+  },
+  "tree-collection-event-subscription": {
+    "ru-RU": "Подписки на события",
+    "en-US": "Event subscriptions"
+  },
+  "tree-collection-exchange-plan": {
+    "ru-RU": "Планы обмена",
+    "en-US": "Exchange plans"
+  },
+  "tree-collection-external-data-source": {
+    "ru-RU": "Внешние источники данных",
+    "en-US": "External data sources"
+  },
+  "tree-collection-filter-criterion": {
+    "ru-RU": "Критерии отбора",
+    "en-US": "Filter criteria"
+  },
+  "tree-collection-functional-option": {
+    "ru-RU": "Функциональные опции",
+    "en-US": "Functional options"
+  },
+  "tree-collection-functional-option-parameter": {
+    "ru-RU": "Параметры функциональных опций",
+    "en-US": "Functional option parameters"
+  },
+  "tree-collection-http-service": {
+    "ru-RU": "HTTP-сервисы",
+    "en-US": "HTTP services"
+  },
+  "tree-collection-information-register": {
+    "ru-RU": "Регистры сведений",
+    "en-US": "Information registers"
+  },
+  "tree-collection-integration-service": {
+    "ru-RU": "Сервисы интеграции",
+    "en-US": "Integration services"
+  },
+  "tree-collection-language": {
+    "ru-RU": "Языки",
+    "en-US": "Languages"
+  },
+  "tree-collection-report": {
+    "ru-RU": "Отчёты",
+    "en-US": "Reports"
+  },
+  "tree-collection-role": {
+    "ru-RU": "Роли",
+    "en-US": "Roles"
+  },
+  "tree-collection-scheduled-job": {
+    "ru-RU": "Регламентные задания",
+    "en-US": "Scheduled jobs"
+  },
+  "tree-collection-sequence": {
+    "ru-RU": "Последовательности",
+    "en-US": "Sequences"
+  },
+  "tree-collection-session-parameter": {
+    "ru-RU": "Параметры сеанса",
+    "en-US": "Session parameters"
+  },
+  "tree-collection-settings-storage": {
+    "ru-RU": "Хранилища настроек",
+    "en-US": "Settings storages"
+  },
+  "tree-collection-style-item": {
+    "ru-RU": "Элементы стиля",
+    "en-US": "Style items"
+  },
+  "tree-collection-style": {
+    "ru-RU": "Стили",
+    "en-US": "Styles"
+  },
+  "tree-collection-subsystem": {
+    "ru-RU": "Подсистемы",
+    "en-US": "Subsystems"
+  },
+  "tree-collection-task": {
+    "ru-RU": "Задачи",
+    "en-US": "Tasks"
+  },
+  "tree-collection-web-service": {
+    "ru-RU": "Web-сервисы",
+    "en-US": "Web services"
+  },
+  "tree-collection-ws-reference": {
+    "ru-RU": "WS-ссылки",
+    "en-US": "WS references"
+  },
+  "tree-collection-xdto-package": {
+    "ru-RU": "Пакеты XDTO",
+    "en-US": "XDTO packages"
+  },
+  "tree-collection-form": {
+    "ru-RU": "Формы",
+    "en-US": "Forms"
+  },
+  "tree-collection-template": {
+    "ru-RU": "Макеты",
+    "en-US": "Templates"
+  },
+  "tree-collection-command": {
+    "ru-RU": "Команды",
+    "en-US": "Commands"
+  },
+  "tree-collection-attribute": {
+    "ru-RU": "Реквизиты",
+    "en-US": "Attributes"
+  },
+  "tree-collection-tabular-section": {
+    "ru-RU": "Табличные части",
+    "en-US": "Tabular sections"
+  },
+  "tree-collection-dimension": {
+    "ru-RU": "Измерения",
+    "en-US": "Dimensions"
+  },
+  "tree-collection-resource": {
+    "ru-RU": "Ресурсы",
+    "en-US": "Resources"
+  },
+  "tree-collection-requisite": {
+    "ru-RU": "Реквизиты",
+    "en-US": "Attributes"
+  },
+  "tree-collection-enum-value": {
+    "ru-RU": "Значения",
+    "en-US": "Values"
+  },
+  "tree-collection-accounting-flag": {
+    "ru-RU": "Признаки учёта",
+    "en-US": "Accounting flags"
+  },
+  "tree-collection-ext-dimension-accounting-flag": {
+    "ru-RU": "Признаки учёта субконто",
+    "en-US": "Extra dimension accounting flags"
+  },
+  "tree-collection-recalculation": {
+    "ru-RU": "Перерасчёты",
+    "en-US": "Recalculations"
+  },
+  "tree-collection-url-template": {
+    "ru-RU": "Шаблоны URL",
+    "en-US": "URL templates"
+  },
+  "tree-collection-method": {
+    "ru-RU": "Методы",
+    "en-US": "Methods"
+  },
+  "tree-collection-operation": {
+    "ru-RU": "Операции",
+    "en-US": "Operations"
+  },
+  "tree-collection-parameter": {
+    "ru-RU": "Параметры",
+    "en-US": "Parameters"
+  },
+  "tree-collection-integration-service-channel": {
+    "ru-RU": "Каналы",
+    "en-US": "Channels"
+  },
+  "tree-collection-column": {
+    "ru-RU": "Графы",
+    "en-US": "Columns"
+  },
+  "tree-collection-addressing-attribute": {
+    "ru-RU": "Реквизиты адресации",
+    "en-US": "Addressing attributes"
+  },
+  "tree-collection-common": {
+    "ru-RU": "Общие",
+    "en-US": "Common"
+  },
+  "tree-collection-modules": {
+    "ru-RU": "Модули",
+    "en-US": "Modules"
+  },
+  "tree-collection-unsupported": {
+    "ru-RU": "Неподдержанные элементы",
+    "en-US": "Unsupported elements"
+  },
+  "tree-module-module": {
+    "ru-RU": "Модуль",
+    "en-US": "Module"
+  },
+  "tree-module-object": {
+    "ru-RU": "Модуль объекта",
+    "en-US": "Object module"
+  },
+  "tree-module-manager": {
+    "ru-RU": "Модуль менеджера",
+    "en-US": "Manager module"
+  },
+  "tree-module-record-set": {
+    "ru-RU": "Модуль набора записей",
+    "en-US": "Record set module"
+  },
+  "tree-module-value-manager": {
+    "ru-RU": "Модуль менеджера значения",
+    "en-US": "Value manager module"
+  },
+  "tree-module-managed-application": {
+    "ru-RU": "Модуль управляемого приложения",
+    "en-US": "Managed application module"
+  },
+  "tree-module-ordinary-application": {
+    "ru-RU": "Модуль обычного приложения",
+    "en-US": "Ordinary application module"
+  },
+  "tree-module-session": {
+    "ru-RU": "Модуль сеанса",
+    "en-US": "Session module"
+  },
+  "tree-module-external-connection": {
+    "ru-RU": "Модуль внешнего соединения",
+    "en-US": "External connection module"
+  },
+  "tree-module-command": {
+    "ru-RU": "Модуль команды",
+    "en-US": "Command module"
+  }
+}

@@ -1,9 +1,13 @@
 # Покрытие типов небольшими fixtures
 
-Проверено 2026-09-17. Сверка с текущим справочником: 65 типов.
-T64 проверяет общую identity-оболочку parser для всех 65 типов. Это не проверка
-специальных свойств и коллекций каждого типа. «T65» ниже означает отсутствие
-отдельного XML-примера и необходимость дополнить покрытие схем.
+Проверено 2026-09-17. Сверка с текущим справочником: 66 типов.
+T64 проверял общую identity-оболочку 65 видов. T65 добавил реквизит адресации
+задачи и [матрицу схем](schema-cases.json) с синтетическим XML для всех классов;
+корень покрыт четырьмя наборами. Это не загрузка каждого типа в платформу.
+Внешние источники данных сохраняют явный fallback для нераспознанных потомков.
+«Матрица T65» означает общий синтетический descriptor и проверку групп/модулей,
+а не отдельный реальный экспорт. Порядок прямых и сгруппированных потомков
+проверяется независимо от порядка XML.
 
 | Тип | XML-пример и ожидаемый ID |
 |---|---|
@@ -12,61 +16,62 @@ T64 проверяет общую identity-оболочку parser для все
 | `report` | есть |
 | `accounting-register` | есть |
 | `accumulation-register` | есть |
-| `bot` | T65 |
-| `business-process` | T65 |
+| `bot` | Матрица T65 |
+| `business-process` | Матрица T65 |
 | `calculation-register` | есть |
 | `catalog` | есть |
-| `chart-of-accounts` | T65 |
-| `chart-of-calculation-types` | T65 |
-| `chart-of-characteristic-types` | T65 |
-| `command-group` | T65 |
-| `common-attribute` | T65 |
-| `common-command` | T65 |
-| `common-form` | T65 |
+| `chart-of-accounts` | Матрица T65 |
+| `chart-of-calculation-types` | Матрица T65 |
+| `chart-of-characteristic-types` | Матрица T65 |
+| `command-group` | Матрица T65 |
+| `common-attribute` | Матрица T65 |
+| `common-command` | Матрица T65 |
+| `common-form` | Матрица T65 |
 | `common-module` | есть |
-| `common-picture` | T65 |
-| `common-template` | T65 |
-| `constant` | T65 |
-| `defined-type` | T65 |
+| `common-picture` | Матрица T65 |
+| `common-template` | Матрица T65 |
+| `constant` | Матрица T65 |
+| `defined-type` | Матрица T65 |
 | `document` | есть |
-| `document-journal` | T65 |
-| `document-numerator` | T65 |
+| `document-journal` | Матрица T65 |
+| `document-numerator` | Матрица T65 |
 | `enum` | есть |
-| `event-subscription` | T65 |
-| `exchange-plan` | T65 |
-| `external-data-source` | T65 |
-| `filter-criterion` | T65 |
-| `functional-option` | T65 |
-| `functional-option-parameter` | T65 |
+| `event-subscription` | Матрица T65 |
+| `exchange-plan` | Матрица T65 |
+| `external-data-source` | Матрица T65 |
+| `filter-criterion` | Матрица T65 |
+| `functional-option` | Матрица T65 |
+| `functional-option-parameter` | Матрица T65 |
 | `http-service` | есть |
 | `information-register` | есть |
 | `integration-service` | есть |
-| `language` | T65 |
-| `role` | T65 |
-| `scheduled-job` | T65 |
-| `sequence` | T65 |
-| `session-parameter` | T65 |
-| `settings-storage` | T65 |
-| `style` | T65 |
-| `style-item` | T65 |
+| `language` | Матрица T65 |
+| `role` | Матрица T65 |
+| `scheduled-job` | Матрица T65 |
+| `sequence` | Матрица T65 |
+| `session-parameter` | Матрица T65 |
+| `settings-storage` | Матрица T65 |
+| `style` | Матрица T65 |
+| `style-item` | Матрица T65 |
 | `subsystem` | есть |
-| `task` | T65 |
+| `task` | Матрица T65 |
 | `web-service` | есть |
-| `ws-reference` | T65 |
-| `xdto-package` | T65 |
+| `ws-reference` | Матрица T65 |
+| `xdto-package` | Матрица T65 |
 | `form` | есть |
 | `template` | есть |
 | `command` | есть |
 | `attribute` | есть |
+| `addressing-attribute` | Матрица T65; форма тега сверена с задачей большого стенда |
 | `tabular-section` | есть |
 | `dimension` | есть |
 | `resource` | есть |
-| `requisite` | T65 |
+| `requisite` | Матрица T65 |
 | `enum-value` | есть |
-| `accounting-flag` | T65 |
-| `ext-dimension-accounting-flag` | T65 |
+| `accounting-flag` | Матрица T65 |
+| `ext-dimension-accounting-flag` | Матрица T65 |
 | `recalculation` | есть |
-| `column` | T65 |
+| `column` | Матрица T65 |
 | `url-template` | есть |
 | `method` | есть |
 | `operation` | есть |

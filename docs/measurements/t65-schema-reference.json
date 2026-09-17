@@ -1,0 +1,308 @@
+{
+  "reference": "bsl-analyzer-reference platform metadata collections; alphabetic property listing, not UI order",
+  "target_configurator": "8.3.27.2325 (user supplied)",
+  "date": "2026-09-17",
+  "collections": [
+    {
+      "kind": "Catalog",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Forms",
+        "TabularSections",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "Document",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Forms",
+        "TabularSections",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "DataProcessor",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Forms",
+        "TabularSections",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "Report",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Forms",
+        "TabularSections",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "ExternalDataProcessor",
+      "status": "not_found",
+      "truncated": false
+    },
+    {
+      "kind": "ExternalReport",
+      "status": "not_found",
+      "truncated": false
+    },
+    {
+      "kind": "ExchangePlan",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Forms",
+        "TabularSections",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "ChartOfCharacteristicTypes",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Forms",
+        "TabularSections",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "ChartOfAccounts",
+      "status": "type",
+      "collections": [
+        "AccountingFlags",
+        "Attributes",
+        "Commands",
+        "ExtDimensionAccountingFlags",
+        "Forms",
+        "TabularSections",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "ChartOfCalculationTypes",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Forms",
+        "TabularSections",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "BusinessProcess",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Forms",
+        "TabularSections",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "Task",
+      "status": "type",
+      "collections": [
+        "AddressingAttributes",
+        "Attributes",
+        "Commands",
+        "Forms",
+        "TabularSections",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "InformationRegister",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Dimensions",
+        "Forms",
+        "Resources",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "AccumulationRegister",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Dimensions",
+        "Forms",
+        "Resources",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "AccountingRegister",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Dimensions",
+        "Forms",
+        "Resources",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "CalculationRegister",
+      "status": "type",
+      "collections": [
+        "Attributes",
+        "Commands",
+        "Dimensions",
+        "Forms",
+        "Recalculations",
+        "Resources",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "Constant",
+      "status": "type",
+      "collections": [],
+      "truncated": false
+    },
+    {
+      "kind": "Enum",
+      "status": "type",
+      "collections": [
+        "Commands",
+        "EnumValues",
+        "Forms",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "DocumentJournal",
+      "status": "type",
+      "collections": [
+        "Columns",
+        "Commands",
+        "Forms",
+        "Templates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "Sequence",
+      "status": "type",
+      "collections": [
+        "Dimensions"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "FilterCriterion",
+      "status": "type",
+      "collections": [
+        "Commands",
+        "Forms"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "SettingsStorage",
+      "status": "type",
+      "collections": [],
+      "truncated": false
+    },
+    {
+      "kind": "Subsystem",
+      "status": "type",
+      "collections": [
+        "Subsystems"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "HTTPService",
+      "status": "type",
+      "collections": [
+        "URLTemplates"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "WebService",
+      "status": "type",
+      "collections": [
+        "Operations"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "IntegrationService",
+      "status": "type",
+      "collections": [
+        "Channels"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "ExternalDataSource",
+      "status": "type",
+      "collections": [
+        "Cubes",
+        "Functions",
+        "Tables"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "Recalculation",
+      "status": "type",
+      "collections": [
+        "Dimensions"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "TabularSection",
+      "status": "type",
+      "collections": [
+        "Attributes"
+      ],
+      "truncated": false
+    },
+    {
+      "kind": "Bot",
+      "status": "type",
+      "collections": [],
+      "truncated": false
+    }
+  ]
+}

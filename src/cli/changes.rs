@@ -9,57 +9,6 @@ use crate::{
 };
 use gix::bstr::{BStr, ByteSlice};
 
-/// Stable Configurator tree order for supported top-level metadata kinds.
-const CONFIGURATOR_METADATA_ORDER: &[&str] = &[
-    "configuration",
-    "subsystem",
-    "common-module",
-    "session-parameter",
-    "role",
-    "common-attribute",
-    "exchange-plan",
-    "filter-criterion",
-    "event-subscription",
-    "scheduled-job",
-    "functional-option",
-    "functional-option-parameter",
-    "defined-type",
-    "settings-storage",
-    "common-form",
-    "common-command",
-    "command-group",
-    "common-template",
-    "common-picture",
-    "style",
-    "style-item",
-    "language",
-    "xdto-package",
-    "web-service",
-    "http-service",
-    "ws-reference",
-    "integration-service",
-    "bot",
-    "constant",
-    "catalog",
-    "document",
-    "document-numerator",
-    "sequence",
-    "document-journal",
-    "enum",
-    "report",
-    "data-processor",
-    "chart-of-characteristic-types",
-    "chart-of-accounts",
-    "chart-of-calculation-types",
-    "information-register",
-    "accumulation-register",
-    "accounting-register",
-    "calculation-register",
-    "business-process",
-    "task",
-    "external-data-source",
-];
-
 /// Render a logical metadata identity in Configurator notation.
 pub(super) fn render_metadata_path(path: &MetadataPath, localizer: &Localizer) -> String {
     path.parts
@@ -86,10 +35,7 @@ pub(super) fn semantic_object_group(id: &str) -> &str {
 
 /// Return the Configurator position, leaving unknown future kinds after known sections.
 pub(super) fn metadata_group_rank(kind: &str) -> usize {
-    CONFIGURATOR_METADATA_ORDER
-        .iter()
-        .position(|candidate| *candidate == kind)
-        .unwrap_or(usize::MAX)
+    crate::project::configurator::metadata_group_rank(kind)
 }
 
 /// Render every hierarchical `ObjectId` segment in localized Configurator notation.
