@@ -884,3 +884,6 @@ tree-module-session = Модуль сеанса
 tree-module-external-connection = Модуль внешнего соединения
 tree-module-command = Модуль команды
 diff-metadata-addressing-attribute = РеквизитАдресации
+
+tree-collection-web-socket-client = WebSocket-клиенты
+diff-metadata-web-socket-client = WebSocket-клиент

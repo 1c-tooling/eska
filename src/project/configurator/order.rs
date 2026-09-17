@@ -1,7 +1,7 @@
 //! One explicit order shared with semantic diff; no CLI dependency.
 use crate::project::metadata_model::MetadataKind;
 
-/// Flattened Configurator class order, retaining the existing T59 ranking contract.
+/// Flattened Configurator class order, verified against Configurator 8.3.27.2325 screenshots.
 pub const METADATA_ORDER: &[MetadataKind] = &[
     MetadataKind::Configuration,
     MetadataKind::Subsystem,
@@ -13,24 +13,25 @@ pub const METADATA_ORDER: &[MetadataKind] = &[
     MetadataKind::FilterCriterion,
     MetadataKind::EventSubscription,
     MetadataKind::ScheduledJob,
+    MetadataKind::Bot,
     MetadataKind::FunctionalOption,
     MetadataKind::FunctionalOptionsParameter,
     MetadataKind::DefinedType,
     MetadataKind::SettingsStorage,
-    MetadataKind::CommonForm,
     MetadataKind::CommonCommand,
     MetadataKind::CommandGroup,
+    MetadataKind::CommonForm,
     MetadataKind::CommonTemplate,
     MetadataKind::CommonPicture,
-    MetadataKind::Style,
-    MetadataKind::StyleItem,
-    MetadataKind::Language,
     MetadataKind::XDTOPackage,
     MetadataKind::WebService,
     MetadataKind::HTTPService,
     MetadataKind::WSReference,
+    MetadataKind::WebSocketClient,
     MetadataKind::IntegrationService,
-    MetadataKind::Bot,
+    MetadataKind::StyleItem,
+    MetadataKind::Style,
+    MetadataKind::Language,
     MetadataKind::Constant,
     MetadataKind::Catalog,
     MetadataKind::Document,

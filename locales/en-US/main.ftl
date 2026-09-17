@@ -884,3 +884,6 @@ tree-module-session = Session module
 tree-module-external-connection = External connection module
 tree-module-command = Command module
 diff-metadata-addressing-attribute = AddressingAttribute
+
+tree-collection-web-socket-client = WebSocket clients
+diff-metadata-web-socket-client = WebSocket client

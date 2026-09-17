@@ -131,7 +131,7 @@ fn build_owner(
             }
         }
     } else {
-        for &kind in ConfiguratorSchema::collections(object.metadata.kind()) {
+        for &kind in schema.owner_collections(owner, object.metadata.kind()) {
             let destination = if ConfiguratorSchema::has_direct_children(object.metadata.kind()) {
                 parent.clone()
             } else {

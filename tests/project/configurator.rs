@@ -509,3 +509,83 @@ fn manual_large_configurator_tree() {
         sampled.len()
     );
 }
+
+/// External processing collections differ from the same kind inside a configuration.
+#[test]
+fn configurator_processing_schema_is_scoped_to_the_manifest_root() {
+    for case in ["processing", "configuration"] {
+        let (_directory, source) = project(case);
+        let schema = ConfiguratorSchema::for_source(&source);
+        let owner = if case == "processing" {
+            source.root().id().clone()
+        } else {
+            MetadataObject::new(
+                MetadataKind::DataProcessor,
+                "Обработка".into(),
+                "id".into(),
+                None,
+            )
+            .unwrap()
+            .id()
+            .clone()
+        };
+        let actual = schema.owner_collections(&owner, MetadataKind::DataProcessor);
+        let expected = if case == "processing" {
+            vec![
+                MetadataKind::Attribute,
+                MetadataKind::TabularSection,
+                MetadataKind::Form,
+                MetadataKind::Template,
+            ]
+        } else {
+            vec![
+                MetadataKind::Attribute,
+                MetadataKind::TabularSection,
+                MetadataKind::Form,
+                MetadataKind::Command,
+                MetadataKind::Template,
+            ]
+        };
+        assert_eq!(actual, expected);
+    }
+}
+
+/// Exercise the standard Designer layout for the newly registered WebSocket client kind.
+#[test]
+fn configurator_websocket_client_resolves_descriptor_and_existing_module() {
+    let (directory, source) = project("configuration");
+    let base = directory.0.join("src/WebSocketClients");
+    fs::create_dir_all(base.join("Соединение/Ext")).unwrap();
+    fs::write(base.join("Соединение.xml"),
+        "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><WebSocketClient uuid='id'><Properties><Name>Соединение</Name></Properties></WebSocketClient></MetaDataObject>").unwrap();
+    fs::write(base.join("Соединение/Ext/Module.bsl"), "// Test module.\n").unwrap();
+    let owner = MetadataObject::new(
+        MetadataKind::WebSocketClient,
+        "Соединение".into(),
+        "id".into(),
+        None,
+    )
+    .unwrap();
+    let projection = tree(&source, owner.id());
+    let group = projection
+        .children(projection.root(), TreeOptions::default())
+        .unwrap();
+    assert_eq!(group.len(), 1);
+    assert!(group[0].expanded_by_default);
+    assert_eq!(
+        group[0].children,
+        vec![NodeId::Module {
+            owner: owner.id().clone(),
+            role: ModuleRole::Module
+        }]
+    );
+    fs::remove_file(base.join("Соединение/Ext/Module.bsl")).unwrap();
+    fs::write(base.join("Соединение/Ext/Module.bin"), [0]).unwrap();
+    let projection = tree(&source, owner.id());
+    assert!(
+        projection
+            .children(projection.root(), TreeOptions::default())
+            .unwrap()
+            .is_empty()
+    );
+}

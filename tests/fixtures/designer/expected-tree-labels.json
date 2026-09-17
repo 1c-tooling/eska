@@ -314,5 +314,9 @@
   "tree-module-command": {
     "ru-RU": "Модуль команды",
     "en-US": "Command module"
+  },
+  "tree-collection-web-socket-client": {
+    "ru-RU": "WebSocket-клиенты",
+    "en-US": "WebSocket clients"
   }
 }

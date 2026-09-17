@@ -112,9 +112,9 @@
     "tag": "ChartOfAccounts",
     "collections": [
       "attribute",
-      "tabular-section",
       "accounting-flag",
       "ext-dimension-accounting-flag",
+      "tabular-section",
       "form",
       "command",
       "template"
@@ -389,9 +389,9 @@
   "task": {
     "tag": "Task",
     "collections": [
+      "addressing-attribute",
       "attribute",
       "tabular-section",
-      "addressing-attribute",
       "form",
       "command",
       "template"
@@ -531,5 +531,12 @@
     "tag": "IntegrationServiceChannel",
     "collections": [],
     "modules": []
+  },
+  "web-socket-client": {
+    "tag": "WebSocketClient",
+    "collections": [],
+    "modules": [
+      "module"
+    ]
   }
 }

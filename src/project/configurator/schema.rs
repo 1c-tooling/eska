@@ -80,6 +80,24 @@ impl ConfiguratorSchema {
             })
     }
 
+    /// Apply manifest-specific differences only to the actual project root.
+    #[must_use]
+    pub fn owner_collections(
+        &self,
+        owner: &ObjectId,
+        kind: MetadataKind,
+    ) -> &'static [MetadataKind] {
+        if &self.root == owner && self.project_type == ProjectType::Processing {
+            return &[
+                MetadataKind::Attribute,
+                MetadataKind::TabularSection,
+                MetadataKind::Form,
+                MetadataKind::Template,
+            ];
+        }
+        Self::collections(kind)
+    }
+
     /// Ordered collections of each supported class; leaf cases are deliberately exhaustive.
     #[must_use]
     pub const fn collections(kind: MetadataKind) -> &'static [MetadataKind] {
@@ -99,17 +117,17 @@ impl ConfiguratorSchema {
             }
             MetadataKind::ChartOfAccounts => &[
                 Attribute,
-                TabularSection,
                 MetadataKind::AccountingFlag,
                 MetadataKind::ExtDimensionAccountingFlag,
+                TabularSection,
                 Form,
                 Command,
                 Template,
             ],
             MetadataKind::Task => &[
+                MetadataKind::AddressingAttribute,
                 Attribute,
                 TabularSection,
-                MetadataKind::AddressingAttribute,
                 Form,
                 Command,
                 Template,
@@ -164,6 +182,7 @@ impl ConfiguratorSchema {
             | MetadataKind::SessionParameter
             | MetadataKind::Style
             | MetadataKind::StyleItem
+            | MetadataKind::WebSocketClient
             | MetadataKind::WSReference
             | MetadataKind::XDTOPackage
             | MetadataKind::Form
@@ -229,7 +248,8 @@ impl ConfiguratorSchema {
             | MetadataKind::WebService
             | MetadataKind::HTTPService
             | MetadataKind::IntegrationService
-            | MetadataKind::Bot => &[Module],
+            | MetadataKind::Bot
+            | MetadataKind::WebSocketClient => &[Module],
             MetadataKind::CommonCommand | MetadataKind::Command => &[ModuleRole::Command],
             _ => &[],
         }

@@ -90,6 +90,7 @@ metadata_kinds! {
     Subsystem => ("subsystem", ["Subsystem"], "Subsystems"),
     Task => ("task", ["Task"], "Tasks"),
     WebService => ("web-service", ["WebService"], "WebServices"),
+    WebSocketClient => ("web-socket-client", ["WebSocketClient"], "WebSocketClients"),
     WSReference => ("ws-reference", ["WSReference"], "WSReferences"),
     XDTOPackage => ("xdto-package", ["XDTOPackage"], "XDTOPackages"),
     Form => ("form", ["Form"], ""),
