@@ -16,6 +16,7 @@ pub enum Operation {
     Switch,
     Stage,
     Commit,
+    Shelf,
 }
 
 pub enum Error {
@@ -140,7 +141,48 @@ impl<'a> Executor<'a> {
     /// # Errors
     /// Returns a structured process error when the existing branch cannot be checked out.
     pub fn switch_existing_branch(&self, branch: &str) -> Result<(), Error> {
-        self.success(Operation::Switch, ["switch", "--no-guess", branch])
+        self.success(
+            Operation::Switch,
+            ["switch", "--no-guess", "--no-overwrite-ignore", branch],
+        )
+    }
+
+    /// Materialize the index tree so a private reference can protect staged blobs from GC.
+    ///
+    /// # Errors
+    /// Returns a structured error if Git cannot serialize the current index.
+    pub(crate) fn shelf_index_tree(&self) -> Result<BString, Error> {
+        let output = self.output(Operation::Shelf, ["write-tree"])?;
+        if !output.status.success() {
+            return Err(Error::Failed {
+                operation: Operation::Shelf,
+                status: output.status,
+                stderr: output.stderr.into(),
+            });
+        }
+        Ok(output.stdout.trim_ascii().into())
+    }
+
+    /// Clean only captured tracked paths using a NUL-delimited literal pathspec file.
+    ///
+    /// # Errors
+    /// Returns a process error; the caller retains its durable shelf before invoking this.
+    pub(crate) fn clean_shelved_paths(&self, base: &str, paths: &Path) -> Result<(), Error> {
+        self.success(
+            Operation::Shelf,
+            [
+                OsStr::new("--literal-pathspecs"),
+                OsStr::new("restore"),
+                OsStr::new("--source"),
+                OsStr::new(base),
+                OsStr::new("--staged"),
+                OsStr::new("--worktree"),
+                OsStr::new("--no-recurse-submodules"),
+                OsStr::new("--pathspec-file-nul"),
+                OsStr::new("--pathspec-from-file"),
+                paths.as_os_str(),
+            ],
+        )
     }
 
     /// Stage all tracked and untracked changes below the executor directory.

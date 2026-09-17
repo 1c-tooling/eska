@@ -291,8 +291,47 @@ eska switch FI-1234
 
 `switch` активирует только существующие ветки. `--base` позволяет временно
 вернуться на `main`, сохранив задачу. Новую ветку создаёт `start`.
-Для `start`, `switch` и `finish` весь Git worktree должен быть чистым,
-включая файлы вне вложенного проекта; автоматического shelve нет.
+`switch` автоматически сохраняет незакоммиченные изменения текущей ветки в
+полку и восстанавливает полку целевой ветки. Сохраняются staged и unstaged
+изменения, удаления, переименования, права файлов и неигнорируемые новые файлы
+во всём репозитории, включая соседние workspace members и файлы вне проекта.
+Ignored-файлы остаются на диске; коллизия останавливает операцию.
+`start` и `finish` по-прежнему требуют чистого worktree.
+
+Полкой можно управлять явно:
+
+```bash
+eska shelve --dry-run
+eska shelve
+eska shelves
+eska unshelve --dry-run
+eska unshelve
+eska switch FI-1234 --dry-run --format json
+```
+
+На одну ветку допускается одна полка. `unshelve [id]` восстанавливает её только
+на исходной ветке и исходном commit; после проверки полного восстановления
+полка удаляется. `shelves` показывает ID, ветку, время и число изменённых путей.
+Все четыре команды поддерживают `--format human|json`; `--dry-run` у `shelve`,
+`unshelve` и `switch` показывает пути и состояния index/worktree без записи.
+
+Если целевая ветка сдвинулась или восстановлению мешают новые файлы, полка
+остаётся доступна через `eska shelves`. После устранения коллизии повторите
+`eska unshelve`. Ошибка восстановления может оставить целевую ветку активной;
+проверьте `eska status`. При ошибке самого переключения команда пытается вернуть
+состояние исходной ветки. Незавершённые merge/rebase, detached/unborn HEAD,
+конфликты, sparse/split index, submodules, intent-to-add, skip-worktree и
+assume-unchanged отклоняются. Существующую ветку в другой рабочей копии
+активировать нельзя.
+
+Полки локальны: исходный index и снимки изменённых файлов хранятся в
+`eska-shelves/` общего Git-каталога, staged-объекты защищены внутренней ref.
+Байты файлов, включая BOM/CRLF, восстанавливаются без повторной нормализации.
+Формат хранения внутренний. Параллельные операции полок сериализуются; внешние
+Git-команды и редакторы не должны менять эти файлы во время операции. После
+прерывания очистки данные сохраняются, но может потребоваться ручное
+восстановление из полки; после частичного восстановления доступен повторный
+`unshelve`, если пути всё ещё совпадают с журналом операции.
 
 ### 5. Передать изменения и завершить задачу
 
@@ -650,7 +689,7 @@ eska init
 артефактов задаются в корне. `build`, `version`, `status`, `diff` и `save`
 поддерживают current/named/all selection через `-p` и `--workspace` в пределах
 семантики каждой команды. Repository-wide команды `start`, `switch`, `finish` и
-`history` не делятся по members.
+`history`, а также `shelve`, `unshelve`, `shelves` не делятся по members.
 Полный контракт: [project workspaces](docs/roadmap/11-workspaces.md).
 
 ### Правила работы с Git
@@ -796,7 +835,8 @@ eska doctor --workspace
 | `save [--dry-run] [-m <message>]` | Просмотреть или сохранить изменения в commit |
 | `history [--limit <n>]` | Посмотреть локальную историю |
 | `doctor` | Проверить готовность окружения для текущих команд |
-| `switch <task>` / `switch --base` | Перейти к задаче или базовой ветке |
+| `switch <task>` / `switch --base` | Перейти к задаче или базовой ветке с сохранением незавершённых изменений |
+| `shelve` / `unshelve [id]` / `shelves` | Сохранить, восстановить или посмотреть полки веток |
 | `finish` | Проверить условия завершения и закрыть локальную задачу |
 | `build [--dry-run|--manifest]` | Просмотреть план или собрать полный нативный файл с необязательным паспортом |
 | `patch` | Собрать ограниченный patch-extension из Git delta |
@@ -805,7 +845,7 @@ eska doctor --workspace
 | `config init` / `config edit` | Настроить локальное окружение |
 
 Все флаги конкретной команды: `eska <command> --help`.
-Публикация, синхронизация, shelve, блокировки объектов, `check`, `fmt`, `apply`
+Публикация, синхронизация, блокировки объектов, `check`, `fmt`, `apply`
 и `run` пока не представлены отдельными работающими командами.
 
 ### Язык и вывод для скриптов
@@ -853,3 +893,28 @@ JSON-документа.
 аргументов. Наличие изменений в `diff` само по себе не является ошибкой.
 При перенаправлении вывод остаётся без терминального оформления;
 непустой `NO_COLOR` отключает цвет.
+
+### JSON полок и переключения
+
+Успешный `shelve`/`unshelve` возвращает `schema_version: 1`, `operation`,
+`dry_run` и `shelf`. `shelves` возвращает `schema_version: 1` и массив `shelves`.
+У `switch` поля `operation: "switch"`, `dry_run`, `task` (либо `null` для базы),
+`branch`, `saved` и `restored`; отсутствующая полка представлена `null`.
+
+Документ полки содержит `id`, полную `branch` ref, `branch_encoding`, исходный
+commit `base`, `created_at` (Unix seconds) и `files`. У preview новой полки
+`id` и `created_at` равны `null`. Каждый путь содержит `path`, `path_encoding`,
+`index` и `worktree`; состояния независимы, отсутствие изменения — `null`.
+Переименования представлены удалением и добавлением. Для UTF-8 используется
+encoding `utf-8`, для произвольных байтов Git — `percent`.
+
+Ошибка после разбора аргументов возвращает в stdout
+`{"schema_version":1,"status":"error","error":{"code":"…"}}`,
+локализованную причину в stderr и exit code 1. Коды полок: `repository`,
+`command`, `io`, `invalid-shelf`, `locked`, `detached`, `unborn`, `in-progress`,
+`unsupported-index`, `empty`, `shelf-exists`, `shelf-missing`, `wrong-branch`,
+`moved-branch`, `dirty`, `collision`, `incomplete`. Discovery возвращает
+`project-discovery`; `switch` дополнительно использует `workflow-missing`,
+`policy`, `project-outside-repository`, `task-branch-missing`,
+`base-branch-missing`, `target-checked-out`. Machine-facing значения не зависят
+от языка; ошибки CLI parsing сохраняют exit code 2 без JSON.

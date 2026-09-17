@@ -31,7 +31,7 @@ artifact и версия crate не изменяются. `auto` выделен 
 
 ## T56 — Автоматическая подготовка версии релиза 1С
 
-**Статус:** `PLANNED`
+**Статус:** `NEXT`
 **Зависит от:** T18, T22, T25, T54
 
 Добавить `eska version bump auto` для Release PR/MR по модели release-plz.

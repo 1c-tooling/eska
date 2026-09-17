@@ -475,7 +475,7 @@ impl Repository {
     }
 
     /// Check the main and all linked worktrees for a branch reference.
-    fn reference_is_checked_out(&self, name: &str) -> Result<bool, Error> {
+    pub(crate) fn reference_is_checked_out(&self, name: &str) -> Result<bool, Error> {
         let points_to_name = |repository: &gix::Repository| {
             repository
                 .head()
