@@ -3,6 +3,7 @@
 pub mod build;
 pub mod clone;
 pub mod create;
+pub mod designer_source;
 mod designer_xml;
 pub mod diff;
 pub mod discovery;

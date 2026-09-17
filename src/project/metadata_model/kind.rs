@@ -2,7 +2,7 @@
 
 /// Define the supported vocabulary once, including external descriptor aliases.
 macro_rules! metadata_kinds {
-    ($( $variant:ident => ($key:literal, [$($tag:literal),+]) ),+ $(,)?) => {
+    ($( $variant:ident => ($key:literal, [$($tag:literal),+], $folder:literal) ),+ $(,)?) => {
         /// A supported logical metadata kind; independent of source paths and locale.
         #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
         pub enum MetadataKind { $( $variant, )+ }
@@ -15,6 +15,19 @@ macro_rules! metadata_kinds {
             #[must_use]
             pub const fn as_str(self) -> &'static str {
                 match self { $(Self::$variant => $key),+ }
+            }
+
+            /// Return the top-level Designer collection, if this kind has one.
+            #[must_use]
+            pub fn collection_folder(self) -> Option<&'static str> {
+                let folder = match self { $(Self::$variant => $folder),+ };
+                (!folder.is_empty()).then_some(folder)
+            }
+
+            /// Resolve a top-level Designer directory using the same type registry.
+            #[must_use]
+            pub fn from_collection_folder(folder: &str) -> Option<Self> {
+                Self::ALL.iter().copied().find(|kind| kind.collection_folder() == Some(folder))
             }
 
             /// Resolve a Designer tag, reporting an unsupported kind explicitly.
@@ -32,71 +45,71 @@ macro_rules! metadata_kinds {
 }
 
 metadata_kinds! {
-    Configuration => ("configuration", ["Configuration"]),
-    DataProcessor => ("data-processor", ["ExternalDataProcessor", "DataProcessor"]),
-    Report => ("report", ["ExternalReport", "Report"]),
-    AccountingRegister => ("accounting-register", ["AccountingRegister"]),
-    AccumulationRegister => ("accumulation-register", ["AccumulationRegister"]),
-    Bot => ("bot", ["Bot"]),
-    BusinessProcess => ("business-process", ["BusinessProcess"]),
-    CalculationRegister => ("calculation-register", ["CalculationRegister"]),
-    Catalog => ("catalog", ["Catalog"]),
-    ChartOfAccounts => ("chart-of-accounts", ["ChartOfAccounts"]),
-    ChartOfCalculationTypes => ("chart-of-calculation-types", ["ChartOfCalculationTypes"]),
-    ChartOfCharacteristicTypes => ("chart-of-characteristic-types", ["ChartOfCharacteristicTypes"]),
-    CommandGroup => ("command-group", ["CommandGroup"]),
-    CommonAttribute => ("common-attribute", ["CommonAttribute"]),
-    CommonCommand => ("common-command", ["CommonCommand"]),
-    CommonForm => ("common-form", ["CommonForm"]),
-    CommonModule => ("common-module", ["CommonModule"]),
-    CommonPicture => ("common-picture", ["CommonPicture"]),
-    CommonTemplate => ("common-template", ["CommonTemplate"]),
-    Constant => ("constant", ["Constant"]),
-    DefinedType => ("defined-type", ["DefinedType"]),
-    Document => ("document", ["Document"]),
-    DocumentJournal => ("document-journal", ["DocumentJournal"]),
-    DocumentNumerator => ("document-numerator", ["DocumentNumerator"]),
-    Enum => ("enum", ["Enum"]),
-    EventSubscription => ("event-subscription", ["EventSubscription"]),
-    ExchangePlan => ("exchange-plan", ["ExchangePlan"]),
-    ExternalDataSource => ("external-data-source", ["ExternalDataSource"]),
-    FilterCriterion => ("filter-criterion", ["FilterCriterion"]),
-    FunctionalOption => ("functional-option", ["FunctionalOption"]),
-    FunctionalOptionsParameter => ("functional-option-parameter", ["FunctionalOptionsParameter"]),
-    HTTPService => ("http-service", ["HTTPService"]),
-    InformationRegister => ("information-register", ["InformationRegister"]),
-    IntegrationService => ("integration-service", ["IntegrationService"]),
-    Language => ("language", ["Language"]),
-    Role => ("role", ["Role"]),
-    ScheduledJob => ("scheduled-job", ["ScheduledJob"]),
-    Sequence => ("sequence", ["Sequence"]),
-    SessionParameter => ("session-parameter", ["SessionParameter"]),
-    SettingsStorage => ("settings-storage", ["SettingsStorage"]),
-    Style => ("style", ["Style"]),
-    StyleItem => ("style-item", ["StyleItem"]),
-    Subsystem => ("subsystem", ["Subsystem"]),
-    Task => ("task", ["Task"]),
-    WebService => ("web-service", ["WebService"]),
-    WSReference => ("ws-reference", ["WSReference"]),
-    XDTOPackage => ("xdto-package", ["XDTOPackage"]),
-    Form => ("form", ["Form"]),
-    Template => ("template", ["Template"]),
-    Command => ("command", ["Command"]),
-    Attribute => ("attribute", ["Attribute"]),
-    TabularSection => ("tabular-section", ["TabularSection"]),
-    Dimension => ("dimension", ["Dimension"]),
-    Resource => ("resource", ["Resource"]),
-    Requisite => ("requisite", ["Requisite"]),
-    EnumValue => ("enum-value", ["EnumValue"]),
-    AccountingFlag => ("accounting-flag", ["AccountingFlag"]),
-    ExtDimensionAccountingFlag => ("ext-dimension-accounting-flag", ["ExtDimensionAccountingFlag"]),
-    Recalculation => ("recalculation", ["Recalculation"]),
-    Column => ("column", ["Column"]),
-    URLTemplate => ("url-template", ["URLTemplate"]),
-    Method => ("method", ["Method"]),
-    Operation => ("operation", ["Operation"]),
-    Parameter => ("parameter", ["Parameter"]),
-    IntegrationServiceChannel => ("integration-service-channel", ["IntegrationServiceChannel"]),
+    Configuration => ("configuration", ["Configuration"], ""),
+    DataProcessor => ("data-processor", ["ExternalDataProcessor", "DataProcessor"], "DataProcessors"),
+    Report => ("report", ["ExternalReport", "Report"], "Reports"),
+    AccountingRegister => ("accounting-register", ["AccountingRegister"], "AccountingRegisters"),
+    AccumulationRegister => ("accumulation-register", ["AccumulationRegister"], "AccumulationRegisters"),
+    Bot => ("bot", ["Bot"], "Bots"),
+    BusinessProcess => ("business-process", ["BusinessProcess"], "BusinessProcesses"),
+    CalculationRegister => ("calculation-register", ["CalculationRegister"], "CalculationRegisters"),
+    Catalog => ("catalog", ["Catalog"], "Catalogs"),
+    ChartOfAccounts => ("chart-of-accounts", ["ChartOfAccounts"], "ChartsOfAccounts"),
+    ChartOfCalculationTypes => ("chart-of-calculation-types", ["ChartOfCalculationTypes"], "ChartsOfCalculationTypes"),
+    ChartOfCharacteristicTypes => ("chart-of-characteristic-types", ["ChartOfCharacteristicTypes"], "ChartsOfCharacteristicTypes"),
+    CommandGroup => ("command-group", ["CommandGroup"], "CommandGroups"),
+    CommonAttribute => ("common-attribute", ["CommonAttribute"], "CommonAttributes"),
+    CommonCommand => ("common-command", ["CommonCommand"], "CommonCommands"),
+    CommonForm => ("common-form", ["CommonForm"], "CommonForms"),
+    CommonModule => ("common-module", ["CommonModule"], "CommonModules"),
+    CommonPicture => ("common-picture", ["CommonPicture"], "CommonPictures"),
+    CommonTemplate => ("common-template", ["CommonTemplate"], "CommonTemplates"),
+    Constant => ("constant", ["Constant"], "Constants"),
+    DefinedType => ("defined-type", ["DefinedType"], "DefinedTypes"),
+    Document => ("document", ["Document"], "Documents"),
+    DocumentJournal => ("document-journal", ["DocumentJournal"], "DocumentJournals"),
+    DocumentNumerator => ("document-numerator", ["DocumentNumerator"], "DocumentNumerators"),
+    Enum => ("enum", ["Enum"], "Enums"),
+    EventSubscription => ("event-subscription", ["EventSubscription"], "EventSubscriptions"),
+    ExchangePlan => ("exchange-plan", ["ExchangePlan"], "ExchangePlans"),
+    ExternalDataSource => ("external-data-source", ["ExternalDataSource"], "ExternalDataSources"),
+    FilterCriterion => ("filter-criterion", ["FilterCriterion"], "FilterCriteria"),
+    FunctionalOption => ("functional-option", ["FunctionalOption"], "FunctionalOptions"),
+    FunctionalOptionsParameter => ("functional-option-parameter", ["FunctionalOptionsParameter"], "FunctionalOptionsParameters"),
+    HTTPService => ("http-service", ["HTTPService"], "HTTPServices"),
+    InformationRegister => ("information-register", ["InformationRegister"], "InformationRegisters"),
+    IntegrationService => ("integration-service", ["IntegrationService"], "IntegrationServices"),
+    Language => ("language", ["Language"], "Languages"),
+    Role => ("role", ["Role"], "Roles"),
+    ScheduledJob => ("scheduled-job", ["ScheduledJob"], "ScheduledJobs"),
+    Sequence => ("sequence", ["Sequence"], "Sequences"),
+    SessionParameter => ("session-parameter", ["SessionParameter"], "SessionParameters"),
+    SettingsStorage => ("settings-storage", ["SettingsStorage"], "SettingsStorages"),
+    Style => ("style", ["Style"], "Styles"),
+    StyleItem => ("style-item", ["StyleItem"], "StyleItems"),
+    Subsystem => ("subsystem", ["Subsystem"], "Subsystems"),
+    Task => ("task", ["Task"], "Tasks"),
+    WebService => ("web-service", ["WebService"], "WebServices"),
+    WSReference => ("ws-reference", ["WSReference"], "WSReferences"),
+    XDTOPackage => ("xdto-package", ["XDTOPackage"], "XDTOPackages"),
+    Form => ("form", ["Form"], ""),
+    Template => ("template", ["Template"], ""),
+    Command => ("command", ["Command"], ""),
+    Attribute => ("attribute", ["Attribute"], ""),
+    TabularSection => ("tabular-section", ["TabularSection"], ""),
+    Dimension => ("dimension", ["Dimension"], ""),
+    Resource => ("resource", ["Resource"], ""),
+    Requisite => ("requisite", ["Requisite"], ""),
+    EnumValue => ("enum-value", ["EnumValue"], ""),
+    AccountingFlag => ("accounting-flag", ["AccountingFlag"], ""),
+    ExtDimensionAccountingFlag => ("ext-dimension-accounting-flag", ["ExtDimensionAccountingFlag"], ""),
+    Recalculation => ("recalculation", ["Recalculation"], ""),
+    Column => ("column", ["Column"], ""),
+    URLTemplate => ("url-template", ["URLTemplate"], ""),
+    Method => ("method", ["Method"], ""),
+    Operation => ("operation", ["Operation"], ""),
+    Parameter => ("parameter", ["Parameter"], ""),
+    IntegrationServiceChannel => ("integration-service-channel", ["IntegrationServiceChannel"], ""),
 }
 
 /// An unsupported Designer metadata tag, retained for a localized diagnostic.

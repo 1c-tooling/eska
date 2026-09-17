@@ -13,16 +13,18 @@ pub fn project_type(input: &str) -> Result<Option<ProjectType>, roxmltree::Error
             ..Default::default()
         },
     )?;
-    let root = document.root_element();
+    Ok(project_type_from_root(document.root_element()))
+}
+
+/// Inspect an already parsed root so metadata opening does not parse the same file again.
+pub(super) fn project_type_from_root(root: roxmltree::Node<'_, '_>) -> Option<ProjectType> {
     if !root.has_tag_name((NAMESPACE, "MetaDataObject")) {
-        return Ok(None);
+        return None;
     }
     let mut objects = root.children().filter(roxmltree::Node::is_element);
-    let Some(object) = objects.next() else {
-        return Ok(None);
-    };
+    let object = objects.next()?;
     if objects.next().is_some() || object.tag_name().namespace() != Some(NAMESPACE) {
-        return Ok(None);
+        return None;
     }
     let kind = match object.tag_name().name() {
         "Configuration" => {
@@ -39,9 +41,9 @@ pub fn project_type(input: &str) -> Result<Option<ProjectType>, roxmltree::Error
         }
         "ExternalDataProcessor" => ProjectType::Processing,
         "ExternalReport" => ProjectType::Report,
-        _ => return Ok(None),
+        _ => return None,
     };
-    Ok(Some(kind))
+    Some(kind)
 }
 
 #[cfg(test)]

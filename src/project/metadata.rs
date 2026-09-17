@@ -301,55 +301,8 @@ fn is_configuration_artifact(components: &[&str]) -> bool {
 
 /// Map Designer XML top-level collection folders to stable metadata kind identifiers.
 fn top_level_kind(folder: &str) -> Option<&'static str> {
-    Some(match folder {
-        "AccountingRegisters" => "accounting-register",
-        "AccumulationRegisters" => "accumulation-register",
-        "Bots" => "bot",
-        "BusinessProcesses" => "business-process",
-        "CalculationRegisters" => "calculation-register",
-        "Catalogs" => "catalog",
-        "ChartsOfAccounts" => "chart-of-accounts",
-        "ChartsOfCalculationTypes" => "chart-of-calculation-types",
-        "ChartsOfCharacteristicTypes" => "chart-of-characteristic-types",
-        "CommandGroups" => "command-group",
-        "CommonAttributes" => "common-attribute",
-        "CommonCommands" => "common-command",
-        "CommonForms" => "common-form",
-        "CommonModules" => "common-module",
-        "CommonPictures" => "common-picture",
-        "CommonTemplates" => "common-template",
-        "Constants" => "constant",
-        "DataProcessors" => "data-processor",
-        "DefinedTypes" => "defined-type",
-        "DocumentJournals" => "document-journal",
-        "DocumentNumerators" => "document-numerator",
-        "Documents" => "document",
-        "Enums" => "enum",
-        "EventSubscriptions" => "event-subscription",
-        "ExchangePlans" => "exchange-plan",
-        "ExternalDataSources" => "external-data-source",
-        "FilterCriteria" => "filter-criterion",
-        "FunctionalOptions" => "functional-option",
-        "FunctionalOptionsParameters" => "functional-option-parameter",
-        "HTTPServices" => "http-service",
-        "InformationRegisters" => "information-register",
-        "IntegrationServices" => "integration-service",
-        "Languages" => "language",
-        "Reports" => "report",
-        "Roles" => "role",
-        "ScheduledJobs" => "scheduled-job",
-        "Sequences" => "sequence",
-        "SessionParameters" => "session-parameter",
-        "SettingsStorages" => "settings-storage",
-        "StyleItems" => "style-item",
-        "Styles" => "style",
-        "Subsystems" => "subsystem",
-        "Tasks" => "task",
-        "WebServices" => "web-service",
-        "WSReferences" => "ws-reference",
-        "XDTOPackages" => "xdto-package",
-        _ => return None,
-    })
+    super::metadata_model::MetadataKind::from_collection_folder(folder)
+        .map(super::metadata_model::MetadataKind::as_str)
 }
 
 struct ParsedMetadata {

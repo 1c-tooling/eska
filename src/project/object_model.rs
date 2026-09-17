@@ -596,7 +596,9 @@ fn index_descriptor(
     by_logical_path: &mut BTreeMap<metadata::MetadataPath, ObjectId>,
     by_source_path: &mut BTreeMap<PathBuf, BTreeSet<ObjectId>>,
 ) -> Result<(), ObjectModelError> {
-    let Some(relative) = file.relative.to_str() else {
+    let relative_bytes =
+        gix::path::to_unix_separators_on_windows(gix::path::into_bstr(&file.relative));
+    let Ok(relative) = relative_bytes.to_str() else {
         return Ok(());
     };
     if !metadata::is_object_descriptor(project_type, relative.as_bytes().as_bstr()) {
@@ -897,7 +899,8 @@ fn logical_path_for_source(
     project_type: super::ProjectType,
     path: &Path,
 ) -> Option<metadata::MetadataPath> {
-    let path = path.to_str()?;
+    let normalized = gix::path::to_unix_separators_on_windows(gix::path::into_bstr(path));
+    let path = normalized.to_str().ok()?;
     let mut logical = match project_type {
         super::ProjectType::Configuration | super::ProjectType::Extension => {
             metadata::from_path(project_type, path.as_bytes().as_bstr())?

@@ -23,6 +23,14 @@ impl MetadataProject {
         let actual = designer_xml::project_type(descriptor)
             .map_err(MetadataProjectError::InvalidXml)?
             .ok_or(MetadataProjectError::UnsupportedRoot)?;
+        Self::from_detected_type(configuration, actual)
+    }
+
+    /// Reuse root detection performed by a resolver without parsing its XML a second time.
+    pub(crate) fn from_detected_type(
+        configuration: &ProjectConfiguration,
+        actual: ProjectType,
+    ) -> Result<Self, MetadataProjectError> {
         let expected = configuration.project_type();
         if actual != expected {
             return Err(MetadataProjectError::TypeMismatch { expected, actual });

@@ -1,3 +1,4 @@
+mod designer_source;
 mod discovery;
 mod finish;
 mod history;
