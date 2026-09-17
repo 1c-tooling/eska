@@ -65,6 +65,20 @@ struct Locations {
 }
 
 impl DesignerSource {
+    /// Resolve only the owning descriptor and inline ancestry, without probing modules/payloads.
+    ///
+    /// # Errors
+    /// Returns malformed identity, ambiguous layout or a source containment failure.
+    pub fn object_descriptor(&self, id: &ObjectId) -> Result<Option<SourceLocation>, SourceError> {
+        let locations = self.locations(id)?;
+        Ok(self
+            .unique_existing(&locations.descriptors)?
+            .map(|path| SourceLocation {
+                path,
+                role: SourceRole::Descriptor,
+                inline: locations.inline,
+            }))
+    }
     /// Resolve an object's existing descriptor, modules and primary payloads without reading BSL.
     ///
     /// # Errors

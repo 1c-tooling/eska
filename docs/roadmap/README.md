@@ -73,8 +73,9 @@ VS Code extension для навигации по Designer XML.
 - `DONE`: `T61` — Designer resolver и открытие через обязательный manifest;
 - `DONE`: `T62` — fixtures, матрица типов и большой стенд;
 - `DONE`: `T63` — выбор XML parsing по измерениям;
-- `NEXT`: `T64` — разбор Designer XML в модель метаданных;
-- `PLANNED`: `T65–T70`, `T75` — resolver, fixtures, parser, дерево, lazy workspace,
+- `DONE`: `T64` — разбор Designer XML в модель метаданных;
+- `NEXT`: `T65` — схемы дерева Конфигуратора;
+- `PLANNED`: `T66–T70`, `T75` — API, lazy workspace,
   поиск, замеры и постоянный IDE protocol;
 - `PLANNED`: `T41`, декомпозированная в `T76–T81`, — расширение VS Code с деревом,
   поиском, фильтром, иконками и устанавливаемым VSIX;
@@ -111,7 +112,7 @@ T35 добавила автоматические полки при `switch` и 
 `shelve` / `unshelve` / `shelves`. T58 завершила настройку production-ветки Git Flow с
 сохранением `develop` базой обычных feature-веток. T59 сделала semantic-вывод
 однозначным, подавила противоречивые события и добавила координаты методов.
-Следующая задача — T64: parser Designer XML. T56 остаётся в backlog.
+Следующая задача — T65: схемы дерева Конфигуратора. T56 остаётся в backlog.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
 операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
@@ -142,8 +143,8 @@ TUI разделён на обработку клавиш, отрисовку и
 | 2 | T61 | Manifest, Designer resolver и переход к XML/BSL — `DONE` |
 | 3 | T62 | Fixtures, матрица типов и большой стенд — `DONE` |
 | 4 | T63 | Выбор XML parser по замерам и проект бюджетов — `DONE` |
-| 5 | T64 | Разбор Designer XML по запросу — `NEXT` |
-| 6 | T65 | Схемы дерева, первая группа модулей и пустые коллекции |
+| 5 | T64 | Разбор Designer XML по запросу — `DONE` |
+| 6 | T65 | Схемы дерева, первая группа модулей и пустые коллекции — `NEXT` |
 | 7 | T66 | Read-only metadata API |
 | 8 | T67 | Lazy cache и обновление затронутых объектов |
 | 9 | T75 | Поисковый индекс и core search API |
@@ -273,8 +274,8 @@ BSL LSP и визуальный редактор форм в это направ
 | T61 | DONE | Designer path resolver | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T62 | DONE | Набор Designer XML fixtures | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T63 | DONE | Выбор стратегии XML parsing | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
-| T64 | NEXT | Разбор Designer XML в модель метаданных | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
-| T65 | PLANNED | ConfiguratorSchema и ConfiguratorTree | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T64 | DONE | Разбор Designer XML в модель метаданных | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T65 | NEXT | ConfiguratorSchema и ConfiguratorTree | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T66 | PLANNED | Read-only metadata workspace API | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T67 | PLANNED | Lazy index, cache и инкрементальное обновление | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T68 | PLANNED | Производительность metadata workspace | [13-metadata-and-ide.md](13-metadata-and-ide.md) |

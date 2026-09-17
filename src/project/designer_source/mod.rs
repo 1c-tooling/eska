@@ -50,6 +50,16 @@ impl DesignerSource {
         &self.descriptor
     }
 
+    /// Read one bounded descriptor after checking containment again at the read boundary.
+    pub(crate) fn read_xml(
+        &self,
+        relative: &std::path::Path,
+    ) -> Result<Option<String>, SourceError> {
+        opening::existing_file(self.project.source(), relative)?
+            .map(|path| opening::read_descriptor(&path))
+            .transpose()
+    }
+
     /// Reuse changed-path ownership discovery, including partial failures and read counters.
     ///
     /// # Errors
@@ -87,6 +97,10 @@ pub enum SourceError {
     InvalidMetadata {
         path: PathBuf,
         reason: &'static str,
+    },
+    Parse {
+        path: PathBuf,
+        source: super::metadata_parser::ParseError,
     },
     MissingRoot,
     AmbiguousRoot {

@@ -6,6 +6,7 @@ use std::{
 use eska::project::{
     designer_source::{SourceError, SourceRole, open_projects},
     metadata_model::{MetadataKind, MetadataObject, ModuleRole},
+    metadata_parser::{self, PropertiesMode},
     object_model,
 };
 use serde::Deserialize;
@@ -65,6 +66,22 @@ fn designer_fixture_snapshots_cover_four_project_types_and_source_ownership() {
             case.name
         );
         for object in model.objects() {
+            for mode in [PropertiesMode::Summary, PropertiesMode::All] {
+                let parsed = metadata_parser::load(&source, object.id(), mode).unwrap();
+                assert!(
+                    parsed.diagnostics.is_empty(),
+                    "{}: {:?}",
+                    object.id(),
+                    parsed.diagnostics
+                );
+                let actual = parsed
+                    .objects
+                    .iter()
+                    .find(|parsed| parsed.metadata.id() == object.id())
+                    .unwrap();
+                assert_eq!(&actual.metadata, object.metadata());
+                assert_eq!(actual.properties.is_some(), mode == PropertiesMode::All);
+            }
             let locations = source.sources(object.id()).unwrap();
             assert!(!locations.is_empty(), "{}", object.id());
             for location in locations
@@ -198,6 +215,13 @@ fn manual_large_designer_open_and_source_lookup() {
                 .iter()
                 .any(|location| location.role == SourceRole::Descriptor)
         );
+        let parsed = metadata_parser::load(&source, metadata.id(), PropertiesMode::All).unwrap();
+        assert!(
+            parsed.diagnostics.is_empty(),
+            "{}: {:?}",
+            metadata.id(),
+            parsed.diagnostics
+        );
         checked += 1;
     }
     assert!(checked > 0);
@@ -206,4 +230,68 @@ fn manual_large_designer_open_and_source_lookup() {
         opened.as_millis(),
         started.elapsed().as_millis()
     );
+}
+
+/// Reading a parent does not read child descriptors, modules or form/template payloads.
+#[test]
+fn designer_parser_loads_only_requested_descriptors_and_checks_inline_identity() {
+    let directory = TestDir::new();
+    copy_fragments(&fragments().join("configuration"), &directory.0.join("src"));
+    fs::write(
+        directory.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    let source = open_projects(&directory.0, &[], false).unwrap().remove(0);
+    let owner = MetadataObject::new(
+        MetadataKind::Catalog,
+        "Контрагенты".into(),
+        "id".into(),
+        None,
+    )
+    .unwrap();
+    let form = MetadataObject::new(
+        MetadataKind::Form,
+        "ФормаЭлемента".into(),
+        "id".into(),
+        Some(owner.id().clone()),
+    )
+    .unwrap();
+    fs::write(
+        directory
+            .0
+            .join("src/Catalogs/Контрагенты/Forms/ФормаЭлемента.xml"),
+        "<broken>",
+    )
+    .unwrap();
+    let parsed = metadata_parser::load(&source, owner.id(), PropertiesMode::Summary).unwrap();
+    assert!(parsed.diagnostics.is_empty());
+    assert!(
+        parsed
+            .references
+            .iter()
+            .any(|reference| &reference.id == form.id())
+    );
+    assert!(matches!(
+        metadata_parser::load(&source, form.id(), PropertiesMode::All),
+        Err(metadata_parser::LoadError::Parse { .. })
+    ));
+    let missing = MetadataObject::new(
+        MetadataKind::Attribute,
+        "НетТакого".into(),
+        "id".into(),
+        Some(owner.id().clone()),
+    )
+    .unwrap();
+    assert!(matches!(
+        metadata_parser::load(&source, missing.id(), PropertiesMode::Summary),
+        Err(metadata_parser::LoadError::ObjectNotFound(_))
+    ));
+    let root = metadata_parser::load(&source, source.root().id(), PropertiesMode::Summary).unwrap();
+    assert!(
+        root.references
+            .iter()
+            .any(|reference| reference.name == "БезФайла")
+    );
+    assert!(root.diagnostics.is_empty());
 }

@@ -84,6 +84,12 @@ fn read_root(project: &Project) -> Result<(PathBuf, MetadataObject), SourceError
             continue;
         };
         let input = read_descriptor(&physical)?;
+        crate::project::metadata_parser::check_envelope(&input).map_err(|source| {
+            SourceError::Parse {
+                path: path.clone(),
+                source,
+            }
+        })?;
         let document = roxmltree::Document::parse_with_options(
             &input,
             roxmltree::ParsingOptions {
@@ -154,7 +160,7 @@ fn root_metadata(
 }
 
 /// Read a bounded XML descriptor; modules and payloads never pass through this function.
-fn read_descriptor(path: &Path) -> Result<String, SourceError> {
+pub(super) fn read_descriptor(path: &Path) -> Result<String, SourceError> {
     let mut input = String::new();
     fs::File::open(path)
         .and_then(|file| {

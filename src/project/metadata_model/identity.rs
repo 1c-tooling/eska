@@ -16,6 +16,14 @@ impl ObjectId {
         &self.0
     }
 
+    /// Return the logical parent encoded in this identity, without interpreting a source path.
+    #[must_use]
+    pub fn parent(&self) -> Option<Self> {
+        self.0
+            .rsplit_once('/')
+            .map(|(parent, _)| Self(parent.to_owned()))
+    }
+
     /// Build an identity after the caller has validated the object's kind and name.
     pub(crate) fn from_parts(parent: Option<&Self>, kind: &str, name: &str) -> Self {
         let escaped = name
