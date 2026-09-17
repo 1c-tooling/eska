@@ -9,6 +9,57 @@ use crate::{
 };
 use gix::bstr::{BStr, ByteSlice};
 
+/// Stable Configurator tree order for supported top-level metadata kinds.
+const CONFIGURATOR_METADATA_ORDER: &[&str] = &[
+    "configuration",
+    "subsystem",
+    "common-module",
+    "session-parameter",
+    "role",
+    "common-attribute",
+    "exchange-plan",
+    "filter-criterion",
+    "event-subscription",
+    "scheduled-job",
+    "functional-option",
+    "functional-option-parameter",
+    "defined-type",
+    "settings-storage",
+    "common-form",
+    "common-command",
+    "command-group",
+    "common-template",
+    "common-picture",
+    "style",
+    "style-item",
+    "language",
+    "xdto-package",
+    "web-service",
+    "http-service",
+    "ws-reference",
+    "integration-service",
+    "bot",
+    "constant",
+    "catalog",
+    "document",
+    "document-numerator",
+    "sequence",
+    "document-journal",
+    "enum",
+    "report",
+    "data-processor",
+    "chart-of-characteristic-types",
+    "chart-of-accounts",
+    "chart-of-calculation-types",
+    "information-register",
+    "accumulation-register",
+    "accounting-register",
+    "calculation-register",
+    "business-process",
+    "task",
+    "external-data-source",
+];
+
 /// Render a logical metadata identity in Configurator notation.
 pub(super) fn render_metadata_path(path: &MetadataPath, localizer: &Localizer) -> String {
     path.parts
@@ -31,6 +82,14 @@ pub(super) fn metadata_kind(kind: &str, localizer: &Localizer) -> String {
 /// Return the top-level metadata kind encoded in a stable semantic object ID.
 pub(super) fn semantic_object_group(id: &str) -> &str {
     id.split([':', '/']).next().unwrap_or(id)
+}
+
+/// Return the Configurator position, leaving unknown future kinds after known sections.
+pub(super) fn metadata_group_rank(kind: &str) -> usize {
+    CONFIGURATOR_METADATA_ORDER
+        .iter()
+        .position(|candidate| *candidate == kind)
+        .unwrap_or(usize::MAX)
 }
 
 /// Render every hierarchical `ObjectId` segment in localized Configurator notation.
@@ -119,7 +178,7 @@ fn unescape_object_name(name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{display_path, render_semantic_object};
+    use super::{display_path, metadata_group_rank, render_semantic_object};
     use crate::cli::localization::{Locale, Localizer};
     use gix::bstr::ByteSlice;
 
@@ -151,5 +210,20 @@ mod tests {
                 expected
             );
         }
+    }
+
+    /// Known metadata follows Configurator order and unknown future kinds remain last.
+    #[test]
+    fn metadata_groups_follow_configurator_order() {
+        let ranks = [
+            metadata_group_rank("common-module"),
+            metadata_group_rank("constant"),
+            metadata_group_rank("catalog"),
+            metadata_group_rank("document"),
+            metadata_group_rank("information-register"),
+            metadata_group_rank("unknown-future-kind"),
+        ];
+
+        assert!(ranks.windows(2).all(|pair| pair[0] < pair[1]));
     }
 }

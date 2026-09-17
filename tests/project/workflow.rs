@@ -89,16 +89,25 @@ fn discovery_preserves_policy_and_cli_validation_does_not_modify_git() {
 fn implemented_presets_and_overrides_resolve_to_deterministic_plans() {
     let dir = TestDir::new();
     fs::create_dir(dir.0.join("src")).unwrap();
-    for (workflow, expected_base, expected_branch, expected_remote, delete_local_branch) in [
+    for (
+        workflow,
+        expected_base,
+        expected_main,
+        expected_branch,
+        expected_remote,
+        delete_local_branch,
+    ) in [
         (
             "[vcs.workflow]\npreset = 'trunk'\n",
+            "main",
             "main",
             "task/FI-9",
             "origin",
             true,
         ),
         (
-            "[vcs.workflow]\npreset = 'trunk'\n[vcs.workflow.policy]\nbase_branch = 'master'\ntask_branch_template = 'feature/{task}'\nintegration_target = 'master'\n",
+            "[vcs.workflow]\npreset = 'trunk'\n[vcs.workflow.policy]\nmain_branch = 'master'\nbase_branch = 'master'\ntask_branch_template = 'feature/{task}'\nintegration_target = 'master'\n",
+            "master",
             "master",
             "feature/FI-9",
             "origin",
@@ -107,6 +116,7 @@ fn implemented_presets_and_overrides_resolve_to_deterministic_plans() {
         (
             "[vcs.workflow]\npreset = 'custom'\nextends = 'trunk'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{task}'\nremote = 'team'\ndelete_local_branch = false\n",
             "main",
+            "main",
             "company/FI-9",
             "team",
             false,
@@ -114,6 +124,15 @@ fn implemented_presets_and_overrides_resolve_to_deterministic_plans() {
         (
             "[vcs.workflow]\npreset = 'git-flow'\n",
             "develop",
+            "main",
+            "feature/FI-9",
+            "origin",
+            true,
+        ),
+        (
+            "[vcs.workflow]\npreset = 'git-flow'\n[vcs.workflow.policy]\nmain_branch = 'master'\n",
+            "develop",
+            "master",
             "feature/FI-9",
             "origin",
             true,
@@ -121,12 +140,14 @@ fn implemented_presets_and_overrides_resolve_to_deterministic_plans() {
         (
             "[vcs.workflow]\npreset = 'custom'\nextends = 'git-flow'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{task}'\nremote = 'team'\ndelete_local_branch = false\n",
             "develop",
+            "main",
             "company/FI-9",
             "team",
             false,
         ),
         (
             "[vcs.workflow]\npreset = 'github-flow'\n",
+            "main",
             "main",
             "feature/FI-9",
             "origin",
@@ -135,51 +156,73 @@ fn implemented_presets_and_overrides_resolve_to_deterministic_plans() {
         (
             "[vcs.workflow]\npreset = 'custom'\nextends = 'github-flow'\n[vcs.workflow.policy]\ntask_branch_template = 'company/{task}'\nremote = 'team'\ndelete_local_branch = false\n",
             "main",
+            "main",
             "company/FI-9",
             "team",
             false,
         ),
     ] {
-        let text = format!("[project]\ntype = 'report'\n{workflow}");
-        fs::write(dir.0.join("eska.toml"), &text).unwrap();
-        let config = ProjectConfig::load(&dir.0.join("eska.toml")).unwrap();
-        let plan = config
-            .configuration()
-            .workflow_settings()
-            .unwrap()
-            .resolve(None)
-            .unwrap()
-            .plan("FI-9")
-            .unwrap();
-        assert_eq!(plan.base_branch, expected_base);
-        assert_eq!(plan.working_branch, expected_branch);
-        assert_eq!(plan.sync_strategy, SyncStrategy::Rebase);
-        assert_eq!(
-            plan.sync_reference,
-            format!("refs/remotes/{expected_remote}/{expected_base}")
+        assert_workflow_plan(
+            &dir.0,
+            workflow,
+            expected_base,
+            expected_main,
+            expected_branch,
+            expected_remote,
+            delete_local_branch,
         );
-        assert_eq!(plan.integration_target, expected_base);
-        assert_eq!(
-            plan.publish,
-            PublishPlan::PushTaskBranch {
-                remote: expected_remote.into(),
-                branch: expected_branch.into(),
-            }
-        );
-        assert_eq!(plan.finish, FinishRequirement::Integrated);
-        assert_eq!(plan.delete_local_branch, delete_local_branch);
-        for locale in ["ru", "en"] {
-            let result = validate(&dir.0, locale);
-            assert!(
-                result.status.success(),
-                "{}",
-                String::from_utf8_lossy(&result.stderr)
-            );
-            assert!(result.stdout.is_empty() && result.stderr.is_empty());
-        }
-        assert_eq!(fs::read_to_string(dir.0.join("eska.toml")).unwrap(), text);
-        assert!(!dir.0.join(".git").exists());
     }
+}
+
+/// Verify one preset/override case without hiding the table of supported combinations.
+fn assert_workflow_plan(
+    root: &Path,
+    workflow: &str,
+    expected_base: &str,
+    expected_main: &str,
+    expected_branch: &str,
+    expected_remote: &str,
+    delete_local_branch: bool,
+) {
+    let text = format!("[project]\ntype = 'report'\n{workflow}");
+    fs::write(root.join("eska.toml"), &text).unwrap();
+    let config = ProjectConfig::load(&root.join("eska.toml")).unwrap();
+    let policy = config
+        .configuration()
+        .workflow_settings()
+        .unwrap()
+        .resolve(None)
+        .unwrap();
+    let plan = policy.plan("FI-9").unwrap();
+    assert_eq!(policy.main_branch(), expected_main);
+    assert_eq!(plan.base_branch, expected_base);
+    assert_eq!(plan.working_branch, expected_branch);
+    assert_eq!(plan.sync_strategy, SyncStrategy::Rebase);
+    assert_eq!(
+        plan.sync_reference,
+        format!("refs/remotes/{expected_remote}/{expected_base}")
+    );
+    assert_eq!(plan.integration_target, expected_base);
+    assert_eq!(
+        plan.publish,
+        PublishPlan::PushTaskBranch {
+            remote: expected_remote.into(),
+            branch: expected_branch.into(),
+        }
+    );
+    assert_eq!(plan.finish, FinishRequirement::Integrated);
+    assert_eq!(plan.delete_local_branch, delete_local_branch);
+    for locale in ["ru", "en"] {
+        let result = validate(root, locale);
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        assert!(result.stdout.is_empty() && result.stderr.is_empty());
+    }
+    assert_eq!(fs::read_to_string(root.join("eska.toml")).unwrap(), text);
+    assert!(!root.join(".git").exists());
 }
 
 #[test]
@@ -190,6 +233,7 @@ fn policy_errors_are_localized_and_do_not_write_files() {
         "[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'custom'\nextends = 'trunk'\n";
     for (text, ru, en, field) in [
         (format!("{header}[vcs.workflow.policy]\nbase_branch = '../main'"), "Неверное значение", "Invalid workflow policy value", "base_branch"),
+        (format!("{header}[vcs.workflow.policy]\nmain_branch = '../main'"), "Неверное значение", "Invalid workflow policy value", "main_branch"),
         (format!("{header}[vcs.workflow.policy]\nsync_strategy = 'reset-hard'"), "Неверное значение", "Invalid workflow policy value", "sync_strategy"),
         ("[project]\ntype = 'report'\n[vcs.workflow]\npreset = 'custom'\n[vcs.workflow.policy]\nbase_branch = 'main'".into(), "Не задано поле", "Missing workflow policy field", "working_branch"),
         (header.replace("extends = 'trunk'", "extends = 'custom'"), "наследование от custom недопустимо", "not custom", "extends"),

@@ -34,6 +34,7 @@ pub enum FinishRequirement {
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct PolicyOverrides {
     pub base_branch: Option<String>,
+    pub main_branch: Option<String>,
     pub working_branch: Option<WorkingBranchPolicy>,
     pub task_branch_template: Option<String>,
     pub remote: Option<String>,
@@ -48,6 +49,7 @@ pub struct PolicyOverrides {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WorkflowPolicy {
     base_branch: String,
+    main_branch: String,
     working_branch: WorkingBranchPolicy,
     task_branch_template: String,
     remote: String,
@@ -74,6 +76,7 @@ impl WorkflowPreset {
         match self {
             Self::Trunk => Some(WorkflowPolicy {
                 base_branch: "main".into(),
+                main_branch: "main".into(),
                 working_branch: WorkingBranchPolicy::TaskBranch,
                 task_branch_template: "task/{task}".into(),
                 remote: "origin".into(),
@@ -87,6 +90,7 @@ impl WorkflowPreset {
             }),
             Self::GitFlow => Some(WorkflowPolicy {
                 base_branch: "develop".into(),
+                main_branch: "main".into(),
                 working_branch: WorkingBranchPolicy::TaskBranch,
                 task_branch_template: "feature/{task}".into(),
                 remote: "origin".into(),
@@ -106,6 +110,7 @@ impl WorkflowPreset {
             }),
             Self::GithubFlow => Some(WorkflowPolicy {
                 base_branch: "main".into(),
+                main_branch: "main".into(),
                 working_branch: WorkingBranchPolicy::TaskBranch,
                 task_branch_template: "feature/{task}".into(),
                 remote: "origin".into(),
@@ -125,6 +130,7 @@ impl WorkflowPreset {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PolicyField {
     BaseBranch,
+    MainBranch,
     WorkingBranch,
     TaskBranchTemplate,
     Remote,
@@ -140,6 +146,7 @@ impl PolicyField {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::BaseBranch => "base_branch",
+            Self::MainBranch => "main_branch",
             Self::WorkingBranch => "working_branch",
             Self::TaskBranchTemplate => "task_branch_template",
             Self::Remote => "remote",
@@ -189,6 +196,7 @@ impl PolicyOverrides {
     pub fn validate(&self) -> Result<(), PolicyError> {
         for (field, value) in [
             (PolicyField::BaseBranch, &self.base_branch),
+            (PolicyField::MainBranch, &self.main_branch),
             (PolicyField::IntegrationTarget, &self.integration_target),
         ] {
             if let Some(value) = value {
@@ -223,14 +231,26 @@ impl PolicyOverrides {
     /// Reports missing/invalid fields or contradictions introduced by overrides.
     pub fn resolve(&self, base: Option<&WorkflowPolicy>) -> Result<WorkflowPolicy, PolicyError> {
         self.validate()?;
+        let base_branch = required(
+            self.base_branch
+                .as_ref()
+                .or_else(|| base.map(|policy| &policy.base_branch)),
+            PolicyField::BaseBranch,
+        )?
+        .clone();
+        let main_branch = self
+            .main_branch
+            .as_ref()
+            .or_else(|| base.map(|policy| &policy.main_branch))
+            .cloned()
+            .unwrap_or_else(|| base_branch.clone());
+        let mut hotfix_branch = base.and_then(|policy| policy.hotfix_branch.clone());
+        if let Some(policy) = &mut hotfix_branch {
+            policy.base_branch.clone_from(&main_branch);
+        }
         let policy = WorkflowPolicy {
-            base_branch: required(
-                self.base_branch
-                    .as_ref()
-                    .or_else(|| base.map(|p| &p.base_branch)),
-                PolicyField::BaseBranch,
-            )?
-            .clone(),
+            base_branch,
+            main_branch,
             working_branch: required(
                 self.working_branch
                     .or_else(|| base.map(|p| p.working_branch)),
@@ -273,7 +293,7 @@ impl PolicyOverrides {
                 PolicyField::DeleteLocalBranch,
             )?,
             release_branch: base.and_then(|policy| policy.release_branch.clone()),
-            hotfix_branch: base.and_then(|policy| policy.hotfix_branch.clone()),
+            hotfix_branch,
         };
         validate_finish(
             Some(policy.publish),
@@ -345,6 +365,12 @@ pub struct TaskPlan {
 }
 
 impl WorkflowPolicy {
+    /// Return the production branch kept separate from ordinary task integration.
+    #[must_use]
+    pub fn main_branch(&self) -> &str {
+        &self.main_branch
+    }
+
     /// Return the local integration target used for committed patch comparisons.
     #[must_use]
     pub fn integration_target(&self) -> &str {
@@ -398,7 +424,10 @@ impl WorkflowPolicy {
         }
         let working_branch = self.task_branch_template.replace("{task}", task_id);
         validate_branch(&working_branch, PolicyField::TaskBranchTemplate)?;
-        if working_branch == self.base_branch || working_branch == self.integration_target {
+        if working_branch == self.base_branch
+            || working_branch == self.main_branch
+            || working_branch == self.integration_target
+        {
             return Err(PolicyError::ProtectedTaskBranch {
                 branch: working_branch,
             });
@@ -431,6 +460,7 @@ mod tests {
     fn complete() -> PolicyOverrides {
         PolicyOverrides {
             base_branch: Some("baseline".into()),
+            main_branch: None,
             working_branch: Some(WorkingBranchPolicy::TaskBranch),
             task_branch_template: Some("task/{task}".into()),
             remote: Some("team".into()),
@@ -465,6 +495,7 @@ mod tests {
         );
         assert_eq!(base.plan("FI-1234").unwrap(), plan);
         assert_eq!(base, original);
+        assert_eq!(base.main_branch(), "baseline");
     }
 
     #[test]
@@ -707,6 +738,7 @@ mod tests {
     #[test]
     fn git_flow_reserves_release_and_hotfix_branch_policies_without_planning_them() {
         let policy = WorkflowPreset::GitFlow.policy().unwrap();
+        assert_eq!(policy.main_branch(), "main");
         assert_eq!(
             policy.release_branch,
             Some(ReservedBranchPolicy {
@@ -718,6 +750,29 @@ mod tests {
             policy.hotfix_branch,
             Some(ReservedBranchPolicy {
                 base_branch: "main".into(),
+                branch_template: "hotfix/{task}".into(),
+            })
+        );
+    }
+
+    #[test]
+    fn git_flow_main_branch_override_preserves_develop_and_updates_hotfix_source() {
+        let policy = PolicyOverrides {
+            main_branch: Some("master".into()),
+            ..PolicyOverrides::default()
+        }
+        .resolve(Some(&WorkflowPreset::GitFlow.policy().unwrap()))
+        .unwrap();
+        let plan = policy.plan("FI-58").unwrap();
+
+        assert_eq!(policy.main_branch(), "master");
+        assert_eq!(plan.base_branch, "develop");
+        assert_eq!(plan.integration_target, "develop");
+        assert_eq!(plan.working_branch, "feature/FI-58");
+        assert_eq!(
+            policy.hotfix_branch,
+            Some(ReservedBranchPolicy {
+                base_branch: "master".into(),
                 branch_template: "hotfix/{task}".into(),
             })
         );
@@ -804,6 +859,20 @@ mod tests {
                 ),
                 "{value:?}"
             );
+            let fields = PolicyOverrides {
+                main_branch: Some(value.into()),
+                ..PolicyOverrides::default()
+            };
+            assert!(
+                matches!(
+                    fields.validate(),
+                    Err(PolicyError::InvalidValue {
+                        field: PolicyField::MainBranch,
+                        ..
+                    })
+                ),
+                "{value:?}"
+            );
         }
         for template in [
             "fixed",
@@ -856,12 +925,13 @@ mod tests {
             Err(PolicyError::PublishRequired)
         );
         let policy = PolicyOverrides {
+            main_branch: Some("production".into()),
             task_branch_template: Some("{task}".into()),
             ..PolicyOverrides::default()
         }
         .resolve(Some(&base))
         .unwrap();
-        for name in ["baseline", "integration"] {
+        for name in ["baseline", "production", "integration"] {
             assert_eq!(
                 policy.plan(name),
                 Err(PolicyError::ProtectedTaskBranch {

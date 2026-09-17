@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0](https://github.com/1c-tooling/eska/compare/v0.9.0...v0.10.0) - 2026-09-17
+
+### Added
+
+- *(vcs)* Добавлены команды полок и автоматическое восстановление при switch
+- *(vcs)* Добавлены полки с точным сохранением index и файлов
+
+## [0.9.0](https://github.com/1c-tooling/eska/compare/v0.8.0...v0.9.0) - 2026-09-16
+
+### Added
+
+- *(diff)* Добавлены координаты методов и устранены дубли
+- *(workflow)* Добавлена настройка основной ветки Git Flow
+
+### Fixed
+
+- *(diff)* Методы отсортированы по строкам исходного файла
+
+### Other
+
+- *(build)* Разделены выполнение команды, JSON, диагностика и прогресс
+- *(cli)* Объединено обратимое кодирование JSON-путей и Git-строк
+- *(build)* Устранены строгие предупреждения Clippy
+- *(roadmap)* Исправлен формат координат методов в diff
+- *(roadmap)* Добавлены сигнатуры и строки методов в diff
+- *(roadmap)* Уточнены дубли и порядок semantic diff
+- *(roadmap)* Добавлена задача по читаемости eska diff
+- *(roadmap)* Добавлена настройка основной ветки Git Flow
+
+## [0.8.0](https://github.com/1c-tooling/eska/compare/v0.7.0...v0.8.0) - 2026-09-10
+
+### Added
+
+- Добавлена команда clean
+
+### Fixed
+
+- *(build)* Сборка EPF и ERF использует базовую конфигурацию
+
+### Other
+
+- *(agents)* Исключены проверки Rust для документации
+- *(roadmap)* Определён контракт команды eska update
+- *(roadmap)* Добавлена автоматическая подготовка версии релиза 1С
+- *(roadmap)* T35 уточнён для восстановления состояния задач
+
 ## [0.7.0](https://github.com/1c-tooling/eska/compare/v0.6.1...v0.7.0) - 2026-09-09
 
 ### Added

@@ -16,3 +16,5 @@ mod start;
 mod status;
 mod switch;
 mod version;
+
+mod shelves;

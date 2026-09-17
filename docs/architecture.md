@@ -14,10 +14,16 @@ src/
 │   ├── mod.rs                   # запуск CLI и выбор локали
 │   ├── args.rs                  # общие аргументы, bootstrap --lang, общий help
 │   ├── changes.rs               # общее представление путей и semantic changes
+│   ├── encoding.rs              # обратимые JSON-пути и Git byte strings
 │   ├── platform.rs              # общие machine-local настройки запуска 1С
 │   ├── commands/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
-│   │   ├── build.rs             # eska build: аргументы, RU/EN и JSON result
+│   │   ├── build.rs             # eska build: аргументы, selection, preflight и запуск
+│   │   ├── build/
+│   │   │   ├── errors.rs        # RU/EN ошибки и стабильные machine-facing codes
+│   │   │   ├── json.rs          # версии JSON-схем preview, result и error
+│   │   │   ├── output.rs        # preview, streaming diagnostics и результат
+│   │   │   └── output/progress.rs # lifecycle spinner и синхронизация stderr
 │   │   ├── clean.rs             # удаление управляемых build-баз
 │   │   ├── config.rs            # eska config: init/edit глобальных настроек
 │   │   ├── doctor.rs            # eska doctor: selectors, RU/EN и versioned JSON
@@ -31,9 +37,11 @@ src/
 │   │   ├── save.rs              # eska save: draft сообщения и presentation
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
+│   │   ├── shelves.rs           # явные команды полок и read-only previews
 │   │   ├── switch.rs            # eska switch: выбор цели и presentation
 │   │   ├── version.rs           # version одного проекта или списка workspace members
 │   │   └── validate.rs          # проверка при запуске без подкоманды
+│   ├── shelves.rs               # общий human/JSON контракт полок и switch
 │   ├── diagnostics.rs           # общие ошибки project/config/platform
 │   ├── interactive/
 │   │   ├── mod.rs               # общие варианты выбора и ошибки prompts
@@ -127,10 +135,12 @@ tests/
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
 | Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`src/project/build/`](../src/project/build/) |
+| Изменить вывод, JSON или ошибки сборки | [`src/cli/commands/build/output.rs`](../src/cli/commands/build/output.rs), [`json.rs`](../src/cli/commands/build/json.rs), [`errors.rs`](../src/cli/commands/build/errors.rs) |
 | Изменить план или генерацию patch-extension | [`src/cli/commands/patch.rs`](../src/cli/commands/patch.rs), затем [`src/project/patch/`](../src/project/patch/) |
 | Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`src/project/build/tool.rs`](../src/project/build/tool.rs) |
 | Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
 | Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
+| Изменить обратимое кодирование JSON-путей и Git-строк | [`src/cli/encoding.rs`](../src/cli/encoding.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`src/project/version.rs`](../src/project/version.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
@@ -163,9 +173,14 @@ tests/
 - Каждый обработчик команды держит вместе свои аргументы, help, диалог и
   представление специфичных для команды ошибок. Общие ошибки проекта, global
   config и платформы находятся в `diagnostics.rs`; общие machine-local options —
-  в `platform.rs`, представление путей и semantic identities — в `changes.rs`.
+  в `platform.rs`, представление путей и semantic identities — в `changes.rs`,
+  обратимые JSON-пути и Git byte strings — в `encoding.rs`.
 - Обработчики команд не используют внутренние функции соседних команд. Общий
   код сначала поднимается из `commands/` в соответствующий модуль `cli/`.
+- `commands/build.rs` управляет выбором, preflight и последовательным выполнением.
+  Его внутренние модули отвечают за ошибки, JSON и вывод; `output/progress.rs`
+  владеет потоком spinner и синхронизацией записи в stderr. Эти детали закрыты
+  границами команды и не входят в публичный API.
 - `project`, `config` и `vcs` не зависят от `cli`, `clap`,
   терминала и локализованных строк. Они возвращают данные и структурированные ошибки.
 - Только `cli/interactive/terminal.rs` владеет переключением режимов терминала
@@ -273,11 +288,23 @@ tests/
   worktree на base локальная task ref удаляется через `gix` с compare-and-swap;
   publish, merge и удаление remote branch не выполняются. `cli/commands/finish.rs`
   отвечает за RU/EN presentation.
-- `project/switch.rs` через `gix` проверяет workflow target, локальную ref и
-  чистоту всего worktree, не выполняя fetch и не создавая веток. Изолированный
-  system Git активирует существующую ветку с `--no-guess`, чтобы согласованно
-  изменить HEAD, index и файлы; `cli/commands/switch.rs` отвечает за выбор
-  task/base и RU/EN presentation.
+- `project/switch.rs` через `gix` проверяет workflow target, локальную ref,
+  владельцев linked worktrees и полку целевой ветки. `vcs/shelves` сохраняет
+  изменения исходной ветки и восстанавливает целевую полку. Fetch и создание
+  веток не выполняются. Изолированный system Git активирует существующую ветку
+  с `--no-guess --no-overwrite-ignore`; CLI отвечает за task/base, RU/EN и JSON.
+- `vcs/shelves/mod.rs` управляет preflight, repository-wide блокировкой,
+  branch/base identity, журналом восстановления и жизненным циклом полки.
+  `vcs/shelves/files.rs` хранит raw bytes и SHA-256 снимки только изменённых путей,
+  проверяет пути и восстанавливает файлы через временные соседние файлы.
+  Исходный index хранится целиком; его tree закреплена через gix ref
+  `refs/eska/shelves/<id>`. Storage — `eska-shelves/` в общем Git-каталоге.
+  System Git `write-tree` сериализует index, `restore` очищает только captured
+  tracked paths через NUL-delimited literal pathspec. Fallback необходим для
+  согласованного изменения index/worktree с учётом атрибутов Git; shell и human
+  output не разбираются. Полка удаляется после проверки восстановленных байтов.
+  `shelves::plan`/`restore_plan` и `switch` preview не создают файлы или блокировки.
+  Sparse/split index и специальные index flags отклоняются до записи.
 - `project/save.rs` выбирает все changed paths внутри корня проекта, отклоняет
   конфликты и detached HEAD и предоставляет тот же preflight через `SavePlan`
   для `save --dry-run`. При исполнении модуль сохраняет исходный index для
@@ -338,9 +365,11 @@ reader не создаётся. Файлы worktree читаются по одн
 worktree при параллельном редактировании не гарантируется.
 
 `project/semantic/routines.rs` содержит консервативный parser процедур и функций.
-Он читает строки через iterator и собирает только нормализованные тела методов,
-без копии всего модуля для замены CRLF и без массивов строк. Сопоставление
-snapshot-пар и создание событий остаются в `project/semantic.rs`.
+Он читает строки через iterator и собирает нормализованные тела методов вместе с
+видом объявления и 1-based координатами ключевого слова, без копии всего модуля
+для замены CRLF и без массивов строк. Сопоставление snapshot-пар, подавление
+производных событий при lifecycle объекта и создание событий остаются в
+`project/semantic.rs`.
 XML-сигнатуры строятся в одном буфере без промежуточных строк поддеревьев;
 правила нормализации не изменены.
 

@@ -61,17 +61,14 @@ impl CleanArgs {
                 .name()
                 .zip(workspace_root)
                 .map(|(name, root)| (root, name.as_str()));
-            let root = match managed_infobase_root(selected.project(), workspace) {
-                Ok(root) => root,
-                Err(_) => {
-                    write_project_error(
-                        selected.name(),
-                        &localizer.text("clean-project-name-missing"),
-                        localizer,
-                    );
-                    failed = true;
-                    continue;
-                }
+            let Ok(root) = managed_infobase_root(selected.project(), workspace) else {
+                write_project_error(
+                    selected.name(),
+                    &localizer.text("clean-project-name-missing"),
+                    localizer,
+                );
+                failed = true;
+                continue;
             };
             let scope = workspace_root.unwrap_or_else(|| selected.project().root());
             match clean_infobase(&root, scope) {

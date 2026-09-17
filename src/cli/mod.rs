@@ -6,9 +6,11 @@ mod args;
 mod changes;
 mod commands;
 mod diagnostics;
+mod encoding;
 mod interactive;
 pub mod localization;
 mod platform;
+mod shelves;
 
 pub use args::Cli;
 

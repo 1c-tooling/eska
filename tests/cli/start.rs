@@ -109,6 +109,30 @@ fn starts_locally_without_a_configured_remote_in_both_locales() {
 }
 
 #[test]
+fn git_flow_main_branch_override_keeps_feature_base_on_develop() {
+    let (_fixture, root) = local_project("git-flow");
+    let config_path = root.join("eska.toml");
+    let mut config = fs::read_to_string(&config_path).expect("read project config");
+    config.push_str("\n[vcs.workflow.policy]\nmain_branch = 'master'\n");
+    fs::write(&config_path, config).expect("configure production branch");
+    git_ok(&root, &["add", "eska.toml"]);
+    git_ok(&root, &["commit", "-m", "configure production branch"]);
+    git_ok(&root, &["branch", "-f", "develop", "HEAD"]);
+    git_ok(&root, &["branch", "-m", "master"]);
+
+    let output = eska(&root, "ru", &["start", "P1C-3558"]);
+
+    assert!(output.status.success(), "{}", text(&output.stderr));
+    assert!(output.stderr.is_empty());
+    assert!(text(&output.stdout).contains("от локальной develop"));
+    let head = git(&root, &["rev-parse", "--abbrev-ref", "HEAD"]);
+    assert_eq!(head.stdout.trim_ascii(), b"feature/P1C-3558");
+    let base = git(&root, &["merge-base", "feature/P1C-3558", "develop"]);
+    let develop = git(&root, &["rev-parse", "develop"]);
+    assert_eq!(base.stdout, develop.stdout);
+}
+
+#[test]
 fn inaccessible_remote_error_includes_remote_url_and_gix_reason() {
     for (locale, expected) in [
         ("ru", "Не удалось получить изменения из репозитория origin"),

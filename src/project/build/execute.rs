@@ -201,21 +201,9 @@ where
         &pid_file,
         on_output,
     )?;
-    if ibcmd.was_interrupted() {
-        return Err(BuildError::Run {
-            stage: BuildStage::ImportSources,
-            source: RunError::Interrupted,
-        });
-    }
+    reject_interrupted_import(ibcmd)?;
 
-    let metadata =
-        fs::metadata(&artifact).map_err(|_| BuildError::ArtifactMissing(artifact.clone()))?;
-    if !metadata.is_file() {
-        return Err(BuildError::ArtifactMissing(artifact));
-    }
-    if metadata.len() == 0 {
-        return Err(BuildError::ArtifactEmpty(artifact));
-    }
+    validate_artifact(&artifact)?;
     let manifest_path = publish_result(
         plan,
         ibcmd,
@@ -239,6 +227,31 @@ where
         duration: started.elapsed(),
         tool_output,
     })
+}
+
+/// Require an ibcmd result to be a non-empty regular file before publication.
+fn validate_artifact(artifact: &Path) -> Result<(), BuildError> {
+    let metadata =
+        fs::metadata(artifact).map_err(|_| BuildError::ArtifactMissing(artifact.to_owned()))?;
+    if !metadata.is_file() {
+        return Err(BuildError::ArtifactMissing(artifact.to_owned()));
+    }
+    if metadata.len() == 0 {
+        return Err(BuildError::ArtifactEmpty(artifact.to_owned()));
+    }
+    Ok(())
+}
+
+/// Convert an interrupt observed after import into the stage-specific build error.
+fn reject_interrupted_import(ibcmd: &Ibcmd) -> Result<(), BuildError> {
+    if ibcmd.was_interrupted() {
+        Err(BuildError::Run {
+            stage: BuildStage::ImportSources,
+            source: RunError::Interrupted,
+        })
+    } else {
+        Ok(())
+    }
 }
 
 /// Copy the base CF into a manifested build snapshot and otherwise retain its verified path.

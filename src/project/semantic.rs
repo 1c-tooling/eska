@@ -382,6 +382,7 @@ pub struct SemanticEvent {
     stage: ChangeStage,
     object: SemanticObject,
     member: Option<String>,
+    location: Option<SourceLocation>,
     path: BString,
 }
 
@@ -410,11 +411,24 @@ impl SemanticEvent {
         self.member.as_deref()
     }
 
+    /// Return the one-based BSL declaration coordinates for a procedure or function.
+    #[must_use]
+    pub const fn location(&self) -> Option<SourceLocation> {
+        self.location
+    }
+
     /// Return the original project-relative source path.
     #[must_use]
     pub fn path(&self) -> &BStr {
         self.path.as_bstr()
     }
+}
+
+/// One-based source coordinates used only by the human semantic presentation.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct SourceLocation {
+    pub line: usize,
+    pub column: usize,
 }
 
 /// Locale-independent classification of reliable semantic changes.
@@ -491,7 +505,7 @@ pub struct SemanticDiff {
 }
 
 impl SemanticDiff {
-    /// Return semantic events sorted by kind, stage, object, member and path.
+    /// Return semantic events sorted by kind, stage, object, member, location and path.
     #[must_use]
     pub fn events(&self) -> &[SemanticEvent] {
         &self.events
@@ -693,10 +707,7 @@ pub fn diff_workspace(
             );
         }
     }
-    Ok(SemanticDiff {
-        events: events.into_iter().collect(),
-        fallbacks: fallbacks.into_iter().collect(),
-    })
+    Ok(build_semantic_diff(events, fallbacks))
 }
 
 /// Analyze one committed comparison from exact tree blob pairs.
@@ -742,10 +753,41 @@ pub fn diff_revisions(
         };
         analyze_snapshots(project, None, &snapshot, &mut events, &mut fallbacks);
     }
-    Ok(SemanticDiff {
-        events: events.into_iter().collect(),
+    Ok(build_semantic_diff(events, fallbacks))
+}
+
+/// Suppress derived changes when the same identity has an object lifecycle event.
+fn build_semantic_diff(
+    events: BTreeSet<SemanticEvent>,
+    fallbacks: BTreeSet<SemanticFallback>,
+) -> SemanticDiff {
+    let mut lifecycle: BTreeMap<ChangeStage, BTreeSet<String>> = BTreeMap::new();
+    for event in &events {
+        if matches!(
+            event.kind,
+            SemanticEventKind::ObjectAdded | SemanticEventKind::ObjectRemoved
+        ) {
+            lifecycle
+                .entry(event.stage)
+                .or_default()
+                .insert(event.object.id.clone());
+        }
+    }
+    let events = events
+        .into_iter()
+        .filter(|event| {
+            matches!(
+                event.kind,
+                SemanticEventKind::ObjectAdded | SemanticEventKind::ObjectRemoved
+            ) || !lifecycle
+                .get(&event.stage)
+                .is_some_and(|objects| objects.contains(&event.object.id))
+        })
+        .collect();
+    SemanticDiff {
+        events,
         fallbacks: fallbacks.into_iter().collect(),
-    })
+    }
 }
 
 /// Open the containing worktree and enforce project scoping.
@@ -1277,27 +1319,24 @@ fn analyze_routines(
     let mut keys: BTreeSet<_> = before.keys().cloned().collect();
     keys.extend(after.keys().cloned());
     for key in keys {
-        let (kind, member) = match (before.get(&key), after.get(&key)) {
-            (None, Some(routine)) => (
-                routine_event_kind(routine.kind, Change::Added),
-                routine.name.clone(),
-            ),
-            (Some(routine), None) => (
-                routine_event_kind(routine.kind, Change::Deleted),
-                routine.name.clone(),
-            ),
-            (Some(previous), Some(current)) if previous.body != current.body => (
-                routine_event_kind(current.kind, Change::Modified),
-                current.name.clone(),
-            ),
+        let (kind, routine) = match (before.get(&key), after.get(&key)) {
+            (None, Some(routine)) => (routine_event_kind(routine.kind, Change::Added), routine),
+            (Some(routine), None) => (routine_event_kind(routine.kind, Change::Deleted), routine),
+            (Some(previous), Some(current)) if previous.body != current.body => {
+                (routine_event_kind(current.kind, Change::Modified), current)
+            }
             _ => continue,
         };
-        emit(
+        emit_at(
             events,
             kind,
             stage,
             object.clone(),
-            Some(member),
+            Some(routine.name.clone()),
+            Some(SourceLocation {
+                line: routine.line,
+                column: routine.column,
+            }),
             path.clone(),
         );
     }
@@ -1362,11 +1401,25 @@ fn emit(
     member: Option<String>,
     path: BString,
 ) {
+    emit_at(events, kind, stage, object, member, None, path);
+}
+
+/// Insert one event with optional source coordinates into the deterministic set.
+fn emit_at(
+    events: &mut BTreeSet<SemanticEvent>,
+    kind: SemanticEventKind,
+    stage: ChangeStage,
+    object: SemanticObject,
+    member: Option<String>,
+    location: Option<SourceLocation>,
+    path: BString,
+) {
     events.insert(SemanticEvent {
         kind,
         stage,
         object,
         member,
+        location,
         path,
     });
 }
