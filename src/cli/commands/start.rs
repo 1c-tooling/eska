@@ -149,6 +149,8 @@ const fn command_error_key(error: &command::Error) -> &'static str {
         command::Operation::Fetch => "start-fetch-command-error",
         command::Operation::UpdateBase => "start-update-base-error",
         command::Operation::Switch => "start-switch-error",
-        command::Operation::Stage | command::Operation::Commit => "start-repository-error",
+        command::Operation::Stage | command::Operation::Commit | command::Operation::Shelf => {
+            "start-repository-error"
+        }
     }
 }

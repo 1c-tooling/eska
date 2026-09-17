@@ -57,7 +57,7 @@
   базы feature-веток;
 - `DONE`: `T59` — читаемый semantic-вывод `eska diff` с координатами методов,
   устранением дублей и порядком метаданных Конфигуратора;
-- `NEXT`: `T35` — автоматическое сохранение и восстановление незакоммиченного
+- `IN-PROGRESS`: `T35` — автоматическое сохранение и восстановление незакоммиченного
   состояния при переключении задач;
 - `PLANNED`: `T56` — автоматическая версия релиза 1С и подготовка Release PR/MR
   после T35;
@@ -190,7 +190,7 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T32 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T33 | PLANNED | CI integration | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T34 | DONE | `eska switch` | [05-safe-vcs.md](05-safe-vcs.md) |
-| T35 | NEXT | `shelve` / `unshelve` / `shelves` и автоматическое восстановление при `switch` | [05-safe-vcs.md](05-safe-vcs.md) |
+| T35 | IN-PROGRESS | `shelve` / `unshelve` / `shelves` и автоматическое восстановление при `switch` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T36 | PLANNED | `eska restore` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T37 | PLANNED | `eska sync` / `continue` / `abort` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T38 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |

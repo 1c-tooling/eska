@@ -5,6 +5,7 @@ pub mod diff;
 pub(crate) mod git;
 pub mod network;
 pub mod repository;
+pub mod shelves;
 pub(crate) mod snapshot;
 pub mod status;
 pub mod workflow;
