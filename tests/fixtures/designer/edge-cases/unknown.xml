@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" version="2.20">
+<FutureObject uuid="11111111-1111-1111-1111-111111111111"><Properties><Name>БудущийТип</Name><Synonym><v8:item xmlns:v8="http://v8.1c.ru/8.1/data/core"><v8:lang>ru</v8:lang><v8:content>БудущийТип для теста</v8:content></v8:item></Synonym></Properties></FutureObject>
+</MetaDataObject>

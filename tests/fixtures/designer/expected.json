@@ -1,0 +1,79 @@
+[
+  {
+    "name": "configuration",
+    "project_type": "configuration",
+    "root_descriptor": "Configuration.xml",
+    "object_ids": [
+      "accounting-register:Проводки",
+      "accounting-register:Проводки/dimension:Организация",
+      "accounting-register:Проводки/resource:Сумма",
+      "accumulation-register:Остатки",
+      "accumulation-register:Остатки/dimension:Номенклатура",
+      "accumulation-register:Остатки/resource:Количество",
+      "calculation-register:Начисления",
+      "calculation-register:Начисления/dimension:Сотрудник",
+      "calculation-register:Начисления/recalculation:Перерасчет",
+      "calculation-register:Начисления/resource:Результат",
+      "catalog:Контрагенты",
+      "catalog:Контрагенты/attribute:ИНН",
+      "catalog:Контрагенты/command:Команда",
+      "catalog:Контрагенты/form:ФормаЭлемента",
+      "catalog:Контрагенты/tabular-section:Контакты",
+      "catalog:Контрагенты/tabular-section:Контакты/attribute:Телефон",
+      "catalog:Контрагенты/template:Макет",
+      "common-module:ЗащищенныйМодуль",
+      "common-module:ОбщийМодуль",
+      "configuration:ТестоваяКонфигурация",
+      "document:Продажа",
+      "document:Продажа/attribute:Комментарий",
+      "document:Продажа/tabular-section:Товары",
+      "document:Продажа/tabular-section:Товары/attribute:Количество",
+      "enum:Состояния",
+      "enum:Состояния/enum-value:Закрыт",
+      "enum:Состояния/enum-value:Новый",
+      "http-service:Api",
+      "http-service:Api/url-template:Ресурс",
+      "http-service:Api/url-template:Ресурс/method:Get",
+      "information-register:Курсы",
+      "information-register:Курсы/dimension:Валюта",
+      "information-register:Курсы/resource:Курс",
+      "integration-service:Обмен",
+      "integration-service:Обмен/integration-service-channel:Канал",
+      "subsystem:Основная",
+      "subsystem:Основная/subsystem:Детальная",
+      "web-service:Сервис",
+      "web-service:Сервис/operation:Выполнить",
+      "web-service:Сервис/operation:Выполнить/parameter:Аргумент"
+    ]
+  },
+  {
+    "name": "extension",
+    "project_type": "extension",
+    "root_descriptor": "Configuration.xml",
+    "object_ids": [
+      "catalog:Контрагенты",
+      "catalog:Контрагенты/attribute:ДополнительныйРеквизит",
+      "configuration:ТестовоеРасширение"
+    ]
+  },
+  {
+    "name": "report",
+    "project_type": "report",
+    "root_descriptor": "ОтчетДляТеста.xml",
+    "object_ids": [
+      "report:Анализ",
+      "report:Анализ/attribute:Параметр",
+      "report:Анализ/form:Основная"
+    ]
+  },
+  {
+    "name": "processing",
+    "project_type": "processing",
+    "root_descriptor": "Выгрузка.xml",
+    "object_ids": [
+      "data-processor:Обработка",
+      "data-processor:Обработка/attribute:Параметр",
+      "data-processor:Обработка/form:Основная"
+    ]
+  }
+]
