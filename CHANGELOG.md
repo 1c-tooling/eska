@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0](https://github.com/1c-tooling/eska/compare/v0.9.0...v0.10.0) - 2026-09-17
+
+### Added
+
+- *(vcs)* Добавлены команды полок и автоматическое восстановление при switch
+- *(vcs)* Добавлены полки с точным сохранением index и файлов
+
 ## [0.9.0](https://github.com/1c-tooling/eska/compare/v0.8.0...v0.9.0) - 2026-09-16
 
 ### Added
