@@ -295,7 +295,17 @@ pub fn discover_affected(
             source: source_error,
         })?;
     let project_type = project.configuration().project_type();
-    let candidates = affected_descriptor_paths(project_type, &source, source_paths)?;
+    let mut candidates: Vec<_> = affected_descriptor_paths(project_type, &source, source_paths)?
+        .into_iter()
+        .collect();
+    // Path ordering compares components, placing `Owner/Child.xml` before `Owner.xml`.
+    // Index ancestors first so independently exported children keep their full identity.
+    candidates.sort_by(|left, right| {
+        left.components()
+            .count()
+            .cmp(&right.components().count())
+            .then_with(|| left.cmp(right))
+    });
     let mut objects = BTreeMap::new();
     let mut by_logical_path = BTreeMap::new();
     let mut by_source_path = BTreeMap::new();
@@ -420,19 +430,22 @@ fn nested_descriptor_ancestry(
 
 /// Add nested descriptors below the single root object of an external project.
 fn external_descriptor_ancestry(components: &[&str], output: &mut BTreeSet<PathBuf>) {
-    let Some(collection) = components.first() else {
+    let Some(first) = components.first() else {
+        return;
+    };
+    let offset = usize::from(!matches!(*first, "Forms" | "Templates" | "Commands"));
+    let Some(collection) = components.get(offset) else {
         return;
     };
     if !matches!(*collection, "Forms" | "Templates" | "Commands") {
         return;
     }
-    let Some(item) = components.get(1) else {
-        return;
+    let mut base = if offset == 0 {
+        PathBuf::new()
+    } else {
+        PathBuf::from(first)
     };
-    let item = item.strip_suffix(".xml").unwrap_or(item);
-    let mut base = PathBuf::from(collection).join(item);
-    output.insert(base.with_extension("xml"));
-    nested_descriptor_ancestry(&mut base, &components[2..], output);
+    nested_descriptor_ancestry(&mut base, &components[offset..], output);
 }
 
 /// Enumerate only immediate root descriptor candidates for an external project.

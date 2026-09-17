@@ -247,6 +247,53 @@ fn keeps_object_ids_unique_when_designer_uuids_are_reused() {
     assert_eq!(ids, ["catalog:First", "catalog:Second"]);
 }
 
+/// Affected lookup must load standalone children's ancestors in both external layouts.
+#[test]
+fn affected_standalone_children_keep_full_owner_identity() {
+    for (project_type, owner_path, owner_tag, child_path, child_tag, module_path, expected) in [
+        (
+            ProjectType::Configuration,
+            "Catalogs/Owner.xml",
+            "Catalog",
+            "Catalogs/Owner/Commands/Child.xml",
+            "Command",
+            "Catalogs/Owner/Commands/Child/Ext/CommandModule.bsl",
+            "catalog:Owner/command:Child",
+        ),
+        (
+            ProjectType::Processing,
+            "Export.xml",
+            "ExternalDataProcessor",
+            "Export/Forms/Child.xml",
+            "Form",
+            "Export/Forms/Child/Ext/Form/Module.bsl",
+            "data-processor:Owner/form:Child",
+        ),
+        (
+            ProjectType::Report,
+            "Export.xml",
+            "ExternalReport",
+            "Forms/Child.xml",
+            "Form",
+            "Forms/Child/Ext/Form/Module.bsl",
+            "report:Owner/form:Child",
+        ),
+    ] {
+        let fixture = fixture(project_type);
+        write_descriptor(&fixture.source, owner_path, owner_tag, "same", "Owner", "");
+        write_descriptor(&fixture.source, child_path, child_tag, "same", "Child", "");
+        write_file(&fixture.source, module_path, "// fixture");
+        let path = std::path::PathBuf::from(module_path);
+        let full = discover(&fixture.project).unwrap();
+        let affected = discover_affected(&fixture.project, std::slice::from_ref(&path)).unwrap();
+        assert!(affected.issues().is_empty());
+        assert_eq!(affected.descriptors_read(), 2);
+        let actual = affected.model().objects_for_changed_path(&path);
+        assert_eq!(actual[0].id().as_str(), expected);
+        assert_eq!(actual[0].id(), full.objects_for_changed_path(&path)[0].id());
+    }
+}
+
 /// Service child types observed in real exports retain their complete logical ancestry.
 #[test]
 fn discovers_service_children_as_path_independent_metadata() {
