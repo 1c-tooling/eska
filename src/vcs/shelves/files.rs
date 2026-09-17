@@ -65,8 +65,13 @@ pub(super) fn capture(path: &Path, payload: &Path) -> Result<Image, Error> {
     match image.kind {
         Kind::Missing => {}
         Kind::File => {
-            fs::copy(path, payload)?;
-            File::open(payload)?.sync_all()?;
+            let mut input = File::open(path)?;
+            let mut output = OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(payload)?;
+            std::io::copy(&mut input, &mut output)?;
+            output.sync_all()?;
         }
         Kind::Link => write_new(payload, &link_bytes(path)?)?,
     }
@@ -156,6 +161,13 @@ pub(super) fn restore(path: &Path, image: &Image, payload: &Path) -> Result<(), 
         let _ = fs::remove_file(&temporary);
     }
     result
+}
+
+impl Image {
+    /// Apply the original file mode to an index lock before committing its replacement.
+    pub(super) fn apply_mode(&self, path: &Path) -> Result<(), Error> {
+        set_mode(path, self.permissions)
+    }
 }
 
 /// Write an exclusively owned durable file without overwriting another operation's data.

@@ -64,7 +64,7 @@ RU/EN; автоматический shelve не добавлен.
 
 ## T35 — `shelve` / `unshelve` / `shelves`
 
-**Статус:** `IN-PROGRESS`
+**Статус:** `DONE`
 **Зависит от:** T15, T34
 
 Сделать переключение между задачами безопасным при незакоммиченных изменениях.
@@ -108,6 +108,35 @@ system Git layer, без разбора локализованного human out
 не теряют полку; конфликты, сдвиг branch и незавершённые Git-операции безопасно
 останавливаются. RU/EN, JSON, exit codes, redirect/`NO_COLOR` и Windows/Unix
 покрыты integration-тестами.
+
+**Результат:** реализованы `shelve`, `unshelve [id]`, `shelves` и автоматический
+цикл сохранения/восстановления в `switch <task>` / `switch --base`, включая
+workspace root/member. Добавлены RU/EN, JSON schema v1, read-only `--dry-run`.
+
+Backend хранит исходный raw index и SHA-256 снимки changed paths в общем
+Git-каталоге `eska-shelves/`; staged tree защищена private ref через gix.
+Это сохраняет BOM/CRLF и разделение staged/unstaged без повторной нормализации.
+System Git используется только через infrastructure layer: `write-tree` для
+index tree, `restore` с literal NUL pathspec для очистки captured tracked paths,
+`switch --no-guess --no-overwrite-ignore` для перехода между ветками. Полка
+привязана к полной branch ref и точному commit; на ветку допускается одна полка.
+
+Проверяются все payloads до восстановления; index заменяется через index.lock,
+файлы — через временные соседние файлы. Журнал разрешает повторный `unshelve`
+после частичного восстановления только при совпадении текущих файлов с исходным
+или восстановленным состоянием. Ошибка очистки вызывает попытку rollback;
+прерывание очистки сохраняет полку, но может потребовать ручного восстановления.
+Внешние Git/editor mutations не входят в гарантию блокировки между командами eska.
+
+Sparse/split index, submodules, intent-to-add, skip-worktree, assume-unchanged,
+unmerged index, detached/unborn HEAD и незавершённые Git-операции отклоняются.
+Формат storage внутренний; public CLI и JSON документированы в README.
+Проверены циклы между dirty задачами и базой, вложенный проект, workspace,
+raw index, staged/unstaged, rename/delete, ignored collisions, сдвиг ветки,
+повреждение payload, повторное восстановление и linked worktree preflight.
+Переносимые integration-тесты выполнены на Linux; Unix отдельно проверяет
+не-UTF-8 пути, symlinks, executable bit и ошибку записи. Native Windows/macOS
+прогон остаётся внешней проверкой T55; здесь он не заявляется выполненным.
 
 ## T36 — `eska restore`
 

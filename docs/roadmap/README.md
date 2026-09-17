@@ -57,10 +57,10 @@
   базы feature-веток;
 - `DONE`: `T59` — читаемый semantic-вывод `eska diff` с координатами методов,
   устранением дублей и порядком метаданных Конфигуратора;
-- `IN-PROGRESS`: `T35` — автоматическое сохранение и восстановление незакоммиченного
+- `DONE`: `T35` — автоматическое сохранение и восстановление незакоммиченного
   состояния при переключении задач;
-- `PLANNED`: `T56` — автоматическая версия релиза 1С и подготовка Release PR/MR
-  после T35;
+- `NEXT`: `T56` — автоматическая версия релиза 1С и подготовка Release PR/MR
+  после завершённой T35;
 - `PLANNED`: `T57` — обновление установленного бинарника командой `eska update`
   после T56;
 - `PLANNED`: `T55` — переносимый стенд реализован, завершение ожидает запусков
@@ -95,11 +95,11 @@ T42 подтвердил узкий сценарий замены метода �
 проверкой BSL и применимости пакетным Конфигуратором. Подробности и ограничения —
 [в результате T42/T43](t42-patch-extension.md).
 
-Первая версия `switch` работает только с чистой рабочей копией и предлагает
-сначала выполнить `save`. T58 завершила настройку production-ветки Git Flow с
+T35 добавила автоматические полки при `switch` и явные команды
+`shelve` / `unshelve` / `shelves`. T58 завершила настройку production-ветки Git Flow с
 сохранением `develop` базой обычных feature-веток. T59 сделала semantic-вывод
 однозначным, подавила противоречивые события и добавила координаты методов.
-Следующей выполняется T35 — безопасное переключение с незакоммиченными изменениями.
+Следующая задача — T56: автоматическая подготовка версии релиза 1С.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
 операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
@@ -126,15 +126,14 @@ TUI разделён на обработку клавиш, отрисовку и
 
 | Порядок | ID | Результат |
 |---|---|---|
-| 1 | T35 | Сохранение состояния задачи и автоматическое восстановление при `switch` |
-| 2 | T56 | Автоматический bump версии 1С и подготовка Release PR/MR |
-| 3 | T57 | Обновление установленного `eska` до последнего стабильного release |
-| 4 | T37 | Синхронизация задачи и штатные продолжение/отмена при конфликтах |
-| 5 | T55 | Завершение внешних Windows/macOS и реальных 1С-проверок при доступном runner |
-| 6 | T26 | Форматирование; последняя задача текущей очереди |
+| 1 | T56 | Автоматический bump версии 1С и подготовка Release PR/MR |
+| 2 | T57 | Обновление установленного `eska` до последнего стабильного release |
+| 3 | T37 | Синхронизация задачи и штатные продолжение/отмена при конфликтах |
+| 4 | T55 | Завершение внешних Windows/macOS и реальных 1С-проверок при доступном runner |
+| 5 | T26 | Форматирование; последняя задача текущей очереди |
 
 T55 можно завершить раньше T37, если станет доступна требуемая ОС; ожидание
-внешнего runner не блокирует реализацию T35, T56, T57 и T37 на
+внешнего runner не блокирует реализацию T56, T57 и T37 на
 текущей системе.
 
 T53 нельзя начинать с ослабления проверки интеграции: сначала снимается
@@ -190,7 +189,7 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T32 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T33 | PLANNED | CI integration | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T34 | DONE | `eska switch` | [05-safe-vcs.md](05-safe-vcs.md) |
-| T35 | IN-PROGRESS | `shelve` / `unshelve` / `shelves` и автоматическое восстановление при `switch` | [05-safe-vcs.md](05-safe-vcs.md) |
+| T35 | DONE | `shelve` / `unshelve` / `shelves` и автоматическое восстановление при `switch` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T36 | PLANNED | `eska restore` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T37 | PLANNED | `eska sync` / `continue` / `abort` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T38 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
@@ -211,7 +210,7 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T53 | NEEDS-SPEC | Завершение задачи после squash/rebase | [12-current-functionality.md](12-current-functionality.md) |
 | T54 | DONE | Паспорт собранного артефакта | [12-current-functionality.md](12-current-functionality.md) |
 | T55 | PLANNED | Переносимые проверки сборки; ожидает внешней приёмки | [12-current-functionality.md](12-current-functionality.md) |
-| T56 | PLANNED | Автоматическая подготовка версии релиза 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T56 | NEXT | Автоматическая подготовка версии релиза 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T57 | PLANNED | Обновление установленного `eska` | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T58 | DONE | Настраиваемая основная production-ветка Git Flow | [03-repository-workflow.md](03-repository-workflow.md) |
 | T59 | DONE | Читаемый semantic-вывод `eska diff` с координатами методов | [04-core-vcs-ux.md](04-core-vcs-ux.md) |

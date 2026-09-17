@@ -189,3 +189,111 @@ fn unix_bytes_modes_and_links_are_preserved() {
         b"target-\xff"
     );
 }
+
+/// Unsupported index flags and detached/rebase states are rejected without changing bytes.
+#[test]
+fn ambiguous_git_states_leave_index_and_files_untouched() {
+    for state in ["intent", "assume", "skip", "split", "detached", "rebase"] {
+        let root = repository();
+        commit(&root.0, "initial");
+        fs::write(root.0.join("pending"), b"keep").unwrap();
+        match state {
+            "intent" => {
+                git(&root.0, &["add", "-N", "pending"]);
+            }
+            "assume" => {
+                git(&root.0, &["update-index", "--assume-unchanged", "initial"]);
+            }
+            "skip" => {
+                git(&root.0, &["update-index", "--skip-worktree", "initial"]);
+            }
+            "split" => {
+                git(&root.0, &["update-index", "--split-index"]);
+            }
+            "detached" => {
+                git(&root.0, &["checkout", "--detach"]);
+            }
+            "rebase" => {
+                fs::create_dir(root.0.join(".git/rebase-merge")).unwrap();
+            }
+            _ => unreachable!(),
+        }
+        let repo = Repository::discover(&root.0).unwrap();
+        let index = fs::read(repo.index_path()).unwrap();
+        assert!(shelves::plan(&repo).is_err(), "{state} must be refused");
+        assert_eq!(fs::read(repo.index_path()).unwrap(), index);
+        assert_eq!(fs::read(root.0.join("pending")).unwrap(), b"keep");
+        assert!(shelves::list(&repo).unwrap().is_empty());
+    }
+}
+
+/// Staged deletion plus a replacement untracked file preserve both independent states.
+#[test]
+fn staged_delete_with_replacement_round_trips() {
+    let root = repository();
+    commit(&root.0, "file");
+    git(&root.0, &["rm", "file"]);
+    fs::write(root.0.join("file"), b"replacement").unwrap();
+    let repo = Repository::discover(&root.0).unwrap();
+    let index = fs::read(repo.index_path()).unwrap();
+    let session = Session::acquire(&repo).unwrap();
+    session.capture().unwrap();
+    assert_eq!(fs::read(root.0.join("file")).unwrap(), b"file\n");
+    session.restore(None).unwrap();
+    assert_eq!(fs::read(repo.index_path()).unwrap(), index);
+    assert_eq!(fs::read(root.0.join("file")).unwrap(), b"replacement");
+}
+
+/// A retained shelf can be retried after removing an unrelated conflicting file.
+#[test]
+fn failed_restore_can_be_retried_without_losing_the_shelf() {
+    let root = repository();
+    commit(&root.0, "file");
+    fs::write(root.0.join("new"), b"original").unwrap();
+    git(&root.0, &["add", "new"]);
+    let repo = Repository::discover(&root.0).unwrap();
+    let session = Session::acquire(&repo).unwrap();
+    let saved = session.capture().unwrap();
+    fs::create_dir_all(root.0.join(".git/info")).unwrap();
+    fs::write(root.0.join(".git/info/exclude"), b"new\n").unwrap();
+    fs::write(root.0.join("new"), b"collision").unwrap();
+    assert!(matches!(
+        session.restore(None),
+        Err(shelves::Error::Collision(_))
+    ));
+    assert_eq!(shelves::list(&repo).unwrap(), vec![saved]);
+    fs::remove_file(root.0.join("new")).unwrap();
+    session.restore(None).unwrap();
+    assert_eq!(fs::read(root.0.join("new")).unwrap(), b"original");
+    assert!(shelves::list(&repo).unwrap().is_empty());
+}
+
+/// A partial worktree restore retains its journal and can resume after permissions are fixed.
+#[cfg(unix)]
+#[test]
+fn partial_restore_resumes_after_write_failure() {
+    use std::os::unix::fs::PermissionsExt;
+    let root = repository();
+    commit(&root.0, "a");
+    fs::create_dir(root.0.join("z")).unwrap();
+    commit(&root.0, "z/file");
+    fs::write(root.0.join("a"), b"saved a").unwrap();
+    fs::write(root.0.join("z/file"), b"saved z").unwrap();
+    let repo = Repository::discover(&root.0).unwrap();
+    let index = fs::read(repo.index_path()).unwrap();
+    let session = Session::acquire(&repo).unwrap();
+    let saved = session.capture().unwrap();
+    fs::set_permissions(root.0.join("z"), fs::Permissions::from_mode(0o555)).unwrap();
+    let result = session.restore(None);
+    fs::set_permissions(root.0.join("z"), fs::Permissions::from_mode(0o755)).unwrap();
+    // Privileged test runners can bypass directory permissions; the roundtrip still applies.
+    if result.is_err() {
+        assert_eq!(fs::read(root.0.join("a")).unwrap(), b"saved a");
+        assert_eq!(shelves::list(&repo).unwrap(), vec![saved]);
+        session.restore(None).unwrap();
+    }
+    assert_eq!(fs::read(root.0.join("a")).unwrap(), b"saved a");
+    assert_eq!(fs::read(root.0.join("z/file")).unwrap(), b"saved z");
+    assert_eq!(fs::read(repo.index_path()).unwrap(), index);
+    assert!(shelves::list(&repo).unwrap().is_empty());
+}

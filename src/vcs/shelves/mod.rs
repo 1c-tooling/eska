@@ -56,7 +56,7 @@ impl From<super::command::Error> for Error {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Shelf {
     pub id: String,
     pub branch: Vec<u8>,
@@ -65,7 +65,7 @@ pub struct Shelf {
     pub files: Vec<ShelfPath>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ShelfPath {
     pub path: Vec<u8>,
     pub index: Option<String>,
@@ -92,6 +92,9 @@ pub struct Session<'a> {
 /// Returns an error for inaccessible or malformed shelf data.
 pub fn list(repository: &Repository) -> Result<Vec<Shelf>, Error> {
     let root = shelf_root(repository);
+    if fs::symlink_metadata(&root).is_ok_and(|m| !m.is_dir() || m.file_type().is_symlink()) {
+        return Err(Error::InvalidShelf);
+    }
     let entries = match fs::read_dir(&root) {
         Ok(entries) => entries,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
@@ -150,6 +153,9 @@ pub fn restore_plan(repository: &Repository, id: Option<&str>) -> Result<Shelf, 
     let directory = shelf_directory(repository, &saved.id)?;
     validate_payloads(&stored, &directory)?;
     if !matches_snapshot(repository, &stored)? {
+        if !directory.join("ready").is_file() {
+            return Err(Error::Incomplete);
+        }
         restore_preflight(repository, &stored, &directory, false)?;
     }
     Ok(saved)
@@ -345,6 +351,7 @@ impl<'a> Session<'a> {
         let result = (|| {
             let mut input = File::open(directory.join("index"))?;
             io::copy(&mut input, &mut file)?;
+            stored.index.apply_mode(&lock)?;
             file.sync_all()?;
             drop(file);
             fs::rename(&lock, &index)?;
@@ -390,10 +397,15 @@ pub(crate) fn preflight(repository: &Repository) -> Result<(Vec<u8>, String), Er
     if !repository.index_path().is_file() {
         return Err(Error::UnsupportedIndex);
     }
-    let index = repository
-        .inner
-        .index_or_empty()
-        .map_err(|_| Error::UnsupportedIndex)?;
+    // Decode without resolving the link extension: gix's repository index accessor
+    // dissolves split indexes and hides the dependency on sharedindex files.
+    let (index, _) = gix::index::State::from_bytes(
+        &fs::read(repository.index_path())?,
+        SystemTime::now().into(),
+        repository.inner.object_hash(),
+        gix::index::decode::Options::default(),
+    )
+    .map_err(|_| Error::UnsupportedIndex)?;
     let flags = gix::index::entry::Flags::SKIP_WORKTREE
         | gix::index::entry::Flags::ASSUME_VALID
         | gix::index::entry::Flags::INTENT_TO_ADD;
@@ -421,8 +433,12 @@ fn load(repository: &Repository, id: &str) -> Result<Stored, Error> {
     {
         return Err(Error::InvalidShelf);
     }
+    let mut paths = std::collections::HashSet::new();
     for entry in &stored.shelf.files {
         files::relative_path(&entry.path)?;
+        if !paths.insert(&entry.path) {
+            return Err(Error::InvalidShelf);
+        }
     }
     Ok(stored)
 }
@@ -540,10 +556,16 @@ fn restore_preflight(
         if !write {
             return Ok(());
         }
-        files::write_new(
-            &directory.join("restore-index"),
-            &fs::read(repository.index_path())?,
-        )?;
+        let baseline_index = directory.join("restore-index");
+        let index = fs::read(repository.index_path())?;
+        if baseline_index.exists() {
+            // A crash between the two journal files must allow a safe retry.
+            if fs::read(&baseline_index)? != index {
+                return Err(Error::Dirty);
+            }
+        } else {
+            files::write_new(&baseline_index, &index)?;
+        }
         files::write_new(
             &journal,
             &serde_json::to_vec(&baseline).map_err(|_| Error::InvalidShelf)?,
@@ -569,4 +591,14 @@ fn matches_snapshot(repository: &Repository, stored: &Stored) -> Result<bool, Er
         }
     }
     Ok(true)
+}
+
+/// Verify a target shelf before a switch captures the current branch's state.
+pub(crate) fn validate_saved(repository: &Repository, id: &str) -> Result<(), Error> {
+    let stored = load(repository, id)?;
+    let directory = shelf_directory(repository, id)?;
+    if !directory.join("ready").is_file() {
+        return Err(Error::Incomplete);
+    }
+    validate_payloads(&stored, &directory)
 }

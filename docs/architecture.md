@@ -37,9 +37,11 @@ src/
 │   │   ├── save.rs              # eska save: draft сообщения и presentation
 │   │   ├── start.rs             # eska start: localized result и ошибки
 │   │   ├── status.rs            # eska status: human/JSON presentation
+│   │   ├── shelves.rs           # явные команды полок и read-only previews
 │   │   ├── switch.rs            # eska switch: выбор цели и presentation
 │   │   ├── version.rs           # version одного проекта или списка workspace members
 │   │   └── validate.rs          # проверка при запуске без подкоманды
+│   ├── shelves.rs               # общий human/JSON контракт полок и switch
 │   ├── diagnostics.rs           # общие ошибки project/config/platform
 │   ├── interactive/
 │   │   ├── mod.rs               # общие варианты выбора и ошибки prompts
@@ -286,11 +288,23 @@ tests/
   worktree на base локальная task ref удаляется через `gix` с compare-and-swap;
   publish, merge и удаление remote branch не выполняются. `cli/commands/finish.rs`
   отвечает за RU/EN presentation.
-- `project/switch.rs` через `gix` проверяет workflow target, локальную ref и
-  чистоту всего worktree, не выполняя fetch и не создавая веток. Изолированный
-  system Git активирует существующую ветку с `--no-guess`, чтобы согласованно
-  изменить HEAD, index и файлы; `cli/commands/switch.rs` отвечает за выбор
-  task/base и RU/EN presentation.
+- `project/switch.rs` через `gix` проверяет workflow target, локальную ref,
+  владельцев linked worktrees и полку целевой ветки. `vcs/shelves` сохраняет
+  изменения исходной ветки и восстанавливает целевую полку. Fetch и создание
+  веток не выполняются. Изолированный system Git активирует существующую ветку
+  с `--no-guess --no-overwrite-ignore`; CLI отвечает за task/base, RU/EN и JSON.
+- `vcs/shelves/mod.rs` управляет preflight, repository-wide блокировкой,
+  branch/base identity, журналом восстановления и жизненным циклом полки.
+  `vcs/shelves/files.rs` хранит raw bytes и SHA-256 снимки только изменённых путей,
+  проверяет пути и восстанавливает файлы через временные соседние файлы.
+  Исходный index хранится целиком; его tree закреплена через gix ref
+  `refs/eska/shelves/<id>`. Storage — `eska-shelves/` в общем Git-каталоге.
+  System Git `write-tree` сериализует index, `restore` очищает только captured
+  tracked paths через NUL-delimited literal pathspec. Fallback необходим для
+  согласованного изменения index/worktree с учётом атрибутов Git; shell и human
+  output не разбираются. Полка удаляется после проверки восстановленных байтов.
+  `shelves::plan`/`restore_plan` и `switch` preview не создают файлы или блокировки.
+  Sparse/split index и специальные index flags отклоняются до записи.
 - `project/save.rs` выбирает все changed paths внутри корня проекта, отклоняет
   конфликты и detached HEAD и предоставляет тот же preflight через `SavePlan`
   для `save --dry-run`. При исполнении модуль сохраняет исходный index для

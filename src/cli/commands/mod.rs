@@ -19,6 +19,7 @@ mod new;
 mod patch;
 mod platform;
 mod save;
+mod shelves;
 mod start;
 mod status;
 mod switch;
@@ -60,6 +61,12 @@ pub(super) enum Commands {
     #[command(disable_help_flag = true)]
     Switch(switch::SwitchArgs),
     #[command(disable_help_flag = true)]
+    Shelve(shelves::ShelveArgs),
+    #[command(disable_help_flag = true)]
+    Unshelve(shelves::UnshelveArgs),
+    #[command(disable_help_flag = true)]
+    Shelves(shelves::ShelvesArgs),
+    #[command(disable_help_flag = true)]
     Version(version::VersionArgs),
 }
 
@@ -69,6 +76,9 @@ pub(super) fn run(
     localizer: &Localizer,
 ) -> ExitCode {
     match command {
+        Some(Commands::Shelve(args)) => args.run(project_dir, localizer),
+        Some(Commands::Unshelve(args)) => args.run(project_dir, localizer),
+        Some(Commands::Shelves(args)) => args.run(project_dir, localizer),
         Some(Commands::Build(args)) => args.run(project_dir, localizer),
         Some(Commands::Clean(args)) => args.run(project_dir, localizer),
         Some(Commands::Clone(args)) => args.run(project_dir, localizer),
@@ -108,5 +118,8 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         .mut_subcommand("start", |command| start::localize(command, localizer))
         .mut_subcommand("status", |command| status::localize(command, localizer))
         .mut_subcommand("switch", |command| switch::localize(command, localizer))
+        .mut_subcommand("shelve", |command| shelves::localize(command, localizer))
+        .mut_subcommand("unshelve", |command| shelves::localize(command, localizer))
+        .mut_subcommand("shelves", |command| shelves::localize(command, localizer))
         .mut_subcommand("version", |command| version::localize(command, localizer))
 }
