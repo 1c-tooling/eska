@@ -11,6 +11,7 @@ pub mod finish;
 pub mod history;
 pub mod init;
 pub(crate) mod metadata;
+pub mod metadata_model;
 pub mod model;
 pub mod object_model;
 pub mod onboarding;

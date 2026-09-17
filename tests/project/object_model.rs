@@ -247,6 +247,73 @@ fn keeps_object_ids_unique_when_designer_uuids_are_reused() {
     assert_eq!(ids, ["catalog:First", "catalog:Second"]);
 }
 
+/// Service child types observed in real exports retain their complete logical ancestry.
+#[test]
+fn discovers_service_children_as_path_independent_metadata() {
+    let fixture = fixture(ProjectType::Configuration);
+    for (folder, tag, child, nested) in [
+        ("HTTPServices", "HTTPService", "URLTemplate", "Method"),
+        ("WebServices", "WebService", "Operation", "Parameter"),
+        (
+            "IntegrationServices",
+            "IntegrationService",
+            "IntegrationServiceChannel",
+            "",
+        ),
+    ] {
+        let nested = if nested.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "<ChildObjects><{nested} uuid=\"shared\"><Properties><Name>Nested</Name></Properties></{nested}></ChildObjects>"
+            )
+        };
+        let children = format!(
+            "<ChildObjects><{child} uuid=\"shared\"><Properties><Name>Child</Name></Properties>{nested}</{child}></ChildObjects>"
+        );
+        write_descriptor(
+            &fixture.source,
+            &format!("{folder}/Service.xml"),
+            tag,
+            "shared",
+            "Service",
+            &children,
+        );
+    }
+    let before = discover(&fixture.project).expect("service metadata");
+    let values: Vec<_> = before
+        .objects()
+        .map(|object| object.metadata().clone())
+        .collect();
+    assert!(
+        values.iter().any(|object| object.id().as_str()
+            == "http-service:Service/url-template:Child/method:Nested")
+    );
+    assert!(values.iter().any(
+        |object| object.id().as_str() == "web-service:Service/operation:Child/parameter:Nested"
+    ));
+    assert!(values.iter().any(|object| object.id().as_str()
+        == "integration-service:Service/integration-service-channel:Child"));
+
+    let destination = TestDir::new();
+    let moved_source = destination.0.join("other-source-root");
+    fs::rename(&fixture.source, &moved_source).expect("move only owned fixture sources");
+    let moved = Project::new(
+        destination.0.clone(),
+        moved_source,
+        fixture.project.configuration().clone(),
+    )
+    .unwrap();
+    let after = discover(&moved).expect("moved project");
+    assert_eq!(
+        values,
+        after
+            .objects()
+            .map(|object| object.metadata().clone())
+            .collect::<Vec<_>>()
+    );
+}
+
 /// Affected discovery reads only owner ancestry and ignores unrelated broken descriptors.
 #[test]
 fn discovers_only_descriptors_owning_changed_paths() {

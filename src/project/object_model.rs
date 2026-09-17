@@ -9,38 +9,20 @@ use std::{
 
 use gix::bstr::ByteSlice;
 
-use super::{Project, metadata};
+use super::{
+    Project, metadata,
+    metadata_model::{MetadataKind, MetadataObject},
+};
+
+pub use super::metadata_model::ObjectId;
 
 const MD_NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024 * 1024;
 
-/// Stable readable identity built from the logical metadata hierarchy.
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct ObjectId(String);
-
-impl ObjectId {
-    /// Return the stable machine-facing hierarchical identifier.
-    #[must_use]
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl fmt::Display for ObjectId {
-    /// Write the stable machine-facing identifier.
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.0)
-    }
-}
-
 /// One Designer metadata object and all source paths owned by it.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LogicalObject {
-    id: ObjectId,
-    metadata_type: &'static str,
-    name: String,
-    uuid: String,
-    parent: Option<ObjectId>,
+    metadata: MetadataObject,
     descriptor_path: PathBuf,
     paths: BTreeSet<PathBuf>,
     module_paths: BTreeSet<PathBuf>,
@@ -48,34 +30,40 @@ pub struct LogicalObject {
 }
 
 impl LogicalObject {
+    /// Return metadata without exposing filesystem paths or an XML representation.
+    #[must_use]
+    pub const fn metadata(&self) -> &MetadataObject {
+        &self.metadata
+    }
+
     /// Return the stable Designer object identifier.
     #[must_use]
     pub const fn id(&self) -> &ObjectId {
-        &self.id
+        &self.metadata.id
     }
 
     /// Return the stable machine-facing metadata type.
     #[must_use]
     pub const fn metadata_type(&self) -> &'static str {
-        self.metadata_type
+        self.metadata.kind.as_str()
     }
 
     /// Return the metadata name stored in the descriptor.
     #[must_use]
     pub fn name(&self) -> &str {
-        &self.name
+        &self.metadata.name
     }
 
     /// Return the Designer UUID as auxiliary, non-unique metadata.
     #[must_use]
     pub fn uuid(&self) -> &str {
-        &self.uuid
+        &self.metadata.uuid
     }
 
     /// Return the containing metadata object, if this is a nested object.
     #[must_use]
     pub const fn parent(&self) -> Option<&ObjectId> {
-        self.parent.as_ref()
+        self.metadata.parent.as_ref()
     }
 
     /// Return the descriptor path relative to the project source directory.
@@ -626,21 +614,21 @@ fn index_descriptor(
     let mut pending_objects: BTreeMap<ObjectId, (metadata::MetadataPath, String)> = BTreeMap::new();
     let mut pending_logical = BTreeMap::new();
     for draft in &drafts {
-        if let Some(existing) = objects.get(&draft.object.id) {
-            if by_logical_path.get(&draft.logical_path) != Some(&draft.object.id)
-                || existing.uuid != draft.object.uuid
+        if let Some(existing) = objects.get(&draft.object.metadata.id) {
+            if by_logical_path.get(&draft.logical_path) != Some(&draft.object.metadata.id)
+                || existing.metadata.uuid != draft.object.metadata.uuid
             {
                 return Err(ObjectModelError::DuplicateObjectId {
-                    id: draft.object.id.clone(),
+                    id: draft.object.metadata.id.clone(),
                     path: file.relative.clone(),
                 });
             }
             continue;
         }
-        if let Some((logical_path, uuid)) = pending_objects.get(&draft.object.id) {
-            if logical_path != &draft.logical_path || uuid != &draft.object.uuid {
+        if let Some((logical_path, uuid)) = pending_objects.get(&draft.object.metadata.id) {
+            if logical_path != &draft.logical_path || uuid != &draft.object.metadata.uuid {
                 return Err(ObjectModelError::DuplicateObjectId {
-                    id: draft.object.id.clone(),
+                    id: draft.object.metadata.id.clone(),
                     path: file.relative.clone(),
                 });
             }
@@ -648,7 +636,7 @@ fn index_descriptor(
         }
         if by_logical_path.contains_key(&draft.logical_path)
             || pending_logical
-                .insert(draft.logical_path.clone(), draft.object.id.clone())
+                .insert(draft.logical_path.clone(), draft.object.metadata.id.clone())
                 .is_some()
         {
             return Err(ObjectModelError::DuplicateLogicalPath {
@@ -656,34 +644,37 @@ fn index_descriptor(
             });
         }
         pending_objects.insert(
-            draft.object.id.clone(),
-            (draft.logical_path.clone(), draft.object.uuid.clone()),
+            draft.object.metadata.id.clone(),
+            (
+                draft.logical_path.clone(),
+                draft.object.metadata.uuid.clone(),
+            ),
         );
     }
     for draft in drafts {
         by_source_path
             .entry(file.relative.clone())
             .or_default()
-            .insert(draft.object.id.clone());
-        if let Some(existing) = objects.get_mut(&draft.object.id) {
-            if by_logical_path.get(&draft.logical_path) != Some(&draft.object.id)
-                || existing.uuid != draft.object.uuid
+            .insert(draft.object.metadata.id.clone());
+        if let Some(existing) = objects.get_mut(&draft.object.metadata.id) {
+            if by_logical_path.get(&draft.logical_path) != Some(&draft.object.metadata.id)
+                || existing.metadata.uuid != draft.object.metadata.uuid
             {
                 return Err(ObjectModelError::DuplicateObjectId {
-                    id: draft.object.id,
+                    id: draft.object.metadata.id,
                     path: file.relative.clone(),
                 });
             }
             existing.paths.extend(draft.object.paths);
             if draft.standalone {
                 existing.descriptor_path = draft.object.descriptor_path;
-                existing.metadata_type = draft.object.metadata_type;
-                existing.name = draft.object.name;
+                existing.metadata.kind = draft.object.metadata.kind;
+                existing.metadata.name = draft.object.metadata.name;
             }
             continue;
         }
-        by_logical_path.insert(draft.logical_path.clone(), draft.object.id.clone());
-        objects.insert(draft.object.id.clone(), draft.object);
+        by_logical_path.insert(draft.logical_path.clone(), draft.object.metadata.id.clone());
+        objects.insert(draft.object.metadata.id.clone(), draft.object);
     }
     Ok(())
 }
@@ -761,7 +752,7 @@ fn collect_descriptor_objects(
     standalone: bool,
     drafts: &mut Vec<DraftObject>,
 ) -> Result<(), ObjectModelError> {
-    let metadata_type = metadata::kind_from_tag(node.tag_name().name()).ok_or_else(|| {
+    let kind = MetadataKind::from_xml_tag(node.tag_name().name()).map_err(|_| {
         ObjectModelError::InvalidDescriptor {
             path: descriptor.to_path_buf(),
             reason: "unsupported metadata object type",
@@ -791,17 +782,19 @@ fn collect_descriptor_objects(
             reason: "metadata name is missing",
         })?
         .to_owned();
-    let id = object_id(parent.as_ref(), metadata_type, &name);
+    let metadata = MetadataObject::new(kind, name, uuid.to_owned(), parent).map_err(|_| {
+        ObjectModelError::InvalidDescriptor {
+            path: descriptor.to_path_buf(),
+            reason: "metadata name is missing",
+        }
+    })?;
+    let id = metadata.id().clone();
     let mut paths = BTreeSet::new();
     paths.insert(descriptor.to_path_buf());
     drafts.push(DraftObject {
         logical_path: logical_path.clone(),
         object: LogicalObject {
-            id: id.clone(),
-            metadata_type,
-            name,
-            uuid: uuid.to_owned(),
-            parent,
+            metadata,
             descriptor_path: descriptor.to_path_buf(),
             paths,
             module_paths: BTreeSet::new(),
@@ -845,19 +838,6 @@ fn collect_descriptor_objects(
         )?;
     }
     Ok(())
-}
-
-/// Build a deterministic readable identifier from an object's logical ancestry.
-fn object_id(parent: Option<&ObjectId>, metadata_type: &str, name: &str) -> ObjectId {
-    let segment = format!("{metadata_type}:{}", escape_id_name(name));
-    ObjectId(parent.map_or_else(|| segment.clone(), |parent| format!("{parent}/{segment}")))
-}
-
-/// Escape structural `ObjectId` separators while keeping Unicode names readable.
-fn escape_id_name(name: &str) -> String {
-    name.replace('%', "%25")
-        .replace('/', "%2F")
-        .replace(':', "%3A")
 }
 
 /// Find the nearest already discovered logical container of a descriptor.
@@ -946,9 +926,10 @@ fn logical_path_for_source(
 fn assign_form_paths(objects: &mut BTreeMap<ObjectId, LogicalObject>) {
     let forms: Vec<_> = objects
         .values()
-        .filter(|object| object.metadata_type == "form")
+        .filter(|object| object.metadata.kind == MetadataKind::Form)
         .filter_map(|object| {
             object
+                .metadata
                 .parent
                 .clone()
                 .map(|parent| (parent, object.descriptor_path.clone()))

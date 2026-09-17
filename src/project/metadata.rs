@@ -437,59 +437,9 @@ fn child_kind(tag: &str) -> Option<&'static str> {
 
 /// Map a Designer XML object tag to its stable machine-facing metadata type.
 pub fn kind_from_tag(tag: &str) -> Option<&'static str> {
-    Some(match tag {
-        "Configuration" => "configuration",
-        "ExternalDataProcessor" | "DataProcessor" => "data-processor",
-        "ExternalReport" | "Report" => "report",
-        "AccountingRegister" => "accounting-register",
-        "AccumulationRegister" => "accumulation-register",
-        "Bot" => "bot",
-        "BusinessProcess" => "business-process",
-        "CalculationRegister" => "calculation-register",
-        "Catalog" => "catalog",
-        "ChartOfAccounts" => "chart-of-accounts",
-        "ChartOfCalculationTypes" => "chart-of-calculation-types",
-        "ChartOfCharacteristicTypes" => "chart-of-characteristic-types",
-        "CommandGroup" => "command-group",
-        "CommonAttribute" => "common-attribute",
-        "CommonCommand" => "common-command",
-        "CommonForm" => "common-form",
-        "CommonModule" => "common-module",
-        "CommonPicture" => "common-picture",
-        "CommonTemplate" => "common-template",
-        "Constant" => "constant",
-        "DefinedType" => "defined-type",
-        "Document" => "document",
-        "DocumentJournal" => "document-journal",
-        "DocumentNumerator" => "document-numerator",
-        "Enum" => "enum",
-        "EventSubscription" => "event-subscription",
-        "ExchangePlan" => "exchange-plan",
-        "ExternalDataSource" => "external-data-source",
-        "FilterCriterion" => "filter-criterion",
-        "FunctionalOption" => "functional-option",
-        "FunctionalOptionsParameter" => "functional-option-parameter",
-        "HTTPService" => "http-service",
-        "InformationRegister" => "information-register",
-        "IntegrationService" => "integration-service",
-        "Language" => "language",
-        "Role" => "role",
-        "ScheduledJob" => "scheduled-job",
-        "Sequence" => "sequence",
-        "SessionParameter" => "session-parameter",
-        "SettingsStorage" => "settings-storage",
-        "Style" => "style",
-        "StyleItem" => "style-item",
-        "Subsystem" => "subsystem",
-        "Task" => "task",
-        "WebService" => "web-service",
-        "WSReference" => "ws-reference",
-        "XDTOPackage" => "xdto-package",
-        "Form" => "form",
-        "Template" => "template",
-        "Command" => "command",
-        child => return child_kind(child),
-    })
+    super::metadata_model::MetadataKind::from_xml_tag(tag)
+        .ok()
+        .map(super::metadata_model::MetadataKind::as_str)
 }
 
 /// Normalize an XML subtree structurally so formatting-only changes are ignored.

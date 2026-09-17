@@ -69,8 +69,9 @@ VS Code extension для навигации по Designer XML.
 - `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
 - `PLANNED`: `T37` — `sync` / `continue` / `abort` после T57;
 - `PLANNED`: `T26` — `eska fmt`, последняя в очереди последующих CLI-задач;
-- `NEXT`: `T60` — модель метаданных и логическая identity;
-- `PLANNED`: `T61–T70`, `T75` — resolver, fixtures, parser, дерево, lazy workspace,
+- `DONE`: `T60` — модель метаданных и логическая identity;
+- `NEXT`: `T61` — Designer resolver и открытие через обязательный manifest;
+- `PLANNED`: `T62–T70`, `T75` — resolver, fixtures, parser, дерево, lazy workspace,
   поиск, замеры и постоянный IDE protocol;
 - `PLANNED`: `T41`, декомпозированная в `T76–T81`, — расширение VS Code с деревом,
   поиском, фильтром, иконками и устанавливаемым VSIX;
@@ -107,7 +108,7 @@ T35 добавила автоматические полки при `switch` и 
 `shelve` / `unshelve` / `shelves`. T58 завершила настройку production-ветки Git Flow с
 сохранением `develop` базой обычных feature-веток. T59 сделала semantic-вывод
 однозначным, подавила противоречивые события и добавила координаты методов.
-Следующая задача — T60: модель метаданных для IDE. T56 остаётся в backlog.
+Следующая задача — T61: Designer resolver для IDE. T56 остаётся в backlog.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
 операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
@@ -134,8 +135,8 @@ TUI разделён на обработку клавиш, отрисовку и
 
 | Порядок | ID | Результат |
 |---|---|---|
-| 1 | T60 | Модель метаданных и стабильная identity — `NEXT` |
-| 2 | T61 | Manifest, Designer resolver и переход к XML/BSL |
+| 1 | T60 | Модель метаданных и стабильная identity — `DONE` |
+| 2 | T61 | Manifest, Designer resolver и переход к XML/BSL — `NEXT` |
 | 3 | T62 | Fixtures, матрица типов и большой стенд |
 | 4 | T63 | Выбор XML parser по замерам и проект бюджетов |
 | 5 | T64 | Разбор Designer XML по запросу |
@@ -265,8 +266,8 @@ BSL LSP и визуальный редактор форм в это направ
 | T57 | PLANNED | Обновление установленного `eska` | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T58 | DONE | Настраиваемая основная production-ветка Git Flow | [03-repository-workflow.md](03-repository-workflow.md) |
 | T59 | DONE | Читаемый semantic-вывод `eska diff` с координатами методов | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T60 | NEXT | Модель метаданных и логическая identity | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
-| T61 | PLANNED | Designer path resolver | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T60 | DONE | Модель метаданных и логическая identity | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T61 | NEXT | Designer path resolver | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T62 | PLANNED | Набор Designer XML fixtures | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T63 | PLANNED | Выбор стратегии XML parsing | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T64 | PLANNED | Разбор Designer XML в модель метаданных | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
