@@ -7,6 +7,7 @@ mod changes;
 mod commands;
 mod diagnostics;
 mod encoding;
+mod ide;
 mod interactive;
 pub mod localization;
 mod platform;

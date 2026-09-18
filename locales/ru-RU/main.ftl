@@ -887,3 +887,6 @@ diff-metadata-addressing-attribute = РеквизитАдресации
 
 tree-collection-web-socket-client = WebSocket-клиенты
 diff-metadata-web-socket-client = WebSocket-клиент
+
+ide-about = Постоянный read-only процесс для IDE
+ide-stdio-help = Обмен сообщениями IDE protocol через stdin/stdout

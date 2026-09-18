@@ -107,6 +107,30 @@ impl ProjectSession {
         self.ancestry(&hit.node)
     }
 
+    /// Reveal an exact current index identity without a name search or trusting client ancestry.
+    ///
+    /// # Errors
+    /// Returns an unknown object for absent or invalidated records, or a source failure.
+    pub fn reveal_indexed_object(
+        &mut self,
+        id: &crate::project::metadata_model::ObjectId,
+    ) -> Result<Vec<NodeId>, WorkspaceError> {
+        let record = self
+            .search_index
+            .records
+            .get(id)
+            .filter(|record| self.search_index.visible(record))
+            .ok_or_else(|| WorkspaceError::UnknownObject(id.clone()))?;
+        let ancestry = record.ancestry.clone();
+        let target = NodeId::Object(id.clone());
+        for node in ancestry.iter().take_while(|node| **node != target) {
+            if matches!(node, NodeId::Object(_)) {
+                self.children(node, crate::project::configurator::TreeOptions::default())?;
+            }
+        }
+        self.ancestry(&target)
+    }
+
     /// Pause between bounded index steps; existing results remain explicitly partial.
     pub fn cancel_search_index(&mut self) {
         if self.search_index.state == IndexState::Building {

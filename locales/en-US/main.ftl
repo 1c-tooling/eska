@@ -887,3 +887,6 @@ diff-metadata-addressing-attribute = AddressingAttribute
 
 tree-collection-web-socket-client = WebSocket clients
 diff-metadata-web-socket-client = WebSocket client
+
+ide-about = Persistent read-only process for IDE clients
+ide-stdio-help = Exchange framed IDE protocol messages over stdin/stdout
