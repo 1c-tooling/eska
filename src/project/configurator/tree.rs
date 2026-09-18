@@ -124,6 +124,14 @@ impl ConfiguratorTree {
         builder::build(schema, descriptor, modules)
     }
 
+    /// Project one predefined payload without loading unrelated metadata or modules.
+    pub(crate) fn predefined(
+        owner: &ObjectId,
+        descriptor: &ParsedDescriptor,
+    ) -> Result<Self, TreeError> {
+        builder::predefined(owner, descriptor)
+    }
+
     /// Return the projection root; separate nested descriptors retain their original identity.
     #[must_use]
     pub const fn root(&self) -> &NodeId {

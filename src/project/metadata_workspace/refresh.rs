@@ -145,6 +145,13 @@ impl ProjectSession {
                 .source
                 .descriptor_candidates(owner)
                 .map_err(WorkspaceError::Source)?;
+            let mut paths = paths;
+            paths.extend(
+                paths
+                    .clone()
+                    .into_iter()
+                    .map(|path| path.with_extension("").join("Ext/Predefined.xml")),
+            );
             for path in paths {
                 self.cache.remove(&path);
                 self.fingerprints.remove(&path);

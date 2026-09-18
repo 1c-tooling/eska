@@ -318,5 +318,9 @@
   "tree-collection-web-socket-client": {
     "ru-RU": "WebSocket-клиенты",
     "en-US": "WebSocket clients"
+  },
+  "tree-collection-predefined-item": {
+    "ru-RU": "Предопределённые данные",
+    "en-US": "Predefined data"
   }
 }

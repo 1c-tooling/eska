@@ -10,7 +10,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-const VERSION: &str = concat!("metadata-2-", env!("CARGO_PKG_VERSION"));
+const VERSION: &str = concat!("metadata-3-", env!("CARGO_PKG_VERSION"));
 const MAX_BYTES: u64 = 64 * 1024 * 1024;
 
 /// Cache failures are observable but never prevent reading source metadata.

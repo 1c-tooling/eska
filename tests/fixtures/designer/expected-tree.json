@@ -39,6 +39,7 @@
     ["group:catalog:Контрагенты#modules", "object:catalog:Контрагенты", "tree-collection-modules", "NonEmpty", true],
     ["module:catalog:Контрагенты#object", "group:catalog:Контрагенты#modules", "tree-module-object", "Empty", false],
     ["module:catalog:Контрагенты#manager", "group:catalog:Контрагенты#modules", "tree-module-manager", "Empty", false],
+    ["group:catalog:Контрагенты#predefined-item", "object:catalog:Контрагенты", "tree-collection-predefined-item", "Unloaded", false],
     ["group:catalog:Контрагенты#attribute", "object:catalog:Контрагенты", "tree-collection-attribute", "NonEmpty", false],
     ["object:catalog:Контрагенты/attribute:ИНН", "group:catalog:Контрагенты#attribute", "name:ИНН", "Empty", false],
     ["group:catalog:Контрагенты#tabular-section", "object:catalog:Контрагенты", "tree-collection-tabular-section", "NonEmpty", false],

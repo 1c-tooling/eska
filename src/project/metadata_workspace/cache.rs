@@ -145,12 +145,58 @@ impl ProjectSession {
             .object_descriptor(id)
             .map_err(WorkspaceError::Source)?
             .ok_or_else(|| WorkspaceError::MissingSource(NodeId::Object(id.clone())))?;
-        let path = location.path;
+        self.load_path(
+            &owner,
+            location.path,
+            mode,
+            Some(id),
+            location.inline.first().is_some_and(|item| {
+                item.kind == crate::project::metadata_model::MetadataKind::PredefinedItem
+            }),
+        )
+    }
+
+    /// Reuse the same bounded cache and race checks for lazily opened predefined payloads.
+    pub(super) fn load_predefined(
+        &mut self,
+        owner: &ObjectId,
+        mode: PropertiesMode,
+    ) -> Result<Arc<ParsedDescriptor>, WorkspaceError> {
+        let Some(path) = self
+            .source
+            .predefined_path(owner)
+            .map_err(WorkspaceError::Source)?
+        else {
+            return Ok(Arc::new(ParsedDescriptor {
+                version: None,
+                objects: Vec::new(),
+                references: Vec::new(),
+                diagnostics: Vec::new(),
+            }));
+        };
+        self.load_path(owner, path, mode, None, true)
+    }
+
+    /// Cache by physical source; requested identity is checked separately from its file owner.
+    fn load_path(
+        &mut self,
+        owner: &ObjectId,
+        path: PathBuf,
+        mode: PropertiesMode,
+        requested: Option<&ObjectId>,
+        predefined: bool,
+    ) -> Result<Arc<ParsedDescriptor>, WorkspaceError> {
+        if let Some(parsed) = self.cache.get(&path, mode) {
+            return requested.map_or_else(
+                || Ok(Arc::clone(&parsed)),
+                |id| Self::require_object(Arc::clone(&parsed), id),
+            );
+        }
         let input = self
             .source
             .read_xml(&path)
             .map_err(WorkspaceError::Source)?
-            .ok_or_else(|| WorkspaceError::MissingSource(NodeId::Object(id.clone())))?;
+            .ok_or_else(|| WorkspaceError::MissingSource(NodeId::Object(owner.clone())))?;
         let started = std::time::Instant::now();
         let hash: [u8; 32] = Sha256::digest(input.as_bytes()).into();
         self.cache.stats.hash_nanos += started.elapsed().as_nanos();
@@ -175,13 +221,17 @@ impl ProjectSession {
         } else {
             self.cache.stats.parses += 1;
             self.cache.stats.last_parsed = Some(path.clone());
-            let parsed =
-                metadata_parser::parse(&input, owner.parent(), mode).map_err(|source| {
-                    WorkspaceError::Load(LoadError::Parse {
-                        path: path.clone(),
-                        source,
-                    })
-                })?;
+            let parsed = (if predefined {
+                metadata_parser::parse_predefined(&input, owner, mode)
+            } else {
+                metadata_parser::parse(&input, owner.parent(), mode)
+            })
+            .map_err(|source| {
+                WorkspaceError::Load(LoadError::Parse {
+                    path: path.clone(),
+                    source,
+                })
+            })?;
             if let Some(cache) = &self.source.disk_cache {
                 cache.put(&key, hash, &parsed);
             }
@@ -197,7 +247,10 @@ impl ProjectSession {
         {
             return Err(WorkspaceError::SourceChanged(path));
         }
-        let parsed = Self::require_object(Arc::new(parsed), id)?;
+        let parsed = Arc::new(parsed);
+        if let Some(id) = requested {
+            Self::require_object(Arc::clone(&parsed), id)?;
+        }
         self.fingerprints.insert(path.clone(), hash);
         self.cache.remove(&path);
         self.cache.clock = self.cache.clock.saturating_add(1);

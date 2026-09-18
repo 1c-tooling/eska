@@ -14,6 +14,16 @@ pub struct ConfiguratorSchema {
     root: ObjectId,
 }
 
+/// Catalogs and characteristic/calculation type plans share this ordered child layout.
+const CATALOG_COLLECTIONS: &[MetadataKind] = &[
+    MetadataKind::PredefinedItem,
+    MetadataKind::Attribute,
+    MetadataKind::TabularSection,
+    MetadataKind::Form,
+    MetadataKind::Command,
+    MetadataKind::Template,
+];
+
 impl ConfiguratorSchema {
     /// Single-kind structural subtrees are displayed directly, without an extra virtual level.
     #[must_use]
@@ -29,6 +39,7 @@ impl ConfiguratorSchema {
                 | MetadataKind::IntegrationService
                 | MetadataKind::Sequence
                 | MetadataKind::Recalculation
+                | MetadataKind::PredefinedItem
         )
     }
 
@@ -102,20 +113,22 @@ impl ConfiguratorSchema {
     #[must_use]
     pub const fn collections(kind: MetadataKind) -> &'static [MetadataKind] {
         use MetadataKind::{
-            Attribute, Command, Dimension, Form, Resource, TabularSection, Template,
+            Attribute, Command, Dimension, Form, PredefinedItem, Resource, TabularSection, Template,
         };
         match kind {
             MetadataKind::Catalog
-            | MetadataKind::Document
+            | MetadataKind::ChartOfCharacteristicTypes
+            | MetadataKind::ChartOfCalculationTypes => CATALOG_COLLECTIONS,
+            PredefinedItem => &[PredefinedItem],
+            MetadataKind::Document
             | MetadataKind::DataProcessor
             | MetadataKind::Report
             | MetadataKind::ExchangePlan
-            | MetadataKind::ChartOfCharacteristicTypes
-            | MetadataKind::ChartOfCalculationTypes
             | MetadataKind::BusinessProcess => {
                 &[Attribute, TabularSection, Form, Command, Template]
             }
             MetadataKind::ChartOfAccounts => &[
+                PredefinedItem,
                 Attribute,
                 MetadataKind::AccountingFlag,
                 MetadataKind::ExtDimensionAccountingFlag,

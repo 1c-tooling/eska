@@ -11,7 +11,7 @@ use crate::project::{
         TreeOptions,
     },
     designer_source::{DesignerSource, SourceLocation, SourceRole},
-    metadata_model::{LocalizedText, MetadataKind, NodeId, ObjectId, ProjectScope},
+    metadata_model::{CollectionKind, LocalizedText, MetadataKind, NodeId, ObjectId, ProjectScope},
     metadata_parser::{LoadError, LocatedProperty, ParsedDescriptor, PropertiesMode},
 };
 
@@ -117,6 +117,21 @@ impl ProjectSession {
         if let NodeId::Object(owner) = id
             && !self.expanded.contains(owner)
             && let Err(error) = self.expand(owner)
+        {
+            if let Some(node) = self.nodes.get_mut(id) {
+                node.state = ChildrenState::Error;
+            }
+            return Err(error);
+        }
+        if let NodeId::Collection {
+            owner,
+            kind: CollectionKind::Metadata(MetadataKind::PredefinedItem),
+        } = id
+            && matches!(
+                self.node(id)?.state,
+                ChildrenState::Unloaded | ChildrenState::Error
+            )
+            && let Err(error) = self.expand_predefined(owner)
         {
             if let Some(node) = self.nodes.get_mut(id) {
                 node.state = ChildrenState::Error;
@@ -259,6 +274,20 @@ impl ProjectSession {
         }
         self.retain_objects(&parsed)?;
         Ok(())
+    }
+
+    /// Publish a complete predefined branch only after bounded parsing and source validation.
+    fn expand_predefined(&mut self, owner: &ObjectId) -> Result<(), WorkspaceError> {
+        let parsed = self.load_predefined(owner, PropertiesMode::Summary)?;
+        let tree = ConfiguratorTree::predefined(owner, &parsed).map_err(WorkspaceError::Tree)?;
+        for node in tree.nodes() {
+            let mut node = node.clone();
+            if &node.id == tree.root() {
+                node.parent = Some(NodeId::Object(owner.clone()));
+            }
+            self.nodes.insert(node.id.clone(), node);
+        }
+        self.retain_objects(&parsed)
     }
 
     /// Keep lightweight navigation summaries separately from the bounded descriptor cache.

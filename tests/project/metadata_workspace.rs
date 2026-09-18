@@ -649,3 +649,5 @@ mod search;
 mod benchmarks;
 mod disk_cache;
 mod ide;
+
+mod predefined;

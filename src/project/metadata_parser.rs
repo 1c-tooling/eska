@@ -1,6 +1,8 @@
 //! Bounded, per-descriptor Designer parsing into owned summaries and optional properties.
 
+mod predefined;
 mod values;
+pub(crate) use predefined::parse as parse_predefined;
 
 use std::{collections::HashSet, ops::Range, path::PathBuf};
 
@@ -121,11 +123,19 @@ pub fn load(
             .parent()
             .ok_or_else(|| LoadError::ObjectNotFound(id.clone()))?;
     }
-    let parsed =
-        parse(&input, descriptor_id.parent(), mode).map_err(|source| LoadError::Parse {
-            path: location.path,
-            source,
-        })?;
+    let parsed = (if location
+        .inline
+        .first()
+        .is_some_and(|item| item.kind == MetadataKind::PredefinedItem)
+    {
+        parse_predefined(&input, &descriptor_id, mode)
+    } else {
+        parse(&input, descriptor_id.parent(), mode)
+    })
+    .map_err(|source| LoadError::Parse {
+        path: location.path,
+        source,
+    })?;
     if !parsed
         .objects
         .iter()
