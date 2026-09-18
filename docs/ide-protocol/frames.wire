@@ -1,0 +1,5 @@
+Content-Length: 174
+
+{"jsonrpc":"2.0","id":"q1","method":"initialize","params":{"apiVersion":{"major":1,"minor":0},"client":{"name":"Пример клиента","version":"1"},"locale":"ru-RU"}}Content-Length: 167
+
+{"jsonrpc":"2.0","id":"q2","method":"workspace/open","params":{"start":{"value":"/workspace/demo","encoding":"utf-8"},"selection":{"kind":"current"},"diskCache":true}}
