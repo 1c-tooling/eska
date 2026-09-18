@@ -65,6 +65,21 @@ struct Locations {
 }
 
 impl DesignerSource {
+    /// Resolve lexical descriptor ownership even after a source file was removed.
+    pub(crate) fn descriptor_candidates(
+        &self,
+        id: &ObjectId,
+    ) -> Result<(ObjectId, Vec<PathBuf>), SourceError> {
+        let locations = self.locations(id)?;
+        let mut owner = id.clone();
+        for _ in locations.inline {
+            owner = owner.parent().ok_or_else(|| SourceError::InvalidIdentity {
+                value: id.to_string(),
+            })?;
+        }
+        Ok((owner, locations.descriptors))
+    }
+
     /// Resolve only the owning descriptor and inline ancestry, without probing modules/payloads.
     ///
     /// # Errors

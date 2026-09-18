@@ -1,6 +1,9 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::PathBuf,
+};
 
-use super::WorkspaceError;
+use super::{WorkspaceError, cache::DescriptorCache};
 use crate::project::{
     Project,
     configurator::{
@@ -9,7 +12,7 @@ use crate::project::{
     },
     designer_source::{DesignerSource, SourceLocation, SourceRole},
     metadata_model::{LocalizedText, MetadataKind, NodeId, ObjectId, ProjectScope},
-    metadata_parser::{self, LoadError, LocatedProperty, ParsedDescriptor, PropertiesMode},
+    metadata_parser::{LoadError, LocatedProperty, ParsedDescriptor, PropertiesMode},
 };
 
 /// Selecting a visible reference does not require its descriptor or invent a UUID.
@@ -23,15 +26,19 @@ pub struct ObjectSummary {
     pub synonyms: Vec<LocalizedText>,
 }
 
-/// Retained visible nodes are a session snapshot; external invalidation belongs to T67.
+/// Visible nodes and bounded descriptor cache share an event-driven generation.
 #[derive(Debug)]
 pub struct ProjectSession {
-    source: DesignerSource,
-    schema: ConfiguratorSchema,
-    root: NodeId,
-    nodes: BTreeMap<NodeId, TreeNode>,
-    objects: BTreeMap<ObjectId, ObjectSummary>,
-    expanded: BTreeSet<ObjectId>,
+    pub(super) source: DesignerSource,
+    pub(super) schema: ConfiguratorSchema,
+    pub(super) root: NodeId,
+    pub(super) nodes: BTreeMap<NodeId, TreeNode>,
+    pub(super) objects: BTreeMap<ObjectId, ObjectSummary>,
+    pub(super) expanded: BTreeSet<ObjectId>,
+    pub(super) cache: DescriptorCache,
+    pub(super) by_path: BTreeMap<PathBuf, ObjectId>,
+    pub(super) generation: u64,
+    pub(super) fingerprints: BTreeMap<PathBuf, [u8; 32]>,
 }
 
 impl ProjectSession {
@@ -46,6 +53,10 @@ impl ProjectSession {
             nodes: BTreeMap::new(),
             objects: BTreeMap::new(),
             expanded: BTreeSet::new(),
+            cache: DescriptorCache::default(),
+            by_path: BTreeMap::new(),
+            generation: 0,
+            fingerprints: BTreeMap::new(),
         };
         let id = session.source.root().id().clone();
         session.expand(&id)?;
@@ -144,19 +155,19 @@ impl ProjectSession {
 
     /// Read existing properties from just this object's owning XML, including inline objects.
     ///
-    /// This explicit request reads the file each time; property caching is deferred to T67.
-    /// The visible tree snapshot is not replaced by a property read.
+    /// Repeated requests use the bounded descriptor cache until invalidation or eviction.
+    /// Source changes without a delivered event are rejected when a descriptor is reread.
     ///
     /// # Errors
     /// Returns unknown objects, absent descriptors, containment or parser failures.
-    pub fn properties(&self, id: &ObjectId) -> Result<Vec<LocatedProperty>, WorkspaceError> {
+    pub fn properties(&mut self, id: &ObjectId) -> Result<Vec<LocatedProperty>, WorkspaceError> {
         self.object(id)?;
         let parsed = self.load(id, PropertiesMode::All)?;
         parsed
             .objects
-            .into_iter()
+            .iter()
             .find(|object| object.metadata.id() == id)
-            .map(|object| object.properties.unwrap_or_default())
+            .map(|object| object.properties.clone().unwrap_or_default())
             .ok_or_else(|| WorkspaceError::Load(LoadError::ObjectNotFound(id.clone())))
     }
 
@@ -197,20 +208,8 @@ impl ProjectSession {
         Ok(sources)
     }
 
-    /// Normalize missing XML to the same source category used for missing BSL.
-    fn load(
-        &self,
-        id: &ObjectId,
-        mode: PropertiesMode,
-    ) -> Result<ParsedDescriptor, WorkspaceError> {
-        metadata_parser::load(&self.source, id, mode).map_err(|error| match error {
-            LoadError::MissingDescriptor(id) => WorkspaceError::MissingSource(NodeId::Object(id)),
-            error => WorkspaceError::Load(error),
-        })
-    }
-
     /// Prepare a branch completely before publishing any nodes or object summaries.
-    fn expand(&mut self, id: &ObjectId) -> Result<(), WorkspaceError> {
+    pub(super) fn expand(&mut self, id: &ObjectId) -> Result<(), WorkspaceError> {
         let parsed = self.load(id, PropertiesMode::Summary)?;
         let modules = parsed
             .objects
@@ -228,6 +227,21 @@ impl ProjectSession {
             .map_err(WorkspaceError::Source)?;
         let tree = ConfiguratorTree::build(&self.schema, &parsed, &modules)
             .map_err(WorkspaceError::Tree)?;
+        self.verify_source(id)?;
+        for object in &parsed.objects {
+            let current = ModuleAvailability::resolve(
+                &self.source,
+                &self.schema,
+                object.metadata.id(),
+                object.metadata.kind(),
+            )
+            .map_err(WorkspaceError::Source)?;
+            if modules.get(object.metadata.id()) != Some(&current) {
+                return Err(WorkspaceError::SourceChanged(
+                    self.source.descriptor().to_path_buf(),
+                ));
+            }
+        }
         for projected in tree.nodes() {
             // The branch root has no parent in its local projection; retain the global parent.
             if let NodeId::Object(owner) = &projected.id
@@ -241,26 +255,28 @@ impl ProjectSession {
             }
             self.nodes.insert(node.id.clone(), node);
         }
-        self.retain_objects(parsed);
+        self.retain_objects(&parsed)?;
         Ok(())
     }
 
-    /// Keep lightweight summaries only; XML buffers and property values do not survive expansion.
-    fn retain_objects(&mut self, parsed: ParsedDescriptor) {
-        for reference in parsed.references {
+    /// Keep lightweight navigation summaries separately from the bounded descriptor cache.
+    fn retain_objects(&mut self, parsed: &ParsedDescriptor) -> Result<(), WorkspaceError> {
+        for reference in &parsed.references {
+            self.register_paths(&reference.id)?;
             self.objects
                 .entry(reference.id.clone())
                 .or_insert_with(|| ObjectSummary {
                     parent: reference.id.parent(),
-                    id: reference.id,
+                    id: reference.id.clone(),
                     kind: reference.kind,
-                    name: reference.name,
+                    name: reference.name.clone(),
                     uuid: None,
                     synonyms: Vec::new(),
                 });
         }
-        for object in parsed.objects {
-            let metadata = object.metadata;
+        for object in &parsed.objects {
+            let metadata = &object.metadata;
+            self.register_paths(metadata.id())?;
             self.expanded.insert(metadata.id().clone());
             self.objects.insert(
                 metadata.id().clone(),
@@ -270,9 +286,22 @@ impl ProjectSession {
                     name: metadata.name().to_owned(),
                     parent: metadata.parent().cloned(),
                     uuid: Some(metadata.uuid().to_owned()),
-                    synonyms: object.synonyms,
+                    synonyms: object.synonyms.clone(),
                 },
             );
         }
+        Ok(())
+    }
+
+    /// Index source layout without stat calls, scans, or opening referenced descriptors.
+    pub(super) fn register_paths(&mut self, id: &ObjectId) -> Result<(), WorkspaceError> {
+        let (owner, paths) = self
+            .source
+            .descriptor_candidates(id)
+            .map_err(WorkspaceError::Source)?;
+        for path in paths {
+            self.by_path.insert(path, owner.clone());
+        }
+        Ok(())
     }
 }

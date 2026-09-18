@@ -182,7 +182,7 @@ fn workspace_is_lazy_and_keeps_selection_free_of_parsing() {
     assert_eq!(session.object(&catalog).unwrap().name, "Контрагенты");
     assert!(matches!(
         session.properties(&catalog),
-        Err(WorkspaceError::Load(LoadError::Parse { .. }))
+        Err(WorkspaceError::SourceChanged(_))
     ));
     let document = NodeId::Object(object(MetadataKind::Document, "Продажа", None));
     assert!(session.children(&document, TreeOptions::default()).is_ok());
@@ -344,5 +344,302 @@ fn workspace_scopes_members_and_honors_selection() {
             .projects()
             .len(),
         1
+    );
+}
+
+/// Client events invalidate only the changed owning descriptor and its visible descendants.
+#[test]
+fn incremental_events_preserve_independent_cached_branches() {
+    let directory = TestDir::new();
+    fixture(&directory.0, "configuration");
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let catalog = object(MetadataKind::Catalog, "Контрагенты", None);
+    let document = object(MetadataKind::Document, "Продажа", None);
+    for id in [&catalog, &document] {
+        session
+            .children(&NodeId::Object(id.clone()), TreeOptions::default())
+            .unwrap();
+        session.properties(id).unwrap();
+    }
+    let before = session.cache_stats().parses;
+    let expected = session.properties(&document).unwrap();
+    assert_eq!(session.cache_stats().parses, before);
+    let path = PathBuf::from("Catalogs/Контрагенты.xml");
+    let file = directory.0.join("src").join(&path);
+    let xml = fs::read_to_string(&file).unwrap().replacen(
+        "</Properties>",
+        "<Comment>Changed</Comment></Properties>",
+        1,
+    );
+    fs::write(file, xml).unwrap();
+    let generation = session.generation();
+    let report = session.changed_paths(std::slice::from_ref(&path)).unwrap();
+    assert_eq!(report.generation, generation + 1);
+    assert!(report.affected.contains(&catalog));
+    assert!(!report.affected.contains(&document));
+    assert!(matches!(
+        session.check_generation(generation),
+        Err(WorkspaceError::StaleGeneration { .. })
+    ));
+    assert_eq!(session.properties(&document).unwrap(), expected);
+    assert_eq!(session.cache_stats().parses, before);
+    assert!(
+        session
+            .properties(&catalog)
+            .unwrap()
+            .iter()
+            .any(|value| value.property.key.name == "Comment")
+    );
+    assert_eq!(session.cache_stats().parses, before + 1);
+    assert_eq!(session.cache_stats().last_parsed, Some(path));
+    session
+        .children(&NodeId::Object(catalog.clone()), TreeOptions::default())
+        .unwrap();
+    assert_eq!(session.cache_stats().parses, before + 1);
+    let attribute = object(MetadataKind::Attribute, "ИНН", Some(catalog));
+    session.properties(&attribute).unwrap();
+    assert_eq!(session.cache_stats().parses, before + 1);
+}
+
+/// Module creation and deletion update the group without changing object identity.
+#[test]
+fn incremental_module_events_and_missing_descriptor_recovery() {
+    let directory = TestDir::new();
+    fixture(&directory.0, "configuration");
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let owner = object(MetadataKind::CommonModule, "ЗащищенныйМодуль", None);
+    let id = NodeId::Object(owner.clone());
+    assert!(
+        session
+            .children(&id, TreeOptions::default())
+            .unwrap()
+            .is_empty()
+    );
+    let path = PathBuf::from("CommonModules/ЗащищенныйМодуль/Ext/Module.bsl");
+    fs::write(session.project().source().join(&path), "// test").unwrap();
+    assert!(
+        session
+            .changed_paths(std::slice::from_ref(&path))
+            .unwrap()
+            .affected
+            .contains(&owner)
+    );
+    assert_eq!(
+        session.children(&id, TreeOptions::default()).unwrap().len(),
+        1
+    );
+    fs::remove_file(session.project().source().join(&path)).unwrap();
+    session.changed_paths(&[path]).unwrap();
+    assert!(
+        session
+            .children(&id, TreeOptions::default())
+            .unwrap()
+            .is_empty()
+    );
+    let descriptor = PathBuf::from("CommonModules/ЗащищенныйМодуль.xml");
+    let file = session.project().source().join(&descriptor);
+    let original = fs::read(&file).unwrap();
+    fs::remove_file(&file).unwrap();
+    session
+        .changed_paths(std::slice::from_ref(&descriptor))
+        .unwrap();
+    assert!(matches!(
+        session.children(&id, TreeOptions::default()),
+        Err(WorkspaceError::MissingSource(_))
+    ));
+    fs::write(&file, b"broken").unwrap();
+    session
+        .changed_paths(std::slice::from_ref(&descriptor))
+        .unwrap();
+    assert!(matches!(
+        session.children(&id, TreeOptions::default()),
+        Err(WorkspaceError::Load(LoadError::Parse { .. }))
+    ));
+    fs::write(file, original).unwrap();
+    session.changed_paths(&[descriptor]).unwrap();
+    assert!(
+        session
+            .children(&id, TreeOptions::default())
+            .unwrap()
+            .is_empty()
+    );
+}
+
+/// Root list changes preserve an unchanged expanded branch and remove obsolete identities.
+#[test]
+fn incremental_root_membership_and_rename_are_consistent() {
+    let directory = TestDir::new();
+    fixture(&directory.0, "configuration");
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let document = object(MetadataKind::Document, "Продажа", None);
+    session
+        .children(&NodeId::Object(document.clone()), TreeOptions::default())
+        .unwrap();
+    let properties = session.properties(&document).unwrap();
+    let before = session.cache_stats().parses;
+    let root_file = session.project().source().join("Configuration.xml");
+    let root_xml = fs::read_to_string(&root_file)
+        .unwrap()
+        .replace("<Catalog>Контрагенты</Catalog>", "<Catalog>Новый</Catalog>");
+    fs::write(&root_file, root_xml).unwrap();
+    let report = session
+        .changed_paths(&[PathBuf::from("Configuration.xml")])
+        .unwrap();
+    assert!(!report.affected.contains(&document));
+    assert_eq!(session.properties(&document).unwrap(), properties);
+    assert_eq!(session.cache_stats().parses, before + 1);
+    let old = object(MetadataKind::Catalog, "Контрагенты", None);
+    assert!(matches!(
+        session.object(&old),
+        Err(WorkspaceError::UnknownObject(_))
+    ));
+    let new = object(MetadataKind::Catalog, "Новый", None);
+    assert!(session.object(&new).is_ok());
+    let old_path = PathBuf::from("Catalogs/Контрагенты.xml");
+    let new_path = PathBuf::from("Catalogs/Новый.xml");
+    let xml = fs::read_to_string(session.project().source().join(&old_path))
+        .unwrap()
+        .replace("<Name>Контрагенты</Name>", "<Name>Новый</Name>");
+    fs::remove_file(session.project().source().join(&old_path)).unwrap();
+    fs::write(session.project().source().join(&new_path), xml).unwrap();
+    session.changed_paths(&[old_path, new_path]).unwrap();
+    session
+        .children(&NodeId::Object(new.clone()), TreeOptions::default())
+        .unwrap();
+    assert_eq!(
+        session.ancestry(&NodeId::Object(new)).unwrap().first(),
+        Some(session.root())
+    );
+}
+
+/// LRU eviction bounds the retained parse cache; explicit refresh handles missed events.
+#[test]
+fn incremental_cache_limits_and_full_refresh() {
+    use eska::project::metadata_workspace::CacheLimits;
+    let directory = TestDir::new();
+    fixture(&directory.0, "configuration");
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    session.set_cache_limits(CacheLimits {
+        descriptors: 1,
+        source_bytes: 1024 * 1024,
+    });
+    let catalog = object(MetadataKind::Catalog, "Контрагенты", None);
+    let document = object(MetadataKind::Document, "Продажа", None);
+    session.properties(&catalog).unwrap();
+    session.properties(&document).unwrap();
+    assert_eq!(session.cache_stats().descriptors, 1);
+    assert!(session.cache_stats().evictions > 0);
+    let before = session.cache_stats().parses;
+    session.properties(&catalog).unwrap();
+    assert_eq!(session.cache_stats().parses, before + 1);
+    let file = session.project().source().join("Catalogs/Контрагенты.xml");
+    fs::write(
+        &file,
+        fs::read_to_string(&file).unwrap().replacen(
+            "</Properties>",
+            "<Comment>Missed event</Comment></Properties>",
+            1,
+        ),
+    )
+    .unwrap();
+    session.set_cache_limits(CacheLimits {
+        descriptors: 0,
+        source_bytes: 0,
+    });
+    assert!(matches!(
+        session.properties(&catalog),
+        Err(WorkspaceError::SourceChanged(_))
+    ));
+    let root = session.root().clone();
+    session.refresh(&root).unwrap();
+    assert!(
+        session
+            .properties(&catalog)
+            .unwrap()
+            .iter()
+            .any(|value| value.property.key.name == "Comment")
+    );
+    assert_eq!(session.cache_stats().descriptors, 0);
+}
+
+/// Dump state is neither required nor authoritative, and escaping event paths do not mutate state.
+#[test]
+fn incremental_events_ignore_dump_info_and_reject_escaping_paths() {
+    let directory = TestDir::new();
+    fixture(&directory.0, "configuration");
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    fs::write(
+        session.project().source().join("ConfigDumpInfo.xml"),
+        b"invalid/stale",
+    )
+    .unwrap();
+    let generation = session.generation();
+    let parses = session.cache_stats().parses;
+    assert!(
+        session
+            .changed_paths(&[PathBuf::from("ConfigDumpInfo.xml")])
+            .unwrap()
+            .affected
+            .is_empty()
+    );
+    assert_eq!(session.generation(), generation);
+    assert_eq!(session.cache_stats().parses, parses);
+    assert!(matches!(
+        session.changed_paths(&[PathBuf::from("../outside.xml")]),
+        Err(WorkspaceError::InvalidChangedPath(_))
+    ));
+    assert_eq!(session.generation(), generation);
+}
+
+/// Inline data in an external root must be replaced, not grafted back from the old tree.
+#[test]
+fn incremental_external_root_replaces_inline_data_and_recovers_root_errors() {
+    let directory = TestDir::new();
+    fixture(&directory.0, "processing");
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let root = session.root().clone();
+    let path = session
+        .source(&root)
+        .unwrap()
+        .into_iter()
+        .find(|source| source.role == SourceRole::Descriptor)
+        .unwrap()
+        .path;
+    let file = session.project().source().join(&path);
+    let original = fs::read(&file).unwrap();
+    let NodeId::Object(root_owner) = &root else {
+        panic!("object root")
+    };
+    let attribute = object(
+        MetadataKind::Attribute,
+        "Параметр",
+        Some(root_owner.clone()),
+    );
+    let changed = String::from_utf8(original.clone())
+        .unwrap()
+        .replace("Параметр для теста", "Новый синоним");
+    fs::write(&file, changed).unwrap();
+    session.changed_paths(std::slice::from_ref(&path)).unwrap();
+    assert_eq!(
+        session.object(&attribute).unwrap().synonyms[0].content,
+        "Новый синоним"
+    );
+    assert!(session.ancestry(&NodeId::Object(attribute)).is_ok());
+    fs::write(&file, b"broken root").unwrap();
+    assert!(session.changed_paths(std::slice::from_ref(&path)).is_err());
+    assert_eq!(session.node(&root).unwrap().state, ChildrenState::Error);
+    fs::write(file, original).unwrap();
+    session.changed_paths(&[path]).unwrap();
+    assert!(
+        !session
+            .children(&root, TreeOptions::default())
+            .unwrap()
+            .is_empty()
     );
 }

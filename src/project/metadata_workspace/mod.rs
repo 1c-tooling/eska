@@ -1,6 +1,10 @@
 //! Read-only, manifest-backed metadata sessions; no CLI, platform, watcher or disk cache.
 
+mod cache;
+mod refresh;
 mod session;
+pub use cache::{CacheLimits, CacheStats};
+pub use refresh::RefreshReport;
 
 use std::path::Path;
 
@@ -30,6 +34,10 @@ pub enum WorkspaceError {
     UnknownObject(ObjectId),
     MissingSource(NodeId),
     BrokenAncestry(NodeId),
+    InvalidChangedPath(std::path::PathBuf),
+    StaleGeneration { expected: u64, actual: u64 },
+    SourceChanged(std::path::PathBuf),
+    GenerationExhausted,
 }
 
 impl MetadataWorkspace {
