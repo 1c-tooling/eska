@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0](https://github.com/1c-tooling/eska/compare/v0.10.1...v0.11.0) - 2026-09-18
+
+### Added
+
+- *(ide)* Добавлены предопределённые данные в дерево и поиск
+
+### Fixed
+
+- *(ide)* Исправлены исходники и модуль перерасчёта в Designer XML
+
+### Other
+
+- *(ide)* Уточнены схема дерева и фильтр разделов «Общие»
+
 ## [0.10.1](https://github.com/1c-tooling/eska/compare/v0.10.0...v0.10.1) - 2026-09-18
 
 ### Added
