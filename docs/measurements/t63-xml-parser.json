@@ -1,0 +1,700 @@
+{
+  "date": "2026-09-17",
+  "host": {
+    "cpu": "Intel Core i5-13420H",
+    "memory_kib": 16079640,
+    "os": "Linux 7.2.5-200.fc44.x86_64",
+    "rustc": "1.98.1",
+    "profile": "release (opt-level=3, default standalone Cargo release profile)"
+  },
+  "versions": {
+    "roxmltree": "0.21.1",
+    "quick-xml": "0.42.0",
+    "memchr": "2.8.3"
+  },
+  "method": "5 separate processes per input/mode, alternating mode order, 31 read-and-parse iterations per process, warm OS cache; GNU time peak RSS for each process",
+  "measurements": [
+    {
+      "case": "small",
+      "mode": "tree",
+      "run": 0,
+      "bytes": 1403,
+      "sha256": "a4f45aba223a6a53283334f68c4483384b2867dd0eb3216635de50d8089d3799",
+      "median_ns": 16688,
+      "p95_ns": 26525,
+      "rss_kib": 2300,
+      "raw": "mode=tree bytes=1403 repeats=31 median_ns=16688 p95_ns=26525 stats=Stats { elements: 34, metadata_elements: 22, attributes: 5, text_bytes: 248, normalized_text_copy_bytes: 0, max_depth: 10, first_metadata_offset: Some(39), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "small",
+      "mode": "stream",
+      "run": 0,
+      "bytes": 1403,
+      "sha256": "a4f45aba223a6a53283334f68c4483384b2867dd0eb3216635de50d8089d3799",
+      "median_ns": 19110,
+      "p95_ns": 50917,
+      "rss_kib": 2420,
+      "raw": "mode=stream bytes=1403 repeats=31 median_ns=19110 p95_ns=50917 stats=Stats { elements: 34, metadata_elements: 22, attributes: 5, text_bytes: 248, normalized_text_copy_bytes: 0, max_depth: 10, first_metadata_offset: Some(39), event_buffer_capacity: 76 }"
+    },
+    {
+      "case": "small",
+      "mode": "stream",
+      "run": 1,
+      "bytes": 1403,
+      "sha256": "a4f45aba223a6a53283334f68c4483384b2867dd0eb3216635de50d8089d3799",
+      "median_ns": 19614,
+      "p95_ns": 26739,
+      "rss_kib": 2300,
+      "raw": "mode=stream bytes=1403 repeats=31 median_ns=19614 p95_ns=26739 stats=Stats { elements: 34, metadata_elements: 22, attributes: 5, text_bytes: 248, normalized_text_copy_bytes: 0, max_depth: 10, first_metadata_offset: Some(39), event_buffer_capacity: 76 }"
+    },
+    {
+      "case": "small",
+      "mode": "tree",
+      "run": 1,
+      "bytes": 1403,
+      "sha256": "a4f45aba223a6a53283334f68c4483384b2867dd0eb3216635de50d8089d3799",
+      "median_ns": 16822,
+      "p95_ns": 27112,
+      "rss_kib": 2360,
+      "raw": "mode=tree bytes=1403 repeats=31 median_ns=16822 p95_ns=27112 stats=Stats { elements: 34, metadata_elements: 22, attributes: 5, text_bytes: 248, normalized_text_copy_bytes: 0, max_depth: 10, first_metadata_offset: Some(39), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "small",
+      "mode": "tree",
+      "run": 2,
+      "bytes": 1403,
+      "sha256": "a4f45aba223a6a53283334f68c4483384b2867dd0eb3216635de50d8089d3799",
+      "median_ns": 17963,
+      "p95_ns": 28185,
+      "rss_kib": 2300,
+      "raw": "mode=tree bytes=1403 repeats=31 median_ns=17963 p95_ns=28185 stats=Stats { elements: 34, metadata_elements: 22, attributes: 5, text_bytes: 248, normalized_text_copy_bytes: 0, max_depth: 10, first_metadata_offset: Some(39), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "small",
+      "mode": "stream",
+      "run": 2,
+      "bytes": 1403,
+      "sha256": "a4f45aba223a6a53283334f68c4483384b2867dd0eb3216635de50d8089d3799",
+      "median_ns": 13330,
+      "p95_ns": 20247,
+      "rss_kib": 2300,
+      "raw": "mode=stream bytes=1403 repeats=31 median_ns=13330 p95_ns=20247 stats=Stats { elements: 34, metadata_elements: 22, attributes: 5, text_bytes: 248, normalized_text_copy_bytes: 0, max_depth: 10, first_metadata_offset: Some(39), event_buffer_capacity: 76 }"
+    },
+    {
+      "case": "small",
+      "mode": "stream",
+      "run": 3,
+      "bytes": 1403,
+      "sha256": "a4f45aba223a6a53283334f68c4483384b2867dd0eb3216635de50d8089d3799",
+      "median_ns": 15111,
+      "p95_ns": 19175,
+      "rss_kib": 2236,
+      "raw": "mode=stream bytes=1403 repeats=31 median_ns=15111 p95_ns=19175 stats=Stats { elements: 34, metadata_elements: 22, attributes: 5, text_bytes: 248, normalized_text_copy_bytes: 0, max_depth: 10, first_metadata_offset: Some(39), event_buffer_capacity: 76 }"
+    },
+    {
+      "case": "small",
+      "mode": "tree",
+      "run": 3,
+      "bytes": 1403,
+      "sha256": "a4f45aba223a6a53283334f68c4483384b2867dd0eb3216635de50d8089d3799",
+      "median_ns": 13840,
+      "p95_ns": 20700,
+      "rss_kib": 2596,
+      "raw": "mode=tree bytes=1403 repeats=31 median_ns=13840 p95_ns=20700 stats=Stats { elements: 34, metadata_elements: 22, attributes: 5, text_bytes: 248, normalized_text_copy_bytes: 0, max_depth: 10, first_metadata_offset: Some(39), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "small",
+      "mode": "tree",
+      "run": 4,
+      "bytes": 1403,
+      "sha256": "a4f45aba223a6a53283334f68c4483384b2867dd0eb3216635de50d8089d3799",
+      "median_ns": 19137,
+      "p95_ns": 29872,
+      "rss_kib": 2364,
+      "raw": "mode=tree bytes=1403 repeats=31 median_ns=19137 p95_ns=29872 stats=Stats { elements: 34, metadata_elements: 22, attributes: 5, text_bytes: 248, normalized_text_copy_bytes: 0, max_depth: 10, first_metadata_offset: Some(39), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "small",
+      "mode": "stream",
+      "run": 4,
+      "bytes": 1403,
+      "sha256": "a4f45aba223a6a53283334f68c4483384b2867dd0eb3216635de50d8089d3799",
+      "median_ns": 14866,
+      "p95_ns": 39658,
+      "rss_kib": 2248,
+      "raw": "mode=stream bytes=1403 repeats=31 median_ns=14866 p95_ns=39658 stats=Stats { elements: 34, metadata_elements: 22, attributes: 5, text_bytes: 248, normalized_text_copy_bytes: 0, max_depth: 10, first_metadata_offset: Some(39), event_buffer_capacity: 76 }"
+    },
+    {
+      "case": "configuration",
+      "mode": "tree",
+      "run": 0,
+      "bytes": 1773646,
+      "sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "median_ns": 9587349,
+      "p95_ns": 11414338,
+      "rss_kib": 11064,
+      "raw": "mode=tree bytes=1773646 repeats=31 median_ns=9587349 p95_ns=11414338 stats=Stats { elements: 18992, metadata_elements: 18811, attributes: 14, text_bytes: 1230943, normalized_text_copy_bytes: 76561, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "configuration",
+      "mode": "stream",
+      "run": 0,
+      "bytes": 1773646,
+      "sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "median_ns": 5901714,
+      "p95_ns": 6810469,
+      "rss_kib": 2356,
+      "raw": "mode=stream bytes=1773646 repeats=31 median_ns=5901714 p95_ns=6810469 stats=Stats { elements: 18992, metadata_elements: 18811, attributes: 14, text_bytes: 1230943, normalized_text_copy_bytes: 76561, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "configuration",
+      "mode": "stream",
+      "run": 1,
+      "bytes": 1773646,
+      "sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "median_ns": 5976117,
+      "p95_ns": 6600592,
+      "rss_kib": 2276,
+      "raw": "mode=stream bytes=1773646 repeats=31 median_ns=5976117 p95_ns=6600592 stats=Stats { elements: 18992, metadata_elements: 18811, attributes: 14, text_bytes: 1230943, normalized_text_copy_bytes: 76561, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "configuration",
+      "mode": "tree",
+      "run": 1,
+      "bytes": 1773646,
+      "sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "median_ns": 9223888,
+      "p95_ns": 10239974,
+      "rss_kib": 11020,
+      "raw": "mode=tree bytes=1773646 repeats=31 median_ns=9223888 p95_ns=10239974 stats=Stats { elements: 18992, metadata_elements: 18811, attributes: 14, text_bytes: 1230943, normalized_text_copy_bytes: 76561, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "configuration",
+      "mode": "tree",
+      "run": 2,
+      "bytes": 1773646,
+      "sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "median_ns": 9860338,
+      "p95_ns": 11913695,
+      "rss_kib": 10804,
+      "raw": "mode=tree bytes=1773646 repeats=31 median_ns=9860338 p95_ns=11913695 stats=Stats { elements: 18992, metadata_elements: 18811, attributes: 14, text_bytes: 1230943, normalized_text_copy_bytes: 76561, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "configuration",
+      "mode": "stream",
+      "run": 2,
+      "bytes": 1773646,
+      "sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "median_ns": 5952794,
+      "p95_ns": 6529475,
+      "rss_kib": 2536,
+      "raw": "mode=stream bytes=1773646 repeats=31 median_ns=5952794 p95_ns=6529475 stats=Stats { elements: 18992, metadata_elements: 18811, attributes: 14, text_bytes: 1230943, normalized_text_copy_bytes: 76561, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "configuration",
+      "mode": "stream",
+      "run": 3,
+      "bytes": 1773646,
+      "sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "median_ns": 5749539,
+      "p95_ns": 6527372,
+      "rss_kib": 2312,
+      "raw": "mode=stream bytes=1773646 repeats=31 median_ns=5749539 p95_ns=6527372 stats=Stats { elements: 18992, metadata_elements: 18811, attributes: 14, text_bytes: 1230943, normalized_text_copy_bytes: 76561, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "configuration",
+      "mode": "tree",
+      "run": 3,
+      "bytes": 1773646,
+      "sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "median_ns": 9223526,
+      "p95_ns": 11249926,
+      "rss_kib": 10952,
+      "raw": "mode=tree bytes=1773646 repeats=31 median_ns=9223526 p95_ns=11249926 stats=Stats { elements: 18992, metadata_elements: 18811, attributes: 14, text_bytes: 1230943, normalized_text_copy_bytes: 76561, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "configuration",
+      "mode": "tree",
+      "run": 4,
+      "bytes": 1773646,
+      "sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "median_ns": 9117616,
+      "p95_ns": 9830061,
+      "rss_kib": 11124,
+      "raw": "mode=tree bytes=1773646 repeats=31 median_ns=9117616 p95_ns=9830061 stats=Stats { elements: 18992, metadata_elements: 18811, attributes: 14, text_bytes: 1230943, normalized_text_copy_bytes: 76561, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "configuration",
+      "mode": "stream",
+      "run": 4,
+      "bytes": 1773646,
+      "sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "median_ns": 6085409,
+      "p95_ns": 7223558,
+      "rss_kib": 2312,
+      "raw": "mode=stream bytes=1773646 repeats=31 median_ns=6085409 p95_ns=7223558 stats=Stats { elements: 18992, metadata_elements: 18811, attributes: 14, text_bytes: 1230943, normalized_text_copy_bytes: 76561, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "document",
+      "mode": "tree",
+      "run": 0,
+      "bytes": 965947,
+      "sha256": "4132609e662c32395ddd85f5c8814feb14b84bfdac06058cfe3769335ddf5089",
+      "median_ns": 8255545,
+      "p95_ns": 11052944,
+      "rss_kib": 10788,
+      "raw": "mode=tree bytes=965947 repeats=31 median_ns=8255545 p95_ns=11052944 stats=Stats { elements: 22428, metadata_elements: 16684, attributes: 2272, text_bytes: 373211, normalized_text_copy_bytes: 209466, max_depth: 10, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "document",
+      "mode": "stream",
+      "run": 0,
+      "bytes": 965947,
+      "sha256": "4132609e662c32395ddd85f5c8814feb14b84bfdac06058cfe3769335ddf5089",
+      "median_ns": 5959222,
+      "p95_ns": 6679624,
+      "rss_kib": 2344,
+      "raw": "mode=stream bytes=965947 repeats=31 median_ns=5959222 p95_ns=6679624 stats=Stats { elements: 22428, metadata_elements: 16684, attributes: 2272, text_bytes: 373211, normalized_text_copy_bytes: 209466, max_depth: 10, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "document",
+      "mode": "stream",
+      "run": 1,
+      "bytes": 965947,
+      "sha256": "4132609e662c32395ddd85f5c8814feb14b84bfdac06058cfe3769335ddf5089",
+      "median_ns": 5786790,
+      "p95_ns": 7073151,
+      "rss_kib": 2224,
+      "raw": "mode=stream bytes=965947 repeats=31 median_ns=5786790 p95_ns=7073151 stats=Stats { elements: 22428, metadata_elements: 16684, attributes: 2272, text_bytes: 373211, normalized_text_copy_bytes: 209466, max_depth: 10, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "document",
+      "mode": "tree",
+      "run": 1,
+      "bytes": 965947,
+      "sha256": "4132609e662c32395ddd85f5c8814feb14b84bfdac06058cfe3769335ddf5089",
+      "median_ns": 8264877,
+      "p95_ns": 10000548,
+      "rss_kib": 10840,
+      "raw": "mode=tree bytes=965947 repeats=31 median_ns=8264877 p95_ns=10000548 stats=Stats { elements: 22428, metadata_elements: 16684, attributes: 2272, text_bytes: 373211, normalized_text_copy_bytes: 209466, max_depth: 10, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "document",
+      "mode": "tree",
+      "run": 2,
+      "bytes": 965947,
+      "sha256": "4132609e662c32395ddd85f5c8814feb14b84bfdac06058cfe3769335ddf5089",
+      "median_ns": 8420857,
+      "p95_ns": 10590748,
+      "rss_kib": 10764,
+      "raw": "mode=tree bytes=965947 repeats=31 median_ns=8420857 p95_ns=10590748 stats=Stats { elements: 22428, metadata_elements: 16684, attributes: 2272, text_bytes: 373211, normalized_text_copy_bytes: 209466, max_depth: 10, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "document",
+      "mode": "stream",
+      "run": 2,
+      "bytes": 965947,
+      "sha256": "4132609e662c32395ddd85f5c8814feb14b84bfdac06058cfe3769335ddf5089",
+      "median_ns": 5552131,
+      "p95_ns": 6302514,
+      "rss_kib": 2232,
+      "raw": "mode=stream bytes=965947 repeats=31 median_ns=5552131 p95_ns=6302514 stats=Stats { elements: 22428, metadata_elements: 16684, attributes: 2272, text_bytes: 373211, normalized_text_copy_bytes: 209466, max_depth: 10, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "document",
+      "mode": "stream",
+      "run": 3,
+      "bytes": 965947,
+      "sha256": "4132609e662c32395ddd85f5c8814feb14b84bfdac06058cfe3769335ddf5089",
+      "median_ns": 5281315,
+      "p95_ns": 6205638,
+      "rss_kib": 2236,
+      "raw": "mode=stream bytes=965947 repeats=31 median_ns=5281315 p95_ns=6205638 stats=Stats { elements: 22428, metadata_elements: 16684, attributes: 2272, text_bytes: 373211, normalized_text_copy_bytes: 209466, max_depth: 10, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "document",
+      "mode": "tree",
+      "run": 3,
+      "bytes": 965947,
+      "sha256": "4132609e662c32395ddd85f5c8814feb14b84bfdac06058cfe3769335ddf5089",
+      "median_ns": 8025076,
+      "p95_ns": 10520330,
+      "rss_kib": 10780,
+      "raw": "mode=tree bytes=965947 repeats=31 median_ns=8025076 p95_ns=10520330 stats=Stats { elements: 22428, metadata_elements: 16684, attributes: 2272, text_bytes: 373211, normalized_text_copy_bytes: 209466, max_depth: 10, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "document",
+      "mode": "tree",
+      "run": 4,
+      "bytes": 965947,
+      "sha256": "4132609e662c32395ddd85f5c8814feb14b84bfdac06058cfe3769335ddf5089",
+      "median_ns": 8350698,
+      "p95_ns": 10188867,
+      "rss_kib": 10764,
+      "raw": "mode=tree bytes=965947 repeats=31 median_ns=8350698 p95_ns=10188867 stats=Stats { elements: 22428, metadata_elements: 16684, attributes: 2272, text_bytes: 373211, normalized_text_copy_bytes: 209466, max_depth: 10, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "document",
+      "mode": "stream",
+      "run": 4,
+      "bytes": 965947,
+      "sha256": "4132609e662c32395ddd85f5c8814feb14b84bfdac06058cfe3769335ddf5089",
+      "median_ns": 5316534,
+      "p95_ns": 6300603,
+      "rss_kib": 2556,
+      "raw": "mode=stream bytes=965947 repeats=31 median_ns=5316534 p95_ns=6300603 stats=Stats { elements: 22428, metadata_elements: 16684, attributes: 2272, text_bytes: 373211, normalized_text_copy_bytes: 209466, max_depth: 10, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "report",
+      "mode": "tree",
+      "run": 0,
+      "bytes": 48821,
+      "sha256": "2da1ba6e2ba6a73edbd4d8953d27be4a8663dd4bb5ad754751a0b109c30a88a7",
+      "median_ns": 251940,
+      "p95_ns": 388603,
+      "rss_kib": 2444,
+      "raw": "mode=tree bytes=48821 repeats=31 median_ns=251940 p95_ns=388603 stats=Stats { elements: 678, metadata_elements: 669, attributes: 6, text_bytes: 32762, normalized_text_copy_bytes: 2741, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "report",
+      "mode": "stream",
+      "run": 0,
+      "bytes": 48821,
+      "sha256": "2da1ba6e2ba6a73edbd4d8953d27be4a8663dd4bb5ad754751a0b109c30a88a7",
+      "median_ns": 244229,
+      "p95_ns": 354854,
+      "rss_kib": 2236,
+      "raw": "mode=stream bytes=48821 repeats=31 median_ns=244229 p95_ns=354854 stats=Stats { elements: 678, metadata_elements: 669, attributes: 6, text_bytes: 32762, normalized_text_copy_bytes: 2741, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "report",
+      "mode": "stream",
+      "run": 1,
+      "bytes": 48821,
+      "sha256": "2da1ba6e2ba6a73edbd4d8953d27be4a8663dd4bb5ad754751a0b109c30a88a7",
+      "median_ns": 201643,
+      "p95_ns": 336066,
+      "rss_kib": 2236,
+      "raw": "mode=stream bytes=48821 repeats=31 median_ns=201643 p95_ns=336066 stats=Stats { elements: 678, metadata_elements: 669, attributes: 6, text_bytes: 32762, normalized_text_copy_bytes: 2741, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "report",
+      "mode": "tree",
+      "run": 1,
+      "bytes": 48821,
+      "sha256": "2da1ba6e2ba6a73edbd4d8953d27be4a8663dd4bb5ad754751a0b109c30a88a7",
+      "median_ns": 269240,
+      "p95_ns": 356669,
+      "rss_kib": 2552,
+      "raw": "mode=tree bytes=48821 repeats=31 median_ns=269240 p95_ns=356669 stats=Stats { elements: 678, metadata_elements: 669, attributes: 6, text_bytes: 32762, normalized_text_copy_bytes: 2741, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "report",
+      "mode": "tree",
+      "run": 2,
+      "bytes": 48821,
+      "sha256": "2da1ba6e2ba6a73edbd4d8953d27be4a8663dd4bb5ad754751a0b109c30a88a7",
+      "median_ns": 298002,
+      "p95_ns": 399227,
+      "rss_kib": 2832,
+      "raw": "mode=tree bytes=48821 repeats=31 median_ns=298002 p95_ns=399227 stats=Stats { elements: 678, metadata_elements: 669, attributes: 6, text_bytes: 32762, normalized_text_copy_bytes: 2741, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "report",
+      "mode": "stream",
+      "run": 2,
+      "bytes": 48821,
+      "sha256": "2da1ba6e2ba6a73edbd4d8953d27be4a8663dd4bb5ad754751a0b109c30a88a7",
+      "median_ns": 177382,
+      "p95_ns": 401450,
+      "rss_kib": 2236,
+      "raw": "mode=stream bytes=48821 repeats=31 median_ns=177382 p95_ns=401450 stats=Stats { elements: 678, metadata_elements: 669, attributes: 6, text_bytes: 32762, normalized_text_copy_bytes: 2741, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "report",
+      "mode": "stream",
+      "run": 3,
+      "bytes": 48821,
+      "sha256": "2da1ba6e2ba6a73edbd4d8953d27be4a8663dd4bb5ad754751a0b109c30a88a7",
+      "median_ns": 238601,
+      "p95_ns": 416091,
+      "rss_kib": 2492,
+      "raw": "mode=stream bytes=48821 repeats=31 median_ns=238601 p95_ns=416091 stats=Stats { elements: 678, metadata_elements: 669, attributes: 6, text_bytes: 32762, normalized_text_copy_bytes: 2741, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    },
+    {
+      "case": "report",
+      "mode": "tree",
+      "run": 3,
+      "bytes": 48821,
+      "sha256": "2da1ba6e2ba6a73edbd4d8953d27be4a8663dd4bb5ad754751a0b109c30a88a7",
+      "median_ns": 273793,
+      "p95_ns": 388227,
+      "rss_kib": 2740,
+      "raw": "mode=tree bytes=48821 repeats=31 median_ns=273793 p95_ns=388227 stats=Stats { elements: 678, metadata_elements: 669, attributes: 6, text_bytes: 32762, normalized_text_copy_bytes: 2741, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "report",
+      "mode": "tree",
+      "run": 4,
+      "bytes": 48821,
+      "sha256": "2da1ba6e2ba6a73edbd4d8953d27be4a8663dd4bb5ad754751a0b109c30a88a7",
+      "median_ns": 312842,
+      "p95_ns": 384595,
+      "rss_kib": 2620,
+      "raw": "mode=tree bytes=48821 repeats=31 median_ns=312842 p95_ns=384595 stats=Stats { elements: 678, metadata_elements: 669, attributes: 6, text_bytes: 32762, normalized_text_copy_bytes: 2741, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 0 }"
+    },
+    {
+      "case": "report",
+      "mode": "stream",
+      "run": 4,
+      "bytes": 48821,
+      "sha256": "2da1ba6e2ba6a73edbd4d8953d27be4a8663dd4bb5ad754751a0b109c30a88a7",
+      "median_ns": 233468,
+      "p95_ns": 286970,
+      "rss_kib": 2364,
+      "raw": "mode=stream bytes=48821 repeats=31 median_ns=233468 p95_ns=286970 stats=Stats { elements: 678, metadata_elements: 669, attributes: 6, text_bytes: 32762, normalized_text_copy_bytes: 2741, max_depth: 6, first_metadata_offset: Some(43), event_buffer_capacity: 868 }"
+    }
+  ],
+  "probes": [
+    {
+      "probe": "byte_limit",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: \"byte limit\""
+    },
+    {
+      "probe": "byte_limit",
+      "mode": "stream",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: \"byte limit\""
+    },
+    {
+      "probe": "depth_257",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: \"depth limit\""
+    },
+    {
+      "probe": "depth_257",
+      "mode": "stream",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: \"depth limit\""
+    },
+    {
+      "probe": "dtd",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: DtdDetected"
+    },
+    {
+      "probe": "dtd",
+      "mode": "stream",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: \"DTD disabled\""
+    },
+    {
+      "probe": "duplicate_attribute",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: DuplicatedAttribute(\"x\", TextPos { row: 1, col: 10 })"
+    },
+    {
+      "probe": "duplicate_attribute",
+      "mode": "stream",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: Duplicated(8, 2)"
+    },
+    {
+      "probe": "duplicate_expanded_attribute",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: DuplicatedAttribute(\"x\", TextPos { row: 1, col: 50 })"
+    },
+    {
+      "probe": "duplicate_expanded_attribute",
+      "mode": "stream",
+      "code": 0,
+      "stdout": "mode=stream bytes=58 repeats=1 median_ns=18973 p95_ns=18973 stats=Stats { elements: 1, metadata_elements: 0, attributes: 2, text_bytes: 0, normalized_text_copy_bytes: 0, max_depth: 1, first_metadata_offset: None, event_buffer_capacity: 58 }",
+      "stderr": ""
+    },
+    {
+      "probe": "foreign_namespace",
+      "mode": "tree",
+      "code": 0,
+      "stdout": "mode=tree bytes=69 repeats=1 median_ns=33503 p95_ns=33503 stats=Stats { elements: 2, metadata_elements: 0, attributes: 0, text_bytes: 0, normalized_text_copy_bytes: 0, max_depth: 2, first_metadata_offset: None, event_buffer_capacity: 0 }",
+      "stderr": ""
+    },
+    {
+      "probe": "foreign_namespace",
+      "mode": "stream",
+      "code": 0,
+      "stdout": "mode=stream bytes=69 repeats=1 median_ns=29017 p95_ns=29017 stats=Stats { elements: 2, metadata_elements: 0, attributes: 0, text_bytes: 0, normalized_text_copy_bytes: 0, max_depth: 2, first_metadata_offset: None, event_buffer_capacity: 36 }",
+      "stderr": ""
+    },
+    {
+      "probe": "illegal_char_reference",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: MalformedEntityReference(TextPos { row: 1, col: 4 })"
+    },
+    {
+      "probe": "illegal_char_reference",
+      "mode": "stream",
+      "code": 0,
+      "stdout": "mode=stream bytes=12 repeats=1 median_ns=29529 p95_ns=29529 stats=Stats { elements: 1, metadata_elements: 0, attributes: 0, text_bytes: 1, normalized_text_copy_bytes: 0, max_depth: 1, first_metadata_offset: None, event_buffer_capacity: 8 }",
+      "stderr": ""
+    },
+    {
+      "probe": "mismatched",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: UnexpectedCloseTag(\"b\", \"a\", TextPos { row: 1, col: 7 })"
+    },
+    {
+      "probe": "mismatched",
+      "mode": "stream",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: IllFormed(MismatchedEndTag { expected: \"b\", found: \"a\" })"
+    },
+    {
+      "probe": "multiple_roots",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: UnknownToken(TextPos { row: 1, col: 5 })"
+    },
+    {
+      "probe": "multiple_roots",
+      "mode": "stream",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: \"missing or multiple roots\""
+    },
+    {
+      "probe": "node_limit",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: NodesLimitReached"
+    },
+    {
+      "probe": "node_limit",
+      "mode": "stream",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: \"node limit\""
+    },
+    {
+      "probe": "prefix_bom_crlf",
+      "mode": "tree",
+      "code": 0,
+      "stdout": "mode=tree bytes=215 repeats=1 median_ns=80790 p95_ns=80790 stats=Stats { elements: 3, metadata_elements: 3, attributes: 1, text_bytes: 27, normalized_text_copy_bytes: 27, max_depth: 3, first_metadata_offset: Some(26), event_buffer_capacity: 0 }",
+      "stderr": ""
+    },
+    {
+      "probe": "prefix_bom_crlf",
+      "mode": "stream",
+      "code": 0,
+      "stdout": "mode=stream bytes=215 repeats=1 median_ns=45653 p95_ns=45653 stats=Stats { elements: 3, metadata_elements: 3, attributes: 1, text_bytes: 27, normalized_text_copy_bytes: 0, max_depth: 3, first_metadata_offset: Some(26), event_buffer_capacity: 58 }",
+      "stderr": ""
+    },
+    {
+      "probe": "unknown_attribute_prefix",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: UnknownNamespace(\"p\", TextPos { row: 1, col: 4 })"
+    },
+    {
+      "probe": "unknown_attribute_prefix",
+      "mode": "stream",
+      "code": 0,
+      "stdout": "mode=stream bytes=12 repeats=1 median_ns=32568 p95_ns=32568 stats=Stats { elements: 1, metadata_elements: 0, attributes: 1, text_bytes: 0, normalized_text_copy_bytes: 0, max_depth: 1, first_metadata_offset: None, event_buffer_capacity: 16 }",
+      "stderr": ""
+    },
+    {
+      "probe": "unknown_entity",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: UnknownEntityReference(\"unknown\", TextPos { row: 1, col: 4 })"
+    },
+    {
+      "probe": "unknown_entity",
+      "mode": "stream",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: \"unknown entity\""
+    },
+    {
+      "probe": "unknown_prefix",
+      "mode": "tree",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: UnknownNamespace(\"q\", TextPos { row: 1, col: 2 })"
+    },
+    {
+      "probe": "unknown_prefix",
+      "mode": "stream",
+      "code": 1,
+      "stdout": "",
+      "stderr": "Error: \"unknown namespace prefix\""
+    }
+  ],
+  "probe_inputs": {
+    "prefix_bom_crlf": {
+      "xml": "﻿<?xml version=\"1.0\"?>\r\n<m:MetaDataObject xmlns:m=\"http://v8.1c.ru/8.3/MDClasses\"><m:Configuration a=\"A&amp;B\"><m:Name>Имя &amp; &#x41; <![CDATA[значение]]></m:Name></m:Configuration></m:MetaDataObject>"
+    },
+    "mismatched": {
+      "xml": "<a><b></a>"
+    },
+    "duplicate_attribute": {
+      "xml": "<a x=\"1\" x=\"2\"/>"
+    },
+    "unknown_prefix": {
+      "xml": "<q:a/>"
+    },
+    "unknown_entity": {
+      "xml": "<a>&unknown;</a>"
+    },
+    "dtd": {
+      "xml": "<!DOCTYPE a [<!ENTITY text \"value\">]><a>&text;</a>"
+    },
+    "multiple_roots": {
+      "xml": "<a/><b/>"
+    },
+    "foreign_namespace": {
+      "xml": "<MetaDataObject xmlns=\"urn:foreign\"><Configuration/></MetaDataObject>"
+    },
+    "illegal_char_reference": {
+      "xml": "<a>&#x1;</a>"
+    },
+    "unknown_attribute_prefix": {
+      "xml": "<a p:x=\"1\"/>"
+    },
+    "duplicate_expanded_attribute": {
+      "xml": "<a xmlns:p=\"urn:test\" xmlns:q=\"urn:test\" p:x=\"1\" q:x=\"2\"/>"
+    },
+    "depth_257": {
+      "recipe": "<a> repeated 257 times, followed by </a> repeated 257 times"
+    },
+    "node_limit": {
+      "recipe": "<a>, followed by <b/> repeated 1000001 times, followed by </a>"
+    },
+    "byte_limit": {
+      "recipe": "sparse zero-filled file of 67108865 bytes; rejected before parsing"
+    }
+  }
+}

@@ -1,0 +1,943 @@
+{
+  "apiVersion": {
+    "major": 1,
+    "minor": 0
+  },
+  "note": "Independent illustrative contract cases, not captured server execution. IDs, counts and ranges may be synthetic. Each case resets the connection.",
+  "cases": [
+    {
+      "name": "initialize",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q1",
+          "method": "initialize",
+          "params": {
+            "apiVersion": {
+              "major": 1,
+              "minor": 0
+            },
+            "client": {
+              "name": "Пример клиента",
+              "version": "1"
+            },
+            "locale": "ru-RU"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q1",
+          "result": {
+            "apiVersion": {
+              "major": 1,
+              "minor": 0
+            },
+            "server": {
+              "name": "eska",
+              "version": "0.10.0"
+            },
+            "capabilities": {
+              "designerXml": true,
+              "readOnly": true,
+              "diskCache": true,
+              "search": true,
+              "clientFileEvents": true,
+              "batch": true,
+              "multiContext": false,
+              "supportedProjectTypes": [
+                "configuration",
+                "extension",
+                "processing",
+                "report"
+              ]
+            },
+            "limits": {
+              "maxHeaderBytes": 8192,
+              "maxRequestBytes": 1048576,
+              "maxResponseBytes": 67108864,
+              "maxDepth": 64,
+              "maxBatchItems": 16,
+              "maxPendingRequests": 128,
+              "maxQueuedBytes": 4194304
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "workspace/open",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q2",
+          "method": "workspace/open",
+          "params": {
+            "start": {
+              "value": "/workspace/demo",
+              "encoding": "utf-8"
+            },
+            "selection": {
+              "kind": "current"
+            },
+            "diskCache": true
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q2",
+          "result": {
+            "sessionId": "s1",
+            "projects": [
+              {
+                "projectId": "p1",
+                "scope": {
+                  "kind": "standalone"
+                },
+                "type": "configuration",
+                "rootPath": {
+                  "value": "/workspace/demo",
+                  "encoding": "utf-8"
+                },
+                "sourcePath": {
+                  "value": "/workspace/demo/src",
+                  "encoding": "utf-8"
+                },
+                "root": {
+                  "kind": "object",
+                  "objectId": "configuration:ТестоваяКонфигурация"
+                },
+                "generation": "0",
+                "eventSequence": "0",
+                "requiresRefresh": false,
+                "requiresReopen": false
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "project/info",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q3",
+          "method": "project/info",
+          "params": {
+            "sessionId": "s1"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q3",
+          "result": {
+            "sessionId": "s1",
+            "projects": [
+              {
+                "projectId": "p1",
+                "scope": {
+                  "kind": "standalone"
+                },
+                "type": "configuration",
+                "rootPath": {
+                  "value": "/workspace/demo",
+                  "encoding": "utf-8"
+                },
+                "sourcePath": {
+                  "value": "/workspace/demo/src",
+                  "encoding": "utf-8"
+                },
+                "root": {
+                  "kind": "object",
+                  "objectId": "configuration:ТестоваяКонфигурация"
+                },
+                "generation": "0",
+                "eventSequence": "0",
+                "requiresRefresh": false,
+                "requiresReopen": false
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata/root",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q4",
+          "method": "metadata/root",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q4",
+          "result": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "eventSequence": "0",
+            "node": {
+              "id": {
+                "kind": "object",
+                "objectId": "configuration:ТестоваяКонфигурация"
+              },
+              "parent": null,
+              "label": {
+                "kind": "name",
+                "text": "ТестоваяКонфигурация"
+              },
+              "state": "non_empty",
+              "expandedByDefault": false,
+              "rootSection": false,
+              "diagnostics": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata/children",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q5",
+          "method": "metadata/children",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "node": {
+              "kind": "object",
+              "objectId": "configuration:ТестоваяКонфигурация"
+            }
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q5",
+          "result": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "eventSequence": "0",
+            "nodes": [
+              {
+                "id": {
+                  "kind": "collection",
+                  "owner": "configuration:ТестоваяКонфигурация",
+                  "collection": {
+                    "kind": "metadata",
+                    "metadataKind": "catalog"
+                  }
+                },
+                "parent": {
+                  "kind": "object",
+                  "objectId": "configuration:ТестоваяКонфигурация"
+                },
+                "label": {
+                  "kind": "key",
+                  "key": "tree-collection-catalog",
+                  "translations": {
+                    "ru-RU": "Справочники",
+                    "en-US": "Catalogs"
+                  }
+                },
+                "state": "non_empty",
+                "expandedByDefault": false,
+                "rootSection": true,
+                "diagnostics": []
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata/get",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q6",
+          "method": "metadata/get",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "objectId": "catalog:Контрагенты"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q6",
+          "result": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "eventSequence": "0",
+            "object": {
+              "objectId": "catalog:Контрагенты",
+              "metadataKind": "catalog",
+              "name": "Контрагенты",
+              "parent": null,
+              "uuid": null,
+              "synonyms": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata/properties",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q7",
+          "method": "metadata/properties",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "objectId": "catalog:Контрагенты"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q7",
+          "result": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "eventSequence": "0",
+            "properties": [
+              {
+                "key": {
+                  "namespace": "http://v8.1c.ru/8.3/MDClasses",
+                  "name": "Name"
+                },
+                "qualifiers": [],
+                "value": {
+                  "kind": "text",
+                  "text": "Контрагенты"
+                },
+                "range": {
+                  "start": 100,
+                  "end": 145
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata/source",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q8",
+          "method": "metadata/source",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "node": {
+              "kind": "object",
+              "objectId": "catalog:Контрагенты"
+            }
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q8",
+          "result": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "eventSequence": "0",
+            "sources": [
+              {
+                "path": {
+                  "value": "Catalogs/Контрагенты.xml",
+                  "encoding": "utf-8"
+                },
+                "role": {
+                  "kind": "descriptor"
+                },
+                "inline": []
+              },
+              {
+                "path": {
+                  "value": "Catalogs/Контрагенты/Ext/ObjectModule.bsl",
+                  "encoding": "utf-8"
+                },
+                "role": {
+                  "kind": "module",
+                  "role": "object"
+                },
+                "inline": []
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata/search",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q9",
+          "method": "metadata/search",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "text": "контрагенты",
+            "limit": 50
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q9",
+          "result": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "eventSequence": "0",
+            "progress": {
+              "state": "ready",
+              "indexedObjects": 3,
+              "pendingDescriptors": 0,
+              "failedDescriptors": 0
+            },
+            "hits": [
+              {
+                "objectId": "catalog:Контрагенты",
+                "node": {
+                  "kind": "object",
+                  "objectId": "catalog:Контрагенты"
+                },
+                "metadataKind": "catalog",
+                "name": "Контрагенты",
+                "synonyms": [],
+                "ancestry": [
+                  {
+                    "kind": "object",
+                    "objectId": "configuration:ТестоваяКонфигурация"
+                  },
+                  {
+                    "kind": "collection",
+                    "owner": "configuration:ТестоваяКонфигурация",
+                    "collection": {
+                      "kind": "metadata",
+                      "metadataKind": "catalog"
+                    }
+                  },
+                  {
+                    "kind": "object",
+                    "objectId": "catalog:Контрагенты"
+                  }
+                ],
+                "rank": "exact_name"
+              }
+            ],
+            "truncated": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata/reveal",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q10",
+          "method": "metadata/reveal",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "objectId": "catalog:Контрагенты"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q10",
+          "result": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "eventSequence": "0",
+            "ancestry": [
+              {
+                "kind": "object",
+                "objectId": "configuration:ТестоваяКонфигурация"
+              },
+              {
+                "kind": "collection",
+                "owner": "configuration:ТестоваяКонфигурация",
+                "collection": {
+                  "kind": "metadata",
+                  "metadataKind": "catalog"
+                }
+              },
+              {
+                "kind": "object",
+                "objectId": "catalog:Контрагенты"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata/index",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q11",
+          "method": "metadata/index",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "action": "status"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q11",
+          "result": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "eventSequence": "0",
+            "progress": {
+              "state": "ready",
+              "indexedObjects": 3,
+              "pendingDescriptors": 0,
+              "failedDescriptors": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata/indexErrors",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q12",
+          "method": "metadata/indexErrors",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "offset": 0,
+            "limit": 50
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q12",
+          "result": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "eventSequence": "0",
+            "errors": [],
+            "nextOffset": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata/refresh",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q13",
+          "method": "metadata/refresh",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "node": {
+              "kind": "object",
+              "objectId": "catalog:Контрагенты"
+            }
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "method": "metadata/changed",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "1",
+            "eventSequence": "1",
+            "affected": [
+              "catalog:Контрагенты"
+            ],
+            "requiresRefresh": false,
+            "requiresReopen": false
+          }
+        },
+        {
+          "jsonrpc": "2.0",
+          "id": "q13",
+          "result": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "1",
+            "eventSequence": "1",
+            "affected": [
+              "catalog:Контрагенты"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "file-event",
+      "precondition": "s1/p1 expects sequence 1",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "method": "workspace/didChangeFiles",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "sequence": "1",
+            "paths": [
+              {
+                "value": "Catalogs/Контрагенты.xml",
+                "encoding": "utf-8"
+              }
+            ]
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "method": "metadata/changed",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "1",
+            "eventSequence": "1",
+            "affected": [
+              "catalog:Контрагенты"
+            ],
+            "requiresRefresh": false,
+            "requiresReopen": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "workspace/close",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q15",
+          "method": "workspace/close",
+          "params": {
+            "sessionId": "s1"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q15",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "shutdown",
+      "precondition": "independent example; initialized s1/p1, generation 0 unless lifecycle method",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q16",
+          "method": "shutdown",
+          "params": {}
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q16",
+          "result": null
+        }
+      ]
+    },
+    {
+      "name": "exit",
+      "precondition": "shutdown completed",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "method": "exit"
+        }
+      ],
+      "server": [],
+      "exitCode": 0
+    },
+    {
+      "name": "cancel-pending",
+      "precondition": "q-cancel queued, not committed",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q-cancel",
+          "method": "metadata/search",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "text": "ИНН"
+          }
+        },
+        {
+          "jsonrpc": "2.0",
+          "method": "$/cancelRequest",
+          "params": {
+            "id": "q-cancel"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "q-cancel",
+          "error": {
+            "code": -32000,
+            "message": "Request failed",
+            "data": {
+              "kind": "cancelled",
+              "details": {}
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "index-progress",
+      "precondition": "explicit indexing completed",
+      "client": [],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "method": "metadata/indexProgress",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0",
+            "progress": {
+              "state": "ready",
+              "indexedObjects": 3,
+              "pendingDescriptors": 0,
+              "failedDescriptors": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "batch",
+      "precondition": "s1/p1 initialized",
+      "client": [
+        [
+          {
+            "jsonrpc": "2.0",
+            "id": "b1",
+            "method": "metadata/root",
+            "params": {
+              "sessionId": "s1",
+              "projectId": "p1",
+              "generation": "0"
+            }
+          },
+          {
+            "jsonrpc": "2.0",
+            "method": "unknown/event"
+          },
+          42
+        ]
+      ],
+      "server": [
+        [
+          {
+            "jsonrpc": "2.0",
+            "id": "b1",
+            "result": {
+              "sessionId": "s1",
+              "projectId": "p1",
+              "generation": "0",
+              "eventSequence": "0",
+              "node": {
+                "id": {
+                  "kind": "object",
+                  "objectId": "configuration:ТестоваяКонфигурация"
+                },
+                "parent": null,
+                "label": {
+                  "kind": "name",
+                  "text": "ТестоваяКонфигурация"
+                },
+                "state": "non_empty",
+                "expandedByDefault": false,
+                "rootSection": false,
+                "diagnostics": []
+              }
+            }
+          },
+          {
+            "jsonrpc": "2.0",
+            "id": null,
+            "error": {
+              "code": -32600,
+              "message": "Invalid Request"
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "name": "stale-generation",
+      "precondition": "server generation 1",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "stale",
+          "method": "metadata/root",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "stale",
+          "error": {
+            "code": -32000,
+            "message": "Request failed",
+            "data": {
+              "kind": "stale_generation",
+              "sessionId": "s1",
+              "projectId": "p1",
+              "generation": "1",
+              "details": {
+                "expected": "1",
+                "actual": "0"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "write-not-supported",
+      "precondition": "initialized",
+      "client": [
+        {
+          "jsonrpc": "2.0",
+          "id": "write",
+          "method": "metadata/updateProperty",
+          "params": {
+            "sessionId": "s1",
+            "projectId": "p1",
+            "generation": "0"
+          }
+        }
+      ],
+      "server": [
+        {
+          "jsonrpc": "2.0",
+          "id": "write",
+          "error": {
+            "code": -32601,
+            "message": "Method not found"
+          }
+        }
+      ]
+    }
+  ],
+  "transportErrors": [
+    {
+      "inputBody": "{",
+      "expected": {
+        "jsonrpc": "2.0",
+        "id": null,
+        "error": {
+          "code": -32700,
+          "message": "Parse error"
+        }
+      },
+      "connection": "continue"
+    },
+    {
+      "inputHeader": "Content-Length: -1\r\n\r\n",
+      "connection": "exit",
+      "exitCode": 2
+    },
+    {
+      "inputHeader": "Content-Length: 1\r\nContent-Length: 1\r\n\r\n",
+      "connection": "exit",
+      "exitCode": 2
+    }
+  ]
+}

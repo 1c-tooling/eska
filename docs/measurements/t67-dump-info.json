@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-18",
+  "method": "Read-only Python ElementTree single run; input-size comparison, not Rust backend benchmark",
+  "files": {
+    "Configuration.xml": {
+      "bytes": 1773646,
+      "read_ms": 1.654,
+      "parse_ms": 13.964,
+      "elements": 18992,
+      "metadata_entries": 0
+    },
+    "ConfigDumpInfo.xml": {
+      "bytes": 39484937,
+      "read_ms": 25.193,
+      "parse_ms": 360.922,
+      "elements": 181737,
+      "metadata_entries": 181735
+    }
+  }
+}

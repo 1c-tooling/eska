@@ -1,0 +1,3 @@
+# Encoding and line endings are part of these immutable test inputs.
+*.xml -text
+*.bsl -text

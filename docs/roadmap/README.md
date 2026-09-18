@@ -6,8 +6,9 @@
 
 ## Текущее состояние
 
-Стадия проекта: **локальный CLI MVP и workspace готовы**. Текущий фокус —
-диагностика, надёжность существующих команд и работа с большими выгрузками.
+Стадия проекта: **локальный CLI MVP и workspace готовы**. По решению пользователя
+от 2026-09-17 текущий фокус ветки `feat/ide` — подготовка `eska` и первой версии
+VS Code extension для навигации по Designer XML.
 
 - `DONE`: чистый минимальный Rust CLI;
 - `DONE`: локализация `ru-RU` / `en-US`, включая `--help`;
@@ -59,15 +60,37 @@
   устранением дублей и порядком метаданных Конфигуратора;
 - `DONE`: `T35` — автоматическое сохранение и восстановление незакоммиченного
   состояния при переключении задач;
-- `NEXT`: `T56` — автоматическая версия релиза 1С и подготовка Release PR/MR
-  после завершённой T35;
+- `PLANNED`: `T56` — автоматическая версия релиза 1С и подготовка Release PR/MR;
+  сохранена в backlog после переключения приоритета на IDE;
 - `PLANNED`: `T57` — обновление установленного бинарника командой `eska update`
   после T56;
 - `PLANNED`: `T55` — переносимый стенд реализован, завершение ожидает запусков
   на Windows/macOS и приёмки с настоящей платформой 1С;
 - `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
 - `PLANNED`: `T37` — `sync` / `continue` / `abort` после T57;
-- `PLANNED`: `T26` — `eska fmt`, выполняется последней в текущей очереди;
+- `PLANNED`: `T26` — `eska fmt`, последняя в очереди последующих CLI-задач;
+- `DONE`: `T60` — модель метаданных и логическая identity;
+- `DONE`: `T61` — Designer resolver и открытие через обязательный manifest;
+- `DONE`: `T62` — fixtures, матрица типов и большой стенд;
+- `DONE`: `T63` — выбор XML parsing по измерениям;
+- `DONE`: `T64` — разбор Designer XML в модель метаданных;
+- `DONE`: `T65` — схемы дерева Конфигуратора;
+- `DONE`: `T66` — read-only metadata workspace API;
+- `DONE`: `T67` — lazy cache и инкрементальное обновление;
+- `DONE`: `T75` — индекс и API поиска;
+- `DONE`: `T68` — дисковый кеш и замеры производительности;
+- `DONE`: `T69` — спецификация постоянного IDE protocol;
+- `DONE`: `T70` — постоянный IDE процесс;
+- `DONE`: `T76` — основа расширения и подключение к backend;
+- `DONE`: `T77` — дерево, модули и открытие исходников;
+- `DONE`: `T78` — поиск и переход к результату в расширении;
+- `DONE`: `T79` — фильтр пустых разделов корня и исходная настройка;
+- `DONE`: `T80` — иконки метаданных;
+- `IN-PROGRESS`: `T81` — итоговая приёмка и VSIX;
+- `PLANNED`: `T41`, декомпозированная в `T76–T81`, — расширение VS Code с деревом,
+  поиском, фильтром, иконками и устанавливаемым VSIX;
+- `PLANNED`: `T71–T73` — отдельный последующий этап редактирования существующих
+  метаданных после первой поставки; `T74` structural editing — `DEFERRED`;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
@@ -99,7 +122,7 @@ T35 добавила автоматические полки при `switch` и 
 `shelve` / `unshelve` / `shelves`. T58 завершила настройку production-ветки Git Flow с
 сохранением `develop` базой обычных feature-веток. T59 сделала semantic-вывод
 однозначным, подавила противоречивые события и добавила координаты методов.
-Следующая задача — T56: автоматическая подготовка версии релиза 1С.
+Поиск T78, фильтр T79 и иконки T80 реализованы. В работе T81: итоговая приёмка и VSIX. T56 остаётся в backlog.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
 операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
@@ -120,21 +143,42 @@ TUI разделён на обработку клавиш, отрисовку и
 
 ## Ближайший порядок выполнения
 
-Порядок скорректирован по анализу кода и CLI от 2026-09-08. Завершённые этапы
-сохраняют `DONE`; найденные ограничения оформлены как отдельные расширения.
-Таблица содержит только ещё не завершённые задачи, доступные без уточнения T53.
+Порядок изменён пользователем 2026-09-17: ближайший результат — устанавливаемое
+расширение VS Code. Завершённые этапы сохраняют `DONE`. Каждая задача имеет
+собственные критерии; наличие в очереди не запускает её реализацию автоматически.
 
 | Порядок | ID | Результат |
 |---|---|---|
-| 1 | T56 | Автоматический bump версии 1С и подготовка Release PR/MR |
-| 2 | T57 | Обновление установленного `eska` до последнего стабильного release |
-| 3 | T37 | Синхронизация задачи и штатные продолжение/отмена при конфликтах |
-| 4 | T55 | Завершение внешних Windows/macOS и реальных 1С-проверок при доступном runner |
-| 5 | T26 | Форматирование; последняя задача текущей очереди |
+| 1 | T60 | Модель метаданных и стабильная identity — `DONE` |
+| 2 | T61 | Manifest, Designer resolver и переход к XML/BSL — `DONE` |
+| 3 | T62 | Fixtures, матрица типов и большой стенд — `DONE` |
+| 4 | T63 | Выбор XML parser по замерам и проект бюджетов — `DONE` |
+| 5 | T64 | Разбор Designer XML по запросу — `DONE` |
+| 6 | T65 | Схемы дерева, первая группа модулей и пустые коллекции — `DONE` |
+| 7 | T66 | Read-only metadata API — `DONE` |
+| 8 | T67 | Lazy cache и обновление затронутых объектов — `DONE` |
+| 9 | T75 | Поисковый индекс и core search API — `DONE` |
+| 10 | T68 | Дисковый кеш и измеренная производительность backend — `DONE` |
+| 11 | T69 | Контракт постоянного IDE protocol — `DONE` |
+| 12 | T70 | Процесс `eska ide --stdio` — `DONE` |
+| 13 | T76 | Основа расширения и подключение к `eska` — `DONE` |
+| 14 | T77 | Дерево, модули и открытие исходников — `DONE` |
+| 15 | T78 | Поиск и переход к результату — `DONE` |
+| 16 | T79 | Фильтр пустых групп и исходная настройка — `DONE` |
+| 17 | T80 | Иконки метаданных — `DONE` |
+| 18 | T81 | Приёмка скорости/UI и VSIX; закрытие T41 — `IN-PROGRESS` |
 
-T55 можно завершить раньше T37, если станет доступна требуемая ОС; ожидание
-внешнего runner не блокирует реализацию T56, T57 и T37 на
-текущей системе.
+Для всех четырёх типов проекта обязателен `eska.toml`: его проверенный тип
+определяет схему дерева. `.bin` без BSL скрываются. Большой стенд —
+`<repo>/../eska-playground/big_configuration_temp`; **сборку этого проекта
+не запускать**, использовать только чтение метаданных и замеры. Изменения XML
+для тестов выполняются на небольших собственных fixtures. Подробные границы и
+неподтверждённые UX-предложения — в [плане расширения](14-vscode-extension.md).
+
+T56 → T57 → T37 → T55 → T26 сохраняются как очередь последующих CLI-задач;
+возврат к ней определяется отдельно после первой IDE-поставки. T55 можно
+завершить раньше при доступном runner; это не повод собирать большой IDE-стенд.
+T71–T73 также требуют отдельного последующего этапа, T74 остаётся отложенной.
 
 T53 нельзя начинать с ослабления проверки интеграции: сначала снимается
 `NEEDS-SPEC`. Уточнение её контракта не блокирует независимые T54–T55.
@@ -146,6 +190,28 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 Контракт обновления установленного CLI: [T57](10-delivery-and-integrations.md).
 Этот план разрешает только отдельно запрошенную задачу, не автоматический запуск
 всей очереди.
+
+## Последовательность metadata / IDE
+
+Детальные контракты: [метаданные Designer XML и IDE protocol](13-metadata-and-ide.md).
+Это развитие T19/T50 с переиспользованием существующих `ObjectId`, discovery и
+mapping, а не повторная реализация завершённых задач. Задачи клиента описаны
+в [T76–T81](14-vscode-extension.md), они завершают текущую первую поставку.
+
+| Milestone | Задачи | Результат |
+|---|---|---|
+| Metadata V0.1 — Core model | T60–T62 | Модель, logical identity, resolver, fixtures |
+| Metadata V0.2 — Designer XML parser | T63–T64 | Стратегия parsing и parser четырёх типов проектов |
+| Metadata V0.3 — Configurator tree | T65–T66 | Schema, golden tests и read-only API |
+| Metadata V0.4 — Incremental workspace | T67, T75, T68 | Lazy cache, поиск, обновления и benchmarks |
+| IDE V0.1 — Read-only protocol | T69–T70 | Спецификация и постоянный `eska ide --stdio` |
+| VS Code V0.1 — Metadata explorer | T41: T76–T81 | Дерево, модули, поиск, фильтр, иконки и VSIX |
+| Metadata V0.5 — Existing object editing | T71–T73 | Safe XML patching и изменение существующих элементов |
+| Metadata V0.6 — Structural editing | T74 | Отложенные add/remove/rename и согласованная запись файлов |
+
+Metadata/IDE API первой поставки полностью read-only. T41 — сводная задача
+клиента, закрываемая результатом T76–T81 после T70. EDT, MCP, AI, собственный
+BSL LSP и визуальный редактор форм в это направление не входят.
 
 ## Реестр задач
 
@@ -195,7 +261,7 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T38 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T39 | DEFERRED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
 | T40 | DONE | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T41 | PLANNED | VS Code extension | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T41 | PLANNED | eska: 1C Explorer — сводная задача T76–T81 | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T42 | DONE | Спецификация и прототип patch-extension `.cfe` из разницы веток | [t42-patch-extension.md](t42-patch-extension.md) |
 | T43 | DONE | Генерация patch-extension для ограниченного набора методов | [t42-patch-extension.md](t42-patch-extension.md) |
 | T44 | DONE | Workspace config, model и discovery | [11-workspaces.md](11-workspaces.md) |
@@ -210,10 +276,32 @@ T23 test backend и T39 locking сохраняют `DEFERRED`.
 | T53 | NEEDS-SPEC | Завершение задачи после squash/rebase | [12-current-functionality.md](12-current-functionality.md) |
 | T54 | DONE | Паспорт собранного артефакта | [12-current-functionality.md](12-current-functionality.md) |
 | T55 | PLANNED | Переносимые проверки сборки; ожидает внешней приёмки | [12-current-functionality.md](12-current-functionality.md) |
-| T56 | NEXT | Автоматическая подготовка версии релиза 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T56 | PLANNED | Автоматическая подготовка версии релиза 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T57 | PLANNED | Обновление установленного `eska` | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T58 | DONE | Настраиваемая основная production-ветка Git Flow | [03-repository-workflow.md](03-repository-workflow.md) |
 | T59 | DONE | Читаемый semantic-вывод `eska diff` с координатами методов | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
+| T60 | DONE | Модель метаданных и логическая identity | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T61 | DONE | Designer path resolver | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T62 | DONE | Набор Designer XML fixtures | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T63 | DONE | Выбор стратегии XML parsing | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T64 | DONE | Разбор Designer XML в модель метаданных | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T65 | DONE | ConfiguratorSchema и ConfiguratorTree | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T66 | DONE | Read-only metadata workspace API | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T67 | DONE | Lazy index, cache и инкрементальное обновление | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T68 | DONE | Производительность metadata workspace | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T69 | DONE | Спецификация постоянного IDE protocol | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T70 | DONE | Постоянный read-only IDE процесс | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T71 | PLANNED | Архитектура safe XML patching | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T72 | PLANNED | Точечный XML patch и безопасная запись | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T73 | PLANNED | Редактирование существующих элементов | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T74 | DEFERRED | Структурные изменения метаданных | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T75 | DONE | Поиск по метаданным | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T76 | DONE | Основа расширения и подключение к eska | [14-vscode-extension.md](14-vscode-extension.md) |
+| T77 | DONE | Дерево проектов, модули и открытие исходников | [14-vscode-extension.md](14-vscode-extension.md) |
+| T78 | DONE | Поиск в расширении и переход к результату | [14-vscode-extension.md](14-vscode-extension.md) |
+| T79 | DONE | Фильтр пустых групп и настройка исходного режима | [14-vscode-extension.md](14-vscode-extension.md) |
+| T80 | DONE | Иконки метаданных | [14-vscode-extension.md](14-vscode-extension.md) |
+| T81 | IN-PROGRESS | Производительность интерфейса, приёмка и VSIX | [14-vscode-extension.md](14-vscode-extension.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в
