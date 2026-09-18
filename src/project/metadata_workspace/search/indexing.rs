@@ -71,9 +71,12 @@ impl ProjectSession {
         for id in removed {
             self.remove_search_subtree(&id)?;
         }
-        self.search_index
-            .records
-            .retain(|_, record| &record.owner != owner);
+        // First-time descriptors cannot own old records. Avoid a quadratic full-index scan.
+        if self.search_index.references.contains_key(owner) {
+            self.search_index
+                .records
+                .retain(|_, record| &record.owner != owner);
+        }
         for object in &parsed.objects {
             let id = object.metadata.id();
             self.insert_search_record(

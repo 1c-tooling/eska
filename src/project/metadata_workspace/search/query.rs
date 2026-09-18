@@ -9,12 +9,15 @@ impl ProjectSession {
         IndexProgress {
             state: self.search_index.state,
             generation: self.generation,
-            indexed_objects: self
-                .search_index
-                .records
-                .values()
-                .filter(|record| self.search_index.visible(record))
-                .count(),
+            indexed_objects: if self.search_index.dirty.is_empty() {
+                self.search_index.records.len()
+            } else {
+                self.search_index
+                    .records
+                    .values()
+                    .filter(|record| self.search_index.visible(record))
+                    .count()
+            },
             pending_descriptors: self.search_index.pending.len(),
             failed_descriptors: self.search_index.failures.len(),
         }
@@ -23,6 +26,12 @@ impl ProjectSession {
     /// Query retained names/synonyms without XML IO; empty input intentionally returns no hits.
     #[must_use]
     pub fn search(&self, text: &str, options: &SearchOptions) -> SearchResponse {
+        type Candidate<'a> = (
+            MatchRank,
+            &'a String,
+            &'a crate::project::metadata_model::ObjectId,
+            &'a super::Record,
+        );
         let query = text.trim().to_lowercase();
         let limit = options.limit.clamp(1, 500);
         let mut matches = Vec::new();
@@ -49,8 +58,13 @@ impl ProjectSession {
                 }
             }
         }
-        matches.sort_by(|a, b| (&a.0, a.1, a.2).cmp(&(&b.0, b.1, b.2)));
+        let order = |a: &Candidate<'_>, b: &Candidate<'_>| (&a.0, a.1, a.2).cmp(&(&b.0, b.1, b.2));
         let truncated = matches.len() > limit;
+        if truncated {
+            matches.select_nth_unstable_by(limit, order);
+            matches.truncate(limit);
+        }
+        matches.sort_unstable_by(order);
         let hits = matches
             .into_iter()
             .take(limit)

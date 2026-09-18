@@ -116,6 +116,18 @@ fn ranks_names_and_synonyms_and_reports_truncation() {
     };
     assert!(session.search("тест", &limited).truncated);
     assert_eq!(session.search("тест", &limited).hits.len(), 2);
+    assert_eq!(
+        session
+            .search("тест", &limited)
+            .hits
+            .iter()
+            .map(|hit| &hit.object)
+            .collect::<Vec<_>>(),
+        results.hits[..2]
+            .iter()
+            .map(|hit| &hit.object)
+            .collect::<Vec<_>>()
+    );
     let russian = SearchOptions {
         limit: 50,
         synonym_language: Some("ru".into()),

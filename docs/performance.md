@@ -73,3 +73,9 @@ binary запускался отдельно для полного и выбор
 проверки XML и исходные бюджеты — [отдельный отчёт](xml-parser-decision.md).
 Сборка конфигурации 1С не запускалась. Выбран текущий roxmltree; performance
 acceptance полного metadata workspace и интерфейса остаётся в T68/T81.
+
+## T68: metadata workspace и дисковый кеш
+
+[Протокол, бюджеты и результаты](metadata-performance.md) для маленькой fixture,
+синтетической выгрузки и большого стенда: root, properties/source, индексация,
+поиск, refresh, память и повторное открытие с дисковым кешем.
