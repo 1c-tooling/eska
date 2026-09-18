@@ -16,21 +16,21 @@ const MAX_BYTES: usize = 64 * 1024 * 1024;
 const MAX_DEPTH: usize = 64;
 
 /// Summaries suffice for tree/search; complete property values are opt-in.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PropertiesMode {
     Summary,
     All,
 }
 
 /// A property retains a byte address in the unchanged UTF-8 descriptor, including any BOM.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct LocatedProperty {
     pub property: MetadataProperty,
     pub range: Range<usize>,
 }
 
 /// One inline or standalone object; children contain IDs in declaration order.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ParsedObject {
     pub metadata: MetadataObject,
     pub synonyms: Vec<LocalizedText>,
@@ -41,7 +41,7 @@ pub struct ParsedObject {
 }
 
 /// A named child in another descriptor; resolving it never happens during parsing.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct MetadataReference {
     pub id: ObjectId,
     pub owner: ObjectId,
@@ -51,14 +51,14 @@ pub struct MetadataReference {
 }
 
 /// Recoverable unsupported fragments remain visible to consumers as diagnostics.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Diagnostic {
     pub range: Range<usize>,
     pub issue: ParseIssue,
 }
 
 /// Machine-facing parse failures, independent of presentation and locale.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Eq, PartialEq)]
 pub enum ParseIssue {
     UnsupportedRoot,
     UnknownKind {
@@ -71,7 +71,7 @@ pub enum ParseIssue {
 }
 
 /// No DOM, source buffer, payload or module content survives in this result.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ParsedDescriptor {
     pub version: Option<String>,
     pub objects: Vec<ParsedObject>,

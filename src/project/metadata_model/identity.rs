@@ -1,13 +1,28 @@
 //! Logical identifiers retain the existing escaping and never contain filesystem paths.
 
-use std::fmt;
+use std::{fmt, sync::Arc};
 
 use super::MetadataKind;
 use crate::project::ProjectName;
 
 /// Stable readable identity built from the logical metadata hierarchy.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct ObjectId(String);
+pub struct ObjectId(Arc<str>);
+
+impl serde::Serialize for ObjectId {
+    /// Cache serialization retains the existing string identity, not the shared allocation.
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for ObjectId {
+    /// Restore an owned identity without borrowing the cache input buffer.
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let text = <String as serde::Deserialize>::deserialize(deserializer)?;
+        Ok(Self(text.into()))
+    }
+}
 
 impl ObjectId {
     /// Return the stable machine-facing hierarchical identifier.
@@ -21,7 +36,7 @@ impl ObjectId {
     pub fn parent(&self) -> Option<Self> {
         self.0
             .rsplit_once('/')
-            .map(|(parent, _)| Self(parent.to_owned()))
+            .map(|(parent, _)| Self(Arc::from(parent)))
     }
 
     /// Build an identity after the caller has validated the object's kind and name.
@@ -31,7 +46,11 @@ impl ObjectId {
             .replace('/', "%2F")
             .replace(':', "%3A");
         let segment = format!("{kind}:{escaped}");
-        Self(parent.map_or_else(|| segment.clone(), |parent| format!("{parent}/{segment}")))
+        Self(
+            parent
+                .map_or_else(|| segment.clone(), |parent| format!("{parent}/{segment}"))
+                .into(),
+        )
     }
 }
 

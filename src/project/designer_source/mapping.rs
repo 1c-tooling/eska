@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::{DesignerSource, SourceError, opening::existing_file};
+use super::{DesignerSource, SourceError};
 use crate::project::{
     ProjectType,
     metadata_model::{MetadataKind, ModuleRole, ObjectId},
@@ -242,7 +242,7 @@ impl DesignerSource {
     fn unique_existing(&self, candidates: &[PathBuf]) -> Result<Option<PathBuf>, SourceError> {
         let mut found = Vec::new();
         for path in candidates {
-            if existing_file(self.project.source(), path)?.is_some() {
+            if self.checked_file(path)?.is_some() {
                 found.push(path.clone());
             }
         }
@@ -300,6 +300,9 @@ impl DesignerSource {
         for base in bases {
             let relative = base.join("Ext");
             let directory = self.project.source().join(&relative);
+            let mut stats = self.io_stats.get();
+            stats.path_checks += 1;
+            self.io_stats.set(stats);
             let physical = match fs::canonicalize(&directory) {
                 Ok(path) => path,
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
@@ -313,6 +316,9 @@ impl DesignerSource {
             if !physical.starts_with(self.project.source()) {
                 return Err(SourceError::OutsideSource { path: relative });
             }
+            let mut stats = self.io_stats.get();
+            stats.directory_reads += 1;
+            self.io_stats.set(stats);
             for entry in fs::read_dir(&physical).map_err(|source| SourceError::Io {
                 path: relative.clone(),
                 source,
@@ -327,7 +333,7 @@ impl DesignerSource {
                     .is_some_and(|name| name.starts_with(prefix))
                 {
                     let path = relative.join(entry.file_name());
-                    if existing_file(self.project.source(), &path)?.is_some() {
+                    if self.checked_file(&path)?.is_some() {
                         payloads.push(SourceLocation {
                             path,
                             role: SourceRole::Payload,

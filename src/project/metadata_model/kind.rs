@@ -4,7 +4,7 @@
 macro_rules! metadata_kinds {
     ($( $variant:ident => ($key:literal, [$($tag:literal),+], $folder:literal) ),+ $(,)?) => {
         /// A supported logical metadata kind; independent of source paths and locale.
-        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+        #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
         pub enum MetadataKind { $( $variant, )+ }
 
         impl MetadataKind {
@@ -115,7 +115,7 @@ metadata_kinds! {
 }
 
 /// An unsupported Designer metadata tag, retained for a localized diagnostic.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct UnknownMetadataKind {
     pub tag: String,
 }

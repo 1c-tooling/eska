@@ -281,7 +281,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T65 | DONE | ConfiguratorSchema и ConfiguratorTree | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T66 | DONE | Read-only metadata workspace API | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T67 | DONE | Lazy index, cache и инкрементальное обновление | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
-| T68 | NEXT | Производительность metadata workspace | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T68 | IN-PROGRESS | Производительность metadata workspace | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T69 | PLANNED | Спецификация постоянного IDE protocol | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T70 | PLANNED | Постоянный read-only IDE процесс | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T71 | PLANNED | Архитектура safe XML patching | [13-metadata-and-ide.md](13-metadata-and-ide.md) |

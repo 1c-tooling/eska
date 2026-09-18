@@ -1,9 +1,10 @@
-//! Read-only, manifest-backed metadata sessions; no CLI, platform, watcher or disk cache.
+//! Read-only, manifest-backed metadata sessions; no CLI, platform or watcher.
 
 mod cache;
 mod refresh;
 pub mod search;
 mod session;
+pub use super::metadata_disk_cache::DiskCacheStats;
 pub use cache::{CacheLimits, CacheStats};
 pub use refresh::RefreshReport;
 
@@ -56,6 +57,24 @@ impl MetadataWorkspace {
             .into_iter()
             .map(ProjectSession::open)
             .collect::<Result<_, _>>()?;
+        Ok(Self { projects })
+    }
+
+    /// Open with a disposable project-local disk cache; XML/BSL and manifests stay unchanged.
+    ///
+    /// # Errors
+    /// Returns the same source/discovery errors as `open`; cache errors fall back to XML.
+    pub fn open_cached(
+        start: &Path,
+        names: &[String],
+        entire_workspace: bool,
+    ) -> Result<Self, WorkspaceError> {
+        let projects =
+            super::designer_source::open_projects_cached(start, names, entire_workspace, true)
+                .map_err(WorkspaceError::Source)?
+                .into_iter()
+                .map(ProjectSession::open)
+                .collect::<Result<_, _>>()?;
         Ok(Self { projects })
     }
 

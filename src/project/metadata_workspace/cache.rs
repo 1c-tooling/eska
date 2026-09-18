@@ -28,6 +28,7 @@ impl Default for CacheLimits {
 #[derive(Clone, Debug, Default)]
 pub struct CacheStats {
     pub parses: u64,
+    pub hash_nanos: u128,
     pub hits: u64,
     pub evictions: u64,
     pub descriptors: usize,
@@ -97,6 +98,21 @@ impl DescriptorCache {
 }
 
 impl ProjectSession {
+    /// Observe source IO separately from disk cache and parser counters.
+    #[must_use]
+    pub const fn source_io_stats(&self) -> crate::project::designer_source::SourceIoStats {
+        self.source.io_stats()
+    }
+
+    /// Return persistent cache counters, or None for the strictly read-only opening mode.
+    #[must_use]
+    pub fn disk_cache_stats(&self) -> Option<super::DiskCacheStats> {
+        self.source
+            .disk_cache
+            .as_ref()
+            .map(crate::project::metadata_disk_cache::DiskCache::stats)
+    }
+
     /// Adjust the session budget; zero disables parsed-descriptor retention.
     pub fn set_cache_limits(&mut self, limits: CacheLimits) {
         self.cache.limits = limits;
@@ -135,7 +151,9 @@ impl ProjectSession {
             .read_xml(&path)
             .map_err(WorkspaceError::Source)?
             .ok_or_else(|| WorkspaceError::MissingSource(NodeId::Object(id.clone())))?;
+        let started = std::time::Instant::now();
         let hash: [u8; 32] = Sha256::digest(input.as_bytes()).into();
+        self.cache.stats.hash_nanos += started.elapsed().as_nanos();
         if self
             .fingerprints
             .get(&path)
@@ -143,14 +161,32 @@ impl ProjectSession {
         {
             return Err(WorkspaceError::SourceChanged(path));
         }
-        self.cache.stats.parses += 1;
-        self.cache.stats.last_parsed = Some(path.clone());
-        let parsed = metadata_parser::parse(&input, owner.parent(), mode).map_err(|source| {
-            WorkspaceError::Load(LoadError::Parse {
-                path: path.clone(),
-                source,
-            })
-        })?;
+        let key = format!(
+            "descriptor:{:?}:{owner}:{mode:?}",
+            path.as_os_str().as_encoded_bytes()
+        );
+        let cached = self
+            .source
+            .disk_cache
+            .as_ref()
+            .and_then(|cache| cache.get(&key, hash));
+        let parsed = if let Some(parsed) = cached {
+            parsed
+        } else {
+            self.cache.stats.parses += 1;
+            self.cache.stats.last_parsed = Some(path.clone());
+            let parsed =
+                metadata_parser::parse(&input, owner.parent(), mode).map_err(|source| {
+                    WorkspaceError::Load(LoadError::Parse {
+                        path: path.clone(),
+                        source,
+                    })
+                })?;
+            if let Some(cache) = &self.source.disk_cache {
+                cache.put(&key, hash, &parsed);
+            }
+            parsed
+        };
         // Detect writers racing the read/parse; never admit partially superseded XML.
         if self
             .source
@@ -191,9 +227,11 @@ impl ProjectSession {
             .source
             .read_xml(&location.path)
             .map_err(WorkspaceError::Source)?;
+        let started = std::time::Instant::now();
         let hash = current
             .as_ref()
             .map(|text| <[u8; 32]>::from(Sha256::digest(text.as_bytes())));
+        self.cache.stats.hash_nanos += started.elapsed().as_nanos();
         if hash.as_ref() != self.fingerprints.get(&location.path) {
             self.cache.remove(&location.path);
             self.fingerprints.remove(&location.path);

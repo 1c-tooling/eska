@@ -11,7 +11,7 @@ pub use project::{MetadataProject, MetadataProjectError};
 pub use value::{LocalizedText, MetadataProperty, MetadataValue, PropertyKey, ValueIssue};
 
 /// One real metadata object, without XML buffers, source paths or presentation labels.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct MetadataObject {
     pub(crate) id: ObjectId,
     pub(crate) kind: MetadataKind,

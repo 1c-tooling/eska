@@ -645,3 +645,6 @@ fn incremental_external_root_replaces_inline_data_and_recovers_root_errors() {
 }
 
 mod search;
+
+mod benchmarks;
+mod disk_cache;

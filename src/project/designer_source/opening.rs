@@ -4,13 +4,15 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
-use super::{DesignerSource, SourceError};
+use super::{DesignerSource, SourceError, SourceIoStats};
+use crate::project::metadata_disk_cache::DiskCache;
 use crate::project::{
     Project, ProjectType, designer_xml,
     discovery::discover_context,
     metadata_model::{MetadataKind, MetadataObject, MetadataProject, ProjectScope},
     selection::{SelectionIntent, select_projects},
 };
+use sha2::{Digest, Sha256};
 
 pub(super) const MD_NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024 * 1024;
@@ -27,6 +29,16 @@ pub fn open_projects(
     names: &[String],
     entire_workspace: bool,
 ) -> Result<Vec<DesignerSource>, SourceError> {
+    open_projects_cached(start, names, entire_workspace, false)
+}
+
+/// Select projects with optional disposable caches; ordinary callers remain read-only.
+pub fn open_projects_cached(
+    start: &Path,
+    names: &[String],
+    entire_workspace: bool,
+    cached: bool,
+) -> Result<Vec<DesignerSource>, SourceError> {
     let context = discover_context(start).map_err(SourceError::Discovery)?;
     let selection = select_projects(&context, names, entire_workspace, SelectionIntent::ReadOnly)
         .map_err(SourceError::Selection)?;
@@ -38,19 +50,27 @@ pub fn open_projects(
             let scope = selected.name().map_or(ProjectScope::Standalone, |name| {
                 ProjectScope::Member(name.clone())
             });
-            let (descriptor, root) = read_root(&project)?;
+            let disk_cache = cached.then(|| DiskCache::new(&project));
+            let mut stats = SourceIoStats::default();
+            let (descriptor, root) = read_root(&project, disk_cache.as_ref(), &mut stats)?;
             Ok(DesignerSource {
                 project,
                 scope,
                 root,
                 descriptor,
+                disk_cache,
+                io_stats: std::cell::Cell::new(stats),
             })
         })
         .collect()
 }
 
 /// Find a root descriptor without opening any child directory or assuming an external filename.
-fn read_root(project: &Project) -> Result<(PathBuf, MetadataObject), SourceError> {
+fn read_root(
+    project: &Project,
+    cache: Option<&DiskCache>,
+    stats: &mut SourceIoStats,
+) -> Result<(PathBuf, MetadataObject), SourceError> {
     let candidates = if matches!(
         project.configuration().project_type(),
         ProjectType::Configuration | ProjectType::Extension
@@ -58,6 +78,7 @@ fn read_root(project: &Project) -> Result<(PathBuf, MetadataObject), SourceError
         vec![PathBuf::from("Configuration.xml")]
     } else {
         let mut paths = Vec::new();
+        stats.directory_reads += 1;
         for entry in fs::read_dir(project.source()).map_err(|source| SourceError::Io {
             path: project.source().to_owned(),
             source,
@@ -80,10 +101,27 @@ fn read_root(project: &Project) -> Result<(PathBuf, MetadataObject), SourceError
     };
     let mut roots = Vec::new();
     for path in candidates {
-        let Some(physical) = existing_file(project.source(), &path)? else {
+        let Some(physical) = existing_file(project.source(), &path, stats)? else {
             continue;
         };
+        stats.xml_reads += 1;
+        let started = std::time::Instant::now();
         let input = read_descriptor(&physical)?;
+        stats.xml_bytes += input.len() as u64;
+        stats.xml_read_nanos += started.elapsed().as_nanos();
+        let started = std::time::Instant::now();
+        let hash = Sha256::digest(input.as_bytes()).into();
+        stats.root_hash_nanos += started.elapsed().as_nanos();
+        let key = format!(
+            "root:{:?}:{}",
+            path.as_os_str().as_encoded_bytes(),
+            project.configuration().project_type().as_str()
+        );
+        if let Some(root) = cache.and_then(|cache| cache.get::<MetadataObject>(&key, hash)) {
+            roots.push((path, root));
+            continue;
+        }
+        stats.root_parses += 1;
         crate::project::metadata_parser::check_envelope(&input).map_err(|source| {
             SourceError::Parse {
                 path: path.clone(),
@@ -117,7 +155,11 @@ fn read_root(project: &Project) -> Result<(PathBuf, MetadataObject), SourceError
                 source,
             },
         )?;
-        roots.push((path.clone(), root_metadata(&path, document.root_element())?));
+        let root = root_metadata(&path, document.root_element())?;
+        if let Some(cache) = cache {
+            cache.put(&key, hash, &root);
+        }
+        roots.push((path, root));
     }
     if roots.len() > 1 {
         return Err(SourceError::AmbiguousRoot {
@@ -183,6 +225,7 @@ pub(super) fn read_descriptor(path: &Path) -> Result<String, SourceError> {
 pub(super) fn existing_file(
     source: &Path,
     relative: &Path,
+    stats: &mut SourceIoStats,
 ) -> Result<Option<PathBuf>, SourceError> {
     if relative.as_os_str().is_empty()
         || relative
@@ -193,6 +236,7 @@ pub(super) fn existing_file(
             path: relative.to_owned(),
         });
     }
+    stats.path_checks += 1;
     let physical = match fs::canonicalize(source.join(relative)) {
         Ok(path) => path,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
@@ -208,6 +252,7 @@ pub(super) fn existing_file(
             path: relative.to_owned(),
         });
     }
+    stats.metadata_checks += 1;
     if !physical.is_file() {
         return Err(SourceError::NotFile {
             path: relative.to_owned(),
