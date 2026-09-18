@@ -31,6 +31,8 @@ pub enum TreeLabel {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TreeNode {
     pub id: NodeId,
+    /// Authoritative object kind, including inline children; virtual nodes have no object kind.
+    pub metadata_kind: Option<MetadataKind>,
     pub parent: Option<NodeId>,
     pub label: TreeLabel,
     pub children: Vec<NodeId>,

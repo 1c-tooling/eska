@@ -148,8 +148,12 @@ EOF внутри кадра — exit 2. Broken pipe stdout — exit 1, без д
 - `Object = {objectId,metadataKind,name,parent:ObjectId|null,uuid:string|null,
   synonyms:Text[]}`. UUID неизвестной ссылки может быть null.
 - `Node = {id:NodeId,parent:NodeId|null,label:Label,state,expandedByDefault,
-  rootSection,diagnostics:Diagnostic[]}`; state:
+  rootSection,metadataKind:string|null,diagnostics:Diagnostic[]}`; state:
   `empty|non_empty|unloaded|error`. Список children получают отдельным запросом.
+  `metadataKind` — machine kind объекта, включая inline-элементы; для групп и
+  модулей null (их тип/роль уже есть в NodeId). Поле добавлено в API 1.0
+  обратно совместимо: старые клиенты игнорируют неизвестные поля; новые клиенты
+  при отсутствии поля у старого backend используют универсальную иконку объекта.
 - `Property = {key:{namespace:string|null,name},qualifiers:[{key,value:string}],
   value,range:Range}`. value: `{kind:"text",text}`, `{kind:"localized",items:Text[]}`,
   `{kind:"record",fields:[{key,qualifiers,value},...]}` или

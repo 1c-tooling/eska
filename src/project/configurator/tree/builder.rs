@@ -33,6 +33,7 @@ pub(super) fn build(
             &mut tree,
             object.metadata.id(),
             object.metadata.name(),
+            object.metadata.kind(),
             ChildrenState::Empty,
         )?;
         kinds.insert(object.metadata.id(), object.metadata.kind());
@@ -42,6 +43,7 @@ pub(super) fn build(
             &mut tree,
             &reference.id,
             &reference.name,
+            reference.kind,
             ChildrenState::Unloaded,
         )?;
         kinds.insert(&reference.id, reference.kind);
@@ -79,11 +81,13 @@ fn insert_object(
     tree: &mut ConfiguratorTree,
     id: &ObjectId,
     name: &str,
+    kind: MetadataKind,
     state: ChildrenState,
 ) -> Result<(), TreeError> {
     let node_id = NodeId::Object(id.clone());
     let node = TreeNode {
         id: node_id.clone(),
+        metadata_kind: Some(kind),
         parent: None,
         label: TreeLabel::Name(name.to_owned()),
         children: Vec::new(),
@@ -199,6 +203,7 @@ fn build_modules(
                 module.clone(),
                 TreeNode {
                     id: module.clone(),
+                    metadata_kind: None,
                     parent: None,
                     label: TreeLabel::Key(format!("tree-module-{}", role.as_str())),
                     children: Vec::new(),
@@ -236,6 +241,7 @@ fn group(
             id.clone(),
             TreeNode {
                 id: id.clone(),
+                metadata_kind: None,
                 parent: None,
                 label: TreeLabel::Key(key),
                 children: Vec::new(),

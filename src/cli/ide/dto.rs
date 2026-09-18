@@ -4,7 +4,9 @@ use crate::cli::localization::{Locale, Localizer};
 use crate::project::{
     configurator::{ChildrenState, TreeLabel, TreeNode},
     designer_source::{SourceLocation, SourceRole},
-    metadata_model::{CollectionKind, MetadataProperty, MetadataValue, NodeId, ValueIssue},
+    metadata_model::{
+        CollectionKind, MetadataKind, MetadataProperty, MetadataValue, NodeId, ValueIssue,
+    },
     metadata_parser::{Diagnostic, LocatedProperty, ParseIssue},
     metadata_workspace::{
         ObjectSummary,
@@ -39,7 +41,7 @@ impl Labels {
             ChildrenState::Unloaded => "unloaded",
             ChildrenState::Error => "error",
         };
-        json!({"id":node_id(&value.id),"parent":value.parent.as_ref().map(node_id),"label":label,"state":state,"expandedByDefault":value.expanded_by_default,"rootSection":value.root_section,"diagnostics":value.diagnostics.iter().map(diagnostic).collect::<Vec<_>>()})
+        json!({"id":node_id(&value.id),"metadataKind":value.metadata_kind.map(MetadataKind::as_str),"parent":value.parent.as_ref().map(node_id),"label":label,"state":state,"expandedByDefault":value.expanded_by_default,"rootSection":value.root_section,"diagnostics":value.diagnostics.iter().map(diagnostic).collect::<Vec<_>>()})
     }
 }
 

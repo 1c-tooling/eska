@@ -141,3 +141,28 @@ fn path_dtos_decode_reversibly() {
         );
     }
 }
+
+/// Object presentation kinds are independent of IDs, parents, names and locale.
+#[test]
+fn tree_node_dto_exposes_authoritative_kind() {
+    use crate::project::configurator::{ChildrenState, TreeLabel, TreeNode};
+    let labels = dto::Labels::new().unwrap();
+    for kind in MetadataKind::ALL {
+        let object =
+            MetadataObject::new(*kind, "ПроизвольноеИмя".into(), String::new(), None).unwrap();
+        let mut node = TreeNode {
+            id: NodeId::Object(object.id().clone()),
+            metadata_kind: Some(*kind),
+            parent: None,
+            label: TreeLabel::Name("ДругоеИмя".into()),
+            children: Vec::new(),
+            state: ChildrenState::Unloaded,
+            expanded_by_default: false,
+            root_section: false,
+            diagnostics: Vec::new(),
+        };
+        assert_eq!(labels.node(&node)["metadataKind"], kind.as_str());
+        node.metadata_kind = None;
+        assert!(labels.node(&node)["metadataKind"].is_null());
+    }
+}
