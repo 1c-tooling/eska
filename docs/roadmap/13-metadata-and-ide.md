@@ -56,7 +56,7 @@
 | T50: `discover_affected` | Выбор descriptors по changed paths и локальные ошибки | Долгоживущего lazy workspace, cache и invalidation |
 | T59: [порядок semantic diff](04-core-vcs-ux.md) | Реализованная таблица порядка типов в [changes.rs](../../src/cli/changes.rs) | Дочерних коллекций и полного дерева; общий порядок предстоит выделить без зависимости core от CLI |
 | T25: [version.rs](../../src/project/version.rs) | Замена диапазона `Properties/Version`, сохранение остальных байтов | Общего mapping свойств и переносимой атомарной записи произвольных изменений |
-| T41: [VS Code extension](10-delivery-and-integrations.md) | Место будущего тонкого клиента | Серверного metadata protocol; он выделен в T69–T70 |
+| T41: [eska: 1C Explorer](10-delivery-and-integrations.md) | Место будущего тонкого клиента | Серверного metadata protocol; он выделен в T69–T70 |
 
 `ObjectModel::discover` сейчас явно обходит source и строит полный индекс;
 `discover_affected` ограничивает работу затронутыми descriptors. Ни один из них

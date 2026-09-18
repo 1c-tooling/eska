@@ -256,7 +256,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T38 | PLANNED | `eska publish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T39 | DEFERRED | Locking объектов | [06-locking-and-xml.md](06-locking-and-xml.md) |
 | T40 | DONE | `eska finish` | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
-| T41 | PLANNED | VS Code extension: сводная задача T76–T81 | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T41 | PLANNED | eska: 1C Explorer — сводная задача T76–T81 | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T42 | DONE | Спецификация и прототип patch-extension `.cfe` из разницы веток | [t42-patch-extension.md](t42-patch-extension.md) |
 | T43 | DONE | Генерация patch-extension для ограниченного набора методов | [t42-patch-extension.md](t42-patch-extension.md) |
 | T44 | DONE | Workspace config, model и discovery | [11-workspaces.md](11-workspaces.md) |
