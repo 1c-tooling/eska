@@ -191,6 +191,7 @@ impl DesignerSource {
                 MetadataKind::Template => Some("Templates"),
                 MetadataKind::Command => Some("Commands"),
                 MetadataKind::Subsystem => Some("Subsystems"),
+                MetadataKind::Recalculation => Some("Recalculations"),
                 _ => None,
             };
             if let Some(folder) = folder {

@@ -105,7 +105,10 @@ pub fn is_object_descriptor(project_type: ProjectType, path: &BStr) -> bool {
 /// Recognize a descriptor below a named nested metadata collection.
 fn is_nested_descriptor(components: &[&str]) -> bool {
     match components {
-        ["Forms" | "Templates" | "Commands" | "Subsystems", file] => has_extension(file, "xml"),
+        [
+            "Forms" | "Templates" | "Commands" | "Subsystems" | "Recalculations",
+            file,
+        ] => has_extension(file, "xml"),
         ["Subsystems", _owner, nested @ ..] => is_nested_descriptor(nested),
         _ => false,
     }
@@ -218,6 +221,7 @@ fn nested_collection_kind(owner: &str, collection: &str) -> Option<&'static str>
         "Templates" => "template",
         "Commands" => "command",
         "Subsystems" if owner == "subsystem" => "subsystem",
+        "Recalculations" if owner == "calculation-register" => "recalculation",
         _ => return None,
     })
 }

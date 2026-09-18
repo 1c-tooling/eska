@@ -237,7 +237,7 @@ impl ConfiguratorSchema {
             | MetadataKind::AccountingRegister
             | MetadataKind::CalculationRegister => &[Manager, RecordSet],
             MetadataKind::Constant => &[ModuleRole::ValueManager, Manager],
-            MetadataKind::Sequence => &[RecordSet],
+            MetadataKind::Sequence | MetadataKind::Recalculation => &[RecordSet],
             MetadataKind::Enum
             | MetadataKind::DocumentJournal
             | MetadataKind::FilterCriterion

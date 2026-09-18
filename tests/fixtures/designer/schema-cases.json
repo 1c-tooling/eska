@@ -493,7 +493,7 @@
     "collections": [
       "dimension"
     ],
-    "modules": [],
+    "modules": ["record-set"],
     "direct": true
   },
   "column": {
