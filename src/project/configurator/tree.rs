@@ -40,6 +40,14 @@ pub struct TreeNode {
     pub diagnostics: Vec<Diagnostic>,
 }
 
+impl TreeNode {
+    /// Empty known leaves cannot expand; unloaded and failed branches may be opened or retried.
+    #[must_use]
+    pub fn can_expand(&self) -> bool {
+        !self.children.is_empty() || self.state != ChildrenState::Empty
+    }
+}
+
 /// File availability is supplied separately so projection itself never touches the filesystem.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ModuleAvailability {

@@ -4,6 +4,7 @@ mod designer_source;
 mod discovery;
 mod finish;
 mod history;
+mod metadata_workspace;
 mod object_model;
 mod patch;
 mod save;
