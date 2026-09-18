@@ -77,8 +77,9 @@ VS Code extension для навигации по Designer XML.
 - `DONE`: `T65` — схемы дерева Конфигуратора;
 - `DONE`: `T66` — read-only metadata workspace API;
 - `DONE`: `T67` — lazy cache и инкрементальное обновление;
-- `NEXT`: `T75` — индекс и API поиска;
-- `PLANNED`: `T68–T70` — замеры и постоянный IDE protocol;
+- `DONE`: `T75` — индекс и API поиска;
+- `NEXT`: `T68` — дисковый кеш и замеры производительности;
+- `PLANNED`: `T69–T70` — постоянный IDE protocol;
 - `PLANNED`: `T41`, декомпозированная в `T76–T81`, — расширение VS Code с деревом,
   поиском, фильтром, иконками и устанавливаемым VSIX;
 - `PLANNED`: `T71–T73` — отдельный последующий этап редактирования существующих
@@ -114,7 +115,7 @@ T35 добавила автоматические полки при `switch` и 
 `shelve` / `unshelve` / `shelves`. T58 завершила настройку production-ветки Git Flow с
 сохранением `develop` базой обычных feature-веток. T59 сделала semantic-вывод
 однозначным, подавила противоречивые события и добавила координаты методов.
-Следующая задача — T75: индекс и API поиска. T56 остаётся в backlog.
+Следующая задача — T68: дисковый кеш и замеры производительности. T56 остаётся в backlog.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
 операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
@@ -149,8 +150,8 @@ TUI разделён на обработку клавиш, отрисовку и
 | 6 | T65 | Схемы дерева, первая группа модулей и пустые коллекции — `DONE` |
 | 7 | T66 | Read-only metadata API — `DONE` |
 | 8 | T67 | Lazy cache и обновление затронутых объектов — `DONE` |
-| 9 | T75 | Поисковый индекс и core search API — `NEXT` |
-| 10 | T68 | Измеренная производительность backend |
+| 9 | T75 | Поисковый индекс и core search API — `DONE` |
+| 10 | T68 | Дисковый кеш и измеренная производительность backend — `NEXT` |
 | 11 | T69 | Контракт постоянного IDE protocol |
 | 12 | T70 | Процесс `eska ide --stdio` |
 | 13 | T76 | Основа расширения и подключение к `eska` |
@@ -280,14 +281,14 @@ BSL LSP и визуальный редактор форм в это направ
 | T65 | DONE | ConfiguratorSchema и ConfiguratorTree | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T66 | DONE | Read-only metadata workspace API | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T67 | DONE | Lazy index, cache и инкрементальное обновление | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
-| T68 | PLANNED | Производительность metadata workspace | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T68 | NEXT | Производительность metadata workspace | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T69 | PLANNED | Спецификация постоянного IDE protocol | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T70 | PLANNED | Постоянный read-only IDE процесс | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T71 | PLANNED | Архитектура safe XML patching | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T72 | PLANNED | Точечный XML patch и безопасная запись | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T73 | PLANNED | Редактирование существующих элементов | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T74 | DEFERRED | Структурные изменения метаданных | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
-| T75 | NEXT | Поиск по метаданным | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T75 | DONE | Поиск по метаданным | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T76 | PLANNED | Основа расширения и подключение к eska | [14-vscode-extension.md](14-vscode-extension.md) |
 | T77 | PLANNED | Дерево проектов, модули и открытие исходников | [14-vscode-extension.md](14-vscode-extension.md) |
 | T78 | PLANNED | Поиск в расширении и переход к результату | [14-vscode-extension.md](14-vscode-extension.md) |

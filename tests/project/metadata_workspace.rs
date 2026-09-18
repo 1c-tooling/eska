@@ -643,3 +643,5 @@ fn incremental_external_root_replaces_inline_data_and_recovers_root_errors() {
             .is_empty()
     );
 }
+
+mod search;

@@ -61,6 +61,7 @@ impl ProjectSession {
                 owners.insert(owner);
             } else {
                 owners.extend(self.by_path.values().cloned());
+                owners.extend(self.search_index.paths.values().cloned());
                 owners.insert(self.source.root().id().clone());
             }
         }
@@ -83,7 +84,12 @@ impl ProjectSession {
             .descriptor_candidates(owner)
             .map_err(WorkspaceError::Source)?;
         if &owner == self.source.root().id() {
-            let mut owners: BTreeSet<_> = self.by_path.values().cloned().collect();
+            let mut owners: BTreeSet<_> = self
+                .by_path
+                .values()
+                .chain(self.search_index.paths.values())
+                .cloned()
+                .collect();
             owners.insert(owner);
             self.invalidate(&owners)
         } else {
@@ -93,12 +99,24 @@ impl ProjectSession {
 
     /// Find exact XML ownership or the nearest known descriptor enclosing an artifact path.
     fn path_owner(&self, path: &Path) -> Option<ObjectId> {
-        if let Some(owner) = self.by_path.get(path) {
+        if let Some(owner) = self
+            .by_path
+            .get(path)
+            .or_else(|| self.search_index.paths.get(path))
+        {
             return Some(owner.clone());
         }
         let mut parent = path.parent();
         while let Some(directory) = parent {
-            if let Some(owner) = self.by_path.get(&directory.with_extension("xml")) {
+            if let Some(owner) = self
+                .by_path
+                .get(&directory.with_extension("xml"))
+                .or_else(|| {
+                    self.search_index
+                        .paths
+                        .get(&directory.with_extension("xml"))
+                })
+            {
                 return Some(owner.clone());
             }
             parent = directory.parent();
@@ -121,6 +139,17 @@ impl ProjectSession {
             .ok_or(WorkspaceError::GenerationExhausted)?;
         let root = self.source.root().id().clone();
         let mut affected = BTreeSet::new();
+        for owner in owners {
+            self.search_index.invalidate(owner, &root);
+            let (_, paths) = self
+                .source
+                .descriptor_candidates(owner)
+                .map_err(WorkspaceError::Source)?;
+            for path in paths {
+                self.cache.remove(&path);
+                self.fingerprints.remove(&path);
+            }
+        }
         for owner in owners.iter().filter(|id| **id != root) {
             self.collapse(owner, &mut affected);
         }

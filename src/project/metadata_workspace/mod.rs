@@ -2,6 +2,7 @@
 
 mod cache;
 mod refresh;
+pub mod search;
 mod session;
 pub use cache::{CacheLimits, CacheStats};
 pub use refresh::RefreshReport;
