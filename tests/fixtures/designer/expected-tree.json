@@ -29,7 +29,7 @@
     ["object:calculation-register:Начисления/resource:Результат", "group:calculation-register:Начисления#resource", "name:Результат", "Empty", false],
     ["group:calculation-register:Начисления#attribute", "object:calculation-register:Начисления", "tree-collection-attribute", "Empty", false],
     ["group:calculation-register:Начисления#recalculation", "object:calculation-register:Начисления", "tree-collection-recalculation", "NonEmpty", false],
-    ["object:calculation-register:Начисления/recalculation:Перерасчет", "group:calculation-register:Начисления#recalculation", "name:Перерасчет", "Empty", false],
+    ["object:calculation-register:Начисления/recalculation:Перерасчет", "group:calculation-register:Начисления#recalculation", "name:Перерасчет", "Unloaded", false],
     ["group:calculation-register:Начисления#form", "object:calculation-register:Начисления", "tree-collection-form", "Empty", false],
     ["group:calculation-register:Начисления#command", "object:calculation-register:Начисления", "tree-collection-command", "Empty", false],
     ["group:calculation-register:Начисления#template", "object:calculation-register:Начисления", "tree-collection-template", "Empty", false]
@@ -39,6 +39,7 @@
     ["group:catalog:Контрагенты#modules", "object:catalog:Контрагенты", "tree-collection-modules", "NonEmpty", true],
     ["module:catalog:Контрагенты#object", "group:catalog:Контрагенты#modules", "tree-module-object", "Empty", false],
     ["module:catalog:Контрагенты#manager", "group:catalog:Контрагенты#modules", "tree-module-manager", "Empty", false],
+    ["group:catalog:Контрагенты#predefined-item", "object:catalog:Контрагенты", "tree-collection-predefined-item", "Unloaded", false],
     ["group:catalog:Контрагенты#attribute", "object:catalog:Контрагенты", "tree-collection-attribute", "NonEmpty", false],
     ["object:catalog:Контрагенты/attribute:ИНН", "group:catalog:Контрагенты#attribute", "name:ИНН", "Empty", false],
     ["group:catalog:Контрагенты#tabular-section", "object:catalog:Контрагенты", "tree-collection-tabular-section", "NonEmpty", false],

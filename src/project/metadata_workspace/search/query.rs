@@ -1,5 +1,5 @@
 use super::{IndexProgress, IndexState, MatchRank, SearchHit, SearchOptions, SearchResponse};
-use crate::project::metadata_model::NodeId;
+use crate::project::metadata_model::{CollectionKind, MetadataKind, NodeId};
 use crate::project::metadata_workspace::{ProjectSession, WorkspaceError};
 
 impl ProjectSession {
@@ -100,7 +100,14 @@ impl ProjectSession {
             if node == &hit.node {
                 break;
             }
-            if matches!(node, NodeId::Object(_)) {
+            if matches!(
+                node,
+                NodeId::Object(_)
+                    | NodeId::Collection {
+                        kind: CollectionKind::Metadata(MetadataKind::PredefinedItem),
+                        ..
+                    }
+            ) {
                 self.children(node, crate::project::configurator::TreeOptions::default())?;
             }
         }
@@ -124,7 +131,14 @@ impl ProjectSession {
         let ancestry = record.ancestry.clone();
         let target = NodeId::Object(id.clone());
         for node in ancestry.iter().take_while(|node| **node != target) {
-            if matches!(node, NodeId::Object(_)) {
+            if matches!(
+                node,
+                NodeId::Object(_)
+                    | NodeId::Collection {
+                        kind: CollectionKind::Metadata(MetadataKind::PredefinedItem),
+                        ..
+                    }
+            ) {
                 self.children(node, crate::project::configurator::TreeOptions::default())?;
             }
         }

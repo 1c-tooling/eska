@@ -72,6 +72,17 @@ pub(super) fn build(
         }
     }
     let root_id = tree.root.clone();
+    for node in tree.nodes.values_mut() {
+        if matches!(
+            node.id,
+            NodeId::Collection {
+                kind: CollectionKind::Metadata(MetadataKind::PredefinedItem),
+                ..
+            }
+        ) {
+            node.state = ChildrenState::Unloaded;
+        }
+    }
     summarize(&mut tree, &root_id);
     Ok(tree)
 }
@@ -295,4 +306,62 @@ fn summarize(tree: &mut ConfiguratorTree, id: &NodeId) -> ChildrenState {
         node.state = state;
     }
     state
+}
+
+/// Project predefined items beneath a virtual collection without inventing metadata owners.
+pub(super) fn predefined(
+    owner: &ObjectId,
+    descriptor: &ParsedDescriptor,
+) -> Result<ConfiguratorTree, TreeError> {
+    let root = NodeId::Collection {
+        owner: owner.clone(),
+        kind: CollectionKind::Metadata(MetadataKind::PredefinedItem),
+    };
+    let mut tree = ConfiguratorTree {
+        root: root.clone(),
+        nodes: BTreeMap::new(),
+    };
+    group(
+        &mut tree,
+        owner,
+        CollectionKind::Metadata(MetadataKind::PredefinedItem),
+        &NodeId::Object(owner.clone()),
+        false,
+    );
+    // The local projection stops at its collection; the session restores the visible owner.
+    tree.nodes
+        .get_mut(&root)
+        .ok_or(TreeError::EmptyDescriptor)?
+        .parent = None;
+    for object in &descriptor.objects {
+        insert_object(
+            &mut tree,
+            object.metadata.id(),
+            object.metadata.name(),
+            MetadataKind::PredefinedItem,
+            ChildrenState::Empty,
+        )?;
+    }
+    for object in &descriptor.objects {
+        let parent = object
+            .metadata
+            .parent()
+            .filter(|id| *id != owner)
+            .map_or_else(|| root.clone(), |id| NodeId::Object(id.clone()));
+        attach(
+            &mut tree,
+            &NodeId::Object(object.metadata.id().clone()),
+            &parent,
+        );
+    }
+    if !descriptor.diagnostics.is_empty() {
+        let node = tree
+            .nodes
+            .get_mut(&root)
+            .ok_or(TreeError::EmptyDescriptor)?;
+        node.state = ChildrenState::Error;
+        node.diagnostics.clone_from(&descriptor.diagnostics);
+    }
+    summarize(&mut tree, &root);
+    Ok(tree)
 }

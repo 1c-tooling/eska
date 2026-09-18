@@ -105,6 +105,7 @@ metadata_kinds! {
     EnumValue => ("enum-value", ["EnumValue"], ""),
     AccountingFlag => ("accounting-flag", ["AccountingFlag"], ""),
     ExtDimensionAccountingFlag => ("ext-dimension-accounting-flag", ["ExtDimensionAccountingFlag"], ""),
+    PredefinedItem => ("predefined-item", ["PredefinedItem"], ""),
     Recalculation => ("recalculation", ["Recalculation"], ""),
     Column => ("column", ["Column"], ""),
     URLTemplate => ("url-template", ["URLTemplate"], ""),

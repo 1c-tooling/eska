@@ -186,11 +186,30 @@ impl DesignerSource {
         let mut kind = first.kind;
         let mut inline = Vec::new();
         for child in &parts[1..] {
+            if child.kind == MetadataKind::PredefinedItem {
+                if inline.is_empty() {
+                    descriptors = descriptors
+                        .iter()
+                        .map(|path| path.with_extension("").join("Ext/Predefined.xml"))
+                        .collect();
+                } else if inline
+                    .iter()
+                    .any(|part: &LogicalLocation| part.kind != MetadataKind::PredefinedItem)
+                {
+                    return Err(SourceError::UnsupportedLocation {
+                        value: id.to_string(),
+                    });
+                }
+                inline.push(child.clone());
+                kind = child.kind;
+                continue;
+            }
             let folder = match child.kind {
                 MetadataKind::Form => Some("Forms"),
                 MetadataKind::Template => Some("Templates"),
                 MetadataKind::Command => Some("Commands"),
                 MetadataKind::Subsystem => Some("Subsystems"),
+                MetadataKind::Recalculation => Some("Recalculations"),
                 _ => None,
             };
             if let Some(folder) = folder {
@@ -223,6 +242,17 @@ impl DesignerSource {
             kind,
             root: root && parts.len() == 1,
         })
+    }
+
+    /// Resolve the optional predefined data payload without scanning or reading it.
+    pub(crate) fn predefined_path(&self, owner: &ObjectId) -> Result<Option<PathBuf>, SourceError> {
+        let locations = self.locations(owner)?;
+        let paths: Vec<_> = locations
+            .descriptors
+            .iter()
+            .map(|path| path.with_extension("").join("Ext/Predefined.xml"))
+            .collect();
+        self.unique_existing(&paths)
     }
 
     /// Root artifacts may be direct or wrapped; ordinary objects use their descriptor stem.

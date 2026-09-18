@@ -97,6 +97,7 @@
   "catalog": {
     "tag": "Catalog",
     "collections": [
+      "predefined-item",
       "attribute",
       "tabular-section",
       "form",
@@ -111,6 +112,7 @@
   "chart-of-accounts": {
     "tag": "ChartOfAccounts",
     "collections": [
+      "predefined-item",
       "attribute",
       "accounting-flag",
       "ext-dimension-accounting-flag",
@@ -127,6 +129,7 @@
   "chart-of-calculation-types": {
     "tag": "ChartOfCalculationTypes",
     "collections": [
+      "predefined-item",
       "attribute",
       "tabular-section",
       "form",
@@ -141,6 +144,7 @@
   "chart-of-characteristic-types": {
     "tag": "ChartOfCharacteristicTypes",
     "collections": [
+      "predefined-item",
       "attribute",
       "tabular-section",
       "form",
@@ -493,7 +497,9 @@
     "collections": [
       "dimension"
     ],
-    "modules": [],
+    "modules": [
+      "record-set"
+    ],
     "direct": true
   },
   "column": {
@@ -538,5 +544,13 @@
     "modules": [
       "module"
     ]
+  },
+  "predefined-item": {
+    "tag": "PredefinedItem",
+    "collections": [
+      "predefined-item"
+    ],
+    "modules": [],
+    "direct": true
   }
 }

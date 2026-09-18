@@ -185,6 +185,14 @@ JavaScript не округлял большие значения. Они лок�
 | `metadata/index` | `action:"start"|"cancel"|"resume"|"status"` | `progress:Progress` |
 | `metadata/indexErrors` | `offset?:number,limit?:1..500` | `errors:[{objectId,code,details}],nextOffset:number|null` |
 
+Предопределённые элементы имеют `metadataKind:"predefined-item"`. Их группа —
+обычный `collection` с `collection:{kind:"metadata",metadataKind:"predefined-item"}`;
+она загружает Predefined.xml при `metadata/children`. Элементы сохраняют
+иерархические ObjectId, sources указывают на Predefined.xml с ролью descriptor.
+Свойства и диапазоны `Name` используют namespace `http://v8.1c.ru/8.3/xcf/predef`.
+Description доступен в поиске как `synonyms` с языком `und` (XML не задаёт язык).
+Форма существующих запросов и ответов не менялась.
+
 Source role: `{kind:"descriptor"}`, `{kind:"payload"}` или `{kind:"module",role}`.
 Виртуальные группы sources не имеют: existing core MissingSource отображается
 как domain error, а не путь к выдуманному XML. Бинарные модули без BSL скрыты.

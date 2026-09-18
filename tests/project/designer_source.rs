@@ -424,3 +424,58 @@ fn rejects_symlink_escapes_for_descriptors_and_modules() {
         Err(SourceError::OutsideSource { .. })
     ));
 }
+
+/// Designer 8.3.27.2325 exports a recalculation descriptor separately from its register.
+#[test]
+fn recalculation_sources_preserve_descriptor_and_inline_dimension_ownership() {
+    let (_directory, source) = fixture("configuration", "Configuration.xml", "Configuration", "");
+    let register = id(MetadataKind::CalculationRegister, "Register", None);
+    let recalc = id(MetadataKind::Recalculation, "Recalc", Some(&register));
+    let dimension = id(MetadataKind::Dimension, "Key", Some(&recalc));
+    let descriptor = "CalculationRegisters/Register/Recalculations/Recalc.xml";
+    let module = "CalculationRegisters/Register/Recalculations/Recalc/Ext/RecordSetModule.bsl";
+    write(
+        source.project().source(),
+        "CalculationRegisters/Register.xml",
+        xml("CalculationRegister", "Register", ""),
+    );
+    write(
+        source.project().source(),
+        descriptor,
+        xml("Recalculation", "Recalc", ""),
+    );
+    write(source.project().source(), module, b"// Demo\r\n");
+    let location = source.object_descriptor(&recalc).unwrap().unwrap();
+    assert_eq!(location.path, Path::new(descriptor));
+    assert!(location.inline.is_empty());
+    let location = source.object_descriptor(&dimension).unwrap().unwrap();
+    assert_eq!(location.path, Path::new(descriptor));
+    assert_eq!(location.inline.len(), 1);
+    assert_eq!(location.inline[0].kind, MetadataKind::Dimension);
+    assert_eq!(
+        source
+            .module(&recalc, ModuleRole::RecordSet)
+            .unwrap()
+            .unwrap()
+            .path,
+        Path::new(module)
+    );
+    assert_eq!(source.sources(&recalc).unwrap().len(), 2);
+    let changed = source.changed_owners(&[PathBuf::from(module)]).unwrap();
+    assert!(changed.issues().is_empty());
+    assert_eq!(
+        changed.model().objects_for_changed_path(Path::new(module))[0].id(),
+        &recalc
+    );
+    fs::rename(
+        source.project().source().join(module),
+        source.project().source().join(module).with_extension("bin"),
+    )
+    .unwrap();
+    assert!(
+        source
+            .module(&recalc, ModuleRole::RecordSet)
+            .unwrap()
+            .is_none()
+    );
+}

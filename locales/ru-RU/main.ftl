@@ -890,3 +890,5 @@ diff-metadata-web-socket-client = WebSocket-клиент
 
 ide-about = Постоянный read-only процесс для IDE
 ide-stdio-help = Обмен сообщениями IDE protocol через stdin/stdout
+
+tree-collection-predefined-item = Предопределённые данные

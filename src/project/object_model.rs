@@ -404,7 +404,7 @@ fn configuration_descriptor_ancestry(components: &[&str], output: &mut BTreeSet<
     nested_descriptor_ancestry(&mut base, &components[2..], output);
 }
 
-/// Add the nested descriptor chain for forms, templates, commands and subsystems.
+/// Add the nested descriptor chain for separately exported metadata objects.
 fn nested_descriptor_ancestry(
     base: &mut PathBuf,
     components: &[&str],
@@ -414,7 +414,7 @@ fn nested_descriptor_ancestry(
     while let (Some(collection), Some(item)) = (components.get(index), components.get(index + 1)) {
         if !matches!(
             *collection,
-            "Forms" | "Templates" | "Commands" | "Subsystems"
+            "Forms" | "Templates" | "Commands" | "Subsystems" | "Recalculations"
         ) {
             break;
         }

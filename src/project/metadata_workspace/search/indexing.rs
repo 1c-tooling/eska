@@ -17,7 +17,7 @@ impl ProjectSession {
             .insert(self.source.root().id().clone(), Vec::new());
     }
 
-    /// Visit up to 64 descriptors per call; zero performs no work, cancellation pauses between calls.
+    /// Visit up to 64 metadata owners per call, including their optional predefined payloads.
     ///
     /// Every failure is retained in `search_failures` and progress remains visibly incomplete.
     pub fn index_search_step(&mut self, descriptors: usize) -> IndexProgress {
@@ -51,6 +51,7 @@ impl ProjectSession {
         ancestors: &[NodeId],
     ) -> Result<(), WorkspaceError> {
         let parsed = self.load(owner, PropertiesMode::Summary)?;
+        let mut diagnostics = parsed.diagnostics.clone();
         let tree = ConfiguratorTree::build(&self.schema, &parsed, &BTreeMap::new())
             .map_err(WorkspaceError::Tree)?;
         self.verify_source(owner)?;
@@ -109,16 +110,40 @@ impl ProjectSession {
                 )?;
             }
         }
+        for object in &parsed.objects {
+            if !crate::project::configurator::ConfiguratorSchema::collections(
+                object.metadata.kind(),
+            )
+            .contains(&MetadataKind::PredefinedItem)
+                || object.metadata.kind() == MetadataKind::PredefinedItem
+            {
+                continue;
+            }
+            let predefined = self.load_predefined(object.metadata.id(), PropertiesMode::Summary)?;
+            let items = ConfiguratorTree::predefined(object.metadata.id(), &predefined)
+                .map_err(WorkspaceError::Tree)?;
+            let parent_path = full_ancestry(&tree, object.metadata.id(), ancestors)?;
+            for item in &predefined.objects {
+                self.insert_search_record(
+                    owner,
+                    item.metadata.id(),
+                    item.metadata.kind(),
+                    item.metadata.name(),
+                    &item.synonyms,
+                    full_ancestry(&items, item.metadata.id(), &parent_path)?,
+                )?;
+            }
+            diagnostics.extend(predefined.diagnostics.iter().cloned());
+        }
         self.search_index
             .references
             .insert(owner.clone(), references);
         self.search_index.dirty.remove(owner);
         self.search_index.failures.remove(owner);
-        if !parsed.diagnostics.is_empty() {
-            self.search_index.failures.insert(
-                owner.clone(),
-                IndexFailure::Unsupported(parsed.diagnostics.clone()),
-            );
+        if !diagnostics.is_empty() {
+            self.search_index
+                .failures
+                .insert(owner.clone(), IndexFailure::Unsupported(diagnostics));
         }
         Ok(())
     }
