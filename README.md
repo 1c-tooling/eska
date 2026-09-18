@@ -859,9 +859,10 @@ eska doctor --workspace
 
 Stdout содержит только JSON-RPC 2.0 с заголовками `Content-Length`; это отдельный
 [IDE protocol 1.0](docs/ide-protocol.md), не CLI JSON и не LSP. Платформа 1С для
-него не требуется. Для дерева и навигации запланировано расширение
-`eska: 1C Explorer` в отдельном репозитории `eska-vscode-explorer`;
-[его границы](docs/roadmap/14-vscode-extension.md) отделены от команд сборки/Git
+него не требуется. В отдельном репозитории `eska-vscode-explorer` реализована
+основа подключения расширения `eska: 1C Explorer` (T76); дерево и навигация
+следуют в T77–T81.
+[Границы расширения](docs/roadmap/14-vscode-extension.md) отделены от команд сборки/Git
 и выбранной пользователем поддержки языка BSL.
 
 ### Язык и вывод для скриптов
