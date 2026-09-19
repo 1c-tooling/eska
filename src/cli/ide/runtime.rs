@@ -35,6 +35,7 @@ struct Queue {
 }
 struct Shared {
     queue: Mutex<Queue>,
+    worker: thread::Thread,
     stop: AtomicI32,
     initialized: AtomicBool,
     diagnostics: AtomicUsize,
@@ -55,6 +56,7 @@ pub(super) fn run() -> u8 {
     };
     let shared = Arc::new(Shared {
         queue: Mutex::new(Queue::default()),
+        worker: thread::current(),
         stop: AtomicI32::new(-1),
         initialized: AtomicBool::new(false),
         diagnostics: AtomicUsize::new(0),
@@ -109,7 +111,7 @@ pub(super) fn run() -> u8 {
                 while shared.written.load(Ordering::Acquire) < published
                     && shared.stop.load(Ordering::Acquire) < 0
                 {
-                    thread::sleep(Duration::from_millis(2));
+                    thread::park();
                 }
                 stop(&shared, exit);
             }
@@ -119,7 +121,7 @@ pub(super) fn run() -> u8 {
                 send(&shared, &writer, &event, Vec::new());
             }
             if !worked {
-                thread::sleep(Duration::from_millis(2));
+                thread::park();
             }
         }
     }
@@ -131,6 +133,7 @@ fn stop(shared: &Shared, code: i32) {
     let _ = shared
         .stop
         .compare_exchange(-1, code, Ordering::AcqRel, Ordering::Acquire);
+    shared.worker.unpark();
 }
 
 /// Bound diagnostics per connection so a malformed client cannot fill stderr indefinitely.
@@ -165,6 +168,7 @@ fn write_loop(shared: &Shared, receiver: &mpsc::Receiver<Output>) {
         }
         drop(queue);
         shared.written.fetch_add(1, Ordering::Release);
+        shared.worker.unpark();
     }
 }
 
@@ -227,6 +231,7 @@ fn enqueue(shared: &Shared, writer: &Writer, value: Value, bytes: usize) {
                 .any(|item| item["method"] == "workspace/didChangeFiles")
         {
             queue.overflow = true;
+            shared.worker.unpark();
         }
         drop(queue);
         let replies: Vec<_> = items.iter().filter_map(|item|match envelope::request(item) {
@@ -251,6 +256,9 @@ fn enqueue(shared: &Shared, writer: &Writer, value: Value, bytes: usize) {
     mark_cancellations(shared, &queue, items);
     queue.bytes += bytes;
     queue.jobs.push_back(Job { value, bytes, ids });
+    drop(queue);
+    // The retained park token also covers enqueue/stop racing the worker's idle check.
+    shared.worker.unpark();
 }
 
 /// Cancellation is out-of-band even when the regular request queue is saturated.
@@ -491,6 +499,7 @@ mod tests {
     fn saturated_queue_still_accepts_cancellation_and_reports_file_loss() {
         let shared = Shared {
             queue: Mutex::new(Queue::default()),
+            worker: thread::current(),
             stop: AtomicI32::new(-1),
             initialized: AtomicBool::new(true),
             diagnostics: AtomicUsize::new(0),
@@ -537,6 +546,7 @@ mod tests {
     fn oversized_response_is_not_partially_published() {
         let shared = Shared {
             queue: Mutex::new(Queue::default()),
+            worker: thread::current(),
             stop: AtomicI32::new(-1),
             initialized: AtomicBool::new(true),
             diagnostics: AtomicUsize::new(0),
@@ -559,6 +569,7 @@ mod tests {
     fn stopped_connection_does_not_wait_for_output_capacity() {
         let shared = Shared {
             queue: Mutex::new(Queue::default()),
+            worker: thread::current(),
             stop: AtomicI32::new(0),
             initialized: AtomicBool::new(true),
             diagnostics: AtomicUsize::new(0),

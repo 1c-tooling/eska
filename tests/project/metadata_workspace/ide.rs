@@ -333,6 +333,34 @@ fn process_eof_and_bad_framing_exit_codes() {
     assert_eq!(client.wait_exit(), 1);
 }
 
+/// An idle worker sleeps until input or EOF arrives, without periodic CPU wakeups.
+#[cfg(target_os = "linux")]
+#[test]
+fn process_idle_worker_waits_and_wakes_for_requests_and_eof() {
+    let mut client = Client::new("en");
+    client.initialize("en-US");
+    let status = format!("/proc/{}/status", client.child.id());
+    let switches = || -> u64 {
+        std::fs::read_to_string(&status)
+            .unwrap()
+            .lines()
+            .find_map(|line| line.strip_prefix("voluntary_ctxt_switches:"))
+            .unwrap()
+            .trim()
+            .parse()
+            .unwrap()
+    };
+    let before = switches();
+    thread::sleep(Duration::from_millis(100));
+    assert!(switches() - before < 10, "idle worker is polling");
+    assert_eq!(
+        client.request("unknown", json!({}))["error"]["code"],
+        -32601
+    );
+    client.input.take();
+    assert_eq!(client.wait_exit(), 0);
+}
+
 /// Real external edits advance generation, reject stale requests and recover malformed roots.
 #[test]
 fn process_external_edits_and_malformed_xml() {
