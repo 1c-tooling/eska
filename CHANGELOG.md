@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1](https://github.com/1c-tooling/eska/compare/v0.11.0...v0.11.1) - 2026-09-19
+
+### Added
+
+- *(update)* Добавлено обновление ESKA с сохранением способа установки
+
+### Other
+
+- *(update)* Проверена установка и миграция CLI на Linux
+- *(explorer)* Описано скрытие пустых контейнеров проектов
+- *(explorer)* Описана группировка настроек агентов и платформ
+- *(explorer)* Уточнён список файлов настроек проекта
+- *(explorer)* Уточнено расположение метаданных и файловых групп
+- *(explorer)* Описано дерево файлов рабочей области и его проверка
+
 ## [0.11.0](https://github.com/1c-tooling/eska/compare/v0.10.1...v0.11.0) - 2026-09-18
 
 ### Added
