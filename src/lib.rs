@@ -6,6 +6,7 @@
 pub mod cli;
 pub mod config;
 pub mod project;
+mod update;
 pub mod vcs;
 
 #[cfg(test)]

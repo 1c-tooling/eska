@@ -74,9 +74,14 @@ maxPendingRequests=128, maxQueuedBytes=4194304.
 Добавление необязательных полей/capabilities — minor; изменение обязательных
 полей/семантики — major. Сериализация Rust/дискового кеша не является wire DTO.
 
-Capabilities 1.0: `designerXml:true`, `readOnly:true`, `diskCache:true`,
+Базовые capabilities 1.0: `designerXml:true`, `readOnly:true`, `diskCache:true`,
 `search:true`, `clientFileEvents:true`, `batch:true`, `multiContext:false`,
 `supportedProjectTypes:["configuration","extension","processing","report"]`.
+Сервер API 1.1 также сообщает `selfUpdate:true`: CLI поддерживает отдельную
+команду `eska update` и её JSON-контракт. Это не разрешение на обновление через
+read-only IDE RPC. Клиент 1.0 продолжает работать; отсутствие поля означает, что
+вызов `update` по этому признаку недоступен.
+
 Один процесс держит один открытый eska discovery context (standalone или
 workspace с несколькими members). Несколько несвязанных manifest contexts
 в одном IDE workspace в 1.0 не объединяются; клиент выбирает активный context.

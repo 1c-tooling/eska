@@ -892,3 +892,21 @@ ide-about = Persistent read-only process for IDE clients
 ide-stdio-help = Exchange framed IDE protocol messages over stdin/stdout
 
 tree-collection-predefined-item = Predefined data
+
+update-about = Update the installed ESKA CLI
+update-check-help = Check for updates without changing the installation
+update-target-help = Select an exact stable version; never downgrade
+update-format-help = Output format
+update-current = ESKA { $installed } is up to date for the selected target.
+update-available = ESKA { $installed }: update { $available } is available. Run eska update.
+update-updated = ESKA updated from { $installed } to { $available }.
+update-unsupported = This ESKA installation is not managed by crates.io Cargo or the official installer. Update it through its original installation method.
+update-error-io = Could not access the ESKA installation. Check file permissions.
+update-error-network = Could not check or download the release. Check the network and retry.
+update-error-cargo-query = Could not confirm Cargo ownership. Check cargo install --list and the installation directory.
+update-error-cargo-install = Cargo update failed. See Cargo output above; no installer fallback was used.
+update-error-installer = The official updater failed. Check the installation and retry.
+update-error-busy = Another update is running or this executable has already been replaced. Retry using the installed ESKA.
+update-error-invalid-version = The requested stable version is invalid or unavailable in this installation channel.
+update-error-verification = Installation finished, but the expected ESKA version could not be verified. Check the executable path.
+update-error-runtime = Could not initialize the update runtime.

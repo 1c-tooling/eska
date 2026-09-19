@@ -62,8 +62,8 @@ VS Code extension для навигации по Designer XML.
   состояния при переключении задач;
 - `PLANNED`: `T56` — автоматическая версия релиза 1С и подготовка Release PR/MR;
   сохранена в backlog после переключения приоритета на IDE;
-- `PLANNED`: `T57` — обновление установленного бинарника командой `eska update`
-  после T56;
+- `IN-PROGRESS`: `T57` — обновление установленного бинарника командой `eska update`
+  по отдельному запросу пользователя, без ожидания T56;
 - `PLANNED`: `T55` — переносимый стенд реализован, завершение ожидает запусков
   на Windows/macOS и приёмки с настоящей платформой 1С;
 - `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
@@ -175,7 +175,8 @@ TUI разделён на обработку клавиш, отрисовку и
 для тестов выполняются на небольших собственных fixtures. Подробные границы и
 неподтверждённые UX-предложения — в [плане расширения](14-vscode-extension.md).
 
-T56 → T57 → T37 → T55 → T26 сохраняются как очередь последующих CLI-задач;
+T57 выполняется по отдельному запросу пользователя;
+T56 → T37 → T55 → T26 остаются очередью последующих CLI-задач;
 возврат к ней определяется отдельно после первой IDE-поставки. T55 можно
 завершить раньше при доступном runner; это не повод собирать большой IDE-стенд.
 T71–T73 также требуют отдельного последующего этапа, T74 остаётся отложенной.
@@ -277,7 +278,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T54 | DONE | Паспорт собранного артефакта | [12-current-functionality.md](12-current-functionality.md) |
 | T55 | PLANNED | Переносимые проверки сборки; ожидает внешней приёмки | [12-current-functionality.md](12-current-functionality.md) |
 | T56 | PLANNED | Автоматическая подготовка версии релиза 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T57 | PLANNED | Обновление установленного `eska` | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T57 | IN-PROGRESS | Обновление установленного `eska` | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T58 | DONE | Настраиваемая основная production-ветка Git Flow | [03-repository-workflow.md](03-repository-workflow.md) |
 | T59 | DONE | Читаемый semantic-вывод `eska diff` с координатами методов | [04-core-vcs-ux.md](04-core-vcs-ux.md) |
 | T60 | DONE | Модель метаданных и логическая identity | [13-metadata-and-ide.md](13-metadata-and-ide.md) |

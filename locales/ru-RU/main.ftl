@@ -892,3 +892,21 @@ ide-about = Постоянный read-only процесс для IDE
 ide-stdio-help = Обмен сообщениями IDE protocol через stdin/stdout
 
 tree-collection-predefined-item = Предопределённые данные
+
+update-about = Обновить установленную ESKA
+update-check-help = Проверить обновления без изменения установки
+update-target-help = Выбрать точную стабильную версию; понижение версии запрещено
+update-format-help = Формат вывода
+update-current = ESKA { $installed } актуальна для выбранной версии обновления.
+update-available = ESKA { $installed }: доступна версия { $available }. Выполните eska update.
+update-updated = ESKA обновлена с { $installed } до { $available }.
+update-unsupported = Эта копия ESKA не относится к установке из crates.io через Cargo или официальным установщиком. Обновите её исходным способом установки.
+update-error-io = Не удалось получить доступ к установленной ESKA. Проверьте права на файлы.
+update-error-network = Не удалось проверить или загрузить релиз. Проверьте сеть и повторите попытку.
+update-error-cargo-query = Не удалось подтвердить принадлежность установки Cargo. Проверьте cargo install --list и каталог установки.
+update-error-cargo-install = Обновление через Cargo завершилось ошибкой. Подробности — в выводе Cargo выше; установщик вместо Cargo не запускался.
+update-error-installer = Официальный механизм обновления завершился ошибкой. Проверьте установку и повторите попытку.
+update-error-busy = Выполняется другое обновление или этот бинарник уже заменён. Повторите команду через установленную ESKA.
+update-error-invalid-version = Указана неверная стабильная версия или её нет в выбранном канале установки.
+update-error-verification = Установка завершилась, но ожидаемую версию ESKA подтвердить не удалось. Проверьте путь к бинарнику.
+update-error-runtime = Не удалось запустить механизм обновления.
