@@ -21,7 +21,8 @@ eska update --check --format json
   и `cargo install --list --root <root>` должны соответствовать запущенной версии.
   Затем выполняется `cargo install eska --locked --registry crates-io --version …`
   с прежними root, target, profile и features. Доступные версии берутся из
-  crates.io; отозванные и предварительные выпуски исключаются.
+  официального sparse index crates.io; отозванные, предварительные выпуски
+  и неизвестные версии схемы индекса исключаются. Web API crates.io не требуется.
 - **Официальный установщик:** проверяются receipt cargo-dist, источник
   `1c-tooling/eska` и принадлежность записи запущенному файлу. Axoupdater получает
   стабильный релиз GitHub и запускает его установщик для прежнего каталога.
