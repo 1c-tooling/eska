@@ -24,11 +24,14 @@ mod shelves;
 mod start;
 mod status;
 mod switch;
+mod update;
 mod validate;
 mod version;
 
 #[derive(Debug, Subcommand)]
 pub(super) enum Commands {
+    #[command(disable_help_flag = true)]
+    Update(update::UpdateArgs),
     #[command(disable_help_flag = true)]
     Ide(ide::IdeArgs),
     #[command(disable_help_flag = true)]
@@ -79,6 +82,7 @@ pub(super) fn run(
     localizer: &Localizer,
 ) -> ExitCode {
     match command {
+        Some(Commands::Update(args)) => args.run(localizer),
         Some(Commands::Ide(args)) => args.run(),
         Some(Commands::Shelve(args)) => args.run(project_dir, localizer),
         Some(Commands::Unshelve(args)) => args.run(project_dir, localizer),
@@ -106,6 +110,7 @@ pub(super) fn run(
 
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
     command
+        .mut_subcommand("update", |command| update::localize(command, localizer))
         .mut_subcommand("ide", |command| ide::localize(command, localizer))
         .mut_subcommand("build", |command| build::localize(command, localizer))
         .mut_subcommand("clean", |command| clean::localize(command, localizer))

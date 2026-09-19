@@ -18,3 +18,5 @@ mod switch;
 mod version;
 
 mod shelves;
+
+mod update;
