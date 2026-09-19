@@ -46,6 +46,7 @@ impl ProjectSession {
     /// Rejects escaping paths, exhausted generations, or an invalid root during root refresh.
     pub fn changed_paths(&mut self, paths: &[PathBuf]) -> Result<RefreshReport, WorkspaceError> {
         let mut owners = BTreeSet::new();
+        let mut full = false;
         for path in paths {
             if path.as_os_str().is_empty()
                 || path
@@ -54,18 +55,20 @@ impl ProjectSession {
             {
                 return Err(WorkspaceError::InvalidChangedPath(path.clone()));
             }
-            if path == Path::new("ConfigDumpInfo.xml") {
+            if full || path == Path::new("ConfigDumpInfo.xml") {
                 continue;
             }
             if let Some(owner) = self.path_owner(path) {
                 owners.insert(owner);
             } else {
-                owners.extend(self.by_path.values().cloned());
-                owners.extend(self.search_index.paths.values().cloned());
-                owners.insert(self.source.root().id().clone());
+                full = true;
             }
         }
-        self.invalidate(&owners)
+        if full {
+            self.invalidate_all()
+        } else {
+            self.invalidate(&owners, false)
+        }
     }
 
     /// Force a branch reread, recovering from missed file events.
@@ -84,17 +87,22 @@ impl ProjectSession {
             .descriptor_candidates(owner)
             .map_err(WorkspaceError::Source)?;
         if &owner == self.source.root().id() {
-            let mut owners: BTreeSet<_> = self
-                .by_path
-                .values()
-                .chain(self.search_index.paths.values())
-                .cloned()
-                .collect();
-            owners.insert(owner);
-            self.invalidate(&owners)
+            self.invalidate_all()
         } else {
-            self.invalidate(&BTreeSet::from([owner]))
+            self.invalidate(&BTreeSet::from([owner]), false)
         }
+    }
+
+    /// Collect the full dependency set once for manual refresh and unknown file batches.
+    fn invalidate_all(&mut self) -> Result<RefreshReport, WorkspaceError> {
+        let mut owners: BTreeSet<_> = self
+            .by_path
+            .values()
+            .chain(self.search_index.paths.values())
+            .cloned()
+            .collect();
+        owners.insert(self.source.root().id().clone());
+        self.invalidate(&owners, true)
     }
 
     /// Find exact XML ownership or the nearest known descriptor enclosing an artifact path.
@@ -126,7 +134,11 @@ impl ProjectSession {
     }
 
     /// Invalidate dependencies before any new XML can become visible.
-    fn invalidate(&mut self, owners: &BTreeSet<ObjectId>) -> Result<RefreshReport, WorkspaceError> {
+    fn invalidate(
+        &mut self,
+        owners: &BTreeSet<ObjectId>,
+        full: bool,
+    ) -> Result<RefreshReport, WorkspaceError> {
         if owners.is_empty() {
             return Ok(RefreshReport {
                 generation: self.generation,
@@ -139,8 +151,18 @@ impl ProjectSession {
             .ok_or(WorkspaceError::GenerationExhausted)?;
         let root = self.source.root().id().clone();
         let mut affected = BTreeSet::new();
+        if full && self.search_index.state != super::search::IndexState::NotStarted {
+            let paused = self.search_index.state == super::search::IndexState::Cancelled;
+            // All records are stale: rebuilding once avoids scanning the old index per owner.
+            self.start_search_index();
+            if paused {
+                self.cancel_search_index();
+            }
+        }
         for owner in owners {
-            self.search_index.invalidate(owner, &root);
+            if !full {
+                self.search_index.invalidate(owner, &root);
+            }
             let (_, paths) = self
                 .source
                 .descriptor_candidates(owner)
@@ -160,6 +182,7 @@ impl ProjectSession {
         for owner in owners.iter().filter(|id| **id != root) {
             self.collapse(owner, &mut affected);
         }
+        self.remove_collapsed_paths(&affected);
         if owners.contains(&root) {
             self.refresh_root(&mut affected)?;
         }
@@ -197,6 +220,10 @@ impl ProjectSession {
             object.uuid = None;
             object.synonyms.clear();
         }
+    }
+
+    /// Prune the path table once per batch, rather than once for each changed descriptor.
+    fn remove_collapsed_paths(&mut self, affected: &BTreeSet<ObjectId>) {
         let paths: Vec<_> = self
             .by_path
             .iter()

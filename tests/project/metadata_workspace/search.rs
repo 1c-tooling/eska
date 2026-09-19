@@ -19,6 +19,66 @@ fn finish(session: &mut ProjectSession) {
     panic!("index did not settle");
 }
 
+/// Full refresh discards superseded index storage while preserving a user's paused indexing job.
+#[test]
+fn full_refresh_rebuilds_once_and_preserves_search_cancellation() {
+    let directory = TestDir::new();
+    fixture(&directory.0, "configuration");
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let root = session.root().clone();
+    session.refresh(&root).unwrap();
+    assert_eq!(session.search_progress().state, IndexState::NotStarted);
+    session.start_search_index();
+    finish(session);
+    assert!(
+        !session
+            .search("инн", &SearchOptions::default())
+            .hits
+            .is_empty()
+    );
+    for paused in [false, true] {
+        if paused {
+            session
+                .changed_paths(&["Catalogs/Контрагенты.xml".into()])
+                .unwrap();
+            session.cancel_search_index();
+        }
+        let file = directory.0.join("src/Catalogs/Контрагенты.xml");
+        let original = fs::read_to_string(&file).unwrap();
+        fs::write(&file, original.replace("ИНН", "ПослеОбновления")).unwrap();
+        session.refresh(&root).unwrap();
+        let progress = session.search_progress();
+        assert_eq!(progress.pending_descriptors, 1);
+        assert_eq!(progress.indexed_objects, 0);
+        assert_eq!(progress.failed_descriptors, 0);
+        assert_eq!(
+            progress.state,
+            if paused {
+                IndexState::Cancelled
+            } else {
+                IndexState::Building
+            }
+        );
+        session.resume_search_index();
+        finish(session);
+        assert!(
+            session
+                .search("инн", &SearchOptions::default())
+                .hits
+                .is_empty()
+        );
+        assert_eq!(
+            session
+                .search("ПослеОбновления", &SearchOptions::default())
+                .hits
+                .len(),
+            1
+        );
+        fs::write(&file, original).unwrap();
+    }
+}
+
 /// Search finds unopened inline elements and reveals only their real presentation ancestry.
 #[test]
 fn indexes_unopened_branches_without_expanding_navigation_or_writing_files() {
