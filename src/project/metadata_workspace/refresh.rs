@@ -211,10 +211,16 @@ impl ProjectSession {
         }
         self.expanded.remove(owner);
         affected.insert(owner.clone());
+        let state = self
+            .objects
+            .get(owner)
+            .map_or(ChildrenState::Unloaded, |object| {
+                self.unexpanded_state(owner, object.kind)
+            });
         if let Some(node) = self.nodes.get_mut(&id) {
             node.children.clear();
             node.diagnostics.clear();
-            node.state = ChildrenState::Unloaded;
+            node.state = state;
         }
         if let Some(object) = self.objects.get_mut(owner) {
             object.uuid = None;

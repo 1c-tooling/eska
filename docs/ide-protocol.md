@@ -155,6 +155,11 @@ EOF внутри кадра — exit 2. Broken pipe stdout — exit 1, без д
 - `Node = {id:NodeId,parent:NodeId|null,label:Label,state,expandedByDefault,
   rootSection,metadataKind:string|null,diagnostics:Diagnostic[]}`; state:
   `empty|non_empty|unloaded|error`. Список children получают отдельным запросом.
+  Для конечных объектов без дочерних коллекций backend сразу возвращает `empty`,
+  не читая их XML. Если тип поддерживает модули, проверяется наличие BSL-файлов;
+  при их наличии узел остаётся `unloaded`. Это состояние пересчитывается при
+  изменениях файлов. Отсутствие загруженного списка children само по себе
+  не доказывает пустоту узла.
   `metadataKind` — machine kind объекта, включая inline-элементы; для групп и
   модулей null (их тип/роль уже есть в NodeId). Поле добавлено в API 1.0
   обратно совместимо: старые клиенты игнорируют неизвестные поля; новые клиенты
