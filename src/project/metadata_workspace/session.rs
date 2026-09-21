@@ -267,6 +267,12 @@ impl ProjectSession {
                 continue;
             }
             let mut node = projected.clone();
+            if node.state == ChildrenState::Unloaded
+                && let NodeId::Object(owner) = &node.id
+                && let Some(kind) = node.metadata_kind
+            {
+                node.state = self.unexpanded_state(owner, kind);
+            }
             if let Some(previous) = self.nodes.get(&node.id) {
                 node.parent.clone_from(&previous.parent);
             }
@@ -274,6 +280,21 @@ impl ProjectSession {
         }
         self.retain_objects(&parsed)?;
         Ok(())
+    }
+
+    /// Prove leaf status from the schema and BSL file presence without parsing child XML.
+    /// Unsupported structures and failed probes remain expandable for lazy diagnostics.
+    pub(super) fn unexpanded_state(&self, owner: &ObjectId, kind: MetadataKind) -> ChildrenState {
+        if kind == MetadataKind::ExternalDataSource
+            || self.schema.has_root_sections(owner)
+            || !self.schema.owner_collections(owner, kind).is_empty()
+        {
+            return ChildrenState::Unloaded;
+        }
+        match ModuleAvailability::resolve(&self.source, &self.schema, owner, kind) {
+            Ok(ModuleAvailability::Loaded(roles)) if roles.is_empty() => ChildrenState::Empty,
+            _ => ChildrenState::Unloaded,
+        }
     }
 
     /// Publish a complete predefined branch only after bounded parsing and source validation.
