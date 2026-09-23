@@ -1,5 +1,6 @@
 //! A support snapshot does not expand the presentation tree or write any project source.
 
+mod persistent;
 mod rules;
 pub(super) use rules::RuleCache;
 
@@ -16,7 +17,7 @@ use std::{
 };
 
 /// Object permission stays independent of the physical file's combined permission.
-#[derive(Clone, Debug, serde::Serialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ObjectSupport {
     pub object_id: ObjectId,
@@ -26,7 +27,7 @@ pub struct ObjectSupport {
 }
 
 /// File-level explanation does not replace the linked objects' individual rules.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum FileReason {
     MixedObjects,
@@ -36,7 +37,7 @@ pub enum FileReason {
 }
 
 /// Every path is supplied by the existing Designer resolver, never a file-extension glob.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct FileSupport {
     pub path: PathBuf,
     pub objects: Vec<ObjectId>,
@@ -47,7 +48,7 @@ pub struct FileSupport {
 }
 
 /// Generation-scoped policy and ownership, with explicit diagnostics on partial reads.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SupportSnapshot {
     pub next_offset: Option<usize>,
     pub objects: Vec<ObjectSupport>,
@@ -66,6 +67,7 @@ pub(super) struct SupportCache {
     diagnostics: Vec<String>,
     pages: Vec<std::sync::Arc<SupportSnapshot>>,
     restrict_unknown: bool,
+    fingerprint: Option<[u8; 32]>,
 }
 
 impl ProjectSession {
@@ -111,21 +113,34 @@ impl ProjectSession {
             .filter(|cache| cache.generation == self.generation)
             .unwrap_or_else(|| {
                 let (policy, diagnostics) = self.support_rules.read(self.source.project().source());
+                let fingerprint = self.support_fingerprint();
+                let pages = fingerprint.and_then(|hash| self.load_support_pages(hash));
+                let pending = if pages.is_some() {
+                    VecDeque::new()
+                } else {
+                    VecDeque::from([self.source.root().id().clone()])
+                };
                 SupportCache {
                     generation: self.generation,
-                    pending: VecDeque::from([self.source.root().id().clone()]),
+                    pending,
                     visited: BTreeSet::new(),
                     restrict_unknown: policy.is_none()
                         && (self.support_seen.is_some() && self.support_seen == root_uuid
                             || diagnostics.iter().any(|value| !value.contains("NotFound"))),
                     policy,
                     diagnostics,
-                    pages: Vec::new(),
+                    pages: pages.unwrap_or_default(),
+                    fingerprint,
                 }
             });
         if offset == cache.pages.len() && (offset == 0 || !cache.pending.is_empty()) {
             let page = self.read_support_page(&mut cache);
             cache.pages.push(std::sync::Arc::new(page));
+            if cache.pending.is_empty()
+                && let Some(hash) = cache.fingerprint.take()
+            {
+                self.save_support_pages(hash, &cache.pages);
+            }
         }
         if cache
             .policy

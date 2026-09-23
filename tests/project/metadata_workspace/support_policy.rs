@@ -188,7 +188,7 @@ fn background_reuses_loaded_descriptors_and_refresh_checks_rule_contents() {
         .unwrap();
     }
     fs::write(dir.0.join("src/Ext/ParentConfigurations.bin"), rules(0, 0)).unwrap();
-    let mut workspace = MetadataWorkspace::open(&dir.0, &[], false).unwrap();
+    let mut workspace = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
     let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
     let priority: eska::project::metadata_model::ObjectId =
         serde_json::from_value(serde_json::json!("common-module:M000")).unwrap();
@@ -223,6 +223,13 @@ fn background_reuses_loaded_descriptors_and_refresh_checks_rule_contents() {
         all.iter().collect::<std::collections::BTreeSet<_>>().len(),
         81
     );
+    let mut reopened = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let reopened = reopened.project_mut(&ProjectScope::Standalone).unwrap();
+    let reads = reopened.source_io_stats().xml_reads;
+    let compact = reopened.support_page(0).unwrap();
+    assert!(compact.next_offset.is_none());
+    assert_eq!(compact.objects.len(), 81);
+    assert_eq!(reopened.source_io_stats().xml_reads, reads);
     let generation = session.generation();
     fs::write(dir.0.join("src/Ext/ParentConfigurations.bin"), rules(0, 0)).unwrap();
     let unchanged = session
@@ -254,5 +261,104 @@ fn background_reuses_loaded_descriptors_and_refresh_checks_rule_contents() {
             .objects
             .iter()
             .all(|object| object.reason == Reason::SupportRemoved)
+    );
+}
+
+#[test]
+fn support_snapshot_survives_restart_and_validates_rules_xml_and_file_inventory() {
+    let dir = TestDir::new();
+    fixture(&dir.0);
+    let rules_path = dir.0.join("src/Ext/ParentConfigurations.bin");
+    fs::write(&rules_path, rules(0, 1)).unwrap();
+    // A complete successful pass is reusable in an independent workspace session.
+    let mut first = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let first = first.project_mut(&ProjectScope::Standalone).unwrap();
+    let expected = first.support_page(0).unwrap();
+    assert!(expected.next_offset.is_none());
+    let mut reopened = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let reopened = reopened.project_mut(&ProjectScope::Standalone).unwrap();
+    let reads = reopened.source_io_stats().xml_reads;
+    let hits = reopened.disk_cache_stats().unwrap().hits;
+    let page = reopened.support_page(0).unwrap();
+    assert_eq!(reopened.source_io_stats().xml_reads, reads);
+    assert_eq!(reopened.disk_cache_stats().unwrap().hits, hits + 2);
+    assert_eq!(page.files.len(), expected.files.len());
+    // A damaged derived file is discarded and reconstructed from the original source.
+    for entry in fs::read_dir(dir.0.join(".eska/cache/metadata")).unwrap() {
+        let path = entry.unwrap().path();
+        if fs::read_to_string(&path)
+            .unwrap()
+            .contains("\"next_offset\"")
+        {
+            fs::write(path, "damaged cache").unwrap();
+        }
+    }
+    let mut damaged = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let damaged = damaged.project_mut(&ProjectScope::Standalone).unwrap();
+    let reads = damaged.source_io_stats().xml_reads;
+    assert_eq!(
+        damaged.support_page(0).unwrap().files.len(),
+        expected.files.len()
+    );
+    assert!(damaged.source_io_stats().xml_reads > reads);
+    // BSL content changes do not affect ownership or support rules.
+    fs::write(
+        dir.0.join("src/Catalogs/Items/Ext/ObjectModule.bsl"),
+        "// edited",
+    )
+    .unwrap();
+    let mut edited = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let edited = edited.project_mut(&ProjectScope::Standalone).unwrap();
+    let reads = edited.source_io_stats().xml_reads;
+    edited.support_page(0).unwrap();
+    assert_eq!(edited.source_io_stats().xml_reads, reads);
+    // Large form/template payloads do not own support UUIDs; their presence still matters.
+    let payload = dir.0.join("src/Catalogs/Items/Ext/Form.xml");
+    fs::write(&payload, "<Form/>").unwrap();
+    let mut added = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let added = added.project_mut(&ProjectScope::Standalone).unwrap();
+    let reads = added.source_io_stats().xml_reads;
+    added.support_page(0).unwrap();
+    assert!(added.source_io_stats().xml_reads > reads);
+    fs::write(&payload, "<Form>changed payload</Form>").unwrap();
+    let mut edited = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let edited = edited.project_mut(&ProjectScope::Standalone).unwrap();
+    let reads = edited.source_io_stats().xml_reads;
+    edited.support_page(0).unwrap();
+    assert_eq!(edited.source_io_stats().xml_reads, reads);
+    // Equal-size rule replacement must be detected from bytes, not size or timestamps.
+    fs::write(&rules_path, rules(0, 2)).unwrap();
+    let mut changed = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let changed = changed.project_mut(&ProjectScope::Standalone).unwrap();
+    assert!(
+        changed
+            .support_page(0)
+            .unwrap()
+            .objects
+            .iter()
+            .any(|o| o.reason == Reason::SupportRemoved)
+    );
+    // Unchanged supplier rules do not prove unchanged UUID ownership.
+    let descriptor = dir.0.join("src/Catalogs/Items.xml");
+    fs::write(&descriptor, xml("Catalog", "Items", "")).unwrap();
+    let mut changed = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let page = changed
+        .project_mut(&ProjectScope::Standalone)
+        .unwrap()
+        .support_page(0)
+        .unwrap();
+    assert!(!page.objects.iter().any(|object| object.uuid == CHILD));
+    fs::remove_file(dir.0.join("src/Catalogs/Items/Ext/ObjectModule.bsl")).unwrap();
+    let mut changed = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let page = changed
+        .project_mut(&ProjectScope::Standalone)
+        .unwrap()
+        .support_page(0)
+        .unwrap();
+    assert!(
+        !page
+            .files
+            .iter()
+            .any(|file| file.path.extension().is_some_and(|ext| ext == "bsl"))
     );
 }

@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 
 /// Effective object policy; unrestricted objects retain their origin separately.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum State {
     Locked,
@@ -13,7 +13,7 @@ pub enum State {
 }
 
 /// Machine-readable explanation, localized only by the consumer.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Reason {
     ConfigurationLocked,
@@ -25,7 +25,7 @@ pub enum Reason {
 }
 
 /// Supplier identity and raw rules remain available for diagnostics.
-#[derive(Clone, Debug, serde::Serialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Supplier {
     pub id: String,
