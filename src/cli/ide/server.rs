@@ -130,15 +130,15 @@ impl Server {
         {
             return Err(error(-32602));
         }
-        if input.api_version.major != 1 || input.api_version.minor > 1 {
+        if input.api_version.major != 1 || input.api_version.minor > 2 {
             return Err(domain(
                 "unsupported_version",
-                json!({"requested":args["apiVersion"],"supported":{"major":1,"minor":1}}),
+                json!({"requested":args["apiVersion"],"supported":{"major":1,"minor":2}}),
             ));
         }
         self.initialized = true;
         Ok(
-            json!({"apiVersion":{"major":1,"minor":1},"server":{"name":"eska","version":env!("CARGO_PKG_VERSION")},"capabilities":{"selfUpdate":true,"designerXml":true,"readOnly":true,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
+            json!({"apiVersion":{"major":1,"minor":2},"server":{"name":"eska","version":env!("CARGO_PKG_VERSION")},"capabilities":{"supportPolicy":true,"selfUpdate":true,"designerXml":true,"readOnly":true,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
         )
     }
 

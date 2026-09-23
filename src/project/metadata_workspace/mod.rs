@@ -4,9 +4,11 @@ mod cache;
 mod refresh;
 pub mod search;
 mod session;
+mod support;
 pub use super::metadata_disk_cache::DiskCacheStats;
 pub use cache::{CacheLimits, CacheStats};
 pub use refresh::RefreshReport;
+pub use support::{FileReason, FileSupport, ObjectSupport, SupportSnapshot};
 
 use std::path::Path;
 

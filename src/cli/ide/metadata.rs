@@ -21,7 +21,8 @@ use serde_json::{Value, json};
 pub(super) fn is_method(method: &str) -> bool {
     matches!(
         method,
-        "metadata/root"
+        "metadata/support"
+            | "metadata/root"
             | "metadata/children"
             | "metadata/get"
             | "metadata/properties"
@@ -122,6 +123,19 @@ fn metadata_request(
             .map_err(|failure| errors::workspace(&failure))?;
     }
     match method {
+        "metadata/support" => {
+            let offset = match args.get("offset") {
+                None => 0,
+                Some(value) => value
+                    .as_u64()
+                    .and_then(|value| usize::try_from(value).ok())
+                    .ok_or_else(|| error(-32602))?,
+            };
+            let snapshot = project.support_page(offset).ok_or_else(|| error(-32602))?;
+            Ok(
+                json!({"objects":snapshot.objects,"files":snapshot.files.iter().map(|file| json!({"path":dto::path(&file.path),"objects":file.objects,"readOnly":file.read_only,"reason":file.reason,"mixed":file.mixed,"unknown":file.unknown})).collect::<Vec<_>>(),"diagnostics":snapshot.diagnostics,"suppliers":snapshot.suppliers.iter().map(|supplier|json!({"id":supplier.id,"configurationUuid":supplier.configuration_uuid,"name":supplier.name,"vendor":supplier.vendor,"version":supplier.version,"locked":supplier.locked})).collect::<Vec<_>>(),"nextOffset":snapshot.next_offset,"freshness":"current"}),
+            )
+        }
         "metadata/root" => Ok(
             json!({"node":labels.node(project.node(project.root()).map_err(|failure| errors::workspace(&failure))?)}),
         ),

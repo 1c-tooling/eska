@@ -45,6 +45,7 @@ impl ProjectSession {
     /// # Errors
     /// Rejects escaping paths, exhausted generations, or an invalid root during root refresh.
     pub fn changed_paths(&mut self, paths: &[PathBuf]) -> Result<RefreshReport, WorkspaceError> {
+        let reuse_support = self.support_unchanged(paths);
         let mut owners = BTreeSet::new();
         let mut full = false;
         for path in paths {
@@ -64,11 +65,15 @@ impl ProjectSession {
                 full = true;
             }
         }
-        if full {
+        let result = if full {
             self.invalidate_all()
         } else {
             self.invalidate(&owners, false)
+        };
+        if reuse_support {
+            self.retain_support_generation();
         }
+        result
     }
 
     /// Force a branch reread, recovering from missed file events.
