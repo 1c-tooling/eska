@@ -1,5 +1,8 @@
 //! A support snapshot does not expand the presentation tree or write any project source.
 
+mod rules;
+pub(super) use rules::RuleCache;
+
 use super::ProjectSession;
 use crate::project::{
     configurator::ConfiguratorSchema,
@@ -59,13 +62,21 @@ pub(super) struct SupportCache {
     generation: u64,
     pending: VecDeque<ObjectId>,
     visited: BTreeSet<ObjectId>,
-    policy: Option<Support>,
+    policy: Option<std::sync::Arc<Support>>,
     diagnostics: Vec<String>,
     pages: Vec<std::sync::Arc<SupportSnapshot>>,
     restrict_unknown: bool,
 }
 
 impl ProjectSession {
+    /// Report whether a metadata event leaves cached support and ownership valid.
+    #[must_use]
+    pub fn support_is_current(&self) -> bool {
+        self.support_cache
+            .as_ref()
+            .is_some_and(|cache| cache.generation == self.generation)
+    }
+
     /// Existing BSL content edits cannot change UUID ownership or vendor support rules.
     pub(super) fn support_unchanged(&self, paths: &[PathBuf]) -> bool {
         self.support_cache.as_ref().is_some_and(|cache| {
@@ -99,8 +110,7 @@ impl ProjectSession {
             .take()
             .filter(|cache| cache.generation == self.generation)
             .unwrap_or_else(|| {
-                let mut diagnostics = Vec::new();
-                let policy = read_support(self.project().source(), &mut diagnostics);
+                let (policy, diagnostics) = self.support_rules.read(self.source.project().source());
                 SupportCache {
                     generation: self.generation,
                     pending: VecDeque::from([self.source.root().id().clone()]),
@@ -178,7 +188,7 @@ impl ProjectSession {
     }
 
     /// Read through existing bounded XML loaders and containment-checked source mappings.
-    fn read_support_page(&self, cache: &mut SupportCache) -> SupportSnapshot {
+    fn read_support_page(&mut self, cache: &mut SupportCache) -> SupportSnapshot {
         let mut snapshot = SupportSnapshot {
             next_offset: None,
             objects: Vec::new(),
@@ -205,8 +215,11 @@ impl ProjectSession {
             if !cache.visited.insert(id.clone()) {
                 continue;
             }
-            let Ok(mut parsed) = metadata_parser::load(&self.source, &id, PropertiesMode::Summary)
-            else {
+            let parsed = self.cached_support_descriptor(&id).map_or_else(
+                || metadata_parser::load(&self.source, &id, PropertiesMode::Summary),
+                |parsed| Ok((*parsed).clone()),
+            );
+            let Ok(mut parsed) = parsed else {
                 snapshot
                     .diagnostics
                     .push(format!("descriptor_unavailable:{id}"));
@@ -233,6 +246,17 @@ impl ProjectSession {
                     state,
                     reason,
                 });
+                // Inline objects share a descriptor already checked for their owner.
+                if let Ok((owner, candidates)) = self.source.descriptor_candidates(metadata.id())
+                    && &owner != metadata.id()
+                    && let Some(path) = candidates.iter().find(|path| files.contains_key(*path))
+                {
+                    files
+                        .get_mut(path)
+                        .into_iter()
+                        .for_each(|owners| owners.push(metadata.id().clone()));
+                    continue;
+                }
                 match self.source.sources(metadata.id()) {
                     Ok(sources) => {
                         for source in sources {
@@ -307,33 +331,4 @@ fn file_policies(
             }
         })
         .collect()
-}
-
-/// Reject unsafe paths and oversized support data before allocation.
-fn read_support(root: &std::path::Path, diagnostics: &mut Vec<String>) -> Option<Support> {
-    let result = (|| {
-        let path = root
-            .join("Ext/ParentConfigurations.bin")
-            .canonicalize()
-            .map_err(|error| format!("support_read:{:?}", error.kind()))?;
-        let root = root
-            .canonicalize()
-            .map_err(|_| "source_unavailable".to_owned())?;
-        if !path.starts_with(root) {
-            return Err("support_outside_source".to_owned());
-        }
-        let metadata = std::fs::metadata(&path).map_err(|_| "support_stat".to_owned())?;
-        if !metadata.is_file() || metadata.len() > 64 * 1024 * 1024 {
-            return Err("support_size".to_owned());
-        }
-        let input = std::fs::read_to_string(path).map_err(|_| "support_read".to_owned())?;
-        Support::parse(&input).map_err(|error| format!("{}:{}", error.code, error.position))
-    })();
-    match result {
-        Ok(support) => Some(support),
-        Err(error) => {
-            diagnostics.push(error);
-            None
-        }
-    }
 }

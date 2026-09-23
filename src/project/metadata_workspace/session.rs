@@ -40,6 +40,7 @@ pub struct ProjectSession {
     pub(super) by_path: BTreeMap<PathBuf, ObjectId>,
     pub(super) generation: u64,
     pub(super) support_seen: Option<String>,
+    pub(super) support_rules: super::support::RuleCache,
     pub(super) support_cache: Option<super::support::SupportCache>,
     pub(super) fingerprints: BTreeMap<PathBuf, [u8; 32]>,
 }
@@ -62,6 +63,7 @@ impl ProjectSession {
             generation: 0,
             support_cache: None,
             support_seen: None,
+            support_rules: super::support::RuleCache::default(),
             fingerprints: BTreeMap::new(),
         };
         let id = session.source.root().id().clone();

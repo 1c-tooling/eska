@@ -163,3 +163,96 @@ fn identical_uuids_in_different_sessions_do_not_share_policy() {
     assert!(missing.files.iter().all(|f| !f.read_only));
     assert!(!missing.diagnostics.is_empty());
 }
+
+#[test]
+fn background_reuses_loaded_descriptors_and_refresh_checks_rule_contents() {
+    use eska::project::{configurator::TreeOptions, metadata_model::NodeId};
+    use std::fmt::Write;
+    let dir = TestDir::new();
+    fixture(&dir.0);
+    fs::create_dir_all(dir.0.join("src/CommonModules")).unwrap();
+    let mut references = String::new();
+    for i in 0..80 {
+        write!(references, "<CommonModule>M{i:03}</CommonModule>").unwrap();
+    }
+    fs::write(
+        dir.0.join("src/Configuration.xml"),
+        xml("Configuration", "Test", &references),
+    )
+    .unwrap();
+    for i in 0..80 {
+        fs::write(
+            dir.0.join(format!("src/CommonModules/M{i:03}.xml")),
+            xml("CommonModule", &format!("M{i:03}"), ""),
+        )
+        .unwrap();
+    }
+    fs::write(dir.0.join("src/Ext/ParentConfigurations.bin"), rules(0, 0)).unwrap();
+    let mut workspace = MetadataWorkspace::open(&dir.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let priority: eska::project::metadata_model::ObjectId =
+        serde_json::from_value(serde_json::json!("common-module:M000")).unwrap();
+    // Expanding this reference populates the regular lazy-tree descriptor cache.
+    session
+        .children(&NodeId::Object(priority.clone()), TreeOptions::default())
+        .unwrap();
+    let reads = session.source_io_stats().xml_reads;
+    let first = session.support_page(0).unwrap();
+    assert!(
+        first
+            .objects
+            .iter()
+            .any(|object| object.object_id == priority)
+    );
+    assert!(first.next_offset.is_some());
+    // Both priority and root were already parsed; only 30 new descriptors need XML reads.
+    assert_eq!(session.source_io_stats().xml_reads - reads, 30);
+    assert!(std::sync::Arc::ptr_eq(
+        &first,
+        &session.support_page(0).unwrap()
+    ));
+    let mut all: Vec<_> = first.objects.iter().map(|o| o.object_id.clone()).collect();
+    let mut offset = first.next_offset;
+    while let Some(next) = offset {
+        let page = session.support_page(next).unwrap();
+        all.extend(page.objects.iter().map(|o| o.object_id.clone()));
+        offset = page.next_offset;
+    }
+    assert_eq!(all.len(), 81);
+    assert_eq!(
+        all.iter().collect::<std::collections::BTreeSet<_>>().len(),
+        81
+    );
+    let generation = session.generation();
+    fs::write(dir.0.join("src/Ext/ParentConfigurations.bin"), rules(0, 0)).unwrap();
+    let unchanged = session
+        .changed_paths(&["Ext/ParentConfigurations.bin".into()])
+        .unwrap();
+    assert_eq!(unchanged.generation, generation);
+    assert!(unchanged.affected.is_empty());
+    assert!(std::sync::Arc::ptr_eq(
+        &first,
+        &session.support_page(0).unwrap()
+    ));
+    let root = session.root().clone();
+    session.refresh(&root).unwrap();
+    assert!(
+        session
+            .support_page(0)
+            .unwrap()
+            .objects
+            .iter()
+            .all(|object| object.state == State::Locked)
+    );
+    // Manual refresh must detect replacement even without a file event.
+    fs::write(dir.0.join("src/Ext/ParentConfigurations.bin"), rules(0, 2)).unwrap();
+    session.refresh(&root).unwrap();
+    assert!(
+        session
+            .support_page(0)
+            .unwrap()
+            .objects
+            .iter()
+            .all(|object| object.reason == Reason::SupportRemoved)
+    );
+}

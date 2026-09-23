@@ -328,6 +328,8 @@ pub(super) fn changed(
         .ok_or_else(|| domain("generation_exhausted", json!({})))?;
     let mut notification = json!({"jsonrpc":"2.0","method":"metadata/changed","params":{"sessionId":session,"projectId":state.id,"generation":project.generation().to_string(),"eventSequence":state.event.to_string(),"affected":null,"requiresRefresh":state.refresh,"requiresReopen":state.reopen}});
     notification["params"]["affected"] = affected;
+    notification["params"]["supportUnchanged"] =
+        json!(!state.refresh && !state.reopen && project.support_is_current());
     if serde_json::to_vec(&notification)
         .map_or(true, |body| body.len() > super::framing::MAX_RESPONSE)
     {

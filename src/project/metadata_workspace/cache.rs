@@ -98,6 +98,17 @@ impl DescriptorCache {
 }
 
 impl ProjectSession {
+    /// Reuse already parsed lazy-tree data without filling the navigation cache from a full scan.
+    pub(super) fn cached_support_descriptor(
+        &mut self,
+        id: &ObjectId,
+    ) -> Option<Arc<ParsedDescriptor>> {
+        let (_, paths) = self.source.descriptor_candidates(id).ok()?;
+        paths
+            .into_iter()
+            .find_map(|path| self.cache.get(&path, PropertiesMode::Summary))
+    }
+
     /// Observe source IO separately from disk cache and parser counters.
     #[must_use]
     pub const fn source_io_stats(&self) -> crate::project::designer_source::SourceIoStats {

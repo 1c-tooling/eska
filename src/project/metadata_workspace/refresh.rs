@@ -45,6 +45,17 @@ impl ProjectSession {
     /// # Errors
     /// Rejects escaping paths, exhausted generations, or an invalid root during root refresh.
     pub fn changed_paths(&mut self, paths: &[PathBuf]) -> Result<RefreshReport, WorkspaceError> {
+        if !paths.is_empty()
+            && paths
+                .iter()
+                .all(|path| path == Path::new("Ext/ParentConfigurations.bin"))
+            && self.support_rules.unchanged(self.project().source())
+        {
+            return Ok(RefreshReport {
+                generation: self.generation,
+                affected: Vec::new(),
+            });
+        }
         let reuse_support = self.support_unchanged(paths);
         let mut owners = BTreeSet::new();
         let mut full = false;
