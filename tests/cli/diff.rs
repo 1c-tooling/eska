@@ -42,6 +42,8 @@ fn git(root: &Path, args: &[&str]) {
         .env("GIT_COMMITTER_NAME", "Eska Test")
         .env("GIT_COMMITTER_EMAIL", "eska@example.invalid")
         .args(["-c", "core.hooksPath=", "-c", "commit.gpgsign=false"])
+        // Detached maintenance must not outlive the fixture and race its directory cleanup.
+        .args(["-c", "maintenance.auto=false"])
         .args(args)
         .output()
         .expect("run Git fixture command");
