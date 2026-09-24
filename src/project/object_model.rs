@@ -908,7 +908,7 @@ fn assign_source_paths<'a>(
 }
 
 /// Resolve a path while normalizing the single root object of external projects.
-fn logical_path_for_source(
+pub(crate) fn logical_path_for_source(
     project_type: super::ProjectType,
     path: &Path,
 ) -> Option<metadata::MetadataPath> {

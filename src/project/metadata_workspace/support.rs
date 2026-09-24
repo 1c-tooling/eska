@@ -2,7 +2,9 @@
 
 mod persistent;
 mod rules;
+mod targeted;
 pub(super) use rules::RuleCache;
+pub(super) use targeted::SupportDescriptors;
 
 use super::ProjectSession;
 use crate::project::{

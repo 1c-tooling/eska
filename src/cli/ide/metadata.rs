@@ -22,6 +22,7 @@ pub(super) fn is_method(method: &str) -> bool {
     matches!(
         method,
         "metadata/support"
+            | "metadata/supportFiles"
             | "metadata/root"
             | "metadata/children"
             | "metadata/get"
@@ -123,6 +124,7 @@ fn metadata_request(
             .map_err(|failure| errors::workspace(&failure))?;
     }
     match method {
+        "metadata/supportFiles" => support_files(project, args),
         "metadata/support" => {
             let offset = match args.get("offset") {
                 None => 0,
@@ -337,4 +339,27 @@ pub(super) fn changed(
     }
     events.push(notification);
     Ok(())
+}
+
+/// Classify a bounded set of source-relative paths without starting a support inventory.
+fn support_files(project: &mut ProjectSession, args: &Value) -> Result<Value, Value> {
+    #[derive(Deserialize)]
+    struct Files {
+        paths: Vec<params::Path>,
+    }
+    let input: Files = params::decode(args)?;
+    if input.paths.is_empty() || input.paths.len() > 128 {
+        return Err(error(-32602));
+    }
+    let paths = input
+        .paths
+        .iter()
+        .map(params::Path::native)
+        .collect::<Result<Vec<_>, _>>()?;
+    let snapshot = project
+        .support_files(&paths)
+        .map_err(|failure| errors::workspace(&failure))?;
+    Ok(
+        json!({"objects":snapshot.objects,"files":snapshot.files.iter().map(|file| json!({"path":dto::path(&file.path),"objects":file.objects,"readOnly":file.read_only,"reason":file.reason,"mixed":file.mixed,"unknown":file.unknown})).collect::<Vec<_>>(),"diagnostics":snapshot.diagnostics,"freshness":"current"}),
+    )
 }

@@ -42,6 +42,7 @@ pub struct ProjectSession {
     pub(super) support_seen: Option<String>,
     pub(super) support_rules: super::support::RuleCache,
     pub(super) support_cache: Option<super::support::SupportCache>,
+    pub(super) support_descriptors: super::support::SupportDescriptors,
     pub(super) fingerprints: BTreeMap<PathBuf, [u8; 32]>,
 }
 
@@ -62,6 +63,7 @@ impl ProjectSession {
             by_path: BTreeMap::new(),
             generation: 0,
             support_cache: None,
+            support_descriptors: super::support::SupportDescriptors::default(),
             support_seen: None,
             support_rules: super::support::RuleCache::default(),
             fingerprints: BTreeMap::new(),

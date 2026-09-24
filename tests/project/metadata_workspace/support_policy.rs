@@ -47,6 +47,166 @@ fn rules(mode: u8, rule: u8) -> String {
         "{{6,0,1,{ROOT},{mode},{ROOT},\"1\",\"Vendor\",\"Test\",2,{rule},0,{ROOT},{ROOT},0,0,{CHILD},{CHILD},0,0,0,1,0,0,0,1,0,1,0,1,1,1,1}}"
     )
 }
+
+#[test]
+fn targeted_permissions_follow_current_bytes_without_scan_or_file_events() {
+    let dir = TestDir::new();
+    fixture(&dir.0);
+    let rules_path = dir.0.join("src/Ext/ParentConfigurations.bin");
+    fs::write(&rules_path, rules(0, 1)).unwrap();
+    // An unrelated corrupt descriptor must not prevent checking this module.
+    fs::write(dir.0.join("src/Catalogs/Unrelated.xml"), "broken").unwrap();
+    let original = super::bytes(&dir.0);
+    let mut workspace = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let paths = [
+        "Catalogs/Items/Ext/ObjectModule.bsl".into(),
+        "Catalogs/Items.xml".into(),
+    ];
+    let reads = session.source_io_stats().xml_reads;
+    let result = session.support_files(&paths).unwrap();
+    assert!(!result.files[0].read_only);
+    assert!(result.files[1].read_only && result.files[1].mixed);
+    assert_eq!(session.source_io_stats().xml_reads - reads, 2);
+    assert!(result.next_offset.is_none());
+    assert!(result.diagnostics.is_empty(), "{:?}", result.diagnostics);
+    // A -> B -> A: no generation notification or timestamp-based permission reuse.
+    for rule in [0, 1, 0, 2] {
+        fs::write(&rules_path, rules(0, rule)).unwrap();
+        let result = session.support_files(&paths).unwrap();
+        assert_eq!(result.files[0].read_only, rule == 0);
+        assert!(result.files[1].read_only);
+    }
+    // Same rules, different ancestry: disappearance never grants permission.
+    fs::write(
+        dir.0.join("src/Configuration.xml"),
+        xml("Configuration", "Test", ""),
+    )
+    .unwrap();
+    assert!(
+        session
+            .support_files(&paths)
+            .unwrap()
+            .files
+            .iter()
+            .all(|file| file.read_only && file.unknown)
+    );
+    fs::write(
+        dir.0.join("src/Configuration.xml"),
+        &original[Path::new("src/Configuration.xml")],
+    )
+    .unwrap();
+    fs::write(&rules_path, "broken").unwrap();
+    assert!(
+        session
+            .support_files(&paths)
+            .unwrap()
+            .files
+            .iter()
+            .all(|file| file.read_only && file.unknown)
+    );
+    assert!(session.support_files(&["../elsewhere.bsl".into()]).is_err());
+    assert!(
+        session
+            .support_files(&["Ext/ParentConfigurations.bin".into()])
+            .unwrap()
+            .files[0]
+            .read_only
+    );
+}
+
+#[test]
+fn targeted_policy_matches_source_ownership_across_all_project_types() {
+    for kind in ["configuration", "extension", "processing", "report"] {
+        let directory = TestDir::new();
+        super::fixture(&directory.0, kind);
+        fs::create_dir_all(directory.0.join("src/Ext")).unwrap();
+        fs::write(
+            directory.0.join("src/Ext/ParentConfigurations.bin"),
+            "{6,0,0,0,0,0}",
+        )
+        .unwrap();
+        let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+        let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+        let inventory = session.support_page(0).unwrap();
+        assert!(inventory.next_offset.is_none());
+        let paths: Vec<_> = inventory
+            .files
+            .iter()
+            .map(|file| file.path.clone())
+            .collect();
+        let targeted = session.support_files(&paths).unwrap();
+        for (expected, actual) in inventory.files.iter().zip(&targeted.files) {
+            assert_eq!(
+                (expected.read_only, expected.unknown, &expected.objects),
+                (actual.read_only, actual.unknown, &actual.objects),
+                "{kind}: {:?} {:?}",
+                expected.path,
+                targeted.diagnostics
+            );
+        }
+    }
+}
+
+#[test]
+fn targeted_permissions_follow_descriptor_uuid_with_unchanged_mtime() {
+    let directory = TestDir::new();
+    fixture(&directory.0);
+    fs::write(
+        directory.0.join("src/Ext/ParentConfigurations.bin"),
+        rules(0, 0),
+    )
+    .unwrap();
+    let descriptor = directory.0.join("src/Catalogs/Items.xml");
+    let input = fs::read_to_string(&descriptor).unwrap();
+    let modified = fs::metadata(&descriptor).unwrap().modified().unwrap();
+    let mut workspace = MetadataWorkspace::open_cached(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    for uuid in [ROOT, "33333333-3333-3333-3333-333333333333", ROOT] {
+        fs::write(&descriptor, input.replacen(ROOT, uuid, 1)).unwrap();
+        fs::File::open(&descriptor)
+            .unwrap()
+            .set_times(fs::FileTimes::new().set_modified(modified))
+            .unwrap();
+        let result = session
+            .support_files(&["Catalogs/Items/Ext/ObjectModule.bsl".into()])
+            .unwrap();
+        assert_eq!(result.files[0].read_only, uuid == ROOT);
+        assert!(!result.files[0].unknown);
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn targeted_policy_rejects_file_and_descriptor_aliases() {
+    use std::os::unix::fs::symlink;
+    let directory = TestDir::new();
+    fixture(&directory.0);
+    fs::write(
+        directory.0.join("src/Ext/ParentConfigurations.bin"),
+        rules(0, 1),
+    )
+    .unwrap();
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let path = "Catalogs/Items/Ext/ObjectModule.bsl".into();
+    let original = directory.0.join("src").join(&path);
+    fs::rename(&original, directory.0.join("module.bsl")).unwrap();
+    symlink(directory.0.join("module.bsl"), &original).unwrap();
+    assert!(
+        session
+            .support_files(std::slice::from_ref(&path))
+            .unwrap()
+            .files[0]
+            .unknown
+    );
+    fs::remove_file(&original).unwrap();
+    fs::rename(directory.0.join("module.bsl"), &original).unwrap();
+    let descriptor = directory.0.join("src/Catalogs/Items.xml");
+    fs::rename(&descriptor, directory.0.join("src/alias.xml")).unwrap();
+    symlink(directory.0.join("src/alias.xml"), descriptor).unwrap();
+    assert!(session.support_files(&[path]).unwrap().files[0].unknown);
+}
 #[test]
 fn support_separates_mixed_xml_from_module_and_invalidates_without_writes() {
     let dir = TestDir::new();
