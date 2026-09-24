@@ -837,6 +837,50 @@ fn semantic_human_combines_identical_index_and_worktree_events() {
     );
 }
 
+/// A property namespace change is observable in both locales and comparison modes.
+#[test]
+fn semantic_diff_detects_property_namespace_changes() {
+    let (_fixture, root) = semantic_project();
+    let path = root.join("src/Catalogs/Контрагенты.xml");
+    let original = fs::read_to_string(&path).expect("descriptor");
+    let before = original.replace(
+        "</Properties>",
+        "<Type xmlns='urn:before'>String</Type></Properties>",
+    );
+    fs::write(&path, &before).expect("baseline property");
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-m", "baseline namespace"]);
+    fs::write(&path, before.replace("urn:before", "urn:after")).expect("changed namespace");
+
+    for revisions in [false, true] {
+        if revisions {
+            git(&root, &["add", "."]);
+            git(&root, &["commit", "-m", "change namespace"]);
+        }
+        let mut outputs = Vec::new();
+        for locale in ["ru", "en"] {
+            let mut args = vec!["diff", "--semantic", "--format", "json"];
+            if revisions {
+                args.extend(["HEAD~1", "HEAD"]);
+            }
+            let output = eska(&root, locale, &args);
+            assert!(output.status.success(), "{output:?}");
+            assert!(output.stderr.is_empty(), "{output:?}");
+            let document: Value = serde_json::from_slice(&output.stdout).expect("semantic JSON");
+            assert_eq!(document["schema_version"], 4);
+            assert_eq!(document["analysis"]["complete"], true);
+            let events = document["events"].as_array().expect("events");
+            assert!(
+                events
+                    .iter()
+                    .any(|event| event["kind"] == "metadata_attribute_changed")
+            );
+            outputs.push(output.stdout);
+        }
+        assert_eq!(outputs[0], outputs[1]);
+    }
+}
+
 /// Object lifecycle suppresses derived module/form events only for the exact same identity.
 #[test]
 fn semantic_added_form_suppresses_derived_events_for_that_form() {

@@ -1198,26 +1198,49 @@ fn xml_signature(node: roxmltree::Node<'_, '_>) -> String {
 /// Append directly to one buffer so ancestors do not copy their descendants' signatures.
 fn append_xml_signature(node: roxmltree::Node<'_, '_>, signature: &mut String) {
     use std::fmt::Write as _;
-    if node.is_element() {
-        signature.push('<');
-        signature.push_str(node.tag_name().name());
-        let mut attributes: Vec<_> = node.attributes().collect();
-        attributes.sort_by_key(|attribute| (attribute.namespace(), attribute.name()));
-        for attribute in attributes {
-            write!(signature, " {}={:?}", attribute.name(), attribute.value())
-                .expect("writing to String cannot fail");
-        }
-        signature.push('>');
-    } else if let Some(text) = node.text() {
-        signature.push_str(text.trim());
+    signature.push('<');
+    append_xml_name(
+        node.tag_name().namespace(),
+        node.tag_name().name(),
+        signature,
+    );
+    let mut attributes: Vec<_> = node.attributes().collect();
+    attributes.sort_by_key(|attribute| (attribute.namespace(), attribute.name()));
+    for attribute in attributes {
+        signature.push(' ');
+        append_xml_name(attribute.namespace(), attribute.name(), signature);
+        write!(signature, "={:?}", attribute.value()).expect("writing to String cannot fail");
     }
+    signature.push('>');
+    let mut text = String::new();
     for child in node.children() {
-        append_xml_signature(child, signature);
+        if child.is_text() {
+            text.push_str(child.text().unwrap_or_default());
+        } else if child.is_element() {
+            append_xml_text(&text, signature);
+            text.clear();
+            append_xml_signature(child, signature);
+        }
     }
-    if node.is_element() {
-        signature.push_str("</");
-        signature.push_str(node.tag_name().name());
-        signature.push('>');
+    append_xml_text(&text, signature);
+    signature.push_str("</>");
+}
+
+/// Expanded names retain namespace identity independently of the document's chosen prefixes.
+fn append_xml_name(namespace: Option<&str>, name: &str, signature: &mut String) {
+    use std::fmt::Write as _;
+    if let Some(namespace) = namespace {
+        write!(signature, "{{{namespace:?}}}").expect("writing to String cannot fail");
+    }
+    signature.push_str(name);
+}
+
+/// Quote text so escaped markup cannot impersonate an element; formatting stays insignificant.
+fn append_xml_text(text: &str, signature: &mut String) {
+    use std::fmt::Write as _;
+    let text = text.trim();
+    if !text.is_empty() {
+        write!(signature, "{text:?}").expect("writing to String cannot fail");
     }
 }
 
@@ -1507,12 +1530,53 @@ mod tests {
         let after = roxmltree::Document::parse(
             "<Properties a=\"1\" b=\"2\">\n<Name>Value</Name>\n<Type><Kind>String</Kind></Type>\n</Properties>",
         ).unwrap();
-        let expected = "<Properties a=\"1\" b=\"2\"><Name>Value</Name><Type><Kind>String</Kind></Type></Properties>";
+        let expected =
+            "<Properties a=\"1\" b=\"2\"><Name>\"Value\"</><Type><Kind>\"String\"</></></>";
         assert_eq!(super::xml_signature(before.root_element()), expected);
         assert_eq!(super::xml_signature(after.root_element()), expected);
         let changed =
             roxmltree::Document::parse("<Properties><Type>String</Type></Properties>").unwrap();
         assert_ne!(super::xml_signature(changed.root_element()), expected);
+    }
+
+    /// Namespace identities and literal text must not collapse into the same signature.
+    #[test]
+    fn xml_signatures_distinguish_namespaces_and_escaped_markup() {
+        for (before, after) in [
+            (
+                "<Type xmlns='urn:one'>String</Type>",
+                "<Type xmlns='urn:two'>String</Type>",
+            ),
+            (
+                "<Type xmlns:x='urn:one' x:value='1'/>",
+                "<Type xmlns:x='urn:two' x:value='1'/>",
+            ),
+            (
+                "<Type>&lt;Kind&gt;String&lt;/Kind&gt;</Type>",
+                "<Type><Kind>String</Kind></Type>",
+            ),
+        ] {
+            let before = roxmltree::Document::parse(before).unwrap();
+            let after = roxmltree::Document::parse(after).unwrap();
+            assert_ne!(
+                super::xml_signature(before.root_element()),
+                super::xml_signature(after.root_element())
+            );
+        }
+    }
+
+    /// Prefix spelling, comments and processing instructions are not metadata values.
+    #[test]
+    fn xml_signatures_ignore_prefixes_and_non_data_nodes() {
+        let before = roxmltree::Document::parse(
+            "<a:Type xmlns:a='urn:type' a:value='1'><a:Kind>String</a:Kind></a:Type>",
+        )
+        .unwrap();
+        let after = roxmltree::Document::parse("<b:Type xmlns:b='urn:type' b:value='1'><!-- comment --><?editor hint?><b:Kind>String</b:Kind></b:Type>").unwrap();
+        assert_eq!(
+            super::xml_signature(before.root_element()),
+            super::xml_signature(after.root_element())
+        );
     }
 
     /// Every event kind has an explicit stable machine name.
