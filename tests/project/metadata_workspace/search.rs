@@ -305,6 +305,65 @@ fn root_deletion_removes_results_and_failed_descriptors_can_recover() {
     );
 }
 
+/// Batched deletion clears descendants and failures without matching an identity's text prefix.
+#[test]
+fn batch_deletion_preserves_similarly_named_branches() {
+    let directory = TestDir::new();
+    fixture(&directory.0, "configuration");
+    let source = directory.0.join("src");
+    fs::write(
+        source.join("Catalogs/КонтрагентыЕще.xml"),
+        "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Catalog uuid='another'><Properties><Name>КонтрагентыЕще</Name></Properties><ChildObjects><Attribute uuid='attribute'><Properties><Name>ИНН</Name></Properties></Attribute></ChildObjects></Catalog></MetaDataObject>",
+    )
+    .unwrap();
+    let root = source.join("Configuration.xml");
+    let original = fs::read_to_string(&root).unwrap().replace(
+        "<Catalog>Контрагенты</Catalog>",
+        "<Catalog>Контрагенты</Catalog><Catalog>КонтрагентыЕще</Catalog>",
+    );
+    fs::write(&root, &original).unwrap();
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    session.start_search_index();
+    finish(session);
+    assert_eq!(
+        session.search("инн", &SearchOptions::default()).hits.len(),
+        2
+    );
+    assert_eq!(session.search_failures().count(), 1);
+    let parses = session.cache_stats().parses;
+    fs::write(
+        &root,
+        original
+            .replace("<Catalog>Контрагенты</Catalog>", "")
+            .replace("<Catalog>БезФайла</Catalog>", ""),
+    )
+    .unwrap();
+    session
+        .changed_paths(&["Configuration.xml".into()])
+        .unwrap();
+    finish(session);
+    assert_eq!(session.search_progress().state, IndexState::Ready);
+    assert_eq!(session.search_failures().count(), 0);
+    assert_eq!(session.cache_stats().parses, parses + 1);
+    let hits = session.search("инн", &SearchOptions::default()).hits;
+    assert_eq!(hits.len(), 1);
+    assert_eq!(
+        hits[0].object,
+        object(
+            MetadataKind::Attribute,
+            "ИНН",
+            Some(object(MetadataKind::Catalog, "КонтрагентыЕще", None))
+        )
+    );
+    assert!(
+        session
+            .search("БезФайла", &SearchOptions::default())
+            .hits
+            .is_empty()
+    );
+}
+
 /// Equal names and identities from separate members are still separate scoped results.
 #[test]
 fn keeps_projects_distinct_and_payloads_unread() {

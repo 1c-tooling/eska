@@ -1,0 +1,62 @@
+{
+  "date": "2026-09-24",
+  "platform": "Linux",
+  "rustc": "1.98.1",
+  "profile": "test (debug, unoptimized)",
+  "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test --test integration measure_search_subtree_removal -- --ignored --nocapture",
+  "scope": "One index_search_step(1) after changed_paths(Configuration.xml); fixture creation, initial indexing and changed_paths are excluded. No real 1C execution.",
+  "baseline_commit": "24d1152",
+  "samples": {
+    "before": [
+      {
+        "after": 21001,
+        "before": 42001,
+        "elapsed_ms": 7076.467807,
+        "removed_descriptors": 1000,
+        "run": 0
+      },
+      {
+        "after": 21001,
+        "before": 42001,
+        "elapsed_ms": 7112.512185,
+        "removed_descriptors": 1000,
+        "run": 1
+      },
+      {
+        "after": 21001,
+        "before": 42001,
+        "elapsed_ms": 7184.36626,
+        "removed_descriptors": 1000,
+        "run": 2
+      }
+    ],
+    "after": [
+      {
+        "after": 21001,
+        "before": 42001,
+        "elapsed_ms": 480.62991300000004,
+        "removed_descriptors": 1000,
+        "run": 0
+      },
+      {
+        "after": 21001,
+        "before": 42001,
+        "elapsed_ms": 478.325833,
+        "removed_descriptors": 1000,
+        "run": 1
+      },
+      {
+        "after": 21001,
+        "before": 42001,
+        "elapsed_ms": 550.50954,
+        "removed_descriptors": 1000,
+        "run": 2
+      }
+    ]
+  },
+  "median_ms": {
+    "before": 7112.512185,
+    "after": 480.62991300000004
+  },
+  "median_speedup": 14.798313614325538
+}
