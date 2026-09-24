@@ -443,6 +443,31 @@ fn fingerprint_into(node: roxmltree::Node<'_, '_>, output: &mut String) {
     }
 }
 
+/// Recognize standard Designer BSL implementation module names.
+pub fn is_module_path(path: &std::path::Path) -> bool {
+    let Some(file) = path.file_name().and_then(|value| value.to_str()) else {
+        return false;
+    };
+    matches!(
+        file,
+        "Module.bsl"
+            | "Module.bin"
+            | "ObjectModule.bsl"
+            | "ObjectModule.bin"
+            | "ManagerModule.bsl"
+            | "ManagerModule.bin"
+            | "RecordSetModule.bsl"
+            | "RecordSetModule.bin"
+            | "ValueManagerModule.bsl"
+            | "ValueManagerModule.bin"
+            | "ManagedApplicationModule.bsl"
+            | "OrdinaryApplicationModule.bsl"
+            | "SessionModule.bsl"
+            | "ExternalConnectionModule.bsl"
+            | "CommandModule.bsl"
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use gix::bstr::ByteSlice;

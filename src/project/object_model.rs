@@ -900,7 +900,7 @@ fn assign_source_paths<'a>(
             .insert(owner.clone());
         if let Some(object) = objects.get_mut(&owner) {
             object.paths.insert(path.to_owned());
-            if is_module_path(path) {
+            if metadata::is_module_path(path) {
                 object.module_paths.insert(path.to_owned());
             }
         }
@@ -956,29 +956,4 @@ fn assign_form_paths(objects: &mut BTreeMap<ObjectId, LogicalObject>) {
             object.form_paths.insert(path);
         }
     }
-}
-
-/// Recognize standard Designer implementation module files.
-fn is_module_path(path: &Path) -> bool {
-    let Some(file) = path.file_name().and_then(|value| value.to_str()) else {
-        return false;
-    };
-    matches!(
-        file,
-        "Module.bsl"
-            | "Module.bin"
-            | "ObjectModule.bsl"
-            | "ObjectModule.bin"
-            | "ManagerModule.bsl"
-            | "ManagerModule.bin"
-            | "RecordSetModule.bsl"
-            | "RecordSetModule.bin"
-            | "ValueManagerModule.bsl"
-            | "ValueManagerModule.bin"
-            | "ManagedApplicationModule.bsl"
-            | "OrdinaryApplicationModule.bsl"
-            | "SessionModule.bsl"
-            | "ExternalConnectionModule.bsl"
-            | "CommandModule.bsl"
-    )
 }
