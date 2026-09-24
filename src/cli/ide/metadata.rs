@@ -21,7 +21,9 @@ use serde_json::{Value, json};
 pub(super) fn is_method(method: &str) -> bool {
     matches!(
         method,
-        "metadata/root"
+        "metadata/support"
+            | "metadata/supportFiles"
+            | "metadata/root"
             | "metadata/children"
             | "metadata/get"
             | "metadata/properties"
@@ -122,6 +124,20 @@ fn metadata_request(
             .map_err(|failure| errors::workspace(&failure))?;
     }
     match method {
+        "metadata/supportFiles" => support_files(project, args),
+        "metadata/support" => {
+            let offset = match args.get("offset") {
+                None => 0,
+                Some(value) => value
+                    .as_u64()
+                    .and_then(|value| usize::try_from(value).ok())
+                    .ok_or_else(|| error(-32602))?,
+            };
+            let snapshot = project.support_page(offset).ok_or_else(|| error(-32602))?;
+            Ok(
+                json!({"objects":snapshot.objects,"files":snapshot.files.iter().map(|file| json!({"path":dto::path(&file.path),"objects":file.objects,"readOnly":file.read_only,"reason":file.reason,"mixed":file.mixed,"unknown":file.unknown})).collect::<Vec<_>>(),"diagnostics":snapshot.diagnostics,"suppliers":snapshot.suppliers.iter().map(|supplier|json!({"id":supplier.id,"configurationUuid":supplier.configuration_uuid,"name":supplier.name,"vendor":supplier.vendor,"version":supplier.version,"locked":supplier.locked})).collect::<Vec<_>>(),"nextOffset":snapshot.next_offset,"freshness":"current"}),
+            )
+        }
         "metadata/root" => Ok(
             json!({"node":labels.node(project.node(project.root()).map_err(|failure| errors::workspace(&failure))?)}),
         ),
@@ -314,6 +330,8 @@ pub(super) fn changed(
         .ok_or_else(|| domain("generation_exhausted", json!({})))?;
     let mut notification = json!({"jsonrpc":"2.0","method":"metadata/changed","params":{"sessionId":session,"projectId":state.id,"generation":project.generation().to_string(),"eventSequence":state.event.to_string(),"affected":null,"requiresRefresh":state.refresh,"requiresReopen":state.reopen}});
     notification["params"]["affected"] = affected;
+    notification["params"]["supportUnchanged"] =
+        json!(!state.refresh && !state.reopen && project.support_is_current());
     if serde_json::to_vec(&notification)
         .map_or(true, |body| body.len() > super::framing::MAX_RESPONSE)
     {
@@ -321,4 +339,27 @@ pub(super) fn changed(
     }
     events.push(notification);
     Ok(())
+}
+
+/// Classify a bounded set of source-relative paths without starting a support inventory.
+fn support_files(project: &mut ProjectSession, args: &Value) -> Result<Value, Value> {
+    #[derive(Deserialize)]
+    struct Files {
+        paths: Vec<params::Path>,
+    }
+    let input: Files = params::decode(args)?;
+    if input.paths.is_empty() || input.paths.len() > 128 {
+        return Err(error(-32602));
+    }
+    let paths = input
+        .paths
+        .iter()
+        .map(params::Path::native)
+        .collect::<Result<Vec<_>, _>>()?;
+    let snapshot = project
+        .support_files(&paths)
+        .map_err(|failure| errors::workspace(&failure))?;
+    Ok(
+        json!({"objects":snapshot.objects,"files":snapshot.files.iter().map(|file| json!({"path":dto::path(&file.path),"objects":file.objects,"readOnly":file.read_only,"reason":file.reason,"mixed":file.mixed,"unknown":file.unknown})).collect::<Vec<_>>(),"diagnostics":snapshot.diagnostics,"freshness":"current"}),
+    )
 }

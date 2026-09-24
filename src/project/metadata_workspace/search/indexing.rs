@@ -60,7 +60,7 @@ impl ProjectSession {
             .iter()
             .map(|reference| reference.id.clone())
             .collect();
-        let removed: Vec<_> = self
+        let removed: BTreeSet<_> = self
             .search_index
             .references
             .get(owner)
@@ -69,9 +69,7 @@ impl ProjectSession {
             .filter(|id| !references.contains(*id))
             .cloned()
             .collect();
-        for id in removed {
-            self.remove_search_subtree(&id)?;
-        }
+        self.remove_search_subtrees(&removed)?;
         // First-time descriptors cannot own old records. Avoid a quadratic full-index scan.
         if self.search_index.references.contains_key(owner) {
             self.search_index
@@ -183,14 +181,24 @@ impl ProjectSession {
         Ok(())
     }
 
-    /// Delete removed descendants from both the search index and descriptor cache.
-    fn remove_search_subtree(&mut self, owner: &ObjectId) -> Result<(), WorkspaceError> {
-        let node = NodeId::Object(owner.clone());
+    /// Scan typed ancestry once for the entire batch of removed branches.
+    fn remove_search_subtrees(
+        &mut self,
+        owners: &BTreeSet<ObjectId>,
+    ) -> Result<(), WorkspaceError> {
+        if owners.is_empty() {
+            return Ok(());
+        }
         let ids: Vec<_> = self
             .search_index
             .records
             .iter()
-            .filter(|(_, record)| record.ancestry.contains(&node))
+            .filter(|(_, record)| {
+                record
+                    .ancestry
+                    .iter()
+                    .any(|node| matches!(node, NodeId::Object(id) if owners.contains(id)))
+            })
             .map(|(id, _)| id.clone())
             .collect();
         for id in ids {

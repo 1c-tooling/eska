@@ -11,6 +11,46 @@ use eska::project::{
 };
 use std::{fmt::Write, fs, path::Path, time::Instant};
 
+/// Measure batched removal on a synthetic index without invoking the 1C platform.
+#[test]
+#[ignore = "explicit synthetic search-index deletion measurement"]
+fn measure_search_subtree_removal() {
+    let owned = TestDir::new();
+    synthetic(&owned.0);
+    let path = owned.0.join("src/Configuration.xml");
+    let original = fs::read_to_string(&path).unwrap();
+    let mut reduced = original.replace("<Catalog>Контрагенты</Catalog>", "");
+    for number in 1..1000 {
+        reduced = reduced.replace(&format!("<Catalog>Справочник{number}</Catalog>"), "");
+    }
+    for run in 0..3 {
+        fs::write(&path, &original).unwrap();
+        let mut workspace = MetadataWorkspace::open(&owned.0, &[], false).unwrap();
+        let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+        session.start_search_index();
+        while session.index_search_step(64).state == IndexState::Building {}
+        let before = session.search_progress().indexed_objects;
+        fs::write(&path, &reduced).unwrap();
+        session
+            .changed_paths(&["Configuration.xml".into()])
+            .unwrap();
+        let parses = session.cache_stats().parses;
+        let start = Instant::now();
+        let progress = session.index_search_step(1);
+        let elapsed = start.elapsed();
+        assert_eq!(progress.state, IndexState::Ready);
+        assert_eq!(before - progress.indexed_objects, 21_000);
+        assert_eq!(session.cache_stats().parses, parses);
+        println!(
+            "SEARCH_REMOVAL_BENCH {}",
+            serde_json::json!({
+                "run": run, "before": before, "after": progress.indexed_objects,
+                "removed_descriptors": 1000, "elapsed_ms": elapsed.as_secs_f64() * 1000.0,
+            })
+        );
+    }
+}
+
 /// Measure one fresh session; repeated runs use the OS page cache, not a rebooted machine.
 fn sample(root: &Path, cached: bool) -> serde_json::Value {
     let start = Instant::now();

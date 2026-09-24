@@ -31,7 +31,13 @@ src/
 │   │   ├── patch.rs             # eska patch: аргументы, preview и JSON result
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
-│   │   ├── diff.rs              # eska diff: human/raw/JSON presentation
+│   │   ├── diff.rs              # eska diff: аргументы, selection и выбор представления
+│   │   ├── diff/
+│   │   │   ├── analysis.rs     # semantic-анализ выбранных проектов и fallback diagnostics
+│   │   │   ├── human.rs        # локализованные группы, подписи и стили
+│   │   │   ├── human/tests.rs  # проверки представлений и группировки
+│   │   │   ├── raw.rs          # стабильные tab-separated строки
+│   │   │   └── json.rs         # versioned DTO и сериализация machine output
 │   │   ├── finish.rs            # eska finish: localized result и ошибки
 │   │   ├── history.rs           # eska history: human/JSON presentation
 │   │   ├── save.rs              # eska save: draft сообщения и presentation
@@ -86,8 +92,13 @@ src/
 │   │   └── execute.rs           # временная ИБ, platform checks и публикация
 │   ├── save.rs                  # project-scoped staging, commit и rollback index
 │   ├── selection.rs             # общий выбор current/named/all workspace projects
-│   ├── semantic.rs              # ChangeSet → object ownership → ChangeSummary
-│   ├── semantic/routines.rs     # потоковое чтение BSL routine snapshots
+│   ├── semantic.rs              # сравнение Git/file snapshots и генерация событий
+│   ├── semantic/
+│   │   ├── changes.rs          # ChangeSet → object ownership → ChangeSummary
+│   │   ├── model.rs            # публичные события, completeness и ошибки
+│   │   ├── descriptor.rs       # XML identities и структурные сигнатуры свойств
+│   │   ├── routines.rs         # потоковое чтение BSL routine snapshots
+│   │   └── tests.rs            # контракты событий и XML-сравнения
 │   ├── start.rs                 # preflight и исполнение task plan
 │   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
 │   ├── version.rs               # точечное чтение и замена Properties/Version
@@ -219,8 +230,10 @@ tests/
   `project/metadata.rs` распознаёт Designer XML ownership для human-вывода,
   сворачивает служебные payload-файлы в ближайший узел Конфигуратора и сравнивает
   свойства дочерних объектов только в изменённых главных XML-файлах.
-  `cli/commands/diff.rs` группирует logical identities по типу метаданных и
-  состоянию, оформляет TTY-заголовки и маркеры, отдельно формирует raw,
+  `cli/commands/diff.rs` выбирает проекты и представление, `diff/analysis.rs`
+  выполняет semantic-анализ и сообщает fallback. `diff/human.rs` группирует
+  logical identities по типу и состоянию, оформляет TTY-заголовки и маркеры.
+  `diff/raw.rs` сохраняет табличный контракт, `diff/json.rs` формирует
   workspace JSON версии 1 и revision JSON версии 2. Для project workspace один
   Git snapshot или tree comparison проецируется на selected members и корневые
   файлы; aggregate semantic JSON использует версию 4 и явно описывает полноту
@@ -233,9 +246,12 @@ tests/
   Designer может повторять его у разных объектов. Индекс связывает descriptors,
   inline children, формы, модули и payload paths в обоих направлениях, не создавая
   cache и не подключаясь автоматически к file-level командам.
-- `project/semantic.rs` нормализует workspace и revision file changes в общий
-  `ChangeSet`, проецирует пути через `ObjectModel` и сравнивает BSL routines,
-  формы и свойства metadata descriptors. Результат — детерминированные semantic
+- `project/semantic.rs` координирует чтение снимков и генерацию событий.
+  `semantic/changes.rs` нормализует workspace и revision file changes в общий
+  `ChangeSet` и проецирует пути через `ObjectModel`; `semantic/model.rs` хранит
+  типы событий и ошибок. `semantic/descriptor.rs` сравнивает XML, а `routines.rs`
+  разбирает BSL routines. Публичные импорты через `project::semantic` сохранены.
+  Результат — детерминированные semantic
   events со стабильной object identity, byte paths и comparison stage. Ошибка
   отдельного дескриптора или консервативного BSL parser сохраняется как точный
   file-level fallback и не отменяет независимые объекты.
@@ -370,7 +386,10 @@ worktree при параллельном редактировании не га�
 для замены CRLF и без массивов строк. Сопоставление snapshot-пар, подавление
 производных событий при lifecycle объекта и создание событий остаются в
 `project/semantic.rs`.
-XML-сигнатуры строятся в одном буфере без промежуточных строк поддеревьев;
-правила нормализации не изменены.
+`project/semantic/descriptor.rs` строит XML-сигнатуры в одном буфере без
+промежуточных строк поддеревьев. Они учитывают namespace URI, отделяют текст от
+структуры и игнорируют комментарии, processing instructions и форматирование.
+`project/metadata.rs` содержит общий список имён BSL/binary-модулей для
+object model и semantic diff.
 
 Условия и результаты локальных замеров: [performance.md](performance.md).

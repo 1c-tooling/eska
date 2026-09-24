@@ -25,6 +25,7 @@ pub mod selection;
 pub mod semantic;
 pub mod start;
 pub mod status;
+pub mod support;
 pub mod switch;
 pub mod templates;
 pub mod version;

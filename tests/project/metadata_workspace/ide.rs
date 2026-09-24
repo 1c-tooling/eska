@@ -152,6 +152,53 @@ fn context(open: &Value, extra: Value) -> Value {
     result
 }
 
+#[test]
+fn targeted_support_protocol_is_bounded_and_locale_independent() {
+    let directory = TestDir::new();
+    fixture(&directory.0, "configuration");
+    let before = bytes(&directory.0);
+    let mut expected = None;
+    for locale in ["ru-RU", "en-US"] {
+        let mut client = Client::new(locale);
+        let initialize = client.initialize(locale);
+        assert_eq!(initialize["capabilities"]["supportFiles"], true);
+        assert_eq!(initialize["apiVersion"]["minor"], 3);
+        let open = client.open(&directory.0);
+        let result = client.ok(
+            "metadata/supportFiles",
+            context(
+                &open,
+                json!({"paths":[{"encoding":"utf-8","value":"Configuration.xml"}]}),
+            ),
+        );
+        assert_eq!(result["files"].as_array().unwrap().len(), 1);
+        assert_eq!(result["files"][0]["readOnly"], true);
+        assert_eq!(result["files"][0]["unknown"], true);
+        let stable = json!({"files":result["files"],"objects":result["objects"],"diagnostics":result["diagnostics"]});
+        if let Some(expected) = &expected {
+            assert_eq!(&stable, expected);
+        } else {
+            expected = Some(stable);
+        }
+        for paths in [
+            json!([]),
+            json!([{"encoding":"utf-8","value":"../outside.xml"}]),
+            json!(vec![
+                json!({"encoding":"utf-8","value":"Configuration.xml"});
+                129
+            ]),
+        ] {
+            let response = client.request(
+                "metadata/supportFiles",
+                context(&open, json!({"paths":paths})),
+            );
+            assert!(response.get("error").is_some(), "{response}");
+        }
+        client.finish();
+    }
+    assert_eq!(before, bytes(&directory.0));
+}
+
 /// Every supported project type can be navigated and closed without any source or cache writes.
 #[test]
 fn process_navigates_four_types_and_preserves_sources() {

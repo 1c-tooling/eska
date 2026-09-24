@@ -874,13 +874,17 @@ eska doctor --workspace
 `.eska/cache/metadata`, отключаемый параметром `diskCache:false` при открытии.
 
 Stdout содержит только JSON-RPC 2.0 с заголовками `Content-Length`; это отдельный
-[IDE protocol 1.0](docs/ide-protocol.md), не CLI JSON и не LSP. Платформа 1С для
+[IDE protocol 1.3](docs/ide-protocol.md), не CLI JSON и не LSP. Платформа 1С для
 него не требуется. В отдельном репозитории `eska-vscode-explorer` реализована
 основа подключения расширения `eska: 1C Explorer`, дерево, открытие XML/BSL,
 поиск, фильтр пустых разделов корня и внутри «Общие», иконки (T76–T80).
 В T81 подготовлена локальная упаковка VSIX `1c-tooling.eska-explorer`; итоговая приёмка продолжается.
 [Границы расширения](docs/roadmap/14-vscode-extension.md) отделены от команд сборки/Git
 и выбранной пользователем поддержки языка BSL.
+
+Проверка поддержки при открытии исходника использует `metadata/supportFiles`:
+читаются текущие правила и дескрипторы владельца выбранного файла. Полный обход
+конфигурации и загрузка всех ограничений больше не нужны для открытия дерева.
 
 ### Язык и вывод для скриптов
 
@@ -952,3 +956,5 @@ encoding `utf-8`, для произвольных байтов Git — `percent`
 `policy`, `project-outside-repository`, `task-branch-missing`,
 `base-branch-missing`, `target-checked-out`. Machine-facing значения не зависят
 от языка; ошибки CLI parsing сохраняют exit code 2 без JSON.
+
+Правила поддержки Designer XML и ограничения их чтения: [описание](docs/support-policy.md).

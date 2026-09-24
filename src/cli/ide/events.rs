@@ -87,6 +87,12 @@ impl Server {
                 .changed_paths(&paths)
                 .map_err(|failure| super::errors::workspace(&failure))
         });
+        if result
+            .as_ref()
+            .is_ok_and(|report| report.affected.is_empty())
+        {
+            return Ok(());
+        }
         if result.is_err() {
             state.refresh = true;
         }
