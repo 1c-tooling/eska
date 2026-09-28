@@ -25,7 +25,7 @@ pub(super) fn run(args: &NewArgs, base: &Path, localizer: &Localizer) -> ExitCod
             println!(
                 "{}",
                 localizer.format(
-                    "new-created",
+                    "artifact-created",
                     &[(
                         "path",
                         LocalizationValue::Text(&project.root().to_string_lossy())

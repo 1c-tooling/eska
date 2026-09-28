@@ -116,7 +116,7 @@ mod tests {
             assert_eq!(
                 names,
                 [
-                    "update", "ide", "build", "clean", "clone", "config", "new", "init",
+                    "update", "ide", "build", "clean", "clone", "config", "new", "init", "import",
                     "platform", "patch", "diff", "doctor", "finish", "history", "save", "start",
                     "status", "switch", "shelve", "unshelve", "shelves", "version"
                 ]

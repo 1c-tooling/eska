@@ -1,10 +1,12 @@
 //! Shared keyboard-driven menus for CLI commands.
 
+mod confirm;
 mod keyboard;
 mod render;
 mod select;
 mod terminal;
 
+pub(super) use confirm::confirm_overwrite;
 pub(super) use select::Selector;
 
 #[derive(Clone, Copy, Debug)]

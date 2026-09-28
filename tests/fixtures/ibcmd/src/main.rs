@@ -44,17 +44,22 @@ fn run(arguments: &[OsString]) -> Result<(), String> {
 
 /// Unpack fixture XML carried by a native-looking file without depending on a 1C license.
 fn export_configuration(arguments: &[OsString]) -> Result<(), String> {
-    if env_flag("FAKE_IBCMD_FAIL_EXPORT") { return Err("fake export failure".to_owned()); }
+    if env_flag("FAKE_IBCMD_FAIL_EXPORT") {
+        return Err("fake export failure".to_owned());
+    }
     let source = option_path(arguments, "--file=").ok_or("missing --file")?;
-    let destination = arguments.last().map(PathBuf::from).ok_or("missing destination")?;
+    let destination = arguments
+        .last()
+        .map(PathBuf::from)
+        .ok_or("missing destination")?;
     let contents = fs::read(&source).map_err(|error| error.to_string())?;
+    wait_for_test_release();
     if String::from_utf8_lossy(&contents).contains("<External") {
-        let mut descriptor = destination.as_os_str().to_owned();
-        descriptor.push(".xml");
-        fs::write(PathBuf::from(descriptor), contents).map_err(|error| error.to_string())
+        fs::write(destination.with_extension("xml"), contents).map_err(|error| error.to_string())
     } else {
         fs::create_dir_all(&destination).map_err(|error| error.to_string())?;
-        fs::write(destination.join("Configuration.xml"), contents).map_err(|error| error.to_string())
+        fs::write(destination.join("Configuration.xml"), contents)
+            .map_err(|error| error.to_string())
     }
 }
 

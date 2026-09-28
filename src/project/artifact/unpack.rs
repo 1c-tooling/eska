@@ -70,18 +70,17 @@ impl PreparedArtifact {
             ],
             &mut output,
         )?;
-        // External objects produce `<path>.xml` plus an optional `<path>/` payload tree.
-        // Configurations instead produce a directory containing Configuration.xml.
-        let mut external_descriptor = export.as_os_str().to_owned();
-        external_descriptor.push(".xml");
-        let exported = if Path::new(&external_descriptor).is_file() {
-            &unpacked
+        // External exports may replace a dotted filename's suffix with `.xml`.
+        // Inspect the actual descriptor instead of predicting the platform's naming rules.
+        let (exported, identity) = if let Some(identity) = inspect_identity(&unpacked)? {
+            (&unpacked, identity)
         } else {
-            &export
+            let identity = inspect_identity(&export)?
+                .ok_or_else(|| ArtifactError::MissingDescriptor(export.clone()))?;
+            (&export, identity)
         };
         fs::rename(exported, &sources).map_err(|error| io_error(exported, error))?;
-        let identity = inspect_identity(&sources)?
-            .ok_or_else(|| ArtifactError::MissingDescriptor(sources.clone()))?;
+        super::snapshot::capture(&sources)?;
         Ok(Self { staging, identity })
     }
 

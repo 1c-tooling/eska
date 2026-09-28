@@ -37,12 +37,23 @@ pub(super) struct PlatformArgs {
 pub(super) struct Failure {
     pub code: &'static str,
     pub message: String,
+    pub details: Option<serde_json::Value>,
 }
 
 impl Failure {
     /// Keep stable error codes independent from localized messages.
     pub const fn new(code: &'static str, message: String) -> Self {
-        Self { code, message }
+        Self {
+            code,
+            message,
+            details: None,
+        }
+    }
+
+    /// Include a machine-readable preview when an import requires a decision.
+    pub fn with_details(mut self, details: serde_json::Value) -> Self {
+        self.details = Some(details);
+        self
     }
 }
 
@@ -177,6 +188,28 @@ pub(super) fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
             path,
         ),
         ArtifactError::UnsafePath(path) => ("unsafe-path", "artifact-unsafe-path", path),
+        ArtifactError::SourceChanged(path) => ("source-changed", "artifact-source-changed", path),
+        ArtifactError::Config(_) => {
+            return Failure::new("project-config", localizer.text("artifact-config-error"));
+        }
+        ArtifactError::Repository(_) => {
+            return Failure::new("repository", localizer.text("artifact-repository-error"));
+        }
+        ArtifactError::ConfirmationRequired => {
+            return Failure::new(
+                "confirmation-required",
+                localizer.text("artifact-confirmation-required"),
+            );
+        }
+        ArtifactError::Rollback { backup, .. } => {
+            return Failure::new(
+                "rollback",
+                localizer.format(
+                    "artifact-rollback-error",
+                    &[("path", LocalizationValue::Text(&backup.to_string_lossy()))],
+                ),
+            );
+        }
         ArtifactError::TypeMismatch { .. } => {
             return Failure::new("type-mismatch", localizer.text("artifact-type-mismatch"));
         }

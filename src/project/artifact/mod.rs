@@ -1,6 +1,8 @@
 //! Native 1C artifacts unpacked into isolated, validated Designer XML sources.
 
 mod identity;
+mod replace;
+mod snapshot;
 mod staging;
 mod unpack;
 
@@ -9,6 +11,7 @@ use std::{io, path::PathBuf};
 use super::{ProjectType, build::RunError};
 
 pub use identity::{Identity, inspect_identity};
+pub use replace::{ImportPlan, ImportResult};
 pub use unpack::PreparedArtifact;
 
 /// Import failures retain their operation and affected path without presentation text.
@@ -23,6 +26,15 @@ pub enum ArtifactError {
     MissingDescriptor(PathBuf),
     AmbiguousDescriptor(PathBuf),
     UnsafePath(PathBuf),
+    Config(crate::config::ProjectConfigError),
+    Repository(crate::vcs::repository::Error),
+    ConfirmationRequired,
+    SourceChanged(PathBuf),
+    Rollback {
+        backup: PathBuf,
+        original: io::Error,
+        restore: io::Error,
+    },
     TypeMismatch {
         expected: ProjectType,
         actual: ProjectType,

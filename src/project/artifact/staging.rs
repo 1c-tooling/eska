@@ -10,6 +10,7 @@ use super::{ArtifactError, io_error};
 
 pub(super) struct Staging {
     pub path: PathBuf,
+    pub preserve: bool,
 }
 
 impl Staging {
@@ -25,7 +26,12 @@ impl Staging {
                 std::process::id()
             ));
             match fs::create_dir(&path) {
-                Ok(()) => return Ok(Self { path }),
+                Ok(()) => {
+                    return Ok(Self {
+                        path,
+                        preserve: false,
+                    });
+                }
                 Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
                 Err(error) => return Err(io_error(&path, error)),
             }
@@ -40,6 +46,8 @@ impl Staging {
 impl Drop for Staging {
     /// Remove only the directory exclusively claimed by this operation.
     fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.path);
+        if !self.preserve {
+            let _ = fs::remove_dir_all(&self.path);
+        }
     }
 }

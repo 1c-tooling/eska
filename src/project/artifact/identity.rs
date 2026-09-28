@@ -34,11 +34,11 @@ pub fn inspect_identity(directory: &Path) -> Result<Option<Identity>, ArtifactEr
         {
             continue;
         }
-        if !entry
-            .file_type()
-            .map_err(|error| io_error(&path, error))?
-            .is_file()
-        {
+        let kind = entry.file_type().map_err(|error| io_error(&path, error))?;
+        if kind.is_dir() {
+            continue;
+        }
+        if !kind.is_file() {
             return Err(ArtifactError::UnsafePath(path));
         }
         if let Some(found) = read_identity(&path)? {
