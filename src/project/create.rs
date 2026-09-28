@@ -50,9 +50,37 @@ pub fn create(
     workflow: WorkflowPreset,
     initialize_vcs: bool,
 ) -> Result<Project, CreationError> {
-    let destination = resolve_destination(destination)?;
     let config = ProjectConfig::new(project_type).with_workflow(workflow);
-    let template = Template::from_config(&config).map_err(CreationError::Template)?;
+    create_configured(destination, &config, initialize_vcs, None)
+}
+
+/// Create a configured project from validated, isolated artifact sources.
+///
+/// # Errors
+/// Returns creation errors and rolls back the exclusively owned destination on failure.
+pub fn create_imported(
+    destination: &Path,
+    config: &ProjectConfig,
+    initialize_vcs: bool,
+    artifact: &super::artifact::PreparedArtifact,
+) -> Result<Project, CreationError> {
+    create_configured(
+        destination,
+        config,
+        initialize_vcs,
+        Some(&artifact.sources()),
+    )
+}
+
+/// Share scaffold publication and rollback between empty and imported projects.
+fn create_configured(
+    destination: &Path,
+    config: &ProjectConfig,
+    initialize_vcs: bool,
+    sources: Option<&Path>,
+) -> Result<Project, CreationError> {
+    let destination = resolve_destination(destination)?;
+    let template = Template::from_config(config).map_err(CreationError::Template)?;
     in_new_directory(&destination, |root| {
         for directory in template.directories() {
             let path = root.join(directory);
@@ -70,6 +98,9 @@ pub fn create(
                 })?;
             file.write_all(entry.contents().as_bytes())
                 .map_err(|source| CreationError::Io { path, source })?;
+        }
+        if let Some(sources) = sources {
+            install_sources(root, config.source(), sources)?;
         }
         if initialize_vcs {
             git::initialize(root).map_err(CreationError::Git)?;
@@ -139,8 +170,30 @@ pub fn create_workspace_member(
     plan: &WorkspaceCreationPlan,
     project_type: ProjectType,
 ) -> Result<Project, CreationError> {
-    let template = Template::workspace_member(plan.name.clone(), project_type)
-        .map_err(CreationError::Template)?;
+    let config = ProjectConfig::new(project_type).with_name(plan.name.clone());
+    create_member_configured(plan, &config, None)
+}
+
+/// Create and enroll an imported member with optional explicit platform overrides.
+///
+/// # Errors
+/// Returns creation errors, restoring the workspace manifest on ordinary failure.
+pub fn create_imported_member(
+    plan: &WorkspaceCreationPlan,
+    config: &ProjectConfig,
+    artifact: &super::artifact::PreparedArtifact,
+) -> Result<Project, CreationError> {
+    let config = config.clone().with_name(plan.name.clone());
+    create_member_configured(plan, &config, Some(&artifact.sources()))
+}
+
+/// Publish member files before enrolling them in the shared workspace manifest.
+fn create_member_configured(
+    plan: &WorkspaceCreationPlan,
+    config: &ProjectConfig,
+    sources: Option<&Path>,
+) -> Result<Project, CreationError> {
+    let template = Template::workspace_config(config).map_err(CreationError::Template)?;
     let owns_parent = if plan.create_parent {
         fs::create_dir(&plan.parent).map_err(|source| CreationError::Io {
             path: plan.parent.clone(),
@@ -168,6 +221,9 @@ pub fn create_workspace_member(
     let mut manifest_published = false;
     let result = (|| {
         write_template(&plan.destination, &template)?;
+        if let Some(sources) = sources {
+            install_sources(&plan.destination, config.source(), sources)?;
+        }
         plan.enrollment
             .publish()
             .map_err(CreationError::Workspace)?;
@@ -214,6 +270,25 @@ pub fn create_workspace_member(
     }
 }
 
+/// Replace only the empty, newly owned scaffold source directory.
+fn install_sources(root: &Path, relative: &Path, sources: &Path) -> Result<(), CreationError> {
+    let destination = root.join(relative);
+    let placeholder = destination.join(".gitkeep");
+    fs::remove_file(&placeholder).map_err(|source| CreationError::Io {
+        path: placeholder,
+        source,
+    })?;
+    fs::remove_dir(&destination).map_err(|source| CreationError::Io {
+        path: destination.clone(),
+        source,
+    })?;
+    fs::rename(sources, &destination).map_err(|source| CreationError::Io {
+        path: destination,
+        source,
+    })
+}
+
+/// Materialize a template only inside a newly created directory.
 fn write_template(root: &Path, template: &Template) -> Result<(), CreationError> {
     for directory in template.directories() {
         let path = root.join(directory);

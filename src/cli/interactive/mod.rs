@@ -7,7 +7,7 @@ mod terminal;
 
 pub(super) use select::Selector;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub(super) enum PromptError {
     Cancelled,
     Io,

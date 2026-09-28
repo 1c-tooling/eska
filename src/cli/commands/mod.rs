@@ -6,6 +6,7 @@ use clap::Subcommand;
 
 use super::localization::Localizer;
 
+mod artifact;
 mod build;
 mod clean;
 mod clone;

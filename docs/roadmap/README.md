@@ -6,6 +6,10 @@
 
 ## Текущее состояние
 
+По запросу от 2026-09-28 в `feat/cli` выполняется T82: создание и обновление
+проектов из CF/CFE/EPF/ERF. Контракт и состояние — в
+[project creation](02-project-creation.md#t82--создание-и-обновление-из-файлов-1с).
+
 Стадия проекта: **локальный CLI MVP и workspace готовы**. По решению пользователя
 от 2026-09-17 текущий фокус ветки `feat/ide` — подготовка `eska` и первой версии
 VS Code extension для навигации по Designer XML.
@@ -234,6 +238,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T04 | DONE | `eska new` | [02-project-creation.md](02-project-creation.md) |
 | T05 | DONE | Built-in templates | [02-project-creation.md](02-project-creation.md) |
 | T06 | DONE | `eska init` | [02-project-creation.md](02-project-creation.md) |
+| T82 | IN-PROGRESS | Создание и обновление из файлов 1С | [02-project-creation.md](02-project-creation.md) |
 | T07 | DONE | Repository layer (`gix`; документированный Git capability fallback) | [03-repository-workflow.md](03-repository-workflow.md) |
 | T08 | DONE | Workflow policy model | [03-repository-workflow.md](03-repository-workflow.md) |
 | T09 | DONE | Trunk preset | [03-repository-workflow.md](03-repository-workflow.md) |

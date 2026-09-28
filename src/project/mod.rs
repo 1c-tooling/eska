@@ -1,5 +1,6 @@
 //! Locale-independent project model and filesystem operations.
 
+pub mod artifact;
 pub mod build;
 pub mod clone;
 pub mod create;
