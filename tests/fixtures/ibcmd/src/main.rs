@@ -28,6 +28,11 @@ fn run(arguments: &[OsString]) -> Result<(), String> {
             create_infobase(rest);
         }
         [group, subgroup, command, rest @ ..]
+            if group == "infobase" && subgroup == "config" && command == "export" =>
+        {
+            export_configuration(rest)?;
+        }
+        [group, subgroup, command, rest @ ..]
             if group == "infobase" && subgroup == "config" && command == "import" =>
         {
             import_configuration(rest);
@@ -35,6 +40,27 @@ fn run(arguments: &[OsString]) -> Result<(), String> {
         _ => process::exit(9),
     }
     Ok(())
+}
+
+/// Unpack fixture XML carried by a native-looking file without depending on a 1C license.
+fn export_configuration(arguments: &[OsString]) -> Result<(), String> {
+    if env_flag("FAKE_IBCMD_FAIL_EXPORT") {
+        return Err("fake export failure".to_owned());
+    }
+    let source = option_path(arguments, "--file=").ok_or("missing --file")?;
+    let destination = arguments
+        .last()
+        .map(PathBuf::from)
+        .ok_or("missing destination")?;
+    let contents = fs::read(&source).map_err(|error| error.to_string())?;
+    wait_for_test_release();
+    if String::from_utf8_lossy(&contents).contains("<External") {
+        fs::write(destination.with_extension("xml"), contents).map_err(|error| error.to_string())
+    } else {
+        fs::create_dir_all(&destination).map_err(|error| error.to_string())?;
+        fs::write(destination.join("Configuration.xml"), contents)
+            .map_err(|error| error.to_string())
+    }
 }
 
 /// Append arguments in the stable form asserted by the parent integration tests.

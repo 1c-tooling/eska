@@ -21,9 +21,15 @@ use crate::{
 };
 use clap::{ArgAction, Args};
 
+mod from;
+
 #[derive(Debug, Args)]
 pub(in crate::cli) struct NewArgs {
     path: PathBuf,
+    #[arg(long, conflicts_with = "project_type")]
+    from: Option<PathBuf>,
+    #[command(flatten)]
+    platform: super::artifact::PlatformArgs,
     #[arg(long = "type")]
     project_type: Option<String>,
     #[arg(long)]
@@ -36,6 +42,13 @@ pub(in crate::cli) struct NewArgs {
 
 impl NewArgs {
     pub(super) fn run(&self, base: &Path, localizer: &Localizer) -> ExitCode {
+        if self.from.is_some() {
+            return from::run(self, base, localizer);
+        }
+        if self.platform.is_set() {
+            eprintln!("{}", localizer.text("artifact-from-required"));
+            return ExitCode::from(2);
+        }
         let workspace = match onboarding::find_workspace(base) {
             Ok(workspace) => workspace,
             Err(error) => {
@@ -295,7 +308,8 @@ fn present(error: &CreationError, localizer: &Localizer) -> String {
 }
 
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
+    super::artifact::localize(command, localizer)
+        .mut_arg("from", |arg| arg.help(localizer.text("artifact-from-help")))
         .about(localizer.text("new-about"))
         .override_usage(localizer.text("new-usage"))
         .help_template(format!(

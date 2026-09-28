@@ -58,6 +58,11 @@ impl Template {
         project_type: ProjectType,
     ) -> Result<Self, toml::ser::Error> {
         let config = ProjectConfig::new(project_type).with_name(name);
+        Self::workspace_config(&config)
+    }
+
+    /// Render a member with explicit build overrides supplied during artifact import.
+    pub(crate) fn workspace_config(config: &ProjectConfig) -> Result<Self, toml::ser::Error> {
         let source = config.source().to_path_buf();
         Ok(Self {
             files: vec![

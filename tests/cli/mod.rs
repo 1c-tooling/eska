@@ -1,3 +1,4 @@
+mod artifact;
 mod build;
 mod clean;
 mod clone;

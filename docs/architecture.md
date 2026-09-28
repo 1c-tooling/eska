@@ -31,6 +31,9 @@ src/
 │   │   ├── patch.rs             # eska patch: аргументы, preview и JSON result
 │   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
 │   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
+│   │   ├── new/from.rs          # создание из нативного файла и onboarding workspace
+│   │   ├── artifact.rs          # общая настройка платформы и диагностика импорта
+│   │   ├── import.rs            # выбор проекта, preview, подтверждение и human/JSON
 │   │   ├── diff.rs              # eska diff: аргументы, selection и выбор представления
 │   │   ├── diff/
 │   │   │   ├── analysis.rs     # semantic-анализ выбранных проектов и fallback diagnostics
@@ -54,6 +57,7 @@ src/
 │   │   ├── select.rs            # цикл событий и подтверждение выбора
 │   │   ├── keyboard.rs          # клавиши, модификаторы, fallback раскладки
 │   │   ├── render.rs            # отрисовка, цвета, минимальный размер окна
+│   │   ├── confirm.rs           # inline-подтверждение с видимым preview и отменой
 │   │   └── terminal.rs          # raw mode, alternate screen и восстановление
 │   └── localization/
 │       ├── mod.rs               # интерфейс локализации
@@ -63,6 +67,12 @@ src/
 │   ├── mod.rs                   # интерфейс модели и операций проекта
 │   ├── model.rs                 # Project, типы проекта, инварианты путей
 │   ├── create.rs                # создание нового каталога и откат
+│   ├── artifact/                # изолированная распаковка CF/CFE/EPF/ERF и identity
+│   │   ├── identity.rs          # bounded namespace-aware проверка type/UUID/Name
+│   │   ├── unpack.rs            # native runner, snapshot файла и нормализация XML
+│   │   ├── snapshot.rs          # fingerprint дерева и отказ от ссылок/вложенных проектов
+│   │   ├── replace.rs           # preflight, проверка Git, публикация и восстановление
+│   │   └── staging.rs           # эксклюзивное владение временными каталогами
 │   ├── init.rs                  # обнаружение выгрузки, подключение и откат
 │   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
 │   ├── discovery.rs             # поиск ближайшего проекта и проверка source

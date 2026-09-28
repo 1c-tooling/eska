@@ -6,6 +6,10 @@
 
 ## Текущее состояние
 
+По запросу от 2026-09-28 в `feat/cli` завершена T82: создание и обновление
+проектов из CF/CFE/EPF/ERF. Контракт и состояние — в
+[project creation](02-project-creation.md#t82--создание-и-обновление-из-файлов-1с).
+
 Стадия проекта: **локальный CLI MVP и workspace готовы**. По решению пользователя
 от 2026-09-17 текущий фокус ветки `feat/ide` — подготовка `eska` и первой версии
 VS Code extension для навигации по Designer XML.
@@ -309,6 +313,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T79 | DONE | Фильтр пустых групп и настройка исходного режима | [14-vscode-extension.md](14-vscode-extension.md) |
 | T80 | DONE | Иконки метаданных | [14-vscode-extension.md](14-vscode-extension.md) |
 | T81 | IN-PROGRESS | Производительность интерфейса, приёмка и VSIX | [14-vscode-extension.md](14-vscode-extension.md) |
+| T82 | DONE | Создание и обновление из файлов 1С | [02-project-creation.md](02-project-creation.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в
