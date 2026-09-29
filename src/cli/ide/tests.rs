@@ -89,14 +89,18 @@ fn property_dtos_preserve_all_value_variants() {
             .into_iter()
             .zip(["text", "localized", "record", "unsupported", "unsupported"])
     {
-        let value = dto::property(&LocatedProperty {
-            property: MetadataProperty {
-                key: key.clone(),
-                qualifiers: vec![],
-                value,
+        let value = dto::property(
+            &dto::Labels::new().unwrap(),
+            MetadataKind::Catalog,
+            &LocatedProperty {
+                property: MetadataProperty {
+                    key: key.clone(),
+                    qualifiers: vec![],
+                    value,
+                },
+                range: 3..25,
             },
-            range: 3..25,
-        });
+        );
         assert_eq!(value["value"]["kind"], kind);
         assert_eq!(value["range"], json!({"start":3,"end":25}));
         if kind == "record" {
@@ -104,6 +108,46 @@ fn property_dtos_preserve_all_value_variants() {
             assert_eq!(value["value"]["fields"][0]["qualifiers"][0]["value"], "x");
         }
     }
+}
+
+/// Both captions are additive; nested XML names, unsupported namespaces and raw values survive.
+#[test]
+fn property_dtos_include_contextual_and_nested_captions() {
+    let labels = dto::Labels::new().unwrap();
+    let nested = MetadataProperty {
+        key: PropertyKey {
+            namespace: Some("http://v8.1c.ru/8.1/data/core".into()),
+            name: "NumberQualifiers".into(),
+        },
+        qualifiers: vec![],
+        value: MetadataValue::Text("raw".into()),
+    };
+    let mut value = LocatedProperty {
+        property: MetadataProperty {
+            key: PropertyKey {
+                namespace: Some("http://v8.1c.ru/8.3/MDClasses".into()),
+                name: "Type".into(),
+            },
+            qualifiers: vec![],
+            value: MetadataValue::Record(vec![nested]),
+        },
+        range: 5..30,
+    };
+    let result = dto::property(&labels, MetadataKind::StyleItem, &value);
+    assert_eq!(result["caption"], json!({"ru-RU":"Вид", "en-US":"Type"}));
+    assert_eq!(result["key"]["name"], "Type");
+    assert_eq!(result["range"], json!({"start":5,"end":30}));
+    assert_eq!(
+        result["value"]["fields"][0]["caption"]["en-US"],
+        "Number qualifiers"
+    );
+    assert_eq!(result["value"]["fields"][0]["value"]["text"], "raw");
+    value.property.key.name = "ClientApplicationTheme".into();
+    let result = dto::property(&labels, MetadataKind::Configuration, &value);
+    assert_eq!(result["caption"]["ru-RU"], "Тема клиентского приложения");
+    value.property.key.namespace = Some("urn:future".into());
+    let result = dto::property(&labels, MetadataKind::Configuration, &value);
+    assert!(result.get("caption").is_none());
 }
 
 /// Valid Unicode percent signs stay literal; fallback bytes require complete native encoding.

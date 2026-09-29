@@ -97,25 +97,32 @@ pub(super) fn diagnostic(value: &Diagnostic) -> Value {
 }
 
 /// Preserve property order, namespace-aware keys and UTF-8 byte ranges.
-pub(super) fn property(value: &LocatedProperty) -> Value {
-    let mut result = field(&value.property);
+pub(super) fn property(labels: &Labels, owner: MetadataKind, value: &LocatedProperty) -> Value {
+    let mut result = field(labels, Some(owner), &value.property);
     result["range"] = json!({"start":value.range.start,"end":value.range.end});
     result
 }
 
 /// Nested record fields retain repeats and qualifiers rather than becoming a JSON map.
-fn field(value: &MetadataProperty) -> Value {
+fn field(labels: &Labels, owner: Option<MetadataKind>, value: &MetadataProperty) -> Value {
     let content = match &value.value {
         MetadataValue::Text(text) => json!({"kind":"text","text":text}),
         MetadataValue::Localized(items) => json!({"kind":"localized","items":items}),
         MetadataValue::Record(fields) => {
-            json!({"kind":"record","fields":fields.iter().map(field).collect::<Vec<_>>()})
+            json!({"kind":"record","fields":fields.iter().map(|value| field(labels, None, value)).collect::<Vec<_>>()})
         }
         MetadataValue::Unsupported(issue) => {
             json!({"kind":"unsupported","issue":match issue { ValueIssue::MixedContent => "mixed_content", ValueIssue::InvalidLocalizedText => "invalid_localized_text" }})
         }
     };
-    json!({"key":value.key,"qualifiers":value.qualifiers.iter().map(|(key,value)|json!({"key":key,"value":value})).collect::<Vec<_>>(),"value":content})
+    let mut result = json!({"key":value.key,"qualifiers":value.qualifiers.iter().map(|(key,value)|json!({"key":key,"value":value})).collect::<Vec<_>>(),"value":content});
+    if let (Some(ru), Some(en)) = (
+        labels.ru.property_caption(owner, &value.key),
+        labels.en.property_caption(owner, &value.key),
+    ) {
+        result["caption"] = json!({"ru-RU": ru, "en-US": en});
+    }
+    result
 }
 
 /// Module roles and inline logical addresses stay separate from physical paths.

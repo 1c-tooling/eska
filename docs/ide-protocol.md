@@ -165,10 +165,16 @@ EOF внутри кадра — exit 2. Broken pipe stdout — exit 1, без д
   обратно совместимо: старые клиенты игнорируют неизвестные поля; новые клиенты
   при отсутствии поля у старого backend используют универсальную иконку объекта.
 - `Property = {key:{namespace:string|null,name},qualifiers:[{key,value:string}],
-  value,range:Range}`. value: `{kind:"text",text}`, `{kind:"localized",items:Text[]}`,
-  `{kind:"record",fields:[{key,qualifiers,value},...]}` или
+  value,range:Range,caption?:{"ru-RU":string,"en-US":string}}`. value: `{kind:"text",text}`, `{kind:"localized",items:Text[]}`,
+  `{kind:"record",fields:[{key,qualifiers,value,caption?},...]}` или
   `{kind:"unsupported",issue:"mixed_content"|"invalid_localized_text"}`.
   Порядок и повторы fields сохраняются; отсутствующие запрошенные properties — [].
+  `caption` — дополнительное необязательное поле с обеими локалями; оно не
+  зависит от `initialize.locale`. Каталог учитывает namespace и контекст
+  владельца, неизвестное свойство не получает caption. Клиент использует
+  исходное `key.name` при отсутствии подписи, в том числе со старым backend.
+  Значения и machine-readable ключи не локализуются. Источники, покрытие и
+  версии 8.3.27/8.5.1 описаны в [каталоге платформы](platform-catalog.md).
 
 Generation и eventSequence передаются десятичными строками unsigned u64, чтобы
 JavaScript не округлял большие значения. Они локальны project/session;
