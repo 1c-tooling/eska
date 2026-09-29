@@ -31,6 +31,11 @@ pub enum MetadataValue {
         text: String,
         key: PropertyKey,
     },
+    /// Scalar content with an explicit xsi:type, resolved independently of prefix spelling.
+    TypedText {
+        text: String,
+        key: PropertyKey,
+    },
     Localized(Vec<LocalizedText>),
     /// Ordered fields retain repeated keys (lists) instead of silently deduplicating them.
     Record(Vec<MetadataProperty>),

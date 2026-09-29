@@ -71,6 +71,11 @@ pub(super) fn property(node: Node<'_, '_>, diagnostics: &mut Vec<Diagnostic>) ->
     } else if let Some(text) = simple_text(node) {
         if let Some(key) = type_reference(node, &text) {
             MetadataValue::QualifiedText { text, key }
+        } else if let Some(key) = node
+            .attribute(("http://www.w3.org/2001/XMLSchema-instance", "type"))
+            .and_then(|name| qualified_name(node, name))
+        {
+            MetadataValue::TypedText { text, key }
         } else {
             MetadataValue::Text(text)
         }
@@ -124,6 +129,11 @@ fn type_reference(node: Node<'_, '_>, text: &str) -> Option<PropertyKey> {
     if !node.has_tag_name((CORE_NAMESPACE, "Type")) {
         return None;
     }
+    qualified_name(node, text)
+}
+
+/// Resolve a `QName` at its declaration site, preserving renamed or rebound XML prefixes.
+fn qualified_name(node: Node<'_, '_>, text: &str) -> Option<PropertyKey> {
     let text = text.trim();
     let (prefix, name) = text
         .split_once(':')

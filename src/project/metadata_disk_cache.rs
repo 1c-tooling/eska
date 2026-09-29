@@ -10,8 +10,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-// Qualified type identities must be reparsed instead of reusing pre-caption text values.
-const VERSION: &str = concat!("metadata-4-", env!("CARGO_PKG_VERSION"));
+// Resolved QName content and xsi:type annotations must be reparsed from older text-only caches.
+const VERSION: &str = concat!("metadata-5-", env!("CARGO_PKG_VERSION"));
 const MAX_BYTES: u64 = 64 * 1024 * 1024;
 
 /// Cache failures are observable but never prevent reading source metadata.

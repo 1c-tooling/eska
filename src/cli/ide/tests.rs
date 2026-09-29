@@ -190,6 +190,81 @@ fn property_value_captions_preserve_source_and_wire_shape() {
     );
 }
 
+/// Only known boolean contexts get a checkbox hint; identical user strings stay raw.
+#[test]
+fn boolean_hints_preserve_text_and_respect_xml_context() {
+    let xml = r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"
+        xmlns:r="http://v8.1c.ru/8.3/xcf/readable"
+        xmlns:a="http://v8.1c.ru/8.2/managed-application/core" xmlns:f="urn:foreign">
+        <Catalog uuid="test"><Properties><Name>true</Name><Comment>false</Comment>
+        <Hierarchical>true</Hierarchical><CheckUnique> 0 </CheckUnique><QuickChoice>false</QuickChoice>
+        <f:Hierarchical>true</f:Hierarchical><Unknown>true</Unknown><ReadOnly>invalid</ReadOnly>
+        <StandardAttributes><r:StandardAttribute name="Code"><r:MultiLine>false</r:MultiLine>
+        <r:Name>true</r:Name></r:StandardAttribute></StandardAttributes>
+        <UsedMobileApplicationFunctionalities><a:functionality><a:functionality>Biometrics</a:functionality>
+        <a:use>1</a:use></a:functionality></UsedMobileApplicationFunctionalities>
+        </Properties></Catalog></MetaDataObject>"#;
+    let parsed = parse(xml, None, PropertiesMode::All).unwrap();
+    let labels = dto::Labels::new().unwrap();
+    let properties = parsed.objects[0].properties.as_ref().unwrap();
+    let values: Vec<_> = properties
+        .iter()
+        .map(|value| dto::property(&labels, MetadataKind::Catalog, value)["value"].clone())
+        .collect();
+    for index in [0, 1, 5, 6, 7] {
+        assert!(
+            values[index].get("scalarType").is_none(),
+            "{}",
+            values[index]
+        );
+    }
+    for index in [2, 3, 4] {
+        assert_eq!(values[index]["scalarType"], "boolean");
+    }
+    assert_eq!(values[3]["text"], " 0 ");
+    let nested = &values[8]["fields"][0]["value"]["fields"];
+    assert_eq!(nested[0]["value"]["scalarType"], "boolean");
+    assert!(nested[1]["value"].get("scalarType").is_none());
+    assert_eq!(
+        values[9]["fields"][0]["value"]["fields"][1]["value"]["scalarType"],
+        "boolean"
+    );
+    // QuickChoice is a boolean for a catalog but an enum for an attribute.
+    assert!(
+        dto::property(&labels, MetadataKind::Attribute, &properties[4])["value"]
+            .get("scalarType")
+            .is_none()
+    );
+}
+
+/// Filling values can be boolean or text despite having identical XML content.
+#[test]
+fn explicit_boolean_annotations_are_namespace_aware() {
+    let xml = r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"
+        xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://www.w3.org/2001/XMLSchema">
+        <Catalog uuid="test"><Properties><Name>Values</Name><FillValue i:type="s:boolean">false</FillValue>
+        <FillValue i:type="s:string">false</FillValue><FillValue i:type="s:boolean" xmlns:s="urn:custom">false</FillValue>
+        <Hierarchical i:type="s:string">true</Hierarchical><Mask>false</Mask>
+        </Properties></Catalog></MetaDataObject>"#;
+    let parsed = parse(xml, None, PropertiesMode::All).unwrap();
+    let labels = dto::Labels::new().unwrap();
+    for (index, value) in parsed.objects[0]
+        .properties
+        .as_ref()
+        .unwrap()
+        .iter()
+        .enumerate()
+    {
+        let result = dto::property(&labels, MetadataKind::Catalog, value);
+        assert_eq!(result["value"]["kind"], "text");
+        assert_eq!(result["value"].get("scalarType").is_some(), index == 1);
+        assert_eq!(
+            result["value"]["text"],
+            ["Values", "false", "false", "false", "true", "false"][index]
+        );
+    }
+}
+
 /// Valid Unicode percent signs stay literal; fallback bytes require complete native encoding.
 #[test]
 fn path_dtos_decode_reversibly() {

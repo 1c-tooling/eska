@@ -118,7 +118,9 @@ fn field<'a>(
     value: &'a MetadataProperty,
 ) -> Value {
     let mut content = match &value.value {
-        MetadataValue::Text(text) | MetadataValue::QualifiedText { text, .. } => {
+        MetadataValue::Text(text)
+        | MetadataValue::QualifiedText { text, .. }
+        | MetadataValue::TypedText { text, .. } => {
             json!({"kind":"text","text":text})
         }
         MetadataValue::Localized(items) => json!({"kind":"localized","items":items}),
@@ -136,7 +138,7 @@ fn field<'a>(
         }
     };
     let value_caption = match &value.value {
-        MetadataValue::Text(text) => translations(
+        MetadataValue::Text(text) | MetadataValue::TypedText { text, .. } => translations(
             labels
                 .ru
                 .property_value_caption(owner, root, path, &value.key, text),
@@ -151,6 +153,9 @@ fn field<'a>(
     };
     if let Some(caption) = value_caption {
         content["caption"] = caption;
+    }
+    if super::property_types::is_boolean_value(owner, root, path, value) {
+        content["scalarType"] = json!("boolean");
     }
     let qualifiers: Vec<_> = value
         .qualifiers
