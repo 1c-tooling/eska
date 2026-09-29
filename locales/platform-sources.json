@@ -38,5 +38,20 @@
     "bundle": "com._1c.g5.v8.dt.platform_v8.5.1",
     "file": "com._1c.g5.v8.dt.platform_v8.5.1_1.0.100.v202603261442.jar",
     "sha256": "d2aa4843e776c12624e4d157360e7e82a92dabfbfa5fddd49d274bfed07e8988"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.form.ui",
+    "file": "com._1c.g5.v8.dt.form.ui_23.0.2.v202605050943.jar",
+    "sha256": "c207115b37e749923ae246e7569b81cc05430d2c092e42b13e2781585623c84b"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.form.ui.chart",
+    "file": "com._1c.g5.v8.dt.form.ui.chart_10.0.0.v202605050943.jar",
+    "sha256": "9b484d26041cf979280b7a85ca45d97edeed37aabe8c5ca9e8e5819c576183f8"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.moxel.ui",
+    "file": "com._1c.g5.v8.dt.moxel.ui_17.0.0.v202605050943.jar",
+    "sha256": "8ace5b476a15c275697bc0acbd40309fee7f6086a64a0b2593583b6b4e0cef03"
   }
 ]

@@ -26,6 +26,11 @@ pub struct LocalizedText {
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Eq, PartialEq)]
 pub enum MetadataValue {
     Text(String),
+    /// An XML type reference with its original spelling and resolved namespace identity.
+    QualifiedText {
+        text: String,
+        key: PropertyKey,
+    },
     Localized(Vec<LocalizedText>),
     /// Ordered fields retain repeated keys (lists) instead of silently deduplicating them.
     Record(Vec<MetadataProperty>),

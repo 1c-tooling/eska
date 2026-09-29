@@ -8,6 +8,34 @@ from pathlib import Path
 import subprocess
 from urllib.parse import unquote, urlparse
 import zipfile
+import xml.etree.ElementTree as ET
+
+
+def reference_values(archive, profile):
+    """Read authoritative enum members, metadata events and standard command groups."""
+    result = []
+    prefix = f'resources/v{profile}/'
+    for name in archive.namelist():
+        if not name.startswith(prefix):
+            continue
+        filename = Path(name).name
+        is_enum = filename.startswith('$Enum$') and filename.endswith('.type')
+        is_metadata = (filename.startswith('$') and filename.endswith('$.type')
+                       and any(part in filename for part in ['Object', 'Manager', 'RecordSet']))
+        if not (is_enum or is_metadata or name.endswith('/commandGroups/commandGroups.xml')):
+            continue
+        root = ET.fromstring(archive.read(name))
+        if is_enum:
+            domain, nodes = filename.removeprefix('$Enum$').removesuffix('.type'), root.findall('.//properties')
+        elif is_metadata:
+            domain, nodes = 'MetadataEvent', root.findall('.//events')
+        else:
+            domain, nodes = 'StandardCommandsGroup', list(root)
+        for node in nodes:
+            if node.get('name') and node.get('nameRu'):
+                result.append({'type': domain, 'name': node.get('name'),
+                               'nameRu': node.get('nameRu'), 'source': name})
+    return result
 
 
 def inspect(args):
@@ -36,15 +64,22 @@ def inspect(args):
                 str(Path(__file__).with_name('Inspect.java'))]
     with (output / 'model.json').open('w') as stdout:
         subprocess.run(command, stdout=stdout, check=True)
+    with (output / 'enums.json').open('w') as stdout:
+        subprocess.run(command + ['enums'], stdout=stdout, check=True)
     sources = []
     for name, path in sorted(bundles.items()):
         if name not in ['com._1c.g5.v8.dt.metadata', 'com._1c.g5.v8.dt.mcore',
                         'com._1c.g5.v8.dt.md.export.xml', 'com._1c.g5.v8.dt.md.ui',
                         'com._1c.g5.v8.dt.md.ui.extension', 'com._1c.g5.v8.dt.mcore.ui',
+                        'com._1c.g5.v8.dt.form.ui', 'com._1c.g5.v8.dt.form.ui.chart', 'com._1c.g5.v8.dt.moxel.ui',
                         'com._1c.g5.v8.dt.platform_v8.3.27', 'com._1c.g5.v8.dt.platform_v8.5.1']:
             continue
         sources.append({'bundle': name, 'file': path.name, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()})
         with zipfile.ZipFile(path) as archive:
+            if name.startswith('com._1c.g5.v8.dt.platform_v'):
+                profile = name.removeprefix('com._1c.g5.v8.dt.platform_v')
+                (output / f'reference-{profile}.json').write_text(
+                    json.dumps(reference_values(archive, profile), ensure_ascii=False, indent=2) + '\n')
             for entry in archive.namelist():
                 if entry.startswith('localization/') and 'FeatureNames' in entry and entry.endswith('.properties'):
                     # Known relative file names only; never extract archive paths directly.

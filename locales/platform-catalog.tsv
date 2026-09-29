@@ -431,3 +431,11 @@ platform-property-readable-Use	http://v8.1c.ru/8.3/xcf/readable	Use		8.3.27
 platform-property-readable-Value	http://v8.1c.ru/8.3/xcf/readable	Value		8.3.27
 platform-property-readable-ValueChange	http://v8.1c.ru/8.3/xcf/readable	ValueChange		8.3.27
 platform-property-readable-ValueField	http://v8.1c.ru/8.3/xcf/readable	ValueField		8.3.27
+platform-property-app-permission	http://v8.1c.ru/8.2/managed-application/core	permission		8.3.27
+platform-property-app-permissionMessage	http://v8.1c.ru/8.2/managed-application/core	permissionMessage		8.3.27
+platform-property-app-description	http://v8.1c.ru/8.2/managed-application/core	description		8.3.27
+platform-property-app-mime	http://v8.1c.ru/8.2/managed-application/core	mime		8.3.27
+platform-property-app-uti	http://v8.1c.ru/8.2/managed-application/core	uti		8.3.27
+platform-property-app-ext	http://v8.1c.ru/8.2/managed-application/core	ext		8.3.27
+platform-property-app-processingVariant	http://v8.1c.ru/8.2/managed-application/core	processingVariant		8.3.27
+platform-property-app-isCustom	http://v8.1c.ru/8.2/managed-application/core	isCustom		8.3.27

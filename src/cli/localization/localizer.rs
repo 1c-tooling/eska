@@ -10,11 +10,13 @@ const EN_US_RESOURCES: &[&str] = &[
     include_str!("../../../locales/en-US/main.ftl"),
     include_str!("../../../locales/en-US/platform-8.3.27.ftl"),
     include_str!("../../../locales/en-US/platform-8.5.1.ftl"),
+    include_str!("../../../locales/en-US/platform-values.ftl"),
 ];
 const RU_RU_RESOURCES: &[&str] = &[
     include_str!("../../../locales/ru-RU/main.ftl"),
     include_str!("../../../locales/ru-RU/platform-8.3.27.ftl"),
     include_str!("../../../locales/ru-RU/platform-8.5.1.ftl"),
+    include_str!("../../../locales/ru-RU/platform-values.ftl"),
 ];
 
 /// A value supplied to a parameterized translation.

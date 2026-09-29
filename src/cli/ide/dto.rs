@@ -98,31 +98,88 @@ pub(super) fn diagnostic(value: &Diagnostic) -> Value {
 
 /// Preserve property order, namespace-aware keys and UTF-8 byte ranges.
 pub(super) fn property(labels: &Labels, owner: MetadataKind, value: &LocatedProperty) -> Value {
-    let mut result = field(labels, Some(owner), &value.property);
+    let mut result = field(
+        labels,
+        owner,
+        &value.property.key,
+        &mut Vec::new(),
+        &value.property,
+    );
     result["range"] = json!({"start":value.range.start,"end":value.range.end});
     result
 }
 
 /// Nested record fields retain repeats and qualifiers rather than becoming a JSON map.
-fn field(labels: &Labels, owner: Option<MetadataKind>, value: &MetadataProperty) -> Value {
-    let content = match &value.value {
-        MetadataValue::Text(text) => json!({"kind":"text","text":text}),
+fn field<'a>(
+    labels: &Labels,
+    owner: MetadataKind,
+    root: &crate::project::metadata_model::PropertyKey,
+    path: &mut Vec<&'a crate::project::metadata_model::PropertyKey>,
+    value: &'a MetadataProperty,
+) -> Value {
+    let mut content = match &value.value {
+        MetadataValue::Text(text) | MetadataValue::QualifiedText { text, .. } => {
+            json!({"kind":"text","text":text})
+        }
         MetadataValue::Localized(items) => json!({"kind":"localized","items":items}),
         MetadataValue::Record(fields) => {
-            json!({"kind":"record","fields":fields.iter().map(|value| field(labels, None, value)).collect::<Vec<_>>()})
+            path.push(&value.key);
+            let children: Vec<_> = fields
+                .iter()
+                .map(|value| field(labels, owner, root, path, value))
+                .collect();
+            path.pop();
+            json!({"kind":"record","fields":children})
         }
         MetadataValue::Unsupported(issue) => {
             json!({"kind":"unsupported","issue":match issue { ValueIssue::MixedContent => "mixed_content", ValueIssue::InvalidLocalizedText => "invalid_localized_text" }})
         }
     };
-    let mut result = json!({"key":value.key,"qualifiers":value.qualifiers.iter().map(|(key,value)|json!({"key":key,"value":value})).collect::<Vec<_>>(),"value":content});
-    if let (Some(ru), Some(en)) = (
-        labels.ru.property_caption(owner, &value.key),
-        labels.en.property_caption(owner, &value.key),
+    let value_caption = match &value.value {
+        MetadataValue::Text(text) => translations(
+            labels
+                .ru
+                .property_value_caption(owner, root, path, &value.key, text),
+            labels
+                .en
+                .property_value_caption(owner, root, path, &value.key, text),
+        ),
+        MetadataValue::QualifiedText { key, .. } => {
+            translations(labels.ru.type_caption(key), labels.en.type_caption(key))
+        }
+        _ => None,
+    };
+    if let Some(caption) = value_caption {
+        content["caption"] = caption;
+    }
+    let qualifiers: Vec<_> = value
+        .qualifiers
+        .iter()
+        .map(|(key, text)| {
+            let mut qualifier = json!({"key":key,"value":text});
+            if let Some(caption) = translations(
+                labels.ru.qualifier_caption(&value.key, key, text),
+                labels.en.qualifier_caption(&value.key, key, text),
+            ) {
+                qualifier["caption"] = caption;
+            }
+            qualifier
+        })
+        .collect();
+    let mut result = json!({"key":value.key,"qualifiers":qualifiers,"value":content});
+    let caption_owner = path.is_empty().then_some(owner);
+    if let Some(caption) = translations(
+        labels.ru.property_caption(caption_owner, &value.key),
+        labels.en.property_caption(caption_owner, &value.key),
     ) {
-        result["caption"] = json!({"ru-RU": ru, "en-US": en});
+        result["caption"] = caption;
     }
     result
+}
+
+/// Captions are optional additive metadata and always contain both supported locales.
+fn translations(ru: Option<String>, en: Option<String>) -> Option<Value> {
+    Some(json!({"ru-RU":ru?, "en-US":en?}))
 }
 
 /// Module roles and inline logical addresses stay separate from physical paths.

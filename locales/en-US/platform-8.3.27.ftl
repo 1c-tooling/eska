@@ -1332,3 +1332,27 @@ platform-property-readable-ValueChange = Change mode
 
 # CharacteristicsDescription|valueField
 platform-property-readable-ValueField = Field of value
+
+# Reviewed Designer XML structural field
+platform-property-app-permission = Permission
+
+# Reviewed Designer XML structural field
+platform-property-app-permissionMessage = Permission explanation
+
+# Reviewed Designer XML structural field
+platform-property-app-description = Description
+
+# Reviewed Designer XML structural field
+platform-property-app-mime = MIME type
+
+# Reviewed Designer XML structural field
+platform-property-app-uti = UTI type
+
+# Reviewed Designer XML structural field
+platform-property-app-ext = File extension
+
+# Reviewed Designer XML structural field
+platform-property-app-processingVariant = Processing variant
+
+# Reviewed Designer XML structural field
+platform-property-app-isCustom = Custom type

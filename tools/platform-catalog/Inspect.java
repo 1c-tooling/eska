@@ -31,6 +31,17 @@ class Inspect extends MetadataObjectWriter {
         var output = new ArrayList<Object>();
         var classifiers = new ArrayList<EClassifier>(MdClassPackage.eINSTANCE.getEClassifiers());
         classifiers.addAll(com._1c.g5.v8.dt.mcore.McorePackage.eINSTANCE.getEClassifiers());
+        classifiers.addAll(com._1c.g5.v8.dt.metadata.common.CommonPackage.eINSTANCE.getEClassifiers());
+        if (args.length > 0 && args[0].equals("enums")) {
+            for (var classifier : classifiers) {
+                if (classifier instanceof EEnum type) {
+                    output.add(Map.of("enum", type.getName(), "values", type.getELiterals().stream()
+                        .map(value -> Map.of("name", value.getName(), "literal", value.getLiteral())).toList()));
+                }
+            }
+            System.out.println(new GsonBuilder().setPrettyPrinting().create().toJson(output));
+            return;
+        }
         for (var classifier : classifiers) {
             if (!(classifier instanceof EClass cls) || cls.isAbstract() || cls.isInterface()) continue;
             var properties = order.getProperties(cls, new Context(Version.V8_5_1));

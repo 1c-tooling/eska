@@ -6,7 +6,7 @@ use crate::project::{
         CollectionKind, LocalizedText, MetadataKind, MetadataObject, MetadataProperty,
         MetadataValue, ModuleRole, NodeId, PropertyKey, ValueIssue,
     },
-    metadata_parser::LocatedProperty,
+    metadata_parser::{LocatedProperty, PropertiesMode, parse},
 };
 use serde_json::json;
 
@@ -148,6 +148,46 @@ fn property_dtos_include_contextual_and_nested_captions() {
     value.property.key.namespace = Some("urn:future".into());
     let result = dto::property(&labels, MetadataKind::Configuration, &value);
     assert!(result.get("caption").is_none());
+}
+
+/// Captions are additive for enums, standard identities and namespace-resolved type names.
+#[test]
+fn property_value_captions_preserve_source_and_wire_shape() {
+    let xml = r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"
+        xmlns:r="http://v8.1c.ru/8.3/xcf/readable" xmlns:c="http://v8.1c.ru/8.1/data/core"
+        xmlns:s="http://www.w3.org/2001/XMLSchema"><Configuration uuid="test"><Properties>
+        <Name>Demo</Name><CompatibilityMode>Version8_3_27</CompatibilityMode>
+        <Comment>Version8_3_27</Comment><StandardAttributes><r:StandardAttribute name="Code">
+        <r:Type><c:Type>s:string</c:Type></r:Type></r:StandardAttribute></StandardAttributes>
+        </Properties></Configuration></MetaDataObject>"#;
+    let parsed = parse(xml, None, PropertiesMode::All).unwrap();
+    let labels = dto::Labels::new().unwrap();
+    let properties: Vec<_> = parsed.objects[0]
+        .properties
+        .as_ref()
+        .unwrap()
+        .iter()
+        .map(|value| dto::property(&labels, MetadataKind::Configuration, value))
+        .collect();
+    assert_eq!(
+        properties[1]["value"],
+        json!({"kind":"text","text":"Version8_3_27",
+        "caption":{"ru-RU":"Версия 8.3.27","en-US":"Version 8.3.27"}})
+    );
+    assert_eq!(
+        properties[2]["value"],
+        json!({"kind":"text","text":"Version8_3_27"})
+    );
+    let attribute = &properties[3]["value"]["fields"][0];
+    assert_eq!(attribute["qualifiers"][0]["value"], "Code");
+    assert_eq!(
+        attribute["qualifiers"][0]["caption"],
+        json!({"ru-RU":"Код","en-US":"Code"})
+    );
+    assert_eq!(
+        attribute["value"]["fields"][0]["value"]["fields"][0]["value"],
+        json!({"kind":"text","text":"s:string","caption":{"ru-RU":"Строка","en-US":"String"}})
+    );
 }
 
 /// Valid Unicode percent signs stay literal; fallback bytes require complete native encoding.

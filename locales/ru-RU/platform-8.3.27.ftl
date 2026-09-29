@@ -1332,3 +1332,27 @@ platform-property-readable-ValueChange = Режим изменения связ�
 
 # CharacteristicsDescription|valueField
 platform-property-readable-ValueField = Поле значения
+
+# Reviewed Designer XML structural field
+platform-property-app-permission = Разрешение
+
+# Reviewed Designer XML structural field
+platform-property-app-permissionMessage = Обоснование разрешения
+
+# Reviewed Designer XML structural field
+platform-property-app-description = Описание
+
+# Reviewed Designer XML structural field
+platform-property-app-mime = Тип MIME
+
+# Reviewed Designer XML structural field
+platform-property-app-uti = Тип UTI
+
+# Reviewed Designer XML structural field
+platform-property-app-ext = Расширение файла
+
+# Reviewed Designer XML structural field
+platform-property-app-processingVariant = Вариант обработки
+
+# Reviewed Designer XML structural field
+platform-property-app-isCustom = Пользовательский тип
