@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0](https://github.com/1c-tooling/eska/compare/v0.11.6...v0.12.0) - 2026-09-29
+
+### Added
+
+- *(metadata)* Добавлены переводы значений свойств платформы
+- *(metadata)* Добавлены словари свойств 1С 8.3.27 и 8.5.1
+
+### Fixed
+
+- *(metadata)* Булевы свойства определяются по XML-типу и модели платформы
+
+### Other
+
+- *(roadmap)* Уточнено открытие свойств форм
+- *(roadmap)* Зафиксировано открытие свойств по клику
+
 ## [0.11.6](https://github.com/1c-tooling/eska/compare/v0.11.5...v0.11.6) - 2026-09-28
 
 ### Added
