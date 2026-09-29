@@ -167,10 +167,16 @@ fn metadata_request(
         }
         "metadata/properties" => {
             let id: ObjectId = params::decode(&args["objectId"])?;
+            let owner = project
+                .object(&id)
+                .map_err(|failure| errors::workspace(&failure))?
+                .kind;
             let properties = project
                 .properties(&id)
                 .map_err(|failure| errors::workspace(&failure))?;
-            Ok(json!({"properties":properties.iter().map(dto::property).collect::<Vec<_>>()}))
+            Ok(
+                json!({"properties":properties.iter().map(|property| dto::property(labels, owner, property)).collect::<Vec<_>>()}),
+            )
         }
         "metadata/source" => {
             let id = params::node(&args["node"])?;

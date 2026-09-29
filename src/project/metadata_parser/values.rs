@@ -69,7 +69,16 @@ pub(super) fn property(node: Node<'_, '_>, diagnostics: &mut Vec<Diagnostic>) ->
             MetadataValue::Localized,
         )
     } else if let Some(text) = simple_text(node) {
-        MetadataValue::Text(text)
+        if let Some(key) = type_reference(node, &text) {
+            MetadataValue::QualifiedText { text, key }
+        } else if let Some(key) = node
+            .attribute(("http://www.w3.org/2001/XMLSchema-instance", "type"))
+            .and_then(|name| qualified_name(node, name))
+        {
+            MetadataValue::TypedText { text, key }
+        } else {
+            MetadataValue::Text(text)
+        }
     } else if node
         .children()
         .filter(Node::is_text)
@@ -113,4 +122,27 @@ pub(super) fn property(node: Node<'_, '_>, diagnostics: &mut Vec<Diagnostic>) ->
             .collect(),
         value,
     }
+}
+
+/// Resolve only the schema-defined `QName` content of a type description's Type element.
+fn type_reference(node: Node<'_, '_>, text: &str) -> Option<PropertyKey> {
+    if !node.has_tag_name((CORE_NAMESPACE, "Type")) {
+        return None;
+    }
+    qualified_name(node, text)
+}
+
+/// Resolve a `QName` at its declaration site, preserving renamed or rebound XML prefixes.
+fn qualified_name(node: Node<'_, '_>, text: &str) -> Option<PropertyKey> {
+    let text = text.trim();
+    let (prefix, name) = text
+        .split_once(':')
+        .map_or((None, text), |(prefix, name)| (Some(prefix), name));
+    if name.is_empty() || name.contains(':') || text.contains(char::is_whitespace) {
+        return None;
+    }
+    Some(PropertyKey {
+        namespace: Some(node.lookup_namespace_uri(prefix)?.to_owned()),
+        name: name.to_owned(),
+    })
 }

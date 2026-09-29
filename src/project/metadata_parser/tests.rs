@@ -98,6 +98,67 @@ fn properties_keep_values_and_explicitly_mark_unsupported_shapes() {
     assert!(xml[parsed.diagnostics[0].range.clone()].starts_with("<m:Mixed>"));
 }
 
+/// Type presentation uses resolved namespace identities, even with renamed or rebound prefixes.
+#[test]
+fn type_values_retain_text_and_resolve_namespace_identity() {
+    let xml = descriptor(
+        r#"<m:Catalog uuid="id"><m:Properties><m:Name>Types</m:Name><m:Type xmlns:s="http://www.w3.org/2001/XMLSchema"><v:Type>s:string</v:Type><v:Type xmlns:s="urn:custom">s:string</v:Type></m:Type><m:Comment>s:string</m:Comment></m:Properties></m:Catalog>"#,
+    );
+    let parsed = parse(&xml, None, PropertiesMode::All).unwrap();
+    let properties = parsed.objects[0].properties.as_ref().unwrap();
+    let MetadataValue::Record(fields) = &properties[1].property.value else {
+        panic!("record");
+    };
+    for (field, namespace) in fields
+        .iter()
+        .zip(["http://www.w3.org/2001/XMLSchema", "urn:custom"])
+    {
+        let MetadataValue::QualifiedText { text, key } = &field.value else {
+            panic!("qualified text");
+        };
+        assert_eq!(text, "s:string");
+        assert_eq!(key.namespace.as_deref(), Some(namespace));
+        assert_eq!(key.name, "string");
+    }
+    assert_eq!(
+        properties[2].property.value,
+        MetadataValue::Text("s:string".into())
+    );
+}
+
+/// Explicit scalar types preserve content and resolve `QName` annotations, not value spelling.
+#[test]
+fn scalar_annotations_resolve_the_type_namespace() {
+    let xml = descriptor(
+        r#"<m:Catalog uuid="id"><m:Properties><m:Name>Values</m:Name>
+        <m:Values xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://www.w3.org/2001/XMLSchema">
+        <m:Value i:type="s:boolean"> false </m:Value>
+        <m:Value i:type="s:boolean" xmlns:s="urn:custom">true</m:Value>
+        <m:Value i:type="s:string">false</m:Value>
+        <m:Value i:type="missing:boolean">true</m:Value>
+        </m:Values></m:Properties></m:Catalog>"#,
+    );
+    let parsed = parse(&xml, None, PropertiesMode::All).unwrap();
+    let properties = parsed.objects[0].properties.as_ref().unwrap();
+    let MetadataValue::Record(fields) = &properties[1].property.value else {
+        panic!("record");
+    };
+    for (field, (namespace, name, expected)) in fields.iter().zip([
+        ("http://www.w3.org/2001/XMLSchema", "boolean", " false "),
+        ("urn:custom", "boolean", "true"),
+        ("http://www.w3.org/2001/XMLSchema", "string", "false"),
+    ]) {
+        let MetadataValue::TypedText { text, key } = &field.value else {
+            panic!("typed text");
+        };
+        assert_eq!(key.namespace.as_deref(), Some(namespace));
+        assert_eq!(key.name, name);
+        assert_eq!(text, expected);
+        assert_eq!(field.qualifiers.len(), 1);
+    }
+    assert_eq!(fields[3].value, MetadataValue::Text("true".into()));
+}
+
 /// A bad child does not hide valid siblings or masquerade as an empty successful branch.
 #[test]
 fn local_errors_retain_supported_siblings() {

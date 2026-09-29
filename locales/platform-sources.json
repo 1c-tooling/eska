@@ -1,0 +1,57 @@
+[
+  {
+    "bundle": "com._1c.g5.v8.dt.metadata",
+    "file": "com._1c.g5.v8.dt.metadata_18.0.100.v202605050943.jar",
+    "sha256": "7f36f8fcc124f9d9847343f0b92596ff7501cb4c633b4dc699f269073f47e86e"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.mcore",
+    "file": "com._1c.g5.v8.dt.mcore_8.6.0.v202605050943.jar",
+    "sha256": "52d1f99f8920d680146bfd68deb93dc52f907f225d92168af081eaafa7d40ccf"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.md.export.xml",
+    "file": "com._1c.g5.v8.dt.md.export.xml_10.0.101.v202605050943.jar",
+    "sha256": "154528c6bc76cb7c09d098a90b2ebcea0a572121aaf90d92ceaea5b0ebf3cbe2"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.md.ui",
+    "file": "com._1c.g5.v8.dt.md.ui_30.0.1.v202605050943.jar",
+    "sha256": "f2c707d86236bdf59488e0bf97b6d0935a01883de4208fbf90d6daa1fc78e0e6"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.md.ui.extension",
+    "file": "com._1c.g5.v8.dt.md.ui.extension_5.0.100.v202605050943.jar",
+    "sha256": "bc99e2231b253f7ce48fcd37e25a429aa0f691c9cfdc659720b2881d284604c0"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.mcore.ui",
+    "file": "com._1c.g5.v8.dt.mcore.ui_1.0.2400.v202605050943.jar",
+    "sha256": "42b56e72c2ba87d0bb954e00b4f63e1a937a3306be35e963b8d38dbbc561c045"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.platform_v8.3.27",
+    "file": "com._1c.g5.v8.dt.platform_v8.3.27_1.0.200.v202603261442.jar",
+    "sha256": "9c89cb09364d316b4715db847e2779ef745fe1c4ada525574f74d442f7ea3f2a"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.platform_v8.5.1",
+    "file": "com._1c.g5.v8.dt.platform_v8.5.1_1.0.100.v202603261442.jar",
+    "sha256": "d2aa4843e776c12624e4d157360e7e82a92dabfbfa5fddd49d274bfed07e8988"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.form.ui",
+    "file": "com._1c.g5.v8.dt.form.ui_23.0.2.v202605050943.jar",
+    "sha256": "c207115b37e749923ae246e7569b81cc05430d2c092e42b13e2781585623c84b"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.form.ui.chart",
+    "file": "com._1c.g5.v8.dt.form.ui.chart_10.0.0.v202605050943.jar",
+    "sha256": "9b484d26041cf979280b7a85ca45d97edeed37aabe8c5ca9e8e5819c576183f8"
+  },
+  {
+    "bundle": "com._1c.g5.v8.dt.moxel.ui",
+    "file": "com._1c.g5.v8.dt.moxel.ui_17.0.0.v202605050943.jar",
+    "sha256": "8ace5b476a15c275697bc0acbd40309fee7f6086a64a0b2593583b6b4e0cef03"
+  }
+]

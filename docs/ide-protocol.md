@@ -164,11 +164,24 @@ EOF внутри кадра — exit 2. Broken pipe stdout — exit 1, без д
   модулей null (их тип/роль уже есть в NodeId). Поле добавлено в API 1.0
   обратно совместимо: старые клиенты игнорируют неизвестные поля; новые клиенты
   при отсутствии поля у старого backend используют универсальную иконку объекта.
-- `Property = {key:{namespace:string|null,name},qualifiers:[{key,value:string}],
-  value,range:Range}`. value: `{kind:"text",text}`, `{kind:"localized",items:Text[]}`,
-  `{kind:"record",fields:[{key,qualifiers,value},...]}` или
+- `Property = {key:{namespace:string|null,name},qualifiers:[{key,value:string,caption?}],
+  value,range:Range,caption?:{"ru-RU":string,"en-US":string}}`. value: `{kind:"text",text,caption?,scalarType?:"boolean"}`, `{kind:"localized",items:Text[]}`,
+  `{kind:"record",fields:[{key,qualifiers,value,caption?},...]}` или
   `{kind:"unsupported",issue:"mixed_content"|"invalid_localized_text"}`.
   Порядок и повторы fields сохраняются; отсутствующие запрошенные properties — [].
+  `caption` — дополнительное необязательное поле с обеими локалями; оно не
+  зависит от `initialize.locale`. Каталог учитывает namespace и контекст
+  владельца, неизвестное свойство не получает caption. Клиент использует
+  исходное `key.name` при отсутствии подписи, в том числе со старым backend.
+  Для известных перечислений и встроенных типов `value.caption` имеет ту же
+  форму; `qualifiers[].caption` применяется к стандартным идентификаторам.
+  Исходные `text`, `value`, machine-readable ключи и варианты `kind` не меняются.
+  `value.scalarType = "boolean"` — необязательная подсказка для известных булевых
+  полей платформы. Исходный `text` сохраняется; допустимы `true`, `false`, `1`, `0`
+  с окружающими пробелами. Клиент без подсказки показывает текст: одно лишь
+  совпадение строки с `true` не определяет её тип. Поле не зависит от locale.
+  Подписи учитывают тип поля; пользовательские строки не переводятся. Источники, покрытие и
+  версии 8.3.27/8.5.1 описаны в [каталоге платформы](platform-catalog.md).
 
 Generation и eventSequence передаются десятичными строками unsigned u64, чтобы
 JavaScript не округлял большие значения. Они локальны project/session;

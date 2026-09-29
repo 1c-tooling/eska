@@ -6,8 +6,18 @@ use fluent::{FluentArgs, FluentBundle, FluentResource, FluentValue};
 
 use super::Locale;
 
-const EN_US_RESOURCE: &str = include_str!("../../../locales/en-US/main.ftl");
-const RU_RU_RESOURCE: &str = include_str!("../../../locales/ru-RU/main.ftl");
+const EN_US_RESOURCES: &[&str] = &[
+    include_str!("../../../locales/en-US/main.ftl"),
+    include_str!("../../../locales/en-US/platform-8.3.27.ftl"),
+    include_str!("../../../locales/en-US/platform-8.5.1.ftl"),
+    include_str!("../../../locales/en-US/platform-values.ftl"),
+];
+const RU_RU_RESOURCES: &[&str] = &[
+    include_str!("../../../locales/ru-RU/main.ftl"),
+    include_str!("../../../locales/ru-RU/platform-8.3.27.ftl"),
+    include_str!("../../../locales/ru-RU/platform-8.5.1.ftl"),
+    include_str!("../../../locales/ru-RU/platform-values.ftl"),
+];
 
 /// A value supplied to a parameterized translation.
 #[derive(Clone, Copy, Debug)]
@@ -30,16 +40,10 @@ impl Localizer {
     /// This can fail only if an embedded resource or its canonical locale identifier
     /// is invalid. Tests validate both resources so installation needs no external files.
     pub fn try_new(locale: Locale) -> Result<Self, LocalizationError> {
-        let source = match locale {
-            Locale::RuRu => RU_RU_RESOURCE,
-            Locale::EnUs => EN_US_RESOURCE,
+        let sources = match locale {
+            Locale::RuRu => RU_RU_RESOURCES,
+            Locale::EnUs => EN_US_RESOURCES,
         };
-        let resource = FluentResource::try_new(source.to_owned()).map_err(|(_, errors)| {
-            LocalizationError::new(format!(
-                "invalid embedded {} resource: {errors:?}",
-                locale.as_str()
-            ))
-        })?;
         let language_id = locale.as_str().parse().map_err(|error| {
             LocalizationError::new(format!(
                 "invalid locale identifier {}: {error}",
@@ -47,12 +51,21 @@ impl Localizer {
             ))
         })?;
         let mut bundle = FluentBundle::new(vec![language_id]);
-        bundle.add_resource(resource).map_err(|errors| {
-            LocalizationError::new(format!(
-                "invalid embedded {} bundle: {errors:?}",
-                locale.as_str()
-            ))
-        })?;
+        for source in sources {
+            let resource =
+                FluentResource::try_new((*source).to_owned()).map_err(|(_, errors)| {
+                    LocalizationError::new(format!(
+                        "invalid embedded {} resource: {errors:?}",
+                        locale.as_str()
+                    ))
+                })?;
+            bundle.add_resource(resource).map_err(|errors| {
+                LocalizationError::new(format!(
+                    "invalid embedded {} bundle: {errors:?}",
+                    locale.as_str()
+                ))
+            })?;
+        }
 
         Ok(Self { locale, bundle })
     }
@@ -67,6 +80,12 @@ impl Localizer {
     #[must_use]
     pub fn text(&self, key: &str) -> String {
         self.format(key, &[])
+    }
+
+    /// Resolve an open-ended catalog key without treating future platform fields as errors.
+    pub(super) fn optional_text(&self, key: &str) -> Option<String> {
+        self.bundle.get_message(key)?.value()?;
+        Some(self.text(key))
     }
 
     /// Resolves a translation with named parameters.
@@ -137,7 +156,9 @@ mod tests {
             keys
         }
 
-        assert_eq!(keys(EN_US_RESOURCE), keys(RU_RU_RESOURCE));
+        for (en, ru) in EN_US_RESOURCES.iter().zip(RU_RU_RESOURCES) {
+            assert_eq!(keys(en), keys(ru));
+        }
         assert!(Localizer::try_new(Locale::EnUs).is_ok());
         assert!(Localizer::try_new(Locale::RuRu).is_ok());
     }
