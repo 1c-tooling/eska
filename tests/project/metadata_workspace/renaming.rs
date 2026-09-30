@@ -212,3 +212,60 @@ fn preview_rename_reports_large_text_without_discarding_the_remaining_plan() {
     );
     assert!(plan.files.iter().any(|file| !file.replacements.is_empty()));
 }
+
+/// Register field kinds share one namespace, while fields of unrelated owners remain independent.
+#[test]
+fn rename_checks_cross_kind_register_names() {
+    let (directory, workspace) = rename_fixture();
+    drop(workspace);
+    let root = directory.0.join("src/Configuration.xml");
+    let input = fs::read_to_string(&root).unwrap().replace(
+        "</ChildObjects>",
+        "<InformationRegister>Регистр</InformationRegister></ChildObjects>",
+    );
+    fs::write(root, input).unwrap();
+    let folder = directory.0.join("src/InformationRegisters");
+    fs::create_dir_all(&folder).unwrap();
+    fs::write(folder.join("Регистр.xml"), r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><InformationRegister uuid="register"><Properties><Name>Регистр</Name></Properties><ChildObjects><Dimension uuid="dimension"><Properties><Name>Измерение</Name></Properties></Dimension><Resource uuid="resource"><Properties><Name>Ресурс</Name></Properties></Resource><Attribute uuid="attribute"><Properties><Name>Реквизит</Name></Properties></Attribute></ChildObjects></InformationRegister></MetaDataObject>"#).unwrap();
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let owner = object(MetadataKind::InformationRegister, "Регистр", None);
+    for (kind, name) in [
+        (MetadataKind::Dimension, "Измерение"),
+        (MetadataKind::Resource, "Ресурс"),
+        (MetadataKind::Attribute, "Реквизит"),
+    ] {
+        for destination in ["измерение", "ресурс", "реквизит"] {
+            if name.to_lowercase() == destination {
+                continue;
+            }
+            let id = object(kind, name, Some(owner.clone()));
+            assert!(
+                matches!(
+                    project.preview_rename(&id, destination),
+                    Err(RenameError::Collision(_))
+                ),
+                "{name} -> {destination}"
+            );
+        }
+    }
+}
+
+/// A missed watcher event must not allow a cached root to hide a newly declared collision.
+#[test]
+fn rename_preview_rereads_declarations_before_checking_collisions() {
+    let (directory, mut workspace) = rename_fixture();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let id = object(MetadataKind::Catalog, "Контрагенты", None);
+    project.preview_rename(&id, "Партнеры").unwrap();
+    let root = directory.0.join("src/Configuration.xml");
+    let input = fs::read_to_string(&root).unwrap().replace(
+        "</ChildObjects>",
+        "<Catalog>Партнеры</Catalog></ChildObjects>",
+    );
+    fs::write(root, input).unwrap();
+    assert!(matches!(
+        project.preview_rename(&id, "партнеры"),
+        Err(RenameError::Collision(_))
+    ));
+}

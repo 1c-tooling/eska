@@ -125,3 +125,22 @@ fn common_module_binding_uses_descriptor_global_flag() {
             .is_empty()
     );
 }
+
+/// An already proven call cannot keep its binding when the new module name is a local variable.
+#[test]
+fn renamed_module_destination_shadow_is_a_blocking_plan_issue() {
+    let (_directory, mut workspace, module) = code_fixture();
+    fs::write(
+        module,
+        "Procedure Run(Сервис)\r\n ОбщийМодуль.Выполнить();\r\nEndProcedure",
+    )
+    .unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let id = object(MetadataKind::CommonModule, "ОбщийМодуль", None);
+    let plan = project.preview_rename(&id, "Сервис").unwrap();
+    assert!(
+        plan.issues
+            .iter()
+            .any(|item| item.reason == "bsl_destination_shadowed")
+    );
+}

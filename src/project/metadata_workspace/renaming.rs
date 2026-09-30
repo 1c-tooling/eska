@@ -54,6 +54,12 @@ impl ProjectSession {
         id: &ObjectId,
         new_name: &str,
     ) -> Result<RenamePlan, RenameError> {
+        let source = self.source.reopen().map_err(WorkspaceError::Source)?;
+        Self::open(source)?.build_rename(id, new_name)
+    }
+
+    /// Resolve from fresh declarations even if the visible tree has not received a file event yet.
+    fn build_rename(&mut self, id: &ObjectId, new_name: &str) -> Result<RenamePlan, RenameError> {
         let context = self.rename_context(id, new_name)?;
         let root = self.project().source().to_path_buf();
         let inventory = Inventory::read(&root, &self.rename_exclusions()).map_err(|source| {
@@ -210,6 +216,16 @@ fn scan_file(
             if plan.new_name != context.old_name {
                 match context.analyze(path, kind, &input, &hex(&hash), environment) {
                     Ok(file) if !file.replacements.is_empty() || !file.uncertain.is_empty() => {
+                        if file
+                            .uncertain
+                            .iter()
+                            .any(|item| item.reason == "bsl_destination_shadowed")
+                        {
+                            plan.issues.push(RenameIssue {
+                                path: path.to_path_buf(),
+                                reason: "bsl_destination_shadowed",
+                            });
+                        }
                         plan.files.push(file);
                     }
                     Ok(_) => (),

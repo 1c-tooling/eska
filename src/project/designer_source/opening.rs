@@ -65,6 +65,22 @@ pub fn open_projects_cached(
         .collect()
 }
 
+impl DesignerSource {
+    /// Reread root identity without reusing cached declarations for a structural mutation.
+    pub(crate) fn reopen(&self) -> Result<Self, SourceError> {
+        let mut stats = SourceIoStats::default();
+        let (descriptor, root) = read_root(&self.project, None, &mut stats)?;
+        Ok(Self {
+            project: self.project.clone(),
+            scope: self.scope.clone(),
+            root,
+            descriptor,
+            disk_cache: None,
+            io_stats: std::cell::Cell::new(stats),
+        })
+    }
+}
+
 /// Find a root descriptor without opening any child directory or assuming an external filename.
 fn read_root(
     project: &Project,

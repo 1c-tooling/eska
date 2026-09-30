@@ -45,7 +45,7 @@ impl ProjectSession {
         if self.objects.values().any(|other| {
             other.id != *id
                 && other.parent == object.parent
-                && other.kind == object.kind
+                && shared_namespace(object.parent.as_ref(), other.kind, object.kind)
                 && same_name(&other.name, new_name)
         }) {
             return Err(RenameError::Collision(new_id));
@@ -150,6 +150,31 @@ impl ProjectSession {
             .collect();
         Ok(ancestry)
     }
+}
+
+/// Register fields share one namespace across dimensions, resources and attributes (EDT validator).
+fn shared_namespace(parent: Option<&ObjectId>, left: MetadataKind, right: MetadataKind) -> bool {
+    if left == right {
+        return true;
+    }
+    let register = parent.is_some_and(|id| {
+        id.as_str().split_once(':').is_some_and(|(kind, _)| {
+            matches!(
+                kind,
+                "accounting-register"
+                    | "accumulation-register"
+                    | "calculation-register"
+                    | "information-register"
+            )
+        })
+    });
+    let field = |kind| {
+        matches!(
+            kind,
+            MetadataKind::Dimension | MetadataKind::Resource | MetadataKind::Attribute
+        )
+    };
+    register && field(left) && field(right)
 }
 
 impl RenameContext {
