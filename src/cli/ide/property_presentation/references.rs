@@ -1,45 +1,37 @@
 //! Explicit reference syntax is interpreted only in schema-defined property contexts.
 
-use super::{MD, Presenter, READABLE, key_is, text};
+use super::{MD, Presenter, READABLE, key_is, reference_context, text};
 use crate::project::{
-    metadata_model::{MetadataKind, MetadataProperty, MetadataValue},
-    metadata_workspace::{ObjectSummary, WorkspaceError},
+    metadata_model::{MetadataKind, MetadataProperty, MetadataValue, PropertyKey},
+    metadata_workspace::ObjectSummary,
 };
 use serde_json::{Value, json};
 
 impl Presenter<'_> {
-    /// Annotated references and known form/template selectors share the same resolver.
-    pub(super) fn reference(&mut self, field: &MetadataProperty) -> Option<Value> {
+    /// Resolve explicit annotations or audited selectors, including their nested fields.
+    pub(super) fn reference(
+        &mut self,
+        field: &MetadataProperty,
+        path: &[&PropertyKey],
+    ) -> Option<Value> {
+        if path.is_empty()
+            && field.key.namespace.as_deref() == Some(MD)
+            && matches!(
+                (self.owner, field.key.name.as_str()),
+                (MetadataKind::EventSubscription, "Handler")
+                    | (MetadataKind::ScheduledJob, "MethodName")
+            )
+        {
+            return self.procedure_reference(text(&field.value)?.trim());
+        }
+        if let MetadataValue::TypedText { key, .. } = &field.value
+            && key_is(key, READABLE, "DesignTimeRef")
+        {
+            return self.design_reference(text(&field.value)?.trim());
+        }
         let explicit = matches!(&field.value, MetadataValue::TypedText { key, .. }
             if key_is(key, READABLE, "MDObjectRef"));
-        let selector = field.key.namespace.as_deref() == Some(MD)
-            && matches!(
-                field.key.name.as_str(),
-                "DefaultChoiceForm"
-                    | "DefaultFolderChoiceForm"
-                    | "DefaultFolderForm"
-                    | "DefaultForm"
-                    | "DefaultListForm"
-                    | "DefaultObjectForm"
-                    | "DefaultRecordForm"
-                    | "DefaultReportForm"
-                    | "DefaultReportSettingsForm"
-                    | "DefaultReportVariantForm"
-                    | "DefaultSettingsForm"
-                    | "DefaultVariantForm"
-                    | "DefaultConstantsForm"
-                    | "DefaultLoadForm"
-                    | "DefaultSaveForm"
-                    | "DefaultSearchForm"
-                    | "DefaultDynamicListSettingsForm"
-                    | "DefaultDataHistoryChangeHistoryForm"
-                    | "DefaultDataHistoryVersionDataForm"
-                    | "DefaultDataHistoryVersionDifferencesForm"
-                    | "DefaultCollaborationSystemUsersChoiceForm"
-                    | "ChoiceForm"
-                    | "MainDataCompositionSchema"
-            );
-        if !explicit && !selector {
+        if !explicit && !reference_context::is_reference(self.owner, &field.key, path) {
             return None;
         }
         let raw = text(&field.value)?.trim();
@@ -48,18 +40,10 @@ impl Presenter<'_> {
                 json!({"kind":"empty", "caption": self.caption("platform-presentation-unset")}),
             );
         }
-        let parts = reference_parts(raw)?;
-        if !explicit
-            && !matches!(
-                parts.last()?.0,
-                MetadataKind::Form
-                    | MetadataKind::CommonForm
-                    | MetadataKind::Template
-                    | MetadataKind::CommonTemplate
-            )
-        {
-            return None;
+        if let Some((owner, name)) = raw.rsplit_once(".StandardAttribute.") {
+            return self.standard_attribute(owner, name);
         }
+        let parts = reference_parts(raw)?;
         self.resolved_reference(raw, &parts)
     }
 
@@ -76,21 +60,19 @@ impl Presenter<'_> {
         let mut result = json!({"kind":"reference", "metadataKind":kind.as_str(),
             "caption":{"ru-RU":name,"en-US":name},
             "category":self.caption(&format!("platform-kind-{}",kind.as_str()))});
-        match self.project.property_reference(parts) {
-            Ok(object) => {
-                result["caption"] =
-                    self.localized(|locale| reference_name(&object, locale.locale().as_str()));
-                result["target"] = json!(object.id.as_str());
-                result["status"] = json!("resolved");
-            }
-            Err(error) => {
-                result["status"] = json!(if matches!(
-                    error,
-                    WorkspaceError::UnknownObject(_) | WorkspaceError::MissingSource(_)
-                ) {
-                    "missing"
-                } else {
-                    "unavailable"
+        let resolved = self.project.property_reference(parts);
+        self.reference_result(&mut result, resolved);
+        if parts.len() > 1 {
+            let parents: Vec<_> = (1..parts.len())
+                .filter_map(|length| self.project.property_reference(&parts[..length]).ok())
+                .collect();
+            if !parents.is_empty() {
+                result["detail"] = self.localized(|locale| {
+                    parents
+                        .iter()
+                        .map(|object| reference_name(object, locale.locale().as_str()))
+                        .collect::<Vec<_>>()
+                        .join(" › ")
                 });
             }
         }
@@ -100,7 +82,7 @@ impl Presenter<'_> {
 }
 
 /// Designer references alternate kind and name; reject partial, oversized or unknown paths.
-fn reference_parts(raw: &str) -> Option<Vec<(MetadataKind, &str)>> {
+pub(super) fn reference_parts(raw: &str) -> Option<Vec<(MetadataKind, &str)>> {
     let tokens: Vec<_> = raw.split('.').collect();
     if tokens.is_empty() || tokens.len() > 64 || !tokens.len().is_multiple_of(2) {
         return None;
@@ -119,7 +101,7 @@ fn reference_parts(raw: &str) -> Option<Vec<(MetadataKind, &str)>> {
 }
 
 /// Follow the selected language, then another nonempty synonym, then the exact object name.
-fn reference_name(object: &ObjectSummary, language: &str) -> String {
+pub(super) fn reference_name(object: &ObjectSummary, language: &str) -> String {
     let base = language.split('-').next().unwrap_or(language);
     object
         .synonyms

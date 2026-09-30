@@ -124,9 +124,16 @@ pub(super) fn property(node: Node<'_, '_>, diagnostics: &mut Vec<Diagnostic>) ->
     }
 }
 
-/// Resolve only the schema-defined `QName` content of a type description's Type element.
+/// Resolve schema-defined type `QNames` at their declaration, including type sets and XDTO fields.
 fn type_reference(node: Node<'_, '_>, text: &str) -> Option<PropertyKey> {
-    if !node.has_tag_name((CORE_NAMESPACE, "Type")) {
+    if !((node.tag_name().namespace() == Some(CORE_NAMESPACE)
+        && matches!(node.tag_name().name(), "Type" | "TypeSet"))
+        || (node.tag_name().namespace() == Some(MD_NAMESPACE)
+            && matches!(
+                node.tag_name().name(),
+                "XDTOValueType" | "XDTOReturningValueType"
+            )))
+    {
         return None;
     }
     qualified_name(node, text)

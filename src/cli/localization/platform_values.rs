@@ -19,6 +19,15 @@ impl Localizer {
         key: &PropertyKey,
         text: &str,
     ) -> Option<String> {
+        if key.namespace.as_deref() == Some(READABLE)
+            && key.name == "Ref"
+            && path.len() == 1
+            && root.namespace.as_deref() == Some(MD)
+            && root.name == "Picture"
+            && let Some(name) = text.strip_prefix("StdPicture.")
+        {
+            return self.optional_text(&format!("platform-picture-{name}"));
+        }
         let domain = if key.namespace.as_deref() == Some("http://v8.1c.ru/8.3/xcf/predef")
             && key.name == "AccountType"
         {
@@ -47,12 +56,29 @@ impl Localizer {
         self.optional_text(&format!("platform-value-{domain}-{token}"))
     }
 
+    /// XML value annotations select a closed enum domain independently of prefix spelling.
+    pub(crate) fn typed_value_caption(&self, key: &PropertyKey, text: &str) -> Option<String> {
+        let domain = match (key.namespace.as_deref()?, key.name.as_str()) {
+            ("http://v8.1c.ru/8.1/data/enterprise", "AccountType") => "AccountType",
+            (APP, "ApplicationUsePurpose") => "ApplicationUsePurpose",
+            _ => return None,
+        };
+        self.enum_caption(domain, text)
+    }
+
     /// Resolve built-in XML type names using namespace URIs, independent of prefix spelling.
     pub(crate) fn type_caption(&self, key: &PropertyKey) -> Option<String> {
         let known = match key.namespace.as_deref()? {
             "http://www.w3.org/2001/XMLSchema" => matches!(
                 key.name.as_str(),
-                "string" | "decimal" | "boolean" | "dateTime" | "base64Binary"
+                "string"
+                    | "decimal"
+                    | "boolean"
+                    | "dateTime"
+                    | "base64Binary"
+                    | "int"
+                    | "integer"
+                    | "date"
             ),
             CORE => matches!(
                 key.name.as_str(),

@@ -2355,3 +2355,10 @@ platform-value-StandardCommandsGroup-NavigationPanelOrdinary = Navigation panel:
 
 # Reviewed platform reference: resources/v8.3.27/commandGroups/commandGroups.xml
 platform-value-StandardCommandsGroup-NavigationPanelSeeAlso = Navigation panel: See also
+
+# XML Schema primitives and standard task attributes found in accounting exports.
+platform-value-PrimitiveType-int = Integer (32-bit)
+platform-value-PrimitiveType-integer = Integer
+platform-value-PrimitiveType-date = Date without time
+platform-value-StandardAttribute-HeadTask = Head task
+platform-value-StandardAttribute-BusinessProcess = Business process

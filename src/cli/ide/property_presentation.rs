@@ -1,5 +1,7 @@
 //! Optional semantic presentation; every original field and annotation stays on the wire.
 
+mod reference_context;
+mod reference_values;
 mod references;
 mod types;
 
@@ -7,7 +9,7 @@ use super::dto::Labels;
 use crate::{
     cli::localization::Localizer,
     project::{
-        metadata_model::{MetadataProperty, MetadataValue, PropertyKey},
+        metadata_model::{MetadataKind, MetadataProperty, MetadataValue, PropertyKey},
         metadata_workspace::ProjectSession,
     },
 };
@@ -24,24 +26,40 @@ const READABLE: &str = "http://v8.1c.ru/8.3/xcf/readable";
 pub(super) struct Presenter<'a> {
     labels: &'a Labels,
     project: &'a mut ProjectSession,
+    owner: MetadataKind,
     references: BTreeMap<String, Value>,
 }
 
 impl<'a> Presenter<'a> {
     /// Memoize only references in this response; project cache still owns source invalidation.
-    pub(super) const fn new(labels: &'a Labels, project: &'a mut ProjectSession) -> Self {
+    pub(super) const fn new(
+        labels: &'a Labels,
+        project: &'a mut ProjectSession,
+        owner: MetadataKind,
+    ) -> Self {
         Self {
             labels,
             project,
+            owner,
             references: BTreeMap::new(),
         }
     }
 
     /// Attach presentation at any depth without replacing raw values or unknown structures.
     pub(super) fn annotate(&mut self, field: &MetadataProperty, wire: &mut Value) {
+        self.annotate_at(field, wire, &mut Vec::new());
+    }
+
+    /// Keep the original property path to distinguish reused XML names.
+    fn annotate_at<'f>(
+        &mut self,
+        field: &'f MetadataProperty,
+        wire: &mut Value,
+        path: &mut Vec<&'f PropertyKey>,
+    ) {
         if let Some(presentation) = self
             .empty(field)
-            .or_else(|| self.reference(field))
+            .or_else(|| self.reference(field, path))
             .or_else(|| self.types(field))
         {
             wire["presentation"] = presentation;
@@ -49,9 +67,11 @@ impl<'a> Presenter<'a> {
         if let MetadataValue::Record(fields) = &field.value
             && let Some(children) = wire["value"]["fields"].as_array_mut()
         {
+            path.push(&field.key);
             for (field, child) in fields.iter().zip(children) {
-                self.annotate(field, child);
+                self.annotate_at(field, child, path);
             }
+            path.pop();
         }
     }
 

@@ -509,8 +509,11 @@ PrimitiveType	ValueTable	ValueTable	platform-value-PrimitiveType-ValueTable
 PrimitiveType	ValueTree	ValueTree	platform-value-PrimitiveType-ValueTree
 PrimitiveType	base64Binary	base64Binary	platform-value-PrimitiveType-base64Binary
 PrimitiveType	boolean	boolean	platform-value-PrimitiveType-boolean
+PrimitiveType	date	date	platform-value-PrimitiveType-date
 PrimitiveType	dateTime	dateTime	platform-value-PrimitiveType-dateTime
 PrimitiveType	decimal	decimal	platform-value-PrimitiveType-decimal
+PrimitiveType	int	int	platform-value-PrimitiveType-int
+PrimitiveType	integer	integer	platform-value-PrimitiveType-integer
 PrimitiveType	string	string	platform-value-PrimitiveType-string
 RealTimePosting	Allow	Allow	platform-value-RealTimePosting-Allow
 RealTimePosting	Deny	Deny	platform-value-RealTimePosting-Deny
@@ -633,6 +636,7 @@ StandardAttribute	Active	Active	platform-value-StandardAttribute-Active
 StandardAttribute	BasePeriod	BasePeriod	platform-value-StandardAttribute-BasePeriod
 StandardAttribute	BasePeriodBegin	BasePeriodBegin	platform-value-StandardAttribute-BasePeriodBegin
 StandardAttribute	BasePeriodEnd	BasePeriodEnd	platform-value-StandardAttribute-BasePeriodEnd
+StandardAttribute	BusinessProcess	BusinessProcess	platform-value-StandardAttribute-BusinessProcess
 StandardAttribute	CalculationType	CalculationType	platform-value-StandardAttribute-CalculationType
 StandardAttribute	Code	Code	platform-value-StandardAttribute-Code
 StandardAttribute	Currency	Currency	platform-value-StandardAttribute-Currency
@@ -641,6 +645,7 @@ StandardAttribute	CurrencyDr	CurrencyDr	platform-value-StandardAttribute-Currenc
 StandardAttribute	Date	Date	platform-value-StandardAttribute-Date
 StandardAttribute	DeletionMark	DeletionMark	platform-value-StandardAttribute-DeletionMark
 StandardAttribute	Description	Description	platform-value-StandardAttribute-Description
+StandardAttribute	HeadTask	HeadTask	platform-value-StandardAttribute-HeadTask
 StandardAttribute	IsFolder	IsFolder	platform-value-StandardAttribute-IsFolder
 StandardAttribute	LineNumber	LineNumber	platform-value-StandardAttribute-LineNumber
 StandardAttribute	Number	Number	platform-value-StandardAttribute-Number

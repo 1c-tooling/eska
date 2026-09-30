@@ -29,7 +29,7 @@ impl Presenter<'_> {
             if !child.qualifiers.is_empty() {
                 return None;
             }
-            if key_is(&child.key, CORE, "Type") {
+            if key_is(&child.key, CORE, "Type") || key_is(&child.key, CORE, "TypeSet") {
                 let MetadataValue::QualifiedText { key, .. } = &child.value else {
                     return None;
                 };
@@ -75,6 +75,9 @@ impl Presenter<'_> {
         if key.namespace.as_deref() != Some(CFG) {
             return None;
         }
+        if !key.name.contains('.') {
+            return self.type_set(&key.name);
+        }
         let (prefix, name) = key.name.split_once('.')?;
         if name.is_empty() || name.contains('.') || name.chars().any(char::is_whitespace) {
             return None;
@@ -105,6 +108,21 @@ impl Presenter<'_> {
             });
         }
         Some(reference)
+    }
+
+    /// Generic type sets describe a family; they are not a link to one arbitrary object.
+    fn type_set(&self, name: &str) -> Option<Value> {
+        if matches!(name, "AnyRef" | "AnyIBRef") {
+            return Some(json!({"caption": self.caption(&format!("platform-type-set-{name}"))}));
+        }
+        let (tag, role) = generated_type(name)?;
+        if !matches!(role, Some("reference" | "object")) {
+            return None;
+        }
+        Some(
+            json!({"caption":self.caption(&format!("platform-type-set-{tag}")),
+            "category":self.caption(&format!("platform-type-role-{}", role?))}),
+        )
     }
 
     /// Keep every supported constraint beside its primitive type in the original order.
@@ -175,6 +193,15 @@ fn qualifier_primitive(field: &MetadataProperty) -> Option<&'static str> {
 
 /// Generated type families differ from metadata kinds; only audited platform names are mapped.
 fn generated_type(prefix: &str) -> Option<(&str, Option<&str>)> {
+    if prefix == "ConstantValueManager" {
+        return Some(("Constant", Some("value-manager")));
+    }
+    if prefix == "BusinessProcessRoutePointRef" {
+        return Some(("BusinessProcess", Some("route-point-reference")));
+    }
+    if prefix == "Characteristic" {
+        return Some(("ChartOfCharacteristicTypes", Some("characteristic")));
+    }
     if prefix == "DefinedType" {
         return Some(("DefinedType", None));
     }

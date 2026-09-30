@@ -209,7 +209,7 @@ fn properties(
     let properties = project
         .properties(&id)
         .map_err(|failure| errors::workspace(&failure))?;
-    let mut presentation = super::property_presentation::Presenter::new(labels, project);
+    let mut presentation = super::property_presentation::Presenter::new(labels, project, owner);
     let values: Vec<_> = properties
         .iter()
         .map(|property| {

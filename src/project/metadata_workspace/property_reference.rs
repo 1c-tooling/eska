@@ -38,3 +38,39 @@ impl ProjectSession {
         Ok(summary)
     }
 }
+
+impl ProjectSession {
+    /// Resolve a design-time value by its globally named item within one predefined payload.
+    ///
+    /// # Errors
+    /// Rejects missing or ambiguous names and uses the usual bounded parser and containment checks.
+    pub fn predefined_reference(
+        &mut self,
+        owner: &ObjectId,
+        name: &str,
+    ) -> Result<ObjectSummary, WorkspaceError> {
+        use crate::project::metadata_model::CollectionKind;
+        self.children(&NodeId::Object(owner.clone()), TreeOptions::default())?;
+        let collection = NodeId::Collection {
+            owner: owner.clone(),
+            kind: CollectionKind::Metadata(MetadataKind::PredefinedItem),
+        };
+        self.children(&collection, TreeOptions::default())?;
+        let parsed = self.load_predefined(owner, PropertiesMode::Summary)?;
+        let mut found = parsed
+            .objects
+            .iter()
+            .filter(|item| item.metadata.name() == name);
+        let item = found.next().ok_or_else(|| {
+            WorkspaceError::UnknownObject(ObjectId::from_parts(
+                Some(owner),
+                MetadataKind::PredefinedItem.as_str(),
+                name,
+            ))
+        })?;
+        if found.next().is_some() {
+            return Err(WorkspaceError::BrokenAncestry(collection));
+        }
+        Ok(self.object(item.metadata.id())?.clone())
+    }
+}

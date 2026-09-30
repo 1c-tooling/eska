@@ -1356,3 +1356,7 @@ platform-property-app-processingVariant = Вариант обработки
 
 # Reviewed Designer XML structural field
 platform-property-app-isCustom = Пользовательский тип
+
+# Nested picture and border fields verified in accounting Designer XML.
+platform-property-readable-TransparentPixel = Цвет прозрачного пикселя
+platform-property-ui-style = Стиль
