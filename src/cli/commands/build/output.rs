@@ -1,7 +1,6 @@
 //! Build previews, streamed diagnostics and result presentation.
 
 use std::{
-    fmt::Write as _,
     io::{self, IsTerminal, Write as _},
     path::Path,
     process::ExitCode,
@@ -13,6 +12,7 @@ use crate::{
     cli::{
         changes,
         localization::{LocalizationValue, Localizer},
+        path_output::{self, display_path},
     },
     project::{
         Project,
@@ -26,7 +26,9 @@ use super::{
     json::{BuildDocument, BuildPlanDocument},
 };
 
-use crate::cli::process_output::{self, decorate_status, progress::ProgressLine};
+use crate::cli::process_output::{
+    self, decorate_status, progress::ProgressLine, result_styling_enabled,
+};
 
 /// Present a fully preflighted plan without starting any build stage.
 pub(super) fn write_build_preview(
@@ -283,11 +285,6 @@ fn existing_source_path<'a>(suffix: &'a str, source: &Path) -> Option<(&'a str, 
         })
 }
 
-/// Enable success styling only when its stdout destination is interactive.
-fn result_styling_enabled() -> bool {
-    io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
-}
-
 /// Print the stable build heading before the first tool stage starts.
 pub(super) fn write_build_started(
     version: &str,
@@ -362,51 +359,10 @@ fn render_build_success(
 
 /// Link the artifact label to its parent directory in an interactive terminal.
 fn render_artifact_link(artifact: &Path, hyperlink: bool) -> String {
-    let label = display_path(artifact);
-    let Some(parent) = artifact.parent().filter(|_| hyperlink) else {
-        return label;
-    };
-    let target = file_uri(parent);
-    format!("\x1b]8;;{target}\x1b\\{label}\x1b]8;;\x1b\\")
-}
-
-/// Escape control characters without making a normal filesystem path less readable.
-fn display_path(path: &Path) -> String {
-    let mut display = String::new();
-    for character in path.to_string_lossy().chars() {
-        if character.is_control() {
-            display.extend(character.escape_default());
-        } else {
-            display.push(character);
-        }
-    }
-    display
-}
-
-/// Encode an absolute local directory as a safe file URI for an OSC 8 target.
-fn file_uri(path: &Path) -> String {
-    let normalized = path.to_string_lossy().replace('\\', "/");
-    let prefix = if normalized.starts_with("//") {
-        "file:"
-    } else if normalized.starts_with('/') {
-        "file://"
-    } else {
-        "file:///"
-    };
-    format!("{prefix}{}", percent_encode_uri_path(normalized.as_bytes()))
-}
-
-/// Percent-encode bytes that are not safe inside a hierarchical file URI path.
-fn percent_encode_uri_path(path: &[u8]) -> String {
-    let mut encoded = String::with_capacity(path.len());
-    for byte in path {
-        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/' | b':') {
-            encoded.push(*byte as char);
-        } else {
-            write!(encoded, "%{byte:02X}").expect("writing to String cannot fail");
-        }
-    }
-    encoded
+    artifact.parent().map_or_else(
+        || display_path(artifact),
+        |parent| path_output::render_link(artifact, parent, hyperlink),
+    )
 }
 
 #[cfg(test)]
@@ -445,19 +401,24 @@ mod tests {
     /// Link the visible artifact to its directory and bold only the result label.
     fn build_result_links_to_artifact_directory() {
         let localizer = Localizer::try_new(Locale::RuRu).expect("locale");
-        let artifact = Path::new("/tmp/build dir/demo.cf");
+        let artifact = if cfg!(windows) {
+            Path::new("C:/tmp/build dir/demo.cf")
+        } else {
+            Path::new("/tmp/build dir/demo.cf")
+        };
+        let prefix = if cfg!(windows) { "C:" } else { "" };
+        let uri_prefix = if cfg!(windows) { "C:/" } else { "" };
         assert_eq!(
             render_build_success(artifact, &localizer, true, true),
-            concat!(
-                "\x1b[1;32m✓\x1b[0m \x1b[1mСобран\x1b[0m ",
-                "\x1b]8;;file:///tmp/build%20dir\x1b\\",
-                "/tmp/build dir/demo.cf",
-                "\x1b]8;;\x1b\\"
+            format!(
+                "\x1b[1;32m✓\x1b[0m \x1b[1mСобран\x1b[0m \
+                \x1b]8;;file:///{uri_prefix}tmp/build%20dir\x1b\\\
+                {prefix}/tmp/build dir/demo.cf\x1b]8;;\x1b\\"
             )
         );
         assert_eq!(
             render_build_success(artifact, &localizer, false, false),
-            "✓ Собран /tmp/build dir/demo.cf"
+            format!("✓ Собран {prefix}/tmp/build dir/demo.cf")
         );
     }
 }

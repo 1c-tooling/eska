@@ -861,6 +861,7 @@ artifact-rollback-error = Failed to restore the previous source directory. Its b
 artifact-output-error = Cannot write the import result.
 artifact-backup-retained = Sources updated, but cleanup failed. Remaining backup: { $path }
 artifact-imported = Project sources updated.
+artifact-dry-run-completed = Preview complete. Project sources were not changed.
 artifact-replace-preview = Replace all contents of { $path } ({ $count } existing files), including files absent from the artifact.
 artifact-current = Current object: { $name }; UUID: { $uuid }
 artifact-incoming = Incoming object: { $name }; UUID: { $uuid }

@@ -861,6 +861,7 @@ artifact-rollback-error = Не удалось восстановить преж�
 artifact-output-error = Не удалось записать результат импорта.
 artifact-backup-retained = Исходники обновлены, но очистка не завершена. Остаток прежней выгрузки: { $path }
 artifact-imported = Исходники проекта обновлены.
+artifact-dry-run-completed = Проверка завершена. Исходники проекта не изменены.
 artifact-replace-preview = Полностью заменить содержимое { $path } ({ $count } существующих файлов), включая удаление отсутствующих в файле поставки.
 artifact-current = Текущий объект: { $name }; UUID: { $uuid }
 artifact-incoming = Входящий объект: { $name }; UUID: { $uuid }

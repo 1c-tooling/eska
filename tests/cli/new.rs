@@ -57,6 +57,7 @@ fn workspace_new_creates_src_member_and_updates_manifest_in_both_locales() {
             .output()
             .expect("workspace new");
         let text = success(&output);
+        assert!(text.starts_with("✓ "), "{text}");
         assert!(text.contains(if locale == "ru" {
             "добавлен в members"
         } else {
