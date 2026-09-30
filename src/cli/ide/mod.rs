@@ -1,6 +1,7 @@
 //! Read-only IDE protocol presentation, separate from CLI JSON and the metadata core.
 
-mod dto;
+pub(in crate::cli) mod dto;
+pub(in crate::cli) mod editing;
 mod envelope;
 mod errors;
 mod events;

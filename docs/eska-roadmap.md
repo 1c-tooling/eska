@@ -1186,7 +1186,8 @@ EDT, MCP, AI, собственный BSL LSP и визуальный редак�
 `NEXT` — T79. Декомпозиция backend, поиска и открытых решений —
 [T60–T70, T75](roadmap/13-metadata-and-ide.md), клиента —
 [T76–T81](roadmap/14-vscode-extension.md), закрывающих T41. Существующие
-CLI/JSON contracts сохраняются. T71–T73 остаются отдельным последующим этапом.
+CLI/JSON contracts сохраняются. T71 завершена; первый набор T72–T73 доступен
+через CLI JSON и IDE API 1.6. [Область и оставшиеся проверки](metadata-editing.md).
 
 ---
 

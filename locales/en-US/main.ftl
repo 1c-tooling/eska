@@ -873,3 +873,13 @@ artifact-confirm = Press 1, Enter or Esc to cancel; press 2 to overwrite the cur
 artifact-created = Project created from file: { $path }.
 artifact-import-usage = eska import <FILE> [OPTIONS]
 artifact-file-value = FILE
+
+metadata-about = Inspect and edit existing metadata properties using JSON
+metadata-project-help = Select one workspace project
+metadata-format-help = Machine output format
+metadata-inspect-about = Read properties and their editable schema
+metadata-types-about = List allowed types for an existing field
+metadata-check-about = Validate a property change and preview its byte replacements
+metadata-apply-about = Apply one validated property change
+metadata-object-help = Object ID returned by metadata inspect; defaults to the root object
+metadata-input-help = JSON request file, or - to read stdin

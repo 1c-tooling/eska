@@ -14,6 +14,7 @@ pub mod history;
 pub mod init;
 pub(crate) mod metadata;
 mod metadata_disk_cache;
+pub mod metadata_edit;
 pub mod metadata_model;
 pub mod metadata_parser;
 pub mod metadata_workspace;

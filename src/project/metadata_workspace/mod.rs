@@ -1,6 +1,7 @@
 //! Read-only, manifest-backed metadata sessions; no CLI, platform or watcher.
 
 mod cache;
+mod editing;
 mod property_reference;
 mod refresh;
 pub mod search;
@@ -8,6 +9,7 @@ mod session;
 mod support;
 pub use super::metadata_disk_cache::DiskCacheStats;
 pub use cache::{CacheLimits, CacheStats};
+pub use editing::{EditingSnapshot, PropertyEditError, PropertyTypeChoice};
 pub use refresh::RefreshReport;
 pub use support::{FileReason, FileSupport, ObjectSupport, SupportSnapshot};
 

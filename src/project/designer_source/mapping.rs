@@ -431,7 +431,7 @@ impl DesignerSource {
 }
 
 /// Decode only identifiers constructed by the metadata model; path separators remain invalid names.
-fn decode(id: &ObjectId) -> Result<Vec<LogicalLocation>, SourceError> {
+pub fn decode(id: &ObjectId) -> Result<Vec<LogicalLocation>, SourceError> {
     id.as_str()
         .split('/')
         .map(|part| {

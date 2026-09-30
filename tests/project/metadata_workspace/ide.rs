@@ -165,7 +165,7 @@ fn targeted_support_protocol_is_bounded_and_locale_independent() {
         let mut client = Client::new(locale);
         let initialize = client.initialize(locale);
         assert_eq!(initialize["capabilities"]["supportFiles"], true);
-        assert_eq!(initialize["apiVersion"]["minor"], 5);
+        assert_eq!(initialize["apiVersion"]["minor"], 6);
         let open = client.open(&directory.0);
         let result = client.ok(
             "metadata/supportFiles",
@@ -334,7 +334,7 @@ fn process_envelopes_batches_and_lifecycle() {
     ]));
     let replies = client.receive();
     assert_eq!(replies.as_array().unwrap().len(), 3);
-    assert_eq!(replies[0]["error"]["code"], -32601);
+    assert_eq!(replies[0]["error"]["data"]["kind"], "property_read_only");
     assert_eq!(replies[1]["error"]["code"], -32602);
     assert_eq!(replies[2]["error"]["code"], -32600);
     client.send(&json!([{ "jsonrpc":"2.0","method":"unknown" }]));

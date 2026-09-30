@@ -22,6 +22,11 @@ pub(super) fn is_method(method: &str) -> bool {
     matches!(
         method,
         "metadata/support"
+            | "metadata/propertyEditing"
+            | "metadata/propertyTypeChoices"
+            | "metadata/previewProperty"
+            | "metadata/updateProperty"
+            | "metadata/undoProperty"
             | "metadata/supportFiles"
             | "metadata/root"
             | "metadata/children"
@@ -124,6 +129,12 @@ fn metadata_request(
             .map_err(|failure| errors::workspace(&failure))?;
     }
     match method {
+        "metadata/propertyEditing"
+        | "metadata/propertyTypeChoices"
+        | "metadata/previewProperty" => super::editing::query(labels, project, method, args),
+        "metadata/updateProperty" | "metadata/undoProperty" => {
+            update_property(labels, session, state, project, method, args, events)
+        }
         "metadata/supportFiles" => support_files(project, args),
         "metadata/support" => {
             let offset = match args.get("offset") {
@@ -193,6 +204,56 @@ fn metadata_request(
         "metadata/indexErrors" => index_errors(project, args),
         _ => Err(error(-32601)),
     }
+}
+
+/// Mutations publish an ordered invalidation once; clients must never replay them after a lost reply.
+fn update_property(
+    labels: &dto::Labels,
+    session: &str,
+    state: &mut ProjectState,
+    project: &mut ProjectSession,
+    method: &str,
+    args: &Value,
+    events: &mut Vec<Value>,
+) -> Result<Value, Value> {
+    if state.event == u64::MAX {
+        return Err(domain("generation_exhausted", json!({})));
+    }
+    let id: ObjectId = params::decode(&args["objectId"])?;
+    let generation = project.generation();
+    let result = if method == "metadata/updateProperty" {
+        let request: super::editing::ChangeRequest = params::decode(args)?;
+        project.update_property(&id, &request.snapshot, &request.path, &request.change)
+    } else {
+        let undo = match args["direction"].as_str() {
+            Some("undo") => true,
+            Some("redo") => false,
+            _ => return Err(error(-32602)),
+        };
+        project.undo_property(
+            &id,
+            args["snapshot"].as_str().ok_or_else(|| error(-32602))?,
+            undo,
+        )
+    };
+    if project.generation() != generation {
+        state.refresh = result.is_err();
+        let affected = result
+            .as_ref()
+            .map_or(Value::Null, |report| json!(report.affected));
+        changed(session, state, project, affected, events)?;
+        Server::progress_event(session, state, project, events);
+    }
+    result.map_err(super::editing::failure)?;
+    let committed = |failure: Value| {
+        domain(
+            "property_committed_refresh_required",
+            json!({"cause":failure["data"]}),
+        )
+    };
+    let mut result = properties(labels, project, args).map_err(committed)?;
+    result["editing"] = super::editing::describe(labels, project, &id).map_err(committed)?;
+    Ok(result)
 }
 
 /// Preview data is optional and never turns a readable property sheet into an error.

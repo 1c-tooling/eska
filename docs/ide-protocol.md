@@ -1,9 +1,10 @@
-# IDE protocol 1.0 — принятый контракт T69
+# IDE protocol 1.x — базовый контракт и расширения
 
 Статус: спецификация принята 2026-09-18; реализована команда `eska ide --stdio` (T70).
-Протокол работает поверх T66–T68/T75; исходники, manifest и Git не изменяет.
-Допустима запись производного кеша T68. MCP, LSP, редактирование XML,
-платформа 1С и зависимость от VS Code в этот контракт не входят.
+Базовый режим поверх T66–T68/T75 не изменяет исходники, manifest и Git.
+Допустима запись производного кеша T68. API 1.6 добавляет явное включение записи
+существующих свойств; контракт приведён ниже. MCP, LSP, запуск платформы 1С
+и зависимость от VS Code в протокол не входят.
 
 ## Транспорт и конверт
 
@@ -394,7 +395,8 @@ Domain code = -32000, message = "Request failed", data:
 `{kind,sessionId?:string,projectId?:string,generation?:string,details:object}`.
 message и kind стабильны и не локализуются. details — структурированные данные,
 не Display/Debug Rust errors; paths используют Path DTO. Неподдержанные write
-методы, включая metadata/updateProperty, дают Method not found.
+методы дают Method not found. Для metadata/updateProperty и metadata/undoProperty
+без явного opt-in возвращается property_read_only.
 
 | kind | Источник / детали |
 | --- | --- |
@@ -504,3 +506,29 @@ source-relative путей в стандартном обратимом DTO `Pat
 mtime и поколение дерева не заменяют сверку исходных данных. Результат описывает
 данные на момент запроса; это read-only API, а не блокировка будущей записи на диск.
 Постраничный API 1.2 и остальные контракты сохранены.
+
+
+## Редактирование свойств — API 1.6
+
+Для записи клиент передаёт в `initialize` `apiVersion:{major:1,minor:6}` и
+`allowPropertyEdits:true`. Сервер сообщает `propertyEditing:true,readOnly:false`.
+Без opt-in, включая клиентов 1.0–1.5, остаются `readOnly:true,propertyEditing:false`.
+Разрешение транспорта не отменяет правил поддержки объектов и Workspace Trust.
+
+Методы используют обычные `sessionId`, `projectId`, `generation` и `objectId`:
+
+| Метод | Дополнительные params | Результат |
+| --- | --- | --- |
+| `metadata/propertyEditing` | — | snapshot, source, profile, writable, fields, readOnlyProperties, undo, redo, addRemove:false |
+| `metadata/propertyTypeChoices` | path из fields | choices с key и RU/EN caption |
+| `metadata/previewProperty` | snapshot, path, change | valid, changed, changes — точные замены UTF-8 байтов |
+| `metadata/updateProperty` | snapshot, path, change | обычные properties/picture и новый editing |
+| `metadata/undoProperty` | snapshot, direction:undo\|redo | обычные properties/picture и новый editing |
+
+Форматы path/change и проверки общие с [CLI для ИИ](metadata-editing.md).
+Изменившая файл операция публикует `metadata/changed`, no-op — нет. Ответ и события
+сохраняют generation/eventSequence. Клиент не повторяет write при stale generation,
+таймауте, устаревшем ответе или разрыве соединения: после неопределённого исхода
+нужно перечитать файл. `property_committed_refresh_required` явно отличает запись
+с последующей ошибкой обновления от отказа до записи. История принадлежит session;
+вкладка клиента имеет отдельный lock и сохраняет черновик при внешнем конфликте.

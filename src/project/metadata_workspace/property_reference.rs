@@ -8,6 +8,27 @@ use crate::project::{
 };
 
 impl ProjectSession {
+    /// Resolve an externally supplied logical ID through declared ancestry, without an index scan.
+    ///
+    /// # Errors
+    /// Rejects malformed IDs, undeclared ancestors and missing or invalid descriptors.
+    pub fn reveal_declared_object(
+        &mut self,
+        id: &ObjectId,
+    ) -> Result<ObjectSummary, WorkspaceError> {
+        let parts =
+            crate::project::designer_source::identity_parts(id).map_err(WorkspaceError::Source)?;
+        let references: Vec<_> = parts
+            .iter()
+            .map(|part| (part.kind, part.name.as_str()))
+            .collect();
+        let object = self.property_reference(&references)?;
+        if &object.id != id {
+            return Err(WorkspaceError::UnknownObject(id.clone()));
+        }
+        Ok(object)
+    }
+
     /// Load only the declared ancestors and target of an explicit Designer reference.
     ///
     /// # Errors

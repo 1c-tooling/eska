@@ -14,6 +14,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+mod editing;
+
 /// Copy static fixtures into a uniquely owned playground directory.
 fn copy(source: &Path, target: &Path) {
     fs::create_dir_all(target).unwrap();

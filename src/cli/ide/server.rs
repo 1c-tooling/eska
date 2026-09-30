@@ -32,6 +32,7 @@ pub(super) struct Server {
     pub closing: bool,
     pub session: Option<Session>,
     pub labels: dto::Labels,
+    property_editing: bool,
     serial: u64,
     round_robin: usize,
 }
@@ -44,6 +45,7 @@ impl Server {
             closing: false,
             session: None,
             labels: dto::Labels::new()?,
+            property_editing: false,
             serial: 0,
             round_robin: 0,
         })
@@ -66,7 +68,7 @@ impl Server {
             return Err(error(-32602));
         }
         let optional = match method {
-            "initialize" => &["locale"][..],
+            "initialize" => &["locale", "allowPropertyEdits"][..],
             "workspace/open" => &["diskCache"],
             "metadata/children" => &["hideEmptyRootSections"],
             "metadata/search" => &["limit", "synonymLanguage"],
@@ -75,6 +77,14 @@ impl Server {
             _ => &[],
         };
         params::optional_fields(args, optional)?;
+        if matches!(method, "metadata/updateProperty" | "metadata/undoProperty")
+            && !self.property_editing
+        {
+            return Err(domain(
+                "property_read_only",
+                json!({"reason":"client_read_only"}),
+            ));
+        }
         match method {
             "initialize" => self.initialize(args),
             "workspace/open" => self.open(args),
@@ -118,6 +128,7 @@ impl Server {
             #[serde(rename = "client")]
             _client: Client,
             locale: Option<String>,
+            allow_property_edits: Option<bool>,
         }
         if self.initialized {
             return Err(domain("invalid_state", json!({"state":"initialized"})));
@@ -130,15 +141,17 @@ impl Server {
         {
             return Err(error(-32602));
         }
-        if input.api_version.major != 1 || input.api_version.minor > 5 {
+        if input.api_version.major != 1 || input.api_version.minor > 6 {
             return Err(domain(
                 "unsupported_version",
-                json!({"requested":args["apiVersion"],"supported":{"major":1,"minor":5}}),
+                json!({"requested":args["apiVersion"],"supported":{"major":1,"minor":6}}),
             ));
         }
         self.initialized = true;
+        self.property_editing =
+            input.api_version.minor >= 6 && input.allow_property_edits == Some(true);
         Ok(
-            json!({"apiVersion":{"major":1,"minor":5},"server":{"name":"eska","version":env!("CARGO_PKG_VERSION")},"capabilities":{"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":true,"designerXml":true,"readOnly":true,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
+            json!({"apiVersion":{"major":1,"minor":6},"server":{"name":"eska","version":env!("CARGO_PKG_VERSION")},"capabilities":{"propertyEditing":self.property_editing,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":true,"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
         )
     }
 
