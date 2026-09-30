@@ -27,7 +27,9 @@ pub enum ScalarSchema {
         min: i64,
         max: i64,
     },
-    Decimal,
+    Decimal {
+        nullable: bool,
+    },
     Enum {
         domain: String,
         values: Vec<String>,
@@ -56,7 +58,7 @@ impl ScalarSchema {
             Self::Integer { min, max } => value
                 .parse::<i64>()
                 .is_ok_and(|number| (*min..=*max).contains(&number)),
-            Self::Decimal => decimal(value),
+            Self::Decimal { nullable } => (*nullable && value.is_empty()) || decimal(value),
             Self::Enum { values, .. } => values.iter().any(|candidate| candidate == value),
             Self::DataType { .. } => false,
             Self::Reference {
@@ -75,7 +77,7 @@ impl ScalarSchema {
 }
 
 /// XML Schema decimal has neither exponent notation nor non-finite floating point values.
-fn decimal(value: &str) -> bool {
+pub(super) fn decimal(value: &str) -> bool {
     let unsigned = value.strip_prefix(['+', '-']).unwrap_or(value);
     let mut digits = 0;
     let mut dots = 0;
@@ -182,6 +184,9 @@ pub(super) fn scalar(
     modern: bool,
 ) -> Option<ScalarSchema> {
     let model_type = model_type?;
+    if model_type == "Value" && super::values::number_bound(node) {
+        return Some(ScalarSchema::Decimal { nullable: true });
+    }
     if node.children().any(|child| child.is_element())
         || node
             .attribute((XSI, "nil"))
@@ -235,7 +240,7 @@ pub(super) fn scalar(
                 min: i64::from(i32::MIN),
                 max: i64::from(i32::MAX),
             }),
-            "decimal" => Some(ScalarSchema::Decimal),
+            "decimal" => Some(ScalarSchema::Decimal { nullable: false }),
             _ => None,
         };
     }
@@ -302,7 +307,7 @@ pub(super) fn schema(model_type: &str, modern: bool) -> Option<ScalarSchema> {
             min: i64::MIN,
             max: i64::MAX,
         }),
-        "EBigDecimal" => Some(ScalarSchema::Decimal),
+        "EBigDecimal" => Some(ScalarSchema::Decimal { nullable: false }),
         domain => {
             let values: Vec<_> = include_str!("enums.tsv")
                 .lines()

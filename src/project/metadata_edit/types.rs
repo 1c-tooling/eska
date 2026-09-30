@@ -295,7 +295,10 @@ pub(super) fn validate_numbers(node: Node<'_, '_>) -> Result<(), EditError> {
 }
 
 /// Reuse a visible namespace prefix, or introduce a declaration only on the changed item.
-fn qname(node: Node<'_, '_>, key: &PropertyKey) -> Result<(String, Option<String>), EditError> {
+pub(super) fn qname(
+    node: Node<'_, '_>,
+    key: &PropertyKey,
+) -> Result<(String, Option<String>), EditError> {
     let namespace = key.namespace.as_deref().ok_or(EditError::InvalidValue)?;
     if let Some(prefix) = node.lookup_prefix(namespace) {
         return Ok((format!("{prefix}:{}", key.name), None));

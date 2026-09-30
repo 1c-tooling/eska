@@ -157,6 +157,11 @@ impl EditingDocument<'_> {
                 .ok_or(EditError::UnsupportedValue)?;
         }
         let plan = match change {
+            PropertyChange::Text { value }
+                if matches!(field.schema, ScalarSchema::Decimal { nullable: true }) =>
+            {
+                super::values::replace_bound(self.input, node, value)?
+            }
             PropertyChange::Text { value } => patch::text_plan(self.input, node.range(), value)?,
             PropertyChange::DataType { key } => super::types::replace(self.input, node, key)?,
         };

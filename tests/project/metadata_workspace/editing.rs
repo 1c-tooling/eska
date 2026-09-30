@@ -352,6 +352,60 @@ fn external_objects_choose_their_own_default_forms() {
     }
 }
 
+/// Numeric bounds are nullable values, including the specialized standard-attribute namespace.
+#[test]
+fn numeric_bounds_edit_existing_nil_elements_and_undo_the_exact_source() {
+    let (directory, workspace, _, _, _) = selector_fixture();
+    drop(workspace);
+    let source = directory.0.join("src");
+    let file = source.join("Catalogs/Goods.xml");
+    let original = fs::read_to_string(&file).unwrap().replace("<DefaultObjectForm/>", "<DefaultObjectForm/><StandardAttributes xmlns:xr='http://v8.1c.ru/8.3/xcf/readable' xmlns:s='http://www.w3.org/2001/XMLSchema-instance'><xr:StandardAttribute name='Code'><xr:MinValue s:nil='1'/></xr:StandardAttribute></StandardAttributes>");
+    fs::write(&file, &original).unwrap();
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let id = object(MetadataKind::Catalog, "Goods", None);
+    let editing = project.property_editing(&id).unwrap();
+    let field = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.path.last().unwrap().key.name == "MinValue")
+        .unwrap();
+    for value in ["undefined", "<XML/>", "1.2.3", "1e30"] {
+        assert!(
+            project
+                .update_property(
+                    &id,
+                    &editing.properties.snapshot,
+                    &field.path,
+                    &PropertyChange::Text {
+                        value: value.into()
+                    }
+                )
+                .is_err()
+        );
+        assert_eq!(fs::read_to_string(&file).unwrap(), original);
+    }
+    project
+        .update_property(
+            &id,
+            &editing.properties.snapshot,
+            &field.path,
+            &PropertyChange::Text {
+                value: "12.5".into(),
+            },
+        )
+        .unwrap();
+    let changed = fs::read_to_string(&file).unwrap();
+    assert!(changed.contains(">12.5</xr:MinValue>"));
+    assert!(changed.contains("name='Code'"));
+    let editing = project.property_editing(&id).unwrap();
+    project
+        .undo_property(&id, &editing.properties.snapshot, true)
+        .unwrap();
+    assert_eq!(fs::read_to_string(&file).unwrap(), original);
+}
+
 /// Preserve byte-sensitive formatting in fixtures for every supported project root.
 fn editable_fixture(case: &str) -> (TestDir, MetadataWorkspace, ObjectId, PathBuf) {
     let directory = TestDir::new();

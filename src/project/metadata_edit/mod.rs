@@ -5,6 +5,7 @@ mod patch;
 pub(crate) mod references;
 mod schema;
 pub(crate) mod types;
+mod values;
 mod write;
 
 pub(crate) use document::EditingDocument;

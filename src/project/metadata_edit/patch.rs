@@ -86,7 +86,8 @@ pub(super) fn replacements_plan(
     replacements.retain(|replacement| {
         input.get(replacement.range.clone()) != Some(replacement.text.as_str())
     });
-    replacements.sort_by_key(|replacement| replacement.range.start);
+    // An insertion at an edited range's start belongs before that range, not inside it.
+    replacements.sort_by_key(|replacement| (replacement.range.start, replacement.range.end));
     let mut end = 0;
     for replacement in &replacements {
         if replacement.range.start < end || input.get(replacement.range.clone()).is_none() {
