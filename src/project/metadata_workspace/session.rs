@@ -196,6 +196,18 @@ impl ProjectSession {
             .ok_or_else(|| WorkspaceError::Load(LoadError::ObjectNotFound(id.clone())))
     }
 
+    /// Read the current picture bytes only for common-picture objects, without caching binaries.
+    ///
+    /// # Errors
+    /// Returns an unknown-object error; payload failures are represented inside the preview.
+    pub fn picture_preview(
+        &self,
+        id: &ObjectId,
+    ) -> Result<Option<crate::project::designer_source::PicturePreview>, WorkspaceError> {
+        Ok((self.object(id)?.kind == MetadataKind::CommonPicture)
+            .then(|| self.source.picture_preview(id)))
+    }
+
     /// Return all applicable existing sources; virtual collections intentionally have none.
     ///
     /// Paths are relative to `project().source()`. Module nodes select only their BSL role;

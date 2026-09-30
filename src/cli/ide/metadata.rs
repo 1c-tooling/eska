@@ -165,19 +165,7 @@ fn metadata_request(
                 json!({"object":dto::object(project.object(&id).map_err(|failure|errors::workspace(&failure))?)}),
             )
         }
-        "metadata/properties" => {
-            let id: ObjectId = params::decode(&args["objectId"])?;
-            let owner = project
-                .object(&id)
-                .map_err(|failure| errors::workspace(&failure))?
-                .kind;
-            let properties = project
-                .properties(&id)
-                .map_err(|failure| errors::workspace(&failure))?;
-            Ok(
-                json!({"properties":properties.iter().map(|property| dto::property(labels, owner, property)).collect::<Vec<_>>()}),
-            )
-        }
+        "metadata/properties" => properties(labels, project, args),
         "metadata/source" => {
             let id = params::node(&args["node"])?;
             let sources = project
@@ -204,6 +192,30 @@ fn metadata_request(
         "metadata/indexErrors" => index_errors(project, args),
         _ => Err(error(-32601)),
     }
+}
+
+/// Preview data is optional and never turns a readable property sheet into an error.
+fn properties(
+    labels: &dto::Labels,
+    project: &mut ProjectSession,
+    args: &Value,
+) -> Result<Value, Value> {
+    let id: ObjectId = params::decode(&args["objectId"])?;
+    let owner = project
+        .object(&id)
+        .map_err(|failure| errors::workspace(&failure))?
+        .kind;
+    let properties = project
+        .properties(&id)
+        .map_err(|failure| errors::workspace(&failure))?;
+    let mut result = json!({"properties":properties.iter().map(|property| dto::property(labels, owner, property)).collect::<Vec<_>>()});
+    if let Some(picture) = project
+        .picture_preview(&id)
+        .map_err(|failure| errors::workspace(&failure))?
+    {
+        result["picture"] = dto::picture(picture);
+    }
+    Ok(result)
 }
 
 /// Literal search never schedules indexing implicitly.

@@ -2,6 +2,7 @@
 
 mod mapping;
 mod opening;
+mod picture;
 
 use super::metadata_disk_cache::DiskCache;
 use std::{cell::Cell, io, path::PathBuf};
@@ -17,6 +18,7 @@ use super::{
 pub use mapping::{LogicalLocation, SourceLocation, SourceRole};
 pub use opening::open_projects;
 pub(crate) use opening::open_projects_cached;
+pub use picture::{Picture, PicturePreview};
 
 /// One manifest-backed project and its checked root descriptor, without a full object index.
 #[derive(Debug)]

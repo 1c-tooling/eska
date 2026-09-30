@@ -200,13 +200,32 @@ JavaScript не округлял большие значения. Они лок�
 | `metadata/root` | нет | `node:Node` |
 | `metadata/children` | `node:NodeId,hideEmptyRootSections?:bool` (default true) | `nodes:Node[]` в порядке Конфигуратора |
 | `metadata/get` | `objectId` | `object:Object` из уже открытой навигации |
-| `metadata/properties` | `objectId` | `properties:Property[]` |
+| `metadata/properties` | `objectId` | `properties:Property[],picture?:PicturePreview` |
 | `metadata/source` | `node:NodeId` | `sources:[{path:Path,role,inline:[{metadataKind,name}]}]` |
 | `metadata/search` | `text:string,limit?:1..500,synonymLanguage?:string` | `progress:Progress,hits:Hit[],truncated:bool` |
 | `metadata/reveal` | `objectId` найденного элемента | `ancestry:NodeId[]` |
 | `metadata/refresh` | `node:NodeId` | `affected:ObjectId[]` и новое generation |
 | `metadata/index` | `action:"start"|"cancel"|"resume"|"status"` | `progress:Progress` |
 | `metadata/indexErrors` | `offset?:number,limit?:1..500` | `errors:[{objectId,code,details}],nextOffset:number|null` |
+
+С API 1.4 capability `picturePreview:true` означает, что `metadata/properties`
+добавляет `picture` для `common-picture`. У других типов поле отсутствует.
+`PicturePreview` — `{status:"ready",mimeType:string,data:string,fileName:string}`
+или `{status:"missing"|"unsupported"|"invalid"|"too_large"|"unavailable"}`.
+`data` содержит стандартный Base64 исходных байтов; имя файла служит подписью,
+а не путём для открытия. Ошибка превью не отменяет получение свойств.
+Поля и статусы не зависят от языка. Старые клиенты могут игнорировать это поле.
+
+Читается только файл из `CommonPictures/<имя>/Ext/Picture.xml` →
+`Picture/<xr:Abs>`. Поддерживаются PNG, JPEG, GIF, BMP, ICO, WebP и SVG;
+MIME определяется содержимым. В ZIP выбирается вариант без `interfaceVariant`,
+затем SVG или вариант с наибольшей объявленной площадью. Если манифеста нет,
+используется SVG или файл с наибольшим числовым именем, затем лексический порядок.
+ZIP поддерживает Stored/DEFLATE; распаковки на диск нет. Лимиты: архив 32 MiB,
+картинка 8 MiB, каждый XML 64 KiB, 512 записей архива. Ссылки содержат только
+имя файла; выход через symlink за source запрещён. Бинарные данные не кешируются:
+повторный запрос читает актуальную картинку. Декодирование изображения и его
+размеров выполняет клиент; неподдерживаемые браузером варианты дают ошибку превью.
 
 Предопределённые элементы имеют `metadataKind:"predefined-item"`. Их группа —
 обычный `collection` с `collection:{kind:"metadata",metadataKind:"predefined-item"}`;
