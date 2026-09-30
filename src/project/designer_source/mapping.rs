@@ -62,6 +62,7 @@ struct Locations {
     inline: Vec<LogicalLocation>,
     kind: MetadataKind,
     root: bool,
+    command_bases: Option<Vec<PathBuf>>,
 }
 
 impl DesignerSource {
@@ -124,10 +125,12 @@ impl DesignerSource {
             role: SourceRole::Descriptor,
             inline: locations.inline.clone(),
         }];
-        if !locations.inline.is_empty() {
+        if !locations.inline.is_empty() && locations.command_bases.is_none() {
             return Ok(sources);
         }
-        let bases = self.artifact_bases(&descriptor, locations.root);
+        let bases = locations
+            .command_bases
+            .unwrap_or_else(|| self.artifact_bases(&descriptor, locations.root));
         for &(role, file) in MODULE_FILES {
             if let Some(path) = self.module_path(&bases, locations.kind, role, file)? {
                 sources.push(SourceLocation {
@@ -151,7 +154,7 @@ impl DesignerSource {
         role: ModuleRole,
     ) -> Result<Option<SourceLocation>, SourceError> {
         let locations = self.locations(owner)?;
-        if !locations.inline.is_empty() {
+        if !locations.inline.is_empty() && locations.command_bases.is_none() {
             return Err(SourceError::UnsupportedModule { role });
         }
         let Some(descriptor) = self.unique_existing(&locations.descriptors)? else {
@@ -161,7 +164,9 @@ impl DesignerSource {
             .iter()
             .find_map(|&(candidate, file)| (candidate == role).then_some(file))
             .ok_or(SourceError::UnsupportedModule { role })?;
-        let bases = self.artifact_bases(&descriptor, locations.root);
+        let bases = locations
+            .command_bases
+            .unwrap_or_else(|| self.artifact_bases(&descriptor, locations.root));
         Ok(self
             .module_path(&bases, locations.kind, role, file)?
             .map(|path| SourceLocation {
@@ -201,6 +206,7 @@ impl DesignerSource {
             };
         let mut kind = first.kind;
         let mut inline = Vec::new();
+        let mut command_bases = None;
         for child in &parts[1..] {
             if child.kind == MetadataKind::PredefinedItem {
                 if inline.is_empty() {
@@ -234,19 +240,26 @@ impl DesignerSource {
                         value: id.to_string(),
                     });
                 }
-                let bases =
-                    if kind == first.kind && root && descriptors == [self.descriptor.clone()] {
-                        self.artifact_bases(&self.descriptor, true)
-                    } else {
-                        descriptors
+                let candidates = self.child_descriptors(
+                    &descriptors,
+                    root && kind == first.kind,
+                    folder,
+                    &child.name,
+                );
+                if child.kind == MetadataKind::Command
+                    && self.unique_existing(&candidates)?.is_none()
+                {
+                    // Commands in ordinary Designer exports are inline; their BSL still has its own directory.
+                    command_bases = Some(
+                        candidates
                             .iter()
                             .map(|path| path.with_extension(""))
-                            .collect()
-                    };
-                descriptors = bases
-                    .iter()
-                    .map(|base| base.join(folder).join(format!("{}.xml", child.name)))
-                    .collect();
+                            .collect(),
+                    );
+                    inline.push(child.clone());
+                } else {
+                    descriptors = candidates;
+                }
             } else {
                 inline.push(child.clone());
             }
@@ -257,7 +270,30 @@ impl DesignerSource {
             inline,
             kind,
             root: root && parts.len() == 1,
+            command_bases,
         })
+    }
+
+    /// Derive nested artifact paths for wrapped and direct external exports alike.
+    fn child_descriptors(
+        &self,
+        descriptors: &[PathBuf],
+        root: bool,
+        folder: &str,
+        name: &str,
+    ) -> Vec<PathBuf> {
+        let bases = if root && descriptors == [self.descriptor.clone()] {
+            self.artifact_bases(&self.descriptor, true)
+        } else {
+            descriptors
+                .iter()
+                .map(|path| path.with_extension(""))
+                .collect()
+        };
+        bases
+            .iter()
+            .map(|base| base.join(folder).join(format!("{name}.xml")))
+            .collect()
     }
 
     /// Resolve the optional predefined data payload without scanning or reading it.
