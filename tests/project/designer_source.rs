@@ -481,3 +481,36 @@ fn recalculation_sources_preserve_descriptor_and_inline_dimension_ownership() {
             .is_none()
     );
 }
+
+/// Inline command properties and their separate BSL module have different owners on disk.
+#[test]
+fn maps_inline_command_descriptor_and_separate_module() {
+    let (_directory, source) = fixture("configuration", "Configuration.xml", "Configuration", "");
+    let root = source.project().source();
+    write(root, "Catalogs/Partners.xml", "owner descriptor");
+    write(
+        root,
+        "Catalogs/Partners/Commands/Open/Ext/CommandModule.bsl",
+        "module",
+    );
+    let catalog = id(MetadataKind::Catalog, "Partners", None);
+    let command = id(MetadataKind::Command, "Open", Some(&catalog));
+    let descriptor = source.object_descriptor(&command).unwrap().unwrap();
+    assert_eq!(descriptor.path, Path::new("Catalogs/Partners.xml"));
+    assert_eq!(descriptor.inline.len(), 1);
+    assert_eq!(descriptor.inline[0].kind, MetadataKind::Command);
+    assert_eq!(descriptor.inline[0].name, "Open");
+    let module = source
+        .module(&command, ModuleRole::Command)
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        module.path,
+        Path::new("Catalogs/Partners/Commands/Open/Ext/CommandModule.bsl")
+    );
+    assert!(module.inline.is_empty());
+    let sources = source.sources(&command).unwrap();
+    assert_eq!(sources.len(), 2);
+    assert_eq!(sources[0], descriptor);
+    assert_eq!(sources[1], module);
+}

@@ -1,6 +1,7 @@
 //! Read-only, manifest-backed metadata sessions; no CLI, platform or watcher.
 
 mod cache;
+mod property_reference;
 mod refresh;
 pub mod search;
 mod session;

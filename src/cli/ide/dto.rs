@@ -16,8 +16,8 @@ use crate::project::{
 use serde_json::{Value, json};
 
 pub(super) struct Labels {
-    ru: Localizer,
-    en: Localizer,
+    pub(super) ru: Localizer,
+    pub(super) en: Localizer,
 }
 impl Labels {
     /// Load both embedded locales once, independently of the client's preferred locale.
@@ -138,7 +138,7 @@ fn field<'a>(
         }
     };
     let value_caption = match &value.value {
-        MetadataValue::Text(text) | MetadataValue::TypedText { text, .. } => translations(
+        MetadataValue::Text(text) => translations(
             labels
                 .ru
                 .property_value_caption(owner, root, path, &value.key, text),
@@ -146,8 +146,28 @@ fn field<'a>(
                 .en
                 .property_value_caption(owner, root, path, &value.key, text),
         ),
+        MetadataValue::TypedText { key, text } => translations(
+            labels.ru.typed_value_caption(key, text).or_else(|| {
+                labels
+                    .ru
+                    .property_value_caption(owner, root, path, &value.key, text)
+            }),
+            labels.en.typed_value_caption(key, text).or_else(|| {
+                labels
+                    .en
+                    .property_value_caption(owner, root, path, &value.key, text)
+            }),
+        ),
         MetadataValue::QualifiedText { key, .. } => {
-            translations(labels.ru.type_caption(key), labels.en.type_caption(key))
+            let builtin = translations(labels.ru.type_caption(key), labels.en.type_caption(key));
+            // User-defined XDTO names are meaningful; their arbitrary XML prefixes are not labels.
+            builtin.or_else(|| {
+                matches!(
+                    value.key.name.as_str(),
+                    "XDTOValueType" | "XDTOReturningValueType"
+                )
+                .then(|| json!({"ru-RU":key.name,"en-US":key.name}))
+            })
         }
         _ => None,
     };

@@ -7,6 +7,7 @@ mod events;
 mod framing;
 mod metadata;
 mod params;
+mod property_presentation;
 mod property_types;
 mod runtime;
 mod server;

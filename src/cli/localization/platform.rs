@@ -20,6 +20,7 @@ impl Localizer {
             "http://v8.1c.ru/8.3/MDClasses" => "md",
             "http://v8.1c.ru/8.3/xcf/readable" => "readable",
             "http://v8.1c.ru/8.1/data/core" => "core",
+            "http://v8.1c.ru/8.1/data/ui" => "ui",
             "http://v8.1c.ru/8.2/managed-application/core" => "app",
             "http://v8.1c.ru/8.3/xcf/predef" => "predef",
             _ => return None,

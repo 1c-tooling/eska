@@ -439,3 +439,5 @@ platform-property-app-uti	http://v8.1c.ru/8.2/managed-application/core	uti		8.3.
 platform-property-app-ext	http://v8.1c.ru/8.2/managed-application/core	ext		8.3.27
 platform-property-app-processingVariant	http://v8.1c.ru/8.2/managed-application/core	processingVariant		8.3.27
 platform-property-app-isCustom	http://v8.1c.ru/8.2/managed-application/core	isCustom		8.3.27
+platform-property-readable-TransparentPixel	http://v8.1c.ru/8.3/xcf/readable	TransparentPixel		8.3.27
+platform-property-ui-style	http://v8.1c.ru/8.1/data/ui	style		8.3.27

@@ -183,6 +183,44 @@ EOF внутри кадра — exit 2. Broken pipe stdout — exit 1, без д
   Подписи учитывают тип поля; пользовательские строки не переводятся. Источники, покрытие и
   версии 8.3.27/8.5.1 описаны в [каталоге платформы](platform-catalog.md).
 
+С API 1.5 capability `propertyPresentation:true` добавляет необязательное
+`presentation` к Property и вложенным fields. Старые формы `value`, исходные
+значения, квалификаторы и byte ranges сохраняются. Неизвестный `presentation.kind`
+клиент отображает через исходный `value`.
+
+- `{kind:"empty",caption:Caption}` — `xsi:nil=true|1`, явно типизированные пустые
+  строки, Undefined/Null либо пустой известный селектор объекта.
+- `{kind:"reference",caption:Caption,category:Caption,metadataKind,status,target?}` —
+  ссылка на метаданные. `status`: `resolved`, `missing`, `unavailable`;
+  `target:ObjectId` присутствует только при `resolved`, в текущем projectId.
+- `{kind:"types",items:[PresentedItem]}` — распознанное описание типов целиком.
+  `PresentedItem` содержит `caption:Caption`, необязательный `detail:Caption`
+  для ограничений, а для типа объекта — также поля reference без обязательного
+  `kind`. `Caption = {"ru-RU":string,"en-US":string}`.
+
+Ссылки распознаются по разрешённому QName `xsi:type=MDObjectRef|DesignTimeRef`
+либо в проверенных контекстах Designer XML: селекторы форм, макетов, стилей,
+языков, признаков учета, хранилищ, функциональных опций, картинки и пути полей. Пользовательский текст не распознаётся по одному лишь
+совпадению с `Catalog.Name`. Разрешаются только объявленные объекты выбранного
+проекта: загружаются их предки и descriptor цели через обычный ограниченный кеш,
+без запуска поискового индекса. Синоним выбирается для каждой локали, затем
+используется другой непустой синоним или точное имя. Отсутствующая/нечитаемая цель
+не прерывает чтение остальных свойств. Неизвестные типы и ограничения сохраняют
+исходную структуру. `metadata/reveal` принимает также эти уже известные дереву
+identity и возвращает актуальную ancestry без индексации.
+
+`DesignTimeRef` различает пустую ссылку, значение перечисления и предопределённый
+элемент. Последний ищется по уникальному имени только в `Predefined.xml`
+владельца; неоднозначное имя не создаёт переход. Ссылка на стандартный реквизит
+открывает свойства владельца; селектор процедуры — свойства общего модуля.
+Подпись объясняет направление перехода, имя поля/процедуры остаётся видимым.
+Вложенные ссылки могут содержать `detail:Caption` с подписями предков.
+
+`TypeSet` разрешается по URI пространства имён аналогично `Type`.
+Определяемые типы и характеристики ссылаются на соответствующие метаданные;
+семейства «Любой документ», «Любая ссылка» отображаются без фиктивной цели.
+XML-префиксы XDTO-типов не используются как подписи, исходный текст сохраняется.
+
 Generation и eventSequence передаются десятичными строками unsigned u64, чтобы
 JavaScript не округлял большие значения. Они локальны project/session;
 переполнение требует переоткрытия session. Начальные значения — "0".
@@ -203,7 +241,7 @@ JavaScript не округлял большие значения. Они лок�
 | `metadata/properties` | `objectId` | `properties:Property[],picture?:PicturePreview` |
 | `metadata/source` | `node:NodeId` | `sources:[{path:Path,role,inline:[{metadataKind,name}]}]` |
 | `metadata/search` | `text:string,limit?:1..500,synonymLanguage?:string` | `progress:Progress,hits:Hit[],truncated:bool` |
-| `metadata/reveal` | `objectId` найденного элемента | `ancestry:NodeId[]` |
+| `metadata/reveal` | `objectId` найденного или уже известного дереву элемента | `ancestry:NodeId[]` |
 | `metadata/refresh` | `node:NodeId` | `affected:ObjectId[]` и новое generation |
 | `metadata/index` | `action:"start"|"cancel"|"resume"|"status"` | `progress:Progress` |
 | `metadata/indexErrors` | `offset?:number,limit?:1..500` | `errors:[{objectId,code,details}],nextOffset:number|null` |
