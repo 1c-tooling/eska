@@ -696,7 +696,7 @@ dependencies = [
 
 [[package]]
 name = "eska"
-version = "0.12.0"
+version = "0.12.1"
 dependencies = [
  "axoupdater",
  "clap",

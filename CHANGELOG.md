@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.1](https://github.com/1c-tooling/eska/compare/v0.12.0...v0.12.1) - 2026-09-30
+
+### Fixed
+
+- *(cli)* Вывод импорта приведён к стилю сборки
+- *(import)* Временные данные и резервные копии исключены из Git
+- *(import)* Исправлена распаковка CF через временную базу
+
 ## [0.12.0](https://github.com/1c-tooling/eska/compare/v0.11.6...v0.12.0) - 2026-09-29
 
 ### Added
