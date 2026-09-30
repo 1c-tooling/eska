@@ -9,7 +9,7 @@ use crate::{
         localization::{LocalizationValue, Localizer},
     },
     config::ProjectConfig,
-    project::{artifact::PreparedArtifact, build::BuildSettings, create, onboarding},
+    project::{build::BuildSettings, create, onboarding},
     vcs::workflow::WorkflowPreset,
 };
 
@@ -100,10 +100,7 @@ fn execute(
         .from
         .as_ref()
         .ok_or_else(|| Failure::new("input-required", localizer.text("artifact-from-required")))?;
-    let prepared = PreparedArtifact::unpack(&base.join(input), &destination, &tool, |_, line| {
-        eprintln!("{}", String::from_utf8_lossy(line));
-    })
-    .map_err(|error| artifact::present(&error, localizer))?;
+    let prepared = artifact::unpack(&base.join(input), &destination, &tool, true, localizer)?;
     let mut config = ProjectConfig::new(prepared.identity().project_type);
     if let Some(workflow) = workflow {
         config = config.with_workflow(workflow);

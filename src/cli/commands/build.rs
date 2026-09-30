@@ -27,16 +27,15 @@ mod errors;
 mod json;
 mod output;
 
+use crate::cli::process_output::{diagnostic_styling_enabled, progress::ProgressLine};
+
 use errors::{
     BuildExecutionError, execution_error_code, execution_error_message, execution_error_stage,
     execution_was_interrupted, plan_error_code, present_plan_error, present_platform_version_error,
     selection_error_code, tool_error_code,
 };
 use json::{WorkspaceBuildEntry, write_build_error, write_workspace_json};
-use output::{
-    diagnostic_styling_enabled, progress::ProgressLine, write_build_preview, write_build_result,
-    write_build_started, write_diagnostic,
-};
+use output::{write_build_preview, write_build_result, write_build_started, write_diagnostic};
 
 #[derive(Debug, Args)]
 pub(in crate::cli) struct BuildArgs {

@@ -49,8 +49,11 @@ fn run(arguments: &[OsString]) -> Result<(), String> {
 
 /// Model CF loading independently from direct export, including failed loads.
 fn load_configuration(arguments: &[OsString]) -> Result<(), String> {
+    if env_flag("FAKE_IBCMD_ARTIFACT_DIAGNOSTICS") {
+        println!("[INFO] Loading fixture CF...");
+    }
     if env_flag("FAKE_IBCMD_FAIL_LOAD") {
-        return Err("fake load failure".to_owned());
+        return Err("[ERROR] fake load failure".to_owned());
     }
     let data = option_path(arguments, "--data=").ok_or("missing --data")?;
     let source = arguments.last().ok_or("missing file")?;
@@ -60,8 +63,12 @@ fn load_configuration(arguments: &[OsString]) -> Result<(), String> {
 
 /// Unpack fixture XML carried by a native-looking file without depending on a 1C license.
 fn export_configuration(arguments: &[OsString]) -> Result<(), String> {
+    if env_flag("FAKE_IBCMD_ARTIFACT_DIAGNOSTICS") {
+        println!("[INFO] Exporting fixture XML...");
+        eprintln!("[WARN] fixture export warning");
+    }
     if env_flag("FAKE_IBCMD_FAIL_EXPORT") {
-        return Err("fake export failure".to_owned());
+        return Err("[ERROR] fake export failure".to_owned());
     }
     let source = if let Some(source) = option_path(arguments, "--file=") {
         if source

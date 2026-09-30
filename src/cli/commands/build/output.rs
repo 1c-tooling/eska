@@ -26,8 +26,7 @@ use super::{
     json::{BuildDocument, BuildPlanDocument},
 };
 
-pub(super) mod progress;
-use progress::ProgressLine;
+use crate::cli::process_output::{self, decorate_status, progress::ProgressLine};
 
 /// Present a fully preflighted plan without starting any build stage.
 pub(super) fn write_build_preview(
@@ -218,24 +217,10 @@ pub(super) fn write_diagnostic(
     progress: Option<&ProgressLine>,
 ) -> io::Result<()> {
     let Ok(line) = std::str::from_utf8(line) else {
-        return write_diagnostic_bytes(line, progress);
+        return process_output::write_diagnostic(line, styled, progress);
     };
     let line = humanize_source_paths(line, project, localizer);
-    let line = style_diagnostic_level(&line, styled);
-    write_diagnostic_bytes(line.as_bytes(), progress)
-}
-
-/// Write one diagnostic while keeping an interactive progress line at the bottom.
-fn write_diagnostic_bytes(line: &[u8], progress: Option<&ProgressLine>) -> io::Result<()> {
-    if let Some(progress) = progress {
-        return progress.write_diagnostic(line);
-    }
-    let mut stderr = io::stderr().lock();
-    stderr.write_all(line)?;
-    if !line.ends_with(b"\n") {
-        stderr.write_all(b"\n")?;
-    }
-    stderr.flush()
+    process_output::write_diagnostic(line.as_bytes(), styled, progress)
 }
 
 /// Replace absolute source files with their existing Configurator-style ownership.
@@ -298,31 +283,6 @@ fn existing_source_path<'a>(suffix: &'a str, source: &Path) -> Option<(&'a str, 
         })
 }
 
-/// Highlight a recognized ibcmd severity prefix while keeping its message unchanged.
-fn style_diagnostic_level(message: &str, styled: bool) -> String {
-    if !styled {
-        return message.to_owned();
-    }
-    for (level, color) in [
-        ("[TRACE]", "90"),
-        ("[DEBUG]", "34"),
-        ("[INFO]", "36"),
-        ("[WARN]", "33"),
-        ("[ERROR]", "31"),
-        ("[FATAL]", "35"),
-    ] {
-        if let Some(rest) = message.strip_prefix(level) {
-            return format!("\x1b[1;{color}m{level}\x1b[0m{rest}");
-        }
-    }
-    message.to_owned()
-}
-
-/// Enable diagnostic colors only for an interactive stderr that permits color.
-pub(super) fn diagnostic_styling_enabled() -> bool {
-    io::stderr().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
-}
-
 /// Enable success styling only when its stdout destination is interactive.
 fn result_styling_enabled() -> bool {
     io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
@@ -342,15 +302,6 @@ pub(super) fn write_build_started(
     let mut stderr = io::stderr().lock();
     writeln!(stderr, "{message}")?;
     stderr.flush()
-}
-
-/// Add a stable marker and optionally color only that marker.
-fn decorate_status(marker: &str, message: &str, styled: bool, color: &str) -> String {
-    if styled {
-        format!("\x1b[1;{color}m{marker}\x1b[0m {message}")
-    } else {
-        format!("{marker} {message}")
-    }
 }
 
 /// Present the successful build without changing the JSON result contract.
@@ -460,40 +411,9 @@ fn percent_encode_uri_path(path: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        decorate_status, diagnostic_path_tail, render_build_success, style_diagnostic_level,
-    };
+    use super::{decorate_status, diagnostic_path_tail, render_build_success};
     use crate::cli::localization::{Locale, Localizer};
     use std::path::Path;
-
-    #[test]
-    /// Color only the recognized diagnostic prefix and preserve the message bytes.
-    fn styles_known_diagnostic_levels() {
-        for (level, color) in [
-            ("TRACE", "90"),
-            ("DEBUG", "34"),
-            ("INFO", "36"),
-            ("WARN", "33"),
-            ("ERROR", "31"),
-            ("FATAL", "35"),
-        ] {
-            let message = format!("[{level}] diagnostic\n");
-            assert_eq!(
-                style_diagnostic_level(&message, true),
-                format!("\x1b[1;{color}m[{level}]\x1b[0m diagnostic\n")
-            );
-            assert_eq!(style_diagnostic_level(&message, false), message);
-        }
-    }
-
-    #[test]
-    /// Leave unknown prefixes unchanged even when terminal styling is enabled.
-    fn preserves_unknown_diagnostic_prefixes() {
-        assert_eq!(
-            style_diagnostic_level("plain diagnostic\n", true),
-            "plain diagnostic\n"
-        );
-    }
 
     #[test]
     /// Preserve the concrete help file without restoring its absolute source path.

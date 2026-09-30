@@ -574,3 +574,54 @@ fn accepts_unicode_dotted_artifact_names_without_guessing_the_descriptor() {
         assert!(output.status.success(), "{output:?}");
     }
 }
+
+/// Redirected native diagnostics keep single lines and never contaminate JSON stdout.
+#[test]
+fn streams_diagnostics_once_without_color_in_both_locales() {
+    for locale in ["ru", "en"] {
+        let fixture = TestDir::new();
+        let root = imported_project(&fixture);
+        for format in ["human", "json"] {
+            for failed in [false, true] {
+                let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+                    .current_dir(&root)
+                    .args([
+                        "--lang",
+                        locale,
+                        "import",
+                        "../incoming.cf",
+                        "--dry-run",
+                        "--format",
+                        format,
+                        "--ibcmd",
+                    ])
+                    .arg(super::build::fake_ibcmd(&fixture))
+                    .env("FAKE_IBCMD_ARTIFACT_DIAGNOSTICS", "1")
+                    .env("FAKE_IBCMD_FAIL_EXPORT", if failed { "1" } else { "0" })
+                    .output()
+                    .unwrap();
+                assert_eq!(output.status.success(), !failed, "{output:?}");
+                let stderr = String::from_utf8(output.stderr).unwrap();
+                assert_eq!(stderr.matches("[INFO] Loading fixture CF...").count(), 1);
+                assert_eq!(stderr.matches("[INFO] Exporting fixture XML...").count(), 1);
+                assert_eq!(stderr.matches("[WARN] fixture export warning").count(), 1);
+                assert_eq!(
+                    stderr.matches("[ERROR] fake export failure").count(),
+                    usize::from(failed)
+                );
+                assert!(!stderr.contains("\n\n"), "{stderr}");
+                assert!(!stderr.contains('\u{1b}'), "{stderr}");
+                if format == "json" {
+                    let document: Value = serde_json::from_slice(&output.stdout).unwrap();
+                    assert_eq!(document["schema_version"], 1);
+                    if failed {
+                        assert_eq!(document["error"]["code"], "platform-failed");
+                    } else {
+                        assert_eq!(document["applied"], false);
+                    }
+                    assert!(!stderr.contains('▶'));
+                }
+            }
+        }
+    }
+}
