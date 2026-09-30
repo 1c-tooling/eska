@@ -406,6 +406,287 @@ fn numeric_bounds_edit_existing_nil_elements_and_undo_the_exact_source() {
     assert_eq!(fs::read_to_string(&file).unwrap(), original);
 }
 
+/// All value tests start from an existing nil element, preserving its surrounding descriptor bytes.
+fn filling_fixture(type_xml: &str) -> (TestDir, MetadataWorkspace, ObjectId, PathBuf, String) {
+    let (directory, workspace, _, _, _) = selector_fixture();
+    drop(workspace);
+    let source = directory.0.join("src");
+    selector_file(
+        &source,
+        "Catalogs/Goods.xml",
+        "Catalog",
+        "Goods",
+        "",
+        &format!(
+            "<Attribute uuid='33333333-3333-3333-3333-333333333333'><Properties xmlns:v='http://v8.1c.ru/8.1/data/core' xmlns:xs='http://www.w3.org/2001/XMLSchema' xmlns:s='http://www.w3.org/2001/XMLSchema-instance' xmlns:c='http://v8.1c.ru/8.1/data/enterprise/current-config'><Name>Target</Name><Type>{type_xml}</Type><FillValue s:nil='true'/><Comment>keep</Comment></Properties></Attribute>"
+        ),
+    );
+    let file = source.join("Catalogs/Goods.xml");
+    let input = fs::read_to_string(&file).unwrap();
+    let workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let id = object(
+        MetadataKind::Attribute,
+        "Target",
+        Some(object(MetadataKind::Catalog, "Goods", None)),
+    );
+    (directory, workspace, id, file, input)
+}
+
+/// Nil is different from an empty string; qualifiers and the backend's declared types constrain writes.
+#[test]
+fn filling_values_enforce_primitive_types_and_preserve_exact_undo() {
+    use eska::project::metadata_model::PropertyKey;
+    for (description, kind, valid, invalid) in [
+        (
+            "<v:Type>xs:string</v:Type><v:StringQualifiers><v:Length>3</v:Length><v:AllowedLength>Variable</v:AllowedLength></v:StringQualifiers>",
+            "string",
+            "",
+            "long",
+        ),
+        (
+            "<v:Type>xs:decimal</v:Type><v:NumberQualifiers><v:Digits>5</v:Digits><v:FractionDigits>2</v:FractionDigits><v:AllowedSign>Nonnegative</v:AllowedSign></v:NumberQualifiers>",
+            "decimal",
+            "12.50",
+            "-12.50",
+        ),
+        ("<v:Type>xs:boolean</v:Type>", "boolean", "true", "yes"),
+        (
+            "<v:Type>xs:dateTime</v:Type><v:DateQualifiers><v:DateFractions>Date</v:DateFractions></v:DateQualifiers>",
+            "dateTime",
+            "2024-02-29T00:00:00",
+            "2023-02-29T00:00:00",
+        ),
+    ] {
+        let (_directory, mut workspace, id, file, input) = filling_fixture(description);
+        let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+        let editing = project.property_editing(&id).unwrap();
+        let field = editing
+            .properties
+            .fields
+            .iter()
+            .find(|field| field.path[0].key.name == "FillValue")
+            .unwrap();
+        let key = Some(PropertyKey {
+            namespace: Some("http://www.w3.org/2001/XMLSchema".into()),
+            name: kind.into(),
+        });
+        assert!(
+            project
+                .update_property(
+                    &id,
+                    &editing.properties.snapshot,
+                    &field.path,
+                    &PropertyChange::Value {
+                        key: key.clone(),
+                        value: invalid.into()
+                    }
+                )
+                .is_err()
+        );
+        assert!(
+            project
+                .update_property(
+                    &id,
+                    &editing.properties.snapshot,
+                    &field.path,
+                    &PropertyChange::Text {
+                        value: valid.into()
+                    }
+                )
+                .is_err()
+        );
+        assert_eq!(fs::read_to_string(&file).unwrap(), input);
+        project
+            .update_property(
+                &id,
+                &editing.properties.snapshot,
+                &field.path,
+                &PropertyChange::Value {
+                    key,
+                    value: valid.into(),
+                },
+            )
+            .unwrap();
+        let replacement = if valid.is_empty() {
+            format!("<FillValue s:type=\"xs:{kind}\"/>")
+        } else {
+            format!("<FillValue s:type=\"xs:{kind}\">{valid}</FillValue>")
+        };
+        assert_eq!(
+            fs::read_to_string(&file).unwrap(),
+            input.replace("<FillValue s:nil='true'/>", &replacement)
+        );
+        let state = project.property_editing(&id).unwrap();
+        project
+            .undo_property(&id, &state.properties.snapshot, true)
+            .unwrap();
+        assert_eq!(fs::read_to_string(&file).unwrap(), input);
+    }
+}
+
+/// Design-time selectors never accept arbitrary runtime data or a value belonging to another type.
+#[test]
+fn filling_reference_values_reject_invented_targets() {
+    use eska::project::metadata_model::PropertyKey;
+    let (_directory, mut workspace, id, file, input) =
+        filling_fixture("<v:Type>c:CatalogRef.Other</v:Type>");
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    let field = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.path[0].key.name == "FillValue")
+        .unwrap();
+    let key = PropertyKey {
+        namespace: Some("http://v8.1c.ru/8.1/data/enterprise/current-config".into()),
+        name: "CatalogRef.Other".into(),
+    };
+    let choices = project
+        .property_value_choices(&id, &field.path, &key)
+        .unwrap();
+    assert_eq!(
+        choices
+            .iter()
+            .map(|choice| choice.value.as_str())
+            .collect::<Vec<_>>(),
+        ["Catalog.Other.EmptyRef"]
+    );
+    for value in [
+        "Catalog.Goods.EmptyRef",
+        "Catalog.Other.Unknown",
+        "arbitrary",
+    ] {
+        assert!(
+            project
+                .update_property(
+                    &id,
+                    &editing.properties.snapshot,
+                    &field.path,
+                    &PropertyChange::Value {
+                        key: Some(key.clone()),
+                        value: value.into()
+                    }
+                )
+                .is_err()
+        );
+        assert_eq!(fs::read_to_string(&file).unwrap(), input);
+    }
+    project
+        .update_property(
+            &id,
+            &editing.properties.snapshot,
+            &field.path,
+            &PropertyChange::Value {
+                key: Some(key),
+                value: choices[0].value.clone(),
+            },
+        )
+        .unwrap();
+    assert!(
+        fs::read_to_string(&file)
+            .unwrap()
+            .contains(">Catalog.Other.EmptyRef</FillValue>")
+    );
+    let state = project.property_editing(&id).unwrap();
+    project
+        .update_property(
+            &id,
+            &state.properties.snapshot,
+            &field.path,
+            &PropertyChange::Value {
+                key: None,
+                value: String::new(),
+            },
+        )
+        .unwrap();
+    assert!(
+        fs::read_to_string(&file)
+            .unwrap()
+            .contains("s:nil=\"true\"")
+    );
+}
+
+/// Enum values and nested predefined records come from declared objects, never free-form strings.
+#[test]
+fn filling_reference_choices_include_enum_and_unique_predefined_records() {
+    use eska::project::metadata_model::PropertyKey;
+    let (directory, workspace, id, _, _) =
+        filling_fixture("<v:Type>c:CatalogRef.Other</v:Type><v:Type>c:EnumRef.Status</v:Type>");
+    drop(workspace);
+    let source = directory.0.join("src");
+    let root = source.join("Configuration.xml");
+    fs::write(
+        &root,
+        fs::read_to_string(&root)
+            .unwrap()
+            .replace("</ChildObjects>", "<Enum>Status</Enum></ChildObjects>"),
+    )
+    .unwrap();
+    selector_file(
+        &source,
+        "Enums/Status.xml",
+        "Enum",
+        "Status",
+        "",
+        "<EnumValue uuid='22222222-2222-2222-2222-222222222222'><Properties><Name>Active</Name></Properties></EnumValue>",
+    );
+    fs::create_dir_all(source.join("Catalogs/Other/Ext")).unwrap();
+    fs::write(source.join("Catalogs/Other/Ext/Predefined.xml"), "<PredefinedData xmlns='http://v8.1c.ru/8.3/xcf/predef' version='2.20'><Item id='one'><Name>Root</Name><ChildItems><Item id='two'><Name>Nested</Name></Item><Item id='three'><Name>Duplicate</Name></Item></ChildItems></Item><Item id='four'><Name>Duplicate</Name></Item></PredefinedData>").unwrap();
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    let field = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.path[0].key.name == "FillValue")
+        .unwrap();
+    for (name, expected) in [
+        (
+            "CatalogRef.Other",
+            vec![
+                "Catalog.Other.EmptyRef",
+                "Catalog.Other.Nested",
+                "Catalog.Other.Root",
+            ],
+        ),
+        (
+            "EnumRef.Status",
+            vec!["Enum.Status.EmptyRef", "Enum.Status.EnumValue.Active"],
+        ),
+    ] {
+        let key = PropertyKey {
+            namespace: Some("http://v8.1c.ru/8.1/data/enterprise/current-config".into()),
+            name: name.into(),
+        };
+        let choices = project
+            .property_value_choices(&id, &field.path, &key)
+            .unwrap();
+        assert_eq!(
+            choices
+                .iter()
+                .map(|choice| choice.value.as_str())
+                .collect::<Vec<_>>(),
+            expected
+        );
+        for choice in choices {
+            let state = project.property_editing(&id).unwrap();
+            project
+                .update_property(
+                    &id,
+                    &state.properties.snapshot,
+                    &field.path,
+                    &PropertyChange::Value {
+                        key: Some(key.clone()),
+                        value: choice.value,
+                    },
+                )
+                .unwrap();
+        }
+    }
+}
+
 /// Preserve byte-sensitive formatting in fixtures for every supported project root.
 fn editable_fixture(case: &str) -> (TestDir, MetadataWorkspace, ObjectId, PathBuf) {
     let directory = TestDir::new();

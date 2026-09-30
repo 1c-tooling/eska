@@ -25,6 +25,7 @@ pub(super) fn is_method(method: &str) -> bool {
             | "metadata/propertyEditing"
             | "metadata/propertyTypeChoices"
             | "metadata/propertyReferenceChoices"
+            | "metadata/propertyValueChoices"
             | "metadata/previewProperty"
             | "metadata/updateProperty"
             | "metadata/undoProperty"
@@ -52,6 +53,9 @@ impl Server {
     ) -> Result<Value, Value> {
         let input: params::Context = params::decode(args)?;
         if method == "metadata/propertyReferenceChoices" && self.client_minor < 7 {
+            return Err(error(-32601));
+        }
+        if method == "metadata/propertyValueChoices" && self.client_minor < 8 {
             return Err(error(-32601));
         }
 
@@ -87,11 +91,11 @@ impl Server {
         );
         result
             .map(|mut result| {
-                if self.client_minor < 7 {
+                if self.client_minor < 8 {
                     if method == "metadata/propertyEditing" {
-                        super::editing::retain_legacy_fields(&mut result);
+                        super::editing::retain_legacy_fields(&mut result, self.client_minor);
                     } else if let Some(editing) = result.get_mut("editing") {
-                        super::editing::retain_legacy_fields(editing);
+                        super::editing::retain_legacy_fields(editing, self.client_minor);
                     }
                 }
                 result["sessionId"] = json!(session.id);
@@ -143,6 +147,7 @@ fn metadata_request(
         "metadata/propertyEditing"
         | "metadata/propertyTypeChoices"
         | "metadata/propertyReferenceChoices"
+        | "metadata/propertyValueChoices"
         | "metadata/previewProperty" => super::editing::query(labels, project, method, args),
         "metadata/updateProperty" | "metadata/undoProperty" => {
             update_property(labels, session, state, project, method, args, events)

@@ -83,7 +83,7 @@ impl Presenter<'_> {
 }
 
 /// Follow the selected language, then another nonempty synonym, then the exact object name.
-pub(super) fn reference_name(object: &ObjectSummary, language: &str) -> String {
+pub(in crate::cli::ide) fn reference_name(object: &ObjectSummary, language: &str) -> String {
     let base = language.split('-').next().unwrap_or(language);
     object
         .synonyms

@@ -508,7 +508,7 @@ mtime и поколение дерева не заменяют сверку ис
 Постраничный API 1.2 и остальные контракты сохранены.
 
 
-## Редактирование свойств — API 1.6–1.7
+## Редактирование свойств — API 1.6–1.8
 
 Для записи клиент передаёт в `initialize` `apiVersion:{major:1,minor:6}` и
 `allowPropertyEdits:true`. Сервер сообщает `propertyEditing:true,readOnly:false`.
@@ -522,6 +522,7 @@ mtime и поколение дерева не заменяют сверку ис
 | `metadata/propertyEditing` | — | snapshot, source, profile, writable, fields, readOnlyProperties, undo, redo, addRemove:false |
 | `metadata/propertyTypeChoices` | path из fields | choices с key и RU/EN caption |
 | `metadata/propertyReferenceChoices` (1.7) | path из fields | choices с value, objectId, metadataKind и RU/EN caption |
+| `metadata/propertyValueChoices` (1.8) | path из fields и key из schema.types | choices с value и RU/EN caption |
 | `metadata/previewProperty` | snapshot, path, change | valid, changed, changes — точные замены UTF-8 байтов |
 | `metadata/updateProperty` | snapshot, path, change | обычные properties/picture и новый editing |
 | `metadata/undoProperty` | snapshot, direction:undo\|redo | обычные properties/picture и новый editing |
@@ -536,3 +537,8 @@ API 1.7 добавляет `schema.kind:"reference"` с `domain` и `nullable`. 
 нужно перечитать файл. `property_committed_refresh_required` явно отличает запись
 с последующей ошибкой обновления от отказа до записи. История принадлежит session;
 вкладка клиента имеет отдельный lock и сохраняет черновик при внешнем конфликте.
+
+API 1.8 добавляет `schema.kind:"value"` и `change.kind:"value"` для значения
+заполнения. Допустимые типы и ограничения публикуются в `schema.types`. Клиентам
+1.6–1.7 этот вариант не возвращается ни в чтении, ни в ответах на запись;
+`metadata/propertyValueChoices` для них возвращает method not found.

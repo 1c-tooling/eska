@@ -21,8 +21,16 @@ pub struct FieldStep {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum PropertyChange {
-    Text { value: String },
-    DataType { key: PropertyKey },
+    Text {
+        value: String,
+    },
+    DataType {
+        key: PropertyKey,
+    },
+    Value {
+        key: Option<PropertyKey>,
+        value: String,
+    },
 }
 
 /// An existing scalar and its backend-owned editing domain.
@@ -125,6 +133,20 @@ impl EditingDocument<'_> {
             .find(|field| field.path == path)
             .ok_or(EditError::UnsupportedValue)?;
         match (&field.schema, change) {
+            (ScalarSchema::Value { types, .. }, PropertyChange::Value { key, value }) => {
+                if let Some(key) = key {
+                    types
+                        .iter()
+                        .find(|choice| &choice.key == key)
+                        .ok_or(EditError::InvalidValue)?
+                        .validate(value)?;
+                } else if !value.is_empty() {
+                    return Err(EditError::InvalidValue);
+                }
+            }
+            (ScalarSchema::Value { .. }, _) | (_, PropertyChange::Value { .. }) => {
+                return Err(EditError::InvalidValue);
+            }
             (ScalarSchema::DataType { reference_only, .. }, PropertyChange::DataType { key }) => {
                 if *reference_only && key.namespace.as_deref() != Some(super::types::CFG) {
                     return Err(EditError::InvalidValue);
@@ -164,6 +186,9 @@ impl EditingDocument<'_> {
             }
             PropertyChange::Text { value } => patch::text_plan(self.input, node.range(), value)?,
             PropertyChange::DataType { key } => super::types::replace(self.input, node, key)?,
+            PropertyChange::Value { key, value } => {
+                super::values::replace_value(self.input, node, key.as_ref(), value)?
+            }
         };
         let after = self.parsed(plan.output())?;
         let candidate =
@@ -242,7 +267,7 @@ impl EditingDocument<'_> {
                 .filter(Node::is_text)
                 .filter_map(|node| node.text())
                 .collect();
-            if schema.validate(&value).is_ok() {
+            if matches!(schema, ScalarSchema::Value { .. }) || schema.validate(&value).is_ok() {
                 let language = node
                     .parent()
                     .filter(|parent| parent.has_tag_name((schema::CORE, "item")))

@@ -155,3 +155,81 @@ fn metadata_reference_choices_validate_the_public_json_contract() {
         )
     );
 }
+
+/// Value schemas, typed writes and rejected invented types use the same locale-independent contract.
+#[test]
+fn metadata_value_schema_and_typed_changes_are_locale_independent() {
+    let root = TestDir::new();
+    fs::create_dir_all(root.0.join("src/Ext")).unwrap();
+    fs::create_dir_all(root.0.join("src/Catalogs")).unwrap();
+    fs::write(
+        root.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    fs::write(
+        root.0.join("src/Ext/ParentConfigurations.bin"),
+        "{6,0,0,0,0,0}",
+    )
+    .unwrap();
+    fs::write(root.0.join("src/Configuration.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='11111111-1111-1111-1111-111111111111'><Properties><Name>Demo</Name></Properties><ChildObjects><Catalog>Value</Catalog></ChildObjects></Configuration></MetaDataObject>").unwrap();
+    let file = root.0.join("src/Catalogs/Value.xml");
+    let original = "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses' xmlns:v='http://v8.1c.ru/8.1/data/core' xmlns:xs='http://www.w3.org/2001/XMLSchema' xmlns:s='http://www.w3.org/2001/XMLSchema-instance'><Catalog uuid='22222222-2222-2222-2222-222222222222'><Properties><Name>Value</Name></Properties><ChildObjects><Attribute uuid='33333333-3333-3333-3333-333333333333'><Properties><Name>Target</Name><Type><v:Type>xs:boolean</v:Type></Type><FillValue s:nil='true'/></Properties></Attribute></ChildObjects></Catalog></MetaDataObject>";
+    fs::write(&file, original).unwrap();
+    let inspect = |locale| {
+        let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&root.0)
+            .args([
+                "--lang",
+                locale,
+                "metadata",
+                "inspect",
+                "--object",
+                "catalog:Value/attribute:Target",
+            ])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        assert!(output.stderr.is_empty());
+        serde_json::from_slice::<Value>(&output.stdout).unwrap()
+    };
+    let ru = inspect("ru-RU");
+    assert_eq!(ru, inspect("en-US"));
+    let editing = &ru["result"]["editing"];
+    let field = editing["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|field| field["schema"]["kind"] == "value")
+        .unwrap();
+    assert!(field["schema"]["key"].is_null());
+    assert_eq!(
+        field["schema"]["types"][0]["constraints"]["kind"],
+        "boolean"
+    );
+    let mut request = json!({"schemaVersion":1,"objectId":"catalog:Value/attribute:Target","snapshot":editing["snapshot"],"path":field["path"],"change":{"kind":"value","key":field["schema"]["types"][0]["key"],"value":"true"}});
+    assert_eq!(
+        call(&root, "ru-RU", "check", Some(&request), true),
+        call(&root, "en-US", "check", Some(&request), true)
+    );
+    assert_eq!(fs::read_to_string(&file).unwrap(), original);
+    request["change"]["key"]["name"] = json!("InventedByAI");
+    assert_eq!(
+        call(&root, "en-US", "apply", Some(&request), false)["error"]["kind"],
+        "property_invalid"
+    );
+    request["change"]["key"]["name"] = json!("boolean");
+    call(&root, "ru-RU", "apply", Some(&request), true);
+    assert_eq!(
+        fs::read_to_string(&file).unwrap(),
+        original.replace(
+            "<FillValue s:nil='true'/>",
+            "<FillValue s:type=\"xs:boolean\">true</FillValue>"
+        )
+    );
+    assert!(!root.0.join(".eska").exists());
+}

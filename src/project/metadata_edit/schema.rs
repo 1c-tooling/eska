@@ -44,6 +44,10 @@ pub enum ScalarSchema {
         #[serde(skip_serializing_if = "Option::is_none")]
         reference_type: Option<PropertyKey>,
     },
+    Value {
+        key: Option<PropertyKey>,
+        types: Vec<super::EditableValueType>,
+    },
 }
 
 impl ScalarSchema {
@@ -60,7 +64,7 @@ impl ScalarSchema {
                 .is_ok_and(|number| (*min..=*max).contains(&number)),
             Self::Decimal { nullable } => (*nullable && value.is_empty()) || decimal(value),
             Self::Enum { values, .. } => values.iter().any(|candidate| candidate == value),
-            Self::DataType { .. } => false,
+            Self::DataType { .. } | Self::Value { .. } => false,
             Self::Reference {
                 domain, nullable, ..
             } => {
@@ -186,6 +190,11 @@ pub(super) fn scalar(
     let model_type = model_type?;
     if model_type == "Value" && super::values::number_bound(node) {
         return Some(ScalarSchema::Decimal { nullable: true });
+    }
+    if model_type == "Value"
+        && let Some(schema) = super::value_schema::schema(node)
+    {
+        return Some(schema);
     }
     if node.children().any(|child| child.is_element())
         || node

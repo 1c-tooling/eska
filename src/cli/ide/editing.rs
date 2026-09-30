@@ -25,14 +25,14 @@ pub(in crate::cli) struct ChangeRequest {
 }
 
 /// API 1.6 clients reject unknown schema variants; keep their original editor vocabulary intact.
-pub(super) fn retain_legacy_fields(schema: &mut Value) {
+pub(super) fn retain_legacy_fields(schema: &mut Value, minor: u32) {
     let mut hidden = Vec::new();
     if let Some(fields) = schema["fields"].as_array_mut() {
         fields.retain(|field| {
             let keep = matches!(
                 field["schema"]["kind"].as_str(),
                 Some("text" | "boolean" | "integer" | "decimal" | "enum" | "dataType")
-            );
+            ) || (minor >= 7 && field["schema"]["kind"] == "reference");
             if !keep {
                 hidden.push(field["path"][0]["key"].clone());
             }
@@ -60,6 +60,7 @@ pub(in crate::cli) fn describe(
         .object(id)
         .map_err(|error| errors::workspace(&error))?
         .kind;
+    let mut presenter = super::property_presentation::Presenter::new(labels, project, owner);
     let fields: Vec<_> = state
         .properties
         .fields
@@ -93,6 +94,28 @@ pub(in crate::cli) fn describe(
                         .and_then(|parts| parts.last().map(|(kind, name)| format!("{} · {name}", locale.text(&format!("platform-kind-{}", kind.as_str())))))
                         .unwrap_or_else(|| locale.text("platform-presentation-unset"))
                 });
+            }
+            if let ScalarSchema::Value { key, types } = &field.schema {
+                value["schema"]["types"] = json!(types.iter().map(|choice| {
+                    let mut choice_json = json!(choice);
+                    choice_json["caption"] = type_caption(labels, &choice.key);
+                    if matches!(choice.constraints, crate::project::metadata_edit::ValueConstraints::Boolean) {
+                        choice_json["options"] = json!(["true", "false"].map(|token| json!({"value":token,"caption":paired(labels, |locale| locale.text(&format!("platform-presentation-boolean-{token}")))})));
+                    }
+                    choice_json
+                }).collect::<Vec<_>>());
+                value["caption"] = paired(labels, |locale| if key.is_none() {
+                    locale.text("platform-presentation-unset")
+                } else if key.as_ref().is_some_and(|key| key.name == "boolean") {
+                    locale.text(if matches!(field.value.as_str(), "true" | "1") { "platform-presentation-boolean-true" } else { "platform-presentation-boolean-false" })
+                } else if field.value.is_empty() { locale.text("platform-presentation-empty-string")
+                } else if field.value.ends_with(".EmptyRef") { locale.text("platform-presentation-empty-reference")
+                } else { field.value.clone() });
+                if key.as_ref().is_some_and(|key| crate::project::metadata_edit::value_schema::reference_prefix(key).is_some())
+                    && let Some(reference) = presenter.design_reference(&field.value)
+                {
+                    value["caption"] = reference["caption"].clone();
+                }
             }
             value
         })
@@ -132,6 +155,24 @@ pub(in crate::cli) fn reference_choices(
         "caption":paired(labels, |locale| format!("{} · {}",locale.text(&format!("platform-kind-{}",choice.object.kind.as_str())),choice.object.name)),
         "metadataKind":choice.object.kind.as_str()
     })).collect::<Vec<_>>()}))
+}
+
+/// A typed value's reference domain includes empty references and existing enum/predefined values.
+pub(in crate::cli) fn value_choices(
+    labels: &Labels,
+    project: &mut ProjectSession,
+    id: &ObjectId,
+    path: &[FieldStep],
+    key: &PropertyKey,
+) -> Result<Value, Value> {
+    let choices = project
+        .property_value_choices(id, path, key)
+        .map_err(failure)?;
+    Ok(
+        json!({"choices":choices.iter().map(|choice| json!({"value":choice.value,
+        "caption":paired(labels, |locale| choice.object.as_ref().map_or_else(||locale.text("platform-presentation-empty-reference"), |object| super::property_presentation::reference_name(object, locale.locale().as_str())))
+    })).collect::<Vec<_>>()}),
+    )
 }
 
 /// Preview uses the mutation planner and support checks, with no source or cache publication.
@@ -174,6 +215,13 @@ pub(super) fn query(
             project,
             &id,
             &params::decode::<Vec<FieldStep>>(&args["path"])?,
+        ),
+        "metadata/propertyValueChoices" => value_choices(
+            labels,
+            project,
+            &id,
+            &params::decode::<Vec<FieldStep>>(&args["path"])?,
+            &params::decode(&args["key"])?,
         ),
         "metadata/previewProperty" => preview(project, &params::decode(args)?),
         _ => Err(super::envelope::error(-32601)),

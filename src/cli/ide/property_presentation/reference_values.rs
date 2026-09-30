@@ -53,7 +53,7 @@ impl Presenter<'_> {
     }
 
     /// Empty references, enum values and predefined data are different XML value variants.
-    pub(super) fn design_reference(&mut self, raw: &str) -> Option<Value> {
+    pub(in crate::cli::ide) fn design_reference(&mut self, raw: &str) -> Option<Value> {
         if let Some(value) = self.references.get(raw) {
             return Some(value.clone());
         }

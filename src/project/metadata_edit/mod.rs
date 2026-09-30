@@ -5,12 +5,14 @@ mod patch;
 pub(crate) mod references;
 mod schema;
 pub(crate) mod types;
+pub(crate) mod value_schema;
 mod values;
 mod write;
 
 pub(crate) use document::EditingDocument;
 pub use document::{EditableField, FieldStep, PropertyChange, PropertyEditing};
 pub use schema::ScalarSchema;
+pub use value_schema::{EditableValueType, ValueConstraints};
 
 use std::{fmt::Write, io, ops::Range};
 

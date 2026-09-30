@@ -51,6 +51,33 @@ pub(super) fn replace_bound(
 }
 
 /// Preserve element spelling, unrelated attributes and comments while replacing its semantic value.
+pub(super) fn replace_value(
+    input: &str,
+    node: Node<'_, '_>,
+    key: Option<&PropertyKey>,
+    value: &str,
+) -> Result<EditPlan, EditError> {
+    if key.is_none()
+        && node
+            .attribute((XSI, "nil"))
+            .is_some_and(|nil| matches!(nil, "true" | "1"))
+    {
+        return patch::replacements_plan(input, Vec::new());
+    }
+    let annotation = key.map(|key| {
+        if key.namespace.as_deref() == Some(types::CFG) {
+            PropertyKey {
+                namespace: Some(READABLE.to_owned()),
+                name: "DesignTimeRef".to_owned(),
+            }
+        } else {
+            key.clone()
+        }
+    });
+    replace(input, node, annotation.as_ref(), value)
+}
+
+/// Keep serialization details behind the reviewed semantic operations above.
 fn replace(
     input: &str,
     node: Node<'_, '_>,

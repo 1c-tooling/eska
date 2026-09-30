@@ -3,6 +3,7 @@
 mod cache;
 mod editing;
 mod editing_references;
+mod editing_values;
 mod property_reference;
 mod refresh;
 pub mod search;
@@ -12,6 +13,7 @@ pub use super::metadata_disk_cache::DiskCacheStats;
 pub use cache::{CacheLimits, CacheStats};
 pub use editing::{EditingSnapshot, PropertyEditError, PropertyTypeChoice};
 pub use editing_references::PropertyReferenceChoice;
+pub use editing_values::PropertyValueChoice;
 pub use refresh::RefreshReport;
 pub use support::{FileReason, FileSupport, ObjectSupport, SupportSnapshot};
 

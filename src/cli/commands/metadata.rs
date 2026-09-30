@@ -111,7 +111,14 @@ impl MetadataArgs {
                 inspect(&labels, project, &id)
             }
             MetadataCommand::Types(args) | MetadataCommand::Choices(args) => {
-                let input = read_input(&args.input, &["schemaVersion", "objectId", "path"])?;
+                let input = read_input(
+                    &args.input,
+                    if matches!(self.command, MetadataCommand::Choices(_)) {
+                        &["schemaVersion", "objectId", "path", "key"]
+                    } else {
+                        &["schemaVersion", "objectId", "path"]
+                    },
+                )?;
                 let id: ObjectId = serde_json::from_value(input["objectId"].clone())
                     .map_err(|_| failure("invalid_request"))?;
                 let path: Vec<crate::project::metadata_edit::FieldStep> =
@@ -119,7 +126,13 @@ impl MetadataArgs {
                         .map_err(|_| failure("invalid_request"))?;
                 reveal(project, &id)?;
                 if matches!(self.command, MetadataCommand::Choices(_)) {
-                    editing::reference_choices(&labels, project, &id, &path)
+                    if let Some(key) = input.get("key") {
+                        let key = serde_json::from_value(key.clone())
+                            .map_err(|_| failure("invalid_request"))?;
+                        editing::value_choices(&labels, project, &id, &path, &key)
+                    } else {
+                        editing::reference_choices(&labels, project, &id, &path)
+                    }
                 } else {
                     editing::choices(&labels, project, &id, &path)
                 }
