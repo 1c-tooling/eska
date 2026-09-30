@@ -1,4 +1,4 @@
-//! Shared platform selection and diagnostics for native artifact onboarding.
+//! Shared platform selection and diagnostics for project onboarding and native imports.
 
 use std::{
     io::{self, IsTerminal},
@@ -148,6 +148,22 @@ impl PlatformArgs {
         interactive: bool,
         localizer: &Localizer,
     ) -> Result<Ibcmd, Failure> {
+        self.resolve_with_cancellation(inherited, interactive, localizer, "artifact-cancelled")
+    }
+
+    /// Reuse native creation's platform selector with initialization-specific cancellation.
+    pub fn resolve_for_init(&self, localizer: &Localizer) -> Result<Ibcmd, Failure> {
+        self.resolve_with_cancellation(None, true, localizer, "init-cancelled")
+    }
+
+    /// Keep selection and installed-version verification identical across onboarding commands.
+    fn resolve_with_cancellation(
+        &self,
+        inherited: Option<&PlatformVersion>,
+        interactive: bool,
+        localizer: &Localizer,
+        cancellation_key: &str,
+    ) -> Result<Ibcmd, Failure> {
         let options = platform::tool_options(
             self.ibcmd.clone(),
             self.platform_arch.clone(),
@@ -200,13 +216,13 @@ impl PlatformArgs {
                 })
                 .collect::<Vec<_>>();
             let mut selector = Selector::start("build-platform-tui-title")
-                .map_err(|error| prompt_error(error, localizer))?;
+                .map_err(|error| platform_prompt_error(error, localizer, cancellation_key))?;
             let selected = selector
-                .choose_values(localizer, "build-platform-menu", &choices)
-                .map_err(|error| prompt_error(error, localizer))?;
+                .choose_values(localizer, "artifact-platform-menu", &choices)
+                .map_err(|error| platform_prompt_error(error, localizer, cancellation_key))?;
             selector
                 .finish()
-                .map_err(|_| prompt_error(PromptError::Io, localizer))?;
+                .map_err(|_| platform_prompt_error(PromptError::Io, localizer, cancellation_key))?;
             selected
         };
         let version = PlatformVersion::parse(&version).map_err(|_| {
@@ -225,6 +241,18 @@ impl PlatformArgs {
                 ),
             )
         })
+    }
+}
+
+/// Localize selector cancellation for the command that owns the interaction.
+fn platform_prompt_error(
+    error: PromptError,
+    localizer: &Localizer,
+    cancellation_key: &str,
+) -> Failure {
+    match error {
+        PromptError::Cancelled => Failure::new("cancelled", localizer.text(cancellation_key)),
+        PromptError::Io => prompt_error(PromptError::Io, localizer),
     }
 }
 
