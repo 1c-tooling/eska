@@ -71,6 +71,12 @@ fn creates_all_types_in_both_locales() {
             assert!(config.contains("platform_version = \"8.3.27.2325\""));
             assert!(!root.join("src/.gitkeep").exists());
             assert!(!root.join(".git").exists());
+            assert!(!fixture.0.join(".eska").exists());
+            assert_eq!(
+                fs::read(root.join(".eska/import/.gitignore")).unwrap(),
+                b"*\n"
+            );
+            assert_eq!(fs::read_dir(root.join(".eska/import")).unwrap().count(), 1);
             assert!(
                 fs::read_to_string(root.join(if matches!(extension, "epf" | "erf") {
                     "src/incoming.xml"
@@ -111,6 +117,11 @@ fn creates_workspace_member_with_inherited_platform() {
     let config = fs::read_to_string(fixture.0.join("src/processor/eska.toml")).unwrap();
     assert!(!config.contains("platform_version"));
     assert!(!fixture.0.join("src/processor/.git").exists());
+    assert!(!fixture.0.join("src/processor/.eska").exists());
+    assert_eq!(
+        fs::read(fixture.0.join(".eska/import/.gitignore")).unwrap(),
+        b"*\n"
+    );
     assert!(
         fs::read_to_string(fixture.0.join("eska.toml"))
             .unwrap()
@@ -136,6 +147,7 @@ fn rejects_invalid_creation_without_partial_files() {
         let output = run(&fixture.0, &fixture, "en", &args);
         assert!(!output.status.success());
         assert!(!fixture.0.join("project").exists());
+        assert!(!fixture.0.join(".eska").exists());
     }
     fs::create_dir(fixture.0.join("project")).unwrap();
     fs::write(fixture.0.join("project/keep"), "user data").unwrap();
@@ -622,6 +634,113 @@ fn streams_diagnostics_once_without_color_in_both_locales() {
                     assert!(!stderr.contains('▶'));
                 }
             }
+        }
+    }
+}
+
+/// Standalone unpacking starts only after claiming the project and preserves sibling service data.
+#[test]
+fn standalone_unpacking_uses_the_new_project_directory() {
+    let fixture = TestDir::new();
+    artifact(&fixture.0, "epf", "ExternalDataProcessor", "Current", UUID);
+    fs::create_dir(fixture.0.join(".eska")).unwrap();
+    fs::write(fixture.0.join(".eska/keep"), "sibling data").unwrap();
+    let ready = fixture.0.join("ready");
+    let proceed = fixture.0.join("continue");
+    let root = fixture.0.join("project");
+    let mut child = Command::new(env!("CARGO_BIN_EXE_eska"))
+        .current_dir(&fixture.0)
+        .args([
+            "--lang",
+            "en",
+            "new",
+            "project",
+            "--from",
+            "incoming.epf",
+            "--workflow",
+            "trunk",
+            "--platform-version",
+            "8.3.27.2325",
+            "--no-vcs",
+            "--ibcmd",
+        ])
+        .arg(super::build::fake_ibcmd(&fixture))
+        .env("FAKE_IBCMD_IMPORT_READY", &ready)
+        .env("FAKE_IBCMD_IMPORT_CONTINUE", &proceed)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while !ready.exists() {
+        assert!(
+            child.try_wait().unwrap().is_none(),
+            "new exited before readiness"
+        );
+        if std::time::Instant::now() >= deadline {
+            child.kill().unwrap();
+            panic!("platform fixture readiness timeout");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    assert!(root.is_dir());
+    let storage = root.join(".eska/import");
+    let staging = fs::read_dir(&storage)
+        .unwrap()
+        .find_map(|entry| {
+            let entry = entry.unwrap();
+            entry.file_type().unwrap().is_dir().then(|| entry.path())
+        })
+        .unwrap();
+    assert_eq!(
+        fs::read(staging.join("input.epf")).unwrap(),
+        fs::read(fixture.0.join("incoming.epf")).unwrap()
+    );
+    assert!(!root.join("eska.toml").exists());
+    fs::write(proceed, "").unwrap();
+    let output = child.wait_with_output().unwrap();
+    assert!(output.status.success(), "{output:?}");
+    assert!(root.join("src/incoming.xml").is_file());
+    assert_eq!(fs::read_dir(storage).unwrap().count(), 1);
+    assert_eq!(fs::read_dir(fixture.0.join(".eska")).unwrap().count(), 1);
+    assert_eq!(
+        fs::read(fixture.0.join(".eska/keep")).unwrap(),
+        b"sibling data"
+    );
+}
+
+/// Failed native loading or export removes the owned project and all its service files.
+#[test]
+fn failed_standalone_creation_removes_nested_service_files_in_both_locales() {
+    for locale in ["ru", "en"] {
+        for failure in ["FAKE_IBCMD_FAIL_LOAD", "FAKE_IBCMD_FAIL_EXPORT"] {
+            let fixture = TestDir::new();
+            artifact(&fixture.0, "cf", "Configuration", "Current", UUID);
+            let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+                .current_dir(&fixture.0)
+                .args([
+                    "--lang",
+                    locale,
+                    "new",
+                    "project",
+                    "--from",
+                    "incoming.cf",
+                    "--workflow",
+                    "trunk",
+                    "--platform-version",
+                    "8.3.27.2325",
+                    "--ibcmd",
+                ])
+                .arg(super::build::fake_ibcmd(&fixture))
+                .env(failure, "1")
+                .output()
+                .unwrap();
+            assert_eq!(output.status.code(), Some(1), "{output:?}");
+            assert!(output.stdout.is_empty(), "{output:?}");
+            assert!(String::from_utf8_lossy(&output.stderr).contains("[ERROR]"));
+            assert!(!fixture.0.join("project").exists());
+            assert!(!fixture.0.join(".eska").exists());
+            assert_eq!(fs::read_dir(&fixture.0).unwrap().count(), 1);
         }
     }
 }

@@ -65,7 +65,10 @@ fn execute(
             diagnostics::present_context_error(&error, localizer),
         )
     })?;
-    let creation_error = |error| Failure::new("creation", super::present(&error, localizer));
+    let creation_error = |error| match error {
+        create::CreationError::Artifact(error) => artifact::present(&error, localizer),
+        error => Failure::new("creation", super::present(&error, localizer)),
+    };
     let (destination, member) = if let Some(workspace) = &workspace {
         if args.workflow.is_some() {
             return Err(Failure::new(
@@ -100,32 +103,43 @@ fn execute(
         .from
         .as_ref()
         .ok_or_else(|| Failure::new("input-required", localizer.text("artifact-from-required")))?;
-    let prepared = artifact::unpack(&base.join(input), &destination, &tool, true, localizer)?;
-    let mut config = ProjectConfig::new(prepared.identity().project_type);
-    if let Some(workflow) = workflow {
-        config = config.with_workflow(workflow);
-    }
-    if workspace.is_none()
+    let build = if workspace.is_none()
         || args.platform.platform_version.is_some()
         || args.platform.select_platform
         || inherited.is_none()
     {
-        let settings =
+        Some(
             BuildSettings::new(tool.version().as_str(), "build".into()).map_err(|_| {
                 Failure::new(
                     "platform-version-invalid",
                     localizer.text("artifact-version-invalid"),
                 )
-            })?;
-        config = config.with_build_settings(settings);
+            })?,
+        )
+    } else {
+        None
+    };
+    let prepare = |destination: &Path| {
+        let prepared = artifact::unpack(&base.join(input), destination, &tool, true, localizer)
+            .map_err(|error| create::CreationError::Artifact(Box::new(error)))?;
+        let mut config = ProjectConfig::new(prepared.identity().project_type);
+        if let Some(workflow) = workflow {
+            config = config.with_workflow(workflow);
+        }
+        if let Some(build) = build {
+            config = config.with_build_settings(build);
+        }
+        Ok((config, prepared))
+    };
+    if let Some(plan) = member {
+        let (config, prepared) = prepare(&destination).map_err(creation_error)?;
+        create::create_imported_member(&plan, &config, &prepared).map_err(creation_error)
+    } else {
+        create::create_imported(&destination, !args.no_vcs, |root| {
+            prepare(&root.join("src"))
+        })
+        .map_err(creation_error)
     }
-    member.map_or_else(
-        || {
-            create::create_imported(&destination, &config, !args.no_vcs, &prepared)
-                .map_err(creation_error)
-        },
-        |plan| create::create_imported_member(&plan, &config, &prepared).map_err(creation_error),
-    )
 }
 
 /// Ask only for the workflow that cannot be derived from a native artifact.

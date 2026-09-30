@@ -110,7 +110,8 @@ impl ImportArgs {
             &tool,
             self.format == Format::Human,
             localizer,
-        )?;
+        )
+        .map_err(|error| artifact::present(&error, localizer))?;
         let mut document = preview(
             &plan,
             &prepared,

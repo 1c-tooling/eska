@@ -40,6 +40,7 @@ pub enum ArtifactError {
         actual: ProjectType,
     },
     Run(RunError),
+    Output(io::Error),
     Platform {
         stage: &'static str,
         output: String,

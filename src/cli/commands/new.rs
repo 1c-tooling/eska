@@ -251,6 +251,9 @@ fn workspace_project_name(path: &Path) -> Option<ProjectName> {
 
 fn present(error: &CreationError, localizer: &Localizer) -> String {
     let (key, path) = match error {
+        CreationError::Artifact(error) => {
+            return super::artifact::present(error, localizer).message;
+        }
         CreationError::InvalidDestination { path } => ("new-destination-invalid", path),
         CreationError::AlreadyExists { path } => ("new-destination-exists", path),
         CreationError::Io { path, .. } => ("new-io-error", path),
