@@ -44,9 +44,8 @@ pub(super) fn unpack(
     tool: &Ibcmd,
     human: bool,
     localizer: &Localizer,
-) -> Result<PreparedArtifact, Failure> {
+) -> Result<PreparedArtifact, ArtifactError> {
     let styled = diagnostic_styling_enabled();
-    let output_failure = || Failure::new("output", localizer.text("artifact-output-error"));
     if human {
         let heading = localizer.format(
             "artifact-unpack-started",
@@ -57,7 +56,7 @@ pub(super) fn unpack(
             false,
             None,
         )
-        .map_err(|_| output_failure())?;
+        .map_err(ArtifactError::Output)?;
     }
     let mut progress = (human && io::stderr().is_terminal())
         .then(|| ProgressLine::start(localizer.text("artifact-unpack-progress"), styled));
@@ -76,9 +75,9 @@ pub(super) fn unpack(
     {
         output_error = Some(error);
     }
-    let prepared = result.map_err(|error| present(&error, localizer))?;
-    if output_error.is_some() {
-        return Err(output_failure());
+    let prepared = result?;
+    if let Some(error) = output_error {
+        return Err(ArtifactError::Output(error));
     }
     Ok(prepared)
 }
@@ -264,6 +263,9 @@ pub(super) fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
         }
         ArtifactError::Run(_) => {
             return Failure::new("platform-run", localizer.text("artifact-platform-run"));
+        }
+        ArtifactError::Output(_) => {
+            return Failure::new("output", localizer.text("artifact-output-error"));
         }
         ArtifactError::Platform { .. } => {
             return Failure::new(

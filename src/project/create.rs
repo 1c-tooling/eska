@@ -13,6 +13,7 @@ use crate::{
 
 use super::{
     Project, ProjectName, ProjectType, Workspace,
+    artifact::{ArtifactError, PreparedArtifact},
     discovery::{self, ContextDiscoveryError, DiscoveryContext, DiscoveryError},
     onboarding::{self, WorkspaceEnrollmentError, WorkspaceMemberEnrollment},
     templates::Template,
@@ -51,25 +52,23 @@ pub fn create(
     initialize_vcs: bool,
 ) -> Result<Project, CreationError> {
     let config = ProjectConfig::new(project_type).with_workflow(workflow);
-    create_configured(destination, &config, initialize_vcs, None)
+    create_configured(destination, &config, initialize_vcs)
 }
 
-/// Create a configured project from validated, isolated artifact sources.
+/// Claim the project directory before preparing its isolated artifact sources.
 ///
 /// # Errors
 /// Returns creation errors and rolls back the exclusively owned destination on failure.
 pub fn create_imported(
     destination: &Path,
-    config: &ProjectConfig,
     initialize_vcs: bool,
-    artifact: &super::artifact::PreparedArtifact,
+    prepare: impl FnOnce(&Path) -> Result<(ProjectConfig, PreparedArtifact), CreationError>,
 ) -> Result<Project, CreationError> {
-    create_configured(
-        destination,
-        config,
-        initialize_vcs,
-        Some(&artifact.sources()),
-    )
+    let destination = resolve_destination(destination)?;
+    in_new_directory(&destination, |root| {
+        let (config, artifact) = prepare(root)?;
+        publish_project(root, &config, initialize_vcs, Some(&artifact.sources()))
+    })
 }
 
 /// Share scaffold publication and rollback between empty and imported projects.
@@ -77,36 +76,29 @@ fn create_configured(
     destination: &Path,
     config: &ProjectConfig,
     initialize_vcs: bool,
-    sources: Option<&Path>,
 ) -> Result<Project, CreationError> {
     let destination = resolve_destination(destination)?;
-    let template = Template::from_config(config).map_err(CreationError::Template)?;
     in_new_directory(&destination, |root| {
-        for directory in template.directories() {
-            let path = root.join(directory);
-            fs::create_dir(&path).map_err(|source| CreationError::Io { path, source })?;
-        }
-        for entry in template.files() {
-            let path = root.join(entry.path());
-            let mut file = fs::OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .open(&path)
-                .map_err(|source| CreationError::Io {
-                    path: path.clone(),
-                    source,
-                })?;
-            file.write_all(entry.contents().as_bytes())
-                .map_err(|source| CreationError::Io { path, source })?;
-        }
-        if let Some(sources) = sources {
-            install_sources(root, config.source(), sources)?;
-        }
-        if initialize_vcs {
-            git::initialize(root).map_err(CreationError::Git)?;
-        }
-        discovery::discover(root).map_err(|error| CreationError::Validation(Box::new(error)))
+        publish_project(root, config, initialize_vcs, None)
     })
+}
+
+/// Finish standalone files and validation only inside an exclusively owned directory.
+fn publish_project(
+    root: &Path,
+    config: &ProjectConfig,
+    initialize_vcs: bool,
+    sources: Option<&Path>,
+) -> Result<Project, CreationError> {
+    let template = Template::from_config(config).map_err(CreationError::Template)?;
+    write_template(root, &template)?;
+    if let Some(sources) = sources {
+        install_sources(root, config.source(), sources)?;
+    }
+    if initialize_vcs {
+        git::initialize(root).map_err(CreationError::Git)?;
+    }
+    discovery::discover(root).map_err(|error| CreationError::Validation(Box::new(error)))
 }
 
 /// Preflights the conventional `src/<name>` destination of a workspace member.
@@ -347,6 +339,7 @@ pub fn resolve_destination(destination: &Path) -> Result<PathBuf, CreationError>
     }
 }
 
+/// Run preparation and publication under one exclusively claimed destination.
 fn in_new_directory(
     destination: &Path,
     operation: impl FnOnce(&Path) -> Result<Project, CreationError>,
@@ -379,6 +372,7 @@ fn in_new_directory(
 
 #[derive(Debug)]
 pub enum CreationError {
+    Artifact(Box<ArtifactError>),
     InvalidDestination {
         path: PathBuf,
     },
@@ -412,6 +406,28 @@ pub enum CreationError {
 mod tests {
     use super::*;
     use crate::test_support;
+
+    /// Preparation owns the new root before unpacking and its failure removes all auxiliaries.
+    #[test]
+    fn imported_preparation_failure_removes_the_claimed_project() {
+        let fixture = test_support::TestDir::new();
+        let sentinel = fixture.0.join("user-file");
+        fs::write(&sentinel, "preserved").unwrap();
+        let destination = fixture.0.join("new-project");
+        let result = create_imported(&destination, false, |root| {
+            assert!(root.is_dir());
+            assert_eq!(root, destination);
+            fs::create_dir_all(root.join(".eska/import/partial")).unwrap();
+            fs::write(root.join(".eska/import/partial/input.epf"), "partial").unwrap();
+            Err(CreationError::Artifact(Box::new(
+                ArtifactError::UnsupportedFile(sentinel.clone()),
+            )))
+        });
+        assert!(matches!(result, Err(CreationError::Artifact(_))));
+        assert!(!destination.exists());
+        assert!(!fixture.0.join(".eska").exists());
+        assert_eq!(fs::read(sentinel).unwrap(), b"preserved");
+    }
 
     #[test]
     fn failed_operation_removes_only_its_new_directory() {
