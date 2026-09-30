@@ -1,5 +1,6 @@
 //! Rename analysis keeps proven semantic references separate from textual candidates.
 
+pub(crate) mod bsl;
 pub(crate) mod inventory;
 mod name;
 mod xml;
@@ -12,7 +13,7 @@ use std::path::PathBuf;
 
 use serde::Serialize;
 
-/// A reference is changed only when its enclosing XML contract identifies its meaning.
+/// A reference is changed only when its source context identifies its metadata binding.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RenameReplacement {

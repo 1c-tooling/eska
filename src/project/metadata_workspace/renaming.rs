@@ -1,5 +1,6 @@
 //! Rename previews resolve declarations through the same source and support boundaries as editing.
 
+mod bsl;
 mod context;
 
 use std::{collections::BTreeMap, fmt::Write, path::PathBuf};
@@ -11,7 +12,7 @@ use crate::project::{
     metadata_edit::EditError,
     metadata_model::ObjectId,
     metadata_rename::{
-        NameError, RenameIssue, RenamePlan, UncertainReference,
+        NameError, RenameIssue, RenamePlan,
         inventory::{Inventory, MAX_TEXT_BYTES, MAX_XML_BYTES, file_hash, read_text},
     },
 };
@@ -55,7 +56,19 @@ impl ProjectSession {
     ) -> Result<RenamePlan, RenameError> {
         let context = self.rename_context(id, new_name)?;
         let root = self.project().source().to_path_buf();
-        let mut plan = scan_sources(&context, id, new_name, &root, &self.rename_exclusions())?;
+        let inventory = Inventory::read(&root, &self.rename_exclusions()).map_err(|source| {
+            RenameError::Io {
+                path: PathBuf::new(),
+                source,
+            }
+        })?;
+        let environment = bsl::Environment::read(
+            &root,
+            self.source.descriptor(),
+            self.project().configuration().project_type(),
+            &inventory,
+        )?;
+        let mut plan = scan_sources(&context, id, new_name, &root, inventory, &environment)?;
         let paths: Vec<_> = plan
             .files
             .iter()
@@ -114,18 +127,15 @@ impl ProjectSession {
     }
 }
 
-/// Read each source once; project fingerprints also include binary payloads and empty directories.
+/// Fingerprint all sources, including binary payloads, empty directories and earlier binding dependencies.
 fn scan_sources(
     context: &context::RenameContext,
     id: &ObjectId,
     new_name: &str,
     root: &std::path::Path,
-    excluded: &[PathBuf],
+    inventory: Inventory,
+    environment: &bsl::Environment,
 ) -> Result<RenamePlan, RenameError> {
-    let inventory = Inventory::read(root, excluded).map_err(|source| RenameError::Io {
-        path: PathBuf::new(),
-        source,
-    })?;
     let mut plan = RenamePlan {
         object_id: id.clone(),
         new_object_id: context.new_id.clone(),
@@ -143,7 +153,7 @@ fn scan_sources(
     digest.update(new_name);
     let mut hashes = BTreeMap::new();
     for path in &inventory.files {
-        let bytes_hash = scan_file(context, root, path, &mut plan)?;
+        let bytes_hash = scan_file(context, root, path, &mut plan, environment)?;
         hashes.insert(path.clone(), hex(&bytes_hash));
         digest.update([0]);
         digest.update((path.as_os_str().as_encoded_bytes().len() as u64).to_le_bytes());
@@ -156,6 +166,7 @@ fn scan_sources(
         digest.update(path.as_os_str().as_encoded_bytes());
     }
     context.check_snapshots(&hashes)?;
+    environment.check_snapshots(&hashes)?;
     plan.snapshot = hex(&digest.finalize());
     Ok(plan)
 }
@@ -166,6 +177,7 @@ fn scan_file(
     root: &std::path::Path,
     path: &std::path::Path,
     plan: &mut RenamePlan,
+    environment: &bsl::Environment,
 ) -> Result<[u8; 32], RenameError> {
     let kind = path
         .extension()
@@ -196,7 +208,7 @@ fn scan_file(
                 })?;
             let hash: [u8; 32] = Sha256::digest(input.as_bytes()).into();
             if plan.new_name != context.old_name {
-                match context.analyze(path, kind, &input, &hex(&hash)) {
+                match context.analyze(path, kind, &input, &hex(&hash), environment) {
                     Ok(file) if !file.replacements.is_empty() || !file.uncertain.is_empty() => {
                         plan.files.push(file);
                     }
@@ -238,25 +250,4 @@ fn hex(bytes: &[u8]) -> String {
             output
         },
     )
-}
-
-/// Keep every BSL occurrence unmodified until semantic resolution proves its binding.
-fn uncertain_bsl(input: &str, name: &str) -> Vec<UncertainReference> {
-    let mut matches = Vec::new();
-    let mut offset = 0;
-    for token in
-        input.split_inclusive(|character: char| !character.is_alphanumeric() && character != '_')
-    {
-        let value = token
-            .trim_end_matches(|character: char| !character.is_alphanumeric() && character != '_');
-        if crate::project::metadata_rename::same_name(value, name) {
-            matches.push(UncertainReference {
-                range: offset..offset + value.len(),
-                text: value.to_owned(),
-                reason: "bsl_binding_unverified",
-            });
-        }
-        offset += token.len();
-    }
-    matches
 }

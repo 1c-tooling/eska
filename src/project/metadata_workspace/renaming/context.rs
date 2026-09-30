@@ -24,6 +24,7 @@ pub(super) struct RenameContext {
     pub new_id: ObjectId,
     pub uuid: String,
     references: ReferenceRename,
+    code: crate::project::metadata_rename::bsl::BslRename,
     declarations: BTreeMap<PathBuf, (String, Vec<Range<usize>>)>,
     move_candidates: Vec<RenameMove>,
 }
@@ -100,6 +101,7 @@ impl ProjectSession {
             uuid: target.metadata.uuid().to_owned(),
             references: ReferenceRename::new(&ancestry, new_name, &generated)
                 .map_err(RenameError::Name)?,
+            code: crate::project::metadata_rename::bsl::BslRename::new(&ancestry, new_name),
             declarations: BTreeMap::from([(
                 location.path.clone(),
                 (snapshot(&input), vec![name.range()]),
@@ -238,6 +240,7 @@ impl RenameContext {
         kind: &str,
         input: &str,
         hash: &str,
+        environment: &super::bsl::Environment,
     ) -> Result<RenameFile, RenameError> {
         let mut file = RenameFile {
             path: path.to_path_buf(),
@@ -257,7 +260,11 @@ impl RenameContext {
             file.replacements = analysis.replacements;
             file.uncertain = analysis.uncertain;
         } else {
-            file.uncertain = super::uncertain_bsl(input, &self.old_name);
+            let analysis =
+                self.code
+                    .analyze(input, &environment.globals, environment.known_module(path));
+            file.replacements = analysis.replacements;
+            file.uncertain = analysis.uncertain;
         }
         Ok(file)
     }
