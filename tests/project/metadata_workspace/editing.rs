@@ -209,6 +209,149 @@ fn empty_role_collections_do_not_expose_a_scalar_editor() {
     );
 }
 
+/// An attribute's choice form belongs to its sole reference type, including when the owner differs.
+#[test]
+fn choice_forms_follow_the_field_type_without_offering_unrelated_forms() {
+    let (directory, workspace, _, _, _) = selector_fixture();
+    drop(workspace);
+    let source = directory.0.join("src");
+    let file = source.join("Catalogs/Goods.xml");
+    let original = fs::read_to_string(&file).unwrap().replace("</ChildObjects>", "<Attribute uuid='33333333-3333-3333-3333-333333333333'><Properties><Name>Target</Name><Type xmlns:v='http://v8.1c.ru/8.1/data/core' xmlns:c='http://v8.1c.ru/8.1/data/enterprise/current-config'><v:Type>c:CatalogRef.Other</v:Type></Type><ChoiceForm/></Properties></Attribute></ChildObjects>");
+    fs::write(&file, &original).unwrap();
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let id = object(
+        MetadataKind::Attribute,
+        "Target",
+        Some(object(MetadataKind::Catalog, "Goods", None)),
+    );
+    project.reveal_declared_object(&id).unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    let field = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.path[0].key.name == "ChoiceForm")
+        .unwrap();
+    let choices = project
+        .property_reference_choices(&id, &field.path)
+        .unwrap();
+    assert_eq!(
+        choices
+            .iter()
+            .map(|choice| choice.value.as_str())
+            .collect::<Vec<_>>(),
+        ["Catalog.Other.Form.Object"]
+    );
+    assert!(
+        project
+            .update_property(
+                &id,
+                &editing.properties.snapshot,
+                &field.path,
+                &PropertyChange::Text {
+                    value: "Catalog.Goods.Form.Object".into()
+                }
+            )
+            .is_err()
+    );
+    project
+        .update_property(
+            &id,
+            &editing.properties.snapshot,
+            &field.path,
+            &PropertyChange::Text {
+                value: choices[0].value.clone(),
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        fs::read_to_string(&file).unwrap(),
+        original.replace(
+            "<ChoiceForm/>",
+            "<ChoiceForm>Catalog.Other.Form.Object</ChoiceForm>"
+        )
+    );
+    let compound = original.replace(
+        "</v:Type>",
+        "</v:Type><v:Type xmlns:xs='http://www.w3.org/2001/XMLSchema'>xs:boolean</v:Type>",
+    );
+    fs::write(&file, compound).unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    let field = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.path[0].key.name == "ChoiceForm")
+        .unwrap();
+    assert!(
+        project
+            .property_reference_choices(&id, &field.path)
+            .unwrap()
+            .is_empty()
+    );
+}
+
+/// External descriptors keep the external Designer reference prefix despite sharing logical kinds.
+#[test]
+fn external_objects_choose_their_own_default_forms() {
+    for (case, tag) in [
+        ("processing", "ExternalDataProcessor"),
+        ("report", "ExternalReport"),
+    ] {
+        let (directory, workspace, id, path) = editable_fixture(case);
+        drop(workspace);
+        let source = directory.0.join("src");
+        let file = source.join(path);
+        let original = fs::read_to_string(&file)
+            .unwrap()
+            .replace("</Properties>", "<DefaultForm/></Properties>")
+            .replace(
+                "<ChildObjects/>",
+                "<ChildObjects><Form>Main</Form></ChildObjects>",
+            );
+        fs::write(&file, &original).unwrap();
+        selector_file(
+            &source,
+            "Demo/Forms/Main.xml",
+            "Form",
+            "Main",
+            "<FormType>Managed</FormType>",
+            "",
+        );
+        let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+        let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+        let editing = project.property_editing(&id).unwrap();
+        let field = editing
+            .properties
+            .fields
+            .iter()
+            .find(|field| field.path[0].key.name == "DefaultForm")
+            .unwrap();
+        let choices = project
+            .property_reference_choices(&id, &field.path)
+            .unwrap();
+        assert_eq!(choices[0].value, format!("{tag}.Demo.Form.Main"));
+        project
+            .update_property(
+                &id,
+                &editing.properties.snapshot,
+                &field.path,
+                &PropertyChange::Text {
+                    value: choices[0].value.clone(),
+                },
+            )
+            .unwrap();
+        assert_eq!(
+            fs::read_to_string(&file).unwrap(),
+            original.replace(
+                "<DefaultForm/>",
+                &format!("<DefaultForm>{tag}.Demo.Form.Main</DefaultForm>")
+            )
+        );
+    }
+}
+
 /// Preserve byte-sensitive formatting in fixtures for every supported project root.
 fn editable_fixture(case: &str) -> (TestDir, MetadataWorkspace, ObjectId, PathBuf) {
     let directory = TestDir::new();

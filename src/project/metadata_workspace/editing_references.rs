@@ -3,8 +3,8 @@
 use super::{ObjectSummary, ProjectSession, PropertyEditError};
 use crate::project::{
     configurator::TreeOptions,
-    metadata_edit::{EditError, FieldStep, PropertyChange, ScalarSchema, references},
-    metadata_model::{NodeId, ObjectId},
+    metadata_edit::{EditError, FieldStep, PropertyChange, ScalarSchema, references, types},
+    metadata_model::{MetadataKind, NodeId, ObjectId, PropertyKey},
 };
 
 /// One allowed Designer reference, with its object identity and human presentation context.
@@ -30,17 +30,39 @@ impl ProjectSession {
             .iter()
             .find(|field| field.path == path)
             .ok_or(EditError::UnsupportedValue)?;
-        let ScalarSchema::Reference { domain, .. } = &field.schema else {
+        let ScalarSchema::Reference {
+            domain,
+            reference_type,
+            ..
+        } = &field.schema
+        else {
             return Err(EditError::UnsupportedValue.into());
         };
         let (kind, parent_kind) = references::target(domain).ok_or(EditError::UnsupportedValue)?;
-        let owner = self.object(id)?.clone();
-        let parent = if let Some(parent_kind) = parent_kind {
+        let mut owner = self.object(id)?.clone();
+        let parent = if domain == "BasicForm" {
+            if path
+                .last()
+                .is_some_and(|step| step.key.name == "ChoiceForm")
+            {
+                let Some(target) = self.choice_form_owner(reference_type.as_ref())? else {
+                    return Ok(Vec::new());
+                };
+                owner = target;
+            } else if !matches!(
+                owner.kind,
+                MetadataKind::Report | MetadataKind::DataProcessor
+            ) {
+                return Err(EditError::UnsupportedValue.into());
+            }
+            self.children(&NodeId::Object(owner.id.clone()), TreeOptions::default())?;
+            Some(owner.id.clone())
+        } else if let Some(parent_kind) = parent_kind {
             if owner.kind != parent_kind {
                 return Err(EditError::UnsupportedValue.into());
             }
             self.children(&NodeId::Object(id.clone()), TreeOptions::default())?;
-            Some(id)
+            Some(id.clone())
         } else {
             None
         };
@@ -48,7 +70,7 @@ impl ProjectSession {
         for candidate in self
             .objects
             .values()
-            .filter(|object| object.kind == kind && object.parent.as_ref() == parent)
+            .filter(|object| object.kind == kind && object.parent == parent)
         {
             let value = if parent.is_some() {
                 let owner_tag = if &owner.id == self.source.root().id() {
@@ -86,6 +108,26 @@ impl ProjectSession {
         }
         result.sort_by(|left, right| left.value.cmp(&right.value));
         Ok(result)
+    }
+
+    /// Follow the field's single generated reference type instead of offering unrelated forms.
+    fn choice_form_owner(
+        &mut self,
+        key: Option<&PropertyKey>,
+    ) -> Result<Option<ObjectSummary>, PropertyEditError> {
+        let Some(key) = key else {
+            return Ok(None);
+        };
+        let (prefix, name) = key
+            .name
+            .split_once('.')
+            .ok_or(EditError::UnsupportedValue)?;
+        let tag = types::REFERENCE_TYPES
+            .iter()
+            .find_map(|(family, tag)| (*family == prefix).then_some(*tag))
+            .ok_or(EditError::UnsupportedValue)?;
+        let kind = MetadataKind::from_xml_tag(tag).map_err(|_| EditError::UnsupportedValue)?;
+        Ok(Some(self.property_reference(&[(kind, name)])?))
     }
 
     /// Both CLI and IDE writes must select an existing object of the exact permitted class and scope.

@@ -6,6 +6,7 @@ use crate::project::metadata_model::MetadataKind;
 pub fn target(domain: &str) -> Option<(MetadataKind, Option<MetadataKind>)> {
     use MetadataKind as K;
     let direct = match domain {
+        "BasicForm" => K::Form,
         "Role" => K::Role,
         "CommonForm" => K::CommonForm,
         "Language" => K::Language,

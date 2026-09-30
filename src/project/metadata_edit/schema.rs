@@ -39,6 +39,8 @@ pub enum ScalarSchema {
     Reference {
         domain: String,
         nullable: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        reference_type: Option<PropertyKey>,
     },
 }
 
@@ -57,7 +59,9 @@ impl ScalarSchema {
             Self::Decimal => decimal(value),
             Self::Enum { values, .. } => values.iter().any(|candidate| candidate == value),
             Self::DataType { .. } => false,
-            Self::Reference { domain, nullable } => {
+            Self::Reference {
+                domain, nullable, ..
+            } => {
                 (*nullable && value.is_empty())
                     || super::references::parts(value).is_some_and(|parts| {
                         super::references::target(domain).is_some_and(|(kind, _)| {
@@ -207,6 +211,11 @@ pub(super) fn scalar(
         return Some(ScalarSchema::Reference {
             domain: model_type.to_owned(),
             nullable: !node.has_tag_name((READABLE, "Item")),
+            reference_type: if model_type == "BasicForm" && node.tag_name().name() == "ChoiceForm" {
+                choice_form_type(node)
+            } else {
+                None
+            },
         });
     }
     if let Some(annotation) = node.attribute((XSI, "type")) {
@@ -252,6 +261,22 @@ pub(super) fn scalar(
         }
     }
     Some(result)
+}
+
+/// EDT's `ReferenceMdFormContentProvider` offers forms only for one concrete metadata reference type.
+fn choice_form_type(node: Node<'_, '_>) -> Option<PropertyKey> {
+    let description = node
+        .parent()?
+        .children()
+        .find(|child| child.has_tag_name((MD, "Type")))?;
+    let mut types = description
+        .children()
+        .filter(|child| child.has_tag_name((CORE, "Type")));
+    let key = super::types::key(types.next()?)?;
+    (types.next().is_none()
+        && key.namespace.as_deref() == Some(super::types::CFG)
+        && super::types::supported(&key))
+    .then_some(key)
 }
 
 /// Sibling constraints are reflected in the advertised schema as well as checked after patching.
