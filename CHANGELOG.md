@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1](https://github.com/1c-tooling/eska/compare/v0.14.0...v0.14.1) - 2026-09-30
+
+### Added
+
+- *(ide)* Добавлено читаемое представление ссылок и типов свойств
+
+### Fixed
+
+- *(ide)* Расширено распознавание ссылок и типов свойств
+- *(metadata)* Исправлено открытие свойств и модулей вложенных команд
+
 ## [0.14.0](https://github.com/1c-tooling/eska/compare/v0.13.0...v0.14.0) - 2026-09-30
 
 ### Added
