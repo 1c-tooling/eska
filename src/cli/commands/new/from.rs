@@ -9,7 +9,7 @@ use crate::{
         localization::{LocalizationValue, Localizer},
     },
     config::ProjectConfig,
-    project::{artifact::PreparedArtifact, build::BuildSettings, create, onboarding},
+    project::{build::BuildSettings, create, onboarding},
     vcs::workflow::WorkflowPreset,
 };
 
@@ -96,18 +96,11 @@ fn execute(
         .as_ref()
         .and_then(|workspace| workspace.build_settings().platform_version());
     let tool = args.platform.resolve(inherited, true, localizer)?;
-    let parent = workspace.as_ref().map_or_else(
-        || destination.parent().unwrap_or(base),
-        |workspace| workspace.root(),
-    );
     let input = args
         .from
         .as_ref()
         .ok_or_else(|| Failure::new("input-required", localizer.text("artifact-from-required")))?;
-    let prepared = PreparedArtifact::unpack(&base.join(input), parent, &tool, |_, line| {
-        eprintln!("{}", String::from_utf8_lossy(line));
-    })
-    .map_err(|error| artifact::present(&error, localizer))?;
+    let prepared = artifact::unpack(&base.join(input), &destination, &tool, true, localizer)?;
     let mut config = ProjectConfig::new(prepared.identity().project_type);
     if let Some(workflow) = workflow {
         config = config.with_workflow(workflow);

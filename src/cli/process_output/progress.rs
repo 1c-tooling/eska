@@ -1,4 +1,4 @@
-//! Lifecycle and synchronized stderr access for the build spinner.
+//! Lifecycle and synchronized stderr access for the platform spinner.
 
 use std::{
     io::{self, Write as _},
@@ -28,7 +28,7 @@ struct ProgressState {
     styled: bool,
 }
 
-pub(in crate::cli::commands::build) struct ProgressLine {
+pub(in crate::cli) struct ProgressLine {
     state: Arc<ProgressState>,
     stop: Sender<()>,
     worker: Option<thread::JoinHandle<io::Result<()>>>,
@@ -37,7 +37,7 @@ pub(in crate::cli::commands::build) struct ProgressLine {
 
 impl ProgressLine {
     /// Start a terminal-owned spinner that remains below streamed diagnostics.
-    pub(in crate::cli::commands::build) fn start(message: String, styled: bool) -> Self {
+    pub(in crate::cli) fn start(message: String, styled: bool) -> Self {
         let state = Arc::new(ProgressState {
             output: Mutex::new(()),
             frame: AtomicUsize::new(0),
@@ -79,7 +79,7 @@ impl ProgressLine {
     }
 
     /// Stop animation and remove its final line before result presentation.
-    pub(in crate::cli::commands::build) fn finish(&mut self) -> io::Result<()> {
+    pub(in crate::cli) fn finish(&mut self) -> io::Result<()> {
         if !self.active {
             return Ok(());
         }
@@ -91,7 +91,7 @@ impl ProgressLine {
             .map(|worker| {
                 worker
                     .join()
-                    .map_err(|_| io::Error::other("build progress thread panicked"))?
+                    .map_err(|_| io::Error::other("platform progress thread panicked"))?
             })
             .transpose();
         let clear_result = {
@@ -105,6 +105,7 @@ impl ProgressLine {
 }
 
 impl Drop for ProgressLine {
+    /// Stop the worker and restore the prompt line on every exit path.
     fn drop(&mut self) {
         let _ = self.finish();
     }
@@ -115,7 +116,7 @@ fn lock_progress_output(state: &ProgressState) -> io::Result<std::sync::MutexGua
     state
         .output
         .lock()
-        .map_err(|_| io::Error::other("build progress output lock was poisoned"))
+        .map_err(|_| io::Error::other("platform progress output lock was poisoned"))
 }
 
 /// Draw the current animation frame while acquiring the shared terminal lock.

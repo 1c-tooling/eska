@@ -432,6 +432,10 @@ fn fills_empty_scaffold_and_selects_exactly_one_workspace_member() {
 fn concurrent_source_edit_aborts_even_with_force() {
     let fixture = TestDir::new();
     let root = imported_project(&fixture);
+    git(&root, &["init", "-q"]);
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-qm", "fixture"]);
+    let ignore = fs::read(root.join(".gitignore")).unwrap();
     let ready = fixture.0.join("ready");
     let proceed = fixture.0.join("continue");
     let mut child = Command::new(env!("CARGO_BIN_EXE_eska"))
@@ -465,6 +469,15 @@ fn concurrent_source_edit_aborts_even_with_force() {
         }
         std::thread::sleep(std::time::Duration::from_millis(20));
     }
+    let status = Command::new("git")
+        .current_dir(&root)
+        .args(["status", "--porcelain", "--untracked-files=all"])
+        .output()
+        .unwrap();
+    assert!(status.status.success());
+    assert!(status.stdout.is_empty(), "{status:?}");
+    assert_eq!(fs::read(root.join(".gitignore")).unwrap(), ignore);
+    assert!(fs::read_dir(root.join(".eska/import")).unwrap().count() > 1);
     let descriptor = root.join("src/Configuration.xml");
     let changed = fs::read_to_string(&descriptor)
         .unwrap()
@@ -487,26 +500,29 @@ fn failed_unpack_leaves_existing_project_unchanged() {
     let root = imported_project(&fixture);
     let before = fs::read(root.join("src/Configuration.xml")).unwrap();
     let config = fs::read(root.join("eska.toml")).unwrap();
-    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
-        .current_dir(&root)
-        .args([
-            "import",
-            "../incoming.cf",
-            "--force",
-            "--format",
-            "json",
-            "--ibcmd",
-        ])
-        .arg(super::build::fake_ibcmd(&fixture))
-        .env("FAKE_IBCMD_FAIL_EXPORT", "1")
-        .output()
-        .unwrap();
-    assert!(!output.status.success());
-    assert_eq!(
-        fs::read(root.join("src/Configuration.xml")).unwrap(),
-        before
-    );
-    assert_eq!(fs::read(root.join("eska.toml")).unwrap(), config);
+    for failure in ["FAKE_IBCMD_FAIL_LOAD", "FAKE_IBCMD_FAIL_EXPORT"] {
+        let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&root)
+            .args([
+                "import",
+                "../incoming.cf",
+                "--force",
+                "--format",
+                "json",
+                "--ibcmd",
+            ])
+            .arg(super::build::fake_ibcmd(&fixture))
+            .env(failure, "1")
+            .output()
+            .unwrap();
+        assert!(!output.status.success());
+        assert_eq!(
+            fs::read(root.join("src/Configuration.xml")).unwrap(),
+            before
+        );
+        assert_eq!(fs::read(root.join("eska.toml")).unwrap(), config);
+        assert_eq!(fs::read_dir(root.join(".eska/import")).unwrap().count(), 1);
+    }
 }
 
 /// Canonical project discovery must not erase the evidence of an unsafe source symlink.
@@ -556,5 +572,56 @@ fn accepts_unicode_dotted_artifact_names_without_guessing_the_descriptor() {
             ],
         );
         assert!(output.status.success(), "{output:?}");
+    }
+}
+
+/// Redirected native diagnostics keep single lines and never contaminate JSON stdout.
+#[test]
+fn streams_diagnostics_once_without_color_in_both_locales() {
+    for locale in ["ru", "en"] {
+        let fixture = TestDir::new();
+        let root = imported_project(&fixture);
+        for format in ["human", "json"] {
+            for failed in [false, true] {
+                let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+                    .current_dir(&root)
+                    .args([
+                        "--lang",
+                        locale,
+                        "import",
+                        "../incoming.cf",
+                        "--dry-run",
+                        "--format",
+                        format,
+                        "--ibcmd",
+                    ])
+                    .arg(super::build::fake_ibcmd(&fixture))
+                    .env("FAKE_IBCMD_ARTIFACT_DIAGNOSTICS", "1")
+                    .env("FAKE_IBCMD_FAIL_EXPORT", if failed { "1" } else { "0" })
+                    .output()
+                    .unwrap();
+                assert_eq!(output.status.success(), !failed, "{output:?}");
+                let stderr = String::from_utf8(output.stderr).unwrap();
+                assert_eq!(stderr.matches("[INFO] Loading fixture CF...").count(), 1);
+                assert_eq!(stderr.matches("[INFO] Exporting fixture XML...").count(), 1);
+                assert_eq!(stderr.matches("[WARN] fixture export warning").count(), 1);
+                assert_eq!(
+                    stderr.matches("[ERROR] fake export failure").count(),
+                    usize::from(failed)
+                );
+                assert!(!stderr.contains("\n\n"), "{stderr}");
+                assert!(!stderr.contains('\u{1b}'), "{stderr}");
+                if format == "json" {
+                    let document: Value = serde_json::from_slice(&output.stdout).unwrap();
+                    assert_eq!(document["schema_version"], 1);
+                    if failed {
+                        assert_eq!(document["error"]["code"], "platform-failed");
+                    } else {
+                        assert_eq!(document["applied"], false);
+                    }
+                    assert!(!stderr.contains('▶'));
+                }
+            }
+        }
     }
 }

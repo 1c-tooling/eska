@@ -2,7 +2,7 @@
 
 use std::{
     io::{self, IsTerminal},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use clap::Args;
@@ -13,9 +13,12 @@ use crate::{
         interactive::{PromptError, Selector},
         localization::{LocalizationValue, Localizer},
         platform,
+        process_output::{
+            self, decorate_status, diagnostic_styling_enabled, progress::ProgressLine,
+        },
     },
     project::{
-        artifact::ArtifactError,
+        artifact::{ArtifactError, PreparedArtifact},
         build::{Ibcmd, PlatformVersion},
     },
 };
@@ -32,6 +35,52 @@ pub(super) struct PlatformArgs {
     pub platform_version: Option<String>,
     #[arg(long)]
     pub select_platform: bool,
+}
+
+/// Stream platform diagnostics with the same color and progress policy used by build.
+pub(super) fn unpack(
+    input: &Path,
+    destination: &Path,
+    tool: &Ibcmd,
+    human: bool,
+    localizer: &Localizer,
+) -> Result<PreparedArtifact, Failure> {
+    let styled = diagnostic_styling_enabled();
+    let output_failure = || Failure::new("output", localizer.text("artifact-output-error"));
+    if human {
+        let heading = localizer.format(
+            "artifact-unpack-started",
+            &[("version", LocalizationValue::Text(tool.version().as_str()))],
+        );
+        process_output::write_diagnostic(
+            decorate_status("▶", &heading, styled, "36").as_bytes(),
+            false,
+            None,
+        )
+        .map_err(|_| output_failure())?;
+    }
+    let mut progress = (human && io::stderr().is_terminal())
+        .then(|| ProgressLine::start(localizer.text("artifact-unpack-progress"), styled));
+    let mut output_error = None;
+    let result = PreparedArtifact::unpack(input, destination, tool, |_, line| {
+        if output_error.is_none()
+            && let Err(error) = process_output::write_diagnostic(line, styled, progress.as_ref())
+        {
+            output_error = Some(error);
+        }
+    });
+    if let Some(error) = progress
+        .as_mut()
+        .and_then(|progress| progress.finish().err())
+        && output_error.is_none()
+    {
+        output_error = Some(error);
+    }
+    let prepared = result.map_err(|error| present(&error, localizer))?;
+    if output_error.is_some() {
+        return Err(output_failure());
+    }
+    Ok(prepared)
 }
 
 pub(super) struct Failure {
@@ -216,13 +265,10 @@ pub(super) fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
         ArtifactError::Run(_) => {
             return Failure::new("platform-run", localizer.text("artifact-platform-run"));
         }
-        ArtifactError::Platform { output, .. } => {
+        ArtifactError::Platform { .. } => {
             return Failure::new(
                 "platform-failed",
-                localizer.format(
-                    "artifact-platform-failed",
-                    &[("reason", LocalizationValue::Text(output))],
-                ),
+                localizer.text("artifact-platform-failed"),
             );
         }
     };

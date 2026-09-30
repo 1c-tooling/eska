@@ -11,6 +11,7 @@ mod ide;
 mod interactive;
 pub mod localization;
 mod platform;
+mod process_output;
 mod shelves;
 
 pub use args::Cli;

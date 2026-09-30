@@ -16,14 +16,15 @@ src/
 │   ├── changes.rs               # общее представление путей и semantic changes
 │   ├── encoding.rs              # обратимые JSON-пути и Git byte strings
 │   ├── platform.rs              # общие machine-local настройки запуска 1С
+│   ├── process_output.rs        # общий вывод диагностики платформы и цветовые правила
+│   ├── process_output/progress.rs # lifecycle spinner и синхронизация stderr
 │   ├── commands/
 │   │   ├── mod.rs               # регистрация и диспетчеризация команд
 │   │   ├── build.rs             # eska build: аргументы, selection, preflight и запуск
 │   │   ├── build/
 │   │   │   ├── errors.rs        # RU/EN ошибки и стабильные machine-facing codes
 │   │   │   ├── json.rs          # версии JSON-схем preview, result и error
-│   │   │   ├── output.rs        # preview, streaming diagnostics и результат
-│   │   │   └── output/progress.rs # lifecycle spinner и синхронизация stderr
+│   │   │   └── output.rs        # preview, streaming diagnostics и результат
 │   │   ├── clean.rs             # удаление управляемых build-баз
 │   │   ├── config.rs            # eska config: init/edit глобальных настроек
 │   │   ├── doctor.rs            # eska doctor: selectors, RU/EN и versioned JSON
@@ -199,9 +200,10 @@ tests/
 - Обработчики команд не используют внутренние функции соседних команд. Общий
   код сначала поднимается из `commands/` в соответствующий модуль `cli/`.
 - `commands/build.rs` управляет выбором, preflight и последовательным выполнением.
-  Его внутренние модули отвечают за ошибки, JSON и вывод; `output/progress.rs`
-  владеет потоком spinner и синхронизацией записи в stderr. Эти детали закрыты
-  границами команды и не входят в публичный API.
+  Его внутренние модули отвечают за ошибки, JSON и вывод. Общий
+  `cli/process_output.rs` обслуживает диагностику `build`, `import` и `new --from`;
+  `process_output/progress.rs` владеет spinner и синхронизацией stderr.
+  Эти детали остаются в CLI и не входят в публичный API.
 - `project`, `config` и `vcs` не зависят от `cli`, `clap`,
   терминала и локализованных строк. Они возвращают данные и структурированные ошибки.
 - Только `cli/interactive/terminal.rs` владеет переключением режимов терминала

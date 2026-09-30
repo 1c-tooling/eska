@@ -104,14 +104,13 @@ impl ImportArgs {
             self.format == Format::Human,
             localizer,
         )?;
-        let parent = project.source().parent().ok_or_else(|| {
-            Failure::new("unsafe-source", localizer.text("artifact-config-error"))
-        })?;
-        let prepared =
-            PreparedArtifact::unpack(&base.join(&self.file), parent, &tool, |_, line| {
-                eprintln!("{}", String::from_utf8_lossy(line));
-            })
-            .map_err(|error| artifact::present(&error, localizer))?;
+        let prepared = artifact::unpack(
+            &base.join(&self.file),
+            project.source(),
+            &tool,
+            self.format == Format::Human,
+            localizer,
+        )?;
         let mut document = preview(
             &plan,
             &prepared,
