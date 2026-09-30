@@ -125,10 +125,7 @@ fn replace_directory(
     sources: &std::path::Path,
     destination: &std::path::Path,
 ) -> Result<ImportResult, ArtifactError> {
-    let parent = destination
-        .parent()
-        .ok_or_else(|| ArtifactError::UnsafePath(destination.to_owned()))?;
-    let mut backup = Staging::create(parent)?;
+    let mut backup = Staging::create(destination)?;
     let previous = backup.path.join("previous");
     fs::rename(destination, &previous).map_err(|error| io_error(destination, error))?;
     // From this point, automatic cleanup must never discard the user's only surviving tree.
@@ -230,6 +227,11 @@ mod tests {
             fs::read(source.join("nested/module.bsl")).unwrap(),
             b"\xef\xbb\xbfkept\r\n"
         );
-        assert_eq!(fs::read_dir(&fixture.0).unwrap().count(), 1);
+        assert_eq!(
+            fs::read_dir(fixture.0.join(".eska/import"))
+                .unwrap()
+                .count(),
+            1
+        );
     }
 }

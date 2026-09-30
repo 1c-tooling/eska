@@ -12,13 +12,13 @@ pub struct PreparedArtifact {
 }
 
 impl PreparedArtifact {
-    /// Snapshot and unpack a native file, then determine its actual metadata type.
+    /// Unpack near the eventual destination into ignored storage and inspect metadata identity.
     ///
     /// # Errors
     /// Returns input, platform, cancellation or XML errors before any project is changed.
     pub fn unpack<F>(
         input: &Path,
-        parent: &Path,
+        destination: &Path,
         tool: &Ibcmd,
         mut output: F,
     ) -> Result<Self, ArtifactError>
@@ -34,7 +34,7 @@ impl PreparedArtifact {
         if !matches!(extension.as_str(), "cf" | "cfe" | "epf" | "erf") || !input.is_file() {
             return Err(ArtifactError::UnsupportedFile(input));
         }
-        let staging = Staging::create(parent)?;
+        let staging = Staging::create(destination)?;
         let snapshot = staging.path.join(format!("input.{extension}"));
         fs::copy(&input, &snapshot).map_err(|error| io_error(&input, error))?;
         let sources = staging.path.join("sources");

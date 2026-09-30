@@ -432,6 +432,10 @@ fn fills_empty_scaffold_and_selects_exactly_one_workspace_member() {
 fn concurrent_source_edit_aborts_even_with_force() {
     let fixture = TestDir::new();
     let root = imported_project(&fixture);
+    git(&root, &["init", "-q"]);
+    git(&root, &["add", "."]);
+    git(&root, &["commit", "-qm", "fixture"]);
+    let ignore = fs::read(root.join(".gitignore")).unwrap();
     let ready = fixture.0.join("ready");
     let proceed = fixture.0.join("continue");
     let mut child = Command::new(env!("CARGO_BIN_EXE_eska"))
@@ -465,6 +469,15 @@ fn concurrent_source_edit_aborts_even_with_force() {
         }
         std::thread::sleep(std::time::Duration::from_millis(20));
     }
+    let status = Command::new("git")
+        .current_dir(&root)
+        .args(["status", "--porcelain", "--untracked-files=all"])
+        .output()
+        .unwrap();
+    assert!(status.status.success());
+    assert!(status.stdout.is_empty(), "{status:?}");
+    assert_eq!(fs::read(root.join(".gitignore")).unwrap(), ignore);
+    assert!(fs::read_dir(root.join(".eska/import")).unwrap().count() > 1);
     let descriptor = root.join("src/Configuration.xml");
     let changed = fs::read_to_string(&descriptor)
         .unwrap()
@@ -508,6 +521,7 @@ fn failed_unpack_leaves_existing_project_unchanged() {
             before
         );
         assert_eq!(fs::read(root.join("eska.toml")).unwrap(), config);
+        assert_eq!(fs::read_dir(root.join(".eska/import")).unwrap().count(), 1);
     }
 }
 

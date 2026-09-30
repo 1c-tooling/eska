@@ -96,15 +96,11 @@ fn execute(
         .as_ref()
         .and_then(|workspace| workspace.build_settings().platform_version());
     let tool = args.platform.resolve(inherited, true, localizer)?;
-    let parent = workspace.as_ref().map_or_else(
-        || destination.parent().unwrap_or(base),
-        |workspace| workspace.root(),
-    );
     let input = args
         .from
         .as_ref()
         .ok_or_else(|| Failure::new("input-required", localizer.text("artifact-from-required")))?;
-    let prepared = PreparedArtifact::unpack(&base.join(input), parent, &tool, |_, line| {
+    let prepared = PreparedArtifact::unpack(&base.join(input), &destination, &tool, |_, line| {
         eprintln!("{}", String::from_utf8_lossy(line));
     })
     .map_err(|error| artifact::present(&error, localizer))?;
