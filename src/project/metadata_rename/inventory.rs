@@ -10,6 +10,8 @@ use std::{
 use sha2::{Digest, Sha256};
 
 pub const MAX_TEXT_BYTES: u64 = 64 * 1024 * 1024;
+/// Spreadsheet payloads exceed the descriptor ceiling and use sequential XML validation.
+pub const MAX_XML_BYTES: u64 = 256 * 1024 * 1024;
 
 /// Source-only paths; symlinks and non-UTF-8 paths cannot authorize a rename transaction.
 #[derive(Debug)]
@@ -73,12 +75,12 @@ pub fn file_hash(path: &Path) -> io::Result<[u8; 32]> {
 }
 
 /// Read text with the parser's byte ceiling even if another process grows the file concurrently.
-pub fn read_text(path: &Path) -> io::Result<String> {
+pub fn read_text(path: &Path, max_bytes: u64) -> io::Result<String> {
     let mut bytes = Vec::new();
     fs::File::open(path)?
-        .take(MAX_TEXT_BYTES + 1)
+        .take(max_bytes + 1)
         .read_to_end(&mut bytes)?;
-    if bytes.len() as u64 > MAX_TEXT_BYTES {
+    if bytes.len() as u64 > max_bytes {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             "source_too_large",

@@ -196,7 +196,7 @@ fn preview_rename_excludes_service_directories_for_project_root_sources() {
 #[test]
 fn preview_rename_reports_large_text_without_discarding_the_remaining_plan() {
     let (directory, mut workspace) = rename_fixture();
-    fs::File::create(directory.0.join("src/large.xml"))
+    fs::File::create(directory.0.join("src/large.bsl"))
         .unwrap()
         .set_len(64 * 1024 * 1024 + 1)
         .unwrap();
@@ -206,7 +206,7 @@ fn preview_rename_reports_large_text_without_discarding_the_remaining_plan() {
     assert!(
         plan.issues
             .iter()
-            .any(|issue| issue.path == Path::new("large.xml") && issue.reason == "text_too_large")
+            .any(|issue| issue.path == Path::new("large.bsl") && issue.reason == "text_too_large")
     );
     assert!(plan.files.iter().any(|file| !file.replacements.is_empty()));
 }

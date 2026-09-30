@@ -163,3 +163,77 @@ fn unprefixed_generated_type_uses_the_default_namespace() {
     assert_eq!(analysis.replacements.len(), 1);
     assert!(apply(&input, &analysis).contains(">CatalogRef.Новый<"));
 }
+
+/// Fragment inspection must agree with whole-document analysis even when prefixes and entity spellings vary.
+#[test]
+fn streaming_and_dom_reference_plans_match_byte_for_byte() {
+    for input in [
+        format!(
+            "\u{feff}<?xml version='1.0'?><r xmlns:xsi='{XSI}' xmlns:xr='{XR}' xmlns:cfg='{CFG}' xmlns:v='{CORE}'><a xsi:type='xr:MDObjectRef'>Catalog.O&#108;d</a><v:Type><![CDATA[cfg:CatalogRef.Old]]></v:Type><xr:GeneratedType name='CatalogRef.Old'/><mixed>Old<child/>Old</mixed></r>\r\n"
+        ),
+        format!(
+            "<r xmlns:xsi='{XSI}' xmlns:xr='{XR}'><a xsi:type='xr:MDObjectRef'>Catalog.Old</a><a xmlns:xr='urn:foreign' xsi:type='xr:MDObjectRef'>Catalog.Old</a><text>Old<!-- x -->Old</text><?instruction Old?></r>"
+        ),
+        format!(
+            "<r xmlns:xml='http://www.w3.org/XML/1998/name&#115;pace' xmlns:xr='{XR}'><xr:GeneratedType name='CatalogRef.Old'/></r>"
+        ),
+        format!(
+            "<MetaDataObject xmlns='{MD}'><Catalog><Properties><Name>Owner</Name><DefaultObjectForm>Catalog.Old.Form.Main</DefaultObjectForm></Properties><ChildObjects><Attribute><Properties><ChoiceForm>Catalog.Old.Form.Choice</ChoiceForm></Properties></Attribute></ChildObjects></Catalog></MetaDataObject>"
+        ),
+    ] {
+        let dom = catalog().analyze_dom(&input, &[]).expect("DOM");
+        let streaming = catalog()
+            .analyze_streaming(&input)
+            .unwrap_or_else(|error| panic!("{error:?}: {input}"));
+        assert_eq!(dom.replacements, streaming.replacements, "{input}");
+        let mut dom_uncertain = dom.uncertain;
+        dom_uncertain.sort_by_key(|hit| hit.range.start);
+        assert_eq!(dom_uncertain, streaming.uncertain, "{input}");
+    }
+}
+
+/// Invalid content cannot pass merely because it does not contain the renamed identifier.
+#[test]
+fn streaming_rejects_malformed_xml_outside_candidate_fragments() {
+    for input in [
+        "<r><1invalid/></r>",
+        "<r><a></r>",
+        "<r/><s/>",
+        "<r>bad ]]> text</r>",
+        "<r><!-- -- --></r>",
+        "<r>&unknown;</r>",
+        "<r>&#0;</r>",
+        "<r a='<'/>",
+        "<r a='1' a='2'/>",
+        "<r xmlns:a='urn:x' xmlns:b='urn:&#120;' a:x='1' b:x='2'/>",
+        "<r xmlns:xml='urn:wrong'/>",
+        "<r xmlns:p=''><p:a/></r>",
+        "<r><missing:a/></r>",
+        "<r>\u{0001}</r>",
+        "\u{feff}\u{feff}<r/>",
+        "<r><?XML version='1.0'?></r>",
+        "<r><?xml version='1.0'?></r>",
+        "<?xml version='1.0' version='1.0'?><r/>",
+        "<?xml version='1.0' standalone='invalid'?><r/>",
+        "<xmlns:r/>",
+        "<r xmlns='http://www.w3.org/XML/1998/namespace'/>",
+        "<!DOCTYPE r><r/>",
+    ] {
+        assert!(catalog().analyze_streaming(input).is_err(), "{input}");
+    }
+}
+
+/// Large spreadsheets exceed the DOM node ceiling while their sparse references remain editable.
+#[test]
+fn large_xml_keeps_exact_ranges_without_allocating_a_dom_for_every_cell() {
+    let mut input = format!("\u{feff}<r xmlns:xsi='{XSI}' xmlns:xr='{XR}'>\r\n");
+    input.push_str(&"<n>0</n>".repeat(510_000));
+    input.push_str("<a xsi:type='xr:MDObjectRef'>Catalog.Old</a>\r\n</r>");
+    let result = catalog().analyze_xml(&input, &[]).expect("large XML");
+    assert_eq!(result.replacements.len(), 1);
+    assert!(result.uncertain.is_empty());
+    assert_eq!(
+        apply(&input, &result),
+        input.replace("Catalog.Old", "Catalog.Новый")
+    );
+}

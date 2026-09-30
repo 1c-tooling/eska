@@ -1,5 +1,7 @@
 //! Namespace-aware XML reference analysis never treats arbitrary text as a metadata path.
 
+mod stream;
+
 use std::{collections::BTreeMap, ops::Range};
 
 use roxmltree::{Document, Node};
@@ -99,6 +101,21 @@ impl ReferenceRename {
     /// # Errors
     /// Rejects unbounded, invalid XML and declaration ranges that no longer name the target.
     pub fn analyze_xml(
+        &self,
+        input: &str,
+        declarations: &[Range<usize>],
+    ) -> Result<XmlAnalysis, crate::project::metadata_edit::EditError> {
+        if input.len() as u64 > super::inventory::MAX_XML_BYTES {
+            return Err(crate::project::metadata_edit::EditError::InvalidXml);
+        }
+        if declarations.is_empty() && input.len() > 512 * 1024 {
+            return self.analyze_streaming(input);
+        }
+        self.analyze_dom(input, declarations)
+    }
+
+    /// Small candidate fragments reuse exactly the same semantic rules as ordinary descriptors.
+    fn analyze_dom(
         &self,
         input: &str,
         declarations: &[Range<usize>],

@@ -12,7 +12,7 @@ use crate::project::{
     metadata_model::ObjectId,
     metadata_rename::{
         NameError, RenameIssue, RenamePlan, UncertainReference,
-        inventory::{Inventory, MAX_TEXT_BYTES, file_hash, read_text},
+        inventory::{Inventory, MAX_TEXT_BYTES, MAX_XML_BYTES, file_hash, read_text},
     },
 };
 
@@ -178,16 +178,22 @@ fn scan_file(
                 source,
             })?
             .len();
-        if size > MAX_TEXT_BYTES {
+        let max_bytes = if kind == "xml" {
+            MAX_XML_BYTES
+        } else {
+            MAX_TEXT_BYTES
+        };
+        if size > max_bytes {
             plan.issues.push(RenameIssue {
                 path: path.to_path_buf(),
                 reason: "text_too_large",
             });
         } else {
-            let input = read_text(&root.join(path)).map_err(|source| RenameError::Io {
-                path: path.to_path_buf(),
-                source,
-            })?;
+            let input =
+                read_text(&root.join(path), max_bytes).map_err(|source| RenameError::Io {
+                    path: path.to_path_buf(),
+                    source,
+                })?;
             let hash: [u8; 32] = Sha256::digest(input.as_bytes()).into();
             if plan.new_name != context.old_name {
                 match context.analyze(path, kind, &input, &hex(&hash)) {
