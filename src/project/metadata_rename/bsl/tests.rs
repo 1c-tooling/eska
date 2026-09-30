@@ -230,3 +230,12 @@ fn bounded_lexer_preserves_uncertain_matches_when_it_reaches_its_limit() {
     assert_eq!(output.uncertain.len(), 1);
     assert_eq!(output.uncertain[0].reason, "bsl_lexical_unavailable");
 }
+
+/// Real update handlers have a member named Процедура; a keyword after a dot is not a declaration.
+#[test]
+fn keyword_members_do_not_change_lexical_scopes() {
+    let input = "Procedure Run() Handler.Процедура = \"Handler\"; Handler.Function = 1; Value.EndProcedure = 2; A = Catalogs.Товары; EndProcedure";
+    let output = analyze(input);
+    assert_eq!(output.replacements.len(), 1);
+    assert!(output.uncertain.is_empty());
+}

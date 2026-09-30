@@ -30,8 +30,9 @@ impl Scopes {
         while index < tokens.len() {
             let token = tokens[index];
             let procedure = token.word(&["Procedure", "Процедура"]);
-            if procedure || token.word(&["Function", "Функция"]) {
-                if active.is_some() || !standalone(tokens, index) {
+            if standalone(tokens, index) && (procedure || token.word(&["Function", "Функция"]))
+            {
+                if active.is_some() {
                     return None;
                 }
                 let name = tokens
@@ -50,16 +51,16 @@ impl Scopes {
                 index = end + 1;
                 continue;
             }
-            if token.word(&[
-                "EndProcedure",
-                "КонецПроцедуры",
-                "EndFunction",
-                "КонецФункции",
-            ]) {
+            if standalone(tokens, index)
+                && token.word(&[
+                    "EndProcedure",
+                    "КонецПроцедуры",
+                    "EndFunction",
+                    "КонецФункции",
+                ])
+            {
                 let (start, procedure, scope) = active.take()?;
-                if !standalone(tokens, index)
-                    || procedure != token.word(&["EndProcedure", "КонецПроцедуры"])
-                {
+                if procedure != token.word(&["EndProcedure", "КонецПроцедуры"]) {
                     return None;
                 }
                 scopes.routines.push((start..index + 1, scope));
