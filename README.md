@@ -171,6 +171,9 @@ eska new processor --from processor.epf --workflow trunk --platform-version 8.3.
 без терминала укажите их явно. Выбранная версия сохраняется в новом проекте.
 Параметры `--ibcmd`, `--platform-arch`, `--distrobox` и `--select-platform`
 используют тот же поиск платформы, что и сборка.
+CF сначала загружается во временную файловую базу через `ibcmd config load`,
+затем выгружается в XML. CFE/EPF/ERF распаковываются через `config export --file`.
+Рабочая информационная база при этом не используется.
 
 В workspace `eska new processor --from processor.epf` создаёт участника
 `src/processor` и наследует версию платформы корня. Явный выбор другой версии

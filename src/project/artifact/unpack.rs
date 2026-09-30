@@ -56,20 +56,7 @@ impl PreparedArtifact {
             vec!["infobase".into(), "create".into(), option("--data=", &data)],
             &mut output,
         )?;
-        run(
-            tool,
-            &pid,
-            "export",
-            vec![
-                "infobase".into(),
-                "config".into(),
-                "export".into(),
-                option("--data=", &data),
-                option("--file=", &snapshot),
-                export.as_os_str().to_owned(),
-            ],
-            &mut output,
-        )?;
+        export_sources(tool, &pid, &data, &snapshot, &export, &mut output)?;
         // External exports may replace a dotted filename's suffix with `.xml`.
         // Inspect the actual descriptor instead of predicting the platform's naming rules.
         let (exported, identity) = if let Some(identity) = inspect_identity(&unpacked)? {
@@ -95,6 +82,49 @@ impl PreparedArtifact {
     pub fn sources(&self) -> std::path::PathBuf {
         self.staging.path.join("sources")
     }
+}
+
+/// Load CF into the isolated database because direct file export rejects some valid CFs.
+/// Extensions and external objects retain the platform's direct file export path.
+fn export_sources<F>(
+    tool: &Ibcmd,
+    pid: &Path,
+    data: &Path,
+    snapshot: &Path,
+    destination: &Path,
+    output: &mut F,
+) -> Result<(), ArtifactError>
+where
+    F: FnMut(ProcessStream, &[u8]),
+{
+    let mut arguments = vec![
+        "infobase".into(),
+        "config".into(),
+        "export".into(),
+        option("--data=", data),
+    ];
+    if snapshot
+        .extension()
+        .is_some_and(|extension| extension == "cf")
+    {
+        run(
+            tool,
+            pid,
+            "load-configuration",
+            vec![
+                "infobase".into(),
+                "config".into(),
+                "load".into(),
+                option("--data=", data),
+                snapshot.as_os_str().to_owned(),
+            ],
+            output,
+        )?;
+    } else {
+        arguments.push(option("--file=", snapshot));
+    }
+    arguments.push(destination.as_os_str().to_owned());
+    run(tool, pid, "export", arguments, output)
 }
 
 /// Construct one native argument without lossy path conversion or shell interpolation.

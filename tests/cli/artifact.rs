@@ -487,26 +487,28 @@ fn failed_unpack_leaves_existing_project_unchanged() {
     let root = imported_project(&fixture);
     let before = fs::read(root.join("src/Configuration.xml")).unwrap();
     let config = fs::read(root.join("eska.toml")).unwrap();
-    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
-        .current_dir(&root)
-        .args([
-            "import",
-            "../incoming.cf",
-            "--force",
-            "--format",
-            "json",
-            "--ibcmd",
-        ])
-        .arg(super::build::fake_ibcmd(&fixture))
-        .env("FAKE_IBCMD_FAIL_EXPORT", "1")
-        .output()
-        .unwrap();
-    assert!(!output.status.success());
-    assert_eq!(
-        fs::read(root.join("src/Configuration.xml")).unwrap(),
-        before
-    );
-    assert_eq!(fs::read(root.join("eska.toml")).unwrap(), config);
+    for failure in ["FAKE_IBCMD_FAIL_LOAD", "FAKE_IBCMD_FAIL_EXPORT"] {
+        let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&root)
+            .args([
+                "import",
+                "../incoming.cf",
+                "--force",
+                "--format",
+                "json",
+                "--ibcmd",
+            ])
+            .arg(super::build::fake_ibcmd(&fixture))
+            .env(failure, "1")
+            .output()
+            .unwrap();
+        assert!(!output.status.success());
+        assert_eq!(
+            fs::read(root.join("src/Configuration.xml")).unwrap(),
+            before
+        );
+        assert_eq!(fs::read(root.join("eska.toml")).unwrap(), config);
+    }
 }
 
 /// Canonical project discovery must not erase the evidence of an unsafe source symlink.

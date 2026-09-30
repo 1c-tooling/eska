@@ -28,6 +28,11 @@ fn run(arguments: &[OsString]) -> Result<(), String> {
             create_infobase(rest);
         }
         [group, subgroup, command, rest @ ..]
+            if group == "infobase" && subgroup == "config" && command == "load" =>
+        {
+            load_configuration(rest)?;
+        }
+        [group, subgroup, command, rest @ ..]
             if group == "infobase" && subgroup == "config" && command == "export" =>
         {
             export_configuration(rest)?;
@@ -42,12 +47,35 @@ fn run(arguments: &[OsString]) -> Result<(), String> {
     Ok(())
 }
 
+/// Model CF loading independently from direct export, including failed loads.
+fn load_configuration(arguments: &[OsString]) -> Result<(), String> {
+    if env_flag("FAKE_IBCMD_FAIL_LOAD") {
+        return Err("fake load failure".to_owned());
+    }
+    let data = option_path(arguments, "--data=").ok_or("missing --data")?;
+    let source = arguments.last().ok_or("missing file")?;
+    fs::copy(source, data.join("loaded.cf")).map_err(|error| error.to_string())?;
+    Ok(())
+}
+
 /// Unpack fixture XML carried by a native-looking file without depending on a 1C license.
 fn export_configuration(arguments: &[OsString]) -> Result<(), String> {
     if env_flag("FAKE_IBCMD_FAIL_EXPORT") {
         return Err("fake export failure".to_owned());
     }
-    let source = option_path(arguments, "--file=").ok_or("missing --file")?;
+    let source = if let Some(source) = option_path(arguments, "--file=") {
+        if source
+            .extension()
+            .is_some_and(|extension| extension == "cf")
+        {
+            return Err("direct CF export is unsupported by this fixture".to_owned());
+        }
+        source
+    } else {
+        option_path(arguments, "--data=")
+            .ok_or("missing --data")?
+            .join("loaded.cf")
+    };
     let destination = arguments
         .last()
         .map(PathBuf::from)
