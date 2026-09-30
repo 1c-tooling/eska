@@ -156,6 +156,8 @@ impl ReferenceRename {
                     } else {
                         None
                     }
+                } else if attribute.namespace() == Some(XSI) && attribute.name() == "type" {
+                    self.generated_qname(node, attribute.value())
                 } else {
                     None
                 };
@@ -201,6 +203,19 @@ impl ReferenceRename {
             .find_map(|(before, after)| same_name(value, before).then(|| after.clone()))
     }
 
+    /// A generated `QName` is bound through its actual namespace, including a locally rebound prefix.
+    fn generated_qname(&self, node: Node<'_, '_>, value: &str) -> Option<String> {
+        let (prefix, local) = value
+            .split_once(':')
+            .map_or((None, value), |(prefix, local)| (Some(prefix), local));
+        if node.lookup_namespace_uri(prefix) != Some(CFG) {
+            return None;
+        }
+        self.generated_reference(local).map(|renamed| {
+            prefix.map_or_else(|| renamed.clone(), |prefix| format!("{prefix}:{renamed}"))
+        })
+    }
+
     /// Recognize typed references and reviewed unannotated metadata property domains.
     fn text_reference(&self, node: Node<'_, '_>) -> Option<String> {
         if node.children().any(|child| child.is_element()) {
@@ -211,15 +226,7 @@ impl ReferenceRename {
             return None;
         }
         if node.has_tag_name((CORE, "Type")) || node.has_tag_name((CORE, "TypeSet")) {
-            let (prefix, local) = value
-                .split_once(':')
-                .map_or((None, value), |(prefix, local)| (Some(prefix), local));
-            if node.lookup_namespace_uri(prefix) == Some(CFG) {
-                return self.generated_reference(local).map(|renamed| {
-                    prefix.map_or_else(|| renamed.clone(), |prefix| format!("{prefix}:{renamed}"))
-                });
-            }
-            return None;
+            return self.generated_qname(node, value);
         }
         if let Some(annotation) = node.attribute((XSI, "type")) {
             let (prefix, local) = annotation

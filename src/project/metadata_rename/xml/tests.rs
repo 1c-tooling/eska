@@ -131,6 +131,32 @@ fn generated_qnames_and_dump_names_respect_segment_boundaries_and_case() {
     assert!(apply(&input, &analysis).contains("name='Catalog.Новый.Form.Main'"));
 }
 
+/// Concrete value annotations use the same generated types as Type descriptions and keep every other attribute.
+#[test]
+fn generated_type_annotations_are_namespace_bound_and_byte_minimal() {
+    let input = format!(
+        "\u{feff}<r xmlns:s='{XSI}' xmlns:t='{CFG}'>\r\n<a id='keep' s:type='t:CatalogRef.Old'>00000000-0000-0000-0000-000000000000</a><b xmlns='{CFG}' s:type='CatalogRef.Old'/><c xmlns:t='urn:foreign' s:type='t:CatalogRef.Old'/><d type='t:CatalogRef.Old'/><e s:type='t:CatalogRef.OldSuffix'/></r>"
+    );
+    for source in [
+        input.clone(),
+        input.replace("</r>", &format!("{}\r\n</r>", " ".repeat(512 * 1024))),
+    ] {
+        let analysis = catalog().analyze_xml(&source, &[]).unwrap();
+        assert_eq!(analysis.replacements.len(), 2);
+        assert_eq!(analysis.uncertain.len(), 2);
+        assert_eq!(
+            apply(&source, &analysis),
+            source
+                .replacen(
+                    "s:type='t:CatalogRef.Old'",
+                    "s:type='t:CatalogRef.Новый'",
+                    1
+                )
+                .replace("s:type='CatalogRef.Old'", "s:type='CatalogRef.Новый'")
+        );
+    }
+}
+
 /// Rights object identities and module handler bindings differ from user text in the same files.
 #[test]
 fn role_object_and_handler_paths_are_confirmed_without_changing_restriction_text() {
