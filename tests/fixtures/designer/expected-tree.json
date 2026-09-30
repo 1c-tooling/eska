@@ -36,7 +36,7 @@
   ],
   "catalog": [
     ["object:catalog:Контрагенты", null, "name:Контрагенты", "NonEmpty", false],
-    ["group:catalog:Контрагенты#modules", "object:catalog:Контрагенты", "tree-collection-modules", "NonEmpty", true],
+    ["group:catalog:Контрагенты#modules", "object:catalog:Контрагенты", "tree-collection-modules", "NonEmpty", false],
     ["module:catalog:Контрагенты#object", "group:catalog:Контрагенты#modules", "tree-module-object", "Empty", false],
     ["module:catalog:Контрагенты#manager", "group:catalog:Контрагенты#modules", "tree-module-manager", "Empty", false],
     ["group:catalog:Контрагенты#predefined-item", "object:catalog:Контрагенты", "tree-collection-predefined-item", "Unloaded", false],
@@ -54,7 +54,7 @@
   ],
   "configuration": [
     ["object:configuration:ТестоваяКонфигурация", null, "name:ТестоваяКонфигурация", "NonEmpty", false],
-    ["group:configuration:ТестоваяКонфигурация#modules", "object:configuration:ТестоваяКонфигурация", "tree-collection-modules", "NonEmpty", true],
+    ["group:configuration:ТестоваяКонфигурация#modules", "object:configuration:ТестоваяКонфигурация", "tree-collection-modules", "NonEmpty", false],
     ["module:configuration:ТестоваяКонфигурация#managed-application", "group:configuration:ТестоваяКонфигурация#modules", "tree-module-managed-application", "Empty", false],
     ["module:configuration:ТестоваяКонфигурация#session", "group:configuration:ТестоваяКонфигурация#modules", "tree-module-session", "Empty", false],
     ["group:configuration:ТестоваяКонфигурация#common", "object:configuration:ТестоваяКонфигурация", "tree-collection-common", "NonEmpty", false],
@@ -117,7 +117,7 @@
   ],
   "information-register": [
     ["object:information-register:Курсы", null, "name:Курсы", "NonEmpty", false],
-    ["group:information-register:Курсы#modules", "object:information-register:Курсы", "tree-collection-modules", "NonEmpty", true],
+    ["group:information-register:Курсы#modules", "object:information-register:Курсы", "tree-collection-modules", "NonEmpty", false],
     ["module:information-register:Курсы#record-set", "group:information-register:Курсы#modules", "tree-module-record-set", "Empty", false],
     ["group:information-register:Курсы#dimension", "object:information-register:Курсы", "tree-collection-dimension", "NonEmpty", false],
     ["object:information-register:Курсы/dimension:Валюта", "group:information-register:Курсы#dimension", "name:Валюта", "Empty", false],
@@ -130,7 +130,7 @@
   ],
   "processing": [
     ["object:data-processor:Обработка", null, "name:Обработка", "NonEmpty", false],
-    ["group:data-processor:Обработка#modules", "object:data-processor:Обработка", "tree-collection-modules", "NonEmpty", true],
+    ["group:data-processor:Обработка#modules", "object:data-processor:Обработка", "tree-collection-modules", "NonEmpty", false],
     ["module:data-processor:Обработка#object", "group:data-processor:Обработка#modules", "tree-module-object", "Empty", false],
     ["group:data-processor:Обработка#attribute", "object:data-processor:Обработка", "tree-collection-attribute", "NonEmpty", false],
     ["object:data-processor:Обработка/attribute:Параметр", "group:data-processor:Обработка#attribute", "name:Параметр", "Empty", false],
@@ -141,7 +141,7 @@
   ],
   "report": [
     ["object:report:Анализ", null, "name:Анализ", "NonEmpty", false],
-    ["group:report:Анализ#modules", "object:report:Анализ", "tree-collection-modules", "NonEmpty", true],
+    ["group:report:Анализ#modules", "object:report:Анализ", "tree-collection-modules", "NonEmpty", false],
     ["module:report:Анализ#object", "group:report:Анализ#modules", "tree-module-object", "Empty", false],
     ["group:report:Анализ#attribute", "object:report:Анализ", "tree-collection-attribute", "NonEmpty", false],
     ["object:report:Анализ/attribute:Параметр", "group:report:Анализ#attribute", "name:Параметр", "Empty", false],
