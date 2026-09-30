@@ -884,3 +884,4 @@ metadata-check-about = Проверить изменение свойства и
 metadata-apply-about = Применить одно проверенное изменение свойства
 metadata-object-help = ID объекта из metadata inspect; по умолчанию корневой объект
 metadata-input-help = Файл запроса JSON или - для чтения stdin
+metadata-rename-preview-about = Показать план переименования и сомнительные ссылки без записи файлов

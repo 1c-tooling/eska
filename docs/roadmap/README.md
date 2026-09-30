@@ -221,7 +221,7 @@ mapping, а не повторная реализация завершённых 
 | IDE V0.1 — Read-only protocol | T69–T70 | Спецификация и постоянный `eska ide --stdio` |
 | VS Code V0.1 — Metadata explorer | T41: T76–T81 | Дерево, модули, поиск, фильтр, иконки и VSIX |
 | Metadata V0.5 — Existing object editing | T71–T73 | Safe XML patching и изменение существующих элементов |
-| Metadata V0.6 — Structural editing | T74 | Отложенные add/remove/rename и согласованная запись файлов |
+| Metadata V0.6 — Structural editing | T74 | Переименование и согласованная запись; add/remove отложены |
 
 Metadata/IDE API первой поставки полностью read-only. T41 — сводная задача
 клиента, закрываемая результатом T76–T81 после T70. EDT, MCP, AI, собственный

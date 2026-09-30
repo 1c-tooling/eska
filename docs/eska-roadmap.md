@@ -1158,7 +1158,7 @@ T19 уже реализует logical objects, `ObjectId` и mapping файло�
 | IDE V0.1 — Read-only protocol | T69–T70 | Постоянный процесс для IDE-клиента |
 | VS Code V0.1 — Metadata explorer | T41: T76–T81 | Дерево, модули, поиск, фильтр, иконки и VSIX |
 | Metadata V0.5 — Existing object editing | T71–T73 | Safe XML patching существующих свойств/элементов |
-| Metadata V0.6 — Structural editing | T74 | Отложенные создание, удаление и переименование |
+| Metadata V0.6 — Structural editing | T74 | Переименование; создание и удаление отложены |
 
 `ConfiguratorSchema` задаёт дерево типов и коллекций как в Конфигураторе,
 а не повторяет каталоги. Metadata workspace предоставляет `root`,

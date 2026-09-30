@@ -50,6 +50,8 @@ enum MetadataCommand {
     Check(InputArgs),
     #[command(disable_help_flag = true)]
     Apply(InputArgs),
+    #[command(disable_help_flag = true)]
+    RenamePreview(InputArgs),
 }
 
 #[derive(Debug, Args)]
@@ -100,6 +102,10 @@ impl MetadataArgs {
             .map_err(|error| editing::failure(error.into()))?;
         let labels = dto::Labels::new().map_err(|_| failure("localization_failed"))?;
         match &self.command {
+            MetadataCommand::RenamePreview(args) => {
+                let request = read_input(&args.input, &["schemaVersion", "objectId", "newName"])?;
+                rename_preview(project, &request)
+            }
             MetadataCommand::Inspect(args) => {
                 let id = args.object.as_ref().map_or_else(
                     || match project.root() {
@@ -248,7 +254,14 @@ pub(super) fn localize(mut command: clap::Command, locale: &Localizer) -> clap::
             arg.help(locale.text("metadata-format-help"))
         })
         .mut_arg("help", |arg| arg.help(locale.text("cli-help")));
-    for name in ["inspect", "types", "choices", "check", "apply"] {
+    for name in [
+        "inspect",
+        "types",
+        "choices",
+        "check",
+        "apply",
+        "rename-preview",
+    ] {
         command = command.mut_subcommand(name, |command| {
             let command = command
                 .about(locale.text(&format!("metadata-{name}-about")))
@@ -263,4 +276,34 @@ pub(super) fn localize(mut command: clap::Command, locale: &Localizer) -> clap::
         });
     }
     command
+}
+
+/// Expose a read-only structural plan before the multi-file mutation contract is enabled.
+fn rename_preview(project: &mut ProjectSession, request: &Value) -> Result<Value, Value> {
+    use crate::project::metadata_workspace::RenameError;
+    let id = serde_json::from_value(request["objectId"].clone())
+        .map_err(|_| failure("invalid_request"))?;
+    let name = request["newName"]
+        .as_str()
+        .ok_or_else(|| failure("invalid_request"))?;
+    let plan = project
+        .preview_rename(&id, name)
+        .map_err(|error| match error {
+            RenameError::Workspace(error) => editing::failure(
+                crate::project::metadata_workspace::PropertyEditError::Workspace(error),
+            ),
+            RenameError::Edit(error) => editing::failure(
+                crate::project::metadata_workspace::PropertyEditError::Edit(error),
+            ),
+            RenameError::Name(reason) => {
+                json!({"kind":"rename_invalid_name","details":{"reason":reason}})
+            }
+            RenameError::Collision(id) => {
+                json!({"kind":"rename_collision","details":{"objectId":id}})
+            }
+            RenameError::Io { path, .. } => {
+                json!({"kind":"rename_source_unavailable","details":{"path":path}})
+            }
+        })?;
+    Ok(json!({"applyAvailable":false,"plan":plan}))
 }

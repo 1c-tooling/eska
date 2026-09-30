@@ -247,3 +247,48 @@ fn metadata_value_schema_and_typed_changes_are_locale_independent() {
     assert_eq!(current, inspect("en-US"));
     assert!(!root.0.join(".eska").exists());
 }
+
+/// Structural inspection uses one JSON contract in both languages and leaves source bytes untouched.
+#[test]
+fn metadata_rename_preview_is_locale_independent_and_never_applies_edits() {
+    let root = TestDir::new();
+    fs::create_dir_all(root.0.join("src")).unwrap();
+    fs::write(
+        root.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    let path = root.0.join("src/Configuration.xml");
+    let original = "\u{feff}<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='11111111-1111-1111-1111-111111111111'><Properties><Name>Demo</Name><Comment>Demo</Comment></Properties><ChildObjects/></Configuration></MetaDataObject>\r\n";
+    fs::write(&path, original).unwrap();
+    let request = json!({"schemaVersion":1,"objectId":"configuration:Demo","newName":"Новая"});
+    let ru = call(&root, "ru-RU", "rename-preview", Some(&request), true);
+    let en = call(&root, "en-US", "rename-preview", Some(&request), true);
+    assert_eq!(ru, en);
+    assert_eq!(ru["result"]["applyAvailable"], false);
+    assert_eq!(ru["result"]["plan"]["newObjectId"], "configuration:Новая");
+    assert_eq!(
+        ru["result"]["plan"]["files"][0]["replacements"][0]["after"],
+        "Новая"
+    );
+    assert_eq!(
+        ru["result"]["plan"]["files"][0]["uncertain"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    let mut invalid = request.clone();
+    invalid["newName"] = json!("../bad");
+    assert_eq!(
+        call(&root, "en-US", "rename-preview", Some(&invalid), false)["error"]["kind"],
+        "rename_invalid_name"
+    );
+    let mut injected = request;
+    injected["path"] = json!("other.xml");
+    assert_eq!(
+        call(&root, "ru-RU", "rename-preview", Some(&injected), false)["error"]["kind"],
+        "invalid_request"
+    );
+    assert_eq!(fs::read_to_string(path).unwrap(), original);
+}

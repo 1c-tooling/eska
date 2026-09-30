@@ -6,6 +6,7 @@ mod editing_references;
 mod editing_values;
 mod property_reference;
 mod refresh;
+mod renaming;
 pub mod search;
 mod session;
 mod support;
@@ -15,6 +16,7 @@ pub use editing::{EditingSnapshot, PropertyEditError, PropertyTypeChoice};
 pub use editing_references::PropertyReferenceChoice;
 pub use editing_values::PropertyValueChoice;
 pub use refresh::RefreshReport;
+pub use renaming::RenameError;
 pub use support::{FileReason, FileSupport, ObjectSupport, SupportSnapshot};
 
 use std::path::Path;

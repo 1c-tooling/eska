@@ -884,3 +884,4 @@ metadata-check-about = Validate a property change and preview its byte replaceme
 metadata-apply-about = Apply one validated property change
 metadata-object-help = Object ID returned by metadata inspect; defaults to the root object
 metadata-input-help = JSON request file, or - to read stdin
+metadata-rename-preview-about = Preview a rename and uncertain references without writing files
