@@ -4,6 +4,7 @@ mod document;
 mod patch;
 pub(crate) mod references;
 mod schema;
+mod standard;
 pub(crate) mod types;
 pub(crate) mod value_schema;
 mod values;

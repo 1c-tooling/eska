@@ -79,27 +79,7 @@ pub(super) fn validate_dependents(description: Node<'_, '_>) -> Result<(), EditE
         .filter(|child| child.tag_name().namespace() == Some(MD))
     {
         let compatible = match property.tag_name().name() {
-            "FillValue" => {
-                if property
-                    .attribute((XSI, "nil"))
-                    .is_some_and(|value| matches!(value, "true" | "1"))
-                {
-                    true
-                } else if let Some(ScalarSchema::Value {
-                    key: Some(key),
-                    types,
-                }) = schema(property)
-                {
-                    types
-                        .iter()
-                        .find(|choice| choice.key == key)
-                        .is_some_and(|choice| {
-                            choice.validate(property.text().unwrap_or_default()).is_ok()
-                        })
-                } else {
-                    false
-                }
-            }
+            "FillValue" => compatible(property),
             "ChoiceForm" if !property.text().unwrap_or_default().trim().is_empty() => {
                 super::schema::choice_form_type(property)
                     .and_then(|key| reference_prefix(&key))
@@ -122,6 +102,27 @@ pub(super) fn validate_dependents(description: Node<'_, '_>) -> Result<(), EditE
     Ok(())
 }
 
+/// Both declared and implicit types must still admit a saved filling value after its constraints change.
+pub(super) fn compatible(property: Node<'_, '_>) -> bool {
+    if property
+        .attribute((XSI, "nil"))
+        .is_some_and(|value| matches!(value, "true" | "1"))
+    {
+        return true;
+    }
+    let Some(ScalarSchema::Value {
+        key: Some(key),
+        types,
+    }) = schema(property)
+    else {
+        return false;
+    };
+    types
+        .iter()
+        .find(|choice| choice.key == key)
+        .is_some_and(|choice| choice.validate(property.text().unwrap_or_default()).is_ok())
+}
+
 /// Resolve an attribute's supported value types while preserving nil independently of empty string.
 pub(super) fn schema(node: Node<'_, '_>) -> Option<ScalarSchema> {
     if !matches!(node.tag_name().namespace(), Some(MD | READABLE))
@@ -132,15 +133,21 @@ pub(super) fn schema(node: Node<'_, '_>) -> Option<ScalarSchema> {
     {
         return None;
     }
-    let description = node
-        .parent()?
-        .children()
-        .find(|child| child.has_tag_name((MD, "Type")))?;
-    let choices: Vec<_> = description
-        .children()
-        .filter(|child| child.has_tag_name((CORE, "Type")))
-        .filter_map(|child| value_type(types::key(child)?, description))
-        .collect();
+    let parent = node.parent()?;
+    let choices: Vec<_> = if parent.has_tag_name((READABLE, "StandardAttribute")) {
+        super::standard::value_types(node)?
+    } else if parent.has_tag_name((MD, "Properties")) {
+        let description = parent
+            .children()
+            .find(|child| child.has_tag_name((MD, "Type")))?;
+        description
+            .children()
+            .filter(|child| child.has_tag_name((CORE, "Type")))
+            .filter_map(|child| value_type(types::key(child)?, description))
+            .collect()
+    } else {
+        return None;
+    };
     if choices.is_empty() {
         return None;
     }

@@ -1161,3 +1161,5 @@ fn failed_publication_preserves_source_and_removes_its_temporary_file() {
             .starts_with(".eska-properties-")
     }));
 }
+
+mod standard;

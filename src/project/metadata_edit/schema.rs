@@ -277,6 +277,9 @@ pub(super) fn scalar(
 
 /// EDT's `ReferenceMdFormContentProvider` offers forms only for one concrete metadata reference type.
 pub(super) fn choice_form_type(node: Node<'_, '_>) -> Option<PropertyKey> {
+    if node.parent()?.has_tag_name((READABLE, "StandardAttribute")) {
+        return super::standard::reference_type(node);
+    }
     let description = node
         .parent()?
         .children()

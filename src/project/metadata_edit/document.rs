@@ -332,6 +332,7 @@ impl EditingDocument<'_> {
 /// Revalidate sibling constraints in the candidate, keeping byte positions relative to unchanged ancestors.
 fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<(), EditError> {
     let candidate = roxmltree::Document::parse(output).map_err(|_| EditError::InvalidXml)?;
+    super::standard::validate_dependents(node, &candidate)?;
     if let Some(description) = node
         .ancestors()
         .find(|ancestor| ancestor.has_tag_name((schema::MD, "Type")))
