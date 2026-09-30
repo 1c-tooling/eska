@@ -191,10 +191,8 @@ pub(super) fn scalar(
     if model_type == "Value" && super::values::number_bound(node) {
         return Some(ScalarSchema::Decimal { nullable: true });
     }
-    if model_type == "Value"
-        && let Some(schema) = super::value_schema::schema(node)
-    {
-        return Some(schema);
+    if model_type == "Value" && node.tag_name().name() == "FillValue" {
+        return super::value_schema::schema(node);
     }
     if node.children().any(|child| child.is_element())
         || node
@@ -278,11 +276,17 @@ pub(super) fn scalar(
 }
 
 /// EDT's `ReferenceMdFormContentProvider` offers forms only for one concrete metadata reference type.
-fn choice_form_type(node: Node<'_, '_>) -> Option<PropertyKey> {
+pub(super) fn choice_form_type(node: Node<'_, '_>) -> Option<PropertyKey> {
     let description = node
         .parent()?
         .children()
         .find(|child| child.has_tag_name((MD, "Type")))?;
+    if description
+        .children()
+        .any(|child| child.has_tag_name((CORE, "TypeSet")))
+    {
+        return None;
+    }
     let mut types = description
         .children()
         .filter(|child| child.has_tag_name((CORE, "Type")));

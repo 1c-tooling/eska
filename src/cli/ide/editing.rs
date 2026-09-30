@@ -236,6 +236,12 @@ pub(in crate::cli) fn failure(error: PropertyEditError) -> Value {
         PropertyEditError::Edit(EditError::Conflict) => "property_conflict",
         PropertyEditError::Edit(EditError::ReadOnly) => "property_read_only",
         PropertyEditError::Edit(EditError::InvalidValue) => "property_invalid",
+        PropertyEditError::Edit(EditError::IncompatibleProperty(property)) => {
+            return domain(
+                "property_dependency",
+                json!({"property":property,"reason":"incompatible_type"}),
+            );
+        }
         PropertyEditError::Edit(EditError::UnsupportedValue) => "property_unsupported",
         PropertyEditError::Edit(EditError::HistoryUnavailable) => "property_history_unavailable",
         PropertyEditError::Edit(EditError::UnsafePath) => "source_invalid",

@@ -687,6 +687,153 @@ fn filling_reference_choices_include_enum_and_unique_predefined_records() {
     }
 }
 
+/// A type or qualifier cannot invalidate an existing dependent value; clearing is a separate user edit.
+#[test]
+fn type_changes_require_incompatible_values_to_be_cleared_first() {
+    use eska::project::metadata_model::PropertyKey;
+    let (_directory, mut workspace, id, file, _) = filling_fixture(
+        "<v:Type>xs:string</v:Type><v:StringQualifiers><v:Length>10</v:Length><v:AllowedLength>Variable</v:AllowedLength></v:StringQualifiers>",
+    );
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    let default_value = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.path[0].key.name == "FillValue")
+        .unwrap();
+    project
+        .update_property(
+            &id,
+            &editing.properties.snapshot,
+            &default_value.path,
+            &PropertyChange::Value {
+                key: Some(PropertyKey {
+                    namespace: Some("http://www.w3.org/2001/XMLSchema".into()),
+                    name: "string".into(),
+                }),
+                value: "four".into(),
+            },
+        )
+        .unwrap();
+    let input = fs::read_to_string(&file).unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    let type_field = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| {
+            matches!(
+                field.schema,
+                eska::project::metadata_edit::ScalarSchema::DataType { .. }
+            )
+        })
+        .unwrap();
+    let length = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.path.last().unwrap().key.name == "Length")
+        .unwrap();
+    let new_type = PropertyChange::DataType {
+        key: PropertyKey {
+            namespace: Some("http://www.w3.org/2001/XMLSchema".into()),
+            name: "boolean".into(),
+        },
+    };
+    for (path, change) in [
+        (&type_field.path, &new_type),
+        (&length.path, &PropertyChange::Text { value: "3".into() }),
+    ] {
+        assert!(
+            matches!(project.update_property(&id, &editing.properties.snapshot, path, change), Err(PropertyEditError::Edit(EditError::IncompatibleProperty(property))) if property.name == "FillValue")
+        );
+        assert_eq!(fs::read_to_string(&file).unwrap(), input);
+    }
+    project
+        .update_property(
+            &id,
+            &editing.properties.snapshot,
+            &default_value.path,
+            &PropertyChange::Value {
+                key: None,
+                value: String::new(),
+            },
+        )
+        .unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    project
+        .update_property(
+            &id,
+            &editing.properties.snapshot,
+            &type_field.path,
+            &new_type,
+        )
+        .unwrap();
+}
+
+/// Choice forms belong to the selected reference type, including when only qualifiers change.
+#[test]
+fn type_changes_cannot_retarget_an_existing_choice_form() {
+    use eska::project::metadata_model::PropertyKey;
+    let (directory, workspace, id, file, input) =
+        filling_fixture("<v:Type>c:CatalogRef.Other</v:Type>");
+    drop(workspace);
+    fs::write(
+        &file,
+        input.replace(
+            "<Comment>keep</Comment>",
+            "<Comment>keep</Comment><ChoiceForm>Catalog.Other.Form.Object</ChoiceForm>",
+        ),
+    )
+    .unwrap();
+    let input = fs::read_to_string(&file).unwrap();
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    let field = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| {
+            matches!(
+                field.schema,
+                eska::project::metadata_edit::ScalarSchema::DataType { .. }
+            )
+        })
+        .unwrap();
+    let change = PropertyChange::DataType {
+        key: PropertyKey {
+            namespace: Some("http://v8.1c.ru/8.1/data/enterprise/current-config".into()),
+            name: "CatalogRef.Goods".into(),
+        },
+    };
+    assert!(
+        matches!(project.preview_property(&id, &editing.properties.snapshot, &field.path, &change), Err(PropertyEditError::Edit(EditError::IncompatibleProperty(property))) if property.name == "ChoiceForm")
+    );
+    assert_eq!(fs::read_to_string(&file).unwrap(), input);
+    let choice = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.path[0].key.name == "ChoiceForm")
+        .unwrap();
+    project
+        .update_property(
+            &id,
+            &editing.properties.snapshot,
+            &choice.path,
+            &PropertyChange::Text {
+                value: String::new(),
+            },
+        )
+        .unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    project
+        .update_property(&id, &editing.properties.snapshot, &field.path, &change)
+        .unwrap();
+}
+
 /// Preserve byte-sensitive formatting in fixtures for every supported project root.
 fn editable_fixture(case: &str) -> (TestDir, MetadataWorkspace, ObjectId, PathBuf) {
     let directory = TestDir::new();

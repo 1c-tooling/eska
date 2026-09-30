@@ -71,6 +71,57 @@ impl EditableValueType {
     }
 }
 
+/// Changing an attribute type must not leave an incompatible filling value or choice form behind.
+pub(super) fn validate_dependents(description: Node<'_, '_>) -> Result<(), EditError> {
+    let properties = description.parent().ok_or(EditError::InvalidXml)?;
+    for property in properties
+        .children()
+        .filter(|child| child.tag_name().namespace() == Some(MD))
+    {
+        let compatible = match property.tag_name().name() {
+            "FillValue" => {
+                if property
+                    .attribute((XSI, "nil"))
+                    .is_some_and(|value| matches!(value, "true" | "1"))
+                {
+                    true
+                } else if let Some(ScalarSchema::Value {
+                    key: Some(key),
+                    types,
+                }) = schema(property)
+                {
+                    types
+                        .iter()
+                        .find(|choice| choice.key == key)
+                        .is_some_and(|choice| {
+                            choice.validate(property.text().unwrap_or_default()).is_ok()
+                        })
+                } else {
+                    false
+                }
+            }
+            "ChoiceForm" if !property.text().unwrap_or_default().trim().is_empty() => {
+                super::schema::choice_form_type(property)
+                    .and_then(|key| reference_prefix(&key))
+                    .is_some_and(|prefix| {
+                        property
+                            .text()
+                            .unwrap_or_default()
+                            .starts_with(&format!("{prefix}Form."))
+                    })
+            }
+            _ => true,
+        };
+        if !compatible {
+            return Err(EditError::IncompatibleProperty(PropertyKey {
+                namespace: Some(MD.to_owned()),
+                name: property.tag_name().name().to_owned(),
+            }));
+        }
+    }
+    Ok(())
+}
+
 /// Resolve an attribute's supported value types while preserving nil independently of empty string.
 pub(super) fn schema(node: Node<'_, '_>) -> Option<ScalarSchema> {
     if !matches!(node.tag_name().namespace(), Some(MD | READABLE))

@@ -231,5 +231,19 @@ fn metadata_value_schema_and_typed_changes_are_locale_independent() {
             "<FillValue s:type=\"xs:boolean\">true</FillValue>"
         )
     );
+    let current = inspect("en-US");
+    let editing = &current["result"]["editing"];
+    let field = editing["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|field| field["schema"]["kind"] == "dataType")
+        .unwrap();
+    let change = json!({"schemaVersion":1,"objectId":"catalog:Value/attribute:Target","snapshot":editing["snapshot"],"path":field["path"],"change":{"kind":"dataType","key":{"namespace":"http://www.w3.org/2001/XMLSchema","name":"string"}}});
+    let failure = call(&root, "en-US", "check", Some(&change), false);
+    assert_eq!(failure, call(&root, "ru-RU", "apply", Some(&change), false));
+    assert_eq!(failure["error"]["kind"], "property_dependency");
+    assert_eq!(failure["error"]["details"]["property"]["name"], "FillValue");
+    assert_eq!(current, inspect("en-US"));
     assert!(!root.0.join(".eska").exists());
 }

@@ -191,17 +191,8 @@ impl EditingDocument<'_> {
             }
         };
         let after = self.parsed(plan.output())?;
-        let candidate =
-            roxmltree::Document::parse(plan.output()).map_err(|_| EditError::InvalidXml)?;
-        if let Some(parent) = node
-            .parent()
-            .filter(|parent| parent.has_tag_name((schema::CORE, "NumberQualifiers")))
-        {
-            let group = candidate
-                .descendants()
-                .find(|node| node.is_element() && node.range().start == parent.range().start)
-                .ok_or(EditError::InvalidXml)?;
-            super::types::validate_numbers(group)?;
+        if !plan.is_empty() {
+            validate_dependencies(node, plan.output())?;
         }
         if parsed
             .objects
@@ -336,6 +327,35 @@ impl EditingDocument<'_> {
             path.pop();
         }
     }
+}
+
+/// Revalidate sibling constraints in the candidate, keeping byte positions relative to unchanged ancestors.
+fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<(), EditError> {
+    let candidate = roxmltree::Document::parse(output).map_err(|_| EditError::InvalidXml)?;
+    if let Some(description) = node
+        .ancestors()
+        .find(|ancestor| ancestor.has_tag_name((schema::MD, "Type")))
+    {
+        let description = candidate
+            .descendants()
+            .find(|candidate| {
+                candidate.has_tag_name((schema::MD, "Type"))
+                    && candidate.range().start == description.range().start
+            })
+            .ok_or(EditError::InvalidXml)?;
+        super::value_schema::validate_dependents(description)?;
+    }
+    if let Some(parent) = node
+        .parent()
+        .filter(|parent| parent.has_tag_name((schema::CORE, "NumberQualifiers")))
+    {
+        let group = candidate
+            .descendants()
+            .find(|node| node.is_element() && node.range().start == parent.range().start)
+            .ok_or(EditError::InvalidXml)?;
+        super::types::validate_numbers(group)?;
+    }
+    Ok(())
 }
 
 /// Each step includes the expanded XML name, including repeated siblings in collection values.

@@ -39,6 +39,7 @@ pub enum EditError {
     InvalidXml,
     UnsupportedValue,
     InvalidValue,
+    IncompatibleProperty(crate::project::metadata_model::PropertyKey),
     Conflict,
     UnsafePath,
     ReadOnly,
