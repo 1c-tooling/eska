@@ -56,12 +56,12 @@ fn process_picture_properties_preserve_bytes_and_recover_on_refresh() {
     for locale in ["ru-RU", "en-US"] {
         fs::write(ext.join("Picture/Picture.svg"), image).unwrap();
         let mut client = Client::new(locale);
-        let parameters = json!({"apiVersion":{"major":1,"minor":7},"client":{"name":"pictures","version":"1"},"locale":locale});
+        let parameters = json!({"apiVersion":{"major":1,"minor":8},"client":{"name":"pictures","version":"1"},"locale":locale});
         let rejected = client.request("initialize", parameters.clone());
         assert_eq!(rejected["error"]["data"]["kind"], "unsupported_version");
         assert_eq!(
             rejected["error"]["data"]["details"]["supported"]["minor"],
-            6
+            7
         );
         let mut parameters = parameters;
         parameters["apiVersion"]["minor"] = json!(4);

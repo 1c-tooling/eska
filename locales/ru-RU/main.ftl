@@ -879,6 +879,7 @@ metadata-project-help = Выбрать один проект рабочего п
 metadata-format-help = Формат машинного вывода
 metadata-inspect-about = Прочитать свойства и схему допустимых изменений
 metadata-types-about = Получить допустимые типы существующего поля
+metadata-choices-about = Получить допустимые ссылки на метаданные для существующего поля
 metadata-check-about = Проверить изменение свойства и показать заменяемые байты
 metadata-apply-about = Применить одно проверенное изменение свойства
 metadata-object-help = ID объекта из metadata inspect; по умолчанию корневой объект

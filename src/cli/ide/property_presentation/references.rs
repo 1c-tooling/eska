@@ -1,6 +1,7 @@
 //! Explicit reference syntax is interpreted only in schema-defined property contexts.
 
 use super::{MD, Presenter, READABLE, key_is, reference_context, text};
+pub(super) use crate::project::metadata_edit::references::parts as reference_parts;
 use crate::project::{
     metadata_model::{MetadataKind, MetadataProperty, MetadataValue, PropertyKey},
     metadata_workspace::ObjectSummary,
@@ -79,25 +80,6 @@ impl Presenter<'_> {
         self.references.insert(raw.to_owned(), result.clone());
         Some(result)
     }
-}
-
-/// Designer references alternate kind and name; reject partial, oversized or unknown paths.
-pub(super) fn reference_parts(raw: &str) -> Option<Vec<(MetadataKind, &str)>> {
-    let tokens: Vec<_> = raw.split('.').collect();
-    if tokens.is_empty() || tokens.len() > 64 || !tokens.len().is_multiple_of(2) {
-        return None;
-    }
-    tokens
-        .as_chunks::<2>()
-        .0
-        .iter()
-        .map(|pair| {
-            if pair[1].is_empty() || pair[1].chars().any(char::is_whitespace) {
-                return None;
-            }
-            Some((MetadataKind::from_xml_tag(pair[0]).ok()?, pair[1]))
-        })
-        .collect()
 }
 
 /// Follow the selected language, then another nonempty synonym, then the exact object name.

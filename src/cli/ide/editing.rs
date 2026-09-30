@@ -24,6 +24,31 @@ pub(in crate::cli) struct ChangeRequest {
     pub change: PropertyChange,
 }
 
+/// API 1.6 clients reject unknown schema variants; keep their original editor vocabulary intact.
+pub(super) fn retain_legacy_fields(schema: &mut Value) {
+    let mut hidden = Vec::new();
+    if let Some(fields) = schema["fields"].as_array_mut() {
+        fields.retain(|field| {
+            let keep = matches!(
+                field["schema"]["kind"].as_str(),
+                Some("text" | "boolean" | "integer" | "decimal" | "enum" | "dataType")
+            );
+            if !keep {
+                hidden.push(field["path"][0]["key"].clone());
+            }
+            keep
+        });
+        hidden.retain(|key| !fields.iter().any(|field| &field["path"][0]["key"] == key));
+    }
+    if let Some(properties) = schema["readOnlyProperties"].as_array_mut() {
+        for key in hidden {
+            if !properties.iter().any(|property| property["key"] == key) {
+                properties.push(json!({"key":key,"reason":"client_version"}));
+            }
+        }
+    }
+}
+
 /// Publish both locale captions while keeping enum values and paths independent of locale.
 pub(in crate::cli) fn describe(
     labels: &Labels,
@@ -62,6 +87,13 @@ pub(in crate::cli) fn describe(
             if let ScalarSchema::DataType { key, .. } = &field.schema {
                 value["caption"] = type_caption(labels, key);
             }
+            if matches!(field.schema, ScalarSchema::Reference { .. }) {
+                value["caption"] = paired(labels, |locale| {
+                    crate::project::metadata_edit::references::parts(&field.value)
+                        .and_then(|parts| parts.last().map(|(kind, name)| format!("{} · {name}", locale.text(&format!("platform-kind-{}", kind.as_str())))))
+                        .unwrap_or_else(|| locale.text("platform-presentation-unset"))
+                });
+            }
             value
         })
         .collect();
@@ -83,6 +115,23 @@ pub(in crate::cli) fn choices(
     Ok(
         json!({"choices":choices.iter().map(|choice| type_choice(labels, choice)).collect::<Vec<_>>()}),
     )
+}
+
+/// Publish only valid declared targets; an empty scalar is distinct from removing a list entry.
+pub(in crate::cli) fn reference_choices(
+    labels: &Labels,
+    project: &mut ProjectSession,
+    id: &ObjectId,
+    path: &[FieldStep],
+) -> Result<Value, Value> {
+    let choices = project
+        .property_reference_choices(id, path)
+        .map_err(failure)?;
+    Ok(json!({"choices":choices.iter().map(|choice| json!({
+        "value":choice.value,"objectId":choice.object.id,
+        "caption":paired(labels, |locale| format!("{} · {}",locale.text(&format!("platform-kind-{}",choice.object.kind.as_str())),choice.object.name)),
+        "metadataKind":choice.object.kind.as_str()
+    })).collect::<Vec<_>>()}))
 }
 
 /// Preview uses the mutation planner and support checks, with no source or cache publication.
@@ -115,6 +164,12 @@ pub(super) fn query(
     match method {
         "metadata/propertyEditing" => describe(labels, project, &id),
         "metadata/propertyTypeChoices" => choices(
+            labels,
+            project,
+            &id,
+            &params::decode::<Vec<FieldStep>>(&args["path"])?,
+        ),
+        "metadata/propertyReferenceChoices" => reference_choices(
             labels,
             project,
             &id,

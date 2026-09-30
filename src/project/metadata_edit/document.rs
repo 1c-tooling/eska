@@ -261,8 +261,9 @@ impl EditingDocument<'_> {
             return;
         };
         for (child, step) in children(node) {
-            let kind = if class == "LocalStringMapEntry"
-                && child.has_tag_name((schema::CORE, "item"))
+            let kind = if (super::references::target(class).is_some()
+                && child.has_tag_name((schema::READABLE, "Item")))
+                || (class == "LocalStringMapEntry" && child.has_tag_name((schema::CORE, "item")))
             {
                 Some(class)
             } else if class == "LocalStringMapEntry"

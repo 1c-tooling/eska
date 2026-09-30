@@ -32,6 +32,7 @@ pub(super) struct Server {
     pub closing: bool,
     pub session: Option<Session>,
     pub labels: dto::Labels,
+    pub(super) client_minor: u32,
     property_editing: bool,
     serial: u64,
     round_robin: usize,
@@ -45,6 +46,7 @@ impl Server {
             closing: false,
             session: None,
             labels: dto::Labels::new()?,
+            client_minor: 0,
             property_editing: false,
             serial: 0,
             round_robin: 0,
@@ -141,17 +143,18 @@ impl Server {
         {
             return Err(error(-32602));
         }
-        if input.api_version.major != 1 || input.api_version.minor > 6 {
+        if input.api_version.major != 1 || input.api_version.minor > 7 {
             return Err(domain(
                 "unsupported_version",
-                json!({"requested":args["apiVersion"],"supported":{"major":1,"minor":6}}),
+                json!({"requested":args["apiVersion"],"supported":{"major":1,"minor":7}}),
             ));
         }
         self.initialized = true;
+        self.client_minor = input.api_version.minor;
         self.property_editing =
             input.api_version.minor >= 6 && input.allow_property_edits == Some(true);
         Ok(
-            json!({"apiVersion":{"major":1,"minor":6},"server":{"name":"eska","version":env!("CARGO_PKG_VERSION")},"capabilities":{"propertyEditing":self.property_editing,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":true,"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
+            json!({"apiVersion":{"major":1,"minor":7},"server":{"name":"eska","version":env!("CARGO_PKG_VERSION")},"capabilities":{"propertyEditing":self.property_editing,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":true,"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
         )
     }
 

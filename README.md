@@ -938,7 +938,8 @@ eska doctor --workspace
 ## Редактирование свойств метаданных
 
 `eska metadata inspect` возвращает JSON со свойствами и схемой допустимых
-изменений. `metadata types` перечисляет типы, `metadata check` показывает точный
+изменений. `metadata types` перечисляет типы, `metadata choices` — допустимые
+ссылки на объекты, `metadata check` показывает точный
 patch без записи, `metadata apply` применяет одно изменение с проверкой снимка.
 Эти команды используют тот же core, что редактор свойств VS Code.
 [Контракт JSON, ограничения и гарантии записи](docs/metadata-editing.md).

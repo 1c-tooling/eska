@@ -508,7 +508,7 @@ mtime и поколение дерева не заменяют сверку ис
 Постраничный API 1.2 и остальные контракты сохранены.
 
 
-## Редактирование свойств — API 1.6
+## Редактирование свойств — API 1.6–1.7
 
 Для записи клиент передаёт в `initialize` `apiVersion:{major:1,minor:6}` и
 `allowPropertyEdits:true`. Сервер сообщает `propertyEditing:true,readOnly:false`.
@@ -521,11 +521,15 @@ mtime и поколение дерева не заменяют сверку ис
 | --- | --- | --- |
 | `metadata/propertyEditing` | — | snapshot, source, profile, writable, fields, readOnlyProperties, undo, redo, addRemove:false |
 | `metadata/propertyTypeChoices` | path из fields | choices с key и RU/EN caption |
+| `metadata/propertyReferenceChoices` (1.7) | path из fields | choices с value, objectId, metadataKind и RU/EN caption |
 | `metadata/previewProperty` | snapshot, path, change | valid, changed, changes — точные замены UTF-8 байтов |
 | `metadata/updateProperty` | snapshot, path, change | обычные properties/picture и новый editing |
 | `metadata/undoProperty` | snapshot, direction:undo\|redo | обычные properties/picture и новый editing |
 
 Форматы path/change и проверки общие с [CLI для ИИ](metadata-editing.md).
+API 1.7 добавляет `schema.kind:"reference"` с `domain` и `nullable`. Клиентам 1.6
+сервер не выдаёт новые варианты схем в чтении и ответах на запись; новый метод
+для них возвращает method not found. Opt-in `allowPropertyEdits` остаётся обязательным.
 Изменившая файл операция публикует `metadata/changed`, no-op — нет. Ответ и события
 сохраняют generation/eventSequence. Клиент не повторяет write при stale generation,
 таймауте, устаревшем ответе или разрыве соединения: после неопределённого исхода

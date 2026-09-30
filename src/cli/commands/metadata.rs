@@ -45,6 +45,8 @@ enum MetadataCommand {
     #[command(disable_help_flag = true)]
     Types(InputArgs),
     #[command(disable_help_flag = true)]
+    Choices(InputArgs),
+    #[command(disable_help_flag = true)]
     Check(InputArgs),
     #[command(disable_help_flag = true)]
     Apply(InputArgs),
@@ -108,7 +110,7 @@ impl MetadataArgs {
                 )?;
                 inspect(&labels, project, &id)
             }
-            MetadataCommand::Types(args) => {
+            MetadataCommand::Types(args) | MetadataCommand::Choices(args) => {
                 let input = read_input(&args.input, &["schemaVersion", "objectId", "path"])?;
                 let id: ObjectId = serde_json::from_value(input["objectId"].clone())
                     .map_err(|_| failure("invalid_request"))?;
@@ -116,7 +118,11 @@ impl MetadataArgs {
                     serde_json::from_value(input["path"].clone())
                         .map_err(|_| failure("invalid_request"))?;
                 reveal(project, &id)?;
-                editing::choices(&labels, project, &id, &path)
+                if matches!(self.command, MetadataCommand::Choices(_)) {
+                    editing::reference_choices(&labels, project, &id, &path)
+                } else {
+                    editing::choices(&labels, project, &id, &path)
+                }
             }
             MetadataCommand::Check(args) | MetadataCommand::Apply(args) => {
                 let input = read_input(
@@ -229,7 +235,7 @@ pub(super) fn localize(mut command: clap::Command, locale: &Localizer) -> clap::
             arg.help(locale.text("metadata-format-help"))
         })
         .mut_arg("help", |arg| arg.help(locale.text("cli-help")));
-    for name in ["inspect", "types", "check", "apply"] {
+    for name in ["inspect", "types", "choices", "check", "apply"] {
         command = command.mut_subcommand(name, |command| {
             let command = command
                 .about(locale.text(&format!("metadata-{name}-about")))

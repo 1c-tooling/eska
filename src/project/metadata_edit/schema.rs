@@ -11,6 +11,7 @@ pub(super) const CORE: &str = "http://v8.1c.ru/8.1/data/core";
 pub(super) const XS: &str = "http://www.w3.org/2001/XMLSchema";
 pub(super) const XSI: &str = "http://www.w3.org/2001/XMLSchema-instance";
 pub(super) const APP: &str = "http://v8.1c.ru/8.2/managed-application/core";
+pub(super) const READABLE: &str = "http://v8.1c.ru/8.3/xcf/readable";
 
 /// An editor is emitted only when the property's source shape and domain are known.
 #[derive(Clone, Debug, Serialize)]
@@ -35,6 +36,10 @@ pub enum ScalarSchema {
         key: PropertyKey,
         reference_only: bool,
     },
+    Reference {
+        domain: String,
+        nullable: bool,
+    },
 }
 
 impl ScalarSchema {
@@ -52,6 +57,14 @@ impl ScalarSchema {
             Self::Decimal => decimal(value),
             Self::Enum { values, .. } => values.iter().any(|candidate| candidate == value),
             Self::DataType { .. } => false,
+            Self::Reference { domain, nullable } => {
+                (*nullable && value.is_empty())
+                    || super::references::parts(value).is_some_and(|parts| {
+                        super::references::target(domain).is_some_and(|(kind, _)| {
+                            parts.last().is_some_and(|(target, _)| *target == kind)
+                        })
+                    })
+            }
         };
         valid.then_some(()).ok_or(EditError::InvalidValue)
     }
@@ -171,6 +184,30 @@ pub(super) fn scalar(
             .is_some_and(|value| matches!(value, "true" | "1"))
     {
         return None;
+    }
+    // These Role-valued fields serialize a list wrapper even when it is empty.
+    if model_type == "Role"
+        && node.tag_name().namespace() == Some(MD)
+        && matches!(
+            node.tag_name().name(),
+            "DefaultRoles" | "StandaloneConfigurationRestrictionRoles"
+        )
+    {
+        return None;
+    }
+    if super::references::target(model_type).is_some() {
+        if node.attribute((XSI, "type")).is_some_and(|annotation| {
+            let (prefix, name) = annotation
+                .split_once(':')
+                .map_or((None, annotation), |(prefix, name)| (Some(prefix), name));
+            name != "MDObjectRef" || node.lookup_namespace_uri(prefix) != Some(READABLE)
+        }) {
+            return None;
+        }
+        return Some(ScalarSchema::Reference {
+            domain: model_type.to_owned(),
+            nullable: !node.has_tag_name((READABLE, "Item")),
+        });
     }
     if let Some(annotation) = node.attribute((XSI, "type")) {
         if model_type != "Value" {

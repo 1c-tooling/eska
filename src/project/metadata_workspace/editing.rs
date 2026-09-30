@@ -148,6 +148,7 @@ impl ProjectSession {
         if let PropertyChange::DataType { key } = change {
             self.validate_property_type(key)?;
         }
+        self.validate_property_reference(id, path, change)?;
         Ok(self
             .editing_document(id, &location, &input)?
             .update(expected, path, change)?)
@@ -193,6 +194,7 @@ impl ProjectSession {
         if let PropertyChange::DataType { key } = change {
             self.validate_property_type(key)?;
         }
+        self.validate_property_reference(id, path, change)?;
         let plan = self
             .editing_document(id, &location, &input)?
             .update(expected, path, change)?;

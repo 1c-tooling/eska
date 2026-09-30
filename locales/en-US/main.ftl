@@ -879,6 +879,7 @@ metadata-project-help = Select one workspace project
 metadata-format-help = Machine output format
 metadata-inspect-about = Read properties and their editable schema
 metadata-types-about = List allowed types for an existing field
+metadata-choices-about = List allowed metadata references for an existing field
 metadata-check-about = Validate a property change and preview its byte replacements
 metadata-apply-about = Apply one validated property change
 metadata-object-help = Object ID returned by metadata inspect; defaults to the root object

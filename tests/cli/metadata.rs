@@ -105,3 +105,53 @@ fn metadata_json_schema_preview_apply_and_conflict_are_locale_independent() {
     assert_eq!(fs::read_to_string(&path).unwrap(), expected);
     assert!(!root.0.join(".eska").exists());
 }
+
+/// AI callers receive the same closed reference domain in either locale; arbitrary names cannot write.
+#[test]
+fn metadata_reference_choices_validate_the_public_json_contract() {
+    let root = TestDir::new();
+    fs::create_dir_all(root.0.join("src/Ext")).unwrap();
+    fs::create_dir_all(root.0.join("src/CommonForms")).unwrap();
+    fs::write(
+        root.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    let path = root.0.join("src/Configuration.xml");
+    let original = "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='11111111-1111-1111-1111-111111111111'><Properties><Name>Demo</Name><DefaultReportForm/></Properties><ChildObjects><CommonForm>Report</CommonForm></ChildObjects></Configuration></MetaDataObject>";
+    fs::write(&path, original).unwrap();
+    fs::write(
+        root.0.join("src/Ext/ParentConfigurations.bin"),
+        "{6,0,0,0,0,0}",
+    )
+    .unwrap();
+    fs::write(root.0.join("src/CommonForms/Report.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><CommonForm uuid='22222222-2222-2222-2222-222222222222'><Properties><Name>Report</Name></Properties></CommonForm></MetaDataObject>").unwrap();
+    let state = call(&root, "ru-RU", "inspect", None, true);
+    let editing = &state["result"]["editing"];
+    let field = &editing["fields"][0];
+    assert_eq!(field["schema"]["kind"], "reference");
+    let query = json!({"schemaVersion":1,"objectId":state["result"]["object"]["objectId"],"path":field["path"]});
+    let choices = call(&root, "ru-RU", "choices", Some(&query), true);
+    assert_eq!(choices, call(&root, "en-US", "choices", Some(&query), true));
+    assert_eq!(
+        choices["result"]["choices"][0]["value"],
+        "CommonForm.Report"
+    );
+    let mut request = query;
+    request["snapshot"] = editing["snapshot"].clone();
+    request["change"] = json!({"kind":"text","value":"CommonForm.InventedByAI"});
+    assert_eq!(
+        call(&root, "en-US", "apply", Some(&request), false)["error"]["kind"],
+        "property_invalid"
+    );
+    assert_eq!(fs::read_to_string(&path).unwrap(), original);
+    request["change"]["value"] = choices["result"]["choices"][0]["value"].clone();
+    call(&root, "ru-RU", "apply", Some(&request), true);
+    assert_eq!(
+        fs::read_to_string(&path).unwrap(),
+        original.replace(
+            "<DefaultReportForm/>",
+            "<DefaultReportForm>CommonForm.Report</DefaultReportForm>"
+        )
+    );
+}

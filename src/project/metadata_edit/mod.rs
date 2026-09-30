@@ -2,6 +2,7 @@
 
 mod document;
 mod patch;
+pub(crate) mod references;
 mod schema;
 pub(crate) mod types;
 mod write;

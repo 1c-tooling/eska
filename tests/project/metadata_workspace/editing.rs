@@ -4,6 +4,211 @@ use eska::project::{
     metadata_workspace::PropertyEditError,
 };
 
+/// Create small real descriptors whose references are declared by the owning XML, never by filenames alone.
+fn selector_file(
+    source: &Path,
+    relative: &str,
+    tag: &str,
+    name: &str,
+    properties: &str,
+    children: &str,
+) {
+    let file = source.join(relative);
+    fs::create_dir_all(file.parent().unwrap()).unwrap();
+    fs::write(file,format!("<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" version=\"2.20\"><{tag} uuid=\"11111111-1111-1111-1111-111111111111\"><Properties><Name>{name}</Name>{properties}</Properties><ChildObjects>{children}</ChildObjects></{tag}></MetaDataObject>")).unwrap();
+}
+
+/// Keep repeated role entries and nullable form selectors in byte-sensitive source text.
+fn selector_fixture() -> (TestDir, MetadataWorkspace, ObjectId, PathBuf, String) {
+    let (directory, workspace, id, path) = editable_fixture("configuration");
+    drop(workspace);
+    let source = directory.0.join("src");
+    let input = fs::read_to_string(source.join(&path)).unwrap()
+        .replace("</Properties>", "<DefaultReportForm/><DefaultRoles xmlns:xr=\"http://v8.1c.ru/8.3/xcf/readable\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><xr:Item xsi:type=\"xr:MDObjectRef\">Role.One</xr:Item><xr:Item xsi:type=\"xr:MDObjectRef\">Role.Two</xr:Item></DefaultRoles></Properties>")
+        .replace("<ChildObjects/>", "<ChildObjects><Role>One</Role><Role>Two</Role><Role>Three</Role><CommonForm>Report</CommonForm><Catalog>Goods</Catalog><Catalog>Other</Catalog></ChildObjects>");
+    fs::write(source.join(&path), &input).unwrap();
+    for name in ["One", "Two", "Three"] {
+        selector_file(&source, &format!("Roles/{name}.xml"), "Role", name, "", "");
+    }
+    selector_file(
+        &source,
+        "CommonForms/Report.xml",
+        "CommonForm",
+        "Report",
+        "<FormType>Managed</FormType>",
+        "",
+    );
+    for name in ["Goods", "Other"] {
+        selector_file(
+            &source,
+            &format!("Catalogs/{name}.xml"),
+            "Catalog",
+            name,
+            "<DefaultObjectForm/>",
+            "<Form>Object</Form>",
+        );
+        selector_file(
+            &source,
+            &format!("Catalogs/{name}/Forms/Object.xml"),
+            "Form",
+            "Object",
+            "<FormType>Managed</FormType>",
+            "",
+        );
+    }
+    let workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    (directory, workspace, id, path, input)
+}
+
+/// Swapping one role preserves other entries; duplicates, wrong kinds and undeclared names cannot write.
+#[test]
+fn role_selectors_preserve_list_membership_and_exact_undo() {
+    let (directory, mut workspace, id, path, input) = selector_fixture();
+    let source = directory.0.join("src");
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    let role = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.value == "Role.One")
+        .unwrap();
+    let choices = project.property_reference_choices(&id, &role.path).unwrap();
+    assert_eq!(
+        choices
+            .iter()
+            .map(|choice| choice.value.as_str())
+            .collect::<Vec<_>>(),
+        ["Role.One", "Role.Three"]
+    );
+    for invalid in ["Role.Two", "Role.Missing", "CommonForm.Report", ""] {
+        assert!(
+            project
+                .update_property(
+                    &id,
+                    &editing.properties.snapshot,
+                    &role.path,
+                    &PropertyChange::Text {
+                        value: invalid.into()
+                    }
+                )
+                .is_err()
+        );
+        assert_eq!(fs::read_to_string(source.join(&path)).unwrap(), input);
+    }
+    let change = PropertyChange::Text {
+        value: "Role.Three".into(),
+    };
+    let plan = project
+        .preview_property(&id, &editing.properties.snapshot, &role.path, &change)
+        .unwrap();
+    assert_eq!(plan.output(), input.replace(">Role.One<", ">Role.Three<"));
+    project
+        .update_property(&id, &editing.properties.snapshot, &role.path, &change)
+        .unwrap();
+    let state = project.property_editing(&id).unwrap();
+    project
+        .undo_property(&id, &state.properties.snapshot, true)
+        .unwrap();
+    assert_eq!(fs::read_to_string(source.join(&path)).unwrap(), input);
+}
+
+/// Scalar form selectors accept empty values, while object forms are scoped to their owner.
+#[test]
+fn form_selectors_validate_nullable_values_and_owner_scope() {
+    let (_directory, mut workspace, id, _path, _input) = selector_fixture();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    let form = editing
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.path[0].key.name == "DefaultReportForm")
+        .unwrap();
+    project
+        .update_property(
+            &id,
+            &editing.properties.snapshot,
+            &form.path,
+            &PropertyChange::Text {
+                value: "CommonForm.Report".into(),
+            },
+        )
+        .unwrap();
+    let state = project.property_editing(&id).unwrap();
+    project
+        .update_property(
+            &id,
+            &state.properties.snapshot,
+            &form.path,
+            &PropertyChange::Text {
+                value: String::new(),
+            },
+        )
+        .unwrap();
+    let catalog = object(MetadataKind::Catalog, "Goods", None);
+    let state = project.property_editing(&catalog).unwrap();
+    let form = state
+        .properties
+        .fields
+        .iter()
+        .find(|field| field.path[0].key.name == "DefaultObjectForm")
+        .unwrap();
+    let choices = project
+        .property_reference_choices(&catalog, &form.path)
+        .unwrap();
+    assert_eq!(
+        choices
+            .iter()
+            .map(|choice| choice.value.as_str())
+            .collect::<Vec<_>>(),
+        ["Catalog.Goods.Form.Object"]
+    );
+    assert!(
+        project
+            .update_property(
+                &catalog,
+                &state.properties.snapshot,
+                &form.path,
+                &PropertyChange::Text {
+                    value: "Catalog.Other.Form.Object".into()
+                }
+            )
+            .is_err()
+    );
+    project
+        .update_property(
+            &catalog,
+            &state.properties.snapshot,
+            &form.path,
+            &PropertyChange::Text {
+                value: "Catalog.Goods.Form.Object".into(),
+            },
+        )
+        .unwrap();
+}
+
+/// An empty collection cannot be converted to a scalar or gain an entry through a selector.
+#[test]
+fn empty_role_collections_do_not_expose_a_scalar_editor() {
+    let (directory, workspace, id, path, input) = selector_fixture();
+    drop(workspace);
+    let start = input.find("<DefaultRoles").unwrap();
+    let end = input.find("</DefaultRoles>").unwrap() + "</DefaultRoles>".len();
+    let input = format!("{}<DefaultRoles/>{}", &input[..start], &input[end..]);
+    fs::write(directory.0.join("src").join(path), input).unwrap();
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let editing = project.property_editing(&id).unwrap();
+    assert!(
+        !editing
+            .properties
+            .fields
+            .iter()
+            .any(|field| field.path[0].key.name == "DefaultRoles")
+    );
+}
+
 /// Preserve byte-sensitive formatting in fixtures for every supported project root.
 fn editable_fixture(case: &str) -> (TestDir, MetadataWorkspace, ObjectId, PathBuf) {
     let directory = TestDir::new();
