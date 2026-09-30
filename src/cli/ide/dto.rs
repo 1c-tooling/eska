@@ -224,18 +224,18 @@ pub(super) fn hit(value: &SearchHit) -> Value {
 
 /// Encode image bytes only at the wire boundary; status keys remain locale-independent.
 pub(super) fn picture(preview: crate::project::designer_source::PicturePreview) -> Value {
-    use crate::project::designer_source::PicturePreview;
+    use crate::project::designer_source::{PictureError, PicturePreview};
     use base64::{Engine as _, engine::general_purpose::STANDARD};
     let status = match preview {
         PicturePreview::Ready(picture) => {
             return json!({"status":"ready", "mimeType":picture.mime_type,
             "data":STANDARD.encode(picture.bytes), "fileName":picture.file_name});
         }
-        PicturePreview::Missing => "missing",
-        PicturePreview::Unsupported => "unsupported",
-        PicturePreview::Invalid => "invalid",
-        PicturePreview::TooLarge => "too_large",
-        PicturePreview::Unavailable => "unavailable",
+        PicturePreview::Failed(PictureError::Missing) => "missing",
+        PicturePreview::Failed(PictureError::Unsupported) => "unsupported",
+        PicturePreview::Failed(PictureError::Invalid) => "invalid",
+        PicturePreview::Failed(PictureError::TooLarge) => "too_large",
+        PicturePreview::Failed(PictureError::Unavailable) => "unavailable",
     };
     json!({"status":status})
 }

@@ -1,92 +1,100 @@
-use std::io::Cursor;
+use std::{io::Cursor, path::Path};
 
-use super::{MAX_IMAGE, MAX_XML, Picture, PicturePreview, bounded, image, safe_name};
+use super::{MAX_IMAGE, MAX_XML, Picture, PictureError, bounded, image, safe_name};
+
+const MAX_ENTRIES: usize = 512;
 
 /// Prefer a current-interface variant, then vector graphics or the largest declared size.
-pub(super) fn picture(bytes: &[u8]) -> Result<Picture, PicturePreview> {
+pub(super) fn picture(bytes: &[u8]) -> Result<Picture, PictureError> {
     let mut archive =
-        zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| PicturePreview::Invalid)?;
-    if archive.len() > 512 {
-        return Err(PicturePreview::TooLarge);
+        zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| PictureError::Invalid)?;
+    if archive.len() > MAX_ENTRIES {
+        return Err(PictureError::TooLarge);
     }
-    let name = match archive.by_name("manifest.xml") {
+    let declared = match archive.by_name("manifest.xml") {
         Ok(file) => {
             if file.size() > MAX_XML {
-                return Err(PicturePreview::TooLarge);
+                return Err(PictureError::TooLarge);
             }
-            let bytes = bounded(file, MAX_XML)?;
-            variant(&bytes)?
+            Some(variant(&bounded(file, MAX_XML)?)?)
         }
         Err(zip::result::ZipError::FileNotFound) => None,
-        Err(_) => return Err(PicturePreview::Invalid),
+        Err(_) => return Err(PictureError::Invalid),
     };
-    let name = name
-        .or_else(|| {
-            archive
-                .file_names()
-                .filter(|name| safe_name(name) && supported_name(name))
-                .max_by_key(|name| {
-                    (
-                        std::path::Path::new(name)
-                            .extension()
-                            .is_some_and(|ext| ext.eq_ignore_ascii_case("svg")),
-                        name.trim_end_matches(|c: char| !c.is_ascii_digit())
-                            .parse::<u32>()
-                            .unwrap_or(0),
-                        *name,
-                    )
-                })
-                .map(str::to_owned)
-        })
-        .ok_or(PicturePreview::Unsupported)?;
-    let file = archive
-        .by_name(&name)
-        .map_err(|_| PicturePreview::Invalid)?;
+    // Filename discovery is only for archives without a manifest, never for broken references.
+    let name = declared
+        .or_else(|| fallback_name(&archive))
+        .ok_or(PictureError::Unsupported)?;
+    let file = archive.by_name(&name).map_err(|_| PictureError::Invalid)?;
     if file.size() > MAX_IMAGE {
-        return Err(PicturePreview::TooLarge);
+        return Err(PictureError::TooLarge);
     }
     image(bounded(file, MAX_IMAGE)?, name)
 }
 
-/// A manifest determines the preferred image; invalid references never reach the filesystem.
-fn variant(bytes: &[u8]) -> Result<Option<String>, PicturePreview> {
-    let input = std::str::from_utf8(bytes).map_err(|_| PicturePreview::Invalid)?;
-    let document = roxmltree::Document::parse(input).map_err(|_| PicturePreview::Invalid)?;
-    if document.root_element().tag_name().name() != "Picture" {
-        return Err(PicturePreview::Invalid);
+/// An authoritative manifest must name at least one safe variant, including extensionless files.
+fn variant(bytes: &[u8]) -> Result<String, PictureError> {
+    let input = std::str::from_utf8(bytes).map_err(|_| PictureError::Invalid)?;
+    let document = roxmltree::Document::parse(input).map_err(|_| PictureError::Invalid)?;
+    if !document.root_element().has_tag_name("Picture") {
+        return Err(PictureError::Invalid);
     }
-    Ok(document
+    let mut preferred = None;
+    for node in document
         .root_element()
         .children()
         .filter(|node| node.has_tag_name("PictureVariant"))
-        .filter_map(|node| {
-            let name = node.attribute("name")?;
-            if !safe_name(name) {
-                return None;
-            }
-            let current = node.attribute("interfaceVariant").is_none_or(str::is_empty);
-            let width = node
-                .attribute("glyphWidth")
-                .and_then(|value| value.parse::<u32>().ok())
+    {
+        let name = node
+            .attribute("name")
+            .filter(|name| safe_name(name))
+            .ok_or(PictureError::Invalid)?;
+        let current = node.attribute("interfaceVariant").is_none_or(str::is_empty);
+        let width = dimension(node, "glyphWidth");
+        let height = dimension(node, "glyphHeight");
+        let rank = (
+            current,
+            is_svg(name),
+            u64::from(width) * u64::from(height),
+            name,
+        );
+        if preferred.is_none_or(|previous| rank > previous) {
+            preferred = Some(rank);
+        }
+    }
+    preferred
+        .map(|(_, _, _, name)| name.to_owned())
+        .ok_or(PictureError::Unsupported)
+}
+
+/// Unknown dimensions rank as zero, retaining valid exports with omitted size attributes.
+fn dimension(node: roxmltree::Node<'_, '_>, name: &str) -> u32 {
+    node.attribute(name)
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(0)
+}
+
+/// Without a manifest, prefer SVG or the largest numeric filename; ties are deterministic.
+fn fallback_name(archive: &zip::ZipArchive<Cursor<&[u8]>>) -> Option<String> {
+    archive
+        .file_names()
+        .filter(|name| safe_name(name) && supported_name(name))
+        .max_by_key(|name| {
+            let density = Path::new(name)
+                .file_stem()
+                .and_then(|stem| stem.to_str())
+                .and_then(|stem| stem.parse::<u32>().ok())
                 .unwrap_or(0);
-            let height = node
-                .attribute("glyphHeight")
-                .and_then(|value| value.parse::<u32>().ok())
-                .unwrap_or(0);
-            Some((
-                (
-                    current,
-                    std::path::Path::new(name)
-                        .extension()
-                        .is_some_and(|ext| ext.eq_ignore_ascii_case("svg")),
-                    u64::from(width) * u64::from(height),
-                    name,
-                ),
-                name,
-            ))
+            (is_svg(name), density, *name)
         })
-        .max_by_key(|(rank, _)| *rank)
-        .map(|(_, name)| name.to_owned()))
+        .map(str::to_owned)
+}
+
+/// Share case-insensitive vector preference between declared and discovered variants.
+fn is_svg(name: &str) -> bool {
+    Path::new(name)
+        .extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("svg"))
 }
 
 /// Restrict fallback discovery to formats that the webview can display as images.

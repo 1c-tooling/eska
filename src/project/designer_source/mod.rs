@@ -18,7 +18,7 @@ use super::{
 pub use mapping::{LogicalLocation, SourceLocation, SourceRole};
 pub use opening::open_projects;
 pub(crate) use opening::open_projects_cached;
-pub use picture::{Picture, PicturePreview};
+pub use picture::{Picture, PictureError, PicturePreview};
 
 /// One manifest-backed project and its checked root descriptor, without a full object index.
 #[derive(Debug)]

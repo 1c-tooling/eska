@@ -1,6 +1,6 @@
 use std::io::{Cursor, Write};
 
-use eska::project::designer_source::{Picture, PicturePreview};
+use eska::project::designer_source::{Picture, PictureError, PicturePreview};
 
 use super::{DesignerSource, MetadataKind, ObjectId, TestDir, fixture, id, write, xml};
 
@@ -77,22 +77,22 @@ fn reads_current_picture_contents_and_distinguishes_missing_from_unsupported() {
     );
     assert!(matches!(
         source.picture_preview(&id),
-        PicturePreview::Unsupported
+        PicturePreview::Failed(PictureError::Unsupported)
     ));
     reference(&source, "missing.png");
     assert!(matches!(
         source.picture_preview(&id),
-        PicturePreview::Missing
+        PicturePreview::Failed(PictureError::Missing)
     ));
     reference(&source, "../Configuration.xml");
     assert!(matches!(
         source.picture_preview(&id),
-        PicturePreview::Invalid
+        PicturePreview::Failed(PictureError::Invalid)
     ));
     reference(&source, "C:\\picture.png");
     assert!(matches!(
         source.picture_preview(&id),
-        PicturePreview::Invalid
+        PicturePreview::Failed(PictureError::Invalid)
     ));
 }
 
@@ -130,7 +130,7 @@ fn rejects_oversized_compressed_and_corrupt_pictures() {
     let (_directory, source, id) = picture_fixture("Picture.zip", &bytes);
     assert!(matches!(
         source.picture_preview(&id),
-        PicturePreview::TooLarge
+        PicturePreview::Failed(PictureError::TooLarge)
     ));
     write(
         source.project().source(),
@@ -139,7 +139,7 @@ fn rejects_oversized_compressed_and_corrupt_pictures() {
     );
     assert!(matches!(
         source.picture_preview(&id),
-        PicturePreview::Invalid
+        PicturePreview::Failed(PictureError::Invalid)
     ));
 }
 
@@ -157,7 +157,7 @@ fn rejects_payload_symlink_escape() {
     std::os::unix::fs::symlink(directory.0.join("outside.svg"), payload).unwrap();
     assert!(matches!(
         source.picture_preview(&id),
-        PicturePreview::Unavailable
+        PicturePreview::Failed(PictureError::Unavailable)
     ));
 }
 
@@ -175,4 +175,42 @@ fn zip_manifest_supports_extensionless_picture_names() {
     let picture = ready(&source, &id);
     assert_eq!(picture.mime_type, "image/svg+xml");
     assert_eq!(picture.file_name, "l");
+}
+
+/// A present manifest is authoritative; invalid references must not select an unrelated file.
+#[test]
+fn rejects_invalid_manifest_instead_of_showing_an_unlisted_picture() {
+    for (manifest, expected) in [
+        (
+            r#"<Picture><PictureVariant name="../other.svg"/></Picture>"#,
+            PictureError::Invalid,
+        ),
+        (
+            "<Picture><PictureVariant/></Picture>",
+            PictureError::Invalid,
+        ),
+        ("<Picture/>", PictureError::Unsupported),
+    ] {
+        let bytes = archive(&[("unlisted.svg", SVG), ("manifest.xml", manifest.as_bytes())]);
+        let (_directory, source, id) = picture_fixture("Picture.zip", &bytes);
+        let PicturePreview::Failed(error) = source.picture_preview(&id) else {
+            panic!("manifest was ignored: {manifest}");
+        };
+        assert_eq!(error, expected);
+    }
+}
+
+/// Archives without manifests retain numeric density ordering and case-insensitive SVG preference.
+#[test]
+fn zip_without_manifest_selects_density_then_prefers_vector() {
+    let bytes = archive(&[("85.png", SVG), ("400.png", SVG), ("100.png", SVG)]);
+    let (_directory, source, id) = picture_fixture("Picture.zip", &bytes);
+    assert_eq!(ready(&source, &id).file_name, "400.png");
+    let bytes = archive(&[("400.png", SVG), ("Picture.SVG", SVG)]);
+    write(
+        source.project().source(),
+        "CommonPictures/Icon/Ext/Picture/Picture.zip",
+        bytes,
+    );
+    assert_eq!(ready(&source, &id).file_name, "Picture.SVG");
 }
