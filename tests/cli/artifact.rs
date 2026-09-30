@@ -65,6 +65,8 @@ fn creates_all_types_in_both_locales() {
                 ],
             );
             assert!(output.status.success(), "{output:?}");
+            assert!(String::from_utf8_lossy(&output.stdout).starts_with("✓ "));
+            assert!(!output.stdout.contains(&0x1b));
             let root = fixture.0.join("different-directory");
             let config = fs::read_to_string(root.join("eska.toml")).unwrap();
             assert!(config.contains(&format!("type = \"{kind}\"")));
@@ -742,5 +744,56 @@ fn failed_standalone_creation_removes_nested_service_files_in_both_locales() {
             assert!(!fixture.0.join(".eska").exists());
             assert_eq!(fs::read_dir(&fixture.0).unwrap().count(), 1);
         }
+    }
+}
+
+/// Redirected human messages retain thematic markers and readable paths in either locale.
+#[test]
+fn human_results_preserve_plain_paths_and_markers_in_both_locales() {
+    for locale in ["ru", "en"] {
+        let fixture = TestDir::new();
+        let root = imported_project(&fixture);
+        let applied = run(
+            &root,
+            &fixture,
+            locale,
+            &["import", "../incoming.cf", "--force"],
+        );
+        assert!(applied.status.success(), "{applied:?}");
+        let stdout = String::from_utf8(applied.stdout).unwrap();
+        let stderr = String::from_utf8(applied.stderr).unwrap();
+        assert!(stdout.starts_with("✓ "), "{stdout}");
+        assert!(stderr.lines().any(|line| line.starts_with("↻ ")));
+        assert!(stderr.lines().any(|line| line.starts_with("• ")));
+        assert!(stderr.lines().any(|line| line.starts_with("→ ")));
+        assert!(stderr.contains(root.join("src").to_str().unwrap()));
+        assert!(!stdout.contains('\x1b') && !stderr.contains('\x1b'));
+        let preview = run(
+            &root,
+            &fixture,
+            locale,
+            &["import", "../incoming.cf", "--dry-run"],
+        );
+        assert!(preview.status.success(), "{preview:?}");
+        assert!(preview.stdout.is_empty());
+        let stderr = String::from_utf8(preview.stderr).unwrap();
+        assert!(stderr.lines().last().unwrap().starts_with("ℹ "));
+        assert!(stderr.contains(if locale == "ru" {
+            "Проверка завершена"
+        } else {
+            "Preview complete"
+        }));
+        let failed = run(
+            &root,
+            &fixture,
+            locale,
+            &["import", "missing.txt", "--dry-run"],
+        );
+        assert_eq!(failed.status.code(), Some(1));
+        assert!(failed.stdout.is_empty());
+        let stderr = String::from_utf8(failed.stderr).unwrap();
+        assert!(stderr.lines().last().unwrap().starts_with("✗ "), "{stderr}");
+        assert!(stderr.contains("missing.txt"), "{stderr}");
+        assert!(!stderr.contains('\x1b'));
     }
 }

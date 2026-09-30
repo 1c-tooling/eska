@@ -1,6 +1,7 @@
 use eska::{
     config::{ProjectConfig, WorkspaceConfig},
     project::ProjectType,
+    project::build::{BuildSettings, PlatformVersion},
     project::discovery,
     project::init::{self, InitError},
     vcs::workflow::WorkflowPreset,
@@ -13,12 +14,22 @@ use std::{
 
 use crate::support::TestDir;
 
+/// Run initialization without supplying choices so failure and inheritance remain observable.
 fn command(root: &Path, locale: &str) -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_eska"));
     command
         .current_dir(root)
         .env_remove("ESKA_LANG")
         .args(["--lang", locale, "init"]);
+    command
+}
+
+/// Supply an installed platform independently of the host machine's 1C setup.
+fn configured_command(root: &Path, locale: &str, fixture: &TestDir) -> Command {
+    let mut command = command(root, locale);
+    command
+        .args(["--platform-version", "8.3.27.2325", "--ibcmd"])
+        .arg(super::build::fake_ibcmd(fixture));
     command
 }
 
@@ -118,10 +129,147 @@ fn workspace_init_enrolls_a_copied_export_without_workflow_or_git_files() {
             &[std::path::PathBuf::from("src/my-orders")]
         );
         let context = discovery::discover_context(&member).unwrap();
-        let discovery::DiscoveryContext::Workspace { current_member, .. } = context else {
+        let discovery::DiscoveryContext::Workspace {
+            workspace,
+            current_member,
+        } = context
+        else {
             panic!("workspace member");
         };
         assert_eq!(current_member.unwrap().as_str(), "my-orders");
+        let project = workspace.members()[0].project();
+        assert_eq!(
+            project
+                .configuration()
+                .build_settings()
+                .platform_version()
+                .unwrap()
+                .as_str(),
+            "8.3.27.2325"
+        );
+    }
+}
+
+#[test]
+/// Persist member overrides without copying root-owned build settings or changing XML bytes.
+fn workspace_init_saves_an_explicit_platform_even_when_root_has_no_version() {
+    for locale in ["ru", "en"] {
+        for inherited in ["", "8.3.27.2325"] {
+            let fixture = TestDir::new();
+            fs::write(
+                fixture.0.join("eska.toml"),
+                format!("# preserve\n[workspace]\nmembers = []\n[build]\nplatform_version = \"{inherited}\"\nartifacts_directory = \"artifacts\"\n"),
+            ).unwrap();
+            let member = fixture.0.join("src/orders");
+            descriptor(&member.join("src"), "configuration");
+            let before = snapshot(&member);
+            let log = fixture.0.join("runner.log");
+            let output = command(&member, locale)
+                .args(["--platform-version", "8.3.28.1000", "--ibcmd"])
+                .arg(super::build::fake_ibcmd(&fixture))
+                .env("FAKE_IBCMD_VERSION", "8.3.28.1000")
+                .env("FAKE_IBCMD_LOG", &log)
+                .output()
+                .expect("explicit member platform");
+            success(&output);
+            assert_eq!(fs::read_to_string(log).unwrap(), "--version\n");
+            let manifest = fs::read_to_string(member.join("eska.toml")).unwrap();
+            assert!(manifest.contains("platform_version = \"8.3.28.1000\""));
+            assert!(!manifest.contains("artifacts_directory"));
+            assert!(!manifest.contains("[vcs"));
+            let discovery::DiscoveryContext::Workspace { workspace, .. } =
+                discovery::discover_context(&member).unwrap()
+            else {
+                panic!("workspace");
+            };
+            let project = workspace.members()[0].project();
+            assert_eq!(
+                project
+                    .configuration()
+                    .build_settings()
+                    .platform_version()
+                    .unwrap()
+                    .as_str(),
+                "8.3.28.1000"
+            );
+            assert_eq!(
+                project
+                    .configuration()
+                    .build_settings()
+                    .artifacts_directory(),
+                Path::new("artifacts")
+            );
+            let root = WorkspaceConfig::load(&fixture.0.join("eska.toml")).unwrap();
+            assert_eq!(
+                root.build_settings()
+                    .platform_version()
+                    .map(PlatformVersion::as_str),
+                (!inherited.is_empty()).then_some(inherited)
+            );
+            let mut after = snapshot(&member);
+            after.retain(|(path, _)| path != Path::new("eska.toml"));
+            assert_eq!(after, before);
+            assert!(!member.join(".git").exists());
+        }
+    }
+}
+
+#[test]
+/// Require an explicit choice in automation without modifying either workspace manifest.
+fn workspace_init_requires_platform_when_root_is_unconfigured_or_selection_is_forced() {
+    for locale in ["ru", "en"] {
+        for select in [false, true] {
+            let fixture = empty_workspace();
+            if !select {
+                fs::write(fixture.0.join("eska.toml"), "[workspace]\nmembers = []\n").unwrap();
+            }
+            let member = fixture.0.join("src/orders");
+            descriptor(&member, "processing");
+            let before = snapshot(&fixture.0);
+            let mut cli = command(&member, locale);
+            if select {
+                cli.arg("--select-platform");
+            }
+            let error = failure(&cli.output().unwrap(), 2, locale);
+            assert!(error.contains("--platform-version"));
+            assert_eq!(snapshot(&fixture.0), before);
+        }
+    }
+}
+
+#[test]
+/// Reject malformed or unavailable versions before creating config or Git files.
+fn standalone_init_validates_the_selected_platform_before_writing() {
+    for locale in ["ru", "en"] {
+        let fixture = TestDir::new();
+        descriptor(&fixture.0.join("src"), "report");
+        let before = snapshot(&fixture.0);
+        for (version, code) in [("8.3", 2), ("8.3.28.1000", 1)] {
+            let output = command(&fixture.0, locale)
+                .args([
+                    "--workflow",
+                    "trunk",
+                    "--platform-version",
+                    version,
+                    "--ibcmd",
+                ])
+                .arg(super::build::fake_ibcmd(&fixture))
+                .output()
+                .unwrap();
+            let error = failure(&output, code, locale);
+            assert!(error.contains(if code == 2 {
+                if locale == "ru" {
+                    "четырёх чисел"
+                } else {
+                    "four numeric"
+                }
+            } else if locale == "ru" {
+                "проект требует точно"
+            } else {
+                "project requires exactly"
+            }));
+            assert_eq!(snapshot(&fixture.0), before);
+        }
     }
 }
 
@@ -216,7 +364,7 @@ fn detects_all_types_locations_and_locales_without_touching_sources() {
                 fs::create_dir_all(&root).expect("project root");
                 descriptor(&source, kind);
                 let before = snapshot(&root);
-                let mut cli = command(&fixture.0, locale);
+                let mut cli = configured_command(&fixture.0, locale, &fixture);
                 cli.arg(&root)
                     .args(["--workflow", "github-flow", "--no-vcs"]);
                 if location == "sources/designer" {
@@ -231,7 +379,7 @@ fn detects_all_types_locations_and_locales_without_touching_sources() {
                 assert!(
                     fs::read_to_string(root.join("eska.toml"))
                         .expect("project config text")
-                        .contains("platform_version = \"\"")
+                        .contains("platform_version = \"8.3.27.2325\"")
                 );
                 let config = ProjectConfig::load(&root.join("eska.toml")).expect("config");
                 assert_eq!(
@@ -288,7 +436,7 @@ fn creates_only_missing_git_files_and_preserves_existing_files() {
         }
 
         success(
-            &command(&root, "en")
+            &configured_command(&root, "en", &fixture)
                 .args(["--workflow", "trunk", "--no-vcs"])
                 .output()
                 .expect("init"),
@@ -339,7 +487,7 @@ fn initializes_git_without_system_git_or_redirecting_environment() {
     descriptor(&fixture.0.join("src"), "configuration");
     let elsewhere = fixture.0.join("untouched");
     let message = success(
-        &command(&fixture.0, "en")
+        &configured_command(&fixture.0, "en", &fixture)
             .args(["--workflow", "trunk"])
             .env("PATH", "")
             .env("GIT_DIR", &elsewhere)
@@ -378,7 +526,7 @@ fn preserves_existing_and_ancestor_repositories_byte_for_byte() {
         };
         descriptor(&root.join("src"), "extension");
         success(
-            &command(&root, "en")
+            &configured_command(&root, "en", &fixture)
                 .args(["--workflow", "custom"])
                 .output()
                 .expect("init"),
@@ -402,7 +550,7 @@ fn existing_gitfile_is_preserved_and_never_reinitialized() {
     fs::write(root.join(".git"), gitfile).expect("gitfile");
     let before = snapshot(&original);
     success(
-        &command(&root, "ru")
+        &configured_command(&root, "ru", &fixture)
             .args(["--workflow", "trunk"])
             .output()
             .expect("init"),
@@ -417,7 +565,12 @@ fn config_collisions_missing_options_and_invalid_xml_never_write() {
         let fixture = TestDir::new();
         descriptor(&fixture.0.join("src"), "processing");
         let before = snapshot(&fixture.0);
-        for args in [vec![], vec!["--workflow", "unknown"]] {
+        for args in [
+            vec![],
+            vec!["--workflow", "unknown"],
+            vec!["--workflow", "trunk"],
+            vec!["--workflow", "trunk", "--select-platform"],
+        ] {
             failure(
                 &command(&fixture.0, locale)
                     .args(args)
@@ -504,7 +657,7 @@ fn rejects_missing_sources_unsafe_paths_and_changes_after_detection() {
     let plan = init::inspect(&fixture.0, None).expect("plan");
     descriptor(&fixture.0.join("src"), "extension");
     assert!(matches!(
-        init::apply(&plan, WorkflowPreset::Trunk, true),
+        init::apply(&plan, WorkflowPreset::Trunk, BuildSettings::default(), true),
         Err(InitError::ChangedSource { .. })
     ));
     assert!(!fixture.0.join("eska.toml").exists());
@@ -534,7 +687,7 @@ fn rejects_unsupported_roots_config_directories_and_bare_repositories() {
     let before = snapshot(&bare);
     let plan = init::inspect(&bare, None).expect("XML");
     assert!(matches!(
-        init::apply(&plan, WorkflowPreset::Trunk, true),
+        init::apply(&plan, WorkflowPreset::Trunk, BuildSettings::default(), true),
         Err(InitError::ExistingGit { .. })
     ));
     assert_eq!(snapshot(&bare), before);
@@ -549,7 +702,13 @@ fn internal_source_symlink_is_canonicalized_without_becoming_ambiguous() {
     symlink(".", fixture.0.join("src")).expect("alias");
     let plan = init::inspect(&fixture.0, None).expect("same source");
     assert_eq!(plan.source(), Path::new("."));
-    init::apply(&plan, WorkflowPreset::Trunk, false).expect("init");
+    init::apply(
+        &plan,
+        WorkflowPreset::Trunk,
+        BuildSettings::default(),
+        false,
+    )
+    .expect("init");
     assert_eq!(
         fs::read_link(fixture.0.join("src")).expect("unchanged alias"),
         Path::new(".")
@@ -584,7 +743,7 @@ fn invalid_git_metadata_is_preserved_and_no_vcs_skips_it() {
     fs::write(fixture.0.join(".git"), "invalid gitfile").expect("gitfile");
     let before = snapshot(&fixture.0);
     failure(
-        &command(&fixture.0, "en")
+        &configured_command(&fixture.0, "en", &fixture)
             .args(["--workflow", "trunk"])
             .output()
             .expect("bad gitfile"),
@@ -593,7 +752,7 @@ fn invalid_git_metadata_is_preserved_and_no_vcs_skips_it() {
     );
     assert_eq!(snapshot(&fixture.0), before);
     success(
-        &command(&fixture.0, "en")
+        &configured_command(&fixture.0, "en", &fixture)
             .args(["--workflow", "trunk", "--no-vcs"])
             .output()
             .expect("no vcs"),
@@ -660,6 +819,11 @@ fn localized_help_and_global_base_work_with_default_path() {
             "--name",
             "--workflow",
             "--no-vcs",
+            "--platform-version",
+            "--select-platform",
+            "--ibcmd",
+            "--platform-arch",
+            "--distrobox",
             "--project-dir",
             "--lang",
         ] {
@@ -677,7 +841,7 @@ fn localized_help_and_global_base_work_with_default_path() {
     let root = fixture.0.join("base");
     descriptor(&root.join("src"), "report");
     success(
-        &command(&fixture.0, "ru")
+        &configured_command(&fixture.0, "ru", &fixture)
             .arg("--project-dir")
             .arg(&root)
             .args(["--lang", "en", "--workflow", "git-flow", "--no-vcs"])

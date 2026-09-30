@@ -10,6 +10,7 @@ mod encoding;
 mod ide;
 mod interactive;
 pub mod localization;
+mod path_output;
 mod platform;
 mod process_output;
 mod shelves;

@@ -1,12 +1,17 @@
 //! Creation from a validated artifact, sharing normal standalone and member publication.
 
-use std::{path::Path, process::ExitCode};
+use std::{
+    io::{self, IsTerminal},
+    path::Path,
+    process::ExitCode,
+};
 
 use crate::{
     cli::{
         diagnostics,
         interactive::{Selector, WORKFLOW_CHOICES},
         localization::{LocalizationValue, Localizer},
+        path_output,
     },
     config::ProjectConfig,
     project::{build::BuildSettings, create, onboarding},
@@ -22,20 +27,20 @@ use super::{
 pub(super) fn run(args: &NewArgs, base: &Path, localizer: &Localizer) -> ExitCode {
     match execute(args, base, localizer) {
         Ok(project) => {
-            println!(
-                "{}",
-                localizer.format(
-                    "artifact-created",
-                    &[(
-                        "path",
-                        LocalizationValue::Text(&project.root().to_string_lossy())
-                    )]
-                )
-            );
+            artifact::success(&localizer.format(
+                "artifact-created",
+                &[(
+                    "path",
+                    LocalizationValue::Text(&path_output::render(
+                        project.root(),
+                        io::stdout().is_terminal(),
+                    )),
+                )],
+            ));
             ExitCode::SUCCESS
         }
         Err(error) => {
-            eprintln!("{}", error.message);
+            error.report();
             if matches!(
                 error.code,
                 "platform-required"
@@ -62,7 +67,11 @@ fn execute(
     let workspace = onboarding::find_workspace(base).map_err(|error| {
         Failure::new(
             "discovery",
-            diagnostics::present_context_error(&error, localizer),
+            diagnostics::present_context_error_with_links(
+                &error,
+                localizer,
+                io::stderr().is_terminal(),
+            ),
         )
     })?;
     let creation_error = |error| match error {

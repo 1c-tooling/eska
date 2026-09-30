@@ -1,4 +1,4 @@
-//! Shared platform selection and diagnostics for native artifact onboarding.
+//! Shared platform selection and diagnostics for project onboarding and native imports.
 
 use std::{
     io::{self, IsTerminal},
@@ -12,9 +12,10 @@ use crate::{
         diagnostics,
         interactive::{PromptError, Selector},
         localization::{LocalizationValue, Localizer},
-        platform,
+        path_output, platform,
         process_output::{
             self, decorate_status, diagnostic_styling_enabled, progress::ProgressLine,
+            result_styling_enabled,
         },
     },
     project::{
@@ -103,6 +104,31 @@ impl Failure {
         self.details = Some(details);
         self
     }
+
+    /// Distinguish cancellation from failure without decorating nested error reasons twice.
+    pub fn report(&self) {
+        if self.code == "cancelled" {
+            report("↩", &self.message, "33");
+        } else {
+            report("✗", &self.message, "31");
+        }
+    }
+}
+
+/// Give final success messages the same marker and stdout color policy as build.
+pub(super) fn success(message: &str) {
+    println!(
+        "{}",
+        decorate_status("✓", message, result_styling_enabled(), "32")
+    );
+}
+
+/// Decorate CLI diagnostics while native platform severity lines remain unchanged.
+pub(super) fn report(marker: &str, message: &str, color: &str) {
+    eprintln!(
+        "{}",
+        decorate_status(marker, message, diagnostic_styling_enabled(), color)
+    );
 }
 
 impl PlatformArgs {
@@ -122,6 +148,22 @@ impl PlatformArgs {
         interactive: bool,
         localizer: &Localizer,
     ) -> Result<Ibcmd, Failure> {
+        self.resolve_with_cancellation(inherited, interactive, localizer, "artifact-cancelled")
+    }
+
+    /// Reuse native creation's platform selector with initialization-specific cancellation.
+    pub fn resolve_for_init(&self, localizer: &Localizer) -> Result<Ibcmd, Failure> {
+        self.resolve_with_cancellation(None, true, localizer, "init-cancelled")
+    }
+
+    /// Keep selection and installed-version verification identical across onboarding commands.
+    fn resolve_with_cancellation(
+        &self,
+        inherited: Option<&PlatformVersion>,
+        interactive: bool,
+        localizer: &Localizer,
+        cancellation_key: &str,
+    ) -> Result<Ibcmd, Failure> {
         let options = platform::tool_options(
             self.ibcmd.clone(),
             self.platform_arch.clone(),
@@ -130,7 +172,11 @@ impl PlatformArgs {
         .map_err(|error| {
             Failure::new(
                 "global-config",
-                diagnostics::present_global_config_error(&error, localizer),
+                diagnostics::present_global_config_error_with_links(
+                    &error,
+                    localizer,
+                    io::stderr().is_terminal(),
+                ),
             )
         })?;
         let version = if let Some(value) = &self.platform_version {
@@ -149,7 +195,11 @@ impl PlatformArgs {
             let installed = Ibcmd::installed(&options).map_err(|error| {
                 Failure::new(
                     "platform-discovery",
-                    diagnostics::present_tool_error(&error, localizer),
+                    diagnostics::present_tool_error_with_links(
+                        &error,
+                        localizer,
+                        io::stderr().is_terminal(),
+                    ),
                 )
             })?;
             if installed.is_empty() {
@@ -166,13 +216,13 @@ impl PlatformArgs {
                 })
                 .collect::<Vec<_>>();
             let mut selector = Selector::start("build-platform-tui-title")
-                .map_err(|error| prompt_error(error, localizer))?;
+                .map_err(|error| platform_prompt_error(error, localizer, cancellation_key))?;
             let selected = selector
-                .choose_values(localizer, "build-platform-menu", &choices)
-                .map_err(|error| prompt_error(error, localizer))?;
+                .choose_values(localizer, "artifact-platform-menu", &choices)
+                .map_err(|error| platform_prompt_error(error, localizer, cancellation_key))?;
             selector
                 .finish()
-                .map_err(|_| prompt_error(PromptError::Io, localizer))?;
+                .map_err(|_| platform_prompt_error(PromptError::Io, localizer, cancellation_key))?;
             selected
         };
         let version = PlatformVersion::parse(&version).map_err(|_| {
@@ -184,9 +234,25 @@ impl PlatformArgs {
         Ibcmd::discover(&version, &options).map_err(|error| {
             Failure::new(
                 "platform-discovery",
-                diagnostics::present_tool_error(&error, localizer),
+                diagnostics::present_tool_error_with_links(
+                    &error,
+                    localizer,
+                    io::stderr().is_terminal(),
+                ),
             )
         })
+    }
+}
+
+/// Localize selector cancellation for the command that owns the interaction.
+fn platform_prompt_error(
+    error: PromptError,
+    localizer: &Localizer,
+    cancellation_key: &str,
+) -> Failure {
+    match error {
+        PromptError::Cancelled => Failure::new("cancelled", localizer.text(cancellation_key)),
+        PromptError::Io => prompt_error(PromptError::Io, localizer),
     }
 }
 
@@ -208,6 +274,7 @@ pub(super) fn prompt_error(error: PromptError, localizer: &Localizer) -> Failure
 
 /// Translate structured import failures only at the CLI boundary.
 pub(super) fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
+    let hyperlinks = io::stderr().is_terminal();
     let (code, key, path) = match error {
         ArtifactError::Io { path, source } => {
             return Failure::new(
@@ -215,7 +282,10 @@ pub(super) fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
                 localizer.format(
                     "artifact-io",
                     &[
-                        ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                        (
+                            "path",
+                            LocalizationValue::Text(&path_output::render(path, hyperlinks)),
+                        ),
                         ("reason", LocalizationValue::Text(&source.to_string())),
                     ],
                 ),
@@ -254,7 +324,10 @@ pub(super) fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
                 "rollback",
                 localizer.format(
                     "artifact-rollback-error",
-                    &[("path", LocalizationValue::Text(&backup.to_string_lossy()))],
+                    &[(
+                        "path",
+                        LocalizationValue::Text(&path_output::render(backup, hyperlinks)),
+                    )],
                 ),
             );
         }
@@ -278,7 +351,10 @@ pub(super) fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
         code,
         localizer.format(
             key,
-            &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
+            &[(
+                "path",
+                LocalizationValue::Text(&path_output::render(path, hyperlinks)),
+            )],
         ),
     )
 }

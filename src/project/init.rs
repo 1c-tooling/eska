@@ -12,7 +12,9 @@ use crate::{
 };
 
 use super::{
-    Project, ProjectName, ProjectType, Workspace, designer_xml,
+    Project, ProjectName, ProjectType, Workspace,
+    build::BuildSettings,
+    designer_xml,
     discovery::{self, ContextDiscoveryError, DiscoveryContext, DiscoveryError},
     onboarding::{self, WorkspaceEnrollmentError, WorkspaceMemberEnrollment},
     templates::{self, TemplateFile},
@@ -33,8 +35,17 @@ pub struct InitPlan {
 pub struct WorkspaceInitPlan {
     detected: InitPlan,
     name: ProjectName,
-    config: String,
+    config: ProjectConfig,
     enrollment: WorkspaceMemberEnrollment,
+}
+
+impl WorkspaceInitPlan {
+    /// Save an explicit platform override while retaining root-owned workspace settings.
+    #[must_use]
+    pub fn with_build_settings(mut self, build: BuildSettings) -> Self {
+        self.config = self.config.with_build_settings(build);
+        self
+    }
 }
 
 impl InitPlan {
@@ -112,7 +123,7 @@ pub enum InitError {
 /// Prepares a member manifest and root enrollment without writing either file.
 ///
 /// # Errors
-/// Returns serialization, workspace-layout, duplicate-name, or manifest errors.
+/// Returns workspace-layout, duplicate-name, or manifest errors.
 pub fn prepare_workspace_member(
     plan: InitPlan,
     workspace: &Workspace,
@@ -131,9 +142,7 @@ pub fn prepare_workspace_member(
     let config = ProjectConfig::new(plan.project_type)
         .with_name(name.clone())
         .with_source(plan.source.clone())
-        .map_err(InitError::Config)?
-        .to_workspace_member_toml()
-        .map_err(InitError::Serialize)?;
+        .map_err(InitError::Config)?;
     let enrollment = onboarding::prepare(workspace, plan.root.clone(), member_path, &name)
         .map_err(InitError::Workspace)?;
     Ok(WorkspaceInitPlan {
@@ -154,6 +163,10 @@ pub fn apply_workspace_member(plan: &WorkspaceInitPlan) -> Result<Project, InitE
             path: plan.detected.root.clone(),
         });
     }
+    let contents = plan
+        .config
+        .to_workspace_member_toml()
+        .map_err(InitError::Serialize)?;
     let config_path = plan.detected.root.join(FILE_NAME);
     let mut config_file = OpenOptions::new()
         .write(true)
@@ -174,7 +187,7 @@ pub fn apply_workspace_member(plan: &WorkspaceInitPlan) -> Result<Project, InitE
     let mut manifest_published = false;
     let result = (|| {
         config_file
-            .write_all(plan.config.as_bytes())
+            .write_all(contents.as_bytes())
             .and_then(|()| config_file.sync_all())
             .map_err(|source| InitError::Io {
                 path: config_path.clone(),
@@ -351,7 +364,7 @@ fn detect_directory(directory: &Path, root: &Path) -> Result<Option<ProjectType>
     Ok(found)
 }
 
-/// Write a new config, missing shared Git files and, when requested, a new repository.
+/// Write selected build settings, missing shared Git files and an optional new repository.
 /// Existing source files, Git control files and repository metadata are never rewritten.
 ///
 /// # Errors
@@ -360,6 +373,7 @@ fn detect_directory(directory: &Path, root: &Path) -> Result<Option<ProjectType>
 pub fn apply(
     plan: &InitPlan,
     workflow: WorkflowPreset,
+    build: BuildSettings,
     initialize_vcs: bool,
 ) -> Result<Project, InitError> {
     if inspect(&plan.root, Some(&plan.source))? != *plan {
@@ -387,6 +401,7 @@ pub fn apply(
         .with_source(plan.source.clone())
         .map_err(InitError::Config)?
         .with_workflow(workflow)
+        .with_build_settings(build)
         .to_toml()
         .map_err(InitError::Serialize)?;
     let project_files = templates::built_in_git_files();

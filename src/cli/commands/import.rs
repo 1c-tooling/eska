@@ -1,7 +1,7 @@
 //! Update one project's sources from a native artifact after preview and consent.
 
 use std::{
-    io::{self, Write},
+    io::{self, IsTerminal, Write},
     path::{Path, PathBuf},
     process::ExitCode,
 };
@@ -14,6 +14,7 @@ use crate::{
         diagnostics,
         encoding::json_path,
         localization::{LocalizationValue, Localizer},
+        path_output,
     },
     project::{
         artifact::{Identity, ImportPlan, PreparedArtifact},
@@ -54,7 +55,7 @@ impl ImportArgs {
         let (document, code) = match self.execute(base, localizer) {
             Ok(document) => (document, ExitCode::SUCCESS),
             Err(error) => {
-                eprintln!("{}", error.message);
+                error.report();
                 (
                     json!({"schema_version":1,"kind":"import","error":{"code":error.code},"preview":error.details}),
                     ExitCode::FAILURE,
@@ -66,7 +67,7 @@ impl ImportArgs {
                 .map_err(io::Error::other)
                 .and_then(|()| writeln!(io::stdout().lock()));
             if result.is_err() {
-                eprintln!("{}", localizer.text("artifact-output-error"));
+                artifact::report("✗", &localizer.text("artifact-output-error"), "31");
                 return ExitCode::FAILURE;
             }
         }
@@ -78,7 +79,11 @@ impl ImportArgs {
         let context = discovery::discover_context(base).map_err(|error| {
             Failure::new(
                 "discovery",
-                diagnostics::present_context_error(&error, localizer),
+                diagnostics::present_context_error_with_links(
+                    &error,
+                    localizer,
+                    io::stderr().is_terminal(),
+                ),
             )
         })?;
         let names = self.project.iter().cloned().collect::<Vec<_>>();
@@ -125,6 +130,9 @@ impl ImportArgs {
             present_preview(&plan, &prepared, project.source(), localizer);
         }
         if self.dry_run {
+            if self.format == Format::Human {
+                artifact::report("ℹ", &localizer.text("artifact-dry-run-completed"), "36");
+            }
             return Ok(document);
         }
         if confirmation && !self.force {
@@ -142,17 +150,24 @@ impl ImportArgs {
             .map_err(|error| artifact::present(&error, localizer))?;
         document["applied"] = json!(true);
         if let Some(backup) = result.retained_backup {
-            eprintln!(
-                "{}",
-                localizer.format(
+            artifact::report(
+                "⚠",
+                &localizer.format(
                     "artifact-backup-retained",
-                    &[("path", LocalizationValue::Text(&backup.to_string_lossy()))]
-                )
+                    &[(
+                        "path",
+                        LocalizationValue::Text(&path_output::render(
+                            &backup,
+                            io::stderr().is_terminal(),
+                        )),
+                    )],
+                ),
+                "33",
             );
             document["retained_backup"] = path_document(&backup);
         }
         if self.format == Format::Human {
-            println!("{}", localizer.text("artifact-imported"));
+            artifact::success(&localizer.text("artifact-imported"));
         }
         Ok(document)
     }
@@ -190,44 +205,53 @@ fn present_preview(
     source: &Path,
     localizer: &Localizer,
 ) {
-    eprintln!(
-        "{}",
-        localizer.format(
+    artifact::report(
+        "↻",
+        &localizer.format(
             "artifact-replace-preview",
             &[
-                ("path", LocalizationValue::Text(&source.to_string_lossy())),
-                ("count", LocalizationValue::Text(&plan.files().to_string()))
-            ]
-        )
+                (
+                    "path",
+                    LocalizationValue::Text(&path_output::render(
+                        source,
+                        io::stderr().is_terminal(),
+                    )),
+                ),
+                ("count", LocalizationValue::Text(&plan.files().to_string())),
+            ],
+        ),
+        "36",
     );
     if let Some(current) = plan.current() {
-        eprintln!(
-            "{}",
-            localizer.format(
+        artifact::report(
+            "•",
+            &localizer.format(
                 "artifact-current",
                 &[
                     ("name", LocalizationValue::Text(&current.name)),
-                    ("uuid", LocalizationValue::Text(&current.uuid))
-                ]
-            )
+                    ("uuid", LocalizationValue::Text(&current.uuid)),
+                ],
+            ),
+            "36",
         );
     }
     let incoming = artifact.identity();
-    eprintln!(
-        "{}",
-        localizer.format(
+    artifact::report(
+        "→",
+        &localizer.format(
             "artifact-incoming",
             &[
                 ("name", LocalizationValue::Text(&incoming.name)),
-                ("uuid", LocalizationValue::Text(&incoming.uuid))
-            ]
-        )
+                ("uuid", LocalizationValue::Text(&incoming.uuid)),
+            ],
+        ),
+        "36",
     );
     if plan.current().is_some_and(|current| current != incoming) {
-        eprintln!("{}", localizer.text("artifact-identity-warning"));
+        artifact::report("⚠", &localizer.text("artifact-identity-warning"), "33");
     }
     if plan.local_changes() != 0 {
-        eprintln!("{}", localizer.text("artifact-local-warning"));
+        artifact::report("⚠", &localizer.text("artifact-local-warning"), "33");
     }
 }
 
@@ -243,7 +267,7 @@ fn confirm(
             localizer.text("artifact-confirmation-required"),
         ));
     }
-    eprintln!("{}", localizer.text("artifact-confirm"));
+    artifact::report("?", &localizer.text("artifact-confirm"), "33");
     let confirmed = crate::cli::interactive::confirm_overwrite(|| tool.was_interrupted())
         .map_err(|error| artifact::prompt_error(error, localizer))?;
     if confirmed {

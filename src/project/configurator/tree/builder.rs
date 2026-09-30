@@ -197,7 +197,6 @@ fn build_modules(
     let parent = NodeId::Object(owner.clone());
     let id = group(tree, owner, CollectionKind::Modules, &parent, false);
     if let Some(node) = tree.nodes.get_mut(&id) {
-        node.expanded_by_default = true;
         node.state = match availability {
             ModuleAvailability::Loaded(_) => ChildrenState::NonEmpty,
             ModuleAvailability::Unloaded => ChildrenState::Unloaded,

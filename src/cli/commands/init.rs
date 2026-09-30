@@ -14,12 +14,15 @@ use crate::{
     },
     project::{
         ProjectName,
+        build::BuildSettings,
         init::{self, InitError},
         onboarding,
     },
     vcs::workflow::WorkflowPreset,
 };
 use clap::{ArgAction, Args};
+
+use super::artifact::{self, Failure, PlatformArgs};
 
 #[derive(Debug, Args)]
 pub(in crate::cli) struct InitArgs {
@@ -33,6 +36,8 @@ pub(in crate::cli) struct InitArgs {
     workflow: Option<String>,
     #[arg(long)]
     no_vcs: bool,
+    #[command(flatten)]
+    platform: PlatformArgs,
     #[arg(short, long, action = ArgAction::Help)]
     help: Option<bool>,
 }
@@ -67,7 +72,7 @@ impl InitArgs {
         self.run_standalone(&plan, localizer)
     }
 
-    /// Completes the legacy standalone initialization flow.
+    /// Select standalone policy and platform before writing any project files.
     fn run_standalone(&self, plan: &init::InitPlan, localizer: &Localizer) -> ExitCode {
         let mut workflow = match self.workflow.as_deref() {
             Some(value) => {
@@ -111,7 +116,11 @@ impl InitArgs {
         let Some(workflow) = workflow else {
             return ExitCode::from(2);
         };
-        match init::apply(plan, workflow, !self.no_vcs) {
+        let build = match self.build_settings(localizer) {
+            Ok(build) => build,
+            Err(error) => return platform_failure(&error),
+        };
+        match init::apply(plan, workflow, build, !self.no_vcs) {
             Ok(project) => {
                 println!(
                     "{}",
@@ -132,7 +141,7 @@ impl InitArgs {
         }
     }
 
-    /// Attaches one copied export to its containing workspace without a prompt.
+    /// Preflight member enrollment before selecting an optional platform override.
     fn run_workspace(
         &self,
         plan: init::InitPlan,
@@ -166,6 +175,17 @@ impl InitArgs {
                 return ExitCode::FAILURE;
             }
         };
+        let plan = if self.platform.platform_version.is_some()
+            || self.platform.select_platform
+            || workspace.build_settings().platform_version().is_none()
+        {
+            match self.build_settings(localizer) {
+                Ok(build) => plan.with_build_settings(build),
+                Err(error) => return platform_failure(&error),
+            }
+        } else {
+            plan
+        };
         match init::apply_workspace_member(&plan) {
             Ok(project) => {
                 println!(
@@ -186,8 +206,30 @@ impl InitArgs {
             }
         }
     }
+
+    /// Store the selected version without persisting machine-local runner settings.
+    fn build_settings(&self, localizer: &Localizer) -> Result<BuildSettings, Failure> {
+        let tool = self.platform.resolve_for_init(localizer)?;
+        BuildSettings::new(tool.version().as_str(), "build".into()).map_err(|_| {
+            Failure::new(
+                "platform-version-invalid",
+                localizer.text("artifact-version-invalid"),
+            )
+        })
+    }
 }
 
+/// Match creation's exit codes while keeping initialization's existing text presentation.
+fn platform_failure(error: &Failure) -> ExitCode {
+    eprintln!("{}", error.message);
+    if matches!(error.code, "platform-required" | "platform-version-invalid") {
+        ExitCode::from(2)
+    } else {
+        ExitCode::FAILURE
+    }
+}
+
+/// Translate core initialization errors at the CLI boundary.
 fn present(error: &InitError, localizer: &Localizer) -> String {
     let (key, path) = match error {
         InitError::Io { path, .. } => ("init-io-error", path),
@@ -245,7 +287,10 @@ fn present(error: &InitError, localizer: &Localizer) -> String {
 }
 
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
+    artifact::localize(command, localizer)
+        .mut_arg("platform_version", |arg| {
+            arg.help(localizer.text("init-platform-version-help"))
+        })
         .about(localizer.text("init-about"))
         .override_usage(localizer.text("init-usage"))
         .help_template(format!(

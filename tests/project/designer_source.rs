@@ -13,6 +13,8 @@ use eska::project::{
 
 const MD: &str = "http://v8.1c.ru/8.3/MDClasses";
 
+mod picture;
+
 /// Module locations cover every role and reverse ownership reads only affected descriptors.
 #[test]
 fn maps_all_module_roles_and_reuses_incremental_reverse_ownership() {

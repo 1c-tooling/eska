@@ -56,6 +56,11 @@ pub(super) fn diagnostic_styling_enabled() -> bool {
     io::stderr().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
 }
 
+/// Enable result colors only for an interactive stdout that permits color.
+pub(super) fn result_styling_enabled() -> bool {
+    io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
+}
+
 /// Add a stable marker and optionally color only that marker.
 pub(super) fn decorate_status(marker: &str, message: &str, styled: bool, color: &str) -> String {
     if styled {

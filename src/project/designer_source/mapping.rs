@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::{DesignerSource, SourceError};
+use super::{DesignerSource, PictureError, PicturePreview, SourceError};
 use crate::project::{
     ProjectType,
     metadata_model::{MetadataKind, ModuleRole, ObjectId},
@@ -65,6 +65,22 @@ struct Locations {
 }
 
 impl DesignerSource {
+    /// Read a common picture without allowing preview failures to hide its properties.
+    #[must_use]
+    pub fn picture_preview(&self, id: &ObjectId) -> PicturePreview {
+        let Ok(locations) = self.locations(id) else {
+            return PicturePreview::Failed(PictureError::Unavailable);
+        };
+        if locations.kind != MetadataKind::CommonPicture {
+            return PicturePreview::Failed(PictureError::Unsupported);
+        }
+        match self.unique_existing(&locations.descriptors) {
+            Ok(Some(descriptor)) => super::picture::read(self, &descriptor),
+            Ok(None) => PicturePreview::Failed(PictureError::Missing),
+            Err(_) => PicturePreview::Failed(PictureError::Unavailable),
+        }
+    }
+
     /// Resolve lexical descriptor ownership even after a source file was removed.
     pub(crate) fn descriptor_candidates(
         &self,

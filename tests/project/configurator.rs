@@ -222,7 +222,7 @@ fn configurator_keeps_unloaded_errors_and_hides_binary_only_modules() {
             .unwrap();
         assert_eq!(children.len(), 1);
         assert_eq!(children[0].state, state);
-        assert!(children[0].expanded_by_default);
+        assert!(!children[0].expanded_by_default);
         assert!(children[0].children.is_empty());
     }
 }
@@ -438,7 +438,7 @@ fn configurator_schema_matrix_checks_every_kind_and_does_not_use_xml_group_order
                 projection.node(projection.root()).unwrap().children.first(),
                 Some(&module_group)
             );
-            assert!(projection.node(&module_group).unwrap().expanded_by_default);
+            assert!(!projection.node(&module_group).unwrap().expanded_by_default);
         }
         assert!(
             !projection
@@ -571,7 +571,7 @@ fn configurator_websocket_client_resolves_descriptor_and_existing_module() {
         .children(projection.root(), TreeOptions::default())
         .unwrap();
     assert_eq!(group.len(), 1);
-    assert!(group[0].expanded_by_default);
+    assert!(!group[0].expanded_by_default);
     assert_eq!(
         group[0].children,
         vec![NodeId::Module {

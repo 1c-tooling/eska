@@ -11,6 +11,7 @@ use crate::{
         diagnostics,
         interactive::{PROJECT_TYPE_CHOICES, PromptError, Selector, WORKFLOW_CHOICES},
         localization::{LocalizationValue, Localizer},
+        path_output,
     },
     project::{
         ProjectName,
@@ -20,6 +21,8 @@ use crate::{
     vcs::workflow::WorkflowPreset,
 };
 use clap::{ArgAction, Args};
+
+use super::artifact;
 
 mod from;
 
@@ -46,13 +49,21 @@ impl NewArgs {
             return from::run(self, base, localizer);
         }
         if self.platform.is_set() {
-            eprintln!("{}", localizer.text("artifact-from-required"));
+            artifact::report("✗", &localizer.text("artifact-from-required"), "31");
             return ExitCode::from(2);
         }
         let workspace = match onboarding::find_workspace(base) {
             Ok(workspace) => workspace,
             Err(error) => {
-                eprintln!("{}", diagnostics::present_context_error(&error, localizer));
+                artifact::report(
+                    "✗",
+                    &diagnostics::present_context_error_with_links(
+                        &error,
+                        localizer,
+                        io::stderr().is_terminal(),
+                    ),
+                    "31",
+                );
                 return ExitCode::FAILURE;
             }
         };
@@ -62,13 +73,13 @@ impl NewArgs {
         self.run_standalone(base, localizer)
     }
 
-    /// Runs the legacy standalone-project creation flow unchanged.
+    /// Preserve standalone creation policy while styling its human result.
     fn run_standalone(&self, base: &Path, localizer: &Localizer) -> ExitCode {
         let destination = base.join(&self.path);
         let destination = match create::resolve_destination(&destination) {
             Ok(path) => path,
             Err(error) => {
-                eprintln!("{}", present(&error, localizer));
+                artifact::report("✗", &present(&error, localizer), "31");
                 return ExitCode::FAILURE;
             }
         };
@@ -78,19 +89,19 @@ impl NewArgs {
             .as_ref()
             .is_some_and(|value| crate::config::parse_project_type(value.clone()).is_err())
         {
-            eprintln!("{}", localizer.text("new-type-invalid"));
+            artifact::report("✗", &localizer.text("new-type-invalid"), "31");
             return ExitCode::from(2);
         }
         if workflow
             .as_deref()
             .is_some_and(|value| WorkflowPreset::from_name(value).is_none())
         {
-            eprintln!("{}", localizer.text("new-workflow-invalid"));
+            artifact::report("✗", &localizer.text("new-workflow-invalid"), "31");
             return ExitCode::from(2);
         }
         if project_type.is_none() || workflow.is_none() {
             if !io::stdin().is_terminal() || !io::stderr().is_terminal() {
-                eprintln!("{}", localizer.text("new-options-required"));
+                artifact::report("✗", &localizer.text("new-options-required"), "31");
                 return ExitCode::from(2);
             }
             let result = (|| {
@@ -107,12 +118,13 @@ impl NewArgs {
                 Ok::<_, PromptError>(())
             })();
             if let Err(error) = result {
-                eprintln!(
-                    "{}",
-                    localizer.text(match error {
+                artifact::report(
+                    "✗",
+                    &localizer.text(match error {
                         PromptError::Cancelled => "new-cancelled",
                         PromptError::Io => "new-prompt-error",
-                    })
+                    }),
+                    "31",
                 );
                 return ExitCode::FAILURE;
             }
@@ -120,29 +132,29 @@ impl NewArgs {
         let Some(project_type) =
             project_type.and_then(|value| crate::config::parse_project_type(value).ok())
         else {
-            eprintln!("{}", localizer.text("new-type-invalid"));
+            artifact::report("✗", &localizer.text("new-type-invalid"), "31");
             return ExitCode::from(2);
         };
         let Some(workflow) = workflow.and_then(|value| WorkflowPreset::from_name(&value)) else {
-            eprintln!("{}", localizer.text("new-workflow-invalid"));
+            artifact::report("✗", &localizer.text("new-workflow-invalid"), "31");
             return ExitCode::from(2);
         };
         match create::create(&destination, project_type, workflow, !self.no_vcs) {
             Ok(project) => {
-                println!(
-                    "{}",
-                    localizer.format(
-                        "new-created",
-                        &[(
-                            "path",
-                            LocalizationValue::Text(&project.root().to_string_lossy())
-                        )]
-                    )
-                );
+                artifact::success(&localizer.format(
+                    "new-created",
+                    &[(
+                        "path",
+                        LocalizationValue::Text(&path_output::render(
+                            project.root(),
+                            io::stdout().is_terminal(),
+                        )),
+                    )],
+                ));
                 ExitCode::SUCCESS
             }
             Err(error) => {
-                eprintln!("{}", present(&error, localizer));
+                artifact::report("✗", &present(&error, localizer), "31");
                 ExitCode::FAILURE
             }
         }
@@ -155,26 +167,31 @@ impl NewArgs {
         localizer: &Localizer,
     ) -> ExitCode {
         let Some(name) = workspace_project_name(&self.path) else {
-            eprintln!(
-                "{}",
-                localizer.format(
+            artifact::report(
+                "✗",
+                &localizer.format(
                     "new-member-name-invalid",
                     &[(
                         "name",
-                        LocalizationValue::Text(&self.path.to_string_lossy())
-                    )]
-                )
+                        LocalizationValue::Text(&self.path.to_string_lossy()),
+                    )],
+                ),
+                "31",
             );
             return ExitCode::from(2);
         };
         if self.workflow.is_some() {
-            eprintln!("{}", localizer.text("workspace-onboarding-workflow-owned"));
+            artifact::report(
+                "✗",
+                &localizer.text("workspace-onboarding-workflow-owned"),
+                "31",
+            );
             return ExitCode::from(2);
         }
         let plan = match create::inspect_workspace_member(workspace, name) {
             Ok(plan) => plan,
             Err(error) => {
-                eprintln!("{}", present(&error, localizer));
+                artifact::report("✗", &present(&error, localizer), "31");
                 return ExitCode::FAILURE;
             }
         };
@@ -183,12 +200,12 @@ impl NewArgs {
             .as_ref()
             .is_some_and(|value| crate::config::parse_project_type(value.clone()).is_err())
         {
-            eprintln!("{}", localizer.text("new-type-invalid"));
+            artifact::report("✗", &localizer.text("new-type-invalid"), "31");
             return ExitCode::from(2);
         }
         if project_type.is_none() {
             if !io::stdin().is_terminal() || !io::stderr().is_terminal() {
-                eprintln!("{}", localizer.text("new-member-type-required"));
+                artifact::report("✗", &localizer.text("new-member-type-required"), "31");
                 return ExitCode::from(2);
             }
             let result = (|| {
@@ -198,12 +215,13 @@ impl NewArgs {
                 selector.finish().map_err(|_| PromptError::Io)
             })();
             if let Err(error) = result {
-                eprintln!(
-                    "{}",
-                    localizer.text(match error {
+                artifact::report(
+                    "✗",
+                    &localizer.text(match error {
                         PromptError::Cancelled => "new-cancelled",
                         PromptError::Io => "new-prompt-error",
-                    })
+                    }),
+                    "31",
                 );
                 return ExitCode::FAILURE;
             }
@@ -211,25 +229,25 @@ impl NewArgs {
         let Some(project_type) =
             project_type.and_then(|value| crate::config::parse_project_type(value).ok())
         else {
-            eprintln!("{}", localizer.text("new-type-invalid"));
+            artifact::report("✗", &localizer.text("new-type-invalid"), "31");
             return ExitCode::from(2);
         };
         match create::create_workspace_member(&plan, project_type) {
             Ok(project) => {
-                println!(
-                    "{}",
-                    localizer.format(
-                        "new-member-created",
-                        &[(
-                            "path",
-                            LocalizationValue::Text(&project.root().to_string_lossy())
-                        )]
-                    )
-                );
+                artifact::success(&localizer.format(
+                    "new-member-created",
+                    &[(
+                        "path",
+                        LocalizationValue::Text(&path_output::render(
+                            project.root(),
+                            io::stdout().is_terminal(),
+                        )),
+                    )],
+                ));
                 ExitCode::SUCCESS
             }
             Err(error) => {
-                eprintln!("{}", present(&error, localizer));
+                artifact::report("✗", &present(&error, localizer), "31");
                 ExitCode::FAILURE
             }
         }
@@ -249,6 +267,7 @@ fn workspace_project_name(path: &Path) -> Option<ProjectName> {
     ProjectName::parse(name.to_str()?.to_owned()).ok()
 }
 
+/// Render nested creation errors without decorating their reasons more than once.
 fn present(error: &CreationError, localizer: &Localizer) -> String {
     let (key, path) = match error {
         CreationError::Artifact(error) => {
@@ -260,13 +279,25 @@ fn present(error: &CreationError, localizer: &Localizer) -> String {
         CreationError::Template(_) => return localizer.text("new-template-error"),
         CreationError::Git(_) => return localizer.text("new-git-error"),
         CreationError::Validation(error) => {
-            return diagnostics::present_project_error(error, localizer);
+            return diagnostics::present_project_error_with_links(
+                error,
+                localizer,
+                io::stderr().is_terminal(),
+            );
         }
         CreationError::Workspace(error) => {
-            return diagnostics::present_workspace_enrollment_error(error, localizer);
+            return diagnostics::present_workspace_enrollment_error_with_links(
+                error,
+                localizer,
+                io::stderr().is_terminal(),
+            );
         }
         CreationError::WorkspaceValidation(error) => {
-            return diagnostics::present_context_error(error, localizer);
+            return diagnostics::present_context_error_with_links(
+                error,
+                localizer,
+                io::stderr().is_terminal(),
+            );
         }
         CreationError::WorkspaceMemberMissing { name } => {
             return localizer.format(
@@ -278,7 +309,13 @@ fn present(error: &CreationError, localizer: &Localizer) -> String {
             return localizer.format(
                 "new-rollback-error",
                 &[
-                    ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                    (
+                        "path",
+                        LocalizationValue::Text(&path_output::render(
+                            path,
+                            io::stderr().is_terminal(),
+                        )),
+                    ),
                     (
                         "reason",
                         LocalizationValue::Text(&present(original, localizer)),
@@ -289,7 +326,7 @@ fn present(error: &CreationError, localizer: &Localizer) -> String {
         CreationError::WorkspaceRollback { paths, original } => {
             let paths = paths
                 .iter()
-                .map(|path| path.to_string_lossy())
+                .map(|path| path_output::render(path, io::stderr().is_terminal()))
                 .collect::<Vec<_>>()
                 .join(", ");
             return localizer.format(
@@ -306,7 +343,10 @@ fn present(error: &CreationError, localizer: &Localizer) -> String {
     };
     localizer.format(
         key,
-        &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
+        &[(
+            "path",
+            LocalizationValue::Text(&path_output::render(path, io::stderr().is_terminal())),
+        )],
     )
 }
 
