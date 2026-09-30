@@ -8,7 +8,7 @@ use super::{
 };
 use crate::project::{
     configurator::TreeOptions,
-    metadata_model::ObjectId,
+    metadata_model::{NodeId, ObjectId},
     metadata_workspace::{
         ProjectSession,
         search::{IndexFailure, SearchOptions},
@@ -183,7 +183,8 @@ fn metadata_request(
         "metadata/reveal" => {
             let id: ObjectId = params::decode(&args["objectId"])?;
             let ancestry = project
-                .reveal_indexed_object(&id)
+                .ancestry(&NodeId::Object(id.clone()))
+                .or_else(|_| project.reveal_indexed_object(&id))
                 .map_err(|failure| errors::workspace(&failure))?;
             Ok(json!({"ancestry":ancestry.iter().map(dto::node_id).collect::<Vec<_>>()}))
         }
@@ -208,7 +209,16 @@ fn properties(
     let properties = project
         .properties(&id)
         .map_err(|failure| errors::workspace(&failure))?;
-    let mut result = json!({"properties":properties.iter().map(|property| dto::property(labels, owner, property)).collect::<Vec<_>>()});
+    let mut presentation = super::property_presentation::Presenter::new(labels, project);
+    let values: Vec<_> = properties
+        .iter()
+        .map(|property| {
+            let mut value = dto::property(labels, owner, property);
+            presentation.annotate(&property.property, &mut value);
+            value
+        })
+        .collect();
+    let mut result = json!({"properties":values});
     if let Some(picture) = project
         .picture_preview(&id)
         .map_err(|failure| errors::workspace(&failure))?

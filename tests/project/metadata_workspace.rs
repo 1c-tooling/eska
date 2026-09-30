@@ -655,3 +655,54 @@ mod predefined;
 mod leaves;
 
 mod support_policy;
+
+/// Explicit references load only declared ancestry and reuse normal descriptor invalidation.
+#[test]
+fn property_references_are_lazy_scoped_and_refreshable() {
+    let directory = TestDir::new();
+    fixture(&directory.0, "configuration");
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let initial = session.cache_stats().parses;
+    let path = [
+        (MetadataKind::Catalog, "Контрагенты"),
+        (MetadataKind::Form, "ФормаЭлемента"),
+    ];
+    let found = session.property_reference(&path).unwrap();
+    assert_eq!(found.name, "ФормаЭлемента");
+    assert_eq!(session.cache_stats().parses, initial + 2);
+    session.property_reference(&path).unwrap();
+    assert_eq!(session.cache_stats().parses, initial + 2);
+    let inline = session
+        .property_reference(&[
+            (MetadataKind::Catalog, "Контрагенты"),
+            (MetadataKind::TabularSection, "Контакты"),
+            (MetadataKind::Attribute, "Телефон"),
+        ])
+        .unwrap();
+    assert_eq!(inline.synonyms[0].content, "Телефон для теста");
+    assert_eq!(session.cache_stats().parses, initial + 2);
+    assert!(session.property_reference(&[]).is_err());
+    assert!(
+        session
+            .property_reference(&[(MetadataKind::Catalog, "Undeclared")])
+            .is_err()
+    );
+    assert!(
+        session
+            .property_reference(&[(MetadataKind::Catalog, "../Контрагенты")])
+            .is_err()
+    );
+    let file = directory
+        .0
+        .join("src/Catalogs/Контрагенты/Forms/ФормаЭлемента.xml");
+    let content = fs::read_to_string(&file).unwrap();
+    fs::write(
+        &file,
+        content.replace("ФормаЭлемента для теста", "Новый синоним"),
+    )
+    .unwrap();
+    session.refresh(&NodeId::Object(found.id)).unwrap();
+    let changed = session.property_reference(&path).unwrap();
+    assert_eq!(changed.synonyms[0].content, "Новый синоним");
+}

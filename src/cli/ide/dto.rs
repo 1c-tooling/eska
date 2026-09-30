@@ -16,8 +16,8 @@ use crate::project::{
 use serde_json::{Value, json};
 
 pub(super) struct Labels {
-    ru: Localizer,
-    en: Localizer,
+    pub(super) ru: Localizer,
+    pub(super) en: Localizer,
 }
 impl Labels {
     /// Load both embedded locales once, independently of the client's preferred locale.
