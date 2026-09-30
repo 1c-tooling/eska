@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0](https://github.com/1c-tooling/eska/compare/v0.13.0...v0.14.0) - 2026-09-30
+
+### Added
+
+- *(ide)* Добавлен предпросмотр общих картинок из Designer XML
+- *(init)* Добавлен выбор и сохранение версии платформы
+- *(cli)* Добавлены маркеры и ссылки в сообщения new/import
+
+### Fixed
+
+- *(ide)* Исправлен выбор превью при ошибке манифеста ZIP
+- *(ide)* Группа модулей свернута по умолчанию
+
+### Other
+
+- Merge pull request #57 from 1c-tooling/feat/cli
+
 ## [0.13.0](https://github.com/1c-tooling/eska/compare/v0.12.1...v0.13.0) - 2026-09-30
 
 ### Fixed
