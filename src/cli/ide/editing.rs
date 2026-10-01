@@ -100,7 +100,7 @@ pub(in crate::cli) fn describe(
             if matches!(field.schema, ScalarSchema::Reference { .. }) {
                 value["caption"] = paired(labels, |locale| reference_caption(locale, &field.value));
             }
-            if let ScalarSchema::Value { key, types } = &field.schema {
+            if let ScalarSchema::Value { key, types, .. } = &field.schema {
                 value["schema"]["types"] = json!(types.iter().map(|choice| {
                     let mut choice_json = json!(choice);
                     choice_json["caption"] = type_caption(labels, &choice.key);

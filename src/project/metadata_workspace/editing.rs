@@ -74,7 +74,7 @@ impl ProjectSession {
         id: &ObjectId,
         path: &[FieldStep],
     ) -> Result<Vec<PropertyTypeChoice>, PropertyEditError> {
-        use crate::project::metadata_edit::{ScalarSchema, types};
+        use crate::project::metadata_edit::{ScalarSchema, ValueDomain, types};
         use crate::project::metadata_model::PropertyKey;
         let snapshot = self.property_fields(id)?;
         let field = snapshot
@@ -83,12 +83,19 @@ impl ProjectSession {
             .iter()
             .find(|field| field.path == path)
             .ok_or(EditError::UnsupportedValue)?;
-        let ScalarSchema::DataType { reference_only, .. } = field.schema else {
-            return Err(EditError::UnsupportedValue.into());
+        let (reference_only, parameter) = match field.schema {
+            ScalarSchema::DataType { reference_only, .. } => (reference_only, false),
+            ScalarSchema::Value {
+                domain: Some(ValueDomain::ChoiceParameter),
+                ..
+            } => (false, true),
+            _ => return Err(EditError::UnsupportedValue.into()),
         };
         let mut choices: Vec<_> = types::PRIMITIVES
             .iter()
-            .filter(|_| !reference_only)
+            .filter(|(namespace, _)| {
+                !reference_only && (!parameter || *namespace == "http://www.w3.org/2001/XMLSchema")
+            })
             .map(|(namespace, name)| PropertyTypeChoice {
                 key: PropertyKey {
                     namespace: Some((*namespace).to_owned()),
@@ -102,7 +109,8 @@ impl ProjectSession {
             .fields
             .iter()
             .filter_map(|other| {
-                if other.path == path
+                if parameter
+                    || other.path == path
                     || other.path.len() != path.len()
                     || other.path[..other.path.len() - 1] != path[..path.len() - 1]
                 {

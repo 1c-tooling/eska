@@ -429,3 +429,90 @@ fn metadata_hierarchy_schema_changes_with_its_prerequisite_in_both_locales() {
         original.replace("<Hierarchical>false", "<Hierarchical>true")
     );
 }
+
+/// AI clients discover broad value types lazily without being allowed to invent a platform type.
+#[test]
+fn choice_parameter_schema_types_and_publication_share_the_json_contract() {
+    let root = TestDir::new();
+    fs::create_dir_all(root.0.join("src/Ext")).unwrap();
+    fs::create_dir_all(root.0.join("src/Catalogs")).unwrap();
+    fs::write(
+        root.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    fs::write(
+        root.0.join("src/Ext/ParentConfigurations.bin"),
+        "{6,0,0,0,0,0}",
+    )
+    .unwrap();
+    fs::write(root.0.join("src/Configuration.xml"),"<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='11111111-1111-1111-1111-111111111111'><Properties><Name>Demo</Name></Properties><ChildObjects><Catalog>Goods</Catalog></ChildObjects></Configuration></MetaDataObject>").unwrap();
+    let file = root.0.join("src/Catalogs/Goods.xml");
+    let original = "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses' xmlns:r='http://v8.1c.ru/8.3/xcf/readable' xmlns:a='http://v8.1c.ru/8.2/managed-application/core' xmlns:x='http://www.w3.org/2001/XMLSchema' xmlns:s='http://www.w3.org/2001/XMLSchema-instance'><Catalog uuid='22222222-2222-2222-2222-222222222222'><Properties><Name>Goods</Name><StandardAttributes><r:StandardAttribute name='Parent'><r:ChoiceParameters><a:item name='Filter.Owner'><a:value s:type='x:decimal'>1</a:value></a:item></r:ChoiceParameters></r:StandardAttribute></StandardAttributes></Properties><ChildObjects/></Catalog></MetaDataObject>";
+    fs::write(&file, original).unwrap();
+    let inspect = |locale| {
+        let out = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&root.0)
+            .args([
+                "--lang",
+                locale,
+                "metadata",
+                "inspect",
+                "--object",
+                "catalog:Goods",
+            ])
+            .output()
+            .unwrap();
+        assert!(out.status.success());
+        assert!(out.stderr.is_empty());
+        serde_json::from_slice::<Value>(&out.stdout).unwrap()
+    };
+    let state = inspect("ru-RU");
+    assert_eq!(state, inspect("en-US"));
+    let editing = &state["result"]["editing"];
+    let field = editing["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["schema"]["domain"] == "choiceParameter")
+        .unwrap();
+    let number = field["schema"]["types"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|t| t["constraints"]["kind"] == "number")
+        .unwrap();
+    assert!(number["constraints"].get("digits").is_none());
+    let query = json!({"schemaVersion":1,"objectId":"catalog:Goods","path":field["path"]});
+    let types = call(&root, "ru-RU", "types", Some(&query), true);
+    assert_eq!(types, call(&root, "en-US", "types", Some(&query), true));
+    assert_eq!(types["result"]["choices"].as_array().unwrap().len(), 5);
+    let key = json!({"namespace":"http://v8.1c.ru/8.1/data/enterprise/current-config","name":"CatalogRef.Goods"});
+    let mut query = query;
+    query["key"] = key.clone();
+    let choices = call(&root, "en-US", "choices", Some(&query), true);
+    assert_eq!(choices, call(&root, "ru-RU", "choices", Some(&query), true));
+    assert_eq!(
+        choices["result"]["choices"][0]["value"],
+        "Catalog.Goods.EmptyRef"
+    );
+    let mut request = json!({"schemaVersion":1,"objectId":"catalog:Goods","path":field["path"],"snapshot":editing["snapshot"],"change":{"kind":"value","key":key,"value":"Catalog.Goods.Invented"}});
+    assert_eq!(
+        call(&root, "ru-RU", "check", Some(&request), false),
+        call(&root, "en-US", "apply", Some(&request), false)
+    );
+    assert_eq!(fs::read_to_string(&file).unwrap(), original);
+    request["change"]["value"] = json!("Catalog.Goods.EmptyRef");
+    assert_eq!(
+        call(&root, "ru-RU", "check", Some(&request), true),
+        call(&root, "en-US", "check", Some(&request), true)
+    );
+    call(&root, "en-US", "apply", Some(&request), true);
+    assert_eq!(
+        fs::read_to_string(file).unwrap(),
+        original.replace(
+            "s:type='x:decimal'>1",
+            "s:type=\"r:DesignTimeRef\">Catalog.Goods.EmptyRef"
+        )
+    );
+}

@@ -30,8 +30,10 @@ pub enum ValueConstraints {
         max_length: u32,
     },
     Number {
-        digits: u32,
-        fraction_digits: u32,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        digits: Option<u32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        fraction_digits: Option<u32>,
         nonnegative: bool,
     },
     Boolean,
@@ -60,14 +62,43 @@ impl EditableValueType {
                 let (whole, fraction) = unsigned.split_once('.').unwrap_or((unsigned, ""));
                 super::schema::decimal(value)
                     && (!nonnegative || !value.starts_with('-'))
-                    && fraction.len() <= *fraction_digits as usize
-                    && whole.trim_start_matches('0').len() <= (digits - fraction_digits) as usize
+                    && digits
+                        .zip(*fraction_digits)
+                        .is_none_or(|(digits, fraction_digits)| {
+                            fraction.len() <= fraction_digits as usize
+                                && whole.trim_start_matches('0').len()
+                                    <= (digits - fraction_digits) as usize
+                        })
             }
             ValueConstraints::Boolean => matches!(value, "true" | "false" | "1" | "0"),
             ValueConstraints::Date { fractions } => date(value, fractions),
             ValueConstraints::Reference => !value.is_empty(), // ProjectSession validates membership.
         };
         valid.then_some(()).ok_or(EditError::InvalidValue)
+    }
+}
+
+/// Broad choice parameters also admit project-validated reference types fetched lazily by the client.
+pub(super) fn validate_change(
+    domain: Option<super::ValueDomain>,
+    types: &[EditableValueType],
+    key: Option<&PropertyKey>,
+    value: &str,
+) -> Result<(), EditError> {
+    let Some(key) = key else {
+        return value
+            .is_empty()
+            .then_some(())
+            .ok_or(EditError::InvalidValue);
+    };
+    if let Some(choice) = types.iter().find(|choice| &choice.key == key) {
+        return choice.validate(value);
+    }
+    match domain {
+        Some(super::ValueDomain::ChoiceParameter) => super::choice_parameters::reference_type(key)
+            .ok_or(EditError::InvalidValue)?
+            .validate(value),
+        None => Err(EditError::InvalidValue),
     }
 }
 
@@ -113,6 +144,7 @@ pub(super) fn compatible(property: Node<'_, '_>) -> bool {
     let Some(ScalarSchema::Value {
         key: Some(key),
         types,
+        ..
     }) = schema(property)
     else {
         return false;
@@ -174,13 +206,14 @@ pub(super) fn schema(node: Node<'_, '_>) -> Option<ScalarSchema> {
         }
     };
     Some(ScalarSchema::Value {
+        domain: None,
         key,
         types: choices,
     })
 }
 
 /// The stored annotation may be an alias; all decisions use its expanded `QName`.
-fn annotation(node: Node<'_, '_>) -> Option<PropertyKey> {
+pub(super) fn annotation(node: Node<'_, '_>) -> Option<PropertyKey> {
     let name = node.attribute((XSI, "type"))?;
     let (prefix, local) = name
         .split_once(':')
@@ -218,8 +251,8 @@ fn value_type(key: PropertyKey, description: Node<'_, '_>) -> Option<EditableVal
                     return None;
                 }
                 ValueConstraints::Number {
-                    digits,
-                    fraction_digits,
+                    digits: Some(digits),
+                    fraction_digits: Some(fraction_digits),
                     nonnegative: child_text("NumberQualifiers", "AllowedSign")
                         == Some("Nonnegative"),
                 }
@@ -319,8 +352,8 @@ mod tests {
                 name: "decimal".into(),
             },
             constraints: ValueConstraints::Number {
-                digits: 38,
-                fraction_digits: 2,
+                digits: Some(38),
+                fraction_digits: Some(2),
                 nonnegative: false,
             },
         };

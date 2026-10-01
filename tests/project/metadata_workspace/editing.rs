@@ -1220,6 +1220,7 @@ fn failed_publication_preserves_source_and_removes_its_temporary_file() {
 }
 
 mod choice_links;
+mod choice_parameters;
 mod ext_dimensions;
 mod integers;
 mod lengths;

@@ -3,7 +3,10 @@
 use super::{ObjectSummary, ProjectSession, PropertyEditError};
 use crate::project::{
     configurator::TreeOptions,
-    metadata_edit::{EditError, FieldStep, PropertyChange, ScalarSchema, types, value_schema},
+    metadata_edit::{
+        EditError, FieldStep, PropertyChange, ScalarSchema, ValueDomain, choice_parameters, types,
+        value_schema,
+    },
     metadata_model::{MetadataKind, NodeId, ObjectId, PropertyKey},
     metadata_parser::PropertiesMode,
 };
@@ -32,10 +35,18 @@ impl ProjectSession {
             .iter()
             .find(|field| field.path == path)
             .ok_or(EditError::UnsupportedValue)?;
-        let ScalarSchema::Value { types: allowed, .. } = &field.schema else {
+        let ScalarSchema::Value {
+            domain,
+            types: allowed,
+            ..
+        } = &field.schema
+        else {
             return Err(EditError::UnsupportedValue.into());
         };
-        if !allowed.iter().any(|choice| &choice.key == key) {
+        if !(allowed.iter().any(|choice| &choice.key == key)
+            || (matches!(domain, Some(ValueDomain::ChoiceParameter))
+                && choice_parameters::reference_type(key).is_some()))
+        {
             return Err(EditError::InvalidValue.into());
         }
         let prefix = value_schema::reference_prefix(key).ok_or(EditError::InvalidValue)?;

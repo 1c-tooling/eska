@@ -522,7 +522,7 @@ mtime и поколение дерева не заменяют сверку ис
 | `metadata/propertyEditing` | — | snapshot, source, profile, writable, fields, readOnlyProperties, undo, redo, addRemove:false |
 | `metadata/propertyTypeChoices` | path из fields | choices с key и RU/EN caption |
 | `metadata/propertyReferenceChoices` (1.7) | path из fields | choices с value, objectId, metadataKind, RU/EN caption и необязательным standardAttribute |
-| `metadata/propertyValueChoices` (1.8) | path из fields и key из schema.types | choices с value и RU/EN caption |
+| `metadata/propertyValueChoices` (1.8) | path из fields и key из schema.types или propertyTypeChoices для choiceParameter | choices с value и RU/EN caption |
 | `metadata/previewProperty` | snapshot, path, change | valid, changed, changes — точные замены UTF-8 байтов |
 | `metadata/updateProperty` | snapshot, path, change | обычные properties/picture и новый editing |
 | `metadata/undoProperty` | snapshot, direction:undo\|redo | обычные properties/picture и новый editing |
@@ -553,6 +553,20 @@ API 1.8 добавляет `schema.kind:"value"` и `change.kind:"value"` для
 заполнения. Допустимые типы и ограничения публикуются в `schema.types`. Клиентам
 1.6–1.7 этот вариант не возвращается ни в чтении, ни в ответах на запись;
 `metadata/propertyValueChoices` для них возвращает method not found.
+
+Для существующих параметров выбора `schema.kind:"value"` дополнительно содержит
+`domain:"choiceParameter"`. Inline `types` содержит четыре примитивных типа и
+текущий распознанный ссылочный тип; полный список запрашивается через
+`metadata/propertyTypeChoices`. Выбранный тип передаётся в
+`metadata/propertyValueChoices`, затем в обычный `change.kind:"value"`.
+Числовые ограничения без `digits`/`fractionDigits` допускают десятичную строку
+без квалификаторов разрядности, с общим лимитом размера значения.
+Старый клиент может использовать inline-список; произвольные типы при записи
+всё равно отклоняются. Имя параметра с доменом `choiceParameterName` адресуется
+путём до существующего `app:item` и изменяет только атрибут `name`.
+У элементов фиксированного массива сохраняются адреса по occurrence;
+контейнер массива не объявляется редактируемым полем. Число и порядок элементов
+сохраняются. Полные правила и проверенная область — в контракте CLI.
 
 ### API 1.9: переименование
 

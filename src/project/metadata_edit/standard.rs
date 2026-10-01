@@ -171,8 +171,8 @@ fn code(properties: Node<'_, '_>, field: &str, kind: &str) -> Option<EditableVal
         "Number" if width <= 38 => (
             "decimal",
             ValueConstraints::Number {
-                digits: width,
-                fraction_digits: 0,
+                digits: Some(width),
+                fraction_digits: Some(0),
                 nonnegative: true,
             },
         ),

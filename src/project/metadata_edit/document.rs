@@ -139,16 +139,8 @@ impl EditingDocument<'_> {
             .find(|field| field.path == path)
             .ok_or(EditError::UnsupportedValue)?;
         match (&field.schema, change) {
-            (ScalarSchema::Value { types, .. }, PropertyChange::Value { key, value }) => {
-                if let Some(key) = key {
-                    types
-                        .iter()
-                        .find(|choice| &choice.key == key)
-                        .ok_or(EditError::InvalidValue)?
-                        .validate(value)?;
-                } else if !value.is_empty() {
-                    return Err(EditError::InvalidValue);
-                }
+            (ScalarSchema::Value { domain, types, .. }, PropertyChange::Value { key, value }) => {
+                super::value_schema::validate_change(*domain, types, key.as_ref(), value)?;
             }
             (ScalarSchema::Value { .. }, _) | (_, PropertyChange::Value { .. }) => {
                 return Err(EditError::InvalidValue);
@@ -189,6 +181,9 @@ impl EditingDocument<'_> {
                 if matches!(field.schema, ScalarSchema::Decimal { nullable: true }) =>
             {
                 super::values::replace_bound(self.input, node, value)?
+            }
+            PropertyChange::Text { value } if super::choice_parameters::is_item(node) => {
+                super::choice_parameters::rename(self.input, node, value)?
             }
             PropertyChange::Text { value } => patch::text_plan(self.input, node.range(), value)?,
             PropertyChange::DataType { key } => super::types::replace(self.input, node, key)?,
@@ -233,7 +228,9 @@ impl EditingDocument<'_> {
         path: &mut Vec<FieldStep>,
         fields: &mut Vec<EditableField>,
     ) {
-        if schema::protected(node.tag_name().name()) && !super::choice_links::is_name(node) {
+        if path.len() > 64
+            || (schema::protected(node.tag_name().name()) && !super::choice_links::is_name(node))
+        {
             return;
         }
         if matches!(model_type, Some("TypeItem" | "ReferenceTypeItem"))
@@ -257,6 +254,16 @@ impl EditingDocument<'_> {
                 });
             }
             return;
+        }
+        if model_type == Some("ChoiceParameter") && super::choice_parameters::is_item(node) {
+            fields.push(EditableField {
+                path: path.clone(),
+                value: node.attribute("name").unwrap_or_default().to_owned(),
+                schema: ScalarSchema::Text {
+                    domain: Some(super::TextDomain::ChoiceParameterName),
+                },
+                language: None,
+            });
         }
         if let Some(schema) = schema::scalar(node, model_type, self.modern) {
             let value: String = node
@@ -311,8 +318,13 @@ fn child_type<'a>(
         && child.has_tag_name((schema::READABLE, "Item")))
         || (class == "LocalStringMapEntry" && child.has_tag_name((schema::CORE, "item")))
         || (class == "ChoiceParameterLink" && super::choice_links::is_link(child))
+        || (class == "ChoiceParameter" && super::choice_parameters::is_item(child))
     {
         Some(class)
+    } else if matches!(class, "ChoiceParameter" | "Value")
+        && super::choice_parameters::is_value(child)
+    {
+        Some("Value")
     } else if class == "ChoiceParameterLink" {
         if super::choice_fields::is_path(child) {
             return Some(super::choice_fields::DOMAIN);
@@ -360,6 +372,7 @@ pub(super) fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<
     super::hierarchy::validate_dependents(node, &candidate)?;
     super::ext_dimensions::validate_dependents(node, &candidate)?;
     super::choice_links::validate_dependents(node, &candidate)?;
+    super::choice_parameters::validate_dependents(node, &candidate)?;
     super::choice_fields::validate_dependents(node, &candidate)?;
     validate_common_module_global(node, &candidate)?;
     if let Some(description) = node

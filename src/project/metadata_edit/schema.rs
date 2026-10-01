@@ -20,6 +20,13 @@ pub enum TextDomain {
     ChoiceParameterName,
 }
 
+/// Broad parameter values fetch project-specific reference types only when a selector is opened.
+#[derive(Clone, Copy, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ValueDomain {
+    ChoiceParameter,
+}
+
 /// An editor is emitted only when the property's source shape and domain are known.
 #[derive(Clone, Debug, Serialize)]
 #[serde(
@@ -61,6 +68,8 @@ pub enum ScalarSchema {
         reference_type: Option<PropertyKey>,
     },
     Value {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        domain: Option<ValueDomain>,
         key: Option<PropertyKey>,
         types: Vec<super::EditableValueType>,
     },
@@ -225,6 +234,9 @@ pub(super) fn scalar(
         || super::ext_dimensions::read_only_reason(node).is_some()
     {
         return None;
+    }
+    if model_type == "Value" && super::choice_parameters::is_value(node) {
+        return super::choice_parameters::schema(node);
     }
     if model_type == "Value" && super::values::number_bound(node) {
         return Some(ScalarSchema::Decimal { nullable: true });
