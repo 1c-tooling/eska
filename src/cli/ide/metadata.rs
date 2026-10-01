@@ -110,7 +110,7 @@ impl Server {
                         }
                     }
                 }
-                if self.client_minor < 10 {
+                if self.client_minor < 11 {
                     if method == "metadata/propertyEditing" {
                         super::editing::retain_legacy_fields(&mut result, self.client_minor);
                     } else if let Some(editing) = result.get_mut("editing") {

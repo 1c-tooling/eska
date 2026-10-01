@@ -1,7 +1,7 @@
 //! Reviewed Designer writer mappings over the installed EDT property model.
 
 use roxmltree::Node;
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 
 use super::EditError;
 use crate::project::metadata_model::{ObjectId, PropertyKey};
@@ -26,6 +26,12 @@ pub enum ScalarSchema {
     Integer {
         min: i64,
         max: i64,
+    },
+    UnsignedInteger {
+        #[serde(serialize_with = "integer_string")]
+        min: u64,
+        #[serde(serialize_with = "integer_string")]
+        max: u64,
     },
     Decimal {
         nullable: bool,
@@ -62,6 +68,9 @@ impl ScalarSchema {
             Self::Integer { min, max } => value
                 .parse::<i64>()
                 .is_ok_and(|number| (*min..=*max).contains(&number)),
+            Self::UnsignedInteger { min, max } => value
+                .parse::<u64>()
+                .is_ok_and(|number| (*min..=*max).contains(&number)),
             Self::Decimal { nullable } => (*nullable && value.is_empty()) || decimal(value),
             Self::Enum { values, .. } => values.iter().any(|candidate| candidate == value),
             Self::DataType { .. } | Self::Value { .. } => false,
@@ -78,6 +87,14 @@ impl ScalarSchema {
         };
         valid.then_some(()).ok_or(EditError::InvalidValue)
     }
+}
+
+/// Bounds exceed JavaScript's exact number range and must cross JSON as decimal strings.
+fn integer_string<S: Serializer>(
+    value: impl std::fmt::Display,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    serializer.collect_str(&value)
 }
 
 /// XML Schema decimal has neither exponent notation nor non-finite floating point values.
@@ -256,6 +273,9 @@ pub(super) fn scalar(
             _ => None,
         };
     }
+    if model_type == "ELong" {
+        return session_age(node);
+    }
     let mut result = schema(model_type, modern)?;
     if let ScalarSchema::Integer { min, max } = &mut result {
         match (
@@ -281,6 +301,19 @@ pub(super) fn scalar(
         }
     }
     Some(result)
+}
+
+/// Designer uses unsigned 64-bit seconds for these two properties, unlike EDT's signed `ELong`.
+fn session_age(node: Node<'_, '_>) -> Option<ScalarSchema> {
+    let properties = node.parent()?;
+    let owner = properties.parent()?;
+    (node.has_tag_name((MD, "SessionMaxAge"))
+        && properties.has_tag_name((MD, "Properties"))
+        && (owner.has_tag_name((MD, "HTTPService")) || owner.has_tag_name((MD, "WebService"))))
+    .then_some(ScalarSchema::UnsignedInteger {
+        min: 0,
+        max: u64::MAX,
+    })
 }
 
 /// Installed EDT editors constrain these fields independently of other metadata properties.
@@ -340,10 +373,6 @@ pub(super) fn schema(model_type: &str, modern: bool) -> Option<ScalarSchema> {
         "EInt" => Some(ScalarSchema::Integer {
             min: i64::from(i32::MIN),
             max: i64::from(i32::MAX),
-        }),
-        "ELong" => Some(ScalarSchema::Integer {
-            min: i64::MIN,
-            max: i64::MAX,
         }),
         "EBigDecimal" => Some(ScalarSchema::Decimal { nullable: false }),
         domain => {

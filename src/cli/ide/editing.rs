@@ -31,6 +31,7 @@ pub(super) fn retain_legacy_fields(schema: &mut Value, minor: u32) {
     if let Some(fields) = schema["fields"].as_array_mut() {
         fields.retain(|field| {
             let keep = (minor >= 10 || field["linked"] != true)
+                && (minor >= 11 || field["schema"]["kind"] != "unsignedInteger")
                 && (minor >= 8
                     || matches!(
                         field["schema"]["kind"].as_str(),
