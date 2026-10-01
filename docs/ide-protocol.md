@@ -1,9 +1,10 @@
-# IDE protocol 1.0 — принятый контракт T69
+# IDE protocol 1.x — базовый контракт и расширения
 
 Статус: спецификация принята 2026-09-18; реализована команда `eska ide --stdio` (T70).
-Протокол работает поверх T66–T68/T75; исходники, manifest и Git не изменяет.
-Допустима запись производного кеша T68. MCP, LSP, редактирование XML,
-платформа 1С и зависимость от VS Code в этот контракт не входят.
+Базовый режим поверх T66–T68/T75 не изменяет исходники, manifest и Git.
+Допустима запись производного кеша T68. API 1.6 добавляет явное включение записи
+существующих свойств; контракт приведён ниже. MCP, LSP, запуск платформы 1С
+и зависимость от VS Code в протокол не входят.
 
 ## Транспорт и конверт
 
@@ -394,7 +395,8 @@ Domain code = -32000, message = "Request failed", data:
 `{kind,sessionId?:string,projectId?:string,generation?:string,details:object}`.
 message и kind стабильны и не локализуются. details — структурированные данные,
 не Display/Debug Rust errors; paths используют Path DTO. Неподдержанные write
-методы, включая metadata/updateProperty, дают Method not found.
+методы дают Method not found. Для metadata/updateProperty и metadata/undoProperty
+без явного opt-in возвращается property_read_only.
 
 | kind | Источник / детали |
 | --- | --- |
@@ -504,3 +506,146 @@ source-relative путей в стандартном обратимом DTO `Pat
 mtime и поколение дерева не заменяют сверку исходных данных. Результат описывает
 данные на момент запроса; это read-only API, а не блокировка будущей записи на диск.
 Постраничный API 1.2 и остальные контракты сохранены.
+
+
+## Редактирование свойств — API 1.6–1.8
+
+Для записи клиент передаёт в `initialize` `apiVersion:{major:1,minor:6}` и
+`allowPropertyEdits:true`. Сервер сообщает `propertyEditing:true,readOnly:false`.
+Без opt-in, включая клиентов 1.0–1.5, остаются `readOnly:true,propertyEditing:false`.
+Разрешение транспорта не отменяет правил поддержки объектов и Workspace Trust.
+
+Методы используют обычные `sessionId`, `projectId`, `generation` и `objectId`:
+
+| Метод | Дополнительные params | Результат |
+| --- | --- | --- |
+| `metadata/propertyEditing` | — | snapshot, source, profile, writable, fields, readOnlyProperties, undo, redo, addRemove:false |
+| `metadata/propertyTypeChoices` | path из fields | choices с key и RU/EN caption |
+| `metadata/propertyReferenceChoices` (1.7) | path из fields | choices с value, objectId, metadataKind, RU/EN caption и необязательным standardAttribute |
+| `metadata/propertyValueChoices` (1.8) | path из fields и key из schema.types или propertyTypeChoices для choiceParameter | choices с value и RU/EN caption |
+| `metadata/previewProperty` | snapshot, path, change | valid, changed, changes — точные замены UTF-8 байтов |
+| `metadata/updateProperty` | snapshot, path, change | обычные properties/picture и новый editing |
+| `metadata/undoProperty` | snapshot, direction:undo\|redo | обычные properties/picture и новый editing |
+
+Форматы path/change и проверки общие с [CLI для ИИ](metadata-editing.md).
+Скаляр `text` может дополнительно объявлять `domain:"choiceParameterName"`:
+имя существующей связи параметров выбора с проверкой синтаксиса и конфликтов
+внутри списка. Операция остаётся `change.kind:"text"`; ограничения проверяет
+backend независимо от поддержки подсказки клиентом. У обычных строк `domain`
+отсутствует. Подробные правила приведены в контракте CLI.
+Домен `reference` со значением `ChoiceParameterField` выбирает источник
+существующей связи параметров выбора. Список ограничен владельцем/строкой
+табличной части и повторно проверяется при записи. Стандартное поле возвращает
+`standardAttribute` вместе с `objectId` своего владельца; отдельного узла дерева
+для него нет. Состав списка связей сохраняется. Старый UUID-путь можно заменить
+вариантом из `propertyReferenceChoices`, но нельзя записать произвольный UUID.
+API 1.7 добавляет `schema.kind:"reference"` с `domain` и `nullable`. Клиентам 1.6
+сервер не выдаёт новые варианты схем в чтении и ответах на запись; новый метод
+для них возвращает method not found. Opt-in `allowPropertyEdits` остаётся обязательным.
+Изменившая файл операция публикует `metadata/changed`, no-op — нет. Ответ и события
+сохраняют generation/eventSequence. Клиент не повторяет write при stale generation,
+таймауте, устаревшем ответе или разрыве соединения: после неопределённого исхода
+нужно перечитать файл. `property_committed_refresh_required` явно отличает запись
+с последующей ошибкой обновления от отказа до записи. История принадлежит session;
+вкладка клиента имеет отдельный lock и сохраняет черновик при внешнем конфликте.
+
+API 1.8 добавляет `schema.kind:"value"` и `change.kind:"value"` для значения
+заполнения. Допустимые типы и ограничения публикуются в `schema.types`. Клиентам
+1.6–1.7 этот вариант не возвращается ни в чтении, ни в ответах на запись;
+`metadata/propertyValueChoices` для них возвращает method not found.
+
+Для существующих параметров выбора `schema.kind:"value"` дополнительно содержит
+`domain:"choiceParameter"`. Inline `types` содержит четыре примитивных типа и
+текущий распознанный ссылочный тип; полный список запрашивается через
+`metadata/propertyTypeChoices`. Выбранный тип передаётся в
+`metadata/propertyValueChoices`, затем в обычный `change.kind:"value"`.
+Числовые ограничения без `digits`/`fractionDigits` допускают десятичную строку
+без квалификаторов разрядности, с общим лимитом размера значения.
+Старый клиент может использовать inline-список; произвольные типы при записи
+всё равно отклоняются. Имя параметра с доменом `choiceParameterName` адресуется
+путём до существующего `app:item` и изменяет только атрибут `name`.
+У элементов фиксированного массива сохраняются адреса по occurrence;
+контейнер массива не объявляется редактируемым полем. Число и порядок элементов
+сохраняются. Полные правила и проверенная область — в контракте CLI.
+
+### API 1.9: переименование
+
+Для записи требуется `allowPropertyEdits:true`; capability `metadataRename:true`
+возвращается только после согласования minor 9 и включения записи. Клиенты 1.0–1.8
+не получают новые признаки редактирования; методы переименования для них недоступны.
+
+| Метод | Дополнительные params к sessionId/projectId/generation | Result |
+| --- | --- | --- |
+| `metadata/renamePreview` | objectId, newName | applyAvailable, plan |
+| `metadata/renameApply` | objectId, newName, snapshot, reviewedUncertain:bool | properties, picture?, editing, renamed |
+
+`plan` совпадает с [JSON CLI](metadata-editing.md#предварительный-просмотр-переименования):
+пути в нём — относительные UTF-8 строки source; диапазоны — смещения UTF-8 байтов.
+`snapshot` берётся из preview. Перед записью backend заново строит план и сверяет
+снимок. `issues` блокируют запись; `reviewedUncertain:true` подтверждает просмотр
+сомнительных мест, которые остаются без изменения. Новые XML, ranges или пути
+записи от клиента не принимаются как источник изменений.
+
+В `editing` добавлены `renameAvailable`, `undoRename`, `redoRename`.
+Первый признак разрешает предложить переименование текущего объявления;
+полная проверка всех исходников выполняется в preview. Последние два признака
+показывают, изменит ли ближайший undo/redo имя и другие файлы. До такой записи
+клиент проверяет несохранённые документы проекта, а не только текущий XML.
+
+`renamed = {from,to,descendantFrom,descendantTo}` сопровождает ответ на rename
+и undo/redo переименования, а также предшествующее ему `metadata/changed`.
+Клиент заменяет точный ID `from` на `to`; у ID с префиксом `descendantFrom`
+заменяет только этот префикс на `descendantTo`. Все четыре строки задаёт сервер;
+клиент не восстанавливает их из имени объекта и не разбирает внутренние сегменты ID.
+Переезжают адреса узлов, родительские ссылки и ключи открытых вкладок.
+При пропущенном eventSequence клиент перечитывает состояние вместо угадывания
+пропущенных переименований.
+
+`rename_invalid_name`, `rename_collision`, `rename_blocked`,
+`rename_review_required` и `rename_committed_refresh_required` имеют тот же
+смысл, что в CLI. `property_edit_busy` и `property_recovery_required` требуют
+перечитывания/восстановления; автоматический повтор записи запрещён.
+Отмена запроса до запуска предотвращает запись. После начала mutating request
+его фактический результат сохраняется, даже если пришёл `$/cancelRequest`:
+завершённая запись не подменяется ошибкой `cancelled`.
+
+
+### API 1.10: связанные параметры нумерации
+
+Capability `linkedPropertyEdits:true` требует minor 10 и `allowPropertyEdits:true`.
+У полей нумератора и ссылки документа `Numerator` появляется `linked:true`;
+клиенты 1.0–1.9 не получают эти поля в схеме редактирования.
+`editing` дополнен `contextSnapshot` (SHA-256 или null), `linkedObjects`,
+`undoLinked`, `redoLinked`. Для связанных `previewProperty`, `updateProperty`
+и `undoProperty` нужен точный `contextSnapshot` из отображённой схемы.
+Детали проверки и полного списка `files` в preview описаны в
+[общем контракте CLI](metadata-editing.md#cli-для-ии-и-скриптов).
+
+Изменение нумератора обновляет соответствующий параметр связанных документов
+одной восстанавливаемой операцией. Назначение нумератора переносит все пять
+параметров внутри документа. История хранит общую отмену связанных файлов;
+внешняя правка любого из них блокирует replay. Клиент сохраняет черновик,
+проверяет несохранённые исходники перед записью и не повторяет запрос после
+потери ответа. На время запроса связанные записи используют тот же барьер
+чтения и длительный таймаут, что и переименование.
+
+### API 1.11: целые значения без потери точности
+
+Capability `unsignedIntegerProperties:true` требует minor 11 и
+`allowPropertyEdits:true`. Схема `unsignedInteger` передаёт `min` и `max`
+десятичными **строками**, например:
+
+```json
+{"kind":"unsignedInteger","min":"0","max":"18446744073709551615"}
+```
+
+`field.value` и `change.value` также остаются строками. Клиент не должен
+преобразовывать их или границы в IEEE 754 number. Новый вариант используется
+для `SessionMaxAge` HTTP- и Web-сервисов: Конфигуратор 8.3.27 сохраняет полные
+беззнаковые 64-битные секунды, несмотря на знаковый `ELong` в модели EDT.
+Схема `integer` сохраняет прежние числовые границы.
+
+Клиентам с minor 0–10 новые поля исключаются из схемы редактирования с причиной
+`readOnlyProperties.reason:"client_version"`; чтение значения сохраняется.
+Отрицательные, дробные значения и переполнение отклоняются до изменения XML.
+CLI JSON использует тот же вариант схемы без handshake.

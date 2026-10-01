@@ -52,6 +52,20 @@ impl ObjectId {
                 .into(),
         )
     }
+
+    /// Rekey an object's session state and descendants after a validated structural rename.
+    pub(crate) fn renamed(&self, from: &Self, to: &Self) -> Self {
+        if self == from {
+            return to.clone();
+        }
+        self.as_str()
+            .strip_prefix(from.as_str())
+            .filter(|suffix| suffix.starts_with('/'))
+            .map_or_else(
+                || self.clone(),
+                |suffix| Self(format!("{to}{suffix}").into()),
+            )
+    }
 }
 
 impl fmt::Display for ObjectId {

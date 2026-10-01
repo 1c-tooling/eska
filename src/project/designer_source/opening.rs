@@ -65,6 +65,25 @@ pub fn open_projects_cached(
         .collect()
 }
 
+impl DesignerSource {
+    /// Reread root identity without reusing cached declarations for a structural mutation.
+    pub(crate) fn reopen(&self) -> Result<Self, SourceError> {
+        let mut sources = open_projects(self.project.root(), &[], false)?.into_iter();
+        let source = sources.next().ok_or_else(|| SourceError::InvalidMetadata {
+            path: PathBuf::from(crate::config::FILE_NAME),
+            reason: "project selection changed",
+        })?;
+        if sources.next().is_some() || source.project != self.project || source.scope != self.scope
+        {
+            return Err(SourceError::InvalidMetadata {
+                path: PathBuf::from(crate::config::FILE_NAME),
+                reason: "project settings changed",
+            });
+        }
+        Ok(source)
+    }
+}
+
 /// Find a root descriptor without opening any child directory or assuming an external filename.
 fn read_root(
     project: &Project,

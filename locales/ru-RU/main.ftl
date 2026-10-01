@@ -873,3 +873,17 @@ artifact-confirm = Нажмите 1, Enter или Esc для отмены; на�
 artifact-created = Проект создан из файла: { $path }.
 artifact-import-usage = eska import <ФАЙЛ> [ПАРАМЕТРЫ]
 artifact-file-value = ФАЙЛ
+
+metadata-about = Чтение и изменение существующих свойств метаданных через JSON
+metadata-project-help = Выбрать один проект рабочего пространства
+metadata-format-help = Формат машинного вывода
+metadata-inspect-about = Прочитать свойства и схему допустимых изменений
+metadata-types-about = Получить допустимые типы существующего поля
+metadata-choices-about = Получить допустимые ссылки на метаданные для существующего поля
+metadata-check-about = Проверить изменение свойства и показать заменяемые байты
+metadata-apply-about = Применить одно проверенное изменение свойства
+metadata-object-help = ID объекта из metadata inspect; по умолчанию корневой объект
+metadata-input-help = Файл запроса JSON или - для чтения stdin
+metadata-rename-preview-about = Показать план переименования и сомнительные ссылки без записи файлов
+metadata-rename-apply-about = Применить проверенный план переименования по снимку источников
+metadata-rename-recovery-about = Проверить или восстановить прерванное переименование

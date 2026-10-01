@@ -21,3 +21,5 @@ mod version;
 mod shelves;
 
 mod update;
+
+mod metadata;

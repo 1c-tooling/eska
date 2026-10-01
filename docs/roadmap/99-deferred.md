@@ -18,7 +18,7 @@
 | `eska setup` onboarding | NEEDS-SPEC | После doctor + environments + build |
 | Завершение задачи после squash/rebase | NEEDS-SPEC | Приоритет и контракт в [T53](12-current-functionality.md); уточнение до изменения T40 |
 | Реализация самостоятельной команды `eska test` | DEFERRED | Отдельная задача после спецификации T23; поставить перед T33, если backend выбран |
-| Структурное редактирование Designer XML: add/remove/rename | DEFERRED | [T74](13-metadata-and-ide.md), после стабильного read-only API и T73; требует спецификации согласованной записи файлов |
+| Структурное редактирование Designer XML: add/remove | DEFERRED | [T74](13-metadata-and-ide.md); переименование отдельно разрешено пользователем и выполняется по [спецификации](t74-rename.md) |
 | Фоновый prefetch метаданных | DEFERRED | Отдельная оптимизация по замерам T68; не включает необходимую индексацию поиска T75 |
 | EDT / `1cedtcli` source format | DEFERRED | После зрелой Designer XML модели |
 | Standalone GUI | DEFERRED | После VS Code и стабильного protocol |
@@ -32,4 +32,5 @@ EDT, AI, MCP, собственный BSL LSP и визуальный редак�
 первую metadata/IDE-поставку T60–T70, T75 и T76–T81. Наличие других идей в общем
 backlog не расширяет её scope. Backend read-only protocol выполняется в T69–T70;
 клиент реализуется в [T76–T81](14-vscode-extension.md), закрывающих T41.
-Редактирование T71–T73 остаётся отдельным последующим этапом.
+Редактирование T71–T73 и переименование T74 выполняются по последующему запросу
+пользователя; добавление и удаление остаются отложенными.

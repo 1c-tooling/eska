@@ -22,6 +22,15 @@ pub(super) fn is_method(method: &str) -> bool {
     matches!(
         method,
         "metadata/support"
+            | "metadata/propertyEditing"
+            | "metadata/propertyTypeChoices"
+            | "metadata/propertyReferenceChoices"
+            | "metadata/propertyValueChoices"
+            | "metadata/previewProperty"
+            | "metadata/updateProperty"
+            | "metadata/undoProperty"
+            | "metadata/renamePreview"
+            | "metadata/renameApply"
             | "metadata/supportFiles"
             | "metadata/root"
             | "metadata/children"
@@ -45,6 +54,17 @@ impl Server {
         events: &mut Vec<Value>,
     ) -> Result<Value, Value> {
         let input: params::Context = params::decode(args)?;
+        if matches!(method, "metadata/renamePreview" | "metadata/renameApply")
+            && self.client_minor < 9
+        {
+            return Err(error(-32601));
+        }
+        if method == "metadata/propertyReferenceChoices" && self.client_minor < 7 {
+            return Err(error(-32601));
+        }
+        if method == "metadata/propertyValueChoices" && self.client_minor < 8 {
+            return Err(error(-32601));
+        }
 
         if self
             .session
@@ -78,6 +98,25 @@ impl Server {
         );
         result
             .map(|mut result| {
+                if self.client_minor < 9 {
+                    let schema = if method == "metadata/propertyEditing" {
+                        Some(&mut result)
+                    } else {
+                        result.get_mut("editing")
+                    };
+                    if let Some(schema) = schema.and_then(Value::as_object_mut) {
+                        for key in ["renameAvailable", "undoRename", "redoRename"] {
+                            schema.remove(key);
+                        }
+                    }
+                }
+                if self.client_minor < 11 {
+                    if method == "metadata/propertyEditing" {
+                        super::editing::retain_legacy_fields(&mut result, self.client_minor);
+                    } else if let Some(editing) = result.get_mut("editing") {
+                        super::editing::retain_legacy_fields(editing, self.client_minor);
+                    }
+                }
                 result["sessionId"] = json!(session.id);
                 result["projectId"] = json!(state.id);
                 result["generation"] = json!(project.generation().to_string());
@@ -124,6 +163,18 @@ fn metadata_request(
             .map_err(|failure| errors::workspace(&failure))?;
     }
     match method {
+        "metadata/propertyEditing"
+        | "metadata/propertyTypeChoices"
+        | "metadata/propertyReferenceChoices"
+        | "metadata/propertyValueChoices"
+        | "metadata/previewProperty" => super::editing::query(labels, project, method, args),
+        "metadata/updateProperty" | "metadata/undoProperty" => {
+            update_property(labels, session, state, project, method, args, events)
+        }
+        "metadata/renamePreview" => super::renaming::preview(project, args),
+        "metadata/renameApply" => {
+            super::renaming::apply(labels, session, state, project, args, events)
+        }
         "metadata/supportFiles" => support_files(project, args),
         "metadata/support" => {
             let offset = match args.get("offset") {
@@ -193,6 +244,88 @@ fn metadata_request(
         "metadata/indexErrors" => index_errors(project, args),
         _ => Err(error(-32601)),
     }
+}
+
+/// Mutations publish an ordered invalidation once; clients must never replay them after a lost reply.
+fn update_property(
+    labels: &dto::Labels,
+    session: &str,
+    state: &mut ProjectState,
+    project: &mut ProjectSession,
+    method: &str,
+    args: &Value,
+    events: &mut Vec<Value>,
+) -> Result<Value, Value> {
+    if state.event == u64::MAX {
+        return Err(domain("generation_exhausted", json!({})));
+    }
+    let id: ObjectId = params::decode(&args["objectId"])?;
+    let generation = project.generation();
+    let result = if method == "metadata/updateProperty" {
+        let request: super::editing::ChangeRequest = params::decode(args)?;
+        project
+            .update_property(
+                &id,
+                &request.snapshot,
+                request.context_snapshot.as_deref(),
+                &request.path,
+                &request.change,
+            )
+            .map(
+                |refresh| crate::project::metadata_workspace::PropertyReplay {
+                    object_id: id.clone(),
+                    refresh,
+                },
+            )
+    } else {
+        let undo = match args["direction"].as_str() {
+            Some("undo") => true,
+            Some("redo") => false,
+            _ => return Err(error(-32602)),
+        };
+        project.undo_property(
+            &id,
+            args["snapshot"].as_str().ok_or_else(|| error(-32602))?,
+            args.get("contextSnapshot")
+                .map(|value| value.as_str().ok_or_else(|| error(-32602)))
+                .transpose()?,
+            undo,
+        )
+    };
+    if project.generation() != generation {
+        state.refresh = result.is_err();
+        let affected = result
+            .as_ref()
+            .map_or(Value::Null, |report| json!(report.refresh.affected));
+        changed(session, state, project, affected, events)?;
+        if let Ok(replay) = &result {
+            super::renaming::annotate_event(events, &id, &replay.object_id);
+        }
+        Server::progress_event(session, state, project, events);
+    }
+    let replay = result.map_err(super::editing::failure)?;
+    let mut result = edited_properties(labels, project, &replay.object_id)?;
+    if id != replay.object_id {
+        result["renamed"] = super::renaming::transition(&id, &replay.object_id);
+    }
+    Ok(result)
+}
+
+/// A committed mutation cannot be reported as a retryable failure when rereading the sheet fails.
+pub(super) fn edited_properties(
+    labels: &dto::Labels,
+    project: &mut ProjectSession,
+    id: &ObjectId,
+) -> Result<Value, Value> {
+    let committed = |failure: Value| {
+        domain(
+            "property_committed_refresh_required",
+            json!({"cause":failure["data"]}),
+        )
+    };
+    let mut result = properties(labels, project, &json!({"objectId":id})).map_err(committed)?;
+    result["editing"] = super::editing::describe(labels, project, id).map_err(committed)?;
+    Ok(result)
 }
 
 /// Preview data is optional and never turns a readable property sheet into an error.

@@ -18,6 +18,7 @@ mod history;
 mod ide;
 mod import;
 mod init;
+mod metadata;
 mod new;
 mod patch;
 mod platform;
@@ -34,6 +35,8 @@ mod version;
 pub(super) enum Commands {
     #[command(disable_help_flag = true)]
     Update(update::UpdateArgs),
+    #[command(disable_help_flag = true)]
+    Metadata(metadata::MetadataArgs),
     #[command(disable_help_flag = true)]
     Ide(ide::IdeArgs),
     #[command(disable_help_flag = true)]
@@ -87,6 +90,7 @@ pub(super) fn run(
 ) -> ExitCode {
     match command {
         Some(Commands::Update(args)) => args.run(localizer),
+        Some(Commands::Metadata(args)) => args.run(project_dir, localizer),
         Some(Commands::Ide(args)) => args.run(),
         Some(Commands::Shelve(args)) => args.run(project_dir, localizer),
         Some(Commands::Unshelve(args)) => args.run(project_dir, localizer),
@@ -115,6 +119,7 @@ pub(super) fn run(
 
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
     command
+        .mut_subcommand("metadata", |command| metadata::localize(command, localizer))
         .mut_subcommand("update", |command| update::localize(command, localizer))
         .mut_subcommand("ide", |command| ide::localize(command, localizer))
         .mut_subcommand("build", |command| build::localize(command, localizer))

@@ -41,7 +41,7 @@ impl Localizer {
     }
 
     /// Preserve unknown enum tokens, including future platform additions.
-    fn enum_caption(&self, domain: &str, token: &str) -> Option<String> {
+    pub(crate) fn enum_caption(&self, domain: &str, token: &str) -> Option<String> {
         if !token
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')

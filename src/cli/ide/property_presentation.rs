@@ -5,6 +5,8 @@ mod reference_values;
 mod references;
 mod types;
 
+pub(super) use references::reference_name;
+
 use super::dto::Labels;
 use crate::{
     cli::localization::Localizer,

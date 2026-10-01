@@ -15,20 +15,20 @@ use crate::project::{
 };
 use serde_json::{Value, json};
 
-pub(super) struct Labels {
-    pub(super) ru: Localizer,
-    pub(super) en: Localizer,
+pub(in crate::cli) struct Labels {
+    pub(in crate::cli) ru: Localizer,
+    pub(in crate::cli) en: Localizer,
 }
 impl Labels {
     /// Load both embedded locales once, independently of the client's preferred locale.
-    pub(super) fn new() -> Result<Self, crate::cli::localization::LocalizationError> {
+    pub(in crate::cli) fn new() -> Result<Self, crate::cli::localization::LocalizationError> {
         Ok(Self {
             ru: Localizer::try_new(Locale::RuRu)?,
             en: Localizer::try_new(Locale::EnUs)?,
         })
     }
     /// Project one node without serializing its potentially large children list.
-    pub(super) fn node(&self, value: &TreeNode) -> Value {
+    pub(in crate::cli) fn node(&self, value: &TreeNode) -> Value {
         let label = match &value.label {
             TreeLabel::Name(text) => json!({"kind":"name","text":text}),
             TreeLabel::Key(key) => {
@@ -46,7 +46,7 @@ impl Labels {
 }
 
 /// Node identities are discriminated by role, never by a localized label or source path.
-pub(super) fn node_id(value: &NodeId) -> Value {
+pub(in crate::cli) fn node_id(value: &NodeId) -> Value {
     match value {
         NodeId::Object(id) => json!({"kind":"object","objectId":id.as_str()}),
         NodeId::Module { owner, role } => {
@@ -70,18 +70,18 @@ pub(super) fn node_id(value: &NodeId) -> Value {
 }
 
 /// Reuse the established reversible native path encoding.
-pub(super) fn path(value: &std::path::Path) -> Value {
+pub(in crate::cli) fn path(value: &std::path::Path) -> Value {
     let (value, encoding) = crate::cli::encoding::json_path(value.as_os_str());
     json!({"value":value,"encoding":encoding})
 }
 
 /// Unknown reference UUIDs remain null until that descriptor is loaded.
-pub(super) fn object(value: &ObjectSummary) -> Value {
+pub(in crate::cli) fn object(value: &ObjectSummary) -> Value {
     json!({"objectId":value.id.as_str(),"metadataKind":value.kind.as_str(),"name":value.name,"parent":value.parent.as_ref().map(crate::project::metadata_model::ObjectId::as_str),"uuid":value.uuid,"synonyms":value.synonyms})
 }
 
 /// Parser diagnostics preserve structural context without including XML source text.
-pub(super) fn diagnostic(value: &Diagnostic) -> Value {
+pub(in crate::cli) fn diagnostic(value: &Diagnostic) -> Value {
     let (code, details) = match &value.issue {
         ParseIssue::UnsupportedRoot => ("unsupported_root", json!({})),
         ParseIssue::UnknownKind { namespace, name } => {
@@ -97,7 +97,11 @@ pub(super) fn diagnostic(value: &Diagnostic) -> Value {
 }
 
 /// Preserve property order, namespace-aware keys and UTF-8 byte ranges.
-pub(super) fn property(labels: &Labels, owner: MetadataKind, value: &LocatedProperty) -> Value {
+pub(in crate::cli) fn property(
+    labels: &Labels,
+    owner: MetadataKind,
+    value: &LocatedProperty,
+) -> Value {
     let mut result = field(
         labels,
         owner,
@@ -208,7 +212,7 @@ fn translations(ru: Option<String>, en: Option<String>) -> Option<Value> {
 }
 
 /// Module roles and inline logical addresses stay separate from physical paths.
-pub(super) fn source(value: &SourceLocation) -> Value {
+pub(in crate::cli) fn source(value: &SourceLocation) -> Value {
     let role = match value.role {
         SourceRole::Descriptor => json!({"kind":"descriptor"}),
         SourceRole::Payload => json!({"kind":"payload"}),
@@ -218,7 +222,7 @@ pub(super) fn source(value: &SourceLocation) -> Value {
 }
 
 /// Explicit state mapping prevents internal Rust variant names from leaking into clients.
-pub(super) fn progress(value: &IndexProgress) -> Value {
+pub(in crate::cli) fn progress(value: &IndexProgress) -> Value {
     let state = match value.state {
         IndexState::NotStarted => "not_started",
         IndexState::Building => "building",
@@ -230,7 +234,7 @@ pub(super) fn progress(value: &IndexProgress) -> Value {
 }
 
 /// Scope and generation are carried once in the enclosing response.
-pub(super) fn hit(value: &SearchHit) -> Value {
+pub(in crate::cli) fn hit(value: &SearchHit) -> Value {
     let rank = match value.rank {
         MatchRank::ExactName => "exact_name",
         MatchRank::ExactSynonym => "exact_synonym",
@@ -243,7 +247,7 @@ pub(super) fn hit(value: &SearchHit) -> Value {
 }
 
 /// Encode image bytes only at the wire boundary; status keys remain locale-independent.
-pub(super) fn picture(preview: crate::project::designer_source::PicturePreview) -> Value {
+pub(in crate::cli) fn picture(preview: crate::project::designer_source::PicturePreview) -> Value {
     use crate::project::designer_source::{PictureError, PicturePreview};
     use base64::{Engine as _, engine::general_purpose::STANDARD};
     let status = match preview {

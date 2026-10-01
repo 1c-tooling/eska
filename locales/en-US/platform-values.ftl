@@ -2362,3 +2362,27 @@ platform-value-PrimitiveType-integer = Integer
 platform-value-PrimitiveType-date = Date without time
 platform-value-StandardAttribute-HeadTask = Head task
 platform-value-StandardAttribute-BusinessProcess = Business process
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-ActionPeriodIsBasic = Action period is basic
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-Completed = Completed
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-Executed = Executed
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-OffBalance = Off-balance
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-PeriodAdjustment = Period adjustment
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-RegistrationPeriod = Registration period
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-Started = Started
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-Type = Type

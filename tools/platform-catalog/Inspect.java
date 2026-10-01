@@ -56,6 +56,12 @@ class Inspect extends MetadataObjectWriter {
                 row.put("feature", feature.getName());
                 row.put("owner", feature.getEContainingClass().getName());
                 row.put("type", feature.getEType().getName());
+                row.put("lower", feature.getLowerBound());
+                row.put("upper", feature.getUpperBound());
+                row.put("changeable", feature.isChangeable());
+                row.put("derived", feature.isDerived());
+                row.put("containment", feature instanceof EReference && ((EReference)feature).isContainment());
+                if (feature.getDefaultValueLiteral() != null) row.put("default", feature.getDefaultValueLiteral());
                 row.put("property", properties.contains(feature));
                 row.put("since", inspect.isFeatureSupportedByVersion(feature, new Context(Version.V8_3_27))
                     ? "8.3.27" : "8.5.1");

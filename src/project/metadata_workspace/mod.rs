@@ -1,14 +1,28 @@
-//! Read-only, manifest-backed metadata sessions; no CLI, platform or watcher.
+//! Manifest-backed metadata sessions with checked edits; no CLI, platform or watcher.
 
 mod cache;
+mod editing;
+mod editing_choice_fields;
+mod editing_history;
+mod editing_linked;
+mod editing_references;
+mod editing_values;
 mod property_reference;
 mod refresh;
+mod renaming;
 pub mod search;
 mod session;
 mod support;
 pub use super::metadata_disk_cache::DiskCacheStats;
+pub use super::metadata_rename::transaction::RecoveryStatus as RenameRecovery;
 pub use cache::{CacheLimits, CacheStats};
+pub use editing::{EditingSnapshot, PropertyEditError, PropertyTypeChoice};
+pub use editing_history::{HistoryOperation, PropertyReplay};
+pub use editing_linked::PropertyEditPlan;
+pub use editing_references::PropertyReferenceChoice;
+pub use editing_values::PropertyValueChoice;
 pub use refresh::RefreshReport;
+pub use renaming::RenameError;
 pub use support::{FileReason, FileSupport, ObjectSupport, SupportSnapshot};
 
 use std::path::Path;

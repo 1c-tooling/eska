@@ -15,6 +15,7 @@ use super::{
     selection::SelectionError,
 };
 
+pub(crate) use mapping::decode as identity_parts;
 pub use mapping::{LogicalLocation, SourceLocation, SourceRole};
 pub use opening::open_projects;
 pub(crate) use opening::open_projects_cached;

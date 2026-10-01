@@ -93,8 +93,10 @@ VS Code extension для навигации по Designer XML.
 - `IN-PROGRESS`: `T81` — итоговая приёмка и VSIX;
 - `PLANNED`: `T41`, декомпозированная в `T76–T81`, — расширение VS Code с деревом,
   поиском, фильтром, иконками и устанавливаемым VSIX;
-- `PLANNED`: `T71–T73` — отдельный последующий этап редактирования существующих
-  метаданных после первой поставки; `T74` structural editing — `DEFERRED`;
+- `DONE`: `T71` — архитектура точечного редактирования;
+- `IN-PROGRESS`: `T72–T73` — первый набор свойств доступен через общий CLI JSON
+  и IDE API 1.8; остаются дополнительные mappings и межплатформенная приёмка;
+  `T74` — переименование `IN-PROGRESS`, add/remove `DEFERRED`;
 - `T23` test backend и `T39` locking отложены до проверки этого MVP в реальной
   работе.
 
@@ -189,7 +191,8 @@ T57 выполняется по отдельному запросу пользо
 T56 → T37 → T55 → T26 остаются очередью последующих CLI-задач;
 возврат к ней определяется отдельно после первой IDE-поставки. T55 можно
 завершить раньше при доступном runner; это не повод собирать большой IDE-стенд.
-T71–T73 также требуют отдельного последующего этапа, T74 остаётся отложенной.
+T71 завершена; T72–T73 реализованы в ограниченной области и продолжаются.
+В T74 пользователь включил переименование со ссылками; add/remove остаются отложенными.
 
 T53 нельзя начинать с ослабления проверки интеграции: сначала снимается
 `NEEDS-SPEC`. Уточнение её контракта не блокирует независимые T54–T55.
@@ -218,7 +221,7 @@ mapping, а не повторная реализация завершённых 
 | IDE V0.1 — Read-only protocol | T69–T70 | Спецификация и постоянный `eska ide --stdio` |
 | VS Code V0.1 — Metadata explorer | T41: T76–T81 | Дерево, модули, поиск, фильтр, иконки и VSIX |
 | Metadata V0.5 — Existing object editing | T71–T73 | Safe XML patching и изменение существующих элементов |
-| Metadata V0.6 — Structural editing | T74 | Отложенные add/remove/rename и согласованная запись файлов |
+| Metadata V0.6 — Structural editing | T74 | Переименование и согласованная запись; add/remove отложены |
 
 Metadata/IDE API первой поставки полностью read-only. T41 — сводная задача
 клиента, закрываемая результатом T76–T81 после T70. EDT, MCP, AI, собственный
@@ -302,10 +305,10 @@ BSL LSP и визуальный редактор форм в это направ
 | T68 | DONE | Производительность metadata workspace | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T69 | DONE | Спецификация постоянного IDE protocol | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T70 | DONE | Постоянный read-only IDE процесс | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
-| T71 | PLANNED | Архитектура safe XML patching | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
-| T72 | PLANNED | Точечный XML patch и безопасная запись | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
-| T73 | PLANNED | Редактирование существующих элементов | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
-| T74 | DEFERRED | Структурные изменения метаданных | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T71 | DONE | Архитектура safe XML patching | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T72 | IN-PROGRESS | Точечный XML patch и безопасная запись | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T73 | IN-PROGRESS | Редактирование существующих элементов | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
+| T74 | IN-PROGRESS | Переименование со ссылками; add/remove отложены | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T75 | DONE | Поиск по метаданным | [13-metadata-and-ide.md](13-metadata-and-ide.md) |
 | T76 | DONE | Основа расширения и подключение к eska | [14-vscode-extension.md](14-vscode-extension.md) |
 | T77 | DONE | Дерево проектов, модули и открытие исходников | [14-vscode-extension.md](14-vscode-extension.md) |

@@ -17,6 +17,15 @@ macro_rules! metadata_kinds {
                 match self { $(Self::$variant => $key),+ }
             }
 
+            /// Return the canonical Designer reference tag; external descriptor aliases come first.
+            #[must_use]
+            pub const fn designer_tag(self) -> &'static str {
+                match self { $(Self::$variant => {
+                    let tags = [$($tag),+];
+                    tags[tags.len() - 1]
+                }),+ }
+            }
+
             /// Return the top-level Designer collection, if this kind has one.
             #[must_use]
             pub fn collection_folder(self) -> Option<&'static str> {
