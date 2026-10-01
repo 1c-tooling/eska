@@ -2,11 +2,13 @@
 
 use std::path::PathBuf;
 
-use super::{ProjectSession, RefreshReport, WorkspaceError};
+use super::{
+    ProjectSession, PropertyReplay, RefreshReport, WorkspaceError, editing_history::HistoryStep,
+};
 use crate::project::{
     designer_source::SourceLocation,
     metadata_edit::{
-        EditError, EditPlan, EditingDocument, FieldStep, PropertyChange, PropertyEditing, SavedEdit,
+        EditError, EditPlan, EditingDocument, FieldStep, PropertyChange, PropertyEditing,
     },
     metadata_model::{MetadataKind, ObjectId},
     support::State,
@@ -50,13 +52,6 @@ impl From<EditError> for PropertyEditError {
     fn from(value: EditError) -> Self {
         Self::Edit(value)
     }
-}
-
-/// One object's history is retained only within the current backend session.
-#[derive(Debug, Default)]
-pub(super) struct PropertyHistory {
-    undo: Vec<SavedEdit>,
-    redo: Vec<SavedEdit>,
 }
 
 impl ProjectSession {
@@ -207,25 +202,7 @@ impl ProjectSession {
         let changed = !plan.is_empty();
         let report = self.publish_property(id, &location, &plan);
         if changed && (report.is_ok() || matches!(report, Err(PropertyEditError::Committed(_)))) {
-            let entry = self.property_history.entry(id.clone()).or_default();
-            entry.redo.clear();
-            entry.undo.push(history);
-            while entry.undo.len() > 100
-                || entry.undo.iter().map(SavedEdit::bytes).sum::<usize>() > 8 * 1024 * 1024
-            {
-                entry.undo.remove(0);
-            }
-            while self.property_history.len() > 256
-                || self
-                    .property_history
-                    .values()
-                    .flat_map(|history| history.undo.iter().chain(&history.redo))
-                    .map(SavedEdit::bytes)
-                    .sum::<usize>()
-                    > 32 * 1024 * 1024
-            {
-                self.property_history.pop_first();
-            }
+            self.record_property(id, HistoryStep::Scalar(history));
         }
         report
     }
@@ -239,7 +216,7 @@ impl ProjectSession {
         id: &ObjectId,
         expected: &str,
         undo: bool,
-    ) -> Result<RefreshReport, PropertyEditError> {
+    ) -> Result<PropertyReplay, PropertyEditError> {
         let guard =
             crate::project::metadata_rename::transaction::Guard::acquire(self.project().root())?;
         guard.check_clear(self.project().source())?;
@@ -259,20 +236,18 @@ impl ProjectSession {
         }
         .ok_or(EditError::HistoryUnavailable)?
         .clone();
-        let plan = step.replay(&input, undo)?;
+        let HistoryStep::Scalar(scalar) = &step else {
+            return self.replay_rename(&guard, id, step, undo);
+        };
+        let plan = scalar.replay(&input, undo)?;
         let report = self.publish_property(id, &location, &plan);
-        if (report.is_ok() || matches!(report, Err(PropertyEditError::Committed(_))))
-            && let Some(history) = self.property_history.get_mut(id)
-        {
-            let (from, to) = if undo {
-                (&mut history.undo, &mut history.redo)
-            } else {
-                (&mut history.redo, &mut history.undo)
-            };
-            from.pop();
-            to.push(step);
+        if report.is_ok() || matches!(report, Err(PropertyEditError::Committed(_))) {
+            self.advance_history(id, step, undo);
         }
-        report
+        report.map(|refresh| PropertyReplay {
+            object_id: id.clone(),
+            refresh,
+        })
     }
 
     /// Resolve the existing descriptor again at every write boundary.

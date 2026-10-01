@@ -115,7 +115,7 @@ impl Guard {
         source: &Path,
         plan: &RenamePlan,
         excluded: &[PathBuf],
-    ) -> Result<(), EditError> {
+    ) -> Result<RenamePlan, EditError> {
         self.check_clear(source)?;
         let directory = io::path(&self.directory, Path::new("rename"))?;
         fs::create_dir(&directory).map_err(EditError::Io)?;
@@ -128,17 +128,46 @@ impl Guard {
                 return Err(error);
             }
         };
-        let current =
-            super::inventory::snapshot(source, excluded, plan.object_id.as_str(), &plan.new_name)
-                .map_err(EditError::Io);
-        match current {
-            Ok(current) if current == plan.snapshot => Self::commit(&journal, &directory),
-            result => {
+        let result = Self::inverse(source, excluded, plan, &journal, &directory);
+        match result {
+            Ok(reverse) => {
+                Self::commit(&journal, &directory)?;
+                Ok(reverse)
+            }
+            Err(error) => {
                 finish(&directory, b"rolled_back").map_err(|_| EditError::RecoveryRequired)?;
                 Self::cleanup(&journal, &directory)?;
-                Err(result.err().unwrap_or(EditError::Conflict))
+                Err(error)
             }
         }
+    }
+
+    /// Predict replay bytes and inventory from the staged files before any source is changed.
+    fn inverse(
+        source: &Path,
+        excluded: &[PathBuf],
+        plan: &RenamePlan,
+        journal: &Journal,
+        directory: &Path,
+    ) -> Result<RenamePlan, EditError> {
+        let mut hashes = BTreeMap::new();
+        let mut staged = BTreeMap::new();
+        for (index, file) in journal.files.iter().enumerate() {
+            hashes.insert(file.path.clone(), file.after.clone());
+            staged.insert(
+                file.path.clone(),
+                super::inventory::file_hash(&directory.join(format!("{index}.after")))
+                    .map_err(EditError::Io)?,
+            );
+        }
+        let mut reverse = super::history::reversed(plan, &hashes)?;
+        let (before, after) =
+            super::inventory::transition(source, excluded, plan, &staged).map_err(EditError::Io)?;
+        if before != plan.snapshot {
+            return Err(EditError::Conflict);
+        }
+        reverse.snapshot = after;
+        Ok(reverse)
     }
 
     /// A normal write failure rolls back already published members; failed restoration retains the journal.

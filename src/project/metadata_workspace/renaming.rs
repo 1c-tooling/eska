@@ -2,6 +2,7 @@
 
 mod bsl;
 mod context;
+mod history;
 
 use std::{collections::BTreeMap, fmt::Write, path::PathBuf};
 
@@ -76,19 +77,19 @@ impl ProjectSession {
         if plan.files.iter().all(|file| file.replacements.is_empty()) && plan.moves.is_empty() {
             return Ok(plan);
         }
-        let generation = self
-            .generation
+        self.generation
             .checked_add(1)
             .ok_or(WorkspaceError::GenerationExhausted)?;
-        guard.publish(self.project().source(), &plan, &self.rename_exclusions())?;
-        let source = self
-            .source
-            .reopen()
-            .map_err(|error| RenameError::Committed(Box::new(WorkspaceError::Source(error))))?;
-        let mut fresh =
-            Self::open(source).map_err(|error| RenameError::Committed(Box::new(error)))?;
-        fresh.generation = generation;
-        *self = fresh;
+        let reverse = guard.publish(self.project().source(), &plan, &self.rename_exclusions())?;
+        self.rename_histories(&plan);
+        self.record_property(
+            &plan.new_object_id,
+            super::editing_history::HistoryStep::Rename(Box::new(
+                crate::project::metadata_rename::history::SavedRename::new(&plan, reverse),
+            )),
+        );
+        self.refresh_after_rename()
+            .map_err(|error| RenameError::Committed(Box::new(error)))?;
         Ok(plan)
     }
 
@@ -151,6 +152,12 @@ impl ProjectSession {
             &inventory,
         )?;
         let mut plan = scan_sources(&context, id, new_name, &root, inventory, &environment)?;
+        self.rename_support(&mut plan)?;
+        Ok(plan)
+    }
+
+    /// Structural writes require every changed source to remain editable at the operation boundary.
+    fn rename_support(&mut self, plan: &mut RenamePlan) -> Result<(), WorkspaceError> {
         let paths: Vec<_> = plan
             .files
             .iter()
@@ -175,7 +182,7 @@ impl ProjectSession {
                 reason: "support_unavailable",
             });
         }
-        Ok(plan)
+        Ok(())
     }
 
     /// A source at project root must not include Git internals, disposable caches or build output.

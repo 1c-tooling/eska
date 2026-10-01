@@ -4,6 +4,7 @@ use super::*;
 use eska::project::metadata_workspace::RenameError;
 
 mod bsl;
+mod history;
 
 /// A static configuration contains both readable code and an opaque protected module.
 fn rename_fixture() -> (TestDir, MetadataWorkspace) {

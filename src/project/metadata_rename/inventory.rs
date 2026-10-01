@@ -1,7 +1,7 @@
 //! Deterministic source inventory detects newly added references as well as changed files.
 
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     fs,
     io::{self, Read},
     path::{Path, PathBuf},
@@ -91,28 +91,87 @@ pub fn read_text(path: &Path, max_bytes: u64) -> io::Result<String> {
 
 /// Recheck the full preview snapshot after staging without reparsing every source file.
 pub fn snapshot(root: &Path, excluded: &[PathBuf], id: &str, name: &str) -> io::Result<String> {
-    use std::fmt::Write;
     let inventory = Inventory::read(root, excluded)?;
+    let files = inventory
+        .files
+        .into_iter()
+        .map(|path| Ok((path.clone(), file_hash(&root.join(path))?)))
+        .collect::<io::Result<_>>()?;
+    Ok(fingerprint(id, name, &files, &inventory.directories))
+}
+
+/// Predict the exact post-rename inventory before publication; never bless a later external edit.
+pub fn transition(
+    root: &Path,
+    excluded: &[PathBuf],
+    plan: &super::RenamePlan,
+    staged: &BTreeMap<PathBuf, [u8; 32]>,
+) -> io::Result<(String, String)> {
+    let inventory = Inventory::read(root, excluded)?;
+    let files: BTreeMap<_, _> = inventory
+        .files
+        .into_iter()
+        .map(|path| Ok((path.clone(), file_hash(&root.join(path))?)))
+        .collect::<io::Result<_>>()?;
+    let before = fingerprint(
+        plan.object_id.as_str(),
+        &plan.new_name,
+        &files,
+        &inventory.directories,
+    );
+    let after_files = files
+        .iter()
+        .map(|(path, hash)| {
+            (
+                super::history::moved_path(path, &plan.moves),
+                *staged.get(path).unwrap_or(hash),
+            )
+        })
+        .collect();
+    let after_directories = inventory
+        .directories
+        .iter()
+        .map(|path| super::history::moved_path(path, &plan.moves))
+        .collect();
+    Ok((
+        before,
+        fingerprint(
+            plan.new_object_id.as_str(),
+            &plan.old_name,
+            &after_files,
+            &after_directories,
+        ),
+    ))
+}
+
+/// Identical fingerprint framing is used for current sources and projected undo snapshots.
+fn fingerprint(
+    id: &str,
+    name: &str,
+    files: &BTreeMap<PathBuf, [u8; 32]>,
+    directories: &BTreeSet<PathBuf>,
+) -> String {
+    use std::fmt::Write;
     let mut digest = Sha256::new();
     digest.update(id);
     digest.update([0]);
     digest.update(name);
-    for path in inventory.files {
+    for (path, hash) in files {
         digest.update([0]);
         digest.update((path.as_os_str().as_encoded_bytes().len() as u64).to_le_bytes());
         digest.update(path.as_os_str().as_encoded_bytes());
-        digest.update(file_hash(&root.join(path))?);
+        digest.update(hash);
     }
-    for path in inventory.directories {
+    for path in directories {
         digest.update([1]);
         digest.update((path.as_os_str().as_encoded_bytes().len() as u64).to_le_bytes());
         digest.update(path.as_os_str().as_encoded_bytes());
     }
-    Ok(digest
+    digest
         .finalize()
         .iter()
         .fold(String::with_capacity(64), |mut output, byte| {
             let _ = write!(output, "{byte:02x}");
             output
-        }))
+        })
 }

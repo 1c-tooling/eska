@@ -240,7 +240,14 @@ fn update_property(
     let generation = project.generation();
     let result = if method == "metadata/updateProperty" {
         let request: super::editing::ChangeRequest = params::decode(args)?;
-        project.update_property(&id, &request.snapshot, &request.path, &request.change)
+        project
+            .update_property(&id, &request.snapshot, &request.path, &request.change)
+            .map(
+                |refresh| crate::project::metadata_workspace::PropertyReplay {
+                    object_id: id.clone(),
+                    refresh,
+                },
+            )
     } else {
         let undo = match args["direction"].as_str() {
             Some("undo") => true,
@@ -257,19 +264,22 @@ fn update_property(
         state.refresh = result.is_err();
         let affected = result
             .as_ref()
-            .map_or(Value::Null, |report| json!(report.affected));
+            .map_or(Value::Null, |report| json!(report.refresh.affected));
         changed(session, state, project, affected, events)?;
         Server::progress_event(session, state, project, events);
     }
-    result.map_err(super::editing::failure)?;
+    let replay = result.map_err(super::editing::failure)?;
+    let mut args = args.clone();
+    args["objectId"] = json!(replay.object_id);
     let committed = |failure: Value| {
         domain(
             "property_committed_refresh_required",
             json!({"cause":failure["data"]}),
         )
     };
-    let mut result = properties(labels, project, args).map_err(committed)?;
-    result["editing"] = super::editing::describe(labels, project, &id).map_err(committed)?;
+    let mut result = properties(labels, project, &args).map_err(committed)?;
+    result["editing"] =
+        super::editing::describe(labels, project, &replay.object_id).map_err(committed)?;
     Ok(result)
 }
 

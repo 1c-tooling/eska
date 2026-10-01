@@ -1,6 +1,7 @@
 //! Rename analysis keeps proven semantic references separate from textual candidates.
 
 pub(crate) mod bsl;
+pub(crate) mod history;
 pub(crate) mod inventory;
 mod name;
 pub(crate) mod transaction;
@@ -34,7 +35,7 @@ pub struct UncertainReference {
 }
 
 /// File changes remain minimal byte ranges in the original source snapshot.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RenameFile {
     pub path: PathBuf,
@@ -53,7 +54,7 @@ pub struct RenameMove {
 }
 
 /// Preview issues are explicit; absence of a confirmed writer never licenses a textual fallback.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RenameIssue {
     pub path: PathBuf,
@@ -61,7 +62,7 @@ pub struct RenameIssue {
 }
 
 /// Backend-owned project snapshot and resolved edits, shared by CLI and future IDE mutation.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RenamePlan {
     pub object_id: crate::project::metadata_model::ObjectId,

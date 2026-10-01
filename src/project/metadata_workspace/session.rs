@@ -44,7 +44,7 @@ pub struct ProjectSession {
     pub(super) support_cache: Option<super::support::SupportCache>,
     pub(super) support_descriptors: super::support::SupportDescriptors,
     pub(super) fingerprints: BTreeMap<PathBuf, [u8; 32]>,
-    pub(super) property_history: BTreeMap<ObjectId, super::editing::PropertyHistory>,
+    pub(super) property_history: BTreeMap<ObjectId, super::editing_history::PropertyHistory>,
 }
 
 impl ProjectSession {
