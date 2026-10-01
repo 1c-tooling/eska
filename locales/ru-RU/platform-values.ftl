@@ -2362,3 +2362,27 @@ platform-value-PrimitiveType-integer = Целое число
 platform-value-PrimitiveType-date = Дата без времени
 platform-value-StandardAttribute-HeadTask = Главная задача
 platform-value-StandardAttribute-BusinessProcess = Бизнес-процесс
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-ActionPeriodIsBasic = Период действия базовый
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-Completed = Завершён
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-Executed = Выполнена
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-OffBalance = Забалансовый
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-PeriodAdjustment = Уточнение периода
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-RegistrationPeriod = Период регистрации
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-Started = Стартован
+
+# Choice source field from the installed EDT MdFieldInferrer
+platform-value-StandardAttribute-Type = Тип

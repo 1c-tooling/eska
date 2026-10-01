@@ -362,7 +362,7 @@ impl ProjectSession {
     }
 
     /// Determine the owning descriptor identity through the existing inline mapping.
-    fn editing_document<'a>(
+    pub(super) fn editing_document<'a>(
         &self,
         id: &'a ObjectId,
         location: &SourceLocation,

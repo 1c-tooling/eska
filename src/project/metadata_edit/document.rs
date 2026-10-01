@@ -212,7 +212,7 @@ impl EditingDocument<'_> {
     }
 
     /// Core parsing keeps object identity and inline descriptor handling identical to reading.
-    fn parsed(&self, input: &str) -> Result<ParsedDescriptor, EditError> {
+    pub(super) fn parsed(&self, input: &str) -> Result<ParsedDescriptor, EditError> {
         let result = if self.predefined {
             metadata_parser::parse_predefined(
                 input,
@@ -264,7 +264,10 @@ impl EditingDocument<'_> {
                 .filter(Node::is_text)
                 .filter_map(|node| node.text())
                 .collect();
-            if matches!(schema, ScalarSchema::Value { .. }) || schema.validate(&value).is_ok() {
+            if matches!(schema, ScalarSchema::Value { .. })
+                || super::choice_fields::is_path(node)
+                || schema.validate(&value).is_ok()
+            {
                 let language = node
                     .parent()
                     .filter(|parent| parent.has_tag_name((schema::CORE, "item")))
@@ -311,6 +314,9 @@ fn child_type<'a>(
     {
         Some(class)
     } else if class == "ChoiceParameterLink" {
+        if super::choice_fields::is_path(child) {
+            return Some(super::choice_fields::DOMAIN);
+        }
         super::choice_links::is_link(parent)
             .then(|| schema::field_type(class, child, false, modern))
             .flatten()
@@ -354,6 +360,7 @@ pub(super) fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<
     super::hierarchy::validate_dependents(node, &candidate)?;
     super::ext_dimensions::validate_dependents(node, &candidate)?;
     super::choice_links::validate_dependents(node, &candidate)?;
+    super::choice_fields::validate_dependents(node, &candidate)?;
     validate_common_module_global(node, &candidate)?;
     if let Some(description) = node
         .ancestors()

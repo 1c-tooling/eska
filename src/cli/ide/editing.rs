@@ -98,11 +98,7 @@ pub(in crate::cli) fn describe(
                 value["caption"] = type_caption(labels, key);
             }
             if matches!(field.schema, ScalarSchema::Reference { .. }) {
-                value["caption"] = paired(labels, |locale| {
-                    crate::project::metadata_edit::references::parts(&field.value)
-                        .and_then(|parts| parts.last().map(|(kind, name)| format!("{} · {name}", locale.text(&format!("platform-kind-{}", kind.as_str())))))
-                        .unwrap_or_else(|| locale.text("platform-presentation-unset"))
-                });
+                value["caption"] = paired(labels, |locale| reference_caption(locale, &field.value));
             }
             if let ScalarSchema::Value { key, types } = &field.schema {
                 value["schema"]["types"] = json!(types.iter().map(|choice| {
@@ -162,11 +158,15 @@ pub(in crate::cli) fn reference_choices(
     let choices = project
         .property_reference_choices(id, path)
         .map_err(failure)?;
-    Ok(json!({"choices":choices.iter().map(|choice| json!({
-        "value":choice.value,"objectId":choice.object.id,
-        "caption":paired(labels, |locale| format!("{} · {}",locale.text(&format!("platform-kind-{}",choice.object.kind.as_str())),choice.object.name)),
-        "metadataKind":choice.object.kind.as_str()
-    })).collect::<Vec<_>>()}))
+    Ok(json!({"choices":choices.iter().map(|choice| {
+        let mut value = json!({
+            "value":choice.value,"objectId":choice.object.id,
+            "caption":paired(labels, |locale| reference_caption(locale, &choice.value)),
+            "metadataKind":choice.object.kind.as_str()
+        });
+        if let Some(name) = &choice.standard_attribute { value["standardAttribute"] = json!(name); }
+        value
+    }).collect::<Vec<_>>()}))
 }
 
 /// A typed value's reference domain includes empty references and existing enum/predefined values.
@@ -291,6 +291,42 @@ fn paired(
     format: impl Fn(&crate::cli::localization::Localizer) -> String,
 ) -> Value {
     json!({"ru-RU":format(&labels.ru),"en-US":format(&labels.en)})
+}
+
+/// Keep field scope visible and localize implicit standard names without inventing tree identities.
+fn reference_caption(locale: &crate::cli::localization::Localizer, raw: &str) -> String {
+    if raw.is_empty() {
+        return locale.text("platform-presentation-unset");
+    }
+    if let Some((owner, name)) = raw.rsplit_once(".StandardAttribute.") {
+        let field = PropertyKey {
+            namespace: Some("http://v8.1c.ru/8.3/xcf/readable".into()),
+            name: "StandardAttribute".into(),
+        };
+        let qualifier = PropertyKey {
+            namespace: None,
+            name: "name".into(),
+        };
+        let caption = locale
+            .qualifier_caption(&field, &qualifier, name)
+            .unwrap_or_else(|| name.to_owned());
+        return format!("{} › {caption}", reference_caption(locale, owner));
+    }
+    crate::project::metadata_edit::references::parts(raw).map_or_else(
+        || raw.to_owned(),
+        |parts| {
+            parts
+                .iter()
+                .map(|(kind, name)| {
+                    format!(
+                        "{} · {name}",
+                        locale.text(&format!("platform-kind-{}", kind.as_str()))
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(" › ")
+        },
+    )
 }
 
 /// Primitive names use the platform dictionary; generated types retain user-provided names.

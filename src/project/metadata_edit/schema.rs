@@ -91,6 +91,8 @@ impl ScalarSchema {
                 domain, nullable, ..
             } => {
                 (*nullable && value.is_empty())
+                    || (domain == super::choice_fields::DOMAIN
+                        && super::choice_fields::valid_path(value))
                     || super::references::parts(value).is_some_and(|parts| {
                         super::references::target(domain).is_some_and(|(kind, _)| {
                             parts.last().is_some_and(|(target, _)| *target == kind)
@@ -240,6 +242,13 @@ pub(super) fn scalar(
     if super::choice_links::is_name(node) {
         return (node.attributes().len() == 0).then_some(ScalarSchema::Text {
             domain: Some(TextDomain::ChoiceParameterName),
+        });
+    }
+    if model_type == super::choice_fields::DOMAIN && super::choice_fields::is_path(node) {
+        return Some(ScalarSchema::Reference {
+            domain: model_type.to_owned(),
+            nullable: false,
+            reference_type: None,
         });
     }
     // These Role-valued fields serialize a list wrapper even when it is empty.

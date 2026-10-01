@@ -3,7 +3,9 @@
 use super::{ObjectSummary, ProjectSession, PropertyEditError};
 use crate::project::{
     configurator::TreeOptions,
-    metadata_edit::{EditError, FieldStep, PropertyChange, ScalarSchema, references, types},
+    metadata_edit::{
+        EditError, FieldStep, PropertyChange, ScalarSchema, choice_fields, references, types,
+    },
     metadata_model::{MetadataKind, NodeId, ObjectId, PropertyKey},
 };
 
@@ -11,6 +13,7 @@ use crate::project::{
 pub struct PropertyReferenceChoice {
     pub value: String,
     pub object: ObjectSummary,
+    pub standard_attribute: Option<String>,
 }
 
 impl ProjectSession {
@@ -38,6 +41,9 @@ impl ProjectSession {
         else {
             return Err(EditError::UnsupportedValue.into());
         };
+        if domain == choice_fields::DOMAIN {
+            return self.choice_parameter_fields(id, path);
+        }
         let (kind, parent_kind) = references::target(domain).ok_or(EditError::UnsupportedValue)?;
         let mut owner = self.object(id)?.clone();
         let parent = if domain == "BasicForm" {
@@ -103,6 +109,7 @@ impl ProjectSession {
                 result.push(PropertyReferenceChoice {
                     value,
                     object: candidate.clone(),
+                    standard_attribute: None,
                 });
             }
         }
@@ -147,7 +154,12 @@ impl ProjectSession {
             .iter()
             .find(|field| field.path == path)
             .ok_or(EditError::UnsupportedValue)?;
-        if let ScalarSchema::Reference { nullable, .. } = field.schema {
+        if let ScalarSchema::Reference {
+            nullable,
+            ref domain,
+            ..
+        } = field.schema
+        {
             if value.is_empty() && nullable {
                 return Ok(());
             }
@@ -157,6 +169,9 @@ impl ProjectSession {
                 .any(|choice| &choice.value == value)
             {
                 return Err(EditError::InvalidValue.into());
+            }
+            if domain == choice_fields::DOMAIN {
+                return Ok(());
             }
             let parts = references::parts(value).ok_or(EditError::InvalidValue)?;
             self.property_reference(&parts)?;

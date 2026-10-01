@@ -521,7 +521,7 @@ mtime и поколение дерева не заменяют сверку ис
 | --- | --- | --- |
 | `metadata/propertyEditing` | — | snapshot, source, profile, writable, fields, readOnlyProperties, undo, redo, addRemove:false |
 | `metadata/propertyTypeChoices` | path из fields | choices с key и RU/EN caption |
-| `metadata/propertyReferenceChoices` (1.7) | path из fields | choices с value, objectId, metadataKind и RU/EN caption |
+| `metadata/propertyReferenceChoices` (1.7) | path из fields | choices с value, objectId, metadataKind, RU/EN caption и необязательным standardAttribute |
 | `metadata/propertyValueChoices` (1.8) | path из fields и key из schema.types | choices с value и RU/EN caption |
 | `metadata/previewProperty` | snapshot, path, change | valid, changed, changes — точные замены UTF-8 байтов |
 | `metadata/updateProperty` | snapshot, path, change | обычные properties/picture и новый editing |
@@ -533,6 +533,12 @@ mtime и поколение дерева не заменяют сверку ис
 внутри списка. Операция остаётся `change.kind:"text"`; ограничения проверяет
 backend независимо от поддержки подсказки клиентом. У обычных строк `domain`
 отсутствует. Подробные правила приведены в контракте CLI.
+Домен `reference` со значением `ChoiceParameterField` выбирает источник
+существующей связи параметров выбора. Список ограничен владельцем/строкой
+табличной части и повторно проверяется при записи. Стандартное поле возвращает
+`standardAttribute` вместе с `objectId` своего владельца; отдельного узла дерева
+для него нет. Состав списка связей сохраняется. Старый UUID-путь можно заменить
+вариантом из `propertyReferenceChoices`, но нельзя записать произвольный UUID.
 API 1.7 добавляет `schema.kind:"reference"` с `domain` и `nullable`. Клиентам 1.6
 сервер не выдаёт новые варианты схем в чтении и ответах на запись; новый метод
 для них возвращает method not found. Opt-in `allowPropertyEdits` остаётся обязательным.

@@ -2,6 +2,7 @@
 
 mod cache;
 mod editing;
+mod editing_choice_fields;
 mod editing_history;
 mod editing_linked;
 mod editing_references;
