@@ -353,3 +353,79 @@ fn metadata_rename_apply_requires_review_and_rejects_external_changes() {
     );
     assert_eq!(status["result"]["pending"], false);
 }
+
+/// AI callers see disabled prerequisites and newly enabled ranges through the same JSON schema.
+#[test]
+fn metadata_hierarchy_schema_changes_with_its_prerequisite_in_both_locales() {
+    let root = TestDir::new();
+    fs::create_dir_all(root.0.join("src/Ext")).unwrap();
+    fs::create_dir_all(root.0.join("src/Catalogs")).unwrap();
+    fs::write(
+        root.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    fs::write(
+        root.0.join("src/Ext/ParentConfigurations.bin"),
+        "{6,0,0,0,0,0}",
+    )
+    .unwrap();
+    fs::write(root.0.join("src/Configuration.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='11111111-1111-1111-1111-111111111111'><Properties><Name>Demo</Name></Properties><ChildObjects><Catalog>Levels</Catalog></ChildObjects></Configuration></MetaDataObject>").unwrap();
+    let path = root.0.join("src/Catalogs/Levels.xml");
+    let original = "\u{feff}<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Catalog uuid='22222222-2222-2222-2222-222222222222'><Properties><Name>Levels</Name><Hierarchical>false</Hierarchical><LimitLevelCount>true</LimitLevelCount><LevelCount>2</LevelCount></Properties><ChildObjects/></Catalog></MetaDataObject>\r\n";
+    fs::write(&path, original).unwrap();
+    let inspect = |locale| {
+        let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&root.0)
+            .args([
+                "--lang",
+                locale,
+                "metadata",
+                "inspect",
+                "--object",
+                "catalog:Levels",
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        assert!(output.stderr.is_empty());
+        serde_json::from_slice::<Value>(&output.stdout).unwrap()
+    };
+    let before = inspect("ru-RU");
+    assert_eq!(before, inspect("en-US"));
+    assert!(
+        before["result"]["editing"]["readOnlyProperties"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|field| field["key"]["name"] == "LevelCount"
+                && field["reason"] == "hierarchy_disabled")
+    );
+    let editing = &before["result"]["editing"];
+    let field = editing["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|field| field["path"][0]["key"]["name"] == "Hierarchical")
+        .unwrap();
+    let request = json!({"schemaVersion":1,"objectId":"catalog:Levels","snapshot":editing["snapshot"],"path":field["path"],"change":{"kind":"text","value":"true"}});
+    call(&root, "ru-RU", "apply", Some(&request), true);
+    let after = inspect("en-US");
+    assert_eq!(after, inspect("ru-RU"));
+    let editing = &after["result"]["editing"];
+    let field = editing["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|field| field["path"][0]["key"]["name"] == "LevelCount")
+        .unwrap();
+    assert_eq!(field["schema"], json!({"kind":"integer","min":2,"max":10}));
+    let invalid = json!({"schemaVersion":1,"objectId":"catalog:Levels","snapshot":editing["snapshot"],"path":field["path"],"change":{"kind":"text","value":"11"}});
+    let error = call(&root, "en-US", "apply", Some(&invalid), false);
+    assert_eq!(error["error"]["kind"], "property_invalid");
+    assert_eq!(error, call(&root, "ru-RU", "check", Some(&invalid), false));
+    assert_eq!(
+        fs::read_to_string(&path).unwrap(),
+        original.replace("<Hierarchical>false", "<Hierarchical>true")
+    );
+}

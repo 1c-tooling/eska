@@ -33,7 +33,7 @@ pub(super) fn range(node: Node<'_, '_>) -> Option<(i64, i64)> {
             }
         }
         ("ChartOfAccounts" | "ChartOfCharacteristicTypes" | "ExchangePlan", "CodeLength") => 50,
-        ("ChartOfAccounts", "DescriptionLength") => 628,
+        ("ChartOfAccounts", "DescriptionLength" | "OrderLength") => 628,
         ("ExchangePlan", "DescriptionLength") => 250,
         (
             "Catalog" | "ChartOfCalculationTypes" | "ChartOfCharacteristicTypes" | "Task",
@@ -41,7 +41,15 @@ pub(super) fn range(node: Node<'_, '_>) -> Option<(i64, i64)> {
         ) => 150,
         _ => return None,
     };
-    Some((0, max))
+    let min = if owner.has_tag_name((MD, "ChartOfAccounts"))
+        && node.has_tag_name((MD, "OrderLength"))
+        && enabled(properties, "AutoOrderByCode")
+    {
+        text(properties, "CodeLength")?.parse::<i64>().ok()?.max(0)
+    } else {
+        0
+    };
+    (min <= max).then_some((min, max))
 }
 
 /// Designer disables document numbering parameters while a shared numerator is selected.
@@ -202,6 +210,7 @@ fn validate_disabled_field(
 pub struct PredefinedLengths {
     code: Option<(usize, bool)>,
     description: Option<usize>,
+    order: Option<usize>,
 }
 
 impl PredefinedLengths {
@@ -229,7 +238,9 @@ impl PredefinedLengths {
             .iter()
             .any(|name| text(old, name) != text(new, name));
         let description_changed = text(old, "DescriptionLength") != text(new, "DescriptionLength");
-        if !code_changed && !description_changed {
+        let order_changed =
+            class == "ChartOfAccounts" && text(old, "OrderLength") != text(new, "OrderLength");
+        if !code_changed && !description_changed && !order_changed {
             return Ok(None);
         }
         let code = if code_changed {
@@ -250,6 +261,9 @@ impl PredefinedLengths {
             code,
             description: description_changed
                 .then(|| width(new, "DescriptionLength"))
+                .transpose()?,
+            order: order_changed
+                .then(|| width(new, "OrderLength"))
                 .transpose()?,
         }))
     }
@@ -280,6 +294,9 @@ impl PredefinedLengths {
                     }),
                     "Description" => self
                         .description
+                        .is_none_or(|width| value.encode_utf16().count() <= width),
+                    "Order" => self
+                        .order
                         .is_none_or(|width| value.encode_utf16().count() <= width),
                     _ => true,
                 };

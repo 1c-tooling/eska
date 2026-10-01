@@ -101,6 +101,8 @@ impl EditingDocument<'_> {
                         "structural_operation"
                     } else if super::lengths::inherited_from_numerator(node) {
                         "numerator_inherited"
+                    } else if let Some(reason) = super::hierarchy::read_only_reason(node) {
+                        reason
                     } else {
                         "unsupported_domain_or_shape"
                     },
@@ -336,6 +338,7 @@ pub(super) fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<
     let candidate = roxmltree::Document::parse(output).map_err(|_| EditError::InvalidXml)?;
     super::standard::validate_dependents(node, &candidate)?;
     super::lengths::validate_dependents(node, &candidate)?;
+    super::hierarchy::validate_dependents(node, &candidate)?;
     validate_common_module_global(node, &candidate)?;
     if let Some(description) = node
         .ancestors()

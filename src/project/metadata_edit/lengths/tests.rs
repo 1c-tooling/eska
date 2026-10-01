@@ -132,7 +132,8 @@ fn predefined_lengths_preserve_nested_values() {
     assert!(
         PredefinedLengths {
             code: Some((2, true)),
-            description: Some(2)
+            description: Some(2),
+            order: None,
         }
         .validate(&xml)
         .is_ok()
@@ -141,14 +142,17 @@ fn predefined_lengths_preserve_nested_values() {
         PredefinedLengths {
             code: Some((1, true)),
             description: None,
+            order: None,
         },
         PredefinedLengths {
             code: None,
             description: Some(1),
+            order: None,
         },
         PredefinedLengths {
             code: None,
             description: Some(0),
+            order: None,
         },
     ] {
         assert!(rule.validate(&xml).is_err());
@@ -156,7 +160,8 @@ fn predefined_lengths_preserve_nested_values() {
     assert!(
         PredefinedLengths {
             code: Some((2, true)),
-            description: None
+            description: None,
+            order: None,
         }
         .validate(&xml.replace(">22<", ">AB<"))
         .is_err()
