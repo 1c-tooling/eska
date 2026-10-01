@@ -60,6 +60,7 @@ pub(in crate::cli) fn describe(
         .object(id)
         .map_err(|error| errors::workspace(&error))?
         .kind;
+    let rename_available = state.writable && project.rename_available(id);
     let mut presenter = super::property_presentation::Presenter::new(labels, project, owner);
     let fields: Vec<_> = state
         .properties
@@ -123,7 +124,8 @@ pub(in crate::cli) fn describe(
     Ok(
         json!({"snapshot":state.properties.snapshot,"source":dto::path(&state.path),"writable":state.writable,
         "readOnlyReason":if state.writable { Value::Null } else { json!("support_or_source_unavailable") },
-        "profile":state.properties.profile,"readOnlyProperties":state.properties.read_only_properties,"fields":fields,"undo":state.undo,"redo":state.redo,"addRemove":false}),
+        "profile":state.properties.profile,"readOnlyProperties":state.properties.read_only_properties,"fields":fields,"undo":state.undo.is_some(),"redo":state.redo.is_some(),"addRemove":false,
+        "renameAvailable":rename_available,"undoRename":state.undo == Some(crate::project::metadata_workspace::HistoryOperation::Rename),"redoRename":state.redo == Some(crate::project::metadata_workspace::HistoryOperation::Rename)}),
     )
 }
 

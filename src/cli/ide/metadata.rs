@@ -29,6 +29,8 @@ pub(super) fn is_method(method: &str) -> bool {
             | "metadata/previewProperty"
             | "metadata/updateProperty"
             | "metadata/undoProperty"
+            | "metadata/renamePreview"
+            | "metadata/renameApply"
             | "metadata/supportFiles"
             | "metadata/root"
             | "metadata/children"
@@ -52,6 +54,11 @@ impl Server {
         events: &mut Vec<Value>,
     ) -> Result<Value, Value> {
         let input: params::Context = params::decode(args)?;
+        if matches!(method, "metadata/renamePreview" | "metadata/renameApply")
+            && self.client_minor < 9
+        {
+            return Err(error(-32601));
+        }
         if method == "metadata/propertyReferenceChoices" && self.client_minor < 7 {
             return Err(error(-32601));
         }
@@ -91,6 +98,18 @@ impl Server {
         );
         result
             .map(|mut result| {
+                if self.client_minor < 9 {
+                    let schema = if method == "metadata/propertyEditing" {
+                        Some(&mut result)
+                    } else {
+                        result.get_mut("editing")
+                    };
+                    if let Some(schema) = schema.and_then(Value::as_object_mut) {
+                        for key in ["renameAvailable", "undoRename", "redoRename"] {
+                            schema.remove(key);
+                        }
+                    }
+                }
                 if self.client_minor < 8 {
                     if method == "metadata/propertyEditing" {
                         super::editing::retain_legacy_fields(&mut result, self.client_minor);
@@ -151,6 +170,10 @@ fn metadata_request(
         | "metadata/previewProperty" => super::editing::query(labels, project, method, args),
         "metadata/updateProperty" | "metadata/undoProperty" => {
             update_property(labels, session, state, project, method, args, events)
+        }
+        "metadata/renamePreview" => super::renaming::preview(project, args),
+        "metadata/renameApply" => {
+            super::renaming::apply(labels, session, state, project, args, events)
         }
         "metadata/supportFiles" => support_files(project, args),
         "metadata/support" => {
@@ -266,20 +289,33 @@ fn update_property(
             .as_ref()
             .map_or(Value::Null, |report| json!(report.refresh.affected));
         changed(session, state, project, affected, events)?;
+        if let Ok(replay) = &result {
+            super::renaming::annotate_event(events, &id, &replay.object_id);
+        }
         Server::progress_event(session, state, project, events);
     }
     let replay = result.map_err(super::editing::failure)?;
-    let mut args = args.clone();
-    args["objectId"] = json!(replay.object_id);
+    let mut result = edited_properties(labels, project, &replay.object_id)?;
+    if id != replay.object_id {
+        result["renamed"] = super::renaming::transition(&id, &replay.object_id);
+    }
+    Ok(result)
+}
+
+/// A committed mutation cannot be reported as a retryable failure when rereading the sheet fails.
+pub(super) fn edited_properties(
+    labels: &dto::Labels,
+    project: &mut ProjectSession,
+    id: &ObjectId,
+) -> Result<Value, Value> {
     let committed = |failure: Value| {
         domain(
             "property_committed_refresh_required",
             json!({"cause":failure["data"]}),
         )
     };
-    let mut result = properties(labels, project, &args).map_err(committed)?;
-    result["editing"] =
-        super::editing::describe(labels, project, &replay.object_id).map_err(committed)?;
+    let mut result = properties(labels, project, &json!({"objectId":id})).map_err(committed)?;
+    result["editing"] = super::editing::describe(labels, project, id).map_err(committed)?;
     Ok(result)
 }
 

@@ -15,7 +15,7 @@ pub use super::metadata_disk_cache::DiskCacheStats;
 pub use super::metadata_rename::transaction::RecoveryStatus as RenameRecovery;
 pub use cache::{CacheLimits, CacheStats};
 pub use editing::{EditingSnapshot, PropertyEditError, PropertyTypeChoice};
-pub use editing_history::PropertyReplay;
+pub use editing_history::{HistoryOperation, PropertyReplay};
 pub use editing_references::PropertyReferenceChoice;
 pub use editing_values::PropertyValueChoice;
 pub use refresh::RefreshReport;

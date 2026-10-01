@@ -14,6 +14,13 @@ pub struct PropertyReplay {
     pub refresh: RefreshReport,
 }
 
+/// The next replay operation determines the editor's dirty-document checks and identity handling.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum HistoryOperation {
+    Scalar,
+    Rename,
+}
+
 #[derive(Clone, Debug)]
 pub(super) enum HistoryStep {
     Scalar(SavedEdit),
@@ -21,6 +28,13 @@ pub(super) enum HistoryStep {
 }
 
 impl HistoryStep {
+    /// Expose the operation category without giving a client any replacement bytes.
+    pub const fn operation(&self) -> HistoryOperation {
+        match self {
+            Self::Scalar(_) => HistoryOperation::Scalar,
+            Self::Rename(_) => HistoryOperation::Rename,
+        }
+    }
     /// Bound retained replacement text and structural paths independently of descriptor size.
     fn bytes(&self) -> usize {
         match self {

@@ -1,6 +1,7 @@
 //! JSON rename commands share backend plans and never accept filesystem destinations.
 
-use super::{ProjectSession, Value, editing, failure, json};
+use super::{ProjectSession, Value, failure, json};
+use crate::cli::ide::renaming::failure as failure_rename;
 
 /// Expose a read-only structural plan and its publication blockers.
 pub(super) fn preview(project: &mut ProjectSession, request: &Value) -> Result<Value, Value> {
@@ -11,27 +12,6 @@ pub(super) fn preview(project: &mut ProjectSession, request: &Value) -> Result<V
         .ok_or_else(|| failure("invalid_request"))?;
     let plan = project.preview_rename(&id, name).map_err(failure_rename)?;
     Ok(json!({"applyAvailable":plan.issues.is_empty(),"plan":plan}))
-}
-
-/// Keep rename failures machine-readable and distinguish committed publication from a failed attempt.
-fn failure_rename(error: crate::project::metadata_workspace::RenameError) -> Value {
-    use crate::project::metadata_workspace::{PropertyEditError, RenameError};
-    match error {
-        RenameError::Workspace(error) => editing::failure(PropertyEditError::Workspace(error)),
-        RenameError::Edit(error) => editing::failure(PropertyEditError::Edit(error)),
-        RenameError::Name(reason) => {
-            json!({"kind":"rename_invalid_name","details":{"reason":reason}})
-        }
-        RenameError::Collision(id) => json!({"kind":"rename_collision","details":{"objectId":id}}),
-        RenameError::Io { path, .. } => {
-            json!({"kind":"rename_source_unavailable","details":{"path":path}})
-        }
-        RenameError::Blocked(issues) => {
-            json!({"kind":"rename_blocked","details":{"issues":issues}})
-        }
-        RenameError::ReviewRequired => failure("rename_review_required"),
-        RenameError::Committed(_) => failure("rename_committed_refresh_required"),
-    }
 }
 
 /// Applying requires the precise preview token and an explicit acknowledgement of uncertain matches.

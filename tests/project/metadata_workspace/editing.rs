@@ -915,7 +915,7 @@ fn existing_values_edit_minimal_bytes_and_undo_exact_lexical_source_in_all_proje
             expected.as_bytes()
         );
         let editing = project.property_editing(&id).unwrap();
-        assert!(editing.undo);
+        assert!(editing.undo.is_some());
         let generation = project.generation();
         project
             .update_property(
@@ -936,7 +936,7 @@ fn existing_values_edit_minimal_bytes_and_undo_exact_lexical_source_in_all_proje
             original
         );
         let editing = project.property_editing(&id).unwrap();
-        assert!(editing.redo);
+        assert!(editing.redo.is_some());
         project
             .undo_property(&id, &editing.properties.snapshot, false)
             .unwrap();

@@ -20,8 +20,8 @@ pub struct EditingSnapshot {
     pub properties: PropertyEditing,
     pub path: PathBuf,
     pub writable: bool,
-    pub undo: bool,
-    pub redo: bool,
+    pub undo: Option<super::HistoryOperation>,
+    pub redo: Option<super::HistoryOperation>,
 }
 
 /// A type choice carries semantic identity and optional metadata context for presentation.
@@ -169,8 +169,12 @@ impl ProjectSession {
             properties,
             path: location.path,
             writable,
-            undo: history.is_some_and(|history| !history.undo.is_empty()),
-            redo: history.is_some_and(|history| !history.redo.is_empty()),
+            undo: history
+                .and_then(|history| history.undo.last())
+                .map(HistoryStep::operation),
+            redo: history
+                .and_then(|history| history.redo.last())
+                .map(HistoryStep::operation),
         })
     }
 

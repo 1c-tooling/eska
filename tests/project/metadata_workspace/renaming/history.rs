@@ -105,7 +105,7 @@ fn rename_and_scalar_history_round_trip_every_identity_shape() {
             .apply_rename(&id, &plan.new_name, &plan.snapshot, true)
             .unwrap();
         let renamed = bytes(&source);
-        assert!(project.property_editing(&next).unwrap().undo);
+        assert!(project.property_editing(&next).unwrap().undo.is_some());
         assert_eq!(
             project.preview_rename(&next, &plan.old_name).unwrap().uuid,
             plan.uuid
@@ -122,7 +122,7 @@ fn rename_and_scalar_history_round_trip_every_identity_shape() {
         assert_eq!(replay(project, &id, false), next);
         assert_eq!(replay(project, &next, false), next);
         assert_eq!(bytes(&source), final_bytes);
-        assert!(!project.property_editing(&next).unwrap().redo);
+        assert!(project.property_editing(&next).unwrap().redo.is_none());
         assert!(source.join("Catalogs").is_dir());
     }
 }
@@ -144,8 +144,14 @@ fn rename_history_rekeys_descendants_and_refuses_new_sources() {
         .unwrap();
     let next = plan.new_object_id;
     let next_child = object(MetadataKind::Form, "Part", Some(next.clone()));
-    assert!(project.property_editing(&next_child).unwrap().undo);
-    assert!(project.property_editing(&other).unwrap().undo);
+    assert!(
+        project
+            .property_editing(&next_child)
+            .unwrap()
+            .undo
+            .is_some()
+    );
+    assert!(project.property_editing(&other).unwrap().undo.is_some());
     assert_eq!(replay(project, &next_child, true), next_child);
     let state = project.property_editing(&next).unwrap();
     assert!(matches!(
@@ -163,7 +169,7 @@ fn rename_history_rekeys_descendants_and_refuses_new_sources() {
     assert_eq!(bytes(&source), before);
     fs::remove_file(added).unwrap();
     assert_eq!(replay(project, &next, true), id);
-    assert!(project.property_editing(&child).unwrap().undo);
+    assert!(project.property_editing(&child).unwrap().undo.is_some());
     assert_eq!(replay(project, &child, true), child);
     assert_eq!(replay(project, &other, true), other);
 }

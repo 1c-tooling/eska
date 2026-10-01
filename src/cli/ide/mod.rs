@@ -10,6 +10,7 @@ mod metadata;
 mod params;
 mod property_presentation;
 mod property_types;
+pub(in crate::cli) mod renaming;
 mod runtime;
 mod server;
 

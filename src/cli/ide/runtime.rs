@@ -412,6 +412,9 @@ fn process_one(
             | "shutdown"
             | "metadata/refresh"
             | "metadata/index"
+            | "metadata/updateProperty"
+            | "metadata/undoProperty"
+            | "metadata/renameApply"
     );
     if request.method == "metadata/refresh"
         && result.is_ok()

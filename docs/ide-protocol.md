@@ -542,3 +542,44 @@ API 1.8 добавляет `schema.kind:"value"` и `change.kind:"value"` для
 заполнения. Допустимые типы и ограничения публикуются в `schema.types`. Клиентам
 1.6–1.7 этот вариант не возвращается ни в чтении, ни в ответах на запись;
 `metadata/propertyValueChoices` для них возвращает method not found.
+
+### API 1.9: переименование
+
+Для записи требуется `allowPropertyEdits:true`; capability `metadataRename:true`
+возвращается только после согласования minor 9 и включения записи. Клиенты 1.0–1.8
+не получают новые признаки редактирования; методы переименования для них недоступны.
+
+| Метод | Дополнительные params к sessionId/projectId/generation | Result |
+| --- | --- | --- |
+| `metadata/renamePreview` | objectId, newName | applyAvailable, plan |
+| `metadata/renameApply` | objectId, newName, snapshot, reviewedUncertain:bool | properties, picture?, editing, renamed |
+
+`plan` совпадает с [JSON CLI](metadata-editing.md#предварительный-просмотр-переименования):
+пути в нём — относительные UTF-8 строки source; диапазоны — смещения UTF-8 байтов.
+`snapshot` берётся из preview. Перед записью backend заново строит план и сверяет
+снимок. `issues` блокируют запись; `reviewedUncertain:true` подтверждает просмотр
+сомнительных мест, которые остаются без изменения. Новые XML, ranges или пути
+записи от клиента не принимаются как источник изменений.
+
+В `editing` добавлены `renameAvailable`, `undoRename`, `redoRename`.
+Первый признак разрешает предложить переименование текущего объявления;
+полная проверка всех исходников выполняется в preview. Последние два признака
+показывают, изменит ли ближайший undo/redo имя и другие файлы. До такой записи
+клиент проверяет несохранённые документы проекта, а не только текущий XML.
+
+`renamed = {from,to,descendantFrom,descendantTo}` сопровождает ответ на rename
+и undo/redo переименования, а также предшествующее ему `metadata/changed`.
+Клиент заменяет точный ID `from` на `to`; у ID с префиксом `descendantFrom`
+заменяет только этот префикс на `descendantTo`. Все четыре строки задаёт сервер;
+клиент не восстанавливает их из имени объекта и не разбирает внутренние сегменты ID.
+Переезжают адреса узлов, родительские ссылки и ключи открытых вкладок.
+При пропущенном eventSequence клиент перечитывает состояние вместо угадывания
+пропущенных переименований.
+
+`rename_invalid_name`, `rename_collision`, `rename_blocked`,
+`rename_review_required` и `rename_committed_refresh_required` имеют тот же
+смысл, что в CLI. `property_edit_busy` и `property_recovery_required` требуют
+перечитывания/восстановления; автоматический повтор записи запрещён.
+Отмена запроса до запуска предотвращает запись. После начала mutating request
+его фактический результат сохраняется, даже если пришёл `$/cancelRequest`:
+завершённая запись не подменяется ошибкой `cancelled`.

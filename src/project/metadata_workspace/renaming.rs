@@ -49,6 +49,16 @@ impl From<EditError> for RenameError {
 }
 
 impl ProjectSession {
+    /// Advertise the name operation only for a currently resolvable, locally owned declaration.
+    ///
+    /// This is a lightweight capability check; source-wide support and reference blockers remain in preview.
+    pub fn rename_available(&mut self, id: &ObjectId) -> bool {
+        let Ok(object) = self.reveal_declared_object(id) else {
+            return false;
+        };
+        self.rename_context(id, &object.name).is_ok()
+    }
+
     /// Rebuild a reviewed source-wide plan and publish its confirmed references as one recoverable operation.
     ///
     /// # Errors
