@@ -9,7 +9,7 @@ use crate::project::{
 
 impl ProjectSession {
     /// Same-file fields are resolved from current XML rather than potentially stale tree entries.
-    pub(super) fn choice_parameter_fields(
+    pub(super) fn property_link_fields(
         &mut self,
         id: &crate::project::metadata_model::ObjectId,
         path: &[FieldStep],
@@ -73,13 +73,17 @@ impl ProjectSession {
             .filter(|reference| reference.kind == MetadataKind::Constant && &reference.id != id)
         {
             let value = format!("Constant.{}", reference.name);
-            let duplicate = editing.properties.fields.iter().any(|field| {
-                field.path != path
-                    && field.path.len() == path.len()
-                    && field.path[..path.len() - 2] == path[..path.len() - 2]
-                    && field.path.last() == path.last()
-                    && crate::project::metadata_rename::same_name(&field.value, &value)
-            });
+            let duplicate = path
+                .first()
+                .is_some_and(|step| step.key.name == "ChoiceParameterLinks")
+                && path.len() >= 2
+                && editing.properties.fields.iter().any(|field| {
+                    field.path != path
+                        && field.path.len() == path.len()
+                        && field.path[..path.len() - 2] == path[..path.len() - 2]
+                        && field.path.last() == path.last()
+                        && crate::project::metadata_rename::same_name(&field.value, &value)
+                });
             if duplicate {
                 continue;
             }

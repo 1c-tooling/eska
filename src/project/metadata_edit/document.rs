@@ -182,6 +182,9 @@ impl EditingDocument<'_> {
             {
                 super::values::replace_bound(self.input, node, value)?
             }
+            PropertyChange::Text { value } if super::type_links::is_link(node) => {
+                super::type_links::replace(self.input, node, value)?
+            }
             PropertyChange::Text { value } if super::choice_parameters::is_item(node) => {
                 super::choice_parameters::rename(self.input, node, value)?
             }
@@ -231,6 +234,10 @@ impl EditingDocument<'_> {
         if path.len() > 64
             || (schema::protected(node.tag_name().name()) && !super::choice_links::is_name(node))
         {
+            return;
+        }
+        if model_type == Some("TypeLink") {
+            fields.extend(super::type_links::fields(node, path));
             return;
         }
         if matches!(model_type, Some("TypeItem" | "ReferenceTypeItem"))

@@ -4,7 +4,8 @@ use super::{ObjectSummary, ProjectSession, PropertyEditError};
 use crate::project::{
     configurator::TreeOptions,
     metadata_edit::{
-        EditError, FieldStep, PropertyChange, ScalarSchema, choice_fields, references, types,
+        EditError, FieldStep, PropertyChange, ScalarSchema, choice_fields, references, type_links,
+        types,
     },
     metadata_model::{MetadataKind, NodeId, ObjectId, PropertyKey},
 };
@@ -41,8 +42,8 @@ impl ProjectSession {
         else {
             return Err(EditError::UnsupportedValue.into());
         };
-        if domain == choice_fields::DOMAIN {
-            return self.choice_parameter_fields(id, path);
+        if matches!(domain.as_str(), choice_fields::DOMAIN | type_links::DOMAIN) {
+            return self.property_link_fields(id, path);
         }
         let (kind, parent_kind) = references::target(domain).ok_or(EditError::UnsupportedValue)?;
         let mut owner = self.object(id)?.clone();
@@ -170,7 +171,7 @@ impl ProjectSession {
             {
                 return Err(EditError::InvalidValue.into());
             }
-            if domain == choice_fields::DOMAIN {
+            if matches!(domain.as_str(), choice_fields::DOMAIN | type_links::DOMAIN) {
                 return Ok(());
             }
             let parts = references::parts(value).ok_or(EditError::InvalidValue)?;

@@ -516,3 +516,99 @@ fn choice_parameter_schema_types_and_publication_share_the_json_contract() {
         )
     );
 }
+
+/// The singular wrapper is a stable JSON address before and after selecting a type-link source.
+#[test]
+fn type_link_source_choices_and_unsigned_index_are_locale_independent() {
+    let root = TestDir::new();
+    fs::create_dir_all(root.0.join("src/Ext")).unwrap();
+    fs::create_dir_all(root.0.join("src/Constants")).unwrap();
+    fs::write(
+        root.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    fs::write(
+        root.0.join("src/Ext/ParentConfigurations.bin"),
+        "{6,0,0,0,0,0}",
+    )
+    .unwrap();
+    fs::write(root.0.join("src/Configuration.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='11111111-1111-1111-1111-111111111111'><Properties><Name>Demo</Name></Properties><ChildObjects><Constant>First</Constant><Constant>Second</Constant></ChildObjects></Configuration></MetaDataObject>").unwrap();
+    for (name, uuid) in [
+        ("First", "22222222-2222-2222-2222-222222222222"),
+        ("Second", "33333333-3333-3333-3333-333333333333"),
+    ] {
+        fs::write(root.0.join(format!("src/Constants/{name}.xml")), format!("<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Constant uuid='{uuid}'><Properties><Name>{name}</Name><LinkByType/></Properties></Constant></MetaDataObject>")).unwrap();
+    }
+    let inspect = |locale| {
+        let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&root.0)
+            .args([
+                "--lang",
+                locale,
+                "metadata",
+                "inspect",
+                "--object",
+                "constant:First",
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        assert!(output.stderr.is_empty());
+        serde_json::from_slice::<Value>(&output.stdout).unwrap()
+    };
+    let state = inspect("ru-RU");
+    assert_eq!(state, inspect("en-US"));
+    let editing = &state["result"]["editing"];
+    let field = editing["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["schema"]["domain"] == "TypeLinkField")
+        .unwrap();
+    assert_eq!(field["path"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        field["schema"],
+        json!({"kind":"reference","domain":"TypeLinkField","nullable":true})
+    );
+    let query = json!({"schemaVersion":1,"objectId":"constant:First","path":field["path"]});
+    let choices = call(&root, "ru-RU", "choices", Some(&query), true);
+    assert_eq!(choices, call(&root, "en-US", "choices", Some(&query), true));
+    assert_eq!(choices["result"]["choices"].as_array().unwrap().len(), 1);
+    assert_eq!(choices["result"]["choices"][0]["value"], "Constant.Second");
+    let mut request = json!({"schemaVersion":1,"objectId":"constant:First","path":field["path"],"snapshot":editing["snapshot"],"change":{"kind":"text","value":"Constant.Second"}});
+    assert_eq!(
+        call(&root, "ru-RU", "check", Some(&request), true),
+        call(&root, "en-US", "check", Some(&request), true)
+    );
+    call(&root, "en-US", "apply", Some(&request), true);
+    let state = inspect("en-US");
+    assert_eq!(state, inspect("ru-RU"));
+    let editing = &state["result"]["editing"];
+    let index = editing["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["path"].as_array().unwrap().last().unwrap()["key"]["name"] == "LinkItem")
+        .unwrap();
+    assert_eq!(
+        index["schema"],
+        json!({"kind":"integer","min":0,"max":4_294_967_295_u64})
+    );
+    request["path"] = index["path"].clone();
+    request["snapshot"] = editing["snapshot"].clone();
+    request["change"]["value"] = json!("4294967296");
+    let file = root.0.join("src/Constants/First.xml");
+    let before = fs::read_to_string(&file).unwrap();
+    assert_eq!(
+        call(&root, "ru-RU", "check", Some(&request), false),
+        call(&root, "en-US", "apply", Some(&request), false)
+    );
+    assert_eq!(fs::read_to_string(&file).unwrap(), before);
+    request["change"]["value"] = json!("4294967295");
+    call(&root, "en-US", "apply", Some(&request), true);
+    assert_eq!(
+        fs::read_to_string(file).unwrap(),
+        before.replace(":LinkItem>0<", ":LinkItem>4294967295<")
+    );
+}

@@ -346,7 +346,7 @@ fn qualifier_xml(
 }
 
 /// A node on its own line owns that line's indentation; inline nodes own only their XML bytes.
-fn line_range(input: &str, range: std::ops::Range<usize>) -> std::ops::Range<usize> {
+pub(super) fn line_range(input: &str, range: std::ops::Range<usize>) -> std::ops::Range<usize> {
     if let Some(indent) = indentation(input, range.start) {
         let after = &input[range.end..];
         let ending = if after.starts_with("\r\n") {
@@ -362,7 +362,7 @@ fn line_range(input: &str, range: std::ops::Range<usize>) -> std::ops::Range<usi
 }
 
 /// Detect indentation without converting tabs, spaces or mixed line endings elsewhere.
-fn indentation(input: &str, start: usize) -> Option<&str> {
+pub(super) fn indentation(input: &str, start: usize) -> Option<&str> {
     let prefix = &input[..start];
     let indent = &prefix[prefix.rfind('\n').map_or(0, |index| index + 1)..];
     indent
@@ -372,7 +372,7 @@ fn indentation(input: &str, start: usize) -> Option<&str> {
 }
 
 /// Newly inserted lines follow the first observed source line ending.
-fn newline(input: &str) -> &str {
+pub(super) fn newline(input: &str) -> &str {
     if input
         .find('\n')
         .is_some_and(|index| index > 0 && input.as_bytes()[index - 1] == b'\r')

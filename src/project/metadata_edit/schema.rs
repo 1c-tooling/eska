@@ -100,8 +100,10 @@ impl ScalarSchema {
                 domain, nullable, ..
             } => {
                 (*nullable && value.is_empty())
-                    || (domain == super::choice_fields::DOMAIN
-                        && super::choice_fields::valid_path(value))
+                    || (matches!(
+                        domain.as_str(),
+                        super::choice_fields::DOMAIN | super::type_links::DOMAIN
+                    ) && super::choice_fields::valid_path(value))
                     || super::references::parts(value).is_some_and(|parts| {
                         super::references::target(domain).is_some_and(|(kind, _)| {
                             parts.last().is_some_and(|(target, _)| *target == kind)

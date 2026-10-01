@@ -1226,6 +1226,7 @@ mod integers;
 mod lengths;
 mod numbering;
 mod standard;
+mod type_links;
 
 /// Disabling Global exposes the module's name as a property and must reject reserved name collisions.
 #[test]

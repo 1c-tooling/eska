@@ -108,7 +108,11 @@ pub(super) fn replacements_plan(
 }
 
 /// Expand only the closing slash of an empty element, retaining its original qualified name.
-fn empty_content(input: &str, node: Node<'_, '_>, value: String) -> Result<Replacement, EditError> {
+pub(super) fn empty_content(
+    input: &str,
+    node: Node<'_, '_>,
+    value: String,
+) -> Result<Replacement, EditError> {
     let range = node.range();
     let source = &input[range.clone()];
     if source.ends_with("/>") {
@@ -131,7 +135,7 @@ fn empty_content(input: &str, node: Node<'_, '_>, value: String) -> Result<Repla
 }
 
 /// Escape text rather than interpolating markup; preserve CR explicitly against normalization.
-fn escape(value: &str) -> Result<String, EditError> {
+pub(super) fn escape(value: &str) -> Result<String, EditError> {
     let mut result = String::with_capacity(value.len());
     for character in value.chars() {
         match character {

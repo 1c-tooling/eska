@@ -1,4 +1,4 @@
-//! Scope-aware source fields for existing choice parameter links.
+//! Scope-aware source fields shared by choice parameter links and type links.
 
 use roxmltree::{Document, Node};
 
@@ -81,17 +81,22 @@ impl EditingDocument<'_> {
                     })
                     .nth(step.occurrence)
             })
-            .filter(|node| is_path(*node))
+            .filter(|node| is_path(*node) || super::type_links::is_link(*node))
             .ok_or(EditError::UnsupportedValue)?;
-        let link = node.parent().ok_or(EditError::InvalidXml)?;
-        let list = link.parent().ok_or(EditError::InvalidXml)?;
-        let used: Vec<_> = list
-            .children()
-            .filter(|other| *other != link)
-            .flat_map(|other| other.children())
-            .filter(|node| is_path(*node))
-            .filter_map(|node| node.text())
-            .collect();
+        let (list, used) = if super::type_links::is_link(node) {
+            (node, Vec::new())
+        } else {
+            let link = node.parent().ok_or(EditError::InvalidXml)?;
+            let list = link.parent().ok_or(EditError::InvalidXml)?;
+            let used = list
+                .children()
+                .filter(|other| *other != link)
+                .flat_map(|other| other.children())
+                .filter(|node| is_path(*node))
+                .filter_map(|node| node.text())
+                .collect();
+            (list, used)
+        };
         let standard = list
             .parent()
             .filter(|node| node.has_tag_name((READABLE, "StandardAttribute")))
@@ -231,18 +236,28 @@ pub(super) fn validate_dependents(
     let owner_path = xml_path(owner)?;
     for field in previous.iter().filter(|field| !current.contains(field)) {
         let value = format!("{owner_path}.StandardAttribute.{field}");
-        if updated
-            .descendants()
-            .filter(|node| is_path(*node))
-            .any(|node| {
-                node.text()
-                    .is_some_and(|text| crate::project::metadata_rename::same_name(text, &value))
-            })
-        {
+        let property = updated.descendants().find_map(|node| {
+            let (property, source) = if is_path(node) {
+                ("ChoiceParameterLinks", node)
+            } else if super::type_links::is_link(node) {
+                (
+                    "LinkByType",
+                    node.children()
+                        .find(|child| child.has_tag_name((READABLE, "DataPath")))?,
+                )
+            } else {
+                return None;
+            };
+            source
+                .text()
+                .is_some_and(|text| crate::project::metadata_rename::same_name(text, &value))
+                .then_some(property)
+        });
+        if let Some(property) = property {
             return Err(EditError::IncompatibleProperty(
                 crate::project::metadata_model::PropertyKey {
                     namespace: Some(MD.to_owned()),
-                    name: "ChoiceParameterLinks".to_owned(),
+                    name: property.to_owned(),
                 },
             ));
         }
