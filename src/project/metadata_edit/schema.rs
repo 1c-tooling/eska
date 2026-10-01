@@ -188,6 +188,9 @@ pub(super) fn scalar(
     modern: bool,
 ) -> Option<ScalarSchema> {
     let model_type = model_type?;
+    if super::lengths::inherited_from_numerator(node) {
+        return None;
+    }
     if model_type == "Value" && super::values::number_bound(node) {
         return Some(ScalarSchema::Decimal { nullable: true });
     }

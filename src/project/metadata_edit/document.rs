@@ -99,6 +99,8 @@ impl EditingDocument<'_> {
                     key: step.key,
                     reason: if schema::protected(node.tag_name().name()) {
                         "structural_operation"
+                    } else if super::lengths::inherited_from_numerator(node) {
+                        "numerator_inherited"
                     } else {
                         "unsupported_domain_or_shape"
                     },

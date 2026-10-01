@@ -25,6 +25,13 @@ pub(super) fn range(node: Node<'_, '_>) -> Option<(i64, i64)> {
                 _ => return None,
             }
         }
+        ("Document" | "Task" | "BusinessProcess", "NumberLength") => {
+            match text(properties, "NumberType")? {
+                "String" => 50,
+                "Number" => 38,
+                _ => return None,
+            }
+        }
         ("ChartOfAccounts" | "ChartOfCharacteristicTypes" | "ExchangePlan", "CodeLength") => 50,
         ("ChartOfAccounts", "DescriptionLength") => 628,
         ("ExchangePlan", "DescriptionLength") => 250,
@@ -35,6 +42,26 @@ pub(super) fn range(node: Node<'_, '_>) -> Option<(i64, i64)> {
         _ => return None,
     };
     Some((0, max))
+}
+
+/// Designer disables document numbering parameters while a shared numerator is selected.
+pub(super) fn inherited_from_numerator(node: Node<'_, '_>) -> bool {
+    node.tag_name().namespace() == Some(MD)
+        && matches!(
+            node.tag_name().name(),
+            "NumberLength"
+                | "NumberType"
+                | "NumberAllowedLength"
+                | "NumberPeriodicity"
+                | "CheckUnique"
+        )
+        && node.parent().is_some_and(|properties| {
+            properties.has_tag_name((MD, "Properties"))
+                && properties
+                    .parent()
+                    .is_some_and(|owner| owner.has_tag_name((MD, "Document")))
+                && text(properties, "Numerator").is_some_and(|value| !value.trim().is_empty())
+        })
 }
 
 /// A qualifier change never disables another existing property or rewrites its value implicitly.
@@ -56,6 +83,8 @@ pub(super) fn validate_dependents(
         changed,
         "CodeLength"
             | "CodeType"
+            | "NumberLength"
+            | "NumberType"
             | "DescriptionLength"
             | "Autonumbering"
             | "CheckUnique"
@@ -71,6 +100,11 @@ pub(super) fn validate_dependents(
         .ok_or(EditError::InvalidXml)?;
     let owner = properties.parent().ok_or(EditError::InvalidXml)?;
     let class = owner.tag_name().name();
+    if matches!(changed, "Autonumbering" | "CheckUnique" | "AutoOrderByCode")
+        && !enabled(properties, changed)
+    {
+        return Ok(());
+    }
     if !matches!(
         class,
         "Catalog"
@@ -79,11 +113,15 @@ pub(super) fn validate_dependents(
             | "ChartOfAccounts"
             | "ExchangePlan"
             | "Task"
+            | "Document"
+            | "BusinessProcess"
     ) {
         return Ok(());
     }
     let length_name = if changed == "DescriptionLength" {
         "DescriptionLength"
+    } else if matches!(class, "Document" | "Task" | "BusinessProcess") {
+        "NumberLength"
     } else {
         "CodeLength"
     };
@@ -100,35 +138,7 @@ pub(super) fn validate_dependents(
         return Err(incompatible(length_name));
     }
     if value == 0 {
-        let field = if length_name == "CodeLength" {
-            "Code"
-        } else {
-            "Description"
-        };
-        if class == "Catalog" && field == "Code" {
-            for flag in ["Autonumbering", "CheckUnique"] {
-                if enabled(properties, flag) {
-                    return Err(incompatible(if changed == flag {
-                        length_name
-                    } else {
-                        flag
-                    }));
-                }
-            }
-        }
-        if let Some(input) = child(properties, "InputByString") {
-            let name = text(properties, "Name").ok_or(EditError::UnsupportedValue)?;
-            let reference = format!("{class}.{name}.StandardAttribute.{field}");
-            if input.children().filter(Node::is_element).any(|node| {
-                node.text()
-                    .is_some_and(|value| value.to_lowercase() == reference.to_lowercase())
-            }) {
-                return Err(incompatible("InputByString"));
-            }
-        } else if class != "ExchangePlan" {
-            // Designer supplies Code/Description defaults when the list element is absent.
-            return Err(incompatible("InputByString"));
-        }
+        validate_disabled_field(properties, class, changed, length_name)?;
     }
     if class == "ChartOfAccounts"
         && length_name == "CodeLength"
@@ -138,6 +148,45 @@ pub(super) fn validate_dependents(
             .is_none_or(|order| order < value)
     {
         return Err(incompatible("OrderLength"));
+    }
+    Ok(())
+}
+
+/// A disabled standard field cannot remain an autocomplete key or an enabled numbering source.
+fn validate_disabled_field(
+    properties: Node<'_, '_>,
+    class: &str,
+    changed: &str,
+    length_name: &str,
+) -> Result<(), EditError> {
+    let field = match length_name {
+        "CodeLength" => "Code",
+        "NumberLength" => "Number",
+        _ => "Description",
+    };
+    if (class == "Catalog" && field == "Code") || (class == "Document" && field == "Number") {
+        for flag in ["Autonumbering", "CheckUnique"] {
+            if enabled(properties, flag) {
+                return Err(incompatible(if changed == flag {
+                    length_name
+                } else {
+                    flag
+                }));
+            }
+        }
+    }
+    if let Some(input) = child(properties, "InputByString") {
+        let name = text(properties, "Name").ok_or(EditError::UnsupportedValue)?;
+        let reference = format!("{class}.{name}.StandardAttribute.{field}").to_lowercase();
+        if input.children().filter(Node::is_element).any(|node| {
+            node.text()
+                .is_some_and(|value| value.to_lowercase() == reference)
+        }) {
+            return Err(incompatible("InputByString"));
+        }
+    } else if class != "ExchangePlan" {
+        // Designer supplies standard-field defaults when the list element is absent.
+        return Err(incompatible("InputByString"));
     }
     Ok(())
 }

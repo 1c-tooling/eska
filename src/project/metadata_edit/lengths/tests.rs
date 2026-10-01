@@ -28,6 +28,19 @@ fn owner_ranges_use_type_and_class() {
             .unwrap();
         assert_eq!(range(node), Some((0, max)), "{class}.{property}");
     }
+    for class in ["Document", "Task", "BusinessProcess"] {
+        for (kind, max) in [("String", 50), ("Number", 38)] {
+            let xml = format!(
+                "<{class} xmlns='{MD}'><Properties><NumberType>{kind}</NumberType><NumberLength>9</NumberLength></Properties></{class}>"
+            );
+            let document = Document::parse(&xml).unwrap();
+            let node = document
+                .descendants()
+                .find(|node| node.has_tag_name((MD, "NumberLength")))
+                .unwrap();
+            assert_eq!(range(node), Some((0, max)), "{class}.{kind}");
+        }
+    }
 }
 
 /// The edited tag can precede its dependency and change byte length; positions bind to its ancestor.
@@ -40,6 +53,27 @@ fn incompatible_siblings_are_reported_without_implicit_corrections() {
             "<CodeType>Number</CodeType><CodeLength>50</CodeLength>",
             "CodeType",
             "CodeLength",
+        ),
+        (
+            "Document",
+            "<NumberType>String</NumberType><NumberLength>50</NumberLength>",
+            "<NumberType>Number</NumberType><NumberLength>50</NumberLength>",
+            "NumberType",
+            "NumberLength",
+        ),
+        (
+            "Document",
+            "<NumberLength>9</NumberLength><NumberType>String</NumberType><Autonumbering>true</Autonumbering>",
+            "<NumberLength>0</NumberLength><NumberType>String</NumberType><Autonumbering>true</Autonumbering>",
+            "NumberLength",
+            "Autonumbering",
+        ),
+        (
+            "Task",
+            "<NumberLength>9</NumberLength><NumberType>String</NumberType><InputByString><Field>Task.Owner.StandardAttribute.Number</Field></InputByString>",
+            "<NumberLength>0</NumberLength><NumberType>String</NumberType><InputByString><Field>Task.Owner.StandardAttribute.Number</Field></InputByString>",
+            "NumberLength",
+            "InputByString",
         ),
         (
             "Catalog",
@@ -144,5 +178,74 @@ fn disabled_lengths_require_an_explicit_autocomplete_list() {
             .find(|node| node.has_tag_name((MD, "DescriptionLength")))
             .unwrap();
         assert_eq!(validate_dependents(node, &new).is_ok(), !list.is_empty());
+    }
+}
+
+/// A nested lookalike or an unbound namespace never inherits a document's numbering restrictions.
+#[test]
+fn numerator_inheritance_requires_the_document_property_context() {
+    for (class, numerator, expected) in [
+        ("Document", "DocumentNumerator.Shared", true),
+        ("Document", "", false),
+        ("Document", "  ", false),
+        ("DocumentNumerator", "DocumentNumerator.Shared", false),
+        ("Task", "DocumentNumerator.Shared", false),
+    ] {
+        let xml = format!(
+            "<{class} xmlns='{MD}'><Properties><Numerator>{numerator}</Numerator><NumberLength>9</NumberLength><NumberType>String</NumberType><NumberAllowedLength>Variable</NumberAllowedLength><NumberPeriodicity>Year</NumberPeriodicity><CheckUnique>true</CheckUnique><Autonumbering>true</Autonumbering><Type><NumberLength>9</NumberLength></Type><NumberLength xmlns='other'>9</NumberLength></Properties></{class}>"
+        );
+        let document = Document::parse(&xml).unwrap();
+        let properties = document.root_element().first_element_child().unwrap();
+        for name in [
+            "NumberLength",
+            "NumberType",
+            "NumberAllowedLength",
+            "NumberPeriodicity",
+            "CheckUnique",
+        ] {
+            assert_eq!(
+                inherited_from_numerator(child(properties, name).unwrap()),
+                expected,
+                "{class}.{name}"
+            );
+        }
+        assert!(!inherited_from_numerator(
+            child(properties, "Autonumbering").unwrap()
+        ));
+        assert!(!inherited_from_numerator(
+            child(properties, "Type")
+                .unwrap()
+                .first_element_child()
+                .unwrap()
+        ));
+        assert!(!inherited_from_numerator(
+            properties.last_element_child().unwrap()
+        ));
+    }
+}
+
+/// Clear one dependent flag even if another inherited XML inconsistency still needs correction.
+#[test]
+fn disabling_a_flag_does_not_require_fixing_unrelated_dependencies_first() {
+    for (class, length, kind) in [
+        ("Catalog", "CodeLength", "CodeType"),
+        ("Document", "NumberLength", "NumberType"),
+    ] {
+        for flag in ["Autonumbering", "CheckUnique"] {
+            let before = format!(
+                "<{class} xmlns='{MD}'><Properties><{kind}>String</{kind}><{length}>0</{length}><Autonumbering>true</Autonumbering><CheckUnique>true</CheckUnique></Properties></{class}>"
+            );
+            let after = before.replace(
+                &format!("<{flag}>true</{flag}>"),
+                &format!("<{flag}>false</{flag}>"),
+            );
+            let old = Document::parse(&before).unwrap();
+            let new = Document::parse(&after).unwrap();
+            let node = old
+                .descendants()
+                .find(|node| node.has_tag_name((MD, flag)))
+                .unwrap();
+            validate_dependents(node, &new).unwrap();
+        }
     }
 }
