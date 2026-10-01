@@ -145,9 +145,11 @@ impl ProjectSession {
         }
         self.validate_property_reference(id, path, change)?;
         self.validate_property_value(id, path, change)?;
-        Ok(self
+        let plan = self
             .editing_document(id, &location, &input)?
-            .update(expected, path, change)?)
+            .update(expected, path, change)?;
+        self.validate_predefined_lengths(id, &plan)?;
+        Ok(plan)
     }
 
     /// Read editing domains and the exact source fingerprint without changing XML.
@@ -345,6 +347,7 @@ impl ProjectSession {
         if !self.can_edit(id, &location.path)? {
             return Err(EditError::ReadOnly.into());
         }
+        self.validate_predefined_lengths(id, plan)?;
         if self.generation == u64::MAX {
             return Err(WorkspaceError::GenerationExhausted.into());
         }
@@ -373,5 +376,32 @@ impl ProjectSession {
         self.property_reference(&parts)
             .map_err(|error| PropertyEditError::Committed(Box::new(error)))?;
         Ok(report)
+    }
+
+    /// Read the current payload rather than a watcher cache before both ordinary writes and undo.
+    fn validate_predefined_lengths(
+        &self,
+        id: &ObjectId,
+        plan: &EditPlan,
+    ) -> Result<(), PropertyEditError> {
+        use crate::project::metadata_edit::lengths::PredefinedLengths;
+        if plan.is_empty() {
+            return Ok(());
+        }
+        let Some(constraints) = PredefinedLengths::changed(plan.original(), plan.output())? else {
+            return Ok(());
+        };
+        if let Some(path) = self
+            .source
+            .predefined_path(id)
+            .map_err(WorkspaceError::Source)?
+            && let Some(input) = self
+                .source
+                .read_xml(&path)
+                .map_err(WorkspaceError::Source)?
+        {
+            constraints.validate(&input)?;
+        }
+        Ok(())
     }
 }

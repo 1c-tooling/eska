@@ -286,7 +286,7 @@ fn metadata_integer(node: Node<'_, '_>, name: &str) -> Option<(i64, i64)> {
         (Some(MD), "ScheduledJob", "RestartCountOnFailure" | "RestartIntervalOnFailure") => {
             Some((0, 1_000_000))
         }
-        _ => None,
+        _ => super::lengths::range(node),
     }
 }
 

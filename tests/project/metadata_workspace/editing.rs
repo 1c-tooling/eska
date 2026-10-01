@@ -1163,6 +1163,7 @@ fn failed_publication_preserves_source_and_removes_its_temporary_file() {
 }
 
 mod integers;
+mod lengths;
 mod standard;
 
 /// Disabling Global exposes the module's name as a property and must reject reserved name collisions.

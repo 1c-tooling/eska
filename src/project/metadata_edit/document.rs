@@ -333,6 +333,7 @@ impl EditingDocument<'_> {
 fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<(), EditError> {
     let candidate = roxmltree::Document::parse(output).map_err(|_| EditError::InvalidXml)?;
     super::standard::validate_dependents(node, &candidate)?;
+    super::lengths::validate_dependents(node, &candidate)?;
     validate_common_module_global(node, &candidate)?;
     if let Some(description) = node
         .ancestors()

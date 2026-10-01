@@ -1,6 +1,7 @@
 //! Validated edits of existing Designer properties, without serializing the document.
 
 mod document;
+pub(crate) mod lengths;
 mod patch;
 pub(crate) mod references;
 mod schema;
@@ -63,6 +64,11 @@ pub fn snapshot(input: &str) -> String {
 }
 
 impl EditPlan {
+    /// Dependency checks compare the planned source, including during history replay.
+    pub(crate) fn original(&self) -> &str {
+        &self.original
+    }
+
     /// Inspect the validated output without publishing it.
     #[must_use]
     pub fn output(&self) -> &str {
