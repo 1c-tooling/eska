@@ -269,10 +269,25 @@ pub(super) fn scalar(
             (Some(CORE), Some("StringQualifiers" | "BinaryDataQualifiers"), "Length") => {
                 *min = 0;
             }
+            (Some(MD), Some("Properties"), name) => {
+                (*min, *max) = metadata_integer(node, name)?;
+            }
             _ => return None,
         }
     }
     Some(result)
+}
+
+/// Installed EDT editors constrain these fields independently of other metadata properties.
+fn metadata_integer(node: Node<'_, '_>, name: &str) -> Option<(i64, i64)> {
+    let owner = node.parent()?.parent()?;
+    match (owner.tag_name().namespace(), owner.tag_name().name(), name) {
+        (Some(MD), "TabularSection", "LineNumberLength") => Some((5, 9)),
+        (Some(MD), "ScheduledJob", "RestartCountOnFailure" | "RestartIntervalOnFailure") => {
+            Some((0, 1_000_000))
+        }
+        _ => None,
+    }
 }
 
 /// EDT's `ReferenceMdFormContentProvider` offers forms only for one concrete metadata reference type.
