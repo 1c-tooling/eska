@@ -63,6 +63,7 @@ fn comment(project: &mut ProjectSession, id: &ObjectId, value: &str) {
         .update_property(
             id,
             &state.properties.snapshot,
+            None,
             &field.path,
             &PropertyChange::Text {
                 value: value.into(),
@@ -75,7 +76,7 @@ fn comment(project: &mut ProjectSession, id: &ObjectId, value: &str) {
 fn replay(project: &mut ProjectSession, id: &ObjectId, undo: bool) -> ObjectId {
     let state = project.property_editing(id).unwrap();
     project
-        .undo_property(id, &state.properties.snapshot, undo)
+        .undo_property(id, &state.properties.snapshot, None, undo)
         .unwrap()
         .object_id
 }
@@ -155,7 +156,7 @@ fn rename_history_rekeys_descendants_and_refuses_new_sources() {
     assert_eq!(replay(project, &next_child, true), next_child);
     let state = project.property_editing(&next).unwrap();
     assert!(matches!(
-        project.undo_property(&next, &state.properties.snapshot, true),
+        project.undo_property(&next, &state.properties.snapshot, None, true),
         Err(PropertyEditError::Edit(EditError::Conflict))
     ));
     replay(project, &next_child, false);
@@ -163,7 +164,7 @@ fn rename_history_rekeys_descendants_and_refuses_new_sources() {
     fs::write(&added, "A = Catalogs.Новый;").unwrap();
     let before = bytes(&source);
     assert!(matches!(
-        project.undo_property(&next, &state.properties.snapshot, true),
+        project.undo_property(&next, &state.properties.snapshot, None, true),
         Err(PropertyEditError::Edit(EditError::Conflict))
     ));
     assert_eq!(bytes(&source), before);

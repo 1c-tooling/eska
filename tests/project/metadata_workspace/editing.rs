@@ -87,6 +87,7 @@ fn role_selectors_preserve_list_membership_and_exact_undo() {
                 .update_property(
                     &id,
                     &editing.properties.snapshot,
+                    None,
                     &role.path,
                     &PropertyChange::Text {
                         value: invalid.into()
@@ -100,15 +101,15 @@ fn role_selectors_preserve_list_membership_and_exact_undo() {
         value: "Role.Three".into(),
     };
     let plan = project
-        .preview_property(&id, &editing.properties.snapshot, &role.path, &change)
+        .preview_property(&id, &editing.properties.snapshot, None, &role.path, &change)
         .unwrap();
     assert_eq!(plan.output(), input.replace(">Role.One<", ">Role.Three<"));
     project
-        .update_property(&id, &editing.properties.snapshot, &role.path, &change)
+        .update_property(&id, &editing.properties.snapshot, None, &role.path, &change)
         .unwrap();
     let state = project.property_editing(&id).unwrap();
     project
-        .undo_property(&id, &state.properties.snapshot, true)
+        .undo_property(&id, &state.properties.snapshot, None, true)
         .unwrap();
     assert_eq!(fs::read_to_string(source.join(&path)).unwrap(), input);
 }
@@ -129,6 +130,7 @@ fn form_selectors_validate_nullable_values_and_owner_scope() {
         .update_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &form.path,
             &PropertyChange::Text {
                 value: "CommonForm.Report".into(),
@@ -140,6 +142,7 @@ fn form_selectors_validate_nullable_values_and_owner_scope() {
         .update_property(
             &id,
             &state.properties.snapshot,
+            None,
             &form.path,
             &PropertyChange::Text {
                 value: String::new(),
@@ -169,6 +172,7 @@ fn form_selectors_validate_nullable_values_and_owner_scope() {
             .update_property(
                 &catalog,
                 &state.properties.snapshot,
+                None,
                 &form.path,
                 &PropertyChange::Text {
                     value: "Catalog.Other.Form.Object".into()
@@ -180,6 +184,7 @@ fn form_selectors_validate_nullable_values_and_owner_scope() {
         .update_property(
             &catalog,
             &state.properties.snapshot,
+            None,
             &form.path,
             &PropertyChange::Text {
                 value: "Catalog.Goods.Form.Object".into(),
@@ -248,6 +253,7 @@ fn choice_forms_follow_the_field_type_without_offering_unrelated_forms() {
             .update_property(
                 &id,
                 &editing.properties.snapshot,
+                None,
                 &field.path,
                 &PropertyChange::Text {
                     value: "Catalog.Goods.Form.Object".into()
@@ -259,6 +265,7 @@ fn choice_forms_follow_the_field_type_without_offering_unrelated_forms() {
         .update_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &field.path,
             &PropertyChange::Text {
                 value: choices[0].value.clone(),
@@ -336,6 +343,7 @@ fn external_objects_choose_their_own_default_forms() {
             .update_property(
                 &id,
                 &editing.properties.snapshot,
+                None,
                 &field.path,
                 &PropertyChange::Text {
                     value: choices[0].value.clone(),
@@ -377,6 +385,7 @@ fn numeric_bounds_edit_existing_nil_elements_and_undo_the_exact_source() {
                 .update_property(
                     &id,
                     &editing.properties.snapshot,
+                    None,
                     &field.path,
                     &PropertyChange::Text {
                         value: value.into()
@@ -390,6 +399,7 @@ fn numeric_bounds_edit_existing_nil_elements_and_undo_the_exact_source() {
         .update_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &field.path,
             &PropertyChange::Text {
                 value: "12.5".into(),
@@ -401,7 +411,7 @@ fn numeric_bounds_edit_existing_nil_elements_and_undo_the_exact_source() {
     assert!(changed.contains("name='Code'"));
     let editing = project.property_editing(&id).unwrap();
     project
-        .undo_property(&id, &editing.properties.snapshot, true)
+        .undo_property(&id, &editing.properties.snapshot, None, true)
         .unwrap();
     assert_eq!(fs::read_to_string(&file).unwrap(), original);
 }
@@ -475,6 +485,7 @@ fn filling_values_enforce_primitive_types_and_preserve_exact_undo() {
                 .update_property(
                     &id,
                     &editing.properties.snapshot,
+                    None,
                     &field.path,
                     &PropertyChange::Value {
                         key: key.clone(),
@@ -488,6 +499,7 @@ fn filling_values_enforce_primitive_types_and_preserve_exact_undo() {
                 .update_property(
                     &id,
                     &editing.properties.snapshot,
+                    None,
                     &field.path,
                     &PropertyChange::Text {
                         value: valid.into()
@@ -500,6 +512,7 @@ fn filling_values_enforce_primitive_types_and_preserve_exact_undo() {
             .update_property(
                 &id,
                 &editing.properties.snapshot,
+                None,
                 &field.path,
                 &PropertyChange::Value {
                     key,
@@ -518,7 +531,7 @@ fn filling_values_enforce_primitive_types_and_preserve_exact_undo() {
         );
         let state = project.property_editing(&id).unwrap();
         project
-            .undo_property(&id, &state.properties.snapshot, true)
+            .undo_property(&id, &state.properties.snapshot, None, true)
             .unwrap();
         assert_eq!(fs::read_to_string(&file).unwrap(), input);
     }
@@ -562,6 +575,7 @@ fn filling_reference_values_reject_invented_targets() {
                 .update_property(
                     &id,
                     &editing.properties.snapshot,
+                    None,
                     &field.path,
                     &PropertyChange::Value {
                         key: Some(key.clone()),
@@ -576,6 +590,7 @@ fn filling_reference_values_reject_invented_targets() {
         .update_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &field.path,
             &PropertyChange::Value {
                 key: Some(key),
@@ -593,6 +608,7 @@ fn filling_reference_values_reject_invented_targets() {
         .update_property(
             &id,
             &state.properties.snapshot,
+            None,
             &field.path,
             &PropertyChange::Value {
                 key: None,
@@ -676,6 +692,7 @@ fn filling_reference_choices_include_enum_and_unique_predefined_records() {
                 .update_property(
                     &id,
                     &state.properties.snapshot,
+                    None,
                     &field.path,
                     &PropertyChange::Value {
                         key: Some(key.clone()),
@@ -706,6 +723,7 @@ fn type_changes_require_incompatible_values_to_be_cleared_first() {
         .update_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &default_value.path,
             &PropertyChange::Value {
                 key: Some(PropertyKey {
@@ -746,7 +764,7 @@ fn type_changes_require_incompatible_values_to_be_cleared_first() {
         (&length.path, &PropertyChange::Text { value: "3".into() }),
     ] {
         assert!(
-            matches!(project.update_property(&id, &editing.properties.snapshot, path, change), Err(PropertyEditError::Edit(EditError::IncompatibleProperty(property))) if property.name == "FillValue")
+            matches!(project.update_property(&id, &editing.properties.snapshot, None, path, change), Err(PropertyEditError::Edit(EditError::IncompatibleProperty(property))) if property.name == "FillValue")
         );
         assert_eq!(fs::read_to_string(&file).unwrap(), input);
     }
@@ -754,6 +772,7 @@ fn type_changes_require_incompatible_values_to_be_cleared_first() {
         .update_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &default_value.path,
             &PropertyChange::Value {
                 key: None,
@@ -766,6 +785,7 @@ fn type_changes_require_incompatible_values_to_be_cleared_first() {
         .update_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &type_field.path,
             &new_type,
         )
@@ -809,7 +829,7 @@ fn type_changes_cannot_retarget_an_existing_choice_form() {
         },
     };
     assert!(
-        matches!(project.preview_property(&id, &editing.properties.snapshot, &field.path, &change), Err(PropertyEditError::Edit(EditError::IncompatibleProperty(property))) if property.name == "ChoiceForm")
+        matches!(project.preview_property(&id, &editing.properties.snapshot, None, &field.path, &change), Err(PropertyEditError::Edit(EditError::IncompatibleProperty(property))) if property.name == "ChoiceForm")
     );
     assert_eq!(fs::read_to_string(&file).unwrap(), input);
     let choice = editing
@@ -822,6 +842,7 @@ fn type_changes_cannot_retarget_an_existing_choice_form() {
         .update_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &choice.path,
             &PropertyChange::Text {
                 value: String::new(),
@@ -830,7 +851,13 @@ fn type_changes_cannot_retarget_an_existing_choice_form() {
         .unwrap();
     let editing = project.property_editing(&id).unwrap();
     project
-        .update_property(&id, &editing.properties.snapshot, &field.path, &change)
+        .update_property(
+            &id,
+            &editing.properties.snapshot,
+            None,
+            &field.path,
+            &change,
+        )
         .unwrap();
 }
 
@@ -901,6 +928,7 @@ fn existing_values_edit_minimal_bytes_and_undo_exact_lexical_source_in_all_proje
             .update_property(
                 &id,
                 &editing.properties.snapshot,
+                None,
                 &field.path,
                 &PropertyChange::Text {
                     value: "Новый <текст>".into(),
@@ -921,6 +949,7 @@ fn existing_values_edit_minimal_bytes_and_undo_exact_lexical_source_in_all_proje
             .update_property(
                 &id,
                 &editing.properties.snapshot,
+                None,
                 &field.path,
                 &PropertyChange::Text {
                     value: "Новый <текст>".into(),
@@ -929,7 +958,7 @@ fn existing_values_edit_minimal_bytes_and_undo_exact_lexical_source_in_all_proje
             .unwrap();
         assert_eq!(generation, project.generation());
         project
-            .undo_property(&id, &editing.properties.snapshot, true)
+            .undo_property(&id, &editing.properties.snapshot, None, true)
             .unwrap();
         assert_eq!(
             fs::read(directory.0.join("src").join(&path)).unwrap(),
@@ -938,7 +967,7 @@ fn existing_values_edit_minimal_bytes_and_undo_exact_lexical_source_in_all_proje
         let editing = project.property_editing(&id).unwrap();
         assert!(editing.redo.is_some());
         project
-            .undo_property(&id, &editing.properties.snapshot, false)
+            .undo_property(&id, &editing.properties.snapshot, None, false)
             .unwrap();
         assert_eq!(
             fs::read(directory.0.join("src").join(&path)).unwrap(),
@@ -955,6 +984,7 @@ fn existing_values_edit_minimal_bytes_and_undo_exact_lexical_source_in_all_proje
             .update_property(
                 &id,
                 &editing.properties.snapshot,
+                None,
                 &synonym.path,
                 &PropertyChange::Text {
                     value: "После".into(),
@@ -987,6 +1017,7 @@ fn external_changes_and_missing_support_rules_reject_writes_without_losing_sourc
         project.update_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &field.path,
             &PropertyChange::Text {
                 value: "mine".into()
@@ -1001,6 +1032,7 @@ fn external_changes_and_missing_support_rules_reject_writes_without_losing_sourc
         project.update_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &field.path,
             &PropertyChange::Text {
                 value: "mine".into()
@@ -1018,9 +1050,19 @@ fn external_changes_and_missing_support_rules_reject_writes_without_losing_sourc
     }));
 }
 
+/// Construct a semantic type proposal without encoding XML prefixes in the test.
+fn data_type(namespace: &str, name: &str) -> PropertyChange {
+    PropertyChange::DataType {
+        key: eska::project::metadata_model::PropertyKey {
+            namespace: Some(namespace.into()),
+            name: name.into(),
+        },
+    }
+}
+
 #[test]
 fn existing_attribute_type_uses_declared_choices_and_validates_qualifier_dependencies() {
-    use eska::project::{metadata_edit::ScalarSchema, metadata_model::PropertyKey};
+    use eska::project::metadata_edit::ScalarSchema;
     let (directory, _, _, root_path) = editable_fixture("configuration");
     let source = directory.0.join("src");
     let root = source.join(root_path);
@@ -1052,26 +1094,34 @@ fn existing_attribute_type_uses_declared_choices_and_validates_qualifier_depende
             .iter()
             .any(|choice| choice.key.name == "CatalogRef.Items")
     );
-    let reference = PropertyChange::DataType {
-        key: PropertyKey {
-            namespace: Some("http://v8.1c.ru/8.1/data/enterprise/current-config".into()),
-            name: "CatalogRef.Items".into(),
-        },
-    };
+    let reference = data_type(
+        "http://v8.1c.ru/8.1/data/enterprise/current-config",
+        "CatalogRef.Items",
+    );
     assert!(
         project
-            .preview_property(&id, &editing.properties.snapshot, &field.path, &reference)
+            .preview_property(
+                &id,
+                &editing.properties.snapshot,
+                None,
+                &field.path,
+                &reference
+            )
             .is_ok()
     );
-    let missing = PropertyChange::DataType {
-        key: PropertyKey {
-            namespace: Some("http://v8.1c.ru/8.1/data/enterprise/current-config".into()),
-            name: "CatalogRef.Missing".into(),
-        },
-    };
+    let missing = data_type(
+        "http://v8.1c.ru/8.1/data/enterprise/current-config",
+        "CatalogRef.Missing",
+    );
     assert!(
         project
-            .preview_property(&id, &editing.properties.snapshot, &field.path, &missing)
+            .preview_property(
+                &id,
+                &editing.properties.snapshot,
+                None,
+                &field.path,
+                &missing
+            )
             .is_err()
     );
     let scale = editing
@@ -1084,22 +1134,21 @@ fn existing_attribute_type_uses_declared_choices_and_validates_qualifier_depende
         project.preview_property(
             &id,
             &editing.properties.snapshot,
+            None,
             &scale.path,
             &PropertyChange::Text { value: "13".into() }
         ),
         Err(PropertyEditError::Edit(EditError::InvalidValue))
     ));
-    let change = PropertyChange::DataType {
-        key: PropertyKey {
-            namespace: Some("http://www.w3.org/2001/XMLSchema".into()),
-            name: "string".into(),
-        },
-    };
+    let change = data_type("http://www.w3.org/2001/XMLSchema", "string");
     project
-        .update_property(&id, &editing.properties.snapshot, &field.path, &change)
-        .unwrap();
-    project
-        .changed_paths(&[PathBuf::from("Catalogs/Items.xml")])
+        .update_property(
+            &id,
+            &editing.properties.snapshot,
+            None,
+            &field.path,
+            &change,
+        )
         .unwrap();
     let current = project.property_editing(&id).unwrap();
     assert!(
@@ -1108,7 +1157,7 @@ fn existing_attribute_type_uses_declared_choices_and_validates_qualifier_depende
             .contains("<v:StringQualifiers>")
     );
     project
-        .undo_property(&id, &current.properties.snapshot, true)
+        .undo_property(&id, &current.properties.snapshot, None, true)
         .unwrap();
     assert_eq!(fs::read_to_string(&path).unwrap(), xml);
 }
@@ -1130,6 +1179,7 @@ fn failed_publication_preserves_source_and_removes_its_temporary_file() {
         .preview_property(
             &id,
             &state.properties.snapshot,
+            None,
             &field.path,
             &PropertyChange::Text {
                 value: "new".into(),
@@ -1143,12 +1193,19 @@ fn failed_publication_preserves_source_and_removes_its_temporary_file() {
     let backup = source.join("original.xml");
     fs::rename(&target, &backup).unwrap();
     fs::create_dir(&target).unwrap();
-    assert!(plan.publish(&source, &path).is_err());
+    assert!(
+        plan.files()
+            .next()
+            .unwrap()
+            .plan
+            .publish(&source, &path)
+            .is_err()
+    );
     fs::remove_dir(&target).unwrap();
     fs::rename(backup, &target).unwrap();
     fs::set_permissions(&target, fs::Permissions::from_mode(0o444)).unwrap();
     assert!(matches!(
-        plan.publish(&source, &path),
+        plan.files().next().unwrap().plan.publish(&source, &path),
         Err(EditError::ReadOnly)
     ));
     fs::set_permissions(&target, fs::Permissions::from_mode(0o644)).unwrap();
@@ -1203,6 +1260,7 @@ fn common_module_global_flag_obeys_the_same_name_domain_as_rename() {
         let result = project.update_property(
             &id,
             &state.properties.snapshot,
+            None,
             &field.path,
             &PropertyChange::Text {
                 value: "false".into(),

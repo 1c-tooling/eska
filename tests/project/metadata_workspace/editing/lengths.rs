@@ -43,10 +43,10 @@ fn owner_lengths_revalidate_predefined_data_before_apply_and_undo() {
         };
         for result in [
             project
-                .preview_property(&id, &state.properties.snapshot, &field.path, &change)
+                .preview_property(&id, &state.properties.snapshot, None, &field.path, &change)
                 .map(|_| ()),
             project
-                .update_property(&id, &state.properties.snapshot, &field.path, &change)
+                .update_property(&id, &state.properties.snapshot, None, &field.path, &change)
                 .map(|_| ()),
         ] {
             assert!(
@@ -63,19 +63,19 @@ fn owner_lengths_revalidate_predefined_data_before_apply_and_undo() {
         .unwrap();
     let change = PropertyChange::Text { value: "4".into() };
     project
-        .preview_property(&id, &state.properties.snapshot, &field.path, &change)
+        .preview_property(&id, &state.properties.snapshot, None, &field.path, &change)
         .unwrap();
     fs::write(&predefined, payload.replace("AA12", "AA123")).unwrap();
     assert!(
         project
-            .update_property(&id, &state.properties.snapshot, &field.path, &change)
+            .update_property(&id, &state.properties.snapshot, None, &field.path, &change)
             .is_err()
     );
     assert_eq!(fs::read_to_string(&file).unwrap(), original);
     fs::write(&predefined, &payload).unwrap();
     let change = PropertyChange::Text { value: "12".into() };
     project
-        .update_property(&id, &state.properties.snapshot, &field.path, &change)
+        .update_property(&id, &state.properties.snapshot, None, &field.path, &change)
         .unwrap();
     let saved = fs::read_to_string(&file).unwrap();
     assert_eq!(
@@ -86,13 +86,13 @@ fn owner_lengths_revalidate_predefined_data_before_apply_and_undo() {
     fs::write(&predefined, payload.replace("AA12", "ABCDEFGHIJ")).unwrap();
     assert!(
         project
-            .undo_property(&id, &state.properties.snapshot, true)
+            .undo_property(&id, &state.properties.snapshot, None, true)
             .is_err()
     );
     assert_eq!(fs::read_to_string(&file).unwrap(), saved);
     fs::write(&predefined, &payload).unwrap();
     project
-        .undo_property(&id, &state.properties.snapshot, true)
+        .undo_property(&id, &state.properties.snapshot, None, true)
         .unwrap();
     assert_eq!(fs::read_to_string(&file).unwrap(), original);
 }

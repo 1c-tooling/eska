@@ -332,7 +332,7 @@ impl EditingDocument<'_> {
 }
 
 /// Revalidate sibling constraints in the candidate, keeping byte positions relative to unchanged ancestors.
-fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<(), EditError> {
+pub(super) fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<(), EditError> {
     let candidate = roxmltree::Document::parse(output).map_err(|_| EditError::InvalidXml)?;
     super::standard::validate_dependents(node, &candidate)?;
     super::lengths::validate_dependents(node, &candidate)?;

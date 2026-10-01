@@ -1,6 +1,7 @@
 //! A rename journal owns synced staged bytes; publication and recovery use exact-source comparisons.
 
 mod io;
+mod properties;
 mod recovery;
 #[cfg(test)]
 mod tests;
@@ -172,8 +173,18 @@ impl Guard {
 
     /// A normal write failure rolls back already published members; failed restoration retains the journal.
     fn commit(journal: &Journal, directory: &Path) -> Result<(), EditError> {
-        let result =
-            Self::publish_steps(journal, directory).and_then(|()| finish(directory, b"committed"));
+        Self::commit_checked(journal, directory, || Ok(()))
+    }
+
+    /// A changed dependency graph rolls back the same way as a failed source write.
+    fn commit_checked(
+        journal: &Journal,
+        directory: &Path,
+        verify: impl FnOnce() -> Result<(), EditError>,
+    ) -> Result<(), EditError> {
+        let result = Self::publish_steps(journal, directory)
+            .and_then(|()| verify())
+            .and_then(|()| finish(directory, b"committed"));
         if let Err(error) = result {
             if Self::rollback(journal, directory).is_err() {
                 return Err(EditError::RecoveryRequired);
@@ -231,19 +242,8 @@ impl Guard {
             for replacement in file.replacements.iter().rev() {
                 after.replace_range(replacement.range.clone(), &replacement.after);
             }
-            let index = journal.files.len();
-            io::create(
-                &directory.join(format!("{index}.before")),
-                before.as_bytes(),
-            )?;
-            io::create(&directory.join(format!("{index}.after")), after.as_bytes())?;
-            let after = snapshot(&after);
-            staged.insert(file.path.clone(), after.clone());
-            journal.files.push(StoredFile {
-                path: file.path.clone(),
-                before: file.snapshot.clone(),
-                after,
-            });
+            journal.stage_file(directory, &file.path, &before, &after)?;
+            staged.insert(file.path.clone(), snapshot(&after));
         }
         for movement in &plan.moves {
             let destination = io::path(&journal.source, &movement.to)?;
@@ -260,12 +260,7 @@ impl Guard {
                 )?,
             });
         }
-        let bytes = serde_json::to_vec(&journal).map_err(|_| EditError::InvalidValue)?;
-        if bytes.len() as u64 > MAX_JOURNAL_BYTES {
-            return Err(EditError::UnsupportedValue);
-        }
-        io::create(&directory.join("journal.json"), &bytes)?;
-        io::create(&directory.join("ready"), b"1")?;
+        journal.make_ready(directory)?;
         Ok(journal)
     }
 

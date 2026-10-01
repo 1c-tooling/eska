@@ -45,6 +45,7 @@ fn bounded_metadata_integers_preserve_bytes_and_reject_out_of_range_values() {
                     .update_property(
                         &id,
                         &editing.properties.snapshot,
+                        None,
                         &field.path,
                         &PropertyChange::Text { value }
                     )
@@ -56,7 +57,13 @@ fn bounded_metadata_integers_preserve_bytes_and_reject_out_of_range_values() {
             value: max.to_string(),
         };
         let plan = project
-            .preview_property(&id, &editing.properties.snapshot, &field.path, &change)
+            .preview_property(
+                &id,
+                &editing.properties.snapshot,
+                None,
+                &field.path,
+                &change,
+            )
             .unwrap();
         assert_eq!(
             plan.output(),
@@ -66,11 +73,17 @@ fn bounded_metadata_integers_preserve_bytes_and_reject_out_of_range_values() {
             )
         );
         project
-            .update_property(&id, &editing.properties.snapshot, &field.path, &change)
+            .update_property(
+                &id,
+                &editing.properties.snapshot,
+                None,
+                &field.path,
+                &change,
+            )
             .unwrap();
         let after = project.property_editing(&id).unwrap();
         project
-            .undo_property(&id, &after.properties.snapshot, true)
+            .undo_property(&id, &after.properties.snapshot, None, true)
             .unwrap();
         assert_eq!(fs::read_to_string(&file).unwrap(), input);
     }

@@ -23,7 +23,7 @@ impl ProjectSession {
         id: &ObjectId,
         path: &[FieldStep],
     ) -> Result<Vec<PropertyReferenceChoice>, PropertyEditError> {
-        let editing = self.property_editing(id)?;
+        let editing = self.property_fields(id)?;
         let field = editing
             .properties
             .fields
@@ -140,7 +140,7 @@ impl ProjectSession {
         let PropertyChange::Text { value } = change else {
             return Ok(());
         };
-        let editing = self.property_editing(id)?;
+        let editing = self.property_fields(id)?;
         let field = editing
             .properties
             .fields

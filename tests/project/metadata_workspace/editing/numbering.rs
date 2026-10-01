@@ -73,6 +73,7 @@ fn number_length_uses_owner_type_and_roundtrips_through_history() {
                     .update_property(
                         &id,
                         &state.properties.snapshot,
+                        state.context_snapshot.as_deref(),
                         &number.path,
                         &PropertyChange::Text {
                             value: value.into()
@@ -94,6 +95,7 @@ fn number_length_uses_owner_type_and_roundtrips_through_history() {
                 .update_property(
                     &id,
                     &state.properties.snapshot,
+                    state.context_snapshot.as_deref(),
                     &selected.path,
                     &PropertyChange::Text {
                         value: value.into(),
@@ -104,7 +106,7 @@ fn number_length_uses_owner_type_and_roundtrips_through_history() {
                 let state = project.property_editing(&id).unwrap();
                 let selected = field(&state.properties.fields, "NumberType");
                 assert!(
-                    matches!(project.update_property(&id, &state.properties.snapshot, &selected.path, &PropertyChange::Text { value: "Number".into() }), Err(PropertyEditError::Edit(EditError::IncompatibleProperty(key))) if key.name == "NumberLength")
+                    matches!(project.update_property(&id, &state.properties.snapshot, state.context_snapshot.as_deref(), &selected.path, &PropertyChange::Text { value: "Number".into() }), Err(PropertyEditError::Edit(EditError::IncompatibleProperty(key))) if key.name == "NumberLength")
                 );
             }
             if name == "NumberType" {
@@ -130,7 +132,12 @@ fn number_length_uses_owner_type_and_roundtrips_through_history() {
         for _ in 0..4 {
             let state = project.property_editing(&id).unwrap();
             project
-                .undo_property(&id, &state.properties.snapshot, true)
+                .undo_property(
+                    &id,
+                    &state.properties.snapshot,
+                    state.context_snapshot.as_deref(),
+                    true,
+                )
                 .unwrap();
         }
         assert_eq!(fs::read_to_string(&file).unwrap(), original);
@@ -166,6 +173,7 @@ fn document_inherited_parameters_cannot_be_written_through_forged_paths() {
                 .preview_property(
                     &id,
                     &state.properties.snapshot,
+                    state.context_snapshot.as_deref(),
                     &path,
                     &PropertyChange::Text { value: "1".into() },
                 )
@@ -174,6 +182,7 @@ fn document_inherited_parameters_cannot_be_written_through_forged_paths() {
                 .update_property(
                     &id,
                     &state.properties.snapshot,
+                    state.context_snapshot.as_deref(),
                     &path,
                     &PropertyChange::Text { value: "1".into() },
                 )
@@ -191,6 +200,7 @@ fn document_inherited_parameters_cannot_be_written_through_forged_paths() {
         .update_property(
             &id,
             &state.properties.snapshot,
+            state.context_snapshot.as_deref(),
             &numerator.path,
             &PropertyChange::Text {
                 value: String::new(),
@@ -207,7 +217,12 @@ fn document_inherited_parameters_cannot_be_written_through_forged_paths() {
         original.replace("DocumentNumerator.Shared", "")
     );
     project
-        .undo_property(&id, &state.properties.snapshot, true)
+        .undo_property(
+            &id,
+            &state.properties.snapshot,
+            state.context_snapshot.as_deref(),
+            true,
+        )
         .unwrap();
     let state = project.property_editing(&id).unwrap();
     assert!(
@@ -219,3 +234,5 @@ fn document_inherited_parameters_cannot_be_written_through_forged_paths() {
     );
     assert_eq!(fs::read_to_string(&file).unwrap(), original);
 }
+
+mod linked;

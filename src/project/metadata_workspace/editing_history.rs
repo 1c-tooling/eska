@@ -19,12 +19,14 @@ pub struct PropertyReplay {
 pub enum HistoryOperation {
     Scalar,
     Rename,
+    Linked,
 }
 
 #[derive(Clone, Debug)]
 pub(super) enum HistoryStep {
     Scalar(SavedEdit),
     Rename(Box<SavedRename>),
+    Linked(Box<super::editing_linked::SavedLinkedEdit>),
 }
 
 impl HistoryStep {
@@ -33,6 +35,7 @@ impl HistoryStep {
         match self {
             Self::Scalar(_) => HistoryOperation::Scalar,
             Self::Rename(_) => HistoryOperation::Rename,
+            Self::Linked(_) => HistoryOperation::Linked,
         }
     }
     /// Bound retained replacement text and structural paths independently of descriptor size.
@@ -40,6 +43,7 @@ impl HistoryStep {
         match self {
             Self::Scalar(step) => step.bytes(),
             Self::Rename(step) => step.bytes(),
+            Self::Linked(step) => step.bytes(),
         }
     }
 }

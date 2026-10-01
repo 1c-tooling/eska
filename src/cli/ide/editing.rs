@@ -20,19 +20,23 @@ use crate::project::{
 pub(in crate::cli) struct ChangeRequest {
     pub object_id: ObjectId,
     pub snapshot: String,
+    pub context_snapshot: Option<String>,
     pub path: Vec<FieldStep>,
     pub change: PropertyChange,
 }
 
-/// API 1.6 clients reject unknown schema variants; keep their original editor vocabulary intact.
+/// Older clients retain only editor variants and write scopes negotiated by their API minor.
 pub(super) fn retain_legacy_fields(schema: &mut Value, minor: u32) {
     let mut hidden = Vec::new();
     if let Some(fields) = schema["fields"].as_array_mut() {
         fields.retain(|field| {
-            let keep = matches!(
-                field["schema"]["kind"].as_str(),
-                Some("text" | "boolean" | "integer" | "decimal" | "enum" | "dataType")
-            ) || (minor >= 7 && field["schema"]["kind"] == "reference");
+            let keep = (minor >= 10 || field["linked"] != true)
+                && (minor >= 8
+                    || matches!(
+                        field["schema"]["kind"].as_str(),
+                        Some("text" | "boolean" | "integer" | "decimal" | "enum" | "dataType")
+                    )
+                    || (minor >= 7 && field["schema"]["kind"] == "reference"));
             if !keep {
                 hidden.push(field["path"][0]["key"].clone());
             }
@@ -68,6 +72,9 @@ pub(in crate::cli) fn describe(
         .iter()
         .map(|field| {
             let mut value = json!({"path":field.path,"value":field.value,"schema":field.schema,"language":field.language});
+            if crate::project::metadata_edit::numbering::linked_field(owner, &field.path) {
+                value["linked"] = json!(true);
+            }
             value["captions"] = json!(
                 field
                     .path
@@ -124,6 +131,8 @@ pub(in crate::cli) fn describe(
     Ok(
         json!({"snapshot":state.properties.snapshot,"source":dto::path(&state.path),"writable":state.writable,
         "readOnlyReason":if state.writable { Value::Null } else { json!("support_or_source_unavailable") },
+        "contextSnapshot":state.context_snapshot,"linkedObjects":state.linked_objects,
+        "undoLinked":state.undo == Some(crate::project::metadata_workspace::HistoryOperation::Linked),"redoLinked":state.redo == Some(crate::project::metadata_workspace::HistoryOperation::Linked),
         "profile":state.properties.profile,"readOnlyProperties":state.properties.read_only_properties,"fields":fields,"undo":state.undo.is_some(),"redo":state.redo.is_some(),"addRemove":false,
         "renameAvailable":rename_available,"undoRename":state.undo == Some(crate::project::metadata_workspace::HistoryOperation::Rename),"redoRename":state.redo == Some(crate::project::metadata_workspace::HistoryOperation::Rename)}),
     )
@@ -186,13 +195,22 @@ pub(in crate::cli) fn preview(
         .preview_property(
             &request.object_id,
             &request.snapshot,
+            request.context_snapshot.as_deref(),
             &request.path,
             &request.change,
         )
         .map_err(failure)?;
+    let changes = |replacements: &[crate::project::metadata_edit::Replacement]| {
+        replacements.iter().map(|replacement| json!({"range":{"start":replacement.range.start,"end":replacement.range.end},"replacement":replacement.text})).collect::<Vec<_>>()
+    };
     Ok(
         json!({"valid":true,"changed":!plan.is_empty(),"snapshot":request.snapshot,
-        "changes":plan.replacements().iter().map(|replacement| json!({"range":{"start":replacement.range.start,"end":replacement.range.end},"replacement":replacement.text})).collect::<Vec<_>>()}),
+        "changes":changes(plan.replacements()),
+        "files":plan.files().filter(|file| !file.plan.is_empty()).map(|file| json!({
+            "objectId":file.object_id,"source":dto::path(&file.path),
+            "snapshot":crate::project::metadata_edit::snapshot(file.plan.original()),
+            "changes":changes(file.plan.replacements())
+        })).collect::<Vec<_>>() }),
     )
 }
 
@@ -233,8 +251,19 @@ pub(super) fn query(
 /// Stable machine errors never expose source content or platform diagnostics as instructions.
 pub(in crate::cli) fn failure(error: PropertyEditError) -> Value {
     let code = match error {
+        PropertyEditError::Related {
+            object_id,
+            name,
+            error,
+        } => {
+            let mut result = failure(PropertyEditError::Edit(error));
+            result["data"]["details"]["objectId"] = json!(object_id);
+            result["data"]["details"]["objectName"] = json!(name);
+            return result;
+        }
         PropertyEditError::Workspace(error) => return errors::workspace(&error),
         PropertyEditError::Committed(_) => "property_committed_refresh_required",
+        PropertyEditError::Edit(EditError::ContextRequired) => "property_context_required",
         PropertyEditError::Edit(EditError::Conflict) => "property_conflict",
         PropertyEditError::Edit(EditError::ReadOnly) => "property_read_only",
         PropertyEditError::Edit(EditError::InvalidValue) => "property_invalid",

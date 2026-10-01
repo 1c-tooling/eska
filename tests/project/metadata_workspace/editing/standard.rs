@@ -58,7 +58,7 @@ fn standard_value_autosave_and_undo_are_byte_minimal() {
         value: "ABC".into(),
     };
     project
-        .update_property(&id, &state.properties.snapshot, &code.path, &change)
+        .update_property(&id, &state.properties.snapshot, None, &code.path, &change)
         .unwrap();
     assert_eq!(
         fs::read_to_string(&file).unwrap(),
@@ -70,7 +70,7 @@ fn standard_value_autosave_and_undo_are_byte_minimal() {
     );
     let state = project.property_editing(&id).unwrap();
     project
-        .undo_property(&id, &state.properties.snapshot, true)
+        .undo_property(&id, &state.properties.snapshot, None, true)
         .unwrap();
     assert_eq!(fs::read_to_string(&file).unwrap(), input);
 }
@@ -86,6 +86,7 @@ fn owner_type_changes_require_manual_clear_of_standard_values() {
         .update_property(
             &id,
             &state.properties.snapshot,
+            None,
             &code.path,
             &PropertyChange::Value {
                 key: Some(PropertyKey {
@@ -108,7 +109,13 @@ fn owner_type_changes_require_manual_clear_of_standard_values() {
         value: "Number".into(),
     };
     assert!(matches!(
-        project.update_property(&id, &state.properties.snapshot, &code_type.path, &change),
+        project.update_property(
+            &id,
+            &state.properties.snapshot,
+            None,
+            &code_type.path,
+            &change
+        ),
         Err(PropertyEditError::Edit(EditError::IncompatibleProperty(_)))
     ));
     assert_eq!(fs::read_to_string(&file).unwrap(), before);
@@ -116,6 +123,7 @@ fn owner_type_changes_require_manual_clear_of_standard_values() {
         .update_property(
             &id,
             &state.properties.snapshot,
+            None,
             &code.path,
             &PropertyChange::Value {
                 key: None,
@@ -125,7 +133,13 @@ fn owner_type_changes_require_manual_clear_of_standard_values() {
         .unwrap();
     let cleared = project.property_editing(&id).unwrap();
     project
-        .update_property(&id, &cleared.properties.snapshot, &code_type.path, &change)
+        .update_property(
+            &id,
+            &cleared.properties.snapshot,
+            None,
+            &code_type.path,
+            &change,
+        )
         .unwrap();
 }
 
@@ -153,6 +167,7 @@ fn standard_parent_selectors_validate_membership_and_type_dependencies() {
             .update_property(
                 &id,
                 &state.properties.snapshot,
+                None,
                 &parent.path,
                 &PropertyChange::Value {
                     key: Some(key.clone()),
@@ -173,6 +188,7 @@ fn standard_parent_selectors_validate_membership_and_type_dependencies() {
         .update_property(
             &id,
             &state.properties.snapshot,
+            None,
             &form.path,
             &PropertyChange::Text {
                 value: "Catalog.Goods.Form.Object".into(),
@@ -191,6 +207,7 @@ fn standard_parent_selectors_validate_membership_and_type_dependencies() {
         project.update_property(
             &id,
             &state.properties.snapshot,
+            None,
             &hierarchy.path,
             &PropertyChange::Text {
                 value: "false".into()

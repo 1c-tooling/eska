@@ -291,3 +291,39 @@ fn publication_rolls_back_after_a_member_becomes_read_only() {
         guard.check_clear(&source).unwrap();
     }
 }
+
+/// A dependency added after the last member write must roll all published bytes back together.
+#[test]
+fn linked_property_postcheck_rolls_back_and_preserves_external_edits() {
+    for external in [false, true] {
+        let (directory, source, plan) = fixture();
+        let before = bytes(&source);
+        let guard = Guard::acquire(&directory.0).unwrap();
+        let (journal, staging) = prepare(
+            &guard,
+            &source,
+            &RenamePlan {
+                moves: Vec::new(),
+                ..plan
+            },
+        );
+        let result = Guard::commit_checked(&journal, &staging, || {
+            if external {
+                fs::write(source.join("Configuration.xml"), "external").unwrap();
+            }
+            Err(EditError::Conflict)
+        });
+        if external {
+            assert!(matches!(result, Err(EditError::RecoveryRequired)));
+            assert_eq!(
+                fs::read_to_string(source.join("Configuration.xml")).unwrap(),
+                "external"
+            );
+            assert!(guard.recovery_status(&source).unwrap().pending);
+        } else {
+            assert!(matches!(result, Err(EditError::Conflict)));
+            assert_eq!(bytes(&source), before);
+            assert!(!staging.exists());
+        }
+    }
+}

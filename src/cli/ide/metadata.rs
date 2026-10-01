@@ -110,7 +110,7 @@ impl Server {
                         }
                     }
                 }
-                if self.client_minor < 8 {
+                if self.client_minor < 10 {
                     if method == "metadata/propertyEditing" {
                         super::editing::retain_legacy_fields(&mut result, self.client_minor);
                     } else if let Some(editing) = result.get_mut("editing") {
@@ -264,7 +264,13 @@ fn update_property(
     let result = if method == "metadata/updateProperty" {
         let request: super::editing::ChangeRequest = params::decode(args)?;
         project
-            .update_property(&id, &request.snapshot, &request.path, &request.change)
+            .update_property(
+                &id,
+                &request.snapshot,
+                request.context_snapshot.as_deref(),
+                &request.path,
+                &request.change,
+            )
             .map(
                 |refresh| crate::project::metadata_workspace::PropertyReplay {
                     object_id: id.clone(),
@@ -280,6 +286,9 @@ fn update_property(
         project.undo_property(
             &id,
             args["snapshot"].as_str().ok_or_else(|| error(-32602))?,
+            args.get("contextSnapshot")
+                .map(|value| value.as_str().ok_or_else(|| error(-32602)))
+                .transpose()?,
             undo,
         )
     };

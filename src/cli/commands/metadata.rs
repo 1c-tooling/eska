@@ -169,7 +169,14 @@ impl MetadataArgs {
             MetadataCommand::Check(args) | MetadataCommand::Apply(args) => {
                 let input = read_input(
                     &args.input,
-                    &["schemaVersion", "objectId", "snapshot", "path", "change"],
+                    &[
+                        "schemaVersion",
+                        "objectId",
+                        "snapshot",
+                        "contextSnapshot",
+                        "path",
+                        "change",
+                    ],
                 )?;
                 let request: editing::ChangeRequest =
                     serde_json::from_value(input).map_err(|_| failure("invalid_request"))?;
@@ -177,20 +184,30 @@ impl MetadataArgs {
                 if matches!(self.command, MetadataCommand::Check(_)) {
                     return editing::preview(project, &request);
                 }
-                project
-                    .update_property(
-                        &request.object_id,
-                        &request.snapshot,
-                        &request.path,
-                        &request.change,
-                    )
-                    .map_err(editing::failure)?;
-                let state = editing::describe(&labels, project, &request.object_id)
-                    .map_err(|_| failure("property_committed_refresh_required"))?;
-                Ok(json!({"applied":true,"objectId":request.object_id,"editing":state}))
+                apply(&labels, project, &request)
             }
         }
     }
+}
+
+/// Apply the same verified plan exposed by check, returning a fresh editing schema.
+fn apply(
+    labels: &dto::Labels,
+    project: &mut ProjectSession,
+    request: &editing::ChangeRequest,
+) -> Result<Value, Value> {
+    project
+        .update_property(
+            &request.object_id,
+            &request.snapshot,
+            request.context_snapshot.as_deref(),
+            &request.path,
+            &request.change,
+        )
+        .map_err(editing::failure)?;
+    let state = editing::describe(labels, project, &request.object_id)
+        .map_err(|_| failure("property_committed_refresh_required"))?;
+    Ok(json!({"applied":true,"objectId":request.object_id,"editing":state}))
 }
 
 /// Resolve only declared ancestors of the supplied ID, including inline attributes and commands.

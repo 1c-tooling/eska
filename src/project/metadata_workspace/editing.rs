@@ -3,12 +3,14 @@
 use std::path::PathBuf;
 
 use super::{
-    ProjectSession, PropertyReplay, RefreshReport, WorkspaceError, editing_history::HistoryStep,
+    ProjectSession, PropertyEditPlan, PropertyReplay, RefreshReport, WorkspaceError,
+    editing_history::HistoryStep,
 };
 use crate::project::{
     designer_source::SourceLocation,
     metadata_edit::{
         EditError, EditPlan, EditingDocument, FieldStep, PropertyChange, PropertyEditing,
+        PropertyFileEdit, numbering,
     },
     metadata_model::{MetadataKind, ObjectId},
     support::State,
@@ -22,6 +24,8 @@ pub struct EditingSnapshot {
     pub writable: bool,
     pub undo: Option<super::HistoryOperation>,
     pub redo: Option<super::HistoryOperation>,
+    pub context_snapshot: Option<String>,
+    pub linked_objects: usize,
 }
 
 /// A type choice carries semantic identity and optional metadata context for presentation.
@@ -38,6 +42,12 @@ pub enum PropertyEditError {
     /// The bytes were published, but refreshing the session failed; do not repeat the write.
     Committed(Box<WorkspaceError>),
     Edit(EditError),
+    /// Preserve the declared owner of a failed dependent field for both human and AI clients.
+    Related {
+        object_id: ObjectId,
+        name: String,
+        error: EditError,
+    },
 }
 
 impl From<WorkspaceError> for PropertyEditError {
@@ -66,7 +76,7 @@ impl ProjectSession {
     ) -> Result<Vec<PropertyTypeChoice>, PropertyEditError> {
         use crate::project::metadata_edit::{ScalarSchema, types};
         use crate::project::metadata_model::PropertyKey;
-        let snapshot = self.property_editing(id)?;
+        let snapshot = self.property_fields(id)?;
         let field = snapshot
             .properties
             .fields
@@ -132,9 +142,22 @@ impl ProjectSession {
         &mut self,
         id: &ObjectId,
         expected: &str,
+        context: Option<&str>,
         path: &[FieldStep],
         change: &PropertyChange,
-    ) -> Result<EditPlan, PropertyEditError> {
+    ) -> Result<PropertyEditPlan, PropertyEditError> {
+        self.plan_property(id, expected, context, path, change)
+    }
+
+    /// Preview and publication always reconstruct the same complete dependent-file plan.
+    fn plan_property(
+        &mut self,
+        id: &ObjectId,
+        expected: &str,
+        context: Option<&str>,
+        path: &[FieldStep],
+        change: &PropertyChange,
+    ) -> Result<PropertyEditPlan, PropertyEditError> {
         self.reveal_declared_object(id)?;
         let (location, input) = self.editing_source(id)?;
         if !self.can_edit(id, &location.path)? {
@@ -145,10 +168,27 @@ impl ProjectSession {
         }
         self.validate_property_reference(id, path, change)?;
         self.validate_property_value(id, path, change)?;
-        let plan = self
-            .editing_document(id, &location, &input)?
-            .update(expected, path, change)?;
+        let document = self.editing_document(id, &location, &input)?;
+        let plan = document.update(expected, path, change)?;
+        let modern = document.modern;
         self.validate_predefined_lengths(id, &plan)?;
+        let kind = self.object(id)?.kind;
+        let plan = if numbering::linked_field(kind, path) {
+            self.plan_linked_property(
+                PropertyFileEdit {
+                    object_id: id.clone(),
+                    path: location.path,
+                    plan,
+                },
+                kind,
+                context,
+                &path[0].key.name,
+                modern,
+            )?
+        } else {
+            Self::scalar_property_plan(id, location.path, plan)
+        };
+        self.validate_linked_support(&plan)?;
         Ok(plan)
     }
 
@@ -157,6 +197,49 @@ impl ProjectSession {
     /// # Errors
     /// Returns unknown object, invalid source or unsupported descriptor shape.
     pub fn property_editing(
+        &mut self,
+        id: &ObjectId,
+    ) -> Result<EditingSnapshot, PropertyEditError> {
+        let mut state = self.property_fields(id)?;
+        let kind = self.object(id)?.kind;
+        match self.property_context(id, kind) {
+            Ok(Some((snapshot, count))) => {
+                state.context_snapshot = Some(snapshot);
+                state.linked_objects = count;
+            }
+            Ok(None) => (),
+            Err(_) => {
+                // Keep history in memory but do not advertise a replay without a current dependency token.
+                if state.undo == Some(super::HistoryOperation::Linked) {
+                    state.undo = None;
+                }
+                if state.redo == Some(super::HistoryOperation::Linked) {
+                    state.redo = None;
+                }
+                let mut hidden = Vec::new();
+                state.properties.fields.retain(|field| {
+                    let keep = !numbering::linked_field(kind, &field.path);
+                    if !keep {
+                        hidden.push(field.path[0].key.clone());
+                    }
+                    keep
+                });
+                state
+                    .properties
+                    .read_only_properties
+                    .extend(hidden.into_iter().map(|key| {
+                        crate::project::metadata_edit::ReadOnlyProperty {
+                            key,
+                            reason: "linked_context_unavailable",
+                        }
+                    }));
+            }
+        }
+        Ok(state)
+    }
+
+    /// Internal domain checks need only the owner's fields, without repeatedly scanning its dependencies.
+    pub(super) fn property_fields(
         &mut self,
         id: &ObjectId,
     ) -> Result<EditingSnapshot, PropertyEditError> {
@@ -171,6 +254,8 @@ impl ProjectSession {
             properties,
             path: location.path,
             writable,
+            context_snapshot: None,
+            linked_objects: 0,
             undo: history
                 .and_then(|history| history.undo.last())
                 .map(HistoryStep::operation),
@@ -180,7 +265,7 @@ impl ProjectSession {
         })
     }
 
-    /// Validate and publish a single existing scalar, then invalidate its owning descriptor.
+    /// Validate and publish an existing property and its declared dependencies, then invalidate changed descriptors.
     ///
     /// # Errors
     /// Rejects stale snapshots, locked objects, unadvertised fields and invalid values.
@@ -188,25 +273,22 @@ impl ProjectSession {
         &mut self,
         id: &ObjectId,
         expected: &str,
+        context: Option<&str>,
         path: &[FieldStep],
         change: &PropertyChange,
     ) -> Result<RefreshReport, PropertyEditError> {
         let guard =
             crate::project::metadata_rename::transaction::Guard::acquire(self.project().root())?;
         guard.check_clear(self.project().source())?;
-        self.reveal_declared_object(id)?;
-        let (location, input) = self.editing_source(id)?;
-        if let PropertyChange::DataType { key } = change {
-            self.validate_property_type(key)?;
+        let plan = self.plan_property(id, expected, context, path, change)?;
+        if plan.context_before.is_some() {
+            let kind = self.object(id)?.kind;
+            return self.save_linked_property(&guard, &plan, kind);
         }
-        self.validate_property_reference(id, path, change)?;
-        self.validate_property_value(id, path, change)?;
-        let plan = self
-            .editing_document(id, &location, &input)?
-            .update(expected, path, change)?;
-        let history = plan.history();
+        let (location, _) = self.editing_source(id)?;
+        let history = plan.primary.plan.history();
         let changed = !plan.is_empty();
-        let report = self.publish_property(id, &location, &plan);
+        let report = self.publish_property(id, &location, &plan.primary.plan);
         if changed && (report.is_ok() || matches!(report, Err(PropertyEditError::Committed(_)))) {
             self.record_property(id, HistoryStep::Scalar(history));
         }
@@ -221,6 +303,7 @@ impl ProjectSession {
         &mut self,
         id: &ObjectId,
         expected: &str,
+        context: Option<&str>,
         undo: bool,
     ) -> Result<PropertyReplay, PropertyEditError> {
         let guard =
@@ -242,8 +325,12 @@ impl ProjectSession {
         }
         .ok_or(EditError::HistoryUnavailable)?
         .clone();
-        let HistoryStep::Scalar(scalar) = &step else {
-            return self.replay_rename(&guard, id, step, undo);
+        let scalar = match &step {
+            HistoryStep::Scalar(scalar) => scalar,
+            HistoryStep::Rename(_) => return self.replay_rename(&guard, id, step, undo),
+            HistoryStep::Linked(_) => {
+                return self.replay_linked_property(&guard, id, context, step, undo);
+            }
         };
         let plan = scalar.replay(&input, undo)?;
         let report = self.publish_property(id, &location, &plan);
@@ -257,7 +344,10 @@ impl ProjectSession {
     }
 
     /// Resolve the existing descriptor again at every write boundary.
-    fn editing_source(&self, id: &ObjectId) -> Result<(SourceLocation, String), PropertyEditError> {
+    pub(super) fn editing_source(
+        &self,
+        id: &ObjectId,
+    ) -> Result<(SourceLocation, String), PropertyEditError> {
         let location = self
             .source
             .object_descriptor(id)
@@ -306,7 +396,11 @@ impl ProjectSession {
     }
 
     /// Object-level support permits a narrow edit even when a sibling in the same XML is locked.
-    fn can_edit(&mut self, id: &ObjectId, path: &std::path::Path) -> Result<bool, WorkspaceError> {
+    pub(super) fn can_edit(
+        &mut self,
+        id: &ObjectId,
+        path: &std::path::Path,
+    ) -> Result<bool, WorkspaceError> {
         let policy = self.support_files(&[path.to_path_buf()])?;
         Ok(policy.diagnostics.is_empty()
             && policy.objects.iter().any(|object| {

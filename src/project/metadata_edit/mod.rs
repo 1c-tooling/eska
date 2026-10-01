@@ -2,6 +2,7 @@
 
 mod document;
 pub(crate) mod lengths;
+pub(crate) mod numbering;
 mod patch;
 pub(crate) mod references;
 mod schema;
@@ -13,6 +14,7 @@ mod write;
 pub(crate) use write::publish_snapshot_in;
 
 pub(crate) use document::EditingDocument;
+pub(crate) use document::ReadOnlyProperty;
 pub use document::{EditableField, FieldStep, PropertyChange, PropertyEditing};
 pub use schema::ScalarSchema;
 pub use value_schema::{EditableValueType, ValueConstraints};
@@ -36,6 +38,14 @@ pub struct EditPlan {
     replacements: Vec<Replacement>,
 }
 
+/// A related descriptor uses the same exact-byte plan as the property directly edited by the user.
+#[derive(Debug)]
+pub struct PropertyFileEdit {
+    pub object_id: crate::project::metadata_model::ObjectId,
+    pub path: std::path::PathBuf,
+    pub plan: EditPlan,
+}
+
 /// Editing failures never imply that an unsuccessful write has changed the source.
 #[derive(Debug)]
 pub enum EditError {
@@ -47,6 +57,7 @@ pub enum EditError {
     UnsafePath,
     ReadOnly,
     HistoryUnavailable,
+    ContextRequired,
     Busy,
     RecoveryRequired,
     Io(io::Error),

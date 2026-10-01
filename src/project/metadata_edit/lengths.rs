@@ -25,7 +25,7 @@ pub(super) fn range(node: Node<'_, '_>) -> Option<(i64, i64)> {
                 _ => return None,
             }
         }
-        ("Document" | "Task" | "BusinessProcess", "NumberLength") => {
+        ("Document" | "DocumentNumerator" | "Task" | "BusinessProcess", "NumberLength") => {
             match text(properties, "NumberType")? {
                 "String" => 50,
                 "Number" => 38,
@@ -114,13 +114,17 @@ pub(super) fn validate_dependents(
             | "ExchangePlan"
             | "Task"
             | "Document"
+            | "DocumentNumerator"
             | "BusinessProcess"
     ) {
         return Ok(());
     }
     let length_name = if changed == "DescriptionLength" {
         "DescriptionLength"
-    } else if matches!(class, "Document" | "Task" | "BusinessProcess") {
+    } else if matches!(
+        class,
+        "Document" | "DocumentNumerator" | "Task" | "BusinessProcess"
+    ) {
         "NumberLength"
     } else {
         "CodeLength"
@@ -159,6 +163,9 @@ fn validate_disabled_field(
     changed: &str,
     length_name: &str,
 ) -> Result<(), EditError> {
+    if class == "DocumentNumerator" {
+        return Ok(());
+    }
     let field = match length_name {
         "CodeLength" => "Code",
         "NumberLength" => "Number",

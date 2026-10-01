@@ -25,7 +25,7 @@ impl ProjectSession {
         path: &[FieldStep],
         key: &PropertyKey,
     ) -> Result<Vec<PropertyValueChoice>, PropertyEditError> {
-        let editing = self.property_editing(id)?;
+        let editing = self.property_fields(id)?;
         let field = editing
             .properties
             .fields
