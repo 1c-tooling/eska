@@ -38,6 +38,13 @@ def reference_values(archive, profile):
     return result
 
 
+def global_properties(archive, profile):
+    """Read machine identifiers reserved for global properties, independently of their UI captions."""
+    root = ET.fromstring(archive.read(f'resources/v{profile}/GlobalContext.type'))
+    return sorted((node.attrib['name'], node.attrib['nameRu'])
+                  for node in root.findall('properties'))
+
+
 def inspect(args):
     """Collect active bundles, serializer fields and paired palette captions in playground."""
     repository = Path(__file__).resolve().parents[2]
@@ -80,6 +87,10 @@ def inspect(args):
                 profile = name.removeprefix('com._1c.g5.v8.dt.platform_v')
                 (output / f'reference-{profile}.json').write_text(
                     json.dumps(reference_values(archive, profile), ensure_ascii=False, indent=2) + '\n')
+                with (output / f'global-properties-{profile}.tsv').open('w', newline='') as table:
+                    writer = csv.writer(table, delimiter='\t', lineterminator='\n')
+                    writer.writerow(['name', 'nameRu'])
+                    writer.writerows(global_properties(archive, profile))
             for entry in archive.namelist():
                 if entry.startswith('localization/') and 'FeatureNames' in entry and entry.endswith('.properties'):
                     # Known relative file names only; never extract archive paths directly.

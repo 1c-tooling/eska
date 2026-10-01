@@ -10,6 +10,20 @@ pub enum NameError {
     TooLong,
     InvalidStart,
     InvalidCharacter,
+    ReservedProperty,
+}
+
+/// Non-global common modules exclude reserved properties, with native-verified legacy exceptions.
+pub fn validate_common_module_name(name: &str) -> Result<(), NameError> {
+    if include_str!("reserved_common_modules.tsv")
+        .lines()
+        .skip(1)
+        .flat_map(|line| line.split('\t'))
+        .any(|reserved| super::same_name(name, reserved))
+    {
+        return Err(NameError::ReservedProperty);
+    }
+    Ok(())
 }
 
 /// Validate one metadata identifier without trimming, normalization or case conversion.

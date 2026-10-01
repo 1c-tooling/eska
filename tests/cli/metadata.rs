@@ -103,7 +103,8 @@ fn metadata_json_schema_preview_apply_and_conflict_are_locale_independent() {
         "property_invalid"
     );
     assert_eq!(fs::read_to_string(&path).unwrap(), expected);
-    assert!(!root.0.join(".eska").exists());
+    assert!(!root.0.join(".eska/metadata/rename").exists());
+    assert!(root.0.join(".eska/metadata/write.lock").is_file());
 }
 
 /// AI callers receive the same closed reference domain in either locale; arbitrary names cannot write.
@@ -245,7 +246,8 @@ fn metadata_value_schema_and_typed_changes_are_locale_independent() {
     assert_eq!(failure["error"]["kind"], "property_dependency");
     assert_eq!(failure["error"]["details"]["property"]["name"], "FillValue");
     assert_eq!(current, inspect("en-US"));
-    assert!(!root.0.join(".eska").exists());
+    assert!(!root.0.join(".eska/metadata/rename").exists());
+    assert!(root.0.join(".eska/metadata/write.lock").is_file());
 }
 
 /// Structural inspection uses one JSON contract in both languages and leaves source bytes untouched.
@@ -291,4 +293,63 @@ fn metadata_rename_preview_is_locale_independent_and_never_applies_edits() {
         "invalid_request"
     );
     assert_eq!(fs::read_to_string(path).unwrap(), original);
+}
+
+/// AI writes must follow a reviewed snapshot, and uncertain literal text is never changed automatically.
+#[test]
+fn metadata_rename_apply_requires_review_and_rejects_external_changes() {
+    let root = TestDir::new();
+    fs::create_dir_all(root.0.join("src/Ext")).unwrap();
+    fs::write(
+        root.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    fs::write(
+        root.0.join("src/Ext/ParentConfigurations.bin"),
+        "{6,0,0,0,0,0}",
+    )
+    .unwrap();
+    let path = root.0.join("src/Configuration.xml");
+    let original = "\u{feff}<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='11111111-1111-1111-1111-111111111111'><Properties><Name>Demo</Name><Comment>Demo</Comment></Properties><ChildObjects/></Configuration></MetaDataObject>\r\n";
+    fs::write(&path, original).unwrap();
+    let preview = json!({"schemaVersion":1,"objectId":"configuration:Demo","newName":"Новая"});
+    let state = call(&root, "ru-RU", "rename-preview", Some(&preview), true);
+    assert_eq!(state["result"]["applyAvailable"], true);
+    let mut request = preview.clone();
+    request["snapshot"] = state["result"]["plan"]["snapshot"].clone();
+    request["reviewedUncertain"] = json!(false);
+    let ru = call(&root, "ru-RU", "rename-apply", Some(&request), false);
+    assert_eq!(ru["error"]["kind"], "rename_review_required");
+    assert_eq!(
+        ru,
+        call(&root, "en-US", "rename-apply", Some(&request), false)
+    );
+    request["reviewedUncertain"] = json!(true);
+    fs::write(root.0.join("src/added.bsl"), "// Demo").unwrap();
+    assert_eq!(
+        call(&root, "en-US", "rename-apply", Some(&request), false)["error"]["kind"],
+        "property_conflict"
+    );
+    assert_eq!(fs::read_to_string(&path).unwrap(), original);
+    let state = call(&root, "en-US", "rename-preview", Some(&preview), true);
+    request["snapshot"] = state["result"]["plan"]["snapshot"].clone();
+    let result = call(&root, "ru-RU", "rename-apply", Some(&request), true);
+    assert_eq!(result["result"]["objectId"], "configuration:Новая");
+    assert_eq!(
+        fs::read_to_string(&path).unwrap(),
+        original.replace("<Name>Demo</Name>", "<Name>Новая</Name>")
+    );
+    assert_eq!(
+        call(&root, "en-US", "inspect", None, true)["result"]["object"]["objectId"],
+        "configuration:Новая"
+    );
+    let status = call(
+        &root,
+        "en-US",
+        "rename-recovery",
+        Some(&json!({"schemaVersion":1,"action":"inspect"})),
+        true,
+    );
+    assert_eq!(status["result"]["pending"], false);
 }

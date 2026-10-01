@@ -68,16 +68,19 @@ pub fn open_projects_cached(
 impl DesignerSource {
     /// Reread root identity without reusing cached declarations for a structural mutation.
     pub(crate) fn reopen(&self) -> Result<Self, SourceError> {
-        let mut stats = SourceIoStats::default();
-        let (descriptor, root) = read_root(&self.project, None, &mut stats)?;
-        Ok(Self {
-            project: self.project.clone(),
-            scope: self.scope.clone(),
-            root,
-            descriptor,
-            disk_cache: None,
-            io_stats: std::cell::Cell::new(stats),
-        })
+        let mut sources = open_projects(self.project.root(), &[], false)?.into_iter();
+        let source = sources.next().ok_or_else(|| SourceError::InvalidMetadata {
+            path: PathBuf::from(crate::config::FILE_NAME),
+            reason: "project selection changed",
+        })?;
+        if sources.next().is_some() || source.project != self.project || source.scope != self.scope
+        {
+            return Err(SourceError::InvalidMetadata {
+                path: PathBuf::from(crate::config::FILE_NAME),
+                reason: "project settings changed",
+            });
+        }
+        Ok(source)
     }
 }
 

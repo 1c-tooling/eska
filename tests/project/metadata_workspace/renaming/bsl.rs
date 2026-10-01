@@ -144,3 +144,55 @@ fn renamed_module_destination_shadow_is_a_blocking_plan_issue() {
             .any(|item| item.reason == "bsl_destination_shadowed")
     );
 }
+
+/// Platform global properties are unavailable common-module names in either API language and case.
+#[test]
+fn common_module_names_reject_platform_properties_before_writing() {
+    let (_directory, mut workspace, _) = code_fixture();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let id = object(MetadataKind::CommonModule, "ОбщийМодуль", None);
+    for name in [
+        "Catalogs",
+        "справочники",
+        "METADATA",
+        "Метаданные",
+        "AdRepresentation",
+        "ФабрикаXDTO",
+    ] {
+        assert!(
+            matches!(
+                project.preview_rename(&id, name),
+                Err(RenameError::Name(
+                    eska::project::metadata_rename::NameError::ReservedProperty
+                ))
+            ),
+            "{name}"
+        );
+    }
+    // Platform methods do not occupy the global property namespace.
+    for name in [
+        "CurrentDate",
+        "String",
+        "Message",
+        "WorkingDate",
+        "WorkingDateUse",
+    ] {
+        project.preview_rename(&id, name).unwrap();
+    }
+}
+
+/// A global common module creates no module-named global property, so platform names remain valid there.
+#[test]
+fn global_modules_can_reuse_names_of_platform_properties() {
+    let (directory, mut workspace, _) = code_fixture();
+    let path = directory.0.join("src/CommonModules/ОбщийМодуль.xml");
+    let input = fs::read_to_string(&path)
+        .unwrap()
+        .replace("<Global>false</Global>", "<Global>true</Global>");
+    fs::write(path, input).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let id = object(MetadataKind::CommonModule, "ОбщийМодуль", None);
+    for name in ["Catalogs", "Метаданные", "AdRepresentation"] {
+        project.preview_rename(&id, name).unwrap();
+    }
+}

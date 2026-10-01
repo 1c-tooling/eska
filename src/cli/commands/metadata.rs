@@ -6,6 +6,8 @@ use std::{
     process::ExitCode,
 };
 
+mod renaming;
+
 use clap::{Args, Subcommand, ValueEnum};
 use serde_json::{Value, json};
 
@@ -52,6 +54,10 @@ enum MetadataCommand {
     Apply(InputArgs),
     #[command(disable_help_flag = true)]
     RenamePreview(InputArgs),
+    #[command(disable_help_flag = true)]
+    RenameApply(InputArgs),
+    #[command(disable_help_flag = true)]
+    RenameRecovery(InputArgs),
 }
 
 #[derive(Debug, Args)]
@@ -104,7 +110,24 @@ impl MetadataArgs {
         match &self.command {
             MetadataCommand::RenamePreview(args) => {
                 let request = read_input(&args.input, &["schemaVersion", "objectId", "newName"])?;
-                rename_preview(project, &request)
+                renaming::preview(project, &request)
+            }
+            MetadataCommand::RenameApply(args) => {
+                let request = read_input(
+                    &args.input,
+                    &[
+                        "schemaVersion",
+                        "objectId",
+                        "newName",
+                        "snapshot",
+                        "reviewedUncertain",
+                    ],
+                )?;
+                renaming::apply(project, &request)
+            }
+            MetadataCommand::RenameRecovery(args) => {
+                let request = read_input(&args.input, &["schemaVersion", "action", "snapshot"])?;
+                renaming::recovery(project, &request)
             }
             MetadataCommand::Inspect(args) => {
                 let id = args.object.as_ref().map_or_else(
@@ -261,6 +284,8 @@ pub(super) fn localize(mut command: clap::Command, locale: &Localizer) -> clap::
         "check",
         "apply",
         "rename-preview",
+        "rename-apply",
+        "rename-recovery",
     ] {
         command = command.mut_subcommand(name, |command| {
             let command = command
@@ -276,34 +301,4 @@ pub(super) fn localize(mut command: clap::Command, locale: &Localizer) -> clap::
         });
     }
     command
-}
-
-/// Expose a read-only structural plan before the multi-file mutation contract is enabled.
-fn rename_preview(project: &mut ProjectSession, request: &Value) -> Result<Value, Value> {
-    use crate::project::metadata_workspace::RenameError;
-    let id = serde_json::from_value(request["objectId"].clone())
-        .map_err(|_| failure("invalid_request"))?;
-    let name = request["newName"]
-        .as_str()
-        .ok_or_else(|| failure("invalid_request"))?;
-    let plan = project
-        .preview_rename(&id, name)
-        .map_err(|error| match error {
-            RenameError::Workspace(error) => editing::failure(
-                crate::project::metadata_workspace::PropertyEditError::Workspace(error),
-            ),
-            RenameError::Edit(error) => editing::failure(
-                crate::project::metadata_workspace::PropertyEditError::Edit(error),
-            ),
-            RenameError::Name(reason) => {
-                json!({"kind":"rename_invalid_name","details":{"reason":reason}})
-            }
-            RenameError::Collision(id) => {
-                json!({"kind":"rename_collision","details":{"objectId":id}})
-            }
-            RenameError::Io { path, .. } => {
-                json!({"kind":"rename_source_unavailable","details":{"path":path}})
-            }
-        })?;
-    Ok(json!({"applyAvailable":false,"plan":plan}))
 }

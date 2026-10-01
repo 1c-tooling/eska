@@ -3,8 +3,10 @@
 pub(crate) mod bsl;
 pub(crate) mod inventory;
 mod name;
+pub(crate) mod transaction;
 mod xml;
 
+pub(crate) use name::validate_common_module_name;
 pub use name::{NameError, validate_name};
 pub use xml::{ReferenceRename, XmlAnalysis};
 
@@ -42,7 +44,7 @@ pub struct RenameFile {
 }
 
 /// A descriptor and its payload directory may move together while retaining every UUID.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RenameMove {
     pub from: PathBuf,

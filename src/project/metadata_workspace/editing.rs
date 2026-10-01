@@ -190,6 +190,9 @@ impl ProjectSession {
         path: &[FieldStep],
         change: &PropertyChange,
     ) -> Result<RefreshReport, PropertyEditError> {
+        let guard =
+            crate::project::metadata_rename::transaction::Guard::acquire(self.project().root())?;
+        guard.check_clear(self.project().source())?;
         self.reveal_declared_object(id)?;
         let (location, input) = self.editing_source(id)?;
         if let PropertyChange::DataType { key } = change {
@@ -237,6 +240,9 @@ impl ProjectSession {
         expected: &str,
         undo: bool,
     ) -> Result<RefreshReport, PropertyEditError> {
+        let guard =
+            crate::project::metadata_rename::transaction::Guard::acquire(self.project().root())?;
+        guard.check_clear(self.project().source())?;
         self.reveal_declared_object(id)?;
         let (location, input) = self.editing_source(id)?;
         if crate::project::metadata_edit::snapshot(&input) != expected {

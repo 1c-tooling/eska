@@ -333,6 +333,7 @@ impl EditingDocument<'_> {
 fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<(), EditError> {
     let candidate = roxmltree::Document::parse(output).map_err(|_| EditError::InvalidXml)?;
     super::standard::validate_dependents(node, &candidate)?;
+    validate_common_module_global(node, &candidate)?;
     if let Some(description) = node
         .ancestors()
         .find(|ancestor| ancestor.has_tag_name((schema::MD, "Type")))
@@ -355,6 +356,47 @@ fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<(), EditErr
             .find(|node| node.is_element() && node.range().start == parent.range().start)
             .ok_or(EditError::InvalidXml)?;
         super::types::validate_numbers(group)?;
+    }
+    Ok(())
+}
+
+/// A global module may use a reserved property name until its Global flag is disabled.
+fn validate_common_module_global(
+    node: Node<'_, '_>,
+    candidate: &roxmltree::Document<'_>,
+) -> Result<(), EditError> {
+    if !node.has_tag_name((schema::MD, "Global"))
+        || !node
+            .parent()
+            .and_then(|properties| properties.parent())
+            .is_some_and(|owner| owner.has_tag_name((schema::MD, "CommonModule")))
+    {
+        return Ok(());
+    }
+    let global = candidate
+        .descendants()
+        .find(|current| {
+            current.has_tag_name((schema::MD, "Global"))
+                && current.range().start == node.range().start
+        })
+        .ok_or(EditError::InvalidXml)?;
+    if !matches!(global.text(), Some("false" | "0")) {
+        return Ok(());
+    }
+    let name = global
+        .parent()
+        .and_then(|properties| {
+            properties
+                .children()
+                .find(|property| property.has_tag_name((schema::MD, "Name")))
+        })
+        .and_then(|name| name.text())
+        .ok_or(EditError::UnsupportedValue)?;
+    if crate::project::metadata_rename::validate_common_module_name(name).is_err() {
+        return Err(EditError::IncompatibleProperty(PropertyKey {
+            namespace: None,
+            name: "Name".into(),
+        }));
     }
     Ok(())
 }

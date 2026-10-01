@@ -9,6 +9,7 @@ pub(crate) mod types;
 pub(crate) mod value_schema;
 mod values;
 mod write;
+pub(crate) use write::publish_snapshot_in;
 
 pub(crate) use document::EditingDocument;
 pub use document::{EditableField, FieldStep, PropertyChange, PropertyEditing};
@@ -45,6 +46,8 @@ pub enum EditError {
     UnsafePath,
     ReadOnly,
     HistoryUnavailable,
+    Busy,
+    RecoveryRequired,
     Io(io::Error),
 }
 

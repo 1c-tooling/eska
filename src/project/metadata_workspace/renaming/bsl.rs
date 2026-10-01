@@ -179,7 +179,7 @@ impl Environment {
 }
 
 /// Validate descriptor identity before accepting its Global property or exported code as project context.
-fn common_module(input: &str, expected: &str) -> Option<bool> {
+pub(super) fn common_module(input: &str, expected: &str) -> Option<bool> {
     let document = Document::parse(input).ok()?;
     let node = document
         .root_element()

@@ -239,3 +239,21 @@ fn keyword_members_do_not_change_lexical_scopes() {
     assert_eq!(output.replacements.len(), 1);
     assert!(output.uncertain.is_empty());
 }
+
+/// Metadata collection methods can have the same spelling as a declared object's name.
+#[test]
+fn collection_method_calls_are_not_renamed_as_metadata_properties() {
+    let reference = BslRename::new(&[("Catalog".into(), "Count".into())], "NewName");
+    let globals = GlobalBindings {
+        complete: true,
+        ..GlobalBindings::default()
+    };
+    let result = reference.analyze(
+        "A = Metadata.Catalogs.Count(); B = Catalogs.Count;",
+        &globals,
+        true,
+    );
+    assert_eq!(result.replacements.len(), 1);
+    assert_eq!(result.uncertain.len(), 1);
+    assert_eq!(result.uncertain[0].reason, "bsl_binding_unverified");
+}

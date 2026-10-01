@@ -88,3 +88,31 @@ pub fn read_text(path: &Path, max_bytes: u64) -> io::Result<String> {
     }
     String::from_utf8(bytes).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))
 }
+
+/// Recheck the full preview snapshot after staging without reparsing every source file.
+pub fn snapshot(root: &Path, excluded: &[PathBuf], id: &str, name: &str) -> io::Result<String> {
+    use std::fmt::Write;
+    let inventory = Inventory::read(root, excluded)?;
+    let mut digest = Sha256::new();
+    digest.update(id);
+    digest.update([0]);
+    digest.update(name);
+    for path in inventory.files {
+        digest.update([0]);
+        digest.update((path.as_os_str().as_encoded_bytes().len() as u64).to_le_bytes());
+        digest.update(path.as_os_str().as_encoded_bytes());
+        digest.update(file_hash(&root.join(path))?);
+    }
+    for path in inventory.directories {
+        digest.update([1]);
+        digest.update((path.as_os_str().as_encoded_bytes().len() as u64).to_le_bytes());
+        digest.update(path.as_os_str().as_encoded_bytes());
+    }
+    Ok(digest
+        .finalize()
+        .iter()
+        .fold(String::with_capacity(64), |mut output, byte| {
+            let _ = write!(output, "{byte:02x}");
+            output
+        }))
+}

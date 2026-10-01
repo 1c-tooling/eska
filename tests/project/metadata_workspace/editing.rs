@@ -1163,3 +1163,59 @@ fn failed_publication_preserves_source_and_removes_its_temporary_file() {
 }
 
 mod standard;
+
+/// Disabling Global exposes the module's name as a property and must reject reserved name collisions.
+#[test]
+fn common_module_global_flag_obeys_the_same_name_domain_as_rename() {
+    for (name, allowed) in [("Catalogs", false), ("WorkingDate", true)] {
+        let directory = TestDir::new();
+        fs::create_dir_all(directory.0.join("src/CommonModules")).unwrap();
+        fs::create_dir_all(directory.0.join("src/Ext")).unwrap();
+        fs::write(
+            directory.0.join("eska.toml"),
+            "[project]\ntype='configuration'\n",
+        )
+        .unwrap();
+        fs::write(directory.0.join("src/Configuration.xml"), format!(r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><Configuration uuid="root"><Properties><Name>Demo</Name></Properties><ChildObjects><CommonModule>{name}</CommonModule></ChildObjects></Configuration></MetaDataObject>"#)).unwrap();
+        fs::write(
+            directory.0.join("src/Ext/ParentConfigurations.bin"),
+            "{6,0,0,0,0,0}",
+        )
+        .unwrap();
+        let path = directory.0.join(format!("src/CommonModules/{name}.xml"));
+        let input = format!(
+            r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><CommonModule uuid="module"><Properties><Name>{name}</Name><Global>true</Global></Properties></CommonModule></MetaDataObject>"#
+        );
+        fs::write(&path, &input).unwrap();
+        let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+        let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+        let id = object(MetadataKind::CommonModule, name, None);
+        let state = project.property_editing(&id).unwrap();
+        let field = state
+            .properties
+            .fields
+            .iter()
+            .find(|field| field.path[0].key.name == "Global")
+            .unwrap();
+        let result = project.update_property(
+            &id,
+            &state.properties.snapshot,
+            &field.path,
+            &PropertyChange::Text {
+                value: "false".into(),
+            },
+        );
+        if allowed {
+            result.unwrap();
+            assert_eq!(
+                fs::read_to_string(&path).unwrap(),
+                input.replace("<Global>true</Global>", "<Global>false</Global>")
+            );
+        } else {
+            assert!(
+                matches!(result, Err(PropertyEditError::Edit(EditError::IncompatibleProperty(key))) if key.name == "Name")
+            );
+            assert_eq!(fs::read_to_string(&path).unwrap(), input);
+        }
+    }
+}

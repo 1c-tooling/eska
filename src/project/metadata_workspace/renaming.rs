@@ -24,6 +24,9 @@ pub enum RenameError {
     Name(NameError),
     Collision(ObjectId),
     Edit(EditError),
+    Blocked(Vec<RenameIssue>),
+    ReviewRequired,
+    Committed(Box<WorkspaceError>),
     Io {
         path: PathBuf,
         source: std::io::Error,
@@ -45,6 +48,79 @@ impl From<EditError> for RenameError {
 }
 
 impl ProjectSession {
+    /// Rebuild a reviewed source-wide plan and publish its confirmed references as one recoverable operation.
+    ///
+    /// # Errors
+    /// Rejects stale previews, unresolved blockers, unreviewed candidates and write conflicts.
+    /// `Committed` means source publication succeeded but this session must be reopened.
+    pub fn apply_rename(
+        &mut self,
+        id: &ObjectId,
+        new_name: &str,
+        expected: &str,
+        reviewed: bool,
+    ) -> Result<RenamePlan, RenameError> {
+        let guard =
+            crate::project::metadata_rename::transaction::Guard::acquire(self.project().root())?;
+        guard.check_clear(self.project().source())?;
+        let plan = self.preview_rename(id, new_name)?;
+        if plan.snapshot != expected {
+            return Err(EditError::Conflict.into());
+        }
+        if !plan.issues.is_empty() {
+            return Err(RenameError::Blocked(plan.issues));
+        }
+        if !reviewed && plan.files.iter().any(|file| !file.uncertain.is_empty()) {
+            return Err(RenameError::ReviewRequired);
+        }
+        if plan.files.iter().all(|file| file.replacements.is_empty()) && plan.moves.is_empty() {
+            return Ok(plan);
+        }
+        let generation = self
+            .generation
+            .checked_add(1)
+            .ok_or(WorkspaceError::GenerationExhausted)?;
+        guard.publish(self.project().source(), &plan, &self.rename_exclusions())?;
+        let source = self
+            .source
+            .reopen()
+            .map_err(|error| RenameError::Committed(Box::new(WorkspaceError::Source(error))))?;
+        let mut fresh =
+            Self::open(source).map_err(|error| RenameError::Committed(Box::new(error)))?;
+        fresh.generation = generation;
+        *self = fresh;
+        Ok(plan)
+    }
+
+    /// Inspect a retained rename journal without restoring files.
+    ///
+    /// # Errors
+    /// Returns busy, unsafe or corrupt journal errors instead of inferring restoration paths.
+    pub fn rename_recovery(&self) -> Result<super::RenameRecovery, RenameError> {
+        let guard =
+            crate::project::metadata_rename::transaction::Guard::acquire(self.project().root())?;
+        Ok(guard.recovery_status(self.project().source())?)
+    }
+
+    /// Restore only journal-owned bytes after the caller has inspected its recovery token.
+    ///
+    /// # Errors
+    /// An external change prevents restoration; the retained journal is never discarded on conflict.
+    pub fn recover_rename(&mut self, expected: &str) -> Result<(), RenameError> {
+        let guard =
+            crate::project::metadata_rename::transaction::Guard::acquire(self.project().root())?;
+        let generation = self
+            .generation
+            .checked_add(1)
+            .ok_or(WorkspaceError::GenerationExhausted)?;
+        guard.recover(self.project().source(), expected)?;
+        let source = self.source.reopen().map_err(WorkspaceError::Source)?;
+        let mut fresh = Self::open(source)?;
+        fresh.generation = generation;
+        *self = fresh;
+        Ok(())
+    }
+
     /// Build a source-wide preview without writing files, caches or session history.
     ///
     /// # Errors

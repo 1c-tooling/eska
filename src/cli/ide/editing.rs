@@ -244,6 +244,8 @@ pub(in crate::cli) fn failure(error: PropertyEditError) -> Value {
         }
         PropertyEditError::Edit(EditError::UnsupportedValue) => "property_unsupported",
         PropertyEditError::Edit(EditError::HistoryUnavailable) => "property_history_unavailable",
+        PropertyEditError::Edit(EditError::Busy) => "property_edit_busy",
+        PropertyEditError::Edit(EditError::RecoveryRequired) => "property_recovery_required",
         PropertyEditError::Edit(EditError::UnsafePath) => "source_invalid",
         PropertyEditError::Edit(EditError::InvalidXml) => "xml_invalid",
         PropertyEditError::Edit(EditError::Io(_)) => "property_write_failed",

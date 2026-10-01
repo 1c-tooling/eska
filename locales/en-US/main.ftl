@@ -885,3 +885,5 @@ metadata-apply-about = Apply one validated property change
 metadata-object-help = Object ID returned by metadata inspect; defaults to the root object
 metadata-input-help = JSON request file, or - to read stdin
 metadata-rename-preview-about = Preview a rename and uncertain references without writing files
+metadata-rename-apply-about = Apply a reviewed rename plan against its source snapshot
+metadata-rename-recovery-about = Inspect or recover an interrupted rename

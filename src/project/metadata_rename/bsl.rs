@@ -128,6 +128,13 @@ impl BslRename {
                 && code.get(index + 3)?.kind == Kind::Symbol('('))
             .then_some(index);
         }
+        // A collection method such as Metadata.Catalogs.Count() is not a metadata object's property.
+        if code
+            .get(index + 1)
+            .is_some_and(|token| token.kind == Kind::Symbol('('))
+        {
+            return None;
+        }
         let aliases = manager_aliases(class)?;
         let (root, valid) = if self.ancestry.len() == 1 {
             let root = index.checked_sub(2)?;

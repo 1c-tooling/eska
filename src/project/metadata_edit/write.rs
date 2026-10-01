@@ -29,32 +29,63 @@ impl EditPlan {
     /// Returns a conflict, unsafe path, read-only source or filesystem error. No
     /// delete-then-rename fallback is used when replacement is unavailable.
     pub fn publish(&self, root: &Path, relative: &Path) -> Result<(), EditError> {
-        let path = checked_path(root, relative)?;
-        let permissions = fs::metadata(&path).map_err(EditError::Io)?.permissions();
-        if permissions.readonly() {
-            return Err(EditError::ReadOnly);
-        }
-        compare(&path, &self.original)?;
-        if self.is_empty() {
-            return Ok(());
-        }
-        let parent = path.parent().ok_or(EditError::UnsafePath)?;
-        let (temporary, mut file) = temporary(parent)?;
-        file.write_all(self.updated.as_bytes())
-            .map_err(EditError::Io)?;
-        file.set_permissions(permissions.clone())
-            .map_err(EditError::Io)?;
-        file.sync_all().map_err(EditError::Io)?;
-        drop(file);
-        if checked_path(root, relative)? != path {
-            return Err(EditError::Conflict);
-        }
-        compare(&path, &self.original)?;
-        if fs::metadata(&path).map_err(EditError::Io)?.permissions() != permissions {
-            return Err(EditError::Conflict);
-        }
-        fs::rename(&temporary.0, &path).map_err(EditError::Io)
+        publish_bytes(root, relative, &self.original, &self.updated, None)
     }
+}
+
+/// A structural journal owns the temporary file too, making process termination recoverable.
+pub fn publish_snapshot_in(
+    root: &Path,
+    relative: &Path,
+    original: &str,
+    updated: &str,
+    staging: &Path,
+) -> Result<(), EditError> {
+    publish_bytes(root, relative, original, updated, Some(staging))
+}
+
+/// Both scalar and structural writes use the same permission and exact-byte replacement checks.
+fn publish_bytes(
+    root: &Path,
+    relative: &Path,
+    original: &str,
+    updated: &str,
+    staging: Option<&Path>,
+) -> Result<(), EditError> {
+    let path = checked_path(root, relative)?;
+    let permissions = fs::metadata(&path).map_err(EditError::Io)?.permissions();
+    if permissions.readonly() {
+        return Err(EditError::ReadOnly);
+    }
+    compare(&path, original)?;
+    if original == updated {
+        return Ok(());
+    }
+    let parent = path.parent().ok_or(EditError::UnsafePath)?;
+    let (temporary, mut file) = if let Some(directory) = staging {
+        let path = directory.join("publish.tmp");
+        let file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&path)
+            .map_err(EditError::Io)?;
+        (Temporary(path), file)
+    } else {
+        temporary(parent)?
+    };
+    file.write_all(updated.as_bytes()).map_err(EditError::Io)?;
+    file.set_permissions(permissions.clone())
+        .map_err(EditError::Io)?;
+    file.sync_all().map_err(EditError::Io)?;
+    drop(file);
+    if checked_path(root, relative)? != path {
+        return Err(EditError::Conflict);
+    }
+    compare(&path, original)?;
+    if fs::metadata(&path).map_err(EditError::Io)?.permissions() != permissions {
+        return Err(EditError::Conflict);
+    }
+    fs::rename(&temporary.0, &path).map_err(EditError::Io)
 }
 
 /// Reject aliases so an edit cannot replace a symlink or traverse outside the configured source.
@@ -67,6 +98,9 @@ fn checked_path(root: &Path, relative: &Path) -> Result<PathBuf, EditError> {
         return Err(EditError::UnsafePath);
     }
     let mut path = root.canonicalize().map_err(EditError::Io)?;
+    if path != root {
+        return Err(EditError::UnsafePath);
+    }
     for component in relative.components() {
         path.push(component);
         if fs::symlink_metadata(&path)

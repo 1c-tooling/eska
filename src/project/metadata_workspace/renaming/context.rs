@@ -80,6 +80,12 @@ impl ProjectSession {
             .children()
             .find(|node| node.has_tag_name((MD, "Properties")))
             .ok_or(EditError::UnsupportedValue)?;
+        if object.kind == MetadataKind::CommonModule
+            && super::bsl::common_module(&input, &object.name) != Some(true)
+        {
+            crate::project::metadata_rename::validate_common_module_name(new_name)
+                .map_err(RenameError::Name)?;
+        }
         if properties.children().any(|node| {
             node.has_tag_name((MD, "ObjectBelonging")) && node.text() == Some("Adopted")
         }) {

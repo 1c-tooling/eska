@@ -1,4 +1,4 @@
-//! Read-only, manifest-backed metadata sessions; no CLI, platform or watcher.
+//! Manifest-backed metadata sessions with checked edits; no CLI, platform or watcher.
 
 mod cache;
 mod editing;
@@ -11,6 +11,7 @@ pub mod search;
 mod session;
 mod support;
 pub use super::metadata_disk_cache::DiskCacheStats;
+pub use super::metadata_rename::transaction::RecoveryStatus as RenameRecovery;
 pub use cache::{CacheLimits, CacheStats};
 pub use editing::{EditingSnapshot, PropertyEditError, PropertyTypeChoice};
 pub use editing_references::PropertyReferenceChoice;
