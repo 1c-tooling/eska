@@ -171,7 +171,7 @@ impl ProjectSession {
         let document = self.editing_document(id, &location, &input)?;
         let plan = document.update(expected, path, change)?;
         let modern = document.modern;
-        self.validate_predefined_lengths(id, &plan)?;
+        self.validate_predefined_constraints(id, &plan)?;
         let kind = self.object(id)?.kind;
         let plan = if numbering::linked_field(kind, path) {
             self.plan_linked_property(
@@ -441,7 +441,7 @@ impl ProjectSession {
         if !self.can_edit(id, &location.path)? {
             return Err(EditError::ReadOnly.into());
         }
-        self.validate_predefined_lengths(id, plan)?;
+        self.validate_predefined_constraints(id, plan)?;
         if self.generation == u64::MAX {
             return Err(WorkspaceError::GenerationExhausted.into());
         }
@@ -473,18 +473,21 @@ impl ProjectSession {
     }
 
     /// Read the current payload rather than a watcher cache before both ordinary writes and undo.
-    fn validate_predefined_lengths(
+    fn validate_predefined_constraints(
         &self,
         id: &ObjectId,
         plan: &EditPlan,
     ) -> Result<(), PropertyEditError> {
+        use crate::project::metadata_edit::ext_dimensions::PredefinedDimensions;
         use crate::project::metadata_edit::lengths::PredefinedLengths;
         if plan.is_empty() {
             return Ok(());
         }
-        let Some(constraints) = PredefinedLengths::changed(plan.original(), plan.output())? else {
+        let lengths = PredefinedLengths::changed(plan.original(), plan.output())?;
+        let dimensions = PredefinedDimensions::changed(plan.original(), plan.output())?;
+        if lengths.is_none() && dimensions.is_none() {
             return Ok(());
-        };
+        }
         if let Some(path) = self
             .source
             .predefined_path(id)
@@ -494,7 +497,12 @@ impl ProjectSession {
                 .read_xml(&path)
                 .map_err(WorkspaceError::Source)?
         {
-            constraints.validate(&input)?;
+            if let Some(lengths) = lengths {
+                lengths.validate(&input)?;
+            }
+            if let Some(dimensions) = dimensions {
+                dimensions.validate(&input)?;
+            }
         }
         Ok(())
     }

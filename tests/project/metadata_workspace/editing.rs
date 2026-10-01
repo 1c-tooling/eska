@@ -1219,6 +1219,7 @@ fn failed_publication_preserves_source_and_removes_its_temporary_file() {
     }));
 }
 
+mod ext_dimensions;
 mod integers;
 mod lengths;
 mod numbering;

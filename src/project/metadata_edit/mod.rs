@@ -1,6 +1,7 @@
 //! Validated edits of existing Designer properties, without serializing the document.
 
 mod document;
+pub(crate) mod ext_dimensions;
 mod hierarchy;
 pub(crate) mod lengths;
 pub(crate) mod numbering;

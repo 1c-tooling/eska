@@ -103,6 +103,8 @@ impl EditingDocument<'_> {
                         "numerator_inherited"
                     } else if let Some(reason) = super::hierarchy::read_only_reason(node) {
                         reason
+                    } else if let Some(reason) = super::ext_dimensions::read_only_reason(node) {
+                        reason
                     } else {
                         "unsupported_domain_or_shape"
                     },
@@ -339,6 +341,7 @@ pub(super) fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<
     super::standard::validate_dependents(node, &candidate)?;
     super::lengths::validate_dependents(node, &candidate)?;
     super::hierarchy::validate_dependents(node, &candidate)?;
+    super::ext_dimensions::validate_dependents(node, &candidate)?;
     validate_common_module_global(node, &candidate)?;
     if let Some(description) = node
         .ancestors()
