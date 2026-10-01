@@ -1,5 +1,6 @@
 //! Validated edits of existing Designer properties, without serializing the document.
 
+mod choice_links;
 mod document;
 pub(crate) mod ext_dimensions;
 mod hierarchy;
@@ -18,7 +19,7 @@ pub(crate) use write::publish_snapshot_in;
 pub(crate) use document::EditingDocument;
 pub(crate) use document::ReadOnlyProperty;
 pub use document::{EditableField, FieldStep, PropertyChange, PropertyEditing};
-pub use schema::ScalarSchema;
+pub use schema::{ScalarSchema, TextDomain};
 pub use value_schema::{EditableValueType, ValueConstraints};
 
 use std::{fmt::Write, io, ops::Range};

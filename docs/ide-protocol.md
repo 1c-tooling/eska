@@ -528,6 +528,11 @@ mtime и поколение дерева не заменяют сверку ис
 | `metadata/undoProperty` | snapshot, direction:undo\|redo | обычные properties/picture и новый editing |
 
 Форматы path/change и проверки общие с [CLI для ИИ](metadata-editing.md).
+Скаляр `text` может дополнительно объявлять `domain:"choiceParameterName"`:
+имя существующей связи параметров выбора с проверкой синтаксиса и конфликтов
+внутри списка. Операция остаётся `change.kind:"text"`; ограничения проверяет
+backend независимо от поддержки подсказки клиентом. У обычных строк `domain`
+отсутствует. Подробные правила приведены в контракте CLI.
 API 1.7 добавляет `schema.kind:"reference"` с `domain` и `nullable`. Клиентам 1.6
 сервер не выдаёт новые варианты схем в чтении и ответах на запись; новый метод
 для них возвращает method not found. Opt-in `allowPropertyEdits` остаётся обязательным.

@@ -233,7 +233,7 @@ impl EditingDocument<'_> {
         path: &mut Vec<FieldStep>,
         fields: &mut Vec<EditableField>,
     ) {
-        if schema::protected(node.tag_name().name()) {
+        if schema::protected(node.tag_name().name()) && !super::choice_links::is_name(node) {
             return;
         }
         if matches!(model_type, Some("TypeItem" | "ReferenceTypeItem"))
@@ -288,50 +288,61 @@ impl EditingDocument<'_> {
             return;
         };
         for (child, step) in children(node) {
-            let kind = if (super::references::target(class).is_some()
-                && child.has_tag_name((schema::READABLE, "Item")))
-                || (class == "LocalStringMapEntry" && child.has_tag_name((schema::CORE, "item")))
-            {
-                Some(class)
-            } else if class == "LocalStringMapEntry"
-                && child.has_tag_name((schema::CORE, "content"))
-            {
-                Some("EString")
-            } else if matches!(
-                class,
-                "TypeDescription"
-                    | "SourceReferenceTypeDescription"
-                    | "MdObjectReferenceTypeDescription"
-            ) && child.tag_name().namespace() == Some(schema::CORE)
-            {
-                match child.tag_name().name() {
-                    "StringQualifiers"
-                    | "NumberQualifiers"
-                    | "DateQualifiers"
-                    | "BinaryDataQualifiers" => Some(class),
-                    "Type" => Some(if class == "TypeDescription" {
-                        "TypeItem"
-                    } else {
-                        "ReferenceTypeItem"
-                    }),
-                    _ => schema::nested_type(&path[0].key.name, node, child),
-                }
-            } else if (matches!(class, "UsedFunctionality" | "RequiredPermission")
-                && child.tag_name().namespace() == Some(schema::APP)
-                && matches!(child.tag_name().name(), "functionality" | "permission")
-                && child.children().any(|node| node.is_element()))
-                || (child.has_tag_name(("http://v8.1c.ru/8.3/xcf/readable", "StandardAttribute"))
-                    && class == "StandardAttribute")
-            {
-                Some(class)
-            } else {
-                schema::field_type(class, child, false, self.modern)
-                    .or_else(|| schema::nested_type(&path[0].key.name, node, child))
-            };
+            let kind = child_type(class, node, child, &path[0].key.name, self.modern);
             path.push(step);
             self.visit(child, kind, path, fields);
             path.pop();
         }
+    }
+}
+
+/// Resolve a child only in the reviewed writer context of its parent record.
+fn child_type<'a>(
+    class: &'a str,
+    parent: Node<'_, '_>,
+    child: Node<'_, '_>,
+    root: &str,
+    modern: bool,
+) -> Option<&'a str> {
+    if (super::references::target(class).is_some()
+        && child.has_tag_name((schema::READABLE, "Item")))
+        || (class == "LocalStringMapEntry" && child.has_tag_name((schema::CORE, "item")))
+        || (class == "ChoiceParameterLink" && super::choice_links::is_link(child))
+    {
+        Some(class)
+    } else if class == "ChoiceParameterLink" {
+        super::choice_links::is_link(parent)
+            .then(|| schema::field_type(class, child, false, modern))
+            .flatten()
+    } else if class == "LocalStringMapEntry" && child.has_tag_name((schema::CORE, "content")) {
+        Some("EString")
+    } else if matches!(
+        class,
+        "TypeDescription" | "SourceReferenceTypeDescription" | "MdObjectReferenceTypeDescription"
+    ) && child.tag_name().namespace() == Some(schema::CORE)
+    {
+        match child.tag_name().name() {
+            "StringQualifiers" | "NumberQualifiers" | "DateQualifiers" | "BinaryDataQualifiers" => {
+                Some(class)
+            }
+            "Type" => Some(if class == "TypeDescription" {
+                "TypeItem"
+            } else {
+                "ReferenceTypeItem"
+            }),
+            _ => schema::nested_type(root, parent, child),
+        }
+    } else if (matches!(class, "UsedFunctionality" | "RequiredPermission")
+        && child.tag_name().namespace() == Some(schema::APP)
+        && matches!(child.tag_name().name(), "functionality" | "permission")
+        && child.children().any(|node| node.is_element()))
+        || (child.has_tag_name(("http://v8.1c.ru/8.3/xcf/readable", "StandardAttribute"))
+            && class == "StandardAttribute")
+    {
+        Some(class)
+    } else {
+        schema::field_type(class, child, false, modern)
+            .or_else(|| schema::nested_type(root, parent, child))
     }
 }
 
@@ -342,6 +353,7 @@ pub(super) fn validate_dependencies(node: Node<'_, '_>, output: &str) -> Result<
     super::lengths::validate_dependents(node, &candidate)?;
     super::hierarchy::validate_dependents(node, &candidate)?;
     super::ext_dimensions::validate_dependents(node, &candidate)?;
+    super::choice_links::validate_dependents(node, &candidate)?;
     validate_common_module_global(node, &candidate)?;
     if let Some(description) = node
         .ancestors()

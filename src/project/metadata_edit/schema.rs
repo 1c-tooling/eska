@@ -13,6 +13,13 @@ pub(super) const XSI: &str = "http://www.w3.org/2001/XMLSchema-instance";
 pub(super) const APP: &str = "http://v8.1c.ru/8.2/managed-application/core";
 pub(super) const READABLE: &str = "http://v8.1c.ru/8.3/xcf/readable";
 
+/// Text domains document context-specific validation without changing the scalar edit operation.
+#[derive(Clone, Copy, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TextDomain {
+    ChoiceParameterName,
+}
+
 /// An editor is emitted only when the property's source shape and domain are known.
 #[derive(Clone, Debug, Serialize)]
 #[serde(
@@ -21,7 +28,10 @@ pub(super) const READABLE: &str = "http://v8.1c.ru/8.3/xcf/readable";
     rename_all_fields = "camelCase"
 )]
 pub enum ScalarSchema {
-    Text,
+    Text {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        domain: Option<TextDomain>,
+    },
     Boolean,
     Integer {
         min: i64,
@@ -63,7 +73,10 @@ impl ScalarSchema {
             return Err(EditError::InvalidValue);
         }
         let valid = match self {
-            Self::Text => true,
+            Self::Text { domain: None } => true,
+            Self::Text {
+                domain: Some(TextDomain::ChoiceParameterName),
+            } => super::choice_links::valid_name(value),
             Self::Boolean => matches!(value, "true" | "false" | "1" | "0"),
             Self::Integer { min, max } => value
                 .parse::<i64>()
@@ -224,6 +237,11 @@ pub(super) fn scalar(
     {
         return None;
     }
+    if super::choice_links::is_name(node) {
+        return (node.attributes().len() == 0).then_some(ScalarSchema::Text {
+            domain: Some(TextDomain::ChoiceParameterName),
+        });
+    }
     // These Role-valued fields serialize a list wrapper even when it is empty.
     if model_type == "Role"
         && node.tag_name().namespace() == Some(MD)
@@ -253,26 +271,8 @@ pub(super) fn scalar(
             },
         });
     }
-    if let Some(annotation) = node.attribute((XSI, "type")) {
-        if model_type != "Value" {
-            return None;
-        }
-        let (prefix, name) = annotation
-            .split_once(':')
-            .map_or((None, annotation), |(prefix, name)| (Some(prefix), name));
-        if node.lookup_namespace_uri(prefix) != Some(XS) {
-            return None;
-        }
-        return match name {
-            "string" => Some(ScalarSchema::Text),
-            "boolean" => Some(ScalarSchema::Boolean),
-            "int" => Some(ScalarSchema::Integer {
-                min: i64::from(i32::MIN),
-                max: i64::from(i32::MAX),
-            }),
-            "decimal" => Some(ScalarSchema::Decimal { nullable: false }),
-            _ => None,
-        };
+    if node.attribute((XSI, "type")).is_some() {
+        return annotated_scalar(node, model_type);
     }
     if model_type == "ELong" {
         return session_age(node);
@@ -302,6 +302,30 @@ pub(super) fn scalar(
         }
     }
     Some(result)
+}
+
+/// Value annotations select only supported XML Schema primitives in their bound namespace.
+fn annotated_scalar(node: Node<'_, '_>, model_type: &str) -> Option<ScalarSchema> {
+    let annotation = node.attribute((XSI, "type"))?;
+    if model_type != "Value" {
+        return None;
+    }
+    let (prefix, name) = annotation
+        .split_once(':')
+        .map_or((None, annotation), |(prefix, name)| (Some(prefix), name));
+    if node.lookup_namespace_uri(prefix) != Some(XS) {
+        return None;
+    }
+    match name {
+        "string" => Some(ScalarSchema::Text { domain: None }),
+        "boolean" => Some(ScalarSchema::Boolean),
+        "int" => Some(ScalarSchema::Integer {
+            min: i64::from(i32::MIN),
+            max: i64::from(i32::MAX),
+        }),
+        "decimal" => Some(ScalarSchema::Decimal { nullable: false }),
+        _ => None,
+    }
 }
 
 /// Designer uses unsigned 64-bit seconds for these two properties, unlike EDT's signed `ELong`.
@@ -370,7 +394,7 @@ fn sibling_number(node: Node<'_, '_>, name: &str) -> Option<i64> {
 /// Domain tokens remain machine-readable; translations are added by the IDE adapter.
 pub(super) fn schema(model_type: &str, modern: bool) -> Option<ScalarSchema> {
     match model_type {
-        "EString" => Some(ScalarSchema::Text),
+        "EString" => Some(ScalarSchema::Text { domain: None }),
         "EBoolean" => Some(ScalarSchema::Boolean),
         "EInt" => Some(ScalarSchema::Integer {
             min: i64::from(i32::MIN),
