@@ -1,6 +1,7 @@
 # Общая граница проекта: первый шаг EF-10
 
-`project_core` содержит обратимые source documents, строгий YAML, native XML,
+`project_core` содержит общую модель проекта, строгие project/workspace manifests,
+discovery/selection, обратимые source documents, строгий YAML, native XML,
 принятую базу, защиту экспорта и точечную правку. Из прежних модулей сюда
 перенесены общий реестр MetadataKind, ProjectType, parser нативной поддержки,
 проверка пределов XML и writer с проверкой ожидаемых байтов. Реализация у каждого
@@ -8,7 +9,7 @@
 
 Default feature `legacy` сохраняет все действующие команды приложения.
 Минимальная библиотека собирается с `--no-default-features --lib`;
-этот граф содержит 29 normal packages, без gix, HTTP transport, Tokio, clap,
+этот граф содержит 37 normal packages, без gix, HTTP transport, Tokio, clap,
 TTY, Fluent, self-updater и zip. Список зависимостей проверен через `cargo tree`.
 Общие source operations не вызывают Git или платформу; им не передаются LSP,
 VS Code и состояние IDE. Optional dependencies не меняют их domain API.
@@ -28,12 +29,18 @@ Cargo package, это отдельно проверено через `cargo pack
 Public CLI/config/JSON не изменились. Экспериментальные Rust types теперь
 также доступны через `project_core`; это не новый стабильный SDK.
 
-Следующие части EF-10: общая конфигурация и discovery, ленивое чтение владельца
+Конфигурация и discovery используют существующие правила без второго parser.
+Проверка имён веток вызывает тот же `gix-validate 0.11.4`, уже закреплённый
+через gix в Cargo.lock. Теперь это прямая минимальная dependency без features;
+она проверяет имя и не открывает repository, не читает refs и не запускает Git.
+TOML parser также общий, machine-local настройки остаются в приложении.
+
+Следующие части EF-10: ленивое чтение владельца
 ESKA и места объявления, защищённая материализация с картой фактически собранных
 входов, самостоятельные project/build точки входа. Проверка границ зависимостей
 повторяется для каждого готового потребителя, не только для общей библиотеки.
 
 Проверки прошли в обеих сборках: fmt/check/strict Clippy, 283 unit и 525
-integration для приложения, 24 unit для минимального ядра, Rustdoc с
+integration для приложения, 82 unit для минимального ядра, Rustdoc с
 `-D warnings` и diff check. Обычный прогон пропускает 12 opt-in тестов;
 минимальный — один. Предупреждений в принятых сборках нет.

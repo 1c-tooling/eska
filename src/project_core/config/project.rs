@@ -5,13 +5,13 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
-use crate::project::{
+use crate::project_core::{
     Project, ProjectConfiguration, ProjectName, ProjectNameError, ProjectPathError, ProjectType,
     SourceFormat,
-    build::{BuildSettings, BuildSettingsError},
+    platform_settings::{BuildSettings, BuildSettingsError},
 };
 
-use crate::vcs::workflow::WorkflowPreset;
+use crate::project_core::workflow::WorkflowPreset;
 
 use super::schema::{
     DEFAULT_SOURCE, RawDocument, SerializedBuild, SerializedDocument, SerializedProject,
@@ -166,7 +166,10 @@ impl ProjectConfig {
     ///
     /// Callers construct member configs without workflow or artifact overrides;
     /// only an explicit platform override is retained.
-    pub(crate) fn to_workspace_member_toml(&self) -> Result<String, toml::ser::Error> {
+    ///
+    /// # Errors
+    /// Returns a path serialization failure before any file is written.
+    pub fn to_workspace_member_toml(&self) -> Result<String, toml::ser::Error> {
         self.serialize(true)
     }
 
@@ -179,9 +182,10 @@ impl ProjectConfig {
         let build =
             (!workspace_member || self.build_overrides.platform_version.is_some()).then(|| {
                 SerializedBuild {
-                    platform_version: build
-                        .platform_version()
-                        .map_or("", crate::project::build::PlatformVersion::as_str),
+                    platform_version: build.platform_version().map_or(
+                        "",
+                        crate::project_core::platform_settings::PlatformVersion::as_str,
+                    ),
                     artifacts_directory: (!workspace_member
                         && build.artifacts_directory() != default_build.artifacts_directory())
                     .then(|| build.artifacts_directory()),
@@ -258,7 +262,7 @@ pub enum InvalidSourceReason {
 pub enum ProjectConfigError {
     InvalidName(ProjectNameError),
     InvalidBuild(BuildSettingsError),
-    InvalidWorkflow(crate::vcs::workflow::PolicyError),
+    InvalidWorkflow(crate::project_core::workflow::PolicyError),
     UnknownWorkflow {
         value: String,
     },
@@ -313,13 +317,12 @@ mod tests {
     use std::{
         fs,
         path::{Path, PathBuf},
-        time::{SystemTime, UNIX_EPOCH},
     };
 
     use super::{InvalidSourceReason, ProjectConfig, ProjectConfigError};
     use crate::{
-        project::{ProjectType, SourceFormat},
-        vcs::workflow::WorkflowPreset,
+        project_core::workflow::WorkflowPreset,
+        project_core::{ProjectType, SourceFormat},
     };
 
     #[test]
@@ -361,7 +364,7 @@ mod tests {
     #[test]
     fn workspace_member_serialization_omits_root_owned_settings() {
         let config = ProjectConfig::new(ProjectType::Processing)
-            .with_name(crate::project::ProjectName::parse("my-orders".to_owned()).unwrap());
+            .with_name(crate::project_core::ProjectName::parse("my-orders".to_owned()).unwrap());
         assert_eq!(
             config.to_workspace_member_toml().unwrap(),
             "[project]\nname = \"my-orders\"\ntype = \"processing\"\n"
@@ -446,29 +449,18 @@ mod tests {
     }
 
     struct TempConfig {
-        directory: PathBuf,
+        directory: crate::test_support::TestDir,
         path: PathBuf,
     }
 
     impl TempConfig {
+        /// Configuration IO tests share exclusively owned playground fixtures with CLI tests.
         fn new(contents: &str) -> Self {
-            let unique = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("system time after Unix epoch")
-                .as_nanos();
-            let directory = std::env::temp_dir()
-                .join(format!("eska-config-test-{}-{unique}", std::process::id()));
-            fs::create_dir(&directory).expect("create temporary config directory");
-            let path = directory.join("eska.toml");
+            let directory = crate::test_support::TestDir::new();
+            let path = directory.0.join("eska.toml");
             fs::write(&path, contents).expect("write temporary config");
 
             Self { directory, path }
-        }
-    }
-
-    impl Drop for TempConfig {
-        fn drop(&mut self) {
-            fs::remove_dir_all(&self.directory).expect("remove temporary config directory");
         }
     }
 
@@ -487,7 +479,7 @@ mod tests {
     #[test]
     fn reports_config_read_error_with_path() {
         let file = TempConfig::new("[project]\ntype = \"report\"\n");
-        let path = file.directory.join("missing.toml");
+        let path = file.directory.0.join("missing.toml");
 
         let error = ProjectConfig::load(&path).expect_err("missing file must be reported");
 

@@ -173,17 +173,17 @@ tests/
 | Изменить подключение существующего проекта | [`src/project/init.rs`](../src/project/init.rs): `inspect` — без записи, `apply` — применение |
 | Изменить создание проекта или откат | [`src/project/create.rs`](../src/project/create.rs) |
 | Изменить состав создаваемых файлов | [`src/project/templates.rs`](../src/project/templates.rs) |
-| Изменить поиск project/workspace и проверку исходников | [`src/project/discovery.rs`](../src/project/discovery.rs) |
+| Изменить поиск project/workspace и проверку исходников | [`src/project_core/discovery.rs`](../src/project_core/discovery.rs) |
 | Изменить расчёт состояния проекта и readiness | [`src/project/status.rs`](../src/project/status.rs) |
-| Изменить схему project `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
-| Изменить схему workspace `eska.toml` | [`src/config/workspace.rs`](../src/config/workspace.rs), затем [`src/project/discovery.rs`](../src/project/discovery.rs) |
-| Изменить распознавание типа выгрузки | [`src/project/designer_xml.rs`](../src/project/designer_xml.rs) |
+| Изменить схему project `eska.toml` | [`src/project_core/config/schema.rs`](../src/project_core/config/schema.rs), затем [`src/project_core/config/project.rs`](../src/project_core/config/project.rs) |
+| Изменить схему workspace `eska.toml` | [`src/project_core/config/workspace.rs`](../src/project_core/config/workspace.rs), затем [`src/project_core/discovery.rs`](../src/project_core/discovery.rs) |
+| Изменить распознавание типа выгрузки | [`src/project_core/native.rs`](../src/project_core/native.rs) |
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
 | Изменить clone/fetch или transport fallback policy | [`src/vcs/network.rs`](../src/vcs/network.rs) |
 | Изменить system Git capability fallback | [`src/vcs/command.rs`](../src/vcs/command.rs) |
 | Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../src/vcs/repository.rs) |
 | Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../src/vcs/status.rs) |
-| Изменить workflow policy или план задачи | [`src/vcs/workflow/policy.rs`](../src/vcs/workflow/policy.rs) |
+| Изменить workflow policy или план задачи | [`src/project_core/workflow/policy.rs`](../src/project_core/workflow/policy.rs) |
 | Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../src/cli/interactive/keyboard.rs) |
 | Изменить оформление меню | [`src/cli/interactive/render.rs`](../src/cli/interactive/render.rs) |
 | Изменить приоритет языка | [`src/cli/localization/locale.rs`](../src/cli/localization/locale.rs) |

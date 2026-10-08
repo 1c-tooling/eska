@@ -9,3 +9,16 @@ pub mod support;
 
 pub use metadata_kind::{MetadataKind, UnknownMetadataKind};
 pub use project_type::ProjectType;
+
+pub mod config;
+pub mod discovery;
+mod model;
+pub mod platform_settings;
+pub mod selection;
+pub mod workflow;
+mod workspace;
+
+pub use model::{
+    InvalidPathReason, Project, ProjectConfiguration, ProjectPath, ProjectPathError, SourceFormat,
+};
+pub use workspace::{ProjectName, ProjectNameError, Workspace, WorkspaceMember};

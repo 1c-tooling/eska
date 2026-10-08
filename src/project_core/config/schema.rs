@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use super::ProjectConfigError;
-use crate::project::{ProjectType, SourceFormat};
+use crate::project_core::{ProjectType, SourceFormat};
 
 pub(super) const DEFAULT_SOURCE: &str = "src";
 const DEFAULT_SOURCE_FORMAT: &str = "designer-xml";
@@ -140,6 +140,10 @@ pub(super) fn default_source_format() -> String {
     DEFAULT_SOURCE_FORMAT.to_owned()
 }
 
+/// Parse the strict machine-facing artifact kind without inferring from filesystem contents.
+///
+/// # Errors
+/// Returns an unknown project type with the original value.
 pub fn parse_project_type(value: String) -> Result<ProjectType, ProjectConfigError> {
     match value.as_str() {
         "configuration" => Ok(ProjectType::Configuration),

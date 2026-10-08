@@ -8,8 +8,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    project::build::{BuildSettings, BuildSettingsError},
-    vcs::workflow::WorkflowSettings,
+    project_core::platform_settings::{BuildSettings, BuildSettingsError},
+    project_core::workflow::WorkflowSettings,
 };
 
 use super::{
@@ -109,10 +109,10 @@ impl WorkspaceConfig {
                 members: &self.members,
             },
             build: SerializedBuild {
-                platform_version: self
-                    .build
-                    .platform_version()
-                    .map_or("", crate::project::build::PlatformVersion::as_str),
+                platform_version: self.build.platform_version().map_or(
+                    "",
+                    crate::project_core::platform_settings::PlatformVersion::as_str,
+                ),
                 artifacts_directory: (self.build.artifacts_directory()
                     != defaults.artifacts_directory())
                 .then(|| self.build.artifacts_directory()),

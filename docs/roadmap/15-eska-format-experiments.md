@@ -402,7 +402,9 @@ byte-preserving Git transport для extensionless блоков базы: ста
 
 **Промежуточный результат:** [общий core](../research/eska-format/core-boundary.md)
 выделен из зависимостей приложения: реестр типов, native support/XML и один
-writer используются обоими форматами. Minimal library compile graph не содержит
+writer используются обоими форматами. Общие model/config/discovery/selection
+тоже доступны без приложения; правила schema и workspace не дублируются.
+Minimal library compile graph не содержит
 gix, HTTP, CLI, TTY или IDE runtime. Это подготовка текущих потребителей;
 публичная конфигурация ESKA, discovery, build и самостоятельные инструменты
 ещё не подключены. Этап остаётся `IN-PROGRESS`.

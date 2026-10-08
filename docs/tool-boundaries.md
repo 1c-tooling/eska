@@ -486,7 +486,7 @@ LSP runtime, Git transport или debugger; `eska-build` не включает �
 
 ## Переход от текущего состояния
 
-Сейчас [модель проекта](../src/project/model.rs) поддерживает Designer XML,
+Сейчас [модель проекта](../src/project_core/model.rs) поддерживает Designer XML,
 а [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.

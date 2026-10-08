@@ -15,6 +15,6 @@ mod update;
 #[cfg(feature = "legacy")]
 pub mod vcs;
 
-#[cfg(all(test, feature = "legacy"))]
+#[cfg(test)]
 #[path = "../tests/support/mod.rs"]
 mod test_support;
