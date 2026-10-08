@@ -412,6 +412,10 @@ writer используются обоими форматами. Общие mode
 Model и pure XML parser вынесены в core; [YAML-проекция](../research/eska-format/semantic-projection.md)
 возвращает те же логические объекты, свойства и ссылки без генерации проекта XML.
 Координаты различаются по исходному формату и привязаны к SHA-256 source text.
+В `build_core` вынесены план сборки, runner платформы и managed infobase;
+прежний сборщик использует их же. Feature `build` проверяется отдельно от
+приложения, без Git engine, HTTP, CLI, TTY и IDE runtime. Конвейер и capture
+Git provenance пока остаются в приложении.
 Minimal library compile graph не содержит
 gix, HTTP, CLI, TTY или IDE runtime. Это подготовка текущих потребителей;
 публичная конфигурация ESKA, discovery, build и самостоятельные инструменты

@@ -4,7 +4,7 @@ use std::{
 };
 
 use super::PlatformVersion;
-use crate::project::{Project, ProjectType};
+use crate::project_core::{Project, ProjectType};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ArtifactType {
@@ -252,8 +252,11 @@ impl BuildPlan {
         self
     }
 
-    /// Replace only the source passed to ibcmd with an isolated snapshot.
-    pub(super) fn with_snapshot_source(&self, source: PathBuf) -> Self {
+    /// Replace only the native XML source with a caller-prepared snapshot.
+    ///
+    /// This resolves a path; it does not validate source provenance or grant export rights.
+    #[must_use]
+    pub fn with_snapshot_source(&self, source: PathBuf) -> Self {
         let mut plan = self.clone();
         plan.source = source;
         plan
@@ -381,7 +384,9 @@ fn resolve_explicit_output(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::{ProjectConfiguration, SourceFormat, build::BuildSettings};
+    use crate::project_core::{
+        ProjectConfiguration, SourceFormat, platform_settings::BuildSettings,
+    };
 
     /// Construct a filesystem-independent project for plan tests.
     fn project(project_type: ProjectType, root: &str) -> Project {

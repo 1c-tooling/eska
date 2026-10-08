@@ -31,7 +31,8 @@ pub enum CleanOutcome {
     AlreadyAbsent,
 }
 
-pub(super) struct ManagedInfobase {
+/// A locked, owned infobase whose lifetime spans one native build operation.
+pub struct ManagedInfobase {
     root: PathBuf,
     data: PathBuf,
     state: StateDocument,
@@ -44,7 +45,7 @@ impl ManagedInfobase {
     ///
     /// # Errors
     /// Returns a structured error for inaccessible, busy, or non-owned cache paths.
-    pub(super) fn prepare(
+    pub fn prepare(
         plan: &BuildPlan,
         base_configuration: Option<&Path>,
     ) -> Result<Self, ManagedInfobaseError> {
@@ -69,12 +70,12 @@ impl ManagedInfobase {
     }
 
     #[must_use]
-    pub(super) fn data(&self) -> &Path {
+    pub fn data(&self) -> &Path {
         &self.data
     }
 
     #[must_use]
-    pub(super) const fn needs_creation(&self) -> bool {
+    pub const fn needs_creation(&self) -> bool {
         self.needs_creation
     }
 
@@ -82,7 +83,7 @@ impl ManagedInfobase {
     ///
     /// # Errors
     /// Returns a structured error when the state document cannot be serialized or written.
-    pub(super) fn mark_ready(&self) -> Result<(), ManagedInfobaseError> {
+    pub fn mark_ready(&self) -> Result<(), ManagedInfobaseError> {
         let bytes =
             serde_json::to_vec_pretty(&self.state).map_err(ManagedInfobaseError::StateSerialize)?;
         let path = self.root.join(STATE_FILE);

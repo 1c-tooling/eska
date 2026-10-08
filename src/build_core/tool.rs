@@ -159,7 +159,10 @@ impl Ibcmd {
     }
 
     /// Run the matching Designer executable through the same interruptible runner.
-    pub(crate) fn run_designer(
+    ///
+    /// # Errors
+    /// Returns a structured error when launching, tracking or interrupting the process fails.
+    pub fn run_designer(
         &self,
         arguments: Vec<OsString>,
         pid_file: &Path,

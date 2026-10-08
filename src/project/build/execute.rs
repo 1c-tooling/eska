@@ -8,8 +8,9 @@ use std::{
 
 use super::{
     ArtifactType, BuildPlan, Ibcmd, ManagedInfobaseError, ManifestError, ProcessStream, RunError,
-    infobase::ManagedInfobase, manifest,
+    manifest,
 };
+use crate::build_core::ManagedInfobase;
 use crate::project::{Project, ProjectType, designer_xml};
 
 static WORKSPACE_SEQUENCE: AtomicU64 = AtomicU64::new(0);

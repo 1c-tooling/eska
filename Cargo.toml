@@ -23,15 +23,17 @@ required-features = ["legacy"]
 
 [features]
 default = ["legacy"]
+# Native platform infrastructure is optional for source-only consumers.
+build = ["dep:ctrlc"]
 # Preserve the existing installed application while smaller tools use only shared cores.
 legacy = [
+    "build",
     "dep:axoupdater",
     "dep:reqwest",
     "dep:semver",
     "dep:tokio",
     "dep:clap",
     "dep:crossterm",
-    "dep:ctrlc",
     "dep:directories",
     "dep:fluent",
     "dep:gix",
