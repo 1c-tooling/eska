@@ -400,6 +400,13 @@ byte-preserving Git transport для extensionless блоков базы: ста
 проектная и сборочная точки входа. Перенос в Git обязан сохранять байты базы
 после чистого checkout; исходный XML не служит fallback при ошибке ESKA.
 
+**Промежуточный результат:** [общий core](../research/eska-format/core-boundary.md)
+выделен из зависимостей приложения: реестр типов, native support/XML и один
+writer используются обоими форматами. Minimal library compile graph не содержит
+gix, HTTP, CLI, TTY или IDE runtime. Это подготовка текущих потребителей;
+публичная конфигурация ESKA, discovery, build и самостоятельные инструменты
+ещё не подключены. Этап остаётся `IN-PROGRESS`.
+
 ## EF-11 Explorer и инструменты BSL
 
 В отдельной согласованной задаче репозитория Explorer подключить дерево,

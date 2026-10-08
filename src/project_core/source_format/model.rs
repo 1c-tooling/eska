@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::project::metadata_model::MetadataKind;
+use crate::project_core::MetadataKind;
 
 use super::Error;
 

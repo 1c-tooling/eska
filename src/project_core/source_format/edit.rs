@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::project::metadata_edit::{self, EditError};
+use crate::project_core::publish::{self, PublishError};
 
 use super::{
     AcceptedBase, AcceptedRef, Child, Error, MetadataNode, NativeUuid, ObjectSource, Operation,
@@ -58,7 +58,7 @@ impl SourceEditPlan {
         }
         permission(base, &self.uuid, self.property)?;
         base.verify()?;
-        metadata_edit::publish_snapshot(
+        publish::publish_snapshot(
             &self.root,
             self.path.as_path(),
             &self.original,
@@ -138,7 +138,7 @@ pub fn prepare_property_edit(
         updated
     };
     // Reuse the publication preflight without writing; do not preview a stale or unsafe source.
-    metadata_edit::publish_snapshot(&root, target.owner.as_path(), &original, &original)
+    publish::publish_snapshot(&root, target.owner.as_path(), &original, &original)
         .map_err(edit_error)?;
     Ok(SourceEditPlan {
         root,
@@ -333,12 +333,11 @@ fn safe_root(root: &Path, path: &SourcePath) -> Result<PathBuf, Error> {
 }
 
 /// Convert the shared writer's domain errors without depending on CLI presentation strings.
-fn edit_error(error: EditError) -> Error {
+fn edit_error(error: PublishError) -> Error {
     match error {
-        EditError::Conflict => Error::root("source_edit_conflict"),
-        EditError::UnsafePath => Error::root("source_edit_unsafe_path"),
-        EditError::ReadOnly => Error::root("source_edit_read_only"),
-        EditError::Io(error) => files::io(&error),
-        _ => Error::root("source_edit_publication_failed"),
+        PublishError::Conflict => Error::root("source_edit_conflict"),
+        PublishError::UnsafePath => Error::root("source_edit_unsafe_path"),
+        PublishError::ReadOnly => Error::root("source_edit_read_only"),
+        PublishError::Io(error) => files::io(&error),
     }
 }

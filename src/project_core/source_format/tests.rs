@@ -1,5 +1,5 @@
 use super::*;
-use crate::project::metadata_model::MetadataKind;
+use crate::project_core::MetadataKind;
 
 /// A small source document exercises exact values, nil, language keys and scoped XML.
 fn descriptor() -> Descriptor {

@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::project::metadata_model::MetadataKind;
+use crate::project_core::MetadataKind;
 
 use super::{
     Child, Descriptor, Error, MD_NAMESPACE, MetadataNode, Namespace, PROFILE, Property,
@@ -263,7 +263,7 @@ fn fragment(
     wrapper.push('>');
     wrapper.push_str(&value.xml);
     wrapper.push_str("</preserved>");
-    crate::project::metadata_parser::check_envelope(&wrapper)
+    crate::project_core::native::check_envelope(&wrapper)
         .map_err(|_| Error::root("source_preserved_xml_invalid"))?;
     let document = roxmltree::Document::parse(&wrapper)
         .map_err(|_| Error::root("source_preserved_xml_invalid"))?;

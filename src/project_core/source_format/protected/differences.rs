@@ -9,7 +9,7 @@ use super::super::{
     AcceptedBase, NativeUuid, Operation, PermissionReason, PropertyName, SourcePath, files,
 };
 use super::{Exclusion, ExclusionAction};
-use crate::project::support::{Reason, State};
+use crate::project_core::support::{Reason, State};
 
 /// Explain each residual difference after supported edits have already been applied.
 pub(super) fn collect(

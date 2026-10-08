@@ -9,8 +9,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::project::metadata_model::MetadataKind;
-use crate::project::support::{Reason, State, Support};
+use crate::project_core::MetadataKind;
+use crate::project_core::support::{Reason, State, Support};
 
 use super::{
     Child, Error, FileEntry, FileRole, MetadataNode, NativeDocument, NativeUuid, PropertyName,

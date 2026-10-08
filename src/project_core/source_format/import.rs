@@ -6,7 +6,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::project::metadata_model::MetadataKind;
+use crate::project_core::MetadataKind;
 
 use super::{
     Descriptor, Error, FileRole, NativeDocument, ObjectSource, PROFILE, PropertyName,

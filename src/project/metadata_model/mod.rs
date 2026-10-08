@@ -1,12 +1,11 @@
 //! Path-independent metadata values and identities. Filesystem resolution lives separately.
 
 mod identity;
-mod kind;
 mod project;
 mod value;
 
+pub use crate::project_core::{MetadataKind, UnknownMetadataKind};
 pub use identity::{CollectionKind, ModuleRole, NodeId, ObjectId, ProjectScope, ScopedNodeId};
-pub use kind::{MetadataKind, UnknownMetadataKind};
 pub use project::{MetadataProject, MetadataProjectError};
 pub use value::{LocalizedText, MetadataProperty, MetadataValue, PropertyKey, ValueIssue};
 

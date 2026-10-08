@@ -35,7 +35,7 @@ pub(super) fn encode(source: &Descriptor) -> Result<String, Error> {
     writer.object(&source.object, 1, &source.xml.namespaces)?;
     writer.output.push_str("</MetaDataObject>");
     writer.output.push_str(writer.eol);
-    crate::project::metadata_parser::check_envelope(&writer.output)
+    crate::project_core::native::check_envelope(&writer.output)
         .map_err(|_| Error::root("source_xml_export_invalid"))?;
     roxmltree::Document::parse_with_options(
         &writer.output,

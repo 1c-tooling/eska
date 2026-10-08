@@ -14,8 +14,8 @@ use super::{
 };
 
 pub(super) const MD_NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
-const MAX_BYTES: usize = 64 * 1024 * 1024;
-const MAX_DEPTH: usize = 64;
+#[cfg(test)]
+use crate::project_core::native::{MAX_BYTES, MAX_DEPTH};
 
 /// Summaries suffice for tree/search; complete property values are opt-in.
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, Eq, PartialEq)]
@@ -193,30 +193,13 @@ pub fn parse(
     Ok(parser.result)
 }
 
-/// Bound nesting before entering roxmltree's recursive tokenizer, including debug builds.
+/// Share the exact XML envelope limits with the independent project core.
 pub(super) fn check_envelope(input: &str) -> Result<(), ParseError> {
-    use quick_xml::events::Event;
-    if input.len() > MAX_BYTES {
-        return Err(ParseError::TooLarge);
-    }
-    let mut reader = quick_xml::Reader::from_str(input);
-    let mut depth = 0_usize;
-    loop {
-        match reader.read_event().map_err(ParseError::Envelope)? {
-            Event::Start(_) => {
-                depth += 1;
-                if depth > MAX_DEPTH {
-                    return Err(ParseError::TooDeep);
-                }
-            }
-            Event::Empty(_) if depth == MAX_DEPTH => return Err(ParseError::TooDeep),
-            Event::End(_) => {
-                depth = depth.saturating_sub(1);
-            }
-            Event::Eof => return Ok(()),
-            _ => {}
-        }
-    }
+    crate::project_core::native::check_envelope(input).map_err(|error| match error {
+        crate::project_core::native::EnvelopeError::TooLarge => ParseError::TooLarge,
+        crate::project_core::native::EnvelopeError::TooDeep => ParseError::TooDeep,
+        crate::project_core::native::EnvelopeError::Xml(error) => ParseError::Envelope(error),
+    })
 }
 
 struct Parser {

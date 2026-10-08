@@ -1,14 +1,20 @@
 //! eska's project operations and CLI presentation.
 //!
-//! Start with [`cli`] for commands, [`project`] for project operations,
-//! [`config`] for `eska.toml`, and [`vcs`] for Git and workflow settings.
+//! [`project_core`] contains shared source operations without application dependencies.
+//! The default `legacy` feature retains the existing application and CLI modules.
 
+#[cfg(feature = "legacy")]
 pub mod cli;
+#[cfg(feature = "legacy")]
 pub mod config;
+#[cfg(feature = "legacy")]
 pub mod project;
+pub mod project_core;
+#[cfg(feature = "legacy")]
 mod update;
+#[cfg(feature = "legacy")]
 pub mod vcs;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy"))]
 #[path = "../tests/support/mod.rs"]
 mod test_support;

@@ -18,8 +18,8 @@ use super::{
     export::{Package, validate_composition},
     files::{self, Inventory},
 };
-use crate::project::{
-    metadata,
+use crate::project_core::{
+    native,
     support::{Reason, State},
 };
 
@@ -177,7 +177,7 @@ fn select_files(
             continue;
         }
         let uuid = file_owner(base, path);
-        let operation = if metadata::is_module_path(path.as_path()) {
+        let operation = if native::is_module_path(path.as_path()) {
             Operation::Module
         } else {
             Operation::Resource

@@ -150,7 +150,7 @@ impl Plan<'_> {
                 continue;
             }
             let text = read_working(self.source, self.working, path)?;
-            crate::project::metadata_parser::check_envelope(&text)
+            crate::project_core::native::check_envelope(&text)
                 .map_err(|_| Error::root("source_resource_xml_invalid").in_field(path.as_str()))?;
             roxmltree::Document::parse_with_options(
                 &text,
@@ -219,7 +219,7 @@ fn store(source: &Path, base: &AcceptedBase, output: &Path) -> Result<PathBuf, E
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::source_format::{
+    use crate::project_core::source_format::{
         ObjectSource, Property, PropertyName, PropertyValue, Section, accept_source,
         export::Package, export_protected, import_designer,
     };
@@ -234,7 +234,7 @@ mod tests {
         fs::create_dir(&native).unwrap();
         fs::write(native.join("Configuration.xml"), format!(
             "<MetaDataObject xmlns=\"{}\" version=\"2.20\"><Configuration uuid=\"10000000-0000-4000-8000-000000000001\"><Properties><Name>Race</Name><Comment>Accepted</Comment></Properties></Configuration></MetaDataObject>",
-            crate::project::source_format::MD_NAMESPACE)).unwrap();
+            crate::project_core::source_format::MD_NAMESPACE)).unwrap();
         let source = root.join("source");
         import_designer(&native, &source).unwrap();
         let accepted = root.join("base");

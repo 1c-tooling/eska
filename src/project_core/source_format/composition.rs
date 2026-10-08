@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use crate::project::metadata_model::MetadataKind;
+use crate::project_core::MetadataKind;
 
 use super::{Child, Error, MetadataNode, Section, SourcePath};
 

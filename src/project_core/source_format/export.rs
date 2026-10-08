@@ -8,7 +8,7 @@ use std::{
 
 use sha2::{Digest, Sha256};
 
-use crate::project::metadata_model::MetadataKind;
+use crate::project_core::MetadataKind;
 
 use super::{
     Error, FileEntry, FileRole, NativeDocument, ObjectSource, PropertyName, PropertyValue,

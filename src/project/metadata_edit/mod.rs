@@ -17,7 +17,7 @@ pub(crate) mod types;
 pub(crate) mod value_schema;
 mod values;
 mod write;
-pub(crate) use write::{publish_snapshot, publish_snapshot_in};
+pub(crate) use write::publish_snapshot_in;
 
 pub(crate) use document::EditingDocument;
 pub(crate) use document::ReadOnlyProperty;

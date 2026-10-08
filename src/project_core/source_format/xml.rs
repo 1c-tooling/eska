@@ -2,7 +2,7 @@
 
 use roxmltree::{Document, Node};
 
-use crate::project::{ProjectType, designer_xml, metadata_model::MetadataKind, metadata_parser};
+use crate::project_core::{MetadataKind, ProjectType, native};
 
 use super::{
     Child, Descriptor, Error, LineEnding, LocalizedText, MD_NAMESPACE, MetadataNode, Namespace,
@@ -15,8 +15,7 @@ const XSI_NAMESPACE: &str = "http://www.w3.org/2001/XMLSchema-instance";
 
 /// Retain all supported sections and explicitly refuse an envelope the model cannot restore.
 pub(super) fn decode(input: &str) -> Result<Descriptor, Error> {
-    metadata_parser::check_envelope(input)
-        .map_err(|_| Error::root("source_xml_envelope_invalid"))?;
+    native::check_envelope(input).map_err(|_| Error::root("source_xml_envelope_invalid"))?;
     if input.contains("<!DOCTYPE") || input.contains("<!ENTITY") {
         return Err(Error::root("source_xml_dtd_forbidden"));
     }
@@ -44,7 +43,7 @@ pub(super) fn decode(input: &str) -> Result<Descriptor, Error> {
     {
         return Err(Error::root("source_xml_envelope_unsupported"));
     }
-    if matches!(designer_xml::project_type_from_root(root), Some(kind) if kind != ProjectType::Configuration)
+    if matches!(native::project_type_from_root(root), Some(kind) if kind != ProjectType::Configuration)
     {
         return Err(Error::root("source_profile_unsupported"));
     }
