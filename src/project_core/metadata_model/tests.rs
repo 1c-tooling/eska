@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use super::*;
-use crate::project::{ProjectConfiguration, ProjectName, ProjectType, SourceFormat};
+use crate::project_core::{ProjectConfiguration, ProjectName, ProjectType, SourceFormat};
 
 /// Construct an object with an intentionally repeated UUID, as real fixtures allow.
 fn object(kind: MetadataKind, name: &str, parent: Option<ObjectId>) -> MetadataObject {

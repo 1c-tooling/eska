@@ -3,13 +3,16 @@ use super::{
     Diagnostic, LocatedProperty, ParseError, ParseIssue, ParsedDescriptor, ParsedObject,
     PropertiesMode, check_envelope, simple_text, values,
 };
-use crate::project::metadata_model::{LocalizedText, MetadataKind, MetadataObject, ObjectId};
+use crate::project_core::metadata_model::{LocalizedText, MetadataKind, MetadataObject, ObjectId};
 use roxmltree::{Document, Node, ParsingOptions};
 use std::collections::HashSet;
 
 const NS: &str = "http://v8.1c.ru/8.3/xcf/predef";
 
 /// Parse only Item/ChildItems hierarchy; property internals never become metadata children.
+///
+/// # Errors
+/// Returns bounded-input, malformed XML, unsupported hierarchy or duplicate-identity failures.
 pub fn parse(
     input: &str,
     owner: &ObjectId,

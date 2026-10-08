@@ -1,6 +1,6 @@
 //! Validate the manifest's project type against a root descriptor without reading descendants.
 
-use crate::project::{ProjectConfiguration, ProjectType, designer_xml};
+use crate::project_core::{ProjectConfiguration, ProjectType, native};
 
 /// Project metadata records the manifest type, including configuration versus extension.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -20,7 +20,7 @@ impl MetadataProject {
         configuration: &ProjectConfiguration,
         descriptor: &str,
     ) -> Result<Self, MetadataProjectError> {
-        let actual = designer_xml::project_type(descriptor)
+        let actual = native::project_type(descriptor)
             .map_err(MetadataProjectError::InvalidXml)?
             .ok_or(MetadataProjectError::UnsupportedRoot)?;
         Self::from_detected_type(configuration, actual)

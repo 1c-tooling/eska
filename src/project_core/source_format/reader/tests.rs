@@ -2,7 +2,7 @@ use super::*;
 use crate::{project_core::source_format::import_designer, test_support::TestDir};
 
 /// Import only the small public corpus into an exclusively owned playground directory.
-fn source() -> (TestDir, PathBuf) {
+pub(super) fn source() -> (TestDir, PathBuf) {
     let test = TestDir::new();
     let root = test.0.join("source");
     import_designer(
@@ -14,7 +14,7 @@ fn source() -> (TestDir, PathBuf) {
 }
 
 /// Address the corpus owner without deriving active metadata from a filesystem scan.
-fn catalog() -> SourcePath {
+pub(super) fn catalog() -> SourcePath {
     SourcePath::parse("Catalogs/Sample/object.yaml").unwrap()
 }
 

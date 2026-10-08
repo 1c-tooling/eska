@@ -1,6 +1,8 @@
 //! Shared project values and source operations; no Git, CLI, IDE or platform runner.
 
 mod metadata_kind;
+pub mod metadata_model;
+pub mod metadata_parser;
 pub mod native;
 mod project_type;
 pub mod publish;

@@ -1,5 +1,5 @@
 use super::*;
-use crate::project::metadata_model::{MetadataValue, ValueIssue};
+use crate::project_core::metadata_model::{MetadataValue, ValueIssue};
 
 /// Wrap fragments in the same namespace envelope as Designer descriptors.
 fn descriptor(body: &str) -> String {

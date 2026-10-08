@@ -1,6 +1,7 @@
 //! Owner-local metadata snapshots; opening a tree never reads modules, resources or a baseline.
 
 mod projection;
+mod semantic;
 
 #[cfg(test)]
 mod measurement;
@@ -24,6 +25,8 @@ use super::{
     composition::{identities, reference_path, references, source_path},
     files, yaml,
 };
+
+pub use semantic::{MetadataSnapshot, NativeMetadata};
 
 /// One declaration projected directly from typed YAML, with coordinates in its owner snapshot.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -175,6 +178,50 @@ impl SourceReader {
             return Err(Error::root("source_declaration_mismatch").in_field(path.as_str()));
         }
         Ok(result)
+    }
+
+    /// Read one YAML family as the same logical descriptors used by the XML consumer.
+    ///
+    /// # Errors
+    /// Returns source, schema, identity or semantic-projection failures without generating XML.
+    pub fn read_metadata(
+        &self,
+        path: &SourcePath,
+        mode: crate::project_core::metadata_parser::PropertiesMode,
+    ) -> Result<MetadataSnapshot, Error> {
+        self.spec(path)?;
+        self.parse_metadata(path, &read_text(&self.root, path)?, mode)
+    }
+
+    /// Project unsaved YAML into the shared model with exact coordinates in this text.
+    ///
+    /// # Errors
+    /// Returns the same failures as an on-disk metadata read, without fallback or writes.
+    pub fn parse_metadata(
+        &self,
+        path: &SourcePath,
+        text: &str,
+        mode: crate::project_core::metadata_parser::PropertiesMode,
+    ) -> Result<MetadataSnapshot, Error> {
+        let result = (|| {
+            let (value, tree) = yaml::decode_with_tree(text)?;
+            let source = ObjectSource::from_value(value)?;
+            let parents = validate_owner(&source, self.spec(path)?)?;
+            if source.document.descriptor.object.kind == MetadataKind::Configuration
+                && references(&source.document.descriptor.object)?
+                    != references(&self.configuration.source.document.descriptor.object)?
+            {
+                return Err(Error::root("source_declaration_mismatch"));
+            }
+            let documents = semantic::documents(&source, &tree, &parents, mode)?;
+            Ok(MetadataSnapshot {
+                path: path.clone(),
+                source_sha256: files::hex(&Sha256::digest(text.as_bytes())),
+                manifest_sha256: self.manifest_sha256.clone(),
+                documents,
+            })
+        })();
+        result.map_err(|error: Error| error.in_field(path.as_str()))
     }
 
     /// Unknown files cannot become metadata merely by matching a directory naming convention.

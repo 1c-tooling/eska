@@ -3,7 +3,7 @@
 use std::{fmt, sync::Arc};
 
 use super::MetadataKind;
-use crate::project::ProjectName;
+use crate::project_core::ProjectName;
 
 /// Stable readable identity built from the logical metadata hierarchy.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -54,7 +54,8 @@ impl ObjectId {
     }
 
     /// Rekey an object's session state and descendants after a validated structural rename.
-    pub(crate) fn renamed(&self, from: &Self, to: &Self) -> Self {
+    #[must_use]
+    pub fn renamed(&self, from: &Self, to: &Self) -> Self {
         if self == from {
             return to.clone();
         }

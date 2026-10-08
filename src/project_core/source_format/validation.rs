@@ -239,30 +239,7 @@ fn fragment(
     value: &XmlFragment,
     inherited: &[Namespace],
 ) -> Result<Option<(String, String)>, Error> {
-    let context = scope(inherited, &value.namespaces)?;
-    if value.xml.contains("<!DOCTYPE") || value.xml.contains("<!ENTITY") {
-        return Err(Error::root("source_xml_dtd_forbidden"));
-    }
-    let mut wrapper = String::from("<preserved");
-    for binding in &context {
-        wrapper.push_str(" xmlns");
-        if let Some(prefix) = &binding.prefix {
-            wrapper.push(':');
-            wrapper.push_str(prefix);
-        }
-        wrapper.push_str("=\"");
-        wrapper.push_str(
-            &binding
-                .uri
-                .replace('&', "&amp;")
-                .replace('"', "&quot;")
-                .replace('<', "&lt;"),
-        );
-        wrapper.push('"');
-    }
-    wrapper.push('>');
-    wrapper.push_str(&value.xml);
-    wrapper.push_str("</preserved>");
+    let wrapper = super::fragment::wrap(value, inherited)?;
     crate::project_core::native::check_envelope(&wrapper)
         .map_err(|_| Error::root("source_preserved_xml_invalid"))?;
     let document = roxmltree::Document::parse(&wrapper)

@@ -409,6 +409,9 @@ writer используются обоими форматами. Общие mode
 родительские UUID и byte locations относятся к точным дисковым/несохранённым
 байтам. Ошибка YAML не включает native XML как fallback. Права и полная
 проверка состава остаются на границе защищённого экспорта.
+Model и pure XML parser вынесены в core; [YAML-проекция](../research/eska-format/semantic-projection.md)
+возвращает те же логические объекты, свойства и ссылки без генерации проекта XML.
+Координаты различаются по исходному формату и привязаны к SHA-256 source text.
 Minimal library compile graph не содержит
 gix, HTTP, CLI, TTY или IDE runtime. Это подготовка текущих потребителей;
 публичная конфигурация ESKA, discovery, build и самостоятельные инструменты

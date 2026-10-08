@@ -5,6 +5,7 @@ mod composition;
 mod edit;
 mod export;
 mod files;
+mod fragment;
 mod import;
 mod model;
 mod native_writer;
@@ -25,7 +26,9 @@ pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManif
 pub use protected::{
     Exclusion, ExclusionAction, ProtectedExport, ProtectedFailure, export_protected,
 };
-pub use reader::{MetadataDeclaration, OwnerSnapshot, SourceReader};
+pub use reader::{
+    MetadataDeclaration, MetadataSnapshot, NativeMetadata, OwnerSnapshot, SourceReader,
+};
 
 pub use model::{
     Child, Descriptor, LineEnding, LocalizedText, MetadataNode, Namespace, NativeUuid, Property,

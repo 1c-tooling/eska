@@ -114,7 +114,7 @@ fn name_range(node: &MetadataNode, tree: &YamlFile, steps: &[Step]) -> Result<Ra
 }
 
 /// CST offsets are UTF-8 bytes; LSP encoding conversion belongs to the protocol consumer.
-fn range_at(tree: &YamlFile, steps: &[Step]) -> Result<Range<usize>, Error> {
+pub(super) fn range_at(tree: &YamlFile, steps: &[Step]) -> Result<Range<usize>, Error> {
     let node = yaml::at(tree, steps).ok_or_else(|| Error::root("source_location_invalid"))?;
     let range = node
         .as_node()

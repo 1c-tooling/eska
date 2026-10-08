@@ -1,7 +1,9 @@
 # Модель метаданных для IDE
 
-Реализованная основа T60 находится в `src/project/metadata_model`.
-Это библиотечная модель; команды `eska ide` и расширения VS Code пока нет.
+Реализованная основа T60 находится в `src/project_core/metadata_model`.
+В EF-10 она вынесена из зависимостей приложения. Действующие XML-потребители
+используют ту же модель; [экспериментальный YAML-adapter](research/eska-format/semantic-projection.md)
+выдаёт такую же проекцию, но ещё не выбирается публичным manifest проекта.
 
 `MetadataObject` хранит тип, имя, UUID, родителя и `ObjectId`, без XML DOM и
 файловых путей. Существующий `LogicalObject` содержит эту модель вместе со
@@ -37,7 +39,7 @@ manifest с корневым XML через существующий namespace-a
 
 ## Матрица типов
 
-Единый справочник содержит 67 логических типов, включая WebSocketClient
+Единый справочник содержит 68 логических типов, включая WebSocketClient
 (web-socket-client, каталог WebSocketClients). Алиасы внешних descriptors
 не создают новый вид объекта. Все 42 вида из корневого списка реального
 `big_configuration_temp` проверены по `Configuration.xml` 2026-09-17.
