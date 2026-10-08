@@ -15,6 +15,7 @@ use crate::support::TestDir;
 
 mod baseline;
 mod edit;
+mod measure;
 mod platform;
 mod protected;
 
