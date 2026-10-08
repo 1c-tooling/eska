@@ -1,0 +1,296 @@
+//! Protected selection precedes platform work; only completed immutable generations are returned.
+
+mod differences;
+mod generation;
+mod merge;
+
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::{Path, PathBuf},
+};
+
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+
+use super::{
+    AcceptedBase, Error, FileRole, NativeUuid, Operation, PermissionReason, SourcePath,
+    export::{Package, validate_composition},
+    files::{self, Inventory},
+};
+use crate::project::{
+    metadata,
+    support::{Reason, State},
+};
+
+/// Every excluded working change states the performed action rather than silently disappearing.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExclusionAction {
+    Restored,
+    Excluded,
+}
+
+/// Stable coordinates and accepted identity explain a protected operation in either locale.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Exclusion {
+    pub id: String,
+    pub code: String,
+    pub path: SourcePath,
+    pub coordinate: Vec<String>,
+    pub uuid: Option<NativeUuid>,
+    pub operation: Operation,
+    pub action: ExclusionAction,
+    pub state: State,
+    pub native_reason: Reason,
+    pub reason: PermissionReason,
+    pub baseline: String,
+}
+
+/// Readers consume a completed generation by its immutable path, with no mutable XML fallback.
+#[derive(Clone, Debug, Serialize)]
+pub struct ProtectedExport {
+    pub generation: String,
+    pub xml: PathBuf,
+    pub input_revision: String,
+    pub baseline: String,
+    pub diagnostics: Vec<Exclusion>,
+}
+
+/// Strict refusal retains the full explanation for callers without publishing any generation.
+#[derive(Clone, Debug, Serialize)]
+pub struct ProtectedFailure {
+    pub error: Error,
+    pub diagnostics: Vec<Exclusion>,
+}
+
+impl From<Error> for ProtectedFailure {
+    /// Propagate bounded parsing and filesystem failures without a localized core message.
+    fn from(error: Error) -> Self {
+        Self {
+            error,
+            diagnostics: Vec::new(),
+        }
+    }
+}
+
+impl std::fmt::Display for ProtectedFailure {
+    /// Presentation belongs to the caller; the fallback retains the stable machine code.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.error.fmt(formatter)
+    }
+}
+impl std::error::Error for ProtectedFailure {}
+
+/// Merge permitted working values with accepted composition and publish a completed generation.
+///
+/// # Errors
+/// Returns untrusted base, invalid permitted values, changing inputs, conflicting output or
+/// strict exclusion. Existing completed generations and working source bytes remain untouched.
+pub fn export_protected(
+    source: &Path,
+    base: &AcceptedBase,
+    output: &Path,
+    strict: bool,
+) -> Result<ProtectedExport, ProtectedFailure> {
+    base.verify()?;
+    let source = fs::canonicalize(source).map_err(|error| files::io(&error))?;
+    let working = Inventory::read(&source)?;
+    let mut diagnostics = Vec::new();
+    let documents = merge::documents(&source, &working, base, &mut diagnostics)?;
+    validate_composition(&documents)?;
+    let (snapshot, origins) = select_files(&working, base, &mut diagnostics);
+    diagnostics.sort_by(|left, right| {
+        (&left.path, &left.coordinate, &left.id).cmp(&(&right.path, &right.coordinate, &right.id))
+    });
+    if strict && !diagnostics.is_empty() {
+        return Err(ProtectedFailure {
+            error: Error::root("source_changes_excluded"),
+            diagnostics,
+        });
+    }
+    let package = Package {
+        manifest: base.package.manifest.clone(),
+        snapshot,
+        documents,
+        owners: base.package.owners.clone(),
+    };
+    let xml = package.native_xml()?;
+    let native = package.output_inventory(&xml)?;
+    let binding = generation::Binding::new(&working.revision, base.reference(), &native.revision);
+    let generation = binding.id()?;
+    let plan = generation::Plan {
+        source: &source,
+        working: &working,
+        base,
+        binding: &binding,
+        xml: &xml,
+        native: &native,
+        origins: &origins,
+    };
+    let destination = plan.publish(output)?;
+    Ok(ProtectedExport {
+        generation,
+        xml: destination,
+        input_revision: working.revision,
+        baseline: base.reference().sha256.clone(),
+        diagnostics,
+    })
+}
+
+/// Byte origins remain explicit while the full output composition is taken from accepted files.
+#[derive(Clone, Copy)]
+enum Origin {
+    Accepted,
+    Working,
+}
+
+/// File permissions depend on a declared native owner; policy and service files remain pinned.
+fn select_files(
+    working: &Inventory,
+    base: &AcceptedBase,
+    diagnostics: &mut Vec<Exclusion>,
+) -> (Inventory, BTreeMap<SourcePath, Origin>) {
+    let mut files = base.package.snapshot.files.clone();
+    let mut origins = BTreeMap::new();
+    let owners: BTreeSet<_> = base
+        .package
+        .manifest
+        .files
+        .iter()
+        .filter_map(|file| {
+            if let FileRole::Descriptor { source, .. } = &file.role {
+                Some(source)
+            } else {
+                None
+            }
+        })
+        .collect();
+    for (path, accepted) in &base.package.snapshot.files {
+        if owners.contains(path) {
+            continue;
+        }
+        let current = working.files.get(path);
+        if current == Some(accepted) {
+            origins.insert(path.clone(), Origin::Working);
+            continue;
+        }
+        let uuid = file_owner(base, path);
+        let operation = if metadata::is_module_path(path.as_path()) {
+            Operation::Module
+        } else {
+            Operation::Resource
+        };
+        let native_policy = path.as_str() == "Ext/ParentConfigurations.bin"
+            || path.as_str().starts_with("Ext/ParentConfigurations/");
+        let binary_module = operation == Operation::Module
+            && !path
+                .as_path()
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("bsl"));
+        let editable = !native_policy
+            && !binary_module
+            && uuid
+                .as_ref()
+                .is_some_and(|uuid| base.permission(uuid, operation).allowed);
+        if let Some(current) = current.filter(|_| editable) {
+            files.insert(path.clone(), current.clone());
+            origins.insert(path.clone(), Origin::Working);
+        } else {
+            origins.insert(path.clone(), Origin::Accepted);
+            diagnostics.push(differences::exclusion(
+                base,
+                path,
+                Vec::new(),
+                uuid,
+                if current.is_none() {
+                    Operation::Delete
+                } else {
+                    operation
+                },
+                ExclusionAction::Restored,
+                "source_file_restored",
+            ));
+        }
+    }
+    record_extras(working, base, diagnostics);
+    let directories = base.package.snapshot.directories.clone();
+    let revision = files::revision(&files, &directories);
+    (
+        Inventory {
+            files,
+            directories,
+            revision,
+        },
+        origins,
+    )
+}
+
+/// Reject new physical entries explicitly, with logarithmic directory lookups on large sources.
+fn record_extras(working: &Inventory, base: &AcceptedBase, diagnostics: &mut Vec<Exclusion>) {
+    for path in working
+        .files
+        .keys()
+        .filter(|path| !base.package.snapshot.files.contains_key(*path))
+    {
+        diagnostics.push(differences::exclusion(
+            base,
+            path,
+            Vec::new(),
+            None,
+            Operation::Create,
+            ExclusionAction::Excluded,
+            "source_file_excluded",
+        ));
+    }
+    let directories: BTreeSet<_> = base.package.snapshot.directories.iter().collect();
+    for path in working
+        .directories
+        .iter()
+        .filter(|path| !directories.contains(path))
+    {
+        diagnostics.push(differences::exclusion(
+            base,
+            path,
+            Vec::new(),
+            None,
+            Operation::Create,
+            ExclusionAction::Excluded,
+            "source_directory_excluded",
+        ));
+    }
+}
+
+/// Resolve the longest declared native owner before considering a configuration root payload.
+fn file_owner(base: &AcceptedBase, path: &SourcePath) -> Option<NativeUuid> {
+    for (end, _) in path.as_str().match_indices('/').rev() {
+        let descriptor = SourcePath::parse(&format!("{}.xml", &path.as_str()[..end])).ok()?;
+        if let Some(document) = base.package.documents.get(&descriptor) {
+            return Some(document.descriptor.object.uuid.clone());
+        }
+    }
+    if path.as_str().starts_with("Ext/") {
+        return base
+            .package
+            .documents
+            .get(&SourcePath::parse("Configuration.xml").ok()?)
+            .map(|document| document.descriptor.object.uuid.clone());
+    }
+    None
+}
+
+/// A text read must match the already captured input bytes, including changes between reads.
+fn read_working(root: &Path, inventory: &Inventory, path: &SourcePath) -> Result<String, Error> {
+    let entry = inventory
+        .files
+        .get(path)
+        .ok_or_else(|| Error::root("source_file_missing"))?;
+    let text = files::read_text(&root.join(path.as_path()))?;
+    if text.len() as u64 != entry.bytes
+        || files::hex(&Sha256::digest(text.as_bytes())) != entry.sha256
+    {
+        return Err(Error::root("source_input_changed").in_field(path.as_str()));
+    }
+    Ok(text)
+}

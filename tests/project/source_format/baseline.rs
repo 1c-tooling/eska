@@ -17,7 +17,7 @@ use sha2::{Digest, Sha256};
 use crate::support::TestDir;
 
 /// Supplier payloads in unit fixtures are opaque sentinels; native CF validity is a separate gate.
-fn fixture(root: &Path) -> PathBuf {
+pub(super) fn fixture(root: &Path) -> PathBuf {
     let input = super::fixture(root);
     fs::create_dir(input.join("Ext/ParentConfigurations")).unwrap();
     fs::write(
@@ -29,12 +29,12 @@ fn fixture(root: &Path) -> PathBuf {
 }
 
 /// Use predictable fixture identities without repeating long UUID spellings in assertions.
-fn uuid(prefix: char) -> NativeUuid {
+pub(super) fn uuid(prefix: char) -> NativeUuid {
     NativeUuid::parse(&format!("{prefix}0000000-0000-4000-8000-000000000001")).unwrap()
 }
 
 /// Compare exact small source bytes, including empty directories.
-fn tree(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
+pub(super) fn tree(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
     fn visit(root: &Path, path: &Path, values: &mut BTreeMap<PathBuf, Option<Vec<u8>>>) {
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();

@@ -1,0 +1,251 @@
+//! The accepted tree is the structural anchor; only existing supported property values vary.
+
+use serde_json::Value;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::Path,
+};
+
+use super::super::{
+    AcceptedBase, Child, Error, MetadataNode, NativeDocument, ObjectSource, Operation, Property,
+    PropertyValue, Section, SourcePath, files::Inventory, yaml,
+};
+use super::{Exclusion, differences, read_working};
+
+/// Read partial working owners without trusting their declared UUID, file map or supplier status.
+pub(super) fn documents(
+    root: &Path,
+    working: &Inventory,
+    base: &AcceptedBase,
+    diagnostics: &mut Vec<Exclusion>,
+) -> Result<BTreeMap<SourcePath, NativeDocument>, Error> {
+    let mut result = BTreeMap::new();
+    for (path, parts) in &base.package.owners {
+        let mut parts = parts.iter().map(|path| {
+            base.package
+                .documents
+                .get(path)
+                .cloned()
+                .ok_or_else(|| Error::root("source_baseline_corrupt"))
+        });
+        let document = parts
+            .next()
+            .ok_or_else(|| Error::root("source_baseline_corrupt"))??;
+        let mut family = ObjectSource {
+            document,
+            nested: parts.collect::<Result<_, _>>()?,
+        };
+        let current = if working.files.contains_key(path) {
+            Some(
+                yaml::decode(&read_working(root, working, path)?)
+                    .map_err(|error| error.in_field(path.as_str()))?,
+            )
+        } else {
+            None
+        };
+        merge_document(
+            base,
+            &mut family.document,
+            current.as_ref().and_then(|value| value.get("document")),
+        )?;
+        let nested = current
+            .as_ref()
+            .and_then(|value| value.get("nested"))
+            .and_then(Value::as_array);
+        let identities: BTreeSet<_> = family
+            .nested
+            .iter()
+            .map(|document| document.descriptor.object.uuid.key())
+            .collect();
+        for (index, document) in family.nested.iter_mut().enumerate() {
+            let candidate = nested_candidate(nested, index, document, &identities)?;
+            merge_document(base, document, candidate)?;
+        }
+        family
+            .validate()
+            .map_err(|error| error.in_field(path.as_str()))?;
+        let expected =
+            serde_json::to_value(&family).map_err(|_| Error::root("source_schema_invalid"))?;
+        differences::collect(
+            base,
+            path,
+            &expected,
+            current.as_ref(),
+            &family.document.descriptor.object.uuid,
+            diagnostics,
+        );
+        for document in std::iter::once(family.document).chain(family.nested) {
+            result.insert(document.path.clone(), document);
+        }
+    }
+    Ok(result)
+}
+
+/// Ambiguous external identities fail instead of selecting the first copy of an allowed value.
+fn nested_candidate<'a>(
+    parts: Option<&'a Vec<Value>>,
+    index: usize,
+    document: &NativeDocument,
+    known: &BTreeSet<String>,
+) -> Result<Option<&'a Value>, Error> {
+    let mut candidates = parts.into_iter().flatten().filter(|part| {
+        part.get("path").and_then(Value::as_str) == Some(document.path.as_str())
+            || part
+                .get("descriptor")
+                .and_then(|descriptor| descriptor.get("object"))
+                .and_then(|node| node.get("uuid"))
+                .and_then(Value::as_str)
+                .is_some_and(|uuid| {
+                    uuid.eq_ignore_ascii_case(document.descriptor.object.uuid.as_str())
+                })
+    });
+    let matched = candidates.next();
+    if candidates.next().is_some() {
+        return Err(Error::root("source_identity_ambiguous"));
+    }
+    if matched.is_some() {
+        return Ok(matched);
+    }
+    Ok(parts.and_then(|parts| parts.get(index)).filter(|part| {
+        part.get("descriptor")
+            .and_then(|descriptor| descriptor.get("object"))
+            .and_then(|node| node.get("uuid"))
+            .and_then(Value::as_str)
+            .is_none_or(|uuid| !known.contains(&uuid.to_ascii_lowercase()))
+    }))
+}
+
+/// A path or UUID edit restores identity while permitted values remain tied to accepted ownership.
+fn merge_document(
+    base: &AcceptedBase,
+    document: &mut NativeDocument,
+    current: Option<&Value>,
+) -> Result<(), Error> {
+    let node = current
+        .and_then(|value| value.get("descriptor"))
+        .and_then(|value| value.get("object"));
+    merge_node(base, &mut document.descriptor.object, node)
+        .map_err(|error| error.in_field(document.path.as_str()))
+}
+
+/// Preserve protected structure, and recurse into individually permitted inline parts.
+fn merge_node(
+    base: &AcceptedBase,
+    node: &mut MetadataNode,
+    current: Option<&Value>,
+) -> Result<(), Error> {
+    let sections = current
+        .and_then(|value| value.get("sections"))
+        .and_then(Value::as_array);
+    for section in &mut node.sections {
+        match section {
+            Section::Properties(properties) => {
+                let values = section_items(sections, "properties")?;
+                merge_properties(base, &node.uuid, properties, values)?;
+            }
+            Section::Children(children) => {
+                let values = section_items(sections, "children")?;
+                let known: BTreeSet<_> = children
+                    .iter()
+                    .filter_map(|child| {
+                        if let Child::Inline { object } = child {
+                            Some(object.uuid.key())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                for (index, child) in children.iter_mut().enumerate() {
+                    if let Child::Inline { object } = child {
+                        let candidate =
+                            inline_candidate(values, index, &object.uuid.key(), &known)?;
+                        merge_node(base, object, candidate)?;
+                    }
+                }
+            }
+            Section::Preserved(_) => {}
+        }
+    }
+    Ok(())
+}
+
+/// Ambiguous sections cannot be interpreted as a valid location for an allowed change.
+fn section_items<'a>(
+    sections: Option<&'a Vec<Value>>,
+    kind: &str,
+) -> Result<Option<&'a Vec<Value>>, Error> {
+    let mut found = sections
+        .into_iter()
+        .flatten()
+        .filter(|section| section.get("kind").and_then(Value::as_str) == Some(kind));
+    let result = found
+        .next()
+        .and_then(|section| section.get("items"))
+        .and_then(Value::as_array);
+    if found.next().is_some() {
+        return Err(Error::root("source_section_duplicate"));
+    }
+    Ok(result)
+}
+
+/// Use native identity for reordered children, with a positional fallback only for a replaced UUID.
+fn inline_candidate<'a>(
+    values: Option<&'a Vec<Value>>,
+    index: usize,
+    identity: &str,
+    known: &BTreeSet<String>,
+) -> Result<Option<&'a Value>, Error> {
+    let nodes = values
+        .into_iter()
+        .flatten()
+        .filter_map(|child| child.get("object"));
+    let mut matching = nodes.filter(|node| {
+        node.get("uuid")
+            .and_then(Value::as_str)
+            .is_some_and(|uuid| uuid.eq_ignore_ascii_case(identity))
+    });
+    let matched = matching.next();
+    if matching.next().is_some() {
+        return Err(Error::root("source_identity_ambiguous"));
+    }
+    if matched.is_some() {
+        return Ok(matched);
+    }
+    let fallback = values
+        .and_then(|values| values.get(index))
+        .and_then(|child| child.get("object"));
+    Ok(fallback.filter(|node| {
+        node.get("uuid")
+            .and_then(Value::as_str)
+            .is_none_or(|uuid| !known.contains(&uuid.to_ascii_lowercase()))
+    }))
+}
+
+/// Only the value of an existing typed property may change; additions and removals stay explicit.
+fn merge_properties(
+    base: &AcceptedBase,
+    uuid: &super::super::NativeUuid,
+    properties: &mut [Property],
+    current: Option<&Vec<Value>>,
+) -> Result<(), Error> {
+    for property in properties {
+        if let Property::Typed { name, value } = property {
+            if !base.permission(uuid, Operation::Property(*name)).allowed {
+                continue;
+            }
+            let mut matches = current.into_iter().flatten().filter(|property| {
+                property.get("kind").and_then(Value::as_str) == Some("typed")
+                    && property.get("name").and_then(Value::as_str) == Some(name.as_str())
+            });
+            let candidate = matches.next().and_then(|property| property.get("value"));
+            if matches.next().is_some() {
+                return Err(Error::root("source_property_duplicate"));
+            }
+            if let Some(candidate) = candidate {
+                *value = serde_json::from_value::<PropertyValue>(candidate.clone())
+                    .map_err(|_| Error::root("source_property_invalid").in_field(name.as_str()))?;
+            }
+        }
+    }
+    Ok(())
+}

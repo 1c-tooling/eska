@@ -163,6 +163,39 @@ pub fn accept_source(
 }
 
 impl AcceptedBase {
+    /// Bind protected output to the caller's independently selected policy.
+    pub(super) const fn reference(&self) -> &AcceptedRef {
+        &self.reference
+    }
+
+    /// Copy one pinned payload directly into a new immutable generation.
+    pub(super) fn copy_file(&self, path: &SourcePath, destination: &Path) -> Result<(), Error> {
+        let mut entry = self
+            .package
+            .snapshot
+            .files
+            .get(path)
+            .ok_or_else(|| Error::root("source_baseline_blob_missing"))?
+            .clone();
+        entry.path = blob_path(&entry.sha256)?;
+        files::copy_to(&self.root, destination, &entry)
+    }
+
+    /// A previously opened base cannot silently supply changed bytes or a replacement policy.
+    pub(super) fn verify(&self) -> Result<(), Error> {
+        verify_manifest(&self.root, &self.reference)?;
+        let inventory = Inventory::read(&self.root)?;
+        if verified_snapshot(&self.manifest, &inventory)? != self.package.snapshot {
+            return Err(Error::root("source_baseline_corrupt"));
+        }
+        Ok(())
+    }
+
+    /// Output generations must not be created inside accepted bytes or around their root.
+    pub(super) fn overlaps(&self, path: &Path) -> bool {
+        path.starts_with(&self.root) || self.root.starts_with(path)
+    }
+
     /// Open pinned metadata and verify every required blob before deriving any permissions.
     ///
     /// # Errors

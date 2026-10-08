@@ -59,6 +59,7 @@ pub(super) struct Package {
     pub manifest: SourceManifest,
     pub snapshot: Inventory,
     pub documents: BTreeMap<SourcePath, NativeDocument>,
+    pub owners: BTreeMap<SourcePath, Vec<SourcePath>>,
 }
 
 impl Package {
@@ -91,6 +92,7 @@ impl Package {
             })
             .collect();
         let mut documents = BTreeMap::new();
+        let mut owner_documents = BTreeMap::new();
         let entries: BTreeMap<_, _> = manifest
             .files
             .iter()
@@ -99,7 +101,9 @@ impl Package {
         for owner in &owners {
             let object = ObjectSource::from_yaml(&read(owner)?)
                 .map_err(|error| error.in_field(owner.as_str()))?;
+            let mut paths = Vec::with_capacity(1 + object.nested.len());
             for part in std::iter::once(object.document).chain(object.nested) {
+                paths.push(part.path.clone());
                 let entry = entries
                     .get(part.path.as_str())
                     .ok_or_else(|| Error::root("source_descriptor_undeclared"))?;
@@ -113,6 +117,7 @@ impl Package {
                     return Err(Error::root("source_descriptor_duplicate"));
                 }
             }
+            owner_documents.insert((*owner).clone(), paths);
         }
         validate_sources(&manifest, &snapshot, &owners, &documents)?;
         validate_composition(&documents)?;
@@ -120,11 +125,12 @@ impl Package {
             manifest,
             snapshot,
             documents,
+            owners: owner_documents,
         })
     }
 
     /// Generate all native descriptors before claiming an export directory.
-    fn native_xml(&self) -> Result<BTreeMap<SourcePath, String>, Error> {
+    pub(super) fn native_xml(&self) -> Result<BTreeMap<SourcePath, String>, Error> {
         self.documents
             .iter()
             .map(|(path, document)| {
@@ -140,7 +146,10 @@ impl Package {
     }
 
     /// Predict exact native bytes and directory composition, including preserved empty directories.
-    fn output_inventory(&self, xml: &BTreeMap<SourcePath, String>) -> Result<Inventory, Error> {
+    pub(super) fn output_inventory(
+        &self,
+        xml: &BTreeMap<SourcePath, String>,
+    ) -> Result<Inventory, Error> {
         let mut files = BTreeMap::new();
         let mut directories: BTreeSet<_> = self.manifest.directories.iter().cloned().collect();
         for file in &self.manifest.files {
@@ -247,7 +256,9 @@ fn validate_sources(
 }
 
 /// Walk current declared composition, refusing missing, extra or ambiguously identified objects.
-fn validate_composition(documents: &BTreeMap<SourcePath, NativeDocument>) -> Result<(), Error> {
+pub(super) fn validate_composition(
+    documents: &BTreeMap<SourcePath, NativeDocument>,
+) -> Result<(), Error> {
     let root = SourcePath::parse("Configuration.xml")?;
     let mut pending = vec![(root, MetadataKind::Configuration, None)];
     let mut visited = BTreeSet::new();

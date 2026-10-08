@@ -8,6 +8,7 @@ mod import;
 mod model;
 mod native_writer;
 mod package;
+mod protected;
 mod validation;
 mod xml;
 mod yaml;
@@ -18,6 +19,9 @@ pub use baseline::{
 pub use export::export_designer;
 pub use import::import_designer;
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
+pub use protected::{
+    Exclusion, ExclusionAction, ProtectedExport, ProtectedFailure, export_protected,
+};
 
 pub use model::{
     Child, Descriptor, LineEnding, LocalizedText, MetadataNode, Namespace, NativeUuid, Property,
