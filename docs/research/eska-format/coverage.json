@@ -1,0 +1,26 @@
+{
+  "coverage_version": 1,
+  "profile": "designer-2.20-configuration",
+  "xml_namespace": "http://v8.1c.ru/8.3/MDClasses",
+  "xml_version": "2.20",
+  "root_kind": "Configuration",
+  "metadata_kinds": "MetadataKind::ALL",
+  "properties": {
+    "Name": {"type": "string", "read": true, "roundtrip": true, "edit": false},
+    "Comment": {"type": "string", "read": true, "roundtrip": true, "edit": true},
+    "Version": {"type": "string", "read": true, "roundtrip": true, "edit": true},
+    "Synonym": {"type": "localized_string", "read": true, "roundtrip": true, "edit": true}
+  },
+  "value_states": ["absent", "empty", "nil", "value"],
+  "unsupported_properties": "preserve_with_owner_slot_and_namespace",
+  "structural_operations": {"create": false, "delete": false, "rename": false, "move": false},
+  "unknown_metadata_kind": "reject",
+  "unknown_xml_version": "reject",
+  "external_or_extension_root": "reject",
+  "ambiguous_identity": "reject",
+  "duplicate_yaml_key": "reject",
+  "resources": "preserve_bytes",
+  "forms": "preserve_bytes_until_EF-12",
+  "undeclared_files": "preserve_without_activation",
+  "support": "accepted_baseline_is_independent_of_working_properties"
+}

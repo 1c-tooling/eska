@@ -1,0 +1,437 @@
+{
+  "trace_version": 1,
+  "requirements": [
+    {
+      "id": "REQ-01",
+      "tasks": [
+        "EF-02",
+        "EF-03",
+        "EF-04",
+        "EF-10"
+      ],
+      "scenario": "offline-without-edt",
+      "status": "planned"
+    },
+    {
+      "id": "REQ-02",
+      "tasks": [
+        "EF-07",
+        "EF-10",
+        "EF-11",
+        "EF-18"
+      ],
+      "scenario": "yaml-bsl-ide-context",
+      "status": "planned"
+    },
+    {
+      "id": "REQ-03",
+      "tasks": [
+        "EF-03",
+        "EF-04",
+        "EF-08"
+      ],
+      "scenario": "roundtrip-and-native-control",
+      "status": "planned"
+    },
+    {
+      "id": "REQ-04",
+      "tasks": [
+        "EF-05",
+        "EF-06",
+        "EF-08"
+      ],
+      "scenario": "support-cannot-be-bypassed",
+      "status": "planned"
+    },
+    {
+      "id": "REQ-05",
+      "tasks": [
+        "EF-09",
+        "EF-19"
+      ],
+      "scenario": "real-size-and-git-comparison",
+      "status": "planned"
+    },
+    {
+      "id": "REQ-06",
+      "tasks": [
+        "EF-07"
+      ],
+      "scenario": "targeted-edit-keeps-unrelated-bytes",
+      "status": "planned"
+    },
+    {
+      "id": "REQ-07",
+      "tasks": [
+        "EF-13",
+        "EF-19"
+      ],
+      "scenario": "merge-success-requires-semantic-validity",
+      "status": "planned"
+    },
+    {
+      "id": "REQ-08",
+      "tasks": [
+        "EF-04",
+        "EF-07",
+        "EF-10"
+      ],
+      "scenario": "no-op-keeps-bytes-and-mtime",
+      "status": "planned"
+    },
+    {
+      "id": "REQ-09",
+      "tasks": [
+        "EF-01",
+        "EF-08",
+        "EF-09"
+      ],
+      "scenario": "real-corpora-and-pinned-evidence",
+      "status": "planned"
+    },
+    {
+      "id": "FMT-01",
+      "tasks": [
+        "EF-02"
+      ],
+      "scenario": "versioned-xml-profile-and-schema",
+      "status": "planned"
+    },
+    {
+      "id": "FMT-02",
+      "tasks": [
+        "EF-01",
+        "EF-03",
+        "EF-14"
+      ],
+      "scenario": "coverage-by-type-and-resource-role",
+      "status": "planned"
+    },
+    {
+      "id": "FMT-03",
+      "tasks": [
+        "EF-02",
+        "EF-04"
+      ],
+      "scenario": "absent-empty-nil-value-and-default",
+      "status": "planned"
+    },
+    {
+      "id": "FMT-04",
+      "tasks": [
+        "EF-02",
+        "EF-04"
+      ],
+      "scenario": "ordered-composition-and-children",
+      "status": "planned"
+    },
+    {
+      "id": "FMT-05",
+      "tasks": [
+        "EF-02",
+        "EF-04",
+        "EF-06"
+      ],
+      "scenario": "unknown-parts-keep-owner-slot-and-context",
+      "status": "planned"
+    },
+    {
+      "id": "FMT-06",
+      "tasks": [
+        "EF-02",
+        "EF-03"
+      ],
+      "scenario": "stable-scoped-native-identity",
+      "status": "planned"
+    },
+    {
+      "id": "FMT-07",
+      "tasks": [
+        "EF-10"
+      ],
+      "scenario": "yaml-resource-to-export-source-map",
+      "status": "planned"
+    },
+    {
+      "id": "FMT-08",
+      "tasks": [
+        "EF-05",
+        "EF-06"
+      ],
+      "scenario": "per-operation-permission-not-filesystem-read-only",
+      "status": "planned"
+    },
+    {
+      "id": "FMT-09",
+      "tasks": [
+        "EF-06"
+      ],
+      "scenario": "complete-generations-and-crash-safety",
+      "status": "planned"
+    },
+    {
+      "id": "SUP-01",
+      "tasks": [
+        "EF-05"
+      ],
+      "scenario": "native-rules-separate-from-editor-protection",
+      "status": "planned"
+    },
+    {
+      "id": "SUP-02",
+      "tasks": [
+        "EF-05"
+      ],
+      "scenario": "available-pinned-baseline-and-integrity",
+      "status": "planned"
+    },
+    {
+      "id": "SUP-03",
+      "tasks": [
+        "EF-06"
+      ],
+      "scenario": "manual-edit-rename-uuid-and-delete-attempts",
+      "status": "planned"
+    },
+    {
+      "id": "SUP-04",
+      "tasks": [
+        "EF-06"
+      ],
+      "scenario": "restore-missing-protected-object-in-empty-export",
+      "status": "planned"
+    },
+    {
+      "id": "SUP-05",
+      "tasks": [
+        "EF-05",
+        "EF-06"
+      ],
+      "scenario": "mixed-parts-and-multiple-suppliers",
+      "status": "planned"
+    },
+    {
+      "id": "SUP-06",
+      "tasks": [
+        "EF-04",
+        "EF-08"
+      ],
+      "scenario": "native-rules-and-supplier-payload-preserved",
+      "status": "planned"
+    },
+    {
+      "id": "SUP-07",
+      "tasks": [
+        "EF-06",
+        "EF-10"
+      ],
+      "scenario": "structured-diagnostics-and-strict-ci",
+      "status": "planned"
+    },
+    {
+      "id": "SUP-08",
+      "tasks": [
+        "EF-05",
+        "EF-06"
+      ],
+      "scenario": "display-policy-does-not-grant-export-permission",
+      "status": "planned"
+    },
+    {
+      "id": "SUP-09",
+      "tasks": [
+        "EF-15"
+      ],
+      "scenario": "three-way-baseline-update",
+      "status": "planned"
+    },
+    {
+      "id": "ID-01",
+      "tasks": [
+        "EF-02",
+        "EF-04",
+        "EF-08"
+      ],
+      "scenario": "keep-all-native-id-roles",
+      "status": "planned"
+    },
+    {
+      "id": "ID-02",
+      "tasks": [
+        "EF-03"
+      ],
+      "scenario": "declared-composition-and-duplicate-uuid-validation",
+      "status": "planned"
+    },
+    {
+      "id": "ID-03",
+      "tasks": [
+        "EF-02",
+        "EF-03"
+      ],
+      "scenario": "reimport-does-not-generate-path-based-id",
+      "status": "planned"
+    },
+    {
+      "id": "ID-04",
+      "tasks": [
+        "EF-12",
+        "EF-13"
+      ],
+      "scenario": "parallel-addition-native-id-collision",
+      "status": "planned"
+    },
+    {
+      "id": "ID-05",
+      "tasks": [
+        "EF-02",
+        "EF-04",
+        "EF-08",
+        "EF-12"
+      ],
+      "scenario": "qname-context-and-typed-reference-validation",
+      "status": "planned"
+    },
+    {
+      "id": "ID-06",
+      "tasks": [
+        "EF-10",
+        "EF-19"
+      ],
+      "scenario": "rename-and-reference-boundaries",
+      "status": "planned"
+    },
+    {
+      "id": "FORM-01",
+      "tasks": [
+        "EF-12"
+      ],
+      "scenario": "one-layout-parent-and-source-slot",
+      "status": "planned"
+    },
+    {
+      "id": "FORM-02",
+      "tasks": [
+        "EF-12",
+        "EF-13"
+      ],
+      "scenario": "definitions-independent-of-layout-order",
+      "status": "planned"
+    },
+    {
+      "id": "FORM-03",
+      "tasks": [
+        "EF-03",
+        "EF-04",
+        "EF-12"
+      ],
+      "scenario": "preserve-all-form-sections",
+      "status": "planned"
+    },
+    {
+      "id": "FORM-04",
+      "tasks": [
+        "EF-12",
+        "EF-13"
+      ],
+      "scenario": "ownership-reachability-cycle-id-and-links",
+      "status": "planned"
+    },
+    {
+      "id": "FORM-05",
+      "tasks": [
+        "EF-03",
+        "EF-04",
+        "EF-08"
+      ],
+      "scenario": "ordinary-binary-form-is-opaque",
+      "status": "planned"
+    },
+    {
+      "id": "FORM-06",
+      "tasks": [
+        "EF-12"
+      ],
+      "scenario": "one-file-per-form-not-per-control",
+      "status": "planned"
+    },
+    {
+      "id": "TEXT-01",
+      "tasks": [
+        "EF-07"
+      ],
+      "scenario": "cst-edit-keeps-comments-quotes-and-eol",
+      "status": "planned"
+    },
+    {
+      "id": "TEXT-02",
+      "tasks": [
+        "EF-02",
+        "EF-07"
+      ],
+      "scenario": "strict-yaml-profile-and-explicit-bom-policy",
+      "status": "planned"
+    },
+    {
+      "id": "TEXT-03",
+      "tasks": [
+        "EF-02",
+        "EF-11",
+        "EF-22"
+      ],
+      "scenario": "schema-and-format-style-contract",
+      "status": "planned"
+    },
+    {
+      "id": "PERF-01",
+      "tasks": [
+        "EF-09"
+      ],
+      "scenario": "logical-allocated-total-and-temporary-peak",
+      "status": "planned"
+    },
+    {
+      "id": "PERF-02",
+      "tasks": [
+        "EF-09",
+        "EF-10"
+      ],
+      "scenario": "import-export-open-rss-and-cache",
+      "status": "planned"
+    },
+    {
+      "id": "PERF-03",
+      "tasks": [
+        "EF-09",
+        "EF-19"
+      ],
+      "scenario": "clean-dirty-status-diff-save",
+      "status": "planned"
+    },
+    {
+      "id": "PERF-04",
+      "tasks": [
+        "EF-09",
+        "EF-19"
+      ],
+      "scenario": "same-backend-options-and-io-accounting",
+      "status": "planned"
+    },
+    {
+      "id": "PERF-05",
+      "tasks": [
+        "EF-09"
+      ],
+      "scenario": "xml-normalized-xml-and-typed-yaml-comparison",
+      "status": "planned"
+    },
+    {
+      "id": "PERF-06",
+      "tasks": [
+        "EF-09"
+      ],
+      "scenario": "commands-versions-repetitions-and-cache-state",
+      "status": "planned"
+    }
+  ]
+}

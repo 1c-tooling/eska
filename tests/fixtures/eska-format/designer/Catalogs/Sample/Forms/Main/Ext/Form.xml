@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.20">
+	<ChildItems><InputField name="Count" id="1"><Type xmlns:local="urn:eska:fixture:form" xsi:type="local:Value">local:ExactType</Type></InputField></ChildItems>
+</Form>

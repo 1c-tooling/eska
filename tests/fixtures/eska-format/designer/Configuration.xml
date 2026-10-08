@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" version="2.20">
+	<Configuration uuid="10000000-0000-4000-8000-000000000001">
+		<Properties>
+			<Name>SampleConfiguration</Name>
+			<Comment>Configuration &amp; resources</Comment>
+			<Version>1.2.3.004</Version>
+			<CompatibilityMode>Version8_3_21</CompatibilityMode>
+		</Properties>
+		<ChildObjects>
+			<CommonModule>Tools</CommonModule>
+			<Catalog>Sample</Catalog>
+		</ChildObjects>
+	</Configuration>
+</MetaDataObject>

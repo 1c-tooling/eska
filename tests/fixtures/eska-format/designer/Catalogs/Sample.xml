@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.20">
+	<Catalog uuid="20000000-0000-4000-8000-000000000001">
+		<InternalInfo><v8:GeneratedType name="CatalogObject.Sample" category="Object"><v8:TypeId>20000000-0000-4000-8000-000000000010</v8:TypeId><v8:ValueId>20000000-0000-4000-8000-000000000011</v8:ValueId></v8:GeneratedType></InternalInfo>
+		<Properties>
+			<Name>Sample</Name>
+			<Synonym><v8:item><v8:lang>ru</v8:lang><v8:content>Образец</v8:content></v8:item><v8:item><v8:lang>en</v8:lang><v8:content>Sample</v8:content></v8:item></Synonym>
+			<Comment></Comment>
+			<CodeLength>9</CodeLength>
+			<Hierarchical>false</Hierarchical>
+			<DefaultPresentation xsi:nil="true"/>
+			<FutureProperty xmlns:local="urn:eska:fixture:type" xsi:type="local:FutureType"><Number>123456789012345678901234567890.0001</Number></FutureProperty>
+		</Properties>
+		<ChildObjects>
+			<Attribute uuid="30000000-0000-4000-8000-000000000001"><Properties><Name>Description</Name><Comment>Editable part</Comment></Properties></Attribute>
+			<TabularSection uuid="40000000-0000-4000-8000-000000000001"><Properties><Name>Items</Name><Comment xsi:nil="true"/></Properties><ChildObjects><Attribute uuid="50000000-0000-4000-8000-000000000001"><Properties><Name>Count</Name><Comment>Nested attribute</Comment></Properties></Attribute></ChildObjects></TabularSection>
+			<Form>Main</Form>
+		</ChildObjects>
+	</Catalog>
+</MetaDataObject>
