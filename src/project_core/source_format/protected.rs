@@ -3,6 +3,7 @@
 mod differences;
 mod generation;
 mod merge;
+mod prepared;
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -22,6 +23,8 @@ use crate::project_core::{
     native,
     support::{Reason, State},
 };
+
+pub use prepared::PreparedSource;
 
 /// Every excluded working change states the performed action rather than silently disappearing.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -94,6 +97,19 @@ pub fn export_protected(
     output: &Path,
     strict: bool,
 ) -> Result<ProtectedExport, ProtectedFailure> {
+    prepare_protected(source, base, output, strict).map(|prepared| prepared.report)
+}
+
+/// Prepare a proof-carrying native generation for a consumer that will verify its build snapshot.
+///
+/// # Errors
+/// Returns the same policy, composition, input-race and publication failures as protected export.
+pub fn prepare_protected(
+    source: &Path,
+    base: &AcceptedBase,
+    output: &Path,
+    strict: bool,
+) -> Result<PreparedSource, ProtectedFailure> {
     base.verify()?;
     let source = fs::canonicalize(source).map_err(|error| files::io(&error))?;
     let working = Inventory::read(&source)?;
@@ -130,12 +146,16 @@ pub fn export_protected(
         origins: &origins,
     };
     let destination = plan.publish(output)?;
-    Ok(ProtectedExport {
-        generation,
-        xml: destination,
-        input_revision: working.revision,
-        baseline: base.reference().sha256.clone(),
-        diagnostics,
+    Ok(PreparedSource {
+        report: ProtectedExport {
+            generation,
+            xml: destination,
+            input_revision: working.revision,
+            baseline: base.reference().sha256.clone(),
+            diagnostics,
+        },
+        binding,
+        native,
     })
 }
 

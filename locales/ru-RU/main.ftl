@@ -640,6 +640,7 @@ build-manifest-filesystem-error = Не удалось подготовить с�
 build-manifest-entry-unsupported = Снимок не поддерживает символическую ссылку или специальный файл: { $path }
 build-manifest-snapshot-invalid = Не удалось создать изолированную модель проекта для снимка исходников.
 build-manifest-serialize-error = Не удалось сериализовать паспорт артефакта.
+build-source-validation-failed = Не удалось проверить исходники сборки (код: { $code }).
 platform-about = Найти установленные платформы 1С
 platform-usage = eska platform <КОМАНДА>
 platform-list-about = Показать платформы в текущем раннере

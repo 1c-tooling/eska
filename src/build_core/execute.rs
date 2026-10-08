@@ -10,6 +10,7 @@ use super::{
     ArtifactType, BuildPlan, BuildProvenance, Ibcmd, ManagedInfobase, ManagedInfobaseError,
     ManifestError, ProcessStream, RunError, manifest,
 };
+use crate::project_core::source_format::{Error as SourceError, PreparedSource};
 use crate::project_core::{Project, ProjectType, native};
 
 static WORKSPACE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -72,6 +73,7 @@ pub enum BuildError {
     BaseConfigurationInvalid(PathBuf),
     ManagedInfobase(ManagedInfobaseError),
     Manifest(ManifestError),
+    SourceValidation(SourceError),
 }
 
 /// Build a native 1C artifact through a reusable managed file infobase.
@@ -99,7 +101,7 @@ pub fn execute_streaming<F>(
 where
     F: FnMut(BuildStage, ProcessStream, &[u8]),
 {
-    execute_streaming_inner(plan, ibcmd, None, &mut on_output)
+    execute_streaming_inner(plan, ibcmd, None, None, &mut on_output)
 }
 
 /// Build from an immutable source snapshot and publish its artifact manifest as one pair.
@@ -117,7 +119,48 @@ pub fn execute_streaming_with_manifest<F>(
 where
     F: FnMut(BuildStage, ProcessStream, &[u8]),
 {
-    execute_streaming_inner(plan, ibcmd, Some((project, provenance)), &mut on_output)
+    execute_streaming_inner(
+        plan,
+        ibcmd,
+        Some((project, provenance)),
+        None,
+        &mut on_output,
+    )
+}
+
+/// Build exclusively from a protected generation and verify the actual copied input.
+///
+/// The working source and any stale XML directory are never used as fallback inputs.
+/// Both artifact and manifest are published only after the verified snapshot has been built.
+///
+/// # Errors
+/// Returns a structured failure for changed prepared bytes, a mismatched artifact profile,
+/// source copying, platform execution or result publication.
+pub fn execute_prepared_with_manifest<F>(
+    plan: &BuildPlan,
+    project: &Project,
+    prepared: &PreparedSource,
+    provenance: BuildProvenance,
+    ibcmd: &Ibcmd,
+    mut on_output: F,
+) -> Result<BuildResult, BuildError>
+where
+    F: FnMut(BuildStage, ProcessStream, &[u8]),
+{
+    if plan.artifact_type() != ArtifactType::Configuration {
+        return Err(BuildError::SourceValidation(SourceError::root(
+            "source_profile_unsupported",
+        )));
+    }
+    prepared.validate().map_err(BuildError::SourceValidation)?;
+    let native_plan = plan.with_snapshot_source(prepared.xml().to_owned());
+    execute_streaming_inner(
+        &native_plan,
+        ibcmd,
+        Some((project, provenance)),
+        Some(prepared),
+        &mut on_output,
+    )
 }
 
 /// Share the verified platform pipeline between ordinary and manifested builds.
@@ -125,6 +168,7 @@ fn execute_streaming_inner<F>(
     plan: &BuildPlan,
     ibcmd: &Ibcmd,
     manifest_request: Option<(&Project, BuildProvenance)>,
+    prepared: Option<&PreparedSource>,
     on_output: &mut F,
 ) -> Result<BuildResult, BuildError>
 where
@@ -157,10 +201,7 @@ where
     let artifact = workspace
         .path
         .join(format!("artifact.{}", plan.artifact_type().extension()));
-    let snapshot = manifest_project
-        .map(|project| manifest::capture_source(project, plan, &workspace.path))
-        .transpose()
-        .map_err(BuildError::Manifest)?;
+    let snapshot = capture_snapshot(manifest_project, plan, &workspace.path, prepared)?;
     let effective_plan = snapshot.as_ref().map_or_else(
         || plan.clone(),
         |snapshot| plan.with_snapshot_source(snapshot.source().to_owned()),
@@ -226,6 +267,30 @@ where
         duration: started.elapsed(),
         tool_output,
     })
+}
+
+/// Bind the copied snapshot to protected evidence before any infobase is opened or changed.
+fn capture_snapshot(
+    project: Option<&Project>,
+    plan: &BuildPlan,
+    workspace: &Path,
+    prepared: Option<&PreparedSource>,
+) -> Result<Option<manifest::SourceSnapshot>, BuildError> {
+    let mut snapshot = project
+        .map(|project| manifest::capture_source(project, plan, workspace, prepared.is_some()))
+        .transpose()
+        .map_err(BuildError::Manifest)?;
+    if let Some(prepared) = prepared {
+        let snapshot = snapshot.as_mut().ok_or_else(|| {
+            BuildError::SourceValidation(SourceError::root("source_snapshot_missing"))
+        })?;
+        prepared
+            .validate_snapshot(snapshot.source())
+            .map_err(BuildError::SourceValidation)?;
+        prepared.validate().map_err(BuildError::SourceValidation)?;
+        snapshot.bind_prepared(prepared);
+    }
+    Ok(snapshot)
 }
 
 /// Require an ibcmd result to be a non-empty regular file before publication.

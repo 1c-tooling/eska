@@ -418,6 +418,13 @@ Model и pure XML parser вынесены в core; [YAML-проекция](../re
 [Конвейер](../research/eska-format/build-boundary.md), снимок и artifact manifest
 также вынесены; приложение только поставляет Git provenance. Независимый
 consumer собрал native C1 через установленную 1С, SHA-256 CF проверен.
+[Подготовленная сборка](../research/eska-format/prepared-inputs.md) принимает
+private proof поколения, проверяет фактический snapshot до ИБ/платформы
+и записывает source context в manifest schema 2. Прежний XML build сохраняет
+schema 1; карта origins и публичная конфигурация пока остаются следующей частью.
+Маршрут ESKA → prepared snapshot → CF → новая выгрузка C1 принят:
+8 769 файлов/8 064 каталога совпали с контролем, исключение — только
+проверенные служебные configVersion. Все остальные байты равны.
 Minimal library compile graph не содержит
 gix, HTTP, CLI, TTY или IDE runtime. Это подготовка текущих потребителей;
 публичная конфигурация ESKA, discovery, build и самостоятельные инструменты

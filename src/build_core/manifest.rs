@@ -10,6 +10,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 
 use super::{ArtifactType, BuildPlan, BuildProvenance, GitProvenance};
+use crate::project_core::source_format::{PROFILE, PreparedSource, RULES_VERSION, SCHEMA_VERSION};
 use crate::project_core::{Project, ProjectPathError, native_version as version};
 
 #[derive(Debug)]
@@ -26,9 +27,23 @@ pub(super) struct SourceSnapshot {
     source: PathBuf,
     id: String,
     version: VersionDocument,
+    protected: Option<ProtectedDocument>,
 }
 
 impl SourceSnapshot {
+    /// Attach context only after the copied tree has passed prepared-input verification.
+    pub(super) fn bind_prepared(&mut self, prepared: &PreparedSource) {
+        self.protected = Some(ProtectedDocument {
+            source_schema_version: SCHEMA_VERSION,
+            rules_version: RULES_VERSION,
+            profile: PROFILE,
+            generation: prepared.generation().to_owned(),
+            input_revision: prepared.input_revision().to_owned(),
+            baseline: prepared.baseline().to_owned(),
+            native_revision: prepared.native_revision().to_owned(),
+        });
+    }
+
     #[must_use]
     pub(super) fn source(&self) -> &Path {
         &self.source
@@ -52,6 +67,7 @@ pub(super) fn capture_source(
     project: &Project,
     plan: &BuildPlan,
     workspace: &Path,
+    preserve_git_payloads: bool,
 ) -> Result<SourceSnapshot, ManifestError> {
     let snapshot_root = workspace.join("snapshot");
     let snapshot_source = snapshot_root.join("source");
@@ -73,6 +89,7 @@ pub(super) fn capture_source(
         plan.source(),
         &excluded,
         &mut hash,
+        preserve_git_payloads,
     )?;
     let snapshot_project = Project::new(
         snapshot_root,
@@ -88,6 +105,7 @@ pub(super) fn capture_source(
         source: snapshot_source,
         id: format!("sha256:{}", hex(&hash.finalize())),
         version,
+        protected: None,
     })
 }
 
@@ -105,7 +123,7 @@ pub(super) fn write(
     base_configuration: Option<&Path>,
 ) -> Result<(), ManifestError> {
     let document = ArtifactManifestDocument {
-        schema_version: 1,
+        schema_version: if snapshot.protected.is_some() { 2 } else { 1 },
         kind: "artifact-manifest",
         project: ProjectDocument {
             name: seed.project_name,
@@ -120,6 +138,7 @@ pub(super) fn write(
         },
         source: SourceDocument {
             snapshot_id: snapshot.id.clone(),
+            protected: snapshot.protected.clone(),
             git: GitDocument::from(seed.git),
             base_configuration: base_configuration
                 .map(file_checksum)
@@ -147,6 +166,7 @@ fn copy_directory(
     root: &Path,
     excluded: &[&Path],
     hash: &mut Sha256,
+    preserve_git_payloads: bool,
 ) -> Result<(), ManifestError> {
     fs::create_dir(target).map_err(|source| ManifestError::SnapshotIo {
         path: target.to_owned(),
@@ -165,7 +185,7 @@ fn copy_directory(
     entries.sort_by_key(std::fs::DirEntry::file_name);
     for entry in entries {
         let path = entry.path();
-        if entry.file_name() == OsStr::new(".git")
+        if (!preserve_git_payloads && entry.file_name() == OsStr::new(".git"))
             || excluded
                 .iter()
                 .any(|excluded| path == **excluded || path.starts_with(excluded))
@@ -184,7 +204,14 @@ fn copy_directory(
             })?;
         if file_type.is_dir() {
             hash_entry(hash, b'd', relative, &[]);
-            copy_directory(&path, &destination, root, excluded, hash)?;
+            copy_directory(
+                &path,
+                &destination,
+                root,
+                excluded,
+                hash,
+                preserve_git_payloads,
+            )?;
             copy_permissions(&path, &destination)?;
         } else if file_type.is_file() {
             let digest = copy_file(&path, &destination)?;
@@ -367,9 +394,22 @@ struct PlatformDocument {
 #[derive(Serialize)]
 struct SourceDocument {
     snapshot_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    protected: Option<ProtectedDocument>,
     git: GitDocument,
     #[serde(skip_serializing_if = "Option::is_none")]
     base_configuration: Option<ChecksumDocument>,
+}
+
+#[derive(Clone, Serialize)]
+struct ProtectedDocument {
+    source_schema_version: u32,
+    rules_version: u32,
+    profile: &'static str,
+    generation: String,
+    input_revision: String,
+    baseline: String,
+    native_revision: String,
 }
 
 #[derive(Serialize)]

@@ -640,6 +640,7 @@ build-manifest-filesystem-error = Failed to prepare the snapshot or manifest at 
 build-manifest-entry-unsupported = The snapshot does not support a symbolic link or special file: { $path }
 build-manifest-snapshot-invalid = Failed to create the isolated project model for the source snapshot.
 build-manifest-serialize-error = Failed to serialize the artifact manifest.
+build-source-validation-failed = Could not verify build inputs (code: { $code }).
 platform-about = Discover installed 1C platforms
 platform-usage = eska platform <COMMAND>
 platform-list-about = List platforms in the current runner

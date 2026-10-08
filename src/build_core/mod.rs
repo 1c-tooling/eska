@@ -14,8 +14,8 @@ pub use crate::project_core::platform_settings::{
     BuildSettings, BuildSettingsError, InvalidArtifactsDirectoryReason, PlatformVersion,
 };
 pub use execute::{
-    BuildError, BuildResult, BuildStage, execute, execute_streaming,
-    execute_streaming_with_manifest, preflight, preflight_manifest,
+    BuildError, BuildResult, BuildStage, execute, execute_prepared_with_manifest,
+    execute_streaming, execute_streaming_with_manifest, preflight, preflight_manifest,
 };
 pub use infobase::{
     CleanOutcome as InfobaseCleanOutcome, ManagedInfobase, ManagedInfobaseError,

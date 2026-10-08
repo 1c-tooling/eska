@@ -163,6 +163,10 @@ fn present_build_error(error: &BuildError, localizer: &Localizer) -> String {
             diagnostics::present_managed_infobase_error(error, localizer)
         }
         BuildError::Manifest(error) => present_manifest_error(error, localizer),
+        BuildError::SourceValidation(error) => localizer.format(
+            "build-source-validation-failed",
+            &[("code", LocalizationValue::Text(error.code))],
+        ),
     }
 }
 
@@ -275,6 +279,7 @@ pub(super) const fn execution_error_code(error: &BuildExecutionError) -> &'stati
         } => "interrupted",
         BuildError::Run { .. } => "process-error",
         BuildError::CommandFailed { .. } => "command-failed",
+        BuildError::SourceValidation(_) => "source-verification",
         BuildError::ArtifactMissing(_) => "artifact-missing",
         BuildError::ArtifactEmpty(_) => "artifact-empty",
         BuildError::Publish { .. } => "publish",
@@ -319,6 +324,7 @@ pub(super) const fn execution_error_stage(error: &BuildExecutionError) -> Option
             | ManifestError::Serialize(_),
         )) => Some("manifest"),
         BuildExecutionError::Build(BuildError::Manifest(_)) => Some("snapshot"),
+        BuildExecutionError::Build(BuildError::SourceValidation(_)) => Some("source-verification"),
         BuildExecutionError::Build(_) | BuildExecutionError::Output(_) => None,
     }
 }
@@ -332,4 +338,29 @@ pub(super) const fn execution_was_interrupted(error: &BuildExecutionError) -> bo
             ..
         })
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{cli::localization::Locale, project_core::source_format::Error};
+
+    #[test]
+    /// Localize a source-verification failure while keeping its kind and stage independent of locale.
+    fn source_verification_error_has_both_locales_and_stable_machine_classification() {
+        let error = BuildExecutionError::Build(BuildError::SourceValidation(Error::root(
+            "source_generation_corrupt",
+        )));
+        for (locale, prefix) in [
+            (Locale::RuRu, "Не удалось проверить"),
+            (Locale::EnUs, "Could not verify"),
+        ] {
+            let localizer = Localizer::try_new(locale).expect("localizer");
+            let message = execution_error_message(&error, &localizer);
+            assert!(message.starts_with(prefix), "{message}");
+            assert!(message.contains("source_generation_corrupt"), "{message}");
+            assert_eq!(execution_error_code(&error), "source-verification");
+            assert_eq!(execution_error_stage(&error), Some("source-verification"));
+        }
+    }
 }
