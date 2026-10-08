@@ -170,7 +170,10 @@ fn fingerprint(path: &Path) -> Result<(u64, String), Error> {
 }
 
 /// Frame paths, lengths and hashes unambiguously; no timestamp or private absolute path is stored.
-fn revision(files: &BTreeMap<SourcePath, FileEntry>, directories: &[SourcePath]) -> String {
+pub(super) fn revision(
+    files: &BTreeMap<SourcePath, FileEntry>,
+    directories: &[SourcePath],
+) -> String {
     let mut digest = Sha256::new();
     for path in directories {
         digest.update([0]);
@@ -188,7 +191,7 @@ fn revision(files: &BTreeMap<SourcePath, FileEntry>, directories: &[SourcePath])
 }
 
 /// Render fingerprints with their canonical machine spelling.
-fn hex(bytes: &[u8]) -> String {
+pub(super) fn hex(bytes: &[u8]) -> String {
     use std::fmt::Write;
     bytes
         .iter()

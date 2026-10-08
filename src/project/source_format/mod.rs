@@ -1,13 +1,17 @@
 //! Experimental, reversible source documents, independent of IDE and platform runners.
 
+mod composition;
+mod export;
 mod files;
 mod import;
 mod model;
+mod native_writer;
 mod package;
 mod validation;
 mod xml;
 mod yaml;
 
+pub use export::export_designer;
 pub use import::import_designer;
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 
@@ -63,6 +67,15 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl Descriptor {
+    /// Materialize one validated descriptor using the observed native BOM and EOL policy.
+    ///
+    /// # Errors
+    /// Returns source validation or namespace-materialization failures before writing a file.
+    pub fn to_xml(&self) -> Result<String, Error> {
+        self.validate()?;
+        native_writer::encode(self)
+    }
+
     /// Read a supported Designer descriptor without discarding unsupported property content.
     ///
     /// # Errors

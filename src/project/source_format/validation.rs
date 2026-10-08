@@ -122,7 +122,12 @@ fn properties(values: &[Property], context: &[Namespace]) -> Result<(), Error> {
                     | (_, PropertyValue::Localized(_)) => {
                         return Err(Error::root("source_property_type_invalid"));
                     }
-                    (_, PropertyValue::Text(text)) => xml_text(text)?,
+                    (_, PropertyValue::Text(text)) => {
+                        if text.is_empty() {
+                            return Err(Error::root("source_property_type_invalid"));
+                        }
+                        xml_text(text)?;
+                    }
                     (_, PropertyValue::Empty | PropertyValue::Nil) => {}
                 }
             }
@@ -291,7 +296,7 @@ fn fragment(
 }
 
 /// Store only local overrides; expand inherited bindings at validation/materialization time.
-fn scope(inherited: &[Namespace], local: &[Namespace]) -> Result<Vec<Namespace>, Error> {
+pub(super) fn scope(inherited: &[Namespace], local: &[Namespace]) -> Result<Vec<Namespace>, Error> {
     namespaces(local)?;
     let mut values: BTreeMap<_, _> = inherited
         .iter()
