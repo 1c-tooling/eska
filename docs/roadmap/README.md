@@ -17,6 +17,11 @@ EF-17–EF-19 добавляют выбор языкового ядра, IDE/п�
 T26 уточнена как отдельный настраиваемый `eska-fmt` с общей библиотекой для CLI
 и IDE; T27 ограничена статическим анализом. Задачи остаются `PLANNED`, собственный
 формат не обязателен для форматирования BSL. Порядок CLI-backlog сохраняется.
+Релизный инструмент `eska-release` определён через T56/T32, CI adapters — T33.
+Добавлены `PLANNED` T83 (версии из трёх и четырёх компонентов) и T84 (неэкспортная
+`Версия()` в модуле внешнего объекта, используемая сведениями регистрации).
+Это предпосылки T56 при возвращении к релизам; текущий `NEXT` не меняется.
+Код форматтера, нового версионирования и релизного инструмента ещё не реализован.
 
 По запросу от 2026-09-28 в `feat/cli` завершена T82: создание и обновление
 проектов из CF/CFE/EPF/ERF. Контракт и состояние — в
@@ -76,8 +81,9 @@ VS Code extension для навигации по Designer XML.
   устранением дублей и порядком метаданных Конфигуратора;
 - `DONE`: `T35` — автоматическое сохранение и восстановление незакоммиченного
   состояния при переключении задач;
-- `PLANNED`: `T56` — автоматическая версия релиза 1С и подготовка Release PR/MR;
-  сохранена в backlog после переключения приоритета на IDE;
+- `PLANNED`: `T83`, `T84` — две схемы версии и версия внешнего объекта через модуль;
+- `PLANNED`: `T56` — автоматический план версии релиза 1С, подготовка PR/MR — T32;
+  задача сохранена в backlog после переключения приоритета на IDE;
 - `IN-PROGRESS`: `T57` — обновление установленного бинарника командой `eska update`
   по отдельному запросу пользователя, без ожидания T56;
 - `PLANNED`: `T55` — переносимый стенд реализован, завершение ожидает запусков
@@ -278,7 +284,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T29 | DONE | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T30 | PLANNED | Development environments | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T31 | PLANNED | `apply` / `run` | [09-build-and-runtime.md](09-build-and-runtime.md) |
-| T32 | PLANNED | Release pipeline | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T32 | PLANNED | `eska-release`: подготовка PR/MR и публикация | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T33 | PLANNED | CI integration | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T34 | DONE | `eska switch` | [05-safe-vcs.md](05-safe-vcs.md) |
 | T35 | DONE | `shelve` / `unshelve` / `shelves` и автоматическое восстановление при `switch` | [05-safe-vcs.md](05-safe-vcs.md) |
@@ -329,6 +335,8 @@ BSL LSP и визуальный редактор форм в это направ
 | T80 | DONE | Иконки метаданных | [14-vscode-extension.md](14-vscode-extension.md) |
 | T81 | IN-PROGRESS | Производительность интерфейса, приёмка и VSIX | [14-vscode-extension.md](14-vscode-extension.md) |
 | T82 | DONE | Создание и обновление из файлов 1С | [02-project-creation.md](02-project-creation.md) |
+| T83 | PLANNED | Версии проекта `x.y.z` и `x.y.z.build` | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T84 | PLANNED | Обязательная `Версия()` внешнего отчёта/обработки | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в
