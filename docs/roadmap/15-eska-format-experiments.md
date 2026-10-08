@@ -414,8 +414,10 @@ Model и pure XML parser вынесены в core; [YAML-проекция](../re
 Координаты различаются по исходному формату и привязаны к SHA-256 source text.
 В `build_core` вынесены план сборки, runner платформы и managed infobase;
 прежний сборщик использует их же. Feature `build` проверяется отдельно от
-приложения, без Git engine, HTTP, CLI, TTY и IDE runtime. Конвейер и capture
-Git provenance пока остаются в приложении.
+приложения, без Git engine, HTTP, CLI, TTY и IDE runtime.
+[Конвейер](../research/eska-format/build-boundary.md), снимок и artifact manifest
+также вынесены; приложение только поставляет Git provenance. Независимый
+consumer собрал native C1 через установленную 1С, SHA-256 CF проверен.
 Minimal library compile graph не содержит
 gix, HTTP, CLI, TTY или IDE runtime. Это подготовка текущих потребителей;
 публичная конфигурация ESKA, discovery, build и самостоятельные инструменты
