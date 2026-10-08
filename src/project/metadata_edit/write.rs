@@ -33,6 +33,16 @@ impl EditPlan {
     }
 }
 
+/// Other source formats share the same exact-byte and permission checks as XML edits.
+pub fn publish_snapshot(
+    root: &Path,
+    relative: &Path,
+    original: &str,
+    updated: &str,
+) -> Result<(), EditError> {
+    publish_bytes(root, relative, original, updated, None)
+}
+
 /// A structural journal owns the temporary file too, making process termination recoverable.
 pub fn publish_snapshot_in(
     root: &Path,

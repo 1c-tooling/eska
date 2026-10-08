@@ -14,6 +14,7 @@ use eska::project::{
 use crate::support::TestDir;
 
 mod baseline;
+mod edit;
 mod protected;
 
 /// Work on a private copy so adverse input tests cannot modify the shared fixture corpus.
