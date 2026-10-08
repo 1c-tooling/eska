@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ESKA experimental main-owner source 1",
+  "type": "object",
+  "properties": {
+    "document": {
+      "$ref": "#/$defs/document"
+    },
+    "nested": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/document"
+      }
+    }
+  },
+  "required": [
+    "document",
+    "nested"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:\\\\|:|\\u0000|[?*\"<>|]))(?!.*(?:^|/)\\.\\.?(/|$))(?!.*(?:^|/)[^/]*[ .](/|$))[^/]+(?:/[^/]+)*$"
+    },
+    "document": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "descriptor": {
+          "$ref": "descriptor.schema.json"
+        }
+      },
+      "required": [
+        "path",
+        "descriptor"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

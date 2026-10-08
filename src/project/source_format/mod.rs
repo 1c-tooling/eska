@@ -1,8 +1,15 @@
 //! Experimental, reversible source documents, independent of IDE and platform runners.
 
+mod files;
+mod import;
 mod model;
+mod package;
 mod validation;
+mod xml;
 mod yaml;
+
+pub use import::import_designer;
+pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 
 pub use model::{
     Child, Descriptor, LineEnding, LocalizedText, MetadataNode, Namespace, NativeUuid, Property,
@@ -56,6 +63,14 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl Descriptor {
+    /// Read a supported Designer descriptor without discarding unsupported property content.
+    ///
+    /// # Errors
+    /// Returns a profile, XML, identity or unsupported-envelope failure before writing.
+    pub fn from_xml(input: &str) -> Result<Self, Error> {
+        xml::decode(input)
+    }
+
     /// Decode one strict YAML document and validate the experimental source contract.
     ///
     /// # Errors

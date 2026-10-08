@@ -9,6 +9,7 @@ mod object_model;
 mod patch;
 mod save;
 mod semantic;
+mod source_format;
 mod start;
 mod switch;
 mod templates;

@@ -112,6 +112,9 @@ pub(super) fn encode(value: &Value) -> Result<String, Error> {
     let mut output = String::new();
     write(value, 0, &mut output)?;
     output.push('\n');
+    if output.len() > MAX_DOCUMENT_BYTES {
+        return Err(Error::root("source_document_too_large"));
+    }
     Ok(output)
 }
 

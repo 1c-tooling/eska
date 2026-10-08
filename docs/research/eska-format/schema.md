@@ -19,8 +19,9 @@ format `eska.toml` и не публичная команда конвертац�
 attributes и упорядоченные `sections`. Секция `properties` хранит typed и preserved
 свойства, `children` — inline части и явные ссылки на отдельные descriptors;
 `preserved` — остальное содержимое в исходном slot. Для основных объектов
-предусмотрен `object.yaml`, для корня — `configuration.yaml`. Сборка целого
-проекта и объединение отдельных описателей владельца принимаются в EF-03/EF-04.
+предусмотрен `object.yaml`, для корня — `configuration.yaml`.
+[Импорт EF-03](import.md) объединяет отдельные описатели в документ владельца;
+обратная сборка целого XML-дерева принимается в EF-04.
 
 Typed-набор: `Name`, `Comment`, `Version`, `Synonym`. Значение имеет состояние
 `text`, `empty`, `nil` или `localized`. Отсутствие — отсутствие property entry,

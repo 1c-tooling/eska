@@ -258,6 +258,8 @@ fn fragment(
     wrapper.push('>');
     wrapper.push_str(&value.xml);
     wrapper.push_str("</preserved>");
+    crate::project::metadata_parser::check_envelope(&wrapper)
+        .map_err(|_| Error::root("source_preserved_xml_invalid"))?;
     let document = roxmltree::Document::parse(&wrapper)
         .map_err(|_| Error::root("source_preserved_xml_invalid"))?;
     if document
