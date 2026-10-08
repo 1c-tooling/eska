@@ -404,6 +404,11 @@ byte-preserving Git transport для extensionless блоков базы: ста
 выделен из зависимостей приложения: реестр типов, native support/XML и один
 writer используются обоими форматами. Общие model/config/discovery/selection
 тоже доступны без приложения; правила schema и workspace не дублируются.
+Добавлен [reader владельцев](../research/eska-format/source-reader.md): открытие
+читает только manifest/configuration, остальные YAML — по запросу; typed facts,
+родительские UUID и byte locations относятся к точным дисковым/несохранённым
+байтам. Ошибка YAML не включает native XML как fallback. Права и полная
+проверка состава остаются на границе защищённого экспорта.
 Minimal library compile graph не содержит
 gix, HTTP, CLI, TTY или IDE runtime. Это подготовка текущих потребителей;
 публичная конфигурация ESKA, discovery, build и самостоятельные инструменты

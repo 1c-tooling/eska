@@ -10,6 +10,11 @@ const MAX_DEPTH: usize = 64;
 
 /// Decode YAML through its CST, rejecting duplicate keys and unsupported syntax first.
 pub(super) fn decode(input: &str) -> Result<Value, Error> {
+    decode_with_tree(input).map(|(value, _)| value)
+}
+
+/// Retain the same validated CST for source coordinates instead of parsing an owner twice.
+pub(super) fn decode_with_tree(input: &str) -> Result<(Value, YamlFile), Error> {
     if input.len() > MAX_DOCUMENT_BYTES {
         return Err(Error::root("source_document_too_large"));
     }
@@ -36,7 +41,27 @@ pub(super) fn decode(input: &str) -> Result<Value, Error> {
     let mapping = documents[0]
         .as_mapping()
         .ok_or_else(|| Error::root("source_yaml_root_invalid"))?;
-    convert(&YamlNode::Mapping(mapping), 0)
+    let value = convert(&YamlNode::Mapping(mapping), 0)?;
+    Ok((value, file))
+}
+
+/// Schema coordinates use actual mapping fields and sequence positions, never string searches.
+#[derive(Clone, Debug)]
+pub(super) enum Step {
+    Key(&'static str),
+    Index(usize),
+}
+
+/// Resolve a node in the exact CST which produced the validated semantic document.
+pub(super) fn at(file: &YamlFile, steps: &[Step]) -> Option<YamlNode> {
+    let mut node = YamlNode::Mapping(file.document()?.as_mapping()?);
+    for step in steps {
+        node = match step {
+            Step::Key(key) => node.as_mapping()?.get(*key),
+            Step::Index(index) => node.as_sequence()?.get(*index),
+        }?;
+    }
+    Some(node)
 }
 
 /// Traverse strict values without letting a mapping silently overwrite an earlier key.

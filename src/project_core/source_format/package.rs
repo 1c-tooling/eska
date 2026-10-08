@@ -75,8 +75,13 @@ impl ObjectSource {
     /// # Errors
     /// Returns schema, XML, path and duplicate-identity failures without normalization.
     pub fn from_yaml(input: &str) -> Result<Self, Error> {
-        let value: Self = serde_json::from_value(yaml::decode(input)?)
-            .map_err(|_| Error::root("source_schema_invalid"))?;
+        Self::from_value(yaml::decode(input)?)
+    }
+
+    /// Use the same schema boundary when a reader also retains the source CST.
+    pub(super) fn from_value(value: serde_json::Value) -> Result<Self, Error> {
+        let value: Self =
+            serde_json::from_value(value).map_err(|_| Error::root("source_schema_invalid"))?;
         value.validate()?;
         Ok(value)
     }

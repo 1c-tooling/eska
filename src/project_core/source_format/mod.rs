@@ -10,6 +10,7 @@ mod model;
 mod native_writer;
 mod package;
 mod protected;
+mod reader;
 mod validation;
 mod xml;
 mod yaml;
@@ -24,6 +25,7 @@ pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManif
 pub use protected::{
     Exclusion, ExclusionAction, ProtectedExport, ProtectedFailure, export_protected,
 };
+pub use reader::{MetadataDeclaration, OwnerSnapshot, SourceReader};
 
 pub use model::{
     Child, Descriptor, LineEnding, LocalizedText, MetadataNode, Namespace, NativeUuid, Property,

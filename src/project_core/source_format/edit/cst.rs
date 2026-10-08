@@ -2,15 +2,11 @@
 
 use std::ops::Range;
 
-use yaml_edit::{AsYaml, Mapping, ScalarValue, SyntaxKind, YamlFile, YamlNode};
+use yaml_edit::{AsYaml, Mapping, ScalarValue, SyntaxKind, YamlFile};
 
-use super::super::{Error, PropertyValue};
+use super::super::{Error, PropertyValue, yaml};
 
-/// Coordinates describe schema fields and explicit sequence positions, never textual searches.
-pub(super) enum Step {
-    Key(&'static str),
-    Index(usize),
-}
+pub(super) use super::super::yaml::Step;
 
 /// Mutate the selected value only and preserve its surrounding YAML verbatim.
 pub(super) fn replace(
@@ -24,18 +20,7 @@ pub(super) fn replace(
         return Err(unsupported());
     }
     let file = parsed.tree();
-    let mut node = YamlNode::Mapping(
-        file.document()
-            .and_then(|doc| doc.as_mapping())
-            .ok_or_else(unsupported)?,
-    );
-    for step in steps {
-        node = match step {
-            Step::Key(key) => node.as_mapping().and_then(|map| map.get(*key)),
-            Step::Index(index) => node.as_sequence().and_then(|seq| seq.get(*index)),
-        }
-        .ok_or_else(unsupported)?;
-    }
+    let node = yaml::at(&file, steps).ok_or_else(unsupported)?;
     let mapping = node.as_mapping().ok_or_else(unsupported)?;
     let original = range(mapping)?;
     let original_text = input.get(original.clone()).ok_or_else(unsupported)?;
