@@ -1,0 +1,475 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ESKA experimental descriptor 1",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "rules_version": {
+      "const": 1
+    },
+    "profile": {
+      "const": "designer-2.20-configuration"
+    },
+    "xml": {
+      "$ref": "#/$defs/xml_profile"
+    },
+    "object": {
+      "$ref": "#/$defs/node"
+    }
+  },
+  "required": [
+    "schema_version",
+    "rules_version",
+    "profile",
+    "xml",
+    "object"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "metadata_kind": {
+      "enum": [
+        "_",
+        "Configuration",
+        "DataProcessor",
+        "Report",
+        "AccountingRegister",
+        "AccumulationRegister",
+        "Bot",
+        "BusinessProcess",
+        "CalculationRegister",
+        "Catalog",
+        "ChartOfAccounts",
+        "ChartOfCalculationTypes",
+        "ChartOfCharacteristicTypes",
+        "CommandGroup",
+        "CommonAttribute",
+        "CommonCommand",
+        "CommonForm",
+        "CommonModule",
+        "CommonPicture",
+        "CommonTemplate",
+        "Constant",
+        "DefinedType",
+        "Document",
+        "DocumentJournal",
+        "DocumentNumerator",
+        "Enum",
+        "EventSubscription",
+        "ExchangePlan",
+        "ExternalDataSource",
+        "FilterCriterion",
+        "FunctionalOption",
+        "FunctionalOptionsParameter",
+        "HTTPService",
+        "InformationRegister",
+        "IntegrationService",
+        "Language",
+        "Role",
+        "ScheduledJob",
+        "Sequence",
+        "SessionParameter",
+        "SettingsStorage",
+        "Style",
+        "StyleItem",
+        "Subsystem",
+        "Task",
+        "WebService",
+        "WebSocketClient",
+        "WSReference",
+        "XDTOPackage",
+        "Form",
+        "Template",
+        "Command",
+        "AddressingAttribute",
+        "Attribute",
+        "TabularSection",
+        "Dimension",
+        "Resource",
+        "Requisite",
+        "EnumValue",
+        "AccountingFlag",
+        "ExtDimensionAccountingFlag",
+        "PredefinedItem",
+        "Recalculation",
+        "Column",
+        "URLTemplate",
+        "Method",
+        "Operation",
+        "Parameter",
+        "IntegrationServiceChannel"
+      ]
+    },
+    "namespace": {
+      "type": "object",
+      "properties": {
+        "prefix": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "prefix",
+        "uri"
+      ],
+      "additionalProperties": false
+    },
+    "attribute": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "fragment": {
+      "type": "object",
+      "properties": {
+        "xml": {
+          "type": "string"
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/namespace"
+          }
+        }
+      },
+      "required": [
+        "xml",
+        "namespaces"
+      ],
+      "additionalProperties": false
+    },
+    "localized": {
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "language",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "property_value": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "empty"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "nil"
+            }
+          },
+          "required": [
+            "state"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "text"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "localized"
+            },
+            "value": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/localized"
+              }
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "property": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "typed"
+            },
+            "name": {
+              "enum": [
+                "Name",
+                "Comment",
+                "Version",
+                "Synonym"
+              ]
+            },
+            "value": {
+              "$ref": "#/$defs/property_value"
+            }
+          },
+          "required": [
+            "kind",
+            "name",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "preserved"
+            },
+            "fragment": {
+              "$ref": "#/$defs/fragment"
+            }
+          },
+          "required": [
+            "kind",
+            "fragment"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "child": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "inline"
+            },
+            "object": {
+              "$ref": "#/$defs/node"
+            }
+          },
+          "required": [
+            "kind",
+            "object"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "reference"
+            },
+            "metadata_kind": {
+              "$ref": "#/$defs/metadata_kind"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "metadata_kind",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "preserved"
+            },
+            "fragment": {
+              "$ref": "#/$defs/fragment"
+            }
+          },
+          "required": [
+            "kind",
+            "fragment"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "section": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "properties"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/property"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "children"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/child"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "preserved"
+            },
+            "items": {
+              "$ref": "#/$defs/fragment"
+            }
+          },
+          "required": [
+            "kind",
+            "items"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "node": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/metadata_kind"
+        },
+        "uuid": {
+          "$ref": "#/$defs/uuid"
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/namespace"
+          }
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/attribute"
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/section"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "uuid",
+        "namespaces",
+        "attributes",
+        "sections"
+      ],
+      "additionalProperties": false
+    },
+    "xml_profile": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "2.20"
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/namespace"
+          }
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/attribute"
+          }
+        },
+        "bom": {
+          "type": "boolean"
+        },
+        "line_ending": {
+          "enum": [
+            "lf",
+            "crlf"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "namespaces",
+        "attributes",
+        "bom",
+        "line_ending"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

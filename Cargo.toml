@@ -54,6 +54,7 @@ toml = { version = "1.1.5", default-features = false, features = ["display", "pa
 toml_edit = { version = "0.25.13", default-features = false, features = ["display", "parse"] }
 base64 = { version = "0.23.1", default-features = false, features = ["std"] }
 zip = { version = "8.6.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+yaml-edit = { version = "0.3.2", default-features = false }
 
 [target.'cfg(windows)'.dependencies]
 self-replace = "1.5.0"

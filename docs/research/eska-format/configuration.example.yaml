@@ -1,0 +1,50 @@
+schema_version: 1
+rules_version: 1
+profile: "designer-2.20-configuration"
+xml:
+  version: "2.20"
+  namespaces:
+    - prefix: null
+      uri: "http://v8.1c.ru/8.3/MDClasses"
+  attributes: []
+  bom: true
+  line_ending: "crlf"
+object:
+  kind: "Configuration"
+  uuid: "10000000-0000-4000-8000-000000000001"
+  namespaces: []
+  attributes: []
+  sections:
+    - kind: "properties"
+      items:
+        - kind: "typed"
+          name: "Name"
+          value:
+            state: "text"
+            value: "SampleConfiguration"
+        - kind: "typed"
+          name: "Comment"
+          value:
+            state: "empty"
+        - kind: "typed"
+          name: "Version"
+          value:
+            state: "text"
+            value: "1.2.3.004"
+        - kind: "typed"
+          name: "Synonym"
+          value:
+            state: "localized"
+            value:
+              - language: "ru"
+                text: "Образец конфигурации"
+              - language: "en"
+                text: "Sample configuration"
+    - kind: "children"
+      items:
+        - kind: "reference"
+          metadata_kind: "CommonModule"
+          name: "Tools"
+        - kind: "reference"
+          metadata_kind: "Catalog"
+          name: "Sample"
