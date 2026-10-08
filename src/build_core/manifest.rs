@@ -10,7 +10,9 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 
 use super::{ArtifactType, BuildPlan, BuildProvenance, GitProvenance};
-use crate::project_core::source_format::{PROFILE, PreparedSource, RULES_VERSION, SCHEMA_VERSION};
+use crate::project_core::source_format::{
+    Error as SourceError, PROFILE, PreparedSource, RULES_VERSION, SCHEMA_VERSION, SourceMap,
+};
 use crate::project_core::{Project, ProjectPathError, native_version as version};
 
 #[derive(Debug)]
@@ -28,11 +30,13 @@ pub(super) struct SourceSnapshot {
     id: String,
     version: VersionDocument,
     protected: Option<ProtectedDocument>,
+    source_map: Option<SourceMap>,
 }
 
 impl SourceSnapshot {
     /// Attach context only after the copied tree has passed prepared-input verification.
-    pub(super) fn bind_prepared(&mut self, prepared: &PreparedSource) {
+    pub(super) fn bind_prepared(&mut self, prepared: &PreparedSource) -> Result<(), SourceError> {
+        let checksum = prepared.source_map().checksum()?;
         self.protected = Some(ProtectedDocument {
             source_schema_version: SCHEMA_VERSION,
             rules_version: RULES_VERSION,
@@ -41,7 +45,10 @@ impl SourceSnapshot {
             input_revision: prepared.input_revision().to_owned(),
             baseline: prepared.baseline().to_owned(),
             native_revision: prepared.native_revision().to_owned(),
+            source_map_checksum: ChecksumDocument::sha256(checksum),
         });
+        self.source_map = Some(prepared.source_map().clone());
+        Ok(())
     }
 
     #[must_use]
@@ -106,6 +113,7 @@ pub(super) fn capture_source(
         id: format!("sha256:{}", hex(&hash.finalize())),
         version,
         protected: None,
+        source_map: None,
     })
 }
 
@@ -139,6 +147,7 @@ pub(super) fn write(
         source: SourceDocument {
             snapshot_id: snapshot.id.clone(),
             protected: snapshot.protected.clone(),
+            source_map: snapshot.source_map.as_ref(),
             git: GitDocument::from(seed.git),
             base_configuration: base_configuration
                 .map(file_checksum)
@@ -350,13 +359,13 @@ impl VersionDocument {
 }
 
 #[derive(Serialize)]
-struct ArtifactManifestDocument {
+struct ArtifactManifestDocument<'a> {
     schema_version: u8,
     kind: &'static str,
     project: ProjectDocument,
     artifact: ArtifactDocument,
     platform: PlatformDocument,
-    source: SourceDocument,
+    source: SourceDocument<'a>,
 }
 
 #[derive(Serialize)]
@@ -371,7 +380,7 @@ struct ArtifactDocument {
     checksum: ChecksumDocument,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 struct ChecksumDocument {
     algorithm: &'static str,
     value: String,
@@ -392,10 +401,12 @@ struct PlatformDocument {
 }
 
 #[derive(Serialize)]
-struct SourceDocument {
+struct SourceDocument<'a> {
     snapshot_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     protected: Option<ProtectedDocument>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    source_map: Option<&'a SourceMap>,
     git: GitDocument,
     #[serde(skip_serializing_if = "Option::is_none")]
     base_configuration: Option<ChecksumDocument>,
@@ -410,6 +421,7 @@ struct ProtectedDocument {
     input_revision: String,
     baseline: String,
     native_revision: String,
+    source_map_checksum: ChecksumDocument,
 }
 
 #[derive(Serialize)]

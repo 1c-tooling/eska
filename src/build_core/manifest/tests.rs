@@ -92,7 +92,7 @@ fn prepared_snapshot_preserves_complete_tree_and_records_authorized_context() {
         fs::read(snapshot.source().join(".git")).expect("opaque payload"),
         b"opaque native payload\r\n"
     );
-    snapshot.bind_prepared(&prepared);
+    snapshot.bind_prepared(&prepared).expect("prepared map");
     let artifact = stage.join("artifact.cf");
     fs::write(&artifact, b"prepared artifact").expect("artifact");
     let output = stage.join("manifest.json");
@@ -119,7 +119,16 @@ fn prepared_snapshot_preserves_complete_tree_and_records_authorized_context() {
             "input_revision": prepared.input_revision(),
             "baseline": prepared.baseline(),
             "native_revision": prepared.native_revision(),
+            "source_map_checksum": {"algorithm": "sha256", "value": prepared.source_map().checksum().expect("map checksum")},
         })
+    );
+    let map: crate::project_core::source_format::SourceMap =
+        serde_json::from_value(document["source"]["source_map"].clone())
+            .expect("stored source map");
+    assert_eq!(map, *prepared.source_map());
+    assert_eq!(
+        map.checksum().expect("stored map checksum"),
+        document["source"]["protected"]["source_map_checksum"]["value"]
     );
     let other_stage = fixture.0.join("ordinary-stage");
     fs::create_dir(&other_stage).expect("ordinary stage");

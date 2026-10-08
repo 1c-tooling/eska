@@ -421,7 +421,10 @@ consumer собрал native C1 через установленную 1С, SHA-2
 [Подготовленная сборка](../research/eska-format/prepared-inputs.md) принимает
 private proof поколения, проверяет фактический snapshot до ИБ/платформы
 и записывает source context в manifest schema 2. Прежний XML build сохраняет
-schema 1; карта origins и публичная конфигурация пока остаются следующей частью.
+schema 1. [Карта файлов](../research/eska-format/source-map.md) различает
+рабочие и принятые bytes BSL/ресурсов, составные metadata origins и сохраняется
+в manifest с SHA-256. Следующие части — координаты YAML, диагностика платформы
+и публичная конфигурация.
 Маршрут ESKA → prepared snapshot → CF → новая выгрузка C1 принят:
 8 769 файлов/8 064 каталога совпали с контролем, исключение — только
 проверенные служебные configVersion. Все остальные байты равны.

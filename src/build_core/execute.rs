@@ -288,7 +288,9 @@ fn capture_snapshot(
             .validate_snapshot(snapshot.source())
             .map_err(BuildError::SourceValidation)?;
         prepared.validate().map_err(BuildError::SourceValidation)?;
-        snapshot.bind_prepared(prepared);
+        snapshot
+            .bind_prepared(prepared)
+            .map_err(BuildError::SourceValidation)?;
     }
     Ok(snapshot)
 }

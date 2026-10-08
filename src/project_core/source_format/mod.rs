@@ -24,8 +24,9 @@ pub use export::export_designer;
 pub use import::import_designer;
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 pub use protected::{
-    Exclusion, ExclusionAction, PreparedSource, ProtectedExport, ProtectedFailure,
-    export_protected, prepare_protected,
+    Exclusion, ExclusionAction, FileOrigin, InputAuthority, InputFile, MappedFile, PreparedSource,
+    ProtectedExport, ProtectedFailure, SOURCE_MAP_VERSION, SourceMap, export_protected,
+    prepare_protected,
 };
 pub use reader::{
     MetadataDeclaration, MetadataSnapshot, NativeMetadata, OwnerSnapshot, SourceReader,

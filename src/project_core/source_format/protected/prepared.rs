@@ -2,7 +2,7 @@
 
 use std::{fs, path::Path};
 
-use super::{Exclusion, ProtectedExport, generation::Binding};
+use super::{Exclusion, ProtectedExport, SourceMap, generation::Binding};
 use crate::project_core::source_format::{
     Error, FileEntry,
     files::{self, Inventory},
@@ -17,9 +17,16 @@ pub struct PreparedSource {
     pub(super) report: ProtectedExport,
     pub(super) binding: Binding,
     pub(super) native: Inventory,
+    pub(super) source_map: SourceMap,
 }
 
 impl PreparedSource {
+    /// Return origins derived from the same selected bytes as this prepared generation.
+    #[must_use]
+    pub const fn source_map(&self) -> &SourceMap {
+        &self.source_map
+    }
+
     /// Return the completed generation's native directory, never a mutable fallback directory.
     #[must_use]
     pub fn xml(&self) -> &Path {

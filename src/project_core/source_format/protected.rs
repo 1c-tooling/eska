@@ -4,6 +4,7 @@ mod differences;
 mod generation;
 mod merge;
 mod prepared;
+mod source_map;
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -25,6 +26,9 @@ use crate::project_core::{
 };
 
 pub use prepared::PreparedSource;
+pub use source_map::{
+    FileOrigin, InputAuthority, InputFile, MappedFile, SOURCE_MAP_VERSION, SourceMap,
+};
 
 /// Every excluded working change states the performed action rather than silently disappearing.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -136,6 +140,14 @@ pub fn prepare_protected(
     let native = package.output_inventory(&xml)?;
     let binding = generation::Binding::new(&working.revision, base.reference(), &native.revision);
     let generation = binding.id()?;
+    let source_map = source_map::create(
+        &working,
+        base,
+        &package,
+        &native,
+        &origins,
+        generation.clone(),
+    )?;
     let plan = generation::Plan {
         source: &source,
         working: &working,
@@ -156,6 +168,7 @@ pub fn prepare_protected(
         },
         binding,
         native,
+        source_map,
     })
 }
 
