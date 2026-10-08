@@ -55,18 +55,28 @@ pub fn export_designer(source: &Path, destination: &Path) -> Result<(), Error> {
     Ok(())
 }
 
-struct Package {
-    manifest: SourceManifest,
-    snapshot: Inventory,
-    documents: BTreeMap<SourcePath, NativeDocument>,
+pub(super) struct Package {
+    pub manifest: SourceManifest,
+    pub snapshot: Inventory,
+    pub documents: BTreeMap<SourcePath, NativeDocument>,
 }
 
 impl Package {
     /// Read only declared owner files; extra filesystem files cannot disappear during export.
-    fn read(root: &Path) -> Result<Self, Error> {
+    pub(super) fn read(root: &Path) -> Result<Self, Error> {
         let snapshot = Inventory::read(root)?;
+        Self::from_snapshot(snapshot, |path| {
+            files::read_text(&root.join(path.as_path()))
+        })
+    }
+
+    /// Share composition validation with pinned bytes stored outside a working source tree.
+    pub(super) fn from_snapshot(
+        snapshot: Inventory,
+        mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
+    ) -> Result<Self, Error> {
         let manifest: SourceManifest =
-            serde_json::from_str(&files::read_text(&root.join(files::MANIFEST))?)
+            serde_json::from_str(&read(&SourcePath::parse(files::MANIFEST)?)?)
                 .map_err(|_| Error::root("source_schema_invalid"))?;
         manifest.validate()?;
         let owners: BTreeSet<_> = manifest
@@ -87,7 +97,7 @@ impl Package {
             .map(|file| (file.path.as_str(), file))
             .collect();
         for owner in &owners {
-            let object = ObjectSource::from_yaml(&files::read_text(&root.join(owner.as_path()))?)
+            let object = ObjectSource::from_yaml(&read(owner)?)
                 .map_err(|error| error.in_field(owner.as_str()))?;
             for part in std::iter::once(object.document).chain(object.nested) {
                 let entry = entries
@@ -189,7 +199,7 @@ impl Package {
     }
 
     /// A changed YAML, payload, manifest or file composition cannot bless a stale export.
-    fn recheck(&self, root: &Path) -> Result<(), Error> {
+    pub(super) fn recheck(&self, root: &Path) -> Result<(), Error> {
         if Inventory::read(root)? != self.snapshot {
             return Err(Error::root("source_input_changed"));
         }

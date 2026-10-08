@@ -97,12 +97,16 @@ pub(super) fn read_text(path: &Path) -> Result<String, Error> {
 
 /// Stream resource bytes once, checking the exact snapshot while exclusively creating output.
 pub(super) fn copy(root: &Path, destination: &Path, entry: &FileEntry) -> Result<(), Error> {
-    let path = destination.join(entry.path.as_path());
-    create_parent(&path)?;
+    copy_to(root, &destination.join(entry.path.as_path()), entry)
+}
+
+/// Copy a verified payload to its physical storage path without intermediate trees.
+pub(super) fn copy_to(root: &Path, path: &Path, entry: &FileEntry) -> Result<(), Error> {
+    create_parent(path)?;
     let mut output = fs::OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(&path)
+        .open(path)
         .map_err(|error| io(&error))?;
     let mut input = fs::File::open(root.join(entry.path.as_path())).map_err(|error| io(&error))?;
     let mut digest = Sha256::new();

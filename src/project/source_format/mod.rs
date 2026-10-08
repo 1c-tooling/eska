@@ -1,5 +1,6 @@
 //! Experimental, reversible source documents, independent of IDE and platform runners.
 
+mod baseline;
 mod composition;
 mod export;
 mod files;
@@ -11,6 +12,9 @@ mod validation;
 mod xml;
 mod yaml;
 
+pub use baseline::{
+    AcceptedBase, AcceptedRef, Operation, Permission, PermissionReason, accept_source,
+};
 pub use export::export_designer;
 pub use import::import_designer;
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};

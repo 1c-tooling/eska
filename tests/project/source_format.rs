@@ -13,6 +13,8 @@ use eska::project::{
 
 use crate::support::TestDir;
 
+mod baseline;
+
 /// Work on a private copy so adverse input tests cannot modify the shared fixture corpus.
 fn fixture(root: &Path) -> PathBuf {
     let input = root.join("xml");

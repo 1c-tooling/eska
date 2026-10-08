@@ -1,17 +1,17 @@
 [
   {
+    "path": "Catalogs/Sample.xml",
+    "bytes": 1590,
+    "sha256": "87094ef5198fa5868042e7ba69a59b4ee971a9af87330c28006777e3b52c790b",
+    "bom": true,
+    "crlf": 20
+  },
+  {
     "path": "Catalogs/Sample/Ext/opaque.bin",
     "bytes": 43,
     "sha256": "dcdcd05aaed02685aaad4508c4c0adef62ce1c4e82235b87461b8c0a2ca33fab",
     "bom": false,
     "crlf": 1
-  },
-  {
-    "path": "Catalogs/Sample/Forms/Main/Ext/Form.xml",
-    "bytes": 329,
-    "sha256": "f6330fa845d38c0f8fc90ad639d9e6dd3dd629c0a6d1a04d495fc1c9cd3649d7",
-    "bom": true,
-    "crlf": 4
   },
   {
     "path": "Catalogs/Sample/Forms/Main.xml",
@@ -21,18 +21,11 @@
     "crlf": 4
   },
   {
-    "path": "Catalogs/Sample.xml",
-    "bytes": 1590,
-    "sha256": "87094ef5198fa5868042e7ba69a59b4ee971a9af87330c28006777e3b52c790b",
+    "path": "Catalogs/Sample/Forms/Main/Ext/Form.xml",
+    "bytes": 329,
+    "sha256": "f6330fa845d38c0f8fc90ad639d9e6dd3dd629c0a6d1a04d495fc1c9cd3649d7",
     "bom": true,
-    "crlf": 20
-  },
-  {
-    "path": "CommonModules/Tools/Ext/Module.bsl",
-    "bytes": 477,
-    "sha256": "05e2f0c3b41c0c890af1bbd5887f4140d1b692a66b4a6955c390ea875f450925",
-    "bom": true,
-    "crlf": 12
+    "crlf": 4
   },
   {
     "path": "CommonModules/Tools.xml",
@@ -42,6 +35,13 @@
     "crlf": 4
   },
   {
+    "path": "CommonModules/Tools/Ext/Module.bsl",
+    "bytes": 477,
+    "sha256": "05e2f0c3b41c0c890af1bbd5887f4140d1b692a66b4a6955c390ea875f450925",
+    "bom": true,
+    "crlf": 12
+  },
+  {
     "path": "Configuration.xml",
     "bytes": 533,
     "sha256": "f5c2286aa218877972a1fc1f21c9546096b40ffae99d8cf69898404a6635e3e6",
@@ -49,7 +49,7 @@
     "crlf": 15
   },
   {
-    "path": "ParentConfigurations.bin",
+    "path": "Ext/ParentConfigurations.bin",
     "bytes": 400,
     "sha256": "63ebec4d386fa1f7c5961bcc45bd67d7f0c593bced63b4e0f6b8527a1627d26c",
     "bom": false,
