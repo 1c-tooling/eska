@@ -20,7 +20,9 @@ XML-экспорт не участвуют в чтении.
 saved/overlay/close; diagnostics и completions используют те же байты и
 канонические метаданные. Бинарные и непрочитанные тела имеют явное состояние.
 Лимит текущих загруженных текстов — 64 MiB по умолчанию; это не бюджет RSS.
-Общий бюджет памяти, прерывание запросов ядра, сервер и checker ещё не реализованы.
+`QueryCancellation` прерывает выполняющийся запрос на ближайшем checkpoint
+Salsa; один токен управляет одним запросом и не меняет исходники или ревизию.
+Общий бюджет памяти, deadlines, сервер и checker ещё не реализованы.
 Библиотека не опубликована и не входит в установленный комплект.
 
 Read-only пример `project_session` принимает каталог исходников ESKA, читает
@@ -45,3 +47,4 @@ cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --ex
 playground. Подробности и реальные замеры —
 в [результатах сессии](../../docs/research/eska-format/shared-session.md)
 и [проверке BSL](../../docs/research/eska-format/bsl-session.md).
+Контракт отмены — в [проверке запросов](../../docs/research/eska-format/query-cancellation.md).

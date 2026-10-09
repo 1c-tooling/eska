@@ -15,7 +15,7 @@ use super::*;
 mod support;
 
 /// Keep fixtures exclusively inside the declared playground.
-pub(super) fn fixture() -> (support::TestDirectory, PathBuf) {
+pub fn fixture() -> (support::TestDirectory, PathBuf) {
     let directory = support::TestDirectory::new();
     let native = directory.0.join("native");
     copy_tree(

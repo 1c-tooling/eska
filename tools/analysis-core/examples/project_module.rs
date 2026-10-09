@@ -3,11 +3,12 @@
 use std::{error::Error, path::PathBuf, time::Instant};
 
 use eska::{
-    analysis_core::{Cancellation, InputRequest},
+    analysis_core::InputRequest,
     project_core::source_format::{SourcePath, SourceReader},
 };
 use eska_analysis::{
     AnalysisSession, Diagnostic, DiagnosticCode, DiagnosticsConfig, Locale, ModuleResult,
+    QueryCancellation,
 };
 
 /// Load the same declared metadata snapshot for resident and independent batch consumers.
@@ -36,7 +37,12 @@ fn diagnostics(
         ..DiagnosticsConfig::default()
     };
     session
-        .module_diagnostics(path, session.revision(), &config, &Cancellation::default())
+        .module_diagnostics(
+            path,
+            session.revision(),
+            &config,
+            &QueryCancellation::default(),
+        )
         .map_err(|error| format!("{error:?}").into())
 }
 

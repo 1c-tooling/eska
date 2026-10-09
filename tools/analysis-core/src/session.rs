@@ -3,7 +3,7 @@
 #[cfg(test)]
 mod module_tests;
 #[cfg(test)]
-mod tests;
+pub mod tests;
 
 use std::{collections::BTreeMap, path::Path, sync::Arc};
 

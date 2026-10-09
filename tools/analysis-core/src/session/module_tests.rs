@@ -9,7 +9,10 @@ use super::{
     AnalysisSession, SessionOptions, SessionRequestError, SourcePath,
     tests::{draft, fixture, load, owner},
 };
-use crate::{DiagnosticCode, DiagnosticsConfig, Locale, ModuleFailure, ModuleState, QueryError};
+use crate::{
+    DiagnosticCode, DiagnosticsConfig, Locale, ModuleFailure, ModuleState, QueryCancellation,
+    QueryError,
+};
 
 /// Keep body locations explicit, independent of the working directory.
 fn tools() -> SourcePath {
@@ -36,7 +39,7 @@ fn syntax(
             path,
             session.revision(),
             &syntax_profile(locale),
-            &Cancellation::default(),
+            &QueryCancellation::default(),
         )
         .unwrap()
 }
@@ -70,7 +73,7 @@ fn lazy_module_states_and_current_readability_are_not_empty_success() {
             &path,
             pending,
             &syntax_profile(Locale::Ru),
-            &Cancellation::default()
+            &QueryCancellation::default()
         ),
         Err(QueryError::ModuleUnavailable { .. })
     ));
@@ -198,7 +201,7 @@ fn saved_editor_close_and_locales_share_current_diagnostics() {
                 &path,
                 current,
                 &syntax_profile(Locale::Ru),
-                &Cancellation::default()
+                &QueryCancellation::default()
             )
             .unwrap(),
         ru
@@ -241,7 +244,7 @@ fn yaml_and_bsl_editor_changes_use_one_clock_and_current_inference() {
             session.revision(),
             offset,
             Locale::Ru,
-            &Cancellation::default(),
+            &QueryCancellation::default(),
         )
         .unwrap();
     assert!(
@@ -256,7 +259,13 @@ fn yaml_and_bsl_editor_changes_use_one_clock_and_current_inference() {
         .apply_overlay(&catalog, prior, 1, &text, &InputRequest::default())
         .unwrap();
     assert!(matches!(
-        session.module_completions(&path, prior, offset, Locale::Ru, &Cancellation::default()),
+        session.module_completions(
+            &path,
+            prior,
+            offset,
+            Locale::Ru,
+            &QueryCancellation::default()
+        ),
         Err(QueryError::Request(
             SessionRequestError::StaleRevision { .. }
         ))
@@ -267,7 +276,7 @@ fn yaml_and_bsl_editor_changes_use_one_clock_and_current_inference() {
             session.revision(),
             offset,
             Locale::Ru,
-            &Cancellation::default(),
+            &QueryCancellation::default(),
         )
         .unwrap();
     assert!(current.value.iter().any(|item| item.label == "LiveField"));
@@ -288,7 +297,7 @@ fn yaml_and_bsl_editor_changes_use_one_clock_and_current_inference() {
             session.revision(),
             offset,
             Locale::Ru,
-            &Cancellation::default(),
+            &QueryCancellation::default(),
         )
         .unwrap();
     assert!(!invalid.value.iter().any(|item| item.label == "LiveField"));
@@ -298,7 +307,7 @@ fn yaml_and_bsl_editor_changes_use_one_clock_and_current_inference() {
             session.revision(),
             1,
             Locale::Ru,
-            &Cancellation::default()
+            &QueryCancellation::default()
         ),
         Err(QueryError::InvalidOffset { .. })
     ));
@@ -369,7 +378,7 @@ fn cancelled_queries_and_bounded_saved_reads_never_use_previous_text() {
     session
         .load_module_saved(&object, session.revision(), &InputRequest::default())
         .unwrap();
-    let cancel = Cancellation::default();
+    let cancel = QueryCancellation::default();
     cancel.cancel();
     assert_eq!(
         session.module_diagnostics(
@@ -386,7 +395,11 @@ fn cancelled_queries_and_bounded_saved_reads_never_use_previous_text() {
             session.revision(),
             &InputRequest {
                 max_document_bytes: 1,
-                cancellation: cancel,
+                cancellation: {
+                    let input = Cancellation::default();
+                    input.cancel();
+                    input
+                },
             },
         )
         .unwrap();
@@ -400,7 +413,7 @@ fn cancelled_queries_and_bounded_saved_reads_never_use_previous_text() {
             &object,
             session.revision(),
             &syntax_profile(Locale::Ru),
-            &Cancellation::default()
+            &QueryCancellation::default()
         ),
         Err(QueryError::ModuleUnavailable { .. })
     ));

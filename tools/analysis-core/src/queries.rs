@@ -1,11 +1,16 @@
 //! Diagnostics and IDE requests query the same current bytes and canonical metadata database.
 
+#[cfg(test)]
+#[path = "queries/cancellation_tests.rs"]
+mod cancellation_tests;
+
 use base_db::SourceDatabase;
-use eska::{analysis_core::Cancellation, project_core::source_format::SourcePath};
+use eska::project_core::source_format::SourcePath;
+use salsa::Database;
 
 use crate::{
     AnalysisSession, CompletionItem, Diagnostic, DiagnosticsConfig, Locale, ModuleState,
-    SessionRequestError, SessionRevision,
+    QueryCancellation, SessionRequestError, SessionRevision,
 };
 
 /// A result belongs to one verbatim source snapshot and one complete session generation.
@@ -31,6 +36,7 @@ pub enum QueryError {
         offset: u32,
     },
     Cancelled,
+    CancellationTokenInUse,
 }
 
 impl AnalysisSession {
@@ -43,7 +49,7 @@ impl AnalysisSession {
         path: &SourcePath,
         expected: SessionRevision,
         config: &DiagnosticsConfig,
-        cancellation: &Cancellation,
+        cancellation: &QueryCancellation,
     ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
         self.query_module(path, expected, cancellation, |analysis, file| {
             Ok(analysis.diagnostics(file, config))
@@ -60,7 +66,7 @@ impl AnalysisSession {
         expected: SessionRevision,
         offset: u32,
         locale: Locale,
-        cancellation: &Cancellation,
+        cancellation: &QueryCancellation,
     ) -> Result<ModuleResult<Vec<CompletionItem>>, QueryError> {
         self.query_module(path, expected, cancellation, |analysis, file| {
             let input = analysis
@@ -85,7 +91,7 @@ impl AnalysisSession {
         &self,
         path: &SourcePath,
         expected: SessionRevision,
-        cancellation: &Cancellation,
+        cancellation: &QueryCancellation,
         query: impl FnOnce(&ide::Analysis, vfs::FileId) -> Result<T, QueryError>,
     ) -> Result<ModuleResult<T>, QueryError> {
         self.validate_revision(expected)
@@ -115,7 +121,14 @@ impl AnalysisSession {
         let analysis = ide::Analysis::from_database(self.database.clone());
         // Salsa handles cancellation unwind; an unrelated panic is rethrown by `catch`.
         let value = salsa::Cancelled::catch(std::panic::AssertUnwindSafe(|| {
-            analysis.attached(|analysis| query(analysis, entry.file))
+            analysis.attached(|analysis| {
+                let _registration =
+                    cancellation.register(analysis.database().cancellation_token())?;
+                analysis.database().unwind_if_revision_cancelled();
+                let value = query(analysis, entry.file)?;
+                analysis.database().unwind_if_revision_cancelled();
+                Ok(value)
+            })
         }))
         .map_err(|_| QueryError::Cancelled)??;
         if cancellation.is_cancelled() {
