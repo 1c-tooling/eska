@@ -1,7 +1,7 @@
 {
   "reference_head": "9021ba07471eee8a2614bed2105a2c8699f60780",
   "salsa_revision": "5d2686f1f94dc3d618569652d5576ce997491b3b",
-  "patch_sha256": "97cff06b4004eba135c79b2aaf8890bb46450cd9c77fa8b09c55c60f4d9c9ac1",
+  "patch_sha256": "e5cebd64483afd44dd9c2a52cf664d12b7e0d02fbf27715fa239654d5934be77",
   "probe_sha256": "5bd04db2c949673e108a7f27be811b2d55b49e23810704419dda31cb60388e56",
   "demo": {
     "disk_unchanged": true,
@@ -42,5 +42,6 @@
   },
   "platform": "Linux x86_64",
   "runtime_path": "empty",
-  "production_integration": false
+  "production_integration": false,
+  "patch_payload_equivalent_to_tested_copy": true
 }
