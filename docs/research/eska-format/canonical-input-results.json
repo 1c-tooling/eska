@@ -2,10 +2,19 @@
   "reference_head": "9021ba07471eee8a2614bed2105a2c8699f60780",
   "salsa_revision": "5d2686f1f94dc3d618569652d5576ce997491b3b",
   "patch_sha256": "e5cebd64483afd44dd9c2a52cf664d12b7e0d02fbf27715fa239654d5934be77",
-  "probe_sha256": "5bd04db2c949673e108a7f27be811b2d55b49e23810704419dda31cb60388e56",
+  "probe_sha256": "1aed49891c0aafd3cc0f18f03720c959e1cf336f0cf6108fef63327e9f812bc8",
   "demo": {
     "disk_unchanged": true,
     "draft_completion_applied": true,
+    "input_summary": {
+      "metadata_input_complete": true,
+      "owners": 3,
+      "parse_issues": 0,
+      "pending": 0,
+      "ready": 3,
+      "revision": 7,
+      "unavailable": 0
+    },
     "invalid_yaml_rejected": true,
     "metadata_complete": false,
     "metadata_coverage": "catalog-and-direct-attribute-names",
@@ -14,10 +23,11 @@
     "pending_has_no_fallback": true,
     "restored_completion_applied": true,
     "same_host": true,
+    "shared_metadata_inputs": true,
     "sibling_resolution_executions": 0,
     "structure_index_retained": true,
     "unrelated_bsl_inference_executions": 0,
-    "update_ms": 0.702806,
+    "update_ms": 0.686866,
     "xml_exported": false,
     "xml_parse_executions": 0
   },
@@ -40,8 +50,107 @@
       "ignored": 0
     }
   },
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8511693799955538
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 4.847673977004888
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 15.19051302599837
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 65.10367070900247
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 7.330459021999559
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2996543099943665
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 9.912067495002702
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.861379042995395
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007087513004080392
+    }
+  ],
+  "application_tests": {
+    "unit_passed": 353,
+    "integration_passed": 529,
+    "ignored": 14,
+    "source_only_unit_passed": 159,
+    "source_only_ignored": 3,
+    "new_input_tests": 12
+  },
   "platform": "Linux x86_64",
   "runtime_path": "empty",
-  "production_integration": false,
-  "patch_payload_equivalent_to_tested_copy": true
+  "production_integration": false
 }

@@ -4,9 +4,12 @@ use std::{collections::BTreeSet, error::Error, fs, path::Path, sync::Arc, time::
 
 use base_db::{Locale, SourceDatabase, SourceRootId};
 use bsl_metadata::{Attribute, AttributeType, Configuration, MdoType, MetadataObject};
-use eska::project_core::{
-    MetadataKind,
-    source_format::{OwnerSnapshot, SourcePath, SourceReader, import_designer},
+use eska::{
+    analysis_core::{InputRequest, InputState, MetadataInputs, OwnerInput},
+    project_core::{
+        MetadataKind,
+        source_format::{MetadataSnapshot, SourcePath, SourceReader, import_designer},
+    },
 };
 use ide_db::{
     GraphConfigCache,
@@ -24,19 +27,25 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 const CODE: &str = "// Demonstrates tracked canonical metadata.\nПроцедура Probe()\n    Item = Справочники.Sample.СоздатьЭлемент();\n    Item.x = 0;\nКонецПроцедуры\n";
 
 /// Keep the same bounded projection as EF-17 so this measures input plumbing, not type parity.
-fn catalog(snapshot: &OwnerSnapshot) -> Result<MetadataObject> {
-    let main = &snapshot.source.document.descriptor.object;
-    let declaration = snapshot
-        .declarations
-        .iter()
-        .find(|item| item.uuid == main.uuid)
-        .ok_or("missing catalog")?;
-    let mut object = MetadataObject::new(MdoType::Catalog, &declaration.name);
-    object.uuid = Some(main.uuid.as_str().parse()?);
-    for child in &snapshot.declarations {
-        if child.kind == MetadataKind::Attribute && child.parent.as_ref() == Some(&main.uuid) {
+fn catalog(snapshot: &MetadataSnapshot) -> Result<MetadataObject> {
+    let document = snapshot.documents.first().ok_or("missing descriptor")?;
+    let main = &document
+        .descriptor
+        .objects
+        .first()
+        .ok_or("missing catalog")?
+        .metadata;
+    if main.kind() != MetadataKind::Catalog {
+        return Err("unsupported canonical object".into());
+    }
+    let mut object = MetadataObject::new(MdoType::Catalog, main.name());
+    object.uuid = Some(main.uuid().parse()?);
+    for child in &document.descriptor.objects {
+        if child.metadata.kind() == MetadataKind::Attribute
+            && child.metadata.parent() == Some(main.id())
+        {
             object.attributes.push(Attribute {
-                name: child.name.clone(),
+                name: child.metadata.name().into(),
                 name_en: None,
                 attr_type: AttributeType::Unknown,
             });
@@ -61,14 +70,14 @@ fn labels(host: &AnalysisHost, root: &Path) -> Result<BTreeSet<String>> {
         .collect())
 }
 
-/// Replace only a parsed Name scalar and revalidate the whole owner's draft.
+/// Replace only a parsed Name scalar; the shared input controller validates the whole draft.
 fn draft(
     reader: &SourceReader,
     path: &SourcePath,
     text: &str,
     field: &str,
     replacement: &str,
-) -> Result<OwnerSnapshot> {
+) -> Result<String> {
     let saved = reader.read_owner(path)?;
     let declaration = saved
         .declarations
@@ -77,7 +86,7 @@ fn draft(
         .ok_or("missing field")?;
     let mut text = text.to_owned();
     text.replace_range(declaration.name_range.clone(), replacement);
-    Ok(reader.parse_owner(path, &text)?)
+    Ok(text)
 }
 
 /// Compare tracked query execution counts, rather than inferring invalidation from elapsed time.
@@ -107,17 +116,18 @@ fn fixture(root: &Path) -> Result<()> {
 }
 
 /// Update one canonical input outside all queries; pending values cannot fall back to XML.
-fn update(
-    host: &mut AnalysisHost,
-    input: CanonicalMdoInput,
-    snapshot: &OwnerSnapshot,
-) -> Result<()> {
-    let object = Arc::new(catalog(snapshot)?);
+fn update(host: &mut AnalysisHost, input: CanonicalMdoInput, owner: &OwnerInput) -> Result<()> {
+    let object = match &owner.state {
+        InputState::Ready(snapshot) => Some(Arc::new(catalog(snapshot)?)),
+        InputState::Pending | InputState::Unavailable(_) => None,
+    };
+    let revision = match &owner.source_sha256 {
+        Some(hash) => hash.clone(),
+        None => serde_json::to_string(&owner.revision)?,
+    };
     let database = host.raw_database_mut();
-    input.set_value(database).to(Some(object));
-    input
-        .set_source_revision(database)
-        .to(snapshot.source_sha256.clone());
+    input.set_value(database).to(object);
+    input.set_source_revision(database).to(revision);
     Ok(())
 }
 
@@ -134,10 +144,15 @@ fn main() -> Result<()> {
     import_designer(&native, &source)?;
     let source = fs::canonicalize(source)?;
     let reader = SourceReader::open(&source)?;
+    let mut metadata = MetadataInputs::open(&source)?;
+    let request = InputRequest::default();
     let sample_path = SourcePath::parse("Catalogs/Sample/object.yaml")?;
     let other_path = SourcePath::parse("Catalogs/Other/object.yaml")?;
-    let sample = reader.read_owner(&sample_path)?;
-    let other = reader.read_owner(&other_path)?;
+    for path in metadata.owner_paths().cloned().collect::<Vec<_>>() {
+        metadata
+            .load_saved(&path, metadata.revision(), &request)
+            .map_err(|error| format!("{error:?}"))?;
+    }
     let sample_text = fs::read_to_string(source.join(sample_path.as_str()))?;
     let other_text = fs::read_to_string(source.join(other_path.as_str()))?;
     let mut host = AnalysisHost::default();
@@ -187,21 +202,23 @@ fn main() -> Result<()> {
     let listing = database
         .metadata_listing(source.to_str().ok_or("non UTF-8 path")?)
         .ok_or("missing listing")?;
-    let sample_input = CanonicalMdoInput::new(
-        database,
-        Some(Arc::new(catalog(&sample)?)),
-        sample.source_sha256.clone(),
-    );
-    let other_input = CanonicalMdoInput::new(
-        database,
-        Some(Arc::new(catalog(&other)?)),
-        other.source_sha256.clone(),
-    );
+    let sample_input = CanonicalMdoInput::new(database, None, "pending".into());
+    let other_input = CanonicalMdoInput::new(database, None, "pending".into());
     let inputs: CanonicalMdoInputs = [(FileId(1), sample_input), (FileId(2), other_input)]
         .into_iter()
         .collect();
     listing.set_canonical_mdos(database).to(Arc::new(inputs));
     let index = Arc::clone(config_index(database, listing));
+    update(
+        &mut host,
+        sample_input,
+        metadata.owner(&sample_path).ok_or("missing input")?,
+    )?;
+    update(
+        &mut host,
+        other_input,
+        metadata.owner(&other_path).ok_or("missing input")?,
+    )?;
     if !labels(&host, &source)?.contains("SourceField") {
         return Err("saved completion missing".into());
     }
@@ -224,7 +241,14 @@ fn main() -> Result<()> {
         "SourceField",
         "DraftField",
     )?;
-    update(&mut host, sample_input, &changed)?;
+    metadata
+        .apply_overlay(&sample_path, metadata.revision(), 1, &changed, &request)
+        .map_err(|error| format!("{error:?}"))?;
+    update(
+        &mut host,
+        sample_input,
+        metadata.owner(&sample_path).ok_or("missing input")?,
+    )?;
     let sibling_again = resolve_metadata_object(
         host.raw_database(),
         listing,
@@ -252,7 +276,14 @@ fn main() -> Result<()> {
         "OtherField",
         "ChangedOther",
     )?;
-    update(&mut host, other_input, &other_draft)?;
+    metadata
+        .apply_overlay(&other_path, metadata.revision(), 1, &other_draft, &request)
+        .map_err(|error| format!("{error:?}"))?;
+    update(
+        &mut host,
+        other_input,
+        metadata.owner(&other_path).ok_or("missing input")?,
+    )?;
     let before = executions(&host, "infer_method_query")?;
     if before == 0 {
         return Err("BSL inference was not observed".into());
@@ -260,13 +291,27 @@ fn main() -> Result<()> {
     if labels(&host, &source)? != current || executions(&host, "infer_method_query")? != before {
         return Err("unrelated metadata edit re-inferred BSL".into());
     }
-    if reader.parse_owner(&sample_path, "document: [").is_ok() {
-        return Err("invalid YAML accepted".into());
+    metadata
+        .apply_overlay(
+            &sample_path,
+            metadata.revision(),
+            2,
+            "document: [",
+            &request,
+        )
+        .map_err(|error| format!("{error:?}"))?;
+    if !matches!(
+        metadata.owner(&sample_path).ok_or("missing input")?.state,
+        InputState::Unavailable(_)
+    ) || metadata.summary().metadata_input_complete
+    {
+        return Err("invalid YAML accepted as complete".into());
     }
-    sample_input.set_value(host.raw_database_mut()).to(None);
-    sample_input
-        .set_source_revision(host.raw_database_mut())
-        .to("invalid-draft".into());
+    update(
+        &mut host,
+        sample_input,
+        metadata.owner(&sample_path).ok_or("missing input")?,
+    )?;
     if resolve_metadata_object(
         host.raw_database(),
         listing,
@@ -280,7 +325,14 @@ fn main() -> Result<()> {
     if labels(&host, &source)?.contains("DraftField") {
         return Err("invalid draft returned stale completion".into());
     }
-    update(&mut host, sample_input, &sample)?;
+    metadata
+        .close_overlay(&sample_path, metadata.revision(), &request)
+        .map_err(|error| format!("{error:?}"))?;
+    update(
+        &mut host,
+        sample_input,
+        metadata.owner(&sample_path).ok_or("missing input")?,
+    )?;
     if !labels(&host, &source)?.contains("SourceField") {
         return Err("restored completion missing".into());
     }
@@ -301,7 +353,8 @@ fn main() -> Result<()> {
         "observed_initial_resolutions":sibling_executions,"observed_bsl_inferences":before,"xml_parse_executions":0,"metadata_complete":false,
         "unrelated_bsl_inference_executions":0,"structure_index_retained":true,"pending_has_no_fallback":true,
         "invalid_yaml_rejected":true,"restored_completion_applied":true,"disk_unchanged":true,"update_ms":update_ms,
-        "metadata_coverage":"catalog-and-direct-attribute-names","xml_exported":false})
+        "metadata_coverage":"catalog-and-direct-attribute-names","xml_exported":false,
+        "shared_metadata_inputs":true,"input_summary":metadata.summary()})
     );
     Ok(())
 }

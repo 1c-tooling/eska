@@ -83,13 +83,19 @@ impl Inventory {
 
 /// Metadata parsing has a bounded allocation even if a file grows after inventory creation.
 pub(super) fn read_text(path: &Path) -> Result<String, Error> {
+    read_text_limited(path, MAX_TEXT_BYTES)
+}
+
+/// A caller can tighten the source limit without weakening the format's hard bound.
+pub(super) fn read_text_limited(path: &Path, max_bytes: u64) -> Result<String, Error> {
+    let max_bytes = max_bytes.min(MAX_TEXT_BYTES);
     let mut bytes = Vec::new();
     fs::File::open(path)
         .map_err(|error| io(&error))?
-        .take(MAX_TEXT_BYTES + 1)
+        .take(max_bytes + 1)
         .read_to_end(&mut bytes)
         .map_err(|error| io(&error))?;
-    if bytes.len() as u64 > MAX_TEXT_BYTES {
+    if bytes.len() as u64 > max_bytes {
         return Err(Error::root("source_document_too_large"));
     }
     String::from_utf8(bytes).map_err(|_| Error::root("source_encoding_unsupported"))

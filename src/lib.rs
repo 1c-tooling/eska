@@ -4,6 +4,7 @@
 //! The `build` feature adds `build_core` without the application or Git engine.
 //! The default `legacy` feature retains the existing application and CLI modules.
 
+pub mod analysis_core;
 #[cfg(feature = "build-cli")]
 pub mod build_cli;
 #[cfg(feature = "build")]

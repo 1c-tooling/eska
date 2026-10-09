@@ -156,6 +156,15 @@ impl SourceReader {
         self.owners.keys()
     }
 
+    /// Read exact declared-owner bytes for a bounded analysis request or editor snapshot.
+    ///
+    /// # Errors
+    /// Returns undeclared/unsafe paths, missing files, encoding failures or the tightened limit.
+    pub fn read_owner_text(&self, path: &SourcePath, max_bytes: u64) -> Result<String, Error> {
+        self.spec(path)?;
+        read_text_limited(&self.root, path, max_bytes)
+    }
+
     /// Read current bytes of exactly one declared owner, rejecting filesystem aliases.
     ///
     /// # Errors
@@ -367,6 +376,11 @@ fn require_directory(root: &Path) -> Result<(), Error> {
 
 /// Check every selected component without inventorying or following unrelated filesystem entries.
 fn read_text(root: &Path, path: &SourcePath) -> Result<String, Error> {
+    read_text_limited(root, path, files::MAX_TEXT_BYTES)
+}
+
+/// Check selected path components before the bounded read; no unrelated payload is opened.
+fn read_text_limited(root: &Path, path: &SourcePath, max_bytes: u64) -> Result<String, Error> {
     require_directory(root)?;
     let mut selected = root.to_owned();
     let mut components = path.as_path().components().peekable();
@@ -383,5 +397,5 @@ fn read_text(root: &Path, path: &SourcePath) -> Result<String, Error> {
             return Err(Error::root("source_entry_unsupported").in_field(path.as_str()));
         }
     }
-    files::read_text(&selected).map_err(|error| error.in_field(path.as_str()))
+    files::read_text_limited(&selected, max_bytes).map_err(|error| error.in_field(path.as_str()))
 }
