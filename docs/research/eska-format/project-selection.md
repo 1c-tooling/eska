@@ -63,8 +63,9 @@ object/semantic readers. Они не используют оставшийся X
 База содержит [byte-preserved blobs](ef-09-results.md). До помещения в Git
 её `blobs/**` требуют `-text -filter`; стандартное `* text=auto` изменяет
 байты некоторых BSL. Protected export отвергает изменённые блоки по pin/hash.
-Автоматическая подготовка transport attributes относится к следующему шагу
-project tool; эта библиотека не запускает Git.
+Общий [transport plan](git-transport.md) готовит scoped attributes для source/base
+с exact-byte preview и публикацией. Project CLI подключит его при создании
+проекта; библиотека не запускает Git. Эффективную policy проверит VCS-инструмент.
 
 В экспериментальном Rust API `SourceFormat::Eska` несёт проверенный
 `accepted_base`, enum больше не Copy, getter возвращает reference.

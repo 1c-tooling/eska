@@ -55,6 +55,54 @@ pub fn publish_snapshot_in(
     publish_bytes(root, relative, original, updated, Some(staging))
 }
 
+/// Publish a complete new file without replacing a concurrent writer's destination.
+///
+/// A same-directory hard link makes the prepared bytes visible at once and refuses an
+/// existing path. Filesystems without hard links return an error rather than a partial file.
+///
+/// # Errors
+/// Returns a conflict, unsafe parent or filesystem failure. Parent directories must exist.
+pub fn publish_new(root: &Path, relative: &Path, updated: &str) -> Result<(), PublishError> {
+    if relative.as_os_str().is_empty()
+        || relative
+            .components()
+            .any(|part| !matches!(part, Component::Normal(_)))
+        || root.canonicalize().map_err(PublishError::Io)? != root
+    {
+        return Err(PublishError::UnsafePath);
+    }
+    let path = root.join(relative);
+    let parent = path.parent().ok_or(PublishError::UnsafePath)?;
+    if parent.canonicalize().map_err(PublishError::Io)? != parent {
+        return Err(PublishError::UnsafePath);
+    }
+    require_absent(&path)?;
+    let (temporary, mut file) = temporary(parent)?;
+    file.write_all(updated.as_bytes())
+        .map_err(PublishError::Io)?;
+    file.sync_all().map_err(PublishError::Io)?;
+    drop(file);
+    if parent.canonicalize().map_err(PublishError::Io)? != parent {
+        return Err(PublishError::UnsafePath);
+    }
+    fs::hard_link(&temporary.0, &path).map_err(|error| {
+        if error.kind() == io::ErrorKind::AlreadyExists {
+            PublishError::Conflict
+        } else {
+            PublishError::Io(error)
+        }
+    })
+}
+
+/// A dangling symlink or a directory is also a concurrent destination, never free space.
+fn require_absent(path: &Path) -> Result<(), PublishError> {
+    match fs::symlink_metadata(path) {
+        Ok(_) => Err(PublishError::Conflict),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(PublishError::Io(error)),
+    }
+}
+
 /// Both scalar and structural writes use the same permission and exact-byte replacement checks.
 fn publish_bytes(
     root: &Path,

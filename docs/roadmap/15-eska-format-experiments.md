@@ -441,8 +441,11 @@ raw bytes и прежние callbacks сохраняются. Проверенн
 к выбранному member, platform/workflow inheritance сохраняется. Ленивый адаптер
 работает без базы; materialization всегда требует separately supplied pin.
 Прежние XML readers/mutators и обычный build не принимают ESKA или старый XML
-вместо private proof. Следующие части — byte-safe Git transport базы
-и самостоятельные точки входа.
+вместо private proof. [Transport plan](../research/eska-format/git-transport.md)
+готовит scoped byte-preserving attributes с expected-byte публикацией без Git;
+clean checkout, BOM/CRLF, filters, quoting и empty native directories проверены.
+Эффективная Git policy и higher-priority overrides остаются границей EF-19.
+Следующие части — самостоятельные проектная и сборочная точки входа.
 Маршрут ESKA → prepared snapshot → CF → новая выгрузка C1 принят:
 8 769 файлов/8 064 каталога совпали с контролем, исключение — только
 проверенные служебные configVersion. Все остальные байты равны.

@@ -9,6 +9,7 @@ mod project_type;
 pub mod publish;
 pub mod source_format;
 pub mod support;
+pub mod transport;
 
 pub use metadata_kind::{MetadataKind, UnknownMetadataKind};
 pub use project_type::ProjectType;

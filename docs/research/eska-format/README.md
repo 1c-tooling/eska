@@ -44,6 +44,8 @@ BSL и ресурсы, составное происхождение метад�
 [Выбор источников](project-selection.md) добавляет явные project settings,
 workspace selection и materialization по отдельно переданному pin; XML-only
 операции отказывают для ESKA до чтения оставшихся дескрипторов.
+[Перенос через Git](git-transport.md) сохраняет байты source/base через scoped
+attributes и общий writer; эффективная Git policy остаётся границей VCS.
 Небольшой обезличенный корпус находится в
 [`tests/fixtures/eska-format/designer`](../../../tests/fixtures/eska-format/designer).
 Это модельные fixtures: успешное чтение не подтверждает сборку платформой.
