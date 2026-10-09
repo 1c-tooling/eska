@@ -181,6 +181,13 @@ impl MetadataInputs {
         &self.reader.configuration().manifest_sha256
     }
 
+    /// Share the exact immutable structure used by this controller, avoiding a second open race.
+    /// Current metadata values must still come from `owner`, which respects active overlays.
+    #[must_use]
+    pub const fn source_reader(&self) -> &SourceReader {
+        &self.reader
+    }
+
     /// Enumerate only manifest-declared owners; no directory naming heuristic activates files.
     pub fn owner_paths(&self) -> impl Iterator<Item = &SourcePath> {
         self.owners.keys()

@@ -1,0 +1,318 @@
+{
+  "corpora": [
+    {
+      "corpus": "c1",
+      "exit_code": 2,
+      "result": {
+        "descriptor_models_complete": false,
+        "descriptors": 3595,
+        "inputs": {
+          "metadata_input_complete": true,
+          "owners": 2645,
+          "parse_issues": 0,
+          "pending": 0,
+          "ready": 2645,
+          "revision": 2645,
+          "unavailable": 0
+        },
+        "invalid": {
+          "UnsupportedType { key: PropertyKey { namespace: Some(\"http://v8.1c.ru/8.1/data/enterprise/current-config\"), name: \"AnyRef\" } }": 1
+        },
+        "main_models_complete": false,
+        "modeled_descriptors": 1266,
+        "opened_pending": 2645,
+        "resolved": 1265,
+        "seconds": 10.414378051,
+        "structure_only": 1,
+        "unavailable": 0,
+        "unsupported": {
+          "chart-of-characteristic-types": 4,
+          "command-group": 7,
+          "common-attribute": 4,
+          "common-command": 58,
+          "common-form": 83,
+          "common-picture": 552,
+          "common-template": 20,
+          "event-subscription": 91,
+          "exchange-plan": 1,
+          "filter-criterion": 2,
+          "functional-option": 43,
+          "functional-option-parameter": 3,
+          "http-service": 4,
+          "integration-service": 1,
+          "language": 1,
+          "role": 212,
+          "scheduled-job": 83,
+          "sequence": 1,
+          "session-parameter": 56,
+          "settings-storage": 3,
+          "style": 1,
+          "style-item": 97,
+          "subsystem": 13,
+          "web-service": 10,
+          "xdto-package": 28
+        },
+        "xml_exported": false
+      },
+      "max_rss_kib": 123692
+    },
+    {
+      "corpus": "c2",
+      "exit_code": 2,
+      "result": {
+        "descriptor_models_complete": false,
+        "descriptors": 39572,
+        "inputs": {
+          "metadata_input_complete": true,
+          "owners": 16286,
+          "parse_issues": 0,
+          "pending": 0,
+          "ready": 16286,
+          "revision": 16286,
+          "unavailable": 0
+        },
+        "invalid": {},
+        "main_models_complete": false,
+        "modeled_descriptors": 9780,
+        "opened_pending": 16286,
+        "resolved": 9779,
+        "seconds": 108.282222916,
+        "structure_only": 1,
+        "unavailable": 0,
+        "unsupported": {
+          "business-process": 9,
+          "chart-of-accounts": 1,
+          "chart-of-calculation-types": 3,
+          "chart-of-characteristic-types": 9,
+          "command-group": 39,
+          "common-attribute": 7,
+          "common-command": 636,
+          "common-form": 435,
+          "common-picture": 1984,
+          "common-template": 277,
+          "document-journal": 38,
+          "document-numerator": 1,
+          "event-subscription": 462,
+          "exchange-plan": 26,
+          "filter-criterion": 6,
+          "functional-option": 525,
+          "functional-option-parameter": 7,
+          "http-service": 12,
+          "integration-service": 1,
+          "language": 1,
+          "role": 676,
+          "scheduled-job": 186,
+          "sequence": 5,
+          "session-parameter": 97,
+          "settings-storage": 3,
+          "style-item": 522,
+          "subsystem": 76,
+          "task": 1,
+          "web-service": 19,
+          "ws-reference": 1,
+          "xdto-package": 441
+        },
+        "xml_exported": false
+      },
+      "max_rss_kib": 1244676
+    },
+    {
+      "corpus": "c3",
+      "exit_code": 2,
+      "result": {
+        "descriptor_models_complete": false,
+        "descriptors": 45708,
+        "inputs": {
+          "metadata_input_complete": true,
+          "owners": 18752,
+          "parse_issues": 0,
+          "pending": 0,
+          "ready": 18752,
+          "revision": 18752,
+          "unavailable": 0
+        },
+        "invalid": {},
+        "main_models_complete": false,
+        "modeled_descriptors": 11693,
+        "opened_pending": 18752,
+        "resolved": 11692,
+        "seconds": 135.935904214,
+        "structure_only": 1,
+        "unavailable": 0,
+        "unsupported": {
+          "business-process": 9,
+          "chart-of-accounts": 2,
+          "chart-of-calculation-types": 3,
+          "chart-of-characteristic-types": 18,
+          "command-group": 45,
+          "common-attribute": 7,
+          "common-command": 688,
+          "common-form": 460,
+          "common-picture": 2100,
+          "common-template": 303,
+          "document-journal": 44,
+          "document-numerator": 1,
+          "event-subscription": 531,
+          "exchange-plan": 29,
+          "filter-criterion": 12,
+          "functional-option": 640,
+          "functional-option-parameter": 8,
+          "http-service": 11,
+          "integration-service": 1,
+          "language": 1,
+          "role": 753,
+          "scheduled-job": 187,
+          "sequence": 5,
+          "session-parameter": 114,
+          "settings-storage": 3,
+          "style-item": 513,
+          "subsystem": 108,
+          "task": 1,
+          "web-service": 20,
+          "ws-reference": 2,
+          "xdto-package": 440
+        },
+        "xml_exported": false
+      },
+      "max_rss_kib": 1628940
+    }
+  ],
+  "runtime_path": "empty",
+  "profile": "release-optimized",
+  "coverage": "main-descriptor-models",
+  "gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.08427775300015128
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.25707564399999683
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.19886066000003666
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 1.0078783700000713,
+      "test_results": [
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 0.7629803650002032
+    },
+    {
+      "gate": "release-example",
+      "exit_code": 0,
+      "seconds": 91.77958039199984
+    }
+  ],
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.1551026879999426
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 14.082314155000176
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 32.777737215000116
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 59.86805801199989
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.064693383000076
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.969962164000208
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 6.616481848000149
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.30848316599986
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007678774999931193
+    }
+  ],
+  "application_tests": {
+    "passed": 883,
+    "ignored": 14,
+    "minimal_passed": 159,
+    "minimal_ignored": 3
+  },
+  "overall_stage": "IN_PROGRESS"
+}

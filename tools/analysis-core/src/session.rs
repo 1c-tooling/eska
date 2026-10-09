@@ -1,0 +1,339 @@
+//! One resident metadata session connects the shared input controller to tracked kernel slots.
+
+#[cfg(test)]
+mod tests;
+
+use std::{collections::BTreeMap, path::Path, sync::Arc};
+
+use bsl_metadata::Configuration;
+use eska::{
+    analysis_core::{InputRequest, InputRevision, InputSummary, MetadataInputs, UpdateError},
+    project_core::source_format::{Error, SourcePath},
+};
+use ide_db::{
+    GraphConfigCache, RootDatabaseImpl,
+    metadata::{
+        CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, MetadataListingData,
+        MetadataListingInput, resolve_common_module, resolve_defined_type, resolve_metadata_object,
+        resolve_register,
+    },
+};
+use salsa::Setter;
+use vfs::FileId;
+
+use crate::{ModelState, OwnerModel, binding::OwnerBinding, projection};
+
+/// Opening failures remain structured; a transport or CLI decides their presentation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SessionError {
+    Source(Error),
+    NonUtf8Root,
+    TooManyOwners,
+    MissingListing,
+}
+
+/// Input readiness, main-descriptor projection and full metadata coverage are independent.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SessionSummary {
+    pub inputs: InputSummary,
+    pub ready_models: usize,
+    pub structure_only: usize,
+    pub pending: usize,
+    pub unsupported: usize,
+    pub invalid: usize,
+    pub unavailable: usize,
+    pub descriptors: usize,
+    pub modeled_descriptors: usize,
+    pub main_models_complete: bool,
+    /// Coverage of parsed descriptors only; resources and BSL are outside this count.
+    pub descriptor_models_complete: bool,
+}
+
+/// A binding and its current model always share the same tracked slot.
+struct OwnerEntry {
+    binding: OwnerBinding,
+    slot: CanonicalMetadataInput,
+    model: OwnerModel,
+}
+
+/// The composition is immutable until reopening; updates replace exactly one canonical input.
+pub struct AnalysisSession {
+    inputs: MetadataInputs,
+    database: RootDatabaseImpl,
+    listing: MetadataListingInput,
+    owners: BTreeMap<SourcePath, OwnerEntry>,
+}
+
+impl AnalysisSession {
+    /// Register pending slots from the authoritative composition, reading no unrelated owner.
+    ///
+    /// # Errors
+    /// Returns source opening failures, a non-UTF-8 kernel root or an exhausted file-ID range.
+    pub fn open(root: &Path) -> Result<Self, SessionError> {
+        Self::with_database(root, RootDatabaseImpl::new())
+    }
+
+    /// Tests may observe Salsa executions without enabling instrumentation for every consumer.
+    fn with_database(root: &Path, mut database: RootDatabaseImpl) -> Result<Self, SessionError> {
+        let inputs = MetadataInputs::open(root).map_err(SessionError::Source)?;
+        let reader = inputs.source_reader();
+        let root_key = reader
+            .root()
+            .to_str()
+            .ok_or(SessionError::NonUtf8Root)?
+            .to_owned();
+        // No fallback may load a partial native configuration from the ESKA directory.
+        let cache = Arc::new(GraphConfigCache::new());
+        let name = reader
+            .configuration()
+            .declarations
+            .first()
+            .map_or("", |declaration| declaration.name.as_str());
+        cache.insert(
+            reader.root().to_path_buf(),
+            Arc::new(Configuration::new(name)),
+        );
+        database.set_graph_config_cache(cache);
+        database.set_all_config_paths(vec![(None, reader.root().to_path_buf())]);
+
+        let mut owners = BTreeMap::new();
+        let mut structure = MetadataListingData::default();
+        let mut slots = CanonicalMetadataInputs::default();
+        for (index, path) in inputs.owner_paths().enumerate() {
+            let identity = reader.declared_owner(path).map_err(SessionError::Source)?;
+            let main = FileId(u32::try_from(index).map_err(|_| SessionError::TooManyOwners)?);
+            let binding = OwnerBinding {
+                kind: identity.kind,
+                name: identity.name.map(str::to_owned),
+                main,
+                native_path: identity.native_path.clone(),
+            };
+            binding.add_to_listing(&mut structure);
+            let slot = CanonicalMetadataInput::new(&database, None, "pending".into());
+            slots.insert(main, slot);
+            let model = OwnerModel {
+                revision: inputs.revision(),
+                origin: eska::analysis_core::InputOrigin::Saved,
+                source_sha256: None,
+                descriptors: 0,
+                modeled_descriptors: 0,
+                state: ModelState::Pending,
+            };
+            owners.insert(
+                path.clone(),
+                OwnerEntry {
+                    binding,
+                    slot,
+                    model,
+                },
+            );
+        }
+        database.set_metadata_listing(&root_key, structure);
+        let listing = database
+            .metadata_listing(&root_key)
+            .ok_or(SessionError::MissingListing)?;
+        listing
+            .set_canonical_metadata(&mut database)
+            .to(Arc::new(slots));
+        Ok(Self {
+            inputs,
+            database,
+            listing,
+            owners,
+        })
+    }
+
+    /// Address this session's current input state, including failed accepted updates.
+    #[must_use]
+    pub const fn revision(&self) -> InputRevision {
+        self.inputs.revision()
+    }
+
+    /// Return the exact source root without reopening or resolving its path a second time.
+    #[must_use]
+    pub fn root(&self) -> &Path {
+        self.inputs.source_reader().root()
+    }
+
+    /// Enumerate only declared owner files, independent of their current readability.
+    pub fn owner_paths(&self) -> impl Iterator<Item = &SourcePath> {
+        self.owners.keys()
+    }
+
+    /// Return current projection facts, including the exact source revision and unsupported state.
+    #[must_use]
+    pub fn owner(&self, path: &SourcePath) -> Option<&OwnerModel> {
+        self.owners.get(path).map(|entry| &entry.model)
+    }
+
+    /// Read the stable native main descriptor identity without generating that file.
+    #[must_use]
+    pub fn native_path(&self, path: &SourcePath) -> Option<&SourcePath> {
+        self.owners
+            .get(path)
+            .map(|entry| &entry.binding.native_path)
+    }
+
+    /// Refresh one saved value; invalid or missing current input clears its kernel slot.
+    ///
+    /// # Errors
+    /// Returns rejected controller updates; active overlays and stale requests remain intact.
+    pub fn load_saved(
+        &mut self,
+        path: &SourcePath,
+        expected: InputRevision,
+        request: &InputRequest,
+    ) -> Result<(), UpdateError> {
+        self.inputs.load_saved(path, expected, request)?;
+        self.publish(path)
+    }
+
+    /// Parse an editor's YAML using the saved reader and publish exactly that current model.
+    ///
+    /// # Errors
+    /// Returns stale revisions/document versions or an undeclared owner before accepting text.
+    pub fn apply_overlay(
+        &mut self,
+        path: &SourcePath,
+        expected: InputRevision,
+        document_version: i64,
+        text: &str,
+        request: &InputRequest,
+    ) -> Result<(), UpdateError> {
+        self.inputs
+            .apply_overlay(path, expected, document_version, text, request)?;
+        self.publish(path)
+    }
+
+    /// Explicitly restore disk input when the editor closes, never the cached saved projection.
+    ///
+    /// # Errors
+    /// Returns stale requests or an undeclared owner; disk failures become the current state.
+    pub fn close_overlay(
+        &mut self,
+        path: &SourcePath,
+        expected: InputRevision,
+        request: &InputRequest,
+    ) -> Result<(), UpdateError> {
+        self.inputs.close_overlay(path, expected, request)?;
+        self.publish(path)
+    }
+
+    /// Resolve through the actual kernel; pending/unsupported/invalid values never fall back.
+    ///
+    /// # Errors
+    /// Returns a stale session revision or an undeclared owner.
+    pub fn resolve(
+        &self,
+        path: &SourcePath,
+        expected: InputRevision,
+    ) -> Result<Option<CanonicalMetadata>, UpdateError> {
+        if expected != self.revision() {
+            return Err(UpdateError::StaleRevision {
+                expected,
+                actual: self.revision(),
+            });
+        }
+        let entry = self
+            .owners
+            .get(path)
+            .ok_or_else(|| UpdateError::UnknownOwner(path.clone()))?;
+        let ModelState::Ready(value) = &entry.model.state else {
+            return Ok(None);
+        };
+        let Some(name) = &entry.binding.name else {
+            return Ok(None);
+        };
+        Ok(match value.as_ref() {
+            CanonicalMetadata::Object(object) => {
+                resolve_metadata_object(&self.database, self.listing, object.mdo_type, name.clone())
+                    .map(CanonicalMetadata::Object)
+            }
+            CanonicalMetadata::Register(register) => resolve_register(
+                &self.database,
+                self.listing,
+                register.mdo_type(),
+                name.clone(),
+            )
+            .map(CanonicalMetadata::Register),
+            CanonicalMetadata::CommonModule(_) => {
+                resolve_common_module(&self.database, self.listing, name.clone())
+                    .map(CanonicalMetadata::CommonModule)
+            }
+            CanonicalMetadata::DefinedType(model) => {
+                resolve_defined_type(&self.database, self.listing, name.clone())
+                    .map(|_| CanonicalMetadata::DefinedType(Arc::clone(model)))
+            }
+        })
+    }
+
+    /// Never equate a ready main descriptor with complete nested metadata or BSL analysis.
+    #[must_use]
+    pub fn summary(&self) -> SessionSummary {
+        let mut summary = SessionSummary {
+            inputs: self.inputs.summary(),
+            ready_models: 0,
+            structure_only: 0,
+            pending: 0,
+            unsupported: 0,
+            invalid: 0,
+            unavailable: 0,
+            descriptors: 0,
+            modeled_descriptors: 0,
+            main_models_complete: false,
+            descriptor_models_complete: false,
+        };
+        for entry in self.owners.values() {
+            summary.descriptors += entry.model.descriptors;
+            summary.modeled_descriptors += entry.model.modeled_descriptors;
+            match entry.model.state {
+                ModelState::Pending => summary.pending += 1,
+                ModelState::Ready(_) => summary.ready_models += 1,
+                ModelState::StructureOnly => {
+                    summary.structure_only += 1;
+                    // The validated configuration document supplies the immutable composition.
+                    summary.modeled_descriptors += 1;
+                }
+                ModelState::Unsupported(_) => summary.unsupported += 1,
+                ModelState::Invalid { .. } => summary.invalid += 1,
+                ModelState::Unavailable(_) => summary.unavailable += 1,
+            }
+        }
+        summary.main_models_complete = summary.inputs.metadata_input_complete
+            && summary.pending == 0
+            && summary.unsupported == 0
+            && summary.invalid == 0
+            && summary.unavailable == 0;
+        summary.descriptor_models_complete =
+            summary.main_models_complete && summary.descriptors == summary.modeled_descriptors;
+        summary
+    }
+
+    /// Publish source revision and typed value together before exposing the new owner status.
+    fn publish(&mut self, path: &SourcePath) -> Result<(), UpdateError> {
+        let input = self
+            .inputs
+            .owner(path)
+            .ok_or_else(|| UpdateError::UnknownOwner(path.clone()))?;
+        let entry = self
+            .owners
+            .get_mut(path)
+            .ok_or_else(|| UpdateError::UnknownOwner(path.clone()))?;
+        let model = projection::project(entry.binding.kind, input);
+        let value = match &model.state {
+            ModelState::Ready(value) => Some(Arc::clone(value)),
+            _ => None,
+        };
+        entry.slot.set_value(&mut self.database).to(value);
+        entry
+            .slot
+            .set_source_revision(&mut self.database)
+            .to(format!(
+                "{:?}:{}",
+                model.revision,
+                model.source_sha256.as_deref().unwrap_or_default(),
+            ));
+        entry.model = model;
+        Ok(())
+    }
+}

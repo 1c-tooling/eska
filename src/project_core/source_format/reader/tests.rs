@@ -41,6 +41,26 @@ fn opening_reads_only_root_and_manifest_and_defers_missing_owner_errors() {
         reader.configuration().declarations[0].kind,
         MetadataKind::Configuration
     );
+    let identity = reader.declared_owner(&catalog()).unwrap();
+    assert_eq!(identity.kind, MetadataKind::Catalog);
+    assert_eq!(identity.name, Some("Sample"));
+    assert_eq!(identity.native_path.as_str(), "Catalogs/Sample.xml");
+    assert_eq!(
+        identity.uuid,
+        &reader
+            .manifest()
+            .files
+            .iter()
+            .find_map(|file| match &file.role {
+                FileRole::Descriptor { source, uuid }
+                    if source == &catalog() && &file.path == identity.native_path =>
+                {
+                    Some(uuid.clone())
+                }
+                _ => None,
+            })
+            .unwrap()
+    );
     assert_eq!(
         reader.read_owner(&catalog()).unwrap_err().code,
         "source_file_missing"

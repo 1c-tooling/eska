@@ -52,6 +52,16 @@ pub struct OwnerSnapshot {
     pub declarations: Vec<MetadataDeclaration>,
 }
 
+/// Stable facts from the validated composition, available before reading an owner's YAML.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DeclaredOwner<'a> {
+    pub kind: MetadataKind,
+    /// The configuration has no enclosing declaration; its name lives in the root snapshot.
+    pub name: Option<&'a str>,
+    pub native_path: &'a SourcePath,
+    pub uuid: &'a NativeUuid,
+}
+
 /// A declared owner has one main descriptor and the complete native identities of its family.
 struct OwnerSpec {
     main: SourcePath,
@@ -145,6 +155,12 @@ impl SourceReader {
         &self.configuration
     }
 
+    /// Return the canonical directory bound to this manifest and composition snapshot.
+    #[must_use]
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
+
     /// Return the original file map without touching the mapped modules or resources.
     #[must_use]
     pub const fn manifest(&self) -> &SourceManifest {
@@ -154,6 +170,24 @@ impl SourceReader {
     /// Enumerate declared owners, including the configuration, without opening their files.
     pub fn owner_paths(&self) -> impl Iterator<Item = &SourcePath> {
         self.owners.keys()
+    }
+
+    /// Read structural identity without opening the selected YAML or inferring a directory name.
+    ///
+    /// # Errors
+    /// Returns an undeclared owner or an inconsistent main identity.
+    pub fn declared_owner(&self, path: &SourcePath) -> Result<DeclaredOwner<'_>, Error> {
+        let spec = self.spec(path)?;
+        let uuid = spec
+            .descriptors
+            .get(&spec.main)
+            .ok_or_else(|| Error::root("source_identity_mismatch").in_field(path.as_str()))?;
+        Ok(DeclaredOwner {
+            kind: spec.kind,
+            name: spec.name.as_deref(),
+            native_path: &spec.main,
+            uuid,
+        })
     }
 
     /// Read exact declared-owner bytes for a bounded analysis request or editor snapshot.

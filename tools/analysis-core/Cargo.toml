@@ -1,0 +1,44 @@
+[package]
+name = "eska-analysis"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "Apache-2.0"
+description = "Revisioned ESKA project inputs for the shared BSL analysis kernel"
+repository = "https://github.com/1c-tooling/eska"
+readme = "README.md"
+keywords = ["1c", "bsl", "analysis"]
+categories = ["development-tools"]
+
+[workspace]
+
+[dependencies]
+eska = { path = "../..", default-features = false }
+eska-bsl-adapter = { path = "../bsl-adapter" }
+bsl-metadata = { path = "../bsl-kernel/crates/bsl-metadata" }
+ide-db = { path = "../bsl-kernel/crates/ide-db" }
+salsa = "=0.28.2"
+vfs = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
+
+[dev-dependencies]
+serde_json = "1.0"
+
+[patch."https://github.com/1c-tooling/bsl-analyzer.git"]
+bsl-metadata = { path = "../bsl-kernel/crates/bsl-metadata" }
+hir-ty = { path = "../bsl-kernel/crates/hir-ty" }
+ide-db = { path = "../bsl-kernel/crates/ide-db" }
+
+[patch.crates-io]
+salsa = { git = "https://github.com/itrous/salsa.git", rev = "5d2686f1f94dc3d618569652d5576ce997491b3b" }
+salsa-macros = { git = "https://github.com/itrous/salsa.git", rev = "5d2686f1f94dc3d618569652d5576ce997491b3b" }
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+# The shared YAML CST and pinned BSL kernel require different hashbrown/rustc-hash lines.
+multiple_crate_versions = { level = "allow", priority = 1 }
+
+[profile.dev]
+debug = 0
