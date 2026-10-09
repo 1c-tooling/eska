@@ -5,7 +5,7 @@ pub(in crate::cli) mod editing;
 mod envelope;
 mod errors;
 mod events;
-mod framing;
+use crate::tool_cli::rpc_framing as framing;
 mod metadata;
 mod params;
 mod property_presentation;

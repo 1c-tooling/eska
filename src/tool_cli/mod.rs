@@ -1,6 +1,8 @@
 //! Shared localized presentation for independently compiled tools.
 
 pub mod localization;
+pub mod rpc_framing;
+pub mod rpc_json;
 
 mod project;
 mod support;

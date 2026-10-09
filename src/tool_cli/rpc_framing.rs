@@ -2,12 +2,15 @@
 
 use std::io::{self, BufRead, Write};
 
-pub(super) const MAX_HEADER: usize = 8192;
-pub(super) const MAX_REQUEST: usize = 1_048_576;
-pub(super) const MAX_RESPONSE: usize = 67_108_864;
+pub const MAX_HEADER: usize = 8192;
+pub const MAX_REQUEST: usize = 1_048_576;
+pub const MAX_RESPONSE: usize = 67_108_864;
 
 /// Read exactly one frame, distinguishing clean EOF from a truncated header or body.
-pub(super) fn read_frame(input: &mut impl BufRead) -> io::Result<Option<Vec<u8>>> {
+///
+/// # Errors
+/// Returns malformed or oversized framing, unsupported encoding, truncated input or I/O errors.
+pub fn read_frame(input: &mut impl BufRead) -> io::Result<Option<Vec<u8>>> {
     let mut header = Vec::new();
     loop {
         let mut byte = [0];
@@ -67,7 +70,10 @@ pub(super) fn read_frame(input: &mut impl BufRead) -> io::Result<Option<Vec<u8>>
 }
 
 /// Write a complete frame under the caller's single-writer ownership.
-pub(super) fn write_frame(output: &mut impl Write, body: &[u8]) -> io::Result<()> {
+///
+/// # Errors
+/// Returns an empty or oversized response, or a write/flush failure.
+pub fn write_frame(output: &mut impl Write, body: &[u8]) -> io::Result<()> {
     if body.is_empty() || body.len() > MAX_RESPONSE {
         return Err(invalid());
     }

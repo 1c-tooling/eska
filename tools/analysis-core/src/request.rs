@@ -1,10 +1,18 @@
 //! A session token covers every accepted YAML and BSL update, including current failures.
 
 use eska::{analysis_core::UpdateError, project_core::source_format::SourcePath};
+use std::fmt;
 
 /// A transport must pair this generation with its own session identity after a reopen.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, serde::Serialize)]
 pub struct SessionRevision(pub(super) u64);
+
+impl fmt::Display for SessionRevision {
+    /// A decimal token can round-trip through clients without losing a 64-bit JSON number.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(formatter)
+    }
+}
 
 impl SessionRevision {
     /// Reserve the next revision before accepting text or performing a disk read.

@@ -1,5 +1,7 @@
 //! Shared, revisioned ESKA analysis sessions; no platform, Git or transport runtime is required.
 
+#[cfg(feature = "analyzer-cli")]
+pub mod analyzer_cli;
 pub mod batch;
 mod binding;
 mod cancellation;

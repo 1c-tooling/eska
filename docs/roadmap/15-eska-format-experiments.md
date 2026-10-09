@@ -761,6 +761,17 @@ estimate отделяет отсутствующий hook от нулевой о
 9 process-тестов, fmt/check/strict Clippy/Rustdoc и полный набор приложения прошли;
 7829 исходных файлов сохранены. Общий memory budget ещё не реализован.
 
+[Первый `eska-analyzer`](../research/eska-format/analyzer-metadata.md) собран
+отдельно от checker: serial stdio worker предоставляет ленивые страницы владельцев,
+текущие логические объекты, свойства и явные состояния YAML. ESKA protocol `0.1`
+согласуется внутри стандартного initialize; прежний IDE protocol не подменяется.
+Fresh session UUID исключает токены другого процесса, строковая ревизия сохраняет
+все 64 bits. Некорректный refresh убирает старые свойства, stale refresh не читает
+источник. 24 unit/file tests, 8 process tests analyzer и 9 checker прошли вместе
+с обязательными проверками и root feature matrix. В C1/C2/C3 проверены страницы
+всего состава и чтение одного владельца в обеих локалях. Синхронизация YAML/BSL,
+language requests/cancellation, общий memory budget и edit plans остаются в работе.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

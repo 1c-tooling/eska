@@ -7,8 +7,11 @@
 
 Документ определяет целевые границы. Самостоятельный
 [eska-project](research/eska-format/project-cli.md) и
-[eska-build](research/eska-format/build-cli.md) доступны в экспериментальной сборке;
-остальные точки входа и комплектная поставка ещё предстоят.
+[eska-build](research/eska-format/build-cli.md),
+[eska-check с профилем syntax](research/eska-format/check-cli.md) и
+[eska-analyzer для чтения метаданных](research/eska-format/analyzer-metadata.md)
+доступны в экспериментальной сборке. Полный IDE-сервер, остальные точки входа
+и комплектная поставка ещё предстоят.
 Последовательность работы и ссылки на связанные задачи находятся в
 [плане экспериментов](roadmap/15-eska-format-experiments.md).
 

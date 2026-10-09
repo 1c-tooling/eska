@@ -947,6 +947,7 @@ metadata-rename-recovery-about = Проверить или восстанови�
 
 # Самостоятельная пакетная проверка.
 tool-check-about = Проверка синтаксиса сохранённых модулей ESKA без 1С, Git и IDE-сервера
+tool-analyzer-about = Метаданные ESKA через версионированное соединение IDE без 1С и Git
 tool-option-profile = Явный профиль проверки; сейчас syntax
 tool-option-config = Файл настроек анализатора; иначе искать bsl-analyzer.toml в корне выбранного проекта
 tool-option-timeout-seconds = Кооперативный лимит времени анализа в секундах; ноль сразу возвращает неполный отчёт

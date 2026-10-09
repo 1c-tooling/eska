@@ -947,6 +947,7 @@ metadata-rename-recovery-about = Inspect or recover an interrupted rename
 
 # Standalone batch analysis.
 tool-check-about = Check saved ESKA module syntax without 1C, Git or an IDE server
+tool-analyzer-about = Serve ESKA metadata over a versioned IDE connection without 1C or Git
 tool-option-profile = Explicit check profile; currently syntax
 tool-option-config = Analyzer settings file; otherwise discover bsl-analyzer.toml at the selected project root
 tool-option-timeout-seconds = Cooperative analysis time limit in seconds; zero returns an incomplete report immediately

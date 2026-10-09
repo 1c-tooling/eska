@@ -3,7 +3,8 @@
 [`eska-analysis`](../../../tools/analysis-core/README.md) соединяет общий
 контроллер saved/overlay, адаптер ESKA и локальное ядро BSL. Библиотеку используют
 файловые тесты, read-only пример `project_session` и первый
-[syntax checker](check-cli.md); сервер пока не подключён. Project core не получил
+[syntax checker](check-cli.md) и первый [transport метаданных IDE](analyzer-metadata.md).
+Синхронизация документов и язык сервера ещё не подключены. Project core не получил
 зависимостей от Salsa или анализатора.
 
 `SourceReader` предоставляет проверенные идентичности и канонический корень

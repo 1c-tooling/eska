@@ -1,0 +1,444 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-09",
+  "scope": "standalone_read_only_metadata_transport",
+  "protocol_version": "0.1",
+  "analysis_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.1335163959993224
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.39241818399932527
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.7188141249989712
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 2.9315541369996936,
+      "test_results": [
+        "ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 1.8898612689990841
+    },
+    {
+      "gate": "release-server",
+      "exit_code": 0,
+      "seconds": 2.9048497330004466
+    }
+  ],
+  "analysis_tests": {
+    "all_features_unit_and_file": 24,
+    "analyzer_process": 8,
+    "checker_process": 9,
+    "minimal": 22,
+    "ignored": 0
+  },
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8493241789983585
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 8.035162473999662
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 22.027892497999346
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 38.081503026000064
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.9895098880006117
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.18165292300000146
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.3073677069987752
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 1.8013676419996045
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.6152606939995167
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 6.181667172999369
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.240083409998988
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.992222093000237
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 11.079195182999683
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.2991387769998255
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.006590721999600646
+    }
+  ],
+  "application_tests": {
+    "full": {
+      "passed": 886,
+      "ignored": 14
+    },
+    "minimal": {
+      "passed": 161,
+      "ignored": 3
+    },
+    "project_cli": {
+      "passed": 176,
+      "ignored": 3
+    },
+    "build_cli": {
+      "passed": 195,
+      "ignored": 3
+    }
+  },
+  "real_corpora": [
+    {
+      "corpus": "C1",
+      "locale": "en-US",
+      "exit_code": 0,
+      "initialize_seconds": 0.06816091399923607,
+      "wall_seconds": 0.10951564300012251,
+      "peak_rss_kib": 38180,
+      "owners": 2645,
+      "pages": 14,
+      "pending_before_read": 2645,
+      "read_descriptors": 1,
+      "read_objects": 1,
+      "read_model": "ready",
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4104,
+        "module_text_bytes": 0,
+        "total_source_bytes": 4104
+      },
+      "tracked_source_bytes_unchanged": true,
+      "tracked_source_files": 3,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C1",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "initialize_seconds": 0.07387730000118609,
+      "wall_seconds": 0.11791901600008714,
+      "peak_rss_kib": 38456,
+      "owners": 2645,
+      "pages": 14,
+      "pending_before_read": 2645,
+      "read_descriptors": 1,
+      "read_objects": 1,
+      "read_model": "ready",
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4104,
+        "module_text_bytes": 0,
+        "total_source_bytes": 4104
+      },
+      "tracked_source_bytes_unchanged": true,
+      "tracked_source_files": 3,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C2",
+      "locale": "en-US",
+      "exit_code": 0,
+      "initialize_seconds": 0.6347390939990873,
+      "wall_seconds": 0.8830850550002651,
+      "peak_rss_kib": 171928,
+      "owners": 16286,
+      "pages": 82,
+      "pending_before_read": 16286,
+      "read_descriptors": 1,
+      "read_objects": 1,
+      "read_model": "ready",
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4070,
+        "module_text_bytes": 0,
+        "total_source_bytes": 4070
+      },
+      "tracked_source_bytes_unchanged": true,
+      "tracked_source_files": 3,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C2",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "initialize_seconds": 0.6426876089990401,
+      "wall_seconds": 0.8743060750002769,
+      "peak_rss_kib": 172088,
+      "owners": 16286,
+      "pages": 82,
+      "pending_before_read": 16286,
+      "read_descriptors": 1,
+      "read_objects": 1,
+      "read_model": "ready",
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4070,
+        "module_text_bytes": 0,
+        "total_source_bytes": 4070
+      },
+      "tracked_source_bytes_unchanged": true,
+      "tracked_source_files": 3,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C3",
+      "locale": "en-US",
+      "exit_code": 0,
+      "initialize_seconds": 0.804855841999597,
+      "wall_seconds": 1.0931040939995,
+      "peak_rss_kib": 195444,
+      "owners": 18752,
+      "pages": 94,
+      "pending_before_read": 18752,
+      "read_descriptors": 1,
+      "read_objects": 1,
+      "read_model": "ready",
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4070,
+        "module_text_bytes": 0,
+        "total_source_bytes": 4070
+      },
+      "tracked_source_bytes_unchanged": true,
+      "tracked_source_files": 3,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C3",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "initialize_seconds": 0.7333443529987562,
+      "wall_seconds": 1.032110323998495,
+      "peak_rss_kib": 195300,
+      "owners": 18752,
+      "pages": 94,
+      "pending_before_read": 18752,
+      "read_descriptors": 1,
+      "read_objects": 1,
+      "read_model": "ready",
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4070,
+        "module_text_bytes": 0,
+        "total_source_bytes": 4070
+      },
+      "tracked_source_bytes_unchanged": true,
+      "tracked_source_files": 3,
+      "runtime_path": "empty"
+    }
+  ],
+  "locale_comparison": "equal_except_fresh_session_id",
+  "dependency_package_names": 206,
+  "resolved_package_versions": 214,
+  "binary_bytes": 44219096,
+  "forbidden_dependencies": [],
+  "previous_process_snapshot_rejected": true,
+  "limitations": [
+    "one_selected_project",
+    "saved_metadata_only",
+    "document_sync_not_implemented",
+    "language_requests_not_implemented",
+    "active_request_cancellation_not_implemented",
+    "global_memory_budget_not_implemented",
+    "full_metadata_models_not_implemented",
+    "edit_plans_not_implemented",
+    "not_installed_or_published"
+  ],
+  "feature_matrix_gates": [
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 0.20964727499995206
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 0.5325650720005797,
+      "test_results": [
+        "ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 0.20321629899990512
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 0.6590701140012243,
+      "test_results": [
+        "ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 0.6686782910001057
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 2.6982018030012114,
+      "test_results": [
+        "ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    }
+  ]
+}

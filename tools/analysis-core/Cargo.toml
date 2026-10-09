@@ -17,13 +17,24 @@ name = "eska-check"
 path = "src/bin/eska-check.rs"
 required-features = ["check-cli"]
 
+[[bin]]
+name = "eska-analyzer"
+path = "src/bin/eska-analyzer.rs"
+required-features = ["analyzer-cli"]
+
 [[test]]
 name = "check_tool"
 path = "tests/check_tool.rs"
 required-features = ["check-cli"]
 
+[[test]]
+name = "analyzer_tool"
+path = "tests/analyzer_tool.rs"
+required-features = ["analyzer-cli"]
+
 [features]
 check-cli = ["dep:clap", "dep:project-model", "dep:serde_json", "eska/tool-cli"]
+analyzer-cli = ["dep:clap", "dep:serde_json", "eska/tool-cli"]
 
 [dependencies]
 eska = { path = "../..", default-features = false }

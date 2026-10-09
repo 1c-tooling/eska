@@ -30,7 +30,8 @@ saved/overlay/close; diagnostics и completions используют те же �
 `QueryCancellation` прерывает выполняющийся запрос на ближайшем checkpoint
 Salsa; один токен управляет одним запросом и не меняет исходники или ревизию.
 Первый самостоятельный checker выполняет явный профиль `syntax` с кооперативным
-deadline. Общий бюджет памяти, сервер и полная семантическая проверка ещё не реализованы.
+deadline. Первый IDE transport читает метаданные этой же сессии. Общий бюджет
+памяти, полный сервер и семантическая проверка ещё не реализованы.
 Библиотека не опубликована и не входит в установленный комплект.
 
 Read-only пример `project_session` принимает каталог исходников ESKA, читает
@@ -89,3 +90,28 @@ eska-check --profile syntax --max-retained-source-bytes 268435456
 Профиль `syntax` не проверяет типы и платформенную исполнимость. Текст каждого
 модуля освобождается после проверки; это правило не подходит для семантического
 профиля. [Контракт и реальные результаты](../../docs/research/eska-format/check-cli.md).
+
+## IDE transport метаданных
+
+Отдельная feature `analyzer-cli` собирает `eska-analyzer`. Feature `check-cli`
+не включает сервер; библиотека без обеих features работает без транспорта и CLI.
+Бинарник использует общий bounded framing/JSON parser, не прежний handshake
+приложения. Runtime не зависит от LSP crates, Git, платформы или отладчика.
+
+```bash
+cargo build --manifest-path tools/analysis-core/Cargo.toml --features analyzer-cli --release --locked --bin eska-analyzer
+```
+
+В выбранном проекте запускается собранный бинарник:
+
+```bash
+eska-analyzer --project-dir .
+eska-analyzer --project-dir . --project main
+```
+
+Стандартный initialize должен явно запросить ESKA protocol `0.1`; после
+initialized доступны страницы владельцев и чтение/refresh одного YAML.
+Новый UUID сеанса и строковая ревизия обязательны в custom requests.
+Пока `documentSync`, language queries, cancellation и edit plans не объявлены.
+Из установленного комплекта бинарник не запускается автоматически.
+[Протокол, границы и проверка C1/C2/C3](../../docs/research/eska-format/analyzer-metadata.md).
