@@ -2372,7 +2372,8 @@ impl RootDatabaseImpl {
                 let readable = index.lookup_module_file(name);
                 let unread = index.lookup_unread_module_file(name);
                 if let Some(fid) = readable {
-                    out.push(fid, false);
+                    // A stable listing body can become pending/unreadable after a source update.
+                    out.push(fid, self.file_is_unread(fid));
                 }
                 if let Some(fid) = unread {
                     out.push(fid, true);

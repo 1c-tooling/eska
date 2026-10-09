@@ -1,5 +1,6 @@
 //! Owner-local metadata snapshots; opening a tree never reads modules, resources or a baseline.
 
+mod modules;
 mod projection;
 mod semantic;
 
@@ -26,6 +27,7 @@ use super::{
     files, yaml,
 };
 
+pub use modules::DeclaredModule;
 pub use semantic::{MetadataSnapshot, NativeMetadata};
 
 /// One declaration projected directly from typed YAML, with coordinates in its owner snapshot.
@@ -82,6 +84,7 @@ pub struct SourceReader {
     manifest_sha256: String,
     configuration: OwnerSnapshot,
     owners: BTreeMap<SourcePath, OwnerSpec>,
+    modules: BTreeMap<SourcePath, modules::ModuleSpec>,
 }
 
 impl SourceReader {
@@ -140,12 +143,14 @@ impl SourceReader {
             return Err(Error::root("source_descriptor_undeclared"));
         }
         owners.insert(root_path, root_spec);
+        let modules = modules::declared_modules(&manifest, &owners)?;
         Ok(Self {
             root,
             manifest,
             manifest_sha256,
             configuration,
             owners,
+            modules,
         })
     }
 
@@ -188,6 +193,35 @@ impl SourceReader {
             native_path: &spec.main,
             uuid,
         })
+    }
+
+    /// Enumerate only manifest modules attached to declared descriptor locations.
+    pub fn module_paths(&self) -> impl Iterator<Item = &SourcePath> {
+        self.modules.keys()
+    }
+
+    /// Read stable ownership and encoding without opening a module or its owner YAML.
+    #[must_use]
+    pub fn declared_module(&self, path: &SourcePath) -> Option<DeclaredModule<'_>> {
+        self.modules.get(path).map(|module| DeclaredModule {
+            owner: &module.owner,
+            native_descriptor: &module.native_descriptor,
+            binary: module.binary,
+        })
+    }
+
+    /// Read the current text of one declared module, preserving BOM and line endings.
+    ///
+    /// # Errors
+    /// Returns an undeclared/binary module, unsafe entry, I/O, encoding or byte-limit failure.
+    pub fn read_module_text(&self, path: &SourcePath, max_bytes: u64) -> Result<String, Error> {
+        let module = self
+            .declared_module(path)
+            .ok_or_else(|| Error::root("source_module_undeclared").in_field(path.as_str()))?;
+        if module.binary {
+            return Err(Error::root("source_module_binary").in_field(path.as_str()));
+        }
+        read_text_limited(&self.root, path, max_bytes)
     }
 
     /// Read exact declared-owner bytes for a bounded analysis request or editor snapshot.

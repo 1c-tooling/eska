@@ -29,8 +29,8 @@ pub use protected::{
     SourceMap, export_protected, prepare_protected,
 };
 pub use reader::{
-    DeclaredOwner, MetadataDeclaration, MetadataSnapshot, NativeMetadata, OwnerSnapshot,
-    SourceReader,
+    DeclaredModule, DeclaredOwner, MetadataDeclaration, MetadataSnapshot, NativeMetadata,
+    OwnerSnapshot, SourceReader,
 };
 
 pub use model::{

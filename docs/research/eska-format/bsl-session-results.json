@@ -1,0 +1,273 @@
+{
+  "schema_version": 1,
+  "scope": "shared_yaml_bsl_session",
+  "date": "2026-10-09",
+  "real": {
+    "corpus": "c1",
+    "exit_code": 2,
+    "result": {
+      "diagnostics": 0,
+      "metadata_models_complete": false,
+      "modules": {
+        "binary": 0,
+        "loaded_bytes": 3922,
+        "max_loaded_bytes": 67108864,
+        "module_input_complete": false,
+        "modules": 1876,
+        "pending": 1875,
+        "ready": 1,
+        "unavailable": 0
+      },
+      "profile": "syntax-only",
+      "revision": 2648,
+      "saved_editor_close_batch_parity": true,
+      "seconds": 13.869332436,
+      "xml_exported": false
+    },
+    "max_rss_kib": 270852,
+    "runtime_path": "empty",
+    "profile": "release-optimized",
+    "gates": [
+      {
+        "component": "analysis-core",
+        "gate": "fmt",
+        "exit_code": 0,
+        "seconds": 1.560119140000097
+      },
+      {
+        "component": "analysis-core",
+        "gate": "check",
+        "exit_code": 0,
+        "seconds": 0.1767861480002466
+      },
+      {
+        "component": "analysis-core",
+        "gate": "clippy",
+        "exit_code": 0,
+        "seconds": 0.529859702000067
+      },
+      {
+        "component": "analysis-core",
+        "gate": "test",
+        "exit_code": 0,
+        "seconds": 1.3838957229991138,
+        "test_results": [
+          "ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s",
+          "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+        ]
+      },
+      {
+        "component": "analysis-core",
+        "gate": "rustdoc",
+        "exit_code": 0,
+        "seconds": 1.2567238010005894
+      },
+      {
+        "component": "analysis-core",
+        "gate": "release-example",
+        "exit_code": 0,
+        "seconds": 113.40604962799989
+      },
+      {
+        "component": "bsl-kernel",
+        "gate": "fmt",
+        "exit_code": 0,
+        "seconds": 0.5369230879996394
+      },
+      {
+        "component": "bsl-kernel",
+        "gate": "check",
+        "exit_code": 0,
+        "seconds": 1.0962104150003142
+      },
+      {
+        "component": "bsl-kernel",
+        "gate": "clippy",
+        "exit_code": 0,
+        "seconds": 2.317158855999878
+      },
+      {
+        "component": "bsl-kernel",
+        "gate": "test",
+        "exit_code": 0,
+        "seconds": 6.069756992000293,
+        "test_results": [
+          "ok. 267 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+          "ok. 600 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+          "ok. 179 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.17s",
+          "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+          "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+          "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+        ]
+      },
+      {
+        "component": "bsl-kernel",
+        "gate": "rustdoc",
+        "exit_code": 0,
+        "seconds": 1.5136241250002058
+      },
+      {
+        "component": "bsl-adapter",
+        "gate": "fmt",
+        "exit_code": 0,
+        "seconds": 0.9790055749999738
+      },
+      {
+        "component": "bsl-adapter",
+        "gate": "check",
+        "exit_code": 0,
+        "seconds": 1.4560724559996743
+      },
+      {
+        "component": "bsl-adapter",
+        "gate": "clippy",
+        "exit_code": 0,
+        "seconds": 0.5859232840002733
+      },
+      {
+        "component": "bsl-adapter",
+        "gate": "test",
+        "exit_code": 0,
+        "seconds": 4.4534610560003784,
+        "test_results": [
+          "ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+          "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+          "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+          "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+          "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+        ]
+      },
+      {
+        "component": "bsl-adapter",
+        "gate": "rustdoc",
+        "exit_code": 0,
+        "seconds": 0.7297159030003968
+      }
+    ]
+  },
+  "reference": {
+    "exit_code": 0,
+    "seconds": 0.037070893999953114,
+    "bytes_equal_native": true,
+    "selected_modules": 1,
+    "profile": "syntax-only",
+    "workspace_mcp_available": false,
+    "version": "bsl-analyzer 0.2.86",
+    "total_files": 1,
+    "total_diagnostics": 0,
+    "failed_files": 0
+  },
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8022744319996491
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.20479563799926837
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2589078530008919
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 14.256249905000004
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.56575353900007
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.6537268590000167
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 6.137259918999916
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 1.9860791300006895
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.012762272000145458
+    }
+  ],
+  "application_tests": {
+    "passed": 884,
+    "ignored": 14,
+    "minimal_passed": 160,
+    "minimal_ignored": 3
+  },
+  "earlier_failure": {
+    "test": "project::switch::preserves_changes_outside_a_nested_project",
+    "error": "Shelf(Locked)",
+    "targeted_retry": "passed",
+    "full_retry": "passed",
+    "cause": "unknown"
+  },
+  "limitations": [
+    "syntax_only_real_module",
+    "incomplete_metadata_and_module_coverage",
+    "module_text_cap_is_not_rss_budget",
+    "query_cancellation_before_and_after_only",
+    "no_server_or_standalone_checker",
+    "no_1c_client_validation"
+  ]
+}

@@ -15,7 +15,7 @@ use super::*;
 mod support;
 
 /// Keep fixtures exclusively inside the declared playground.
-fn fixture() -> (support::TestDirectory, PathBuf) {
+pub(super) fn fixture() -> (support::TestDirectory, PathBuf) {
     let directory = support::TestDirectory::new();
     let native = directory.0.join("native");
     copy_tree(
@@ -39,6 +39,12 @@ fn fixture() -> (support::TestDirectory, PathBuf) {
             "<Name>Count</Name><Type><v8:Type>xs:decimal</v8:Type></Type>",
         );
     fs::write(catalog_path, catalog).unwrap();
+    fs::write(native.join("Catalogs/Sample/Ext/ObjectModule.bsl"), "\u{feff}Процедура Проверка()\r\n\tОбъект = Справочники.Sample.СоздатьЭлемент();\r\n\tОбъект.Description = \"fixture\";\r\nКонецПроцедуры\r\n").unwrap();
+    fs::write(
+        native.join("Catalogs/Sample/Ext/ManagerModule.bin"),
+        [0xff, 0xfe],
+    )
+    .unwrap();
     let mut configuration = fs::read_to_string(native.join("Configuration.xml")).unwrap();
     let extra = [
         (
@@ -105,7 +111,7 @@ fn copy_tree(source: &Path, destination: &Path) {
 }
 
 /// Fully load metadata inputs; unsupported families still remain explicitly unsupported.
-fn load(session: &mut AnalysisSession) {
+pub(super) fn load(session: &mut AnalysisSession) {
     let paths = session.owner_paths().cloned().collect::<Vec<_>>();
     for path in paths {
         session
@@ -115,12 +121,12 @@ fn load(session: &mut AnalysisSession) {
 }
 
 /// Keep the owner identity explicit in each scenario.
-fn owner(value: &str) -> SourcePath {
+pub(super) fn owner(value: &str) -> SourcePath {
     SourcePath::parse(value).unwrap()
 }
 
 /// Rename one declared attribute using its exact YAML coordinates.
-fn draft(root: &Path, path: &SourcePath, field: &str, value: &str) -> String {
+pub(super) fn draft(root: &Path, path: &SourcePath, field: &str, value: &str) -> String {
     let reader = SourceReader::open(root).unwrap();
     let parsed = reader.read_owner(path).unwrap();
     let range = parsed
@@ -330,15 +336,19 @@ fn adapter_failure_and_rejected_requests_never_restore_an_old_value() {
     assert!(session.resolve(&path, current).unwrap().is_none());
     assert!(matches!(
         session.resolve(&path, stale),
-        Err(UpdateError::StaleRevision { .. })
+        Err(SessionRequestError::StaleRevision { .. })
     ));
     assert!(matches!(
         session.apply_overlay(&path, current, 1, &text, &InputRequest::default()),
-        Err(UpdateError::StaleDocumentVersion { .. })
+        Err(SessionRequestError::Metadata(
+            UpdateError::StaleDocumentVersion { .. }
+        ))
     ));
     assert!(matches!(
         session.load_saved(&path, current, &InputRequest::default()),
-        Err(UpdateError::OverlayActive { .. })
+        Err(SessionRequestError::Metadata(
+            UpdateError::OverlayActive { .. }
+        ))
     ));
     assert_eq!(session.revision(), current);
     assert!(session.resolve(&path, current).unwrap().is_none());
@@ -449,4 +459,71 @@ fn unrelated_owner_changes_preserve_the_index_and_neighbor_query() {
             .0,
         0
     );
+}
+
+/// IDE metadata remains available for a valid unsupported family and shares current draft failure.
+#[test]
+fn metadata_views_share_current_snapshots_without_requiring_bsl_projection() {
+    let (_directory, root) = fixture();
+    let mut session = AnalysisSession::open(&root).unwrap();
+    let path = owner("Roles/Reader/object.yaml");
+    session
+        .load_saved(&path, session.revision(), &InputRequest::default())
+        .unwrap();
+    let saved = session.metadata(&path, session.revision()).unwrap();
+    let eska::analysis_core::InputState::Ready(snapshot) = &saved.input else {
+        panic!("readable role metadata");
+    };
+    assert_eq!(
+        snapshot.documents[0].descriptor.objects[0].metadata.name(),
+        "Reader"
+    );
+    assert!(matches!(saved.model.state, ModelState::Unsupported(_)));
+    let text = fs::read_to_string(root.join(path.as_path()))
+        .unwrap()
+        .replace('\n', "\r\n");
+    session
+        .apply_overlay(
+            &path,
+            session.revision(),
+            1,
+            &text,
+            &InputRequest::default(),
+        )
+        .unwrap();
+    let overlay = session.metadata(&path, session.revision()).unwrap();
+    assert!(matches!(
+        overlay.origin,
+        InputOrigin::Overlay {
+            document_version: 1
+        }
+    ));
+    assert_eq!(overlay.source_sha256, overlay.model.source_sha256);
+    assert!(matches!(
+        overlay.input,
+        eska::analysis_core::InputState::Ready(_)
+    ));
+    assert!(matches!(
+        session.metadata(&path, saved.revision),
+        Err(SessionRequestError::StaleRevision { .. })
+    ));
+    session
+        .apply_overlay(
+            &path,
+            session.revision(),
+            2,
+            "broken: [",
+            &InputRequest::default(),
+        )
+        .unwrap();
+    let invalid = session.metadata(&path, session.revision()).unwrap();
+    assert!(matches!(
+        invalid.input,
+        eska::analysis_core::InputState::Unavailable(_)
+    ));
+    assert!(matches!(invalid.model.state, ModelState::Unavailable(_)));
+    assert!(matches!(
+        saved.input,
+        eska::analysis_core::InputState::Ready(_)
+    ));
 }

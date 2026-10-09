@@ -1,5 +1,7 @@
 //! Compose kernel identities from declared metadata, never from a directory scan.
 
+use std::collections::BTreeMap;
+
 use bsl_metadata::MdoType;
 use eska::project_core::{MetadataKind, source_format::SourcePath};
 use ide_db::metadata::{CommonModuleEntry, DefinedTypeEntry, MdoEntry, MetadataListingData};
@@ -46,4 +48,74 @@ impl OwnerBinding {
             }
         }
     }
+}
+
+/// Allocate declared bodies after metadata IDs without reading their bytes or owner YAML.
+pub fn register_modules(
+    reader: &eska::project_core::source_format::SourceReader,
+    first_file: usize,
+    database: &mut ide_db::RootDatabaseImpl,
+    file_set: &mut vfs::file_set::FileSet,
+) -> Result<std::collections::BTreeMap<SourcePath, crate::modules::ModuleEntry>, crate::SessionError>
+{
+    use crate::{ModuleInput, ModuleState, SessionError, SessionRevision, modules::ModuleEntry};
+    use base_db::{SourceDatabase, SourceRootId};
+    use vfs::VfsPath;
+    let mut modules = BTreeMap::new();
+    for (index, path) in reader.module_paths().enumerate() {
+        let file = FileId(
+            u32::try_from(
+                first_file
+                    .checked_add(index)
+                    .ok_or(SessionError::TooManyFiles)?,
+            )
+            .map_err(|_| SessionError::TooManyFiles)?,
+        );
+        let identity = reader
+            .declared_module(path)
+            .ok_or(SessionError::MissingListing)?;
+        file_set.insert(file, VfsPath::new(reader.root().join(path.as_path())));
+        database.set_file_source_root(file, SourceRootId(0));
+        database.set_file_unreadable(file);
+        let model = ModuleInput {
+            revision: SessionRevision::default(),
+            origin: eska::analysis_core::InputOrigin::Saved,
+            source_sha256: None,
+            state: if identity.binary {
+                ModuleState::Binary
+            } else {
+                ModuleState::Pending
+            },
+        };
+        modules.insert(
+            path.clone(),
+            ModuleEntry {
+                file,
+                owner: identity.owner.clone(),
+                model,
+            },
+        );
+    }
+    Ok(modules)
+}
+
+/// Keep a stable body backlink; its tracked unread flag supplies current readability.
+pub fn connect_common_bodies(
+    structure: &mut MetadataListingData,
+    modules: &std::collections::BTreeMap<SourcePath, crate::modules::ModuleEntry>,
+) -> Result<(), crate::SessionError> {
+    use crate::SessionError;
+    for entry in &mut structure.common_modules {
+        let prefix = format!("CommonModules/{}/Ext/Module", entry.name);
+        if let Some(module) =
+            modules.get(&SourcePath::parse(&format!("{prefix}.bsl")).map_err(SessionError::Source)?)
+        {
+            entry.module_file = Some(module.file);
+        } else if let Some(module) =
+            modules.get(&SourcePath::parse(&format!("{prefix}.bin")).map_err(SessionError::Source)?)
+        {
+            entry.unread_module_file = Some(module.file);
+        }
+    }
+    Ok(())
 }

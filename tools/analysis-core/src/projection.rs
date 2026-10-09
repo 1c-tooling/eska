@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use eska::{
-    analysis_core::{InputFailure, InputOrigin, InputRevision, InputState, OwnerInput},
+    analysis_core::{InputFailure, InputOrigin, InputState, OwnerInput},
     project_core::{MetadataKind, source_format::SourcePath},
 };
 use eska_bsl_adapter::AdapterError;
@@ -25,25 +25,52 @@ pub enum ModelState {
     },
 }
 
+/// Tree/property consumers receive the same current YAML snapshot as the semantic adapter.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MetadataView {
+    pub revision: crate::SessionRevision,
+    pub source: SourcePath,
+    pub origin: InputOrigin,
+    pub source_sha256: Option<String>,
+    /// Unsupported BSL projection does not hide valid metadata properties from the IDE tree.
+    pub input: InputState,
+    pub model: OwnerModel,
+}
+
 /// Coordinates and model coverage belong to exactly one current owner revision.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OwnerModel {
-    pub revision: InputRevision,
+    pub revision: crate::SessionRevision,
     pub origin: InputOrigin,
     pub source_sha256: Option<String>,
     pub descriptors: usize,
+    pub parse_issues: usize,
     /// Only the main descriptor is currently projected; nested descriptors remain visible here.
     pub modeled_descriptors: usize,
     pub state: ModelState,
 }
 
+impl OwnerModel {
+    /// This predicate covers parsed descriptors only, never BSL or opaque resource semantics.
+    pub(super) const fn descriptors_complete(&self) -> bool {
+        matches!(self.state, ModelState::Ready(_) | ModelState::StructureOnly)
+            && self.parse_issues == 0
+            && self.descriptors == self.modeled_descriptors
+    }
+}
+
 /// Project only the declared main descriptor, retaining explicit failure and coverage states.
-pub fn project(kind: MetadataKind, input: &OwnerInput) -> OwnerModel {
+pub fn project(
+    kind: MetadataKind,
+    input: &OwnerInput,
+    revision: crate::SessionRevision,
+) -> OwnerModel {
     let mut result = OwnerModel {
-        revision: input.revision,
+        revision,
         origin: input.origin,
         source_sha256: input.source_sha256.clone(),
         descriptors: 0,
+        parse_issues: 0,
         modeled_descriptors: 0,
         state: ModelState::Pending,
     };
@@ -52,7 +79,13 @@ pub fn project(kind: MetadataKind, input: &OwnerInput) -> OwnerModel {
         InputState::Unavailable(failure) => ModelState::Unavailable(failure.clone()),
         InputState::Ready(snapshot) => {
             result.descriptors = snapshot.documents.len();
+            result.parse_issues = snapshot
+                .documents
+                .iter()
+                .map(|document| document.descriptor.diagnostics.len())
+                .sum();
             if kind == MetadataKind::Configuration {
+                result.modeled_descriptors = 1;
                 ModelState::StructureOnly
             } else if let Some(document) = snapshot.documents.first() {
                 match canonical(kind, &document.descriptor) {

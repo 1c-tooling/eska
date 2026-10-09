@@ -1,0 +1,133 @@
+//! Diagnostics and IDE requests query the same current bytes and canonical metadata database.
+
+use base_db::SourceDatabase;
+use eska::{analysis_core::Cancellation, project_core::source_format::SourcePath};
+
+use crate::{
+    AnalysisSession, CompletionItem, Diagnostic, DiagnosticsConfig, Locale, ModuleState,
+    SessionRequestError, SessionRevision,
+};
+
+/// A result belongs to one verbatim source snapshot and one complete session generation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ModuleResult<T> {
+    pub revision: SessionRevision,
+    pub source: SourcePath,
+    pub source_sha256: String,
+    pub metadata_models_complete: bool,
+    pub module_inputs_complete: bool,
+    pub value: T,
+}
+
+/// Unavailable input is a failed query, never an empty successful diagnostic/completion list.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum QueryError {
+    Request(SessionRequestError),
+    ModuleUnavailable {
+        path: SourcePath,
+        state: ModuleState,
+    },
+    InvalidOffset {
+        offset: u32,
+    },
+    Cancelled,
+}
+
+impl AnalysisSession {
+    /// Run the shared BSL diagnostics profile over this exact saved or editor module snapshot.
+    ///
+    /// # Errors
+    /// Returns stale/unknown/unread input or cancellation; parser errors are ordinary diagnostics.
+    pub fn module_diagnostics(
+        &self,
+        path: &SourcePath,
+        expected: SessionRevision,
+        config: &DiagnosticsConfig,
+        cancellation: &Cancellation,
+    ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
+        self.query_module(path, expected, cancellation, |analysis, file| {
+            Ok(analysis.diagnostics(file, config))
+        })
+    }
+
+    /// Complete at a UTF-8 byte boundary, resolving metadata from current YAML canonical slots.
+    ///
+    /// # Errors
+    /// Returns stale/unknown/unread input, an invalid offset or cancellation.
+    pub fn module_completions(
+        &self,
+        path: &SourcePath,
+        expected: SessionRevision,
+        offset: u32,
+        locale: Locale,
+        cancellation: &Cancellation,
+    ) -> Result<ModuleResult<Vec<CompletionItem>>, QueryError> {
+        self.query_module(path, expected, cancellation, |analysis, file| {
+            let input = analysis
+                .database()
+                .try_file_text_input(file)
+                .ok_or_else(|| QueryError::ModuleUnavailable {
+                    path: path.clone(),
+                    state: ModuleState::Pending,
+                })?;
+            if !input
+                .text(analysis.database())
+                .is_char_boundary(offset as usize)
+            {
+                return Err(QueryError::InvalidOffset { offset });
+            }
+            Ok(analysis.completions(file, offset, Some(self.root().to_owned()), locale))
+        })
+    }
+
+    /// Validate the exact source and clock before cloning a short-lived kernel handle.
+    fn query_module<T>(
+        &self,
+        path: &SourcePath,
+        expected: SessionRevision,
+        cancellation: &Cancellation,
+        query: impl FnOnce(&ide::Analysis, vfs::FileId) -> Result<T, QueryError>,
+    ) -> Result<ModuleResult<T>, QueryError> {
+        self.validate_revision(expected)
+            .map_err(QueryError::Request)?;
+        let entry = self
+            .modules
+            .get(path)
+            .ok_or_else(|| QueryError::Request(SessionRequestError::UnknownModule(path.clone())))?;
+        if !matches!(entry.model.state, ModuleState::Ready { .. }) {
+            return Err(QueryError::ModuleUnavailable {
+                path: path.clone(),
+                state: entry.model.state.clone(),
+            });
+        }
+        let source_sha256 =
+            entry
+                .model
+                .source_sha256
+                .clone()
+                .ok_or_else(|| QueryError::ModuleUnavailable {
+                    path: path.clone(),
+                    state: ModuleState::Pending,
+                })?;
+        if cancellation.is_cancelled() {
+            return Err(QueryError::Cancelled);
+        }
+        let analysis = ide::Analysis::from_database(self.database.clone());
+        // Salsa handles cancellation unwind; an unrelated panic is rethrown by `catch`.
+        let value = salsa::Cancelled::catch(std::panic::AssertUnwindSafe(|| {
+            analysis.attached(|analysis| query(analysis, entry.file))
+        }))
+        .map_err(|_| QueryError::Cancelled)??;
+        if cancellation.is_cancelled() {
+            return Err(QueryError::Cancelled);
+        }
+        Ok(ModuleResult {
+            revision: expected,
+            source: path.clone(),
+            source_sha256,
+            metadata_models_complete: self.incomplete_metadata == 0,
+            module_inputs_complete: self.incomplete_modules == 0,
+            value,
+        })
+    }
+}

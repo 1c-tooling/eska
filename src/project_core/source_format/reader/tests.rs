@@ -74,6 +74,80 @@ fn opening_reads_only_root_and_manifest_and_defers_missing_owner_errors() {
     );
 }
 
+/// Module activation uses declared locations, not a directory scan or a readable payload heuristic.
+#[test]
+fn declared_module_reads_preserve_bytes_and_keep_missing_and_binary_inputs_explicit() {
+    let (_test, root) = source();
+    let module = SourcePath::parse("CommonModules/Tools/Ext/Module.bsl").unwrap();
+    let reader = SourceReader::open(&root).unwrap();
+    assert_eq!(reader.module_paths().collect::<Vec<_>>(), [&module]);
+    let identity = reader.declared_module(&module).unwrap();
+    assert_eq!(identity.owner.as_str(), "CommonModules/Tools/object.yaml");
+    assert_eq!(
+        identity.native_descriptor.as_str(),
+        "CommonModules/Tools.xml"
+    );
+    assert!(!identity.binary);
+    let text = "\u{feff}Функция Версия()\r\n\tВозврат \"1.2.3\";\r\nКонецФункции\r\n";
+    fs::write(root.join(module.as_path()), text).unwrap();
+    assert_eq!(reader.read_module_text(&module, 1024).unwrap(), text);
+    assert_eq!(
+        reader.read_module_text(&module, 1).unwrap_err().code,
+        "source_document_too_large"
+    );
+    fs::write(root.join(module.as_path()), [0xff, 0xfe]).unwrap();
+    assert_eq!(
+        reader.read_module_text(&module, 1024).unwrap_err().code,
+        "source_encoding_unsupported"
+    );
+    fs::remove_file(root.join(module.as_path())).unwrap();
+    assert!(
+        SourceReader::open(&root)
+            .unwrap()
+            .declared_module(&module)
+            .is_some()
+    );
+    assert_eq!(
+        reader.read_module_text(&module, 1024).unwrap_err().code,
+        "source_file_missing"
+    );
+    let mut manifest = reader.manifest().clone();
+    let entry = manifest
+        .files
+        .iter()
+        .find(|file| file.path == module)
+        .unwrap()
+        .clone();
+    for value in [
+        "Catalogs/Sample/Forms/Main/Ext/Form/Module.bin",
+        "Catalogs/Sample/Extra/Ext/Module.bsl",
+    ] {
+        let mut added = entry.clone();
+        added.path = SourcePath::parse(value).unwrap();
+        manifest.files.push(added);
+    }
+    write_manifest(&root, &manifest);
+    let reader = SourceReader::open(&root).unwrap();
+    let binary = SourcePath::parse("Catalogs/Sample/Forms/Main/Ext/Form/Module.bin").unwrap();
+    let identity = reader.declared_module(&binary).unwrap();
+    assert_eq!(identity.owner, &catalog());
+    assert_eq!(
+        identity.native_descriptor.as_str(),
+        "Catalogs/Sample/Forms/Main.xml"
+    );
+    assert!(identity.binary);
+    assert_eq!(
+        reader.read_module_text(&binary, 1024).unwrap_err().code,
+        "source_module_binary"
+    );
+    let stray = SourcePath::parse("Catalogs/Sample/Extra/Ext/Module.bsl").unwrap();
+    assert!(reader.declared_module(&stray).is_none());
+    assert_eq!(
+        reader.read_module_text(&stray, 1024).unwrap_err().code,
+        "source_module_undeclared"
+    );
+}
+
 #[test]
 fn typed_declarations_keep_inline_and_external_parents_and_native_identity() {
     let (_test, root) = source();
