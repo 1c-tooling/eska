@@ -130,7 +130,7 @@ fn child_object(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> Res
 }
 
 /// Promote only values with a proven inverse rule; retain every other shape as opaque XML.
-fn property(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> Property {
+pub(super) fn property(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> Property {
     let name = if node.is_element() && node.tag_name().namespace() == Some(MD_NAMESPACE) {
         match node.tag_name().name() {
             "Name" => Some(PropertyName::Name),

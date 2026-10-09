@@ -2,13 +2,13 @@
 
 use std::{collections::BTreeMap, ops::Range};
 
-use yaml_edit::{AsYaml, YamlFile};
+use yaml_edit::YamlFile;
 
 use super::{MetadataDeclaration, node_name};
 use crate::project_core::source_format::{
     Child, Error, MetadataNode, NativeUuid, ObjectSource, Property, PropertyName, Section,
     SourcePath,
-    yaml::{self, Step},
+    yaml::{Step, range_at},
 };
 
 /// Flatten this owner in source order, preserving logical parents across external descriptors.
@@ -111,14 +111,4 @@ fn name_range(node: &MetadataNode, tree: &YamlFile, steps: &[Step]) -> Result<Ra
         }
     }
     Err(Error::root("source_name_missing"))
-}
-
-/// CST offsets are UTF-8 bytes; LSP encoding conversion belongs to the protocol consumer.
-pub(super) fn range_at(tree: &YamlFile, steps: &[Step]) -> Result<Range<usize>, Error> {
-    let node = yaml::at(tree, steps).ok_or_else(|| Error::root("source_location_invalid"))?;
-    let range = node
-        .as_node()
-        .ok_or_else(|| Error::root("source_location_invalid"))?
-        .text_range();
-    Ok(usize::from(range.start())..usize::from(range.end()))
 }

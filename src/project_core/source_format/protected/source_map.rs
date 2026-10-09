@@ -1,5 +1,9 @@
 //! Native-file origins describe selected bytes; metadata always retains accepted structure.
 
+mod location;
+
+pub use location::{OriginTexts, SourceLocation};
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};

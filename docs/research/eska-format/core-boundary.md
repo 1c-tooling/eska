@@ -64,17 +64,19 @@ Designer и замена source path в BuildPlan. Планирование пу
 native snapshot до открытия ИБ; schema 2 manifest записывает authority context.
 Прежний XML build сохраняет schema 1. [Карта origins](source-map.md) различает
 выбранные рабочие/принятые payloads и составное происхождение metadata XML.
+[Координаты](source-locations.md) вычисляются по запросу из точных input bytes,
+общего CST и native property parser; platform output parser пока не подключён.
 
 Следующие части EF-10: подключение проверенной конфигурации ESKA,
-координаты YAML и сопоставление ошибок платформы, самостоятельные project/build
+сопоставление ошибок платформы, самостоятельные project/build
 точки входа. Проверка границ зависимостей
 повторяется для каждого готового потребителя, не только для общей библиотеки.
 
-Проверки прошли в обеих сборках: fmt/check/strict Clippy, 314 unit и 525
-integration для приложения, 125 unit для минимального ядра, Rustdoc с
+Проверки прошли в обеих сборках: fmt/check/strict Clippy, 321 unit и 525
+integration для приложения, 132 unit для минимального ядра, Rustdoc с
 `-D warnings` и diff check. Обычный прогон пропускает 14 opt-in тестов;
 минимальный — три. Предупреждений в принятых сборках нет.
-Сборочная библиотека отдельно прошла strict Clippy, 137 unit test и Rustdoc
+Сборочная библиотека отдельно прошла strict Clippy, 144 unit test и Rustdoc
 с `-D warnings`; три opt-in теста пропущены. Все изменения проверены через
 обычный полный набор приложения и минимального source core.
 Независимый consumer без приложения собрал native C1 на установленной 1С;

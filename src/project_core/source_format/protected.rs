@@ -27,7 +27,8 @@ use crate::project_core::{
 
 pub use prepared::PreparedSource;
 pub use source_map::{
-    FileOrigin, InputAuthority, InputFile, MappedFile, SOURCE_MAP_VERSION, SourceMap,
+    FileOrigin, InputAuthority, InputFile, MappedFile, OriginTexts, SOURCE_MAP_VERSION,
+    SourceLocation, SourceMap,
 };
 
 /// Every excluded working change states the performed action rather than silently disappearing.

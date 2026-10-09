@@ -22,11 +22,13 @@ use crate::project_core::{
     source_format::{
         Child, Error, MD_NAMESPACE, MetadataNode, Namespace, NativeDocument, NativeUuid,
         ObjectSource, Property, PropertyName, PropertyValue, Section, SourcePath, XmlFragment,
-        fragment, validation::scope, yaml::Step,
+        fragment,
+        validation::scope,
+        yaml::{Step, range_at},
     },
 };
 
-use super::{node_name, projection::range_at};
+use super::node_name;
 
 const XSI_NAMESPACE: &str = "http://www.w3.org/2001/XMLSchema-instance";
 

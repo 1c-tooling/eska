@@ -44,10 +44,9 @@ Prepared artifact manifest schema 2 теперь дополнительно со
 а не повторного чтения рабочей копии. Снимок manifest хранит одну копию DTO;
 публикация JSON заимствует её.
 
-Это пока карта файлов. Координаты отдельных YAML objects/properties и перевод
-platform diagnostics ещё не подключены. Для byte-preserved BSL можно сохранить
-координату только при совпадении input checksum; для составного metadata XML
-нельзя переносить XML line number на YAML без дополнительного сопоставления.
+Это карта файлов. [Координаты YAML/BSL](source-locations.md) вычисляются по запросу
+из byte-verified inputs; перевод platform diagnostics ещё не подключён.
+Для составного metadata XML нельзя переносить XML line number на YAML.
 
 ## Проверки
 

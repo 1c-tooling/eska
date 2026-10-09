@@ -423,8 +423,11 @@ private proof поколения, проверяет фактический snap
 и записывает source context в manifest schema 2. Прежний XML build сохраняет
 schema 1. [Карта файлов](../research/eska-format/source-map.md) различает
 рабочие и принятые bytes BSL/ресурсов, составные metadata origins и сохраняется
-в manifest с SHA-256. Следующие части — координаты YAML, диагностика платформы
-и публичная конфигурация.
+в manifest с SHA-256. [Координаты](../research/eska-format/source-locations.md)
+вычисляются по запросу из точных native/YAML bytes: вложенные объекты,
+existing typed values и opaque properties, без переноса XML column на YAML.
+На реальном C1 проверены все 3 595 native Name locations и 5 183 payloads.
+Следующие части — диагностика платформы и публичная конфигурация.
 Маршрут ESKA → prepared snapshot → CF → новая выгрузка C1 принят:
 8 769 файлов/8 064 каталога совпали с контролем, исключение — только
 проверенные служебные configVersion. Все остальные байты равны.

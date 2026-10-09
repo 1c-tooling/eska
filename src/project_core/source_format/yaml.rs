@@ -1,7 +1,9 @@
 //! One strict YAML 1.2 document; CST acceptance never implies source-profile acceptance.
 
+use std::ops::Range;
+
 use serde_json::{Map, Value};
-use yaml_edit::{Scalar, SyntaxKind, YamlFile, YamlNode};
+use yaml_edit::{AsYaml, Scalar, SyntaxKind, YamlFile, YamlNode};
 
 use super::Error;
 
@@ -62,6 +64,16 @@ pub(super) fn at(file: &YamlFile, steps: &[Step]) -> Option<YamlNode> {
         }?;
     }
     Some(node)
+}
+
+/// CST offsets are UTF-8 bytes in the exact text that passed strict decoding.
+pub(super) fn range_at(file: &YamlFile, steps: &[Step]) -> Result<Range<usize>, Error> {
+    let node = at(file, steps).ok_or_else(|| Error::root("source_location_invalid"))?;
+    let range = node
+        .as_node()
+        .ok_or_else(|| Error::root("source_location_invalid"))?
+        .text_range();
+    Ok(usize::from(range.start())..usize::from(range.end()))
 }
 
 /// Traverse strict values without letting a mapping silently overwrite an earlier key.
