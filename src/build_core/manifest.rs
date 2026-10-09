@@ -13,7 +13,9 @@ use super::{ArtifactType, BuildPlan, BuildProvenance, GitProvenance};
 use crate::project_core::source_format::{
     Error as SourceError, PROFILE, PreparedSource, RULES_VERSION, SCHEMA_VERSION, SourceMap,
 };
-use crate::project_core::{Project, ProjectPathError, native_version as version};
+use crate::project_core::{
+    Project, ProjectConfiguration, ProjectPathError, SourceFormat, native_version as version,
+};
 
 #[derive(Debug)]
 pub enum ManifestError {
@@ -101,7 +103,10 @@ pub(super) fn capture_source(
     let snapshot_project = Project::new(
         snapshot_root,
         snapshot_source.clone(),
-        project.configuration().clone(),
+        ProjectConfiguration::new(
+            project.configuration().project_type(),
+            SourceFormat::DesignerXml,
+        ),
     )
     .map_err(ManifestError::SnapshotProject)?;
     let version = version::inspect(&snapshot_project).map_or_else(

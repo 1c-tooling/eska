@@ -11,7 +11,7 @@ use super::{
     ManifestError, ProcessStream, RunError, locate_output_file, manifest,
 };
 use crate::project_core::source_format::{Error as SourceError, MappedFile, PreparedSource};
-use crate::project_core::{Project, ProjectType, native};
+use crate::project_core::{Project, ProjectType, SourceFormat, native};
 
 static WORKSPACE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
@@ -208,11 +208,7 @@ where
 {
     let started = Instant::now();
     let (manifest_project, manifest_seed) = manifest_request.unzip();
-    if manifest_project.is_some() {
-        preflight_manifest(plan)?;
-    } else {
-        preflight(plan)?;
-    }
+    preflight_input(plan, prepared, manifest_project.is_some())?;
     ibcmd
         .begin_interruptible_operation()
         .map_err(|source| BuildError::Run {
@@ -307,6 +303,24 @@ where
         duration: started.elapsed(),
         tool_output,
     })
+}
+
+/// Check proof presence and publication constraints before creating any build resources.
+fn preflight_input(
+    plan: &BuildPlan,
+    prepared: Option<&PreparedSource>,
+    manifested: bool,
+) -> Result<(), BuildError> {
+    if prepared.is_none() && !matches!(plan.source_format(), SourceFormat::DesignerXml) {
+        return Err(BuildError::SourceValidation(SourceError::root(
+            "source_preparation_required",
+        )));
+    }
+    if manifested {
+        preflight_manifest(plan)
+    } else {
+        preflight(plan)
+    }
 }
 
 /// Bind the copied snapshot to protected evidence before any infobase is opened or changed.

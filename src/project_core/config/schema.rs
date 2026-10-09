@@ -14,8 +14,16 @@ const DEFAULT_SOURCE_FORMAT: &str = "designer-xml";
 #[serde(deny_unknown_fields)]
 pub(super) struct RawDocument {
     pub(super) project: RawProject,
+    pub(super) eska: Option<RawEska>,
     pub(super) build: Option<RawBuild>,
     pub(super) vcs: Option<RawVcs>,
+}
+
+/// Only the location is configurable; the expected baseline digest belongs to the caller.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct RawEska {
+    pub(super) accepted_base: crate::project_core::source_format::SourcePath,
 }
 
 #[derive(Default, Deserialize)]
@@ -70,9 +78,16 @@ pub(super) struct RawProject {
 pub(super) struct SerializedDocument<'a> {
     pub(super) project: SerializedProject<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) eska: Option<SerializedEska<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) build: Option<SerializedBuild<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) vcs: Option<SerializedVcs<'a>>,
+}
+
+#[derive(Serialize)]
+pub(super) struct SerializedEska<'a> {
+    pub(super) accepted_base: &'a str,
 }
 
 #[derive(Serialize)]
@@ -154,9 +169,18 @@ pub fn parse_project_type(value: String) -> Result<ProjectType, ProjectConfigErr
     }
 }
 
-pub(super) fn parse_source_format(value: String) -> Result<SourceFormat, ProjectConfigError> {
+pub(super) fn parse_source_format(
+    value: String,
+    eska: Option<RawEska>,
+) -> Result<SourceFormat, ProjectConfigError> {
     match value.as_str() {
-        DEFAULT_SOURCE_FORMAT => Ok(SourceFormat::DesignerXml),
+        DEFAULT_SOURCE_FORMAT if eska.is_none() => Ok(SourceFormat::DesignerXml),
+        DEFAULT_SOURCE_FORMAT => Err(ProjectConfigError::UnexpectedEskaSettings),
+        "eska" => eska
+            .map(|settings| SourceFormat::Eska {
+                accepted_base: settings.accepted_base,
+            })
+            .ok_or(ProjectConfigError::EskaSettingsRequired),
         _ => Err(ProjectConfigError::UnknownSourceFormat { value }),
     }
 }
@@ -170,8 +194,6 @@ pub(super) const fn project_type_name(project_type: ProjectType) -> &'static str
     }
 }
 
-pub(super) const fn source_format_name(source_format: SourceFormat) -> &'static str {
-    match source_format {
-        SourceFormat::DesignerXml => DEFAULT_SOURCE_FORMAT,
-    }
+pub(super) const fn source_format_name(source_format: &SourceFormat) -> &'static str {
+    source_format.as_str()
 }

@@ -173,7 +173,7 @@ mod tests {
             assert_eq!(config.configuration().project_type(), project_type);
             assert_eq!(
                 config.configuration().source_format(),
-                SourceFormat::DesignerXml
+                &SourceFormat::DesignerXml
             );
             assert_eq!(config.source(), template.directories()[0]);
             assert_eq!(config, ProjectConfig::new(project_type));

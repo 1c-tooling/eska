@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::{Project, ProjectType};
+use super::{Project, ProjectType, SourceFormat};
 
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024 * 1024;
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
@@ -172,6 +172,7 @@ pub fn bump(project: &Project, kind: BumpKind) -> Result<BumpOutcome, VersionErr
 
 #[derive(Debug)]
 pub enum VersionError {
+    SourceFormatUnsupported,
     Io {
         path: PathBuf,
         source: io::Error,
@@ -218,6 +219,12 @@ struct ParsedDescriptor<'a> {
 
 /// Locate the single root descriptor matching the configured project type.
 fn load_descriptor(project: &Project) -> Result<LoadedDescriptor, VersionError> {
+    if !matches!(
+        project.configuration().source_format(),
+        SourceFormat::DesignerXml
+    ) {
+        return Err(VersionError::SourceFormatUnsupported);
+    }
     if matches!(
         project.configuration().project_type(),
         ProjectType::Configuration | ProjectType::Extension

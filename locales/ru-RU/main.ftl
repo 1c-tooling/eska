@@ -69,7 +69,12 @@ workspace-member-workflow-unsupported = Настройте [vcs.workflow] тол
 workspace-member-artifacts-directory-unsupported = Настройте [build].artifacts_directory только в корне workspace, а не в { $path }.
 workspace-project-unlisted = Проект { $project } находится в workspace { $workspace }, но не указан в workspace.members.
 project-type-unknown = Неизвестный тип проекта «{ $value }» в { $path }. Допустимы: configuration, extension, processing, report.
-project-format-unknown = Неизвестный формат исходников «{ $value }» в { $path }. Допустим: designer-xml.
+project-format-unknown = Неизвестный формат исходников «{ $value }» в { $path }. Допустимы: designer-xml, eska.
+project-eska-settings-required = В { $path } для source_format = "eska" требуется [eska].accepted_base.
+project-eska-settings-unexpected = Раздел [eska] в { $path } допустим только при source_format = "eska".
+project-eska-base-overlap = В { $path } исходники ESKA и accepted_base должны находиться в отдельных непересекающихся каталогах.
+project-eska-type-unsupported = В { $path } формат eska пока не поддерживает тип «{ $value }». Допустим: configuration.
+source-designer-required = Эта XML-операция недоступна для исходников ESKA.
 project-workflow-value-invalid = Неверное значение workflow policy «{ $value }» для { $field } в { $path }. Проверьте допустимые значения и правила именования веток в документации.
 project-workflow-field-missing = Не задано поле workflow policy { $field } в { $path }. Самостоятельная custom policy требует все поля; используйте extends для наследования пресета.
 project-workflow-custom-required = Поле extends доступно только при preset = "custom" в { $path }.
@@ -747,6 +752,7 @@ patch-empty = Нет изменённых методов; артефакт не 
 patch-built = Патч создан: { $output }. BSL и применимость проверены; поведение в рабочей базе не проверено. Для этого сценария требуется отключить безопасный режим при подключении расширения.
 patch-error-project = Не удалось открыть проект
 patch-error-project-type = Патчи поддерживаются только для configuration
+patch-error-source-format = Создание патча из исходников ESKA пока не поддерживается
 patch-error-repository = Не удалось прочитать Git-версию
 patch-error-dirty = Рабочая копия должна быть чистой; сначала выполните eska save и завершите текущую Git-операцию
 patch-error-base = Укажите --base или настройте workflow.integration_target

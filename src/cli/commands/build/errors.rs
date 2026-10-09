@@ -38,6 +38,7 @@ pub(super) fn execution_error_message(
 /// Render output-plan errors without changing their stable domain representation.
 pub(super) fn present_plan_error(error: &PlanError, localizer: &Localizer) -> String {
     let (key, path) = match error {
+        PlanError::SourcePreparationRequired => return localizer.text("source-designer-required"),
         PlanError::ProjectNameMissing => return localizer.text("build-project-name-missing"),
         PlanError::PlatformVersionMissing => {
             return localizer.text("build-platform-version-missing");
@@ -237,6 +238,7 @@ pub(super) const fn selection_error_code(error: &SelectionError) -> &'static str
 /// Map immutable plan failures to stable machine-facing codes.
 pub(super) const fn plan_error_code(error: &PlanError) -> &'static str {
     match error {
+        PlanError::SourcePreparationRequired => "source-preparation-required",
         PlanError::ProjectNameMissing => "project-name-missing",
         PlanError::PlatformVersionMissing => "platform-version-missing",
         PlanError::InvalidOutput { .. } => "output-invalid",

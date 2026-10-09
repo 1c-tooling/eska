@@ -436,14 +436,20 @@ raw bytes и прежние callbacks сохраняются. Проверенн
 В собственной копии разрешённый ресурс с неверным числовым атрибутом вызвал
 две реальные ошибки XDTO; оба origins проверены, CF/manifest не опубликованы.
 Невалидный XML того же ресурса отклонён ещё до платформы.
-Следующие части — публичная конфигурация и самостоятельные точки входа.
+[Выбор источников](../research/eska-format/project-selection.md) добавлен
+в строгую конфигурацию и discovery/selection: формат явный, путь базы относится
+к выбранному member, platform/workflow inheritance сохраняется. Ленивый адаптер
+работает без базы; materialization всегда требует separately supplied pin.
+Прежние XML readers/mutators и обычный build не принимают ESKA или старый XML
+вместо private proof. Следующие части — byte-safe Git transport базы
+и самостоятельные точки входа.
 Маршрут ESKA → prepared snapshot → CF → новая выгрузка C1 принят:
 8 769 файлов/8 064 каталога совпали с контролем, исключение — только
 проверенные служебные configVersion. Все остальные байты равны.
 Minimal library compile graph не содержит
 gix, HTTP, CLI, TTY или IDE runtime. Это подготовка текущих потребителей;
-публичная конфигурация ESKA, discovery, build и самостоятельные инструменты
-ещё не подключены. Этап остаётся `IN-PROGRESS`.
+конфигурация ESKA и discovery уже доступны, build использует prepared SDK route;
+самостоятельные инструменты ещё не подключены. Этап остаётся `IN-PROGRESS`.
 
 ## EF-11 Explorer и инструменты BSL
 

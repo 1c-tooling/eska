@@ -4,7 +4,7 @@ use std::{
 };
 
 use super::PlatformVersion;
-use crate::project_core::{Project, ProjectType};
+use crate::project_core::{Project, ProjectType, SourceFormat};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ArtifactType {
@@ -55,6 +55,7 @@ pub struct BuildPlan {
     artifact_type: ArtifactType,
     platform_version: PlatformVersion,
     source: PathBuf,
+    source_format: SourceFormat,
     base_configuration: Option<PathBuf>,
     artifacts_directory: PathBuf,
     infobase_root: PathBuf,
@@ -64,6 +65,12 @@ pub struct BuildPlan {
 }
 
 impl BuildPlan {
+    /// Retain the configured format even when a caller substitutes a derived XML path.
+    #[must_use]
+    pub const fn source_format(&self) -> &SourceFormat {
+        &self.source_format
+    }
+
     /// Resolve a deterministic artifact path without creating files or invoking tools.
     ///
     /// Relative explicit outputs are resolved from the project root. Their extension must match
@@ -111,6 +118,7 @@ impl BuildPlan {
                 })
                 .ok_or(PlanError::PlatformVersionMissing)?,
             source: project.source().to_owned(),
+            source_format: project.configuration().source_format().clone(),
             base_configuration: None,
             infobase_root: infobase_root(&artifacts_directory, &artifact_name),
             artifacts_directory,
@@ -161,6 +169,7 @@ impl BuildPlan {
                 })
                 .ok_or(PlanError::PlatformVersionMissing)?,
             source: project.source().to_owned(),
+            source_format: project.configuration().source_format().clone(),
             base_configuration: None,
             infobase_root: infobase_root(&artifacts_directory, &artifact_name),
             artifacts_directory,
@@ -297,6 +306,7 @@ fn infobase_root(artifacts_directory: &Path, artifact_name: &OsStr) -> PathBuf {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PlanError {
+    SourcePreparationRequired,
     ProjectNameMissing,
     PlatformVersionMissing,
     InvalidOutput {

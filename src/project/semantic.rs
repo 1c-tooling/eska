@@ -37,6 +37,7 @@ pub fn diff_workspace_affected(
     project: &Project,
     diff: &ProjectDiff,
 ) -> Result<SemanticDiff, SemanticDiffError> {
+    require_designer(project)?;
     if diff.files.is_empty() {
         return Ok(SemanticDiff::default());
     }
@@ -59,6 +60,7 @@ pub fn diff_workspace(
     objects: &ObjectModel,
     diff: &ProjectDiff,
 ) -> Result<SemanticDiff, SemanticDiffError> {
+    require_designer(project)?;
     let repository = semantic_repository(project)?;
     let prefix = repository_project_prefix(&repository, project);
     let mut versions_reader = None;
@@ -127,6 +129,7 @@ pub fn diff_revisions(
     project: &Project,
     diff: &RevisionProjectDiff,
 ) -> Result<SemanticDiff, SemanticDiffError> {
+    require_designer(project)?;
     let repository = semantic_repository(project)?;
     let effective_from = diff
         .comparison
@@ -163,6 +166,19 @@ pub fn diff_revisions(
         analyze_snapshots(project, None, &snapshot, &mut events, &mut fallbacks);
     }
     Ok(build_semantic_diff(events, fallbacks))
+}
+
+/// Keep the existing XML comparison explicit until the VCS tool adopts the ESKA projection.
+const fn require_designer(project: &Project) -> Result<(), SemanticDiffError> {
+    if !matches!(
+        project.configuration().source_format(),
+        super::SourceFormat::DesignerXml
+    ) {
+        return Err(SemanticDiffError::ObjectModel(
+            super::object_model::ObjectModelError::SourceFormatUnsupported,
+        ));
+    }
+    Ok(())
 }
 
 /// Suppress derived changes when the same identity has an object lifecycle event.

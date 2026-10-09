@@ -592,6 +592,12 @@ fn build_plan(
     base_configuration: Option<PathBuf>,
     recreate_infobase: bool,
 ) -> Result<BuildPlan, PlanError> {
+    if !matches!(
+        selected.project().configuration().source_format(),
+        crate::project::SourceFormat::DesignerXml
+    ) {
+        return Err(PlanError::SourcePreparationRequired);
+    }
     let plan = match (selected.name(), workspace_root) {
         (Some(name), Some(root)) => BuildPlan::for_workspace_member(
             selected.project(),

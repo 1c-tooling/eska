@@ -5,6 +5,7 @@ mod clone;
 mod config;
 mod diff;
 mod doctor;
+mod eska_format;
 mod finish;
 mod history;
 mod init;

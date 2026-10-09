@@ -276,6 +276,12 @@ pub(super) fn prompt_error(error: PromptError, localizer: &Localizer) -> Failure
 pub(super) fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
     let hyperlinks = io::stderr().is_terminal();
     let (code, key, path) = match error {
+        ArtifactError::SourceFormatUnsupported => {
+            return Failure::new(
+                "source-format-unsupported",
+                localizer.text("source-designer-required"),
+            );
+        }
         ArtifactError::Io { path, source } => {
             return Failure::new(
                 "io",

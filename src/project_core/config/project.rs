@@ -14,9 +14,9 @@ use crate::project_core::{
 use crate::project_core::workflow::WorkflowPreset;
 
 use super::schema::{
-    DEFAULT_SOURCE, RawDocument, SerializedBuild, SerializedDocument, SerializedProject,
-    SerializedVcs, default_source, parse_project_type, parse_source_format, project_type_name,
-    source_format_name,
+    DEFAULT_SOURCE, RawDocument, SerializedBuild, SerializedDocument, SerializedEska,
+    SerializedProject, SerializedVcs, default_source, parse_project_type, parse_source_format,
+    project_type_name, source_format_name,
 };
 
 /// The validated contents of an `eska.toml` file.
@@ -87,10 +87,23 @@ impl ProjectConfig {
     /// Sets a validated relative source directory.
     ///
     /// # Errors
-    /// Returns [`ProjectConfigError::InvalidSource`] for an unsafe path.
+    /// Returns an unsafe source path or an ESKA source/accepted-base overlap.
     pub fn with_source(mut self, source: PathBuf) -> Result<Self, ProjectConfigError> {
         validate_source_path(&source)?;
+        validate_source_layout(&source, self.configuration.source_format())?;
         self.source = source;
+        Ok(self)
+    }
+
+    /// Select an explicit source format; the current ESKA profile supports configurations only.
+    ///
+    /// # Errors
+    /// Returns an unsupported profile or overlapping inputs before publishing a manifest.
+    pub fn with_source_format(mut self, format: SourceFormat) -> Result<Self, ProjectConfigError> {
+        let project_type = self.configuration.project_type();
+        validate_profile(project_type, &format)?;
+        validate_source_layout(&self.source, &format)?;
+        self.configuration = self.configuration.with_source_format(format);
         Ok(self)
     }
 
@@ -123,9 +136,11 @@ impl ProjectConfig {
             .transpose()
             .map_err(ProjectConfigError::InvalidName)?;
         let project_type = parse_project_type(document.project.project_type)?;
-        let source_format = parse_source_format(document.project.source_format)?;
+        let source_format = parse_source_format(document.project.source_format, document.eska)?;
+        validate_profile(project_type, &source_format)?;
 
         validate_source_path(&document.project.source)?;
+        validate_source_layout(&document.project.source, &source_format)?;
 
         let default_build = BuildSettings::default();
         let build = document.build.unwrap_or_default();
@@ -175,7 +190,7 @@ impl ProjectConfig {
 
     fn serialize(&self, workspace_member: bool) -> Result<String, toml::ser::Error> {
         let source = (self.source != Path::new(DEFAULT_SOURCE)).then_some(self.source.as_path());
-        let source_format = (self.configuration.source_format() != SourceFormat::DesignerXml)
+        let source_format = (self.configuration.source_format() != &SourceFormat::DesignerXml)
             .then_some(source_format_name(self.configuration.source_format()));
         let default_build = BuildSettings::default();
         let build = self.configuration.build_settings();
@@ -197,6 +212,12 @@ impl ProjectConfig {
                 project_type: project_type_name(self.configuration.project_type()),
                 source,
                 source_format,
+            },
+            eska: match self.configuration.source_format() {
+                SourceFormat::DesignerXml => None,
+                SourceFormat::Eska { accepted_base } => Some(SerializedEska {
+                    accepted_base: accepted_base.as_str(),
+                }),
             },
             build,
             vcs: (!workspace_member)
@@ -277,11 +298,43 @@ pub enum ProjectConfigError {
     UnknownSourceFormat {
         value: String,
     },
+    EskaSettingsRequired,
+    UnexpectedEskaSettings,
+    EskaBaseOverlapsSource,
+    UnsupportedEskaProjectType {
+        project_type: ProjectType,
+    },
     InvalidSource {
         path: PathBuf,
         reason: InvalidSourceReason,
     },
     ProjectPath(ProjectPathError),
+}
+
+/// Refuse a format/profile combination before discovery or any platform operation.
+fn validate_profile(
+    project_type: ProjectType,
+    format: &SourceFormat,
+) -> Result<(), ProjectConfigError> {
+    if matches!(format, SourceFormat::Eska { .. }) && project_type != ProjectType::Configuration {
+        return Err(ProjectConfigError::UnsupportedEskaProjectType { project_type });
+    }
+    Ok(())
+}
+
+/// The accepted tree is an input authority, never part of the editable source inventory.
+fn validate_source_layout(source: &Path, format: &SourceFormat) -> Result<(), ProjectConfigError> {
+    if let SourceFormat::Eska { accepted_base } = format {
+        let source: PathBuf = source
+            .components()
+            .filter(|part| *part != Component::CurDir)
+            .collect();
+        let base = accepted_base.as_path();
+        if source.starts_with(base) || base.starts_with(&source) {
+            return Err(ProjectConfigError::EskaBaseOverlapsSource);
+        }
+    }
+    Ok(())
 }
 
 impl From<BuildSettingsError> for ProjectConfigError {
@@ -502,7 +555,7 @@ mod tests {
         assert_eq!(config.source(), Path::new("src"));
         assert_eq!(
             config.configuration().source_format(),
-            SourceFormat::DesignerXml
+            &SourceFormat::DesignerXml
         );
 
         let project = config

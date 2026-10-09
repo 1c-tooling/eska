@@ -371,6 +371,7 @@ fn fail(error: &VersionError, localizer: &Localizer) -> ExitCode {
 
 fn version_error_message(error: &VersionError, localizer: &Localizer) -> String {
     match error {
+        VersionError::SourceFormatUnsupported => localizer.text("source-designer-required"),
         VersionError::Io { path, source } => localizer.format(
             "version-io-error",
             &[

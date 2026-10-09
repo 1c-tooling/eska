@@ -119,6 +119,7 @@ impl DesignerSource {
 /// Resolution failures retain structured context for the future IDE presentation layer.
 #[derive(Debug)]
 pub enum SourceError {
+    SourceFormatUnsupported,
     Discovery(ContextDiscoveryError),
     Selection(SelectionError),
     Io {

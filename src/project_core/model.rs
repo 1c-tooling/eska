@@ -86,8 +86,15 @@ impl ProjectConfiguration {
     }
 
     #[must_use]
-    pub const fn source_format(&self) -> SourceFormat {
-        self.source_format
+    pub const fn source_format(&self) -> &SourceFormat {
+        &self.source_format
+    }
+
+    /// Replace source settings while preserving build and workflow policy.
+    #[must_use]
+    pub fn with_source_format(mut self, format: SourceFormat) -> Self {
+        self.source_format = format;
+        self
     }
 
     #[must_use]
@@ -130,9 +137,23 @@ impl ProjectConfiguration {
 pub use crate::project_core::ProjectType;
 
 /// The on-disk representation of project sources.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SourceFormat {
     DesignerXml,
+    Eska {
+        accepted_base: super::source_format::SourcePath,
+    },
+}
+
+impl SourceFormat {
+    /// Return the stable manifest spelling without treating a baseline path as authority.
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::DesignerXml => "designer-xml",
+            Self::Eska { .. } => "eska",
+        }
+    }
 }
 
 /// Identifies a path field in a project.
@@ -215,7 +236,7 @@ mod tests {
         );
         assert_eq!(
             project.configuration().source_format(),
-            SourceFormat::DesignerXml
+            &SourceFormat::DesignerXml
         );
     }
 

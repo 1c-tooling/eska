@@ -7,7 +7,7 @@ use std::{
 use super::{DesignerSource, SourceError, SourceIoStats};
 use crate::project::metadata_disk_cache::DiskCache;
 use crate::project::{
-    Project, ProjectType, designer_xml,
+    Project, ProjectType, SourceFormat, designer_xml,
     discovery::discover_context,
     metadata_model::{MetadataKind, MetadataObject, MetadataProject, ProjectScope},
     selection::{SelectionIntent, select_projects},
@@ -47,6 +47,12 @@ pub fn open_projects_cached(
         .iter()
         .map(|selected| {
             let project = selected.project().clone();
+            if !matches!(
+                project.configuration().source_format(),
+                SourceFormat::DesignerXml
+            ) {
+                return Err(SourceError::SourceFormatUnsupported);
+            }
             let scope = selected.name().map_or(ProjectScope::Standalone, |name| {
                 ProjectScope::Member(name.clone())
             });

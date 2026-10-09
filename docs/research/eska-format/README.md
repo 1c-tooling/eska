@@ -41,6 +41,9 @@ BSL и ресурсы, составное происхождение метад�
 проверенного snapshot в сборочном callback; raw output сохраняется.
 На установленной 1С проверены предупреждения и ошибка чтения XDTO ресурса;
 при отказе CF/manifest не публикуются. Эти сообщения содержат только путь файла.
+[Выбор источников](project-selection.md) добавляет явные project settings,
+workspace selection и materialization по отдельно переданному pin; XML-only
+операции отказывают для ESKA до чтения оставшихся дескрипторов.
 Небольшой обезличенный корпус находится в
 [`tests/fixtures/eska-format/designer`](../../../tests/fixtures/eska-format/designer).
 Это модельные fixtures: успешное чтение не подтверждает сборку платформой.

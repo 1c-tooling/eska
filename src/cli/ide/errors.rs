@@ -20,6 +20,7 @@ pub(super) fn opening(value: &WorkspaceError) -> Value {
         ))) => "manifest_missing",
         WorkspaceError::Source(SourceError::Discovery(_)) => "manifest_invalid",
         WorkspaceError::Source(SourceError::Selection(_)) => "selection_invalid",
+        WorkspaceError::Source(SourceError::SourceFormatUnsupported) => "source_format_unsupported",
         WorkspaceError::Source(
             SourceError::InvalidRoot { .. }
             | SourceError::MissingRoot
@@ -85,6 +86,9 @@ fn parse(path: &std::path::Path, value: &ParseError) -> Value {
 /// Preserve containment, IO, missing-file and identity distinctions at the boundary.
 fn source(value: &SourceError) -> Value {
     let (kind, reason, path) = match value {
+        SourceError::SourceFormatUnsupported => {
+            ("source_invalid", "source_format_unsupported", None)
+        }
         SourceError::Io { path, source } => (
             if source.kind() == std::io::ErrorKind::NotFound {
                 "source_missing"

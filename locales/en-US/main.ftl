@@ -69,7 +69,12 @@ workspace-member-workflow-unsupported = Configure [vcs.workflow] only in the wor
 workspace-member-artifacts-directory-unsupported = Configure [build].artifacts_directory only in the workspace root, not in { $path }.
 workspace-project-unlisted = Project { $project } belongs to workspace { $workspace } but is not listed in workspace.members.
 project-type-unknown = Unknown project type "{ $value }" in { $path }. Expected: configuration, extension, processing, report.
-project-format-unknown = Unknown source format "{ $value }" in { $path }. Expected: designer-xml.
+project-format-unknown = Unknown source format "{ $value }" in { $path }. Expected: designer-xml, eska.
+project-eska-settings-required = In { $path }, source_format = "eska" requires [eska].accepted_base.
+project-eska-settings-unexpected = The [eska] section in { $path } requires source_format = "eska".
+project-eska-base-overlap = In { $path }, ESKA sources and accepted_base must be in separate, non-overlapping directories.
+project-eska-type-unsupported = In { $path }, the eska format does not yet support "{ $value }". Expected: configuration.
+source-designer-required = This XML operation is unavailable for ESKA sources.
 project-workflow-value-invalid = Invalid workflow policy value "{ $value }" for { $field } in { $path }. Check the documented values and branch naming rules.
 project-workflow-field-missing = Missing workflow policy field { $field } in { $path }. A standalone custom policy must specify all fields; use extends to inherit a preset.
 project-workflow-custom-required = The extends field requires preset = "custom" in { $path }.
@@ -747,6 +752,7 @@ patch-empty = No changed methods; no artifact created.
 patch-built = Patch created: { $output }. BSL and applicability checked; target runtime behavior is unverified. This scenario requires safe mode to be disabled when attaching the extension.
 patch-error-project = Cannot open project
 patch-error-project-type = Patches require a configuration project
+patch-error-source-format = Creating a patch from ESKA sources is not yet supported
 patch-error-repository = Cannot read Git revision
 patch-error-dirty = Worktree must be clean; run eska save and complete any ongoing Git operation
 patch-error-base = Specify --base or configure workflow.integration_target

@@ -15,6 +15,7 @@ pub use project_type::ProjectType;
 
 pub mod config;
 pub mod discovery;
+pub mod eska_source;
 mod model;
 pub mod platform_settings;
 pub mod selection;

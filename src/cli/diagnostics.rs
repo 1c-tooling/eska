@@ -532,30 +532,9 @@ fn config_message(
                 ("value", LocalizationValue::Text(error.value())),
             ],
         ),
-        ProjectConfigError::InvalidBuild(error) => match error {
-            BuildSettingsError::InvalidPlatformVersion { value } => localizer.format(
-                "project-build-version-invalid",
-                &[
-                    (
-                        "path",
-                        LocalizationValue::Text(&path_output::render(path, hyperlinks)),
-                    ),
-                    ("value", LocalizationValue::Text(value)),
-                ],
-            ),
-            BuildSettingsError::InvalidArtifactsDirectory { path, reason } => {
-                let key = match reason {
-                    InvalidArtifactsDirectoryReason::Empty => "project-build-path-empty",
-                    InvalidArtifactsDirectoryReason::Absolute => {
-                        "project-build-path-relative-required"
-                    }
-                    InvalidArtifactsDirectoryReason::ContainsParentTraversal => {
-                        "project-build-path-parent-traversal"
-                    }
-                };
-                configured_path_message(localizer, key, path, manifest_path, hyperlinks)
-            }
-        },
+        ProjectConfigError::InvalidBuild(error) => {
+            configured_build_message(localizer, path, error, hyperlinks)
+        }
         ProjectConfigError::InvalidWorkflow(error) => {
             workflow_message(localizer, path, error, hyperlinks)
         }
@@ -578,6 +557,28 @@ fn config_message(
         ProjectConfigError::UnknownSourceFormat { value } => {
             value_message(localizer, "project-format-unknown", path, value, hyperlinks)
         }
+        ProjectConfigError::EskaSettingsRequired => path_message(
+            localizer,
+            "project-eska-settings-required",
+            path,
+            hyperlinks,
+        ),
+        ProjectConfigError::UnexpectedEskaSettings => path_message(
+            localizer,
+            "project-eska-settings-unexpected",
+            path,
+            hyperlinks,
+        ),
+        ProjectConfigError::EskaBaseOverlapsSource => {
+            path_message(localizer, "project-eska-base-overlap", path, hyperlinks)
+        }
+        ProjectConfigError::UnsupportedEskaProjectType { project_type } => value_message(
+            localizer,
+            "project-eska-type-unsupported",
+            path,
+            project_type.as_str(),
+            hyperlinks,
+        ),
         ProjectConfigError::InvalidSource { path, reason } => {
             let key = match reason {
                 InvalidSourceReason::Empty => "project-path-empty",
@@ -729,6 +730,37 @@ fn value_message(
             ("value", LocalizationValue::Text(value)),
         ],
     )
+}
+
+/// Localize structured build settings independently of source-format validation.
+fn configured_build_message(
+    localizer: &Localizer,
+    manifest_path: &Path,
+    error: &BuildSettingsError,
+    hyperlinks: bool,
+) -> String {
+    match error {
+        BuildSettingsError::InvalidPlatformVersion { value } => localizer.format(
+            "project-build-version-invalid",
+            &[
+                (
+                    "path",
+                    LocalizationValue::Text(&path_output::render(manifest_path, hyperlinks)),
+                ),
+                ("value", LocalizationValue::Text(value)),
+            ],
+        ),
+        BuildSettingsError::InvalidArtifactsDirectory { path, reason } => {
+            let key = match reason {
+                InvalidArtifactsDirectoryReason::Empty => "project-build-path-empty",
+                InvalidArtifactsDirectoryReason::Absolute => "project-build-path-relative-required",
+                InvalidArtifactsDirectoryReason::ContainsParentTraversal => {
+                    "project-build-path-parent-traversal"
+                }
+            };
+            configured_path_message(localizer, key, path, manifest_path, hyperlinks)
+        }
+    }
 }
 
 #[cfg(test)]

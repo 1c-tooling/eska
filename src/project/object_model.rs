@@ -170,6 +170,7 @@ impl ObjectModel {
 /// Structured failures produced while indexing a Designer XML source tree.
 #[derive(Debug)]
 pub enum ObjectModelError {
+    SourceFormatUnsupported,
     Io {
         path: PathBuf,
         source: io::Error,
@@ -201,6 +202,7 @@ impl fmt::Display for ObjectModelError {
     /// Render a locale-independent diagnostic for library callers.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::SourceFormatUnsupported => formatter.write_str("source_format_unsupported"),
             Self::Io { path, source } => write!(formatter, "{}: {source}", path.display()),
             Self::PathOutsideSource { path } => {
                 write!(formatter, "path escapes source: {}", path.display())
@@ -245,6 +247,7 @@ impl std::error::Error for ObjectModelError {
 /// Returns a structured error for unreadable paths, unsafe symlinks, malformed
 /// descriptors, missing identity fields or duplicate stable identities.
 pub fn discover(project: &Project) -> Result<ObjectModel, ObjectModelError> {
+    require_designer(project)?;
     let files = collect_source_files(project.source())?;
     let project_type = project.configuration().project_type();
     let mut objects: BTreeMap<ObjectId, LogicalObject> = BTreeMap::new();
@@ -289,6 +292,7 @@ pub fn discover_affected(
     project: &Project,
     source_paths: &[PathBuf],
 ) -> Result<AffectedObjectModel, ObjectModelError> {
+    require_designer(project)?;
     let source =
         fs::canonicalize(project.source()).map_err(|source_error| ObjectModelError::Io {
             path: project.source().to_owned(),
@@ -350,6 +354,17 @@ pub fn discover_affected(
         descriptors_read,
         issues,
     })
+}
+
+/// Never interpret leftover XML as metadata for an explicitly selected ESKA source.
+const fn require_designer(project: &Project) -> Result<(), ObjectModelError> {
+    if !matches!(
+        project.configuration().source_format(),
+        super::SourceFormat::DesignerXml
+    ) {
+        return Err(ObjectModelError::SourceFormatUnsupported);
+    }
+    Ok(())
 }
 
 /// Resolve the minimal descriptor ancestry needed to identify changed paths.

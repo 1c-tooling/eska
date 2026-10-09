@@ -286,7 +286,7 @@ fn resolve_member_configuration(
     .map_err(ContextDiscoveryError::ResolvedBuild)?;
     let mut configuration = ProjectConfiguration::new(
         member.configuration().project_type(),
-        member.configuration().source_format(),
+        member.configuration().source_format().clone(),
     )
     .with_build_settings(build);
     if let Some(workflow) = workspace.workflow_settings() {

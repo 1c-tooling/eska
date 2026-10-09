@@ -402,7 +402,7 @@ message и kind стабильны и не локализуются. details —
 | --- | --- |
 | unsupported_version | requested, supported версии |
 | invalid_state / workspace_already_open | state |
-| project_open_failed | reason: manifest_missing, manifest_invalid, selection_invalid, source_invalid, root_invalid; path? |
+| project_open_failed | reason: manifest_missing, manifest_invalid, selection_invalid, source_invalid, source_format_unsupported, root_invalid; path? |
 | unknown_session / unknown_project | запрошенный token |
 | unknown_node / unknown_object | node или objectId |
 | source_missing / source_invalid / xml_invalid | path?, objectId?, reason; без содержимого файла |

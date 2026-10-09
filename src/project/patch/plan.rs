@@ -1,7 +1,7 @@
 //! Committed patch planning and a deliberately narrow common-module support gate.
 
 use super::{PatchChange, PatchError, PatchModule, PatchPlan};
-use crate::project::{Project, ProjectType};
+use crate::project::{Project, ProjectType, SourceFormat};
 use crate::vcs::{repository::Repository, status::Change};
 use gix::{ObjectId, bstr::ByteSlice};
 use std::{
@@ -20,6 +20,12 @@ struct ClassifiedChanges {
 /// # Errors
 /// Returns a structured error for dirty worktrees, ambiguous history or unsupported source input.
 pub fn plan(project: &Project, base: Option<&str>) -> Result<PatchPlan, PatchError> {
+    if !matches!(
+        project.configuration().source_format(),
+        SourceFormat::DesignerXml
+    ) {
+        return Err(PatchError::new("source-format", ""));
+    }
     if project.configuration().project_type() != ProjectType::Configuration {
         return Err(PatchError::new("project-type", ""));
     }

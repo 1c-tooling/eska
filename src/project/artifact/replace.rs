@@ -11,7 +11,7 @@ use super::{
 };
 use crate::{
     config::ProjectConfig,
-    project::Project,
+    project::{Project, SourceFormat},
     vcs::repository::{Error as RepositoryError, Repository},
 };
 
@@ -35,6 +35,12 @@ impl ImportPlan {
     /// # Errors
     /// Rejects root-level sources, symlinks, nested projects and unreadable source/Git state.
     pub fn inspect(project: &Project) -> Result<Self, ArtifactError> {
+        if !matches!(
+            project.configuration().source_format(),
+            SourceFormat::DesignerXml
+        ) {
+            return Err(ArtifactError::SourceFormatUnsupported);
+        }
         validate_location(project)?;
         let config_path = project.root().join(crate::config::FILE_NAME);
         let config = fs::read(&config_path).map_err(|error| io_error(&config_path, error))?;

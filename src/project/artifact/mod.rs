@@ -17,6 +17,7 @@ pub use unpack::PreparedArtifact;
 /// Import failures retain their operation and affected path without presentation text.
 #[derive(Debug)]
 pub enum ArtifactError {
+    SourceFormatUnsupported,
     Io {
         path: PathBuf,
         source: io::Error,
