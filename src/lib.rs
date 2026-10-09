@@ -12,7 +12,11 @@ pub mod cli;
 pub mod config;
 #[cfg(feature = "legacy")]
 pub mod project;
+#[cfg(feature = "project-cli")]
+pub mod project_cli;
 pub mod project_core;
+#[cfg(feature = "tool-cli")]
+pub mod tool_cli;
 #[cfg(feature = "legacy")]
 mod update;
 #[cfg(feature = "legacy")]

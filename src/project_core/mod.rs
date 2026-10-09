@@ -15,6 +15,7 @@ pub use metadata_kind::{MetadataKind, UnknownMetadataKind};
 pub use project_type::ProjectType;
 
 pub mod config;
+pub mod creation;
 pub mod discovery;
 pub mod eska_source;
 mod model;

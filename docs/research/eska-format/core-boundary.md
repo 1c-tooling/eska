@@ -75,8 +75,9 @@ native snapshot до открытия ИБ; schema 2 manifest записывае
 Проверенная конфигурация и ленивый project adapter уже подключены к общей
 discovery/selection. Expected baseline digest приходит отдельно от настроек;
 обычный build не принимает ESKA без protected proof даже при подстановке XML path.
-Следующие части EF-10: byte-safe Git transport и самостоятельные project/build
-точки входа. Проверка границ зависимостей
+[Byte-preserving transport](git-transport.md) и
+[самостоятельная project точка входа](project-cli.md) уже используют это ядро.
+Следующая часть EF-10 — сборочный CLI. Проверка границ зависимостей
 повторяется для каждого готового потребителя, не только для общей библиотеки.
 
 Проверки прошли в обеих сборках: fmt/check/strict Clippy, 332 unit и 529

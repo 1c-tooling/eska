@@ -1,4 +1,4 @@
-//! Supported locales and the CLI/environment/system selection policy.
+//! Shared supported locales and the CLI/environment/system selection policy.
 
 use std::{
     env,

@@ -8,16 +8,24 @@ use super::Locale;
 
 const EN_US_RESOURCES: &[&str] = &[
     include_str!("../../../locales/en-US/main.ftl"),
+    #[cfg(feature = "legacy")]
     include_str!("../../../locales/en-US/platform-8.3.27.ftl"),
+    #[cfg(feature = "legacy")]
     include_str!("../../../locales/en-US/platform-8.5.1.ftl"),
+    #[cfg(feature = "legacy")]
     include_str!("../../../locales/en-US/platform-values.ftl"),
+    #[cfg(feature = "legacy")]
     include_str!("../../../locales/en-US/platform-presentation.ftl"),
 ];
 const RU_RU_RESOURCES: &[&str] = &[
     include_str!("../../../locales/ru-RU/main.ftl"),
+    #[cfg(feature = "legacy")]
     include_str!("../../../locales/ru-RU/platform-8.3.27.ftl"),
+    #[cfg(feature = "legacy")]
     include_str!("../../../locales/ru-RU/platform-8.5.1.ftl"),
+    #[cfg(feature = "legacy")]
     include_str!("../../../locales/ru-RU/platform-values.ftl"),
+    #[cfg(feature = "legacy")]
     include_str!("../../../locales/ru-RU/platform-presentation.ftl"),
 ];
 
@@ -85,7 +93,8 @@ impl Localizer {
     }
 
     /// Resolve an open-ended catalog key without treating future platform fields as errors.
-    pub(super) fn optional_text(&self, key: &str) -> Option<String> {
+    #[cfg(feature = "legacy")]
+    pub(crate) fn optional_text(&self, key: &str) -> Option<String> {
         self.bundle.get_message(key)?.value()?;
         Some(self.text(key))
     }

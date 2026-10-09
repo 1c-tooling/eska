@@ -445,14 +445,22 @@ raw bytes и прежние callbacks сохраняются. Проверенн
 готовит scoped byte-preserving attributes с expected-byte публикацией без Git;
 clean checkout, BOM/CRLF, filters, quoting и empty native directories проверены.
 Эффективная Git policy и higher-priority overrides остаются границей EF-19.
-Следующие части — самостоятельные проектная и сборочная точки входа.
+[Самостоятельный eska-project](../research/eska-format/project-cli.md) создаёт
+полный проект из XML, читает настройки, материализует защищённое поколение
+и публикует transport plan. Общая CLI presentation сохраняет ru/en и отдельный
+machine protocol; project-only graph содержит 66 packages без платформы,
+Git engine, HTTP или IDE runtime. Реальный C1 принят без этих инструментов:
+8 778 файлов и 8 077 каталогов, 2 645 owners; контекст поколения совпал с
+платформенной приёмкой. Девять CLI integration tests прошли, включая pin,
+strict refusal, cache recreation и workspace inheritance.
+Следующая часть — самостоятельная сборочная точка входа.
 Маршрут ESKA → prepared snapshot → CF → новая выгрузка C1 принят:
 8 769 файлов/8 064 каталога совпали с контролем, исключение — только
 проверенные служебные configVersion. Все остальные байты равны.
 Minimal library compile graph не содержит
 gix, HTTP, CLI, TTY или IDE runtime. Это подготовка текущих потребителей;
-конфигурация ESKA и discovery уже доступны, build использует prepared SDK route;
-самостоятельные инструменты ещё не подключены. Этап остаётся `IN-PROGRESS`.
+конфигурация ESKA и discovery доступны, project CLI работает самостоятельно,
+build пока использует prepared SDK route. Этап остаётся `IN-PROGRESS`.
 
 ## EF-11 Explorer и инструменты BSL
 

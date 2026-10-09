@@ -58,14 +58,16 @@ ESKA project config не превращает текущий YAML в XML для 
 native build, import из CF, version/bump, patch, metadata/IDE opening и XML
 object/semantic readers. Они не используют оставшийся XML. Human ошибки
 локализованы в ru/en; добавленные machine codes не зависят от locale.
-Самостоятельные project/build CLI и делегирование оболочки ещё не подключены.
+[Самостоятельный project CLI](project-cli.md) использует эту discovery/selection;
+сборочный CLI и делегирование оболочки ещё не подключены.
 
 База содержит [byte-preserved blobs](ef-09-results.md). До помещения в Git
 её `blobs/**` требуют `-text -filter`; стандартное `* text=auto` изменяет
 байты некоторых BSL. Protected export отвергает изменённые блоки по pin/hash.
 Общий [transport plan](git-transport.md) готовит scoped attributes для source/base
-с exact-byte preview и публикацией. Project CLI подключит его при создании
-проекта; библиотека не запускает Git. Эффективную policy проверит VCS-инструмент.
+с exact-byte preview и публикацией. Project CLI применяет его при создании
+проекта и предоставляет отдельную команду `transport`; библиотека не запускает
+Git. Эффективную policy проверит VCS-инструмент.
 
 В экспериментальном Rust API `SourceFormat::Eska` несёт проверенный
 `accepted_base`, enum больше не Copy, getter возвращает reference.

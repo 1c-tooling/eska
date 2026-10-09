@@ -16,28 +16,39 @@ name = "eska"
 path = "src/main.rs"
 required-features = ["legacy"]
 
+[[bin]]
+name = "eska-project"
+path = "src/bin/eska-project.rs"
+required-features = ["project-cli"]
+
 [[test]]
 name = "integration"
 path = "tests/integration.rs"
 required-features = ["legacy"]
 
+[[test]]
+name = "project_tool"
+path = "tests/project_tool.rs"
+required-features = ["project-cli"]
+
 [features]
 default = ["legacy"]
 # Native platform infrastructure is optional for source-only consumers.
 build = ["dep:ctrlc"]
+# Human/JSON presentation is shared by tools, independent of the installed application.
+tool-cli = ["dep:clap", "dep:fluent", "dep:sys-locale"]
+project-cli = ["tool-cli"]
 # Preserve the existing installed application while smaller tools use only shared cores.
 legacy = [
     "build",
+    "tool-cli",
     "dep:axoupdater",
     "dep:reqwest",
     "dep:semver",
     "dep:tokio",
-    "dep:clap",
     "dep:crossterm",
     "dep:directories",
-    "dep:fluent",
     "dep:gix",
-    "dep:sys-locale",
     "dep:unicode-general-category",
     "dep:toml_edit",
     "dep:base64",
