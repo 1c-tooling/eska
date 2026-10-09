@@ -7,9 +7,9 @@ use std::path::Path;
 
 use crate::project_core::source_format::{MappedFile, SourceMap, SourcePath};
 
-/// Match an ibcmd `File:` address to exactly one file in a caller-verified source map.
+/// Match an observed ibcmd file address to exactly one file in a caller-verified source map.
 ///
-/// The accepted grammar is a bracketed level followed by `File: <absolute path>, <message>`.
+/// Accepted ibcmd forms are `File: <absolute path>, <message>` and the observed XDTO read error.
 /// Only paths inside the exact snapshot root participate. Commas inside filenames can make
 /// a line ambiguous; this method never guesses between two known file prefixes. Unsupported
 /// output/encoding produces no annotation and must remain visible to the caller.
@@ -25,15 +25,27 @@ pub fn locate_output_file<'a>(
     let text = std::str::from_utf8(line)
         .ok()?
         .trim_end_matches(['\r', '\n']);
-    let (level, address) = text.strip_prefix('[')?.split_once("] File: ")?;
+    let (level, message) = text.strip_prefix('[')?.split_once("] ")?;
     if !matches!(level, "WARN" | "ERROR" | "FATAL") {
         return None;
     }
+    let (address, delimiter) = if let Some(address) = message.strip_prefix("File: ") {
+        (address, ", ")
+    } else if level == "ERROR" {
+        let address = message
+            .strip_prefix("XDTO exception while reading file ")
+            .or_else(|| {
+                message.strip_prefix("An error occurred while importing the configuration from XML XDTO exception while reading file ")
+            })?;
+        (address, ". Error converting XDTO data: ")
+    } else {
+        return None;
+    };
     let root = native_root.to_str()?.trim_end_matches(['/', '\\']);
     let relative = address.strip_prefix(root)?.strip_prefix(['/', '\\'])?;
     let relative = relative.replace('\\', "/");
     let mut result = None;
-    for (index, _) in relative.match_indices(", ") {
+    for (index, _) in relative.match_indices(delimiter) {
         let Ok(path) = SourcePath::parse(&relative[..index]) else {
             continue;
         };

@@ -146,3 +146,39 @@ fn comma_filenames_are_matched_only_when_unambiguous() {
         "a,b.xml"
     );
 }
+
+#[test]
+/// The installed platform's direct and wrapped XDTO failures identify a resource without columns.
+fn observed_xdto_errors_map_the_named_resource_and_reject_unrecognized_wrappers() {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("snapshot");
+    let path = "Catalogs/Sample/Forms/Main/Ext/Form.xml";
+    let map = map(&[path]);
+    let diagnostic = format!(
+        "XDTO exception while reading file {}/{path}. Error converting XDTO data: Value: invalid\tType: {{http://www.w3.org/2001/XMLSchema}}decimal Error transforming XML data",
+        root.display()
+    );
+    for prefix in [
+        "",
+        "An error occurred while importing the configuration from XML ",
+    ] {
+        let line = format!("[ERROR] {prefix}{diagnostic}\n");
+        assert_eq!(
+            locate_output_file(&map, &root, line.as_bytes())
+                .expect("observed XDTO address")
+                .path
+                .as_str(),
+            path
+        );
+    }
+    for line in [
+        format!("[WARN] {diagnostic}"),
+        format!("[ERROR] unknown wrapper {diagnostic}"),
+        format!(
+            "[ERROR] {}",
+            diagnostic.replace(". Error converting XDTO data: ", ". Unexpected text: ")
+        ),
+    ] {
+        assert!(locate_output_file(&map, &root, line.as_bytes()).is_none());
+    }
+}
