@@ -67,6 +67,54 @@ impl<'a> Properties<'a> {
             .transpose()
     }
 
+    /// Lengths are unsigned source values; malformed explicit values cannot become absent defaults.
+    pub fn unsigned(&self, name: &str) -> Result<Option<u32>, AdapterError> {
+        self.field(name)?
+            .map(|field| {
+                let MetadataValue::Text(text) = &field.property.value else {
+                    return Err(Self::invalid(field));
+                };
+                text.parse().map_err(|_| Self::invalid(field))
+            })
+            .transpose()
+    }
+
+    /// Ordered metadata-reference lists retain every item and reject foreign or malformed entries.
+    pub fn references(&self, name: &str) -> Result<Vec<&'a str>, AdapterError> {
+        const READABLE: &str = "http://v8.1c.ru/8.3/xcf/readable";
+        let Some(field) = self.field(name)? else {
+            return Ok(Vec::new());
+        };
+        let entries = match &field.property.value {
+            MetadataValue::Record(entries) => entries,
+            MetadataValue::Text(text) if text.is_empty() => return Ok(Vec::new()),
+            _ => return Err(Self::invalid(field)),
+        };
+        entries
+            .iter()
+            .map(|entry| {
+                if entry.key.name != "Item"
+                    || !matches!(
+                        entry.key.namespace.as_deref(),
+                        Some(MD_NAMESPACE | READABLE)
+                    )
+                {
+                    return Err(Self::invalid(field));
+                }
+                match &entry.value {
+                    MetadataValue::Text(text) => Ok(text.as_str()),
+                    MetadataValue::TypedText { text, key }
+                        if key.namespace.as_deref() == Some(READABLE)
+                            && key.name == "MDObjectRef" =>
+                    {
+                        Ok(text.as_str())
+                    }
+                    _ => Err(Self::invalid(field)),
+                }
+            })
+            .collect()
+    }
+
     /// Address a field failure at its original qualified-property range.
     pub fn invalid(field: &LocatedProperty) -> AdapterError {
         AdapterError {

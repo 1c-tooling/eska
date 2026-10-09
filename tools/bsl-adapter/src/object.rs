@@ -1,0 +1,159 @@
+//! Object models combine source fields with the pinned platform's standard-attribute catalogue.
+
+mod standard;
+#[cfg(test)]
+mod tests;
+
+use bsl_metadata::{
+    AttributeType, MdoType, MetadataObject,
+    enums::CodeSeries,
+    metadata_object::Attribute,
+    tabular_section::{TabularSection, TabularSectionAttribute},
+};
+use bsl_platform::MdoTemplateKind;
+use eska::project_core::{
+    MetadataKind,
+    metadata_parser::{ParsedDescriptor, ParsedObject},
+};
+
+use crate::{AdapterError, AdapterIssue, attribute_type, identity, properties::Properties};
+
+/// Convert supported object descriptors, including typed attributes and ordered tabular sections.
+///
+/// # Errors
+/// Returns unsupported kinds, incomplete descriptors, invalid identities or unsupported field values.
+pub fn metadata_object(descriptor: &ParsedDescriptor) -> Result<MetadataObject, AdapterError> {
+    let root = identity::descriptor_root(descriptor)?;
+    let (kind, template) = match root.metadata.kind() {
+        MetadataKind::Catalog => (MdoType::Catalog, Some(MdoTemplateKind::Catalog)),
+        MetadataKind::Document => (MdoType::Document, Some(MdoTemplateKind::Document)),
+        MetadataKind::DataProcessor => (MdoType::DataProcessor, None),
+        MetadataKind::Report => (MdoType::Report, None),
+        actual => {
+            return Err(AdapterError {
+                issue: AdapterIssue::WrongKind { actual },
+                range: root.range.clone(),
+            });
+        }
+    };
+    let fields = Properties::new(root)?;
+    let (belonging, extends) = identity::ownership(&fields)?;
+    let mut model = MetadataObject::new(kind, root.metadata.name());
+    model.set_uuid(identity::uuid(root)?);
+    model.set_object_belonging(belonging);
+    if let Some(uuid) = extends {
+        model.set_extends_uuid(uuid);
+    }
+    model.set_check_unique(fields.boolean("CheckUnique")?.unwrap_or(false));
+    if let Some(field) = fields.field("CodeSeries")? {
+        model.set_code_series(match fields.text("CodeSeries")? {
+            Some("WholeCatalog" | "WholeCharacteristicKind" | "WholeChartOfAccounts") => {
+                CodeSeries::WholeCatalog
+            }
+            Some("WithinSubordination") => CodeSeries::WithinSubordination,
+            Some("WithinOwnerSubordination" | "WithinOwner") => {
+                CodeSeries::WithinOwnerSubordination
+            }
+            _ => return Err(Properties::invalid(field)),
+        });
+    }
+    if let Some(template) = template {
+        model.attributes = standard::attributes(root, kind, template)?;
+    }
+    if kind == MdoType::Document {
+        model.register_records = fields
+            .references("RegisterRecords")?
+            .into_iter()
+            .map(|value| {
+                let reference = standard::reference(root, "RegisterRecords", value)?;
+                if matches!(
+                    reference.0,
+                    MdoType::InformationRegister
+                        | MdoType::AccumulationRegister
+                        | MdoType::AccountingRegister
+                        | MdoType::CalculationRegister
+                ) {
+                    Ok(reference)
+                } else {
+                    Err(standard::invalid_reference(root, "RegisterRecords"))
+                }
+            })
+            .collect::<Result<_, _>>()?;
+    }
+    for child in children(descriptor, root) {
+        match child.metadata.kind() {
+            MetadataKind::Attribute | MetadataKind::Dimension | MetadataKind::Resource => {
+                identity::uuid(child)?;
+                model.add_attribute(Attribute {
+                    name: child.metadata.name().into(),
+                    name_en: None,
+                    attr_type: required_type(child)?,
+                });
+            }
+            MetadataKind::TabularSection => {
+                model.add_tabular_section(tabular_section(descriptor, child)?);
+            }
+            _ => {}
+        }
+    }
+    Ok(model)
+}
+
+/// Direct parent identity distinguishes a tabular field from a same-named object attribute.
+fn children<'a>(
+    descriptor: &'a ParsedDescriptor,
+    parent: &'a ParsedObject,
+) -> impl Iterator<Item = &'a ParsedObject> {
+    descriptor
+        .objects
+        .iter()
+        .filter(|child| child.metadata.parent() == Some(parent.metadata.id()))
+}
+
+/// An explicit user field needs a type; absence never becomes a guessed `Unknown`.
+fn required_type(object: &ParsedObject) -> Result<AttributeType, AdapterError> {
+    let fields = Properties::new(object)?;
+    let field = fields.field("Type")?.ok_or_else(|| AdapterError {
+        issue: AdapterIssue::MissingProperty {
+            name: "Type".into(),
+        },
+        range: object.range.clone(),
+    })?;
+    attribute_type(field)
+}
+
+/// Retain source section/column UUIDs and use a real localized caption rather than XML whitespace.
+fn tabular_section(
+    descriptor: &ParsedDescriptor,
+    object: &ParsedObject,
+) -> Result<TabularSection, AdapterError> {
+    let fields = Properties::new(object)?;
+    let mut section = TabularSection::new(identity::uuid(object)?, object.metadata.name());
+    // The kernel has one caption slot; the shared source model retains every language.
+    let synonym = object
+        .synonyms
+        .iter()
+        .find(|value| value.language == "ru")
+        .or_else(|| object.synonyms.first())
+        .map(|value| value.content.clone());
+    section.set_synonym(synonym);
+    section.set_use_mode(fields.text("Use")?.map(str::to_owned));
+    let mut attributes = Vec::new();
+    for child in children(descriptor, object) {
+        if child.metadata.kind() != MetadataKind::Attribute {
+            return Err(AdapterError {
+                issue: AdapterIssue::WrongKind {
+                    actual: child.metadata.kind(),
+                },
+                range: child.range.clone(),
+            });
+        }
+        attributes.push(TabularSectionAttribute::new(
+            identity::uuid(child)?,
+            child.metadata.name(),
+            required_type(child)?,
+        ));
+    }
+    section.set_attributes(attributes);
+    Ok(section)
+}

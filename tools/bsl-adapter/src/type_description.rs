@@ -14,6 +14,7 @@ use crate::{AdapterError, AdapterIssue, properties::Properties};
 const CORE: &str = "http://v8.1c.ru/8.1/data/core";
 const CONFIG: &str = "http://v8.1c.ru/8.1/data/enterprise/current-config";
 const SCHEMA: &str = "http://www.w3.org/2001/XMLSchema";
+const COMPOSITION_SETTINGS: &str = "http://v8.1c.ru/8.1/data-composition-system/settings";
 
 /// Convert one complete Type property; unsupported alternatives fail rather than disappear.
 ///
@@ -365,6 +366,17 @@ fn single_type(key: &PropertyKey, qualifiers: &Qualifiers) -> Option<AttributeTy
     }
     if namespace == CONFIG {
         return configuration_type(name);
+    }
+    if namespace == COMPOSITION_SETTINGS {
+        return match name {
+            "SettingsComposer" => {
+                Some(AttributeType::Platform(PlatformValueType::SettingsComposer))
+            }
+            "Filter" => Some(AttributeType::Platform(
+                PlatformValueType::DataCompositionFilter,
+            )),
+            _ => None,
+        };
     }
     if !namespace
         .strip_prefix("http://v8.1c.ru/")

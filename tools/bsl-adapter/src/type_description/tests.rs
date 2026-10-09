@@ -63,6 +63,36 @@ fn type_identity_uses_resolved_namespace_and_local_name() {
     assert_eq!(converted(&canonical).unwrap(), converted(&default).unwrap());
 }
 
+/// Composition settings have their own namespace and must not depend on the legacy XML prefix.
+#[test]
+fn composition_settings_types_use_exact_namespace_identity() {
+    let text = xml(
+        "<Type xmlns:dcsset='http://v8.1c.ru/8.1/data-composition-system/settings'><v8:Type>dcsset:SettingsComposer</v8:Type><v8:Type>dcsset:Filter</v8:Type></Type>",
+    );
+    let canonical = converted(&text).unwrap();
+    assert_eq!(
+        canonical,
+        bsl_metadata::xml_parser::parse_defined_type_xml(&text).unwrap()
+    );
+    assert_eq!(
+        canonical,
+        converted(&text.replace("dcsset", "alias")).unwrap()
+    );
+    let foreign = text.replace(
+        "http://v8.1c.ru/8.1/data-composition-system/settings",
+        "urn:foreign",
+    );
+    assert!(matches!(
+        converted(&foreign).unwrap_err().issue,
+        AdapterIssue::UnsupportedType { .. }
+    ));
+    let unknown = text.replace("SettingsComposer", "FutureSettings");
+    assert!(matches!(
+        converted(&unknown).unwrap_err().issue,
+        AdapterIssue::UnsupportedType { .. }
+    ));
+}
+
 /// An unbound or rebound prefix cannot acquire a schema or platform catalog type by spelling.
 #[test]
 fn foreign_and_unresolved_type_names_are_explicit_failures() {

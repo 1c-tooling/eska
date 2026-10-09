@@ -1,0 +1,134 @@
+{
+  "reference_head": "9021ba07471eee8a2614bed2105a2c8699f60780",
+  "gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.11080918600055156
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.19583055300608976
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.3987526480050292
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 0.9880689530036761
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 0.5119447600009153
+    },
+    {
+      "gate": "example",
+      "exit_code": 0,
+      "seconds": 37.85940154799755
+    }
+  ],
+  "tests": {
+    "unit": 30,
+    "integration": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  "corpora": [
+    {
+      "corpus": "c1",
+      "exit_code": 2,
+      "result": {
+        "attributes": 2138,
+        "caption_differences": 135,
+        "comparison": "all-fields-except-tabular-caption",
+        "object_scope_complete": false,
+        "objects_by_kind": {
+          "catalog": 86,
+          "data-processor": 69,
+          "document": 32,
+          "report": 44
+        },
+        "seconds": 2.875973716,
+        "semantic_model_parity": true,
+        "tabular_columns": 716,
+        "tabular_sections": 135,
+        "unsupported": {
+          "UnsupportedType { key: PropertyKey { namespace: Some(\"http://v8.1c.ru/8.1/data/enterprise/current-config\"), name: \"AnyRef\" } }": 1
+        },
+        "xml_exported": false
+      }
+    },
+    {
+      "corpus": "c2",
+      "exit_code": 0,
+      "result": {
+        "attributes": 27151,
+        "caption_differences": 2254,
+        "comparison": "all-fields-except-tabular-caption",
+        "object_scope_complete": true,
+        "objects_by_kind": {
+          "catalog": 743,
+          "data-processor": 385,
+          "document": 439,
+          "report": 722
+        },
+        "seconds": 63.592108978,
+        "semantic_model_parity": true,
+        "tabular_columns": 16529,
+        "tabular_sections": 2254,
+        "unsupported": {},
+        "xml_exported": false
+      }
+    },
+    {
+      "corpus": "c3",
+      "exit_code": 0,
+      "result": {
+        "attributes": 37703,
+        "caption_differences": 3096,
+        "comparison": "all-fields-except-tabular-caption",
+        "object_scope_complete": true,
+        "objects_by_kind": {
+          "catalog": 1010,
+          "data-processor": 440,
+          "document": 629,
+          "report": 916
+        },
+        "seconds": 87.409758848,
+        "semantic_model_parity": true,
+        "tabular_columns": 22547,
+        "tabular_sections": 3096,
+        "unsupported": {},
+        "xml_exported": false
+      }
+    }
+  ],
+  "source_sha256": {
+    "tools/bsl-adapter/Cargo.toml": "f4ab3fbdbcac0be40d7a0e12b0d5a3a03c2f15b042d94bad0d47c44ea51337eb",
+    "tools/bsl-adapter/Cargo.lock": "c200f1099ad84da5279fb34e9334cfe264d2da219ce21a5c0099e5f1d86a014c",
+    "tools/bsl-adapter/src/lib.rs": "6c1f2458eb8bc059d5b802043e8b5439800396df4d550369ddd945e4df10bf6b",
+    "tools/bsl-adapter/src/identity.rs": "da2ee0f51c3d33131d333db8f04a9c80f44ba9f6268e50fc4b1337d35447b077",
+    "tools/bsl-adapter/src/common_module.rs": "0cea26111a1dbd2bf9d8ba860b0bbb2214b2c8b08234ef612ab42c45d5fd9ce9",
+    "tools/bsl-adapter/src/register.rs": "e1b5a84c7c02424a8c59ab8a0a9e2f3d7589273f603436ce8782641d5ca0e79a",
+    "tools/bsl-adapter/src/object.rs": "617190239a3b96e96d112e07561d8b31137a9d091d451067adde4c2ea524b0a1",
+    "tools/bsl-adapter/src/object/standard.rs": "ea9546a93e7785de984834167263d20b1a5725e997ea3cd954904c5cc6d8efa9",
+    "tools/bsl-adapter/src/object/tests.rs": "e3ae4db058c7e99bc981ff1f187899356fe6c2c8b41abc6ad320c8151815e193",
+    "tools/bsl-adapter/src/properties.rs": "4d04f6d71b9d1c16009f9a377bc1d1409b6aca0172611b71bb886ddeb83cc6a2",
+    "tools/bsl-adapter/src/type_description.rs": "f72ca47101e9a3bdc3e5df553bcc4bbd7e3c0b3291e0ace3959cd4655a7ec537",
+    "tools/bsl-adapter/src/type_description/tests.rs": "2cd1d4f49551f9efd3e27fa5d61afebbb10fc113158947a2bf4ea3fb11df2600",
+    "tools/bsl-adapter/tests/object_inputs.rs": "e9415b279c9ff317bbc87f0c4112d5942f5a93112cd4a9a92060fdad73c09537",
+    "tools/bsl-adapter/tests/metadata_inputs.rs": "b57074d4d5d77da81d50f6fe39933b43283fb211ec33d391f7802ab631caede3",
+    "tools/bsl-adapter/tests/simple_inputs.rs": "83eb769f066d6944f7454fa661b8673c86a7c4c2cc29a1019eb8652250f49d87",
+    "tools/bsl-adapter/tests/support/mod.rs": "3e3dcceea1cab3f9c477cfad7a8a7a357024d6dd463a58d4c4b75d11e44eb495",
+    "tools/bsl-adapter/examples/project_objects.rs": "9833150a3fcd459d7b7b86177b413f1861a66c3b657e0f47609c815c6e402d73"
+  },
+  "runtime_path": "empty",
+  "coverage": "catalogs-documents-processors-reports-main-descriptors",
+  "profile": "release-optimized",
+  "production_analyzer": false
+}

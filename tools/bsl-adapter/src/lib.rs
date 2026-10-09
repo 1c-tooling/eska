@@ -3,6 +3,7 @@
 mod common_module;
 mod defined_type;
 mod identity;
+mod object;
 mod properties;
 mod register;
 mod simple_object;
@@ -10,6 +11,7 @@ mod type_description;
 
 pub use common_module::common_module;
 pub use defined_type::defined_type;
+pub use object::metadata_object;
 pub use register::register;
 pub use simple_object::{constant_object, enum_object};
 pub use type_description::attribute_type;
