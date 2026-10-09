@@ -120,7 +120,12 @@ fn declared_module_reads_preserve_bytes_and_keep_missing_and_binary_inputs_expli
         .clone();
     for value in [
         "Catalogs/Sample/Forms/Main/Ext/Form/Module.bin",
+        "Catalogs/Sample/Commands/Run/Ext/CommandModule.bsl",
+        "Catalogs/Sample/Commands/Protected/Ext/CommandModule.bin",
         "Catalogs/Sample/Extra/Ext/Module.bsl",
+        "Catalogs/Sample/Commands/Run/Extra/Ext/CommandModule.bsl",
+        "Catalogs/Undeclared/Commands/Run/Ext/CommandModule.bsl",
+        "Catalogs/Sample/Commands/Run/Ext/Module.bsl",
     ] {
         let mut added = entry.clone();
         added.path = SourcePath::parse(value).unwrap();
@@ -140,6 +145,32 @@ fn declared_module_reads_preserve_bytes_and_keep_missing_and_binary_inputs_expli
         reader.read_module_text(&binary, 1024).unwrap_err().code,
         "source_module_binary"
     );
+    for extension in ["bsl", "bin"] {
+        let command = if extension == "bsl" {
+            "Run"
+        } else {
+            "Protected"
+        };
+        let path = SourcePath::parse(&format!(
+            "Catalogs/Sample/Commands/{command}/Ext/CommandModule.{extension}"
+        ))
+        .unwrap();
+        let identity = reader.declared_module(&path).unwrap();
+        assert_eq!(identity.owner, &catalog());
+        assert_eq!(identity.native_descriptor.as_str(), "Catalogs/Sample.xml");
+        assert_eq!(identity.binary, extension == "bin");
+    }
+    for value in [
+        "Catalogs/Sample/Commands/Run/Extra/Ext/CommandModule.bsl",
+        "Catalogs/Undeclared/Commands/Run/Ext/CommandModule.bsl",
+        "Catalogs/Sample/Commands/Run/Ext/Module.bsl",
+    ] {
+        assert!(
+            reader
+                .declared_module(&SourcePath::parse(value).unwrap())
+                .is_none()
+        );
+    }
     let stray = SourcePath::parse("Catalogs/Sample/Extra/Ext/Module.bsl").unwrap();
     assert!(reader.declared_module(&stray).is_none());
     assert_eq!(

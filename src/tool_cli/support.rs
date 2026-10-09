@@ -1,7 +1,9 @@
 //! Shared argument presentation and locale-independent tool envelopes; no business operations.
 
 use super::localization::{LocalizationValue, Localizer};
-use crate::project_core::source_format::{AcceptedRef, Error};
+#[cfg(any(feature = "project-cli", feature = "build-cli"))]
+use crate::project_core::source_format::AcceptedRef;
+use crate::project_core::source_format::Error;
 use clap::{ArgMatches, Command, error::ErrorKind};
 use serde_json::{Value, json};
 use std::{
@@ -27,6 +29,7 @@ pub struct Failure {
 
 impl Failure {
     /// Construct a stable failure without embedding a human-language message in JSON.
+    #[must_use]
     pub const fn new(code: &'static str) -> Self {
         Self {
             code,
@@ -36,6 +39,7 @@ impl Failure {
     }
 
     /// Attach a filesystem or selector coordinate without changing the core error code.
+    #[must_use]
     pub fn at(mut self, location: impl Into<String>) -> Self {
         self.location.push(location.into());
         self
@@ -120,6 +124,9 @@ pub fn localize(mut command: Command, localizer: &Localizer, prefix: &str) -> Co
 }
 
 /// Parse safely: help/version succeed, other argument failures use the tool's stable envelope.
+///
+/// # Errors
+/// Returns the already-presented exit code for help, version, invalid arguments or output failure.
 pub fn parse(
     command: Command,
     args: Vec<OsString>,
@@ -157,6 +164,7 @@ pub fn parse(
 }
 
 /// Resolve an independent caller pin; editable project TOML cannot approve its own baseline.
+#[cfg(any(feature = "project-cli", feature = "build-cli"))]
 pub fn accepted_ref(explicit: Option<&str>) -> Result<AcceptedRef, Failure> {
     let environment = std::env::var("ESKA_ACCEPTED_BASE_SHA256").ok();
     let value = explicit
@@ -171,6 +179,7 @@ pub fn accepted_ref(explicit: Option<&str>) -> Result<AcceptedRef, Failure> {
 }
 
 /// Write a success envelope only after the owning operation has completed.
+#[cfg(any(feature = "project-cli", feature = "build-cli"))]
 pub fn emit_success(
     tool: &str,
     command: &str,
@@ -232,6 +241,8 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         "source_format_mismatch" => Some("tool-error-format"),
         "project_selection_failed" => Some("tool-error-selection"),
         "project_discovery_failed" => Some("tool-error-discovery"),
+        "analysis_config_invalid" => Some("tool-error-analysis-config"),
+        "analysis_scope_unsupported" => Some("tool-error-analysis-scope"),
         "source_changes_excluded" => Some("tool-error-exclusions"),
         "platform_version_missing" => Some("tool-error-platform-version-missing"),
         "platform_not_found"

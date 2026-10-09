@@ -139,5 +139,6 @@
     "incomplete_metadata_and_module_coverage",
     "no_server_or_standalone_checker",
     "no_1c_client_validation"
-  ]
+  ],
+  "state_at_commit": "8d7a5ea"
 }

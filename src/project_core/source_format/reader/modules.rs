@@ -1,4 +1,4 @@
-//! A preserved file is active BSL only at a module location of a declared descriptor.
+//! Preserved modules bind to declared descriptors, including an inline command's enclosing owner.
 
 use std::collections::BTreeMap;
 
@@ -60,7 +60,7 @@ pub(super) fn declared_modules(
     Ok(result)
 }
 
-/// Only Ext/<module> and Ext/Form/Module are module bodies; extra arbitrary folders stay resources.
+/// Recognize Designer body locations without reading YAML or activating arbitrary resource folders.
 fn descriptor_for(
     path: &SourcePath,
     descriptors: &BTreeMap<SourcePath, SourcePath>,
@@ -76,5 +76,17 @@ fn descriptor_for(
         return Ok(None);
     }
     let descriptor = SourcePath::parse(&format!("{prefix}.xml"))?;
-    Ok(descriptors.contains_key(&descriptor).then_some(descriptor))
+    if descriptors.contains_key(&descriptor) {
+        return Ok(Some(descriptor));
+    }
+    // Object commands are inline in their enclosing descriptor, unlike separately saved forms.
+    if matches!(module, "CommandModule.bsl" | "CommandModule.bin")
+        && let Some((owner, command)) = prefix.rsplit_once("/Commands/")
+        && !command.is_empty()
+        && !command.contains('/')
+    {
+        let descriptor = SourcePath::parse(&format!("{owner}.xml"))?;
+        return Ok(descriptors.contains_key(&descriptor).then_some(descriptor));
+    }
+    Ok(None)
 }

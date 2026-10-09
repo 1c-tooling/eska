@@ -314,5 +314,6 @@
     "minimal_passed": 159,
     "minimal_ignored": 3
   },
-  "overall_stage": "IN_PROGRESS"
+  "overall_stage": "IN_PROGRESS",
+  "state_at_commit": "9ca1852"
 }

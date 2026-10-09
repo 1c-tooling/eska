@@ -11,7 +11,7 @@ use base_db::{SourceDatabase, SourceRoot, SourceRootId};
 use bsl_metadata::Configuration;
 use eska::{
     analysis_core::{InputRequest, InputSummary, MetadataInputs, UpdateError},
-    project_core::source_format::{Error, SourcePath},
+    project_core::source_format::{Error, SourcePath, SourceReader},
 };
 use ide_db::{
     GraphConfigCache, RootDatabaseImpl,
@@ -94,6 +94,21 @@ impl AnalysisSession {
         Self::with_database_and_options(root, RootDatabaseImpl::new(), options)
     }
 
+    /// Adopt the caller's verified composition; project and analysis use the same reader snapshot.
+    ///
+    /// # Errors
+    /// Returns non-UTF-8 roots or exhausted file identities, without reopening source files.
+    pub fn from_reader(
+        reader: SourceReader,
+        options: SessionOptions,
+    ) -> Result<Self, SessionError> {
+        Self::with_inputs(
+            MetadataInputs::from_reader(reader),
+            RootDatabaseImpl::new(),
+            options,
+        )
+    }
+
     /// Tests may observe Salsa executions without enabling instrumentation for every consumer.
     #[cfg(test)]
     fn with_database(root: &Path, database: RootDatabaseImpl) -> Result<Self, SessionError> {
@@ -103,10 +118,19 @@ impl AnalysisSession {
     /// Allocate one stable source-root map for canonical descriptor identities and module bodies.
     fn with_database_and_options(
         root: &Path,
-        mut database: RootDatabaseImpl,
+        database: RootDatabaseImpl,
         options: SessionOptions,
     ) -> Result<Self, SessionError> {
         let inputs = MetadataInputs::open(root).map_err(SessionError::Source)?;
+        Self::with_inputs(inputs, database, options)
+    }
+
+    /// Keep one authoritative listing for all consumers, whether opened directly or via a project.
+    fn with_inputs(
+        inputs: MetadataInputs,
+        mut database: RootDatabaseImpl,
+        options: SessionOptions,
+    ) -> Result<Self, SessionError> {
         let reader = inputs.source_reader();
         let root_key = reader
             .root()

@@ -1,0 +1,242 @@
+//! Stable machine fields never serialize a translated diagnostic message.
+
+use eska::{analysis_core::InputFailure, project_core::source_format::SourcePath};
+
+use crate::{
+    AnalysisSession, Diagnostic, ModelState, ModuleFailure, ModuleInput, ModuleState,
+    SessionRevision,
+};
+
+use super::BatchError;
+
+/// Findings and incompleteness are separate from a fatal setup error.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BatchStatus {
+    Passed,
+    Findings,
+    Incomplete,
+}
+
+/// Stopping is explicit; unvisited declarations are not counted as checked.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StopReason {
+    DeadlineExceeded,
+    Cancelled,
+}
+
+/// The module report retains the checked bytes' identity after resident text was released.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum FileState {
+    Checked,
+    Binary,
+    Unavailable { code: String, location: Vec<String> },
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+pub struct BatchFile {
+    pub source: SourcePath,
+    pub revision: SessionRevision,
+    pub source_sha256: Option<String>,
+    pub state: FileState,
+    pub findings: Vec<BatchFinding>,
+}
+
+/// Lines and columns are zero-based Unicode scalar positions; byte ranges retain exact UTF-8.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+pub struct BatchFinding {
+    pub code: String,
+    pub severity: String,
+    pub start_byte: u32,
+    pub end_byte: u32,
+    pub start_line: usize,
+    pub start_column: usize,
+    pub end_line: usize,
+    pub end_column: usize,
+    #[serde(skip)]
+    pub message: String,
+}
+
+/// A YAML issue has the current fingerprint and range, never coordinates in exported XML.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+pub struct MetadataIssue {
+    pub source: SourcePath,
+    pub source_sha256: Option<String>,
+    pub code: String,
+    pub location: Vec<String>,
+    pub range: Option<std::ops::Range<usize>>,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize)]
+pub struct BatchCoverage {
+    pub metadata_owners: usize,
+    pub metadata_inputs_complete: bool,
+    pub metadata_models_complete: bool,
+    pub modules: usize,
+    pub checked_modules: usize,
+    pub binary_modules: usize,
+    pub unavailable_modules: usize,
+    pub unchecked_modules: usize,
+    pub syntax_complete: bool,
+}
+
+/// Syntax coverage does not claim complete semantic or platform validation.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+pub struct BatchReport {
+    pub profile: &'static str,
+    pub profile_enabled: bool,
+    pub status: BatchStatus,
+    pub manifest_sha256: String,
+    pub coverage: BatchCoverage,
+    pub stop: Option<StopReason>,
+    pub metadata_issues: Vec<MetadataIssue>,
+    pub files: Vec<BatchFile>,
+}
+
+impl BatchFile {
+    /// Project an unread/binary state before querying; successful syntax later changes it to checked.
+    #[must_use]
+    pub fn unavailable(path: &SourcePath, input: &ModuleInput) -> Self {
+        let state = match &input.state {
+            ModuleState::Binary => FileState::Binary,
+            ModuleState::Unavailable(ModuleFailure::Input(failure)) => {
+                let (code, location) = input_failure(failure);
+                FileState::Unavailable { code, location }
+            }
+            ModuleState::Unavailable(ModuleFailure::LoadedTextBudgetExceeded { .. }) => {
+                FileState::Unavailable {
+                    code: "module_text_budget_exceeded".into(),
+                    location: vec![],
+                }
+            }
+            ModuleState::Pending | ModuleState::Ready { .. } => FileState::Unavailable {
+                code: "module_pending".into(),
+                location: vec![],
+            },
+        };
+        Self {
+            source: path.clone(),
+            revision: input.revision,
+            source_sha256: input.source_sha256.clone(),
+            state,
+            findings: vec![],
+        }
+    }
+}
+
+/// Validate kernel coordinates before calling its conversion routine, which panics on bad ranges.
+pub fn finding(
+    path: &SourcePath,
+    diagnostic: &Diagnostic,
+    text: &str,
+) -> Result<BatchFinding, BatchError> {
+    let start_byte = u32::from(diagnostic.range.start());
+    let end_byte = u32::from(diagnostic.range.end());
+    if !text.is_char_boundary(start_byte as usize) || !text.is_char_boundary(end_byte as usize) {
+        return Err(BatchError::DiagnosticRangeInvalid {
+            source: path.clone(),
+            code: diagnostic.code.as_str().into(),
+        });
+    }
+    let output = diagnostic.to_output(text);
+    Ok(BatchFinding {
+        code: output.code,
+        severity: output.severity,
+        start_byte,
+        end_byte,
+        start_line: output.start_line,
+        start_column: output.start_column,
+        end_line: output.end_line,
+        end_column: output.end_column,
+        message: output.message,
+    })
+}
+
+/// The batch counts completed checks, rather than pretending its released bodies remain resident.
+pub fn finish(
+    session: &AnalysisSession,
+    manifest_sha256: String,
+    files: Vec<BatchFile>,
+    stop: Option<StopReason>,
+    syntax_enabled: bool,
+) -> BatchReport {
+    let summary = session.summary();
+    let mut coverage = BatchCoverage {
+        metadata_owners: summary.inputs.owners,
+        metadata_inputs_complete: summary.inputs.metadata_input_complete,
+        metadata_models_complete: summary.descriptor_models_complete,
+        modules: session.module_paths().count(),
+        ..BatchCoverage::default()
+    };
+    for file in &files {
+        match file.state {
+            FileState::Checked => coverage.checked_modules += 1,
+            FileState::Binary => coverage.binary_modules += 1,
+            FileState::Unavailable { .. } => coverage.unavailable_modules += 1,
+        }
+    }
+    coverage.unchecked_modules = coverage.modules - files.len();
+    coverage.syntax_complete =
+        syntax_enabled && stop.is_none() && coverage.checked_modules == coverage.modules;
+    let status = if !coverage.metadata_models_complete || !coverage.syntax_complete {
+        BatchStatus::Incomplete
+    } else if files.iter().any(|file| !file.findings.is_empty()) {
+        BatchStatus::Findings
+    } else {
+        BatchStatus::Passed
+    };
+    let metadata_issues = session
+        .owner_paths()
+        .filter_map(|path| metadata_issue(session, path))
+        .collect();
+    BatchReport {
+        profile: "syntax",
+        profile_enabled: syntax_enabled,
+        status,
+        manifest_sha256,
+        coverage,
+        stop,
+        metadata_issues,
+        files,
+    }
+}
+
+/// Preserve unsupported/invalid/pending YAML separately from successful syntax diagnostics.
+fn metadata_issue(session: &AnalysisSession, path: &SourcePath) -> Option<MetadataIssue> {
+    let model = session.owner(path)?;
+    let (code, location, range) = match &model.state {
+        ModelState::Pending => ("metadata_pending".into(), vec![], None),
+        ModelState::Unsupported(_) => ("metadata_projection_unsupported".into(), vec![], None),
+        ModelState::Unavailable(failure) => {
+            let (code, location) = input_failure(failure);
+            (code, location, None)
+        }
+        ModelState::Invalid { error, .. } => (
+            "metadata_projection_invalid".into(),
+            vec![],
+            Some(error.range.clone()),
+        ),
+        ModelState::Ready(_) | ModelState::StructureOnly if !model.descriptors_complete() => {
+            ("metadata_descriptors_unmodeled".into(), vec![], None)
+        }
+        ModelState::Ready(_) | ModelState::StructureOnly => return None,
+    };
+    Some(MetadataIssue {
+        source: path.clone(),
+        source_sha256: model.source_sha256.clone(),
+        code,
+        location,
+        range,
+    })
+}
+
+/// Domain input errors already have stable codes; protocol fields never contain Debug or messages.
+fn input_failure(failure: &InputFailure) -> (String, Vec<String>) {
+    match failure {
+        InputFailure::Source(error) => (error.code.into(), error.location.clone()),
+        InputFailure::Cancelled => ("analysis_cancelled".into(), vec![]),
+        InputFailure::DocumentTooLarge { .. } => ("source_document_too_large".into(), vec![]),
+    }
+}

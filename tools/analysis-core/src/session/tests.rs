@@ -12,7 +12,7 @@ use ide_db::metadata::config_index;
 use super::*;
 
 #[path = "../../../bsl-adapter/tests/support/mod.rs"]
-mod support;
+pub mod support;
 
 /// Keep fixtures exclusively inside the declared playground.
 pub fn fixture() -> (support::TestDirectory, PathBuf) {

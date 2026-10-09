@@ -1,7 +1,10 @@
 //! Shared, revisioned ESKA analysis sessions; no platform, Git or transport runtime is required.
 
+pub mod batch;
 mod binding;
 mod cancellation;
+#[cfg(feature = "check-cli")]
+pub mod check_cli;
 mod modules;
 mod projection;
 mod queries;

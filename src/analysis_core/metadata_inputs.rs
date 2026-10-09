@@ -147,6 +147,12 @@ impl MetadataInputs {
     /// Returns the common reader's opening failures. No platform, Git or generated XML is used.
     pub fn open(root: &Path) -> Result<Self, Error> {
         let reader = SourceReader::open(root)?;
+        Ok(Self::from_reader(reader))
+    }
+
+    /// Adopt the already validated project composition instead of reopening mutable disk input.
+    #[must_use]
+    pub fn from_reader(reader: SourceReader) -> Self {
         let revision = InputRevision::default();
         let owners = reader
             .owner_paths()
@@ -162,11 +168,11 @@ impl MetadataInputs {
                 )
             })
             .collect();
-        Ok(Self {
+        Self {
             reader,
             revision,
             owners,
-        })
+        }
     }
 
     /// Return the current request token; a result is usable only for this controller revision.

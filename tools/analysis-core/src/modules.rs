@@ -170,6 +170,43 @@ impl AnalysisSession {
         self.read_module_saved(path, next, request, limits)
     }
 
+    /// Release a saved body after a syntax batch check; editor-owned snapshots cannot be evicted.
+    ///
+    /// # Errors
+    /// Returns stale/undeclared/binary input, an active overlay or exhausted revision counter.
+    pub fn release_module_saved(
+        &mut self,
+        path: &SourcePath,
+        expected: SessionRevision,
+    ) -> Result<(), SessionRequestError> {
+        let (next, current) = self.validate_module_update(path, expected)?;
+        if let InputOrigin::Overlay { document_version } = current.origin {
+            return Err(SessionRequestError::OverlayActive { document_version });
+        }
+        let entry = self
+            .modules
+            .get_mut(path)
+            .ok_or_else(|| SessionRequestError::UnknownModule(path.clone()))?;
+        self.loaded_module_bytes -= entry.model.bytes();
+        if matches!(entry.model.state, ModuleState::Ready { .. }) {
+            self.incomplete_modules += 1;
+        }
+        self.database.set_file_unreadable(entry.file);
+        entry.model = ModuleInput {
+            revision: next,
+            origin: InputOrigin::Saved,
+            source_sha256: None,
+            state: ModuleState::Pending,
+        };
+        self.revision = next;
+        Ok(())
+    }
+
+    /// Trim heavy computed memos between batch chunks after all short-lived query handles dropped.
+    pub fn trim_batch_caches(&mut self) {
+        self.database.enforce_lru_deep();
+    }
+
     /// Count readable, protected and unknown current input independently of semantic diagnostics.
     #[must_use]
     pub fn module_summary(&self) -> ModuleSummary {

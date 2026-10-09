@@ -1,0 +1,396 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-09",
+  "scope": "standalone_eska_syntax_checker",
+  "kernel_revision": "9021ba07471eee8a2614bed2105a2c8699f60780",
+  "analysis_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.3096693620000224
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.9332881680002174
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.6758483840003464
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 2.2222049289994175,
+      "test_results": [
+        "ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 1.1876990360005948
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 2.7562029410000832,
+      "test_results": [
+        "ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 1.9423618640003042
+    },
+    {
+      "gate": "release-cli",
+      "exit_code": 0,
+      "seconds": 17.78859813100007
+    }
+  ],
+  "analysis_tests": {
+    "unit_and_file_passed": 20,
+    "process_passed": 8,
+    "ignored": 0,
+    "minimal_passed": 20
+  },
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8087468649991933
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.9668069240005934
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 5.940757061000113
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 31.47220926999944
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.9409858269991673
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.4661922390005202
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 2.208870622000177
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7392416260008758
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5302106400013145
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 2.9941831359992648
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.128488793001452
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7718059010003344
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 7.717852210998899
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.540697837001062
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.014239868000004208
+    }
+  ],
+  "application_tests": {
+    "passed": 884,
+    "ignored": 14,
+    "minimal_passed": 160,
+    "minimal_ignored": 3,
+    "project_cli_passed": 172,
+    "project_cli_ignored": 3,
+    "build_cli_passed": 191,
+    "build_cli_ignored": 3
+  },
+  "real": {
+    "corpus": "C1",
+    "runs": [
+      {
+        "locale": "en-US",
+        "exit_code": 2,
+        "elapsed_seconds": 13.510141991999262,
+        "max_rss_kib": 541320,
+        "status": "incomplete",
+        "coverage": {
+          "binary_modules": 0,
+          "checked_modules": 1975,
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": false,
+          "metadata_owners": 2645,
+          "modules": 1975,
+          "syntax_complete": true,
+          "unavailable_modules": 0,
+          "unchecked_modules": 0
+        },
+        "metadata_issues": 1693,
+        "syntax_findings": 0,
+        "stop": null
+      },
+      {
+        "locale": "ru-RU",
+        "exit_code": 2,
+        "elapsed_seconds": 14.246073277001415,
+        "max_rss_kib": 541108,
+        "status": "incomplete",
+        "coverage": {
+          "binary_modules": 0,
+          "checked_modules": 1975,
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": false,
+          "metadata_owners": 2645,
+          "modules": 1975,
+          "syntax_complete": true,
+          "unavailable_modules": 0,
+          "unchecked_modules": 0
+        },
+        "metadata_issues": 1693,
+        "syntax_findings": 0,
+        "stop": null
+      }
+    ],
+    "json_locale_independent": true,
+    "source_bytes_unchanged": true,
+    "source_files": 7829,
+    "runtime_path": "empty",
+    "release_binary_bytes": 46138016,
+    "reference": {
+      "tool": "bsl-analyzer 0.2.86",
+      "exit_code": 0,
+      "elapsed_seconds": 6.0672950349999155,
+      "profile": "ParseError",
+      "format": "jsonl",
+      "no_extensions": true,
+      "no_externals": true,
+      "summary": {
+        "type": "done",
+        "elapsed_secs": 5.961185576,
+        "total_files": 1979,
+        "total_diagnostics": 0,
+        "failed_files": 0,
+        "baseline": {
+          "state": "disabled",
+          "complete": true
+        }
+      },
+      "max_rss_kib": 682292,
+      "on_disk_modules": 1979,
+      "comparable_declared_modules": 1975,
+      "inactive_preserved_modules": 4,
+      "workspace_mcp_available": false
+    },
+    "exact_declared_module_parity": true,
+    "exact_native_bsl_bytes": true,
+    "syntax_diagnostics_parity": true,
+    "new_inline_command_modules": 99
+  },
+  "large_corpora_deadlines": [
+    {
+      "corpus": "C2",
+      "analysis_timeout_seconds": 1,
+      "elapsed_seconds": 1.72625318000064,
+      "exit_code": 2,
+      "status": "incomplete",
+      "stop": "deadline_exceeded",
+      "coverage": {
+        "binary_modules": 0,
+        "checked_modules": 0,
+        "metadata_inputs_complete": false,
+        "metadata_models_complete": false,
+        "metadata_owners": 16286,
+        "modules": 19170,
+        "syntax_complete": false,
+        "unavailable_modules": 0,
+        "unchecked_modules": 19170
+      },
+      "max_rss_kib": 186032,
+      "composition_fingerprint_unchanged": true,
+      "setup_config_removed": true,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C3",
+      "analysis_timeout_seconds": 1,
+      "elapsed_seconds": 1.8440291219994833,
+      "exit_code": 2,
+      "status": "incomplete",
+      "stop": "deadline_exceeded",
+      "coverage": {
+        "binary_modules": 0,
+        "checked_modules": 0,
+        "metadata_inputs_complete": false,
+        "metadata_models_complete": false,
+        "metadata_owners": 18752,
+        "modules": 22710,
+        "syntax_complete": false,
+        "unavailable_modules": 0,
+        "unchecked_modules": 22710
+      },
+      "max_rss_kib": 209000,
+      "composition_fingerprint_unchanged": true,
+      "setup_config_removed": true,
+      "runtime_path": "empty"
+    }
+  ],
+  "dependency_audit": {
+    "normal_packages": 206,
+    "forbidden": [
+      "lsp-server",
+      "lsp-types",
+      "tokio",
+      "gix",
+      "git2",
+      "bsl-debug",
+      "debug-adapter",
+      "ctrlc",
+      "reqwest"
+    ],
+    "forbidden_present": []
+  },
+  "limitations": [
+    "syntax_profile_only",
+    "incomplete_canonical_metadata_models",
+    "deadline_excludes_composition_open_and_report_output",
+    "cooperative_checkpoints_only",
+    "current_text_cap_is_not_global_heap_or_rss_budget",
+    "no_analyzer_server",
+    "not_in_installed_suite",
+    "no_1c_client_validation"
+  ]
+}

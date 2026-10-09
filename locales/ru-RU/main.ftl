@@ -944,3 +944,18 @@ metadata-input-help = Файл запроса JSON или - для чтения 
 metadata-rename-preview-about = Показать план переименования и сомнительные ссылки без записи файлов
 metadata-rename-apply-about = Применить проверенный план переименования по снимку источников
 metadata-rename-recovery-about = Проверить или восстановить прерванное переименование
+
+# Самостоятельная пакетная проверка.
+tool-check-about = Проверка синтаксиса сохранённых модулей ESKA без 1С, Git и IDE-сервера
+tool-option-profile = Явный профиль проверки; сейчас syntax
+tool-option-config = Файл настроек анализатора; иначе искать bsl-analyzer.toml в корне выбранного проекта
+tool-option-timeout-seconds = Кооперативный лимит времени анализа в секундах; ноль сразу возвращает неполный отчёт
+tool-option-max-document-bytes = Максимум байтов в одном YAML или BSL; жёсткий предел — 64 MiB
+tool-check-status-passed = Синтаксис проверен
+tool-check-status-findings = Найдены ошибки синтаксиса
+tool-check-status-incomplete = Проверка неполная
+tool-check-result = { $status }. Модули: { $checked }/{ $total }; ошибки: { $findings }; неполные метаданные: { $metadata }.
+tool-check-deadline = Достигнут лимит времени анализа.
+tool-check-cancelled = Проверка отменена.
+tool-error-analysis-config = Исправьте настройки анализатора или задайте корректный файл через --config.
+tool-error-analysis-scope = Эта проверка синтаксиса пока не поддерживает исключения, расширения, внешние источники, Git-фильтры и базовые отчёты диагностики.

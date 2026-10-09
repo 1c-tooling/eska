@@ -944,3 +944,18 @@ metadata-input-help = JSON request file, or - to read stdin
 metadata-rename-preview-about = Preview a rename and uncertain references without writing files
 metadata-rename-apply-about = Apply a reviewed rename plan against its source snapshot
 metadata-rename-recovery-about = Inspect or recover an interrupted rename
+
+# Standalone batch analysis.
+tool-check-about = Check saved ESKA module syntax without 1C, Git or an IDE server
+tool-option-profile = Explicit check profile; currently syntax
+tool-option-config = Analyzer settings file; otherwise discover bsl-analyzer.toml at the selected project root
+tool-option-timeout-seconds = Cooperative analysis time limit in seconds; zero returns an incomplete report immediately
+tool-option-max-document-bytes = Maximum bytes per YAML or BSL document; the hard limit is 64 MiB
+tool-check-status-passed = Syntax checked
+tool-check-status-findings = Syntax findings
+tool-check-status-incomplete = Check incomplete
+tool-check-result = { $status }. Modules: { $checked }/{ $total }; findings: { $findings }; incomplete metadata: { $metadata }.
+tool-check-deadline = The analysis time limit was reached.
+tool-check-cancelled = The check was cancelled.
+tool-error-analysis-config = Correct the analyzer settings or provide a valid --config file.
+tool-error-analysis-scope = This syntax checker does not yet support exclusions, extensions, external sources, Git filters or diagnostic baselines.

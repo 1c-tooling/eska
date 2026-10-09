@@ -21,6 +21,9 @@ pub struct Selected {
 }
 
 /// Resolve one member through the same shared selector used by the application and offline CLI.
+///
+/// # Errors
+/// Returns failed discovery, ambiguous/unknown selection or a non-UTF-8 output coordinate.
 pub fn selected(start: &Path, requested: Option<&str>) -> Result<Selected, Failure> {
     let context = discover_context(start)
         .map_err(|_| Failure::new("project_discovery_failed").at(start.to_string_lossy()))?;
@@ -53,6 +56,9 @@ pub fn selected(start: &Path, requested: Option<&str>) -> Result<Selected, Failu
 }
 
 /// Machine paths must retain all bytes; unsupported encodings fail before mutation.
+///
+/// # Errors
+/// Returns `path_encoding_unsupported` when the selected path is not valid UTF-8.
 pub fn path_text(path: &Path) -> Result<&str, Failure> {
     path.to_str()
         .ok_or_else(|| Failure::new("path_encoding_unsupported"))

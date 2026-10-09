@@ -57,6 +57,12 @@ impl EskaSource {
         &self.reader
     }
 
+    /// Transfer the validated composition to an analysis host without a second filesystem open.
+    #[must_use]
+    pub fn into_reader(self) -> SourceReader {
+        self.reader
+    }
+
     /// Materialize saved inputs using a baseline digest supplied independently by the caller.
     ///
     /// The configured path locates bytes; it does not approve their policy. Every invocation
