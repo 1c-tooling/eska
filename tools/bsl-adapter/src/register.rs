@@ -17,7 +17,10 @@ use eska::project_core::{
     metadata_parser::{ParsedDescriptor, ParsedObject},
 };
 
-use crate::{AdapterError, AdapterIssue, attribute_type, identity, properties::Properties};
+use crate::{
+    AdapterError, AdapterIssue, attribute_type, identity, properties::Properties,
+    type_description::required_type,
+};
 
 /// Convert one complete register descriptor, including direct fields in declaration order.
 ///
@@ -207,16 +210,4 @@ fn attribute(object: &ParsedObject) -> Result<RegisterAttribute, AdapterError> {
     attribute.set_type_str(value.to_string());
     attribute.set_attr_type(value);
     Ok(attribute)
-}
-
-/// Both resource and requisite types are mandatory and address missing data at their declaration.
-fn required_type(object: &ParsedObject) -> Result<AttributeType, AdapterError> {
-    let fields = Properties::new(object)?;
-    let field = fields.field("Type")?.ok_or_else(|| AdapterError {
-        issue: AdapterIssue::MissingProperty {
-            name: "Type".into(),
-        },
-        range: object.range.clone(),
-    })?;
-    attribute_type(field)
 }

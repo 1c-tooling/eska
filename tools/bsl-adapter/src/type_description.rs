@@ -6,7 +6,7 @@ mod tests;
 use bsl_metadata::{AttributeType, MdoType, metadata_object::PlatformValueType};
 use eska::project_core::{
     metadata_model::{MetadataProperty, MetadataValue, PropertyKey},
-    metadata_parser::LocatedProperty,
+    metadata_parser::{LocatedProperty, ParsedObject},
 };
 
 use crate::{AdapterError, AdapterIssue, properties::Properties};
@@ -15,6 +15,18 @@ const CORE: &str = "http://v8.1c.ru/8.1/data/core";
 const CONFIG: &str = "http://v8.1c.ru/8.1/data/enterprise/current-config";
 const SCHEMA: &str = "http://www.w3.org/2001/XMLSchema";
 const COMPOSITION_SETTINGS: &str = "http://v8.1c.ru/8.1/data-composition-system/settings";
+
+/// Required types share one missing-field boundary across objects, registers and defined types.
+pub fn required_type(object: &ParsedObject) -> Result<AttributeType, AdapterError> {
+    let fields = Properties::new(object)?;
+    let field = fields.field("Type")?.ok_or_else(|| AdapterError {
+        issue: AdapterIssue::MissingProperty {
+            name: "Type".into(),
+        },
+        range: object.range.clone(),
+    })?;
+    attribute_type(field)
+}
 
 /// Convert one complete Type property; unsupported alternatives fail rather than disappear.
 ///
@@ -146,6 +158,22 @@ impl TypeReader<'_> {
             .map_or(Ok(&[]), |field| self.record(field))
     }
 
+    /// Validate source enums even when the kernel does not retain their distinction.
+    fn validate_enum(
+        &self,
+        fields: &[MetadataProperty],
+        name: &str,
+        allowed: &[&str],
+    ) -> Result<(), AdapterError> {
+        if self
+            .scalar(fields, name)?
+            .is_some_and(|value| !allowed.contains(&value))
+        {
+            return Err(Properties::invalid(self.source));
+        }
+        Ok(())
+    }
+
     /// Integer width follows the selected kernel's model, with checked narrowing.
     fn qualifiers(&self, fields: &[MetadataProperty]) -> Result<Qualifiers, AdapterError> {
         let strings = self.qualifier_fields(fields, "StringQualifiers")?;
@@ -154,6 +182,8 @@ impl TypeReader<'_> {
         self.check_fields(strings, &["Length", "AllowedLength"])?;
         self.check_fields(numbers, &["Digits", "FractionDigits", "AllowedSign"])?;
         self.check_fields(dates, &["DateFractions"])?;
+        self.validate_enum(strings, "AllowedLength", &["Variable", "Fixed"])?;
+        self.validate_enum(numbers, "AllowedSign", &["Any", "Nonnegative"])?;
         let invalid = || Properties::invalid(self.source);
         let length = self
             .scalar(strings, "Length")?

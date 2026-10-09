@@ -165,6 +165,22 @@ fn defined_type_drafts_change_underlying_type_and_report_unsupported_values_in_y
     let error = defined_type(&snapshot.documents[0].descriptor.objects[0]).unwrap_err();
     assert!(matches!(error.issue, AdapterIssue::UnsupportedType { .. }));
     assert!(unsupported[error.range].contains("cfg:Future.Value"));
+    let invalid = text.replace(
+        "</v8:NumberQualifiers>",
+        "<v8:AllowedSign>Future</v8:AllowedSign></v8:NumberQualifiers>",
+    );
+    inputs
+        .apply_overlay(&path, inputs.revision(), 4, &invalid, &request)
+        .unwrap();
+    let snapshot = ready(&inputs, &path);
+    let error = defined_type(&snapshot.documents[0].descriptor.objects[0]).unwrap_err();
+    assert_eq!(
+        error.issue,
+        AdapterIssue::InvalidProperty {
+            name: "Type".into()
+        }
+    );
+    assert!(invalid[error.range].contains("<v8:AllowedSign>Future</v8:AllowedSign>"));
     inputs
         .close_overlay(&path, inputs.revision(), &request)
         .unwrap();

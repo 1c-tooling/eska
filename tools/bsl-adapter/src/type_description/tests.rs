@@ -23,8 +23,10 @@ fn supported_defined_types_match_native_kernel_models() {
         "<Type/>",
         "<Type><v8:Type>xs:boolean</v8:Type></Type>",
         "<Type><v8:Type>xs:string</v8:Type><v8:StringQualifiers><v8:Length>75</v8:Length><v8:AllowedLength>Variable</v8:AllowedLength></v8:StringQualifiers></Type>",
+        "<Type><v8:Type>xs:string</v8:Type><v8:StringQualifiers><v8:Length>75</v8:Length><v8:AllowedLength>Fixed</v8:AllowedLength></v8:StringQualifiers></Type>",
         "<Type><v8:Type>xs:decimal</v8:Type></Type>",
         "<Type><v8:Type>xs:decimal</v8:Type><v8:NumberQualifiers><v8:Digits>15</v8:Digits><v8:FractionDigits>2</v8:FractionDigits><v8:AllowedSign>Any</v8:AllowedSign></v8:NumberQualifiers></Type>",
+        "<Type><v8:Type>xs:decimal</v8:Type><v8:NumberQualifiers><v8:AllowedSign>Nonnegative</v8:AllowedSign></v8:NumberQualifiers></Type>",
         "<Type><v8:Type>xs:dateTime</v8:Type><v8:DateQualifiers><v8:DateFractions>DateTime</v8:DateFractions></v8:DateQualifiers></Type>",
         "<Type><v8:Type>xs:dateTime</v8:Type><v8:DateQualifiers><v8:DateFractions>Time</v8:DateFractions></v8:DateQualifiers></Type>",
         "<Type><v8:Type>cfg:CatalogRef.Items</v8:Type><v8:Type>cfg:DocumentObject.Receipt</v8:Type></Type>",
@@ -156,6 +158,11 @@ fn malformed_and_duplicate_qualifiers_are_rejected_at_type_location() {
         "<v8:DateQualifiers><v8:DateFractions>Future</v8:DateFractions></v8:DateQualifiers>",
         "<v8:NumberQualifiers><v8:Digits>10</v8:Digits><v8:Digits>12</v8:Digits></v8:NumberQualifiers>",
         "<v8:NumberQualifiers/><v8:NumberQualifiers/>",
+        "<v8:StringQualifiers><v8:AllowedLength>Future</v8:AllowedLength></v8:StringQualifiers>",
+        "<v8:StringQualifiers><v8:AllowedLength>Variable</v8:AllowedLength><v8:AllowedLength>Fixed</v8:AllowedLength></v8:StringQualifiers>",
+        "<v8:NumberQualifiers><v8:AllowedSign>Future</v8:AllowedSign></v8:NumberQualifiers>",
+        "<v8:NumberQualifiers><v8:AllowedSign>Any</v8:AllowedSign><v8:AllowedSign>Nonnegative</v8:AllowedSign></v8:NumberQualifiers>",
+        "<v8:NumberQualifiers><v8:AllowedSign><v8:Value>Any</v8:Value></v8:AllowedSign></v8:NumberQualifiers>",
     ] {
         let text = xml(&format!(
             "<Type><v8:Type>xs:decimal</v8:Type>{qualifiers}</Type>"

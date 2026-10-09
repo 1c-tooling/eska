@@ -1,6 +1,7 @@
 //! Native controls cover object fields while a known whitespace-caption bug is checked separately.
 
 use super::*;
+use bsl_metadata::AttributeType;
 use bsl_metadata::xml_parser;
 use eska::project_core::metadata_parser::{self, PropertiesMode};
 

@@ -5,7 +5,7 @@ mod standard;
 mod tests;
 
 use bsl_metadata::{
-    AttributeType, MdoType, MetadataObject,
+    MdoType, MetadataObject,
     enums::CodeSeries,
     metadata_object::Attribute,
     tabular_section::{TabularSection, TabularSectionAttribute},
@@ -16,7 +16,9 @@ use eska::project_core::{
     metadata_parser::{ParsedDescriptor, ParsedObject},
 };
 
-use crate::{AdapterError, AdapterIssue, attribute_type, identity, properties::Properties};
+use crate::{
+    AdapterError, AdapterIssue, identity, properties::Properties, type_description::required_type,
+};
 
 /// Convert supported object descriptors, including typed attributes and ordered tabular sections.
 ///
@@ -108,18 +110,6 @@ fn children<'a>(
         .objects
         .iter()
         .filter(|child| child.metadata.parent() == Some(parent.metadata.id()))
-}
-
-/// An explicit user field needs a type; absence never becomes a guessed `Unknown`.
-fn required_type(object: &ParsedObject) -> Result<AttributeType, AdapterError> {
-    let fields = Properties::new(object)?;
-    let field = fields.field("Type")?.ok_or_else(|| AdapterError {
-        issue: AdapterIssue::MissingProperty {
-            name: "Type".into(),
-        },
-        range: object.range.clone(),
-    })?;
-    attribute_type(field)
 }
 
 /// Retain source section/column UUIDs and use a real localized caption rather than XML whitespace.

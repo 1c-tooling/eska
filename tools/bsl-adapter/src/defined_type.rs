@@ -3,7 +3,7 @@
 use bsl_metadata::DefinedType;
 use eska::project_core::{MetadataKind, metadata_parser::ParsedObject};
 
-use crate::{AdapterError, AdapterIssue, attribute_type, properties::Properties};
+use crate::{AdapterError, AdapterIssue, type_description::required_type};
 
 /// Supply every required builder value explicitly; incomplete input never reaches its panic paths.
 ///
@@ -18,17 +18,11 @@ pub fn defined_type(object: &ParsedObject) -> Result<DefinedType, AdapterError> 
             range: object.range.clone(),
         });
     }
-    let fields = Properties::new(object)?;
+    let underlying_type = required_type(object)?;
     let uuid = crate::identity::uuid(object)?;
-    let field = fields.field("Type")?.ok_or_else(|| AdapterError {
-        issue: AdapterIssue::MissingProperty {
-            name: "Type".into(),
-        },
-        range: object.range.clone(),
-    })?;
     Ok(DefinedType::builder()
         .uuid(uuid)
         .name(object.metadata.name())
-        .underlying_type(attribute_type(field)?)
+        .underlying_type(underlying_type)
         .build())
 }
