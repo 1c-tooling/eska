@@ -1,0 +1,46 @@
+{
+  "reference_head": "9021ba07471eee8a2614bed2105a2c8699f60780",
+  "salsa_revision": "5d2686f1f94dc3d618569652d5576ce997491b3b",
+  "patch_sha256": "97cff06b4004eba135c79b2aaf8890bb46450cd9c77fa8b09c55c60f4d9c9ac1",
+  "probe_sha256": "5bd04db2c949673e108a7f27be811b2d55b49e23810704419dda31cb60388e56",
+  "demo": {
+    "disk_unchanged": true,
+    "draft_completion_applied": true,
+    "invalid_yaml_rejected": true,
+    "metadata_complete": false,
+    "metadata_coverage": "catalog-and-direct-attribute-names",
+    "observed_bsl_inferences": 2,
+    "observed_initial_resolutions": 2,
+    "pending_has_no_fallback": true,
+    "restored_completion_applied": true,
+    "same_host": true,
+    "sibling_resolution_executions": 0,
+    "structure_index_retained": true,
+    "unrelated_bsl_inference_executions": 0,
+    "update_ms": 0.702806,
+    "xml_exported": false,
+    "xml_parse_executions": 0
+  },
+  "gates": [
+    "build",
+    "consumer-clippy",
+    "kernel-clippy-all-targets",
+    "kernel-unit",
+    "host-unit"
+  ],
+  "tests": {
+    "ide_db": {
+      "passed": 174,
+      "failed": 0,
+      "ignored": 0
+    },
+    "ide_host_core": {
+      "passed": 30,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "platform": "Linux x86_64",
+  "runtime_path": "empty",
+  "production_integration": false
+}

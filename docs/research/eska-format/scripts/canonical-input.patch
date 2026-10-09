@@ -1,0 +1,266 @@
+--- a/crates/ide-db/src/metadata.rs
++++ b/crates/ide-db/src/metadata.rs
+@@ -13,6 +13,13 @@
+ 
+     pub(crate) fn mdo_heap(v: &Option<Arc<bsl_metadata::MetadataObject>>) -> usize {
+         v.as_ref().map_or(0, |m| m.estimated_heap_size())
++    }
++
++    /// Canonical input values own their object payload and exact source revision.
++    pub(crate) fn canonical_mdo_input_heap(
++        fields: &(Option<Arc<bsl_metadata::MetadataObject>>, String),
++    ) -> usize {
++        mdo_heap(&fields.0) + fields.1.capacity()
+     }
+ 
+     pub(crate) fn register_heap(v: &Option<Arc<bsl_metadata::Register>>) -> usize {
+@@ -113,6 +120,7 @@
+             Arc<Vec<super::WebServiceEntry>>,
+             Arc<Vec<super::IntegrationServiceEntry>>,
+             Arc<Vec<super::SubsystemEntry>>,
++            Arc<super::CanonicalMdoInputs>,
+         ),
+     ) -> usize {
+         let (
+@@ -126,6 +134,7 @@
+             web_services,
+             integration_services,
+             subsystems,
++            canonical_mdos,
+         ) = fields;
+ 
+         stdx::heap::vec_bytes::<super::MdoEntry>(entries.len())
+@@ -148,6 +157,9 @@
+             + integration_services.iter().map(|e| e.name.capacity()).sum::<usize>()
+             + stdx::heap::vec_bytes::<super::SubsystemEntry>(subsystems.len())
+             + subsystems.iter().map(|e| e.name.capacity()).sum::<usize>()
++            + stdx::heap::map_table_bytes::<vfs::FileId, super::CanonicalMdoInput>(
++                canonical_mdos.len(),
++            )
+     }
+ 
+     /// A `resolve_metadata_object` result is a clone of an `Arc` owned by
+@@ -901,6 +913,17 @@
+     pub subsystems: Vec<SubsystemEntry>,
+ }
+ 
++/// A host-provided metadata value; None means pending or unavailable, never XML fallback.
++/// The source revision addresses exact input bytes independently of semantic equality.
++#[salsa::input(debug, heap_size = heap_estimate::canonical_mdo_input_heap)]
++pub struct CanonicalMdoInput {
++    pub value: Option<Arc<bsl_metadata::MetadataObject>>,
++    pub source_revision: String,
++}
++
++/// Stable main-file identities map to mutable Salsa inputs, not untracked payloads.
++pub type CanonicalMdoInputs = FxHashMap<vfs::FileId, CanonicalMdoInput>;
++
+ /// The per-config-root *structure* input: the MDOs and defined types that exist in
+ /// one config root (base config or one extension). Set out-of-query by the
+ /// bootstrap; re-set only when the directory structure changes. Keeping it per-root
+@@ -921,6 +944,7 @@
+     pub web_services: Arc<Vec<WebServiceEntry>>,
+     pub integration_services: Arc<Vec<IntegrationServiceEntry>>,
+     pub subsystems: Arc<Vec<SubsystemEntry>>,
++    pub canonical_mdos: Arc<CanonicalMdoInputs>,
+ }
+ 
+ /// The composing-file identities for one MDO, as held in a [`ConfigIndex`].
+@@ -1005,6 +1029,14 @@
+ 
+     let index = config_index(db, listing);
+     let ids = index.lookup(mdo_type, &name)?;
++    if let Some(input) = listing.canonical_mdos(db).get(&ids.main) {
++        let _source_revision = input.source_revision(db);
++        let object = Arc::clone(input.value(db).as_ref()?);
++        if object.mdo_type != mdo_type || !stdx::case::eq_ignore_case(&object.name, &name) {
++            return None;
++        }
++        return Some(object);
++    }
+     let files = MdoFiles::new(db, mdo_type, ids.main, ids.predefined);
+     let object = parse_mdo_query(db, files)?;
+     warn_on_stem_name_divergence(mdo_type.english_name(), &name, &object.name);
+--- a/crates/ide-db/src/database.rs
++++ b/crates/ide-db/src/database.rs
+@@ -874,6 +874,7 @@
+                     web_services,
+                     integration_services,
+                     subsystems,
++                    Arc::new(metadata::CanonicalMdoInputs::default()),
+                 )
+                 .durability(salsa::Durability::MEDIUM)
+                 .new(self);
+--- a/crates/ide-db/src/database_impl_tests.rs
++++ b/crates/ide-db/src/database_impl_tests.rs
+@@ -202,6 +202,7 @@
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
++        Arc::new(crate::metadata::CanonicalMdoInputs::default()),
+     );
+     assert_eq!(config_index(&db, listing).len(), 1);
+ 
+@@ -299,6 +300,7 @@
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
++        Arc::new(crate::metadata::CanonicalMdoInputs::default()),
+     );
+ 
+     let reg = resolve_register_by_name(&db, listing, "РегистрСведений1".to_string())
+@@ -363,6 +365,7 @@
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
++        Arc::new(crate::metadata::CanonicalMdoInputs::default()),
+     );
+     assert_eq!(defined_type_index(&db, listing).lookup("денежнаясумма"), Some(f1));
+ 
+@@ -438,6 +441,7 @@
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
++        Arc::new(crate::metadata::CanonicalMdoInputs::default()),
+     );
+ 
+     // The by-name lookup, the body-file-by-name lookup, and the by-body reverse
+@@ -546,6 +550,7 @@
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
++        Arc::new(crate::metadata::CanonicalMdoInputs::default()),
+     );
+     assert_eq!(event_subscription_index(&db, listing).lookup("передзаписью"), Some(before_file));
+ 
+@@ -898,6 +903,7 @@
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
++        Arc::new(crate::metadata::CanonicalMdoInputs::default()),
+     );
+     assert_eq!(scheduled_job_index(&db, listing).lookup("регламентноезадание1"), Some(before_file));
+ 
+@@ -1130,6 +1136,7 @@
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
++        Arc::new(crate::metadata::CanonicalMdoInputs::default()),
+     );
+ 
+     let files = role_index(&db, listing)
+@@ -5329,6 +5336,7 @@
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
+         Arc::new(Vec::new()),
++        Arc::new(crate::metadata::CanonicalMdoInputs::default()),
+     );
+     listing.set_http_services(&mut db).to(Arc::new(vec![HTTPServiceEntry {
+         name: "Сервис1".to_string(),
+@@ -7884,3 +7892,106 @@
+     hir_ty::resolve_method(&db, receiver(MetadataKind::ExternalReportObject), &name)
+         .expect("and so does the external report's");
+ }
++
++/// Canonical inputs retain revisions and do not read unregistered XML file identities.
++#[test]
++fn canonical_mdo_tracks_value_and_pending_without_xml_fallback() {
++    use crate::metadata::{
++        config_index, resolve_metadata_object, CanonicalMdoInput, CanonicalMdoInputs, MdoEntry,
++    };
++    use bsl_metadata::{Attribute, AttributeType, MdoType, MetadataObject};
++    use salsa::Setter;
++
++    let mut db = RootDatabaseImpl::new_with_salsa_events();
++    db.set_metadata_listing(
++        "/canonical",
++        MetadataListingData {
++            entries: vec![MdoEntry {
++                kind: MdoType::Catalog,
++                name: "Sample".into(),
++                main: FileId(0),
++                predefined: None,
++            }],
++            ..MetadataListingData::default()
++        },
++    );
++    let listing = db.metadata_listing("/canonical").expect("registered listing");
++    let mut object = MetadataObject::new(MdoType::Catalog, "Sample");
++    object.attributes.push(Attribute {
++        name: "SavedField".into(),
++        name_en: None,
++        attr_type: AttributeType::Unknown,
++    });
++    let input = CanonicalMdoInput::new(&db, Some(Arc::new(object.clone())), "saved".into());
++    let inputs: CanonicalMdoInputs = [(FileId(0), input)].into_iter().collect();
++    listing.set_canonical_mdos(&mut db).to(Arc::new(inputs));
++    let index = Arc::clone(config_index(&db, listing));
++    let saved = resolve_metadata_object(&db, listing, MdoType::Catalog, "Sample".into())
++        .expect("canonical value");
++    assert_eq!(saved.attributes[0].name, "SavedField");
++    object.attributes[0].name = "DraftField".into();
++    input.set_value(&mut db).to(Some(Arc::new(object)));
++    input.set_source_revision(&mut db).to("draft".into());
++    let draft = resolve_metadata_object(&db, listing, MdoType::Catalog, "Sample".into())
++        .expect("updated value");
++    assert_eq!(draft.attributes[0].name, "DraftField");
++    assert_eq!(saved.attributes[0].name, "SavedField");
++    assert!(Arc::ptr_eq(&index, config_index(&db, listing)));
++    input.set_value(&mut db).to(None);
++    input.set_source_revision(&mut db).to("pending".into());
++    assert!(resolve_metadata_object(&db, listing, MdoType::Catalog, "Sample".into()).is_none());
++    assert_eq!(db.salsa_family_churn("parse_mdo_query").expect("events").0, 0);
++}
++
++/// Changing one provided object must not re-execute resolution for its sibling.
++#[test]
++fn canonical_mdo_keeps_unrelated_resolution_memoized() {
++    use crate::metadata::{
++        resolve_metadata_object, CanonicalMdoInput, CanonicalMdoInputs, MdoEntry,
++    };
++    use bsl_metadata::{MdoType, MetadataObject};
++    use salsa::Setter;
++
++    let mut db = RootDatabaseImpl::new_with_salsa_events();
++    db.set_metadata_listing(
++        "/canonical",
++        MetadataListingData {
++            entries: ["First", "Second"]
++                .into_iter()
++                .enumerate()
++                .map(|(index, name)| MdoEntry {
++                    kind: MdoType::Catalog,
++                    name: name.into(),
++                    main: FileId(index as u32),
++                    predefined: None,
++                })
++                .collect(),
++            ..MetadataListingData::default()
++        },
++    );
++    let listing = db.metadata_listing("/canonical").expect("registered listing");
++    let first = CanonicalMdoInput::new(
++        &db,
++        Some(Arc::new(MetadataObject::new(MdoType::Catalog, "First"))),
++        "first".into(),
++    );
++    let second = CanonicalMdoInput::new(
++        &db,
++        Some(Arc::new(MetadataObject::new(MdoType::Catalog, "Second"))),
++        "second".into(),
++    );
++    let inputs: CanonicalMdoInputs =
++        [(FileId(0), first), (FileId(1), second)].into_iter().collect();
++    listing.set_canonical_mdos(&mut db).to(Arc::new(inputs));
++    assert!(resolve_metadata_object(&db, listing, MdoType::Catalog, "First".into()).is_some());
++    let sibling =
++        resolve_metadata_object(&db, listing, MdoType::Catalog, "Second".into()).expect("sibling");
++    let executions = db.salsa_family_churn("resolve_metadata_object").expect("events").0;
++    assert_eq!(executions, 2);
++    first.set_value(&mut db).to(None);
++    first.set_source_revision(&mut db).to("changed".into());
++    let retained = resolve_metadata_object(&db, listing, MdoType::Catalog, "Second".into())
++        .expect("cached sibling");
++    assert!(Arc::ptr_eq(&sibling, &retained));
++    assert_eq!(db.salsa_family_churn("resolve_metadata_object").expect("events").0, executions);
++}
