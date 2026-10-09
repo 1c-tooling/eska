@@ -1,0 +1,86 @@
+{
+  "reference_head": "9021ba07471eee8a2614bed2105a2c8699f60780",
+  "gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.09504436499992153
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.20306107399665052
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.27408749500318663
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 0.2647190679999767
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 0.5283175459990161
+    },
+    {
+      "gate": "example",
+      "exit_code": 0,
+      "seconds": 0.08221293399401475
+    }
+  ],
+  "tests": {
+    "unit": 12,
+    "integration": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  "corpora": [
+    {
+      "corpus": "c1",
+      "exit_code": 0,
+      "result": {
+        "defined_types": 50,
+        "model_parity": true,
+        "seconds": 0.651013476,
+        "xml_exported": false
+      }
+    },
+    {
+      "corpus": "c2",
+      "exit_code": 0,
+      "result": {
+        "defined_types": 508,
+        "model_parity": true,
+        "seconds": 6.10735383,
+        "xml_exported": false
+      }
+    },
+    {
+      "corpus": "c3",
+      "exit_code": 0,
+      "result": {
+        "defined_types": 531,
+        "model_parity": true,
+        "seconds": 6.940232576,
+        "xml_exported": false
+      }
+    }
+  ],
+  "source_sha256": {
+    "tools/bsl-adapter/Cargo.toml": "f4ab3fbdbcac0be40d7a0e12b0d5a3a03c2f15b042d94bad0d47c44ea51337eb",
+    "tools/bsl-adapter/Cargo.lock": "c200f1099ad84da5279fb34e9334cfe264d2da219ce21a5c0099e5f1d86a014c",
+    "tools/bsl-adapter/src/lib.rs": "8737a6ba1736d0d79c976271f20285e89ae4779f8d0dc650662dc6a57ec15a25",
+    "tools/bsl-adapter/src/defined_type.rs": "c850e61d9824031e9e26c41bcc2019260df4bbab78c03219394470c742568dea",
+    "tools/bsl-adapter/src/type_description.rs": "0aec4e22ac1a0011c9b59a5e759d2e5ff5f6ccaf0d8811a1f6fabea42cfbebfe",
+    "tools/bsl-adapter/src/type_description/tests.rs": "0a1715f0a0fd672a6f4c7e396e9f66e2ade39bf98f06f31cdecdc4a8b84c4ae9",
+    "tools/bsl-adapter/tests/metadata_inputs.rs": "36a8662c9048eb1ad1e64a87d26f3a74eb53f13df1db42459d2dcf659f3b778b",
+    "tools/bsl-adapter/examples/project_types.rs": "402bd7d6c515aed2ed8bb89612942b53bcecb5e1df0486f09194f3b0b3f0c1c1"
+  },
+  "runtime_path": "empty",
+  "coverage": "defined-types-and-type-description",
+  "production_analyzer": false
+}

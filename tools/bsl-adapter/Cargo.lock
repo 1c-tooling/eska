@@ -246,6 +246,7 @@ name = "eska-bsl-adapter"
 version = "0.0.0"
 dependencies = [
  "bsl-metadata",
+ "bsl-platform",
  "eska",
  "serde_json",
 ]
