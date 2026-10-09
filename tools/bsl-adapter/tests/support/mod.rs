@@ -39,10 +39,3 @@ impl Drop for TestDirectory {
         let _ = fs::remove_dir_all(&self.0);
     }
 }
-
-/// Resolve the checked-in corpus through the adapter's location inside the project.
-pub fn native_corpus() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .join("tests/fixtures/eska-format/designer")
-}

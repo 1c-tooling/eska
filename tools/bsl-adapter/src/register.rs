@@ -24,16 +24,7 @@ use crate::{AdapterError, AdapterIssue, attribute_type, identity, properties::Pr
 /// # Errors
 /// Returns an incomplete/wrong descriptor or invalid field identity, flags, enums and types.
 pub fn register(descriptor: &ParsedDescriptor) -> Result<Register, AdapterError> {
-    if let Some(issue) = descriptor.diagnostics.first() {
-        return Err(AdapterError {
-            issue: AdapterIssue::IncompleteDescriptor,
-            range: issue.range.clone(),
-        });
-    }
-    let root = descriptor.objects.first().ok_or(AdapterError {
-        issue: AdapterIssue::MissingRoot,
-        range: 0..0,
-    })?;
+    let root = identity::descriptor_root(descriptor)?;
     let kind = match root.metadata.kind() {
         MetadataKind::InformationRegister => MdoType::InformationRegister,
         MetadataKind::AccumulationRegister => MdoType::AccumulationRegister,

@@ -63,30 +63,10 @@ pub fn common_module(object: &ParsedObject) -> Result<CommonModule, AdapterError
         }
         builder = builder.return_values_reuse(reuse);
     }
-    if let Some(value) = fields.text("ObjectBelonging")? {
-        let belonging = match value {
-            "Own" => ObjectBelonging::Own,
-            "Adopted" => ObjectBelonging::Adopted,
-            _ => {
-                return Err(AdapterError {
-                    issue: AdapterIssue::UnsupportedOwnership {
-                        value: value.into(),
-                    },
-                    range: fields
-                        .field("ObjectBelonging")?
-                        .map_or_else(|| object.range.clone(), |field| field.range.clone()),
-                });
-            }
-        };
-        builder = builder.object_belonging(belonging);
-    }
-    if let Some(field) = fields.field("ExtendedConfigurationObject")? {
-        let Some(value) = fields.text("ExtendedConfigurationObject")? else {
-            return Err(Properties::invalid(field));
-        };
-        if !value.is_empty() {
-            builder = builder.extends_uuid(value.parse().map_err(|_| Properties::invalid(field))?);
-        }
+    let (belonging, extends) = crate::identity::ownership(&fields)?;
+    builder = builder.object_belonging(belonging);
+    if let Some(uuid) = extends {
+        builder = builder.extends_uuid(uuid);
     }
     Ok(builder.build())
 }

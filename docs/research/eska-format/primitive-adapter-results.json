@@ -1,0 +1,97 @@
+{
+  "reference_head": "9021ba07471eee8a2614bed2105a2c8699f60780",
+  "gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.10409242400055518
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.08264246299950173
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.24416128099983325
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 0.6019157960035955
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 0.5181799639976816
+    },
+    {
+      "gate": "example",
+      "exit_code": 0,
+      "seconds": 0.08257904500351287
+    }
+  ],
+  "tests": {
+    "unit": 23,
+    "integration": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  "corpora": [
+    {
+      "corpus": "c1",
+      "exit_code": 0,
+      "result": {
+        "constants": 123,
+        "enum_values": 654,
+        "enums": 119,
+        "model_parity": true,
+        "seconds": 3.833286509,
+        "xml_exported": false
+      }
+    },
+    {
+      "corpus": "c2",
+      "exit_code": 0,
+      "result": {
+        "constants": 745,
+        "enum_values": 9763,
+        "enums": 1184,
+        "model_parity": true,
+        "seconds": 39.873652027,
+        "xml_exported": false
+      }
+    },
+    {
+      "corpus": "c3",
+      "exit_code": 0,
+      "result": {
+        "constants": 852,
+        "enum_values": 11524,
+        "enums": 1543,
+        "model_parity": true,
+        "seconds": 47.554469043,
+        "xml_exported": false
+      }
+    }
+  ],
+  "source_sha256": {
+    "tools/bsl-adapter/Cargo.toml": "f4ab3fbdbcac0be40d7a0e12b0d5a3a03c2f15b042d94bad0d47c44ea51337eb",
+    "tools/bsl-adapter/Cargo.lock": "c200f1099ad84da5279fb34e9334cfe264d2da219ce21a5c0099e5f1d86a014c",
+    "tools/bsl-adapter/src/lib.rs": "e3513c906af225e33be70bc78b4db40da8f8731bc48ac1dee7eb94e17c5c1c32",
+    "tools/bsl-adapter/src/identity.rs": "da2ee0f51c3d33131d333db8f04a9c80f44ba9f6268e50fc4b1337d35447b077",
+    "tools/bsl-adapter/src/common_module.rs": "0cea26111a1dbd2bf9d8ba860b0bbb2214b2c8b08234ef612ab42c45d5fd9ce9",
+    "tools/bsl-adapter/src/register.rs": "e1b5a84c7c02424a8c59ab8a0a9e2f3d7589273f603436ce8782641d5ca0e79a",
+    "tools/bsl-adapter/src/simple_object.rs": "b674516c09a79ea2837e28e6318d6dc451b1e9286e463b4a5647baa5ad77ea6c",
+    "tools/bsl-adapter/src/simple_object/tests.rs": "50475b904bc2a7bfdf9b91340c08dba327116a034b0ba6fb08059c753dd2ef9e",
+    "tools/bsl-adapter/tests/metadata_inputs.rs": "b57074d4d5d77da81d50f6fe39933b43283fb211ec33d391f7802ab631caede3",
+    "tools/bsl-adapter/tests/simple_inputs.rs": "83eb769f066d6944f7454fa661b8673c86a7c4c2cc29a1019eb8652250f49d87",
+    "tools/bsl-adapter/tests/support/mod.rs": "3e3dcceea1cab3f9c477cfad7a8a7a357024d6dd463a58d4c4b75d11e44eb495",
+    "tools/bsl-adapter/examples/project_primitives.rs": "650762bc2dfdac1e0ceedd42628c825169f8e93fa16585e921030bb4b5498cae"
+  },
+  "runtime_path": "empty",
+  "coverage": "constants-and-enums-main-descriptors",
+  "profile": "dev-unoptimized",
+  "production_analyzer": false
+}

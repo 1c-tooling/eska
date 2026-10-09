@@ -9,7 +9,7 @@ use eska::{
     project_core::source_format::{MetadataSnapshot, SourcePath, import_designer},
 };
 use eska_bsl_adapter::{AdapterIssue, common_module, defined_type, register};
-use support::{TestDirectory, native_corpus};
+use support::TestDirectory;
 
 /// Only the current ready snapshot may feed the analyzer; a prior value is never substituted.
 fn ready(inputs: &MetadataInputs, path: &SourcePath) -> Arc<MetadataSnapshot> {
@@ -24,7 +24,8 @@ fn ready(inputs: &MetadataInputs, path: &SourcePath) -> Arc<MetadataSnapshot> {
 fn module_drafts_share_saved_semantics_and_invalid_inputs_have_no_stale_model() {
     let directory = TestDirectory::new();
     let source = directory.0.join("source");
-    let corpus = native_corpus();
+    let corpus = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tests/fixtures/eska-format/designer");
     import_designer(&corpus, &source).unwrap();
     let mut inputs = MetadataInputs::open(&source).unwrap();
     let path = inputs
