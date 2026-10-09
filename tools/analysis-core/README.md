@@ -23,6 +23,10 @@ saved/overlay/close; diagnostics и completions используют те же �
 Общая [квота текущих входов](../../docs/research/eska-format/source-budget.md)
 считает исходный размер готовых YAML-моделей и BSL-текстов, по умолчанию 256 MiB.
 Замены переиспользуют свой резерв; недостаточная квота очищает прежний вход.
+`kernel_memory()` возвращает отдельный снимок таблиц Salsa: число живых entries,
+размеры полей и optional heap estimate. Отсутствующий hook отличается от нулевой
+оценки; сумма может повторно учитывать общие Arc и не включает всю память процесса.
+Снятие статистики не вычисляет запросы и не меняет текущую ревизию.
 `QueryCancellation` прерывает выполняющийся запрос на ближайшем checkpoint
 Salsa; один токен управляет одним запросом и не меняет исходники или ревизию.
 Первый самостоятельный checker выполняет явный профиль `syntax` с кооперативным
@@ -45,6 +49,7 @@ Read-only пример `project_session` принимает каталог ис�
 ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test --manifest-path tools/analysis-core/Cargo.toml --locked
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_session -- /path/to/eska/source
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_module -- /path/to/eska/source
+cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_memory -- /path/to/eska/source
 ```
 
 Команды выполняются из корня `eska`; для тестов путь задаётся к соседнему
@@ -52,6 +57,10 @@ playground. Подробности и реальные замеры —
 в [результатах сессии](../../docs/research/eska-format/shared-session.md)
 и [проверке BSL](../../docs/research/eska-format/bsl-session.md).
 Контракт отмены — в [проверке запросов](../../docs/research/eska-format/query-cancellation.md).
+Пример `project_memory` читает все YAML и до 40 объявленных текстовых модулей;
+сравнивает оценки до/после освобождения текста и глубокой LRU-очистки.
+[Реальный замер](../../docs/research/eska-format/kernel-memory.md) показывает
+ограничения этих оценок; очистка не гарантирует освобождение всех memo или RSS.
 
 ## Самостоятельная проверка
 

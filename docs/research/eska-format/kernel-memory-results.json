@@ -1,0 +1,397 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-09",
+  "scope": "shared_kernel_memory_observability",
+  "analysis_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.1357949129996996
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.15985598699990078
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.30684345299960114
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 2.2954541819999577,
+      "test_results": [
+        "ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 0.7582257419999223
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 2.828247344999909,
+      "test_results": [
+        "ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 1.884508076000202
+    },
+    {
+      "gate": "release-example",
+      "exit_code": 0,
+      "seconds": 11.325774810999064
+    }
+  ],
+  "analysis_tests": {
+    "unit_and_file_passed": 22,
+    "process_passed": 9,
+    "minimal_passed": 22,
+    "ignored": 0
+  },
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9286633760002587
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3140796659990883
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2966976700008672
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 9.767169101998661
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.386683806998917
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.003598716999476892
+    }
+  ],
+  "application_tests": {
+    "passed": 885,
+    "ignored": 14
+  },
+  "real_corpus": {
+    "corpus": "C1",
+    "exit_code": 2,
+    "wall_seconds": 7.874441044999912,
+    "peak_rss_kib": 157320,
+    "selected_modules": 40,
+    "checked_modules": 40,
+    "metadata_models_complete": false,
+    "loaded_resources": {
+      "max_source_bytes": 268435456,
+      "metadata_source_bytes": 46327997,
+      "module_text_bytes": 472163,
+      "total_source_bytes": 46800160
+    },
+    "current_resources": {
+      "max_source_bytes": 268435456,
+      "metadata_source_bytes": 46327997,
+      "module_text_bytes": 0,
+      "total_source_bytes": 46327997
+    },
+    "stages": {
+      "opened": {
+        "tables_without_heap_hook": 47,
+        "live_tables_without_heap_hook": 1,
+        "summed_heap_estimates": 2760227,
+        "live_tables": 11,
+        "parse_entries": 0,
+        "live_without_hook": [
+          {
+            "name": "FeaturesInput",
+            "entries": 1
+          }
+        ],
+        "largest_estimates": [
+          {
+            "name": "SourceRootInput",
+            "entries": 1,
+            "heap_bytes": 2562360
+          },
+          {
+            "name": "MetadataListingInput",
+            "entries": 1,
+            "heap_bytes": 179043
+          },
+          {
+            "name": "CanonicalMetadataInput",
+            "entries": 2645,
+            "heap_bytes": 18515
+          },
+          {
+            "name": "WorkspaceConfigsInput",
+            "entries": 1,
+            "heap_bytes": 309
+          },
+          {
+            "name": "ConfigRevisionInput",
+            "entries": 1,
+            "heap_bytes": 0
+          }
+        ]
+      },
+      "metadata": {
+        "tables_without_heap_hook": 47,
+        "live_tables_without_heap_hook": 1,
+        "summed_heap_estimates": 3928090,
+        "live_tables": 11,
+        "parse_entries": 0,
+        "live_without_hook": [
+          {
+            "name": "FeaturesInput",
+            "entries": 1
+          }
+        ],
+        "largest_estimates": [
+          {
+            "name": "SourceRootInput",
+            "entries": 1,
+            "heap_bytes": 2562360
+          },
+          {
+            "name": "CanonicalMetadataInput",
+            "entries": 2645,
+            "heap_bytes": 1186378
+          },
+          {
+            "name": "MetadataListingInput",
+            "entries": 1,
+            "heap_bytes": 179043
+          },
+          {
+            "name": "WorkspaceConfigsInput",
+            "entries": 1,
+            "heap_bytes": 309
+          },
+          {
+            "name": "ConfigRevisionInput",
+            "entries": 1,
+            "heap_bytes": 0
+          }
+        ]
+      },
+      "queried": {
+        "tables_without_heap_hook": 43,
+        "live_tables_without_heap_hook": 4,
+        "summed_heap_estimates": 7838473,
+        "live_tables": 31,
+        "parse_entries": 40,
+        "live_without_hook": [
+          {
+            "name": "FeaturesInput",
+            "entries": 1
+          },
+          {
+            "name": "file_diagnostics_query::interned_arguments",
+            "entries": 40
+          },
+          {
+            "name": "method_diagnostics_query::interned_arguments",
+            "entries": 110
+          },
+          {
+            "name": "module_code_diagnostics_query::interned_arguments",
+            "entries": 38
+          }
+        ],
+        "largest_estimates": [
+          {
+            "name": "SourceRootInput",
+            "entries": 1,
+            "heap_bytes": 2562360
+          },
+          {
+            "name": "syntax::Parse<rowan::api::SyntaxNode<syntax::syntax_node::BslLanguage>>",
+            "entries": 40,
+            "heap_bytes": 1813091
+          },
+          {
+            "name": "CanonicalMetadataInput",
+            "entries": 2645,
+            "heap_bytes": 1186378
+          },
+          {
+            "name": "core::option::Option<alloc::sync::Arc<hir_def::body::LowerResult>>",
+            "entries": 124,
+            "heap_bytes": 645210
+          },
+          {
+            "name": "FileTextInput",
+            "entries": 4620,
+            "heap_bytes": 472163
+          }
+        ]
+      },
+      "released": {
+        "tables_without_heap_hook": 43,
+        "live_tables_without_heap_hook": 4,
+        "summed_heap_estimates": 7366310,
+        "live_tables": 31,
+        "parse_entries": 40,
+        "live_without_hook": [
+          {
+            "name": "FeaturesInput",
+            "entries": 1
+          },
+          {
+            "name": "file_diagnostics_query::interned_arguments",
+            "entries": 40
+          },
+          {
+            "name": "method_diagnostics_query::interned_arguments",
+            "entries": 110
+          },
+          {
+            "name": "module_code_diagnostics_query::interned_arguments",
+            "entries": 38
+          }
+        ],
+        "largest_estimates": [
+          {
+            "name": "SourceRootInput",
+            "entries": 1,
+            "heap_bytes": 2562360
+          },
+          {
+            "name": "syntax::Parse<rowan::api::SyntaxNode<syntax::syntax_node::BslLanguage>>",
+            "entries": 40,
+            "heap_bytes": 1813091
+          },
+          {
+            "name": "CanonicalMetadataInput",
+            "entries": 2645,
+            "heap_bytes": 1186378
+          },
+          {
+            "name": "core::option::Option<alloc::sync::Arc<hir_def::body::LowerResult>>",
+            "entries": 124,
+            "heap_bytes": 645210
+          },
+          {
+            "name": "alloc::sync::Arc<str>",
+            "entries": 40,
+            "heap_bytes": 472163
+          }
+        ]
+      },
+      "trimmed": {
+        "tables_without_heap_hook": 43,
+        "live_tables_without_heap_hook": 4,
+        "summed_heap_estimates": 7355110,
+        "live_tables": 31,
+        "parse_entries": 40,
+        "live_without_hook": [
+          {
+            "name": "FeaturesInput",
+            "entries": 1
+          },
+          {
+            "name": "file_diagnostics_query::interned_arguments",
+            "entries": 40
+          },
+          {
+            "name": "method_diagnostics_query::interned_arguments",
+            "entries": 110
+          },
+          {
+            "name": "module_code_diagnostics_query::interned_arguments",
+            "entries": 38
+          }
+        ],
+        "largest_estimates": [
+          {
+            "name": "SourceRootInput",
+            "entries": 1,
+            "heap_bytes": 2562360
+          },
+          {
+            "name": "syntax::Parse<rowan::api::SyntaxNode<syntax::syntax_node::BslLanguage>>",
+            "entries": 40,
+            "heap_bytes": 1813091
+          },
+          {
+            "name": "CanonicalMetadataInput",
+            "entries": 2645,
+            "heap_bytes": 1186378
+          },
+          {
+            "name": "core::option::Option<alloc::sync::Arc<hir_def::body::LowerResult>>",
+            "entries": 124,
+            "heap_bytes": 645210
+          },
+          {
+            "name": "alloc::sync::Arc<str>",
+            "entries": 40,
+            "heap_bytes": 472163
+          }
+        ]
+      }
+    },
+    "all_source_bytes_unchanged": true,
+    "source_files": 7829,
+    "runtime_path": "empty"
+  },
+  "limitations": [
+    "estimates_not_deduplicated_heap_or_rss",
+    "non_salsa_allocations_not_measured",
+    "partial_metadata_models",
+    "bounded_40_module_working_set_only",
+    "global_memory_budget_not_implemented",
+    "analyzer_transport_not_implemented"
+  ]
+}
