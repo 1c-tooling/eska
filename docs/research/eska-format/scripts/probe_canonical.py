@@ -26,6 +26,7 @@ def main():
     """Keep source checkouts unchanged and test the patched library and its real consumer."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--analyzer", required=True, type=Path)
+    parser.add_argument("--family-inputs", action="store_true", help="Test the generalized object/register/module/defined-type input")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[4]
     playground = (repo.parent / "eska-playground").resolve(strict=True)
@@ -43,12 +44,13 @@ def main():
     with tarfile.open(archive) as stream:
         stream.extractall(copy, filter="data")
     archive.unlink()
-    patch = Path(__file__).with_name("canonical-input.patch")
+    patch = Path(__file__).with_name("canonical-family-input.patch" if args.family_inputs else "canonical-input.patch")
+    probe = Path(__file__).with_name("canonical_family_probe.rs" if args.family_inputs else "canonical_probe.rs")
     run(["git", "apply", "--check", str(patch)], copy, output / "patch-check.log")
     run(["git", "apply", str(patch)], copy, output / "patch-apply.log")
     consumer = output / "consumer"
     (consumer / "src").mkdir(parents=True)
-    shutil.copyfile(Path(__file__).with_name("canonical_probe.rs"), consumer / "src/main.rs")
+    shutil.copyfile(probe, consumer / "src/main.rs")
     manifest = '[package]\nname = "eska-canonical-probe"\nversion = "0.0.0"\nedition = "2024"\npublish = false\n\n[workspace]\n\n[dependencies]\n'
     manifest += f'eska = {{ path = {json.dumps(str(repo))}, default-features = false }}\n'
     for name in ["base-db", "bsl-metadata", "ide-db", "ide-host-core", "vfs"]:
@@ -75,7 +77,8 @@ def main():
     run(["cargo", "test", "--locked", "-p", "ide-host-core", "--lib"], copy, output / "host-tests.log", env)
     summary = {"reference_head": head, "salsa_revision": SALSA_REVISION,
                "patch_sha256": hashlib.sha256(patch.read_bytes()).hexdigest(),
-               "probe_sha256": hashlib.sha256(Path(__file__).with_name("canonical_probe.rs").read_bytes()).hexdigest(),
+               "probe_sha256": hashlib.sha256(probe.read_bytes()).hexdigest(),
+               "input_mode": "families" if args.family_inputs else "mdo",
                "demo": json.loads((output / "demo.json").read_text()),
                "gates": ["build", "consumer-clippy", "kernel-clippy-all-targets", "kernel-unit", "host-unit"]}
     (output / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n")

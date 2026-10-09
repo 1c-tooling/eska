@@ -1,0 +1,86 @@
+{
+  "reference_head": "9021ba07471eee8a2614bed2105a2c8699f60780",
+  "salsa_revision": "5d2686f1f94dc3d618569652d5576ce997491b3b",
+  "patch_sha256": "06b9f41b78630af4efeff3cadec582c3bfa710330b033aae49293e72615b1d2a",
+  "probe_sha256": "a8612aa182b622aae1e3f910a4cca72624c9b8e98853b7e073a84a89bbde94bc",
+  "input_mode": "families",
+  "demo": {
+    "canonical_families_available": [
+      "object",
+      "register",
+      "common_module",
+      "defined_type"
+    ],
+    "disk_unchanged": true,
+    "draft_completion_applied": true,
+    "input_summary": {
+      "metadata_input_complete": true,
+      "owners": 3,
+      "parse_issues": 0,
+      "pending": 0,
+      "ready": 3,
+      "revision": 7,
+      "unavailable": 0
+    },
+    "invalid_yaml_rejected": true,
+    "metadata_complete": false,
+    "metadata_coverage": "catalog-and-direct-attribute-names",
+    "observed_bsl_inferences": 2,
+    "observed_initial_resolutions": 2,
+    "pending_has_no_fallback": true,
+    "restored_completion_applied": true,
+    "same_host": true,
+    "shared_metadata_inputs": true,
+    "sibling_resolution_executions": 0,
+    "structure_index_retained": true,
+    "unrelated_bsl_inference_executions": 0,
+    "update_ms": 0.8903230000000001,
+    "xml_exported": false,
+    "xml_parse_executions": 0
+  },
+  "gates": [
+    "build",
+    "consumer-clippy",
+    "kernel-clippy-all-targets",
+    "kernel-unit",
+    "host-unit"
+  ],
+  "revised_gates": [
+    {
+      "gate": "revised-clippy",
+      "exit_code": 0
+    },
+    {
+      "gate": "revised-kernel-tests",
+      "exit_code": 0
+    },
+    {
+      "gate": "revised-host-tests",
+      "exit_code": 0
+    },
+    {
+      "gate": "revised-build",
+      "exit_code": 0
+    },
+    {
+      "gate": "revised-consumer-clippy",
+      "exit_code": 0
+    }
+  ],
+  "tests": {
+    "ide_db": {
+      "passed": 179,
+      "failed": 0,
+      "ignored": 0
+    },
+    "ide_host_core": {
+      "passed": 30,
+      "failed": 0,
+      "ignored": 0
+    },
+    "new_family_tests": 5
+  },
+  "platform": "Linux x86_64",
+  "runtime_path": "empty",
+  "production_integration": false
+}
