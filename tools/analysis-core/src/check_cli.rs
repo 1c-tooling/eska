@@ -72,6 +72,7 @@ fn execute(cli: &args::Cli, localizer: &Localizer) -> Result<ExitCode, Failure> 
     let options = BatchOptions {
         timeout: Duration::from_secs(cli.timeout_seconds),
         max_document_bytes: cli.max_document_bytes,
+        max_retained_source_bytes: cli.max_retained_source_bytes,
         ..BatchOptions::default()
     };
     let report = match cli.profile {

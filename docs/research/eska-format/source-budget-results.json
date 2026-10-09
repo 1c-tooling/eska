@@ -1,0 +1,369 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-09",
+  "scope": "shared_current_source_byte_budget",
+  "analysis_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.3312553220002883
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.21800794699993276
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.934048752000308
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 2.0861567550000473,
+      "test_results": [
+        "ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 2.0813941979995434
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 5.189043606998894,
+      "test_results": [
+        "ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 1.868407040999955
+    },
+    {
+      "gate": "release-cli",
+      "exit_code": 0,
+      "seconds": 12.134813647000556
+    }
+  ],
+  "analysis_tests": {
+    "unit_and_file_passed": 21,
+    "process_passed": 9,
+    "minimal_passed": 21,
+    "ignored": 0
+  },
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8824822770002356
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 4.604222703999767
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 11.259469925000303
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 33.82766793000155
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.072528789001808
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.2117779350010096
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 4.843956374999834
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7479258599996683
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 4.362544841998897
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 7.148265877000085
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.2394470519993774
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.9305545229999552
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 12.088478216001022
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.368334868999227
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.012974780000149622
+    }
+  ],
+  "application_tests": {
+    "passed": 885,
+    "ignored": 14,
+    "minimal_passed": 161,
+    "minimal_ignored": 3,
+    "project_cli_passed": 173,
+    "project_cli_ignored": 3,
+    "build_cli_passed": 192,
+    "build_cli_ignored": 3
+  },
+  "real": {
+    "runs": [
+      {
+        "corpus": "C1",
+        "case": "normal",
+        "lang": "en-US",
+        "exit_code": 2,
+        "elapsed_seconds": 13.775544909000018,
+        "max_rss_kib": 540576,
+        "resources": {
+          "max_source_bytes": 268435456,
+          "metadata_source_bytes": 46327997,
+          "module_text_bytes": 0,
+          "total_source_bytes": 46327997
+        },
+        "coverage": {
+          "binary_modules": 0,
+          "checked_modules": 1975,
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": false,
+          "metadata_owners": 2645,
+          "modules": 1975,
+          "syntax_complete": true,
+          "unavailable_modules": 0,
+          "unchecked_modules": 0
+        },
+        "source_budget_failures": 0,
+        "syntax_findings": 0
+      },
+      {
+        "corpus": "C1",
+        "case": "normal",
+        "lang": "ru-RU",
+        "exit_code": 2,
+        "elapsed_seconds": 14.87267663700004,
+        "max_rss_kib": 540816,
+        "resources": {
+          "max_source_bytes": 268435456,
+          "metadata_source_bytes": 46327997,
+          "module_text_bytes": 0,
+          "total_source_bytes": 46327997
+        },
+        "coverage": {
+          "binary_modules": 0,
+          "checked_modules": 1975,
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": false,
+          "metadata_owners": 2645,
+          "modules": 1975,
+          "syntax_complete": true,
+          "unavailable_modules": 0,
+          "unchecked_modules": 0
+        },
+        "source_budget_failures": 0,
+        "syntax_findings": 0
+      },
+      {
+        "corpus": "C1",
+        "case": "bounded",
+        "lang": "en-US",
+        "exit_code": 2,
+        "elapsed_seconds": 0.3853929729993979,
+        "max_rss_kib": 70764,
+        "resources": {
+          "max_source_bytes": 1048576,
+          "metadata_source_bytes": 1046943,
+          "module_text_bytes": 0,
+          "total_source_bytes": 1046943
+        },
+        "coverage": {
+          "binary_modules": 0,
+          "checked_modules": 432,
+          "metadata_inputs_complete": false,
+          "metadata_models_complete": false,
+          "metadata_owners": 2645,
+          "modules": 1975,
+          "syntax_complete": false,
+          "unavailable_modules": 1543,
+          "unchecked_modules": 0
+        },
+        "source_budget_failures": 4174,
+        "syntax_findings": 0
+      },
+      {
+        "corpus": "C1",
+        "case": "bounded",
+        "lang": "ru-RU",
+        "exit_code": 2,
+        "elapsed_seconds": 0.37267310400056886,
+        "max_rss_kib": 70664,
+        "resources": {
+          "max_source_bytes": 1048576,
+          "metadata_source_bytes": 1046943,
+          "module_text_bytes": 0,
+          "total_source_bytes": 1046943
+        },
+        "coverage": {
+          "binary_modules": 0,
+          "checked_modules": 432,
+          "metadata_inputs_complete": false,
+          "metadata_models_complete": false,
+          "metadata_owners": 2645,
+          "modules": 1975,
+          "syntax_complete": false,
+          "unavailable_modules": 1543,
+          "unchecked_modules": 0
+        },
+        "source_budget_failures": 4174,
+        "syntax_findings": 0
+      }
+    ],
+    "json_locale_independent": true,
+    "default_result_matches_pre_budget_checker": true,
+    "source_bytes_unchanged": true,
+    "runtime_path": "empty"
+  },
+  "new_dependencies": [],
+  "limitations": [
+    "current_source_sizes_only_not_model_heap",
+    "immutable_composition_not_accounted",
+    "transient_allocations_not_accounted",
+    "external_snapshot_arcs_not_accounted",
+    "kernel_memos_and_query_results_not_accounted",
+    "no_global_rss_budget",
+    "no_automatic_metadata_eviction",
+    "syntax_only_real_probe",
+    "no_1c_client_validation"
+  ]
+}

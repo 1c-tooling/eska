@@ -33,6 +33,8 @@ pub struct Cli {
     pub timeout_seconds: u64,
     #[arg(long, default_value_t = 64 * 1024 * 1024)]
     pub max_document_bytes: u64,
+    #[arg(long, default_value_t = 256 * 1024 * 1024)]
+    pub max_retained_source_bytes: u64,
     #[arg(short, long, action = ArgAction::Help)]
     help: Option<bool>,
     #[arg(short = 'V', long, action = ArgAction::Version)]

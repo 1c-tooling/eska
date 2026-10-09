@@ -20,6 +20,9 @@ XML-экспорт не участвуют в чтении.
 saved/overlay/close; diagnostics и completions используют те же байты и
 канонические метаданные. Бинарные и непрочитанные тела имеют явное состояние.
 Лимит текущих загруженных текстов — 64 MiB по умолчанию; это не бюджет RSS.
+Общая [квота текущих входов](../../docs/research/eska-format/source-budget.md)
+считает исходный размер готовых YAML-моделей и BSL-текстов, по умолчанию 256 MiB.
+Замены переиспользуют свой резерв; недостаточная квота очищает прежний вход.
 `QueryCancellation` прерывает выполняющийся запрос на ближайшем checkpoint
 Salsa; один токен управляет одним запросом и не меняет исходники или ревизию.
 Первый самостоятельный checker выполняет явный профиль `syntax` с кооперативным
@@ -67,6 +70,7 @@ cargo build --manifest-path tools/analysis-core/Cargo.toml --features check-cli 
 ```bash
 eska-check --profile syntax --format json
 eska-check --profile syntax --project main --timeout-seconds 300
+eska-check --profile syntax --max-retained-source-bytes 268435456
 ```
 
 Его пока нет в установленном комплекте `eska`; путь к собранному бинарнику

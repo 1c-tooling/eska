@@ -9,6 +9,7 @@ mod modules;
 mod projection;
 mod queries;
 mod request;
+mod resources;
 mod session;
 
 pub use cancellation::QueryCancellation;
@@ -17,4 +18,5 @@ pub use modules::{ModuleFailure, ModuleInput, ModuleState, ModuleSummary, Sessio
 pub use projection::{MetadataView, ModelState, OwnerModel};
 pub use queries::{ModuleResult, QueryError};
 pub use request::{SessionRequestError, SessionRevision};
+pub use resources::ResourceSummary;
 pub use session::{AnalysisSession, SessionError, SessionSummary};

@@ -4,7 +4,7 @@ use eska::{analysis_core::InputFailure, project_core::source_format::SourcePath}
 
 use crate::{
     AnalysisSession, Diagnostic, ModelState, ModuleFailure, ModuleInput, ModuleState,
-    SessionRevision,
+    ResourceSummary, SessionRevision,
 };
 
 use super::BatchError;
@@ -90,6 +90,7 @@ pub struct BatchReport {
     pub status: BatchStatus,
     pub manifest_sha256: String,
     pub coverage: BatchCoverage,
+    pub resources: ResourceSummary,
     pub stop: Option<StopReason>,
     pub metadata_issues: Vec<MetadataIssue>,
     pub files: Vec<BatchFile>,
@@ -197,6 +198,7 @@ pub fn finish(
         status,
         manifest_sha256,
         coverage,
+        resources: session.resources(),
         stop,
         metadata_issues,
         files,
@@ -238,5 +240,8 @@ fn input_failure(failure: &InputFailure) -> (String, Vec<String>) {
         InputFailure::Source(error) => (error.code.into(), error.location.clone()),
         InputFailure::Cancelled => ("analysis_cancelled".into(), vec![]),
         InputFailure::DocumentTooLarge { .. } => ("source_document_too_large".into(), vec![]),
+        InputFailure::SourceBudgetExceeded { .. } => {
+            ("analysis_source_budget_exceeded".into(), vec![])
+        }
     }
 }

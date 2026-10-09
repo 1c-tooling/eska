@@ -392,5 +392,6 @@
     "no_analyzer_server",
     "not_in_installed_suite",
     "no_1c_client_validation"
-  ]
+  ],
+  "state_at_commit": "f5181b1"
 }

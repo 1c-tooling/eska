@@ -71,6 +71,7 @@ fn saved_and_overlay_bytes_have_identical_values_hashes_and_coordinates() {
     assert!(inputs.summary().metadata_input_complete);
     let saved = ready(&inputs, &catalog());
     let text = fs::read_to_string(root.join(catalog().as_path())).unwrap();
+    assert_eq!(saved.source_bytes, text.len() as u64);
     inputs
         .apply_overlay(
             &catalog(),
@@ -89,6 +90,52 @@ fn saved_and_overlay_bytes_have_identical_values_hashes_and_coordinates() {
     assert_eq!(inputs.manifest_sha256(), overlay.manifest_sha256);
     assert!(inputs.summary().metadata_input_complete);
     assert!(!root.join("Configuration.xml").exists());
+}
+
+/// A host reservation bounds both saved and editor reads, clearing current models on refusal.
+#[test]
+fn source_budget_refusal_is_distinct_from_a_document_limit_and_releases_current_input() {
+    let (_test, root, mut inputs) = project();
+    let path = catalog();
+    inputs
+        .load_saved(&path, inputs.revision(), &InputRequest::default())
+        .unwrap();
+    let saved = ready(&inputs, &path);
+    let text = fs::read_to_string(root.join(path.as_path())).unwrap();
+    let request = InputRequest::default().with_source_budget(0, 20);
+    inputs
+        .load_saved(&path, inputs.revision(), &request)
+        .unwrap();
+    assert_eq!(
+        inputs.owner(&path).unwrap().state,
+        InputState::Unavailable(InputFailure::SourceBudgetExceeded { limit: 20 })
+    );
+    let request =
+        InputRequest::default().with_source_budget(text.len() as u64 - 1, text.len() as u64);
+    inputs
+        .apply_overlay(&path, inputs.revision(), 1, &text, &request)
+        .unwrap();
+    assert!(matches!(
+        inputs.owner(&path).unwrap().state,
+        InputState::Unavailable(InputFailure::SourceBudgetExceeded { .. })
+    ));
+    let request = InputRequest {
+        max_document_bytes: 2,
+        ..InputRequest::default()
+    }
+    .with_source_budget(10, 20);
+    inputs
+        .apply_overlay(&path, inputs.revision(), 2, &text, &request)
+        .unwrap();
+    assert_eq!(
+        inputs.owner(&path).unwrap().state,
+        InputState::Unavailable(InputFailure::DocumentTooLarge { limit: 2 })
+    );
+    inputs
+        .close_overlay(&path, inputs.revision(), &InputRequest::default())
+        .unwrap();
+    assert_eq!(ready(&inputs, &path), saved);
+    assert_eq!(fs::read_to_string(root.join(path.as_path())).unwrap(), text);
 }
 
 #[test]

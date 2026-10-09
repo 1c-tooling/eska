@@ -44,6 +44,8 @@ pub struct NativeMetadata {
 pub struct MetadataSnapshot {
     pub path: SourcePath,
     pub source_sha256: String,
+    /// Exact owning YAML size for source quota accounting; this is not the model's heap size.
+    pub source_bytes: u64,
     pub manifest_sha256: String,
     pub documents: Vec<NativeMetadata>,
 }

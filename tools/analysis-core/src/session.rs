@@ -10,7 +10,7 @@ use std::{collections::BTreeMap, path::Path, sync::Arc};
 use base_db::{SourceDatabase, SourceRoot, SourceRootId};
 use bsl_metadata::Configuration;
 use eska::{
-    analysis_core::{InputRequest, InputSummary, MetadataInputs, UpdateError},
+    analysis_core::{InputRequest, InputState, InputSummary, MetadataInputs, UpdateError},
     project_core::source_format::{Error, SourcePath, SourceReader},
 };
 use ide_db::{
@@ -61,6 +61,7 @@ struct OwnerEntry {
     binding: OwnerBinding,
     slot: CanonicalMetadataInput,
     model: OwnerModel,
+    source_bytes: u64,
 }
 
 /// The composition is immutable until reopening; updates replace exactly one canonical input.
@@ -70,6 +71,7 @@ pub struct AnalysisSession {
     pub(super) revision: SessionRevision,
     pub(super) modules: BTreeMap<SourcePath, ModuleEntry>,
     pub(super) loaded_module_bytes: u64,
+    pub(super) loaded_metadata_source_bytes: u64,
     pub(super) options: SessionOptions,
     pub(super) incomplete_metadata: usize,
     pub(super) incomplete_modules: usize,
@@ -188,6 +190,7 @@ impl AnalysisSession {
                     binding,
                     slot,
                     model,
+                    source_bytes: 0,
                 },
             );
         }
@@ -212,6 +215,7 @@ impl AnalysisSession {
             modules,
             revision: SessionRevision::default(),
             loaded_module_bytes: 0,
+            loaded_metadata_source_bytes: 0,
             options,
         })
     }
@@ -285,8 +289,10 @@ impl AnalysisSession {
     ) -> Result<(), SessionRequestError> {
         self.validate_revision(expected)?;
         let next = self.revision.next()?;
+        let previous = self.owners.get(path).map_or(0, |entry| entry.source_bytes);
+        let request = self.source_budget_request(previous, request);
         self.inputs
-            .load_saved(path, self.inputs.revision(), request)?;
+            .load_saved(path, self.inputs.revision(), &request)?;
         self.publish(path, next)
     }
 
@@ -304,12 +310,14 @@ impl AnalysisSession {
     ) -> Result<(), SessionRequestError> {
         self.validate_revision(expected)?;
         let next = self.revision.next()?;
+        let previous = self.owners.get(path).map_or(0, |entry| entry.source_bytes);
+        let request = self.source_budget_request(previous, request);
         self.inputs.apply_overlay(
             path,
             self.inputs.revision(),
             document_version,
             text,
-            request,
+            &request,
         )?;
         self.publish(path, next)
     }
@@ -326,8 +334,10 @@ impl AnalysisSession {
     ) -> Result<(), SessionRequestError> {
         self.validate_revision(expected)?;
         let next = self.revision.next()?;
+        let previous = self.owners.get(path).map_or(0, |entry| entry.source_bytes);
+        let request = self.source_budget_request(previous, request);
         self.inputs
-            .close_overlay(path, self.inputs.revision(), request)?;
+            .close_overlay(path, self.inputs.revision(), &request)?;
         self.publish(path, next)
     }
 
@@ -440,6 +450,10 @@ impl AnalysisSession {
             SessionRequestError::Metadata(UpdateError::UnknownOwner(path.clone()))
         })?;
         let model = projection::project(entry.binding.kind, input, next);
+        let source_bytes = match &input.state {
+            InputState::Ready(snapshot) => snapshot.source_bytes,
+            InputState::Pending | InputState::Unavailable(_) => 0,
+        };
         let was_complete = entry.model.descriptors_complete();
         let is_complete = model.descriptors_complete();
         let value = match &model.state {
@@ -455,6 +469,9 @@ impl AnalysisSession {
                 model.revision,
                 model.source_sha256.as_deref().unwrap_or_default(),
             ));
+        self.loaded_metadata_source_bytes -= entry.source_bytes;
+        self.loaded_metadata_source_bytes += source_bytes;
+        entry.source_bytes = source_bytes;
         entry.model = model;
         if was_complete && !is_complete {
             self.incomplete_metadata += 1;

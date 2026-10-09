@@ -4,5 +4,5 @@ mod metadata_inputs;
 
 pub use metadata_inputs::{
     Cancellation, InputFailure, InputOrigin, InputRequest, InputRevision, InputState, InputSummary,
-    MetadataInputs, OwnerInput, UpdateError,
+    MetadataInputs, OwnerInput, SourceBudget, UpdateError,
 };

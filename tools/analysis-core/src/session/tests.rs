@@ -121,7 +121,7 @@ pub(super) fn load(session: &mut AnalysisSession) {
 }
 
 /// Keep the owner identity explicit in each scenario.
-pub(super) fn owner(value: &str) -> SourcePath {
+pub fn owner(value: &str) -> SourcePath {
     SourcePath::parse(value).unwrap()
 }
 
@@ -368,6 +368,7 @@ fn cancellation_and_limits_clear_the_current_kernel_model() {
     let request = InputRequest {
         max_document_bytes: 1,
         cancellation,
+        ..InputRequest::default()
     };
     session
         .load_saved(&path, session.revision(), &request)
@@ -385,6 +386,7 @@ fn cancellation_and_limits_clear_the_current_kernel_model() {
     let request = InputRequest {
         max_document_bytes: 1,
         cancellation: Cancellation::default(),
+        ..InputRequest::default()
     };
     session
         .load_saved(&path, session.revision(), &request)

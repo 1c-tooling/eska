@@ -13,6 +13,7 @@
 eska-check --profile syntax --format json
 eska-check --profile syntax --project-dir . --project main --lang ru-RU
 eska-check --profile syntax --timeout-seconds 300 --max-document-bytes 67108864
+eska-check --profile syntax --max-retained-source-bytes 268435456
 ```
 
 `--profile` обязателен; сейчас поддержан только `syntax`, использующий
@@ -57,7 +58,8 @@ YAML проходит прежний saved input/adapter. BSL читается v
 а не текущей резидентной полноте уже освобождённых тел. Это правило нельзя
 переносить на семантический профиль, которому нужны соседние модули.
 
-`--max-document-bytes` уменьшает общий жёсткий предел документа 64 MiB.
+`--max-retained-source-bytes` задаёт [общую квоту текущих YAML/BSL-входов](source-budget.md),
+по умолчанию 256 MiB. `--max-document-bytes` уменьшает общий жёсткий предел документа 64 MiB.
 Текущие BSL-тексты также ограничены 64 MiB; модели YAML, результаты, parse trees
 и memo в эту квоту не входят. Это не общий предел heap или RSS.
 
@@ -79,12 +81,14 @@ Schema 1 содержит `tool=eska-check`, `command=check`, `status` и `data`
 к нормализованным правилам профиля, а не к сырым байтам файла настроек.
 Ошибки запуска используют общий error envelope проектных инструментов.
 
-`report` содержит profile/enabled/status, manifest hash, coverage, stop,
+`report` содержит profile/enabled/status, manifest hash, coverage, resources, stop,
 metadata issues и результаты файлов. Coverage раздельно показывает полноту
 чтения YAML, поддержанных моделей прочитанных дескрипторов и syntax-проверки.
 `metadata_models_complete` имеет ограниченный смысл
 [`descriptor_models_complete`](shared-session.md): полнота ресурсов, всех
 семантических свойств, типов и BSL-анализа этим полем не подтверждается.
+`resources` показывает точный текущий резерв исходных байтов и его общий предел,
+считая owning YAML текущих готовых моделей и загруженные BSL-тексты.
 Файлы имеют state `checked`, `binary` или `unavailable`, source hash и ревизию
 проверенных байтов. Findings содержат code/severity, UTF-8 byte ranges и
 zero-based строки/колонки в Unicode scalars. Человекочитаемые позиции начинаются
@@ -92,9 +96,10 @@ zero-based строки/колонки в Unicode scalars. Человекочи�
 
 ## Проверки
 
-20 unit/файловых тестов общего host и восемь process-тестов проверяют saved IDE/
-batch parity, inline-команды, release текущего текста, readonly BOM/CRLF,
-оба языка, JSON, exit codes, настройки, selection, binary/unread/limits и deadline.
+Первый компонент проверен 20 unit/файловыми тестами общего host и восемью
+process-тестами. Проверены saved IDE/batch parity, inline-команды, release
+текущего текста, readonly BOM/CRLF, оба языка, JSON, exit codes, настройки,
+selection, binary/unread/limits и deadline.
 Fmt/check/strict Clippy/test/Rustdoc и release-сборка прошли. Приложение прошло
 полный обязательный набор и minimal/project-cli/build-cli matrix: 884 успешных
 теста основного набора, 14 прежних ignored. Минимальный core сохранил
@@ -117,7 +122,8 @@ release-бинарника — около 44 MiB. На C2/C3 analysis timeout в
 кооперативного лимита, а не жёсткий предел всего процесса. Полный syntax sweep
 этих двух конфигураций здесь не проводился.
 
-Замеры и граф зависимостей записаны в
+Исторические замеры первого компонента и граф зависимостей записаны в
 [машинном отчёте](check-cli-results.json). Полная семантическая приёмка,
 сервер, глобальный бюджет памяти и платформенная клиентская проверка этим
 компонентом не выполнены. EF-18 остаётся `IN_PROGRESS`.
+Общая квота и её последующие проверки описаны в [следующем компоненте](source-budget.md).

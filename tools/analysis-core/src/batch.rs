@@ -44,6 +44,7 @@ impl BatchCancellation {
 pub struct BatchOptions {
     pub timeout: Duration,
     pub max_document_bytes: u64,
+    pub max_retained_source_bytes: u64,
     pub cancellation: BatchCancellation,
 }
 
@@ -53,6 +54,7 @@ impl Default for BatchOptions {
         Self {
             timeout: Duration::from_secs(300),
             max_document_bytes: 64 * 1024 * 1024,
+            max_retained_source_bytes: SessionOptions::default().max_retained_source_bytes,
             cancellation: BatchCancellation::default(),
         }
     }
@@ -84,11 +86,18 @@ pub fn check_syntax(
 ) -> Result<BatchReport, BatchError> {
     let deadline = deadline::Deadline::start(options.timeout, options.cancellation.clone())?;
     let manifest_sha256 = reader.configuration().manifest_sha256.clone();
-    let mut session = AnalysisSession::from_reader(reader, SessionOptions::default())
-        .map_err(BatchError::Open)?;
+    let mut session = AnalysisSession::from_reader(
+        reader,
+        SessionOptions {
+            max_retained_source_bytes: options.max_retained_source_bytes,
+            ..SessionOptions::default()
+        },
+    )
+    .map_err(BatchError::Open)?;
     let request = InputRequest {
         max_document_bytes: options.max_document_bytes,
         cancellation: options.cancellation.input.clone(),
+        source_budget: None,
     };
     let owners = session.owner_paths().cloned().collect::<Vec<_>>();
     for path in owners {

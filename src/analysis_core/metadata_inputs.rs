@@ -47,6 +47,14 @@ impl Cancellation {
 pub struct InputRequest {
     pub max_document_bytes: u64,
     pub cancellation: Cancellation,
+    pub source_budget: Option<SourceBudget>,
+}
+
+/// A host reserves current source bytes, which are not a measurement of parsed heap or RSS.
+#[derive(Clone, Copy, Debug)]
+pub struct SourceBudget {
+    pub available_bytes: u64,
+    pub max_bytes: u64,
 }
 
 impl Default for InputRequest {
@@ -55,17 +63,51 @@ impl Default for InputRequest {
         Self {
             max_document_bytes: MAX_DOCUMENT_BYTES,
             cancellation: Cancellation::default(),
+            source_budget: None,
         }
     }
 }
 
 impl InputRequest {
-    /// A consumer may tighten the common hard bound, never raise it.
-    const fn document_limit(&self) -> u64 {
-        if self.max_document_bytes < MAX_DOCUMENT_BYTES {
-            self.max_document_bytes
+    /// Preserve a caller's stricter reservation while imposing the host's current remaining quota.
+    #[must_use]
+    pub fn with_source_budget(&self, available_bytes: u64, max_bytes: u64) -> Self {
+        let budget = SourceBudget {
+            available_bytes: available_bytes.min(max_bytes),
+            max_bytes,
+        };
+        let mut request = self.clone();
+        if request.source_budget.is_none_or(|current| {
+            budget.available_bytes < current.available_bytes.min(current.max_bytes)
+        }) {
+            request.source_budget = Some(budget);
+        }
+        request
+    }
+
+    /// Per-document and remaining-source bounds apply before reading or parsing exact UTF-8 bytes.
+    #[must_use]
+    pub fn source_limit(&self) -> u64 {
+        let limit = self.max_document_bytes.min(MAX_DOCUMENT_BYTES);
+        self.source_budget.map_or(limit, |budget| {
+            limit.min(budget.available_bytes.min(budget.max_bytes))
+        })
+    }
+
+    /// Classify the stricter bound without turning source accounting into a process memory claim.
+    #[must_use]
+    pub fn limit_failure(&self) -> InputFailure {
+        let document_limit = self.max_document_bytes.min(MAX_DOCUMENT_BYTES);
+        if let Some(budget) = self.source_budget
+            && budget.available_bytes.min(budget.max_bytes) < document_limit
+        {
+            InputFailure::SourceBudgetExceeded {
+                limit: budget.max_bytes,
+            }
         } else {
-            MAX_DOCUMENT_BYTES
+            InputFailure::DocumentTooLarge {
+                limit: document_limit,
+            }
         }
     }
 }
@@ -83,6 +125,7 @@ pub enum InputFailure {
     Source(Error),
     Cancelled,
     DocumentTooLarge { limit: u64 },
+    SourceBudgetExceeded { limit: u64 },
 }
 
 /// Ready means parsed input, not full BSL analysis; recoverable parser issues remain in the model.
@@ -315,7 +358,7 @@ impl MetadataInputs {
         let (hash, state) = if request.cancellation.is_cancelled() {
             (None, InputState::Unavailable(InputFailure::Cancelled))
         } else {
-            match self.reader.read_owner_text(path, request.document_limit()) {
+            match self.reader.read_owner_text(path, request.source_limit()) {
                 Ok(text) => self.parse(path, &text, request),
                 Err(error) => (
                     None,
@@ -336,13 +379,8 @@ impl MetadataInputs {
         if request.cancellation.is_cancelled() {
             return (None, InputState::Unavailable(InputFailure::Cancelled));
         }
-        if text.len() as u64 > request.document_limit() {
-            return (
-                None,
-                InputState::Unavailable(InputFailure::DocumentTooLarge {
-                    limit: request.document_limit(),
-                }),
-            );
+        if text.len() as u64 > request.source_limit() {
+            return (None, InputState::Unavailable(request.limit_failure()));
         }
         let hash = Some(Sha256::digest(text.as_bytes()).iter().fold(
             String::with_capacity(64),
@@ -367,9 +405,7 @@ impl MetadataInputs {
         if request.cancellation.is_cancelled() {
             InputFailure::Cancelled
         } else if error.code == "source_document_too_large" {
-            InputFailure::DocumentTooLarge {
-                limit: request.document_limit(),
-            }
+            request.limit_failure()
         } else {
             InputFailure::Source(error)
         }

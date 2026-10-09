@@ -87,6 +87,26 @@ fn human(report: &BatchReport, localizer: &Localizer) -> String {
         ],
     );
     text.push('\n');
+    let quota_exceeded = report
+        .metadata_issues
+        .iter()
+        .any(|issue| issue.code == "analysis_source_budget_exceeded")
+        || report.files.iter().any(|file| {
+            matches!(&file.state, crate::batch::FileState::Unavailable { code, .. }
+                if code == "analysis_source_budget_exceeded")
+        });
+    if quota_exceeded {
+        let used = report.resources.total_source_bytes.to_string();
+        let limit = report.resources.max_source_bytes.to_string();
+        text.push_str(&localizer.format(
+            "tool-check-source-budget",
+            &[
+                ("used", LocalizationValue::Text(&used)),
+                ("limit", LocalizationValue::Text(&limit)),
+            ],
+        ));
+        text.push('\n');
+    }
     if let Some(stop) = report.stop {
         let key = match stop {
             crate::batch::StopReason::DeadlineExceeded => "tool-check-deadline",

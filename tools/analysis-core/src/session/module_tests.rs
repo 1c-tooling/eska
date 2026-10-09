@@ -323,6 +323,7 @@ fn failed_budget_replacements_release_old_text_reservations() {
         &root,
         SessionOptions {
             max_loaded_module_bytes: saved.len() as u64 + 1,
+            ..SessionOptions::default()
         },
     )
     .unwrap();
@@ -400,6 +401,7 @@ fn cancelled_queries_and_bounded_saved_reads_never_use_previous_text() {
                     input.cancel();
                     input
                 },
+                ..InputRequest::default()
             },
         )
         .unwrap();
@@ -424,6 +426,7 @@ fn cancelled_queries_and_bounded_saved_reads_never_use_previous_text() {
             &InputRequest {
                 max_document_bytes: 1,
                 cancellation: Cancellation::default(),
+                ..InputRequest::default()
             },
         )
         .unwrap();
@@ -485,6 +488,7 @@ fn complete_small_session_counts_each_current_metadata_and_module_input() {
             &InputRequest {
                 max_document_bytes: 1,
                 cancellation: Cancellation::default(),
+                ..InputRequest::default()
             },
         )
         .unwrap();

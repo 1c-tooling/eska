@@ -176,6 +176,26 @@ fn deadline_cancellation_binary_and_byte_limit_remain_incomplete() {
     .unwrap();
     assert_eq!(report.status, BatchStatus::Incomplete);
     assert_eq!(report.coverage.unavailable_modules, 1);
+    let options = BatchOptions {
+        max_retained_source_bytes: 0,
+        ..BatchOptions::default()
+    };
+    let report = check_syntax(
+        SourceReader::open(&source).unwrap(),
+        &DiagnosticsConfig::default(),
+        &options,
+    )
+    .unwrap();
+    assert_eq!(report.status, BatchStatus::Incomplete);
+    assert_eq!(report.resources.total_source_bytes, 0);
+    assert_eq!(report.resources.max_source_bytes, 0);
+    assert_eq!(report.coverage.unavailable_modules, 1);
+    assert!(
+        report
+            .metadata_issues
+            .iter()
+            .all(|issue| issue.code == "analysis_source_budget_exceeded")
+    );
     let (_directory, root) = project("binary body", true);
     let report = check_syntax(
         SourceReader::open(&root.join("src")).unwrap(),

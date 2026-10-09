@@ -294,6 +294,7 @@ impl SourceReader {
             Ok(MetadataSnapshot {
                 path: path.clone(),
                 source_sha256: files::hex(&Sha256::digest(text.as_bytes())),
+                source_bytes: text.len() as u64,
                 manifest_sha256: self.manifest_sha256.clone(),
                 documents,
             })

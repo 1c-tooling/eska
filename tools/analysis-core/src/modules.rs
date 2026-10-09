@@ -14,10 +14,11 @@ use crate::{AnalysisSession, SessionRequestError, SessionRevision};
 
 const MAX_DOCUMENT_BYTES: u64 = 64 * 1024 * 1024;
 
-/// This cap counts current module text, not Salsa memo trees, metadata models or process RSS.
+/// These caps count current source sizes, not parsed model heap, Salsa memos or process RSS.
 #[derive(Clone, Debug)]
 pub struct SessionOptions {
     pub max_loaded_module_bytes: u64,
+    pub max_retained_source_bytes: u64,
 }
 
 impl Default for SessionOptions {
@@ -25,6 +26,7 @@ impl Default for SessionOptions {
     fn default() -> Self {
         Self {
             max_loaded_module_bytes: MAX_DOCUMENT_BYTES,
+            max_retained_source_bytes: 256 * 1024 * 1024,
         }
     }
 }
@@ -117,8 +119,9 @@ impl AnalysisSession {
         if let InputOrigin::Overlay { document_version } = current.origin {
             return Err(SessionRequestError::OverlayActive { document_version });
         }
-        let limits = self.module_limit(current.bytes(), request);
-        self.read_module_saved(path, next, request, limits)
+        let request = self.source_budget_request(current.bytes(), request);
+        let limits = self.module_limit(current.bytes(), &request);
+        self.read_module_saved(path, next, &request, limits)
     }
 
     /// Replace the module's current bytes with a newer verbatim editor document.
@@ -144,14 +147,15 @@ impl AnalysisSession {
                 received: document_version,
             });
         }
-        let limits = self.module_limit(current.bytes(), request);
-        let value = self.check_module_text(text, request, limits);
+        let request = self.source_budget_request(current.bytes(), request);
+        let limits = self.module_limit(current.bytes(), &request);
+        let value = self.check_module_text(text, &request, limits);
         self.publish_module(
             path,
             next,
             InputOrigin::Overlay { document_version },
             value,
-            request,
+            &request,
         )
     }
 
@@ -166,8 +170,9 @@ impl AnalysisSession {
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
         let (next, current) = self.validate_module_update(path, expected)?;
-        let limits = self.module_limit(current.bytes(), request);
-        self.read_module_saved(path, next, request, limits)
+        let request = self.source_budget_request(current.bytes(), request);
+        let limits = self.module_limit(current.bytes(), &request);
+        self.read_module_saved(path, next, &request, limits)
     }
 
     /// Release a saved body after a syntax batch check; editor-owned snapshots cannot be evicted.
@@ -252,7 +257,7 @@ impl AnalysisSession {
             .options
             .max_loaded_module_bytes
             .saturating_sub(self.loaded_module_bytes.saturating_sub(previous_bytes));
-        let document_limit = request.max_document_bytes.min(MAX_DOCUMENT_BYTES);
+        let document_limit = request.source_limit();
         (remaining.min(document_limit), remaining < document_limit)
     }
 
@@ -281,7 +286,7 @@ impl AnalysisSession {
                         limit: self.options.max_loaded_module_bytes,
                     }
                 } else {
-                    ModuleFailure::Input(InputFailure::DocumentTooLarge { limit })
+                    ModuleFailure::Input(request.limit_failure())
                 }),
                 Err(error) => Err(ModuleFailure::Input(InputFailure::Source(error))),
             }
@@ -312,7 +317,7 @@ impl AnalysisSession {
                     limit: self.options.max_loaded_module_bytes,
                 }
             } else {
-                ModuleFailure::Input(InputFailure::DocumentTooLarge { limit })
+                ModuleFailure::Input(request.limit_failure())
             });
         }
         Ok(text)

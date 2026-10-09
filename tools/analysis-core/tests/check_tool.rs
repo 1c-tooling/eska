@@ -247,6 +247,65 @@ fn unread_input_and_deadline_return_exit_two() {
     );
 }
 
+/// Complete metadata and BSL share one source quota; its refusal has explicit localized coverage.
+#[test]
+fn source_quota_is_shared_with_metadata_and_visible_in_both_formats() {
+    let (_directory, root) = support::project(GOOD, false);
+    let source = root.join("src");
+    let bytes = fs::read(source.join("configuration.yaml")).unwrap().len()
+        + fs::read(source.join("CommonModules/Tools/object.yaml"))
+            .unwrap()
+            .len();
+    let limit = bytes.to_string();
+    let mut reports = vec![];
+    for lang in ["ru-RU", "en-US"] {
+        let value = report(
+            &run(
+                &root,
+                lang,
+                &[
+                    "--profile",
+                    "syntax",
+                    "--format",
+                    "json",
+                    "--max-retained-source-bytes",
+                    &limit,
+                ],
+            ),
+            2,
+        );
+        let batch = &value["data"]["report"];
+        assert_eq!(batch["coverage"]["metadata_models_complete"], true);
+        assert_eq!(batch["coverage"]["syntax_complete"], false);
+        assert_eq!(batch["coverage"]["unavailable_modules"], 1);
+        assert_eq!(batch["resources"]["total_source_bytes"], bytes);
+        assert_eq!(batch["resources"]["max_source_bytes"], bytes);
+        assert_eq!(batch["resources"]["module_text_bytes"], 0);
+        assert_eq!(
+            batch["files"][0]["state"]["code"],
+            "analysis_source_budget_exceeded"
+        );
+        reports.push(value);
+        let human = run(
+            &root,
+            lang,
+            &["--profile", "syntax", "--max-retained-source-bytes", &limit],
+        );
+        assert_eq!(human.status.code(), Some(2));
+        assert!(human.stderr.is_empty());
+        assert!(
+            String::from_utf8(human.stdout)
+                .unwrap()
+                .contains(if lang == "ru-RU" {
+                    "квоты"
+                } else {
+                    "quota"
+                })
+        );
+    }
+    assert_eq!(reports[0], reports[1]);
+}
+
 /// Analyzer settings apply before checking; invalid or unsupported config is a fatal error.
 #[test]
 fn settings_are_read_without_silent_default_or_scope_fallback() {
