@@ -45,7 +45,8 @@ Prepared artifact manifest schema 2 теперь дополнительно со
 публикация JSON заимствует её.
 
 Это карта файлов. [Координаты YAML/BSL](source-locations.md) вычисляются по запросу
-из byte-verified inputs; перевод platform diagnostics ещё не подключён.
+из byte-verified inputs; [адреса сообщений платформы](platform-locations.md)
+сопоставляются с этой картой в callback сборщика.
 Для составного metadata XML нельзя переносить XML line number на YAML.
 
 ## Проверки

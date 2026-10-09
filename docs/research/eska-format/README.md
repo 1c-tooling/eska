@@ -37,6 +37,8 @@ private proof и проверяют фактический snapshot до зап�
 BSL и ресурсы, составное происхождение метаданных и контрольную сумму в manifest.
 [Сопоставление координат EF-10](source-locations.md) связывает native byte span
 с выбранным YAML/BSL input после проверки точных байтов.
+[Адреса сообщений 1С EF-10](platform-locations.md) сопоставляются с картой
+проверенного snapshot в сборочном callback; raw output сохраняется.
 Небольшой обезличенный корпус находится в
 [`tests/fixtures/eska-format/designer`](../../../tests/fixtures/eska-format/designer).
 Это модельные fixtures: успешное чтение не подтверждает сборку платформой.

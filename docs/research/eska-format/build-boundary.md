@@ -59,3 +59,5 @@ Consumer служит проверкой границы, самостоятел�
 в публичной конфигурации остаются сопоставление ошибок платформы
 и самостоятельные точки входа. [Карта файлов](source-map.md) уже сохраняется
 в manifest, [координаты](source-locations.md) вычисляются в project core.
+[Platform callback](platform-locations.md) добавляет origins файлов проверенного
+snapshot к поддержанным адресам сообщений, сохраняя raw bytes и прежние callbacks.

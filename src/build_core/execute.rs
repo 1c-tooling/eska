@@ -8,9 +8,9 @@ use std::{
 
 use super::{
     ArtifactType, BuildPlan, BuildProvenance, Ibcmd, ManagedInfobase, ManagedInfobaseError,
-    ManifestError, ProcessStream, RunError, manifest,
+    ManifestError, ProcessStream, RunError, locate_output_file, manifest,
 };
-use crate::project_core::source_format::{Error as SourceError, PreparedSource};
+use crate::project_core::source_format::{Error as SourceError, MappedFile, PreparedSource};
 use crate::project_core::{Project, ProjectType, native};
 
 static WORKSPACE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -101,7 +101,9 @@ pub fn execute_streaming<F>(
 where
     F: FnMut(BuildStage, ProcessStream, &[u8]),
 {
-    execute_streaming_inner(plan, ibcmd, None, None, &mut on_output)
+    execute_streaming_inner(plan, ibcmd, None, None, &mut |stage, stream, line, _| {
+        on_output(stage, stream, line);
+    })
 }
 
 /// Build from an immutable source snapshot and publish its artifact manifest as one pair.
@@ -124,7 +126,7 @@ where
         ibcmd,
         Some((project, provenance)),
         None,
-        &mut on_output,
+        &mut |stage, stream, line, _| on_output(stage, stream, line),
     )
 }
 
@@ -146,6 +148,36 @@ pub fn execute_prepared_with_manifest<F>(
 ) -> Result<BuildResult, BuildError>
 where
     F: FnMut(BuildStage, ProcessStream, &[u8]),
+{
+    execute_prepared_with_locations(
+        plan,
+        project,
+        prepared,
+        provenance,
+        ibcmd,
+        |stage, stream, line, _| on_output(stage, stream, line),
+    )
+}
+
+/// Report raw platform output and an optional file origin from the verified import snapshot.
+///
+/// Only recognized, unambiguous file addresses inside that snapshot receive an annotation.
+/// Raw bytes and process failures remain available even when a message has no recognized address.
+/// Metadata origins are composite; a file address alone does not identify a working property.
+///
+/// # Errors
+/// Returns the same prepared-source, platform and publication failures as
+/// [`execute_prepared_with_manifest`].
+pub fn execute_prepared_with_locations<F>(
+    plan: &BuildPlan,
+    project: &Project,
+    prepared: &PreparedSource,
+    provenance: BuildProvenance,
+    ibcmd: &Ibcmd,
+    mut on_output: F,
+) -> Result<BuildResult, BuildError>
+where
+    F: FnMut(BuildStage, ProcessStream, &[u8], Option<&MappedFile>),
 {
     if plan.artifact_type() != ArtifactType::Configuration {
         return Err(BuildError::SourceValidation(SourceError::root(
@@ -172,7 +204,7 @@ fn execute_streaming_inner<F>(
     on_output: &mut F,
 ) -> Result<BuildResult, BuildError>
 where
-    F: FnMut(BuildStage, ProcessStream, &[u8]),
+    F: FnMut(BuildStage, ProcessStream, &[u8], Option<&MappedFile>),
 {
     let started = Instant::now();
     let (manifest_project, manifest_seed) = manifest_request.unzip();
@@ -214,13 +246,21 @@ where
     )?;
     let infobase = ManagedInfobase::prepare(plan, effective_base_configuration.as_deref())
         .map_err(BuildError::ManagedInfobase)?;
+    let mut observed_output = |stage, stream, line: &[u8]| {
+        let location = prepared
+            .filter(|_| stage == BuildStage::ImportSources)
+            .and_then(|prepared| {
+                locate_output_file(prepared.source_map(), effective_plan.source(), line)
+            });
+        on_output(stage, stream, line, location);
+    };
     let create_output = if infobase.needs_creation() {
         let output = create_infobase(
             ibcmd,
             infobase.data(),
             effective_base_configuration.as_deref(),
             &pid_file,
-            on_output,
+            &mut observed_output,
         )?;
         infobase.mark_ready().map_err(BuildError::ManagedInfobase)?;
         Some(output)
@@ -239,7 +279,7 @@ where
             import_source.into_os_string(),
         ],
         &pid_file,
-        on_output,
+        &mut observed_output,
     )?;
     reject_interrupted_import(ibcmd)?;
 

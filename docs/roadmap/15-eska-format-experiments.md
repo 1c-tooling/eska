@@ -427,7 +427,12 @@ schema 1. [Карта файлов](../research/eska-format/source-map.md) ра�
 вычисляются по запросу из точных native/YAML bytes: вложенные объекты,
 existing typed values и opaque properties, без переноса XML column на YAML.
 На реальном C1 проверены все 3 595 native Name locations и 5 183 payloads.
-Следующие части — диагностика платформы и публичная конфигурация.
+[Сборочный callback](../research/eska-format/platform-locations.md) добавляет
+origin из проверенного snapshot к поддержанному адресу сообщения платформы;
+raw bytes и прежние callbacks сохраняются. Строка/колонка ещё не извлекаются.
+Независимая сборка C1 на установленной 1С подтвердила origins всех пяти реальных
+предупреждений; CF checksum и неизменность source context проверены.
+Следующие части — завершение diagnostics contract и публичная конфигурация.
 Маршрут ESKA → prepared snapshot → CF → новая выгрузка C1 принят:
 8 769 файлов/8 064 каталога совпали с контролем, исключение — только
 проверенные служебные configVersion. Все остальные байты равны.
