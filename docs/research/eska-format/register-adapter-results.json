@@ -1,0 +1,118 @@
+{
+  "reference_head": "9021ba07471eee8a2614bed2105a2c8699f60780",
+  "gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.10588745499990182
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.2574003640038427
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.4289847720065154
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 0.909256999999343
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 0.4915492779982742
+    },
+    {
+      "gate": "example",
+      "exit_code": 0,
+      "seconds": 0.08717795599659439
+    }
+  ],
+  "tests": {
+    "unit": 19,
+    "integration": 3,
+    "failed": 0,
+    "ignored": 0
+  },
+  "corpora": [
+    {
+      "corpus": "c1",
+      "exit_code": 0,
+      "result": {
+        "fields": 2030,
+        "metadata_complete": true,
+        "registers": {
+          "accumulation-register": 6,
+          "information-register": 222
+        },
+        "seconds": 20.99465,
+        "supported_models_equal": true,
+        "unsupported": {},
+        "xml_exported": false
+      }
+    },
+    {
+      "corpus": "c2",
+      "exit_code": 2,
+      "result": {
+        "fields": 16329,
+        "metadata_complete": false,
+        "registers": {
+          "accounting-register": 1,
+          "accumulation-register": 108,
+          "information-register": 1326
+        },
+        "seconds": 183.515223291,
+        "supported_models_equal": true,
+        "unsupported": {
+          "InformationRegisterPeriodicity.Quarter": 9,
+          "InformationRegisterPeriodicity.Year": 20
+        },
+        "xml_exported": false
+      }
+    },
+    {
+      "corpus": "c3",
+      "exit_code": 2,
+      "result": {
+        "fields": 23360,
+        "metadata_complete": false,
+        "registers": {
+          "accounting-register": 2,
+          "accumulation-register": 224,
+          "information-register": 1704
+        },
+        "seconds": 260.308516555,
+        "supported_models_equal": true,
+        "unsupported": {
+          "InformationRegisterPeriodicity.Quarter": 10,
+          "InformationRegisterPeriodicity.Year": 23
+        },
+        "xml_exported": false
+      }
+    }
+  ],
+  "source_sha256": {
+    "tools/bsl-adapter/src/lib.rs": "ca287e416583dbea043ea922c061d473173855a117820931c752bc63e495aec1",
+    "tools/bsl-adapter/src/common_module.rs": "839d8527bf78fde57493f61646d83e5d9cbddc90f7a5fbcccb36159e0af0d05a",
+    "tools/bsl-adapter/src/defined_type.rs": "3dd999a31d6d6b7ed7307779ee910c4995ae0da3bae6b8b048378803c5446af3",
+    "tools/bsl-adapter/src/identity.rs": "bef85d070d6f77087961fea8325edebf1b1dd447d300b1c33a166a4092b0b35d",
+    "tools/bsl-adapter/src/register.rs": "438d3e971000b560d8b0243d1ba9fa82b1e2e69767d27271694c42674ee846d8",
+    "tools/bsl-adapter/src/register/tests.rs": "ec4a2a640663694e522be032c6f01f958200de7eaf3835ce2c89689f54c2ad56",
+    "tools/bsl-adapter/tests/metadata_inputs.rs": "9f33079341b7c320a1da8849eef59950ee4ff93ff11bffa0e07e717d31d07df4",
+    "tools/bsl-adapter/examples/project_registers.rs": "8750db204a746fdbefdbcf5e85bc3ae5ca4f295f81d62d58ae911cc8a91304b3"
+  },
+  "runtime_path": "empty",
+  "profile": "dev",
+  "coverage_scope": "register-main-descriptors",
+  "unsupported_periodicity": [
+    "Quarter",
+    "Year"
+  ],
+  "platform_values_verified_via": "bsl-analyzer-reference.syntax_help",
+  "production_analyzer": false
+}

@@ -8,7 +8,7 @@ use eska::{
     analysis_core::{InputRequest, InputState, MetadataInputs},
     project_core::source_format::{MetadataSnapshot, SourcePath, import_designer},
 };
-use eska_bsl_adapter::{AdapterIssue, common_module, defined_type};
+use eska_bsl_adapter::{AdapterIssue, common_module, defined_type, register};
 use support::{TestDirectory, native_corpus};
 
 /// Only the current ready snapshot may feed the analyzer; a prior value is never substituted.
@@ -174,4 +174,85 @@ fn defined_type_drafts_change_underlying_type_and_report_unsupported_values_in_y
     );
     assert!(!source.join("Configuration.xml").exists());
     assert!(!source.join("DefinedTypes/Value.xml").exists());
+}
+
+/// Register fields use the same YAML snapshot as modes, while prior model holders keep their value.
+#[test]
+fn register_yaml_and_drafts_preserve_types_and_address_invalid_modes() {
+    let directory = TestDirectory::new();
+    let native = directory.0.join("native");
+    fs::create_dir(&native).unwrap();
+    fs::create_dir(native.join("InformationRegisters")).unwrap();
+    fs::write(native.join("Configuration.xml"), r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" version="2.20"><Configuration uuid="10000000-0000-4000-8000-000000000001"><Properties><Name>RegisterProbe</Name></Properties><ChildObjects><InformationRegister>Rates</InformationRegister></ChildObjects></Configuration></MetaDataObject>"#).unwrap();
+    let xml = r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" version="2.20"><InformationRegister uuid="20000000-0000-4000-8000-000000000001"><Properties><Name>Rates</Name><InformationRegisterPeriodicity>Month</InformationRegisterPeriodicity><WriteMode>Independent</WriteMode></Properties><ChildObjects><Dimension uuid="30000000-0000-4000-8000-000000000001"><Properties><Name>Item</Name><Type><v8:Type>cfg:CatalogRef.Items</v8:Type></Type></Properties></Dimension></ChildObjects></InformationRegister></MetaDataObject>"#;
+    fs::write(native.join("InformationRegisters/Rates.xml"), xml).unwrap();
+    let source = directory.0.join("source");
+    import_designer(&native, &source).unwrap();
+    let mut inputs = MetadataInputs::open(&source).unwrap();
+    let path = inputs
+        .owner_paths()
+        .find(|path| path.as_str().starts_with("InformationRegisters/Rates/"))
+        .unwrap()
+        .clone();
+    let request = InputRequest::default();
+    inputs
+        .load_saved(&path, inputs.revision(), &request)
+        .unwrap();
+    let saved = ready(&inputs, &path);
+    let saved_model = register(&saved.documents[0].descriptor).unwrap();
+    assert_eq!(
+        saved_model,
+        bsl_metadata::xml_parser::parse_information_register_xml(xml).unwrap()
+    );
+    let text = fs::read_to_string(source.join(path.as_path())).unwrap();
+    let draft = text
+        .replace(
+            "<v8:Type>cfg:CatalogRef.Items</v8:Type>",
+            "<v8:Type>xs:boolean</v8:Type>",
+        )
+        .replace(
+            "<WriteMode>Independent</WriteMode>",
+            "<WriteMode>RecorderSubordinate</WriteMode>",
+        );
+    assert_ne!(draft, text);
+    inputs
+        .apply_overlay(&path, inputs.revision(), 1, &draft, &request)
+        .unwrap();
+    let changed = ready(&inputs, &path);
+    let model = register(&changed.documents[0].descriptor).unwrap();
+    assert!(model.is_recorder_subordinate());
+    assert_eq!(
+        model.dimensions()[0].attr_type(),
+        Some(&bsl_metadata::AttributeType::Boolean)
+    );
+    assert!(!saved_model.is_recorder_subordinate());
+    assert_eq!(
+        model.dimensions()[0].uuid(),
+        saved_model.dimensions()[0].uuid()
+    );
+    let invalid = text.replace(
+        "<WriteMode>Independent</WriteMode>",
+        "<WriteMode>Future</WriteMode>",
+    );
+    inputs
+        .apply_overlay(&path, inputs.revision(), 2, &invalid, &request)
+        .unwrap();
+    let snapshot = ready(&inputs, &path);
+    let error = register(&snapshot.documents[0].descriptor).unwrap_err();
+    assert_eq!(
+        error.issue,
+        AdapterIssue::InvalidProperty {
+            name: "WriteMode".into()
+        }
+    );
+    assert!(invalid[error.range].contains("<WriteMode>Future</WriteMode>"));
+    inputs
+        .close_overlay(&path, inputs.revision(), &request)
+        .unwrap();
+    assert_eq!(ready(&inputs, &path), saved);
+    assert_eq!(
+        fs::read_to_string(source.join(path.as_path())).unwrap(),
+        text
+    );
+    assert!(!source.join("Configuration.xml").exists());
 }

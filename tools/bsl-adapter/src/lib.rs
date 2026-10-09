@@ -2,11 +2,14 @@
 
 mod common_module;
 mod defined_type;
+mod identity;
 mod properties;
+mod register;
 mod type_description;
 
 pub use common_module::common_module;
 pub use defined_type::defined_type;
+pub use register::register;
 pub use type_description::attribute_type;
 
 use std::ops::Range;
@@ -34,4 +37,8 @@ pub enum AdapterIssue {
     UnsupportedType { key: PropertyKey },
     UnsupportedTypeField { key: PropertyKey },
     UnresolvedTypeName { text: String },
+    MissingRoot,
+    IncompleteDescriptor,
+    UnsupportedStandardAttribute { name: String },
+    UnsupportedPropertyValue { name: String, value: String },
 }

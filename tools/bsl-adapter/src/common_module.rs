@@ -22,10 +22,7 @@ pub fn common_module(object: &ParsedObject) -> Result<CommonModule, AdapterError
         });
     }
     let fields = Properties::new(object)?;
-    let uuid = object.metadata.uuid().parse().map_err(|_| AdapterError {
-        issue: AdapterIssue::InvalidUuid,
-        range: object.range.clone(),
-    })?;
+    let uuid = crate::identity::uuid(object)?;
     let mut builder = CommonModule::builder()
         .uuid(uuid)
         .name(object.metadata.name())

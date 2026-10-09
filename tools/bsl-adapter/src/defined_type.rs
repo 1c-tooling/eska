@@ -19,10 +19,7 @@ pub fn defined_type(object: &ParsedObject) -> Result<DefinedType, AdapterError> 
         });
     }
     let fields = Properties::new(object)?;
-    let uuid = object.metadata.uuid().parse().map_err(|_| AdapterError {
-        issue: AdapterIssue::InvalidUuid,
-        range: object.range.clone(),
-    })?;
+    let uuid = crate::identity::uuid(object)?;
     let field = fields.field("Type")?.ok_or_else(|| AdapterError {
         issue: AdapterIssue::MissingProperty {
             name: "Type".into(),
