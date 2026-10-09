@@ -10,6 +10,32 @@
 src/
 ├── main.rs                      # точка входа бинарника
 ├── lib.rs                       # карта модулей библиотеки
+├── bin/{eska-project,eska-build}.rs # самостоятельные точки входа
+├── project_cli/                 # команды исходников без платформы и Git
+├── build_cli/                   # команды сборки без Git и анализатора
+├── tool_cli/                    # общие ошибки, selection и локализация инструментов
+├── analysis_core/               # saved/overlay metadata inputs, revisions и отмена
+├── project_core/                # общий source SDK без CLI, Git и платформы
+│   ├── config/                  # project/workspace manifests и workflow settings
+│   ├── discovery.rs             # поиск и проверка project/workspace
+│   ├── metadata_model/          # logical identity и общие значения
+│   ├── metadata_parser.rs       # общая семантическая проекция XML
+│   ├── source_format/           # YAML/XML, принятая база, protected export и source map
+│   ├── native.rs                # распознавание Designer XML и модулей
+│   ├── native_version.rs        # чтение и изменение версии Designer XML
+│   ├── platform_settings.rs     # переносимые build settings
+│   ├── workflow/policy.rs       # переносимые политики и план задачи
+│   └── publish.rs               # запись с проверкой ожидаемых байтов
+├── build_core/                  # нативная сборка, feature build
+│   ├── plan.rs                  # пути, тип артефакта и настройки
+│   ├── tool.rs                  # обнаружение и запуск ibcmd/Designer
+│   ├── infobase.rs              # владение и повторное использование служебной базы
+│   ├── manifest.rs              # снимок исходников и паспорт артефакта
+│   ├── execute.rs               # общий конвейер snapshot → platform → publication
+│   └── execute/
+│       ├── preflight.rs         # проверки входов, выходов и scope без записи
+│       ├── publication.rs       # публикация и восстановление artifact/manifest
+│       └── workspace.rs         # владение временными файлами и каталогами
 ├── cli/
 │   ├── mod.rs                   # запуск CLI и выбор локали
 │   ├── args.rs                  # общие аргументы, bootstrap --lang, общий help
@@ -61,9 +87,7 @@ src/
 │   │   ├── confirm.rs           # inline-подтверждение с видимым preview и отменой
 │   │   └── terminal.rs          # raw mode, alternate screen и восстановление
 │   └── localization/
-│       ├── mod.rs               # интерфейс локализации
-│       ├── locale.rs            # поддерживаемые локали и их приоритет
-│       └── localizer.rs         # загрузка Fluent-ресурсов и форматирование
+│       └── mod.rs               # интерфейс общей tool_cli::localization
 ├── project/
 │   ├── mod.rs                   # интерфейс модели и операций проекта
 │   ├── model.rs                 # Project, типы проекта, инварианты путей
@@ -86,13 +110,9 @@ src/
 │   ├── object_model.rs          # логические Designer XML objects и двусторонний path index
 │   ├── clone.rs                 # план clone, владение destination и validation
 │   ├── build/
-│   │   ├── mod.rs               # публичная граница build subsystem
-│   │   ├── settings.rs          # переносимые settings и версия платформы
-│   │   ├── plan.rs              # тип и путь build artifact без запуска процессов
-│   │   ├── tool.rs              # поиск, version check и запуск ibcmd/Distrobox
-│   │   ├── manifest.rs          # снимок source, SHA-256 и паспорт артефакта
-│   │   ├── infobase.rs          # хранение, валидация и очистка служебных баз
-│   │   └── execute.rs           # import, staging cleanup и публикация
+│   │   ├── mod.rs               # фасад общей build_core для приложения
+│   │   ├── manifest.rs          # Git provenance перед вызовом общего конвейера
+│   │   └── execute.rs           # запуск build_core с Git provenance приложения
 │   ├── patch/
 │   │   ├── mod.rs               # публичная граница patch subsystem
 │   │   ├── model.rs             # PatchPlan, изменения, модули и ошибки
@@ -115,12 +135,7 @@ src/
 │   ├── version.rs               # точечное чтение и замена Properties/Version
 │   └── templates.rs             # план файлов встроенного каркаса
 ├── config/
-│   ├── mod.rs                   # интерфейс config и имя eska.toml
-│   ├── project.rs               # ProjectConfig, загрузка и валидация
-│   ├── manifest.rs              # различение строгих project/workspace manifests
-│   ├── workspace.rs             # WorkspaceConfig и проверка member paths
-│   ├── workflow.rs              # преобразование workflow-полей в доменную модель
-│   └── schema.rs                # TOML-поля, defaults и строковые значения
+│   └── mod.rs                   # фасад project_core::config и build_core::machine
 └── vcs/
     ├── mod.rs                   # граница VCS
     ├── git.rs                   # общее открытие и инициализация Git через gix
@@ -130,9 +145,7 @@ src/
     ├── repository.rs            # discovery, HEAD, refs и ограниченная история
     ├── snapshot.rs              # общий HEAD/index reader на время анализа файлов
     ├── status.rs                # изменения HEAD/index/worktree и changed paths
-    ├── workflow.rs              # выбор preset, overrides и разрешение policy
-    └── workflow/
-        └── policy.rs            # валидация policy и декларативный план задачи
+    └── workflow.rs              # фасад общей project_core::workflow
 
 locales/{ru-RU,en-US}/main.ftl    # пользовательские тексты
 assets/project/                    # встроенные .gitattributes и .gitignore для new
@@ -156,15 +169,15 @@ tests/
 |---|---|
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
-| Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`src/project/build/`](../src/project/build/) |
+| Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`src/build_core/`](../src/build_core/) |
 | Изменить вывод, JSON или ошибки сборки | [`src/cli/commands/build/output.rs`](../src/cli/commands/build/output.rs), [`json.rs`](../src/cli/commands/build/json.rs), [`errors.rs`](../src/cli/commands/build/errors.rs) |
 | Изменить план или генерацию patch-extension | [`src/cli/commands/patch.rs`](../src/cli/commands/patch.rs), затем [`src/project/patch/`](../src/project/patch/) |
-| Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`src/project/build/tool.rs`](../src/project/build/tool.rs) |
+| Изменить общие настройки запуска платформы | [`src/build_core/machine.rs`](../src/build_core/machine.rs), затем [`src/build_core/tool.rs`](../src/build_core/tool.rs) |
 | Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
 | Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
 | Изменить обратимое кодирование JSON-путей и Git-строк | [`src/cli/encoding.rs`](../src/cli/encoding.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
-| Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`src/project/version.rs`](../src/project/version.rs) |
+| Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`src/project_core/native_version.rs`](../src/project_core/native_version.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
 | Изменить вывод или связь commit с task в `history` | [`src/cli/commands/history.rs`](../src/cli/commands/history.rs), затем [`src/project/history.rs`](../src/project/history.rs) |
 | Изменить запуск задачи или его ошибки | [`src/cli/commands/start.rs`](../src/cli/commands/start.rs), затем [`src/project/start.rs`](../src/project/start.rs) |
@@ -186,7 +199,7 @@ tests/
 | Изменить workflow policy или план задачи | [`src/project_core/workflow/policy.rs`](../src/project_core/workflow/policy.rs) |
 | Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../src/cli/interactive/keyboard.rs) |
 | Изменить оформление меню | [`src/cli/interactive/render.rs`](../src/cli/interactive/render.rs) |
-| Изменить приоритет языка | [`src/cli/localization/locale.rs`](../src/cli/localization/locale.rs) |
+| Изменить приоритет языка | [`src/tool_cli/localization/locale.rs`](../src/tool_cli/localization/locale.rs) |
 
 ## Границы ответственности
 
@@ -208,12 +221,12 @@ tests/
   терминала и локализованных строк. Они возвращают данные и структурированные ошибки.
 - Только `cli/interactive/terminal.rs` владеет переключением режимов терминала
   и их восстановлением. Обработка клавиш и отрисовка тестируются без TTY.
-- `config/schema.rs` описывает внешний TOML-формат; `config/project.rs` переводит
-  его в проверенные настройки, `config/workflow.rs` преобразует строковые значения
+- `project_core/config/schema.rs` описывает внешний TOML-формат; `project.rs` переводит
+  его в проверенные настройки, `workflow.rs` преобразует строковые значения
   policy и сохраняет только явные overrides. Модель проекта не зависит от TOML-парсера.
-- `config/manifest.rs` различает взаимоисключающие `[project]` и `[workspace]`;
-  `config/workspace.rs` проверяет корневые defaults и относительные member paths.
-  `project/discovery.rs::discover_context` валидирует весь workspace, канонические
+- `project_core/config/manifest.rs` различает взаимоисключающие `[project]` и `[workspace]`;
+  `workspace.rs` проверяет корневые defaults и относительные member paths.
+  `project_core/discovery.rs::discover_context` валидирует весь workspace, канонические
   границы и наследование настроек. `build`, `version`, `status`, `diff` и `save`
   используют общий selection; старый `discover` остаётся одно-проектной границей
   команд без workspace-семантики.
@@ -276,14 +289,15 @@ tests/
   задачей только при однозначной достижимости из одной локальной task-ветки вне
   base. `cli/commands/history.rs` локализует human-вывод и формирует стабильный
   JSON версии 1, сохраняя произвольные Git-байты через явную кодировку.
-- `project/build/` отделяет переносимый план от machine-local обнаружения
+- `build_core/` отделяет переносимый план от machine-local обнаружения
   `ibcmd` и исполнения. `BuildPlan` разделяет source root участника и output scope
   workspace; `infobase.rs` повторно использует совместимую служебную базу,
   блокирует конкурентный доступ и удаляет только помеченные eska каталоги;
-  `execute.rs` предоставляет read-only preflight и безопасную публикацию
-  артефакта. `manifest.rs` создаёт ограниченный
+  `execute/preflight.rs` выполняет read-only проверки; `execute/workspace.rs`
+  владеет временными каталогами. `manifest.rs` создаёт ограниченный
   снимок Designer XML, вычисляет SHA-256 и формирует паспорт без локальных путей;
-  `execute.rs` публикует artifact/manifest как одну восстанавливаемую пару.
+  `execute/publication.rs` публикует artifact/manifest как восстанавливаемую пару;
+  `execute.rs` согласует этапы. `project/build/` добавляет Git provenance приложения.
   `cli/commands/build.rs` сначала
   проверяет всю выбранную группу и обнаруживает подходящие runners. Обычный режим
   затем последовательно выполняет планы, сохраняя одиночный JSON v1 и отдельный
@@ -293,7 +307,7 @@ tests/
   переносимых интеграционных проверок host runner. Он воспроизводит только
   используемый command contract `ibcmd`; приёмка с настоящей платформой 1С и
   Linux-сценарии Distrobox ведутся отдельно.
-- `project/version.rs` находит единственный корневой Designer XML descriptor,
+- `project_core/native_version.rs` находит единственный корневой Designer XML descriptor,
   валидирует четырёхкомпонентную версию и при bump заменяет только диапазон
   текста прямого `Properties/Version` без повторной сериализации XML.
   `project/selection.rs` разрешает standalone/current/named/all selection без

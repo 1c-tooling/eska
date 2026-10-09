@@ -5,6 +5,11 @@
 создание CF/CFE/EPF/ERF и публикация artifact manifest. Конвейер один:
 действующие команды приложения вызывают его же.
 
+`execute.rs` согласует этапы конвейера. Проверки без записи находятся в
+`execute/preflight.rs`, публикация артефакта и manifest с восстановлением — в
+`execute/publication.rs`, владение временными каталогами — в `execute/workspace.rs`.
+Публичные точки входа и схемы manifest сохраняются.
+
 Сборочная библиотека не открывает Git repository, не вызывает CLI приложения
 и не использует анализатор или IDE. Caller передаёт `BuildProvenance`:
 имя проекта и `GitProvenance::{Available, Absent, Unavailable}`. Если Git
