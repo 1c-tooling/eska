@@ -6,8 +6,9 @@
 самостоятельные инструменты отвечают за свои операции и жизненный цикл.
 
 Документ определяет целевые границы. Самостоятельный
-[eska-project](research/eska-format/project-cli.md) уже доступен в экспериментальной
-сборке; остальные точки входа и комплектная поставка ещё предстоят.
+[eska-project](research/eska-format/project-cli.md) и
+[eska-build](research/eska-format/build-cli.md) доступны в экспериментальной сборке;
+остальные точки входа и комплектная поставка ещё предстоят.
 Последовательность работы и ссылки на связанные задачи находятся в
 [плане экспериментов](roadmap/15-eska-format-experiments.md).
 
@@ -491,7 +492,7 @@ LSP runtime, Git transport или debugger; `eska-build` не включает �
 поддерживает Designer XML и [явные настройки ESKA](research/eska-format/project-selection.md).
 Прежний CLI для XML возвращает явный отказ при выборе ESKA.
 Самостоятельный `eska-project` использует общий core без платформы и Git;
-`eska-build` пока представлен сборочной библиотекой.
+`eska-build` собирает сохранённые входы через общую библиотеку без Git и анализатора.
 [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.

@@ -36,7 +36,8 @@ IDE-host зависит от EF-18, оформление YAML — от EF-02/EF-
 за подключение готовых форматтера и релизного процесса к ESKA, включая адаптер
 версии, без повторной реализации задач T26/T83/T84/T56/T32.
 
-Задачи `EF` образуют отдельную очередь. Сейчас **EF-10** — `IN-PROGRESS`. Очередь остальных
+Задачи `EF` образуют отдельную очередь. **EF-10** завершена; следующий этап —
+выбор основы анализа EF-17. Очередь остальных
 направлений в [общем трекере](README.md) сохраняется. Каждый следующий этап
 начинается после проверки результата предыдущего; список не означает запуск
 всех задач одновременно. Общие правила — в [working-agreement.md](working-agreement.md).
@@ -85,7 +86,7 @@ IDE-host зависит от EF-18, оформление YAML — от EF-02/EF-
 | EF-07 | DONE | EF-04, EF-06 | Локальные правки YAML с сохранением оформления |
 | EF-08 | DONE | EF-06, EF-07 | Платформенная приёмка небольшой конфигурации |
 | EF-09 | DONE | EF-08 | Сравнение размера, Git и стоимости преобразования |
-| EF-10 | IN-PROGRESS | EF-09, решение о продолжении | Общая модель нового источника и проектные/сборочные инструменты |
+| EF-10 | DONE | EF-09, решение о продолжении | Общая модель нового источника и проектные/сборочные инструменты |
 | EF-11 | PLANNED | EF-18 | Explorer через единый сервер метаданных и BSL |
 | EF-12 | PLANNED | EF-09, отдельный выбор форм | Типизированная плоская модель управляемой формы |
 | EF-13 | PLANNED | EF-12 | Проверка слияния форм и решение о merge-драйвере |
@@ -400,7 +401,7 @@ byte-preserving Git transport для extensionless блоков базы: ста
 проектная и сборочная точки входа. Перенос в Git обязан сохранять байты базы
 после чистого checkout; исходный XML не служит fallback при ошибке ESKA.
 
-**Промежуточный результат:** [общий core](../research/eska-format/core-boundary.md)
+**Результат:** [общий core](../research/eska-format/core-boundary.md)
 выделен из зависимостей приложения: реестр типов, native support/XML и один
 writer используются обоими форматами. Общие model/config/discovery/selection
 тоже доступны без приложения; правила schema и workspace не дублируются.
@@ -453,14 +454,28 @@ Git engine, HTTP или IDE runtime. Реальный C1 принят без э�
 8 778 файлов и 8 077 каталогов, 2 645 owners; контекст поколения совпал с
 платформенной приёмкой. Девять CLI integration tests прошли, включая pin,
 strict refusal, cache recreation и workspace inheritance.
-Следующая часть — самостоятельная сборочная точка входа.
+[Самостоятельный eska-build](../research/eska-format/build-cli.md) использует
+общие selection, machine config и конвейер snapshot/runner/publication.
+Для ESKA повторяется protected prepare по independent pin до поиска платформы;
+strict refusal и явное восстановление не переписывают рабочие исходники.
+Build-only CLI graph содержит 73 packages без Git, HTTP или BSL/IDE runtime.
+Девять integration scenarios прошли в обеих локалях, включая native error origins,
+сохранение предыдущей пары, inherited platform/output scope и CI pin.
+Реальная C1 собрана отдельным minimal tool на 1С 8.3.27.2325:
+CF — 200 420 573 bytes, SHA-256 равен manifest; snapshot/context/map и
+версия 1.0.2.01 совпали с принятой SDK-сборкой. Все пять предупреждений получили
+origins; source/base/TOML побайтово не изменились. Применение к БД, клиент и
+полный Designer CheckConfig не входят в эту приёмку.
 Маршрут ESKA → prepared snapshot → CF → новая выгрузка C1 принят:
 8 769 файлов/8 064 каталога совпали с контролем, исключение — только
 проверенные служебные configVersion. Все остальные байты равны.
 Minimal library compile graph не содержит
-gix, HTTP, CLI, TTY или IDE runtime. Это подготовка текущих потребителей;
-конфигурация ESKA и discovery доступны, project CLI работает самостоятельно,
-build пока использует prepared SDK route. Этап остаётся `IN-PROGRESS`.
+gix, HTTP, CLI, TTY или IDE runtime. Конфигурация ESKA и discovery доступны,
+project/build CLI работают самостоятельно. Полные fmt/check/strict Clippy/test/
+Rustdoc и minimal source/build/project CLI/build CLI gates прошли:
+приложение — 341 unit + 529 integration, инструменты — по девять integration.
+Этап завершён; analyzer/VCS/facade и комплектная поставка остаются отдельными
+задачами. Распаковка CF относится к последующей координации EF-20.
 
 ## EF-11 Explorer и инструменты BSL
 

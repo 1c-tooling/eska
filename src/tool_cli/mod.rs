@@ -2,7 +2,11 @@
 
 pub mod localization;
 
-#[cfg(feature = "project-cli")]
+#[cfg(any(feature = "project-cli", feature = "build-cli"))]
+mod project;
+#[cfg(any(feature = "project-cli", feature = "build-cli"))]
 mod support;
-#[cfg(feature = "project-cli")]
+#[cfg(any(feature = "project-cli", feature = "build-cli"))]
+pub(crate) use project::*;
+#[cfg(any(feature = "project-cli", feature = "build-cli"))]
 pub(crate) use support::*;

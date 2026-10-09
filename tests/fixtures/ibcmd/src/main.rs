@@ -158,6 +158,10 @@ fn import_configuration(arguments: &[OsString]) {
 
     wait_for_test_release();
     stream_test_diagnostic(&source);
+    if env_flag("FAKE_IBCMD_FAIL_AFTER_STREAM") {
+        eprintln!("fake import failure after diagnostic");
+        process::exit(7);
+    }
     if let Err(error) = write_artifact(&source, &output) {
         eprintln!("fake artifact write failed: {error}");
         process::exit(9);
@@ -201,10 +205,11 @@ fn stream_test_diagnostic(source: &Path) {
     if !env_flag("FAKE_IBCMD_STREAM") {
         return;
     }
-    println!(
-        "[INFO] File: {}/DataProcessors/РаботаСФайлами/Forms/ПрисоединенныйФайл/Ext/Help/ru.html, checking",
-        source.display()
-    );
+    let relative = env::var("FAKE_IBCMD_STREAM_FILE").unwrap_or_else(|_| {
+        "DataProcessors/РаботаСФайлами/Forms/ПрисоединенныйФайл/Ext/Help/ru.html".to_owned()
+    });
+    let level = env::var("FAKE_IBCMD_STREAM_LEVEL").unwrap_or_else(|_| "INFO".to_owned());
+    println!("[{level}] File: {}/{relative}, checking", source.display());
     thread::sleep(Duration::from_secs(2));
 }
 

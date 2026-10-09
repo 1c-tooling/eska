@@ -3,19 +3,17 @@
 use super::args::{Cli, Command, Import, Prepare, Selector, Transport};
 use crate::{
     project_core::{
-        Project, ProjectName, SourceFormat,
+        ProjectName, SourceFormat,
         creation::{self, DEFAULT_GENERATIONS_DIRECTORY},
-        discovery::discover_context,
         eska_source::EskaSource,
-        metadata_model::ProjectScope,
         platform_settings::PlatformVersion,
-        selection::{SelectionIntent, select_projects},
         source_format::{NativeUuid, PROFILE, RULES_VERSION, SCHEMA_VERSION},
         transport::TransportPlan,
     },
     tool_cli::{
         self, Failure,
         localization::{LocalizationValue, Localizer},
+        path_text, selected,
     },
 };
 use serde_json::{Value, json};
@@ -96,7 +94,9 @@ fn inspect(
     selector: &Selector,
     localizer: &Localizer,
 ) -> Result<(Value, String), Failure> {
-    let (project, scope) = selected(start, selector)?;
+    let selection = selected(start, selector.project.as_deref())?;
+    let project = selection.project;
+    let scope = selection.scope;
     let format = project.configuration().source_format().as_str();
     let metadata = if matches!(
         project.configuration().source_format(),
@@ -137,7 +137,9 @@ fn prepare(
     localizer: &Localizer,
 ) -> Result<(Value, String), Failure> {
     let pin = tool_cli::accepted_ref(args.accepted_base_sha256.as_deref())?;
-    let (project, scope) = selected(start, &args.selector)?;
+    let selection = selected(start, args.selector.project.as_deref())?;
+    let project = selection.project;
+    let scope = selection.scope;
     let generations = args.generations.as_ref().map_or_else(
         || project.root().join(DEFAULT_GENERATIONS_DIRECTORY),
         |path| project.root().join(path),
@@ -177,7 +179,7 @@ fn transport(
     args: &Transport,
     localizer: &Localizer,
 ) -> Result<(Value, String), Failure> {
-    let (project, _) = selected(start, &args.selector)?;
+    let project = selected(start, args.selector.project.as_deref())?.project;
     let plan = TransportPlan::prepare(&project)?;
     let changed = !plan.is_empty();
     if args.write {
@@ -200,28 +202,4 @@ fn transport(
         "content":plan.updated(),"effective_git_policy_verified":false}),
         human,
     ))
-}
-
-/// Resolve exactly one member with the shared discovery/inheritance and selector policy.
-fn selected(start: &Path, selector: &Selector) -> Result<(Project, ProjectScope), Failure> {
-    let context = discover_context(start)
-        .map_err(|_| Failure::new("project_discovery_failed").at(start.to_string_lossy()))?;
-    let names: Vec<_> = selector.project.iter().cloned().collect();
-    let selection = select_projects(&context, &names, false, SelectionIntent::SingleMutation)
-        .map_err(|_| Failure::new("project_selection_failed"))?;
-    let project = selection
-        .projects()
-        .first()
-        .ok_or_else(|| Failure::new("project_selection_failed"))?;
-    path_text(project.project().root())?;
-    let scope = project.name().map_or(ProjectScope::Standalone, |name| {
-        ProjectScope::Member(name.clone())
-    });
-    Ok((project.project().clone(), scope))
-}
-
-/// Machine paths must be lossless UTF-8; reject unsupported encodings before mutation.
-fn path_text(path: &Path) -> Result<&str, Failure> {
-    path.to_str()
-        .ok_or_else(|| Failure::new("path_encoding_unsupported"))
 }

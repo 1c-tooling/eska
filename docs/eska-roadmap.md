@@ -84,8 +84,10 @@ en-US
 [настройки ESKA](research/eska-format/project-selection.md), discovery сохраняет
 формат и выбранные members, materialization требует independently supplied pin.
 Прежние XML-only команды отказывают для ESKA до чтения/изменения старого XML;
-самостоятельные инструменты ещё не подключены. Установленный выпуск сохраняет
-Designer XML.
+самостоятельные [project](research/eska-format/project-cli.md) и
+[build инструменты](research/eska-format/build-cli.md) уже используют общие core
+без оболочки. EF-10 завершена в экспериментальной ветке; установленный выпуск
+сохраняет Designer XML.
 
 Принята будущая поставка: обычная установка `eska` даёт оболочку и комплект
 отдельных инструментов; для CI/IDE доступны самостоятельные пакеты. В плане

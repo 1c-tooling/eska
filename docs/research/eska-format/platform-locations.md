@@ -38,7 +38,8 @@ Metadata origin указывает на принятый YAML и имеющий�
 без строки/колонки. Они получают file-level origin; строка из текста значения
 и XML column не выдаются за координату YAML. Неподдержанные формы,
 языки/encodings сохраняются без выдуманной привязки. [Workspace selection](project-selection.md)
-уже подключён к общему core; самостоятельный CLI пока не подключён.
+подключён к общему core; [самостоятельный build CLI](build-cli.md) сохраняет
+raw bytes и origins при успехе и отказе.
 
 ## Проверки
 

@@ -77,7 +77,8 @@ discovery/selection. Expected baseline digest приходит отдельно 
 обычный build не принимает ESKA без protected proof даже при подстановке XML path.
 [Byte-preserving transport](git-transport.md) и
 [самостоятельная project точка входа](project-cli.md) уже используют это ядро.
-Следующая часть EF-10 — сборочный CLI. Проверка границ зависимостей
+[Самостоятельный сборочный CLI](build-cli.md) также использует общее ядро.
+Проверка границ зависимостей
 повторяется для каждого готового потребителя, не только для общей библиотеки.
 
 Проверки прошли в обеих сборках: fmt/check/strict Clippy, 332 unit и 529

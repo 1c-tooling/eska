@@ -58,8 +58,8 @@ ESKA project config не превращает текущий YAML в XML для 
 native build, import из CF, version/bump, patch, metadata/IDE opening и XML
 object/semantic readers. Они не используют оставшийся XML. Human ошибки
 локализованы в ru/en; добавленные machine codes не зависят от locale.
-[Самостоятельный project CLI](project-cli.md) использует эту discovery/selection;
-сборочный CLI и делегирование оболочки ещё не подключены.
+[Самостоятельные project](project-cli.md) и [build CLI](build-cli.md)
+используют эту discovery/selection; делегирование оболочки ещё не подключено.
 
 База содержит [byte-preserved blobs](ef-09-results.md). До помещения в Git
 её `blobs/**` требуют `-text -filter`; стандартное `* text=auto` изменяет

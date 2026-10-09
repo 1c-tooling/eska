@@ -232,6 +232,20 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         "source_format_mismatch" => Some("tool-error-format"),
         "project_selection_failed" => Some("tool-error-selection"),
         "project_discovery_failed" => Some("tool-error-discovery"),
+        "source_changes_excluded" => Some("tool-error-exclusions"),
+        "platform_version_missing" => Some("tool-error-platform-version-missing"),
+        "platform_not_found"
+        | "platform_version_mismatch"
+        | "platform_executable_invalid"
+        | "platform_version_command_failed"
+        | "platform_version_unreadable"
+        | "platform_container_required"
+        | "platform_container_invalid"
+        | "platform_architecture_invalid" => Some("tool-error-platform"),
+        "build_source_options_incompatible" => Some("tool-error-source-options"),
+        "machine_config_invalid"
+        | "machine_config_container_missing"
+        | "machine_config_container_unexpected" => Some("tool-error-machine-config"),
         _ => None,
     }
 }

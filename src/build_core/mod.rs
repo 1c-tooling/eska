@@ -6,6 +6,8 @@
 mod diagnostics;
 mod execute;
 mod infobase;
+#[cfg(any(feature = "legacy", feature = "build-cli"))]
+pub mod machine;
 mod manifest;
 mod plan;
 mod provenance;

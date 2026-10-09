@@ -1,4 +1,4 @@
-//! Machine-local configuration stored outside project repositories.
+//! Shared machine-local runner settings, separate from tracked project configuration.
 
 use std::{
     fs::{self, File, OpenOptions},
@@ -9,6 +9,8 @@ use std::{
 
 use directories::BaseDirs;
 use serde::Deserialize;
+
+use super::{RunnerPreference, ToolOptions};
 
 const CONFIG_DIRECTORY_ENV: &str = "ESKA_CONFIG_DIR";
 const DEFAULT_CONFIG: &str = "[build]\nrunner = \"auto\"\n";
@@ -35,6 +37,9 @@ pub struct GlobalConfig {
 
 impl GlobalConfig {
     /// Load the machine config, or return portable defaults when it does not exist.
+    ///
+    /// # Errors
+    /// Returns invalid TOML/settings or an unreadable existing file.
     pub fn load(path: &Path) -> Result<Self, GlobalConfigError> {
         let input = match fs::read_to_string(path) {
             Ok(input) => input,
@@ -77,10 +82,37 @@ impl GlobalConfig {
 }
 
 /// Load the machine config from its resolved path.
+///
+/// # Errors
+/// Returns an unavailable user configuration location or an invalid/unreadable file.
 pub fn load() -> Result<(PathBuf, GlobalConfig), GlobalConfigError> {
     let path = config_path()?;
     let config = GlobalConfig::load(&path)?;
     Ok((path, config))
+}
+
+/// Merge explicit runner options with shared machine defaults; environment precedence stays in the runner.
+///
+/// # Errors
+/// Returns an inaccessible or invalid machine configuration without starting a platform process.
+pub fn tool_options(
+    ibcmd: Option<PathBuf>,
+    platform_arch: Option<String>,
+    distrobox: Option<String>,
+) -> Result<ToolOptions, GlobalConfigError> {
+    let (_, config) = load()?;
+    let runner = match config.build.runner {
+        RunnerKind::Auto => RunnerPreference::Auto,
+        RunnerKind::Host => RunnerPreference::Host,
+        RunnerKind::Distrobox => RunnerPreference::Distrobox,
+    };
+    Ok(
+        ToolOptions::new(ibcmd, platform_arch, distrobox).with_machine_defaults(
+            runner,
+            config.build.platform_arch,
+            config.build.container,
+        ),
+    )
 }
 
 #[derive(Debug, Deserialize)]
@@ -148,6 +180,9 @@ pub enum GlobalConfigError {
 }
 
 /// Resolve the standard per-user config location on the current operating system.
+///
+/// # Errors
+/// Returns an unavailable user configuration directory when no override is supplied.
 pub fn config_path() -> Result<PathBuf, GlobalConfigError> {
     if let Some(directory) = std::env::var_os(CONFIG_DIRECTORY_ENV) {
         return Ok(PathBuf::from(directory).join("config.toml"));
@@ -158,6 +193,9 @@ pub fn config_path() -> Result<PathBuf, GlobalConfigError> {
 }
 
 /// Create the default config without overwriting an existing file.
+///
+/// # Errors
+/// Returns a missing parent component or a filesystem failure during exclusive creation.
 pub fn init_at(path: &Path) -> Result<InitOutcome, GlobalConfigError> {
     let parent = path
         .parent()
@@ -183,6 +221,9 @@ pub fn init_at(path: &Path) -> Result<InitOutcome, GlobalConfigError> {
 }
 
 /// Edit a temporary copy, validate it and atomically retain the previous config as backup.
+///
+/// # Errors
+/// Returns an editor, validation, backup or publication failure; the previous file is retained.
 pub fn edit_at<F>(path: &Path, edit: F) -> Result<EditOutcome, GlobalConfigError>
 where
     F: FnOnce(&Path) -> Result<(), GlobalConfigError>,
@@ -297,6 +338,7 @@ fn unique_backup(path: &Path) -> Result<PathBuf, GlobalConfigError> {
     ))
 }
 
+/// Keep the original filesystem error and path for either presentation layer.
 fn io_error(path: &Path, source: io::Error) -> GlobalConfigError {
     GlobalConfigError::Io {
         path: path.to_owned(),

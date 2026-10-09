@@ -78,11 +78,12 @@ generation id независимо пересчитан из binding, base pin �
 
 Это экспериментальный Rust API; [конфигурация ESKA](project-selection.md) уже
 выбирает source и путь базы; [самостоятельный project CLI](project-cli.md)
-подготавливает такое поколение. Сборочный бинарник пока не подключён.
+подготавливает такое поколение. [Сборочный бинарник](build-cli.md) повторяет
+protected prepare и проверяет собственный snapshot до платформы.
 [Координаты](source-locations.md) уже вычисляются
 по конкретным native/YAML bytes; [адреса платформы](platform-locations.md)
 поступают с origins проверенного snapshot при успехе и отказе. Наблюдённые
 сообщения XDTO не содержат строки/колонки.
-[Byte-preserving transport](git-transport.md) уже готов; остаётся сборочный CLI.
+[Byte-preserving transport](git-transport.md) также готов.
 Проверки не дают файловой системе CAS-гарантию против внешней записи в частный
 снимок после последней проверки; рабочее редактирование не получает его путь.
