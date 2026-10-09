@@ -160,25 +160,25 @@ pub fn check_envelope(input: &str) -> Result<(), EnvelopeError> {
 /// Recognize standard Designer BSL implementation module names.
 #[must_use]
 pub fn is_module_path(path: &std::path::Path) -> bool {
-    let Some(file) = path.file_name().and_then(|value| value.to_str()) else {
+    if !matches!(
+        path.extension().and_then(|value| value.to_str()),
+        Some("bsl" | "bin")
+    ) {
         return false;
-    };
+    }
     matches!(
-        file,
-        "Module.bsl"
-            | "Module.bin"
-            | "ObjectModule.bsl"
-            | "ObjectModule.bin"
-            | "ManagerModule.bsl"
-            | "ManagerModule.bin"
-            | "RecordSetModule.bsl"
-            | "RecordSetModule.bin"
-            | "ValueManagerModule.bsl"
-            | "ValueManagerModule.bin"
-            | "ManagedApplicationModule.bsl"
-            | "OrdinaryApplicationModule.bsl"
-            | "SessionModule.bsl"
-            | "ExternalConnectionModule.bsl"
-            | "CommandModule.bsl"
+        path.file_stem().and_then(|value| value.to_str()),
+        Some(
+            "Module"
+                | "ObjectModule"
+                | "ManagerModule"
+                | "RecordSetModule"
+                | "ValueManagerModule"
+                | "ManagedApplicationModule"
+                | "OrdinaryApplicationModule"
+                | "SessionModule"
+                | "ExternalConnectionModule"
+                | "CommandModule"
+        )
     )
 }

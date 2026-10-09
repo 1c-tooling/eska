@@ -4,9 +4,9 @@ use std::{
 };
 
 use eska::project::source_format::{
-    AcceptedBase, Child, Descriptor, MetadataNode, ObjectSource, PermissionReason, Property,
-    PropertyName, PropertyValue, Section, accept_source, export_designer, export_protected,
-    import_designer,
+    AcceptedBase, Child, Descriptor, MetadataNode, ObjectSource, Operation, PermissionReason,
+    Property, PropertyName, PropertyValue, Section, accept_source, export_designer,
+    export_protected, import_designer,
 };
 
 use super::baseline::{fixture, tree, uuid};
@@ -422,6 +422,57 @@ fn opaque_binary_modules_are_restored_and_unmanaged_output_is_not_claimed() {
             .iter()
             .any(|item| item.reason == PermissionReason::UnsupportedOperation)
     );
+}
+
+/// Every opaque module keeps its accepted bytes even when its owner permits resource edits.
+#[test]
+fn configuration_binary_modules_cannot_be_edited_as_resources() {
+    let test = TestDir::new();
+    let input = super::fixture(&test.0);
+    fs::remove_file(input.join("Ext/ParentConfigurations.bin")).unwrap();
+    let paths = [
+        "Ext/ManagedApplicationModule.bin",
+        "Ext/OrdinaryApplicationModule.bin",
+        "Ext/SessionModule.bin",
+        "Ext/ExternalConnectionModule.bin",
+        "Catalogs/Sample/Commands/Run/Ext/CommandModule.bin",
+    ];
+    for path in paths {
+        let destination = input.join(path);
+        fs::create_dir_all(destination.parent().unwrap()).unwrap();
+        fs::write(destination, b"accepted opaque code").unwrap();
+    }
+    let source = test.0.join("source");
+    import_designer(&input, &source).unwrap();
+    let accepted = test.0.join("accepted");
+    let reference = accept_source(&source, &accepted, &[]).unwrap();
+    let base = AcceptedBase::open(&accepted, &reference).unwrap();
+    for path in paths {
+        fs::write(source.join(path), b"unsupported change").unwrap();
+    }
+    let output = test.0.join("generations");
+    assert_eq!(
+        export_protected(&source, &base, &output, true)
+            .unwrap_err()
+            .error
+            .code,
+        "source_changes_excluded"
+    );
+    assert!(!output.exists());
+    let report = export_protected(&source, &base, &output, false).unwrap();
+    for path in paths {
+        assert_eq!(
+            fs::read(report.xml.join(path)).unwrap(),
+            b"accepted opaque code"
+        );
+        assert_eq!(fs::read(source.join(path)).unwrap(), b"unsupported change");
+        assert!(
+            report
+                .diagnostics
+                .iter()
+                .any(|item| { item.path.as_str() == path && item.operation == Operation::Module })
+        );
+    }
 }
 
 /// A user-edited cache is an error; it cannot become the authoritative replacement source.
