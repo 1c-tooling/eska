@@ -1,0 +1,347 @@
+{
+  "corpora": [
+    {
+      "corpus": "c1",
+      "exit_code": 0,
+      "result": {
+        "fields": 2030,
+        "metadata_complete": true,
+        "registers": {
+          "accumulation-register": 6,
+          "information-register": 222
+        },
+        "seconds": 1.912029993,
+        "supported_models_equal": true,
+        "unsupported": {},
+        "xml_exported": false
+      }
+    },
+    {
+      "corpus": "c2",
+      "exit_code": 0,
+      "result": {
+        "fields": 16606,
+        "metadata_complete": true,
+        "registers": {
+          "accounting-register": 1,
+          "accumulation-register": 108,
+          "information-register": 1355
+        },
+        "seconds": 18.949690636,
+        "supported_models_equal": true,
+        "unsupported": {},
+        "xml_exported": false
+      }
+    },
+    {
+      "corpus": "c3",
+      "exit_code": 0,
+      "result": {
+        "fields": 23680,
+        "metadata_complete": true,
+        "registers": {
+          "accounting-register": 2,
+          "accumulation-register": 224,
+          "information-register": 1737
+        },
+        "seconds": 26.949647347,
+        "supported_models_equal": true,
+        "unsupported": {},
+        "xml_exported": false
+      }
+    }
+  ],
+  "gates": [
+    {
+      "component": "bsl-kernel",
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.4614212829983444
+    },
+    {
+      "component": "bsl-kernel",
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.8469214020005893
+    },
+    {
+      "component": "bsl-kernel",
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 5.984912841995538
+    },
+    {
+      "component": "bsl-kernel",
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 10.44419415199809,
+      "test_results": [
+        "ok. 267 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 600 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 179 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "component": "bsl-kernel",
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 0.12558741300017573
+    },
+    {
+      "component": "bsl-adapter",
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.8731101379962638
+    },
+    {
+      "component": "bsl-adapter",
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 1.4761521149994223
+    },
+    {
+      "component": "bsl-adapter",
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.4871473019957193
+    },
+    {
+      "component": "bsl-adapter",
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 2.320380422002927,
+      "test_results": [
+        "ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "component": "bsl-adapter",
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 0.5634789079995244
+    },
+    {
+      "component": "bsl-adapter",
+      "gate": "register-example",
+      "exit_code": 0,
+      "seconds": 4.870513180998387
+    }
+  ],
+  "reference_head": "9021ba07471eee8a2614bed2105a2c8699f60780",
+  "reference_changes": [
+    "canonical-family-inputs",
+    "information-register-quarter-year"
+  ],
+  "runtime_path": "empty",
+  "profile": "release-optimized",
+  "coverage": "main-register-descriptors",
+  "production_analyzer": false,
+  "tests": {
+    "kernel": {
+      "bsl_metadata_passed": 267,
+      "hir_ty_passed": 600,
+      "ide_db_passed": 179,
+      "ignored": 4,
+      "failed": 0
+    },
+    "adapter": {
+      "unit_passed": 30,
+      "integration_passed": 6,
+      "ignored": 0,
+      "failed": 0
+    },
+    "application": {
+      "unit_passed": 353,
+      "integration_passed": 529,
+      "ignored": 14,
+      "failed": 0
+    },
+    "minimal_project_core": {
+      "passed": 159,
+      "ignored": 3,
+      "failed": 0
+    }
+  },
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9492283439976745
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4509336749979411
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.32571139900392154
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 18.403770953002095
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 6.732606836005289
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2744389730069088
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 2.2316467450000346
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.359306006001134
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.004894853998848703
+    }
+  ],
+  "source_sha256": {
+    "tools/bsl-kernel/crates/bsl-metadata/Cargo.toml": "32af4a57ce708c1288af824ce8272882ce7b781ec4b57a4f47ccee9708820e21",
+    "tools/bsl-kernel/crates/bsl-metadata/src/loader.rs": "e4bc24a9750d0299b5faff49c1a99a2e9ee4386db7f4575249002df8195b879b",
+    "tools/bsl-kernel/crates/bsl-metadata/src/register.rs": "47b740d449035958d7c9b42abfff32e9f915dbd2d114e154d1aea262a2580aae",
+    "tools/bsl-kernel/crates/bsl-metadata/src/xml_parser/register.rs": "852a22b340ae40e85260a56519905b834729e058b649955c4f07a2fc234d9593",
+    "tools/bsl-kernel/crates/hir-ty/Cargo.toml": "8ac0a73d54e5dcfa4c9e2dd774c82d7d61874a37b28d447a9fd7b5370716cdcf",
+    "tools/bsl-kernel/crates/hir-ty/src/doc_see.rs": "e379dd8c94f51b2ae95277f2f26cb09bc779b59fe14a587d30141756eb5e1cc3",
+    "tools/bsl-kernel/crates/hir-ty/src/field_enum.rs": "941fe004b59ffee1cc7c11ec6c617f305aa07954a53e94150ff55fead1b0ddf0",
+    "tools/bsl-kernel/crates/hir-ty/src/infer.rs": "5b1b670b88cf2772322170c25023f6378e66342e62de2b73cd5ab67911a094d6",
+    "tools/bsl-kernel/crates/hir-ty/src/narrow.rs": "42972a144a20332dd78f1f27e7b8386f81615d7575d5c06e1ee4d565960d597b",
+    "tools/bsl-kernel/crates/hir-ty/src/platform_type_name.rs": "2bc3d5b16b2d61487941884bb5d2a060dd17444564a5dd0a0fcf19781ac79ab1",
+    "tools/bsl-kernel/crates/ide-db/src/database.rs": "3e3a0a53f850c3dc665b011247505d3774dca448d466beee884868dcc827616c",
+    "tools/bsl-kernel/crates/ide-db/src/database_impl_tests.rs": "ec014a38380e54fb5fd52827506255a6f91549666a783b6d6d08fe84fbe9f395",
+    "tools/bsl-kernel/crates/ide-db/src/lib.rs": "0380cea138661d8446dc260d15b64adc6ee409ffb2a620fcdd25ba205c993fa5",
+    "tools/bsl-kernel/crates/ide-db/src/metadata.rs": "8e3c55508a9766ee865ecc96c460d7049d2ff70de1a8f05ec66edc60eea148c0",
+    "tools/bsl-kernel/Cargo.toml": "17304ccae851ced5f04d5fb1cbfde1aa4435758bf8f2da582d21ec4cc5ac5baa",
+    "tools/bsl-kernel/Cargo.lock": "d2b19eb0e218be42b416e219c8b5188c2a7a7259a970272b675d999668b29e7f",
+    "tools/bsl-kernel/crates/ide-db/src/canonical_metadata_tests.rs": "2be8d062d9083ec3e114a2f4323c2db8b0d2c1da3de9831e6a897eb7539ac35a",
+    "tools/bsl-kernel/rustfmt.toml": "f5a4278cea22034f684c4153757a610aa8487e8f65abcda528efef7c9d3c40e9",
+    "tools/bsl-adapter/Cargo.toml": "72d17fed3eab20998efecd802d420131a66724c988a78626b34ac2e638673066",
+    "tools/bsl-adapter/Cargo.lock": "e7a3e93309c3a729b54ec5840b7b70fee45e8070746b9803846d1c4f768d1c4c",
+    "tools/bsl-adapter/src/register.rs": "1a82ca8e69748f4811a221b02dbe14efe2cf9d9eaf82440f1011a68414a5098f",
+    "tools/bsl-adapter/src/register/tests.rs": "6603982c7d25aa3cfa08bf905c8a42038416a1a7c58f02299cdc55a0b8412f7a",
+    "Cargo.toml": "67019172282e266e2e8bf11654b8967aa65b35254c54a3406419efbe9eea6d1c",
+    "Cargo.lock": "b928cfddb278283def29c952d74e978b23cb36220229526b4539a288a60f20c5",
+    "tools/bsl-kernel/crates/bsl-metadata/fixtures/designer/CommonModules/ГлобальныйСерверныйМодуль/Ext/Module.bsl": "5039061dadf757c579b9cc6d99fbc6bd42c8e8d320b5ca3e84aafadffcf539fc"
+  },
+  "source_revision_originals": 313,
+  "local_override_files": [
+    "crates/bsl-metadata/Cargo.toml",
+    "crates/bsl-metadata/src/loader.rs",
+    "crates/bsl-metadata/src/register.rs",
+    "crates/bsl-metadata/src/xml_parser/register.rs",
+    "crates/hir-ty/Cargo.toml",
+    "crates/hir-ty/src/doc_see.rs",
+    "crates/hir-ty/src/field_enum.rs",
+    "crates/hir-ty/src/infer.rs",
+    "crates/hir-ty/src/narrow.rs",
+    "crates/hir-ty/src/platform_type_name.rs",
+    "crates/ide-db/src/database.rs",
+    "crates/ide-db/src/database_impl_tests.rs",
+    "crates/ide-db/src/lib.rs",
+    "crates/ide-db/src/metadata.rs",
+    "crates/bsl-metadata/fixtures/designer/CommonModules/ГлобальныйСерверныйМодуль/Ext/Module.bsl"
+  ],
+  "remaining": [
+    "other-metadata-families-and-predefined-resources",
+    "one-c1-object-typeset-cfg-anyref",
+    "shared-runtime-host-and-bsl-input-lifecycle",
+    "common-analysis-coverage-budgets-cancellation",
+    "analyzer-and-check-cli",
+    "explorer-integration"
+  ],
+  "fixture_retest": {
+    "exit_code": 0,
+    "test_results": [
+      "ok. 267 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+      "ok. 600 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+      "ok. 179 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.04s",
+      "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+    ]
+  },
+  "bsl_fixture_validation": {
+    "analyzer_version": "0.2.86",
+    "workspace_mcp_available": false,
+    "config_file_present": false,
+    "selected_files": 1,
+    "metadata_loaded": true,
+    "failed_files": 0,
+    "new_diagnostics": 0,
+    "unchanged_fixture_diagnostics": [
+      "CommonModuleInvalidType",
+      "CommonModuleMissingAPI",
+      "CommonModuleNameWords",
+      "CodeOutOfRegion"
+    ],
+    "bom_preserved": true,
+    "line_endings_preserved": "LF",
+    "reference_exit_code": 0,
+    "updated_exit_code": 0
+  }
+}

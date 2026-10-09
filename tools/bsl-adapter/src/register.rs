@@ -80,14 +80,9 @@ fn periodicity(
                 Some("Second") => Ok(RegisterPeriodicity::Second),
                 Some("Day") => Ok(RegisterPeriodicity::Day),
                 Some("Month") => Ok(RegisterPeriodicity::Month),
+                Some("Quarter") => Ok(RegisterPeriodicity::Quarter),
+                Some("Year") => Ok(RegisterPeriodicity::Year),
                 Some("RecorderPosition") => Ok(RegisterPeriodicity::RecorderPosition),
-                Some(value @ ("Quarter" | "Year")) => Err(AdapterError {
-                    issue: AdapterIssue::UnsupportedPropertyValue {
-                        name: "InformationRegisterPeriodicity".into(),
-                        value: value.into(),
-                    },
-                    range: field.range.clone(),
-                }),
                 _ => Err(Properties::invalid(field)),
             },
         )

@@ -182,28 +182,24 @@ fn incomplete_and_wrong_descriptors_fail_explicitly() {
     );
 }
 
-/// Quarter/Year are valid platform values but cannot be represented by the pinned kernel enum.
+/// All valid calendar periodicities retain their enum, standard period and both slice tables.
 #[test]
-fn valid_unmodeled_periodicity_never_becomes_nonperiodical_or_missing() {
-    for value in ["Quarter", "Year"] {
+fn quarterly_and_yearly_periodicities_keep_slice_tables() {
+    for (value, expected) in [
+        ("Quarter", RegisterPeriodicity::Quarter),
+        ("Year", RegisterPeriodicity::Year),
+    ] {
         let text = xml(
             "InformationRegister",
             &format!("<InformationRegisterPeriodicity>{value}</InformationRegisterPeriodicity>"),
             "",
         );
         let descriptor = metadata_parser::parse(&text, None, PropertiesMode::All).unwrap();
-        let error = register(&descriptor).unwrap_err();
-        assert_eq!(
-            error.issue,
-            AdapterIssue::UnsupportedPropertyValue {
-                name: "InformationRegisterPeriodicity".into(),
-                value: value.into()
-            }
-        );
-        assert!(text[error.range].contains(value));
+        let model = register(&descriptor).unwrap();
         let native = bsl_metadata::xml_parser::parse_information_register_xml(&text).unwrap();
-        assert!(native.periodicity().is_none());
-        assert!(native.virtual_tables().is_empty());
+        assert_eq!(model, native);
+        assert_eq!(model.periodicity(), Some(expected));
+        assert_eq!(model.virtual_tables(), ["СрезПервых", "СрезПоследних"]);
         assert!(
             native
                 .attributes()

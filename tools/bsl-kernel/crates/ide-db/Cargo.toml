@@ -1,0 +1,44 @@
+[package]
+name = "ide-db"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+bsl-conventions.workspace = true
+stdx.workspace = true
+intern.workspace = true
+parser.workspace = true
+hir.workspace = true
+sdbl-hir.workspace = true
+base-db.workspace = true
+bsl-config.workspace = true
+bsl-metadata.workspace = true
+project-model.workspace = true
+bsl-platform.workspace = true
+bsl-types.workspace = true
+syntax.workspace = true
+vfs.workspace = true
+salsa.workspace = true
+rustc-hash.workspace = true
+dashmap.workspace = true
+elsa.workspace = true
+indexmap.workspace = true
+tracing.workspace = true
+line-index.workspace = true
+parking_lot.workspace = true
+thiserror.workspace = true
+rayon.workspace = true
+
+[dev-dependencies]
+expect-test.workspace = true
+criterion.workspace = true
+hir-ty.workspace = true
+tempfile.workspace = true
+rayon.workspace = true
+test-fixture.workspace = true
+
+[[bench]]
+name = "salsa_incremental"
+harness = false

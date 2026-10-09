@@ -1,0 +1,239 @@
+//! Regression tests for canonical metadata families; no XML file is registered.
+
+use std::sync::Arc;
+
+use bsl_metadata::{AttributeType, CommonModule, DefinedType, MdoType, Register};
+use salsa::Setter;
+use vfs::FileId;
+
+use crate::{
+    metadata::{
+        common_module_index, config_index, defined_type_index, resolve_common_module,
+        resolve_common_module_by_file, resolve_defined_type, resolve_register,
+        resolve_register_by_name, CanonicalMetadata, CanonicalMetadataInput,
+        CanonicalMetadataInputs, CommonModuleEntry, DefinedTypeEntry, MdoEntry,
+        MetadataListingData, MetadataListingInput,
+    },
+    RootDatabaseImpl,
+};
+
+/// Register only structural identities; canonical slots are the sole data providers.
+fn database() -> (RootDatabaseImpl, MetadataListingInput) {
+    let mut database = RootDatabaseImpl::new_with_salsa_events();
+    database.set_metadata_listing(
+        "/canonical-families",
+        MetadataListingData {
+            entries: vec![MdoEntry {
+                kind: MdoType::InformationRegister,
+                name: "Rates".into(),
+                main: FileId(0),
+                predefined: None,
+            }],
+            common_modules: vec![CommonModuleEntry {
+                name: "Tools".into(),
+                main: FileId(1),
+                module_file: Some(FileId(3)),
+                unread_module_file: None,
+            }],
+            defined_types: vec![DefinedTypeEntry { name: "Money".into(), main: FileId(2) }],
+            ..MetadataListingData::default()
+        },
+    );
+    let listing = database.metadata_listing("/canonical-families").expect("registered listing");
+    (database, listing)
+}
+
+/// Bind one stable file identity to a host-provided tracked value.
+fn input(database: &RootDatabaseImpl, value: CanonicalMetadata) -> CanonicalMetadataInput {
+    CanonicalMetadataInput::new(database, Some(Arc::new(value)), "saved".into())
+}
+
+/// Supply typed register semantics directly, not through an XML-shaped VFS string.
+#[test]
+fn canonical_register_uses_both_entry_points_and_never_falls_back_when_unavailable() {
+    let (mut database, listing) = database();
+    let register = Arc::new(
+        Register::builder()
+            .name("Rates")
+            .mdo_type(MdoType::InformationRegister)
+            .recorder_subordinate(false)
+            .build(),
+    );
+    let provided = input(&database, CanonicalMetadata::Register(Arc::clone(&register)));
+    let inputs: CanonicalMetadataInputs = [(FileId(0), provided)].into_iter().collect();
+    listing.set_canonical_metadata(&mut database).to(Arc::new(inputs));
+    let index = Arc::clone(config_index(&database, listing));
+    assert!(Arc::ptr_eq(
+        &register,
+        &resolve_register(&database, listing, MdoType::InformationRegister, "rates".into())
+            .expect("by kind")
+    ));
+    assert!(Arc::ptr_eq(
+        &register,
+        &resolve_register_by_name(&database, listing, "RATES".into()).expect("by name")
+    ));
+    let changed = Arc::new(
+        Register::builder()
+            .name("Rates")
+            .mdo_type(MdoType::InformationRegister)
+            .recorder_subordinate(true)
+            .build(),
+    );
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::Register(changed))));
+    provided.set_source_revision(&mut database).to("draft".into());
+    assert!(resolve_register_by_name(&database, listing, "Rates".into())
+        .expect("changed register")
+        .is_recorder_subordinate());
+    assert!(!register.is_recorder_subordinate());
+    assert!(Arc::ptr_eq(&index, config_index(&database, listing)));
+    provided.set_value(&mut database).to(None);
+    assert!(resolve_register(&database, listing, MdoType::InformationRegister, "Rates".into())
+        .is_none());
+    assert!(resolve_register_by_name(&database, listing, "Rates".into()).is_none());
+    assert_eq!(database.salsa_family_churn("parse_register_query").expect("events").0, 0);
+}
+
+/// Both common-module name lookup and the BSL-body backlink use the same flags and input.
+#[test]
+fn canonical_common_module_by_name_and_body_share_current_flags() {
+    let (mut database, listing) = database();
+    let module =
+        Arc::new(CommonModule::builder().name("Tools").server(true).server_call(false).build());
+    let provided = input(&database, CanonicalMetadata::CommonModule(Arc::clone(&module)));
+    let inputs: CanonicalMetadataInputs = [(FileId(1), provided)].into_iter().collect();
+    listing.set_canonical_metadata(&mut database).to(Arc::new(inputs));
+    let index = Arc::clone(common_module_index(&database, listing));
+    assert!(Arc::ptr_eq(
+        &module,
+        &resolve_common_module(&database, listing, "TOOLS".into()).expect("by name")
+    ));
+    assert!(Arc::ptr_eq(
+        &module,
+        &resolve_common_module_by_file(&database, listing, FileId(3)).expect("by body")
+    ));
+    let changed =
+        Arc::new(CommonModule::builder().name("Tools").server(true).server_call(true).build());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::CommonModule(changed))));
+    provided.set_source_revision(&mut database).to("draft".into());
+    assert!(resolve_common_module_by_file(&database, listing, FileId(3))
+        .expect("changed flags")
+        .is_server_call());
+    assert!(!module.is_server_call());
+    assert!(Arc::ptr_eq(&index, common_module_index(&database, listing)));
+    provided.set_value(&mut database).to(None);
+    assert!(resolve_common_module(&database, listing, "Tools".into()).is_none());
+    assert!(resolve_common_module_by_file(&database, listing, FileId(3)).is_none());
+    assert_eq!(database.salsa_family_churn("parse_common_module_query").expect("events").0, 0);
+}
+
+/// A changed defined type replaces its underlying type without reparsing XML or the structure.
+#[test]
+fn canonical_defined_type_replaces_composite_type_at_one_slot() {
+    let (mut database, listing) = database();
+    let value = Arc::new(
+        DefinedType::builder()
+            .uuid("30000000-0000-4000-8000-000000000001".parse().expect("fixed test UUID"))
+            .name("Money")
+            .underlying_type(AttributeType::Number { precision: 15, scale: 2 })
+            .build(),
+    );
+    let provided = input(&database, CanonicalMetadata::DefinedType(value));
+    let inputs: CanonicalMetadataInputs = [(FileId(2), provided)].into_iter().collect();
+    listing.set_canonical_metadata(&mut database).to(Arc::new(inputs));
+    let index = Arc::clone(defined_type_index(&database, listing));
+    let saved = resolve_defined_type(&database, listing, "money".into()).expect("saved type");
+    assert_eq!(saved.as_ref(), &AttributeType::Number { precision: 15, scale: 2 });
+    let draft = AttributeType::Composite {
+        types: vec![AttributeType::Boolean, AttributeType::String { length: Some(20) }],
+    };
+    let changed = Arc::new(
+        DefinedType::builder()
+            .uuid("30000000-0000-4000-8000-000000000001".parse().expect("fixed test UUID"))
+            .name("Money")
+            .underlying_type(draft.clone())
+            .build(),
+    );
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::DefinedType(changed))));
+    provided.set_source_revision(&mut database).to("draft".into());
+    assert_eq!(
+        resolve_defined_type(&database, listing, "Money".into()).expect("changed type").as_ref(),
+        &draft
+    );
+    assert_eq!(saved.as_ref(), &AttributeType::Number { precision: 15, scale: 2 });
+    assert!(Arc::ptr_eq(&index, defined_type_index(&database, listing)));
+    provided.set_value(&mut database).to(None);
+    assert!(resolve_defined_type(&database, listing, "Money".into()).is_none());
+    assert_eq!(database.salsa_family_churn("parse_defined_type_query").expect("events").0, 0);
+}
+
+/// A provider cannot silently supply a different family, structural name or register kind.
+#[test]
+fn canonical_family_and_identity_mismatches_are_unavailable() {
+    let (mut database, listing) = database();
+    let wrong_name = input(
+        &database,
+        CanonicalMetadata::Register(Arc::new(
+            Register::builder().name("Other").mdo_type(MdoType::InformationRegister).build(),
+        )),
+    );
+    let wrong_family = input(
+        &database,
+        CanonicalMetadata::DefinedType(Arc::new(
+            DefinedType::builder()
+                .uuid("30000000-0000-4000-8000-000000000001".parse().expect("fixed test UUID"))
+                .name("Tools")
+                .underlying_type(AttributeType::Boolean)
+                .build(),
+        )),
+    );
+    let inputs: CanonicalMetadataInputs =
+        [(FileId(0), wrong_name), (FileId(1), wrong_family), (FileId(2), wrong_family)]
+            .into_iter()
+            .collect();
+    listing.set_canonical_metadata(&mut database).to(Arc::new(inputs));
+    assert!(resolve_register_by_name(&database, listing, "Rates".into()).is_none());
+    assert!(resolve_common_module(&database, listing, "Tools".into()).is_none());
+    assert!(resolve_defined_type(&database, listing, "Money".into()).is_none());
+    wrong_name.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::Register(Arc::new(
+        Register::builder().name("Rates").mdo_type(MdoType::AccumulationRegister).build(),
+    )))));
+    assert!(resolve_register(&database, listing, MdoType::InformationRegister, "Rates".into())
+        .is_none());
+    assert!(resolve_register_by_name(&database, listing, "Rates".into()).is_none());
+    wrong_family.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::CommonModule(
+        Arc::new(CommonModule::builder().name("Other").build()),
+    ))));
+    assert!(resolve_common_module_by_file(&database, listing, FileId(3)).is_none());
+    for family in ["parse_register_query", "parse_common_module_query", "parse_defined_type_query"]
+    {
+        assert_eq!(database.salsa_family_churn(family).expect("events").0, 0);
+    }
+}
+
+/// Invalidating one family leaves the other family's memo and the root structure untouched.
+#[test]
+fn unrelated_canonical_family_does_not_execute_register_resolution() {
+    let (mut database, listing) = database();
+    let register = input(
+        &database,
+        CanonicalMetadata::Register(Arc::new(
+            Register::builder().name("Rates").mdo_type(MdoType::InformationRegister).build(),
+        )),
+    );
+    let module = input(
+        &database,
+        CanonicalMetadata::CommonModule(Arc::new(CommonModule::builder().name("Tools").build())),
+    );
+    let inputs: CanonicalMetadataInputs =
+        [(FileId(0), register), (FileId(1), module)].into_iter().collect();
+    listing.set_canonical_metadata(&mut database).to(Arc::new(inputs));
+    let first = resolve_register_by_name(&database, listing, "Rates".into()).expect("register");
+    let before = database.salsa_family_churn("resolve_register_by_name").expect("events").0;
+    assert_eq!(before, 1);
+    module.set_value(&mut database).to(None);
+    module.set_source_revision(&mut database).to("invalid".into());
+    let second =
+        resolve_register_by_name(&database, listing, "Rates".into()).expect("memoized register");
+    assert!(Arc::ptr_eq(&first, &second));
+    assert_eq!(database.salsa_family_churn("resolve_register_by_name").expect("events").0, before);
+}

@@ -20,6 +20,9 @@ bsl-platform = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "
 [dev-dependencies]
 serde_json = "1.0"
 
+[patch."https://github.com/1c-tooling/bsl-analyzer.git"]
+bsl-metadata = { path = "../bsl-kernel/crates/bsl-metadata" }
+
 [lints.clippy]
 all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
