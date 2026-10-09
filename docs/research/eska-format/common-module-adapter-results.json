@@ -1,0 +1,58 @@
+{
+  "reference_head": "9021ba07471eee8a2614bed2105a2c8699f60780",
+  "gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.08725823600252625
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.19023332000506343
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.2669217189977644
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 0.5022000829994795
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 0.5519633489966509
+    }
+  ],
+  "tests": {
+    "unit": 6,
+    "integration": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  "C1": {
+    "model_parity": true,
+    "modules": 514,
+    "seconds": 5.966493153,
+    "trees_changed": false,
+    "xml_exported": false
+  },
+  "adapter_sha256": {
+    "tools/bsl-adapter/Cargo.lock": "267a84da725025aec00db9bdeef6bf9c156920b00d674af5498416c31b6fdb97",
+    "tools/bsl-adapter/Cargo.toml": "fbc4abbfb45cd62365c32c053e267d340805b46cacc0744d5cfa1be2bbfcf2e8",
+    "tools/bsl-adapter/README.md": "2d30232bad54ccef65d0ad2396fca8b8a0ae4dc1833549572809f5bdf6c6119a",
+    "tools/bsl-adapter/examples/project_modules.rs": "fe2f3a498ccdcb4fe9e765cb66b05c97fa7b7b7cfb0f749227c73800a647b6f2",
+    "tools/bsl-adapter/src/common_module/tests.rs": "acbdb03d64ca7111baee97a26425b591971189944be24ef65915b9258e166218",
+    "tools/bsl-adapter/src/common_module.rs": "32dfb4227beb3ee24abc7add2427de1bf7b2c4ebf5668f7845742c9acda762db",
+    "tools/bsl-adapter/src/lib.rs": "19d82bde4ac2ddc9c3ba5f7a3bd66485a707bdc15e7cdfa7029c78f5aa8da3bc",
+    "tools/bsl-adapter/src/properties.rs": "5e38f9e6ad6f05627c1b041aa03eb32c531c79b73e6f02b40aac079923009266",
+    "tools/bsl-adapter/tests/common_module_inputs.rs": "f071ae0407c13dcfaeaeaba72d4479ccd4a137c967d857be017546e1139e8dff",
+    "tools/bsl-adapter/tests/support/mod.rs": "1cf0e8120e8e052bc5db3e3eed253ceab5f423fc5cf809fd4f991b9682df6ff4"
+  },
+  "runtime_path": "empty",
+  "coverage": "common-module-model",
+  "production_analyzer": false
+}
