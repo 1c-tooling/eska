@@ -62,6 +62,24 @@ impl Inputs {
         self.0.get(path).copied()
     }
 
+    /// Relative literal filenames keep glob syntax out of arbitrary project and workspace paths.
+    pub fn watchers(&self) -> Result<Vec<Value>, Value> {
+        self.0
+            .keys()
+            .map(|path| {
+                let invalid =
+                    || protocol::error_value(-32603, "path_encoding_unsupported", Value::Null);
+                let parent = path.parent().ok_or_else(invalid)?;
+                let base = url::Url::from_directory_path(parent).map_err(|()| invalid())?;
+                let name = path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .ok_or_else(invalid)?;
+                Ok(json!({"globPattern":{"baseUri":base.as_str(),"pattern":name},"kind":7}))
+            })
+            .collect()
+    }
+
     /// Clients watch this explicit small inventory rather than guessing project or workspace boundaries.
     pub fn capability(&self) -> Result<Value, Value> {
         let inputs = self

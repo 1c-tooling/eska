@@ -22,13 +22,36 @@ pub struct Message {
     pub params: Value,
 }
 
-/// Distinguish syntax from envelope failures; batch messages and server responses are unsupported.
-pub fn parse(body: &[u8]) -> Result<Message, Value> {
+pub enum Incoming {
+    Message(Message),
+    Response(ClientResponse),
+}
+
+pub struct ClientResponse {
+    pub id: Option<Id>,
+    pub result: Result<Value, ClientError>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ClientError {
+    pub code: i32,
+    #[serde(rename = "message")]
+    _message: String,
+    #[serde(default, rename = "data")]
+    _data: Value,
+}
+
+/// Distinguish requests from client replies before cancellation tracking; JSON-RPC batches stay unsupported.
+pub fn parse(body: &[u8]) -> Result<Incoming, Value> {
     use eska::tool_cli::rpc_json::{ParseFailure, parse_unique};
     let value = parse_unique(body).map_err(|error| match error {
         ParseFailure::Syntax => error_value(-32700, "rpc_parse_error", Value::Null),
         ParseFailure::Invalid => error_value(-32600, "rpc_invalid_request", Value::Null),
     })?;
+    if value.get("method").is_none() {
+        return client_response(value).map(Incoming::Response);
+    }
     if value.get("id").is_some_and(Value::is_null) {
         return Err(error_value(-32600, "rpc_invalid_request", Value::Null));
     }
@@ -37,7 +60,31 @@ pub fn parse(body: &[u8]) -> Result<Message, Value> {
     if message.jsonrpc != "2.0" || message.method.is_empty() {
         return Err(error_value(-32600, "rpc_invalid_request", Value::Null));
     }
-    Ok(message)
+    Ok(Incoming::Message(message))
+}
+
+/// Require one result or error while preserving null success and response IDs independently of requests.
+fn client_response(value: Value) -> Result<ClientResponse, Value> {
+    let invalid = || error_value(-32600, "rpc_invalid_request", Value::Null);
+    let Value::Object(mut fields) = value else {
+        return Err(invalid());
+    };
+    if fields.remove("jsonrpc") != Some(json!("2.0")) {
+        return Err(invalid());
+    }
+    let id =
+        serde_json::from_value(fields.remove("id").ok_or_else(invalid)?).map_err(|_| invalid())?;
+    let result = fields.remove("result");
+    let error = fields.remove("error");
+    if !fields.is_empty() {
+        return Err(invalid());
+    }
+    let result = match (result, error) {
+        (Some(result), None) => Ok(result),
+        (None, Some(error)) => Err(serde_json::from_value(error).map_err(|_| invalid())?),
+        _ => return Err(invalid()),
+    };
+    Ok(ClientResponse { id, result })
 }
 
 /// Machine errors carry stable codes; standard messages do not depend on process locale.
@@ -107,7 +154,10 @@ mod tests {
             let body =
                 serde_json::to_vec(&json!({"jsonrpc":"2.0", "id":id, "method":"initialize"}))
                     .unwrap();
-            assert_eq!(serde_json::to_value(parse(&body).unwrap().id).unwrap(), id);
+            let Incoming::Message(message) = parse(&body).unwrap() else {
+                panic!("request parsed as a reply");
+            };
+            assert_eq!(serde_json::to_value(message.id).unwrap(), id);
         }
         for body in [
             br#"{"jsonrpc":"2.0","id":null,"method":"initialize"}"#.as_slice(),
@@ -119,6 +169,40 @@ mod tests {
             assert_eq!(parse(body).err().unwrap()["code"], -32600);
         }
         assert_eq!(parse(b"{").err().unwrap()["code"], -32700);
+    }
+
+    /// Replies preserve null results and response-only null IDs, while ambiguous/error envelopes fail.
+    #[test]
+    fn client_replies_have_exactly_one_result_or_structured_error() {
+        for id in [json!(null), json!(-1), json!("ответ")] {
+            let Incoming::Response(response) = parse(
+                &serde_json::to_vec(&json!({"jsonrpc":"2.0","id":id,"result":null})).unwrap(),
+            )
+            .unwrap() else {
+                panic!("reply parsed as a request");
+            };
+            assert_eq!(serde_json::to_value(response.id).unwrap(), id);
+            assert_eq!(response.result.ok().unwrap(), Value::Null);
+        }
+        let Incoming::Response(response) = parse(
+            br#"{"jsonrpc":"2.0","id":"registration","error":{"code":-32601,"message":"missing","data":null}}"#,
+        ).unwrap() else {
+            panic!("error reply parsed as a request");
+        };
+        assert_eq!(response.result.err().unwrap().code, -32601);
+        for body in [
+            br#"{"jsonrpc":"2.0","id":1,"result":null,"error":null}"#.as_slice(),
+            br#"{"jsonrpc":"2.0","id":1}"#,
+            br#"{"jsonrpc":"2.0","result":null}"#,
+            br#"{"jsonrpc":"2.0","id":true,"result":null}"#,
+            br#"{"jsonrpc":"2.0","id":1,"error":{"code":false,"message":"bad"}}"#,
+            br#"{"jsonrpc":"2.0","id":1,"error":{"code":1}}"#,
+            br#"{"jsonrpc":"2.0","id":1,"result":null,"method":"initialize"}"#,
+            br#"{"jsonrpc":"2.0","id":1,"result":null,"extra":1}"#,
+            br#"{"jsonrpc":"2.0","id":1,"result":null,"result":false}"#,
+        ] {
+            assert_eq!(parse(body).err().unwrap()["code"], -32600);
+        }
     }
 
     /// Decimal revision tokens retain all bits even when a client's JSON numbers are binary64.

@@ -17,6 +17,7 @@ mod server;
 mod stream;
 mod text_edits;
 mod watched_files;
+mod watcher_registration;
 
 use std::{env, io, process::ExitCode};
 

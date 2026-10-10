@@ -44,6 +44,9 @@ YAML/BSL, учитывает возможности клиента и сообщ
 инвалидацию YAML/BSL без I/O и приоритет editor authority; клиента watcher ещё нет.
 [Изменения состава и настроек](analyzer-project-changes.md) завершают прежний host
 с `eska/restartRequired`, явным списком control URI и отказом до нового процесса.
+[Регистрация control watcher](analyzer-watcher-registration.md) использует одну
+post-initialized LSP-подписку и явное подтверждение клиента; saved-input watcher
+и интеграция настоящего клиента ещё не подключены.
 [Поля регистров](analyzer-register-definitions.md) связывают typed запись и
 измерения отбора с теми же координатами текущего YAML.
 [Планы изменения свойств](analyzer-property-plans.md) связывают текущую editor

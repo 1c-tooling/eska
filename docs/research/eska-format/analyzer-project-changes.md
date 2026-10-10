@@ -1,5 +1,9 @@
 # Перезапуск после изменения состава проекта
 
+Здесь сохранён компонент на `b5970bf`. Следующая
+[регистрация control watcher](analyzer-watcher-registration.md) добавила
+post-initialized LSP-подписку; counts и замеры ниже относятся к restart guard.
+
 `eska-analyzer` больше не продолжает работу по прежнему составу после события
 изменения манифеста, корневой конфигурации или настроек. Он принимает
 `workspace/didChangeWatchedFiles`, освобождает host и сообщает

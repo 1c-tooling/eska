@@ -999,6 +999,26 @@ Client watcher/dynamic registration и автоматический restart ещ
 полная семантика, остальные модели, IDE edits, memory budget и Explorer также
 не завершены. EF-18 — `IN_PROGRESS`.
 
+[Регистрация control watcher](../research/eska-format/analyzer-watcher-registration.md)
+добавила один client/registerCapability после initialized, только при true
+dynamicRegistration и relativePatternSupport. Шесть standalone или семь workspace
+watchers используют relative parent URI и точное стандартное имя файла;
+число owners/modules не увеличивает подписку. Сервер принимает client replies
+через прежнюю очередь, отдельно от request/cancellation IDs. Один
+eska/watchRegistration явно подтверждает registered/failed без новой revision.
+Неизвестный/повторный/поздний reply не активирует подписку и не оживляет
+завершённый host; pending registration не блокирует работу или shutdown.
+Пройдены 53 unit/file, 59 analyzer process и 9 checker process; все 19 tool
+и 15 root gates, root 893/14, minimal 165/3, project-cli 181/3, build-cli 200/3.
+На C1/C2/C3 в RU/EN прошли 42 control-event и шесть saved-input сценариев
+с подтверждённой регистрацией на собственных частичных копиях с полным составом:
+84/84 и 30/42 definition/locate, точные ranges/hash и совпадение locale traces.
+Исходные corpus files не записывались, собственные проекты удалены.
+Runtime graph остался 206/214. Настоящий клиент/OS watcher не запускался.
+Регистрация ограничена control files; наблюдение всех saved inputs и интеграция
+клиента, автоматический restart, полная семантика/модели, IDE edits, общий memory
+budget и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

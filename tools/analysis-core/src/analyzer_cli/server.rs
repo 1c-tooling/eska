@@ -17,6 +17,7 @@ use crate::{AnalysisSession, RequestCancellation, SessionOptions, analysis_setti
 use super::{
     args::Cli, completion, definitions, diagnostics, documents, dto, language, metadata_locations,
     project_changes, property_edits, protocol, request_control, stream, watched_files,
+    watcher_registration,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -39,6 +40,7 @@ struct Server<'a> {
     edit_plans: Option<property_edits::Plans>,
     project_inputs: Option<project_changes::Inputs>,
     restart: Option<Value>,
+    watcher: Option<watcher_registration::Registration>,
 }
 
 enum Step {
@@ -63,6 +65,7 @@ pub fn run(cli: &Cli, input: impl BufRead + Send + 'static, output: &mut impl Wr
         edit_plans: None,
         project_inputs: None,
         restart: None,
+        watcher: None,
     };
     loop {
         let Ok(envelope) = incoming.receive() else {
@@ -74,6 +77,7 @@ pub fn run(cli: &Cli, input: impl BufRead + Send + 'static, output: &mut impl Wr
                 tracked,
             ),
             stream::Envelope::Error(error) => (Step::Continue(Some(error)), None),
+            stream::Envelope::Response(response) => (server.client_response(response), None),
         };
         match step {
             Step::Exit(code) => return if incoming.join_after_exit() { code } else { 1 },
@@ -157,7 +161,11 @@ impl Server<'_> {
                 "exit" => Step::Exit(u8::from(self.phase != Phase::Shutdown)),
                 "initialized" if self.phase == Phase::Initializing => {
                     self.phase = Phase::Ready;
-                    Step::Continue(None)
+                    Step::Continue(
+                        self.watcher
+                            .as_mut()
+                            .and_then(watcher_registration::Registration::request),
+                    )
                 }
                 watched_files::METHOD if self.phase == Phase::Ready => {
                     self.watched_notification(message)
@@ -195,6 +203,7 @@ impl Server<'_> {
             self.edit_plans = None;
             self.project_inputs = None;
             self.restart = None;
+            self.watcher = None;
             Ok(Value::Null)
         } else if let Some(state) = &self.restart {
             Err(project_changes::error(state))
@@ -243,6 +252,7 @@ impl Server<'_> {
             protocol::error_value(-32000, error.code, json!({"location":error.location}))
         })?;
         let project_inputs = project_changes::Inputs::selected(&source, workspace.as_deref());
+        let watcher = watcher_registration::Registration::selected(&project_inputs, params)?;
         let edit_plans = property_edits::Plans::selected(
             &source,
             self.cli.accepted_base_sha256.as_deref(),
@@ -270,9 +280,10 @@ impl Server<'_> {
                 "requestTimeoutSeconds":self.cli.timeout_seconds,
                 "languageMethods":language::METHODS,
                 "analysis":diagnostics::availability(&settings),
-                "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT, project_changes::EVENT],
+                "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT, project_changes::EVENT, watcher_registration::EVENT],
                 "watchedFiles":watched_files::capabilities(),
                 "projectChanges":project_inputs.capability()?,
+                "watchRegistration":watcher_registration::capability(params),
                 "editPlans":edit_plans.is_some(), "locationEncoding":"utf-8-bytes",
                 "maxRequestBytes":documents::MAX_REQUEST,
                 "maxResponseBytes":rpc_framing::MAX_RESPONSE,
@@ -297,6 +308,7 @@ impl Server<'_> {
         }
         self.client_capabilities(params);
         self.project_inputs = Some(project_inputs);
+        self.watcher = watcher;
         self.edit_plans = edit_plans;
         self.session = Some(session);
         self.settings = Some(settings);
@@ -340,6 +352,17 @@ impl Server<'_> {
             .is_some_and(Value::is_object);
     }
 
+    /// Client replies share the bounded input queue but never receive JSON-RPC responses of their own.
+    fn client_response(&mut self, response: protocol::ClientResponse) -> Step {
+        if self.phase != Phase::Ready {
+            return Step::Continue(None);
+        }
+        let (Some(watcher), Some(session)) = (self.watcher.as_mut(), self.session.as_ref()) else {
+            return Step::Continue(None);
+        };
+        Step::Continue(watcher.response(response, &dto::snapshot(session, &self.session_id)))
+    }
+
     /// Retire the old host after a control event; only an explicit process restart can reopen it.
     fn watched_notification(&mut self, message: &protocol::Message) -> Step {
         if let Some(state) = &self.restart {
@@ -361,6 +384,7 @@ impl Server<'_> {
                 self.settings = None;
                 self.edit_plans = None;
                 self.documents = documents::Documents::default();
+                self.watcher = None;
                 self.restart = Some(state.clone());
                 Step::Continue(Some(
                     json!({"jsonrpc":"2.0","method":project_changes::EVENT,"params":state}),

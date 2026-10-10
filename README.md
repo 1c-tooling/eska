@@ -761,6 +761,9 @@ preset = "trunk"
 сбрасывают прежний ввод без чтения диска и сохраняют открытые черновики.
 [Изменение манифеста или настроек](docs/research/eska-format/analyzer-project-changes.md)
 завершает старую сессию с `eska/restartRequired`; новый состав открывает новый процесс.
+[Динамическая LSP-регистрация](docs/research/eska-format/analyzer-watcher-registration.md)
+запрашивает у поддерживающего клиента наблюдение за точными control files;
+автоматическое наблюдение всех YAML/BSL ещё не подключено.
 [Отмена языковых запросов](docs/research/eska-format/analyzer-cancellation.md)
 принимается во время вычисления, с сохранением текущего редакторского ввода.
 [Лимит времени диагностики](docs/research/eska-format/analyzer-deadline.md)

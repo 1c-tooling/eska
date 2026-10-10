@@ -12,7 +12,12 @@ fn message(id: Option<Value>, method: &str, params: &Value) -> Message {
     if let Some(id) = id {
         value["id"] = id;
     }
-    protocol::parse(&serde_json::to_vec(&value).unwrap()).unwrap()
+    let protocol::Incoming::Message(message) =
+        protocol::parse(&serde_json::to_vec(&value).unwrap()).unwrap()
+    else {
+        panic!("request parsed as a reply");
+    };
+    message
 }
 
 /// Current string/numeric IDs remain distinct; completion removes every cancellation record.
@@ -86,6 +91,55 @@ fn unknown_completed_and_reused_ids_do_not_poison_other_requests() {
     drop(plan);
     drop(other);
     assert!(requests.0.lock().unwrap().is_empty());
+}
+
+/// The server's response ID cannot collide with, release or cancel a client request using that ID.
+#[test]
+fn client_responses_bypass_the_in_flight_request_registry() {
+    let mut wire = Vec::new();
+    for value in [
+        json!({"jsonrpc":"2.0","id":"eska/project-watch/1","method":"textDocument/diagnostic","params":{}}),
+        json!({"jsonrpc":"2.0","id":"eska/project-watch/1","result":null}),
+        json!({"jsonrpc":"2.0","method":"$/cancelRequest","params":{"id":"eska/project-watch/1"}}),
+        json!({"jsonrpc":"2.0","id":3,"method":"eska/metadata/owners","params":{}}),
+        json!({"jsonrpc":"2.0","method":"exit"}),
+    ] {
+        rpc_framing::write_frame(&mut wire, &serde_json::to_vec(&value).unwrap()).unwrap();
+    }
+    let incoming = Incoming::start(Cursor::new(wire)).unwrap();
+    let Envelope::Message(_, Some(held)) = incoming
+        .receiver
+        .recv_timeout(Duration::from_secs(10))
+        .unwrap()
+    else {
+        panic!("missing control");
+    };
+    let Envelope::Response(reply) = incoming
+        .receiver
+        .recv_timeout(Duration::from_secs(10))
+        .unwrap()
+    else {
+        panic!("reply entered the request registry");
+    };
+    assert_eq!(reply.id, Some(Id::String("eska/project-watch/1".into())));
+    assert_eq!(reply.result.ok().unwrap(), Value::Null);
+    let Envelope::Message(checkpoint, None) = incoming
+        .receiver
+        .recv_timeout(Duration::from_secs(10))
+        .unwrap()
+    else {
+        panic!("missing checkpoint");
+    };
+    assert_eq!(checkpoint.method, "eska/metadata/owners");
+    assert!(held.control.is_cancelled());
+    assert!(matches!(
+        incoming
+            .receiver
+            .recv_timeout(Duration::from_secs(10))
+            .unwrap(),
+        Envelope::Message(_, None)
+    ));
+    assert!(incoming.join_after_exit());
 }
 
 /// The reader signals a held worker control before the worker can consume subsequent messages.

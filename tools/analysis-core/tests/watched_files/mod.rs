@@ -23,7 +23,7 @@ fn watched(changes: Value) -> Value {
     event
 }
 
-/// No static or dynamic LSP watcher registration is advertised by this experimental transport.
+/// Saved-input watchers stay client-owned; these clients do not opt in to control-file registration.
 fn start(root: &Path, lang: &str) -> Client {
     let mut client = Client::with_options(root, lang, &[]);
     let result = client.ask(&initialize());

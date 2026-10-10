@@ -14,6 +14,7 @@ mod request_cancellation;
 mod request_deadline;
 mod support;
 mod watched_files;
+mod watcher_registration;
 
 use std::{
     fs,

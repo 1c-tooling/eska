@@ -29,6 +29,7 @@ pub const MAX_QUEUED_MESSAGES: usize = 4;
 
 pub enum Envelope {
     Message(Message, Option<TrackedRequest>),
+    Response(protocol::ClientResponse),
     Error(Value),
 }
 
@@ -64,7 +65,8 @@ fn forward(input: &mut impl BufRead, sender: &SyncSender<Envelope>, requests: &A
     while let Ok(Some(frame)) = rpc_framing::read_frame_with_limit(input, documents::MAX_REQUEST) {
         let envelope = match protocol::parse(&frame) {
             Err(error) => Envelope::Error(protocol::response(None, Err(error))),
-            Ok(message) => {
+            Ok(protocol::Incoming::Response(response)) => Envelope::Response(response),
+            Ok(protocol::Incoming::Message(message)) => {
                 if message.id.is_none() && message.method == "$/cancelRequest" {
                     if let Ok(params) = protocol::params::<Cancel>(&message.params) {
                         requests.cancel(&params.id);

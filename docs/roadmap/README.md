@@ -105,7 +105,11 @@ receiver и точный parent текущего YAML. На C1/C2/C3 в RU/EN п
 [Control file events](../research/eska-format/analyzer-project-changes.md) уже
 завершают прежний host с `eska/restartRequired`; 42 сценария C1/C2/C3 в RU/EN
 проверили все семь control inputs, отказ старой сессии и новый процесс.
-Watcher client, dynamic registration и автоматическое обновление состава ещё в работе.
+[Динамическая регистрация](../research/eska-format/analyzer-watcher-registration.md)
+запрашивает у поддерживающего клиента одну подписку на 6–7 control paths.
+42 control-event и шесть saved-input сценариев с подтверждённой регистрацией
+прошли; настоящего клиента и наблюдения всех saved inputs ещё нет.
+Автоматическое открытие нового состава и остальные условия EF-18 ещё в работе.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
