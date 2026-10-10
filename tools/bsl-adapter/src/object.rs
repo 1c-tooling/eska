@@ -29,6 +29,12 @@ pub fn metadata_object(descriptor: &ParsedDescriptor) -> Result<MetadataObject, 
     let (kind, template) = match root.metadata.kind() {
         MetadataKind::Catalog => (MdoType::Catalog, Some(MdoTemplateKind::Catalog)),
         MetadataKind::Document => (MdoType::Document, Some(MdoTemplateKind::Document)),
+        MetadataKind::BusinessProcess => (
+            MdoType::BusinessProcess,
+            Some(MdoTemplateKind::BusinessProcess),
+        ),
+        MetadataKind::Task => (MdoType::Task, Some(MdoTemplateKind::Task)),
+        MetadataKind::ExchangePlan => (MdoType::ExchangePlan, Some(MdoTemplateKind::ExchangePlan)),
         MetadataKind::DataProcessor => (MdoType::DataProcessor, None),
         MetadataKind::Report => (MdoType::Report, None),
         actual => {
@@ -85,12 +91,10 @@ pub fn metadata_object(descriptor: &ParsedDescriptor) -> Result<MetadataObject, 
     for child in children(descriptor, root) {
         match child.metadata.kind() {
             MetadataKind::Attribute | MetadataKind::Dimension | MetadataKind::Resource => {
-                identity::uuid(child)?;
-                model.add_attribute(Attribute {
-                    name: child.metadata.name().into(),
-                    name_en: None,
-                    attr_type: required_type(child)?,
-                });
+                model.add_attribute(attribute(child)?);
+            }
+            MetadataKind::AddressingAttribute if kind == MdoType::Task => {
+                model.add_attribute(attribute(child)?);
             }
             MetadataKind::TabularSection => {
                 model.add_tabular_section(tabular_section(descriptor, child)?);
@@ -99,6 +103,16 @@ pub fn metadata_object(descriptor: &ParsedDescriptor) -> Result<MetadataObject, 
         }
     }
     Ok(model)
+}
+
+/// Ordinary and task-addressing attributes share typed fields, while the source retains their distinct kinds/UUIDs.
+fn attribute(object: &ParsedObject) -> Result<Attribute, AdapterError> {
+    identity::uuid(object)?;
+    Ok(Attribute {
+        name: object.metadata.name().into(),
+        name_en: None,
+        attr_type: required_type(object)?,
+    })
 }
 
 /// Direct parent identity distinguishes a tabular field from a same-named object attribute.

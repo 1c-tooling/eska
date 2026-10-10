@@ -26,9 +26,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut columns = 0;
     let mut caption_differences = 0;
     for path in reader.owner_paths().filter(|path| {
-        ["Catalogs/", "Documents/", "DataProcessors/", "Reports/"]
-            .iter()
-            .any(|prefix| path.as_str().starts_with(prefix))
+        [
+            "Catalogs/",
+            "Documents/",
+            "DataProcessors/",
+            "Reports/",
+            "BusinessProcesses/",
+            "Tasks/",
+            "ExchangePlans/",
+        ]
+        .iter()
+        .any(|prefix| path.as_str().starts_with(prefix))
     }) {
         let snapshot = reader.read_metadata(path, PropertiesMode::All)?;
         for document in snapshot
@@ -61,6 +69,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             let mut reference = match root.metadata.kind() {
                 MetadataKind::Catalog => xml_parser::parse_catalog_xml(&xml),
                 MetadataKind::Document => xml_parser::parse_document_xml(&xml),
+                MetadataKind::BusinessProcess => xml_parser::parse_business_process_xml(&xml),
+                MetadataKind::Task => xml_parser::parse_task_xml(&xml),
+                MetadataKind::ExchangePlan => xml_parser::parse_exchange_plan_xml(&xml),
                 MetadataKind::DataProcessor => xml_parser::parse_data_processor_xml(&xml),
                 MetadataKind::Report => xml_parser::parse_report_xml(&xml),
                 _ => return Err("wrong_object_kind".into()),

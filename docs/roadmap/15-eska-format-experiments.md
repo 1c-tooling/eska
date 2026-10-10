@@ -1081,6 +1081,25 @@ Runtime graph остался 206/214. Настоящий client/OS watcher и а
 restart расширения не приняты; полные модели/семантика, все IDE edits,
 общий memory budget и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
 
+[Процессы, задачи и планы обмена](../research/eska-format/analyzer-process-objects.md)
+добавлены в существующий CanonicalMetadata::Object. Типы адресных реквизитов
+задач сохраняются; навигация подтверждает фактический дочерний kind/UUID.
+При совпадении обычного и адресного имени нет выбора первой цели. Стандартные
+неявные поля без YAML-объекта не получают выдуманного UUID/диапазона.
+Пройдены 32 adapter unit/шесть файловых тестов; 62 unit/file, 67 analyzer process
+и девять checker process tests, все шесть adapter, 19 tool и 15 root gates.
+Root — 893/14, minimal 165/3, project-cli 181/3, build-cli 200/3.
+Все 76 новых моделей C1/C2/C3 совпали с native reader; контроль семи видов дал
+232/2325/3034 готовых модели с прежним неподдержанным cfg:AnyRef C1.
+Шесть реальных stdio-сценариев в RU/EN подтвердили 764 definition/locate и 292 отказа;
+current ranges/hash, editor/invalid/close/refresh и locale parity согласованы.
+Bytes выбранных оригиналов сохранены, собственные проекты удалены. CLI
+bsl-analyzer-app 0.3.0 проверил 183 уникальных BSL-фрагмента: ноль ParseError;
+workspace MCP недоступен. Runtime graph прежний — 206/214; новых dependencies нет.
+Планы видов характеристик/счетов/расчёта, form data, predefined values, query text,
+все IDE edits, полнота семантики, общий memory budget и Explorer ещё в работе.
+Платформа 1С, настоящий client/OS watcher здесь не проверялись. EF-18 — IN_PROGRESS.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

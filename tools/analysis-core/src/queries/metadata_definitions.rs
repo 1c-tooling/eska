@@ -6,6 +6,8 @@ mod members;
 #[cfg(test)]
 mod namespace_tests;
 #[cfg(test)]
+mod process_tests;
+#[cfg(test)]
 mod register_tests;
 #[cfg(test)]
 mod tests;

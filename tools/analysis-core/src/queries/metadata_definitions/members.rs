@@ -185,7 +185,10 @@ pub(super) fn selected_uuid(
     for (kind, name) in children {
         let mut candidates = document.descriptor.objects.iter().filter(|object| {
             object.metadata.parent() == Some(selected.id())
-                && object.metadata.kind() == *kind
+                && (object.metadata.kind() == *kind
+                    || (*kind == MetadataKind::Attribute
+                        && selected.kind() == MetadataKind::Task
+                        && object.metadata.kind() == MetadataKind::AddressingAttribute))
                 && folded_eq(object.metadata.name(), name)
         });
         let Some(next) = candidates.next() else {

@@ -139,6 +139,9 @@ fn canonical(
         }
         MetadataKind::Catalog
         | MetadataKind::Document
+        | MetadataKind::BusinessProcess
+        | MetadataKind::Task
+        | MetadataKind::ExchangePlan
         | MetadataKind::DataProcessor
         | MetadataKind::Report => adapter::metadata_object(descriptor)
             .map(|model| CanonicalMetadata::Object(Arc::new(model))),

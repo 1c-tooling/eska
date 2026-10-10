@@ -4,6 +4,7 @@ mod completion_queries;
 mod definition_member_queries;
 mod definition_metadata_queries;
 mod definition_namespace_queries;
+mod definition_process_queries;
 mod definition_queries;
 mod definition_register_queries;
 mod definition_union_queries;

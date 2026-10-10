@@ -157,6 +157,10 @@ metadataTargets — typed-objects-and-members.
 [Составной receiver](../../docs/research/eska-format/analyzer-union-definitions.md)
 подтверждает одно общее объявление всех содержательных arms; nullable arms
 пропускаются, неоднозначные owners и неподдержанные варианты не дают цели.
+[Процессы, задачи и планы обмена](../../docs/research/eska-format/analyzer-process-objects.md)
+загружаются в тот же `CanonicalMetadata::Object`; typed поля и адресные реквизиты
+задач открывают текущий дочерний YAML. Неявные стандартные поля без исходного
+объекта не получают диапазон или UUID.
 Полная семантика ещё не готова. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
 возвращают versioned WorkspaceEdit для ready открытого документа при независимо
 закреплённой базе и client documentChanges support. План не записывает файл и
