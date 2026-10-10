@@ -17,6 +17,8 @@ pub struct Cli {
     pub project_dir: PathBuf,
     #[arg(long)]
     pub project: Option<String>,
+    #[arg(long)]
+    pub accepted_base_sha256: Option<String>,
     #[arg(long, default_value_t = 300)]
     pub timeout_seconds: u64,
     #[arg(long, default_value_t = 64 * 1024 * 1024)]

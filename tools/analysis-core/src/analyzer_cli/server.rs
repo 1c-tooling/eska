@@ -14,7 +14,9 @@ use serde_json::{Value, json};
 
 use crate::{AnalysisSession, RequestCancellation, SessionOptions, analysis_settings::Settings};
 
-use super::{args::Cli, completion, diagnostics, documents, dto, language, protocol, stream};
+use super::{
+    args::Cli, completion, diagnostics, documents, dto, language, property_edits, protocol, stream,
+};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum Phase {
@@ -33,6 +35,7 @@ struct Server<'a> {
     settings: Option<Result<Settings, Failure>>,
     snippets: bool,
     extended_kinds: bool,
+    edit_plans: Option<property_edits::Plans>,
 }
 
 enum Step {
@@ -54,6 +57,7 @@ pub fn run(cli: &Cli, input: impl BufRead + Send + 'static, output: &mut impl Wr
         settings: None,
         snippets: false,
         extended_kinds: false,
+        edit_plans: None,
     };
     loop {
         let Ok(envelope) = incoming.receive() else {
@@ -180,6 +184,7 @@ impl Server<'_> {
             self.session = None;
             self.documents = documents::Documents::default();
             self.settings = None;
+            self.edit_plans = None;
             Ok(Value::Null)
         } else {
             self.request(&message.method, &message.params, cancellation)
@@ -224,6 +229,11 @@ impl Server<'_> {
         let source = EskaSource::open(selected.project, selected.scope).map_err(|error| {
             protocol::error_value(-32000, error.code, json!({"location":error.location}))
         })?;
+        let edit_plans = property_edits::Plans::selected(
+            &source,
+            self.cli.accepted_base_sha256.as_deref(),
+            params,
+        )?;
         let options = SessionOptions {
             max_retained_source_bytes: self.cli.max_retained_source_bytes,
             ..SessionOptions::default()
@@ -246,13 +256,17 @@ impl Server<'_> {
                 "languageMethods":language::METHODS,
                 "analysis":diagnostics::availability(&settings),
                 "inputNotifications":["eska/inputChanged", "eska/inputRejected"],
-                "editPlans":false, "locationEncoding":"utf-8-bytes",
+                "editPlans":edit_plans.is_some(), "locationEncoding":"utf-8-bytes",
                 "maxRequestBytes":documents::MAX_REQUEST,
                 "maxResponseBytes":rpc_framing::MAX_RESPONSE,
                 "snapshot":dto::snapshot(&session, &session_id),
             }}},
             "serverInfo":{"name":"eska-analyzer", "version":env!("CARGO_PKG_VERSION")},
         });
+        if edit_plans.is_some() {
+            result["capabilities"]["experimental"]["eska"]["propertyEditPlans"] =
+                json!({"method":property_edits::METHOD,"scope":"open-document","versioned":true});
+        }
         if diagnostics::enabled(&settings) {
             result["capabilities"]["diagnosticProvider"] = json!({
                 "identifier":diagnostics::IDENTIFIER, "interFileDependencies":false,
@@ -269,6 +283,7 @@ impl Server<'_> {
         self.extended_kinds = params
             .pointer("/capabilities/textDocument/completion/completionItemKind")
             .is_some_and(Value::is_object);
+        self.edit_plans = edit_plans;
         self.session = Some(session);
         self.settings = Some(settings);
         self.session_id = session_id;
@@ -303,6 +318,21 @@ impl Server<'_> {
     ) -> Result<Value, Value> {
         if let Some(method) = language::Method::parse(method) {
             return self.language_request(method, value, cancellation);
+        }
+        if method == property_edits::METHOD {
+            let params: property_edits::Params = protocol::params(value)?;
+            let session = self
+                .session
+                .as_ref()
+                .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
+            validate_snapshot(session, &self.session_id, &params.snapshot)?;
+            return self
+                .edit_plans
+                .as_ref()
+                .ok_or_else(|| {
+                    protocol::error_value(-32000, "source_edit_plans_disabled", Value::Null)
+                })?
+                .prepare(session, &self.session_id, &params);
         }
         let session = self
             .session

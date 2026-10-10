@@ -19,7 +19,9 @@ mod yaml;
 pub use baseline::{
     AcceptedBase, AcceptedRef, Operation, Permission, PermissionReason, accept_source,
 };
-pub use edit::{SourceEditPlan, prepare_property_edit};
+pub use edit::{
+    SourceEditPlan, SourcePropertyEdit, prepare_property_edit, prepare_property_edit_text,
+};
 pub use export::export_designer;
 pub use import::import_designer;
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};

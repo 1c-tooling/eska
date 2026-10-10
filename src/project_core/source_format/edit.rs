@@ -26,6 +26,41 @@ pub struct SourceEditPlan {
     updated: String,
 }
 
+/// A lossless preview over caller-owned current text; it has no filesystem publication authority.
+#[derive(Debug)]
+pub struct SourcePropertyEdit {
+    path: SourcePath,
+    baseline: AcceptedRef,
+    updated: String,
+    unchanged: bool,
+}
+
+impl SourcePropertyEdit {
+    /// Return the accepted owner's path, never a path selected by editable YAML.
+    #[must_use]
+    pub const fn path(&self) -> &SourcePath {
+        &self.path
+    }
+
+    /// Bind the preview's permission decision to the caller's independently verified base.
+    #[must_use]
+    pub const fn baseline(&self) -> &AcceptedRef {
+        &self.baseline
+    }
+
+    /// Return the validated current text with only the selected existing property changed.
+    #[must_use]
+    pub fn updated(&self) -> &str {
+        &self.updated
+    }
+
+    /// An equal logical value preserves every original byte, including scalar spelling.
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.unchanged
+    }
+}
+
 impl SourceEditPlan {
     /// Return the accepted owner's relative source path.
     #[must_use]
@@ -87,7 +122,56 @@ pub fn prepare_property_edit(
     let target = target(base, uuid)?;
     let root = safe_root(root, &target.owner)?;
     let original = files::read_text(&root.join(target.owner.as_path()))?;
-    let mut object = ObjectSource::from_yaml(&original)?;
+    let updated = property_text(base, &target, property, value, &original)?;
+    // Reuse the publication preflight without writing; do not preview a stale or unsafe source.
+    publish::publish_snapshot(&root, target.owner.as_path(), &original, &original)
+        .map_err(edit_error)?;
+    Ok(SourceEditPlan {
+        root,
+        path: target.owner,
+        uuid: uuid.clone(),
+        property,
+        baseline: base.reference().clone(),
+        original,
+        updated,
+    })
+}
+
+/// Prepare a property preview over exact editor bytes without reading or writing a source file.
+///
+/// The caller validates its document version/hash and supplies an independently verified base.
+/// This does not recheck mutable baseline storage or authorize publication; saved-file editing
+/// must still use `prepare_property_edit` and its conflict-checked `publish` method.
+///
+/// # Errors
+/// Returns the same policy, identity, structure and value failures as saved-file preparation.
+pub fn prepare_property_edit_text(
+    base: &AcceptedBase,
+    uuid: &NativeUuid,
+    property: PropertyName,
+    value: PropertyValue,
+    original: &str,
+) -> Result<SourcePropertyEdit, Error> {
+    permission(base, uuid, property)?;
+    let target = target(base, uuid)?;
+    let updated = property_text(base, &target, property, value, original)?;
+    Ok(SourcePropertyEdit {
+        path: target.owner,
+        baseline: base.reference().clone(),
+        unchanged: original == updated,
+        updated,
+    })
+}
+
+/// Saved and editor consumers share accepted ancestry, CST replacement and whole-model validation.
+fn property_text(
+    base: &AcceptedBase,
+    target: &Target,
+    property: PropertyName,
+    value: PropertyValue,
+    original: &str,
+) -> Result<String, Error> {
+    let mut object = ObjectSource::from_yaml(original)?;
     let paths = std::iter::once(&object.document)
         .chain(&object.nested)
         .map(|part| &part.path);
@@ -129,26 +213,15 @@ pub fn prepare_property_edit(
     let previous = change_property(node, property, value, &mut steps)?;
     object.validate()?;
     let updated = if previous == candidate {
-        original.clone()
+        original.to_owned()
     } else {
-        let updated = cst::replace(&original, &steps, &previous, &candidate)?;
+        let updated = cst::replace(original, &steps, &previous, &candidate)?;
         if ObjectSource::from_yaml(&updated)? != object {
             return Err(Error::root("source_edit_value_unsupported"));
         }
         updated
     };
-    // Reuse the publication preflight without writing; do not preview a stale or unsafe source.
-    publish::publish_snapshot(&root, target.owner.as_path(), &original, &original)
-        .map_err(edit_error)?;
-    Ok(SourceEditPlan {
-        root,
-        path: target.owner,
-        uuid: uuid.clone(),
-        property,
-        baseline: base.reference().clone(),
-        original,
-        updated,
-    })
+    Ok(updated)
 }
 
 /// Every selection is derived from accepted paths and ancestry rather than editable YAML.

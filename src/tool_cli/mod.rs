@@ -7,6 +7,8 @@ pub mod rpc_json;
 mod project;
 mod support;
 pub use project::*;
-pub use support::{Failure, OutputFormat, bootstrap_value, emit_failure, localize, parse};
 #[cfg(any(feature = "project-cli", feature = "build-cli"))]
-pub(crate) use support::{accepted_ref, emit_success};
+pub(crate) use support::emit_success;
+pub use support::{
+    Failure, OutputFormat, accepted_ref, bootstrap_value, emit_failure, localize, parse,
+};

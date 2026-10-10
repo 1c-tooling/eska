@@ -844,6 +844,20 @@ Rustdoc/release и полная root matrix прошли. На C1/C2/C3 в RU/EN
 Resolve, textEdit/edit plans, полная семантика/metadata coverage и общий
 heap/RSS budget остаются в работе; EF-18 — `IN_PROGRESS`.
 
+[Первый план правки свойства](../research/eska-format/analyzer-property-plans.md)
+возвращает versioned WorkspaceEdit для ready открытого YAML. Общая сессия
+проверяет revision/version/size/hash до baseline IO; project core использует
+тот же policy/ancestry/CST editor, что EF-07 saved writer. Независимый pin и
+client documentChanges support необходимы; initialize не читает принятую базу.
+План не пишет файл и не меняет inputs/quota, no-op содержит пустой edits.
+35 unit/file, 33 analyzer process и 9 checker process tests, feature matrix,
+Rustdoc/release и полная root matrix прошли. Root — 888 passed / 14 прежних ignored.
+В C1 RU/EN подтверждены разрешённый Comment, настоящий supplier restriction,
+stale/version/hash, no-op, didChange и восстановление после close; bytes сохранены.
+Каждый план пока полностью проверяет базу (3,7–4,2 с на C1), включая no-op/refusal.
+Адресная policy verification, управление временем этого IO, все IDE edits,
+полный memory budget и полнота анализа остаются в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

@@ -99,6 +99,7 @@ corpus — manifest, configuration, выбранные YAML/BSL — сохран
 Release server — 47990472 bytes; runtime graph — 206 package names / 214 resolved
 versions. [Машинный отчёт](analyzer-completion-results.json) содержит gates и замеры.
 Платформа 1С не запускалась: проверены подсказки, не исполнение BSL.
-Resolve, точные textEdit, edit plans, watcher, multi-project host, полная
-семантика/metadata coverage и общий heap/RSS budget ещё не реализованы.
+На commit `af6dd54` resolve, точные textEdit, edit plans, watcher, multi-project
+host, полная семантика/metadata coverage и общий heap/RSS budget оставались
+в работе. Позднее подключён [первый план правки свойства](analyzer-property-plans.md).
 EF-18 остаётся `IN_PROGRESS`; установленная поставка и Explorer не переключены.

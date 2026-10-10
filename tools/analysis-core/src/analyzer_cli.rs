@@ -7,9 +7,11 @@ mod documents;
 mod dto;
 mod language;
 mod positions;
+mod property_edits;
 mod protocol;
 mod server;
 mod stream;
+mod text_edits;
 
 use std::{env, io, process::ExitCode};
 

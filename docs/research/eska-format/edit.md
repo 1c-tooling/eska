@@ -3,7 +3,11 @@
 Внутреннее ядро `prepare_property_edit` готовит изменение одного существующего
 типизированного свойства. `SourceEditPlan` предоставляет относительный путь,
 проверенный текст и признак отсутствия изменений; `publish` отдельно сохраняет
-результат. Публичный CLI и IDE ещё не подключены.
+результат. Saved CLI ещё не подключён. [IDE-сервер](analyzer-property-plans.md)
+уже возвращает versioned plans для открытого YAML; он не публикует файлы.
+`prepare_property_edit_text`/`SourcePropertyEdit` используют тот же editor над
+caller-owned text с проверкой текущей версии/hash в общей сессии. Preview
+не предоставляет publish; saved writer и его повторный preflight сохраняются.
 
 Владелец, путь native descriptor и UUID берутся из независимо закреплённой
 принятой базы. Рабочий документ должен сохранить состав частей и ancestry

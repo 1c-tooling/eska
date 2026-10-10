@@ -108,6 +108,7 @@ cargo build --manifest-path tools/analysis-core/Cargo.toml --features analyzer-c
 eska-analyzer --project-dir .
 eska-analyzer --project-dir . --project main
 eska-analyzer --project-dir . --timeout-seconds 300
+eska-analyzer --project-dir . --accepted-base-sha256 <approved-base-sha256>
 ```
 
 Стандартный initialize должен явно запросить ESKA protocol `0.1`; после
@@ -120,7 +121,11 @@ close перечитывает файл. `textDocument/diagnostic` исполь�
 получены из текущих байтов без чтения диска. Ошибка settings не отключает дерево.
 `textDocument/completion` получает кандидатов из того же текущего YAML/BSL,
 учитывает client snippet support и явно сообщает неполноту. Полная семантика
-и edit plans ещё не объявлены.
+ещё не объявлена. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
+возвращают versioned WorkspaceEdit для ready открытого документа при независимо
+закреплённой базе и client documentChanges support. План не записывает файл и
+не меняет input; он использует общий редактор project core. Полная проверка базы
+выполняется на каждый запрос; этот custom метод пока без отмены/deadline.
 [`$/cancelRequest`](../../docs/research/eska-format/analyzer-cancellation.md) отменяет diagnostic/completion query
 через отдельный input thread; один worker сохраняет владение YAML/BSL и порядок изменений.
 Общий `RequestCancellation` заменяет неопубликованный `batch::BatchCancellation`.

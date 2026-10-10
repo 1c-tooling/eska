@@ -3,6 +3,7 @@
 mod completion_queries;
 mod diagnostic_queries;
 mod document_sync;
+mod property_edit_plans;
 mod request_cancellation;
 mod request_deadline;
 mod support;

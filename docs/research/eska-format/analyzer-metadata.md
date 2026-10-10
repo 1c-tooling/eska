@@ -44,7 +44,10 @@ Batch JSON-RPC, null ID, повторные JSON keys и глубина боле
 [`textDocument/completion`](analyzer-completion.md) по текущему YAML/BSL.
 `requestCancellation=true` включает [отмену обеих операций](analyzer-cancellation.md);
 `requestTimeoutSeconds` задаёт общий кооперативный лимит языкового запроса;
-`editPlans=false`. Существующие расширения не переводятся
+`editPlans=true` возможно при независимом base pin и client versioned-edit support:
+[первый план существующего свойства](analyzer-property-plans.md) возвращается
+для открытого ready YAML без записи файла. По умолчанию capability false.
+Существующие расширения не переводятся
 на новый процесс автоматически; это ещё не полный языковой сервер.
 
 ## Текущий custom API

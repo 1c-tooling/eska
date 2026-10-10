@@ -1,9 +1,7 @@
 //! Shared argument presentation and locale-independent tool envelopes; no business operations.
 
 use super::localization::{LocalizationValue, Localizer};
-#[cfg(any(feature = "project-cli", feature = "build-cli"))]
-use crate::project_core::source_format::AcceptedRef;
-use crate::project_core::source_format::Error;
+use crate::project_core::source_format::{AcceptedRef, Error};
 use clap::{ArgMatches, Command, error::ErrorKind};
 use serde_json::{Value, json};
 use std::{
@@ -164,7 +162,9 @@ pub fn parse(
 }
 
 /// Resolve an independent caller pin; editable project TOML cannot approve its own baseline.
-#[cfg(any(feature = "project-cli", feature = "build-cli"))]
+///
+/// # Errors
+/// Returns a missing pin or a value other than exactly 64 hexadecimal characters.
 pub fn accepted_ref(explicit: Option<&str>) -> Result<AcceptedRef, Failure> {
     let environment = std::env::var("ESKA_ACCEPTED_BASE_SHA256").ok();
     let value = explicit

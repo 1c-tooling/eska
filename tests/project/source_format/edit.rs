@@ -6,6 +6,7 @@ use std::{
 use eska::project::source_format::{
     AcceptedBase, Child, Descriptor, LocalizedText, MetadataNode, PropertyName, PropertyValue,
     Section, accept_source, export_protected, import_designer, prepare_property_edit,
+    prepare_property_edit_text,
 };
 
 use super::baseline::{fixture, tree, uuid};
@@ -19,6 +20,61 @@ fn prepare(root: &Path, frozen: &[char]) -> (PathBuf, AcceptedBase) {
     let frozen = frozen.iter().copied().map(uuid).collect::<Vec<_>>();
     let reference = accept_source(&source, &path, &frozen).unwrap();
     (source, AcceptedBase::open(&path, &reference).unwrap())
+}
+
+/// Editor previews use supplied bytes and the same policy without accessing a source file.
+#[test]
+fn editor_property_preview_preserves_current_text_and_never_publishes_it() {
+    let test = TestDir::new();
+    let (source, base) = prepare(&test.0, &['4']);
+    let path = source.join("Catalogs/Sample/object.yaml");
+    let saved = fs::read_to_string(&path).unwrap();
+    let original = format!("# Я😀\r\n{}", saved.replace('\n', "\r\n"))
+        .replace("\"Editable part\"", "'Current text' # keep");
+    let preview = prepare_property_edit_text(
+        &base,
+        &uuid('3'),
+        PropertyName::Comment,
+        PropertyValue::Text("Changed text".into()),
+        &original,
+    )
+    .unwrap();
+    assert_eq!(preview.path().as_str(), "Catalogs/Sample/object.yaml");
+    assert_eq!(
+        preview.updated(),
+        original.replace("'Current text'", "'Changed text'")
+    );
+    assert!(!preview.is_empty());
+    assert_eq!(fs::read_to_string(&path).unwrap(), saved);
+    fs::remove_file(&path).unwrap();
+    let no_op = prepare_property_edit_text(
+        &base,
+        &uuid('3'),
+        PropertyName::Comment,
+        PropertyValue::Text("Current text".into()),
+        &original,
+    )
+    .unwrap();
+    assert!(no_op.is_empty());
+    assert_eq!(no_op.updated(), original);
+    for (id, property, expected) in [
+        ('2', PropertyName::Comment, "source_edit_native_restricted"),
+        ('4', PropertyName::Comment, "source_edit_frozen"),
+        ('3', PropertyName::Name, "source_edit_operation_unsupported"),
+    ] {
+        assert_eq!(
+            prepare_property_edit_text(
+                &base,
+                &uuid(id),
+                property,
+                PropertyValue::Text("Changed".into()),
+                &original,
+            )
+            .unwrap_err()
+            .code,
+            expected
+        );
+    }
 }
 
 /// Inspect a native inline identity independently of its physical position.

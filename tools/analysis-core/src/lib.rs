@@ -13,6 +13,7 @@ mod deadline;
 mod memory;
 mod modules;
 mod projection;
+mod property_edits;
 mod queries;
 mod request;
 mod resources;
@@ -23,6 +24,7 @@ pub use ide::{CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, Loc
 pub use memory::{KernelMemoryReport, KernelMemoryTable};
 pub use modules::{ModuleFailure, ModuleInput, ModuleState, ModuleSummary, SessionOptions};
 pub use projection::{MetadataView, ModelState, OwnerModel};
+pub use property_edits::{PropertyEditError, PropertyEditInput, PropertyEditPlan};
 pub use queries::{ModuleResult, QueryError};
 pub use request::{SessionRequestError, SessionRevision};
 pub use resources::ResourceSummary;
