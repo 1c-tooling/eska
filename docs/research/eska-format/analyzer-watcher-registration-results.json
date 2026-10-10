@@ -2486,5 +2486,6 @@
     "Owned copies preserve full compositions but intentionally omit unrelated payloads; semantic complete remains false.",
     "No real VS Code client, OS watcher or 1C platform validation for this component.",
     "No latency SLA or general heap/RSS budget; all IDE edits and full semantic/model coverage remain incomplete."
-  ]
+  ],
+  "verified_commit": "f64cdbf"
 }

@@ -781,6 +781,9 @@ preset = "trunk"
 разрешаются по типу receiver и точному parent текущего дочернего объекта.
 [Поля записей регистров и измерения отбора](docs/research/eska-format/analyzer-register-definitions.md)
 используют те же UUID и текущие координаты YAML.
+[Пространства общих модулей](docs/research/eska-format/analyzer-namespace-definitions.md)
+открывают готовый owner YAML без чтения target BSL; ближайшие объявления
+переменных, параметров и методов сохраняют BSL-цели.
 Полная семантика
 и комплектная поставка ещё не готовы. [План правки свойства YAML](docs/research/eska-format/analyzer-property-plans.md)
 уже учитывает текущую editor version и отдельно закреплённую поддержку;

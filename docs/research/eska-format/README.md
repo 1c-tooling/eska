@@ -49,6 +49,8 @@ post-initialized LSP-подписку и явное подтверждение �
 и интеграция настоящего клиента ещё не подключены.
 [Поля регистров](analyzer-register-definitions.md) связывают typed запись и
 измерения отбора с теми же координатами текущего YAML.
+[Пространства общих модулей](analyzer-namespace-definitions.md) открывают текущий
+owner YAML без чтения target BSL и сохраняют приоритет локальных объявлений.
 [Планы изменения свойств](analyzer-property-plans.md) связывают текущую editor
 version/hash, поддержку из независимо закреплённой базы и общий CST-редактор.
 [Полная проверка базы](analyzer-property-cancellation.md) уже поддерживает общий

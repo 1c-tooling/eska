@@ -110,6 +110,10 @@ receiver и точный parent текущего YAML. На C1/C2/C3 в RU/EN п
 42 control-event и шесть saved-input сценариев с подтверждённой регистрацией
 прошли; настоящего клиента и наблюдения всех saved inputs ещё нет.
 Автоматическое открытие нового состава и остальные условия EF-18 ещё в работе.
+[Переходы к пространствам общих модулей](../research/eska-format/analyzer-namespace-definitions.md)
+подтверждают current owner YAML без чтения target BSL. На C1/C2/C3 в RU/EN прошли
+12 сценариев: 72 namespace definition/locate и 48 BSL shadow/alias definition.
+Полная семантика, IDE edits, общий memory budget и клиент ещё в работе.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.

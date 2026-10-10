@@ -1,16 +1,19 @@
-//! Typed metadata collection members resolve to current canonical slots and YAML coordinates.
+//! Typed namespaces and metadata members resolve to current canonical slots and YAML coordinates.
 
 #[cfg(test)]
 mod member_tests;
 mod members;
+#[cfg(test)]
+mod namespace_tests;
 #[cfg(test)]
 mod register_tests;
 #[cfg(test)]
 mod tests;
 
 use base_db::RootQueryDb;
+use bsl_types::kind::ConfigId;
 use hir::{NameClass, Semantics, TypeKernelDb, TypeKind};
-use ide_db::metadata::config_index;
+use ide_db::metadata::{common_module_index, config_index, resolve_common_module};
 
 use eska::project_core::source_format::SourcePath;
 
@@ -49,12 +52,22 @@ impl AnalysisSession {
                 .database()
                 .metadata_listing(root)
                 .ok_or(QueryError::UnsupportedNavigationTarget)?;
-            let Some(ids) =
-                config_index(analysis.database(), listing).lookup(symbol.kind, &symbol.name)
-            else {
+            let main = if symbol.kind == bsl_metadata::MdoType::CommonModule {
+                if resolve_common_module(analysis.database(), listing, symbol.name.clone())
+                    .is_none()
+                {
+                    return Ok(None);
+                }
+                common_module_index(analysis.database(), listing).lookup(&symbol.name)
+            } else {
+                config_index(analysis.database(), listing)
+                    .lookup(symbol.kind, &symbol.name)
+                    .map(|ids| ids.main)
+            };
+            let Some(main) = main else {
                 return Ok(None);
             };
-            let native = source_for_file(self, analysis, ids.main)?;
+            let native = source_for_file(self, analysis, main)?;
             let owner = self
                 .inputs
                 .source_reader()
@@ -103,6 +116,32 @@ fn metadata_symbol(
         .right_biased()?;
     let semantics = Semantics::new(analysis.database());
     match hir::classify_token(&token) {
+        NameClass::FreeName { token } => {
+            if hir::FileSymbolCtx::new(analysis.database(), file)
+                .without_binding_types()
+                .symbol_for_token(&token)
+                .is_some_and(|symbol| {
+                    !matches!(symbol.definition, Some(hir::Definition::Module(_)))
+                })
+            {
+                return None;
+            }
+            // Namespace types do not require a readable target body, while nearer declarations retain BSL ownership.
+            let receiver = token.parent()?;
+            let receiver_type = semantics.type_of_expr(file, &receiver);
+            let TypeKind::CommonModule(facet) = analysis.database().lookup_type(receiver_type)
+            else {
+                return None;
+            };
+            if facet.config_id != ConfigId::Root {
+                return None;
+            }
+            Some(MetadataSymbol {
+                kind: bsl_metadata::MdoType::CommonModule,
+                name: facet.name.clone(),
+                children: Vec::new(),
+            })
+        }
         NameClass::FieldName {
             receiver,
             token,

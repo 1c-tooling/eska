@@ -14,7 +14,7 @@ fn offset(text: &str, name: &str) -> u32 {
 }
 
 /// Ordinary reads always use the caller's current snapshot and a fresh request control.
-fn query(
+pub(super) fn query(
     session: &AnalysisSession,
     caller: &SourcePath,
     at: u32,

@@ -538,6 +538,9 @@ receiver kinds и полнота анализа остаются в работе
 [Поля записей четырёх видов регистров и измерения отбора](research/eska-format/analyzer-register-definitions.md)
 теперь привязаны к текущим дочерним UUID. Набор записей и синтетические стандартные
 поля не получают выдуманных YAML-целей; transport не дублирует правила ядра.
+[Пространство общего модуля](research/eska-format/analyzer-namespace-definitions.md)
+использует прежние типы и common-module index: current YAML подтверждается
+без чтения target BSL; ближайшие объявления остаются в ведении BSL.
 [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.

@@ -147,6 +147,9 @@ ready-bsl-and-canonical-metadata; YAML-цель содержит kind/UUID/nativ
 metadataTargets — typed-objects-and-members.
 [Поля записей регистров и измерения отбора](../../docs/research/eska-format/analyzer-register-definitions.md)
 также открываются в текущем YAML. Стандартные поля без YAML-объекта не дают цели.
+[Пространство общего модуля](../../docs/research/eska-format/analyzer-namespace-definitions.md)
+открывает ready owner YAML без чтения его BSL; ближайшие локальные объявления
+сохраняют BSL-цели.
 Полная семантика ещё не готова. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
 возвращают versioned WorkspaceEdit для ready открытого документа при независимо
 закреплённой базе и client documentChanges support. План не записывает файл и

@@ -1019,6 +1019,24 @@ Runtime graph остался 206/214. Настоящий клиент/OS watcher
 клиента, автоматический restart, полная семантика/модели, IDE edits, общий memory
 budget и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
 
+[Пространства общих модулей](../research/eska-format/analyzer-namespace-definitions.md)
+разрешаются через прежний CommonModule type и common-module index. Ready owner
+подтверждается без чтения target BSL; ближайшие локальные объявления и aliases
+сохраняют BSL-цели. Root config facet покрыт; изменение opening owner Name
+делает модель unavailable, live rename состава не заявлен.
+Пройдены 56 unit/file, 61 analyzer process и 9 checker process; все 19 tool
+и 15 root gates, root 893/14, minimal 165/3, project-cli 181/3, build-cli 200/3.
+На C1/C2/C3 в RU/EN прошли 12 сценариев с полным составом на собственных
+частичных копиях: 72 namespace definition/locate, 48 BSL shadow/alias definition,
+168 definition всего. Точные ranges/hash и locale traces согласованы;
+target BSL не копировался и module_text_bytes равнялся только caller BSL.
+Пять выбранных оригинальных файлов сохранили bytes, собственные проекты удалены.
+CLI bsl-analyzer-app 0.3.0 проверил 18 уникальных BSL-фрагментов: ноль ParseError;
+workspace MCP недоступен, платформа 1С и настоящий клиент не запускались.
+Runtime graph остался 206/214. Form data, predefined values, union receivers,
+query text, все IDE edits, полнота анализа, общий memory budget, saved-input
+watcher и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя
