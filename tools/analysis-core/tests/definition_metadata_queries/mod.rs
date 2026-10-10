@@ -32,6 +32,13 @@ fn confirmed(client: &mut Client, source: &Path, body: &str, revision: &Value) -
     ));
     assert!(location.get("result").is_some(), "{location}");
     let response = client.ask(&definition(source, body, "sAmPlE", revision));
+    let mut boundary = definition(source, body, "sAmPlE", revision);
+    let character = boundary["params"]["position"]["character"]
+        .as_u64()
+        .unwrap();
+    boundary["params"]["position"]["character"] = json!(character + 5);
+    let at_end = client.ask(&boundary);
+    assert_eq!(at_end["result"], response["result"]);
     let result = &response["result"];
     let direct = &location["result"];
     assert_eq!(result["uri"], direct["location"]["uri"]);

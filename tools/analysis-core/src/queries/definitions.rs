@@ -3,7 +3,7 @@
 #[cfg(test)]
 mod tests;
 
-use base_db::{SourceDatabase, SourceRootId};
+use base_db::{RootQueryDb, SourceDatabase, SourceRootId};
 use eska::project_core::source_format::SourcePath;
 
 use crate::{
@@ -33,6 +33,7 @@ impl AnalysisSession {
     ) -> Result<ModuleResult<Option<DefinitionTarget>>, QueryError> {
         self.query_module(path, expected, cancellation, |analysis, file| {
             validate_offset(analysis, file, path, offset)?;
+            let offset = navigation_offset(analysis, file, offset);
             let Some(target) = analysis.goto_definition(file, offset) else {
                 return Ok(None);
             };
@@ -73,6 +74,24 @@ impl AnalysisSession {
             }))
         })
     }
+}
+
+/// Prefer an adjacent name at either cursor boundary; retain original positions for non-name queries.
+pub(super) fn navigation_offset(analysis: &ide::Analysis, file: vfs::FileId, offset: u32) -> u32 {
+    analysis
+        .database()
+        .parse(file)
+        .syntax_node()
+        .token_at_offset(offset.into())
+        .find(|token| {
+            matches!(
+                hir::classify_token(token),
+                hir::NameClass::FreeName { .. }
+                    | hir::NameClass::FieldName { .. }
+                    | hir::NameClass::TypeRef { .. }
+            )
+        })
+        .map_or(offset, |token| u32::from(token.text_range().start()))
 }
 
 /// Both navigation paths validate the caller's exact UTF-8 boundary before any semantic query.

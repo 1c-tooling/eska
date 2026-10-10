@@ -33,6 +33,14 @@ fn current_definition_targets_follow_editor_close_and_cross_module_input_changes
     assert_eq!(found.source, target);
     assert!(body[found.start_byte as usize..found.end_byte as usize].contains("Процедура Цель"));
     assert_eq!(found.source_sha256, local.source_sha256);
+    let at_end = u32::try_from(body.rfind("Цель").unwrap() + "Цель".len()).unwrap();
+    assert_eq!(
+        session
+            .module_definition(&target, previous, at_end, &QueryCancellation::default())
+            .unwrap()
+            .value,
+        Some(found.clone())
+    );
     assert!(!local.metadata_models_complete);
     let text = "Процедура Вызов()\r\nTools.Цель();\r\nКонецПроцедуры\r\n";
     session

@@ -29,6 +29,45 @@ pub(super) fn query(
         .unwrap()
 }
 
+/// Identifier boundaries retain the same target before punctuation, whitespace and end of file.
+#[test]
+fn metadata_definition_accepts_both_identifier_boundaries() {
+    let (_directory, root) = fixture();
+    let mut session = AnalysisSession::open(&root).unwrap();
+    let caller = SourcePath::parse(CALLER).unwrap();
+    let owner = SourcePath::parse(OWNER).unwrap();
+    let request = InputRequest::default();
+    session
+        .load_saved(&owner, session.revision(), &request)
+        .unwrap();
+    for (version, suffix) in [";", ".СоздатьЭлемент();", " ;", ""]
+        .into_iter()
+        .enumerate()
+    {
+        let body = format!("Значение=Справочники.Sample{suffix}");
+        session
+            .apply_module_overlay(
+                &caller,
+                session.revision(),
+                i64::try_from(version).unwrap(),
+                &body,
+                &request,
+            )
+            .unwrap();
+        let start = body.find("Sample").unwrap();
+        let expected = query(&session, &caller, u32::try_from(start + 1).unwrap())
+            .value
+            .unwrap();
+        for at in [start, start + "Sample".len()] {
+            assert_eq!(
+                query(&session, &caller, u32::try_from(at).unwrap()).value,
+                Some(expected.clone()),
+                "cursor {at} in {body}"
+            );
+        }
+    }
+}
+
 /// A canonical location follows editor changes and close, and does not reread its YAML file.
 #[test]
 fn metadata_definition_uses_current_canonical_object_and_exact_owner_coordinates() {

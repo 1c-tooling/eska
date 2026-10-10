@@ -28,7 +28,7 @@ use crate::{
     SessionRevision,
 };
 
-use super::definitions::{source_for_file, validate_offset};
+use super::definitions::{navigation_offset, source_for_file, validate_offset};
 
 impl AnalysisSession {
     /// Navigate a typed metadata object or declared member to current ready YAML.
@@ -47,6 +47,7 @@ impl AnalysisSession {
     ) -> Result<ModuleResult<Option<MetadataLocation>>, QueryError> {
         self.query_module(path, expected, cancellation, |analysis, file| {
             validate_offset(analysis, file, path, offset)?;
+            let offset = navigation_offset(analysis, file, offset);
             let Some(symbol) = metadata_symbol(analysis, file, offset) else {
                 return Ok(None);
             };

@@ -37,6 +37,11 @@ language operations и workspace search остаются отдельной ра
 может изменить ревизию. Pending соседние YAML/BSL автоматически не читаются.
 workDoneToken и partialResultToken принимаются, потоковые части не отправляются.
 
+Курсор в начале или сразу после идентификатора выбирает то же объявление,
+что и курсор внутри имени. Общий выбор токена применяется к BSL- и YAML-целям:
+соседние точка, скобка, пробел или конец файла не скрывают имя. Позиции внутри
+комментариев и литералов не смещаются к чужим идентификаторам.
+
 Подтверждённая цель возвращается как стандартный
 [Location](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.18/language/definition.md):
 URI и end-exclusive range, рассчитанный по target text. Location используется
