@@ -114,7 +114,11 @@ initialized доступны страницы владельцев и чтени
 Новый UUID сеанса и строковая ревизия обязательны в custom requests.
 Объявлена full-document синхронизация YAML/BSL: open/change/save/close используют
 общую ревизию и текущую source-byte квоту. Save не заменяет текст редактора;
-close перечитывает файл. Языковые запросы, cancellation и edit plans ещё не объявлены.
+close перечитывает файл. `textDocument/diagnostic` использует общий профиль `syntax`
+и `bsl-analyzer.toml`; settings фиксируются при initialize. UTF-16 диапазоны
+получены из текущих байтов без чтения диска. Ошибка settings не отключает дерево.
+Полная семантика, completion, cancellation транспорта и edit plans ещё не объявлены.
 Из установленного комплекта бинарник не запускается автоматически.
 [Протокол, границы и проверка C1/C2/C3](../../docs/research/eska-format/analyzer-metadata.md).
 [Синхронизация документов и события состояния](../../docs/research/eska-format/analyzer-documents.md).
+[Pull-диагностика и совпадение с checker](../../docs/research/eska-format/analyzer-diagnostics.md).

@@ -34,7 +34,7 @@ required-features = ["analyzer-cli"]
 
 [features]
 check-cli = ["dep:clap", "dep:project-model", "dep:serde_json", "eska/tool-cli"]
-analyzer-cli = ["dep:clap", "dep:serde_json", "dep:url", "eska/tool-cli"]
+analyzer-cli = ["dep:clap", "dep:project-model", "dep:serde_json", "dep:url", "eska/tool-cli"]
 
 [dependencies]
 eska = { path = "../..", default-features = false }
@@ -59,6 +59,7 @@ serde_json = "1.0"
 bsl-metadata = { path = "../bsl-kernel/crates/bsl-metadata" }
 hir-ty = { path = "../bsl-kernel/crates/hir-ty" }
 ide-db = { path = "../bsl-kernel/crates/ide-db" }
+parser-error = { path = "../bsl-kernel/crates/parser-error" }
 
 [patch.crates-io]
 salsa = { git = "https://github.com/itrous/salsa.git", rev = "5d2686f1f94dc3d618569652d5576ce997491b3b" }

@@ -1,8 +1,10 @@
 //! IDE transport owns protocol and presentation; metadata and analysis remain in the shared session.
 
 mod args;
+mod diagnostics;
 mod documents;
 mod dto;
+mod positions;
 mod protocol;
 mod server;
 

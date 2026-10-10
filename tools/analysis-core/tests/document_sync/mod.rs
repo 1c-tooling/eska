@@ -27,7 +27,7 @@ fn start(root: &Path, lang: &str, extra: &[&str]) -> Client {
     assert_eq!(capabilities["experimental"]["eska"]["documentSync"], true);
     assert_eq!(
         capabilities["experimental"]["eska"]["languageQueries"],
-        false
+        true
     );
     assert_eq!(
         capabilities["experimental"]["eska"]["maxRequestBytes"],

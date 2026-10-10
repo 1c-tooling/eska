@@ -1267,7 +1267,6 @@ dependencies = [
 [[package]]
 name = "parser-error"
 version = "0.2.85"
-source = "git+https://github.com/1c-tooling/bsl-analyzer.git?rev=9021ba07471eee8a2614bed2105a2c8699f60780#9021ba07471eee8a2614bed2105a2c8699f60780"
 dependencies = [
  "lexer",
  "smallvec",

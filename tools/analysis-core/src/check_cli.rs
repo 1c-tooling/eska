@@ -2,7 +2,6 @@
 
 mod args;
 mod presentation;
-mod settings;
 
 use std::{env, process::ExitCode, time::Duration};
 
@@ -15,7 +14,10 @@ use eska::{
     },
 };
 
-use crate::batch::{BatchOptions, check_syntax};
+use crate::{
+    analysis_settings as settings,
+    batch::{BatchOptions, check_syntax},
+};
 
 /// Select one ESKA project, run the explicit syntax profile and emit stable RU/EN results.
 #[must_use]

@@ -39,8 +39,9 @@ Batch JSON-RPC, null ID, повторные JSON keys и глубина боле
 Ошибки аргументов до запуска транспорта дают 3; help/version — 0.
 
 `documentSync` уже true: [full-document синхронизация YAML/BSL](analyzer-documents.md)
-подключена к той же сессии. `languageQueries`, `requestCancellation`, `editPlans`
-пока false. Языковые LSP capabilities не объявлены. Существующие расширения не переводятся
+подключена к той же сессии. `languageQueries=true` включает пока только
+[`textDocument/diagnostic` с профилем syntax](analyzer-diagnostics.md).
+`requestCancellation` и `editPlans` пока false. Существующие расширения не переводятся
 на новый процесс автоматически; это ещё не полный языковой сервер.
 
 ## Текущий custom API
@@ -106,8 +107,8 @@ composition и ядро не входят в этот wire cap.
 `--max-document-bytes` сохраняет hard bound 64 MiB. Общая текущая
 [квота исходных байтов](source-budget.md) по умолчанию 256 MiB и используется
 той же сессией. Это не общий heap/RSS budget. Страницы/свойства не читают BSL;
-BSL-текст поступает отдельно через document sync. Анализ и отмена активного
-языкового запроса пока не подключены.
+BSL-текст поступает через document sync или lazy-чтение для диагностики.
+Полная семантика и отмена активного языкового запроса пока не подключены.
 Состав неизменяем до restart; structural changes manifest/configuration требуют
 перезапуска. Watcher и multi-project host пока не подключены.
 

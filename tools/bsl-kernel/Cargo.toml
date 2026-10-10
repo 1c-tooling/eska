@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/bsl-metadata", "crates/hir-ty", "crates/ide-db"]
+members = ["crates/bsl-metadata", "crates/hir-ty", "crates/ide-db", "crates/parser-error"]
 
 [workspace.package]
 version = "0.2.85"
@@ -30,6 +30,7 @@ hir-ty = { path = "crates/hir-ty" }
 indexmap = "2.1"
 intern = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 la-arena = "0.3"
+lexer = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 line-index = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 once_cell = "1.19"
 parking_lot = "0.12"
@@ -41,6 +42,8 @@ salsa = { version = "=0.28.2", features = ["rayon", "macros", "salsa_unstable"] 
 sdbl-hir = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 serde_json = "1.0"
 smol_str = "0.3.2"
+smallvec = "1.13"
+text-size = "1.1"
 stdx = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 syntax = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 tempfile = "3.8"
@@ -53,6 +56,7 @@ vfs = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba074
 bsl-metadata = { path = "crates/bsl-metadata" }
 hir-ty = { path = "crates/hir-ty" }
 ide-db = { path = "crates/ide-db" }
+parser-error = { path = "crates/parser-error" }
 
 [patch.crates-io]
 salsa = { git = "https://github.com/itrous/salsa.git", rev = "5d2686f1f94dc3d618569652d5576ce997491b3b" }

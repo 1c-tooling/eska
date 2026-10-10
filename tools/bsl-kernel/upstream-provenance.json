@@ -4,7 +4,8 @@
   "selected_packages": [
     "bsl-metadata",
     "hir-ty",
-    "ide-db"
+    "ide-db",
+    "parser-error"
   ],
   "original_file_sha256": {
     "crates/bsl-metadata/Cargo.toml": "2214bad4e04dc93f12e2bd07fd1637187e74eb3a7b6497103f1bf27ba78308d4",
@@ -319,6 +320,8 @@
     "LICENSE-GPL": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
     "NOTICE": "c3cb1f80bedd3fe5041b7143aede65f832f0f19449b83d5d566ba80bfc13f841",
     "LICENSING.md": "3926ec48c1759149d07f9a6ff7a99a1fe63d18f0c9b18af6106dfc36ea7bb7d4",
-    "rustfmt.toml": "f5a4278cea22034f684c4153757a610aa8487e8f65abcda528efef7c9d3c40e9"
+    "rustfmt.toml": "f5a4278cea22034f684c4153757a610aa8487e8f65abcda528efef7c9d3c40e9",
+    "crates/parser-error/Cargo.toml": "56a59c23434e6e6473820a113ab5eec286aae9f3079da0697d31d7209947aa79",
+    "crates/parser-error/src/lib.rs": "c507ae4a057a4a7e5a1e4dcc96747e76b73273ed47a7eb62d9c5a3859e371e01"
   }
 }

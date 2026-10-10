@@ -4,8 +4,9 @@
 контроллер saved/overlay, адаптер ESKA и локальное ядро BSL. Библиотеку используют
 файловые тесты, read-only пример `project_session` и первый
 [syntax checker](check-cli.md) и первый [transport метаданных IDE](analyzer-metadata.md).
-Подключена [синхронизация документов](analyzer-documents.md), языковые операции
-сервера ещё не подключены. Project core не получил
+Подключены [синхронизация документов](analyzer-documents.md) и
+[серверная syntax-диагностика](analyzer-diagnostics.md). Остальные языковые
+операции сервера ещё не подключены. Project core не получил
 зависимостей от Salsa или анализатора.
 
 `SourceReader` предоставляет проверенные идентичности и канонический корень

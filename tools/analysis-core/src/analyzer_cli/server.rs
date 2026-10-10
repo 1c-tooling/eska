@@ -5,13 +5,13 @@ use std::io::{BufRead, Write};
 use eska::{
     analysis_core::{InputRequest, InputState},
     project_core::{eska_source::EskaSource, source_format::SourcePath},
-    tool_cli::{self, rpc_framing},
+    tool_cli::{self, Failure, localization::resolve_locale_from_environment, rpc_framing},
 };
 use serde_json::{Value, json};
 
-use crate::{AnalysisSession, SessionOptions};
+use crate::{AnalysisSession, SessionOptions, analysis_settings::Settings};
 
-use super::{args::Cli, documents, dto, protocol};
+use super::{args::Cli, diagnostics, documents, dto, protocol};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum Phase {
@@ -27,6 +27,7 @@ struct Server<'a> {
     session: Option<AnalysisSession>,
     session_id: String,
     documents: documents::Documents,
+    settings: Option<Result<Settings, Failure>>,
 }
 
 enum Step {
@@ -42,6 +43,7 @@ pub fn run(cli: &Cli, input: &mut impl BufRead, output: &mut impl Write) -> u8 {
         session: None,
         session_id: String::new(),
         documents: documents::Documents::default(),
+        settings: None,
     };
     loop {
         let Ok(Some(frame)) = rpc_framing::read_frame_with_limit(input, documents::MAX_REQUEST)
@@ -117,6 +119,7 @@ impl Server<'_> {
             self.phase = Phase::Shutdown;
             self.session = None;
             self.documents = documents::Documents::default();
+            self.settings = None;
             Ok(Value::Null)
         } else {
             self.request(&message.method, &message.params)
@@ -153,6 +156,11 @@ impl Server<'_> {
             .map_err(|failure| {
                 protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
             })?;
+        let settings = crate::analysis_settings::load(
+            selected.project.root(),
+            None,
+            resolve_locale_from_environment(self.cli.lang.as_deref()),
+        );
         let source = EskaSource::open(selected.project, selected.scope).map_err(|error| {
             protocol::error_value(-32000, error.code, json!({"location":error.location}))
         })?;
@@ -165,13 +173,16 @@ impl Server<'_> {
                 protocol::error_value(-32000, "analysis_session_open_failed", Value::Null)
             })?;
         let session_id = bsl_metadata::Uuid::new_v4().to_string();
-        let result = json!({
+        let mut result = json!({
             "capabilities":{"textDocumentSync":{"openClose":true,"change":1,"save":{"includeText":false}},
+                "positionEncoding":"utf-16",
                 "experimental":{"eska":{
                 "protocolVersion":protocol::VERSION,
                 "sourceFormat":"eska", "scope":"selected-project",
                 "metadata":{"owners":true, "read":true, "refresh":true},
-                "documentSync":true, "languageQueries":false, "requestCancellation":false,
+                "documentSync":true, "languageQueries":true, "requestCancellation":false,
+                "languageMethods":["textDocument/diagnostic"],
+                "analysis":diagnostics::availability(&settings),
                 "inputNotifications":["eska/inputChanged", "eska/inputRejected"],
                 "editPlans":false, "locationEncoding":"utf-8-bytes",
                 "maxRequestBytes":documents::MAX_REQUEST,
@@ -180,7 +191,13 @@ impl Server<'_> {
             }}},
             "serverInfo":{"name":"eska-analyzer", "version":env!("CARGO_PKG_VERSION")},
         });
+        if diagnostics::enabled(&settings) {
+            result["capabilities"]["diagnosticProvider"] = json!({
+                "identifier":diagnostics::IDENTIFIER, "interFileDependencies":false,
+                "workspaceDiagnostics":false, "workDoneProgress":false});
+        }
         self.session = Some(session);
+        self.settings = Some(settings);
         self.session_id = session_id;
         self.phase = Phase::Initializing;
         Ok(result)
@@ -259,6 +276,25 @@ impl Server<'_> {
                 Ok(
                     json!({"snapshot":dto::snapshot(session, &self.session_id), "metadata":dto::metadata(&current),
                     "resources":session.resources()}),
+                )
+            }
+            "textDocument/diagnostic" => {
+                let params: diagnostics::Params = protocol::params(value)?;
+                if let Some(expected) = &params.eska {
+                    validate_snapshot(session, &self.session_id, &expected.snapshot)?;
+                }
+                let settings = self.settings.as_ref().ok_or_else(|| {
+                    protocol::error_value(-32603, "session_invariant", Value::Null)
+                })?;
+                diagnostics::pull(
+                    session,
+                    &self.session_id,
+                    &params,
+                    settings,
+                    &InputRequest {
+                        max_document_bytes: self.cli.max_document_bytes,
+                        ..InputRequest::default()
+                    },
                 )
             }
             _ => Err(protocol::error_value(

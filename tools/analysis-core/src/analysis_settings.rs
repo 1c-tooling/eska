@@ -1,4 +1,4 @@
-//! The pinned analyzer owns config parsing; malformed or unsupported scopes never fall back silently.
+//! Both tool consumers use the pinned config parser and reject unsupported scopes explicitly.
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};

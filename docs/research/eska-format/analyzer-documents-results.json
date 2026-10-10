@@ -495,5 +495,6 @@
   "request_cancellation": false,
   "edit_plans": false,
   "platform_build_run": false,
-  "stage_status": "IN_PROGRESS"
+  "stage_status": "IN_PROGRESS",
+  "state_at_commit": "edab5d7"
 }

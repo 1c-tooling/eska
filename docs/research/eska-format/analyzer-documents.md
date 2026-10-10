@@ -2,8 +2,9 @@
 
 `eska-analyzer` объявляет `textDocumentSync` с `openClose=true`, `change=1`
 (full text) и `save.includeText=false`. Экспериментальный ESKA protocol `0.1`
-сохраняется; `documentSync=true`, остальные language/cancellation/edit-plan
-capabilities пока false. Старый IDE protocol приложения не изменён.
+сохраняется; `documentSync=true`. Теперь отдельно подключена
+[pull-диагностика syntax](analyzer-diagnostics.md); остальные language/cancellation/
+edit-plan возможности ещё не готовы. Старый IDE protocol приложения не изменён.
 
 Транспорт владеет только набором открытых путей. Текст, версии, origin, hash,
 текущие модели и source-byte квота находятся в общем `AnalysisSession`;
@@ -63,6 +64,9 @@ readiness и неполнота. Текст BSL в событие не копи�
 для structural changes пока нужен restart.
 
 ## Ограничения и проверки
+
+Показанные ниже результаты относятся к `edab5d7`, до подключения pull-диагностики.
+Текущие gates и размер бинарника — в [результатах диагностики](analyzer-diagnostics.md).
 
 Входной frame сервера увеличен с 1 до 4 MiB; header 8 KiB и ответ 64 MiB
 сохранены. Существующий IDE reader приложения сохраняет прежний предел 1 MiB.

@@ -4,13 +4,15 @@
 #[path = "queries/cancellation_tests.rs"]
 mod cancellation_tests;
 
-use base_db::SourceDatabase;
+use std::collections::BTreeMap;
+
+use base_db::{RootQueryDb, SourceDatabase};
 use eska::project_core::source_format::SourcePath;
 use salsa::Database;
 
 use crate::{
-    AnalysisSession, CompletionItem, Diagnostic, DiagnosticsConfig, Locale, ModuleState,
-    QueryCancellation, SessionRequestError, SessionRevision,
+    AnalysisSession, CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, Locale,
+    ModuleState, QueryCancellation, SessionRequestError, SessionRevision,
 };
 
 /// A result belongs to one verbatim source snapshot and one complete session generation.
@@ -35,11 +37,38 @@ pub enum QueryError {
     InvalidOffset {
         offset: u32,
     },
+    InconsistentDiagnostic {
+        start_byte: u32,
+        end_byte: u32,
+    },
     Cancelled,
     CancellationTokenInUse,
 }
 
 impl AnalysisSession {
+    /// Project borrowed current bytes for transport coordinates without rereading or copying text.
+    ///
+    /// # Errors
+    /// Returns the same stale/unknown/unread input and cancellation failures as an analysis query.
+    pub fn with_module_text<T>(
+        &self,
+        path: &SourcePath,
+        expected: SessionRevision,
+        cancellation: &QueryCancellation,
+        project: impl FnOnce(&str) -> T,
+    ) -> Result<ModuleResult<T>, QueryError> {
+        self.query_module(path, expected, cancellation, |analysis, file| {
+            analysis
+                .database()
+                .try_file_text_input(file)
+                .map(|input| project(input.text(analysis.database())))
+                .ok_or_else(|| QueryError::ModuleUnavailable {
+                    path: path.clone(),
+                    state: ModuleState::Pending,
+                })
+        })
+    }
+
     /// Run the shared BSL diagnostics profile over this exact saved or editor module snapshot.
     ///
     /// # Errors
@@ -52,7 +81,47 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
     ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
         self.query_module(path, expected, cancellation, |analysis, file| {
-            Ok(analysis.diagnostics(file, config))
+            let mut diagnostics = analysis.diagnostics(file, config);
+            if config.locale == Locale::En
+                && diagnostics
+                    .iter()
+                    .any(|item| item.code == DiagnosticCode::ParseError)
+            {
+                // The pinned handler ignores locale. Reuse its cached structured parse errors;
+                // range plus the original rendering identifies errors after suppression/sorting.
+                let parse = analysis.database().parse(file);
+                let messages: BTreeMap<_, _> = parse
+                    .errors()
+                    .iter()
+                    .map(|error| {
+                        (
+                            (
+                                u32::from(error.range().start()),
+                                u32::from(error.range().end()),
+                                error.structured().format_ru(),
+                            ),
+                            error.structured().format_en(),
+                        )
+                    })
+                    .collect();
+                for item in diagnostics
+                    .iter_mut()
+                    .filter(|item| item.code == DiagnosticCode::ParseError)
+                {
+                    let message = messages
+                        .get(&(
+                            u32::from(item.range.start()),
+                            u32::from(item.range.end()),
+                            item.message.clone(),
+                        ))
+                        .ok_or_else(|| QueryError::InconsistentDiagnostic {
+                            start_byte: item.range.start().into(),
+                            end_byte: item.range.end().into(),
+                        })?;
+                    item.message.clone_from(message);
+                }
+            }
+            Ok(diagnostics)
         })
     }
 

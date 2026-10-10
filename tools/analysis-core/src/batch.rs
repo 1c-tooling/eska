@@ -108,13 +108,7 @@ pub fn check_syntax(
             .load_saved(&path, session.revision(), &request)
             .map_err(BatchError::Request)?;
     }
-    let mut config = config.clone();
-    let syntax_enabled = !config.is_disabled(DiagnosticCode::ParseError);
-    config.only_enabled = Some(if syntax_enabled {
-        vec![DiagnosticCode::ParseError]
-    } else {
-        vec![]
-    });
+    let (config, syntax_enabled) = syntax_profile(config);
     let paths = session.module_paths().cloned().collect::<Vec<_>>();
     let mut files = Vec::with_capacity(paths.len());
     for path in paths {
@@ -151,6 +145,19 @@ pub fn check_syntax(
         report.coverage.syntax_complete = false;
     }
     Ok(report)
+}
+
+/// IDE and batch syntax consumers preserve rule disabling, severity, locale and parameters.
+#[must_use]
+pub fn syntax_profile(config: &DiagnosticsConfig) -> (DiagnosticsConfig, bool) {
+    let mut config = config.clone();
+    let enabled = !config.is_disabled(DiagnosticCode::ParseError);
+    config.only_enabled = Some(if enabled {
+        vec![DiagnosticCode::ParseError]
+    } else {
+        vec![]
+    });
+    (config, enabled)
 }
 
 /// One syntax file is independent of unread neighbors; never use this streaming rule for semantics.

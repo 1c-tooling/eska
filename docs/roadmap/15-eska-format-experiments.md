@@ -785,6 +785,23 @@ Save сохраняет редакторскую authority, close читает �
 сохранены. Дополнительных packages нет: optional `url` уже есть в графе ядра.
 Языковые запросы/отмена транспорта, полный memory budget и edit plans ещё не готовы.
 
+[Pull-диагностика syntax](../research/eska-format/analyzer-diagnostics.md) подключена
+стандартным `textDocument/diagnostic`. Общий loader `bsl-analyzer.toml` и профиль
+сохраняют настройки checker; server settings фиксируются при initialize.
+Disabled/invalid/scope-unsupported настройки не дают пустую успешную диагностику
+и не отключают независимое дерево. UTF-16 диапазоны вычисляются одним проходом
+по текущему тексту; core отдаёт только ограниченный borrowed callback, не LSP DTO.
+26 unit/file, 21 analyzer process и 9 checker process tests прошли вместе
+с собственными gates и полной root matrix. На C1/C2/C3 проверены syntax findings
+редакторского BSL и восстановление после close; canonical bytes/координаты совпали.
+EN/RU ParseError формируются из структурированных ошибок одного cached parse;
+нетипизированные custom reasons дают общее `Syntax error` в EN. Локальный
+`parser-error` и полный kernel workspace прошли 1054 tests / 4 прежних ignored.
+Core batch и server совпали на synthetic input; C1 checker проверил 1975 активных
+модулей и совпал с сервером для выбранного saved модуля. Неполная metadata model
+сохраняет exit 2. Completion, отмена транспорта, полная семантика/memory budget
+и edit plans остаются в работе; EF-18 остаётся `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

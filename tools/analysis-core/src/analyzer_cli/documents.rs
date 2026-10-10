@@ -215,7 +215,7 @@ impl Documents {
 }
 
 /// URI decoding never reads the document; only declared files inside the selected root are inputs.
-fn source_path(session: &AnalysisSession, uri: &str) -> Result<SourcePath, Value> {
+pub fn source_path(session: &AnalysisSession, uri: &str) -> Result<SourcePath, Value> {
     let parsed = Url::parse(uri)
         .map_err(|_| protocol::error_value(-32602, "document_uri_invalid", Value::Null))?;
     if parsed.query().is_some() || parsed.fragment().is_some() {
