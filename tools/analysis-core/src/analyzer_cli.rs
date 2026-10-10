@@ -9,6 +9,7 @@ mod dto;
 mod language;
 mod metadata_locations;
 mod positions;
+mod project_changes;
 mod property_edits;
 mod protocol;
 mod request_control;

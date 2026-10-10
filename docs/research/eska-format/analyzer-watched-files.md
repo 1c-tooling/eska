@@ -1,5 +1,9 @@
 # Уведомления об изменениях сохранённых файлов
 
+Здесь сохранён компонент на `8988627`. Следующая
+[защита после изменений состава](analyzer-project-changes.md) добавила
+`eska/restartRequired`; counts и замеры ниже относятся к saved file events.
+
 `eska-analyzer` принимает `workspace/didChangeWatchedFiles` для объявленных
 YAML и BSL выбранного проекта. Событие очищает прежний saved input и его
 каноническую проекцию, переводит его в pending и освобождает source-byte

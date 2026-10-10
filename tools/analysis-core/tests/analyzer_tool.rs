@@ -8,6 +8,7 @@ mod definition_register_queries;
 mod diagnostic_queries;
 mod document_sync;
 mod metadata_locations;
+mod project_changes;
 mod property_edit_plans;
 mod request_cancellation;
 mod request_deadline;

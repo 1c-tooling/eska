@@ -759,6 +759,8 @@ preset = "trunk"
 [YAML и BSL синхронизируются](docs/research/eska-format/analyzer-documents.md)
 в той же ревизии. [События сохранённых файлов](docs/research/eska-format/analyzer-watched-files.md)
 сбрасывают прежний ввод без чтения диска и сохраняют открытые черновики.
+[Изменение манифеста или настроек](docs/research/eska-format/analyzer-project-changes.md)
+завершает старую сессию с `eska/restartRequired`; новый состав открывает новый процесс.
 [Отмена языковых запросов](docs/research/eska-format/analyzer-cancellation.md)
 принимается во время вычисления, с сохранением текущего редакторского ввода.
 [Лимит времени диагностики](docs/research/eska-format/analyzer-deadline.md)

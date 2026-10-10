@@ -1,6 +1,9 @@
 //! Standard full-document synchronization delegates bytes and version checks to the common host.
 
-use std::collections::BTreeSet;
+use std::{
+    collections::BTreeSet,
+    path::{Path, PathBuf},
+};
 
 use eska::{
     analysis_core::{InputRequest, UpdateError},
@@ -214,8 +217,8 @@ impl Documents {
     }
 }
 
-/// URI decoding never reads the document; only declared files inside the selected root are inputs.
-pub fn source_path(session: &AnalysisSession, uri: &str) -> Result<SourcePath, Value> {
+/// Decode a local file URI without reading it; the caller applies its source or control-file boundary.
+pub fn file_path(uri: &str) -> Result<PathBuf, Value> {
     let parsed = Url::parse(uri)
         .map_err(|_| protocol::error_value(-32602, "document_uri_invalid", Value::Null))?;
     if parsed.query().is_some() || parsed.fragment().is_some() {
@@ -225,9 +228,19 @@ pub fn source_path(session: &AnalysisSession, uri: &str) -> Result<SourcePath, V
             Value::Null,
         ));
     }
-    let file = parsed
+    parsed
         .to_file_path()
-        .map_err(|()| protocol::error_value(-32602, "document_uri_invalid", Value::Null))?;
+        .map_err(|()| protocol::error_value(-32602, "document_uri_invalid", Value::Null))
+}
+
+/// Resolve only declared inputs under the selected source, without probing filesystem aliases.
+pub fn source_path(session: &AnalysisSession, uri: &str) -> Result<SourcePath, Value> {
+    let file = file_path(uri)?;
+    declared_path(session, &file)
+}
+
+/// Reuse the declared-input boundary after a batch has already decoded all local URIs.
+pub fn declared_path(session: &AnalysisSession, file: &Path) -> Result<SourcePath, Value> {
     let relative = file
         .strip_prefix(session.root())
         .map_err(|_| protocol::error_value(-32602, "document_outside_source", Value::Null))?;

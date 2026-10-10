@@ -16,7 +16,7 @@ use crate::{AnalysisSession, RequestCancellation, SessionOptions, analysis_setti
 
 use super::{
     args::Cli, completion, definitions, diagnostics, documents, dto, language, metadata_locations,
-    property_edits, protocol, request_control, stream, watched_files,
+    project_changes, property_edits, protocol, request_control, stream, watched_files,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -37,6 +37,8 @@ struct Server<'a> {
     snippets: bool,
     extended_kinds: bool,
     edit_plans: Option<property_edits::Plans>,
+    project_inputs: Option<project_changes::Inputs>,
+    restart: Option<Value>,
 }
 
 enum Step {
@@ -59,6 +61,8 @@ pub fn run(cli: &Cli, input: impl BufRead + Send + 'static, output: &mut impl Wr
         snippets: false,
         extended_kinds: false,
         edit_plans: None,
+        project_inputs: None,
+        restart: None,
     };
     loop {
         let Ok(envelope) = incoming.receive() else {
@@ -156,14 +160,7 @@ impl Server<'_> {
                     Step::Continue(None)
                 }
                 watched_files::METHOD if self.phase == Phase::Ready => {
-                    let Some(session) = self.session.as_mut() else {
-                        return Step::Exit(1);
-                    };
-                    Step::Continue(Some(watched_files::notify(
-                        session,
-                        &self.session_id,
-                        &message.params,
-                    )))
+                    self.watched_notification(message)
                 }
                 "textDocument/didOpen"
                 | "textDocument/didChange"
@@ -196,7 +193,11 @@ impl Server<'_> {
             self.documents = documents::Documents::default();
             self.settings = None;
             self.edit_plans = None;
+            self.project_inputs = None;
+            self.restart = None;
             Ok(Value::Null)
+        } else if let Some(state) = &self.restart {
+            Err(project_changes::error(state))
         } else {
             self.request(&message.method, &message.params, cancellation)
         };
@@ -232,6 +233,7 @@ impl Server<'_> {
             .map_err(|failure| {
                 protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
             })?;
+        let workspace = selected.workspace_root;
         let settings = crate::analysis_settings::load(
             selected.project.root(),
             None,
@@ -240,6 +242,7 @@ impl Server<'_> {
         let source = EskaSource::open(selected.project, selected.scope).map_err(|error| {
             protocol::error_value(-32000, error.code, json!({"location":error.location}))
         })?;
+        let project_inputs = project_changes::Inputs::selected(&source, workspace.as_deref());
         let edit_plans = property_edits::Plans::selected(
             &source,
             self.cli.accepted_base_sha256.as_deref(),
@@ -267,8 +270,9 @@ impl Server<'_> {
                 "requestTimeoutSeconds":self.cli.timeout_seconds,
                 "languageMethods":language::METHODS,
                 "analysis":diagnostics::availability(&settings),
-                "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT],
+                "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT, project_changes::EVENT],
                 "watchedFiles":watched_files::capabilities(),
+                "projectChanges":project_inputs.capability()?,
                 "editPlans":edit_plans.is_some(), "locationEncoding":"utf-8-bytes",
                 "maxRequestBytes":documents::MAX_REQUEST,
                 "maxResponseBytes":rpc_framing::MAX_RESPONSE,
@@ -291,13 +295,8 @@ impl Server<'_> {
             result["capabilities"]["definitionProvider"] = json!(true);
             result["capabilities"]["experimental"]["eska"]["definition"] = json!({"scope":"ready-bsl-and-canonical-metadata","metadataTargets":"typed-objects-and-members","incompleteResults":"error"});
         }
-        self.snippets = params
-            .pointer("/capabilities/textDocument/completion/completionItem/snippetSupport")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        self.extended_kinds = params
-            .pointer("/capabilities/textDocument/completion/completionItemKind")
-            .is_some_and(Value::is_object);
+        self.client_capabilities(params);
+        self.project_inputs = Some(project_inputs);
         self.edit_plans = edit_plans;
         self.session = Some(session);
         self.settings = Some(settings);
@@ -308,6 +307,12 @@ impl Server<'_> {
 
     /// Full-sync notifications update the host before emitting an acknowledgement event.
     fn document_notification(&mut self, message: &protocol::Message) -> Step {
+        if let Some(state) = &self.restart {
+            return Step::Continue(Some(
+                json!({"jsonrpc":"2.0","method":"eska/inputRejected","params":{
+                "snapshot":state["snapshot"],"operation":message.method,"error":project_changes::error(state)}}),
+            ));
+        }
         let Some(session) = self.session.as_mut() else {
             return Step::Exit(1);
         };
@@ -322,6 +327,46 @@ impl Server<'_> {
             &message.params,
             &request,
         )))
+    }
+
+    /// Keep negotiated presentation options separate from the immutable project input inventory.
+    fn client_capabilities(&mut self, params: &Value) {
+        self.snippets = params
+            .pointer("/capabilities/textDocument/completion/completionItem/snippetSupport")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        self.extended_kinds = params
+            .pointer("/capabilities/textDocument/completion/completionItemKind")
+            .is_some_and(Value::is_object);
+    }
+
+    /// Retire the old host after a control event; only an explicit process restart can reopen it.
+    fn watched_notification(&mut self, message: &protocol::Message) -> Step {
+        if let Some(state) = &self.restart {
+            return Step::Continue(Some(
+                json!({"jsonrpc":"2.0","method":"eska/inputRejected","params":{
+                "snapshot":state["snapshot"],"operation":message.method,"error":project_changes::error(state)}}),
+            ));
+        }
+        let (Some(session), Some(controls)) = (self.session.as_mut(), self.project_inputs.as_ref())
+        else {
+            return Step::Exit(1);
+        };
+        match watched_files::notify(session, &self.session_id, &message.params, controls) {
+            watched_files::Notification::Inputs(event) => Step::Continue(Some(event)),
+            watched_files::Notification::Restart(changes) => {
+                let state =
+                    json!({"snapshot":dto::snapshot(session,&self.session_id),"changes":changes});
+                self.session = None;
+                self.settings = None;
+                self.edit_plans = None;
+                self.documents = documents::Documents::default();
+                self.restart = Some(state.clone());
+                Step::Continue(Some(
+                    json!({"jsonrpc":"2.0","method":project_changes::EVENT,"params":state}),
+                ))
+            }
+        }
     }
 
     /// Every custom request validates the connection identity and exact current revision first.

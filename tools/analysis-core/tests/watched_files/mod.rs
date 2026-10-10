@@ -280,14 +280,6 @@ fn watched_file_batches_preflight_before_mutation_in_both_locales() {
                 "unknown_source",
             ),
             (
-                json!([valid,{"uri":uri(&root,"source.json"),"type":2}]),
-                "unknown_source",
-            ),
-            (
-                json!([valid,{"uri":Url::from_file_path(root.join("eska.toml")).unwrap().as_str(),"type":2}]),
-                "document_outside_source",
-            ),
-            (
                 json!([valid,{"uri":format!("{}#fragment",uri(&root,OWNER)),"type":2}]),
                 "document_uri_invalid",
             ),

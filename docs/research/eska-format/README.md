@@ -42,6 +42,8 @@ YAML/BSL, учитывает возможности клиента и сообщ
 реквизиты, таблицы/колонки и значения перечислений с точным parent ID.
 [События сохранённых файлов](analyzer-watched-files.md) используют общую
 инвалидацию YAML/BSL без I/O и приоритет editor authority; клиента watcher ещё нет.
+[Изменения состава и настроек](analyzer-project-changes.md) завершают прежний host
+с `eska/restartRequired`, явным списком control URI и отказом до нового процесса.
 [Поля регистров](analyzer-register-definitions.md) связывают typed запись и
 измерения отбора с теми же координатами текущего YAML.
 [Планы изменения свойств](analyzer-property-plans.md) связывают текущую editor

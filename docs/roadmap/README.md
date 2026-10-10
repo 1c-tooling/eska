@@ -101,8 +101,11 @@ receiver и точный parent текущего YAML. На C1/C2/C3 в RU/EN п
 [Client file events](../research/eska-format/analyzer-watched-files.md) уже
 сбрасывают saved YAML/BSL без I/O и сохраняют открытые черновики. На C1/C2/C3
 в RU/EN прошли шесть сценариев на собственных частичных копиях с полным составом:
-30 подтверждённых definition и 42 locate. Watcher client, dynamic registration
-и обновление состава ещё в работе.
+30 подтверждённых definition и 42 locate.
+[Control file events](../research/eska-format/analyzer-project-changes.md) уже
+завершают прежний host с `eska/restartRequired`; 42 сценария C1/C2/C3 в RU/EN
+проверили все семь control inputs, отказ старой сессии и новый процесс.
+Watcher client, dynamic registration и автоматическое обновление состава ещё в работе.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.

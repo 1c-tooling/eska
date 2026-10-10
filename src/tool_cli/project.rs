@@ -16,7 +16,7 @@ pub struct Selected {
     pub scope: ProjectScope,
     #[cfg(feature = "build-cli")]
     pub member: Option<crate::project_core::ProjectName>,
-    #[cfg(feature = "build-cli")]
+    /// Keep the shared manifest owner for consumers whose session depends on inherited settings.
     pub workspace_root: Option<std::path::PathBuf>,
 }
 
@@ -50,7 +50,6 @@ pub fn selected(start: &Path, requested: Option<&str>) -> Result<Selected, Failu
         scope,
         #[cfg(feature = "build-cli")]
         member: item.name().cloned(),
-        #[cfg(feature = "build-cli")]
         workspace_root,
     })
 }

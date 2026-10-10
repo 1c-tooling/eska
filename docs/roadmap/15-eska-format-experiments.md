@@ -974,9 +974,30 @@ Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
 delete/recreate, atomic rejection и editor/close согласованы. Оригинальные
 corpus files не записывались, пять выбранных файлов каждого сценария сохранили
 bytes, собственные временные проекты удалены. Runtime graph остался 206/214.
-Client watcher, dynamic registration и изменения состава требуют следующего
+Client watcher, dynamic registration и изменения состава на этом компоненте требуют следующего
 компонента; остальные модели/семантика, IDE edits, memory budget и Explorer
 ещё в работе. EF-18 — `IN_PROGRESS`.
+
+[Изменения состава и настроек](../research/eska-format/analyzer-project-changes.md)
+завершают прежний host без чтения control file. Initialize сообщает точный
+список source.json, configuration.yaml, project/workspace eska.toml и трёх
+кандидатов analysis settings. Один eska/restartRequired содержит последний
+принятый snapshot и control changes; этот snapshot больше не используется.
+Все проектные requests и input notifications отклоняются до нового процесса.
+Смешанный control/new-source пакет не пытается зарегистрировать новый owner;
+malformed event или внешний путь отклоняет пакет до завершения сессии.
+Пройдены 51 unit/file, 55 analyzer process и 9 checker process; все 19 tool
+и 15 root gates, root 893/14, minimal 165/3, project-cli 181/3, build-cli 200/3.
+На собственных частичных копиях с полным составом C1/C2/C3 в RU/EN прошли
+42 сценария: 84 подтверждённых definition, 84 locate, 336 запросов к завершённой
+сессии и 210 отклонённых уведомлений. Восстановление файла не оживляет старый
+host; новый процесс подтверждает текущие saved координаты/hash с новым UUID.
+Шесть прежних saved-input сценариев также прошли: 30 подтверждённых definition,
+42 locate и 30 принятых file notifications. Оригинальные corpus files не
+записывались; собственные проекты удалены. Runtime graph остался 206/214.
+Client watcher/dynamic registration и автоматический restart ещё в работе;
+полная семантика, остальные модели, IDE edits, memory budget и Explorer также
+не завершены. EF-18 — `IN_PROGRESS`.
 
 ## EF-19 Самостоятельный инструмент VCS
 

@@ -604,5 +604,6 @@
     "Small-batch timing and sampled peak RSS are observations, not latency or heap/RSS budget guarantees.",
     "No 1C runtime or real VS Code client acceptance was performed.",
     "Only five explicitly selected original files per scenario were hashed; original corpus files were read-only."
-  ]
+  ],
+  "verified_commit": "8988627"
 }

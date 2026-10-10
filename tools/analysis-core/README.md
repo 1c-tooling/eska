@@ -118,7 +118,11 @@ initialized доступны страницы владельцев и чтени
 общую ревизию и текущую source-byte квоту. Save не заменяет текст редактора;
 close перечитывает файл. [Client file events](../../docs/research/eska-format/analyzer-watched-files.md)
 инвалидируют сохранённые YAML/BSL без I/O, с общим preflight и приоритетом editor.
-Настройка watcher и обновление состава ещё не подключены.
+[Control file events](../../docs/research/eska-format/analyzer-project-changes.md)
+освобождают прежний host с `eska/restartRequired`; до нового процесса все
+проектные операции отклоняются. Список control URI включает родительский
+workspace manifest и отсутствующие кандидаты settings. Настройка watcher
+и автоматическое открытие нового состава ещё не подключены.
 `textDocument/diagnostic` использует общий профиль `syntax`
 и `bsl-analyzer.toml`; settings фиксируются при initialize. UTF-16 диапазоны
 получены из текущих байтов без чтения диска. Ошибка settings не отключает дерево.
