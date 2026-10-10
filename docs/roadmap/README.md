@@ -114,6 +114,11 @@ receiver и точный parent текущего YAML. На C1/C2/C3 в RU/EN п
 подтверждают current owner YAML без чтения target BSL. На C1/C2/C3 в RU/EN прошли
 12 сценариев: 72 namespace definition/locate и 48 BSL shadow/alias definition.
 Полная семантика, IDE edits, общий memory budget и клиент ещё в работе.
+[Переходы для составного типа](../research/eska-format/analyzer-union-definitions.md)
+подтверждают только общее объявление поля; nullable arms пропускаются,
+разные owners и неподдержанные варианты не дают произвольной цели.
+На C1/C2/C3 в RU/EN прошли шесть сценариев: 48 definition/locate и 48 отказов.
+Полнота inference, модель формы и остальные условия EF-18 остаются в работе.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.

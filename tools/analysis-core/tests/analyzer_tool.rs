@@ -6,6 +6,7 @@ mod definition_metadata_queries;
 mod definition_namespace_queries;
 mod definition_queries;
 mod definition_register_queries;
+mod definition_union_queries;
 mod diagnostic_queries;
 mod document_sync;
 mod metadata_locations;

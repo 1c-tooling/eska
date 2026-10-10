@@ -894,5 +894,6 @@
     "Only five original payload files per case were tracked; original corpora were read only.",
     "No real VS Code client, OS watcher or 1C platform validation for this component.",
     "No latency SLA or general heap/RSS budget; full semantic/model coverage and all IDE edits remain incomplete."
-  ]
+  ],
+  "verified_commit": "8db020d"
 }

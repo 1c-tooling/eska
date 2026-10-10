@@ -784,6 +784,9 @@ preset = "trunk"
 [Пространства общих модулей](docs/research/eska-format/analyzer-namespace-definitions.md)
 открывают готовый owner YAML без чтения target BSL; ближайшие объявления
 переменных, параметров и методов сохраняют BSL-цели.
+[Составные типы](docs/research/eska-format/analyzer-union-definitions.md)
+дают YAML-цель при одном общем объявлении всех содержательных вариантов;
+разные владельцы с одноимёнными полями не выбираются произвольно.
 Полная семантика
 и комплектная поставка ещё не готовы. [План правки свойства YAML](docs/research/eska-format/analyzer-property-plans.md)
 уже учитывает текущую editor version и отдельно закреплённую поддержку;

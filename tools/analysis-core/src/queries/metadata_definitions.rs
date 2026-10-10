@@ -9,6 +9,8 @@ mod namespace_tests;
 mod register_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod union_tests;
 
 use base_db::RootQueryDb;
 use bsl_types::kind::ConfigId;

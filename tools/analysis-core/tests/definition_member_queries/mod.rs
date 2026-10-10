@@ -7,7 +7,7 @@ const CATALOG: &str = "Catalogs/Sample/object.yaml";
 const ENUM: &str = "Enums/Choice/object.yaml";
 
 /// Expand only a task-owned native fixture and import it into another unique source directory.
-fn fixture(directory: &Path) -> std::path::PathBuf {
+pub fn fixture(directory: &Path) -> std::path::PathBuf {
     let root = support::inline_command_project(directory, "// Saved caller.\n");
     let native = directory.join("native");
     let configuration = fs::read_to_string(native.join("Configuration.xml")).unwrap();

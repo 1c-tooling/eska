@@ -1037,6 +1037,25 @@ Runtime graph остался 206/214. Form data, predefined values, union receiv
 query text, все IDE edits, полнота анализа, общий memory budget, saved-input
 watcher и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
 
+[Переходы для составного типа](../research/eska-format/analyzer-union-definitions.md)
+проверяют каждый substantive arm через прежние typed-member rules. Один
+общий owner/child подтверждается текущим UUID/YAML; nullable arms пропускаются.
+Неоднозначные owners с одинаковыми именами полей, структура, число и nullable-only
+не дают произвольной цели. Inference не дублируется: return contract уже даёт
+ядру union; обычные untyped parameters и разнотипный ternary могут оставаться unknown.
+Пройдены 59 unit/file, 63 analyzer process и 9 checker process; все 19 tool
+и 15 root gates, root 893/14, minimal 165/3, project-cli 181/3, build-cli 200/3.
+На C1/C2/C3 в RU/EN прошли шесть сценариев с полным составом на собственных
+частичных копиях: 48 definition/locate и 48 отказов, 96 definition всего.
+Current byte/UTF-16 ranges, hashes, editor/close и file events согласованы;
+module_text_bytes равнялся текущему caller BSL. Пять выбранных оригинальных
+файлов сохранили bytes, собственные проекты удалены. CLI bsl-analyzer-app 0.3.0
+проверил 16 уникальных BSL-фрагментов: ноль ParseError; workspace MCP недоступен.
+Runtime graph остался 206/214. Настоящий клиент и платформа 1С не запускались.
+Полная модель form data, predefined values, query text, все IDE edits,
+полнота inference/анализа, общий memory budget, saved-input watcher и Explorer
+ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

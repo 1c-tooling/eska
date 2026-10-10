@@ -9,14 +9,53 @@ use eska::{
         source_format::{NativeUuid, SourcePath},
     },
 };
-use hir::{HirFieldOrigin, Name, Type, TypeId, TypeKind};
+use hir::{HirFieldOrigin, Name, Type, TypeId, TypeKernelDb, TypeKind};
 
 use crate::{AnalysisSession, QueryError, SessionRevision};
 
 use super::MetadataSymbol;
 
-/// An enum manager's value or a real metadata field is distinct from platform/structural members.
+/// A canonical union confirms a declaration only when every substantive arm selects that same child.
 pub(super) fn symbol(
+    analysis: &ide::Analysis,
+    file: vfs::FileId,
+    receiver: TypeId,
+    name: &str,
+) -> Option<MetadataSymbol> {
+    let TypeKind::Union(arms) = analysis.database().lookup_type(receiver) else {
+        return single_symbol(analysis, file, receiver, name);
+    };
+    // The type kernel flattens canonical unions; nullable arms have no field declaration.
+    let mut arms = arms.iter().copied().filter(|&arm| {
+        !matches!(
+            analysis.database().lookup_type(arm),
+            TypeKind::Undefined | TypeKind::Null
+        )
+    });
+    let target = single_symbol(analysis, file, arms.next()?, name)?;
+    for arm in arms {
+        let next = single_symbol(analysis, file, arm, name)?;
+        if !same_declaration(&target, &next) {
+            return None;
+        }
+    }
+    Some(target)
+}
+
+/// Canonical names may differ in case; every metadata kind and parent segment must still agree.
+fn same_declaration(left: &MetadataSymbol, right: &MetadataSymbol) -> bool {
+    left.kind == right.kind
+        && folded_eq(&left.name, &right.name)
+        && left.children.len() == right.children.len()
+        && left.children.iter().zip(&right.children).all(
+            |((kind, name), (other_kind, other_name))| {
+                kind == other_kind && folded_eq(name, other_name)
+            },
+        )
+}
+
+/// An enum manager's value or a real metadata field is distinct from platform/structural members.
+fn single_symbol(
     analysis: &ide::Analysis,
     file: vfs::FileId,
     receiver: TypeId,

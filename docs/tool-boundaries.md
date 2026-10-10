@@ -541,6 +541,9 @@ receiver kinds и полнота анализа остаются в работе
 [Пространство общего модуля](research/eska-format/analyzer-namespace-definitions.md)
 использует прежние типы и common-module index: current YAML подтверждается
 без чтения target BSL; ближайшие объявления остаются в ведении BSL.
+[Составной тип](research/eska-format/analyzer-union-definitions.md) проверяется
+по arms того же ядра: подтверждается только одно общее объявление поля.
+Transport не выбирает первый одноимённый UUID и не добавляет inference.
 [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.
