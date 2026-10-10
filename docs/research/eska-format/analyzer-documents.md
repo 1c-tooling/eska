@@ -3,8 +3,8 @@
 `eska-analyzer` объявляет `textDocumentSync` с `openClose=true`, `change=1`
 (full text) и `save.includeText=false`. Экспериментальный ESKA protocol `0.1`
 сохраняется; `documentSync=true`. Теперь отдельно подключена
-[pull-диагностика syntax](analyzer-diagnostics.md); остальные language/cancellation/
-edit-plan возможности ещё не готовы. Старый IDE protocol приложения не изменён.
+[pull-диагностика syntax](analyzer-diagnostics.md) и [отмена запросов](analyzer-cancellation.md);
+Другие языковые запросы и планы изменений ещё не готовы. Старый IDE protocol приложения не изменён.
 
 Транспорт владеет только набором открытых путей. Текст, версии, origin, hash,
 текущие модели и source-byte квота находятся в общем `AnalysisSession`;
@@ -104,5 +104,5 @@ project-cli — 177/3, build-cli — 196/3. fmt/check/strict Clippy/test/Rustdoc
 не записывались сервером и реальные BSL-семантика/языковые запросы не выполнялись.
 
 [Машинный отчёт](analyzer-documents-results.json) содержит gates и измерения.
-EF-18 остаётся `IN_PROGRESS`: language operations/cancellation, полное покрытие
+EF-18 остаётся `IN_PROGRESS`: остальные language operations, полное покрытие
 канонических моделей, global memory budget и защищённые edit plans ещё не готовы.

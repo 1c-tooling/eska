@@ -17,7 +17,7 @@ mod request;
 mod resources;
 mod session;
 
-pub use cancellation::QueryCancellation;
+pub use cancellation::{QueryCancellation, RequestCancellation};
 pub use ide::{CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, Locale};
 pub use memory::{KernelMemoryReport, KernelMemoryTable};
 pub use modules::{ModuleFailure, ModuleInput, ModuleState, ModuleSummary, SessionOptions};

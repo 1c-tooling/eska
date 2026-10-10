@@ -802,6 +802,22 @@ Core batch и server совпали на synthetic input; C1 checker прове�
 сохраняет exit 2. Completion, отмена транспорта, полная семантика/memory budget
 и edit plans остаются в работе; EF-18 остаётся `IN_PROGRESS`.
 
+
+[Отмена syntax-запросов по LSP](../research/eska-format/analyzer-cancellation.md)
+передаёт `$/cancelRequest` текущему request control из отдельного reader.
+Один worker сохраняет владение общим YAML/BSL host и порядок изменений.
+Очередь ограничена четырьмя сообщениями; unknown/completed IDs не влияют
+на будущие запросы. Shared `RequestCancellation` заменяет неопубликованный
+`batch::BatchCancellation`, объединяя source/kernel cancellation для server/checker.
+Cancelled saved-чтение повторяется новым pull; cancelled overlay не получает
+fallback с диска. 29 unit/file, 22 analyzer process и 9 checker process tests
+прошли вместе с собственной feature matrix, Rustdoc/release и полной root matrix.
+На C1/C2/C3 в обеих локалях отмена после наблюдаемого начала вычисления вернула
+`-32800` за 0,111–0,118 с; тот же editor input проверился повторно, close восстановил
+saved, normal exit не ждал stdin EOF. Проверенные source bytes сохранены.
+Server deadline, остальные language operations, полнота metadata/семантики,
+общий heap/RSS budget и edit plans остаются в работе; EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

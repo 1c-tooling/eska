@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use base_db::SourceDatabase;
 use eska::{
-    analysis_core::{Cancellation, InputRequest},
+    analysis_core::InputRequest,
     project_core::source_format::{SourcePath, SourceReader},
 };
 
@@ -20,24 +20,9 @@ pub use report::{
 };
 
 use crate::{
-    AnalysisSession, DiagnosticCode, DiagnosticsConfig, ModuleState, QueryCancellation, QueryError,
-    SessionError, SessionOptions, SessionRequestError,
+    AnalysisSession, DiagnosticCode, DiagnosticsConfig, ModuleState, QueryError,
+    RequestCancellation, SessionError, SessionOptions, SessionRequestError,
 };
-
-/// A caller can cancel reads and the current kernel query using the same request control.
-#[derive(Clone, Debug, Default)]
-pub struct BatchCancellation {
-    input: Cancellation,
-    query: QueryCancellation,
-}
-
-impl BatchCancellation {
-    /// Stop this whole batch cooperatively; cancellation does not change project source files.
-    pub fn cancel(&self) {
-        self.input.cancel();
-        self.query.cancel();
-    }
-}
 
 /// A syntax sweep keeps one body resident and trims heavy memos between bounded chunks.
 #[derive(Clone, Debug)]
@@ -45,7 +30,7 @@ pub struct BatchOptions {
     pub timeout: Duration,
     pub max_document_bytes: u64,
     pub max_retained_source_bytes: u64,
-    pub cancellation: BatchCancellation,
+    pub cancellation: RequestCancellation,
 }
 
 impl Default for BatchOptions {
@@ -55,7 +40,7 @@ impl Default for BatchOptions {
             timeout: Duration::from_secs(300),
             max_document_bytes: 64 * 1024 * 1024,
             max_retained_source_bytes: SessionOptions::default().max_retained_source_bytes,
-            cancellation: BatchCancellation::default(),
+            cancellation: RequestCancellation::default(),
         }
     }
 }
@@ -166,7 +151,7 @@ fn check_module(
     path: &SourcePath,
     config: &DiagnosticsConfig,
     request: &InputRequest,
-    cancellation: &BatchCancellation,
+    cancellation: &RequestCancellation,
 ) -> Result<Option<BatchFile>, BatchError> {
     let initial = session
         .module(path)

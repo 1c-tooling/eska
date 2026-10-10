@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 
 pub const VERSION: &str = "0.1";
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Id {
     Number(i32),
@@ -50,6 +50,7 @@ pub fn error_value(code: i32, kind: &str, details: Value) -> Value {
         -32603 => "Internal error",
         -32002 => "Server not initialized",
         -32801 => "Content modified",
+        -32800 => "Request cancelled",
         _ => "Request failed",
     };
     let mut error = json!({"code":code, "message":message, "data":{"kind":kind}});

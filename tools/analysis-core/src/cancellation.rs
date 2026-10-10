@@ -7,6 +7,27 @@ use std::sync::{
 
 use crate::QueryError;
 
+/// One caller controls both bounded source reads and the kernel computation for its request.
+#[derive(Clone, Debug, Default)]
+pub struct RequestCancellation {
+    pub(crate) input: eska::analysis_core::Cancellation,
+    pub(crate) query: QueryCancellation,
+}
+
+impl RequestCancellation {
+    /// Stop source reading and the active kernel handle without cancelling other requests.
+    pub fn cancel(&self) {
+        self.input.cancel();
+        self.query.cancel();
+    }
+
+    /// A transport may discard a result completed concurrently with cancellation.
+    #[must_use]
+    pub fn is_cancelled(&self) -> bool {
+        self.input.is_cancelled()
+    }
+}
+
 /// One token controls one active query; cancelling it never cancels the session's other handles.
 #[derive(Clone, Debug, Default)]
 pub struct QueryCancellation(Arc<RequestState>);

@@ -12,6 +12,7 @@
 [eska-analyzer для чтения метаданных](research/eska-format/analyzer-metadata.md)
 и [синхронизации черновиков YAML/BSL](research/eska-format/analyzer-documents.md)
 с [pull-диагностикой syntax](research/eska-format/analyzer-diagnostics.md)
+и [отменой активного запроса](research/eska-format/analyzer-cancellation.md)
 доступны в экспериментальной сборке. Полный IDE-сервер, остальные точки входа
 и комплектная поставка ещё предстоят.
 Последовательность работы и ссылки на связанные задачи находятся в

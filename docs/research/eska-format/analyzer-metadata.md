@@ -41,7 +41,8 @@ Batch JSON-RPC, null ID, повторные JSON keys и глубина боле
 `documentSync` уже true: [full-document синхронизация YAML/BSL](analyzer-documents.md)
 подключена к той же сессии. `languageQueries=true` включает пока только
 [`textDocument/diagnostic` с профилем syntax](analyzer-diagnostics.md).
-`requestCancellation` и `editPlans` пока false. Существующие расширения не переводятся
+`requestCancellation=true` включает [отмену syntax-запросов](analyzer-cancellation.md);
+`editPlans=false`. Существующие расширения не переводятся
 на новый процесс автоматически; это ещё не полный языковой сервер.
 
 ## Текущий custom API
@@ -97,7 +98,9 @@ YAML и привязан к source hash/snapshot. Inline-команды видн
 
 ## Ограничения ресурсов
 
-Serial worker читает один запрос за раз, не накапливая собственную очередь.
+Один worker обрабатывает запросы последовательно. Отдельный reader принимает
+отмену и держит ограниченную очередь обычных сообщений; подробности —
+в [контракте отмены](analyzer-cancellation.md).
 Framing этого сервера ограничивает header 8 KiB, вход 4 MiB, ответ 64 MiB; malformed
 framing завершает процесс без поиска следующей предполагаемой границы.
 Oversized response возвращает coded error `response_too_large` с текущим
@@ -108,7 +111,7 @@ composition и ядро не входят в этот wire cap.
 [квота исходных байтов](source-budget.md) по умолчанию 256 MiB и используется
 той же сессией. Это не общий heap/RSS budget. Страницы/свойства не читают BSL;
 BSL-текст поступает через document sync или lazy-чтение для диагностики.
-Полная семантика и отмена активного языкового запроса пока не подключены.
+Отмена активной syntax-диагностики подключена; полная семантика ещё не готова.
 Состав неизменяем до restart; structural changes manifest/configuration требуют
 перезапуска. Watcher и multi-project host пока не подключены.
 
@@ -158,5 +161,5 @@ eska-analyzer --project-dir .
 
 Его ещё нет в установленном комплекте, путь нужно задать самостоятельно.
 [Машинный отчёт](analyzer-metadata-results.json) содержит итоговые замеры и gates.
-EF-18 остаётся `IN_PROGRESS`: language operations/cancellation,
+EF-18 остаётся `IN_PROGRESS`: остальные language operations,
 полное покрытие метаданных, memory budget и защищённые edit plans ещё не готовы.

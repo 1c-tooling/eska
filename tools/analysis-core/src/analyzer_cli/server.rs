@@ -9,9 +9,9 @@ use eska::{
 };
 use serde_json::{Value, json};
 
-use crate::{AnalysisSession, SessionOptions, analysis_settings::Settings};
+use crate::{AnalysisSession, RequestCancellation, SessionOptions, analysis_settings::Settings};
 
-use super::{args::Cli, diagnostics, documents, dto, protocol};
+use super::{args::Cli, diagnostics, documents, dto, protocol, stream};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum Phase {
@@ -36,7 +36,10 @@ enum Step {
 }
 
 /// Keep stdout framed; malformed boundaries and lost pipes terminate without guessed resync.
-pub fn run(cli: &Cli, input: &mut impl BufRead, output: &mut impl Write) -> u8 {
+pub fn run(cli: &Cli, input: impl BufRead + Send + 'static, output: &mut impl Write) -> u8 {
+    let Ok(incoming) = stream::Incoming::start(input) else {
+        return 1;
+    };
     let mut server = Server {
         cli,
         phase: Phase::New,
@@ -46,18 +49,24 @@ pub fn run(cli: &Cli, input: &mut impl BufRead, output: &mut impl Write) -> u8 {
         settings: None,
     };
     loop {
-        let Ok(Some(frame)) = rpc_framing::read_frame_with_limit(input, documents::MAX_REQUEST)
-        else {
+        let Ok(envelope) = incoming.receive() else {
             return 1;
         };
-        let step = match protocol::parse(&frame) {
-            Ok(message) => server.process(&message),
-            Err(error) => Step::Continue(Some(protocol::response(None, Err(error)))),
+        let (step, tracked) = match envelope {
+            stream::Envelope::Message(message, tracked) => (
+                server.process(&message, tracked.as_ref().map(|request| &request.control)),
+                tracked,
+            ),
+            stream::Envelope::Error(error) => (Step::Continue(Some(error)), None),
         };
         match step {
-            Step::Exit(code) => return code,
+            Step::Exit(code) => return if incoming.join_after_exit() { code } else { 1 },
             Step::Continue(None) => (),
-            Step::Continue(Some(response)) => {
+            Step::Continue(Some(mut response)) => {
+                let control = tracked.as_ref().map(|request| &request.control);
+                if server.cancel_response(&mut response, control).is_err() {
+                    return 1;
+                }
                 let mut body = LimitedBody(Vec::new());
                 if serde_json::to_writer(&mut body, &response).is_err() {
                     let current = server
@@ -72,6 +81,17 @@ pub fn run(cli: &Cli, input: &mut impl BufRead, output: &mut impl Write) -> u8 {
                         return 1;
                     }
                 }
+                match server.cancel_response(&mut response, control) {
+                    Err(()) => return 1,
+                    Ok(true) => {
+                        body.0.clear();
+                        if serde_json::to_writer(&mut body, &response).is_err() {
+                            return 1;
+                        }
+                    }
+                    Ok(false) => (),
+                }
+                drop(tracked);
                 if rpc_framing::write_frame(output, &body.0).is_err() {
                     return 1;
                 }
@@ -81,8 +101,33 @@ pub fn run(cli: &Cli, input: &mut impl BufRead, output: &mut impl Write) -> u8 {
 }
 
 impl Server<'_> {
+    /// Discard a late successful result before its wire write; retain the original request ID.
+    fn cancel_response(
+        &self,
+        response: &mut Value,
+        control: Option<&RequestCancellation>,
+    ) -> Result<bool, ()> {
+        if !control.is_some_and(RequestCancellation::is_cancelled)
+            || response.get("result").is_none()
+        {
+            return Ok(false);
+        }
+        let session = self.session.as_ref().ok_or(())?;
+        let fields = response.as_object_mut().ok_or(())?;
+        fields.remove("result");
+        fields.insert(
+            "error".into(),
+            diagnostics::cancelled(session, &self.session_id),
+        );
+        Ok(true)
+    }
+
     /// Enforce standard lifecycle before a custom request can see or change a session.
-    fn process(&mut self, message: &protocol::Message) -> Step {
+    fn process(
+        &mut self,
+        message: &protocol::Message,
+        cancellation: Option<&RequestCancellation>,
+    ) -> Step {
         if message.id.is_none() {
             return match message.method.as_str() {
                 "exit" => Step::Exit(u8::from(self.phase != Phase::Shutdown)),
@@ -122,7 +167,7 @@ impl Server<'_> {
             self.settings = None;
             Ok(Value::Null)
         } else {
-            self.request(&message.method, &message.params)
+            self.request(&message.method, &message.params, cancellation)
         };
         Step::Continue(Some(protocol::response(message.id.as_ref(), result)))
     }
@@ -180,7 +225,8 @@ impl Server<'_> {
                 "protocolVersion":protocol::VERSION,
                 "sourceFormat":"eska", "scope":"selected-project",
                 "metadata":{"owners":true, "read":true, "refresh":true},
-                "documentSync":true, "languageQueries":true, "requestCancellation":false,
+                "documentSync":true, "languageQueries":true, "requestCancellation":true,
+                "cancellableMethods":["textDocument/diagnostic"],"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
                 "languageMethods":["textDocument/diagnostic"],
                 "analysis":diagnostics::availability(&settings),
                 "inputNotifications":["eska/inputChanged", "eska/inputRejected"],
@@ -222,7 +268,12 @@ impl Server<'_> {
     }
 
     /// Every custom request validates the connection identity and exact current revision first.
-    fn request(&mut self, method: &str, value: &Value) -> Result<Value, Value> {
+    fn request(
+        &mut self,
+        method: &str,
+        value: &Value,
+        cancellation: Option<&RequestCancellation>,
+    ) -> Result<Value, Value> {
         let session = self
             .session
             .as_mut()
@@ -279,6 +330,9 @@ impl Server<'_> {
                 )
             }
             "textDocument/diagnostic" => {
+                let cancellation = cancellation.ok_or_else(|| {
+                    protocol::error_value(-32603, "request_invariant", Value::Null)
+                })?;
                 let params: diagnostics::Params = protocol::params(value)?;
                 if let Some(expected) = &params.eska {
                     validate_snapshot(session, &self.session_id, &expected.snapshot)?;
@@ -293,8 +347,10 @@ impl Server<'_> {
                     settings,
                     &InputRequest {
                         max_document_bytes: self.cli.max_document_bytes,
+                        cancellation: cancellation.input.clone(),
                         ..InputRequest::default()
                     },
+                    cancellation,
                 )
             }
             _ => Err(protocol::error_value(

@@ -1,11 +1,17 @@
 //! Standard document pulls execute the same explicit syntax profile as the standalone checker.
 
-use eska::{analysis_core::InputRequest, tool_cli::Failure};
+#[cfg(test)]
+mod tests;
+
+use eska::{
+    analysis_core::{InputFailure, InputOrigin, InputRequest},
+    tool_cli::Failure,
+};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::{
-    AnalysisSession, Diagnostic, ModuleState, QueryCancellation, QueryError,
+    AnalysisSession, Diagnostic, ModuleFailure, ModuleState, QueryError, RequestCancellation,
     analysis_settings::Settings, batch::syntax_profile,
 };
 
@@ -68,6 +74,7 @@ pub fn pull(
     params: &Params,
     settings: &Result<Settings, Failure>,
     request: &InputRequest,
+    cancellation: &RequestCancellation,
 ) -> Result<Value, Value> {
     if params
         .identifier
@@ -95,17 +102,28 @@ pub fn pull(
     let input = session
         .module(&path)
         .ok_or_else(|| protocol::error_value(-32602, "source_not_module", Value::Null))?;
-    if matches!(input.state, ModuleState::Pending) {
+    if cancellation.is_cancelled() {
+        return Err(cancelled(session, id));
+    }
+    // A cancelled lazy read is transient. Other failed inputs still require an explicit update.
+    let retry_cancelled = matches!(input.origin, InputOrigin::Saved)
+        && matches!(
+            input.state,
+            ModuleState::Unavailable(ModuleFailure::Input(InputFailure::Cancelled))
+        );
+    if matches!(input.state, ModuleState::Pending) || retry_cancelled {
         session
             .load_module_saved(&path, session.revision(), request)
             .map_err(|error| documents::request_error(&error))?;
     }
-    let cancellation = QueryCancellation::default();
+    if cancellation.is_cancelled() {
+        return Err(cancelled(session, id));
+    }
     let result = session
-        .module_diagnostics(&path, session.revision(), &config, &cancellation)
+        .module_diagnostics(&path, session.revision(), &config, &cancellation.query)
         .map_err(|error| query_error(session, id, &error))?;
     let items = session
-        .with_module_text(&path, session.revision(), &cancellation, |text| {
+        .with_module_text(&path, session.revision(), &cancellation.query, |text| {
             items(&result.value, text)
         })
         .map_err(|error| query_error(session, id, &error))?
@@ -118,6 +136,11 @@ pub fn pull(
         "coverage":{"module_syntax_complete":true,"metadata_inputs_complete":summary.inputs.metadata_input_complete,
             "metadata_models_complete":summary.descriptor_models_complete,"module_inputs_complete":result.module_inputs_complete,
             "semantic_complete":false},"resources":session.resources()}}))
+}
+
+/// Cancellation is a response to the original request, never an acknowledgement notification.
+pub fn cancelled(session: &AnalysisSession, id: &str) -> Value {
+    protocol::error_value(-32800, "analysis_cancelled", dto::snapshot(session, id))
 }
 
 /// Build UTF-16 ranges once and preserve canonical byte offsets for checker parity and future plans.

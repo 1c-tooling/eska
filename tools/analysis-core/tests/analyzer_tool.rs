@@ -2,6 +2,7 @@
 
 mod diagnostic_queries;
 mod document_sync;
+mod request_cancellation;
 mod support;
 
 use std::{
@@ -167,6 +168,11 @@ impl Client {
     /// Read exactly the response to an acknowledged mutation before the next disk edit.
     fn ask(&mut self, value: &Value) -> Value {
         self.send(value);
+        self.receive()
+    }
+
+    /// Read a response after pipelined requests/cancellation without sending another message.
+    fn receive(&mut self) -> Value {
         let body = rpc_framing::read_frame(&mut self.output).unwrap().unwrap();
         let mut response: Value = serde_json::from_slice(&body).unwrap();
         if let Some(id) = response

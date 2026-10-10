@@ -6,18 +6,19 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::{BatchCancellation, BatchError, StopReason};
+use super::{BatchError, StopReason};
+use crate::RequestCancellation;
 
 pub struct Deadline {
     end: Instant,
-    cancellation: BatchCancellation,
+    cancellation: RequestCancellation,
     stop: Sender<()>,
     timer: Option<JoinHandle<()>>,
 }
 
 impl Deadline {
     /// The timer owns no database handle and wakes immediately when a completed batch drops it.
-    pub fn start(timeout: Duration, cancellation: BatchCancellation) -> Result<Self, BatchError> {
+    pub fn start(timeout: Duration, cancellation: RequestCancellation) -> Result<Self, BatchError> {
         let end = Instant::now()
             .checked_add(timeout)
             .ok_or(BatchError::TimeoutOutOfRange)?;

@@ -7,6 +7,7 @@ mod dto;
 mod positions;
 mod protocol;
 mod server;
+mod stream;
 
 use std::{env, io, process::ExitCode};
 
@@ -45,5 +46,9 @@ pub fn run() -> ExitCode {
     };
     let stdin = io::stdin();
     let stdout = io::stdout();
-    ExitCode::from(server::run(&cli, &mut stdin.lock(), &mut stdout.lock()))
+    ExitCode::from(server::run(
+        &cli,
+        io::BufReader::new(stdin),
+        &mut stdout.lock(),
+    ))
 }

@@ -618,5 +618,6 @@
     "ru_detail_preserved": true,
     "en_custom_reason": "generic_syntax_error",
     "rendered_phrase_translation": false
-  }
+  },
+  "state_at_commit": "fc26d82"
 }
