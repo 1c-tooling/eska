@@ -11,7 +11,7 @@ use serde_json::{Value, json};
 use crate::{AnalysisSession, RequestCancellation, analysis_settings::Settings};
 
 use super::{
-    args::Cli, completion, documents, dto, project_changes, property_edits, protocol,
+    args::Cli, completion, documents, dto, hover, project_changes, property_edits, protocol,
     request_control, stream, watched_files, watcher_registration,
 };
 
@@ -36,6 +36,7 @@ struct Server<'a> {
     settings: Option<Result<Settings, Failure>>,
     completion: completion::Capabilities,
     hierarchical_symbols: bool,
+    hover_format: hover::Format,
     edit_plans: Option<property_edits::Plans>,
     project_inputs: Option<project_changes::Inputs>,
     restart: Option<Value>,
@@ -67,6 +68,7 @@ pub fn run(
         settings: None,
         completion: completion::Capabilities::default(),
         hierarchical_symbols: false,
+        hover_format: hover::Format::Plaintext,
         edit_plans: None,
         project_inputs: None,
         restart: None,

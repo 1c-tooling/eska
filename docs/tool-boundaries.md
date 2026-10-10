@@ -125,6 +125,11 @@ flowchart TD
 расширения, например `eska/metadata/*`. Их точные методы проектируются отдельно.
 Дерево конфигурации не подменяется списком символов одного текстового документа.
 
+[Hover символа](research/eska-format/analyzer-symbol-hover.md) получает typed
+карточку из общего ядра. IDE transport владеет локализованными заголовками,
+negotiation plaintext/markdown и оформлением authored text. Языковой core не
+содержит собственных UI-заголовков и не отправляет native XML/graph locations.
+
 VS Code предоставляет [TreeDataProvider](https://code.visualstudio.com/api/extension-guides/tree-view).
 Расширение запрашивает нужные дочерние узлы, преобразует их в TreeItem, хранит
 раскрытие и выделение, показывает свойства и пользовательские команды. Состав,

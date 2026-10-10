@@ -6,6 +6,7 @@ mod cancellation_tests;
 pub mod definitions;
 mod document_symbols;
 mod metadata_definitions;
+pub mod symbol_hover;
 
 use std::collections::BTreeMap;
 
@@ -54,6 +55,13 @@ pub enum QueryError {
         end_byte: u32,
         selection_start_byte: u32,
         selection_end_byte: u32,
+    },
+    InconsistentHover {
+        start_byte: u32,
+        end_byte: u32,
+    },
+    UnsupportedHoverSymbol {
+        kind: &'static str,
     },
     Cancelled,
     CancellationTokenInUse,

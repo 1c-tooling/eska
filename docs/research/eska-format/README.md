@@ -47,6 +47,9 @@ YAML/BSL, учитывает возможности клиента и сообщ
 [Структура текущего BSL](analyzer-document-symbols.md) подключена к стандартному
 documentSymbol: negotiated hierarchy/flat, текущие byte/UTF-16 ranges и общий
 request control, без второго parser или metadata IO.
+[Карточка символа BSL](analyzer-symbol-hover.md) использует структурированный
+позиционный API ядра. Hover согласует plaintext/markdown, локализует заголовки
+в IDE и сохраняет текущие caller ranges/hash при смене BSL/YAML.
 [Координаты объектов и свойств YAML](analyzer-metadata-locations.md) вычисляются
 из текущего разбора; metadata locate выбирает UUID/QName без чтения файла.
 [Переход из BSL к объекту YAML](analyzer-metadata-definitions.md) использует

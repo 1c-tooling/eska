@@ -150,6 +150,12 @@ findings; неполнота моделей сохранила exit 2. EF-18 о�
 hierarchy/flat и возвращает текущие ranges/hash без чтения соседей. 173 tool tests,
 19 tool gates и 15 root gates прошли; 24 сценария C1/C2/C3 RU/EN подтвердили
 144 pulls и 768 узлов. EF-18 остаётся `IN_PROGRESS`.
+[Карточка текущего символа](../research/eska-format/analyzer-symbol-hover.md)
+подключена к standard hover через typed API общего ядра. IDE переводит заголовки
+RU/EN и согласует plaintext/markdown; caller ranges/hash сохраняются при изменении
+BSL/YAML. 187 tool tests и все 19 tool/15 root gates прошли; 24 сценария C1/C2/C3
+подтвердили 192 hover pulls. Scope пока ограничен resolved symbols и возвращаемым
+типом метода; EF-18 остаётся `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

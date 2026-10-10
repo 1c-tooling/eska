@@ -1204,6 +1204,23 @@ byte/UTF-16/hash и stale refusal согласованы. Bytes 12 выбран�
 и их копий сохранены; временные проекты удалены. Полная семантика, общий memory
 budget, остальные IDE edits и Explorer остаются в работе; EF-18 — `IN_PROGRESS`.
 
+[Карточка текущего символа BSL](../research/eska-format/analyzer-symbol-hover.md)
+подключена к стандартному hover через позиционный typed API того же ядра.
+Core возвращает имя/kind, BSL-объявление и purpose/return type метода; IDE
+согласует plaintext/markdown и переводит заголовки в RU/EN. Native UI Markdown,
+XML locations и graph ids не передаются. Current caller ranges/hash сохраняются,
+включая обращение к другому ready модулю; смена BSL/YAML не возвращает старую карточку.
+Проверены BOM/non-BMP/разные EOL, guards, incomplete/null, текущие docs/types,
+отмена с numeric/Unicode ID и продолжение сессии. 89 unit/file, 87 analyzer и
+11 checker process tests прошли, всего 187; minimal — 70. Все 19 tool и
+15 root gates прошли, root — 894/14. 24 сценария C1/C2/C3 RU/EN plaintext/markdown
+подтвердили 192 hover pulls: 120 cards, 48 incomplete и 24 stale refusals.
+Bytes 12 выбранных оригиналов и копий сохранены, временные проекты удалены;
+новых dependencies нет. Локальные типы, implicit locals, keyword/expression hover
+и полный platform help пока не подключены; semantic_complete=false сохранён.
+Общий heap/RSS budget, остальные IDE edits и Explorer ещё в работе;
+EF-18 остаётся `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

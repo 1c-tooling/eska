@@ -11,11 +11,12 @@ use crate::{AnalysisSession, ModuleFailure, ModuleState, QueryError};
 
 use super::{documents, dto, protocol};
 
-pub const METHODS: [&str; 4] = [
+pub const METHODS: [&str; 5] = [
     "textDocument/diagnostic",
     "textDocument/completion",
     "textDocument/definition",
     "textDocument/documentSymbol",
+    "textDocument/hover",
 ];
 
 #[derive(Clone, Copy)]
@@ -24,6 +25,7 @@ pub enum Method {
     Completion,
     Definition,
     DocumentSymbol,
+    Hover,
 }
 
 impl Method {
@@ -34,6 +36,7 @@ impl Method {
             "textDocument/completion" => Some(Self::Completion),
             "textDocument/definition" => Some(Self::Definition),
             "textDocument/documentSymbol" => Some(Self::DocumentSymbol),
+            "textDocument/hover" => Some(Self::Hover),
             _ => None,
         }
     }
@@ -133,5 +136,16 @@ pub fn query_error(session: &AnalysisSession, id: &str, error: &QueryError) -> V
             json!({"start_byte":start_byte,"end_byte":end_byte,
                 "selection_start_byte":selection_start_byte,"selection_end_byte":selection_end_byte}),
         ),
+        QueryError::InconsistentHover {
+            start_byte,
+            end_byte,
+        } => protocol::error_value(
+            -32603,
+            "hover_inconsistent",
+            json!({"start_byte":start_byte,"end_byte":end_byte}),
+        ),
+        QueryError::UnsupportedHoverSymbol { kind } => {
+            protocol::error_value(-32000, "hover_symbol_unsupported", json!({"kind":kind}))
+        }
     }
 }

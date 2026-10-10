@@ -9,7 +9,7 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    completion, definitions, diagnostics, document_symbols, documents, dto, language,
+    completion, definitions, diagnostics, document_symbols, documents, dto, hover, language,
     metadata_locations, property_edits, protocol,
 };
 use super::Server;
@@ -210,8 +210,35 @@ impl Server<'_> {
                     },
                 )
             }
+            language::Method::Hover => hover_request(
+                session,
+                value,
+                settings,
+                &hover::Options {
+                    session_id: &self.session_id,
+                    request: &request,
+                    cancellation,
+                    timeout,
+                    localizer: self.localizer,
+                    format: self.hover_format,
+                },
+            ),
         }
     }
+}
+
+/// Hover guards run before source selection, input loading or any query deadline.
+fn hover_request(
+    session: &mut AnalysisSession,
+    value: &Value,
+    settings: &Result<crate::analysis_settings::Settings, eska::tool_cli::Failure>,
+    options: &hover::Options<'_>,
+) -> Result<Value, Value> {
+    let params: hover::Params = protocol::params(value)?;
+    if let Some(expected) = &params.eska {
+        validate_snapshot(session, options.session_id, &expected.snapshot)?;
+    }
+    hover::pull(session, &params, settings, options)
 }
 
 /// Clients copy the opaque token; incrementing it or keeping it after reconnect is invalid.

@@ -7,6 +7,7 @@ mod diagnostics;
 mod document_symbols;
 mod documents;
 mod dto;
+mod hover;
 mod language;
 mod metadata_locations;
 mod positions;

@@ -7,7 +7,7 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    completion, diagnostics, document_symbols, documents, dto, language, metadata_locations,
+    completion, diagnostics, document_symbols, documents, dto, hover, language, metadata_locations,
     project_changes, property_edits, protocol, request_control, stream, watched_files,
     watcher_registration,
 };
@@ -46,6 +46,7 @@ impl Server<'_> {
             })?;
         let session_id = bsl_metadata::Uuid::new_v4().to_string();
         let hierarchical_symbols = document_symbols::hierarchical(params);
+        let hover_format = hover::Format::negotiate(params);
         let mut result = json!({
             "capabilities":{"textDocumentSync":{"openClose":true,"change":1,"save":{"includeText":false}},
                 "positionEncoding":"utf-16",
@@ -82,6 +83,10 @@ impl Server<'_> {
                 json!({"resolveProvider":false,"triggerCharacters":["."],"workDoneProgress":false});
             result["capabilities"]["definitionProvider"] = json!(true);
             result["capabilities"]["documentSymbolProvider"] = json!(true);
+            result["capabilities"]["hoverProvider"] = json!(true);
+            result["capabilities"]["experimental"]["eska"]["hover"] = json!({
+                "scope":"resolved-bsl-symbol","contentFormat":hover_format.as_str(),
+                "incompleteResults":"error"});
             result["capabilities"]["experimental"]["eska"]["documentSymbols"] = json!({
                 "scope":"current-bsl-module","profile":"structure",
                 "result":if hierarchical_symbols { "hierarchical" } else { "flat" }});
@@ -89,6 +94,7 @@ impl Server<'_> {
         }
         self.completion = completion::Capabilities::negotiate(params);
         self.hierarchical_symbols = hierarchical_symbols;
+        self.hover_format = hover_format;
         self.project_inputs = Some(project_inputs);
         self.watcher = watcher;
         self.edit_plans = edit_plans;

@@ -52,7 +52,8 @@ semantic_complete всегда false. Восстановленные после 
 объявления не означают успешную диагностику или полноту семантики.
 Editor bytes имеют приоритет; close читает фактический сохранённый BSL.
 
-Четыре languageMethods и пять cancellableMethods включают новую операцию.
+Пять languageMethods и шесть cancellableMethods включают documentSymbol
+и последующий [hover символа](analyzer-symbol-hover.md).
 Общий request control сохраняет lifetime ID, input thread и одну очередь/worker.
 Клиентская отмена — `-32800`; deadline — `-32000` без retriggerRequest.
 Нулевой timeout останавливает запрос до lazy IO; обычный — 300 секунд.
