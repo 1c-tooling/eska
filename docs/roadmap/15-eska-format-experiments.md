@@ -943,6 +943,24 @@ Saved/editor/close, alias, Unicode и enum rename согласованы; чет
 остальные receivers, все IDE edits, полнота анализа, общий memory budget,
 watcher и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
 
+[Поля регистров](../research/eska-format/analyzer-register-definitions.md)
+добавлены в ту же общую навигацию: record/record-manager и filter dimension
+получают UUID по typed origin и точному parent. Набор записей, ресурсы отбора
+и стандартные поля без дочернего YAML-объекта не получают ложную цель.
+Новых dependencies, indexes, XML fallback или kernel patches нет; протокол
+сохраняет форму typed-objects-and-members. 48 unit/file, 48 analyzer process,
+9 checker process tests и все 19 tool gates прошли. Root 892/14, minimal 164/3,
+project-cli 180/3, build-cli 199/3, все 15 gates прошли. На C1/C2/C3 в RU/EN
+прошли 16 сценариев: 320 подтверждённых целей, 320 locate и 576 definition.
+Record/filter rename, saved/editor/invalid/close, точные ranges/hash и locale
+parity согласованы; исходные четыре выбранных файла каждого сценария сохранены.
+Регистров расчёта в корпусах нет: их покрывают только library/process fixtures.
+Workspace MCP недоступен; установленный bsl-analyzer-app 0.3.0 проверил 84
+фрагмента BSL с ParseError, ноль диагностик. Runtime graph остался 206/214.
+Form data, predefined values, union receivers, пространства общих модулей,
+query text, все IDE edits, полнота анализа, общий memory budget, watcher и
+Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

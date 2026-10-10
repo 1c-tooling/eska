@@ -4,6 +4,8 @@
 mod member_tests;
 mod members;
 #[cfg(test)]
+mod register_tests;
+#[cfg(test)]
 mod tests;
 
 use base_db::RootQueryDb;

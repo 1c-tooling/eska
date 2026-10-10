@@ -772,6 +772,8 @@ preset = "trunk"
 использует тип коллекции и готовую каноническую модель для той же YAML-цели.
 [Реквизиты, табличные части и значения перечислений](docs/research/eska-format/analyzer-member-definitions.md)
 разрешаются по типу receiver и точному parent текущего дочернего объекта.
+[Поля записей регистров и измерения отбора](docs/research/eska-format/analyzer-register-definitions.md)
+используют те же UUID и текущие координаты YAML.
 Полная семантика
 и комплектная поставка ещё не готовы. [План правки свойства YAML](docs/research/eska-format/analyzer-property-plans.md)
 уже учитывает текущую editor version и отдельно закреплённую поддержку;

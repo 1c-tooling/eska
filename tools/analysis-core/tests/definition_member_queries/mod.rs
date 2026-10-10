@@ -66,7 +66,7 @@ fn query(source: &Path, body: &str, name: &str, revision: &Value) -> Value {
 }
 
 /// A confirmed nested definition must match independently selected UUID navigation in every field.
-fn confirmed(
+pub fn confirmed(
     client: &mut Client,
     source: &Path,
     body: &str,

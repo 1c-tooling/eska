@@ -1,0 +1,1526 @@
+{
+  "schema_version": 1,
+  "status": "partial-ef18-component-verified",
+  "date": "2026-10-10",
+  "protocol_version": "0.1",
+  "definition_scope": "ready-bsl-and-canonical-metadata",
+  "source": "task-owned-imported-playground-copies",
+  "application_tests": {
+    "default": {
+      "passed": 892,
+      "ignored": 14
+    },
+    "minimal": {
+      "passed": 164,
+      "ignored": 3
+    },
+    "project_cli": {
+      "passed": 180,
+      "ignored": 3
+    },
+    "build_cli": {
+      "passed": 199,
+      "ignored": 3
+    }
+  },
+  "metadata_targets": "typed-objects-and-members",
+  "core_queries": "AnalysisSession::module_metadata_definition and current metadata_location",
+  "runtime": {
+    "package_names": 206,
+    "resolved_versions": 214,
+    "release_bytes": 48847528
+  },
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.8509773160039913
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 1.0507725630013738
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 1.4071595040004468
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 15.14735782900243,
+      "results": [
+        "ok. 48 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.42s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 48 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.04s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.696867790000397
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 0.4282553660013946
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 0.7310408359917346
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 2.8184354749973863,
+      "results": [
+        "ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 1.8943536279984983
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.60668986098608
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 0.8653014369920129
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 3.8003427700023167,
+      "results": [
+        "ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.2231933860020945
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 0.5218955230084248
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 1.569989693001844
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 8.251604908000445,
+      "results": [
+        "ok. 48 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.91s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 48 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.23s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.964917580000474
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 3.69759934200556
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 5.176547982991906
+    }
+  ],
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9808019310003147
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.71756905199436
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6774549010006012
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 21.813051222998183
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 6.090286302001914
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.21959016399341635
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7407864440028789
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.2817335769941565
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.24896175001049414
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7929387030017097
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.386373582005035
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.439554844997474
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 6.540083233994665
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.065652403005515
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.006383315994753502
+    }
+  ],
+  "tool_tests": {
+    "unit_file": 48,
+    "analyzer_process": 48,
+    "checker_process": 9,
+    "failed": 0
+  },
+  "real_checks": [
+    {
+      "kind": "InformationRegister",
+      "locale": "en-US",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.07060470299620647,
+      "read_seconds": 0.006166602004668675,
+      "saved_query_seconds": [
+        0.009173639002256095,
+        0.0007755560072837397,
+        0.0004380489990580827,
+        0.0003685380070237443
+      ],
+      "editor_query_seconds": [
+        0.0007452480058418587,
+        0.0006843529990874231,
+        0.0005993850063532591,
+        0.0006075989949749783
+      ],
+      "close_query_seconds": [
+        0.0007369800005108118,
+        0.0005520160048035905,
+        0.0004507979901973158,
+        0.00045916499220766127
+      ],
+      "alias_query_seconds": [
+        0.0007039579941192642,
+        0.000716763999662362,
+        0.0006589909899048507,
+        0.0005892289918847382
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 35079,
+      "peak_rss_kib": 68848,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.20926345000043511,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "InformationRegister",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.07344526999804657,
+      "read_seconds": 0.006938267993973568,
+      "saved_query_seconds": [
+        0.011745477007934824,
+        0.0008175509865395725,
+        0.0006480560114141554,
+        0.0006559570028912276
+      ],
+      "editor_query_seconds": [
+        0.0008643039909657091,
+        0.0005383380048442632,
+        0.0005323160003172234,
+        0.00040535000152885914
+      ],
+      "close_query_seconds": [
+        0.0006705740088364109,
+        0.0004309530049795285,
+        0.00035100799868814647,
+        0.00033108200295828283
+      ],
+      "alias_query_seconds": [
+        0.00039018099778331816,
+        0.00035153199860360473,
+        0.0003642770025180653,
+        0.0003612400032579899
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 35079,
+      "peak_rss_kib": 69292,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.2172680789954029,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "AccumulationRegister",
+      "locale": "en-US",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.06947536200459581,
+      "read_seconds": 0.009420771995792165,
+      "saved_query_seconds": [
+        0.006689086992992088,
+        0.0006434209935832769,
+        0.0006746050057699904,
+        0.0007240059931064025
+      ],
+      "editor_query_seconds": [
+        0.0007439350010827184,
+        0.0006715649942634627,
+        0.0007237730023916811,
+        0.0005613520042970777
+      ],
+      "close_query_seconds": [
+        0.0007488370029022917,
+        0.00047696100955363363,
+        0.00043036899296566844,
+        0.0002690450055524707
+      ],
+      "alias_query_seconds": [
+        0.0002906900044763461,
+        0.00027896498795598745,
+        0.00027109700022265315,
+        0.00027416800730861723
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 48689,
+      "peak_rss_kib": 69504,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.22234318699338473,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "AccumulationRegister",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.06690815799811389,
+      "read_seconds": 0.008916450009564869,
+      "saved_query_seconds": [
+        0.006910473995958455,
+        0.0006297090003499761,
+        0.0006331059994408861,
+        0.0004189629980828613
+      ],
+      "editor_query_seconds": [
+        0.0008822609961498529,
+        0.0005077829991932958,
+        0.00048028099990915507,
+        0.0004057400074088946
+      ],
+      "close_query_seconds": [
+        0.0008482889970764518,
+        0.000793598999734968,
+        0.0005398089997470379,
+        0.00046328100143000484
+      ],
+      "alias_query_seconds": [
+        0.0004392569971969351,
+        0.0003886580088874325,
+        0.0003573790017981082,
+        0.00033866000012494624
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 48689,
+      "peak_rss_kib": 69532,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.22515039799327496,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "InformationRegister",
+      "locale": "en-US",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.6422105300007388,
+      "read_seconds": 0.006625482012168504,
+      "saved_query_seconds": [
+        0.059625174006214365,
+        0.0008204039913835004,
+        0.0006197679904289544,
+        0.0005703459901269525
+      ],
+      "editor_query_seconds": [
+        0.000689612003043294,
+        0.0005597249983111396,
+        0.0005563620070461184,
+        0.0004910860006930307
+      ],
+      "close_query_seconds": [
+        0.0008357629994861782,
+        0.0006702880054945126,
+        0.0006136290030553937,
+        0.0005074320069979876
+      ],
+      "alias_query_seconds": [
+        0.0005318389885360375,
+        0.000535595987457782,
+        0.0005930899933446199,
+        0.0006553290004376322
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 34246,
+      "peak_rss_kib": 219924,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9376893010048661,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "InformationRegister",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.6516722670057788,
+      "read_seconds": 0.006504431992652826,
+      "saved_query_seconds": [
+        0.05688403300882783,
+        0.0007045860111247748,
+        0.0006374989898176864,
+        0.0007318619900615886
+      ],
+      "editor_query_seconds": [
+        0.000928698995267041,
+        0.0007326339982682839,
+        0.0007232979987747967,
+        0.0005634739936795086
+      ],
+      "close_query_seconds": [
+        0.0006044300098437816,
+        0.00040014399564825,
+        0.00034766299359034747,
+        0.00034088701067958027
+      ],
+      "alias_query_seconds": [
+        0.0003601159987738356,
+        0.00034964799124281853,
+        0.0003476900019450113,
+        0.0003638380003394559
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 34246,
+      "peak_rss_kib": 219816,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9415848130011,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "AccumulationRegister",
+      "locale": "en-US",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.6472120249964064,
+      "read_seconds": 0.006898490988533013,
+      "saved_query_seconds": [
+        0.05187219800427556,
+        0.0007112099992809817,
+        0.0005963010044069961,
+        0.0006772529886802658
+      ],
+      "editor_query_seconds": [
+        0.0007211219926830381,
+        0.0006314140046015382,
+        0.00045564900210592896,
+        0.0006259889923967421
+      ],
+      "close_query_seconds": [
+        0.0006051669915905222,
+        0.0004529690049821511,
+        0.0003690269950311631,
+        0.00029298099980223924
+      ],
+      "alias_query_seconds": [
+        0.0003251589951105416,
+        0.0003101410111412406,
+        0.00032388599356636405,
+        0.0003017690032720566
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 37683,
+      "peak_rss_kib": 219680,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.92426942801103,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "AccumulationRegister",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.6630440220033051,
+      "read_seconds": 0.007618044997798279,
+      "saved_query_seconds": [
+        0.054176624995307066,
+        0.000927668996155262,
+        0.0008064569992711768,
+        0.0006730099994456396
+      ],
+      "editor_query_seconds": [
+        0.0009998540044762194,
+        0.0009896339906845242,
+        0.0006901049928274006,
+        0.0004918389895465225
+      ],
+      "close_query_seconds": [
+        0.0007574769988423213,
+        0.0004701260040747002,
+        0.00036476099921856076,
+        0.0003976159932790324
+      ],
+      "alias_query_seconds": [
+        0.000824520000605844,
+        0.0007480910135200247,
+        0.0006998970056883991,
+        0.0005614519905066118
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 37683,
+      "peak_rss_kib": 219772,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9664535039919429,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "AccountingRegister",
+      "locale": "en-US",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.6809762679913547,
+      "read_seconds": 0.018862983997678384,
+      "saved_query_seconds": [
+        0.054836515002534725,
+        0.0007039240008452907,
+        0.000621493993094191,
+        0.00046506899525411427
+      ],
+      "editor_query_seconds": [
+        0.0007452470017597079,
+        0.0005475020006997511,
+        0.000546300012501888,
+        0.00042359800136182457
+      ],
+      "close_query_seconds": [
+        0.0006165780068840832,
+        0.0005097950052004308,
+        0.0005123269947944209,
+        0.00043256100616417825
+      ],
+      "alias_query_seconds": [
+        0.0004461110074771568,
+        0.0005342429940355942,
+        0.0005245240026852116,
+        0.0005260720063233748
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 98638,
+      "peak_rss_kib": 220480,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0850178439868614,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "AccountingRegister",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.696894386986969,
+      "read_seconds": 0.01900496199959889,
+      "saved_query_seconds": [
+        0.05725684099888895,
+        0.0010301230067852885,
+        0.0007706680044066161,
+        0.0007832010014681146
+      ],
+      "editor_query_seconds": [
+        0.0010004820069298148,
+        0.0006963619962334633,
+        0.0005450459866551682,
+        0.0004995640047127381
+      ],
+      "close_query_seconds": [
+        0.0007481049979105592,
+        0.0008768619882175699,
+        0.000653374008834362,
+        0.0004989719891455024
+      ],
+      "alias_query_seconds": [
+        0.00045449200842995197,
+        0.0004073169984621927,
+        0.00033806500141508877,
+        0.0003952999977627769
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 98638,
+      "peak_rss_kib": 220464,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0754644539993023,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "InformationRegister",
+      "locale": "en-US",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.8274761859938735,
+      "read_seconds": 0.0063808510021772236,
+      "saved_query_seconds": [
+        0.0688772989960853,
+        0.001044431992340833,
+        0.0008039280073717237,
+        0.0007475749880541116
+      ],
+      "editor_query_seconds": [
+        0.0008503420103807002,
+        0.0008316410094266757,
+        0.0008155210089171305,
+        0.0007593569898745045
+      ],
+      "close_query_seconds": [
+        0.000818970991531387,
+        0.000553307996597141,
+        0.0007292149966815487,
+        0.0006261319940676913
+      ],
+      "alias_query_seconds": [
+        0.0007342269964283332,
+        0.000605519991950132,
+        0.0005986559990560636,
+        0.0005763340013800189
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 34246,
+      "peak_rss_kib": 247420,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.1752874669909943,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "InformationRegister",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.8018350380007178,
+      "read_seconds": 0.006694280993542634,
+      "saved_query_seconds": [
+        0.06447728400235064,
+        0.0008635080012027174,
+        0.0006812089995946735,
+        0.0003758790116989985
+      ],
+      "editor_query_seconds": [
+        0.0006412020011339337,
+        0.00048193399561569095,
+        0.0005414389888755977,
+        0.0003888830106006935
+      ],
+      "close_query_seconds": [
+        0.0003883180033881217,
+        0.0004136580100748688,
+        0.00030719798814971,
+        0.0002747730031842366
+      ],
+      "alias_query_seconds": [
+        0.0002952499926323071,
+        0.0002777879999484867,
+        0.0002814780018525198,
+        0.00027271200087852776
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 34246,
+      "peak_rss_kib": 247436,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.1167892930097878,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "AccumulationRegister",
+      "locale": "en-US",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.7868733459908981,
+      "read_seconds": 0.0062151460006134585,
+      "saved_query_seconds": [
+        0.06441951300075743,
+        0.0008395929908147082,
+        0.0006935089913895354,
+        0.0007628320017829537
+      ],
+      "editor_query_seconds": [
+        0.0008396859921049327,
+        0.0006661469960818067,
+        0.0005050390027463436,
+        0.0005334189918357879
+      ],
+      "close_query_seconds": [
+        0.0004331239906605333,
+        0.00040744499710854143,
+        0.0003025420010089874,
+        0.0002930920018116012
+      ],
+      "alias_query_seconds": [
+        0.0003458239953033626,
+        0.0003692600002977997,
+        0.00033727499248925596,
+        0.0002734950103331357
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 30966,
+      "peak_rss_kib": 247632,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0984816340060206,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "AccumulationRegister",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.8201719179924112,
+      "read_seconds": 0.006326726987026632,
+      "saved_query_seconds": [
+        0.06635745099629276,
+        0.0008879279921529815,
+        0.0008501490083290264,
+        0.0006877799896756187
+      ],
+      "editor_query_seconds": [
+        0.0007259499980136752,
+        0.0004890840064035729,
+        0.00045100299757905304,
+        0.0004566689895000309
+      ],
+      "close_query_seconds": [
+        0.0008113740041153505,
+        0.0006195469904923812,
+        0.0006850720092188567,
+        0.0005861770041519776
+      ],
+      "alias_query_seconds": [
+        0.000681056990288198,
+        0.0006269419973250479,
+        0.0007290280045708641,
+        0.0006231659936020151
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 30966,
+      "peak_rss_kib": 247128,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.157720265997341,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "AccountingRegister",
+      "locale": "en-US",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.8074238239933038,
+      "read_seconds": 0.0191327270003967,
+      "saved_query_seconds": [
+        0.06800566300807986,
+        0.0009102589974645525,
+        0.0008119340054690838,
+        0.0005904590070713311
+      ],
+      "editor_query_seconds": [
+        0.0008403589890804142,
+        0.0007263399893417954,
+        0.0005925699952058494,
+        0.0007583370024804026
+      ],
+      "close_query_seconds": [
+        0.0007950419967528433,
+        0.0005471190088428557,
+        0.0005266670050332323,
+        0.0004236060049152002
+      ],
+      "alias_query_seconds": [
+        0.00043075400753878057,
+        0.00039242999628186226,
+        0.0003814859956037253,
+        0.0003674080071505159
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 98638,
+      "peak_rss_kib": 248072,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.2352074200025527,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "kind": "AccountingRegister",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "member_kinds": [
+        "record-dimension",
+        "record-resource",
+        "record-attribute",
+        "filter-dimension"
+      ],
+      "confirmed_definition_queries": 20,
+      "total_definition_queries": 36,
+      "locate_queries": 20,
+      "targets_per_state": 4,
+      "init_seconds": 0.8090546780003933,
+      "read_seconds": 0.018885741010308266,
+      "saved_query_seconds": [
+        0.0647031410044292,
+        0.0007148869917728007,
+        0.0005823800020152703,
+        0.0004925090033793822
+      ],
+      "editor_query_seconds": [
+        0.0016359790024580434,
+        0.0007780589949106798,
+        0.000764623997383751,
+        0.0007572709873784333
+      ],
+      "close_query_seconds": [
+        0.0007678529946133494,
+        0.0005600010044872761,
+        0.0005052119959145784,
+        0.000535519007826224
+      ],
+      "alias_query_seconds": [
+        0.0005216999998083338,
+        0.00045386000419966877,
+        0.00040981199708767235,
+        0.00040115600859280676
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "record_set_fields_refused": true,
+      "filter_resources_refused": true,
+      "standard_fields_without_yaml_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "record_and_filter_dimension_rename": true,
+      "yaml_source_bytes": 98638,
+      "peak_rss_kib": 247652,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.2267073789989809,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    }
+  ],
+  "corpus_coverage": [
+    {
+      "corpus": "C1",
+      "families": [
+        {
+          "kind": "InformationRegister",
+          "declared_owners": 222,
+          "present": true,
+          "selected_member_kinds": [
+            "record-dimension",
+            "record-resource",
+            "record-attribute",
+            "filter-dimension"
+          ]
+        },
+        {
+          "kind": "AccumulationRegister",
+          "declared_owners": 6,
+          "present": true,
+          "selected_member_kinds": [
+            "record-dimension",
+            "record-resource",
+            "record-attribute",
+            "filter-dimension"
+          ]
+        },
+        {
+          "kind": "AccountingRegister",
+          "declared_owners": 0,
+          "present": false
+        },
+        {
+          "kind": "CalculationRegister",
+          "declared_owners": 0,
+          "present": false
+        }
+      ]
+    },
+    {
+      "corpus": "C2",
+      "families": [
+        {
+          "kind": "InformationRegister",
+          "declared_owners": 1355,
+          "present": true,
+          "selected_member_kinds": [
+            "record-dimension",
+            "record-resource",
+            "record-attribute",
+            "filter-dimension"
+          ]
+        },
+        {
+          "kind": "AccumulationRegister",
+          "declared_owners": 108,
+          "present": true,
+          "selected_member_kinds": [
+            "record-dimension",
+            "record-resource",
+            "record-attribute",
+            "filter-dimension"
+          ]
+        },
+        {
+          "kind": "AccountingRegister",
+          "declared_owners": 1,
+          "present": true,
+          "selected_member_kinds": [
+            "record-dimension",
+            "record-resource",
+            "record-attribute",
+            "filter-dimension"
+          ]
+        },
+        {
+          "kind": "CalculationRegister",
+          "declared_owners": 0,
+          "present": false
+        }
+      ]
+    },
+    {
+      "corpus": "C3",
+      "families": [
+        {
+          "kind": "InformationRegister",
+          "declared_owners": 1737,
+          "present": true,
+          "selected_member_kinds": [
+            "record-dimension",
+            "record-resource",
+            "record-attribute",
+            "filter-dimension"
+          ]
+        },
+        {
+          "kind": "AccumulationRegister",
+          "declared_owners": 224,
+          "present": true,
+          "selected_member_kinds": [
+            "record-dimension",
+            "record-resource",
+            "record-attribute",
+            "filter-dimension"
+          ]
+        },
+        {
+          "kind": "AccountingRegister",
+          "declared_owners": 2,
+          "present": true,
+          "selected_member_kinds": [
+            "record-dimension",
+            "record-resource",
+            "record-attribute",
+            "filter-dimension"
+          ]
+        },
+        {
+          "kind": "CalculationRegister",
+          "declared_owners": 0,
+          "present": false
+        }
+      ]
+    }
+  ],
+  "editor_syntax_check": {
+    "tool": "installed bsl-analyzer-app",
+    "scope": "ParseError",
+    "workspace_mcp_available": false,
+    "files": 84,
+    "exit_code": 0,
+    "seconds": 0.4967813789990032,
+    "source": "owned editor snippets in a unique playground directory",
+    "platform_executed": false,
+    "version": "0.3.0",
+    "reported_files": 84,
+    "diagnostics": 0,
+    "platform_help_degraded": true
+  },
+  "platform_reference": {
+    "source": "bsl-analyzer-reference syntax_help by exact reference IDs",
+    "schema_version": "2",
+    "information_register_record_manager_return_confirmed": true,
+    "record_set_add_return_record_confirmed": true,
+    "record_set_filter_property_confirmed": true,
+    "legacy_lookup_not_found_did_not_imply_missing_api": true,
+    "platform_executed": false
+  },
+  "limits": [
+    "Calculation registers do not exist in C1/C2/C3; only library/process fixtures validate that flavour.",
+    "Register record fields and filter dimensions require ready canonical root models and exact current parent identities.",
+    "Record-set fields, filter resources and synthetic standard fields without a declared YAML child are not targets.",
+    "Form data, predefined values, query text, common-module namespace identifiers and union receivers remain outside this component.",
+    "RSS and query latency are limited scenarios; no full heap/RSS budget or cold-start SLA is asserted.",
+    "No new 1C runtime or real VS Code client acceptance was performed."
+  ]
+}

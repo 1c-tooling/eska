@@ -93,7 +93,10 @@ local/cross-file targets привязаны к той же revision и target ha
 реквизиты, табличные части/колонки строк и значения перечислений используют тип
 receiver и точный parent текущего YAML. На C1/C2/C3 в RU/EN прошли 18 сценариев,
 108 подтверждённых definition и 108 locate, включая enum rename и structure refusal.
-Form data, register records/filters и остальные receiver kinds ещё не покрыты.
+[Поля записей и измерения отбора](../research/eska-format/analyzer-register-definitions.md)
+уже покрыты для четырёх видов регистров. На C1/C2/C3 в RU/EN прошли 16 сценариев:
+320 подтверждённых definition и 320 locate; регистров расчёта в корпусах нет,
+для них пройдены тестовые примеры. Form data и остальные receiver kinds ещё не покрыты.
 Все IDE edits, полная семантика и общий memory budget ещё не готовы; EF-18 не завершена.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):

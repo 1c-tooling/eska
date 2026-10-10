@@ -46,6 +46,9 @@ pub(super) fn symbol(
             MetadataKind::Attribute
         }
         HirFieldOrigin::TabularSection => MetadataKind::TabularSection,
+        HirFieldOrigin::RegisterDimension => MetadataKind::Dimension,
+        HirFieldOrigin::RegisterResource => MetadataKind::Resource,
+        HirFieldOrigin::RegisterAttribute => MetadataKind::Attribute,
         _ => return None,
     };
     owner.children.push((kind, field.name.to_string()));
@@ -73,6 +76,13 @@ fn owner(ty: &Type<'_, ide_db::RootDatabaseImpl>) -> Option<MetadataSymbol> {
             children: vec![(MetadataKind::TabularSection, table.into())],
         });
     }
+    if let Some(parent) = register_parent(kind) {
+        return Some(MetadataSymbol {
+            kind: parent,
+            name: name.clone(),
+            children: Vec::new(),
+        });
+    }
     let manager = ty.manager()?;
     let TypeKind::ObjectManager(facet) = manager.kind() else {
         return None;
@@ -82,6 +92,20 @@ fn owner(ty: &Type<'_, ide_db::RootDatabaseImpl>) -> Option<MetadataSymbol> {
         name: facet.name.clone(),
         children: Vec::new(),
     })
+}
+
+/// Records expose declared fields; record sets themselves do not, and filters expose dimensions.
+const fn register_parent(kind: KernelKind) -> Option<MdoType> {
+    match kind {
+        KernelKind::InformationRegisterRecordManager | KernelKind::InformationRegisterRecord => {
+            Some(MdoType::InformationRegister)
+        }
+        KernelKind::AccumulationRegisterRecord => Some(MdoType::AccumulationRegister),
+        KernelKind::AccountingRegisterRecord => Some(MdoType::AccountingRegister),
+        KernelKind::CalculationRegisterRecord => Some(MdoType::CalculationRegister),
+        KernelKind::RegisterFilter { parent } => Some(parent),
+        _ => None,
+    }
 }
 
 /// Follow exact parent IDs inside the main current document; ambiguity never chooses a first match.

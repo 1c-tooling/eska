@@ -1167,5 +1167,6 @@
     "Measured RSS and field-query latency are limited scenarios; no full heap/RSS budget or cold-start SLA is asserted.",
     "No new 1C runtime or real VS Code client acceptance was performed.",
     "Source bytes and projections share one session with no XML fallback, additional inverse index or disk read for target coordinates."
-  ]
+  ],
+  "verified_commit": "50ad6c6"
 }
