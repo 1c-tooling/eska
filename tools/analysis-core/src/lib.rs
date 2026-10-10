@@ -20,6 +20,8 @@ mod queries;
 mod request;
 mod resources;
 mod session;
+#[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
+mod tool_metadata;
 
 pub use cancellation::{QueryCancellation, RequestCancellation};
 pub use ide::{CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, Locale};

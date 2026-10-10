@@ -3,8 +3,8 @@
 use eska::{analysis_core::InputFailure, project_core::source_format::SourcePath};
 
 use crate::{
-    AnalysisSession, Diagnostic, ModelState, ModuleFailure, ModuleInput, ModuleState,
-    ResourceSummary, SessionRevision,
+    AnalysisSession, Diagnostic, MetadataDiagnostic, MetadataDiagnosticsError, ModelState,
+    ModuleFailure, ModuleInput, ModuleState, QueryCancellation, ResourceSummary, SessionRevision,
 };
 
 use super::BatchError;
@@ -77,6 +77,9 @@ pub struct MetadataIssue {
     pub code: String,
     pub location: Vec<String>,
     pub range: Option<std::ops::Range<usize>>,
+    /// `None` means no current diagnostic walk completed; an empty vector is a checked local result.
+    #[serde(skip)]
+    pub diagnostics: Option<Vec<MetadataDiagnostic>>,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize)]
@@ -172,7 +175,8 @@ pub fn finish(
     files: Vec<BatchFile>,
     stop: Option<StopReason>,
     syntax_enabled: bool,
-) -> BatchReport {
+    cancellation: &QueryCancellation,
+) -> Result<BatchReport, BatchError> {
     let summary = session.summary();
     let mut coverage = BatchCoverage {
         metadata_owners: summary.inputs.owners,
@@ -200,9 +204,9 @@ pub fn finish(
     };
     let metadata_issues = session
         .owner_paths()
-        .filter_map(|path| metadata_issue(session, path))
-        .collect();
-    BatchReport {
+        .filter_map(|path| metadata_issue(session, path, cancellation).transpose())
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(BatchReport {
         profile: "syntax",
         profile_enabled: syntax_enabled,
         status,
@@ -212,12 +216,18 @@ pub fn finish(
         stop,
         metadata_issues,
         files,
-    }
+    })
 }
 
 /// Preserve unsupported/invalid/pending YAML separately from successful syntax diagnostics.
-fn metadata_issue(session: &AnalysisSession, path: &SourcePath) -> Option<MetadataIssue> {
-    let model = session.owner(path)?;
+fn metadata_issue(
+    session: &AnalysisSession,
+    path: &SourcePath,
+    cancellation: &QueryCancellation,
+) -> Result<Option<MetadataIssue>, BatchError> {
+    let Some(model) = session.owner(path) else {
+        return Ok(None);
+    };
     let (code, location, range) = match &model.state {
         ModelState::Pending => ("metadata_pending".into(), vec![], None),
         ModelState::Unsupported(_) => ("metadata_projection_unsupported".into(), vec![], None),
@@ -233,15 +243,30 @@ fn metadata_issue(session: &AnalysisSession, path: &SourcePath) -> Option<Metada
         ModelState::Ready(_) | ModelState::StructureOnly if !model.descriptors_complete() => {
             ("metadata_descriptors_unmodeled".into(), vec![], None)
         }
-        ModelState::Ready(_) | ModelState::StructureOnly => return None,
+        ModelState::Ready(_) | ModelState::StructureOnly => return Ok(None),
     };
-    Some(MetadataIssue {
+    let diagnostics = match session.metadata_diagnostics(path, session.revision(), cancellation) {
+        Ok(report) => Some(report.findings),
+        Err(
+            MetadataDiagnosticsError::Pending
+            | MetadataDiagnosticsError::Unavailable(_)
+            | MetadataDiagnosticsError::Cancelled,
+        ) => None,
+        Err(error) => {
+            return Err(BatchError::MetadataQuery {
+                source: path.clone(),
+                error,
+            });
+        }
+    };
+    Ok(Some(MetadataIssue {
         source: path.clone(),
         source_sha256: model.source_sha256.clone(),
         code,
         location,
         range,
-    })
+        diagnostics,
+    }))
 }
 
 /// Domain input errors already have stable codes; protocol fields never contain Debug or messages.

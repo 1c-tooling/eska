@@ -1,5 +1,6 @@
 //! Actual process contracts distinguish findings, incomplete input and environment errors in both locales.
 
+mod check_metadata;
 mod support;
 
 use std::{
@@ -216,6 +217,14 @@ fn unread_input_and_deadline_return_exit_two() {
         );
         assert_eq!(value["data"]["report"]["stop"], "deadline_exceeded");
         assert_eq!(value["data"]["report"]["coverage"]["unchecked_modules"], 1);
+        assert!(
+            value["data"]["report"]["metadata_issues"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|issue| issue.as_object().unwrap().contains_key("findings")
+                    && issue["findings"].is_null())
+        );
         let value = report(
             &run(
                 &root,
@@ -234,6 +243,13 @@ fn unread_input_and_deadline_return_exit_two() {
         assert_eq!(
             value["data"]["report"]["coverage"]["unavailable_modules"],
             1
+        );
+        assert!(
+            value["data"]["report"]["metadata_issues"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|issue| issue["findings"].is_null())
         );
     }
     fs::remove_file(root.join("src/CommonModules/Tools/Ext/Module.bsl")).unwrap();

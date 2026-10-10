@@ -564,6 +564,10 @@ Transport не выбирает первый одноимённый UUID и не
 получает текущие typed findings из общего core; сервер переводит их в LSP items
 и Fluent сообщения. SourceReader сохраняет только дополнительные нужные endpoints.
 BSL rules не отключают эту операцию; unavailable input остаётся явной ошибкой.
+[Batch metadata findings](research/eska-format/analyzer-checker-metadata.md)
+используют тот же core query и общий presentation для IDE/CI. Доменные причины
+не зависят от JSON или Fluent; две tool features подключают machine mapping
+и локализованные объяснения. Exit codes checker и протокол сервера сохранены.
 [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.

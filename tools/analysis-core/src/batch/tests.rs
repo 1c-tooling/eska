@@ -1,5 +1,7 @@
 //! Batch coverage, disk immutability and exact saved IDE parity use actual shared queries.
 
+mod metadata;
+
 use std::fs;
 
 use crate::{Locale, QueryCancellation};

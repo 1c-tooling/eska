@@ -16,8 +16,9 @@ use eska::{
 
 use super::settings::Settings;
 use crate::{
-    SessionError,
+    MetadataDiagnosticsError, SessionError,
     batch::{BatchError, BatchReport, BatchStatus},
+    tool_metadata,
 };
 
 /// Keep findings (1), incomplete input (2) and fatal setup (3) distinct in CI.
@@ -39,7 +40,7 @@ pub fn emit(
                 "schema_version":1, "tool":"eska-check", "command":"check", "status":report.status,
                 "data":{"project_root":root, "scope":scope, "settings_path":settings.path,
                     "settings_sha256":settings.sha256, "position_encoding":"unicode-scalar",
-                    "report":report},
+                    "metadata_position_encoding":"utf-16", "report":machine_report(report)?},
             }))
             .map_err(|_| Failure::new("tool_json"))?;
             bytes.push(b'\n');
@@ -56,6 +57,29 @@ pub fn emit(
         BatchStatus::Findings => ExitCode::from(1),
         BatchStatus::Incomplete => ExitCode::from(2),
     })
+}
+
+/// JSON presentation adds shared findings while the domain report stays independent of tool features.
+fn machine_report(report: &BatchReport) -> Result<serde_json::Value, Failure> {
+    let mut value = serde_json::to_value(report).map_err(|_| Failure::new("tool_json"))?;
+    let issues = value
+        .get_mut("metadata_issues")
+        .and_then(serde_json::Value::as_array_mut)
+        .filter(|issues| issues.len() == report.metadata_issues.len())
+        .ok_or_else(|| Failure::new("tool_json"))?;
+    for (value, issue) in issues.iter_mut().zip(&report.metadata_issues) {
+        let fields = value
+            .as_object_mut()
+            .ok_or_else(|| Failure::new("tool_json"))?;
+        let findings = issue.diagnostics.as_ref().map(|findings| {
+            findings
+                .iter()
+                .map(tool_metadata::finding)
+                .collect::<Vec<_>>()
+        });
+        fields.insert("findings".into(), serde_json::json!(findings));
+    }
+    Ok(value)
 }
 
 /// Summarize coverage before listing ordinary localized syntax findings.
@@ -128,7 +152,39 @@ fn human(report: &BatchReport, localizer: &Localizer) -> String {
             );
         }
     }
+    metadata_human(report, localizer, &mut text);
     text
+}
+
+/// Unavailable input remains explicit; captured findings use the same reasons as the IDE.
+fn metadata_human(report: &BatchReport, localizer: &Localizer, text: &mut String) {
+    use std::fmt::Write;
+    for issue in &report.metadata_issues {
+        if let Some(findings) = &issue.diagnostics
+            && !findings.is_empty()
+        {
+            for finding in findings {
+                let _ = writeln!(
+                    text,
+                    "{}:{}:{}: {} ({})",
+                    issue.source.as_str(),
+                    finding.range.start.line + 1,
+                    finding.range.start.character + 1,
+                    tool_metadata::message(&finding.issue, localizer),
+                    tool_metadata::code(&finding.issue),
+                );
+            }
+        } else {
+            text.push_str(&localizer.format(
+                "tool-check-metadata-incomplete",
+                &[
+                    ("source", LocalizationValue::Text(issue.source.as_str())),
+                    ("code", LocalizationValue::Text(&issue.code)),
+                ],
+            ));
+            text.push('\n');
+        }
+    }
 }
 
 /// Setup failures retain stable coordinates without serializing a Debug representation.
@@ -146,6 +202,15 @@ pub fn batch_failure(error: BatchError) -> Failure {
             Failure::new("analysis_diagnostic_range_invalid")
                 .at(source.as_str())
                 .at(code)
+        }
+        BatchError::MetadataQuery {
+            source,
+            error: MetadataDiagnosticsError::InconsistentCoordinates(_),
+        } => Failure::new("analysis_diagnostic_range_invalid")
+            .at(source.as_str())
+            .at("metadata"),
+        BatchError::MetadataQuery { source, .. } => {
+            Failure::new("analysis_internal").at(source.as_str())
         }
         BatchError::Request(_) | BatchError::Query(_) => Failure::new("analysis_internal"),
     }

@@ -960,6 +960,7 @@ tool-check-result = { $status }. Modules: { $checked }/{ $total }; findings: { $
 tool-check-deadline = The analysis time limit was reached.
 tool-check-cancelled = The check was cancelled.
 tool-check-source-budget = Current inputs could not fit the source-byte quota; retained { $used }/{ $limit } bytes.
+tool-check-metadata-incomplete = Metadata check is incomplete: { $source } ({ $code }).
 tool-error-analysis-config = Correct the analyzer settings or provide a valid --config file.
 tool-error-analysis-scope = This syntax checker does not yet support exclusions, extensions, external sources, Git filters or diagnostic baselines.
 tool-metadata-properties-not-loaded = Metadata properties have not been loaded.

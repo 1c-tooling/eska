@@ -1,6 +1,8 @@
 //! Actual stdio sessions verify negotiation, lazy state and read-only metadata in both locales.
 
 mod adapter_issues;
+#[cfg(feature = "check-cli")]
+mod checker_metadata_queries;
 mod completion_queries;
 mod definition_chart_queries;
 mod definition_member_queries;

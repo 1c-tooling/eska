@@ -31,7 +31,7 @@ pub(super) const fn parse_severity(issue: &ParseIssue) -> u8 {
 }
 
 /// Domain causes select explicit localized messages rather than exposing Rust Debug.
-pub(super) fn message(issue: &MetadataDiagnosticIssue, localizer: &Localizer) -> String {
+pub fn message(issue: &MetadataDiagnosticIssue, localizer: &Localizer) -> String {
     match issue {
         MetadataDiagnosticIssue::Adapter(issue) => adapter_message(issue, localizer),
         MetadataDiagnosticIssue::Parse(issue) => parse_message(issue, localizer),

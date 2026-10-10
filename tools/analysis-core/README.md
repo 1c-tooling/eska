@@ -87,6 +87,11 @@ eska-check --profile syntax --max-retained-source-bytes 268435456
 нужно указать самостоятельно. Exit codes: 0 — проверенный профиль без находок,
 1 — ошибки синтаксиса, 2 — неполная проверка, 3 — ошибка запуска или настроек.
 Неполнота метаданных не скрывается даже при отсутствии syntax findings.
+Подробные [причины ошибок YAML](../../docs/research/eska-format/analyzer-checker-metadata.md)
+совпадают с IDE: общий core возвращает typed findings, общий presentation —
+machine cause, severity и RU/EN объяснение. JSON schema 1 добавляет `findings`
+у metadata issues и отдельное `metadata_position_encoding=utf-16`; прежние BSL
+координаты и exit codes сохраняются. Недоступный YAML имеет `findings=null`.
 Профиль `syntax` не проверяет типы и платформенную исполнимость. Текст каждого
 модуля освобождается после проверки; это правило не подходит для семантического
 профиля. [Контракт и реальные результаты](../../docs/research/eska-format/check-cli.md).

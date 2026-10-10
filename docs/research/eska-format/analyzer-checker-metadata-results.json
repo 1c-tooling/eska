@@ -1,0 +1,816 @@
+{
+  "schema_version": 1,
+  "status": "verified",
+  "date": "2026-10-10",
+  "scope": "shared current YAML findings in independent IDE and CI entry points",
+  "protocol_version": "0.1",
+  "checker_schema_version": 1,
+  "contract": {
+    "shared_core_query": true,
+    "shared_tool_presentation": true,
+    "core_without_json_or_localizer": true,
+    "existing_aggregate_codes_and_exit_codes_preserved": true,
+    "existing_bsl_position_encoding": "unicode-scalar",
+    "metadata_position_encoding": "utf-16",
+    "current_hashes_and_native_paths": true,
+    "nullable_unfinished_findings": true,
+    "empty_checked_findings_distinct": true,
+    "no_fabricated_spans": true,
+    "no_localized_machine_messages": true
+  },
+  "tool_tests": {
+    "unit_file": 75,
+    "analyzer_process": 74,
+    "checker_process": 11,
+    "total": 160,
+    "minimal_unit_file": 60,
+    "checker_only_unit_file": 62,
+    "checker_only_process": 11
+  },
+  "application_tests": [
+    {
+      "profile": "all",
+      "passed": 893,
+      "ignored": 14
+    },
+    {
+      "profile": "minimal",
+      "passed": 165,
+      "ignored": 3
+    },
+    {
+      "profile": "project-cli",
+      "passed": 181,
+      "ignored": 3
+    },
+    {
+      "profile": "build-cli",
+      "passed": 200,
+      "ignored": 3
+    }
+  ],
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 2.3070390820066677
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 0.190996372999507
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 1.159743627998978
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 10.733625553999445,
+      "results": [
+        "ok. 75 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.20s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 74 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.72s",
+        "ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 4.712473243998829
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 0.15386710700113326
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 0.2673364880029112
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 2.0902269119978882,
+      "results": [
+        "ok. 60 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.40s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.5124596060049953
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.21123009199800435
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 0.46144854101294186
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 2.1920550630020443,
+      "results": [
+        "ok. 62 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.17s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 4.38718382800289
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 0.17499926300661173
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 0.2621216719999211
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 8.945939044002444,
+      "results": [
+        "ok. 75 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.24s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 73 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.14s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.021401944002719
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 0.2502518120018067
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 0.21229011499963235
+    }
+  ],
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.0459405699948547
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.702091903993278
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 8.604456881992519
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 26.761843790998682
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 8.970181616998161
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7061564549949253
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 3.4217029370047385
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.6409761919931043
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 4.313748725006008
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 2.9210649559972808
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.780207973992219
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7963746349996654
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 7.553003993991297
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.7290675200056285
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.00967280101031065
+    }
+  ],
+  "runtime": {
+    "analyzer": {
+      "package_names": 206,
+      "resolved_versions": 214,
+      "release_bytes": 49141912,
+      "forbidden_present": [],
+      "graph_unchanged": true
+    },
+    "checker": {
+      "package_names": 206,
+      "resolved_versions": 214,
+      "release_bytes": 46252536,
+      "forbidden_present": []
+    }
+  },
+  "real_scenarios": [
+    {
+      "corpus": "C1",
+      "variant": "invalid",
+      "locale": "en-US",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 68360,
+        "wall_seconds": 0.47630051099986304
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 44268,
+        "wall_seconds": 0.1750132070010295
+      },
+      "exact_shared_findings": 4,
+      "declared_modules": 1975,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 7,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C1",
+      "variant": "invalid",
+      "locale": "ru-RU",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 69492,
+        "wall_seconds": 0.5470571699988795
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 44184,
+        "wall_seconds": 0.17020546899584588
+      },
+      "exact_shared_findings": 4,
+      "declared_modules": 1975,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 7,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C1",
+      "variant": "corrected",
+      "locale": "en-US",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 69328,
+        "wall_seconds": 0.5057624730106909
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 44252,
+        "wall_seconds": 0.1654156409931602
+      },
+      "exact_shared_findings": 3,
+      "declared_modules": 1975,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 7,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C1",
+      "variant": "corrected",
+      "locale": "ru-RU",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 68708,
+        "wall_seconds": 0.474805940000806
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 44372,
+        "wall_seconds": 0.15509518299950287
+      },
+      "exact_shared_findings": 3,
+      "declared_modules": 1975,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 7,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C2",
+      "variant": "invalid",
+      "locale": "en-US",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 223828,
+        "wall_seconds": 11.55498365299718
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 173516,
+        "wall_seconds": 0.8869375229987781
+      },
+      "exact_shared_findings": 2,
+      "declared_modules": 19170,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 5,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C2",
+      "variant": "invalid",
+      "locale": "ru-RU",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 223804,
+        "wall_seconds": 11.275947432004614
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 173268,
+        "wall_seconds": 0.8049097509938292
+      },
+      "exact_shared_findings": 2,
+      "declared_modules": 19170,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 5,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C2",
+      "variant": "corrected",
+      "locale": "en-US",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 223664,
+        "wall_seconds": 11.282015070988564
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 173320,
+        "wall_seconds": 0.7976186010055244
+      },
+      "exact_shared_findings": 1,
+      "declared_modules": 19170,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 5,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C2",
+      "variant": "corrected",
+      "locale": "ru-RU",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 223808,
+        "wall_seconds": 12.31616564799333
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 173440,
+        "wall_seconds": 0.7977143399912165
+      },
+      "exact_shared_findings": 1,
+      "declared_modules": 19170,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 5,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C3",
+      "variant": "invalid",
+      "locale": "en-US",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 254432,
+        "wall_seconds": 19.361276951996842
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 196512,
+        "wall_seconds": 0.9309791879932163
+      },
+      "exact_shared_findings": 2,
+      "declared_modules": 22710,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 5,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C3",
+      "variant": "invalid",
+      "locale": "ru-RU",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 254944,
+        "wall_seconds": 25.146495237000636
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 196568,
+        "wall_seconds": 1.0710599110025214
+      },
+      "exact_shared_findings": 2,
+      "declared_modules": 22710,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 5,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C3",
+      "variant": "corrected",
+      "locale": "en-US",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 256552,
+        "wall_seconds": 16.723345222999342
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 196352,
+        "wall_seconds": 1.2844519830105128
+      },
+      "exact_shared_findings": 1,
+      "declared_modules": 22710,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 5,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    },
+    {
+      "corpus": "C3",
+      "variant": "corrected",
+      "locale": "ru-RU",
+      "checker": {
+        "exit_code": 2,
+        "peak_rss_kib": 256168,
+        "wall_seconds": 16.559880335000344
+      },
+      "ide": {
+        "exit_code": 0,
+        "peak_rss_kib": 196268,
+        "wall_seconds": 0.9499287640064722
+      },
+      "exact_shared_findings": 1,
+      "declared_modules": 22710,
+      "checked_modules": 1,
+      "source_hashes_equal": true,
+      "current_byte_utf16_ranges_equal": true,
+      "complete_semantic_analysis": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "preserved_full_composition": true,
+      "runtime_path": "empty",
+      "native_xml_absent_from_tools": true,
+      "normal_ide_exit_without_stdin_eof": true,
+      "tracked_original_files": 5,
+      "original_files_written": false,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "temporary_project_removed": true,
+      "locale_machine_equal": true
+    }
+  ],
+  "real_counts": {
+    "partial_scenarios": 12,
+    "ide_document_pulls": 32,
+    "matching_findings": 26,
+    "partial_json_checker_runs": 12,
+    "human_checker_runs": 6,
+    "full_json_checker_runs": 2,
+    "checker_runs": 20
+  },
+  "full_c1": [
+    {
+      "corpus": "C1",
+      "locale": "en-US",
+      "exit_code": 2,
+      "peak_rss_kib": 546076,
+      "wall_seconds": 15.842204480999499,
+      "coverage": {
+        "binary_modules": 0,
+        "checked_modules": 1975,
+        "metadata_inputs_complete": true,
+        "metadata_models_complete": false,
+        "metadata_owners": 2645,
+        "modules": 1975,
+        "syntax_complete": true,
+        "unavailable_modules": 0,
+        "unchecked_modules": 0
+      },
+      "metadata_issues": 1692,
+      "owners_with_current_findings_walk": 1692,
+      "metadata_findings": 1375,
+      "syntax_findings": 0,
+      "runtime_path": "empty",
+      "all_original_files_hashed": 7829,
+      "locale_machine_equal": true,
+      "all_original_bytes_unchanged": true
+    },
+    {
+      "corpus": "C1",
+      "locale": "ru-RU",
+      "exit_code": 2,
+      "peak_rss_kib": 547000,
+      "wall_seconds": 14.88780454499647,
+      "coverage": {
+        "binary_modules": 0,
+        "checked_modules": 1975,
+        "metadata_inputs_complete": true,
+        "metadata_models_complete": false,
+        "metadata_owners": 2645,
+        "modules": 1975,
+        "syntax_complete": true,
+        "unavailable_modules": 0,
+        "unchecked_modules": 0
+      },
+      "metadata_issues": 1692,
+      "owners_with_current_findings_walk": 1692,
+      "metadata_findings": 1375,
+      "syntax_findings": 0,
+      "runtime_path": "empty",
+      "all_original_files_hashed": 7829,
+      "locale_machine_equal": true,
+      "all_original_bytes_unchanged": true
+    }
+  ],
+  "limitations": {
+    "full_c2_c3_sweep": false,
+    "real_editor_client": false,
+    "platform_runtime_validation": false,
+    "full_semantic_analysis": false,
+    "heap_rss_budget": false,
+    "new_dependencies": false,
+    "workspace_bsl_mcp_available": false,
+    "bsl_changes": false,
+    "original_files_written": false
+  }
+}

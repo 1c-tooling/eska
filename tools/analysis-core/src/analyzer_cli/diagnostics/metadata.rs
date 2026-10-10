@@ -1,14 +1,12 @@
 //! Current metadata findings become localized LSP items; no text is loaded to convert captured ranges.
 
-mod presentation;
-
 use eska::{
     analysis_core::{InputFailure, InputOrigin, InputState},
     project_core::source_format::SourcePath,
 };
 use serde_json::{Value, json};
 
-use crate::{AnalysisSession, MetadataDiagnosticIssue, MetadataDiagnosticsError};
+use crate::{AnalysisSession, MetadataDiagnosticsError, tool_metadata};
 
 use super::{Options, documents, dto, protocol};
 
@@ -40,31 +38,18 @@ pub(super) fn pull(
         .iter()
         .map(|finding| {
             if options.cancellation.is_cancelled() {
-                return Err(protocol::error_value(-32800,"analysis_cancelled",dto::snapshot(session,id)));
+                return Err(protocol::error_value(
+                    -32800,
+                    "analysis_cancelled",
+                    dto::snapshot(session, id),
+                ));
             }
-            let (code, severity, issue) = match &finding.issue {
-                MetadataDiagnosticIssue::Adapter(issue) => (
-                    "analysis_adapter_invalid",
-                    presentation::adapter_severity(issue),
-                    dto::adapter_cause(issue),
-                ),
-                MetadataDiagnosticIssue::Parse(issue) => (
-                    "analysis_metadata_parse_issue",
-                    presentation::parse_severity(issue),
-                    json!({"kind":"parse_issue","cause":issue}),
-                ),
-                MetadataDiagnosticIssue::UnsupportedKind(kind) => (
-                    "analysis_metadata_kind_unsupported",
-                    2,
-                    json!({"kind":"unsupported_kind","metadata_kind":kind.as_str()}),
-                ),
-            };
-            Ok(json!({"range":finding.range,"severity":severity,"code":code,"source":"eska-analyzer",
-            "message":presentation::message(&finding.issue,options.localizer),
-            "data":{"start_byte":finding.byte_range.start,"end_byte":finding.byte_range.end,
-                "native_path":finding.native_path,"issue":issue}}))
+            let mut value = tool_metadata::finding(finding);
+            value["source"] = json!("eska-analyzer");
+            value["message"] = json!(tool_metadata::message(&finding.issue, options.localizer));
+            Ok(value)
         })
-        .collect::<Result<Vec<_>,Value>>()?;
+        .collect::<Result<Vec<_>, Value>>()?;
     let summary = session.summary();
     Ok(
         json!({"kind":"full","resultId":format!("{id}:{}:metadata:{}",report.revision,report.source_sha256),

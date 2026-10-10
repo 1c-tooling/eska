@@ -140,6 +140,11 @@ C1/C2/C3 совпали с native reader; в RU/EN прошли 764 definition/l
 использует общие typed findings и captured coordinates, отдельно от BSL settings.
 155 tool tests, 19 tool gates и 15 root gates прошли; 12 stdio-сценариев RU/EN
 подтвердили 144 pulls, editor/close/refresh, unsupported warnings и locale parity.
+[Подробный отчёт CI](../research/eska-format/analyzer-checker-metadata.md)
+использует тот же metadata query и общий presentation. 160 tool tests и все
+обязательные gates прошли; 12 сценариев C1/C2/C3 RU/EN подтвердили точные
+findings/coordinates/hash. Полный C1 sweep проверил 1 975 модулей без syntax
+findings; неполнота моделей сохранила exit 2. EF-18 остаётся `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

@@ -802,6 +802,8 @@ preset = "trunk"
 [Диагностика моделей YAML](docs/research/eska-format/analyzer-metadata-diagnostics.md)
 передаёт те же причины как ошибки/предупреждения текущего документа с точными
 координатами и сообщениями RU/EN; отключение BSL rules не скрывает эту проверку.
+[Отчёт CI](docs/research/eska-format/analyzer-checker-metadata.md) использует те же
+причины, severities и UTF-16 диапазоны; недоступный YAML сохраняет явную неполноту.
 Полная семантика
 и комплектная поставка ещё не готовы. [План правки свойства YAML](docs/research/eska-format/analyzer-property-plans.md)
 уже учитывает текущую editor version и отдельно закреплённую поддержку;

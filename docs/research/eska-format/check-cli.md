@@ -77,7 +77,7 @@ wall-time лимита. Остановка сохраняет явные `stop` 
 
 Schema 1 содержит `tool=eska-check`, `command=check`, `status` и `data`.
 В `data` находятся `project_root`, `scope`, `settings_path`, `settings_sha256`,
-`position_encoding=unicode-scalar` и `report`. Settings hash относится
+`position_encoding=unicode-scalar`, `metadata_position_encoding=utf-16` и `report`. Settings hash относится
 к нормализованным правилам профиля, а не к сырым байтам файла настроек.
 Ошибки запуска используют общий error envelope проектных инструментов.
 
@@ -90,9 +90,26 @@ metadata issues и результаты файлов. Coverage раздельн�
 `resources` показывает точный текущий резерв исходных байтов и его общий предел,
 считая owning YAML текущих готовых моделей и загруженные BSL-тексты.
 Файлы имеют state `checked`, `binary` или `unavailable`, source hash и ревизию
-проверенных байтов. Findings содержат code/severity, UTF-8 byte ranges и
+проверенных байтов. BSL findings содержат code/severity, UTF-8 byte ranges и
 zero-based строки/колонки в Unicode scalars. Человекочитаемые позиции начинаются
 с 1; это не LSP UTF-16 coordinates.
+
+`metadata_issues[]` сохраняет прежние `source`, `source_sha256`, `code`, `location`
+и `range` в байтах. Дополнительный `findings` использует ту же проекцию typed
+причин, что IDE: zero-based UTF-16 `range`, numeric severity 1/2, стабильный code
+и `data` с `start_byte`, `end_byte`, `native_path`, `issue`. Сообщения и поле
+`source` LSP в этот массив не включаются; human output показывает общие RU/EN
+объяснения с позициями от 1. Parse issues вложенного описателя сохраняют его
+native path и span в физическом owning YAML.
+
+`findings=null` означает, что текущая подробная проверка не завершена: pending,
+unavailable input или отмена. `[]` означает завершённую локальную проверку без
+конкретных находок; общее ограничение модели остаётся в прежнем code/coverage.
+Отсутствие YAML, ошибка его грамматики/схемы или квота не получают выдуманной
+позиции. Исправленный fully modeled owner исчезает из `metadata_issues`.
+Schema 1, профиль `syntax`, прежние агрегатные codes и exit 0/1/2/3 сохранены.
+Некорректные BSL settings по-прежнему дают fatal exit 3 до начала batch.
+[Совпадение IDE и CI на реальных входах](analyzer-checker-metadata.md) проверено отдельно.
 
 ## Проверки
 
@@ -127,3 +144,5 @@ release-бинарника — около 44 MiB. На C2/C3 analysis timeout в
 сервер, глобальный бюджет памяти и платформенная клиентская проверка этим
 компонентом не выполнены. EF-18 остаётся `IN_PROGRESS`.
 Общая квота и её последующие проверки описаны в [следующем компоненте](source-budget.md).
+Подробные metadata findings и текущий полный syntax sweep C1 описаны в
+[следующей проверке](analyzer-checker-metadata.md).

@@ -51,9 +51,16 @@ pub enum BatchError {
     Open(SessionError),
     Request(SessionRequestError),
     Query(QueryError),
+    MetadataQuery {
+        source: SourcePath,
+        error: crate::MetadataDiagnosticsError,
+    },
     TimerUnavailable,
     TimeoutOutOfRange,
-    DiagnosticRangeInvalid { source: SourcePath, code: String },
+    DiagnosticRangeInvalid {
+        source: SourcePath,
+        code: String,
+    },
 }
 
 /// Check all declared saved input with the IDE's syntax profile, preserving explicit coverage.
@@ -127,7 +134,8 @@ pub fn check_syntax(
         files,
         deadline.stop_reason().map(StopReason::from),
         syntax_enabled,
-    );
+        &options.cancellation.query,
+    )?;
     // Constructing coverage can itself cross the deadline; check again before returning success.
     if let Some(stop) = deadline.stop_reason() {
         report.stop = Some(StopReason::from(stop));

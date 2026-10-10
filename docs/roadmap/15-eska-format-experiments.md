@@ -1151,6 +1151,19 @@ invalid/close/refresh, unsupported role/AnyRef и machine locale parity согл
 Bytes 6/4/4 выбранных оригиналов/копий сохранены, временные проекты удалены.
 Граф — 206/214, release server — 49125504 bytes; остальные условия EF-18 ещё в работе.
 
+[Подробные metadata findings CI](../research/eska-format/analyzer-checker-metadata.md)
+получаются тем же query и presentation, что IDE: typed причина, severity,
+native path и captured byte/UTF-16 span. Schema 1 сохраняет прежние aggregate
+codes и BSL coordinates; `findings=null` означает незавершённую текущую проверку.
+75 unit/file, 74 analyzer и 11 checker process tests прошли, всего 160; minimal 60.
+Все 19 tool и 15 root gates прошли; root 893/14, minimal 165/3, project-cli 181/3,
+build-cli 200/3. В 12 сценариях C1/C2/C3 RU/EN пройдены 32 IDE pulls, подтверждены
+26 совпадений current findings с CI, исправленный Server исчезает из обоих.
+Полный C1 sweep проверил 1 975 модулей без syntax findings и все 2 645 YAML owners;
+1 692 неполных owners дали 1 375 конкретных findings, exit 2 сохранён.
+Bytes всех 7 829 исходников C1 и выбранных копий/оригиналов сохранены; временные
+проекты удалены. Новых зависимостей нет; остальные условия EF-18 остаются в работе.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

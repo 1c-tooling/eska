@@ -4,7 +4,7 @@ use eska_bsl_adapter::AdapterIssue;
 use serde_json::{Value, json};
 
 /// Exhaustive transport mapping keeps every current cause distinct without changing the core's error types.
-pub(super) fn value(issue: &AdapterIssue) -> Value {
+pub fn value(issue: &AdapterIssue) -> Value {
     match issue {
         AdapterIssue::PropertiesNotLoaded => json!({"kind":"properties_not_loaded"}),
         AdapterIssue::WrongKind { actual } => json!({"kind":"wrong_kind","actual":actual.as_str()}),

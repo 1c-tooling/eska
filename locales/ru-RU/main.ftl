@@ -960,6 +960,7 @@ tool-check-result = { $status }. Модули: { $checked }/{ $total }; ошиб
 tool-check-deadline = Достигнут лимит времени анализа.
 tool-check-cancelled = Проверка отменена.
 tool-check-source-budget = Текущим входам не хватило квоты исходных байтов; удерживается { $used }/{ $limit } байт.
+tool-check-metadata-incomplete = Проверка метаданных неполна: { $source } ({ $code }).
 tool-error-analysis-config = Исправьте настройки анализатора или задайте корректный файл через --config.
 tool-error-analysis-scope = Эта проверка синтаксиса пока не поддерживает исключения, расширения, внешние источники, Git-фильтры и базовые отчёты диагностики.
 tool-metadata-properties-not-loaded = Свойства метаданных не загружены.

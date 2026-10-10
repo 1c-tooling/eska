@@ -1,5 +1,9 @@
 # Диагностика текущих моделей YAML
 
+Поведение этого компонента принято на `4581e17`. Его результаты ниже относятся
+к этому состоянию; следующая [проверка IDE/CI](analyzer-checker-metadata.md)
+подключает тот же metadata query и presentation к самостоятельному checker.
+
 Стандартный [`textDocument/diagnostic`](https://raw.githubusercontent.com/microsoft/language-server-protocol/gh-pages/_specifications/lsp/3.18/language/pullDiagnostics.md)
 теперь принимает объявленный YAML выбранного проекта. URI выбирает профиль:
 модуль — прежний `syntax`, владелец метаданных — `metadata`. Прежний opaque
