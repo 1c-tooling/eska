@@ -262,8 +262,8 @@ impl RootDatabaseImpl {
         salsa::Database::trigger_lru_eviction(self);
     }
 
-    /// Run one deep LRU trim: evict with the heaviest per-file caps (parse trees,
-    /// lowered bodies) shrunk to a small sweep profile, then restore the interactive
+    /// Run one deep LRU trim: evict with the heaviest per-file caps (source text,
+    /// parse trees, lowered bodies) shrunk to a small sweep profile, then restore the interactive
     /// caps — restoring evicts nothing, the wide window simply repopulates on
     /// demand. For a whole-workspace sweep's final cleanup, where the swept files'
     /// memos are working set nothing will read again: a plain [`Self::enforce_lru`]

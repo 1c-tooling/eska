@@ -195,6 +195,13 @@ disk fallback. 238 tool tests, все 19 tool/15 root gates и kernel 1102/4 п�
 источника, сохранность 390 оригиналов и различие OS RSS/Salsa estimates.
 Entries включает metadata-only memos; прежняя схема статистики сохраняется.
 Общий memory budget и остальные условия EF-18 остаются в работе.
+[Пакетная очистка вычисленных текстов](../research/eska-format/kernel-source-sweep.md)
+включает source memos в прежний deep LRU trim и восстанавливает interactive
+window. Сравнение 128 крупных модулей каждого состава подтвердило совпадение
+384 пар syntax/hash и уменьшение source estimates до 6,2/36,1/40,1 MB.
+Current inputs и 390 оригиналов сохранены; общий heap/RSS budget ещё в работе.
+Все 19 tool/15 root gates, 238 tool tests и kernel 1103/4 прошли;
+normal graph 206/214 сохранён, новых dependencies нет.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

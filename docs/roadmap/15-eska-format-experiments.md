@@ -1314,6 +1314,22 @@ hashes семи файлов записаны в provenance, лицензии/в
 Полная семантика, общий memory budget, остальные edits и Explorer ещё в работе;
 EF-18 остаётся `IN_PROGRESS`, очередь этапов не меняется.
 
+[Пакетная очистка вычисленных текстов](../research/eska-format/kernel-source-sweep.md)
+исправляет отдельное удержание source-text memos внутри Salsa. Существующий
+deep LRU trim сокращает окна parse и file_text_query вместе до 64 файлов,
+затем восстанавливает interactive caps 512. Native regression проверяет
+снятие сильного владения, восстановление окна и повторное вычисление
+из resident input без disk path; current inputs/версии/квоты сохраняются.
+На 128 крупных CommonModules каждого C1/C2/C3 выполнены 768 syntax checks,
+шесть reload checks и 30 samples. Все 384 пары результатов/hashes совпали;
+390 выбранных оригиналов сохранены. Source-memo estimates уменьшились
+с 31,7/130,4/138,2 до 6,2/36,1/40,1 MB, остальные native таблицы совпали.
+Это file-count LRU, не общий heap/RSS budget; entries всё ещё включает
+metadata-only memos. EF-18 остаётся `IN_PROGRESS`, очередь этапов не меняется.
+
+Все 19 tool и 15 root gates прошли, 238 tool tests и kernel 1103/4.
+Normal graph остался 206/214; manifest/lock, версии и human strings прежние.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

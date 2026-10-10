@@ -66,6 +66,9 @@ table estimates через общий сервер без queries и lazy I/O. S
 native reparse hint у недоступного ввода. Release и отказ по квоте используют
 общую точку ядра; соседние hints и current reload сохраняются. Измерение на
 128 крупных модулях каждого состава отделяет RSS от неполных Salsa estimates.
+[Очистка вычисленных текстов](kernel-source-sweep.md) сокращает их batch LRU
+вместе с parse window. На тех же 128 телах диагностика и hashes совпали,
+числовая оценка удерживаемого текста уменьшилась; общий RSS budget ещё не готов.
 [Координаты объектов и свойств YAML](analyzer-metadata-locations.md) вычисляются
 из текущего разбора; metadata locate выбирает UUID/QName без чтения файла.
 [Переход из BSL к объекту YAML](analyzer-metadata-definitions.md) использует

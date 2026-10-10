@@ -663,6 +663,57 @@ mod tests {
         assert_eq!(db.parse_snapshot(retained).unwrap().text, neighbor.text);
     }
 
+    /// Batch trimming must drop source-memo ownership and then restore the interactive window.
+    #[test]
+    fn sweep_trims_source_memos_and_restores_interactive_window() {
+        use salsa::Database;
+
+        let mut db = TestDatabase::default();
+        let original = "Procedure Previous() EndProcedure";
+        let previous = (0..128)
+            .map(|index| {
+                let file = FileId(index);
+                db.set_file_text(file, original);
+                let weak = Arc::downgrade(&db.file_text(file));
+                db.set_file_unreadable(file);
+                weak
+            })
+            .collect::<Vec<_>>();
+        assert!(previous.iter().all(|text| text.upgrade().is_some()));
+
+        set_parse_lru_sweep_mode(&mut db, true);
+        db.trigger_lru_eviction();
+        set_parse_lru_sweep_mode(&mut db, false);
+        assert!(previous.iter().any(|text| text.upgrade().is_none()));
+        assert!(db.file_is_unread(FileId(0)));
+        assert_eq!(&*db.file_text(FileId(0)), "");
+
+        let current = "Procedure Current() EndProcedure";
+        let restored = (0..128)
+            .map(|index| {
+                let file = FileId(index);
+                db.set_file_text(file, current);
+                let text = db.file_text(file);
+                assert_eq!(&*text, current);
+                Arc::downgrade(&text)
+            })
+            .collect::<Vec<_>>();
+        db.trigger_lru_eviction();
+        assert!(restored.iter().all(|text| text.upgrade().is_some()));
+
+        let revision = db.file_revision_input(FileId(0)).revision(&db);
+        set_parse_lru_sweep_mode(&mut db, true);
+        db.trigger_lru_eviction();
+        set_parse_lru_sweep_mode(&mut db, false);
+        let evicted = restored.iter().position(|text| text.upgrade().is_none()).unwrap();
+        let file = FileId(u32::try_from(evicted).unwrap());
+        assert!(!db.file_is_unread(file));
+        assert_eq!(db.try_file_text_input(file).unwrap().text(&db), current);
+        assert_eq!(db.file_revision_input(file).revision(&db), revision);
+        // No source root was registered: re-derivation must use the still-current resident input.
+        assert_eq!(&*db.file_text(file), current);
+    }
+
     #[salsa::tracked(lru = 10, returns(copy))]
     fn test_fileid_query<'db>(
         db: &'db dyn salsa::Database,

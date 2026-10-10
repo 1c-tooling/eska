@@ -159,18 +159,20 @@ fn reparse_verify_enabled() -> bool {
     *ENABLED.get_or_init(|| std::env::var_os("BSL_REPARSE_VERIFY").is_some_and(|v| v == "1"))
 }
 
-/// Switch [`parse_query`]'s LRU cap between the interactive profile and a small
-/// sweep profile. During a chunked whole-workspace sweep the closed files' syntax
-/// trees are pure batch working set — a wide retention window only pins hundreds of
-/// megabytes of green trees across chunks — so the sweep shrinks the cap and restores
-/// the interactive one when it ends. The interactive value must stay equal to the
-/// `lru` literal on [`parse_query`]. The new cap takes effect at the next LRU trim;
+/// Switch parse and source-text memos between interactive and small sweep windows.
+/// Released input no longer owns its text, but [`file_text_query`] can still pin an
+/// earlier copy independently of the syntax tree. Trim both windows together so a
+/// syntax sweep does not retain hundreds of old source bodies across chunks. The
+/// interactive value must match both queries' `lru` literals. The new cap takes
+/// effect at the next LRU trim;
 /// it evicts nothing by itself. Like any salsa write, this cancels in-flight
 /// snapshots — call it only from points that may already trim.
 pub fn set_parse_lru_sweep_mode(db: &mut dyn SourceDatabase, sweep: bool) {
     const INTERACTIVE: usize = 512;
     const SWEEP: usize = 64;
-    parse_query::set_lru_capacity(db, if sweep { SWEEP } else { INTERACTIVE });
+    let capacity = if sweep { SWEEP } else { INTERACTIVE };
+    parse_query::set_lru_capacity(db, capacity);
+    file_text_query::set_lru_capacity(db, capacity);
 }
 
 /// A file's source text, keyed on its stable [`FileIdInput`] and triggered by its

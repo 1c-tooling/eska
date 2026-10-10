@@ -207,7 +207,7 @@ impl AnalysisSession {
         Ok(())
     }
 
-    /// Trim heavy computed memos between batch chunks after all short-lived query handles dropped.
+    /// Trim computed source, parse and lowering memos after short-lived query handles dropped.
     pub fn trim_batch_caches(&mut self) {
         self.database.enforce_lru_deep();
     }
