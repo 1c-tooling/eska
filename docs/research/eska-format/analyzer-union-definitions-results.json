@@ -618,5 +618,6 @@
     "Measurements follow syntax and pending checkpoints in the same session; no cold-start claim or latency SLA.",
     "No real VS Code client, OS watcher or 1C platform validation for this component.",
     "No general heap/RSS budget; full inference, semantic/model coverage and all IDE edits remain incomplete."
-  ]
+  ],
+  "commit": "649c3ce"
 }

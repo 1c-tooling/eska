@@ -108,8 +108,10 @@ receiver и точный parent текущего YAML. На C1/C2/C3 в RU/EN п
 [Динамическая регистрация](../research/eska-format/analyzer-watcher-registration.md)
 запрашивает у поддерживающего клиента одну подписку на 6–7 control paths.
 42 control-event и шесть saved-input сценариев с подтверждённой регистрацией
-прошли; настоящего клиента и наблюдения всех saved inputs ещё нет.
-Автоматическое открытие нового состава и остальные условия EF-18 ещё в работе.
+прошли. [Saved-input подписка](../research/eska-format/analyzer-saved-watcher.md)
+добавляет компактные source-relative patterns для объявленных YAML/BSL и binary
+modules, без обхода каталогов. Настоящий client/OS watcher, автоматическое
+открытие нового состава и остальные условия EF-18 ещё в работе.
 [Переходы к пространствам общих модулей](../research/eska-format/analyzer-namespace-definitions.md)
 подтверждают current owner YAML без чтения target BSL. На C1/C2/C3 в RU/EN прошли
 12 сценариев: 72 namespace definition/locate и 48 BSL shadow/alias definition.

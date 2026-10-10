@@ -45,8 +45,11 @@ YAML/BSL, учитывает возможности клиента и сообщ
 [Изменения состава и настроек](analyzer-project-changes.md) завершают прежний host
 с `eska/restartRequired`, явным списком control URI и отказом до нового процесса.
 [Регистрация control watcher](analyzer-watcher-registration.md) использует одну
-post-initialized LSP-подписку и явное подтверждение клиента; saved-input watcher
-и интеграция настоящего клиента ещё не подключены.
+post-initialized LSP-подписку и явное подтверждение клиента.
+[Регистрация saved inputs](analyzer-saved-watcher.md) добавляет source-relative
+шаблоны в тот же запрос, ограничивает пакеты размером frame и сохраняет readable
+изменения при посторонних или двоичных совпадениях. Настоящий client/OS watcher
+и автоматический restart расширения ещё не приняты.
 [Поля регистров](analyzer-register-definitions.md) связывают typed запись и
 измерения отбора с теми же координатами текущего YAML.
 [Пространства общих модулей](analyzer-namespace-definitions.md) открывают текущий

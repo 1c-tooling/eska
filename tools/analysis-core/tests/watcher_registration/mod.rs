@@ -1,4 +1,4 @@
-//! Actual bidirectional stdio sessions verify the fixed inventory and bounded registration lifecycle.
+//! Bidirectional sessions verify exact controls, compact saved-input patterns and registration lifecycle.
 
 use std::fs;
 
@@ -34,14 +34,14 @@ fn reply(result: Value) -> Value {
     response
 }
 
-/// The eligible client receives exactly one post-initialized registration for literal control names.
+/// One post-initialized request contains exact controls and source-relative saved-input patterns.
 fn registration(client: &mut Client, capability: &Value) -> Value {
     client.send(&notification("initialized"));
     let request = client.receive();
     assert_eq!(request["method"], "client/registerCapability");
     assert_eq!(request["id"], ID);
     let registered = &request["params"]["registrations"];
-    assert_eq!(registered.as_array().unwrap().len(), 1);
+    assert_eq!(registered.as_array().unwrap().len(), 2);
     assert_eq!(registered[0]["method"], "workspace/didChangeWatchedFiles");
     let actual = registered[0]["registerOptions"]["watchers"]
         .as_array()
@@ -65,6 +65,30 @@ fn registration(client: &mut Client, capability: &Value) -> Value {
         .map(|input| input["uri"].as_str().unwrap().to_owned())
         .collect::<Vec<_>>();
     assert_eq!(actual, expected);
+    let manifest = capability["projectChanges"]["inputs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|input| input["kind"] == "source_manifest")
+        .unwrap();
+    let base = Url::parse(manifest["uri"].as_str().unwrap())
+        .unwrap()
+        .join(".")
+        .unwrap();
+    let saved = &registered[1];
+    assert_eq!(saved["id"], "eska/project-saved-inputs");
+    assert_eq!(saved["method"], "workspace/didChangeWatchedFiles");
+    let patterns = saved["registerOptions"]["watchers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|watcher| {
+            assert_eq!(watcher["kind"], 7);
+            assert_eq!(watcher["globPattern"]["baseUri"], base.as_str());
+            watcher["globPattern"]["pattern"].as_str().unwrap()
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(patterns, ["**/Module.bsl", "**/object.yaml"]);
     request
 }
 
@@ -126,7 +150,13 @@ fn exact_control_inventory_is_registered_once_and_acknowledged_in_both_locales()
                 capability["watchRegistration"]["scope"],
                 "project-control-inputs"
             );
-            assert_eq!(capability["watchedFiles"]["dynamicRegistration"], false);
+            assert_eq!(capability["watchedFiles"]["dynamicRegistration"], true);
+            assert_eq!(capability["watchedFiles"]["maxChanges"], Value::Null);
+            assert_eq!(capability["watchedFiles"]["unknownSourceEvents"], "ignore");
+            assert_eq!(
+                capability["watchRegistration"]["savedInputs"]["registrationId"],
+                "eska/project-saved-inputs"
+            );
             assert_eq!(
                 capability["projectChanges"]["inputs"]
                     .as_array()
@@ -150,6 +180,10 @@ fn exact_control_inventory_is_registered_once_and_acknowledged_in_both_locales()
             assert_eq!(
                 ack["params"]["registrationId"],
                 registered["params"]["registrations"][0]["id"]
+            );
+            assert_eq!(
+                ack["params"]["registrationIds"],
+                json!(["eska/project-control-files", "eska/project-saved-inputs"])
             );
             client.send(&reply(Value::Null));
             let fence = owners(&mut client, json!("after-duplicate"), "0");

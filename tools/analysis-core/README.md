@@ -124,9 +124,13 @@ close перечитывает файл. [Client file events](../../docs/researc
 workspace manifest и отсутствующие кандидаты settings.
 [Динамическая регистрация](../../docs/research/eska-format/analyzer-watcher-registration.md)
 запрашивает одну подписку на эти 6–7 control files после initialized, если клиент
-поддерживает оба watcher flags. Ответ подтверждается eska/watchRegistration;
-отказ не блокирует host. Автоматическое наблюдение всех saved YAML/BSL,
-интеграция клиента и открытие нового состава ещё не подключены.
+поддерживает оба watcher flags. [Saved-input регистрация](../../docs/research/eska-format/analyzer-saved-watcher.md)
+включена вторым элементом того же запроса: source-relative шаблоны покрывают
+объявленные YAML/BSL и binary modules. Ответ подтверждается eska/watchRegistration.
+Согласованные пакеты ограничены 4 MiB frame; unknown source matches игнорируются,
+binary остаются нечитаемыми. Manual policy сохраняет предел 200 и строгий отказ.
+Отказ регистрации не блокирует host. Интеграция клиента и автоматическое открытие
+нового состава ещё не приняты.
 `textDocument/diagnostic` использует общий профиль `syntax`
 и `bsl-analyzer.toml`; settings фиксируются при initialize. UTF-16 диапазоны
 получены из текущих байтов без чтения диска. Ошибка settings не отключает дерево.

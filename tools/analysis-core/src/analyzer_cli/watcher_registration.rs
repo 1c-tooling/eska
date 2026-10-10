@@ -1,5 +1,8 @@
-//! One optional client registration watches only the fixed control inventory, never all metadata files.
+//! One optional request registers fixed control files and compact globs for declared saved inputs.
 
+use std::collections::BTreeSet;
+
+use eska::project_core::source_format::SourceReader;
 use serde_json::{Value, json};
 
 use super::{project_changes, protocol, watched_files};
@@ -8,6 +11,7 @@ pub const EVENT: &str = "eska/watchRegistration";
 const METHOD: &str = "client/registerCapability";
 const REQUEST_ID: &str = "eska/project-watch/1";
 const REGISTRATION_ID: &str = "eska/project-control-files";
+const SAVED_REGISTRATION_ID: &str = "eska/project-saved-inputs";
 const SCOPE: &str = "project-control-inputs";
 
 enum State {
@@ -32,13 +36,16 @@ pub fn eligible(params: &Value) -> bool {
 /// This describes an optional post-initialized request, not a static LSP file-watching capability.
 pub fn capability(params: &Value) -> Value {
     json!({"method":METHOD,"scope":SCOPE,"eligible":eligible(params),
-        "requiresRelativePatterns":true,"inputNotification":EVENT})
+        "requiresRelativePatterns":true,"inputNotification":EVENT,
+        "savedInputs":{"scope":"declared-saved-inputs","registrationId":SAVED_REGISTRATION_ID,
+            "patternPolicy":"declared-basenames","inputNotification":watched_files::EVENT}})
 }
 
 impl Registration {
-    /// Build at most one small request from the already selected control paths, without reading files.
+    /// Build one small request from the selected inventory, without opening payloads or scanning directories.
     pub fn selected(
         inputs: &project_changes::Inputs,
+        source: &SourceReader,
         params: &Value,
     ) -> Result<Option<Self>, Value> {
         if !eligible(params) {
@@ -46,7 +53,9 @@ impl Registration {
         }
         let request = json!({"jsonrpc":"2.0","id":REQUEST_ID,"method":METHOD,"params":{
             "registrations":[{"id":REGISTRATION_ID,"method":watched_files::METHOD,
-                "registerOptions":{"watchers":inputs.watchers()?}}]}});
+                "registerOptions":{"watchers":inputs.watchers()?}},
+                {"id":SAVED_REGISTRATION_ID,"method":watched_files::METHOD,
+                "registerOptions":{"watchers":saved_watchers(source)?}}]}});
         Ok(Some(Self(State::Planned(request))))
     }
 
@@ -73,8 +82,8 @@ impl Registration {
             return None;
         }
         self.0 = State::Finished;
-        let mut params =
-            json!({"scope":SCOPE,"snapshot":snapshot,"registrationId":REGISTRATION_ID});
+        let mut params = json!({"scope":SCOPE,"snapshot":snapshot,"registrationId":REGISTRATION_ID,
+                "registrationIds":[REGISTRATION_ID,SAVED_REGISTRATION_ID]});
         match response.result {
             Ok(Value::Null) => params["status"] = json!("registered"),
             result => {
@@ -87,4 +96,28 @@ impl Registration {
         }
         Some(json!({"jsonrpc":"2.0","method":EVENT,"params":params}))
     }
+}
+
+/// Generated owner/module basenames contain no glob syntax; arbitrary parent names remain in the base URI.
+fn saved_watchers(source: &SourceReader) -> Result<Vec<Value>, Value> {
+    let invalid = || protocol::error_value(-32603, "path_encoding_unsupported", Value::Null);
+    let base = url::Url::from_directory_path(source.root()).map_err(|()| invalid())?;
+    let names = source
+        .owner_paths()
+        .chain(source.module_paths())
+        .filter(|path| path.as_str() != "configuration.yaml")
+        .map(|path| {
+            path.as_path()
+                .file_name()
+                .and_then(|name| name.to_str())
+                .ok_or_else(invalid)
+        })
+        .collect::<Result<BTreeSet<_>, _>>()?;
+    // An empty saved inventory needs no matching file yet, but the source's standard owner pattern is harmless.
+    let names = if names.is_empty() {
+        BTreeSet::from(["object.yaml"])
+    } else {
+        names
+    };
+    Ok(names.into_iter().map(|name|json!({"globPattern":{"baseUri":base.as_str(),"pattern":format!("**/{name}")},"kind":7})).collect())
 }

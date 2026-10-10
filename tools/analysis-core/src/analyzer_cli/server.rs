@@ -215,29 +215,7 @@ impl Server<'_> {
 
     /// Reject an incompatible ESKA protocol before project discovery or source reads.
     fn initialize(&mut self, params: &Value) -> Result<Value, Value> {
-        if self.phase != Phase::New {
-            return Err(protocol::error_value(
-                -32600,
-                "already_initialized",
-                Value::Null,
-            ));
-        }
-        if !params.get("capabilities").is_some_and(Value::is_object) {
-            return Err(protocol::error_value(
-                -32602,
-                "rpc_invalid_params",
-                Value::Null,
-            ));
-        }
-        if params.pointer("/initializationOptions/eska/protocolVersion")
-            != Some(&json!(protocol::VERSION))
-        {
-            return Err(protocol::error_value(
-                -32602,
-                "protocol_version_unsupported",
-                json!({"supported":[protocol::VERSION]}),
-            ));
-        }
+        self.check_initialize(params)?;
         let selected = tool_cli::selected(&self.cli.project_dir, self.cli.project.as_deref())
             .map_err(|failure| {
                 protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
@@ -252,7 +230,8 @@ impl Server<'_> {
             protocol::error_value(-32000, error.code, json!({"location":error.location}))
         })?;
         let project_inputs = project_changes::Inputs::selected(&source, workspace.as_deref());
-        let watcher = watcher_registration::Registration::selected(&project_inputs, params)?;
+        let watcher =
+            watcher_registration::Registration::selected(&project_inputs, source.reader(), params)?;
         let edit_plans = property_edits::Plans::selected(
             &source,
             self.cli.accepted_base_sha256.as_deref(),
@@ -281,7 +260,7 @@ impl Server<'_> {
                 "languageMethods":language::METHODS,
                 "analysis":diagnostics::availability(&settings),
                 "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT, project_changes::EVENT, watcher_registration::EVENT],
-                "watchedFiles":watched_files::capabilities(),
+                "watchedFiles":watched_files::capabilities(watcher.is_some()),
                 "projectChanges":project_inputs.capability()?,
                 "watchRegistration":watcher_registration::capability(params),
                 "editPlans":edit_plans.is_some(), "locationEncoding":"utf-8-bytes",
@@ -315,6 +294,34 @@ impl Server<'_> {
         self.session_id = session_id;
         self.phase = Phase::Initializing;
         Ok(result)
+    }
+
+    /// All negotiation preconditions are checked before opening the selected source or changing server state.
+    fn check_initialize(&self, params: &Value) -> Result<(), Value> {
+        if self.phase != Phase::New {
+            return Err(protocol::error_value(
+                -32600,
+                "already_initialized",
+                Value::Null,
+            ));
+        }
+        if !params.get("capabilities").is_some_and(Value::is_object) {
+            return Err(protocol::error_value(
+                -32602,
+                "rpc_invalid_params",
+                Value::Null,
+            ));
+        }
+        if params.pointer("/initializationOptions/eska/protocolVersion")
+            != Some(&json!(protocol::VERSION))
+        {
+            return Err(protocol::error_value(
+                -32602,
+                "protocol_version_unsupported",
+                json!({"supported":[protocol::VERSION]}),
+            ));
+        }
+        Ok(())
     }
 
     /// Full-sync notifications update the host before emitting an acknowledgement event.
@@ -375,7 +382,13 @@ impl Server<'_> {
         else {
             return Step::Exit(1);
         };
-        match watched_files::notify(session, &self.session_id, &message.params, controls) {
+        match watched_files::notify(
+            session,
+            &self.session_id,
+            &message.params,
+            controls,
+            self.watcher.is_some(),
+        ) {
             watched_files::Notification::Inputs(event) => Step::Continue(Some(event)),
             watched_files::Notification::Restart(changes) => {
                 let state =

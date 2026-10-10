@@ -762,8 +762,11 @@ preset = "trunk"
 [Изменение манифеста или настроек](docs/research/eska-format/analyzer-project-changes.md)
 завершает старую сессию с `eska/restartRequired`; новый состав открывает новый процесс.
 [Динамическая LSP-регистрация](docs/research/eska-format/analyzer-watcher-registration.md)
-запрашивает у поддерживающего клиента наблюдение за точными control files;
-автоматическое наблюдение всех YAML/BSL ещё не подключено.
+запрашивает у поддерживающего клиента наблюдение за точными control files.
+[Подписка на сохранённые исходники](docs/research/eska-format/analyzer-saved-watcher.md)
+добавляет компактные source-relative шаблоны для объявленных YAML/BSL.
+Посторонние совпадения не мешают инвалидации; двоичные модули остаются нечитаемыми.
+Настоящий client watcher и автоматический restart расширения ещё не приняты.
 [Отмена языковых запросов](docs/research/eska-format/analyzer-cancellation.md)
 принимается во время вычисления, с сохранением текущего редакторского ввода.
 [Лимит времени диагностики](docs/research/eska-format/analyzer-deadline.md)

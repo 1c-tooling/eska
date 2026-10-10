@@ -1056,6 +1056,31 @@ Runtime graph остался 206/214. Настоящий клиент и пла�
 полнота inference/анализа, общий memory budget, saved-input watcher и Explorer
 ещё в работе. EF-18 — `IN_PROGRESS`.
 
+[Регистрация saved inputs](../research/eska-format/analyzer-saved-watcher.md)
+добавила второй элемент в прежний client/registerCapability: compact patterns
+по basenames объявленных YAML/BSL/binary modules из SourceReader. Client policy
+уже при initialize ограничивает пакет 4 MiB frame, игнорирует допустимые
+посторонние source matches и подтверждает binary как нечитаемый без инвалидации.
+Manual policy сохраняет предел 200 и строгий отказ. Ошибочный/внешний URI
+отклоняет весь пакет; control inputs сохраняют приоритет retirement.
+Binary regression найдена полным потоком C2 и покрыта process test; текстовые
+изменения больше не теряются из-за двоичного совпадения. Новых dependencies,
+индекса, обхода каталогов или чтения payloads при регистрации нет.
+Пройдены 59 unit/file, 66 analyzer process и 9 checker process; все 19 tool
+и 15 root gates, root 893/14, minimal 165/3, project-cli 181/3, build-cli 200/3.
+На C1/C2/C3 в RU/EN прошли 54 сценария: 42 control, шесть сохранения и шесть
+полного потока. 114 definition/126 locate проверили current coordinates/hash.
+Независимый SourceReader consumer подтвердил 4619/35455/41461 saved inputs;
+подписки используют 11/13/15 patterns. 5080/35916/41922 событий на locale
+обработаны в 3/18/21 пакетах до 2000: все declared inputs учтены, дубликаты
+объединены, unknown проигнорированы, editor сохранён; инвалидация не читает диск.
+В каждом сценарии bytes пяти выбранных оригинальных файлов проверены,
+собственные копии восстановлены и временные проекты удалены. Locale traces
+совпали; исходные corpora не записывались, semantic complete остаётся false.
+Runtime graph остался 206/214. Настоящий client/OS watcher и автоматический
+restart расширения не приняты; полные модели/семантика, все IDE edits,
+общий memory budget и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

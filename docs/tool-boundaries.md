@@ -518,7 +518,12 @@ metadata, full-sync YAML/BSL, syntax pull, [completion](research/eska-format/ana
 неполнота чтения/моделей отделена от полной семантики.
 [Client file events](research/eska-format/analyzer-watched-files.md) проверяются
 транспортом; общая сессия инвалидирует saved inputs без I/O и сохраняет overlays.
-Наблюдение на стороне клиента и смена состава проекта ещё в работе.
+[Control events](research/eska-format/analyzer-project-changes.md) требуют
+нового host при смене состава и настроек. [Регистрация saved inputs](research/eska-format/analyzer-saved-watcher.md)
+запрашивает компактные source-relative patterns наряду с точными control files.
+Политика пакетов принадлежит transport, общая инвалидация — прежней сессии;
+binary modules остаются явно нечитаемыми. Настоящий client/OS watcher и
+автоматическое открытие нового состава ещё не приняты.
 [Первый property plan](research/eska-format/analyzer-property-plans.md) использует
 общий project editor и version/hash сессии; сервер не пишет файл.
 [Полная проверка принятой базы](research/eska-format/analyzer-property-cancellation.md)
