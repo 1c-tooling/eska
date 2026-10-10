@@ -64,6 +64,56 @@ fn unread_missing_and_failed_owners_do_not_become_successful_empty_inputs() {
     assert!(!inputs.summary().metadata_input_complete);
 }
 
+/// Invalidation drops current bytes without probing a missing file or rewriting a retained snapshot.
+#[test]
+fn saved_invalidation_is_pending_until_read_and_keeps_open_editor_authority() {
+    let (_test, root, mut inputs) = project();
+    let path = catalog();
+    let file = root.join(path.as_path());
+    let text = fs::read_to_string(&file).unwrap();
+    inputs
+        .load_saved(&path, inputs.revision(), &InputRequest::default())
+        .unwrap();
+    let retained = ready(&inputs, &path);
+    let previous = inputs.revision();
+    fs::remove_file(&file).unwrap();
+    inputs.invalidate_saved(&path, previous).unwrap();
+    assert_eq!(inputs.owner(&path).unwrap().state, InputState::Pending);
+    assert!(inputs.owner(&path).unwrap().source_sha256.is_none());
+    assert_eq!(retained.source_bytes, text.len() as u64);
+    let current = inputs.revision();
+    assert_ne!(current, previous);
+    assert!(matches!(
+        inputs.invalidate_saved(&path, previous),
+        Err(UpdateError::StaleRevision { .. })
+    ));
+    assert_eq!(inputs.revision(), current);
+    inputs
+        .load_saved(&path, current, &InputRequest::default())
+        .unwrap();
+    assert!(matches!(
+        inputs.owner(&path).unwrap().state,
+        InputState::Unavailable(_)
+    ));
+    inputs
+        .apply_overlay(&path, inputs.revision(), 7, &text, &InputRequest::default())
+        .unwrap();
+    let editor = inputs.owner(&path).unwrap().clone();
+    assert_eq!(
+        inputs.invalidate_saved(&path, inputs.revision()),
+        Err(UpdateError::OverlayActive {
+            document_version: 7
+        })
+    );
+    assert_eq!(inputs.owner(&path), Some(&editor));
+    let unknown = SourcePath::parse("Catalogs/Unknown/object.yaml").unwrap();
+    assert_eq!(
+        inputs.invalidate_saved(&unknown, inputs.revision()),
+        Err(UpdateError::UnknownOwner(unknown))
+    );
+    assert_eq!(inputs.owner(&path), Some(&editor));
+}
+
 #[test]
 fn saved_and_overlay_bytes_have_identical_values_hashes_and_coordinates() {
     let (_test, root, mut inputs) = project();

@@ -12,6 +12,7 @@ mod property_edit_plans;
 mod request_cancellation;
 mod request_deadline;
 mod support;
+mod watched_files;
 
 use std::{
     fs,

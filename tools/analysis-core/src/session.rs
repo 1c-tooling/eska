@@ -2,6 +2,7 @@
 
 #[cfg(test)]
 mod module_tests;
+mod saved_changes;
 #[cfg(test)]
 pub mod tests;
 

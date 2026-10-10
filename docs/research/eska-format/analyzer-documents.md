@@ -4,7 +4,10 @@
 (full text) и `save.includeText=false`. Экспериментальный ESKA protocol `0.1`
 сохраняется; `documentSync=true`. Теперь отдельно подключена
 [pull-диагностика syntax](analyzer-diagnostics.md) и [отмена запросов](analyzer-cancellation.md);
-Другие языковые запросы и планы изменений ещё не готовы. Старый IDE protocol приложения не изменён.
+[Completion](analyzer-completion.md), [definition](analyzer-definitions.md),
+[property plans](analyzer-property-plans.md) и [saved file events](analyzer-watched-files.md)
+теперь используют ту же сессию. Проверки ниже относятся к первому компоненту
+document sync. Старый IDE protocol приложения не изменён.
 
 Транспорт владеет только набором открытых путей. Текст, версии, origin, hash,
 текущие модели и source-byte квота находятся в общем `AnalysisSession`;

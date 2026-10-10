@@ -260,7 +260,7 @@ fn overlay(
 }
 
 /// Current input summaries omit the actual editor text; tree consumers request properties separately.
-fn current(session: &AnalysisSession, path: &SourcePath) -> Value {
+pub fn current(session: &AnalysisSession, path: &SourcePath) -> Value {
     if let Ok(metadata) = session.metadata(path, session.revision()) {
         return json!({"kind":"metadata", "state":dto::state(&metadata)});
     }

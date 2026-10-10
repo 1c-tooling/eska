@@ -98,6 +98,11 @@ receiver и точный parent текущего YAML. На C1/C2/C3 в RU/EN п
 320 подтверждённых definition и 320 locate; регистров расчёта в корпусах нет,
 для них пройдены тестовые примеры. Form data и остальные receiver kinds ещё не покрыты.
 Все IDE edits, полная семантика и общий memory budget ещё не готовы; EF-18 не завершена.
+[Client file events](../research/eska-format/analyzer-watched-files.md) уже
+сбрасывают saved YAML/BSL без I/O и сохраняют открытые черновики. На C1/C2/C3
+в RU/EN прошли шесть сценариев на собственных частичных копиях с полным составом:
+30 подтверждённых definition и 42 locate. Watcher client, dynamic registration
+и обновление состава ещё в работе.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.

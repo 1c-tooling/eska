@@ -16,7 +16,7 @@ use crate::{AnalysisSession, RequestCancellation, SessionOptions, analysis_setti
 
 use super::{
     args::Cli, completion, definitions, diagnostics, documents, dto, language, metadata_locations,
-    property_edits, protocol, request_control, stream,
+    property_edits, protocol, request_control, stream, watched_files,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -155,6 +155,16 @@ impl Server<'_> {
                     self.phase = Phase::Ready;
                     Step::Continue(None)
                 }
+                watched_files::METHOD if self.phase == Phase::Ready => {
+                    let Some(session) = self.session.as_mut() else {
+                        return Step::Exit(1);
+                    };
+                    Step::Continue(Some(watched_files::notify(
+                        session,
+                        &self.session_id,
+                        &message.params,
+                    )))
+                }
                 "textDocument/didOpen"
                 | "textDocument/didChange"
                 | "textDocument/didClose"
@@ -257,7 +267,8 @@ impl Server<'_> {
                 "requestTimeoutSeconds":self.cli.timeout_seconds,
                 "languageMethods":language::METHODS,
                 "analysis":diagnostics::availability(&settings),
-                "inputNotifications":["eska/inputChanged", "eska/inputRejected"],
+                "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT],
+                "watchedFiles":watched_files::capabilities(),
                 "editPlans":edit_plans.is_some(), "locationEncoding":"utf-8-bytes",
                 "maxRequestBytes":documents::MAX_REQUEST,
                 "maxResponseBytes":rpc_framing::MAX_RESPONSE,

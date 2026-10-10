@@ -508,6 +508,9 @@ metadata, full-sync YAML/BSL, syntax pull, [completion](research/eska-format/ana
 и [переход к текущему BSL-объявлению](research/eska-format/analyzer-definitions.md)
 из того же host. Языковые запросы имеют общий control отмены и deadline;
 неполнота чтения/моделей отделена от полной семантики.
+[Client file events](research/eska-format/analyzer-watched-files.md) проверяются
+транспортом; общая сессия инвалидирует saved inputs без I/O и сохраняет overlays.
+Наблюдение на стороне клиента и смена состава проекта ещё в работе.
 [Первый property plan](research/eska-format/analyzer-property-plans.md) использует
 общий project editor и version/hash сессии; сервер не пишет файл.
 [Полная проверка принятой базы](research/eska-format/analyzer-property-cancellation.md)

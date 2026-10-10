@@ -292,6 +292,22 @@ impl MetadataInputs {
         self.read_saved(path, request)
     }
 
+    /// Remove a saved value without I/O; the next explicit read evaluates the current disk bytes.
+    ///
+    /// # Errors
+    /// Returns a stale request, unknown owner, active overlay or exhausted revision counter.
+    pub fn invalidate_saved(
+        &mut self,
+        path: &SourcePath,
+        expected: InputRevision,
+    ) -> Result<(), UpdateError> {
+        let owner = self.validate_update(path, expected)?;
+        if let InputOrigin::Overlay { document_version } = owner.origin {
+            return Err(UpdateError::OverlayActive { document_version });
+        }
+        self.publish(path, InputOrigin::Saved, None, InputState::Pending)
+    }
+
     /// Explicitly close an editor overlay and read current disk bytes, including disk failures.
     ///
     /// # Errors

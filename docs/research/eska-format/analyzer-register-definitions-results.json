@@ -1522,5 +1522,6 @@
     "Form data, predefined values, query text, common-module namespace identifiers and union receivers remain outside this component.",
     "RSS and query latency are limited scenarios; no full heap/RSS budget or cold-start SLA is asserted.",
     "No new 1C runtime or real VS Code client acceptance was performed."
-  ]
+  ],
+  "verified_commit": "1c95fc6"
 }

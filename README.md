@@ -757,7 +757,9 @@ preset = "trunk"
 Первый [самостоятельный `eska-analyzer`](docs/research/eska-format/analyzer-metadata.md)
 обслуживает чтение метаданных через явно согласованный протокол. Открытые
 [YAML и BSL синхронизируются](docs/research/eska-format/analyzer-documents.md)
-в той же ревизии. [Отмена языковых запросов](docs/research/eska-format/analyzer-cancellation.md)
+в той же ревизии. [События сохранённых файлов](docs/research/eska-format/analyzer-watched-files.md)
+сбрасывают прежний ввод без чтения диска и сохраняют открытые черновики.
+[Отмена языковых запросов](docs/research/eska-format/analyzer-cancellation.md)
 принимается во время вычисления, с сохранением текущего редакторского ввода.
 [Лимит времени диагностики](docs/research/eska-format/analyzer-deadline.md)
 настраивается через `--timeout-seconds`; общий таймер используется и checker.

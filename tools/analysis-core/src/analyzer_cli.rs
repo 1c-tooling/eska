@@ -15,6 +15,7 @@ mod request_control;
 mod server;
 mod stream;
 mod text_edits;
+mod watched_files;
 
 use std::{env, io, process::ExitCode};
 

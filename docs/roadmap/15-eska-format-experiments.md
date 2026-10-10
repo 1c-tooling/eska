@@ -961,6 +961,23 @@ Form data, predefined values, union receivers, пространства общи
 query text, все IDE edits, полнота анализа, общий memory budget, watcher и
 Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
 
+[Уведомления сохранённых файлов](../research/eska-format/analyzer-watched-files.md)
+принимаются как workspace/didChangeWatchedFiles в рамках declared-saved-inputs.
+Общая сессия проверяет пакет целиком, объединяет дубликаты, сбрасывает YAML/BSL
+в pending без I/O и сохраняет editor authority. Один eska/inputsChanged сообщает
+итоговую revision, текущие состояния и resources. Полная матрица прошла:
+51 unit/file, 52 analyzer process и 9 checker process; 19 tool gates, root
+893/14, minimal 165/3, project-cli 181/3, build-cli 200/3 и все 15 root gates.
+На C1/C2/C3 в RU/EN прошли шесть сценариев на собственных частичных копиях
+с полным составом: 30 подтверждённых definition, 42 locate, 42 definition
+с отказами и 30 принятых уведомлений. Точные coordinates/hash, stale/pending,
+delete/recreate, atomic rejection и editor/close согласованы. Оригинальные
+corpus files не записывались, пять выбранных файлов каждого сценария сохранили
+bytes, собственные временные проекты удалены. Runtime graph остался 206/214.
+Client watcher, dynamic registration и изменения состава требуют следующего
+компонента; остальные модели/семантика, IDE edits, memory budget и Explorer
+ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя
