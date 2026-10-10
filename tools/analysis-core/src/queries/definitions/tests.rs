@@ -33,14 +33,6 @@ fn current_definition_targets_follow_editor_close_and_cross_module_input_changes
     assert_eq!(found.source, target);
     assert!(body[found.start_byte as usize..found.end_byte as usize].contains("Процедура Цель"));
     assert_eq!(found.source_sha256, local.source_sha256);
-    let at_end = u32::try_from(body.rfind("Цель").unwrap() + "Цель".len()).unwrap();
-    assert_eq!(
-        session
-            .module_definition(&target, previous, at_end, &QueryCancellation::default())
-            .unwrap()
-            .value,
-        Some(found.clone())
-    );
     assert!(!local.metadata_models_complete);
     let text = "Процедура Вызов()\r\nTools.Цель();\r\nКонецПроцедуры\r\n";
     session
@@ -119,6 +111,29 @@ fn current_definition_targets_follow_editor_close_and_cross_module_input_changes
             .unwrap(),
         found
     );
+}
+
+/// Both edges of a Cyrillic call name resolve to the same declaration before punctuation.
+#[test]
+fn local_definition_accepts_both_identifier_boundaries() {
+    let (_directory, root) = fixture();
+    let mut session = AnalysisSession::open(&root).unwrap();
+    let path = SourcePath::parse(TARGET).unwrap();
+    let body = "\u{feff}// Я😀\r\nПроцедура Цель()\r\nКонецПроцедуры\r\nЦель();\r\n";
+    session
+        .apply_module_overlay(&path, session.revision(), 1, body, &InputRequest::default())
+        .unwrap();
+    let start = u32::try_from(body.rfind("Цель").unwrap()).unwrap();
+    let end = start + u32::try_from("Цель".len()).unwrap();
+    let cancellation = QueryCancellation::default();
+    let at_start = session
+        .module_definition(&path, session.revision(), start, &cancellation)
+        .unwrap();
+    let at_end = session
+        .module_definition(&path, session.revision(), end, &cancellation)
+        .unwrap();
+    assert!(at_start.value.is_some());
+    assert_eq!(at_start, at_end);
 }
 
 /// Pending/bad/cancelled input and split UTF-8 offsets remain errors rather than empty navigation.

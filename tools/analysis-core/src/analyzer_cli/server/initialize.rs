@@ -1,0 +1,133 @@
+//! Negotiate capabilities before publishing a selected project session to the worker.
+
+use eska::{
+    project_core::eska_source::EskaSource,
+    tool_cli::{self, rpc_framing},
+};
+use serde_json::{Value, json};
+
+use super::super::{
+    diagnostics, documents, dto, language, metadata_locations, project_changes, property_edits,
+    protocol, request_control, stream, watched_files, watcher_registration,
+};
+use super::{Phase, Server};
+use crate::{AnalysisSession, SessionOptions};
+
+impl Server<'_> {
+    /// Reject an incompatible ESKA protocol before project discovery or source reads.
+    pub(super) fn initialize(&mut self, params: &Value) -> Result<Value, Value> {
+        self.check_initialize(params)?;
+        let selected = tool_cli::selected(&self.cli.project_dir, self.cli.project.as_deref())
+            .map_err(|failure| {
+                protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
+            })?;
+        let workspace = selected.workspace_root;
+        let settings =
+            crate::analysis_settings::load(selected.project.root(), None, self.localizer.locale());
+        let source = EskaSource::open(selected.project, selected.scope).map_err(|error| {
+            protocol::error_value(-32000, error.code, json!({"location":error.location}))
+        })?;
+        let project_inputs = project_changes::Inputs::selected(&source, workspace.as_deref());
+        let watcher =
+            watcher_registration::Registration::selected(&project_inputs, source.reader(), params)?;
+        let edit_plans = property_edits::Plans::selected(
+            &source,
+            self.cli.accepted_base_sha256.as_deref(),
+            params,
+        )?;
+        let options = SessionOptions {
+            max_retained_source_bytes: self.cli.max_retained_source_bytes,
+            ..SessionOptions::default()
+        };
+        let session =
+            AnalysisSession::from_reader(source.into_reader(), options).map_err(|_| {
+                protocol::error_value(-32000, "analysis_session_open_failed", Value::Null)
+            })?;
+        let session_id = bsl_metadata::Uuid::new_v4().to_string();
+        let mut result = json!({
+            "capabilities":{"textDocumentSync":{"openClose":true,"change":1,"save":{"includeText":false}},
+                "positionEncoding":"utf-16",
+                "experimental":{"eska":{
+                "protocolVersion":protocol::VERSION,
+                "sourceFormat":"eska", "scope":"selected-project",
+                "metadata":{"owners":true, "read":true, "refresh":true,
+                    "locate":{"method":metadata_locations::METHOD,"scope":"current-ready-owner","positionEncoding":"utf-16","lazyRead":false}},
+                "documentSync":true, "languageQueries":true, "requestCancellation":true,
+                "cancellableMethods":request_control::METHODS,"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
+                "requestTimeoutSeconds":self.cli.timeout_seconds,
+                "languageMethods":language::METHODS,
+                "analysis":diagnostics::availability(&settings),
+                "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT, project_changes::EVENT, watcher_registration::EVENT],
+                "watchedFiles":watched_files::capabilities(watcher.is_some()),
+                "projectChanges":project_inputs.capability()?,
+                "watchRegistration":watcher_registration::capability(params),
+                "editPlans":edit_plans.is_some(), "locationEncoding":"utf-8-bytes",
+                "maxRequestBytes":documents::MAX_REQUEST,
+                "maxResponseBytes":rpc_framing::MAX_RESPONSE,
+                "snapshot":dto::snapshot(&session, &session_id),
+            }}},
+            "serverInfo":{"name":"eska-analyzer", "version":env!("CARGO_PKG_VERSION")},
+        });
+        if edit_plans.is_some() {
+            result["capabilities"]["experimental"]["eska"]["propertyEditPlans"] =
+                json!({"method":property_edits::METHOD,"scope":"open-document","versioned":true});
+        }
+        result["capabilities"]["diagnosticProvider"] = json!({
+            "identifier":diagnostics::IDENTIFIER, "interFileDependencies":false,
+            "workspaceDiagnostics":false, "workDoneProgress":false});
+        if settings.is_ok() {
+            result["capabilities"]["completionProvider"] =
+                json!({"resolveProvider":false,"triggerCharacters":["."],"workDoneProgress":false});
+            result["capabilities"]["definitionProvider"] = json!(true);
+            result["capabilities"]["experimental"]["eska"]["definition"] = json!({"scope":"ready-bsl-and-canonical-metadata","metadataTargets":"typed-objects-and-members","incompleteResults":"error"});
+        }
+        self.client_capabilities(params);
+        self.project_inputs = Some(project_inputs);
+        self.watcher = watcher;
+        self.edit_plans = edit_plans;
+        self.session = Some(session);
+        self.settings = Some(settings);
+        self.session_id = session_id;
+        self.phase = Phase::Initializing;
+        Ok(result)
+    }
+
+    /// All negotiation preconditions are checked before opening the selected source or changing server state.
+    fn check_initialize(&self, params: &Value) -> Result<(), Value> {
+        if self.phase != Phase::New {
+            return Err(protocol::error_value(
+                -32600,
+                "already_initialized",
+                Value::Null,
+            ));
+        }
+        if !params.get("capabilities").is_some_and(Value::is_object) {
+            return Err(protocol::error_value(
+                -32602,
+                "rpc_invalid_params",
+                Value::Null,
+            ));
+        }
+        if params.pointer("/initializationOptions/eska/protocolVersion")
+            != Some(&json!(protocol::VERSION))
+        {
+            return Err(protocol::error_value(
+                -32602,
+                "protocol_version_unsupported",
+                json!({"supported":[protocol::VERSION]}),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Keep negotiated presentation options separate from the immutable project input inventory.
+    fn client_capabilities(&mut self, params: &Value) {
+        self.snippets = params
+            .pointer("/capabilities/textDocument/completion/completionItem/snippetSupport")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        self.extended_kinds = params
+            .pointer("/capabilities/textDocument/completion/completionItemKind")
+            .is_some_and(Value::is_object);
+    }
+}

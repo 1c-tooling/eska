@@ -102,6 +102,10 @@ machine cause, severity и RU/EN объяснение. JSON schema 1 добав�
 не включает сервер; библиотека без обеих features работает без транспорта и CLI.
 Бинарник использует общий bounded framing/JSON parser, не прежний handshake
 приложения. Runtime не зависит от LSP crates, Git, платформы или отладчика.
+Внутри транспорта `server.rs` управляет жизненным циклом соединения и одним
+worker; `server/initialize.rs` согласует возможности, `server/requests.rs`
+проверяет snapshot и передаёт запросы профильным обработчикам. Сессия и порядок
+изменений остаются общими.
 
 ```bash
 cargo build --manifest-path tools/analysis-core/Cargo.toml --features analyzer-cli --release --locked --bin eska-analyzer
