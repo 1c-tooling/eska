@@ -1,0 +1,1206 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "scope": "current_ready_yaml_object_and_property_locations",
+  "protocol_version": "0.1",
+  "analysis_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.342081826995127
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 0.49637555600202177
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 0.747607394005172
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 5.707099680003012,
+      "results": [
+        "ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.49s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.02373085700674
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 2.2174733630090486
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 1.0800035760039464
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 7.301797020991216,
+      "results": [
+        "ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 1.925849727995228
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.6580292299913708
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 1.4052543379948474
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 4.10267737400136,
+      "results": [
+        "ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.6227494689956075
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 1.3487789200007683
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 3.2845846059935866
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 10.997901402995922,
+      "results": [
+        "ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.62s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.85s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.254743776997202
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 20.562328902000445
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 5.335139872011496
+    }
+  ],
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8003748699993594
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.8012132729927544
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 14.01018146800925
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 56.956910713997786
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 6.435722356007318
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.3698386150063016
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 7.127504884003429
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.1259788619936444
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.6067401670006802
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 8.997945666997111
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.088631931997952
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 4.60386751301121
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 12.790520300011849
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.6517492280108854
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007472067009075545
+    }
+  ],
+  "runtime": {
+    "package_names": 206,
+    "resolved_versions": 214,
+    "release_bytes": 48801256
+  },
+  "real_runs": [
+    {
+      "category": "common",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.10945697900024243,
+      "read_seconds": 0.001323351010796614,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0008724280196474865
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0009373060165671632
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0008407389977946877
+      },
+      "yaml_bytes": 4104,
+      "peak_rss_kib": 39500,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.1403308389999438,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "common",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.09000053298950661,
+      "read_seconds": 0.001217059005284682,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0014255130081437528
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0012741600075969473
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.001120884990086779
+      },
+      "yaml_bytes": 4104,
+      "peak_rss_kib": 39600,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.11386171200138051,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "catalog_nested",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.09025622300396208,
+      "read_seconds": 0.06209003999538254,
+      "saved": {
+        "location_queries": 90,
+        "objects": 30,
+        "native_parts": 3,
+        "opaque_properties": 30,
+        "total_query_seconds": 0.027307906944770366
+      },
+      "editor": {
+        "location_queries": 90,
+        "objects": 30,
+        "native_parts": 3,
+        "opaque_properties": 30,
+        "total_query_seconds": 0.014710176052176394
+      },
+      "restored": {
+        "location_queries": 90,
+        "objects": 30,
+        "native_parts": 3,
+        "opaque_properties": 30,
+        "total_query_seconds": 0.02014936407795176
+      },
+      "yaml_bytes": 224732,
+      "peak_rss_kib": 49548,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.4997546820086427,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "catalog_nested",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.09585453799809329,
+      "read_seconds": 0.06246858100348618,
+      "saved": {
+        "location_queries": 90,
+        "objects": 30,
+        "native_parts": 3,
+        "opaque_properties": 30,
+        "total_query_seconds": 0.024485877016559243
+      },
+      "editor": {
+        "location_queries": 90,
+        "objects": 30,
+        "native_parts": 3,
+        "opaque_properties": 30,
+        "total_query_seconds": 0.04131474200403318
+      },
+      "restored": {
+        "location_queries": 90,
+        "objects": 30,
+        "native_parts": 3,
+        "opaque_properties": 30,
+        "total_query_seconds": 0.05009290500311181
+      },
+      "yaml_bytes": 224732,
+      "peak_rss_kib": 48796,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.6940748409979278,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "unsupported_role",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.10325426200870425,
+      "read_seconds": 0.000741607989766635,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0008831370068946853
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0005689980025636032
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.00044059100036974996
+      },
+      "yaml_bytes": 2800,
+      "peak_rss_kib": 38800,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "unsupported",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.12169758300296962,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "unsupported_role",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.0921732190035982,
+      "read_seconds": 0.0010251189960399643,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0013071749999653548
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0008245119970524684
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0008030349999899045
+      },
+      "yaml_bytes": 2800,
+      "peak_rss_kib": 39048,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "unsupported",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.11260745298932306,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "common",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.8406984749890398,
+      "read_seconds": 0.0014659629960078746,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.00088641801266931
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0011465649877209216
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0007025849918136373
+      },
+      "yaml_bytes": 4070,
+      "peak_rss_kib": 173764,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9678243910020683,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "common",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 1.011428542988142,
+      "read_seconds": 0.001305059005971998,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.00061554997228086
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0005203189939493313
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0003005420003319159
+      },
+      "yaml_bytes": 4070,
+      "peak_rss_kib": 173540,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.1486951400002,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "catalog_nested",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 1.3540781479969155,
+      "read_seconds": 0.05169909700634889,
+      "saved": {
+        "location_queries": 69,
+        "objects": 23,
+        "native_parts": 3,
+        "opaque_properties": 23,
+        "total_query_seconds": 0.022133721999125555
+      },
+      "editor": {
+        "location_queries": 69,
+        "objects": 23,
+        "native_parts": 3,
+        "opaque_properties": 23,
+        "total_query_seconds": 0.022993574020802043
+      },
+      "restored": {
+        "location_queries": 69,
+        "objects": 23,
+        "native_parts": 3,
+        "opaque_properties": 23,
+        "total_query_seconds": 0.01541649097634945
+      },
+      "yaml_bytes": 171884,
+      "peak_rss_kib": 174444,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.803990963002434,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "catalog_nested",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.9727492219972191,
+      "read_seconds": 0.040041469008428976,
+      "saved": {
+        "location_queries": 69,
+        "objects": 23,
+        "native_parts": 3,
+        "opaque_properties": 23,
+        "total_query_seconds": 0.009601532015949488
+      },
+      "editor": {
+        "location_queries": 69,
+        "objects": 23,
+        "native_parts": 3,
+        "opaque_properties": 23,
+        "total_query_seconds": 0.019114534996333532
+      },
+      "restored": {
+        "location_queries": 69,
+        "objects": 23,
+        "native_parts": 3,
+        "opaque_properties": 23,
+        "total_query_seconds": 0.016652516918838955
+      },
+      "yaml_bytes": 171884,
+      "peak_rss_kib": 174456,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.3585516099992674,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "unsupported_role",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.8063777200004552,
+      "read_seconds": 0.000783438008511439,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0011026669963030145
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0006275399791775271
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0016994269972201437
+      },
+      "yaml_bytes": 2748,
+      "peak_rss_kib": 173736,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "unsupported",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9387890020007035,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "unsupported_role",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.8565596499975072,
+      "read_seconds": 0.0010659199906513095,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0011441710084909573
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0009158350003417581
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0006735019996995106
+      },
+      "yaml_bytes": 2748,
+      "peak_rss_kib": 173724,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "unsupported",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0070473320083693,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "common",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.9388456779997796,
+      "read_seconds": 0.00124992300698068,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0006778160168323666
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0006860920111648738
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.00023527501616626978
+      },
+      "yaml_bytes": 4070,
+      "peak_rss_kib": 196464,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0729824290028773,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "common",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.9026614360045642,
+      "read_seconds": 0.0011789599957410246,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0007007590029388666
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.00046637300692964345
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0004604099958669394
+      },
+      "yaml_bytes": 4070,
+      "peak_rss_kib": 197032,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.038352240997483,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "catalog_nested",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.9683031169988681,
+      "read_seconds": 0.005830314999911934,
+      "saved": {
+        "location_queries": 9,
+        "objects": 3,
+        "native_parts": 2,
+        "opaque_properties": 3,
+        "total_query_seconds": 0.004036058991914615
+      },
+      "editor": {
+        "location_queries": 9,
+        "objects": 3,
+        "native_parts": 2,
+        "opaque_properties": 3,
+        "total_query_seconds": 0.002628521964652464
+      },
+      "restored": {
+        "location_queries": 9,
+        "objects": 3,
+        "native_parts": 2,
+        "opaque_properties": 3,
+        "total_query_seconds": 0.0023307220253627747
+      },
+      "yaml_bytes": 20624,
+      "peak_rss_kib": 196688,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.1457031220052158,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "catalog_nested",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.9970345100009581,
+      "read_seconds": 0.005856591000338085,
+      "saved": {
+        "location_queries": 9,
+        "objects": 3,
+        "native_parts": 2,
+        "opaque_properties": 3,
+        "total_query_seconds": 0.002289626994752325
+      },
+      "editor": {
+        "location_queries": 9,
+        "objects": 3,
+        "native_parts": 2,
+        "opaque_properties": 3,
+        "total_query_seconds": 0.0019154000037815422
+      },
+      "restored": {
+        "location_queries": 9,
+        "objects": 3,
+        "native_parts": 2,
+        "opaque_properties": 3,
+        "total_query_seconds": 0.001218240024172701
+      },
+      "yaml_bytes": 20624,
+      "peak_rss_kib": 196732,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "ready",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.1622003550000954,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "unsupported_role",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.9684610039985273,
+      "read_seconds": 0.0009884120081551373,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0007713629893260077
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.000620448001427576
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0005046440055593848
+      },
+      "yaml_bytes": 2761,
+      "peak_rss_kib": 196836,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "unsupported",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.1122217570082285,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "unsupported_role",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.9339337580022402,
+      "read_seconds": 0.0009413109946763143,
+      "saved": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.00045374000910669565
+      },
+      "editor": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.00046676899364683777
+      },
+      "restored": {
+        "location_queries": 3,
+        "objects": 1,
+        "native_parts": 1,
+        "opaque_properties": 1,
+        "total_query_seconds": 0.0010699790000217035
+      },
+      "yaml_bytes": 2761,
+      "peak_rss_kib": 196576,
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read": true,
+      "invalid_clears_old_locations": true,
+      "stale_snapshot_rejected": true,
+      "foreign_qname_rejected": true,
+      "close_restores_saved": true,
+      "zero_timeout_independent_of_metadata": true,
+      "semantic_model": "unsupported",
+      "source_hashes_verified": true,
+      "tracked_source_files": 3,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0833898049895652,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    }
+  ],
+  "limitations": [
+    "metadata_locate_requires_explicit_ready_owner",
+    "ranges_cover_object_or_property_entry_not_scalar_selection",
+    "bsl_symbol_to_metadata_navigation_not_connected",
+    "source_quota_is_not_heap_or_rss_budget",
+    "actual_vs_code_and_platform_not_run_for_this_component",
+    "no_watcher_or_multi_project_host"
+  ],
+  "complete_all_semantic_parity": [
+    {
+      "corpus": "C1",
+      "exit_code": 0,
+      "wall_seconds": 42.83600949200627,
+      "projection": {
+        "diagnostics": 0,
+        "documents": 3595,
+        "mode": "All",
+        "objects": 8330,
+        "optimized": true,
+        "owners": 2645,
+        "references": 3594,
+        "schema_version": 1,
+        "seconds": 7.185508568
+      }
+    },
+    {
+      "corpus": "C2",
+      "exit_code": 0,
+      "wall_seconds": 128.80458528999588,
+      "projection": {
+        "diagnostics": 0,
+        "documents": 39572,
+        "mode": "All",
+        "objects": 103417,
+        "optimized": true,
+        "owners": 16286,
+        "references": 39571,
+        "schema_version": 1,
+        "seconds": 128.675131814
+      }
+    },
+    {
+      "corpus": "C3",
+      "exit_code": 0,
+      "wall_seconds": 171.41900457300653,
+      "projection": {
+        "diagnostics": 0,
+        "documents": 45708,
+        "mode": "All",
+        "objects": 131381,
+        "optimized": true,
+        "owners": 18752,
+        "references": 45707,
+        "schema_version": 1,
+        "seconds": 171.245256955
+      }
+    }
+  ]
+}

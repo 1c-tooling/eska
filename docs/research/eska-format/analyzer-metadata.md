@@ -102,6 +102,11 @@ Properties используют общий `MetadataProperty`/`MetadataValue`: �
 YAML и привязан к source hash/snapshot. Inline-команды видны у своего владельца.
 Двоичные payload и неподдержанные модели BSL этим API не раскрываются как код.
 
+[`eska/metadata/locate`](analyzer-metadata-locations.md) принимает snapshot,
+owner source, UUID и необязательный QName свойства. Готовый текущий YAML даёт
+Location в UTF-16 и исходный byte range; locate не загружает вход и не читает
+файл для вычисления координат. Inline/nested объекты используют URI владельца.
+
 ## Ограничения ресурсов
 
 Один worker обрабатывает запросы последовательно. Отдельный reader принимает

@@ -106,7 +106,7 @@ pub fn module(input: &ModuleInput) -> Value {
 }
 
 /// Metadata and module summaries use the same editor authority and document-version contract.
-fn origin(origin: InputOrigin) -> Value {
+pub(super) fn origin(origin: InputOrigin) -> Value {
     match origin {
         InputOrigin::Saved => json!({"kind":"saved"}),
         InputOrigin::Overlay { document_version } => {
@@ -116,7 +116,7 @@ fn origin(origin: InputOrigin) -> Value {
 }
 
 /// Unavailable source remains a coded result for the current revision, never an empty success.
-fn failure_value(failure: &InputFailure) -> Value {
+pub(super) fn failure_value(failure: &InputFailure) -> Value {
     match failure {
         InputFailure::Source(error) => json!({"code":error.code, "location":error.location}),
         InputFailure::Cancelled => json!({"code":"analysis_cancelled"}),

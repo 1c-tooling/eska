@@ -48,6 +48,8 @@ pub struct MetadataSnapshot {
     pub source_bytes: u64,
     pub manifest_sha256: String,
     pub documents: Vec<NativeMetadata>,
+    /// Selected coordinates address object/property spans in the exact text which was parsed.
+    pub coordinates: super::super::TextCoordinates,
 }
 
 /// Keep a separate logical descriptor per native file while sharing the physical owner text.

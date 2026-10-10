@@ -766,6 +766,8 @@ preset = "trunk"
 использует текущий YAML/BSL и явно сообщает неполноту.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
+[Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)
+использует UUID и QName текущего владельца, без чтения файла для координат.
 Полная семантика
 и комплектная поставка ещё не готовы. [План правки свойства YAML](docs/research/eska-format/analyzer-property-plans.md)
 уже учитывает текущую editor version и отдельно закреплённую поддержку;

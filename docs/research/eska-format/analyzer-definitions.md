@@ -69,6 +69,10 @@ revision и resources сохраняются. Следующий запрос п
 
 ## Проверки
 
+Здесь сохранена проверка компонента на `0a700fd`. Последующий
+[metadata locate](analyzer-metadata-locations.md) добавил отдельные координаты
+объектов/свойств YAML; scope стандартного BSL definition пока не расширен.
+
 37 unit/file, 39 analyzer process и 9 checker process tests прошли, все 19 tool
 gates feature matrix/Rustdoc/release прошли. Root: 889 passed / 14 прежних ignored;
 minimal 161/3, project-cli 177/3, build-cli 196/3, все 15 gates прошли.
@@ -103,5 +107,5 @@ corpus — manifest, configuration, выбранные YAML/BSL — сохран
 Release server — 48780736 bytes; runtime graph — 206 package names / 214 resolved
 versions. Новых dependencies, CLI options или config keys нет.
 [Машинный отчёт](analyzer-definitions-results.json) сохраняет gates и замеры.
-Координаты YAML, все IDE edits, полный memory budget и полнота анализа остаются
+Связь BSL с YAML, все IDE edits, полный memory budget и полнота анализа остаются
 в работе. EF-18 — `IN_PROGRESS`; комплектная поставка и Explorer не переключены.

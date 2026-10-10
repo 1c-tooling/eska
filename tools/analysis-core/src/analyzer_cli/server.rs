@@ -15,8 +15,8 @@ use serde_json::{Value, json};
 use crate::{AnalysisSession, RequestCancellation, SessionOptions, analysis_settings::Settings};
 
 use super::{
-    args::Cli, completion, definitions, diagnostics, documents, dto, language, property_edits,
-    protocol, request_control, stream,
+    args::Cli, completion, definitions, diagnostics, documents, dto, language, metadata_locations,
+    property_edits, protocol, request_control, stream,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -250,7 +250,8 @@ impl Server<'_> {
                 "experimental":{"eska":{
                 "protocolVersion":protocol::VERSION,
                 "sourceFormat":"eska", "scope":"selected-project",
-                "metadata":{"owners":true, "read":true, "refresh":true},
+                "metadata":{"owners":true, "read":true, "refresh":true,
+                    "locate":{"method":metadata_locations::METHOD,"scope":"current-ready-owner","positionEncoding":"utf-16","lazyRead":false}},
                 "documentSync":true, "languageQueries":true, "requestCancellation":true,
                 "cancellableMethods":request_control::METHODS,"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
                 "requestTimeoutSeconds":self.cli.timeout_seconds,
@@ -351,6 +352,11 @@ impl Server<'_> {
             .as_mut()
             .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
         match method {
+            metadata_locations::METHOD => {
+                let params: metadata_locations::Params = protocol::params(value)?;
+                validate_snapshot(session, &self.session_id, &params.snapshot)?;
+                metadata_locations::locate(session, &self.session_id, &params)
+            }
             "eska/metadata/owners" => {
                 let params: protocol::Owners = protocol::params(value)?;
                 validate_snapshot(session, &self.session_id, &params.snapshot)?;

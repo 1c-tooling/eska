@@ -1,7 +1,6 @@
 //! Map all requested byte boundaries in one pass; diagnostic volume must not rescan whole files.
 
-use std::collections::{BTreeMap, BTreeSet};
-
+use eska::project_core::source_format::TextCoordinates;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
@@ -49,56 +48,27 @@ impl Position {
     }
 }
 
-pub struct Positions(BTreeMap<u32, Position>);
+pub struct Positions(TextCoordinates);
 
 impl Positions {
     /// Only valid UTF-8 boundaries of the same text may become zero-based UTF-16 positions.
     pub fn new(text: &str, offsets: &[u32]) -> Result<Self, Value> {
-        if offsets
+        let offsets = offsets
             .iter()
-            .any(|offset| !text.is_char_boundary(*offset as usize))
-        {
-            return Err(invalid());
-        }
-        let mut targets = offsets
-            .iter()
-            .copied()
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-            .peekable();
-        let mut positions = BTreeMap::new();
-        let mut position = Position::default();
-        let mut chars = text.char_indices().peekable();
-        while let Some((offset, character)) = chars.next() {
-            if targets.peek().is_none() {
-                break;
-            }
-            let offset = u32::try_from(offset).map_err(|_| invalid())?;
-            if targets.peek() == Some(&offset) {
-                positions.insert(offset, position);
-                targets.next();
-            }
-            if character == '\n'
-                || (character == '\r' && chars.peek().is_none_or(|(_, next)| *next != '\n'))
-            {
-                position.line += 1;
-                position.character = 0;
-            } else if character != '\r' || chars.peek().is_none_or(|(_, next)| *next != '\n') {
-                position.character +=
-                    u32::try_from(character.len_utf16()).map_err(|_| invalid())?;
-            }
-        }
-        if let Some(offset) = targets.next() {
-            positions.insert(offset, position);
-        }
-        Ok(Self(positions))
+            .map(|offset| *offset as usize)
+            .collect::<Vec<_>>();
+        TextCoordinates::new(text, &offsets)
+            .map(Self)
+            .map_err(|_| invalid())
     }
 
     /// A range is end-exclusive; both endpoints must have been validated against the current bytes.
     pub fn range(&self, start: u32, end: u32) -> Result<Value, Value> {
-        let start = self.0.get(&start).ok_or_else(invalid)?;
-        let end = self.0.get(&end).ok_or_else(invalid)?;
-        Ok(json!({"start":start,"end":end}))
+        let range = self
+            .0
+            .range(start as usize..end as usize)
+            .map_err(|_| invalid())?;
+        Ok(json!(range))
     }
 }
 

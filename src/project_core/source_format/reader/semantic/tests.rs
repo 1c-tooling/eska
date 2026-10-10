@@ -3,6 +3,76 @@ use super::*;
 use crate::project_core::source_format::SourceReader;
 use std::{fs, path::Path};
 
+/// Count a fixture prefix independently; the source uses CRLF and never lone CR.
+fn position(text: &str, byte: usize) -> crate::project_core::source_format::TextPosition {
+    let prefix = &text[..byte];
+    let line_start = prefix.rfind('\n').map_or(0, |index| index + 1);
+    crate::project_core::source_format::TextPosition {
+        line: u32::try_from(prefix.bytes().filter(|&value| value == b'\n').count()).unwrap(),
+        character: u32::try_from(prefix[line_start..].encode_utf16().count()).unwrap(),
+    }
+}
+
+/// Flow-style YAML spans address current non-BMP values, including nested and inline objects.
+#[test]
+fn current_flow_yaml_captures_only_object_and_requested_property_coordinates() {
+    let (_test, root) = source();
+    let reader = SourceReader::open(&root).unwrap();
+    let family = reader.read_owner(&catalog()).unwrap().source;
+    let text = format!(
+        "# Я😀\r\n{}\r\n",
+        serde_json::to_string(&family)
+            .unwrap()
+            .replace("Editable part", "Я😀")
+    );
+    let summary = reader
+        .parse_metadata(&catalog(), &text, PropertiesMode::Summary)
+        .unwrap();
+    let all = reader
+        .parse_metadata(&catalog(), &text, PropertiesMode::All)
+        .unwrap();
+    assert_eq!(summary.source_sha256, all.source_sha256);
+    assert!(summary.coordinates.stored_boundaries() < all.coordinates.stored_boundaries());
+    for document in &all.documents {
+        for object in &document.descriptor.objects {
+            assert_eq!(
+                summary.coordinates.range(object.range.clone()).unwrap(),
+                all.coordinates.range(object.range.clone()).unwrap()
+            );
+            for bytes in std::iter::once(&object.range).chain(
+                object
+                    .properties
+                    .as_ref()
+                    .unwrap()
+                    .iter()
+                    .map(|property| &property.range),
+            ) {
+                let range = all.coordinates.range(bytes.clone()).unwrap();
+                assert_eq!(range.start, position(&text, bytes.start));
+                assert_eq!(range.end, position(&text, bytes.end));
+                assert_eq!(range.start.line, 1);
+                assert_eq!(range.end.line, 1);
+            }
+        }
+    }
+    let property = all.documents[0].descriptor.objects[1]
+        .properties
+        .as_ref()
+        .unwrap()
+        .iter()
+        .find(|property| property.property.key.name == "Comment")
+        .unwrap();
+    assert!(text[property.range.clone()].contains("Я😀"));
+    assert!(
+        all.coordinates
+            .range(property.range.clone())
+            .unwrap()
+            .end
+            .character
+            < u32::try_from(property.range.end).unwrap()
+    );
+}
+
 /// Compare every semantic field while accepting the deliberate change in source byte addresses.
 fn without_coordinates(mut descriptor: ParsedDescriptor) -> ParsedDescriptor {
     for object in &mut descriptor.objects {

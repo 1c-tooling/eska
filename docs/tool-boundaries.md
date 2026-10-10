@@ -513,8 +513,10 @@ metadata, full-sync YAML/BSL, syntax pull, [completion](research/eska-format/ana
 [Полная проверка принятой базы](research/eska-format/analyzer-property-cancellation.md)
 поддерживает общий request control и deadline без загрузки частичной policy.
 Explorer, все IDE edit operations и общий heap/RSS budget ещё не подключены.
-Переходы к метаданным требуют канонических координат YAML; XML-диапазоны ядра
-не используются как fallback.
+[Metadata locate](research/eska-format/analyzer-metadata-locations.md) уже открывает
+UUID или QName свойства в текущем YAML владельца без чтения диска. Координаты
+сохраняются в общем parser snapshot без raw text или дополнительного UUID-индекса.
+Связь BSL-символа с этой целью ещё не подключена; XML-диапазоны ядра не служат fallback.
 [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.

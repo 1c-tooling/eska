@@ -555,5 +555,6 @@
   "real_vscode_client_checked": false,
   "metadata_yaml_coordinates_implemented": false,
   "heap_or_rss_budget_implemented": false,
-  "semantic_complete": false
+  "semantic_complete": false,
+  "verified_commit": "0a700fd"
 }

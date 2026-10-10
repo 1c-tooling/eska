@@ -123,7 +123,10 @@ close перечитывает файл. `textDocument/diagnostic` исполь�
 учитывает client snippet support и явно сообщает неполноту.
 `textDocument/definition` подтверждает BSL-цель из объявленного ready состава;
 диапазон и hash относятся к текущему target text. Не найденная цель при неполных
-входах даёт navigation_incomplete; координаты YAML ещё не подключены. Полная семантика
+входах даёт navigation_incomplete. Отдельный [metadata locate](../../docs/research/eska-format/analyzer-metadata-locations.md)
+находит объект или QName свойства по UUID в текущем готовом YAML, без чтения диска.
+Native path вложенного descriptor сохраняется, URI указывает на физического владельца.
+Связь BSL-символа с метаданными ещё не подключена. Полная семантика
 ещё не объявлена. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
 возвращают versioned WorkspaceEdit для ready открытого документа при независимо
 закреплённой базе и client documentChanges support. План не записывает файл и

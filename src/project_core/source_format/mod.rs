@@ -2,6 +2,7 @@
 
 mod baseline;
 mod composition;
+mod coordinates;
 mod edit;
 mod export;
 mod files;
@@ -19,6 +20,7 @@ mod yaml;
 pub use baseline::{
     AcceptedBase, AcceptedRef, Operation, Permission, PermissionReason, accept_source,
 };
+pub use coordinates::{CoordinateError, TextCoordinates, TextPosition, TextRange};
 pub use edit::{
     SourceEditPlan, SourcePropertyEdit, prepare_property_edit, prepare_property_edit_text,
 };

@@ -883,8 +883,25 @@ saved/editor/close объявления и machine trace parity; исходны�
 В C1 cancel активного 3600046-byte модуля ответил за 0,754–0,852 с, timeout 1 с —
 за 1,037–2,687 с. Задержка и peak RSS до 1131616 KiB подтверждают ограничения
 кооперативной остановки и source quota. Следующий короткий query прошёл в том
-же процессе. Координаты YAML, все IDE edits, полный memory budget и полнота
-анализа остаются в работе. EF-18 — `IN_PROGRESS`.
+же процессе. Эти замеры сохранены для commit `0a700fd`.
+
+[Координаты текущего YAML](../research/eska-format/analyzer-metadata-locations.md)
+добавлены в общий MetadataSnapshot без хранения исходной строки или второго
+UUID-индекса. Metadata locate выбирает UUID/QName в ready owner и возвращает
+UTF-16 Location вместе с source hash/origin/native path/byte range. Inline и
+nested объекты открываются в физическом YAML; запрос не читает диск и не
+изменяет входы. Неподдержанная BSL-модель не мешает корректному дереву метаданных.
+Общий конвертер используется также BSL diagnostics/definitions.
+39 unit/file, 42 analyzer process и 9 checker process tests, все 19 tool gates
+прошли; root — 892/14, minimal — 164/3, project-cli — 180/3, build-cli — 199/3,
+все 15 gates прошли. На C1/C2/C3 в RU/EN прошли 18 сценариев и 1116 locate:
+saved/editor/invalid/close, inline/nested, Name/preserved properties, pending,
+stale и foreign QName; текущие диапазоны/hash и machine trace parity совпали.
+Полная проекция All после изменения parser совпала с XML для 8330/103417/131381
+объектов C1/C2/C3, без metadata diagnostics; эта проверка исключает native/YAML
+диапазоны разных текстов, точные координаты проверены отдельно.
+Связь BSL-символа с метаданными, все IDE edits, полный memory budget, полнота
+анализа и Explorer остаются в работе. EF-18 — `IN_PROGRESS`.
 
 ## EF-19 Самостоятельный инструмент VCS
 

@@ -7,6 +7,7 @@ mod diagnostics;
 mod documents;
 mod dto;
 mod language;
+mod metadata_locations;
 mod positions;
 mod property_edits;
 mod protocol;

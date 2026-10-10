@@ -291,12 +291,29 @@ impl SourceReader {
                 return Err(Error::root("source_declaration_mismatch"));
             }
             let documents = semantic::documents(&source, &tree, &parents, mode)?;
+            let offsets = documents
+                .iter()
+                .flat_map(|document| &document.descriptor.objects)
+                .flat_map(|object| {
+                    std::iter::once(&object.range).chain(
+                        object
+                            .properties
+                            .iter()
+                            .flatten()
+                            .map(|property| &property.range),
+                    )
+                })
+                .flat_map(|range| [range.start, range.end])
+                .collect::<Vec<_>>();
+            let coordinates = super::TextCoordinates::new(text, &offsets)
+                .map_err(|_| Error::root("source_coordinates_invalid"))?;
             Ok(MetadataSnapshot {
                 path: path.clone(),
                 source_sha256: files::hex(&Sha256::digest(text.as_bytes())),
                 source_bytes: text.len() as u64,
                 manifest_sha256: self.manifest_sha256.clone(),
                 documents,
+                coordinates,
             })
         })();
         result.map_err(|error: Error| error.in_field(path.as_str()))
