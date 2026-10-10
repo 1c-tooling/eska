@@ -11,8 +11,8 @@ use serde_json::{Value, json};
 use crate::{AnalysisSession, RequestCancellation, analysis_settings::Settings};
 
 use super::{
-    args::Cli, documents, dto, project_changes, property_edits, protocol, request_control, stream,
-    watched_files, watcher_registration,
+    args::Cli, completion, documents, dto, project_changes, property_edits, protocol,
+    request_control, stream, watched_files, watcher_registration,
 };
 
 mod initialize;
@@ -34,8 +34,7 @@ struct Server<'a> {
     session_id: String,
     documents: documents::Documents,
     settings: Option<Result<Settings, Failure>>,
-    snippets: bool,
-    extended_kinds: bool,
+    completion: completion::Capabilities,
     edit_plans: Option<property_edits::Plans>,
     project_inputs: Option<project_changes::Inputs>,
     restart: Option<Value>,
@@ -65,8 +64,7 @@ pub fn run(
         session_id: String::new(),
         documents: documents::Documents::default(),
         settings: None,
-        snippets: false,
-        extended_kinds: false,
+        completion: completion::Capabilities::default(),
         edit_plans: None,
         project_inputs: None,
         restart: None,

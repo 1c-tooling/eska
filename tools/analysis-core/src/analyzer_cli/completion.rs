@@ -35,13 +35,33 @@ struct Trigger {
     trigger_character: Option<String>,
 }
 
+#[derive(Clone, Copy, Default)]
+pub struct Capabilities {
+    snippets: bool,
+    extended_kinds: bool,
+}
+
+impl Capabilities {
+    /// Missing client options retain plain insertion text and the original LSP item kinds.
+    pub fn negotiate(params: &Value) -> Self {
+        Self {
+            snippets: params
+                .pointer("/capabilities/textDocument/completion/completionItem/snippetSupport")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
+            extended_kinds: params
+                .pointer("/capabilities/textDocument/completion/completionItemKind/valueSet")
+                .is_some_and(Value::is_array),
+        }
+    }
+}
+
 pub struct Options<'a> {
     pub session_id: &'a str,
     pub request: InputRequest,
     pub cancellation: &'a RequestCancellation,
     pub timeout: Duration,
-    pub snippets: bool,
-    pub extended_kinds: bool,
+    pub capabilities: Capabilities,
 }
 
 /// Unsupported settings are failures; disabling the syntax rule does not disable completion.
@@ -120,7 +140,7 @@ fn analyze(
     let items = result
         .value
         .into_iter()
-        .filter_map(|item| item_value(item, options.snippets, options.extended_kinds))
+        .filter_map(|item| item_value(item, options.capabilities))
         .collect::<Vec<_>>();
     let summary = session.summary();
     Ok(
@@ -134,12 +154,16 @@ fn analyze(
 }
 
 /// Only typed kernel snippets/calls use snippet syntax; unsupported clients receive plain names.
-fn item_value(mut item: CompletionItem, snippets: bool, extended_kinds: bool) -> Option<Value> {
+fn item_value(mut item: CompletionItem, capabilities: Capabilities) -> Option<Value> {
     use ide::CompletionItemKind as Kind;
     let snippet = matches!(item.kind, Kind::Snippet)
         || (matches!(item.kind, Kind::Function | Kind::Method) && item.insert_text.contains('$'));
-    let format = if snippet && snippets { 2 } else { 1 };
-    if snippet && !snippets {
+    let format = if snippet && capabilities.snippets {
+        2
+    } else {
+        1
+    };
+    if snippet && !capabilities.snippets {
         if item.kind == Kind::Snippet {
             return None;
         }
@@ -153,8 +177,8 @@ fn item_value(mut item: CompletionItem, snippets: bool, extended_kinds: bool) ->
         Kind::Function => 3,
         Kind::Method => 2,
         Kind::Keyword => 14,
-        Kind::Constant if extended_kinds => 21,
-        Kind::EnumMember if extended_kinds => 20,
+        Kind::Constant if capabilities.extended_kinds => 21,
+        Kind::EnumMember if capabilities.extended_kinds => 20,
         Kind::Constant | Kind::EnumMember => 12,
         Kind::Constructor => 4,
         Kind::Snippet => 15,
@@ -177,21 +201,44 @@ mod tests {
     #[test]
     fn insertion_format_honors_capabilities_and_semantic_item_kind() {
         use ide::CompletionItemKind as Kind;
+        let plain = Capabilities::default();
+        let snippets = Capabilities::negotiate(&json!({"capabilities":{"textDocument":{
+            "completion":{"completionItem":{"snippetSupport":true}}}}}));
         let call = CompletionItem::simple("Call".into(), Kind::Method, "Call($0)".into());
         assert_eq!(
-            item_value(call.clone(), true, false).unwrap()["insertTextFormat"],
+            item_value(call.clone(), snippets).unwrap()["insertTextFormat"],
             2
         );
-        assert_eq!(
-            item_value(call, false, false).unwrap()["insertText"],
-            "Call"
-        );
+        assert_eq!(item_value(call, plain).unwrap()["insertText"], "Call");
         let snippet = CompletionItem::simple("If".into(), Kind::Snippet, "If $1\n$0".into());
-        assert!(item_value(snippet, false, false).is_none());
+        assert!(item_value(snippet, plain).is_none());
         let field = CompletionItem::simple("Literal".into(), Kind::Field, "Literal$0".into());
-        assert_eq!(
-            item_value(field, true, false).unwrap()["insertTextFormat"],
-            1
-        );
+        assert_eq!(item_value(field, snippets).unwrap()["insertTextFormat"], 1);
+    }
+
+    /// An empty kind capability still permits only Text through Reference; valueSet opts into extensions.
+    #[test]
+    fn completion_item_kinds_require_the_client_value_set() {
+        use ide::CompletionItemKind as Kind;
+        for (completion, extended) in [
+            (json!({}), false),
+            (json!({"completionItemKind":{}}), false),
+            (json!({"completionItemKind":{"valueSet":null}}), false),
+            (json!({"completionItemKind":{"valueSet":{}}}), false),
+            (json!({"completionItemKind":{"valueSet":[1, 12]}}), true),
+            (json!({"completionItemKind":{"valueSet":[20, 21]}}), true),
+        ] {
+            let params = json!({"capabilities":{"textDocument":{"completion":completion}}});
+            let capabilities = Capabilities::negotiate(&params);
+            for (kind, number) in [(Kind::Constant, 21), (Kind::EnumMember, 20)] {
+                let item = CompletionItem::simple("Value".into(), kind, "Value".into());
+                let expected = if extended { number } else { 12 };
+                assert_eq!(
+                    item_value(item, capabilities).unwrap()["kind"],
+                    expected,
+                    "{params}"
+                );
+            }
+        }
     }
 }

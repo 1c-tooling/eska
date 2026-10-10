@@ -46,8 +46,10 @@ close восстанавливает фактические saved bytes. Ста�
 
 [Стандартное completion API](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.18/language/completion.md)
 используется для label/kind/insertText/insertTextFormat и optional sortText/filterText.
-Типы кандидатов берутся из ядра. Без client completionItemKind константы и элементы
-перечислений получают совместимый Value; при объявленной поддержке — Constant/EnumMember.
+Типы кандидатов берутся из ядра. Без client `completionItemKind.valueSet`, в том
+числе при пустом `completionItemKind: {}`, константы и элементы перечислений
+получают совместимый Value. Переданный массив `valueSet` разрешает расширенные
+Constant/EnumMember: по LSP такой клиент умеет обрабатывать и неизвестные ему kinds.
 Фильтрацию слова для insertText выполняет клиент.
 
 С `snippetSupport=true` сохраняются шаблоны и tab stops вызовов. Иначе шаблоны

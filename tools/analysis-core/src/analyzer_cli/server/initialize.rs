@@ -7,8 +7,8 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    diagnostics, documents, dto, language, metadata_locations, project_changes, property_edits,
-    protocol, request_control, stream, watched_files, watcher_registration,
+    completion, diagnostics, documents, dto, language, metadata_locations, project_changes,
+    property_edits, protocol, request_control, stream, watched_files, watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisSession, SessionOptions};
@@ -81,7 +81,7 @@ impl Server<'_> {
             result["capabilities"]["definitionProvider"] = json!(true);
             result["capabilities"]["experimental"]["eska"]["definition"] = json!({"scope":"ready-bsl-and-canonical-metadata","metadataTargets":"typed-objects-and-members","incompleteResults":"error"});
         }
-        self.client_capabilities(params);
+        self.completion = completion::Capabilities::negotiate(params);
         self.project_inputs = Some(project_inputs);
         self.watcher = watcher;
         self.edit_plans = edit_plans;
@@ -118,16 +118,5 @@ impl Server<'_> {
             ));
         }
         Ok(())
-    }
-
-    /// Keep negotiated presentation options separate from the immutable project input inventory.
-    fn client_capabilities(&mut self, params: &Value) {
-        self.snippets = params
-            .pointer("/capabilities/textDocument/completion/completionItem/snippetSupport")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        self.extended_kinds = params
-            .pointer("/capabilities/textDocument/completion/completionItemKind")
-            .is_some_and(Value::is_object);
     }
 }

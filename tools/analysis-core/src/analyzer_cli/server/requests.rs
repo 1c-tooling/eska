@@ -173,8 +173,7 @@ impl Server<'_> {
                         request,
                         cancellation,
                         timeout,
-                        snippets: self.snippets,
-                        extended_kinds: self.extended_kinds,
+                        capabilities: self.completion,
                     },
                 )
             }
