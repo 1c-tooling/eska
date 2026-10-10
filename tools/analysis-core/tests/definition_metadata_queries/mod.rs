@@ -70,7 +70,7 @@ fn definitions_follow_current_yaml_and_clear_invalid_targets_in_both_locales() {
         let init = client.ask(&initialize());
         assert_eq!(
             init["result"]["capabilities"]["experimental"]["eska"]["definition"]["metadataTargets"],
-            "top-level-objects"
+            "typed-objects-and-members"
         );
         client.send(&notification("initialized"));
         let pending = client.ask(&definition(&source, BODY, "sAmPlE", &snapshot("0")));

@@ -1179,5 +1179,6 @@
     "Measured RSS is for limited navigation scenarios and does not enforce a heap/RSS budget.",
     "No new 1C runtime or real VS Code client acceptance was performed.",
     "Current source bytes and projections share one session; no raw XML ranges or additional inverse index are used."
-  ]
+  ],
+  "verified_commit": "a13d796"
 }

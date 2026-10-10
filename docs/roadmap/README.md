@@ -89,7 +89,11 @@ local/cross-file targets привязаны к той же revision и target ha
 доступны по UUID/QName без чтения файла; [BSL-символ коллекции](../research/eska-format/analyzer-metadata-definitions.md)
 открывает верхнеуровневую YAML-цель готовой канонической модели.
 24 сценария четырёх семейств на C1/C2/C3 в RU/EN прошли, включая editor/invalid/close
-и declared shadowing. Вложенные BSL-символы ещё требуют реализации.
+и declared shadowing. Добавлены [дочерние BSL-символы](../research/eska-format/analyzer-member-definitions.md):
+реквизиты, табличные части/колонки строк и значения перечислений используют тип
+receiver и точный parent текущего YAML. На C1/C2/C3 в RU/EN прошли 18 сценариев,
+108 подтверждённых definition и 108 locate, включая enum rename и structure refusal.
+Form data, register records/filters и остальные receiver kinds ещё не покрыты.
 Все IDE edits, полная семантика и общий memory budget ещё не готовы; EF-18 не завершена.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):

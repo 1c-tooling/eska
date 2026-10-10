@@ -79,7 +79,8 @@ metadata_input_unavailable с текущим failure. Отсутствующий
 
 Здесь сохранена проверка компонента на `83983b9`; последующие
 [metadata definitions](analyzer-metadata-definitions.md) используют эти координаты
-для перехода из BSL к верхнеуровневому объекту текущей канонической модели.
+для перехода из BSL к верхнеуровневому объекту текущей канонической модели;
+[member definitions](analyzer-member-definitions.md) добавляют дочерние цели.
 
 Прошли 39 unit/file, 42 analyzer process и 9 checker process tests, все 19 tool
 gates для четырёх feature profiles, Rustdoc и release. Root: 892 passed /
@@ -127,5 +128,6 @@ Release server — 48801256 bytes; runtime graph сохранил 206 package na
 это изменение внутреннего API, не новая стабильная версия SDK.
 [Машинный отчёт](analyzer-metadata-locations-results.json) сохраняет gates и замеры.
 
-Вложенные BSL-символы, отдельный selection range, полные IDE edits, memory budget,
-watcher и переключение Explorer остаются в работе. EF-18 — `IN_PROGRESS`.
+Остальные BSL receiver kinds, отдельный selection range, полные IDE edits,
+memory budget, watcher и переключение Explorer остаются в работе.
+EF-18 — `IN_PROGRESS`.

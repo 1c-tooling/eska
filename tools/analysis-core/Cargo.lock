@@ -591,6 +591,7 @@ version = "0.0.0"
 dependencies = [
  "base-db",
  "bsl-metadata",
+ "bsl-types",
  "clap",
  "eska",
  "eska-bsl-adapter",

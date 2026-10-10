@@ -130,8 +130,10 @@ Native path вложенного descriptor сохраняется, URI указ
 уже разрешается в текущий верхнеуровневый объект готовой канонической модели,
 используя тот же metadata locate. Scope definition теперь
 ready-bsl-and-canonical-metadata; YAML-цель содержит kind/UUID/native_path/origin
-с собственным hash, отдельно от caller BSL. Вложенные символы и полная семантика
-ещё не объявлена. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
+с собственным hash, отдельно от caller BSL.
+[Дочерние символы](../../docs/research/eska-format/analyzer-member-definitions.md)
+включают typed реквизиты, таблицы/колонки строк и значения перечислений; capability
+metadataTargets — typed-objects-and-members. Полная семантика ещё не готова. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
 возвращают versioned WorkspaceEdit для ready открытого документа при независимо
 закреплённой базе и client documentChanges support. План не записывает файл и
 не меняет input; он использует общий редактор project core. Полная проверка базы

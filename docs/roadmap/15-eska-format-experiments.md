@@ -920,6 +920,23 @@ Runtime graph остался 206/214; прямой hir dependency уже был 
 Вложенные BSL-символы, все IDE edits, общий heap/RSS budget, полнота анализа,
 watcher и Explorer остаются в работе. EF-18 — `IN_PROGRESS`.
 
+[Переход к дочерним метаданным](../research/eska-format/analyzer-member-definitions.md)
+добавлен через существующий HIR facade: typed origin выбирает реквизит, таблицу
+или колонку строки; enum manager подтверждает значение. Точный parent ID/kind/name
+в текущем документе выбирает UUID для прежнего metadata locate. Нет нового
+индекса, XML fallback или disk read для координат; kernel patch не добавлен.
+Capability metadataTargets расширена до typed-objects-and-members.
+45 unit/file, 46 analyzer process и 9 checker process tests, все 19 tool gates
+прошли. Root 892/14, minimal 164/3, project-cli 180/3, build-cli 199/3, все
+15 gates прошли. На C1/C2/C3 в RU/EN прошли 18 сценариев: 108 подтверждённых
+целей, 108 locate и 210 definition с отказами pending/invalid/stale/structure.
+Saved/editor/close, alias, Unicode и enum rename согласованы; четыре выбранных
+файла каждого сценария сохранили bytes. Runtime graph остался 206/214;
+прямой bsl-types dependency уже был транзитивным. Ограниченные RSS/latency
+замеры не заменяют полный бюджет. Form data, register records/filters,
+остальные receivers, все IDE edits, полнота анализа, общий memory budget,
+watcher и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

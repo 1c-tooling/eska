@@ -519,7 +519,11 @@ UUID или QName свойства в текущем YAML владельца б�
 [Связь BSL-символа коллекции](research/eska-format/analyzer-metadata-definitions.md)
 с верхнеуровневой YAML-целью уже подключена в общей библиотеке анализа;
 transport использует готовый результат. Требуется ready каноническая модель,
-XML-диапазоны ядра не служат fallback. Вложенные BSL-символы ещё не подключены.
+XML-диапазоны ядра не служат fallback.
+[Реквизиты, таблицы/колонки и значения перечислений](research/eska-format/analyzer-member-definitions.md)
+уже используют typed receiver и точные parent IDs текущего документа. Поля
+структуры и свойства платформы не подменяются одноимёнными метаданными; остальные
+receiver kinds и полнота анализа остаются в работе.
 [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.

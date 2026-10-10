@@ -126,7 +126,7 @@ pub fn owner(value: &str) -> SourcePath {
 }
 
 /// Rename one declared attribute using its exact YAML coordinates.
-pub(super) fn draft(root: &Path, path: &SourcePath, field: &str, value: &str) -> String {
+pub fn draft(root: &Path, path: &SourcePath, field: &str, value: &str) -> String {
     let reader = SourceReader::open(root).unwrap();
     let parsed = reader.read_owner(path).unwrap();
     let range = parsed

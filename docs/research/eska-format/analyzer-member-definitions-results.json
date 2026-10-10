@@ -1,0 +1,1171 @@
+{
+  "schema_version": 1,
+  "status": "partial-ef18-component-verified",
+  "date": "2026-10-10",
+  "protocol_version": "0.1",
+  "definition_scope": "ready-bsl-and-canonical-metadata",
+  "source": "task-owned-imported-playground-copies",
+  "application_tests": {
+    "default": {
+      "passed": 892,
+      "ignored": 14
+    },
+    "minimal": {
+      "passed": 164,
+      "ignored": 3
+    },
+    "project_cli": {
+      "passed": 180,
+      "ignored": 3
+    },
+    "build_cli": {
+      "passed": 199,
+      "ignored": 3
+    }
+  },
+  "metadata_targets": "typed-objects-and-members",
+  "core_queries": "AnalysisSession::module_metadata_definition and current metadata_location",
+  "runtime": {
+    "package_names": 206,
+    "resolved_versions": 214,
+    "release_bytes": 48847280
+  },
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.4147583879966987
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 0.7349054060032358
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 0.21053013499476947
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 5.896907696995186,
+      "results": [
+        "ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.32s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.266769748996012
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 0.50546032100101
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 1.0110097620054148
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 3.1635407629946712,
+      "results": [
+        "ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 1.5920431929989718
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.8956259289989248
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 1.4248782729991945
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 5.0167840250069275,
+      "results": [
+        "ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.54s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.8942749490088318
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 1.0889994299941463
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 2.6832915910054
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 8.178491166996537,
+      "results": [
+        "ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.39s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.8503450020070886
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 3.352146506003919
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 4.955416682991199
+    }
+  ],
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8910759179998422
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2653466180054238
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2533687219984131
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 12.855733960997895
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.189485077993595
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.21617547899950296
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6365322240017122
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.06972304500232
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4519950750109274
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 2.5815096070000436
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.980318443995202
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.24320650899608154
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 6.455537342000753
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.1459243040008005
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.00794522299838718
+    }
+  ],
+  "tool_tests": {
+    "unit_file": 45,
+    "analyzer_process": 46,
+    "checker_process": 9,
+    "failed": 0
+  },
+  "real_checks": [
+    {
+      "category": "attribute",
+      "locale": "en-US",
+      "exit_code": 0,
+      "confirmed_definition_queries": 4,
+      "total_definition_queries": 8,
+      "locate_queries": 4,
+      "targets_per_state": 1,
+      "init_seconds": 0.08938764799677301,
+      "read_seconds": 0.04365529300412163,
+      "saved_query_seconds": [
+        0.006673323005088605
+      ],
+      "editor_query_seconds": [
+        0.0005764520028606057
+      ],
+      "close_query_seconds": [
+        0.0007703709998168051
+      ],
+      "alias_query_seconds": [
+        0.0006458090065279976
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 224732,
+      "bsl_source_bytes": 146,
+      "peak_rss_kib": 75420,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.2628014570072992,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "attribute",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "confirmed_definition_queries": 4,
+      "total_definition_queries": 8,
+      "locate_queries": 4,
+      "targets_per_state": 1,
+      "init_seconds": 0.06759489100659266,
+      "read_seconds": 0.04339199599053245,
+      "saved_query_seconds": [
+        0.008250728002167307
+      ],
+      "editor_query_seconds": [
+        0.0005325579986674711
+      ],
+      "close_query_seconds": [
+        0.0007345260091824457
+      ],
+      "alias_query_seconds": [
+        0.0008906990115065128
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 224732,
+      "bsl_source_bytes": 146,
+      "peak_rss_kib": 75536,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.2373988180042943,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "table-and-row",
+      "locale": "en-US",
+      "exit_code": 0,
+      "confirmed_definition_queries": 8,
+      "total_definition_queries": 15,
+      "locate_queries": 8,
+      "targets_per_state": 2,
+      "init_seconds": 0.06914477000827901,
+      "read_seconds": 0.04325160299777053,
+      "saved_query_seconds": [
+        0.006475844988017343,
+        0.0004374409909360111
+      ],
+      "editor_query_seconds": [
+        0.00048815400805324316,
+        0.0004379430029075593
+      ],
+      "close_query_seconds": [
+        0.0005867349973414093,
+        0.00032571300107520074
+      ],
+      "alias_query_seconds": [
+        0.0007387799996649846,
+        0.0004312370001571253
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 224732,
+      "bsl_source_bytes": 243,
+      "peak_rss_kib": 75492,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.24017978600750212,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "table-and-row",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "confirmed_definition_queries": 8,
+      "total_definition_queries": 15,
+      "locate_queries": 8,
+      "targets_per_state": 2,
+      "init_seconds": 0.06881747099396307,
+      "read_seconds": 0.04401876500924118,
+      "saved_query_seconds": [
+        0.007174833997851238,
+        0.0005745200032833964
+      ],
+      "editor_query_seconds": [
+        0.0006597640021936968,
+        0.0007185290014604107
+      ],
+      "close_query_seconds": [
+        0.0007882670033723116,
+        0.00047400199400726706
+      ],
+      "alias_query_seconds": [
+        0.000746150006307289,
+        0.0006316429935395718
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 224732,
+      "bsl_source_bytes": 243,
+      "peak_rss_kib": 75448,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.2499484849977307,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "enum-value",
+      "locale": "en-US",
+      "exit_code": 0,
+      "confirmed_definition_queries": 6,
+      "total_definition_queries": 12,
+      "locate_queries": 6,
+      "targets_per_state": 1,
+      "init_seconds": 0.06904898100765422,
+      "read_seconds": 0.0013992809981573373,
+      "saved_query_seconds": [
+        0.0005124769959365949
+      ],
+      "editor_query_seconds": [
+        0.00040686999273020774
+      ],
+      "close_query_seconds": [
+        0.0004603929992299527
+      ],
+      "alias_query_seconds": [
+        0.0004826920048799366
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": true,
+      "yaml_source_bytes": 7801,
+      "bsl_source_bytes": 105,
+      "peak_rss_kib": 68524,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.13078409701120108,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "enum-value",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "confirmed_definition_queries": 6,
+      "total_definition_queries": 12,
+      "locate_queries": 6,
+      "targets_per_state": 1,
+      "init_seconds": 0.06916469999123365,
+      "read_seconds": 0.0014776450116187334,
+      "saved_query_seconds": [
+        0.0004856529994867742
+      ],
+      "editor_query_seconds": [
+        0.00028530000417958945
+      ],
+      "close_query_seconds": [
+        0.00021638900216203183
+      ],
+      "alias_query_seconds": [
+        0.00028142899100203067
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": true,
+      "yaml_source_bytes": 7801,
+      "bsl_source_bytes": 105,
+      "peak_rss_kib": 69000,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.13508312100020703,
+      "corpus": "C1",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "attribute",
+      "locale": "en-US",
+      "exit_code": 0,
+      "confirmed_definition_queries": 4,
+      "total_definition_queries": 8,
+      "locate_queries": 4,
+      "targets_per_state": 1,
+      "init_seconds": 0.6688302619877504,
+      "read_seconds": 0.03731585299829021,
+      "saved_query_seconds": [
+        0.05318464999436401
+      ],
+      "editor_query_seconds": [
+        0.0006220450013643131
+      ],
+      "close_query_seconds": [
+        0.0008869830053299665
+      ],
+      "alias_query_seconds": [
+        0.0009529399976599962
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 171884,
+      "bsl_source_bytes": 146,
+      "peak_rss_kib": 220632,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9841277950035874,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "attribute",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "confirmed_definition_queries": 4,
+      "total_definition_queries": 8,
+      "locate_queries": 4,
+      "targets_per_state": 1,
+      "init_seconds": 0.6867341949982801,
+      "read_seconds": 0.03268077400571201,
+      "saved_query_seconds": [
+        0.05057021700486075
+      ],
+      "editor_query_seconds": [
+        0.0006207239930517972
+      ],
+      "close_query_seconds": [
+        0.0008100609993562102
+      ],
+      "alias_query_seconds": [
+        0.0007531790033681318
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 171884,
+      "bsl_source_bytes": 146,
+      "peak_rss_kib": 220636,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9763405410049018,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "table-and-row",
+      "locale": "en-US",
+      "exit_code": 0,
+      "confirmed_definition_queries": 8,
+      "total_definition_queries": 15,
+      "locate_queries": 8,
+      "targets_per_state": 2,
+      "init_seconds": 0.6496533320023445,
+      "read_seconds": 0.033596202003536746,
+      "saved_query_seconds": [
+        0.05129099499026779,
+        0.0004779690061695874
+      ],
+      "editor_query_seconds": [
+        0.000580264997552149,
+        0.000434371002484113
+      ],
+      "close_query_seconds": [
+        0.0007154409977374598,
+        0.0005301729979692027
+      ],
+      "alias_query_seconds": [
+        0.0007537420024164021,
+        0.00042872800258919597
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 171884,
+      "bsl_source_bytes": 243,
+      "peak_rss_kib": 220620,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9511767189978855,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "table-and-row",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "confirmed_definition_queries": 8,
+      "total_definition_queries": 15,
+      "locate_queries": 8,
+      "targets_per_state": 2,
+      "init_seconds": 0.7403514999896288,
+      "read_seconds": 0.034220620000269264,
+      "saved_query_seconds": [
+        0.052815945993643254,
+        0.00044172500201966614
+      ],
+      "editor_query_seconds": [
+        0.000563056004466489,
+        0.0005263899947749451
+      ],
+      "close_query_seconds": [
+        0.0007416269945679232,
+        0.0003383919975021854
+      ],
+      "alias_query_seconds": [
+        0.0005879919917788357,
+        0.0003559190081432462
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 171884,
+      "bsl_source_bytes": 243,
+      "peak_rss_kib": 220556,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.04878808799549,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "enum-value",
+      "locale": "en-US",
+      "exit_code": 0,
+      "confirmed_definition_queries": 6,
+      "total_definition_queries": 12,
+      "locate_queries": 6,
+      "targets_per_state": 1,
+      "init_seconds": 0.6710745629970916,
+      "read_seconds": 0.0016190659953281283,
+      "saved_query_seconds": [
+        0.0006536770088132471
+      ],
+      "editor_query_seconds": [
+        0.0005671629915013909
+      ],
+      "close_query_seconds": [
+        0.00018456100951880217
+      ],
+      "alias_query_seconds": [
+        0.00046806299360468984
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": true,
+      "yaml_source_bytes": 7730,
+      "bsl_source_bytes": 97,
+      "peak_rss_kib": 219340,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9021014919999288,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "enum-value",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "confirmed_definition_queries": 6,
+      "total_definition_queries": 12,
+      "locate_queries": 6,
+      "targets_per_state": 1,
+      "init_seconds": 0.6599927939969348,
+      "read_seconds": 0.0016636820073472336,
+      "saved_query_seconds": [
+        0.000738339003873989
+      ],
+      "editor_query_seconds": [
+        0.0004755340050905943
+      ],
+      "close_query_seconds": [
+        0.0005389279976952821
+      ],
+      "alias_query_seconds": [
+        0.0004941619990859181
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": true,
+      "yaml_source_bytes": 7730,
+      "bsl_source_bytes": 97,
+      "peak_rss_kib": 219532,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.8891388019983424,
+      "corpus": "C2",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "attribute",
+      "locale": "en-US",
+      "exit_code": 0,
+      "confirmed_definition_queries": 4,
+      "total_definition_queries": 8,
+      "locate_queries": 4,
+      "targets_per_state": 1,
+      "init_seconds": 0.7452277900010813,
+      "read_seconds": 0.004188196005998179,
+      "saved_query_seconds": [
+        0.06510324799455702
+      ],
+      "editor_query_seconds": [
+        0.0005146159965079278
+      ],
+      "close_query_seconds": [
+        0.0005111609934829175
+      ],
+      "alias_query_seconds": [
+        0.0007212420023279265
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 19824,
+      "bsl_source_bytes": 173,
+      "peak_rss_kib": 247576,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0080070659896592,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "attribute",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "confirmed_definition_queries": 4,
+      "total_definition_queries": 8,
+      "locate_queries": 4,
+      "targets_per_state": 1,
+      "init_seconds": 0.8097679679922294,
+      "read_seconds": 0.004153018991928548,
+      "saved_query_seconds": [
+        0.06538873999670614
+      ],
+      "editor_query_seconds": [
+        0.0005943860014667735
+      ],
+      "close_query_seconds": [
+        0.0003461070009507239
+      ],
+      "alias_query_seconds": [
+        0.00048239200259558856
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 19824,
+      "bsl_source_bytes": 173,
+      "peak_rss_kib": 247200,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.066080625008908,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "table-and-row",
+      "locale": "en-US",
+      "exit_code": 0,
+      "confirmed_definition_queries": 8,
+      "total_definition_queries": 15,
+      "locate_queries": 8,
+      "targets_per_state": 2,
+      "init_seconds": 0.7526922170072794,
+      "read_seconds": 0.00662252600886859,
+      "saved_query_seconds": [
+        0.06906244700076059,
+        0.0005311849963618442
+      ],
+      "editor_query_seconds": [
+        0.0005259430035948753,
+        0.0004866430099355057
+      ],
+      "close_query_seconds": [
+        0.0005401219968916848,
+        0.0003654000029200688
+      ],
+      "alias_query_seconds": [
+        0.0005990159988868982,
+        0.00019162999524269253
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 36229,
+      "bsl_source_bytes": 217,
+      "peak_rss_kib": 247484,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0125190459948499,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "table-and-row",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "confirmed_definition_queries": 8,
+      "total_definition_queries": 15,
+      "locate_queries": 8,
+      "targets_per_state": 2,
+      "init_seconds": 0.7668196859885938,
+      "read_seconds": 0.006479107003542595,
+      "saved_query_seconds": [
+        0.06692186900181696,
+        0.0005944919976172969
+      ],
+      "editor_query_seconds": [
+        0.0005874540074728429,
+        0.0004673369985539466
+      ],
+      "close_query_seconds": [
+        0.0007657179958187044,
+        0.00045677900197915733
+      ],
+      "alias_query_seconds": [
+        0.0008271719998447224,
+        0.00031643599504604936
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": false,
+      "yaml_source_bytes": 36229,
+      "bsl_source_bytes": 217,
+      "peak_rss_kib": 247368,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0343539059977047,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "enum-value",
+      "locale": "en-US",
+      "exit_code": 0,
+      "confirmed_definition_queries": 6,
+      "total_definition_queries": 12,
+      "locate_queries": 6,
+      "targets_per_state": 1,
+      "init_seconds": 0.773504494005465,
+      "read_seconds": 0.001619141999981366,
+      "saved_query_seconds": [
+        0.000462397001683712
+      ],
+      "editor_query_seconds": [
+        0.0003781440027523786
+      ],
+      "close_query_seconds": [
+        0.0002444740093778819
+      ],
+      "alias_query_seconds": [
+        0.0003447640046942979
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": true,
+      "yaml_source_bytes": 7730,
+      "bsl_source_bytes": 97,
+      "peak_rss_kib": 246900,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.042585681003402,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "category": "enum-value",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "confirmed_definition_queries": 6,
+      "total_definition_queries": 12,
+      "locate_queries": 6,
+      "targets_per_state": 1,
+      "init_seconds": 0.7627374209987465,
+      "read_seconds": 0.0015032520022941753,
+      "saved_query_seconds": [
+        0.0005189150106161833
+      ],
+      "editor_query_seconds": [
+        0.00040529799298383296
+      ],
+      "close_query_seconds": [
+        0.000533485013875179
+      ],
+      "alias_query_seconds": [
+        0.0005837890057591721
+      ],
+      "current_utf16_and_byte_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "pending_does_not_read_yaml": true,
+      "invalid_clears_old_targets": true,
+      "stale_snapshot_rejected": true,
+      "close_restores_saved": true,
+      "structure_fields_refused": true,
+      "inferred_alias_resolves": true,
+      "unicode_case_folded_names": true,
+      "enum_rename_verified": true,
+      "yaml_source_bytes": 7730,
+      "bsl_source_bytes": 97,
+      "peak_rss_kib": 247040,
+      "semantic_complete": false,
+      "source_hashes_verified": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0154548010032158,
+      "corpus": "C3",
+      "normalized_locale_trace_parity": true
+    }
+  ],
+  "limits": [
+    "Only ready canonical root models with a confirmed typed object/member and an exact current parent chain are covered.",
+    "Form data, register records/filters, predefined values, query text, common-module namespace identifiers and union receivers are outside this component.",
+    "Measured RSS and field-query latency are limited scenarios; no full heap/RSS budget or cold-start SLA is asserted.",
+    "No new 1C runtime or real VS Code client acceptance was performed.",
+    "Source bytes and projections share one session with no XML fallback, additional inverse index or disk read for target coordinates."
+  ]
+}

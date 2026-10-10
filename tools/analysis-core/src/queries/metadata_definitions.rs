@@ -1,6 +1,9 @@
 //! Typed metadata collection members resolve to current canonical slots and YAML coordinates.
 
 #[cfg(test)]
+mod member_tests;
+mod members;
+#[cfg(test)]
 mod tests;
 
 use base_db::RootQueryDb;
@@ -17,7 +20,7 @@ use crate::{
 use super::definitions::{source_for_file, validate_offset};
 
 impl AnalysisSession {
-    /// Navigate a typed collection member to current ready YAML.
+    /// Navigate a typed metadata object or declared member to current ready YAML.
     ///
     /// Receiver inference respects local shadowing; the existing canonical index resolves the name.
     /// Invalid/unread canonical metadata cannot confirm a symbol even if its tree is readable.
@@ -33,7 +36,7 @@ impl AnalysisSession {
     ) -> Result<ModuleResult<Option<MetadataLocation>>, QueryError> {
         self.query_module(path, expected, cancellation, |analysis, file| {
             validate_offset(analysis, file, path, offset)?;
-            let Some((kind, name)) = metadata_symbol(analysis, file, offset) else {
+            let Some(symbol) = metadata_symbol(analysis, file, offset) else {
                 return Ok(None);
             };
             let root = self
@@ -44,7 +47,9 @@ impl AnalysisSession {
                 .database()
                 .metadata_listing(root)
                 .ok_or(QueryError::UnsupportedNavigationTarget)?;
-            let Some(ids) = config_index(analysis.database(), listing).lookup(kind, &name) else {
+            let Some(ids) =
+                config_index(analysis.database(), listing).lookup(symbol.kind, &symbol.name)
+            else {
                 return Ok(None);
             };
             let native = source_for_file(self, analysis, ids.main)?;
@@ -64,19 +69,31 @@ impl AnalysisSession {
                 .source_reader()
                 .declared_owner(owner)
                 .map_err(|_| QueryError::UnsupportedNavigationTarget)?;
-            self.metadata_location(owner, expected, declared.uuid, None)
+            let Some(uuid) =
+                members::selected_uuid(self, owner, expected, declared.uuid, &symbol.children)?
+            else {
+                return Ok(None);
+            };
+            self.metadata_location(owner, expected, &uuid, None)
                 .map(Some)
                 .map_err(|_| QueryError::UnsupportedNavigationTarget)
         })
     }
 }
 
-/// Only an actual collection receiver can designate a top-level metadata object.
+/// One typed symbol selects an owner and an exact path of declared metadata children.
+struct MetadataSymbol {
+    kind: bsl_metadata::MdoType,
+    name: String,
+    children: Vec<(eska::project_core::MetadataKind, String)>,
+}
+
+/// Collection/member facts come from the existing semantic facade, never a spelling heuristic.
 fn metadata_symbol(
     analysis: &ide::Analysis,
     file: vfs::FileId,
     offset: u32,
-) -> Option<(bsl_metadata::MdoType, String)> {
+) -> Option<MetadataSymbol> {
     let parse = analysis.database().parse(file);
     let token = parse
         .syntax_node()
@@ -90,11 +107,17 @@ fn metadata_symbol(
             is_call: false,
         } => {
             let receiver_type = semantics.type_of_expr(file, &receiver);
-            let TypeKind::ManagerCollection(kind) = analysis.database().lookup_type(receiver_type)
-            else {
-                return None;
-            };
-            Some((*kind, token.text().to_owned()))
+            if let TypeKind::ManagerCollection(kind) =
+                analysis.database().lookup_type(receiver_type)
+            {
+                Some(MetadataSymbol {
+                    kind: *kind,
+                    name: token.text().to_owned(),
+                    children: Vec::new(),
+                })
+            } else {
+                members::symbol(analysis, file, receiver_type, token.text())
+            }
         }
         _ => None,
     }

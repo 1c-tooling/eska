@@ -74,7 +74,8 @@ revision и resources сохраняются. Следующий запрос п
 Здесь сохранена проверка компонента на `0a700fd`. Последующий
 [metadata locate](analyzer-metadata-locations.md) добавил отдельные координаты
 объектов/свойств YAML; [metadata definitions](analyzer-metadata-definitions.md)
-расширил стандартную навигацию верхнеуровневой целью текущего YAML.
+расширил стандартную навигацию верхнеуровневой целью текущего YAML,
+а [member definitions](analyzer-member-definitions.md) — дочерними объектами.
 
 37 unit/file, 39 analyzer process и 9 checker process tests прошли, все 19 tool
 gates feature matrix/Rustdoc/release прошли. Root: 889 passed / 14 прежних ignored;
