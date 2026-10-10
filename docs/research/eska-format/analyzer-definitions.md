@@ -61,8 +61,9 @@ BOM, CRLF/LF/CR и non-BMP учитываются тем же borrowed converter
 
 ## Отмена и время
 
-Initialize сообщает три languageMethods: diagnostic, completion, definition;
-четыре cancellableMethods включают также preparePropertyEdit. Используются тот
+Initialize сообщает девять languageMethods, включая diagnostic, completion,
+definition и [локальные prepareRename/rename](analyzer-local-rename.md);
+десять cancellableMethods включают также preparePropertyEdit. Используются тот
 же input thread, очередь на четыре сообщения, lifetime ID и RequestCancellation.
 Клиентская отмена отвечает `-32800`, analysis_cancelled; deadline — `-32000`,
 analysis_deadline_exceeded без retriggerRequest. `-32802` остаётся специальным

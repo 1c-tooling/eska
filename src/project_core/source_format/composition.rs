@@ -16,15 +16,8 @@ pub(super) fn reference_path(
     if name.contains('/') {
         return Err(Error::root("source_path_invalid"));
     }
-    let folder = kind
-        .collection_folder()
-        .or(match kind {
-            MetadataKind::Form => Some("Forms"),
-            MetadataKind::Template => Some("Templates"),
-            MetadataKind::Command => Some("Commands"),
-            _ => None,
-        })
-        .ok_or_else(|| Error::root("source_reference_kind_unsupported"))?;
+    let folder =
+        reference_folder(kind).ok_or_else(|| Error::root("source_reference_kind_unsupported"))?;
     SourcePath::parse(&format!(
         "{}{folder}/{name}.xml",
         if base.is_empty() {
@@ -33,6 +26,16 @@ pub(super) fn reference_path(
             format!("{base}/")
         }
     ))
+}
+
+/// Descriptor paths and pinned payload ownership use the same native collection vocabulary.
+pub(super) fn reference_folder(kind: MetadataKind) -> Option<&'static str> {
+    kind.collection_folder().or(match kind {
+        MetadataKind::Form => Some("Forms"),
+        MetadataKind::Template => Some("Templates"),
+        MetadataKind::Command => Some("Commands"),
+        _ => None,
+    })
 }
 
 /// One YAML replaces a main descriptor while preserving its native relative owner directory.

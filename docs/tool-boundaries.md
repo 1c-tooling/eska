@@ -140,6 +140,12 @@ IDE transport согласует формат документации, UTF-16 l
 диапазоны в Locations, сохраняя target hash, coverage и caps. Неполный поиск
 не становится основанием для rename; второй текстовый индекс не создаётся.
 
+[Локальный rename](research/eska-format/analyzer-local-rename.md) получает native
+method scope и occurrences из общего ядра; модель проекта определяет pinned
+module permission тем же resolver, что защищённый экспорт. IDE transport
+возвращает один versioned WorkspaceEdit с UTF-16 ranges. Применение остаётся
+за клиентом; server не записывает BSL и не выдаёт частичный поиск за полный план.
+
 VS Code предоставляет [TreeDataProvider](https://code.visualstudio.com/api/extension-guides/tree-view).
 Расширение запрашивает нужные дочерние узлы, преобразует их в TreeItem, хранит
 раскрытие и выделение, показывает свойства и пользовательские команды. Состав,

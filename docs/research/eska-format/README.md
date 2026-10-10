@@ -56,6 +56,9 @@ binding того же ядра. SignatureHelp согласует докумен�
 [Использования BSL-символа](analyzer-references.md) получены типизированным native
 поиском. Locations сохраняют текущие target ranges/hash, kind, coverage и caps;
 разрешённый пустой поиск отделён от неполного и неподдержанного.
+[Переименование локальных BSL-символов](analyzer-local-rename.md) ограничено
+методом открытого модуля. Планы связывают native occurrences, editor version/hash
+и принятую module policy; capture/неполный поиск дают отказ, файл не записывается.
 [Координаты объектов и свойств YAML](analyzer-metadata-locations.md) вычисляются
 из текущего разбора; metadata locate выбирает UUID/QName без чтения файла.
 [Переход из BSL к объекту YAML](analyzer-metadata-definitions.md) использует

@@ -1255,8 +1255,27 @@ stale/quotas/settings, отмена и продолжение сессии. 100 
 Runtime graph прежний 206/214; новые dependencies отсутствуют. 200 candidate
 files и 10000 projected hits не являются native CPU/heap/RSS budget:
 collection предшествует проекции. Неполный поиск не даёт rename proof.
-Rename plans, полнота моделей/семантики, общий memory budget и Explorer
+Планы вне метода, полнота моделей/семантики, общий memory budget и Explorer
 ещё в работе; EF-18 остаётся `IN_PROGRESS`, очередь этапов не меняется.
+
+[Планы локального переименования BSL](../research/eska-format/analyzer-local-rename.md)
+подключены к standard prepareRename/rename для параметров и явных/неявных locals
+метода открытого модуля. Native scope и полный resident search связываются с
+current version/hash и независимо принятой module policy. Общий Authority
+обслуживает YAML/BSL previews; protected export использует тот же ownership
+resolver. Исправлен выбор UUID вложенного CommandModule: freeze команды больше
+не теряется из-за физического YAML родителя. Сервер возвращает versioned edit,
+файл не записывается; capture, syntax invalid, stale и неполный поиск дают отказ.
+233 tool tests и все 19 tool/15 root gates прошли; root — 895/14.
+24 сценария C1/C2/C3 RU/EN на собственных полных минимальных композициях с
+реальными модулями подтвердили 360 pulls, 96 планов и 228 правок. Проверены
+настоящие параметры, дополнительные locals, no-op, версия и независимые
+UTF-16/hash; 15 выбранных оригиналов и BSL копий сохранены, свои проекты удалены.
+Установленный native CLI дополнительно проверил синтаксис шести изменённых копий.
+Parser получил прямой edge для name validation, graph прежний 206/214.
+Policy/память всей исходной конфигурации, реальный IDE-клиент и 1С runtime
+этими сценариями не подтверждаются. Планы вне метода, полные модели/семантика,
+общий memory budget и Explorer ещё в работе; EF-18 — `IN_PROGRESS`.
 
 ## EF-19 Самостоятельный инструмент VCS
 

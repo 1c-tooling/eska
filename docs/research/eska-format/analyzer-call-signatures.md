@@ -86,8 +86,8 @@ native lexer завершает `//`-комментарий только на LF
 не исправляются скрыто. Проверка CR в process tests изолирует преобразование
 позиций на BSL без line comments; устранение ограничения lexer сюда не входит.
 
-Семь languageMethods и восемь cancellableMethods включают signatureHelp
-и [references](analyzer-references.md).
+Девять languageMethods и десять cancellableMethods включают signatureHelp,
+[references](analyzer-references.md) и [локальные prepareRename/rename](analyzer-local-rename.md).
 Общий request control сохраняет отмену `-32800`, deadline `-32000` без
 retriggerRequest, нулевой timeout до IO и обычный лимит 300 секунд.
 Отмена кооперативная; второй worker, host, индекс или dependency не добавлены.

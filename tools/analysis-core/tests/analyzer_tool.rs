@@ -21,6 +21,7 @@ mod metadata_locations;
 mod project_changes;
 mod property_edit_plans;
 mod reference_queries;
+mod rename_queries;
 mod request_cancellation;
 mod request_deadline;
 mod saved_watcher_registration;

@@ -312,6 +312,14 @@ impl AcceptedBase {
         })
     }
 
+    /// Resolve an existing text module through pinned ownership rather than editable YAML identity.
+    ///
+    /// # Errors
+    /// Returns an unsupported payload or missing accepted owner; denial remains a typed permission.
+    pub fn module_permission(&self, path: &SourcePath) -> Result<Permission, Error> {
+        super::protected::module_permission(self, path)
+    }
+
     /// Compute permission for an accepted native identity and a concrete operation.
     #[must_use]
     pub fn permission(&self, uuid: &NativeUuid, operation: Operation) -> Permission {

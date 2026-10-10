@@ -54,7 +54,8 @@ native порядок результатов сохранён.
 каждый Location сохраняет coverage и flags. semantic_complete всегда false.
 Результат не доказывает безопасность rename.
 
-Семь languageMethods и восемь cancellableMethods включают references.
+Девять languageMethods и десять cancellableMethods включают references
+и [локальные prepareRename/rename](analyzer-local-rename.md).
 Общий request control сохраняет отмену `-32800`, deadline `-32000` без
 retriggerRequest и остановку нулевого timeout до IO. Обычный лимит — 300 секунд.
 Отмена кооперативная; задержка и потребление ресурсов не имеют жёсткой гарантии.
@@ -101,5 +102,5 @@ Current byte/UTF-16 ranges, hashes и machine traces согласованы ме
 VmHWM — 68136–247092 KiB; query time — 0,0001355–0,138889 секунды.
 Это частичные ленивые сценарии, а не полный анализ конфигураций или SLA.
 Платформа 1С, IDE-клиент и OS watcher в этой части не проверялись.
-Rename plans, полнота моделей/семантики, общий memory budget и Explorer
+Планы вне метода, полнота моделей/семантики, общий memory budget и Explorer
 остаются в работе; EF-18 — `IN_PROGRESS`.

@@ -6,7 +6,9 @@
 [textDocument/definition](analyzer-definitions.md) и
 [eska/metadata/preparePropertyEdit](analyzer-property-cancellation.md).
 Initialize объявляет `requestCancellation=true`,
-`cancellableMethods=[textDocument/diagnostic,textDocument/completion,textDocument/definition,eska/metadata/preparePropertyEdit]`
+десять cancellableMethods: diagnostic, completion, definition, documentSymbol,
+hover, signatureHelp, references, [prepareRename/rename](analyzer-local-rename.md)
+и eska/metadata/preparePropertyEdit
 и `maxQueuedMessages=4` внутри `experimental.eska`. Остальные metadata requests, initialize и document notifications
 не объявлены отменяемыми. Прежний IDE protocol не изменён.
 

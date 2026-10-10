@@ -10,11 +10,12 @@ use serde_json::{Value, json};
 use crate::{AnalysisSession, ModuleFailure, ModuleState, QueryError};
 
 use super::{
-    completion, definitions, diagnostics, document_symbols, hover, references, signature_help,
+    completion, definitions, diagnostics, document_symbols, hover, references, rename,
+    signature_help,
 };
 use super::{documents, dto, protocol};
 
-pub const METHODS: [&str; 7] = [
+pub const METHODS: [&str; 9] = [
     "textDocument/diagnostic",
     "textDocument/completion",
     "textDocument/definition",
@@ -22,6 +23,8 @@ pub const METHODS: [&str; 7] = [
     "textDocument/hover",
     "textDocument/signatureHelp",
     "textDocument/references",
+    "textDocument/prepareRename",
+    "textDocument/rename",
 ];
 
 #[derive(Clone, Copy)]
@@ -33,6 +36,8 @@ pub enum Method {
     Hover,
     SignatureHelp,
     References,
+    PrepareRename,
+    Rename,
 }
 
 impl Method {
@@ -46,6 +51,8 @@ impl Method {
             "textDocument/hover" => Some(Self::Hover),
             "textDocument/signatureHelp" => Some(Self::SignatureHelp),
             "textDocument/references" => Some(Self::References),
+            "textDocument/prepareRename" => Some(Self::PrepareRename),
+            "textDocument/rename" => Some(Self::Rename),
             _ => None,
         }
     }
@@ -60,6 +67,7 @@ pub enum Request {
     Hover(hover::Params),
     SignatureHelp(signature_help::Params),
     References(references::Params),
+    LocalRename(rename::Request),
 }
 
 impl Request {
@@ -73,6 +81,10 @@ impl Request {
             Method::Hover => protocol::params(value).map(Self::Hover),
             Method::SignatureHelp => protocol::params(value).map(Self::SignatureHelp),
             Method::References => protocol::params(value).map(Self::References),
+            Method::PrepareRename => protocol::params(value)
+                .map(|params| Self::LocalRename(rename::Request::Prepare(params))),
+            Method::Rename => protocol::params(value)
+                .map(|params| Self::LocalRename(rename::Request::Rename(params))),
         }
     }
 
@@ -86,6 +98,7 @@ impl Request {
             Self::Hover(params) => params.eska.as_ref(),
             Self::SignatureHelp(params) => params.eska.as_ref(),
             Self::References(params) => params.eska.as_ref(),
+            Self::LocalRename(params) => params.context(),
         }
     }
 }

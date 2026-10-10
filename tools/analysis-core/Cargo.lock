@@ -598,6 +598,7 @@ dependencies = [
  "hir",
  "ide",
  "ide-db",
+ "parser",
  "project-model",
  "salsa",
  "serde",

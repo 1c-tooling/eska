@@ -8,8 +8,8 @@ use std::{
 
 use eska::project::{
     source_format::{
-        AcceptedBase, NativeUuid, Operation, PermissionReason, PropertyName, accept_source,
-        import_designer,
+        AcceptedBase, NativeUuid, Operation, PermissionReason, PropertyName, SourcePath,
+        accept_source, import_designer,
     },
     support::{Reason, State},
 };
@@ -176,6 +176,57 @@ fn accepted_policy_keeps_mixed_inline_permissions_and_ignores_working_edits() {
     assert_eq!(unknown.reason, PermissionReason::UnknownObject);
     assert_eq!(unknown.baseline, reference.sha256);
     assert!(!accepted.permission(&uuid('6'), Operation::Rename).allowed);
+}
+
+/// Text-module previews resolve pinned ownership, rejecting resources, binaries and undeclared paths.
+#[test]
+fn module_permission_uses_accepted_paths_and_ignores_working_identity_changes() {
+    let test = TestDir::new();
+    let source = test.0.join("source");
+    let input = fixture(&test.0);
+    fs::write(
+        input.join("Catalogs/Sample/Ext/ObjectModule.bsl"),
+        "// Locked module.\r\n",
+    )
+    .unwrap();
+    import_designer(&input, &source).unwrap();
+    let root = test.0.join("accepted");
+    let reference = accept_source(&source, &root, &[]).unwrap();
+    let base = AcceptedBase::open(&root, &reference).unwrap();
+    let own = SourcePath::parse("CommonModules/Tools/Ext/Module.bsl").unwrap();
+    let locked = SourcePath::parse("Catalogs/Sample/Ext/ObjectModule.bsl").unwrap();
+    assert!(base.module_permission(&own).unwrap().allowed);
+    let permission = base.module_permission(&locked).unwrap();
+    assert_eq!(permission.uuid, uuid('2'));
+    assert_eq!(permission.reason, PermissionReason::NativeRestriction);
+    fs::write(
+        source.join("Catalogs/Sample/object.yaml"),
+        "uuid: altered\nstate: unrestricted\n",
+    )
+    .unwrap();
+    assert!(!base.module_permission(&locked).unwrap().allowed);
+    for path in [
+        "CommonModules/Tools/object.yaml",
+        "CommonModules/Tools/Ext/Module.bin",
+        "CommonModules/Tools/Ext/UnknownModule.bsl",
+    ] {
+        assert_eq!(
+            base.module_permission(&SourcePath::parse(path).unwrap())
+                .unwrap_err()
+                .code,
+            "source_edit_module_unsupported"
+        );
+    }
+    let frozen_root = test.0.join("accepted-frozen");
+    // Restore the source before making a distinct accepted base with a genuine freeze.
+    let pristine = test.0.join("pristine");
+    import_designer(&input, &pristine).unwrap();
+    let reference = accept_source(&pristine, &frozen_root, &[uuid('6')]).unwrap();
+    let frozen = AcceptedBase::open(&frozen_root, &reference).unwrap();
+    assert_eq!(
+        frozen.module_permission(&own).unwrap().reason,
+        PermissionReason::EskaFrozen
+    );
 }
 
 #[test]

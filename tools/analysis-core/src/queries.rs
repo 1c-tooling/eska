@@ -5,6 +5,7 @@
 mod cancellation_tests;
 pub mod definitions;
 mod document_symbols;
+pub mod local_rename;
 mod metadata_definitions;
 pub mod references;
 pub mod signature_help;

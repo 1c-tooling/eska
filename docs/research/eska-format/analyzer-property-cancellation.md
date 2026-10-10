@@ -9,15 +9,14 @@
 
 ## Контроль запроса
 
-Initialize сообщает четыре `cancellableMethods`: textDocument/diagnostic,
-textDocument/completion, [textDocument/definition](analyzer-definitions.md),
-eska/metadata/preparePropertyEdit. Список languageMethods содержит три языковых
-метода. Включение editPlans по-прежнему требует
+Initialize включает eska/metadata/preparePropertyEdit в десять `cancellableMethods`.
+Список languageMethods содержит девять языковых методов, включая
+[локальные prepareRename/rename](analyzer-local-rename.md). Включение editPlans по-прежнему требует
 независимый accepted pin и клиентскую поддержку versioned documentChanges.
 
 Input thread направляет [`$/cancelRequest`](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.18/specification.md#cancelRequest)
 по текущему ID; worker единолично владеет сессией. Контроль и очередь общие для
-всех четырёх операций. Повторный активный ID любой из них отклоняется;
+всех десяти операций. Повторный активный ID любой из них отклоняется;
 числовые/string IDs различаются. Завершённый или неизвестный ID не влияет на
 будущее использование. Guard снимает регистрацию до начала wire write.
 

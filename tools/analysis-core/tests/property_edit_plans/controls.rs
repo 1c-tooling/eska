@@ -15,7 +15,9 @@ fn open(client: &mut Client, root: &Path, text: &str) -> Value {
             "textDocument/documentSymbol",
             "textDocument/hover",
             "textDocument/signatureHelp",
-            "textDocument/references"
+            "textDocument/references",
+            "textDocument/prepareRename",
+            "textDocument/rename"
         ])
     );
     assert_eq!(
@@ -28,6 +30,8 @@ fn open(client: &mut Client, root: &Path, text: &str) -> Value {
             "textDocument/hover",
             "textDocument/signatureHelp",
             "textDocument/references",
+            "textDocument/prepareRename",
+            "textDocument/rename",
             METHOD
         ])
     );

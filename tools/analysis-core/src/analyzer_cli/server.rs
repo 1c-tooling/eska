@@ -11,7 +11,7 @@ use serde_json::{Value, json};
 use crate::{AnalysisSession, RequestCancellation, analysis_settings::Settings};
 
 use super::{
-    args::Cli, completion, documents, dto, hover, project_changes, property_edits, protocol,
+    args::Cli, completion, documents, dto, edit_authority, hover, project_changes, protocol,
     request_control, signature_help, stream, watched_files, watcher_registration,
 };
 
@@ -38,7 +38,7 @@ struct Server<'a> {
     hierarchical_symbols: bool,
     hover_format: hover::Format,
     signature: signature_help::Capabilities,
-    edit_plans: Option<property_edits::Plans>,
+    edit_plans: Option<edit_authority::Authority>,
     project_inputs: Option<project_changes::Inputs>,
     restart: Option<Value>,
     watcher: Option<watcher_registration::Registration>,

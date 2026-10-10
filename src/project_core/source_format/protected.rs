@@ -16,12 +16,14 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use super::{
-    AcceptedBase, Error, FileRole, NativeUuid, Operation, PermissionReason, SourcePath,
+    AcceptedBase, Child, Error, FileRole, MetadataNode, NativeUuid, Operation, PermissionReason,
+    PropertyName, PropertyValue, Section, SourcePath,
+    composition::reference_folder,
     export::{Package, validate_composition},
     files::{self, Inventory},
 };
 use crate::project_core::{
-    native,
+    MetadataKind, native,
     support::{Reason, State},
 };
 
@@ -225,9 +227,13 @@ fn select_files(
                 .is_some_and(|extension| extension.eq_ignore_ascii_case("bsl"));
         let editable = !native_policy
             && !binary_module
-            && uuid
-                .as_ref()
-                .is_some_and(|uuid| base.permission(uuid, operation).allowed);
+            && if operation == Operation::Module {
+                base.module_permission(path)
+                    .is_ok_and(|permission| permission.allowed)
+            } else {
+                uuid.as_ref()
+                    .is_some_and(|uuid| base.permission(uuid, operation).allowed)
+            };
         if let Some(current) = current.filter(|_| editable) {
             files.insert(path.clone(), current.clone());
             origins.insert(path.clone(), Origin::Working);
@@ -296,12 +302,30 @@ fn record_extras(working: &Inventory, base: &AcceptedBase, diagnostics: &mut Vec
     }
 }
 
+/// Editor plans and protected export share the same accepted text-module ownership and permission.
+pub(super) fn module_permission(
+    base: &AcceptedBase,
+    path: &SourcePath,
+) -> Result<super::Permission, Error> {
+    if !native::is_module_path(path.as_path())
+        || !path
+            .as_path()
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("bsl"))
+        || !base.package.snapshot.files.contains_key(path)
+    {
+        return Err(Error::root("source_edit_module_unsupported"));
+    }
+    let uuid = file_owner(base, path).ok_or_else(|| Error::root("source_edit_owner_unknown"))?;
+    Ok(base.permission(&uuid, Operation::Module))
+}
+
 /// Resolve the longest declared native owner before considering a configuration root payload.
 fn file_owner(base: &AcceptedBase, path: &SourcePath) -> Option<NativeUuid> {
     for (end, _) in path.as_str().match_indices('/').rev() {
         let descriptor = SourcePath::parse(&format!("{}.xml", &path.as_str()[..end])).ok()?;
         if let Some(document) = base.package.documents.get(&descriptor) {
-            return Some(document.descriptor.object.uuid.clone());
+            return inline_owner(&document.descriptor.object, &path.as_str()[end + 1..]);
         }
     }
     if path.as_str().starts_with("Ext/") {
@@ -312,6 +336,32 @@ fn file_owner(base: &AcceptedBase, path: &SourcePath) -> Option<NativeUuid> {
             .map(|document| document.descriptor.object.uuid.clone());
     }
     None
+}
+
+/// A nested inline descriptor owns its payload even though its physical YAML belongs to a parent.
+fn inline_owner(mut node: &MetadataNode, mut remaining: &str) -> Option<NativeUuid> {
+    loop {
+        let mut parts = remaining.splitn(3, '/');
+        let folder = parts.next()?;
+        if !MetadataKind::ALL
+            .iter()
+            .any(|kind| reference_folder(*kind) == Some(folder))
+        {
+            return Some(node.uuid.clone());
+        }
+        let name = parts.next()?;
+        let tail = parts.next()?;
+        node = node.sections.iter().find_map(|section| {
+            let Section::Children(children) = section else { return None; };
+            children.iter().find_map(|child| {
+                let Child::Inline {object} = child else {return None;};
+                (reference_folder(object.kind) == Some(folder)
+                    && matches!(object.property(PropertyName::Name),Some(PropertyValue::Text(value)) if value == name))
+                    .then_some(object.as_ref())
+            })
+        })?;
+        remaining = tail;
+    }
 }
 
 /// A text read must match the already captured input bytes, including changes between reads.

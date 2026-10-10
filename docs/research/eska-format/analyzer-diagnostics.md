@@ -16,7 +16,7 @@ Config fingerprint совпадает при одинаковых rules, locale 
 автоматический restart клиента ещё не подключён.
 
 Initialize объявляет `positionEncoding=utf-16`, `languageQueries=true`,
-`languageMethods=[textDocument/diagnostic]`, состояние syntax в
+textDocument/diagnostic в languageMethods, состояние syntax в
 `experimental.eska.analysis` и config fingerprint/path. Стандартный `diagnosticProvider`
 теперь объявляется независимо от настроек BSL с
 `identifier=eska-syntax`, `interFileDependencies=false`, `workspaceDiagnostics=false`.

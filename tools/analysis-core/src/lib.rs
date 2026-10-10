@@ -20,6 +20,9 @@ mod queries;
 mod request;
 mod resources;
 mod session;
+#[cfg(test)]
+#[path = "../tests/support/project.rs"]
+mod test_project;
 #[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
 mod tool_metadata;
 
@@ -36,6 +39,9 @@ pub use modules::{ModuleFailure, ModuleInput, ModuleState, ModuleSummary, Sessio
 pub use projection::{MetadataView, ModelState, OwnerModel};
 pub use property_edits::{PropertyEditError, PropertyEditInput, PropertyEditPlan};
 pub use queries::definitions::DefinitionTarget;
+pub use queries::local_rename::{
+    LocalRenameError, LocalRenameInput, LocalRenamePlan, LocalRenameTarget,
+};
 pub use queries::references::{ReferenceKind, ReferenceOccurrence, ReferenceSearch};
 pub use queries::signature_help::{CallParameter, CallSignature, CallSignatures};
 pub use queries::symbol_hover::{HoverKind, SymbolHover};

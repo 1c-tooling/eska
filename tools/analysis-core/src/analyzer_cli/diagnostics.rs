@@ -49,6 +49,23 @@ pub struct Options<'a> {
     pub localizer: &'a Localizer,
 }
 
+impl<'a> Options<'a> {
+    /// Freeze the current request's IO bound, stop control and presentation together.
+    pub const fn new(
+        request: &'a InputRequest,
+        cancellation: &'a RequestCancellation,
+        timeout: Duration,
+        localizer: &'a Localizer,
+    ) -> Self {
+        Self {
+            request,
+            cancellation,
+            timeout,
+            localizer,
+        }
+    }
+}
+
 /// A configuration failure affects language analysis without disabling the independent metadata tree.
 pub fn availability(settings: &Result<Settings, Failure>) -> Value {
     match settings {

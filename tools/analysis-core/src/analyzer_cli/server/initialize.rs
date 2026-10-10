@@ -7,9 +7,9 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    completion, diagnostics, document_symbols, documents, dto, hover, language, metadata_locations,
-    project_changes, property_edits, protocol, references, request_control, signature_help, stream,
-    watched_files, watcher_registration,
+    completion, diagnostics, document_symbols, documents, dto, edit_authority, hover, language,
+    metadata_locations, project_changes, property_edits, protocol, references, rename,
+    request_control, signature_help, stream, watched_files, watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisSession, SessionOptions};
@@ -31,7 +31,7 @@ impl Server<'_> {
         let project_inputs = project_changes::Inputs::selected(&source, workspace.as_deref());
         let watcher =
             watcher_registration::Registration::selected(&project_inputs, source.reader(), params)?;
-        let edit_plans = property_edits::Plans::selected(
+        let edit_plans = edit_authority::Authority::selected(
             &source,
             self.cli.accepted_base_sha256.as_deref(),
             params,
@@ -80,6 +80,11 @@ impl Server<'_> {
             "identifier":diagnostics::IDENTIFIER, "interFileDependencies":false,
             "workspaceDiagnostics":false, "workDoneProgress":false});
         if settings.is_ok() {
+            if edit_plans.is_some() {
+                result["capabilities"]["renameProvider"] = rename::provider(params);
+                result["capabilities"]["experimental"]["eska"]["localRename"] =
+                    rename::capability();
+            }
             result["capabilities"]["completionProvider"] =
                 json!({"resolveProvider":false,"triggerCharacters":["."],"workDoneProgress":false});
             result["capabilities"]["definitionProvider"] = json!(true);

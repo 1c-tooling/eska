@@ -8,8 +8,7 @@ use crate::{Locale, QueryCancellation};
 
 use super::*;
 
-#[path = "../../tests/support/project.rs"]
-mod support;
+use crate::test_project as support;
 
 /// Reuse the library's one test-directory module rather than compiling it twice.
 fn project(

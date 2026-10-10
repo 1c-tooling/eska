@@ -9,8 +9,8 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    completion, definitions, diagnostics, document_symbols, documents, dto, hover, language,
-    metadata_locations, property_edits, protocol, references, signature_help,
+    args::Cli, completion, definitions, diagnostics, document_symbols, documents, dto, hover,
+    language, metadata_locations, property_edits, protocol, references, rename, signature_help,
 };
 use super::Server;
 use crate::{AnalysisSession, RequestCancellation};
@@ -35,19 +35,17 @@ impl Server<'_> {
             validate_snapshot(session, &self.session_id, &params.snapshot)?;
             let cancellation = cancellation
                 .ok_or_else(|| protocol::error_value(-32603, "request_invariant", Value::Null))?;
-            return self
-                .edit_plans
-                .as_ref()
-                .ok_or_else(|| {
-                    protocol::error_value(-32000, "source_edit_plans_disabled", Value::Null)
-                })?
-                .prepare(
-                    session,
-                    &self.session_id,
-                    &params,
-                    cancellation,
-                    Duration::from_secs(self.cli.timeout_seconds),
-                );
+            let authority = self.edit_plans.as_ref().ok_or_else(|| {
+                protocol::error_value(-32000, "source_edit_plans_disabled", Value::Null)
+            })?;
+            return property_edits::prepare(
+                authority,
+                session,
+                &self.session_id,
+                &params,
+                cancellation,
+                Duration::from_secs(self.cli.timeout_seconds),
+            );
         }
         let session = self
             .session
@@ -128,30 +126,20 @@ impl Server<'_> {
             .session
             .as_mut()
             .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
-        let cancellation = cancellation
-            .ok_or_else(|| protocol::error_value(-32603, "request_invariant", Value::Null))?;
         let settings = self
             .settings
             .as_ref()
             .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
-        let params = language::Request::parse(method, value)?;
-        if let Some(expected) = params.context() {
-            validate_snapshot(session, &self.session_id, &expected.snapshot)?;
-        }
-        let request = query_input(self.cli.max_document_bytes, cancellation);
-        let timeout = Duration::from_secs(self.cli.timeout_seconds);
+        let (params, cancellation) =
+            decode(session, &self.session_id, method, value, cancellation)?;
+        let (request, timeout) = query_limits(self.cli, cancellation);
         match params {
             language::Request::Diagnostic(params) => diagnostics::pull(
                 session,
                 &self.session_id,
                 &params,
                 settings,
-                &diagnostics::Options {
-                    request: &request,
-                    cancellation,
-                    timeout,
-                    localizer: self.localizer,
-                },
+                &diagnostics::Options::new(&request, cancellation, timeout, self.localizer),
             ),
             language::Request::Completion(params) => completion::pull(
                 session,
@@ -222,17 +210,48 @@ impl Server<'_> {
                     timeout,
                 },
             ),
+            language::Request::LocalRename(params) => rename::pull(
+                session,
+                &params,
+                settings,
+                &rename::Options::new(
+                    &self.session_id,
+                    self.edit_plans.as_ref(),
+                    cancellation,
+                    timeout,
+                ),
+            ),
         }
     }
 }
 
 /// Lazy language reads inherit the same document bound and the request's input cancellation handle.
-fn query_input(max_document_bytes: u64, cancellation: &RequestCancellation) -> InputRequest {
-    InputRequest {
-        max_document_bytes,
-        cancellation: cancellation.input.clone(),
-        ..InputRequest::default()
+fn query_limits(cli: &Cli, cancellation: &RequestCancellation) -> (InputRequest, Duration) {
+    (
+        InputRequest {
+            max_document_bytes: cli.max_document_bytes,
+            cancellation: cancellation.input.clone(),
+            ..InputRequest::default()
+        },
+        Duration::from_secs(cli.timeout_seconds),
+    )
+}
+
+/// Typed decoding and snapshot checks precede dispatch; managed controls cannot be optional afterward.
+fn decode<'a>(
+    session: &AnalysisSession,
+    id: &str,
+    method: language::Method,
+    value: &Value,
+    cancellation: Option<&'a RequestCancellation>,
+) -> Result<(language::Request, &'a RequestCancellation), Value> {
+    let cancellation = cancellation
+        .ok_or_else(|| protocol::error_value(-32603, "request_invariant", Value::Null))?;
+    let params = language::Request::parse(method, value)?;
+    if let Some(expected) = params.context() {
+        validate_snapshot(session, id, &expected.snapshot)?;
     }
+    Ok((params, cancellation))
 }
 
 /// Clients copy the opaque token; incrementing it or keeping it after reconnect is invalid.
