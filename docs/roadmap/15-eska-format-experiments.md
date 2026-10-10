@@ -772,6 +772,19 @@ Fresh session UUID исключает токены другого процесс
 всего состава и чтение одного владельца в обеих локалях. Синхронизация YAML/BSL,
 language requests/cancellation, общий memory budget и edit plans остаются в работе.
 
+[Синхронизация документов сервера](../research/eska-format/analyzer-documents.md)
+подключает стандартные full-document open/change/save/close к той же сессии YAML/BSL.
+Транспорт хранит только список открытых путей; текст, версии, хеши и квоты
+принадлежат общему host. Invalid/quota failure становятся текущим unavailable
+с новой ревизией; stale versions и несбалансированный lifecycle отклоняются.
+Save сохраняет редакторскую authority, close читает актуальный файл. URI ресурсов,
+двоичных модулей и файлов вне выбранного корня не становятся текстовыми входами.
+24 unit/file, 14 analyzer process и 9 checker process tests прошли с обязательными
+проверками и root matrix (887 passed / 14 прежних ignored). Read-only C1/C2/C3
+проверили один YAML и BSL saved/editor/close в обеих локалях; контрольные байты
+сохранены. Дополнительных packages нет: optional `url` уже есть в графе ядра.
+Языковые запросы/отмена транспорта, полный memory budget и edit plans ещё не готовы.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

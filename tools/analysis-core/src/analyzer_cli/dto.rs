@@ -9,7 +9,7 @@ use eska::{
 };
 use serde_json::{Value, json};
 
-use crate::{AnalysisSession, MetadataView, ModelState};
+use crate::{AnalysisSession, MetadataView, ModelState, ModuleFailure, ModuleInput, ModuleState};
 
 /// The transport's fresh identity disambiguates equal revisions from different server processes.
 pub fn snapshot(session: &AnalysisSession, id: &str) -> Value {
@@ -57,13 +57,8 @@ fn object(object: &ParsedObject) -> Value {
 }
 
 /// A ready source can still have an unsupported/invalid semantic adapter or incomplete children.
-fn state(view: &MetadataView) -> Value {
-    let origin = match view.origin {
-        InputOrigin::Saved => json!({"kind":"saved"}),
-        InputOrigin::Overlay { document_version } => {
-            json!({"kind":"overlay", "document_version":document_version})
-        }
-    };
+pub fn state(view: &MetadataView) -> Value {
+    let origin = origin(view.origin);
     let input = match &view.input {
         InputState::Pending => json!({"kind":"pending"}),
         InputState::Ready(_) => json!({"kind":"ready"}),
@@ -91,6 +86,33 @@ fn state(view: &MetadataView) -> Value {
     json!({"origin":origin, "source_sha256":view.source_sha256, "input":input,
         "model":model, "model_issue":model_issue, "descriptors":view.model.descriptors,
         "modeled_descriptors":view.model.modeled_descriptors, "parse_issues":view.model.parse_issues})
+}
+
+/// A module's current readability and byte count do not imply clean syntax or full analysis.
+pub fn module(input: &ModuleInput) -> Value {
+    let state = match &input.state {
+        ModuleState::Pending => json!({"kind":"pending"}),
+        ModuleState::Ready { bytes } => json!({"kind":"ready", "bytes":bytes}),
+        ModuleState::Binary => json!({"kind":"binary"}),
+        ModuleState::Unavailable(ModuleFailure::Input(failure)) => {
+            json!({"kind":"unavailable", "failure":failure_value(failure)})
+        }
+        ModuleState::Unavailable(ModuleFailure::LoadedTextBudgetExceeded { limit }) => {
+            json!({"kind":"unavailable", "failure":{
+                "code":"analysis_module_text_budget_exceeded", "limit":limit}})
+        }
+    };
+    json!({"origin":origin(input.origin), "source_sha256":input.source_sha256, "input":state})
+}
+
+/// Metadata and module summaries use the same editor authority and document-version contract.
+fn origin(origin: InputOrigin) -> Value {
+    match origin {
+        InputOrigin::Saved => json!({"kind":"saved"}),
+        InputOrigin::Overlay { document_version } => {
+            json!({"kind":"overlay", "document_version":document_version})
+        }
+    }
 }
 
 /// Unavailable source remains a coded result for the current revision, never an empty success.

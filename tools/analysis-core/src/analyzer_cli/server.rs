@@ -1,4 +1,4 @@
-//! One serial worker owns input revisions; the initial read-only protocol advertises only metadata.
+//! One serial worker owns revisions shared by editor inputs and lazy metadata requests.
 
 use std::io::{BufRead, Write};
 
@@ -11,7 +11,7 @@ use serde_json::{Value, json};
 
 use crate::{AnalysisSession, SessionOptions};
 
-use super::{args::Cli, dto, protocol};
+use super::{args::Cli, documents, dto, protocol};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum Phase {
@@ -26,6 +26,7 @@ struct Server<'a> {
     phase: Phase,
     session: Option<AnalysisSession>,
     session_id: String,
+    documents: documents::Documents,
 }
 
 enum Step {
@@ -40,9 +41,11 @@ pub fn run(cli: &Cli, input: &mut impl BufRead, output: &mut impl Write) -> u8 {
         phase: Phase::New,
         session: None,
         session_id: String::new(),
+        documents: documents::Documents::default(),
     };
     loop {
-        let Ok(Some(frame)) = rpc_framing::read_frame(input) else {
+        let Ok(Some(frame)) = rpc_framing::read_frame_with_limit(input, documents::MAX_REQUEST)
+        else {
             return 1;
         };
         let step = match protocol::parse(&frame) {
@@ -85,6 +88,14 @@ impl Server<'_> {
                     self.phase = Phase::Ready;
                     Step::Continue(None)
                 }
+                "textDocument/didOpen"
+                | "textDocument/didChange"
+                | "textDocument/didClose"
+                | "textDocument/didSave"
+                    if self.phase == Phase::Ready =>
+                {
+                    self.document_notification(message)
+                }
                 _ => Step::Continue(None),
             };
         }
@@ -105,6 +116,7 @@ impl Server<'_> {
         } else if message.method == "shutdown" {
             self.phase = Phase::Shutdown;
             self.session = None;
+            self.documents = documents::Documents::default();
             Ok(Value::Null)
         } else {
             self.request(&message.method, &message.params)
@@ -154,13 +166,15 @@ impl Server<'_> {
             })?;
         let session_id = bsl_metadata::Uuid::new_v4().to_string();
         let result = json!({
-            "capabilities":{"experimental":{"eska":{
+            "capabilities":{"textDocumentSync":{"openClose":true,"change":1,"save":{"includeText":false}},
+                "experimental":{"eska":{
                 "protocolVersion":protocol::VERSION,
                 "sourceFormat":"eska", "scope":"selected-project",
                 "metadata":{"owners":true, "read":true, "refresh":true},
-                "documentSync":false, "languageQueries":false, "requestCancellation":false,
+                "documentSync":true, "languageQueries":false, "requestCancellation":false,
+                "inputNotifications":["eska/inputChanged", "eska/inputRejected"],
                 "editPlans":false, "locationEncoding":"utf-8-bytes",
-                "maxRequestBytes":rpc_framing::MAX_REQUEST,
+                "maxRequestBytes":documents::MAX_REQUEST,
                 "maxResponseBytes":rpc_framing::MAX_RESPONSE,
                 "snapshot":dto::snapshot(&session, &session_id),
             }}},
@@ -170,6 +184,24 @@ impl Server<'_> {
         self.session_id = session_id;
         self.phase = Phase::Initializing;
         Ok(result)
+    }
+
+    /// Full-sync notifications update the host before emitting an acknowledgement event.
+    fn document_notification(&mut self, message: &protocol::Message) -> Step {
+        let Some(session) = self.session.as_mut() else {
+            return Step::Exit(1);
+        };
+        let request = InputRequest {
+            max_document_bytes: self.cli.max_document_bytes,
+            ..InputRequest::default()
+        };
+        Step::Continue(Some(self.documents.notify(
+            session,
+            &self.session_id,
+            &message.method,
+            &message.params,
+            &request,
+        )))
     }
 
     /// Every custom request validates the connection identity and exact current revision first.
@@ -219,9 +251,7 @@ impl Server<'_> {
                     };
                     session
                         .load_saved(&path, session.revision(), &request)
-                        .map_err(|_| {
-                            protocol::error_value(-32603, "session_invariant", Value::Null)
-                        })?;
+                        .map_err(|error| documents::request_error(&error))?;
                 }
                 let current = session
                     .metadata(&path, session.revision())

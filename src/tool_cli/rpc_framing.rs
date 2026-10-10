@@ -11,6 +11,17 @@ pub const MAX_RESPONSE: usize = 67_108_864;
 /// # Errors
 /// Returns malformed or oversized framing, unsupported encoding, truncated input or I/O errors.
 pub fn read_frame(input: &mut impl BufRead) -> io::Result<Option<Vec<u8>>> {
+    read_frame_with_limit(input, MAX_REQUEST)
+}
+
+/// A document-sync consumer may choose a larger cap while legacy requests keep their old bound.
+///
+/// # Errors
+/// Returns the same boundary/encoding/I/O failures as `read_frame`; the hard cap is 64 MiB.
+pub fn read_frame_with_limit(
+    input: &mut impl BufRead,
+    limit: usize,
+) -> io::Result<Option<Vec<u8>>> {
     let mut header = Vec::new();
     loop {
         let mut byte = [0];
@@ -59,7 +70,7 @@ pub fn read_frame(input: &mut impl BufRead) -> io::Result<Option<Vec<u8>>> {
         }
     }
     let length = length
-        .filter(|n| (1..=MAX_REQUEST).contains(n))
+        .filter(|n| (1..=limit.min(MAX_RESPONSE)).contains(n))
         .ok_or_else(invalid)?;
     let mut body = vec![0; length];
     input.read_exact(&mut body)?;
@@ -113,6 +124,26 @@ mod tests {
         assert_eq!(read_frame(&mut reader).unwrap().unwrap(), body);
         assert_eq!(read_frame(&mut reader).unwrap().unwrap(), b"{}");
         assert!(read_frame(&mut reader).unwrap().is_none());
+    }
+
+    /// Larger document-sync frames are opt-in; the legacy reader retains its existing cap.
+    #[test]
+    fn request_cap_is_selected_before_reading_a_body() {
+        let body = vec![b'a'; MAX_REQUEST + 1];
+        let mut wire = Vec::new();
+        write_frame(&mut wire, &body).unwrap();
+        assert!(read_frame(&mut Cursor::new(&wire)).is_err());
+        assert_eq!(
+            read_frame_with_limit(&mut Cursor::new(&wire), 4 * MAX_REQUEST)
+                .unwrap()
+                .unwrap(),
+            body
+        );
+        assert!(
+            read_frame_with_limit(&mut Cursor::new(b"Content-Length: 2\r\n\r\n{}"), 1).is_err()
+        );
+        let oversized = format!("Content-Length: {}\r\n\r\n", MAX_RESPONSE + 1);
+        assert!(read_frame_with_limit(&mut Cursor::new(oversized), usize::MAX).is_err());
     }
 
     /// Invalid lengths, encodings, headers and partial frames are terminal.

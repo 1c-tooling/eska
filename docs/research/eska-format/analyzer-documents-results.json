@@ -1,0 +1,499 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "scope": "standalone_full_document_synchronization",
+  "protocol_version": "0.1",
+  "analysis_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.4311107350004022
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 0.6068582989973947
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 0.3948246959989774
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 3.7043405380027252,
+      "results": [
+        "ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.0545057839990477
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 0.4680971230045543
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 0.5232515449970379
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 0.6201364130029106,
+      "results": [
+        "ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 0.9122729709997657
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.4934621030042763
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 0.6106631410002592
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 2.303606348003086,
+      "results": [
+        "ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 1.6832346599985613
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 0.6067469359986717
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 1.102221984998323
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 3.179250830995443,
+      "results": [
+        "ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 1.754225131997373
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 8.910967433999758
+    }
+  ],
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8340165539993905
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.9003520899987052
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 4.892664865001279
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 22.32440719599981
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.491255168999487
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.207184638000399
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.435306932999083
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 1.8085061950005183
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6290799360012898
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 3.571179499000209
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.1147611349988438
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7925880029997643
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 8.12192994399993
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.194830061000175
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.005985470001178328
+    }
+  ],
+  "real_scenarios": [
+    {
+      "corpus": "C1",
+      "locale": "en-US",
+      "exit_code": 0,
+      "initialize_seconds": 0.0666114240011666,
+      "wall_seconds": 0.1025733160058735,
+      "peak_rss_kib": 37848,
+      "yaml_saved_bytes": 4104,
+      "yaml_draft_bytes": 4105,
+      "bsl_saved_bytes": 3922,
+      "bsl_draft_bytes": 3954,
+      "shared_final_revision": "5",
+      "overlay_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4105,
+        "module_text_bytes": 3954,
+        "total_source_bytes": 8059
+      },
+      "closed_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4104,
+        "module_text_bytes": 3922,
+        "total_source_bytes": 8026
+      },
+      "metadata_saved_overlay_close": true,
+      "active_overlay_refresh_rejected": true,
+      "stale_document_rejected": true,
+      "save_preserves_editor": true,
+      "locale_independent": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C1",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "initialize_seconds": 0.0740953479980817,
+      "wall_seconds": 0.08403562100284034,
+      "peak_rss_kib": 37240,
+      "yaml_saved_bytes": 4104,
+      "yaml_draft_bytes": 4105,
+      "bsl_saved_bytes": 3922,
+      "bsl_draft_bytes": 3954,
+      "shared_final_revision": "5",
+      "overlay_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4105,
+        "module_text_bytes": 3954,
+        "total_source_bytes": 8059
+      },
+      "closed_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4104,
+        "module_text_bytes": 3922,
+        "total_source_bytes": 8026
+      },
+      "metadata_saved_overlay_close": true,
+      "active_overlay_refresh_rejected": true,
+      "stale_document_rejected": true,
+      "save_preserves_editor": true,
+      "locale_independent": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C2",
+      "locale": "en-US",
+      "exit_code": 0,
+      "initialize_seconds": 0.8555591769982129,
+      "wall_seconds": 0.9243238529961673,
+      "peak_rss_kib": 171852,
+      "yaml_saved_bytes": 4070,
+      "yaml_draft_bytes": 4071,
+      "bsl_saved_bytes": 13998,
+      "bsl_draft_bytes": 14030,
+      "shared_final_revision": "5",
+      "overlay_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4071,
+        "module_text_bytes": 14030,
+        "total_source_bytes": 18101
+      },
+      "closed_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4070,
+        "module_text_bytes": 13998,
+        "total_source_bytes": 18068
+      },
+      "metadata_saved_overlay_close": true,
+      "active_overlay_refresh_rejected": true,
+      "stale_document_rejected": true,
+      "save_preserves_editor": true,
+      "locale_independent": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C2",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "initialize_seconds": 0.7360511160004535,
+      "wall_seconds": 0.7929739309984143,
+      "peak_rss_kib": 172004,
+      "yaml_saved_bytes": 4070,
+      "yaml_draft_bytes": 4071,
+      "bsl_saved_bytes": 13998,
+      "bsl_draft_bytes": 14030,
+      "shared_final_revision": "5",
+      "overlay_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4071,
+        "module_text_bytes": 14030,
+        "total_source_bytes": 18101
+      },
+      "closed_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4070,
+        "module_text_bytes": 13998,
+        "total_source_bytes": 18068
+      },
+      "metadata_saved_overlay_close": true,
+      "active_overlay_refresh_rejected": true,
+      "stale_document_rejected": true,
+      "save_preserves_editor": true,
+      "locale_independent": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C3",
+      "locale": "en-US",
+      "exit_code": 0,
+      "initialize_seconds": 0.8457690400027786,
+      "wall_seconds": 0.913564023001527,
+      "peak_rss_kib": 195376,
+      "yaml_saved_bytes": 4070,
+      "yaml_draft_bytes": 4071,
+      "bsl_saved_bytes": 13998,
+      "bsl_draft_bytes": 14030,
+      "shared_final_revision": "5",
+      "overlay_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4071,
+        "module_text_bytes": 14030,
+        "total_source_bytes": 18101
+      },
+      "closed_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4070,
+        "module_text_bytes": 13998,
+        "total_source_bytes": 18068
+      },
+      "metadata_saved_overlay_close": true,
+      "active_overlay_refresh_rejected": true,
+      "stale_document_rejected": true,
+      "save_preserves_editor": true,
+      "locale_independent": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "runtime_path": "empty"
+    },
+    {
+      "corpus": "C3",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "initialize_seconds": 0.8620845129989902,
+      "wall_seconds": 0.9254003650057712,
+      "peak_rss_kib": 195412,
+      "yaml_saved_bytes": 4070,
+      "yaml_draft_bytes": 4071,
+      "bsl_saved_bytes": 13998,
+      "bsl_draft_bytes": 14030,
+      "shared_final_revision": "5",
+      "overlay_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4071,
+        "module_text_bytes": 14030,
+        "total_source_bytes": 18101
+      },
+      "closed_resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 4070,
+        "module_text_bytes": 13998,
+        "total_source_bytes": 18068
+      },
+      "metadata_saved_overlay_close": true,
+      "active_overlay_refresh_rejected": true,
+      "stale_document_rejected": true,
+      "save_preserves_editor": true,
+      "locale_independent": true,
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "runtime_path": "empty"
+    }
+  ],
+  "dependency_package_names": 206,
+  "dependency_resolved_packages": 214,
+  "binary_bytes": 44604008,
+  "source_budget_is_heap_budget": false,
+  "language_queries": false,
+  "request_cancellation": false,
+  "edit_plans": false,
+  "platform_build_run": false,
+  "stage_status": "IN_PROGRESS"
+}

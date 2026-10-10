@@ -112,6 +112,9 @@ eska-analyzer --project-dir . --project main
 Стандартный initialize должен явно запросить ESKA protocol `0.1`; после
 initialized доступны страницы владельцев и чтение/refresh одного YAML.
 Новый UUID сеанса и строковая ревизия обязательны в custom requests.
-Пока `documentSync`, language queries, cancellation и edit plans не объявлены.
+Объявлена full-document синхронизация YAML/BSL: open/change/save/close используют
+общую ревизию и текущую source-byte квоту. Save не заменяет текст редактора;
+close перечитывает файл. Языковые запросы, cancellation и edit plans ещё не объявлены.
 Из установленного комплекта бинарник не запускается автоматически.
 [Протокол, границы и проверка C1/C2/C3](../../docs/research/eska-format/analyzer-metadata.md).
+[Синхронизация документов и события состояния](../../docs/research/eska-format/analyzer-documents.md).

@@ -1,5 +1,6 @@
 //! Actual stdio sessions verify negotiation, lazy state and read-only metadata in both locales.
 
+mod document_sync;
 mod support;
 
 use std::{
@@ -130,9 +131,16 @@ struct Client {
 impl Client {
     /// An interactive test may change only its own fixture between acknowledged requests.
     fn new(root: &Path) -> Self {
+        Self::with_options(root, "en-US", &[])
+    }
+
+    /// Each locale and quota are exercised through the same actual server process.
+    fn with_options(root: &Path, lang: &str, extra: &[&str]) -> Self {
         let mut child = Command::new(env!("CARGO_BIN_EXE_eska-analyzer"))
             .current_dir(root)
             .env("PATH", "")
+            .args(["--lang", lang])
+            .args(extra)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -428,7 +436,7 @@ fn refresh_replaces_failed_input_and_recovery_restores_only_current_bytes() {
     let capabilities = client.ask(&initialize());
     assert_eq!(
         capabilities["result"]["capabilities"]["experimental"]["eska"]["documentSync"],
-        false
+        true
     );
     client.send(&notification("initialized"));
     let read = request(

@@ -38,8 +38,9 @@ Batch JSON-RPC, null ID, повторные JSON keys и глубина боле
 даёт exit 0. Exit без shutdown, потерянный pipe или неверная граница frame дают 1.
 Ошибки аргументов до запуска транспорта дают 3; help/version — 0.
 
-`documentSync`, `languageQueries`, `requestCancellation`, `editPlans` пока false.
-Языковые LSP capabilities не объявлены. Существующие расширения не переводятся
+`documentSync` уже true: [full-document синхронизация YAML/BSL](analyzer-documents.md)
+подключена к той же сессии. `languageQueries`, `requestCancellation`, `editPlans`
+пока false. Языковые LSP capabilities не объявлены. Существующие расширения не переводятся
 на новый процесс автоматически; это ещё не полный языковой сервер.
 
 ## Текущий custom API
@@ -55,6 +56,9 @@ UUID каждого успешного открытия процесса; вто
 | `eska/metadata/owners` | `offset` по умолчанию 0, `limit` от 1 до 200 | Проверенный состав, текущие состояния, total, offset, resources; YAML не читается |
 | `eska/metadata/read` | `source` — объявленный путь YAML | Текущий YAML-снимок; pending загружается с диска один раз |
 | `eska/metadata/refresh` | `source` | Явное повторное saved-чтение с новой ревизией, включая неудачный результат |
+
+`read` возвращает текущий черновик открытого YAML, не заменяя его диском.
+`refresh` открытого документа отклоняется с `overlay_active` (`-32000`).
 
 Например, для синтетического владельца:
 
@@ -93,7 +97,7 @@ YAML и привязан к source hash/snapshot. Inline-команды видн
 ## Ограничения ресурсов
 
 Serial worker читает один запрос за раз, не накапливая собственную очередь.
-Общий framing ограничивает header 8 KiB, вход 1 MiB, ответ 64 MiB; malformed
+Framing этого сервера ограничивает header 8 KiB, вход 4 MiB, ответ 64 MiB; malformed
 framing завершает процесс без поиска следующей предполагаемой границы.
 Oversized response возвращает coded error `response_too_large` с текущим
 snapshot; wire buffer ограничен до записи header. Оценка DTO до сериализации,
@@ -101,12 +105,16 @@ composition и ядро не входят в этот wire cap.
 
 `--max-document-bytes` сохраняет hard bound 64 MiB. Общая текущая
 [квота исходных байтов](source-budget.md) по умолчанию 256 MiB и используется
-той же сессией. Это не общий heap/RSS budget. BSL не загружается, анализ не
-выполняется для страниц или свойств. Отмены активного запроса пока нет.
+той же сессией. Это не общий heap/RSS budget. Страницы/свойства не читают BSL;
+BSL-текст поступает отдельно через document sync. Анализ и отмена активного
+языкового запроса пока не подключены.
 Состав неизменяем до restart; structural changes manifest/configuration требуют
-перезапуска. Watcher, unsaved documents и multi-project host пока не подключены.
+перезапуска. Watcher и multi-project host пока не подключены.
 
 ## Реальные проверки
+
+Ниже сохранён первый read-only замер на `f199144`; текущая синхронизация,
+размер бинарника и проверки описаны в [следующем компоненте](analyzer-documents.md).
 
 Проверены C1/C2/C3: initialize, все страницы владельцев, чтение одного common
 module owner, shutdown/exit. До read все owner inputs оставались pending, source
@@ -149,5 +157,5 @@ eska-analyzer --project-dir .
 
 Его ещё нет в установленном комплекте, путь нужно задать самостоятельно.
 [Машинный отчёт](analyzer-metadata-results.json) содержит итоговые замеры и gates.
-EF-18 остаётся `IN_PROGRESS`: doc sync, language operations/cancellation,
+EF-18 остаётся `IN_PROGRESS`: language operations/cancellation,
 полное покрытие метаданных, memory budget и защищённые edit plans ещё не готовы.
