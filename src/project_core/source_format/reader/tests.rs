@@ -46,6 +46,24 @@ fn opening_reads_only_root_and_manifest_and_defers_missing_owner_errors() {
     assert_eq!(identity.name, Some("Sample"));
     assert_eq!(identity.native_path.as_str(), "Catalogs/Sample.xml");
     assert_eq!(
+        reader.owner_for_native_main(identity.native_path),
+        Some(&catalog())
+    );
+    assert_eq!(
+        reader.owner_for_native_main(&SourcePath::parse("Configuration.xml").unwrap()),
+        Some(&SourcePath::parse("configuration.yaml").unwrap())
+    );
+    for native in [
+        "Catalogs/Unknown.xml",
+        "Catalogs/Sample/Forms/Main.xml",
+        "Catalogs/Sample.xml/other",
+    ] {
+        assert_eq!(
+            reader.owner_for_native_main(&SourcePath::parse(native).unwrap()),
+            None
+        );
+    }
+    assert_eq!(
         identity.uuid,
         &reader
             .manifest()

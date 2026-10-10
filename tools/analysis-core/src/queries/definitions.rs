@@ -32,39 +32,11 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
     ) -> Result<ModuleResult<Option<DefinitionTarget>>, QueryError> {
         self.query_module(path, expected, cancellation, |analysis, file| {
-            let input = analysis
-                .database()
-                .try_file_text_input(file)
-                .ok_or_else(|| QueryError::ModuleUnavailable {
-                    path: path.clone(),
-                    state: ModuleState::Pending,
-                })?;
-            if !input
-                .text(analysis.database())
-                .is_char_boundary(offset as usize)
-            {
-                return Err(QueryError::InvalidOffset { offset });
-            }
+            validate_offset(analysis, file, path, offset)?;
             let Some(target) = analysis.goto_definition(file, offset) else {
                 return Ok(None);
             };
-            let root = analysis.database().source_root_input(SourceRootId(0));
-            let native = root
-                .root(analysis.database())
-                .file_set()
-                .path_for_file(&target.file_id)
-                .map(vfs::VfsPath::as_path)
-                .ok_or(QueryError::UnsupportedNavigationTarget)?;
-            let relative = native
-                .strip_prefix(self.root())
-                .map_err(|_| QueryError::UnsupportedNavigationTarget)?;
-            let source = SourcePath::parse(
-                &relative
-                    .to_str()
-                    .ok_or(QueryError::UnsupportedNavigationTarget)?
-                    .replace(std::path::MAIN_SEPARATOR, "/"),
-            )
-            .map_err(|_| QueryError::UnsupportedNavigationTarget)?;
+            let source = source_for_file(self, analysis, target.file_id)?;
             let entry = self
                 .modules
                 .get(&source)
@@ -101,4 +73,53 @@ impl AnalysisSession {
             }))
         })
     }
+}
+
+/// Both navigation paths validate the caller's exact UTF-8 boundary before any semantic query.
+pub(super) fn validate_offset(
+    analysis: &ide::Analysis,
+    file: vfs::FileId,
+    path: &SourcePath,
+    offset: u32,
+) -> Result<(), QueryError> {
+    let input = analysis
+        .database()
+        .try_file_text_input(file)
+        .ok_or_else(|| QueryError::ModuleUnavailable {
+            path: path.clone(),
+            state: ModuleState::Pending,
+        })?;
+    if input
+        .text(analysis.database())
+        .is_char_boundary(offset as usize)
+    {
+        Ok(())
+    } else {
+        Err(QueryError::InvalidOffset { offset })
+    }
+}
+
+/// Resolve a registered identity through the existing file set, never filesystem or directory scans.
+pub(super) fn source_for_file(
+    session: &AnalysisSession,
+    analysis: &ide::Analysis,
+    file: vfs::FileId,
+) -> Result<SourcePath, QueryError> {
+    let root = analysis.database().source_root_input(SourceRootId(0));
+    let native = root
+        .root(analysis.database())
+        .file_set()
+        .path_for_file(&file)
+        .map(vfs::VfsPath::as_path)
+        .ok_or(QueryError::UnsupportedNavigationTarget)?;
+    let relative = native
+        .strip_prefix(session.root())
+        .map_err(|_| QueryError::UnsupportedNavigationTarget)?;
+    SourcePath::parse(
+        &relative
+            .to_str()
+            .ok_or(QueryError::UnsupportedNavigationTarget)?
+            .replace(std::path::MAIN_SEPARATOR, "/"),
+    )
+    .map_err(|_| QueryError::UnsupportedNavigationTarget)
 }

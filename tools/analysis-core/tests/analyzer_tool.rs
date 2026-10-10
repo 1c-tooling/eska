@@ -1,6 +1,7 @@
 //! Actual stdio sessions verify negotiation, lazy state and read-only metadata in both locales.
 
 mod completion_queries;
+mod definition_metadata_queries;
 mod definition_queries;
 mod diagnostic_queries;
 mod document_sync;

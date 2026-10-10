@@ -177,6 +177,21 @@ impl SourceReader {
         self.owners.keys()
     }
 
+    /// Resolve only a declared main descriptor to its physical owner, without reading its text.
+    /// Nested descriptors are not main analysis slots; callers must carry their enclosing owner.
+    #[must_use]
+    pub fn owner_for_native_main(&self, native: &SourcePath) -> Option<&SourcePath> {
+        let candidate = if native == &self.configuration.source.document.path {
+            self.configuration.path.clone()
+        } else {
+            source_path(native).ok()?
+        };
+        self.owners
+            .get_key_value(&candidate)
+            .filter(|(_, spec)| &spec.main == native)
+            .map(|(path, _)| path)
+    }
+
     /// Read structural identity without opening the selected YAML or inferring a directory name.
     ///
     /// # Errors

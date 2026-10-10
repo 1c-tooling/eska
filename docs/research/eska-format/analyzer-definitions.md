@@ -2,7 +2,9 @@
 
 `eska-analyzer` обслуживает стандартный `textDocument/definition` через общий
 `AnalysisSession::module_definition`. При корректных frozen settings initialize
-объявляет `definitionProvider=true` и experimental scope `ready-bsl-modules`.
+объявляет `definitionProvider=true`. Здесь описан первый BSL-компонент на
+`0a700fd` со scope `ready-bsl-modules`. Текущий scope расширен в
+[переходах из BSL к YAML](analyzer-metadata-definitions.md).
 Отключённый ParseError не отключает навигацию; неверный settings file даёт явный
 отказ языкового запроса. Metadata API остаётся доступным.
 
@@ -23,8 +25,8 @@ BSL меняет target range/hash, close восстанавливает фак�
 В закреплённом [goto_definition ядра](https://github.com/1c-tooling/bsl-analyzer/blob/9021ba07471eee8a2614bed2105a2c8699f60780/crates/ide/src/goto_definition.rs)
 переходы к метаданным опираются на координаты XML. Эти пути не используются для
 ESKA: сырой XML не загружается, диапазоны YAML не угадываются по имени.
-Канонические координаты метаданных, остальные language operations и workspace
-search остаются отдельной работой.
+Координаты YAML и первая связь BSL-символа с ними добавлены позднее; остальные
+language operations и workspace search остаются отдельной работой.
 
 ## Запрос и результат
 
@@ -71,7 +73,8 @@ revision и resources сохраняются. Следующий запрос п
 
 Здесь сохранена проверка компонента на `0a700fd`. Последующий
 [metadata locate](analyzer-metadata-locations.md) добавил отдельные координаты
-объектов/свойств YAML; scope стандартного BSL definition пока не расширен.
+объектов/свойств YAML; [metadata definitions](analyzer-metadata-definitions.md)
+расширил стандартную навигацию верхнеуровневой целью текущего YAML.
 
 37 unit/file, 39 analyzer process и 9 checker process tests прошли, все 19 tool
 gates feature matrix/Rustdoc/release прошли. Root: 889 passed / 14 прежних ignored;
@@ -107,5 +110,6 @@ corpus — manifest, configuration, выбранные YAML/BSL — сохран
 Release server — 48780736 bytes; runtime graph — 206 package names / 214 resolved
 versions. Новых dependencies, CLI options или config keys нет.
 [Машинный отчёт](analyzer-definitions-results.json) сохраняет gates и замеры.
-Связь BSL с YAML, все IDE edits, полный memory budget и полнота анализа остаются
-в работе. EF-18 — `IN_PROGRESS`; комплектная поставка и Explorer не переключены.
+Замеры относятся к первому BSL-компоненту. Вложенные BSL-цели YAML, все IDE edits,
+полный memory budget и полнота анализа остаются в работе. EF-18 — `IN_PROGRESS`;
+комплектная поставка и Explorer не переключены.

@@ -84,7 +84,12 @@ native refusal, no-op и сохранность текущего ввода. П�
 Добавлен [переход к текущему объявлению BSL](../research/eska-format/analyzer-definitions.md):
 local/cross-file targets привязаны к той же revision и target hash, неполнота
 не скрывается пустым успехом. Saved/editor/close пройдены на C1/C2/C3 в RU/EN;
-отмена/deadline и ID reuse используют общий контроль. Координаты YAML ещё требуются.
+отмена/deadline и ID reuse используют общий контроль.
+[Координаты YAML](../research/eska-format/analyzer-metadata-locations.md) уже
+доступны по UUID/QName без чтения файла; [BSL-символ коллекции](../research/eska-format/analyzer-metadata-definitions.md)
+открывает верхнеуровневую YAML-цель готовой канонической модели.
+24 сценария четырёх семейств на C1/C2/C3 в RU/EN прошли, включая editor/invalid/close
+и declared shadowing. Вложенные BSL-символы ещё требуют реализации.
 Все IDE edits, полная семантика и общий memory budget ещё не готовы; EF-18 не завершена.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):

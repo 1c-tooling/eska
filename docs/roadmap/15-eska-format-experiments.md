@@ -900,8 +900,25 @@ stale и foreign QName; текущие диапазоны/hash и machine trace 
 Полная проекция All после изменения parser совпала с XML для 8330/103417/131381
 объектов C1/C2/C3, без metadata diagnostics; эта проверка исключает native/YAML
 диапазоны разных текстов, точные координаты проверены отдельно.
-Связь BSL-символа с метаданными, все IDE edits, полный memory budget, полнота
-анализа и Explorer остаются в работе. EF-18 — `IN_PROGRESS`.
+После этого компонента связь BSL-символа с метаданными, все IDE edits, полный
+memory budget, полнота анализа и Explorer ещё оставались в работе.
+
+[Переход из BSL к текущему YAML](../research/eska-format/analyzer-metadata-definitions.md)
+добавлен в общую библиотеку: фактический тип коллекции и существующий ConfigIndex
+подтверждают верхнеуровневый объект ready канонической модели. FileId/native main
+разрешается через существующий состав, UUID открывается тем же metadata locate;
+нового индекса, raw XML или текстового угадывания координат нет. Caller BSL и
+target YAML имеют отдельные текущие hashes. Scope definition расширен до
+ready-bsl-and-canonical-metadata; форма BSL-цели сохранена.
+42 unit/file, 44 analyzer process и 9 checker process tests, все 19 tool gates
+прошли. Root 892/14, minimal 164/3, project-cli 180/3, build-cli 199/3, все
+15 gates прошли. На C1/C2/C3 в RU/EN прошли 24 сценария справочников, констант,
+перечислений и регистров сведений: 96 подтверждённых целей и 96 locate, всего
+240 definition с проверками pending/stale/invalid/shadowing. Saved/editor/close,
+Unicode case folding и inferred alias совпали; исходные файлы сохранены.
+Runtime graph остался 206/214; прямой hir dependency уже был транзитивным.
+Вложенные BSL-символы, все IDE edits, общий heap/RSS budget, полнота анализа,
+watcher и Explorer остаются в работе. EF-18 — `IN_PROGRESS`.
 
 ## EF-19 Самостоятельный инструмент VCS
 

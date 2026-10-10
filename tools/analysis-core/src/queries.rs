@@ -4,6 +4,7 @@
 #[path = "queries/cancellation_tests.rs"]
 mod cancellation_tests;
 pub mod definitions;
+mod metadata_definitions;
 
 use std::collections::BTreeMap;
 

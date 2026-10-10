@@ -126,7 +126,11 @@ close перечитывает файл. `textDocument/diagnostic` исполь�
 входах даёт navigation_incomplete. Отдельный [metadata locate](../../docs/research/eska-format/analyzer-metadata-locations.md)
 находит объект или QName свойства по UUID в текущем готовом YAML, без чтения диска.
 Native path вложенного descriptor сохраняется, URI указывает на физического владельца.
-Связь BSL-символа с метаданными ещё не подключена. Полная семантика
+[BSL-символ коллекции](../../docs/research/eska-format/analyzer-metadata-definitions.md)
+уже разрешается в текущий верхнеуровневый объект готовой канонической модели,
+используя тот же metadata locate. Scope definition теперь
+ready-bsl-and-canonical-metadata; YAML-цель содержит kind/UUID/native_path/origin
+с собственным hash, отдельно от caller BSL. Вложенные символы и полная семантика
 ещё не объявлена. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
 возвращают versioned WorkspaceEdit для ready открытого документа при независимо
 закреплённой базе и client documentChanges support. План не записывает файл и

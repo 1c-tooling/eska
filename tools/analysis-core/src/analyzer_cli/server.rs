@@ -278,8 +278,7 @@ impl Server<'_> {
             result["capabilities"]["completionProvider"] =
                 json!({"resolveProvider":false,"triggerCharacters":["."],"workDoneProgress":false});
             result["capabilities"]["definitionProvider"] = json!(true);
-            result["capabilities"]["experimental"]["eska"]["definition"] =
-                json!({"scope":"ready-bsl-modules","incompleteResults":"error"});
+            result["capabilities"]["experimental"]["eska"]["definition"] = json!({"scope":"ready-bsl-and-canonical-metadata","metadataTargets":"top-level-objects","incompleteResults":"error"});
         }
         self.snippets = params
             .pointer("/capabilities/textDocument/completion/completionItem/snippetSupport")

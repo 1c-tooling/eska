@@ -516,7 +516,10 @@ Explorer, все IDE edit operations и общий heap/RSS budget ещё не �
 [Metadata locate](research/eska-format/analyzer-metadata-locations.md) уже открывает
 UUID или QName свойства в текущем YAML владельца без чтения диска. Координаты
 сохраняются в общем parser snapshot без raw text или дополнительного UUID-индекса.
-Связь BSL-символа с этой целью ещё не подключена; XML-диапазоны ядра не служат fallback.
+[Связь BSL-символа коллекции](research/eska-format/analyzer-metadata-definitions.md)
+с верхнеуровневой YAML-целью уже подключена в общей библиотеке анализа;
+transport использует готовый результат. Требуется ready каноническая модель,
+XML-диапазоны ядра не служат fallback. Вложенные BSL-символы ещё не подключены.
 [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.

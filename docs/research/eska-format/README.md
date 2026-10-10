@@ -31,6 +31,8 @@
 YAML/BSL, учитывает возможности клиента и сообщает неполноту.
 [Координаты объектов и свойств YAML](analyzer-metadata-locations.md) вычисляются
 из текущего разбора; metadata locate выбирает UUID/QName без чтения файла.
+[Переход из BSL к объекту YAML](analyzer-metadata-definitions.md) использует
+тип коллекции, текущую каноническую модель и те же координаты владельца.
 [Планы изменения свойств](analyzer-property-plans.md) связывают текущую editor
 version/hash, поддержку из независимо закреплённой базы и общий CST-редактор.
 [Полная проверка базы](analyzer-property-cancellation.md) уже поддерживает общий

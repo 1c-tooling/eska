@@ -34,7 +34,7 @@ fn definition_uses_current_unicode_bsl_and_close_restores_saved_target_in_both_l
         );
         assert_eq!(
             initialized["result"]["capabilities"]["experimental"]["eska"]["definition"]["scope"],
-            "ready-bsl-modules"
+            "ready-bsl-and-canonical-metadata"
         );
         client.send(&notification("initialized"));
         let first = client.ask(&pull(&root, "0"));
