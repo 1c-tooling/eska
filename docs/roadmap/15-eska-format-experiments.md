@@ -827,7 +827,22 @@ Rustdoc/release и полная root matrix прошли. На C1/C2/C3 в RU/EN
 с 3600044 editor bytes остановился при лимите 1 с за 1,043–1,081 с; текущий
 ввод сохранился, маленький saved query затем прошёл в том же процессе.
 Peak RSS до 1103164 KiB подтверждает, что source quota не заменяет memory budget.
-Completion, edit plans и полное покрытие остаются в работе; EF-18 — `IN_PROGRESS`.
+Completion, edit plans и полное покрытие на этом commit ещё оставались в работе.
+
+[Стандартное автодополнение](../research/eska-format/analyzer-completion.md)
+вызывает общий module_completions с current YAML/BSL и frozen settings.
+UTF-16 cursor учитывает BOM/CRLF/non-BMP; позиции после конца строки ограничены
+EOL по LSP. Кандидаты, snippet support, incomplete coverage и optional snapshot
+передаются без XML-экспорта или полного metadata scan. Отмена и deadline общие
+с диагностикой; completion timeout возвращает `-32000` без retriggerRequest.
+34 unit/file, 28 analyzer process и 9 checker process tests, feature matrix,
+Rustdoc/release и полная root matrix прошли. На C1/C2/C3 в RU/EN проверены
+переименование реквизита в YAML overlay, invalid/close и смена BSL-типа.
+Активная completion синтетического модуля 3600053 bytes отменена за 0,945–0,982 с;
+новый маленький запрос прошёл в том же процессе. C1 с лимитом 1 с и 4080049 bytes
+дал timeout за 1,101–1,113 с. Исходные проверенные bytes сохранены.
+Resolve, textEdit/edit plans, полная семантика/metadata coverage и общий
+heap/RSS budget остаются в работе; EF-18 — `IN_PROGRESS`.
 
 ## EF-19 Самостоятельный инструмент VCS
 

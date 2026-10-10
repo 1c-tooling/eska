@@ -2,15 +2,51 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use super::protocol;
 
-#[derive(Clone, Copy, Default, Serialize)]
-struct Position {
+#[derive(Clone, Copy, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Position {
     line: u32,
     character: u32,
+}
+
+impl Position {
+    /// LSP columns beyond a line clamp to its end; a split surrogate or absent line is invalid.
+    pub fn offset(self, text: &str) -> Result<u32, Value> {
+        let invalid = || protocol::error_value(-32602, "position_invalid", Value::Null);
+        if self.line > i32::MAX as u32 || self.character > i32::MAX as u32 {
+            return Err(invalid());
+        }
+        let mut start = 0;
+        let mut rest = text;
+        for _ in 0..self.line {
+            let end = rest.find(['\r', '\n']).ok_or_else(invalid)?;
+            let next = end
+                + if rest[end..].starts_with("\r\n") {
+                    2
+                } else {
+                    1
+                };
+            start += next;
+            rest = &rest[next..];
+        }
+        let end = rest.find(['\r', '\n']).unwrap_or(rest.len());
+        let mut column = 0;
+        for (offset, character) in rest[..end].char_indices() {
+            if column == self.character {
+                return u32::try_from(start + offset).map_err(|_| invalid());
+            }
+            column += u32::try_from(character.len_utf16()).map_err(|_| invalid())?;
+            if column > self.character {
+                return Err(invalid());
+            }
+        }
+        u32::try_from(start + end).map_err(|_| invalid())
+    }
 }
 
 pub struct Positions(BTreeMap<u32, Position>);
@@ -42,7 +78,9 @@ impl Positions {
                 positions.insert(offset, position);
                 targets.next();
             }
-            if character == '\n' {
+            if character == '\n'
+                || (character == '\r' && chars.peek().is_none_or(|(_, next)| *next != '\n'))
+            {
                 position.line += 1;
                 position.character = 0;
             } else if character != '\r' || chars.peek().is_none_or(|(_, next)| *next != '\n') {
@@ -103,5 +141,35 @@ mod tests {
             assert!(Positions::new("\u{feff}Я😀\r\nZ\r\n", &[offset]).is_err());
         }
         assert!(Positions::new("x", &[0]).unwrap().range(0, 1).is_err());
+    }
+
+    /// One converter preserves BOM/non-BMP boundaries across CRLF, LF, CR and the final empty line.
+    #[test]
+    fn utf16_cursor_uses_current_bytes_and_clamps_only_past_line_end() {
+        let text = "\u{feff}Я😀\r\nZ\rR\n";
+        for (line, character, offset) in [
+            (0, 0, 0),
+            (0, 1, 3),
+            (0, 2, 5),
+            (0, 4, 9),
+            (0, 99, 9),
+            (1, 1, 12),
+            (2, 0, 13),
+            (3, 0, 15),
+        ] {
+            assert_eq!(Position { line, character }.offset(text).unwrap(), offset);
+            let actual = Positions::new(text, &[offset])
+                .unwrap()
+                .range(offset, offset)
+                .unwrap();
+            assert_eq!(actual["start"]["line"], line);
+            if character != 99 {
+                assert_eq!(actual["start"]["character"], character);
+            }
+        }
+        for (line, character) in [(0, 3), (4, 0), (0, u32::MAX), (u32::MAX, 0)] {
+            assert!(Position { line, character }.offset(text).is_err());
+        }
+        assert_eq!(Position::default().offset("").unwrap(), 0);
     }
 }

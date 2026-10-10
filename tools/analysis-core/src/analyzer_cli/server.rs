@@ -14,7 +14,7 @@ use serde_json::{Value, json};
 
 use crate::{AnalysisSession, RequestCancellation, SessionOptions, analysis_settings::Settings};
 
-use super::{args::Cli, diagnostics, documents, dto, protocol, stream};
+use super::{args::Cli, completion, diagnostics, documents, dto, language, protocol, stream};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum Phase {
@@ -31,6 +31,8 @@ struct Server<'a> {
     session_id: String,
     documents: documents::Documents,
     settings: Option<Result<Settings, Failure>>,
+    snippets: bool,
+    extended_kinds: bool,
 }
 
 enum Step {
@@ -50,6 +52,8 @@ pub fn run(cli: &Cli, input: impl BufRead + Send + 'static, output: &mut impl Wr
         session_id: String::new(),
         documents: documents::Documents::default(),
         settings: None,
+        snippets: false,
+        extended_kinds: false,
     };
     loop {
         let Ok(envelope) = incoming.receive() else {
@@ -66,8 +70,10 @@ pub fn run(cli: &Cli, input: impl BufRead + Send + 'static, output: &mut impl Wr
             Step::Exit(code) => return if incoming.join_after_exit() { code } else { 1 },
             Step::Continue(None) => (),
             Step::Continue(Some(mut response)) => {
-                let control = tracked.as_ref().map(|request| &request.control);
-                if server.cancel_response(&mut response, control).is_err() {
+                if server
+                    .cancel_response(&mut response, tracked.as_ref())
+                    .is_err()
+                {
                     return 1;
                 }
                 let mut body = LimitedBody(Vec::new());
@@ -84,7 +90,7 @@ pub fn run(cli: &Cli, input: impl BufRead + Send + 'static, output: &mut impl Wr
                         return 1;
                     }
                 }
-                match server.cancel_response(&mut response, control) {
+                match server.cancel_response(&mut response, tracked.as_ref()) {
                     Err(()) => return 1,
                     Ok(true) => {
                         body.0.clear();
@@ -108,9 +114,14 @@ impl Server<'_> {
     fn cancel_response(
         &self,
         response: &mut Value,
-        control: Option<&RequestCancellation>,
+        tracked: Option<&stream::TrackedRequest>,
     ) -> Result<bool, ()> {
-        let Some(reason) = control.and_then(RequestCancellation::stop_reason) else {
+        let Some((request, reason)) = tracked.and_then(|request| {
+            request
+                .control
+                .stop_reason()
+                .map(|reason| (request, reason))
+        }) else {
             return Ok(false);
         };
         if response.get("result").is_none() {
@@ -121,7 +132,7 @@ impl Server<'_> {
         fields.remove("result");
         fields.insert(
             "error".into(),
-            diagnostics::stopped(session, &self.session_id, reason),
+            language::stopped(session, &self.session_id, request.method, reason),
         );
         Ok(true)
     }
@@ -230,9 +241,9 @@ impl Server<'_> {
                 "sourceFormat":"eska", "scope":"selected-project",
                 "metadata":{"owners":true, "read":true, "refresh":true},
                 "documentSync":true, "languageQueries":true, "requestCancellation":true,
-                "cancellableMethods":["textDocument/diagnostic"],"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
+                "cancellableMethods":language::METHODS,"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
                 "requestTimeoutSeconds":self.cli.timeout_seconds,
-                "languageMethods":["textDocument/diagnostic"],
+                "languageMethods":language::METHODS,
                 "analysis":diagnostics::availability(&settings),
                 "inputNotifications":["eska/inputChanged", "eska/inputRejected"],
                 "editPlans":false, "locationEncoding":"utf-8-bytes",
@@ -247,6 +258,17 @@ impl Server<'_> {
                 "identifier":diagnostics::IDENTIFIER, "interFileDependencies":false,
                 "workspaceDiagnostics":false, "workDoneProgress":false});
         }
+        if settings.is_ok() {
+            result["capabilities"]["completionProvider"] =
+                json!({"resolveProvider":false,"triggerCharacters":["."],"workDoneProgress":false});
+        }
+        self.snippets = params
+            .pointer("/capabilities/textDocument/completion/completionItem/snippetSupport")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        self.extended_kinds = params
+            .pointer("/capabilities/textDocument/completion/completionItemKind")
+            .is_some_and(Value::is_object);
         self.session = Some(session);
         self.settings = Some(settings);
         self.session_id = session_id;
@@ -279,6 +301,9 @@ impl Server<'_> {
         value: &Value,
         cancellation: Option<&RequestCancellation>,
     ) -> Result<Value, Value> {
+        if let Some(method) = language::Method::parse(method) {
+            return self.language_request(method, value, cancellation);
+        }
         let session = self
             .session
             .as_mut()
@@ -334,36 +359,72 @@ impl Server<'_> {
                     "resources":session.resources()}),
                 )
             }
-            "textDocument/diagnostic" => {
-                let cancellation = cancellation.ok_or_else(|| {
-                    protocol::error_value(-32603, "request_invariant", Value::Null)
-                })?;
-                let params: diagnostics::Params = protocol::params(value)?;
-                if let Some(expected) = &params.eska {
-                    validate_snapshot(session, &self.session_id, &expected.snapshot)?;
-                }
-                let settings = self.settings.as_ref().ok_or_else(|| {
-                    protocol::error_value(-32603, "session_invariant", Value::Null)
-                })?;
-                diagnostics::pull(
-                    session,
-                    &self.session_id,
-                    &params,
-                    settings,
-                    &InputRequest {
-                        max_document_bytes: self.cli.max_document_bytes,
-                        cancellation: cancellation.input.clone(),
-                        ..InputRequest::default()
-                    },
-                    cancellation,
-                    Duration::from_secs(self.cli.timeout_seconds),
-                )
-            }
             _ => Err(protocol::error_value(
                 -32601,
                 "rpc_method_not_found",
                 Value::Null,
             )),
+        }
+    }
+
+    /// Language methods share process settings and input controls while keeping their own payloads.
+    fn language_request(
+        &mut self,
+        method: language::Method,
+        value: &Value,
+        cancellation: Option<&RequestCancellation>,
+    ) -> Result<Value, Value> {
+        let session = self
+            .session
+            .as_mut()
+            .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
+        let cancellation = cancellation
+            .ok_or_else(|| protocol::error_value(-32603, "request_invariant", Value::Null))?;
+        let settings = self
+            .settings
+            .as_ref()
+            .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
+        let request = InputRequest {
+            max_document_bytes: self.cli.max_document_bytes,
+            cancellation: cancellation.input.clone(),
+            ..InputRequest::default()
+        };
+        let timeout = Duration::from_secs(self.cli.timeout_seconds);
+        match method {
+            language::Method::Diagnostic => {
+                let params: diagnostics::Params = protocol::params(value)?;
+                if let Some(expected) = &params.eska {
+                    validate_snapshot(session, &self.session_id, &expected.snapshot)?;
+                }
+                diagnostics::pull(
+                    session,
+                    &self.session_id,
+                    &params,
+                    settings,
+                    &request,
+                    cancellation,
+                    timeout,
+                )
+            }
+            language::Method::Completion => {
+                let params: completion::Params = protocol::params(value)?;
+                if let Some(expected) = &params.eska {
+                    validate_snapshot(session, &self.session_id, &expected.snapshot)?;
+                }
+                completion::pull(
+                    session,
+                    &params,
+                    settings,
+                    &completion::Options {
+                        session_id: &self.session_id,
+                        request,
+                        cancellation,
+                        timeout,
+                        snippets: self.snippets,
+                        extended_kinds: self.extended_kinds,
+                    },
+                )
+            }
         }
     }
 }

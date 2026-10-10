@@ -72,7 +72,10 @@ BSL-ресурса принадлежат необъявленным объек�
 UUID сеанса со строковой ревизией. C1/C2/C3 пройдены без BSL-прохода и платформы.
 Подключены [документы редактора](../research/eska-format/analyzer-documents.md),
 syntax pull, отмена активной диагностики и [общий server/checker deadline](../research/eska-format/analyzer-deadline.md).
-Completion, edit plans, полная семантика и общий memory budget ещё не готовы; EF-18 не завершена.
+Подключено [стандартное автодополнение](../research/eska-format/analyzer-completion.md)
+с теми же current inputs, отменой и deadline. На C1/C2/C3 в RU/EN проверены
+изменение/ошибка YAML, смена BSL-типа, восстановление после close и активная отмена.
+Edit plans, полная семантика и общий memory budget ещё не готовы; EF-18 не завершена.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.

@@ -1,10 +1,12 @@
 //! A cancelled source read is retryable, while an unavailable editor input stays authoritative.
 
+use eska::analysis_core::{InputFailure, InputOrigin};
 use eska::project_core::source_format::SourcePath;
 use serde_json::json;
 
 use super::*;
 use crate::session::tests::fixture;
+use crate::{ModuleFailure, ModuleState};
 
 const MODULE: &str = "CommonModules/Tools/Ext/Module.bsl";
 

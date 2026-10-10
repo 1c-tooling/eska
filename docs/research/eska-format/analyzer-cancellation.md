@@ -1,9 +1,10 @@
-# Отмена диагностики через IDE-сервер
+# Отмена языковых запросов через IDE-сервер
 
 `eska-analyzer` принимает стандартный
 [`$/cancelRequest`](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/specification.md)
-для `textDocument/diagnostic`. Initialize объявляет `requestCancellation=true`,
-`cancellableMethods=[textDocument/diagnostic]` и `maxQueuedMessages=4` внутри
+для `textDocument/diagnostic` и [textDocument/completion](analyzer-completion.md).
+Initialize объявляет `requestCancellation=true`,
+`cancellableMethods=[textDocument/diagnostic,textDocument/completion]` и `maxQueuedMessages=4` внутри
 `experimental.eska`. Metadata requests, initialize и document notifications
 не объявлены отменяемыми. Прежний IDE protocol не изменён.
 
@@ -21,10 +22,10 @@
 обычным сообщением задержится до освобождения места. Отдельной гарантии времени
 реакции при перегруженном входе нет.
 
-ID хранится только на время конкретного syntax request. Числовые и строковые
+ID хранится только на время конкретного языкового request. Числовые и строковые
 ID различаются; Unicode сохраняется. Отмена неизвестного или завершённого ID
 игнорируется, не влияет на будущий запрос с таким же ID. Повторный текущий
-syntax ID отклоняется как `request_id_in_use`. Перед началом записи ответа guard удаляет ID.
+ID любой из двух операций отклоняется как `request_id_in_use`. Перед началом записи ответа guard удаляет ID.
 
 `RequestCancellation` общий для checker и server: он связывает прежний сигнал
 ограниченного чтения и `QueryCancellation` текущего kernel handle. Это замена

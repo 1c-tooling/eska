@@ -5,29 +5,28 @@ mod tests;
 
 use std::time::Duration;
 
-use eska::{
-    analysis_core::{InputFailure, InputOrigin, InputRequest},
-    tool_cli::Failure,
-};
+use eska::{analysis_core::InputRequest, tool_cli::Failure};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::{
-    AnalysisSession, Diagnostic, ModuleFailure, ModuleState, QueryError, RequestCancellation,
-    analysis_settings::Settings,
+    AnalysisSession, Diagnostic, RequestCancellation, analysis_settings::Settings,
     batch::syntax_profile,
-    cancellation::RequestStop,
-    deadline::{Deadline, DeadlineError},
 };
 
-use super::{documents, dto, positions::Positions, protocol};
+use super::{
+    dto,
+    language::{self, Method},
+    positions::Positions,
+    protocol,
+};
 
 pub const IDENTIFIER: &str = "eska-syntax";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Params {
-    text_document: Document,
+    text_document: language::Document,
     identifier: Option<String>,
     #[serde(rename = "previousResultId")]
     _previous_result_id: Option<String>,
@@ -35,19 +34,7 @@ pub struct Params {
     _work_done_token: Option<protocol::Id>,
     #[serde(rename = "partialResultToken")]
     _partial_result_token: Option<protocol::Id>,
-    pub eska: Option<Context>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Document {
-    uri: String,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Context {
-    pub snapshot: protocol::Snapshot,
+    pub eska: Option<language::Context>,
 }
 
 /// Invalid settings or a disabled rule cannot be advertised as a successful empty syntax profile.
@@ -104,27 +91,10 @@ pub fn pull(
             json!({"profile":"syntax"}),
         ));
     }
-    let path = documents::source_path(session, &params.text_document.uri)?;
-    session
-        .module(&path)
-        .ok_or_else(|| protocol::error_value(-32602, "source_not_module", Value::Null))?;
-    if let Some(reason) = cancellation.stop_reason() {
-        return Err(stopped(session, id, reason));
-    }
-    let deadline = Deadline::start(timeout, cancellation.clone()).map_err(|error| {
-        let kind = match error {
-            DeadlineError::TimerUnavailable => "analysis_timer_unavailable",
-            DeadlineError::TimeoutOutOfRange => "analysis_timeout_out_of_range",
-        };
-        protocol::error_value(-32000, kind, dto::snapshot(session, id))
-    })?;
-    if let Some(reason) = deadline.stop_reason() {
-        return Err(stopped(session, id, reason));
-    }
+    let path = language::source_path(session, &params.text_document.uri)?;
+    let deadline = language::start(session, id, Method::Diagnostic, cancellation, timeout)?;
     let result = analyze(session, id, &path, settings, &config, request, cancellation);
-    deadline
-        .stop_reason()
-        .map_or(result, |reason| Err(stopped(session, id, reason)))
+    language::finish(session, id, Method::Diagnostic, &deadline, result)
 }
 
 /// Input reads, kernel queries and range conversion all run within the same cooperative deadline.
@@ -137,31 +107,18 @@ fn analyze(
     request: &InputRequest,
     cancellation: &RequestCancellation,
 ) -> Result<Value, Value> {
-    let input = session
-        .module(path)
-        .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
-    // A cancelled lazy read is transient. Other failed inputs still require an explicit update.
-    let retry_cancelled = matches!(input.origin, InputOrigin::Saved)
-        && matches!(
-            input.state,
-            ModuleState::Unavailable(ModuleFailure::Input(InputFailure::Cancelled))
-        );
-    if matches!(input.state, ModuleState::Pending) || retry_cancelled {
-        session
-            .load_module_saved(path, session.revision(), request)
-            .map_err(|error| documents::request_error(&error))?;
-    }
+    language::load_module(session, path, request)?;
     if let Some(reason) = cancellation.stop_reason() {
-        return Err(stopped(session, id, reason));
+        return Err(language::stopped(session, id, Method::Diagnostic, reason));
     }
     let result = session
         .module_diagnostics(path, session.revision(), config, &cancellation.query)
-        .map_err(|error| query_error(session, id, &error))?;
+        .map_err(|error| language::query_error(session, id, &error))?;
     let items = session
         .with_module_text(path, session.revision(), &cancellation.query, |text| {
             items(&result.value, text)
         })
-        .map_err(|error| query_error(session, id, &error))?
+        .map_err(|error| language::query_error(session, id, &error))?
         .value?;
     let summary = session.summary();
     Ok(json!({"kind":"full",
@@ -171,24 +128,6 @@ fn analyze(
         "coverage":{"module_syntax_complete":true,"metadata_inputs_complete":summary.inputs.metadata_input_complete,
             "metadata_models_complete":summary.descriptor_models_complete,"module_inputs_complete":result.module_inputs_complete,
             "semantic_complete":false},"resources":session.resources()}}))
-}
-
-/// The first stop cause survives late client cancellation; deadlines must not trigger retry loops.
-pub fn stopped(session: &AnalysisSession, id: &str, reason: RequestStop) -> Value {
-    match reason {
-        RequestStop::Cancelled => {
-            protocol::error_value(-32800, "analysis_cancelled", dto::snapshot(session, id))
-        }
-        RequestStop::DeadlineExceeded => {
-            let mut error = protocol::error_value(
-                -32802,
-                "analysis_deadline_exceeded",
-                dto::snapshot(session, id),
-            );
-            error["data"]["retriggerRequest"] = json!(false);
-            error
-        }
-    }
 }
 
 /// Build UTF-16 ranges once and preserve canonical byte offsets for checker parity and future plans.
@@ -216,33 +155,4 @@ fn items(diagnostics: &[Diagnostic], text: &str) -> Result<Vec<Value>, Value> {
             "source":"eska-analyzer","message":diagnostic.message,"data":{"start_byte":start,"end_byte":end,
                 "original_severity":diagnostic.severity.as_str()}}))
     }).collect()
-}
-
-/// A missing/binary/refused module produces a coded failure with current state, never empty items.
-fn query_error(session: &AnalysisSession, id: &str, error: &QueryError) -> Value {
-    match error {
-        QueryError::Request(error) => documents::request_error(error),
-        QueryError::ModuleUnavailable { path, .. } => protocol::error_value(
-            -32000,
-            "module_unavailable",
-            json!({
-            "snapshot":dto::snapshot(session,id),"source":path,"input":session.module(path).map(dto::module),
-            "resources":session.resources()}),
-        ),
-        QueryError::Cancelled => stopped(session, id, RequestStop::Cancelled),
-        QueryError::CancellationTokenInUse => {
-            protocol::error_value(-32603, "query_token_in_use", Value::Null)
-        }
-        QueryError::InconsistentDiagnostic {
-            start_byte,
-            end_byte,
-        } => protocol::error_value(
-            -32603,
-            "diagnostic_inconsistent",
-            json!({"start_byte":start_byte,"end_byte":end_byte}),
-        ),
-        QueryError::InvalidOffset { .. } => {
-            protocol::error_value(-32602, "position_invalid", Value::Null)
-        }
-    }
 }

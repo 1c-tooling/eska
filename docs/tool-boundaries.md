@@ -503,6 +503,11 @@ LSP runtime, Git transport или debugger; `eska-build` не включает �
 отдельно с `check-cli`, использует общую сессию анализа для явного профиля `syntax`
 и возвращает неполноту метаданных. LSP runtime, Git, отладчик и платформа
 не входят в его граф зависимостей; к комплектной установке он пока не подключён.
+Отдельный [eska-analyzer](research/eska-format/analyzer-metadata.md) уже обслуживает
+metadata, full-sync YAML/BSL, syntax pull и [completion](research/eska-format/analyzer-completion.md)
+из того же host. Языковые запросы имеют общий control отмены и deadline;
+неполнота чтения/моделей отделена от полной семантики. Explorer, edit plans
+и общий heap/RSS budget ещё не подключены.
 [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.

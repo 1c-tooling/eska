@@ -21,6 +21,7 @@ use crate::RequestCancellation;
 
 use super::{
     documents,
+    language::{self, Method},
     protocol::{self, Id, Message},
 };
 
@@ -95,9 +96,9 @@ impl Requests {
         let Some(id) = &message.id else {
             return Envelope::Message(message, None);
         };
-        if message.method != "textDocument/diagnostic" {
+        let Some(method) = Method::parse(&message.method) else {
             return Envelope::Message(message, None);
-        }
+        };
         let mut active = self
             .0
             .lock()
@@ -118,6 +119,7 @@ impl Requests {
             id: id.clone(),
             requests: Arc::clone(self),
             control,
+            method,
         };
         drop(active);
         Envelope::Message(message, Some(request))
@@ -141,6 +143,7 @@ pub struct TrackedRequest {
     id: Id,
     requests: Arc<Requests>,
     pub control: RequestCancellation,
+    pub method: language::Method,
 }
 
 impl Drop for TrackedRequest {

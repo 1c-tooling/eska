@@ -39,10 +39,11 @@ Batch JSON-RPC, null ID, повторные JSON keys и глубина боле
 Ошибки аргументов до запуска транспорта дают 3; help/version — 0.
 
 `documentSync` уже true: [full-document синхронизация YAML/BSL](analyzer-documents.md)
-подключена к той же сессии. `languageQueries=true` включает пока только
-[`textDocument/diagnostic` с профилем syntax](analyzer-diagnostics.md).
-`requestCancellation=true` включает [отмену syntax-запросов](analyzer-cancellation.md);
-`requestTimeoutSeconds` задаёт [кооперативный лимит диагностики](analyzer-deadline.md);
+подключена к той же сессии. `languageQueries=true` включает
+[`textDocument/diagnostic` с профилем syntax](analyzer-diagnostics.md) и
+[`textDocument/completion`](analyzer-completion.md) по текущему YAML/BSL.
+`requestCancellation=true` включает [отмену обеих операций](analyzer-cancellation.md);
+`requestTimeoutSeconds` задаёт общий кооперативный лимит языкового запроса;
 `editPlans=false`. Существующие расширения не переводятся
 на новый процесс автоматически; это ещё не полный языковой сервер.
 

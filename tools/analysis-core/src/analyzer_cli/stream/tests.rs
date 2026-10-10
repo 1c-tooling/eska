@@ -30,7 +30,7 @@ fn unknown_completed_and_reused_ids_do_not_poison_other_requests() {
     assert!(!first.control.is_cancelled());
     let Envelope::Error(duplicate) = requests.track(message(
         Some(json!(7)),
-        "textDocument/diagnostic",
+        "textDocument/completion",
         &Value::Null,
     )) else {
         panic!("duplicate accepted");
@@ -39,12 +39,13 @@ fn unknown_completed_and_reused_ids_do_not_poison_other_requests() {
     assert_eq!(duplicate["error"]["data"]["kind"], "request_id_in_use");
     let Envelope::Message(_, Some(other)) = requests.track(message(
         Some(json!("7")),
-        "textDocument/diagnostic",
+        "textDocument/completion",
         &Value::Null,
     )) else {
         panic!("missing request");
     };
     requests.cancel(&Id::Number(7));
+    assert!(matches!(other.method, Method::Completion));
     assert!(first.control.input.is_cancelled());
     assert!(first.control.query.is_cancelled());
     assert!(!other.control.is_cancelled());

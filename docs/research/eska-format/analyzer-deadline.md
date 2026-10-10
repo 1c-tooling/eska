@@ -1,7 +1,8 @@
-# Лимит времени диагностики
+# Лимит времени диагностики и автодополнения
 
 `eska-analyzer --timeout-seconds 300` задаёт кооперативный лимит одного
-`textDocument/diagnostic`. Значение по умолчанию — 300 секунд; initialize
+`textDocument/diagnostic` или [textDocument/completion](analyzer-completion.md).
+Значение по умолчанию — 300 секунд; initialize
 объявляет его как `experimental.eska.requestTimeoutSeconds`. Ноль останавливает
 проверку до lazy-чтения BSL. Metadata requests и document notifications остаются
 доступными. Настройка относится к процессу, не к `eska.toml`.
@@ -29,6 +30,8 @@ report. Поздний результат отбрасывается перед 
 `data.retriggerRequest=false` и текущий snapshot в `data.details`. Так клиент
 не запускает бесконечный повтор того же слишком дорогого запроса.
 Клиентская отмена сохраняет `-32800` и `analysis_cancelled`.
+Completion использует `-32000` с analysis_deadline_exceeded без retriggerRequest:
+специальный `-32802` остаётся ответом diagnostic pull.
 
 Timeout не закрывает документ и не меняет готовые editor bytes/hash/revision
 или source quota. Следующий запрос получает новый control. Прерванное saved
@@ -42,6 +45,10 @@ Checker сохраняет прежнюю схему `deadline_exceeded`/`cancel
 неполного отчёта. Новых dependencies, config keys или compatibility aliases нет.
 
 ## Проверки
+
+Замеры этого раздела и машинного отчёта зафиксированы на commit `9b45392`.
+Позднее подключено [completion с тем же timer](analyzer-completion.md);
+новые проверки и размеры бинарника приведены в его отчёте.
 
 32 unit/file, 24 analyzer process и 9 checker process tests прошли вместе с
 fmt/check/strict Clippy/test/Rustdoc для всех tool features и обоими release builds.
@@ -76,5 +83,5 @@ YAML и BSL. Остальные файлы не хешировались. Machin
 Release server — 46734912 bytes; runtime graph 206 package names / 214 resolved
 versions. [Машинный отчёт](analyzer-deadline-results.json) сохраняет gates и замеры.
 Платформа 1С не запускалась: проверено управление запросом, не исполнение BSL.
-Полный heap/RSS budget, completion, семантика, watcher, multi-project host и
+Полный heap/RSS budget, семантика, watcher, multi-project host и
 edit plans остаются в работе. EF-18 — `IN_PROGRESS`.
