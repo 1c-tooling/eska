@@ -35,6 +35,35 @@ use std::{
 use eska::tool_cli::rpc_framing;
 use serde_json::{Value, json};
 
+/// Valid MIME header variants establish a real session instead of terminating its input reader.
+#[test]
+fn content_type_variants_keep_stdio_sessions_open_in_both_locales() {
+    let (_directory, root) = support::project("// Current module.\n", false);
+    for lang in ["en-US", "ru-RU"] {
+        for content_type in [
+            "application/vscode-jsonrpc",
+            "application/vscode-jsonrpc;charset=utf8",
+            "APPLICATION/VSCODE-JSONRPC ; CHARSET = \"UTF-8\"",
+        ] {
+            let mut client = Client::with_options(&root, lang, &[]);
+            let body = serde_json::to_vec(&initialize()).unwrap();
+            write!(
+                client.input,
+                "Content-Length: {}\r\nContent-Type: {content_type}\r\n\r\n",
+                body.len()
+            )
+            .unwrap();
+            client.input.write_all(&body).unwrap();
+            client.input.flush().unwrap();
+            let response = client.receive();
+            assert_eq!(response["id"], 1);
+            assert!(response.get("result").is_some(), "{response}");
+            client.send(&notification("initialized"));
+            client.finish();
+        }
+    }
+}
+
 /// Requests use standard framed JSON-RPC, including arbitrary Unicode string correlation IDs.
 fn request(id: Value, method: &str, params: Value) -> Value {
     let mut request = json!({"jsonrpc":"2.0", "method":method});

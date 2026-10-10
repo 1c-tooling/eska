@@ -12,6 +12,10 @@ Feature `analyzer-cli` включает только его process boundary; `c
 Используется stdio с [framing и жизненным циклом LSP 3.17](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/specification.md).
 ESKA methods согласуются отдельно от существующего IDE protocol приложения 1.x.
 CLI help/version локализованы; нормальный stdout содержит только framed JSON-RPC.
+Общий reader принимает `Content-Type: application/vscode-jsonrpc` с UTF-8 по
+умолчанию, явный `charset=utf-8` и исторический `utf8`, включая quoted значение.
+Регистр и пробелы параметра не меняют кодировку; неоднозначные и неподдержанные
+заголовки отклоняются по общему [контракту кадров](../../ide-protocol.md).
 Строковые ID сохраняют Unicode, числовые ID — signed 32-bit integers LSP.
 Batch JSON-RPC, null ID, повторные JSON keys и глубина более 64 отклоняются.
 

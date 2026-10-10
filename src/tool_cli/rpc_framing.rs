@@ -45,6 +45,7 @@ pub fn read_frame_with_limit(
     }
     let text = std::str::from_utf8(&header).map_err(|_| invalid())?;
     let mut length = None;
+    let mut content_type_seen = false;
     for line in text[..text.len() - 4].split("\r\n") {
         let (key, value) = line.split_once(':').ok_or_else(invalid)?;
         if key.is_empty()
@@ -63,10 +64,11 @@ pub fn read_frame_with_limit(
                 return Err(invalid());
             }
             length = Some(value.parse::<usize>().map_err(|_| invalid())?);
-        } else if key.eq_ignore_ascii_case("Content-Type")
-            && !value.eq_ignore_ascii_case("application/vscode-jsonrpc; charset=utf-8")
-        {
-            return Err(invalid());
+        } else if key.eq_ignore_ascii_case("Content-Type") {
+            if content_type_seen || !utf8_content_type(value) {
+                return Err(invalid());
+            }
+            content_type_seen = true;
         }
     }
     let length = length
@@ -78,6 +80,31 @@ pub fn read_frame_with_limit(
         return Err(invalid());
     }
     Ok(Some(body))
+}
+
+/// LSP defaults to UTF-8 and accepts its historical alias; ambiguous or foreign parameters are rejected.
+fn utf8_content_type(value: &str) -> bool {
+    let mut parts = value.split(';');
+    if !parts.next().is_some_and(|mime| {
+        mime.trim()
+            .eq_ignore_ascii_case("application/vscode-jsonrpc")
+    }) {
+        return false;
+    }
+    let Some(parameter) = parts.next() else {
+        return true;
+    };
+    let Some((name, encoding)) = parameter.split_once('=') else {
+        return false;
+    };
+    let encoding = encoding.trim();
+    let encoding = encoding
+        .strip_prefix('"')
+        .and_then(|quoted| quoted.strip_suffix('"'))
+        .unwrap_or(encoding);
+    parts.next().is_none()
+        && name.trim().eq_ignore_ascii_case("charset")
+        && (encoding.eq_ignore_ascii_case("utf-8") || encoding.eq_ignore_ascii_case("utf8"))
 }
 
 /// Write a complete frame under the caller's single-writer ownership.
@@ -146,6 +173,24 @@ mod tests {
         assert!(read_frame_with_limit(&mut Cursor::new(oversized), usize::MAX).is_err());
     }
 
+    /// Equivalent MIME parameters retain the same UTF-8 bytes, including the omitted default charset.
+    #[test]
+    fn content_type_accepts_default_utf8_and_equivalent_parameter_spelling() {
+        for content_type in [
+            "application/vscode-jsonrpc",
+            "application/vscode-jsonrpc; charset=utf-8",
+            "application/vscode-jsonrpc;charset=utf8",
+            "APPLICATION/VSCODE-JSONRPC ; CHARSET = \"UTF-8\"",
+        ] {
+            let wire = format!("Content-Length: 2\r\nContent-Type: {content_type}\r\n\r\n{{}}");
+            assert_eq!(
+                read_frame(&mut Cursor::new(wire)).unwrap().unwrap(),
+                b"{}",
+                "{content_type}"
+            );
+        }
+    }
+
     /// Invalid lengths, encodings, headers and partial frames are terminal.
     #[test]
     fn rejects_invalid_boundaries() {
@@ -159,6 +204,11 @@ mod tests {
             b"Content-Length: 1\r\n\r\n\xff",
             b"Content-Length: 3\r\n\r\n\xef\xbb\xbf",
             b"Content-Length: 2\r\nContent-Type: application/json\r\n\r\n{}",
+            b"Content-Length: 2\r\nContent-Type: application/vscode-jsonrpc; charset=utf-16\r\n\r\n{}",
+            b"Content-Length: 2\r\nContent-Type: application/vscode-jsonrpc; charset=utf-8; charset=utf-16\r\n\r\n{}",
+            b"Content-Length: 2\r\nContent-Type: application/vscode-jsonrpc\r\nContent-Type: application/vscode-jsonrpc\r\n\r\n{}",
+            b"Content-Length: 2\r\nContent-Type: application/vscode-jsonrpc; charset=\"utf-8\r\n\r\n{}",
+            b"Content-Length: 2\r\nContent-Type: application/vscode-jsonrpc; other=utf-8\r\n\r\n{}",
         ] {
             assert!(read_frame(&mut Cursor::new(wire)).is_err());
         }
