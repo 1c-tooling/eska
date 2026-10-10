@@ -9,16 +9,19 @@ use serde_json::{Value, json};
 
 use crate::{AnalysisSession, ModuleFailure, ModuleState, QueryError};
 
-use super::{completion, definitions, diagnostics, document_symbols, hover, signature_help};
+use super::{
+    completion, definitions, diagnostics, document_symbols, hover, references, signature_help,
+};
 use super::{documents, dto, protocol};
 
-pub const METHODS: [&str; 6] = [
+pub const METHODS: [&str; 7] = [
     "textDocument/diagnostic",
     "textDocument/completion",
     "textDocument/definition",
     "textDocument/documentSymbol",
     "textDocument/hover",
     "textDocument/signatureHelp",
+    "textDocument/references",
 ];
 
 #[derive(Clone, Copy)]
@@ -29,6 +32,7 @@ pub enum Method {
     DocumentSymbol,
     Hover,
     SignatureHelp,
+    References,
 }
 
 impl Method {
@@ -41,6 +45,7 @@ impl Method {
             "textDocument/documentSymbol" => Some(Self::DocumentSymbol),
             "textDocument/hover" => Some(Self::Hover),
             "textDocument/signatureHelp" => Some(Self::SignatureHelp),
+            "textDocument/references" => Some(Self::References),
             _ => None,
         }
     }
@@ -54,6 +59,7 @@ pub enum Request {
     DocumentSymbol(document_symbols::Params),
     Hover(hover::Params),
     SignatureHelp(signature_help::Params),
+    References(references::Params),
 }
 
 impl Request {
@@ -66,6 +72,7 @@ impl Request {
             Method::DocumentSymbol => protocol::params(value).map(Self::DocumentSymbol),
             Method::Hover => protocol::params(value).map(Self::Hover),
             Method::SignatureHelp => protocol::params(value).map(Self::SignatureHelp),
+            Method::References => protocol::params(value).map(Self::References),
         }
     }
 
@@ -78,6 +85,7 @@ impl Request {
             Self::DocumentSymbol(params) => params.eska.as_ref(),
             Self::Hover(params) => params.eska.as_ref(),
             Self::SignatureHelp(params) => params.eska.as_ref(),
+            Self::References(params) => params.eska.as_ref(),
         }
     }
 }
@@ -195,5 +203,13 @@ pub fn query_error(session: &AnalysisSession, id: &str, error: &QueryError) -> V
             "signature_help_inconsistent",
             json!({"signature":signature,"parameter":parameter}),
         ),
+        QueryError::UnsupportedReferenceSymbol { category } => protocol::error_value(
+            -32000,
+            "references_symbol_unsupported",
+            json!({"category":category}),
+        ),
+        QueryError::InconsistentReferences => {
+            protocol::error_value(-32603, "references_inconsistent", Value::Null)
+        }
     }
 }

@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 
 use super::super::{
     completion, diagnostics, document_symbols, documents, dto, hover, language, metadata_locations,
-    project_changes, property_edits, protocol, request_control, signature_help, stream,
+    project_changes, property_edits, protocol, references, request_control, signature_help, stream,
     watched_files, watcher_registration,
 };
 use super::{Phase, Server};
@@ -85,6 +85,8 @@ impl Server<'_> {
             result["capabilities"]["definitionProvider"] = json!(true);
             result["capabilities"]["documentSymbolProvider"] = json!(true);
             result["capabilities"]["hoverProvider"] = json!(true);
+            result["capabilities"]["referencesProvider"] = json!(true);
+            result["capabilities"]["experimental"]["eska"]["references"] = references::capability();
             result["capabilities"]["signatureHelpProvider"] = signature.provider();
             result["capabilities"]["experimental"]["eska"]["signatureHelp"] = json!({
                 "scope":"current-bsl-call","documentationFormat":signature.documentation.as_str(),

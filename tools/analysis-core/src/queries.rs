@@ -6,6 +6,7 @@ mod cancellation_tests;
 pub mod definitions;
 mod document_symbols;
 mod metadata_definitions;
+pub mod references;
 pub mod signature_help;
 pub mod symbol_hover;
 
@@ -68,6 +69,10 @@ pub enum QueryError {
         signature: usize,
         parameter: Option<usize>,
     },
+    UnsupportedReferenceSymbol {
+        category: &'static str,
+    },
+    InconsistentReferences,
     Cancelled,
     CancellationTokenInUse,
 }

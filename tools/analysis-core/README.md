@@ -161,6 +161,11 @@ purpose сохраняет язык автора. Координаты/hash от
 не вычисляются вторым parser. Согласуются документация, UTF-16 parameter labels
 и nullable selection; изменения target BSL/YAML сохраняют caller hash.
 Прежняя карточка клиента игнорируется; неполное отсутствие даёт signature_help_incomplete.
+[`textDocument/references`](../../docs/research/eska-format/analyzer-references.md)
+использует typed native search с обязательным includeDeclaration. Каждый Location
+сохраняет current target/hash, kind и явные coverage/caps; пустой неполный поиск
+даёт references_incomplete. 200 candidate files и 10000 projected locations
+не ограничивают память native collection и не доказывают безопасность rename.
 `textDocument/definition` подтверждает BSL-цель из объявленного ready состава;
 диапазон и hash относятся к текущему target text. Не найденная цель при неполных
 входах даёт navigation_incomplete. Отдельный [metadata locate](../../docs/research/eska-format/analyzer-metadata-locations.md)
@@ -202,13 +207,13 @@ transport добавляет сообщения RU/EN; failed input не пол�
 не меняет input; он использует общий редактор project core. Полная проверка базы
 выполняется на каждый запрос; [отмена и deadline](../../docs/research/eska-format/analyzer-property-cancellation.md)
 останавливают её кооперативно без потери текущего ввода.
-[`$/cancelRequest`](../../docs/research/eska-format/analyzer-cancellation.md) отменяет diagnostic/completion/definition/documentSymbol/hover/signatureHelp query
+[`$/cancelRequest`](../../docs/research/eska-format/analyzer-cancellation.md) отменяет diagnostic/completion/definition/documentSymbol/hover/signatureHelp/references query
 и property plan через отдельный input thread; один worker сохраняет владение YAML/BSL и порядок изменений.
 Общий `RequestCancellation` заменяет неопубликованный `batch::BatchCancellation`.
 Один внутренний [таймер](../../docs/research/eska-format/analyzer-deadline.md) обслуживает
 server и checker. Лимит языкового запроса и property plan по умолчанию 300 секунд; timeout pull
-diagnostics возвращает `-32802` с `retriggerRequest=false`, timeout completion/definition/documentSymbol/hover/signatureHelp/plan —
-`-32000` без этого поля; клиентская отмена всех семи операций — `-32800`.
+diagnostics возвращает `-32802` с `retriggerRequest=false`, timeout completion/definition/documentSymbol/hover/signatureHelp/references/plan —
+`-32000` без этого поля; клиентская отмена всех восьми операций — `-32800`.
 Из установленного комплекта бинарник не запускается автоматически.
 [Протокол, границы и проверка C1/C2/C3](../../docs/research/eska-format/analyzer-metadata.md).
 [Синхронизация документов и события состояния](../../docs/research/eska-format/analyzer-documents.md).

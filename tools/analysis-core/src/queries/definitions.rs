@@ -37,43 +37,60 @@ impl AnalysisSession {
             let Some(target) = analysis.goto_definition(file, offset) else {
                 return Ok(None);
             };
-            let source = source_for_file(self, analysis, target.file_id)?;
-            let entry = self
-                .modules
-                .get(&source)
-                .filter(|entry| entry.file == target.file_id)
-                .ok_or(QueryError::UnsupportedNavigationTarget)?;
-            let unavailable = || QueryError::ModuleUnavailable {
-                path: source.clone(),
-                state: entry.model.state.clone(),
-            };
-            if !matches!(entry.model.state, ModuleState::Ready { .. }) {
-                return Err(unavailable());
-            }
-            let text = analysis
-                .database()
-                .try_file_text_input(target.file_id)
-                .ok_or_else(unavailable)?;
-            let text = text.text(analysis.database());
-            let start_byte = u32::from(target.range.start());
-            let end_byte = u32::from(target.range.end());
-            if start_byte > end_byte
-                || !text.is_char_boundary(start_byte as usize)
-                || !text.is_char_boundary(end_byte as usize)
-            {
-                return Err(QueryError::InconsistentNavigation {
-                    start_byte,
-                    end_byte,
-                });
-            }
-            Ok(Some(DefinitionTarget {
-                source: source.clone(),
-                source_sha256: entry.model.source_sha256.clone().ok_or_else(unavailable)?,
-                start_byte,
-                end_byte,
-            }))
+            current_target(
+                self,
+                analysis,
+                target.file_id,
+                target.range.start().into(),
+                target.range.end().into(),
+            )
+            .map(Some)
         })
     }
+}
+
+/// Navigation and references capture only declared ready targets, with verbatim bytes and hashes.
+pub(super) fn current_target(
+    session: &AnalysisSession,
+    analysis: &ide::Analysis,
+    file: vfs::FileId,
+    start_byte: u32,
+    end_byte: u32,
+) -> Result<DefinitionTarget, QueryError> {
+    let source = source_for_file(session, analysis, file)?;
+    let entry = session
+        .modules
+        .get(&source)
+        .filter(|entry| entry.file == file)
+        .ok_or(QueryError::UnsupportedNavigationTarget)?;
+    let unavailable = || QueryError::ModuleUnavailable {
+        path: source.clone(),
+        state: entry.model.state.clone(),
+    };
+    if !matches!(entry.model.state, ModuleState::Ready { .. }) {
+        return Err(unavailable());
+    }
+    let input = analysis
+        .database()
+        .try_file_text_input(file)
+        .ok_or_else(unavailable)?;
+    let text = input.text(analysis.database());
+    if start_byte > end_byte
+        || !text.is_char_boundary(start_byte as usize)
+        || !text.is_char_boundary(end_byte as usize)
+    {
+        return Err(QueryError::InconsistentNavigation {
+            start_byte,
+            end_byte,
+        });
+    }
+    let source_sha256 = entry.model.source_sha256.clone().ok_or_else(unavailable)?;
+    Ok(DefinitionTarget {
+        source,
+        source_sha256,
+        start_byte,
+        end_byte,
+    })
 }
 
 /// Prefer an adjacent name at either cursor boundary; retain original positions for non-name queries.

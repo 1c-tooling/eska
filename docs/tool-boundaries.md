@@ -135,6 +135,11 @@ negotiation plaintext/markdown и оформлением authored text. Язык
 IDE transport согласует формат документации, UTF-16 labels и nullable selection;
 прежняя карточка клиента не становится вторым источником семантики.
 
+[References](research/eska-format/analyzer-references.md) получает поиск и kind
+из native resolver общего ядра. IDE transport переводит подтверждённые текущие
+диапазоны в Locations, сохраняя target hash, coverage и caps. Неполный поиск
+не становится основанием для rename; второй текстовый индекс не создаётся.
+
 VS Code предоставляет [TreeDataProvider](https://code.visualstudio.com/api/extension-guides/tree-view).
 Расширение запрашивает нужные дочерние узлы, преобразует их в TreeItem, хранит
 раскрытие и выделение, показывает свойства и пользовательские команды. Состав,

@@ -15,6 +15,7 @@ mod positions;
 mod project_changes;
 mod property_edits;
 mod protocol;
+mod references;
 mod request_control;
 mod server;
 mod signature_help;

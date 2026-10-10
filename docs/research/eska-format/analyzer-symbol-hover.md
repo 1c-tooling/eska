@@ -72,8 +72,8 @@ Scope ограничен разрешёнными символами позиц�
 подсказки keyword/expression и полная platform documentation ещё не подключены.
 semantic_complete всегда false; null не означает полную семантическую проверку.
 
-Шесть languageMethods и семь cancellableMethods включают hover и
-[подсказки параметров](analyzer-call-signatures.md). Используется
+Семь languageMethods и восемь cancellableMethods включают hover,
+[подсказки параметров](analyzer-call-signatures.md) и [references](analyzer-references.md). Используется
 общий request control: отмена `-32800`, deadline `-32000` без retriggerRequest,
 нулевой timeout до IO, обычный 300 секунд. Отмена остаётся кооперативной.
 

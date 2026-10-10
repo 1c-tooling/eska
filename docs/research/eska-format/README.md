@@ -53,6 +53,9 @@ request control, без второго parser или metadata IO.
 [Параметры текущего вызова](analyzer-call-signatures.md) используют native call
 binding того же ядра. SignatureHelp согласует документацию/UTF-16 labels,
 выбор перегрузки и параметра, сохраняя текущие caller bytes и явную неполноту.
+[Использования BSL-символа](analyzer-references.md) получены типизированным native
+поиском. Locations сохраняют текущие target ranges/hash, kind, coverage и caps;
+разрешённый пустой поиск отделён от неполного и неподдержанного.
 [Координаты объектов и свойств YAML](analyzer-metadata-locations.md) вычисляются
 из текущего разбора; metadata locate выбирает UUID/QName без чтения файла.
 [Переход из BSL к объекту YAML](analyzer-metadata-definitions.md) использует

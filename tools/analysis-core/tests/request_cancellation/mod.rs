@@ -25,6 +25,8 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
         ("ru-RU", json!("отмена"), "textDocument/hover"),
         ("en-US", json!(-7), "textDocument/signatureHelp"),
         ("ru-RU", json!("отмена"), "textDocument/signatureHelp"),
+        ("en-US", json!(-7), "textDocument/references"),
+        ("ru-RU", json!("отмена"), "textDocument/references"),
     ] {
         let mut client = Client::with_options(&root, lang, &[]);
         let initialized = client.ask(&initialize());
@@ -67,7 +69,10 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
         client.send(&json!({"jsonrpc":"2.0","method":"$/cancelRequest","params":{"id":"reuse"}}));
         let later = client.ask(&request(json!("reuse"), method, params(method, &uri, "2")));
         assert!(later.get("result").is_some(), "{later}");
-        let current = if method == "textDocument/documentSymbol" {
+        let current = if matches!(
+            method,
+            "textDocument/documentSymbol" | "textDocument/references"
+        ) {
             &later["result"][0]["eska"]["snapshot"]
         } else {
             &later["result"]["eska"]["snapshot"]
@@ -86,8 +91,14 @@ fn params(method: &str, uri: &str, revision: &str) -> Value {
     if method == "textDocument/completion" {
         params["position"] = json!({"line":1,"character":5});
     }
-    if matches!(method, "textDocument/definition" | "textDocument/hover") {
+    if matches!(
+        method,
+        "textDocument/definition" | "textDocument/hover" | "textDocument/references"
+    ) {
         params["position"] = json!({"line":0,"character":11});
+    }
+    if method == "textDocument/references" {
+        params["context"] = json!({"includeDeclaration":true});
     }
     if method == "textDocument/signatureHelp" {
         params["position"] = json!({"line":2,"character":5});

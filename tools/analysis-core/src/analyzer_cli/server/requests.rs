@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 
 use super::super::{
     completion, definitions, diagnostics, document_symbols, documents, dto, hover, language,
-    metadata_locations, property_edits, protocol, signature_help,
+    metadata_locations, property_edits, protocol, references, signature_help,
 };
 use super::Server;
 use crate::{AnalysisSession, RequestCancellation};
@@ -138,11 +138,7 @@ impl Server<'_> {
         if let Some(expected) = params.context() {
             validate_snapshot(session, &self.session_id, &expected.snapshot)?;
         }
-        let request = InputRequest {
-            max_document_bytes: self.cli.max_document_bytes,
-            cancellation: cancellation.input.clone(),
-            ..InputRequest::default()
-        };
+        let request = query_input(self.cli.max_document_bytes, cancellation);
         let timeout = Duration::from_secs(self.cli.timeout_seconds);
         match params {
             language::Request::Diagnostic(params) => diagnostics::pull(
@@ -215,7 +211,27 @@ impl Server<'_> {
                     capabilities: self.signature,
                 },
             ),
+            language::Request::References(params) => references::pull(
+                session,
+                &params,
+                settings,
+                &references::Options {
+                    session_id: &self.session_id,
+                    request: &request,
+                    cancellation,
+                    timeout,
+                },
+            ),
         }
+    }
+}
+
+/// Lazy language reads inherit the same document bound and the request's input cancellation handle.
+fn query_input(max_document_bytes: u64, cancellation: &RequestCancellation) -> InputRequest {
+    InputRequest {
+        max_document_bytes,
+        cancellation: cancellation.input.clone(),
+        ..InputRequest::default()
     }
 }
 

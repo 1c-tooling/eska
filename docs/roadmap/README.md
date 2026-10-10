@@ -162,6 +162,13 @@ BSL/YAML. 187 tool tests и все 19 tool/15 root gates прошли; 24 сце
 labels/null selection. 203 tool tests и все 19 tool/15 root gates прошли;
 24 сценария C1/C2/C3 RU/EN подтвердили 240 pulls без записи оригиналов.
 Полная семантика и общий memory budget остаются в работе; EF-18 — `IN_PROGRESS`.
+[Использования BSL-символа](../research/eska-format/analyzer-references.md)
+подключены к standard references через typed native search, без второго индекса.
+Текущие target ranges/hash, includeDeclaration и scope подтверждены;
+coverage/caps остаются явными, неполный поиск не доказывает безопасность rename.
+217 tool tests и все 19 tool/15 root gates прошли; 24 сценария C1/C2/C3 RU/EN
+подтвердили 192 pulls и 160 Locations. Native collection ещё не имеет жёсткого
+CPU/RSS budget; EF-18 остаётся `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

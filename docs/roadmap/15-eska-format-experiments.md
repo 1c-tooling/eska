@@ -1240,6 +1240,24 @@ line comments при одиночном CR описано явно; bytes не �
 Полная семантика, общий heap/RSS budget, остальные IDE edits и Explorer ещё
 в работе; EF-18 остаётся `IN_PROGRESS`.
 
+[Поиск использований BSL](../research/eska-format/analyzer-references.md)
+подключён к standard references через типизированный resident API ядра.
+Native outcome сохраняет различие resolved-zero, not-found и unsupported;
+adapter проверяет declared current targets, transport возвращает Locations
+с target hash, kind, coverage/caps и обязательным includeDeclaration.
+Соседние inputs не читаются; второй parser/индекс/host не добавлен.
+Проверены lexical scope, cross-module/current YAML/BSL, BOM/non-BMP/EOL,
+stale/quotas/settings, отмена и продолжение сессии. 100 unit/file, 106 analyzer
+и 11 checker process tests прошли, всего 217; minimal — 78. Все 19 tool и
+15 root gates прошли; root — 894/14. 24 сценария C1/C2/C3 RU/EN подтвердили
+192 pulls, 96 поисков и 160 Locations, 72 incomplete и 24 stale refusals.
+18 выбранных оригиналов и bytes копий сохранены, свои проекты удалены.
+Runtime graph прежний 206/214; новые dependencies отсутствуют. 200 candidate
+files и 10000 projected hits не являются native CPU/heap/RSS budget:
+collection предшествует проекции. Неполный поиск не даёт rename proof.
+Rename plans, полнота моделей/семантики, общий memory budget и Explorer
+ещё в работе; EF-18 остаётся `IN_PROGRESS`, очередь этапов не меняется.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

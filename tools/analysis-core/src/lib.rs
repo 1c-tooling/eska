@@ -36,6 +36,7 @@ pub use modules::{ModuleFailure, ModuleInput, ModuleState, ModuleSummary, Sessio
 pub use projection::{MetadataView, ModelState, OwnerModel};
 pub use property_edits::{PropertyEditError, PropertyEditInput, PropertyEditPlan};
 pub use queries::definitions::DefinitionTarget;
+pub use queries::references::{ReferenceKind, ReferenceOccurrence, ReferenceSearch};
 pub use queries::signature_help::{CallParameter, CallSignature, CallSignatures};
 pub use queries::symbol_hover::{HoverKind, SymbolHover};
 pub use queries::{ModuleResult, QueryError};
