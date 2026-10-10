@@ -8,18 +8,23 @@
 [`eska/analysis/memory`](analyzer-kernel-memory.md); прежний замер ниже относится
 к SDK и ограниченному рабочему набору.
 
-Для каждой таблицы возвращаются имя реализации, число живых entries,
+Для каждой таблицы возвращаются имя реализации, число instances (`entries`),
 `metadata_bytes`, `field_stack_bytes` и `heap_bytes: Option<usize>`.
 Имена могут повторяться. Таблицы отсортированы по полным значениям: name,
-entries, metadata_bytes, field_stack_bytes, heap_bytes. `None` означает отсутствие heap hook,
-`Some(0)` — нулевую оценку. В отчёте отдельно показаны число всех таблиц без
-hook, число живых таблиц без hook и сумма доступных heap estimates.
+entries, metadata_bytes, field_stack_bytes, heap_bytes. `None` означает
+недоступную aggregate-оценку, `Some(0)` — нулевой вклад, в том числе у memo
+с вытесненным значением. Счётчик entries включает такие memo; это не число
+живых parse trees. Смешанный aggregate может не учитывать values без hook.
+В отчёте отдельно показаны число null-оценок, число таких таблиц с entries>0
+и сумма доступных heap estimates. Схема отчёта не менялась.
 Снимок сопровождается текущим `SessionRevision`.
 
 Чтение статистики не оценивает tracked queries, не читает файлы, не меняет
 исходники, ревизию или [квоту входов](source-budget.md). Тест подтверждает пустые
 parse tables до анализа и заполненную таблицу после реального syntax query.
 После `trim_batch_caches()` текущие входы, ревизия и диагностика сохраняются.
+Отдельно исправлено [освобождение reparse hints](kernel-parse-release.md)
+недоступных модулей: они хранились вне Salsa и не учитывались этим отчётом.
 
 Размеры таблиц не дают общий memory budget. Один Arc может участвовать
 в нескольких estimates; есть таблицы без hook и объекты вне Salsa:

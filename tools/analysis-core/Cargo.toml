@@ -59,6 +59,7 @@ url = { version = "2.5.8", default-features = false, features = ["std"], optiona
 serde_json = "1.0"
 
 [patch."https://github.com/1c-tooling/bsl-analyzer.git"]
+base-db = { path = "../bsl-kernel/crates/base-db" }
 bsl-metadata = { path = "../bsl-kernel/crates/bsl-metadata" }
 hir-ty = { path = "../bsl-kernel/crates/hir-ty" }
 ide-db = { path = "../bsl-kernel/crates/ide-db" }

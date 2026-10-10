@@ -289,10 +289,11 @@ impl RootDatabaseImpl {
 
     /// Per-ingredient memory snapshot for diagnostics tooling, via salsa's
     /// `memory_usage` introspection (the `salsa_unstable` feature). Each tuple is
-    /// `(ingredient name, live entry count, salsa metadata bytes, field stack bytes,
-    /// optional heap bytes)`. `heap` is `None` unless the ingredient implements a
-    /// `heap_size` hook, so the strongest signal here is `count` (whether LRU is
-    /// actually evicting) rather than absolute bytes.
+    /// `(ingredient name, retained instance count, salsa metadata bytes, field stack bytes,
+    /// optional heap bytes)`. Counts include metadata-only memos after eviction;
+    /// they do not prove how many computed values remain live. Heap aggregates
+    /// may omit uninstrumented values even when another value contributes zero.
+    /// Neither the count nor the sum measures all resident process memory.
     pub fn memory_report(&self) -> Vec<(&'static str, usize, usize, usize, Option<usize>)> {
         let db: &dyn salsa::Database = self;
         let info = db.memory_usage();

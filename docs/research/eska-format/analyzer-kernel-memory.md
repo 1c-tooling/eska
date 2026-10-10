@@ -36,8 +36,11 @@ unknown_session, устаревшая revision — stale_revision. Запрос 
 
 Каждая таблица содержит `name`, `entries`, `metadata_bytes`,
 `field_stack_bytes`, `heap_bytes`. Счётчики — неотрицательные числа;
-heap_bytes допускает null. Null означает отсутствие hook, 0 — полученную
-нулевую оценку. Сумма не включает metadata_bytes/field_stack_bytes.
+heap_bytes допускает null. Null означает недоступную aggregate-оценку;
+0 может означать полученную нулевую оценку или вытесненные значения.
+Entries считает instances, включая memo без сохранённого значения.
+Даже ненулевой aggregate может пропускать values без hook внутри той же таблицы.
+Сумма не включает metadata_bytes/field_stack_bytes. Схема ответа не менялась.
 
 Ядро называет таблицы по типам значений; разные ingredients могут иметь
 одинаковый name. Потребитель не должен превращать массив в map по этому полю.

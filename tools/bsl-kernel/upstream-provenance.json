@@ -2,12 +2,26 @@
   "repository": "https://github.com/1c-tooling/bsl-analyzer",
   "revision": "9021ba07471eee8a2614bed2105a2c8699f60780",
   "selected_packages": [
+    "base-db",
     "bsl-metadata",
     "hir-ty",
     "ide-db",
     "parser-error"
   ],
   "original_file_sha256": {
+    "LICENSE-APACHE": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+    "LICENSE-GPL": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
+    "LICENSE-LGPL": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
+    "LICENSE-MIT": "eabf424905be03c7e86b9ba3905ee0935936f85ad98afce697716f3d046ac838",
+    "LICENSING.md": "3926ec48c1759149d07f9a6ff7a99a1fe63d18f0c9b18af6106dfc36ea7bb7d4",
+    "NOTICE": "c3cb1f80bedd3fe5041b7143aede65f832f0f19449b83d5d566ba80bfc13f841",
+    "crates/base-db/Cargo.toml": "c95234f9931811988b2d2e9b0a585b9370dc20f718ae82d7a8142800ead0a04b",
+    "crates/base-db/src/change.rs": "7cbc3825094a3805c8e0126955e1b78f1fc7c149ee2c43cd0c9186ced7ed5133",
+    "crates/base-db/src/input.rs": "54d55f9679a74c2fe900c734ca0262d103ca1eb593fd582f737b6f64a5859b57",
+    "crates/base-db/src/lib.rs": "fa9e5a5f704b6e1a814ea222082510bc080fd4f09f4d3767416f4cad0397007e",
+    "crates/base-db/src/locale.rs": "dd2d8f60e636fd51d87f310cb6a33d7f33dca152ceb462e0b8f06a44a57ae310",
+    "crates/base-db/src/queries.rs": "8be6409d9d1d53007b5b897b1263613017677c4e42de133c343a6973917f2847",
+    "crates/base-db/src/scope.rs": "9678254349cea2229599897811bf5b854feab94727d65d5745c73401f6008286",
     "crates/bsl-metadata/Cargo.toml": "2214bad4e04dc93f12e2bd07fd1637187e74eb3a7b6497103f1bf27ba78308d4",
     "crates/bsl-metadata/fixtures/cfe_dependencies/adopter/Catalogs/\u0422\u043e\u0432\u0430\u0440\u044b.xml": "57022c09de0acdf9e97520b6001437ae28443c7661fc3a6d95acc82887b98b4e",
     "crates/bsl-metadata/fixtures/cfe_dependencies/adopter/Configuration.xml": "2b00f336886e3a2caf11dd90470eb62c2d4a8801bde0b414500ec57342c72212",
@@ -314,14 +328,8 @@
     "crates/ide-db/src/type_kernel.rs": "4a962422cfbba3684d92d49c4d762c653141b2607177d13cf613ef3c0847d1b0",
     "crates/ide-db/src/types.rs": "6233dd36016eeacb70f1f814a386499a57213bea6f7749277e9a49d70cabec75",
     "crates/ide-db/src/vfs_helpers.rs": "bc9038c0b8aa265affb77ae1dfc062df7c2aa8e58967520418eccb14ef025041",
-    "LICENSE-MIT": "eabf424905be03c7e86b9ba3905ee0935936f85ad98afce697716f3d046ac838",
-    "LICENSE-APACHE": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
-    "LICENSE-LGPL": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
-    "LICENSE-GPL": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
-    "NOTICE": "c3cb1f80bedd3fe5041b7143aede65f832f0f19449b83d5d566ba80bfc13f841",
-    "LICENSING.md": "3926ec48c1759149d07f9a6ff7a99a1fe63d18f0c9b18af6106dfc36ea7bb7d4",
-    "rustfmt.toml": "f5a4278cea22034f684c4153757a610aa8487e8f65abcda528efef7c9d3c40e9",
     "crates/parser-error/Cargo.toml": "56a59c23434e6e6473820a113ab5eec286aae9f3079da0697d31d7209947aa79",
-    "crates/parser-error/src/lib.rs": "c507ae4a057a4a7e5a1e4dcc96747e76b73273ed47a7eb62d9c5a3859e371e01"
+    "crates/parser-error/src/lib.rs": "c507ae4a057a4a7e5a1e4dcc96747e76b73273ed47a7eb62d9c5a3859e371e01",
+    "rustfmt.toml": "f5a4278cea22034f684c4153757a610aa8487e8f65abcda528efef7c9d3c40e9"
   }
 }

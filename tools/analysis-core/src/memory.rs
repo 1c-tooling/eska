@@ -6,10 +6,11 @@ mod tests;
 
 use crate::{AnalysisSession, SessionRevision};
 
-/// Names may repeat; `None` distinguishes an absent heap hook from a measured empty table.
+/// Names may repeat; `None` is an unavailable aggregate, while zero can include evicted memos.
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct KernelMemoryTable {
     pub name: &'static str,
+    /// Retained instances include metadata-only memos whose computed values were evicted.
     pub entries: usize,
     pub metadata_bytes: usize,
     pub field_stack_bytes: usize,
@@ -21,7 +22,9 @@ pub struct KernelMemoryTable {
 pub struct KernelMemoryReport {
     pub revision: SessionRevision,
     pub tables: Vec<KernelMemoryTable>,
+    /// Count null native estimates; mixed aggregates may still omit uninstrumented live values.
     pub tables_without_heap_hook: usize,
+    /// Count nonempty instance tables above, not tables with proven live computed values.
     pub live_tables_without_heap_hook: usize,
     pub summed_heap_estimates: usize,
 }

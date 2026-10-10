@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/bsl-metadata", "crates/hir-ty", "crates/ide-db", "crates/parser-error"]
+members = ["crates/base-db", "crates/bsl-metadata", "crates/hir-ty", "crates/ide-db", "crates/parser-error"]
 
 [workspace.package]
 version = "0.2.85"
@@ -11,7 +11,7 @@ repository = "https://github.com/itrous/bsl-analyzer"
 rust-version = "1.95"
 
 [workspace.dependencies]
-base-db = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
+base-db = { path = "crates/base-db" }
 bsl-config = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 bsl-conventions = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 bsl-metadata = { path = "crates/bsl-metadata" }
@@ -53,6 +53,7 @@ tracing = { version = "0.1.42", default-features = false, features = ["std"] }
 vfs = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 
 [patch."https://github.com/1c-tooling/bsl-analyzer.git"]
+base-db = { path = "crates/base-db" }
 bsl-metadata = { path = "crates/bsl-metadata" }
 hir-ty = { path = "crates/hir-ty" }
 ide-db = { path = "crates/ide-db" }

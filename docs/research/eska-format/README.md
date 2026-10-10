@@ -62,6 +62,10 @@ binding того же ядра. SignatureHelp согласует докумен�
 [Отчёт памяти сессии](analyzer-kernel-memory.md) предоставляет прежние native
 table estimates через общий сервер без queries и lazy I/O. Source quota,
 неполный heap estimate и недоступный RSS остаются раздельными.
+[Освобождение прежнего разбора BSL](kernel-parse-release.md) устраняет удержание
+native reparse hint у недоступного ввода. Release и отказ по квоте используют
+общую точку ядра; соседние hints и current reload сохраняются. Измерение на
+128 крупных модулях каждого состава отделяет RSS от неполных Salsa estimates.
 [Координаты объектов и свойств YAML](analyzer-metadata-locations.md) вычисляются
 из текущего разбора; metadata locate выбирает UUID/QName без чтения файла.
 [Переход из BSL к объекту YAML](analyzer-metadata-definitions.md) использует

@@ -1296,6 +1296,24 @@ Machine reports совпали между локалями; 12 выбранны�
 Общий memory budget, полные модели/семантика, остальные edits и Explorer
 ещё в работе; EF-18 остаётся `IN_PROGRESS`, очередь этапов не меняется.
 
+[Освобождение прежнего разбора BSL](../research/eska-format/kernel-parse-release.md)
+исправляет удержание native reparse snapshot после release и rejected input.
+Пятый локальный patch `base-db` той же ревизии освобождает hint в общем
+unreadable setter после input write, сохраняя unread flag/пустой resident text,
+neighbor hints и current reload. Новый кеш, disk fallback и cache policy
+не добавлены; CLI/JSON schemas, clocks и source-byte caps прежние.
+238 tool tests, все 19 tool/15 root gates и kernel 1102/4 прошли.
+Парные release sweeps по 128 крупным CommonModules C1/C2/C3 дали 768 syntax
+checks и 30 samples; после каждого release source bytes равны нулю.
+390 выбранных оригиналов сохранены. OS RSS снизился в этих единичных замерах,
+доступные Salsa estimates совпали: hints находятся вне её таблиц.
+Entries включает metadata-only memos; zero/неполный aggregate не доказывает
+число живых parse trees или точный heap. Документация уточнена без смены схемы.
+Normal graph — прежние 206/214; base-db заменён локальным patch, исходные
+hashes семи файлов записаны в provenance, лицензии/версия не менялись.
+Полная семантика, общий memory budget, остальные edits и Explorer ещё в работе;
+EF-18 остаётся `IN_PROGRESS`, очередь этапов не меняется.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя
