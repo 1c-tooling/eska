@@ -50,6 +50,9 @@ request control, без второго parser или metadata IO.
 [Карточка символа BSL](analyzer-symbol-hover.md) использует структурированный
 позиционный API ядра. Hover согласует plaintext/markdown, локализует заголовки
 в IDE и сохраняет текущие caller ranges/hash при смене BSL/YAML.
+[Параметры текущего вызова](analyzer-call-signatures.md) используют native call
+binding того же ядра. SignatureHelp согласует документацию/UTF-16 labels,
+выбор перегрузки и параметра, сохраняя текущие caller bytes и явную неполноту.
 [Координаты объектов и свойств YAML](analyzer-metadata-locations.md) вычисляются
 из текущего разбора; metadata locate выбирает UUID/QName без чтения файла.
 [Переход из BSL к объекту YAML](analyzer-metadata-definitions.md) использует

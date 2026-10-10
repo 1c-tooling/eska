@@ -23,6 +23,7 @@ mod property_edit_plans;
 mod request_cancellation;
 mod request_deadline;
 mod saved_watcher_registration;
+mod signature_queries;
 mod support;
 mod watched_files;
 mod watcher_registration;

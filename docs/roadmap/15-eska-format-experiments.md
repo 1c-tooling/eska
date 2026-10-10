@@ -1221,6 +1221,25 @@ Bytes 12 выбранных оригиналов и копий сохранен�
 Общий heap/RSS budget, остальные IDE edits и Explorer ещё в работе;
 EF-18 остаётся `IN_PROGRESS`.
 
+[Параметры текущего BSL-вызова](../research/eska-format/analyzer-call-signatures.md)
+подключены к standard signatureHelp через native call binding того же ядра.
+Core сохраняет порядок сигнатур, документацию и выбор аргумента; IDE согласует
+markup, string/UTF-16 parameter labels и nullable selection. Нет второго parser,
+ранжирования или host; клиентская прежняя карточка не подменяет inputs.
+Текущие изменения BSL другого ready модуля обновляют подсказку с hash caller;
+rename/invalid YAML не возвращают прежнюю модель. Проверены nested calls,
+comma внутри string, non-BMP default, авторские docs, current snapshots,
+неполнота, guards/settings, отмена и продолжение. 95 unit/file, 97 analyzer и
+11 checker process tests прошли, всего 203; minimal — 73. Все 19 tool и
+15 root gates прошли; root — 894/14. 24 сценария C1/C2/C3 в RU/EN подтвердили
+240 pulls: 144 сигнатуры, 72 incomplete и 24 stale refusals. Реальные декларации
+сохранены; проверочный вызов добавлен только в собственный editor overlay.
+12 выбранных оригиналов и bytes копий сохранены, временные проекты удалены.
+Runtime graph прежний 206/214, dependencies не добавлены. Ограничение native
+line comments при одиночном CR описано явно; bytes не нормализуются скрыто.
+Полная семантика, общий heap/RSS budget, остальные IDE edits и Explorer ещё
+в работе; EF-18 остаётся `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

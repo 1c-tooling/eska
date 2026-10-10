@@ -2,6 +2,7 @@
 
 use eska::tool_cli::localization::Localizer;
 
+use super::super::markup::escape;
 use crate::{HoverKind, SymbolHover};
 
 use super::Format;
@@ -64,16 +65,4 @@ const fn kind_key(kind: HoverKind) -> &'static str {
         HoverKind::ManagerModule => "tool-hover-kind-manager-module",
         HoverKind::Field => "tool-hover-kind-field",
     }
-}
-
-/// Escape `CommonMark` punctuation so source comments cannot create headings, links, images or HTML.
-fn escape(text: &str) -> String {
-    let mut escaped = String::with_capacity(text.len());
-    for character in text.chars() {
-        if character.is_ascii_punctuation() {
-            escaped.push('\\');
-        }
-        escaped.push(character);
-    }
-    escaped
 }

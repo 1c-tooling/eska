@@ -8,8 +8,8 @@ use serde_json::{Value, json};
 
 use super::super::{
     completion, diagnostics, document_symbols, documents, dto, hover, language, metadata_locations,
-    project_changes, property_edits, protocol, request_control, stream, watched_files,
-    watcher_registration,
+    project_changes, property_edits, protocol, request_control, signature_help, stream,
+    watched_files, watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisSession, SessionOptions};
@@ -46,7 +46,8 @@ impl Server<'_> {
             })?;
         let session_id = bsl_metadata::Uuid::new_v4().to_string();
         let hierarchical_symbols = document_symbols::hierarchical(params);
-        let hover_format = hover::Format::negotiate(params);
+        let hover_format = hover::format(params);
+        let signature = signature_help::Capabilities::negotiate(params);
         let mut result = json!({
             "capabilities":{"textDocumentSync":{"openClose":true,"change":1,"save":{"includeText":false}},
                 "positionEncoding":"utf-16",
@@ -84,6 +85,11 @@ impl Server<'_> {
             result["capabilities"]["definitionProvider"] = json!(true);
             result["capabilities"]["documentSymbolProvider"] = json!(true);
             result["capabilities"]["hoverProvider"] = json!(true);
+            result["capabilities"]["signatureHelpProvider"] = signature.provider();
+            result["capabilities"]["experimental"]["eska"]["signatureHelp"] = json!({
+                "scope":"current-bsl-call","documentationFormat":signature.documentation.as_str(),
+                "parameterLabel":if signature.parameters.label_offsets {"utf16-offsets"} else {"string"},
+                "incompleteResults":"error","clientHints":"recompute"});
             result["capabilities"]["experimental"]["eska"]["hover"] = json!({
                 "scope":"resolved-bsl-symbol","contentFormat":hover_format.as_str(),
                 "incompleteResults":"error"});
@@ -95,6 +101,7 @@ impl Server<'_> {
         self.completion = completion::Capabilities::negotiate(params);
         self.hierarchical_symbols = hierarchical_symbols;
         self.hover_format = hover_format;
+        self.signature = signature;
         self.project_inputs = Some(project_inputs);
         self.watcher = watcher;
         self.edit_plans = edit_plans;

@@ -130,6 +130,11 @@ flowchart TD
 negotiation plaintext/markdown и оформлением authored text. Языковой core не
 содержит собственных UI-заголовков и не отправляет native XML/graph locations.
 
+[SignatureHelp](research/eska-format/analyzer-call-signatures.md) получает
+сигнатуры и выбор аргумента из того же native call binding, что inference.
+IDE transport согласует формат документации, UTF-16 labels и nullable selection;
+прежняя карточка клиента не становится вторым источником семантики.
+
 VS Code предоставляет [TreeDataProvider](https://code.visualstudio.com/api/extension-guides/tree-view).
 Расширение запрашивает нужные дочерние узлы, преобразует их в TreeItem, хранит
 раскрытие и выделение, показывает свойства и пользовательские команды. Состав,

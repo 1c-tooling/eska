@@ -13,6 +13,8 @@ use serde_json::{Value, json};
 
 use crate::{AnalysisSession, RequestCancellation, analysis_settings::Settings};
 
+pub use super::markup::Format;
+
 use super::{
     dto, language,
     positions::{Position, Positions},
@@ -30,35 +32,9 @@ pub struct Params {
     pub eska: Option<language::Context>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Format {
-    Plaintext,
-    Markdown,
-}
-
-impl Format {
-    /// Use the first supported standard client preference; absent preferences receive plain text.
-    pub fn negotiate(params: &Value) -> Self {
-        params
-            .pointer("/capabilities/textDocument/hover/contentFormat")
-            .and_then(Value::as_array)
-            .and_then(|formats| {
-                formats.iter().find_map(|format| match format.as_str() {
-                    Some("plaintext") => Some(Self::Plaintext),
-                    Some("markdown") => Some(Self::Markdown),
-                    _ => None,
-                })
-            })
-            .unwrap_or(Self::Plaintext)
-    }
-
-    /// Markup kinds are wire vocabulary and never depend on the presentation locale.
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Plaintext => "plaintext",
-            Self::Markdown => "markdown",
-        }
-    }
+/// The hover capability points to the same supported formats as signature documentation.
+pub fn format(params: &Value) -> Format {
+    Format::preferred(params.pointer("/capabilities/textDocument/hover/contentFormat"))
 }
 
 pub struct Options<'a> {

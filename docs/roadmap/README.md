@@ -156,6 +156,12 @@ RU/EN и согласует plaintext/markdown; caller ranges/hash сохран�
 BSL/YAML. 187 tool tests и все 19 tool/15 root gates прошли; 24 сценария C1/C2/C3
 подтвердили 192 hover pulls. Scope пока ограничен resolved symbols и возвращаемым
 типом метода; EF-18 остаётся `IN_PROGRESS`.
+[Подсказки параметров вызова](../research/eska-format/analyzer-call-signatures.md)
+подключены к standard signatureHelp через native call binding общего ядра.
+Текущие parameter/docs и выбор аргумента сохранены; согласуются markup/UTF-16
+labels/null selection. 203 tool tests и все 19 tool/15 root gates прошли;
+24 сценария C1/C2/C3 RU/EN подтвердили 240 pulls без записи оригиналов.
+Полная семантика и общий memory budget остаются в работе; EF-18 — `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

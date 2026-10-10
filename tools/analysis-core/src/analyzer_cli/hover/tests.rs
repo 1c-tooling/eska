@@ -18,12 +18,12 @@ fn markup_negotiation_follows_supported_client_order_and_plaintext_default() {
         (Value::Null, Format::Plaintext),
     ] {
         assert_eq!(
-            Format::negotiate(&json!({"capabilities":{"textDocument":{
+            format(&json!({"capabilities":{"textDocument":{
             "hover":{"contentFormat":formats}}}})),
             expected
         );
     }
-    assert_eq!(Format::negotiate(&json!({})), Format::Plaintext);
+    assert_eq!(format(&json!({})), Format::Plaintext);
 }
 
 /// Authored punctuation remains literal in Markdown; BSL backticks cannot terminate the code block.

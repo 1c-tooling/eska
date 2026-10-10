@@ -6,6 +6,7 @@ mod cancellation_tests;
 pub mod definitions;
 mod document_symbols;
 mod metadata_definitions;
+pub mod signature_help;
 pub mod symbol_hover;
 
 use std::collections::BTreeMap;
@@ -62,6 +63,10 @@ pub enum QueryError {
     },
     UnsupportedHoverSymbol {
         kind: &'static str,
+    },
+    InconsistentSignatureHelp {
+        signature: usize,
+        parameter: Option<usize>,
     },
     Cancelled,
     CancellationTokenInUse,

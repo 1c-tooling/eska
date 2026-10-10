@@ -12,12 +12,13 @@ use crate::{
 
 use super::{dto, language, property_edits, protocol};
 
-pub const METHODS: [&str; 6] = [
+pub const METHODS: [&str; 7] = [
     "textDocument/diagnostic",
     "textDocument/completion",
     "textDocument/definition",
     "textDocument/documentSymbol",
     "textDocument/hover",
+    "textDocument/signatureHelp",
     property_edits::METHOD,
 ];
 

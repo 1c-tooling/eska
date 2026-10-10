@@ -9,14 +9,16 @@ use serde_json::{Value, json};
 
 use crate::{AnalysisSession, ModuleFailure, ModuleState, QueryError};
 
+use super::{completion, definitions, diagnostics, document_symbols, hover, signature_help};
 use super::{documents, dto, protocol};
 
-pub const METHODS: [&str; 5] = [
+pub const METHODS: [&str; 6] = [
     "textDocument/diagnostic",
     "textDocument/completion",
     "textDocument/definition",
     "textDocument/documentSymbol",
     "textDocument/hover",
+    "textDocument/signatureHelp",
 ];
 
 #[derive(Clone, Copy)]
@@ -26,6 +28,7 @@ pub enum Method {
     Definition,
     DocumentSymbol,
     Hover,
+    SignatureHelp,
 }
 
 impl Method {
@@ -37,7 +40,44 @@ impl Method {
             "textDocument/definition" => Some(Self::Definition),
             "textDocument/documentSymbol" => Some(Self::DocumentSymbol),
             "textDocument/hover" => Some(Self::Hover),
+            "textDocument/signatureHelp" => Some(Self::SignatureHelp),
             _ => None,
+        }
+    }
+}
+
+/// Decode each standard payload before applying the common optional snapshot guard.
+pub enum Request {
+    Diagnostic(diagnostics::Params),
+    Completion(completion::Params),
+    Definition(definitions::Params),
+    DocumentSymbol(document_symbols::Params),
+    Hover(hover::Params),
+    SignatureHelp(signature_help::Params),
+}
+
+impl Request {
+    /// Typed decoding retains each method's unknown-field and required-parameter checks.
+    pub fn parse(method: Method, value: &Value) -> Result<Self, Value> {
+        match method {
+            Method::Diagnostic => protocol::params(value).map(Self::Diagnostic),
+            Method::Completion => protocol::params(value).map(Self::Completion),
+            Method::Definition => protocol::params(value).map(Self::Definition),
+            Method::DocumentSymbol => protocol::params(value).map(Self::DocumentSymbol),
+            Method::Hover => protocol::params(value).map(Self::Hover),
+            Method::SignatureHelp => protocol::params(value).map(Self::SignatureHelp),
+        }
+    }
+
+    /// All language request variants pin the same opaque session/revision context.
+    pub const fn context(&self) -> Option<&Context> {
+        match self {
+            Self::Diagnostic(params) => params.eska.as_ref(),
+            Self::Completion(params) => params.eska.as_ref(),
+            Self::Definition(params) => params.eska.as_ref(),
+            Self::DocumentSymbol(params) => params.eska.as_ref(),
+            Self::Hover(params) => params.eska.as_ref(),
+            Self::SignatureHelp(params) => params.eska.as_ref(),
         }
     }
 }
@@ -147,5 +187,13 @@ pub fn query_error(session: &AnalysisSession, id: &str, error: &QueryError) -> V
         QueryError::UnsupportedHoverSymbol { kind } => {
             protocol::error_value(-32000, "hover_symbol_unsupported", json!({"kind":kind}))
         }
+        QueryError::InconsistentSignatureHelp {
+            signature,
+            parameter,
+        } => protocol::error_value(
+            -32603,
+            "signature_help_inconsistent",
+            json!({"signature":signature,"parameter":parameter}),
+        ),
     }
 }

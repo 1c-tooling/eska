@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 
 use super::super::{
     completion, definitions, diagnostics, document_symbols, documents, dto, hover, language,
-    metadata_locations, property_edits, protocol,
+    metadata_locations, property_edits, protocol, signature_help,
 };
 use super::Server;
 use crate::{AnalysisSession, RequestCancellation};
@@ -134,85 +134,65 @@ impl Server<'_> {
             .settings
             .as_ref()
             .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
+        let params = language::Request::parse(method, value)?;
+        if let Some(expected) = params.context() {
+            validate_snapshot(session, &self.session_id, &expected.snapshot)?;
+        }
         let request = InputRequest {
             max_document_bytes: self.cli.max_document_bytes,
             cancellation: cancellation.input.clone(),
             ..InputRequest::default()
         };
         let timeout = Duration::from_secs(self.cli.timeout_seconds);
-        match method {
-            language::Method::Diagnostic => {
-                let params: diagnostics::Params = protocol::params(value)?;
-                if let Some(expected) = &params.eska {
-                    validate_snapshot(session, &self.session_id, &expected.snapshot)?;
-                }
-                diagnostics::pull(
-                    session,
-                    &self.session_id,
-                    &params,
-                    settings,
-                    &diagnostics::Options {
-                        request: &request,
-                        cancellation,
-                        timeout,
-                        localizer: self.localizer,
-                    },
-                )
-            }
-            language::Method::Completion => {
-                let params: completion::Params = protocol::params(value)?;
-                if let Some(expected) = &params.eska {
-                    validate_snapshot(session, &self.session_id, &expected.snapshot)?;
-                }
-                completion::pull(
-                    session,
-                    &params,
-                    settings,
-                    &completion::Options {
-                        session_id: &self.session_id,
-                        request,
-                        cancellation,
-                        timeout,
-                        capabilities: self.completion,
-                    },
-                )
-            }
-            language::Method::Definition => {
-                let params: definitions::Params = protocol::params(value)?;
-                if let Some(expected) = &params.eska {
-                    validate_snapshot(session, &self.session_id, &expected.snapshot)?;
-                }
-                definitions::pull(
-                    session,
-                    &self.session_id,
-                    &params,
-                    settings,
-                    &request,
+        match params {
+            language::Request::Diagnostic(params) => diagnostics::pull(
+                session,
+                &self.session_id,
+                &params,
+                settings,
+                &diagnostics::Options {
+                    request: &request,
                     cancellation,
                     timeout,
-                )
-            }
-            language::Method::DocumentSymbol => {
-                let params: document_symbols::Params = protocol::params(value)?;
-                if let Some(expected) = &params.eska {
-                    validate_snapshot(session, &self.session_id, &expected.snapshot)?;
-                }
-                document_symbols::pull(
-                    session,
-                    &params,
-                    settings,
-                    &document_symbols::Options {
-                        session_id: &self.session_id,
-                        request: &request,
-                        cancellation,
-                        timeout,
-                        hierarchical: self.hierarchical_symbols,
-                    },
-                )
-            }
-            language::Method::Hover => hover_request(
+                    localizer: self.localizer,
+                },
+            ),
+            language::Request::Completion(params) => completion::pull(
                 session,
-                value,
+                &params,
+                settings,
+                &completion::Options {
+                    session_id: &self.session_id,
+                    request,
+                    cancellation,
+                    timeout,
+                    capabilities: self.completion,
+                },
+            ),
+            language::Request::Definition(params) => definitions::pull(
+                session,
+                &self.session_id,
+                &params,
+                settings,
+                &request,
+                cancellation,
+                timeout,
+            ),
+            language::Request::DocumentSymbol(params) => document_symbols::pull(
+                session,
+                &params,
+                settings,
+                &document_symbols::Options {
+                    session_id: &self.session_id,
+                    request: &request,
+                    cancellation,
+                    timeout,
+                    hierarchical: self.hierarchical_symbols,
+                },
+            ),
+            language::Request::Hover(params) => hover::pull(
+                session,
+                &params,
                 settings,
                 &hover::Options {
                     session_id: &self.session_id,
@@ -223,22 +203,20 @@ impl Server<'_> {
                     format: self.hover_format,
                 },
             ),
+            language::Request::SignatureHelp(params) => signature_help::pull(
+                session,
+                &params,
+                settings,
+                &signature_help::Options {
+                    session_id: &self.session_id,
+                    request: &request,
+                    cancellation,
+                    timeout,
+                    capabilities: self.signature,
+                },
+            ),
         }
     }
-}
-
-/// Hover guards run before source selection, input loading or any query deadline.
-fn hover_request(
-    session: &mut AnalysisSession,
-    value: &Value,
-    settings: &Result<crate::analysis_settings::Settings, eska::tool_cli::Failure>,
-    options: &hover::Options<'_>,
-) -> Result<Value, Value> {
-    let params: hover::Params = protocol::params(value)?;
-    if let Some(expected) = &params.eska {
-        validate_snapshot(session, options.session_id, &expected.snapshot)?;
-    }
-    hover::pull(session, &params, settings, options)
 }
 
 /// Clients copy the opaque token; incrementing it or keeping it after reconnect is invalid.

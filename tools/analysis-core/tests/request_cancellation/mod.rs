@@ -23,6 +23,8 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
         ("ru-RU", json!("отмена"), "textDocument/documentSymbol"),
         ("en-US", json!(-7), "textDocument/hover"),
         ("ru-RU", json!("отмена"), "textDocument/hover"),
+        ("en-US", json!(-7), "textDocument/signatureHelp"),
+        ("ru-RU", json!("отмена"), "textDocument/signatureHelp"),
     ] {
         let mut client = Client::with_options(&root, lang, &[]);
         let initialized = client.ask(&initialize());
@@ -52,8 +54,15 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
         ));
         assert_eq!(owners["result"]["snapshot"], snapshot("1"));
         assert_eq!(owners["result"]["resources"], opened["params"]["resources"]);
-        let changed=client.ask(&json!({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
-            "textDocument":{"uri":uri,"version":2},"contentChanges":[{"text":"Procedure Test()\nEndProcedure\n"}]}}));
+        let text = if method == "textDocument/signatureHelp" {
+            "Procedure Test()\nEndProcedure\nTest();\n"
+        } else {
+            "Procedure Test()\nEndProcedure\n"
+        };
+        let changed = client.ask(
+            &json!({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+            "textDocument":{"uri":uri,"version":2},"contentChanges":[{"text":text}]}}),
+        );
         assert_eq!(changed["params"]["snapshot"], snapshot("2"));
         client.send(&json!({"jsonrpc":"2.0","method":"$/cancelRequest","params":{"id":"reuse"}}));
         let later = client.ask(&request(json!("reuse"), method, params(method, &uri, "2")));
@@ -79,6 +88,9 @@ fn params(method: &str, uri: &str, revision: &str) -> Value {
     }
     if matches!(method, "textDocument/definition" | "textDocument/hover") {
         params["position"] = json!({"line":0,"character":11});
+    }
+    if method == "textDocument/signatureHelp" {
+        params["position"] = json!({"line":2,"character":5});
     }
     params
 }

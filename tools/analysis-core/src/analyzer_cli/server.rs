@@ -12,7 +12,7 @@ use crate::{AnalysisSession, RequestCancellation, analysis_settings::Settings};
 
 use super::{
     args::Cli, completion, documents, dto, hover, project_changes, property_edits, protocol,
-    request_control, stream, watched_files, watcher_registration,
+    request_control, signature_help, stream, watched_files, watcher_registration,
 };
 
 mod initialize;
@@ -37,6 +37,7 @@ struct Server<'a> {
     completion: completion::Capabilities,
     hierarchical_symbols: bool,
     hover_format: hover::Format,
+    signature: signature_help::Capabilities,
     edit_plans: Option<property_edits::Plans>,
     project_inputs: Option<project_changes::Inputs>,
     restart: Option<Value>,
@@ -69,6 +70,7 @@ pub fn run(
         completion: completion::Capabilities::default(),
         hierarchical_symbols: false,
         hover_format: hover::Format::Plaintext,
+        signature: signature_help::Capabilities::negotiate(&Value::Null),
         edit_plans: None,
         project_inputs: None,
         restart: None,
