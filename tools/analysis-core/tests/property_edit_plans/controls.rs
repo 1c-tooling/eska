@@ -8,11 +8,20 @@ fn open(client: &mut Client, root: &Path, text: &str) -> Value {
     let capabilities = &initialized["result"]["capabilities"]["experimental"]["eska"];
     assert_eq!(
         capabilities["languageMethods"],
-        json!(["textDocument/diagnostic", "textDocument/completion"])
+        json!([
+            "textDocument/diagnostic",
+            "textDocument/completion",
+            "textDocument/definition"
+        ])
     );
     assert_eq!(
         capabilities["cancellableMethods"],
-        json!(["textDocument/diagnostic", "textDocument/completion", METHOD])
+        json!([
+            "textDocument/diagnostic",
+            "textDocument/completion",
+            "textDocument/definition",
+            METHOD
+        ])
     );
     client.send(&notification("initialized"));
     let uri = url::Url::from_file_path(root.join("src-plans").join(OWNER)).unwrap();

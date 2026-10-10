@@ -9,14 +9,15 @@
 
 ## Контроль запроса
 
-Initialize сообщает три `cancellableMethods`: textDocument/diagnostic,
-textDocument/completion, eska/metadata/preparePropertyEdit. Список languageMethods
-остаётся из двух языковых методов. Включение editPlans по-прежнему требует
+Initialize сообщает четыре `cancellableMethods`: textDocument/diagnostic,
+textDocument/completion, [textDocument/definition](analyzer-definitions.md),
+eska/metadata/preparePropertyEdit. Список languageMethods содержит три языковых
+метода. Включение editPlans по-прежнему требует
 независимый accepted pin и клиентскую поддержку versioned documentChanges.
 
 Input thread направляет [`$/cancelRequest`](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.18/specification.md#cancelRequest)
 по текущему ID; worker единолично владеет сессией. Контроль и очередь общие для
-всех трёх операций. Повторный активный ID любой из них отклоняется;
+всех четырёх операций. Повторный активный ID любой из них отклоняется;
 числовые/string IDs различаются. Завершённый или неизвестный ID не влияет на
 будущее использование. Guard снимает регистрацию до начала wire write.
 
@@ -49,6 +50,9 @@ stdout. Backpressure может задержать ещё не прочитан�
 Гарантия задержки ответа и адресный policy reader пока не реализованы.
 
 ## Проверки
+
+Замеры и machine report этого раздела зафиксированы на commit `e308f3e`;
+последующие проверки и размер бинарника приведены в [навигации BSL](analyzer-definitions.md).
 
 35 unit/file, 35 analyzer process и 9 checker process tests прошли вместе с
 19 gates tool feature matrix/Rustdoc/release. Root: 889 passed / 14 прежних

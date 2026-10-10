@@ -81,6 +81,10 @@ syntax pull, отмена активной диагностики и [общий
 native refusal, no-op и сохранность текущего ввода. Полная повторная проверка базы
 занимает несколько секунд; [отмена и deadline](../research/eska-format/analyzer-property-cancellation.md)
 этого IO уже подключены. Адресная проверка policy ещё требуется.
+Добавлен [переход к текущему объявлению BSL](../research/eska-format/analyzer-definitions.md):
+local/cross-file targets привязаны к той же revision и target hash, неполнота
+не скрывается пустым успехом. Saved/editor/close пройдены на C1/C2/C3 в RU/EN;
+отмена/deadline и ID reuse используют общий контроль. Координаты YAML ещё требуются.
 Все IDE edits, полная семантика и общий memory budget ещё не готовы; EF-18 не завершена.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):

@@ -41,8 +41,9 @@ Batch JSON-RPC, null ID, повторные JSON keys и глубина боле
 `documentSync` уже true: [full-document синхронизация YAML/BSL](analyzer-documents.md)
 подключена к той же сессии. `languageQueries=true` включает
 [`textDocument/diagnostic` с профилем syntax](analyzer-diagnostics.md) и
-[`textDocument/completion`](analyzer-completion.md) по текущему YAML/BSL.
-`requestCancellation=true` включает [отмену обеих операций](analyzer-cancellation.md);
+[`textDocument/completion`](analyzer-completion.md) по текущему YAML/BSL и
+[переход к готовому BSL-объявлению](analyzer-definitions.md).
+`requestCancellation=true` включает [общую отмену запросов](analyzer-cancellation.md);
 `requestTimeoutSeconds` задаёт общий кооперативный лимит языкового запроса;
 `editPlans=true` возможно при независимом base pin и client versioned-edit support:
 [первый план существующего свойства](analyzer-property-plans.md) возвращается

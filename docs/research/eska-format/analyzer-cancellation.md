@@ -1,11 +1,12 @@
 # Отмена языковых запросов через IDE-сервер
 
 `eska-analyzer` принимает стандартный
-[`$/cancelRequest`](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/specification.md)
-для `textDocument/diagnostic`, [textDocument/completion](analyzer-completion.md)
-и [eska/metadata/preparePropertyEdit](analyzer-property-cancellation.md).
+[`$/cancelRequest`](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.18/specification.md#cancelRequest)
+для `textDocument/diagnostic`, [textDocument/completion](analyzer-completion.md),
+[textDocument/definition](analyzer-definitions.md) и
+[eska/metadata/preparePropertyEdit](analyzer-property-cancellation.md).
 Initialize объявляет `requestCancellation=true`,
-`cancellableMethods=[textDocument/diagnostic,textDocument/completion,eska/metadata/preparePropertyEdit]`
+`cancellableMethods=[textDocument/diagnostic,textDocument/completion,textDocument/definition,eska/metadata/preparePropertyEdit]`
 и `maxQueuedMessages=4` внутри `experimental.eska`. Остальные metadata requests, initialize и document notifications
 не объявлены отменяемыми. Прежний IDE protocol не изменён.
 
@@ -26,7 +27,7 @@ Initialize объявляет `requestCancellation=true`,
 ID хранится только на время конкретного отменяемого request. Числовые и строковые
 ID различаются; Unicode сохраняется. Отмена неизвестного или завершённого ID
 игнорируется, не влияет на будущий запрос с таким же ID. Повторный текущий
-ID любой из трёх операций отклоняется как `request_id_in_use`. Перед началом записи ответа guard удаляет ID.
+ID любой из четырёх операций отклоняется как `request_id_in_use`. Перед началом записи ответа guard удаляет ID.
 
 `RequestCancellation` общий для checker и server: он связывает прежний сигнал
 ограниченного чтения и `QueryCancellation` текущего kernel handle. Это замена

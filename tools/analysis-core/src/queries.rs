@@ -3,6 +3,7 @@
 #[cfg(test)]
 #[path = "queries/cancellation_tests.rs"]
 mod cancellation_tests;
+pub mod definitions;
 
 use std::collections::BTreeMap;
 
@@ -38,6 +39,11 @@ pub enum QueryError {
         offset: u32,
     },
     InconsistentDiagnostic {
+        start_byte: u32,
+        end_byte: u32,
+    },
+    UnsupportedNavigationTarget,
+    InconsistentNavigation {
         start_byte: u32,
         end_byte: u32,
     },

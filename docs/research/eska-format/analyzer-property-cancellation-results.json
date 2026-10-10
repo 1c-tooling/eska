@@ -401,5 +401,6 @@
     "source_quota_is_not_total_heap_or_rss_budget",
     "only_existing_open_yaml_property_plans",
     "no_1c_or_vscode_runtime_validation"
-  ]
+  ],
+  "state_at_commit": "e308f3e"
 }

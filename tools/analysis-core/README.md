@@ -120,22 +120,26 @@ close перечитывает файл. `textDocument/diagnostic` исполь�
 и `bsl-analyzer.toml`; settings фиксируются при initialize. UTF-16 диапазоны
 получены из текущих байтов без чтения диска. Ошибка settings не отключает дерево.
 `textDocument/completion` получает кандидатов из того же текущего YAML/BSL,
-учитывает client snippet support и явно сообщает неполноту. Полная семантика
+учитывает client snippet support и явно сообщает неполноту.
+`textDocument/definition` подтверждает BSL-цель из объявленного ready состава;
+диапазон и hash относятся к текущему target text. Не найденная цель при неполных
+входах даёт navigation_incomplete; координаты YAML ещё не подключены. Полная семантика
 ещё не объявлена. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
 возвращают versioned WorkspaceEdit для ready открытого документа при независимо
 закреплённой базе и client documentChanges support. План не записывает файл и
 не меняет input; он использует общий редактор project core. Полная проверка базы
 выполняется на каждый запрос; [отмена и deadline](../../docs/research/eska-format/analyzer-property-cancellation.md)
 останавливают её кооперативно без потери текущего ввода.
-[`$/cancelRequest`](../../docs/research/eska-format/analyzer-cancellation.md) отменяет diagnostic/completion query
+[`$/cancelRequest`](../../docs/research/eska-format/analyzer-cancellation.md) отменяет diagnostic/completion/definition query
 и property plan через отдельный input thread; один worker сохраняет владение YAML/BSL и порядок изменений.
 Общий `RequestCancellation` заменяет неопубликованный `batch::BatchCancellation`.
 Один внутренний [таймер](../../docs/research/eska-format/analyzer-deadline.md) обслуживает
 server и checker. Лимит языкового запроса и property plan по умолчанию 300 секунд; timeout pull
-diagnostics возвращает `-32802` с `retriggerRequest=false`, timeout completion/plan —
-`-32000` без этого поля; клиентская отмена всех трёх операций — `-32800`.
+diagnostics возвращает `-32802` с `retriggerRequest=false`, timeout completion/definition/plan —
+`-32000` без этого поля; клиентская отмена всех четырёх операций — `-32800`.
 Из установленного комплекта бинарник не запускается автоматически.
 [Протокол, границы и проверка C1/C2/C3](../../docs/research/eska-format/analyzer-metadata.md).
 [Синхронизация документов и события состояния](../../docs/research/eska-format/analyzer-documents.md).
 [Pull-диагностика и совпадение с checker](../../docs/research/eska-format/analyzer-diagnostics.md).
 [Автодополнение, UTF-16 cursor и capabilities](../../docs/research/eska-format/analyzer-completion.md).
+[Текущие BSL-цели и неполная навигация](../../docs/research/eska-format/analyzer-definitions.md).

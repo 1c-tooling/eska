@@ -15,8 +15,8 @@ use serde_json::{Value, json};
 use crate::{AnalysisSession, RequestCancellation, SessionOptions, analysis_settings::Settings};
 
 use super::{
-    args::Cli, completion, diagnostics, documents, dto, language, property_edits, protocol,
-    request_control, stream,
+    args::Cli, completion, definitions, diagnostics, documents, dto, language, property_edits,
+    protocol, request_control, stream,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -276,6 +276,9 @@ impl Server<'_> {
         if settings.is_ok() {
             result["capabilities"]["completionProvider"] =
                 json!({"resolveProvider":false,"triggerCharacters":["."],"workDoneProgress":false});
+            result["capabilities"]["definitionProvider"] = json!(true);
+            result["capabilities"]["experimental"]["eska"]["definition"] =
+                json!({"scope":"ready-bsl-modules","incompleteResults":"error"});
         }
         self.snippets = params
             .pointer("/capabilities/textDocument/completion/completionItem/snippetSupport")
@@ -462,6 +465,21 @@ impl Server<'_> {
                         snippets: self.snippets,
                         extended_kinds: self.extended_kinds,
                     },
+                )
+            }
+            language::Method::Definition => {
+                let params: definitions::Params = protocol::params(value)?;
+                if let Some(expected) = &params.eska {
+                    validate_snapshot(session, &self.session_id, &expected.snapshot)?;
+                }
+                definitions::pull(
+                    session,
+                    &self.session_id,
+                    &params,
+                    settings,
+                    &request,
+                    cancellation,
+                    timeout,
                 )
             }
         }

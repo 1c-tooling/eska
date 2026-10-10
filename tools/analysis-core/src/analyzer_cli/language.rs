@@ -11,20 +11,26 @@ use crate::{AnalysisSession, ModuleFailure, ModuleState, QueryError};
 
 use super::{documents, dto, protocol};
 
-pub const METHODS: [&str; 2] = ["textDocument/diagnostic", "textDocument/completion"];
+pub const METHODS: [&str; 3] = [
+    "textDocument/diagnostic",
+    "textDocument/completion",
+    "textDocument/definition",
+];
 
 #[derive(Clone, Copy)]
 pub enum Method {
     Diagnostic,
     Completion,
+    Definition,
 }
 
 impl Method {
-    /// Parse the two supported language queries independently of property-plan requests.
+    /// Parse supported language queries independently of property-plan requests.
     pub fn parse(name: &str) -> Option<Self> {
         match name {
             "textDocument/diagnostic" => Some(Self::Diagnostic),
             "textDocument/completion" => Some(Self::Completion),
+            "textDocument/definition" => Some(Self::Definition),
             _ => None,
         }
     }
@@ -95,6 +101,19 @@ pub fn query_error(session: &AnalysisSession, id: &str, error: &QueryError) -> V
         } => protocol::error_value(
             -32603,
             "diagnostic_inconsistent",
+            json!({"start_byte":start_byte,"end_byte":end_byte}),
+        ),
+        QueryError::UnsupportedNavigationTarget => protocol::error_value(
+            -32000,
+            "navigation_target_unsupported",
+            dto::snapshot(session, id),
+        ),
+        QueryError::InconsistentNavigation {
+            start_byte,
+            end_byte,
+        } => protocol::error_value(
+            -32603,
+            "navigation_inconsistent",
             json!({"start_byte":start_byte,"end_byte":end_byte}),
         ),
         QueryError::InvalidOffset { .. } => {

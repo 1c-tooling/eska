@@ -868,7 +868,22 @@ stale/version/hash, no-op, didChange и восстановление после 
 В C1 RU/EN cancel после подтверждённых 12–15 MB чтения получил ответ менее 1 ms;
 deadline 1 s — за 1,01 s. Нормальный повторный plan проверил базу за 3,7–3,8 s.
 Это локальные замеры; blocked read/parse/очередь не дают гарантии задержки.
-Адресная policy verification, все IDE edits, полный memory budget и полнота
+На commit `e308f3e` адресная policy verification, все IDE edits, полный memory
+budget и полнота анализа оставались в работе.
+
+[Переход к текущему BSL-объявлению](../research/eska-format/analyzer-definitions.md)
+использует module_definition общей сессии. Target проверяется по объявленному
+ready модулю, его текущим bytes/hash и UTF-16 range; нет отдельного VFS-индекса
+или XML fallback. Неподтверждённая цель при неполных inputs/models даёт явный
+navigation_incomplete. Контроль/deadline общий для четырёх transport methods;
+definition timeout использует `-32000` без retriggerRequest. 37 unit/file,
+39 analyzer process и 9 checker process tests, все tool gates прошли; root —
+889 passed / 14 ignored, вся matrix прошла. На C1/C2/C3 в RU/EN проверены
+saved/editor/close объявления и machine trace parity; исходные bytes сохранены.
+В C1 cancel активного 3600046-byte модуля ответил за 0,754–0,852 с, timeout 1 с —
+за 1,037–2,687 с. Задержка и peak RSS до 1131616 KiB подтверждают ограничения
+кооперативной остановки и source quota. Следующий короткий query прошёл в том
+же процессе. Координаты YAML, все IDE edits, полный memory budget и полнота
 анализа остаются в работе. EF-18 — `IN_PROGRESS`.
 
 ## EF-19 Самостоятельный инструмент VCS

@@ -504,7 +504,8 @@ LSP runtime, Git transport или debugger; `eska-build` не включает �
 и возвращает неполноту метаданных. LSP runtime, Git, отладчик и платформа
 не входят в его граф зависимостей; к комплектной установке он пока не подключён.
 Отдельный [eska-analyzer](research/eska-format/analyzer-metadata.md) уже обслуживает
-metadata, full-sync YAML/BSL, syntax pull и [completion](research/eska-format/analyzer-completion.md)
+metadata, full-sync YAML/BSL, syntax pull, [completion](research/eska-format/analyzer-completion.md)
+и [переход к текущему BSL-объявлению](research/eska-format/analyzer-definitions.md)
 из того же host. Языковые запросы имеют общий control отмены и deadline;
 неполнота чтения/моделей отделена от полной семантики.
 [Первый property plan](research/eska-format/analyzer-property-plans.md) использует
@@ -512,6 +513,8 @@ metadata, full-sync YAML/BSL, syntax pull и [completion](research/eska-format/a
 [Полная проверка принятой базы](research/eska-format/analyzer-property-cancellation.md)
 поддерживает общий request control и deadline без загрузки частичной policy.
 Explorer, все IDE edit operations и общий heap/RSS budget ещё не подключены.
+Переходы к метаданным требуют канонических координат YAML; XML-диапазоны ядра
+не используются как fallback.
 [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.

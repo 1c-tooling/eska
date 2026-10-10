@@ -1,7 +1,8 @@
-# Лимит времени диагностики и автодополнения
+# Лимит времени языкового запроса и плана правки
 
 `eska-analyzer --timeout-seconds 300` задаёт кооперативный лимит одного
-`textDocument/diagnostic`, [textDocument/completion](analyzer-completion.md) или
+`textDocument/diagnostic`, [textDocument/completion](analyzer-completion.md),
+[textDocument/definition](analyzer-definitions.md) или
 [eska/metadata/preparePropertyEdit](analyzer-property-cancellation.md).
 Значение по умолчанию — 300 секунд; initialize
 объявляет его как `experimental.eska.requestTimeoutSeconds`. Ноль останавливает
@@ -31,7 +32,7 @@ report. Поздний результат отбрасывается перед 
 `data.retriggerRequest=false` и текущий snapshot в `data.details`. Так клиент
 не запускает бесконечный повтор того же слишком дорогого запроса.
 Клиентская отмена сохраняет `-32800` и `analysis_cancelled`.
-Completion использует `-32000` с analysis_deadline_exceeded без retriggerRequest:
+Completion, definition и property plan используют `-32000` с analysis_deadline_exceeded без retriggerRequest:
 специальный `-32802` остаётся ответом diagnostic pull.
 
 Timeout не закрывает документ и не меняет готовые editor bytes/hash/revision

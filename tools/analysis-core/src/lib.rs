@@ -25,6 +25,7 @@ pub use memory::{KernelMemoryReport, KernelMemoryTable};
 pub use modules::{ModuleFailure, ModuleInput, ModuleState, ModuleSummary, SessionOptions};
 pub use projection::{MetadataView, ModelState, OwnerModel};
 pub use property_edits::{PropertyEditError, PropertyEditInput, PropertyEditPlan};
+pub use queries::definitions::DefinitionTarget;
 pub use queries::{ModuleResult, QueryError};
 pub use request::{SessionRequestError, SessionRevision};
 pub use resources::ResourceSummary;

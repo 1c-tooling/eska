@@ -2,6 +2,7 @@
 
 mod args;
 mod completion;
+mod definitions;
 mod diagnostics;
 mod documents;
 mod dto;

@@ -763,7 +763,10 @@ preset = "trunk"
 настраивается через `--timeout-seconds`; общий таймер используется и checker.
 [Диагностика синтаксиса BSL](docs/research/eska-format/analyzer-diagnostics.md)
 доступна через стандартный LSP pull. [Автодополнение](docs/research/eska-format/analyzer-completion.md)
-использует текущий YAML/BSL и явно сообщает неполноту. Полная семантика
+использует текущий YAML/BSL и явно сообщает неполноту.
+[Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
+возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
+Полная семантика
 и комплектная поставка ещё не готовы. [План правки свойства YAML](docs/research/eska-format/analyzer-property-plans.md)
 уже учитывает текущую editor version и отдельно закреплённую поддержку;
 сервер возвращает правку без записи файла. [Отмена и лимит времени](docs/research/eska-format/analyzer-property-cancellation.md)

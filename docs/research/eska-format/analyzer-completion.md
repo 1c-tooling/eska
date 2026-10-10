@@ -58,8 +58,9 @@ Literal field names не интерпретируются как snippet. Detail
 числовые kinds, coverage и error codes от locale не зависят.
 
 Diagnostics и completion используют общий request control, ограниченный reader
-и timer server/checker. Initialize объявляет обе операции в languageMethods и
-cancellableMethods. `$/cancelRequest` возвращает исходному запросу `-32800` с
+и timer server/checker. Они входят в languageMethods и cancellableMethods вместе
+с [definition](analyzer-definitions.md); property plan тоже отменяемый.
+`$/cancelRequest` возвращает исходному запросу `-32800` с
 analysis_cancelled. Timeout `--timeout-seconds` по умолчанию 300, ноль прекращает
 операцию до lazy-чтения. Для completion ошибка timeout — `-32000` с
 analysis_deadline_exceeded и текущим snapshot; retriggerRequest отсутствует.

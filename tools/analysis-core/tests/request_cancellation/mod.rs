@@ -17,6 +17,8 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
         ("ru-RU", json!("отмена"), "textDocument/diagnostic"),
         ("en-US", json!(-7), "textDocument/completion"),
         ("ru-RU", json!("отмена"), "textDocument/completion"),
+        ("en-US", json!(-7), "textDocument/definition"),
+        ("ru-RU", json!("отмена"), "textDocument/definition"),
     ] {
         let mut client = Client::with_options(&root, lang, &[]);
         let initialized = client.ask(&initialize());
@@ -65,6 +67,9 @@ fn params(method: &str, uri: &str, revision: &str) -> Value {
     let mut params = json!({"textDocument":{"uri":uri},"eska":{"snapshot":snapshot(revision)}});
     if method == "textDocument/completion" {
         params["position"] = json!({"line":1,"character":5});
+    }
+    if method == "textDocument/definition" {
+        params["position"] = json!({"line":0,"character":11});
     }
     params
 }

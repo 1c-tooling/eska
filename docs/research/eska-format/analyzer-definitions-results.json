@@ -1,0 +1,559 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "scope": "current_declared_ready_bsl_definitions",
+  "protocol_version": "0.1",
+  "analysis_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.4498184959957143
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 0.17637698899488896
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 0.47512007300247205
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 2.8575632070060237,
+      "results": [
+        "ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.39s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.8506659220001893
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 0.4337859999941429
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 0.8530487910029478
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 2.671431456001301,
+      "results": [
+        "ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 1.2188342179942993
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.47707613999955356
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 1.0641793519971543
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 3.9396519850051845,
+      "results": [
+        "ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.277593758997682
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 0.8039304359990638
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 1.8015986969985534
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 6.712533058998815,
+      "results": [
+        "ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.25s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.2338455369972507
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 11.910319064998475
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 4.68221619000542
+    }
+  ],
+  "root_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8037870680054766
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.319260124997527
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 5.385226402002445
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 14.242695490000187
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.8980651089950697
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2176733009982854
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5386869319991092
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.189731206999568
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7861197069942136
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 3.126466827998229
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.303161108000495
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7066469330020482
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 7.308595452006557
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.273113867006032
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.006107886001700535
+    }
+  ],
+  "runtime": {
+    "package_names": 206,
+    "resolved_versions": 214,
+    "release_bytes": 48780736
+  },
+  "real_queries": [
+    {
+      "mode": "saved_editor_close",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.0779334149992792,
+      "saved_query_seconds": 0.022224035994440783,
+      "editor_query_seconds": 0.0007726010007900186,
+      "closed_query_seconds": 0.0006935679994057864,
+      "module_bytes": 3922,
+      "peak_rss_kib": 66296,
+      "exact_current_utf16_ranges": true,
+      "non_bmp_prefix": true,
+      "editor_target_fingerprint_changed": true,
+      "close_restores_saved_target": true,
+      "stale_snapshot_rejected": true,
+      "unresolved_incomplete_is_error": true,
+      "metadata_not_loaded_for_local_target": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.1166978149994975,
+      "corpus": "C1",
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "mode": "saved_editor_close",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.07223245299974224,
+      "saved_query_seconds": 0.022397747001377866,
+      "editor_query_seconds": 0.000829436001367867,
+      "closed_query_seconds": 0.0005229640009929426,
+      "module_bytes": 3922,
+      "peak_rss_kib": 66052,
+      "exact_current_utf16_ranges": true,
+      "non_bmp_prefix": true,
+      "editor_target_fingerprint_changed": true,
+      "close_restores_saved_target": true,
+      "stale_snapshot_rejected": true,
+      "unresolved_incomplete_is_error": true,
+      "metadata_not_loaded_for_local_target": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.10485681499994826,
+      "corpus": "C1",
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "mode": "cancel",
+      "locale": "en-US",
+      "timeout_seconds": 300,
+      "exit_code": 0,
+      "editor_bytes": 3600046,
+      "query_seconds": 0.8544849070021883,
+      "stop_reply_seconds": 0.8519255819992395,
+      "active_observation_seconds": 0.0025593250029487535,
+      "peak_rss_kib": 948872,
+      "reply_code": -32800,
+      "automatic_retrigger": false,
+      "editor_snapshot_and_resources_preserved": true,
+      "close_restores_saved_target": true,
+      "small_query_recovers_same_process": true,
+      "late_cancel_does_not_poison_id_reuse": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9922152860017377,
+      "corpus": "C1",
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "mode": "cancel",
+      "locale": "ru-RU",
+      "timeout_seconds": 300,
+      "exit_code": 0,
+      "editor_bytes": 3600046,
+      "query_seconds": 0.7564458849956281,
+      "stop_reply_seconds": 0.7540993619986693,
+      "active_observation_seconds": 0.002346522996958811,
+      "peak_rss_kib": 948252,
+      "reply_code": -32800,
+      "automatic_retrigger": false,
+      "editor_snapshot_and_resources_preserved": true,
+      "close_restores_saved_target": true,
+      "small_query_recovers_same_process": true,
+      "late_cancel_does_not_poison_id_reuse": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.889701760999742,
+      "corpus": "C1",
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "mode": "deadline",
+      "locale": "en-US",
+      "timeout_seconds": 1,
+      "exit_code": 0,
+      "editor_bytes": 3600046,
+      "query_seconds": 2.687253341995529,
+      "stop_reply_seconds": 2.687253341995529,
+      "active_observation_seconds": 0.0,
+      "peak_rss_kib": 1131616,
+      "reply_code": -32000,
+      "automatic_retrigger": false,
+      "editor_snapshot_and_resources_preserved": true,
+      "close_restores_saved_target": true,
+      "small_query_recovers_same_process": true,
+      "late_cancel_does_not_poison_id_reuse": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 2.9644746869962546,
+      "corpus": "C1",
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "mode": "deadline",
+      "locale": "ru-RU",
+      "timeout_seconds": 1,
+      "exit_code": 0,
+      "editor_bytes": 3600046,
+      "query_seconds": 1.0372453889940516,
+      "stop_reply_seconds": 1.0372453889940516,
+      "active_observation_seconds": 0.0,
+      "peak_rss_kib": 949060,
+      "reply_code": -32000,
+      "automatic_retrigger": false,
+      "editor_snapshot_and_resources_preserved": true,
+      "close_restores_saved_target": true,
+      "small_query_recovers_same_process": true,
+      "late_cancel_does_not_poison_id_reuse": true,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 1.1758428510001977,
+      "corpus": "C1",
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "mode": "saved_editor_close",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.6831964360026177,
+      "saved_query_seconds": 0.024104593001538888,
+      "editor_query_seconds": 0.0012514759946498089,
+      "closed_query_seconds": 0.001163828004791867,
+      "module_bytes": 13998,
+      "peak_rss_kib": 194548,
+      "exact_current_utf16_ranges": true,
+      "non_bmp_prefix": true,
+      "editor_target_fingerprint_changed": true,
+      "close_restores_saved_target": true,
+      "stale_snapshot_rejected": true,
+      "unresolved_incomplete_is_error": true,
+      "metadata_not_loaded_for_local_target": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.7665750480009592,
+      "corpus": "C2",
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "mode": "saved_editor_close",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.6798170370020671,
+      "saved_query_seconds": 0.023582995003380347,
+      "editor_query_seconds": 0.0013414519999059848,
+      "closed_query_seconds": 0.001529322995338589,
+      "module_bytes": 13998,
+      "peak_rss_kib": 194672,
+      "exact_current_utf16_ranges": true,
+      "non_bmp_prefix": true,
+      "editor_target_fingerprint_changed": true,
+      "close_restores_saved_target": true,
+      "stale_snapshot_rejected": true,
+      "unresolved_incomplete_is_error": true,
+      "metadata_not_loaded_for_local_target": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.7627337590020034,
+      "corpus": "C2",
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "mode": "saved_editor_close",
+      "locale": "en-US",
+      "exit_code": 0,
+      "init_seconds": 0.8076871720040799,
+      "saved_query_seconds": 0.026346605001890566,
+      "editor_query_seconds": 0.0011921609984710813,
+      "closed_query_seconds": 0.0010541720039327629,
+      "module_bytes": 13998,
+      "peak_rss_kib": 217808,
+      "exact_current_utf16_ranges": true,
+      "non_bmp_prefix": true,
+      "editor_target_fingerprint_changed": true,
+      "close_restores_saved_target": true,
+      "stale_snapshot_rejected": true,
+      "unresolved_incomplete_is_error": true,
+      "metadata_not_loaded_for_local_target": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9001526669962914,
+      "corpus": "C3",
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normalized_locale_trace_parity": true
+    },
+    {
+      "mode": "saved_editor_close",
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "init_seconds": 0.7994784119946416,
+      "saved_query_seconds": 0.0267518469991046,
+      "editor_query_seconds": 0.0013309470014064573,
+      "closed_query_seconds": 0.001426283000910189,
+      "module_bytes": 13998,
+      "peak_rss_kib": 217488,
+      "exact_current_utf16_ranges": true,
+      "non_bmp_prefix": true,
+      "editor_target_fingerprint_changed": true,
+      "close_restores_saved_target": true,
+      "stale_snapshot_rejected": true,
+      "unresolved_incomplete_is_error": true,
+      "metadata_not_loaded_for_local_target": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.8922785809991183,
+      "corpus": "C3",
+      "tracked_source_files": 4,
+      "tracked_source_bytes_unchanged": true,
+      "normalized_locale_trace_parity": true
+    }
+  ],
+  "platform_runtime_checked": false,
+  "real_vscode_client_checked": false,
+  "metadata_yaml_coordinates_implemented": false,
+  "heap_or_rss_budget_implemented": false,
+  "semantic_complete": false
+}
