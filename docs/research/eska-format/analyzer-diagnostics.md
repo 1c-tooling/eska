@@ -117,7 +117,8 @@ Git, 1C, HTTP-клиент, debugger и LSP runtime не подключены.
 [Машинный отчёт](analyzer-diagnostics-results.json) сохраняет gates и замеры.
 Сборка 1С не запускалась: проверены язык/transport, не платформенная приёмка.
 Gates и замеры выше относятся к `fc26d82`. [Отмена активной диагностики](analyzer-cancellation.md)
-добавлена следующим компонентом; текущий размер сервера и проверки — по этой ссылке.
-Server timeout, полный heap/RSS budget, completion, семантика и edit plans не завершены.
+добавлена следующим компонентом. [Server timeout](analyzer-deadline.md) уже подключён;
+текущий размер сервера и проверки — по этой ссылке.
+Полный heap/RSS budget, completion, семантика и edit plans не завершены.
 Source-byte quota не ограничивает memos или общую память процесса.
 EF-18 остаётся `IN_PROGRESS`.

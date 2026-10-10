@@ -51,6 +51,7 @@ pub fn error_value(code: i32, kind: &str, details: Value) -> Value {
         -32002 => "Server not initialized",
         -32801 => "Content modified",
         -32800 => "Request cancelled",
+        -32802 => "Server cancelled",
         _ => "Request failed",
     };
     let mut error = json!({"code":code, "message":message, "data":{"kind":kind}});

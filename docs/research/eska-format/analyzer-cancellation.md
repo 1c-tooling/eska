@@ -85,7 +85,8 @@ stdin. Machine responses обеих локалей совпали за искл�
 Release server — 46729992 bytes; graph 206 package names / 214 resolved versions,
 новых dependencies нет.
 
-[Машинный отчёт](analyzer-cancellation-results.json) содержит gates и замеры.
+[Машинный отчёт](analyzer-cancellation-results.json) содержит gates и замеры на `80e0e79`.
 Платформа 1С не запускалась: проверялось управление языковыми запросами.
-Server deadline, полный heap/RSS budget, completion, семантика, watcher,
+[Server deadline](analyzer-deadline.md) добавлен следующим компонентом;
+его проверки и текущий размер сервера описаны отдельно. Полный heap/RSS budget, completion, семантика, watcher,
 multi-project host и edit plans остаются в работе. EF-18 — `IN_PROGRESS`.

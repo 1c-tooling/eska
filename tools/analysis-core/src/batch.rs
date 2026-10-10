@@ -1,6 +1,5 @@
 //! Read-only syntax batches use the resident session's exact input and diagnostic paths.
 
-mod deadline;
 mod report;
 
 #[cfg(test)]
@@ -22,6 +21,7 @@ pub use report::{
 use crate::{
     AnalysisSession, DiagnosticCode, DiagnosticsConfig, ModuleState, QueryError,
     RequestCancellation, SessionError, SessionOptions, SessionRequestError,
+    deadline::{Deadline, DeadlineError},
 };
 
 /// A syntax sweep keeps one body resident and trims heavy memos between bounded chunks.
@@ -69,7 +69,12 @@ pub fn check_syntax(
     config: &DiagnosticsConfig,
     options: &BatchOptions,
 ) -> Result<BatchReport, BatchError> {
-    let deadline = deadline::Deadline::start(options.timeout, options.cancellation.clone())?;
+    let deadline = Deadline::start(options.timeout, options.cancellation.clone()).map_err(
+        |error| match error {
+            DeadlineError::TimerUnavailable => BatchError::TimerUnavailable,
+            DeadlineError::TimeoutOutOfRange => BatchError::TimeoutOutOfRange,
+        },
+    )?;
     let manifest_sha256 = reader.configuration().manifest_sha256.clone();
     let mut session = AnalysisSession::from_reader(
         reader,
@@ -120,12 +125,12 @@ pub fn check_syntax(
         &session,
         manifest_sha256,
         files,
-        deadline.stop_reason(),
+        deadline.stop_reason().map(StopReason::from),
         syntax_enabled,
     );
     // Constructing coverage can itself cross the deadline; check again before returning success.
     if let Some(stop) = deadline.stop_reason() {
-        report.stop = Some(stop);
+        report.stop = Some(StopReason::from(stop));
         report.status = BatchStatus::Incomplete;
         report.coverage.syntax_complete = false;
     }

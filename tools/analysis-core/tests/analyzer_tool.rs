@@ -3,6 +3,7 @@
 mod diagnostic_queries;
 mod document_sync;
 mod request_cancellation;
+mod request_deadline;
 mod support;
 
 use std::{
@@ -223,6 +224,12 @@ fn help_and_version_are_localized_and_do_not_open_a_project() {
             "Serve ESKA metadata"
         }));
         assert!(help.contains("--max-retained-source-bytes"));
+        assert!(help.contains("--timeout-seconds"));
+        assert!(help.contains(if lang == "ru-RU" {
+            "ноль сразу останавливает проверку"
+        } else {
+            "zero stops the check immediately"
+        }));
         let version = Command::new(env!("CARGO_BIN_EXE_eska-analyzer"))
             .current_dir(&directory.0)
             .args(["--lang", lang, "--version"])

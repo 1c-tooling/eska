@@ -815,8 +815,19 @@ fallback с диска. 29 unit/file, 22 analyzer process и 9 checker process t
 На C1/C2/C3 в обеих локалях отмена после наблюдаемого начала вычисления вернула
 `-32800` за 0,111–0,118 с; тот же editor input проверился повторно, close восстановил
 saved, normal exit не ждал stdin EOF. Проверенные source bytes сохранены.
-Server deadline, остальные language operations, полнота metadata/семантики,
-общий heap/RSS budget и edit plans остаются в работе; EF-18 — `IN_PROGRESS`.
+Общий heap/RSS budget, остальные language operations, полнота metadata/семантики
+и edit plans остаются в работе; EF-18 — `IN_PROGRESS`.
+
+[Лимит времени syntax-диагностики](../research/eska-format/analyzer-deadline.md)
+использует общий timer server/checker и фиксирует первый stop cause. CLI задаёт
+`--timeout-seconds` (по умолчанию 300); `-32802` и `retriggerRequest=false`
+отличают timeout от клиентской отмены. Ноль не читает BSL и не меняет snapshot.
+32 unit/file, 24 analyzer process и 9 checker process tests, feature matrix,
+Rustdoc/release и полная root matrix прошли. На C1/C2/C3 в RU/EN активный запрос
+с 3600044 editor bytes остановился при лимите 1 с за 1,043–1,081 с; текущий
+ввод сохранился, маленький saved query затем прошёл в том же процессе.
+Peak RSS до 1103164 KiB подтверждает, что source quota не заменяет memory budget.
+Completion, edit plans и полное покрытие остаются в работе; EF-18 — `IN_PROGRESS`.
 
 ## EF-19 Самостоятельный инструмент VCS
 

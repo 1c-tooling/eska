@@ -1,6 +1,9 @@
 //! One serial worker owns revisions shared by editor inputs and lazy metadata requests.
 
-use std::io::{BufRead, Write};
+use std::{
+    io::{BufRead, Write},
+    time::Duration,
+};
 
 use eska::{
     analysis_core::{InputRequest, InputState},
@@ -107,9 +110,10 @@ impl Server<'_> {
         response: &mut Value,
         control: Option<&RequestCancellation>,
     ) -> Result<bool, ()> {
-        if !control.is_some_and(RequestCancellation::is_cancelled)
-            || response.get("result").is_none()
-        {
+        let Some(reason) = control.and_then(RequestCancellation::stop_reason) else {
+            return Ok(false);
+        };
+        if response.get("result").is_none() {
             return Ok(false);
         }
         let session = self.session.as_ref().ok_or(())?;
@@ -117,7 +121,7 @@ impl Server<'_> {
         fields.remove("result");
         fields.insert(
             "error".into(),
-            diagnostics::cancelled(session, &self.session_id),
+            diagnostics::stopped(session, &self.session_id, reason),
         );
         Ok(true)
     }
@@ -227,6 +231,7 @@ impl Server<'_> {
                 "metadata":{"owners":true, "read":true, "refresh":true},
                 "documentSync":true, "languageQueries":true, "requestCancellation":true,
                 "cancellableMethods":["textDocument/diagnostic"],"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
+                "requestTimeoutSeconds":self.cli.timeout_seconds,
                 "languageMethods":["textDocument/diagnostic"],
                 "analysis":diagnostics::availability(&settings),
                 "inputNotifications":["eska/inputChanged", "eska/inputRejected"],
@@ -351,6 +356,7 @@ impl Server<'_> {
                         ..InputRequest::default()
                     },
                     cancellation,
+                    Duration::from_secs(self.cli.timeout_seconds),
                 )
             }
             _ => Err(protocol::error_value(

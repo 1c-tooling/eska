@@ -446,5 +446,6 @@
   "edit_plans": false,
   "platform_build_run": false,
   "stage_status": "IN_PROGRESS",
-  "rust_api_change": "batch::BatchCancellation replaced by crate::RequestCancellation"
+  "rust_api_change": "batch::BatchCancellation replaced by crate::RequestCancellation",
+  "state_at_commit": "80e0e79"
 }

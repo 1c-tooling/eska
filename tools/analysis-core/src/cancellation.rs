@@ -2,7 +2,7 @@
 
 use std::sync::{
     Arc, Mutex,
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicU8, Ordering},
 };
 
 use crate::QueryError;
@@ -12,19 +12,50 @@ use crate::QueryError;
 pub struct RequestCancellation {
     pub(crate) input: eska::analysis_core::Cancellation,
     pub(crate) query: QueryCancellation,
+    reason: Arc<AtomicU8>,
+}
+
+/// The first caller to stop a request determines the structured response reason.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(u8)]
+pub enum RequestStop {
+    Cancelled = 1,
+    DeadlineExceeded = 2,
 }
 
 impl RequestCancellation {
     /// Stop source reading and the active kernel handle without cancelling other requests.
     pub fn cancel(&self) {
-        self.input.cancel();
-        self.query.cancel();
+        self.stop(RequestStop::Cancelled);
     }
 
     /// A transport may discard a result completed concurrently with cancellation.
     #[must_use]
     pub fn is_cancelled(&self) -> bool {
-        self.input.is_cancelled()
+        self.stop_reason().is_some()
+    }
+
+    /// Timer cancellation preserves a client cancellation that already won the race.
+    pub(crate) fn cancel_deadline(&self) {
+        self.stop(RequestStop::DeadlineExceeded);
+    }
+
+    /// A late transport check sees the same cause as input/kernel cancellation and the timer.
+    pub(crate) fn stop_reason(&self) -> Option<RequestStop> {
+        match self.reason.load(Ordering::Acquire) {
+            1 => Some(RequestStop::Cancelled),
+            2 => Some(RequestStop::DeadlineExceeded),
+            _ => None,
+        }
+    }
+
+    /// Latch the first reason once; all clones stop the same read and kernel handle.
+    fn stop(&self, reason: RequestStop) {
+        let _ = self
+            .reason
+            .compare_exchange(0, reason as u8, Ordering::AcqRel, Ordering::Acquire);
+        self.input.cancel();
+        self.query.cancel();
     }
 }
 

@@ -15,7 +15,7 @@ use ide_db::RootDatabaseImpl;
 use salsa::Database;
 
 use super::*;
-use crate::{QueryCancellation, session::tests::fixture};
+use crate::{QueryCancellation, RequestCancellation, deadline::Deadline, session::tests::fixture};
 
 /// Gates are test-only untracked signals; identity is stable for one controlled computation.
 #[derive(Clone, Debug)]
@@ -83,52 +83,76 @@ fn syntax(session: &AnalysisSession, path: &SourcePath, token: &QueryCancellatio
     );
 }
 
-/// The running tracked query unwinds before its parser checkpoint, rather than finishing silently.
+/// Both stop sources reach the registered handle while the tracked query is actually running.
 #[test]
-fn cancelling_running_tracked_query_preserves_inputs_and_allows_later_updates() {
-    let (_directory, root) = fixture();
-    let mut session = AnalysisSession::open(&root).unwrap();
-    let path = ready(&mut session);
-    let revision = session.revision();
-    let before = session.module(&path).unwrap().clone();
-    let token = QueryCancellation::default();
-    let request = token.clone();
-    let (entered, started) = mpsc::sync_channel(1);
-    let (resume, receiver) = mpsc::sync_channel(1);
-    let gate = Gate(Arc::new(Signals {
-        entered,
-        resume: Mutex::new(receiver),
-        passed_checkpoint: AtomicBool::new(false),
-    }));
-    let probe = GateInput::new(&session.database, gate.clone());
-    let worker_path = path.clone();
-    let worker = std::thread::spawn(move || {
-        let result = session.query_module(&worker_path, revision, &request, |analysis, file| {
-            Ok(gated_parse(analysis.database(), probe, file))
+fn client_and_deadline_stop_running_query_without_changing_inputs() {
+    for timed in [false, true] {
+        let (_directory, root) = fixture();
+        let mut session = AnalysisSession::open(&root).unwrap();
+        let path = ready(&mut session);
+        let revision = session.revision();
+        let before = session.module(&path).unwrap().clone();
+        let control = RequestCancellation::default();
+        let token = control.query.clone();
+        let request = token.clone();
+        let (entered, started) = mpsc::sync_channel(1);
+        let (resume, receiver) = mpsc::sync_channel(1);
+        let gate = Gate(Arc::new(Signals {
+            entered,
+            resume: Mutex::new(receiver),
+            passed_checkpoint: AtomicBool::new(false),
+        }));
+        let probe = GateInput::new(&session.database, gate.clone());
+        let worker_path = path.clone();
+        let worker = std::thread::spawn(move || {
+            let result =
+                session.query_module(&worker_path, revision, &request, |analysis, file| {
+                    Ok(gated_parse(analysis.database(), probe, file))
+                });
+            (result, session)
         });
-        (result, session)
-    });
-    started.recv_timeout(Duration::from_secs(10)).unwrap();
-    token.cancel();
-    resume.send(()).unwrap();
-    let (result, mut session) = worker.join().unwrap();
-    assert_eq!(result, Err(QueryError::Cancelled));
-    assert!(!gate.0.passed_checkpoint.load(Ordering::Acquire));
-    assert_eq!(session.revision(), revision);
-    assert_eq!(session.module(&path), Some(&before));
-    assert!(token.is_cancelled());
-    syntax(&session, &path, &QueryCancellation::default());
-    session
-        .apply_module_overlay(
-            &path,
-            revision,
-            1,
-            "Процедура ПослеОтмены()\nКонецПроцедуры\n",
-            &InputRequest::default(),
-        )
-        .unwrap();
-    assert_ne!(session.revision(), revision);
-    syntax(&session, &path, &QueryCancellation::default());
+        started.recv_timeout(Duration::from_secs(10)).unwrap();
+        let _deadline = stop_running_request(&control, timed);
+        assert!(control.input.is_cancelled());
+        resume.send(()).unwrap();
+        let (result, mut session) = worker.join().unwrap();
+        assert_eq!(result, Err(QueryError::Cancelled));
+        assert!(!gate.0.passed_checkpoint.load(Ordering::Acquire));
+        assert_eq!(session.revision(), revision);
+        assert_eq!(session.module(&path), Some(&before));
+        assert!(token.is_cancelled());
+        syntax(&session, &path, &QueryCancellation::default());
+        session
+            .apply_module_overlay(
+                &path,
+                revision,
+                1,
+                "Процедура ПослеОтмены()\nКонецПроцедуры\n",
+                &InputRequest::default(),
+            )
+            .unwrap();
+        assert_ne!(session.revision(), revision);
+        syntax(&session, &path, &QueryCancellation::default());
+    }
+}
+
+/// Wait for an actual timer signal only after the worker's query gate confirms registration.
+fn stop_running_request(control: &RequestCancellation, timed: bool) -> Option<Deadline> {
+    if !timed {
+        control.cancel();
+        return None;
+    }
+    let deadline = Deadline::start(Duration::from_millis(10), control.clone()).unwrap();
+    let bound = std::time::Instant::now() + Duration::from_secs(10);
+    while !control.is_cancelled() {
+        assert!(std::time::Instant::now() < bound, "timer did not signal");
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    assert_eq!(
+        deadline.stop_reason(),
+        Some(crate::cancellation::RequestStop::DeadlineExceeded)
+    );
+    Some(deadline)
 }
 
 /// Reusing a token concurrently is rejected; cancellation reaches only its registered handle.

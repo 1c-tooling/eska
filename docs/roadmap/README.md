@@ -70,7 +70,9 @@ BSL-ресурса принадлежат необъявленным объек�
 Добавлен [первый отдельный IDE transport](../research/eska-format/analyzer-metadata.md):
 явный handshake, страницы состава, чтение/refresh YAML и проверка свежего
 UUID сеанса со строковой ревизией. C1/C2/C3 пройдены без BSL-прохода и платформы.
-Документы редактора и языковые операции ещё не подключены; EF-18 не завершена.
+Подключены [документы редактора](../research/eska-format/analyzer-documents.md),
+syntax pull, отмена активной диагностики и [общий server/checker deadline](../research/eska-format/analyzer-deadline.md).
+Completion, edit plans, полная семантика и общий memory budget ещё не готовы; EF-18 не завершена.
 Очередность остальных задач не меняется.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.

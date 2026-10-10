@@ -107,6 +107,7 @@ cargo build --manifest-path tools/analysis-core/Cargo.toml --features analyzer-c
 ```bash
 eska-analyzer --project-dir .
 eska-analyzer --project-dir . --project main
+eska-analyzer --project-dir . --timeout-seconds 300
 ```
 
 Стандартный initialize должен явно запросить ESKA protocol `0.1`; после
@@ -121,6 +122,9 @@ close перечитывает файл. `textDocument/diagnostic` исполь�
 [`$/cancelRequest`](../../docs/research/eska-format/analyzer-cancellation.md) отменяет syntax query
 через отдельный input thread; один worker сохраняет владение YAML/BSL и порядок изменений.
 Общий `RequestCancellation` заменяет неопубликованный `batch::BatchCancellation`.
+Один внутренний [таймер](../../docs/research/eska-format/analyzer-deadline.md) обслуживает
+server и checker. Лимит диагностики по умолчанию 300 секунд; timeout возвращает
+`-32802` с `retriggerRequest=false`, клиентская отмена — `-32800`.
 Из установленного комплекта бинарник не запускается автоматически.
 [Протокол, границы и проверка C1/C2/C3](../../docs/research/eska-format/analyzer-metadata.md).
 [Синхронизация документов и события состояния](../../docs/research/eska-format/analyzer-documents.md).

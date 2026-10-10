@@ -1,4 +1,4 @@
-//! One timer per batch forwards the deadline to bounded input reads and the active kernel handle.
+//! Both batch and IDE requests use one cooperative timer for input reads and the kernel handle.
 
 use std::{
     sync::mpsc::{self, RecvTimeoutError, Sender},
@@ -6,8 +6,16 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::{BatchError, StopReason};
-use crate::RequestCancellation;
+use crate::{RequestCancellation, cancellation::RequestStop};
+
+#[cfg(test)]
+mod tests;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DeadlineError {
+    TimerUnavailable,
+    TimeoutOutOfRange,
+}
 
 pub struct Deadline {
     end: Instant,
@@ -17,23 +25,26 @@ pub struct Deadline {
 }
 
 impl Deadline {
-    /// The timer owns no database handle and wakes immediately when a completed batch drops it.
-    pub fn start(timeout: Duration, cancellation: RequestCancellation) -> Result<Self, BatchError> {
+    /// The timer owns no database handle and wakes immediately when a completed request drops it.
+    pub(crate) fn start(
+        timeout: Duration,
+        cancellation: RequestCancellation,
+    ) -> Result<Self, DeadlineError> {
         let end = Instant::now()
             .checked_add(timeout)
-            .ok_or(BatchError::TimeoutOutOfRange)?;
+            .ok_or(DeadlineError::TimeoutOutOfRange)?;
         let (stop, receiver) = mpsc::channel();
         let request = cancellation.clone();
         let timer = std::thread::Builder::new()
-            .name("eska-check-deadline".into())
+            .name("eska-analysis-deadline".into())
             .spawn(move || {
                 if receiver.recv_timeout(end.saturating_duration_since(Instant::now()))
                     == Err(RecvTimeoutError::Timeout)
                 {
-                    request.cancel();
+                    request.cancel_deadline();
                 }
             })
-            .map_err(|_| BatchError::TimerUnavailable)?;
+            .map_err(|_| DeadlineError::TimerUnavailable)?;
         Ok(Self {
             end,
             cancellation,
@@ -43,15 +54,11 @@ impl Deadline {
     }
 
     /// Recognize a zero/elapsed deadline immediately even if the timer thread has not run yet.
-    pub fn stop_reason(&self) -> Option<StopReason> {
+    pub(crate) fn stop_reason(&self) -> Option<RequestStop> {
         if Instant::now() >= self.end {
-            self.cancellation.cancel();
-            Some(StopReason::DeadlineExceeded)
-        } else if self.cancellation.input.is_cancelled() {
-            Some(StopReason::Cancelled)
-        } else {
-            None
+            self.cancellation.cancel_deadline();
         }
+        self.cancellation.stop_reason()
     }
 }
 

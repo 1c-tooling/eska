@@ -42,6 +42,7 @@ Batch JSON-RPC, null ID, повторные JSON keys и глубина боле
 подключена к той же сессии. `languageQueries=true` включает пока только
 [`textDocument/diagnostic` с профилем syntax](analyzer-diagnostics.md).
 `requestCancellation=true` включает [отмену syntax-запросов](analyzer-cancellation.md);
+`requestTimeoutSeconds` задаёт [кооперативный лимит диагностики](analyzer-deadline.md);
 `editPlans=false`. Существующие расширения не переводятся
 на новый процесс автоматически; это ещё не полный языковой сервер.
 
@@ -111,7 +112,7 @@ composition и ядро не входят в этот wire cap.
 [квота исходных байтов](source-budget.md) по умолчанию 256 MiB и используется
 той же сессией. Это не общий heap/RSS budget. Страницы/свойства не читают BSL;
 BSL-текст поступает через document sync или lazy-чтение для диагностики.
-Отмена активной syntax-диагностики подключена; полная семантика ещё не готова.
+Отмена активной syntax-диагностики и её deadline подключены; полная семантика ещё не готова.
 Состав неизменяем до restart; structural changes manifest/configuration требуют
 перезапуска. Watcher и multi-project host пока не подключены.
 

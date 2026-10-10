@@ -9,6 +9,7 @@ mod binding;
 mod cancellation;
 #[cfg(feature = "check-cli")]
 pub mod check_cli;
+mod deadline;
 mod memory;
 mod modules;
 mod projection;

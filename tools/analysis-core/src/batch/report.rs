@@ -26,6 +26,16 @@ pub enum StopReason {
     Cancelled,
 }
 
+impl From<crate::cancellation::RequestStop> for StopReason {
+    /// The batch schema preserves its existing names while the request control is shared.
+    fn from(reason: crate::cancellation::RequestStop) -> Self {
+        match reason {
+            crate::cancellation::RequestStop::Cancelled => Self::Cancelled,
+            crate::cancellation::RequestStop::DeadlineExceeded => Self::DeadlineExceeded,
+        }
+    }
+}
+
 /// The module report retains the checked bytes' identity after resident text was released.
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]

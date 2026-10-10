@@ -40,6 +40,7 @@ fn cancelled_saved_read_retries_but_cancelled_overlay_does_not_fall_back_to_disk
         &settings,
         &InputRequest::default(),
         &fresh,
+        Duration::from_secs(300),
     )
     .unwrap();
     assert_eq!(report["items"], json!([]));
@@ -67,6 +68,7 @@ fn cancelled_saved_read_retries_but_cancelled_overlay_does_not_fall_back_to_disk
         &settings,
         &InputRequest::default(),
         &fresh,
+        Duration::from_secs(300),
     )
     .unwrap_err();
     assert_eq!(error["data"]["kind"], "module_unavailable");

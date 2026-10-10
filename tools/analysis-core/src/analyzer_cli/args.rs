@@ -17,6 +17,8 @@ pub struct Cli {
     pub project_dir: PathBuf,
     #[arg(long)]
     pub project: Option<String>,
+    #[arg(long, default_value_t = 300)]
+    pub timeout_seconds: u64,
     #[arg(long, default_value_t = 64 * 1024 * 1024)]
     pub max_document_bytes: u64,
     #[arg(long, default_value_t = 256 * 1024 * 1024)]

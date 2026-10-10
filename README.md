@@ -759,6 +759,8 @@ preset = "trunk"
 [YAML и BSL синхронизируются](docs/research/eska-format/analyzer-documents.md)
 в той же ревизии. [Отмена syntax-запросов](docs/research/eska-format/analyzer-cancellation.md)
 принимается во время вычисления, с сохранением текущего редакторского ввода.
+[Лимит времени диагностики](docs/research/eska-format/analyzer-deadline.md)
+настраивается через `--timeout-seconds`; общий таймер используется и checker.
 [Диагностика синтаксиса BSL](docs/research/eska-format/analyzer-diagnostics.md)
 доступна через стандартный LSP pull. Автодополнение сервера, полная семантика
 и комплектная поставка ещё не готовы.
