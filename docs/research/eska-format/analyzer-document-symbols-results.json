@@ -1,0 +1,1164 @@
+{
+  "schema_version": 1,
+  "status": "verified-component",
+  "date": "2026-10-10",
+  "scope": "EF-18 current BSL document structure",
+  "protocol_version": "0.1",
+  "contract": {
+    "method": "textDocument/documentSymbol",
+    "kernel_query": "AnalysisSession::module_document_symbols",
+    "profile": "structure",
+    "negotiated_shapes": [
+      "hierarchical",
+      "flat"
+    ],
+    "position_encoding": "utf-16",
+    "semantic_complete": false,
+    "metadata_io": false,
+    "second_parser": false,
+    "new_dependencies": false,
+    "client_cancellation": -32800,
+    "deadline": -32000
+  },
+  "tool_tests": {
+    "unit_file": 82,
+    "analyzer_process": 80,
+    "checker_process": 11,
+    "total": 173,
+    "minimal": 66
+  },
+  "application_tests": {
+    "passed": 894,
+    "ignored": 14,
+    "minimal": {
+      "passed": 165,
+      "ignored": 3
+    },
+    "project_cli": {
+      "passed": 181,
+      "ignored": 3
+    },
+    "build_cli": {
+      "passed": 200,
+      "ignored": 3
+    }
+  },
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.3791712439997355
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 0.20531776201096363
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 1.1403323909908067
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 11.012791388988262,
+      "results": [
+        "ok. 82 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.25s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 80 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.44s",
+        "ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 4.28370279999217
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 0.44380925899895374
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 1.10800320499402
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 4.110880585008999,
+      "results": [
+        "ok. 66 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.14s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 1.753402245012694
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.512510453001596
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 1.2274673470092239
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 4.616613227000926,
+      "results": [
+        "ok. 68 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.12s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.2103957639919827
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 1.2244397579925135
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 2.7969285669969395
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 11.257128092998755,
+      "results": [
+        "ok. 82 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.11s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 79 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.28s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.4390986030048225
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 13.455859112000326
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 6.072911356997793
+    }
+  ],
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8692653190082638
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3553357899945695
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.25926534800964873
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 9.97176003799541
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.809595500002615
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2547603420098312
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5456771809986094
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.4311364790046355
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.9602271870098775
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 4.053770858998178
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.872370729994145
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.8618423770094523
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 8.413903741995455
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.9411495020030998
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007799935003276914
+    }
+  ],
+  "runtime": {
+    "analyzer": {
+      "host": "x86_64-unknown-linux-gnu",
+      "scope": "normal-dependencies",
+      "package_names": 209,
+      "resolved_versions": 217,
+      "forbidden_present": [],
+      "release_bytes": 49230872
+    },
+    "checker": {
+      "host": "x86_64-unknown-linux-gnu",
+      "scope": "normal-dependencies",
+      "package_names": 209,
+      "resolved_versions": 217,
+      "forbidden_present": [],
+      "release_bytes": 46267376
+    }
+  },
+  "real_scenarios": [
+    {
+      "locale": "en-US",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.07136708000325598,
+      "query_seconds": [
+        0.0008750190027058125,
+        0.0005943779979133978,
+        0.0004942689993185923,
+        0.0005578190030064434
+      ],
+      "verified_nodes": 26,
+      "saved_nodes": 6,
+      "source_bytes": 884,
+      "peak_rss_kib": 40740,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.09022372799518052,
+      "corpus": "C1",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.07425017199420836,
+      "query_seconds": [
+        0.000791643004049547,
+        0.0003932899999199435,
+        0.0005874310008948669,
+        0.00047017399629112333
+      ],
+      "verified_nodes": 26,
+      "saved_nodes": 6,
+      "source_bytes": 884,
+      "peak_rss_kib": 40956,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.08747093300917186,
+      "corpus": "C1",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "en-US",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.0700693699909607,
+      "query_seconds": [
+        0.0006366960005834699,
+        0.00034950199187733233,
+        0.0004337419959483668,
+        0.0003065120108658448
+      ],
+      "verified_nodes": 26,
+      "saved_nodes": 6,
+      "source_bytes": 884,
+      "peak_rss_kib": 40812,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.08175615400250535,
+      "corpus": "C1",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.0688557179964846,
+      "query_seconds": [
+        0.0008394930046051741,
+        0.0007390230020973831,
+        0.0005776049947598949,
+        0.0002567329938756302
+      ],
+      "verified_nodes": 26,
+      "saved_nodes": 6,
+      "source_bytes": 884,
+      "peak_rss_kib": 41104,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.08141343200986739,
+      "corpus": "C1",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "en-US",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.712802563997684,
+      "query_seconds": [
+        0.0007072070002323017,
+        0.00035127099545206875,
+        0.0002733669971348718,
+        0.0001689890050329268
+      ],
+      "verified_nodes": 6,
+      "saved_nodes": 1,
+      "source_bytes": 206,
+      "peak_rss_kib": 172904,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.7694477990007726,
+      "corpus": "C2",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.6702766550006345,
+      "query_seconds": [
+        0.0005366459954530001,
+        0.00033267500111833215,
+        0.00032055299379862845,
+        0.0003416639956412837
+      ],
+      "verified_nodes": 6,
+      "saved_nodes": 1,
+      "source_bytes": 206,
+      "peak_rss_kib": 173392,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.723719085988705,
+      "corpus": "C2",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "en-US",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.6874588459904771,
+      "query_seconds": [
+        0.0008454299968434498,
+        0.0006640589999733493,
+        0.0005432589969132096,
+        0.0006619329942623153
+      ],
+      "verified_nodes": 6,
+      "saved_nodes": 1,
+      "source_bytes": 206,
+      "peak_rss_kib": 173356,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.7406705050088931,
+      "corpus": "C2",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.6979134830035036,
+      "query_seconds": [
+        0.0010960329964291304,
+        0.0016463490028399974,
+        0.0005208900111028925,
+        0.0002904339926317334
+      ],
+      "verified_nodes": 6,
+      "saved_nodes": 1,
+      "source_bytes": 206,
+      "peak_rss_kib": 173380,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.7555393219954567,
+      "corpus": "C2",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "en-US",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.8405326729989611,
+      "query_seconds": [
+        0.0009985399956349283,
+        0.0003730890020960942,
+        0.0005827699933433905,
+        0.00029461899248417467
+      ],
+      "verified_nodes": 10,
+      "saved_nodes": 2,
+      "source_bytes": 209,
+      "peak_rss_kib": 196616,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.9107739949977258,
+      "corpus": "C3",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.8192421049898257,
+      "query_seconds": [
+        0.0009212610020767897,
+        0.0005658009904436767,
+        0.0006140629993751645,
+        0.0004821770126000047
+      ],
+      "verified_nodes": 10,
+      "saved_nodes": 2,
+      "source_bytes": 209,
+      "peak_rss_kib": 196844,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.8884047980100149,
+      "corpus": "C3",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "en-US",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.8054429610056104,
+      "query_seconds": [
+        0.0007193069905042648,
+        0.000546094001038,
+        0.0006128990062279627,
+        0.00048336699546780437
+      ],
+      "verified_nodes": 10,
+      "saved_nodes": 2,
+      "source_bytes": 209,
+      "peak_rss_kib": 196860,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.8748413599969354,
+      "corpus": "C3",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.8216926930035697,
+      "query_seconds": [
+        0.0023458969953935593,
+        0.0004177770024398342,
+        0.00036755499604623765,
+        0.00028267699235584587
+      ],
+      "verified_nodes": 10,
+      "saved_nodes": 2,
+      "source_bytes": 209,
+      "peak_rss_kib": 196824,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.8885629970027367,
+      "corpus": "C3",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "small"
+    },
+    {
+      "locale": "en-US",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.07777834800072014,
+      "query_seconds": [
+        0.0014501709956675768,
+        0.0009655419999035075,
+        0.0008537219982827082,
+        0.0007184820133261383
+      ],
+      "verified_nodes": 42,
+      "saved_nodes": 10,
+      "source_bytes": 10044,
+      "peak_rss_kib": 41512,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.10591824899893254,
+      "corpus": "C1",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.07112858899927232,
+      "query_seconds": [
+        0.001336464993073605,
+        0.001019513001665473,
+        0.001239949997398071,
+        0.0008498149982187897
+      ],
+      "verified_nodes": 42,
+      "saved_nodes": 10,
+      "source_bytes": 10044,
+      "peak_rss_kib": 41292,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.09872146099223755,
+      "corpus": "C1",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "en-US",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.06891567700949963,
+      "query_seconds": [
+        0.001228074004757218,
+        0.0008257330046035349,
+        0.000951655994867906,
+        0.0007658939866814762
+      ],
+      "verified_nodes": 42,
+      "saved_nodes": 10,
+      "source_bytes": 10044,
+      "peak_rss_kib": 41116,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.09280816100363154,
+      "corpus": "C1",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.06956167699536309,
+      "query_seconds": [
+        0.0012040339934173971,
+        0.0008611609955551103,
+        0.0008600370056228712,
+        0.0007095829932950437
+      ],
+      "verified_nodes": 42,
+      "saved_nodes": 10,
+      "source_bytes": 10044,
+      "peak_rss_kib": 41032,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.09472319199994672,
+      "corpus": "C1",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "en-US",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.6755097239947645,
+      "query_seconds": [
+        0.005337759997928515,
+        0.0013563729880843312,
+        0.0012776150106219575,
+        0.001086449992726557
+      ],
+      "verified_nodes": 62,
+      "saved_nodes": 15,
+      "source_bytes": 10001,
+      "peak_rss_kib": 173384,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.7545547180052381,
+      "corpus": "C2",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.6618668239971157,
+      "query_seconds": [
+        0.0018127939983969554,
+        0.0014601180009776726,
+        0.0013709769991692156,
+        0.0009287050052080303
+      ],
+      "verified_nodes": 62,
+      "saved_nodes": 15,
+      "source_bytes": 10001,
+      "peak_rss_kib": 173500,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.7323329110076884,
+      "corpus": "C2",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "en-US",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.6497849480074365,
+      "query_seconds": [
+        0.0015516730054514483,
+        0.001332676998572424,
+        0.0010820980096468702,
+        0.0008854670013533905
+      ],
+      "verified_nodes": 62,
+      "saved_nodes": 15,
+      "source_bytes": 10001,
+      "peak_rss_kib": 173268,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.7208197790023405,
+      "corpus": "C2",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.6445879120001337,
+      "query_seconds": [
+        0.0015161899937083945,
+        0.0012217600014992058,
+        0.0012311489990679547,
+        0.0010750380024546757
+      ],
+      "verified_nodes": 62,
+      "saved_nodes": 15,
+      "source_bytes": 10001,
+      "peak_rss_kib": 173544,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.7173864259966649,
+      "corpus": "C2",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "en-US",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.7585632580012316,
+      "query_seconds": [
+        0.0055860069987829775,
+        0.0012662179942708462,
+        0.001184570006444119,
+        0.0009114560089074075
+      ],
+      "verified_nodes": 46,
+      "saved_nodes": 11,
+      "source_bytes": 10023,
+      "peak_rss_kib": 196784,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.8486035429959884,
+      "corpus": "C3",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "flat",
+      "exit_code": 0,
+      "init_seconds": 0.7705419260018971,
+      "query_seconds": [
+        0.0014708789967698976,
+        0.001074043000699021,
+        0.001011292013572529,
+        0.0008120159909594804
+      ],
+      "verified_nodes": 46,
+      "saved_nodes": 11,
+      "source_bytes": 10023,
+      "peak_rss_kib": 196944,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.8484191419993294,
+      "corpus": "C3",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "en-US",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.7485006079950836,
+      "query_seconds": [
+        0.0013496140018105507,
+        0.0010547750134719536,
+        0.0009752740006661043,
+        0.0009844220039667562
+      ],
+      "verified_nodes": 46,
+      "saved_nodes": 11,
+      "source_bytes": 10023,
+      "peak_rss_kib": 196492,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.8276971070008585,
+      "corpus": "C3",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    },
+    {
+      "locale": "ru-RU",
+      "shape": "hierarchical",
+      "exit_code": 0,
+      "init_seconds": 0.7565165179985343,
+      "query_seconds": [
+        0.0014054280036361888,
+        0.0010234950023004785,
+        0.0010569000005489215,
+        0.0008206710044760257
+      ],
+      "verified_nodes": 46,
+      "saved_nodes": 11,
+      "source_bytes": 10023,
+      "peak_rss_kib": 196484,
+      "current_utf16_and_byte_ranges": true,
+      "editor_revisions_and_hashes": true,
+      "stale_rejected": true,
+      "empty_ready_structure": true,
+      "close_restores_saved": true,
+      "metadata_source_bytes": 0,
+      "unrelated_inputs_not_loaded": true,
+      "semantic_complete": false,
+      "normal_exit_without_stdin_eof": true,
+      "runtime_path": "empty",
+      "wall_seconds": 0.836439363003592,
+      "corpus": "C3",
+      "locale_machine_parity": true,
+      "flat_hierarchical_symbols_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "sample": "medium"
+    }
+  ],
+  "real_counts": {
+    "scenarios": 24,
+    "document_symbol_pulls": 144,
+    "verified_nodes": 768,
+    "nonempty_results": 96,
+    "empty_results": 24,
+    "stale_refusals": 24,
+    "selected_original_files_unchanged": 12,
+    "temporary_projects_removed": true
+  },
+  "limitations": [
+    "Partial payload copies preserve complete project composition; two selected real modules per corpus are checked.",
+    "Measured HWM is not a heap/RSS budget or a full large-configuration sweep.",
+    "No actual editor client or 1C runtime validation in this component.",
+    "Structure results do not imply successful diagnostics or complete semantics.",
+    "Explorer, other IDE edits, semantic coverage and memory policy remain incomplete."
+  ]
+}

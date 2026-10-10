@@ -19,6 +19,8 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
         ("ru-RU", json!("отмена"), "textDocument/completion"),
         ("en-US", json!(-7), "textDocument/definition"),
         ("ru-RU", json!("отмена"), "textDocument/definition"),
+        ("en-US", json!(-7), "textDocument/documentSymbol"),
+        ("ru-RU", json!("отмена"), "textDocument/documentSymbol"),
     ] {
         let mut client = Client::with_options(&root, lang, &[]);
         let initialized = client.ask(&initialize());
@@ -54,7 +56,12 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
         client.send(&json!({"jsonrpc":"2.0","method":"$/cancelRequest","params":{"id":"reuse"}}));
         let later = client.ask(&request(json!("reuse"), method, params(method, &uri, "2")));
         assert!(later.get("result").is_some(), "{later}");
-        assert_eq!(later["result"]["eska"]["snapshot"], snapshot("2"));
+        let current = if method == "textDocument/documentSymbol" {
+            &later["result"][0]["eska"]["snapshot"]
+        } else {
+            &later["result"]["eska"]["snapshot"]
+        };
+        assert_eq!(current, &snapshot("2"));
         if method == "textDocument/diagnostic" {
             assert_eq!(later["result"]["items"], json!([]));
         }
@@ -62,7 +69,7 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
     }
 }
 
-/// Both methods use the same current URI/snapshot, while only completion needs a cursor.
+/// All language methods use one current URI/snapshot; cursor queries add a position.
 fn params(method: &str, uri: &str, revision: &str) -> Value {
     let mut params = json!({"textDocument":{"uri":uri},"eska":{"snapshot":snapshot(revision)}});
     if method == "textDocument/completion" {

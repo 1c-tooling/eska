@@ -1191,6 +1191,19 @@ minimal: 62. Проверены 177 локальных Markdown-ссылок и 
 Новые проверки выполнялись на изолированных fixtures и реальных stdio-процессах;
 ручной запуск в IDE и платформе 1С в это ревью не входил.
 
+[Структура текущего BSL](../research/eska-format/analyzer-document-symbols.md)
+добавлена в стандартный documentSymbol через общий current-module query.
+Item/region trees ядра сохраняют kind/details; transport согласует hierarchy/flat,
+UTF-16 и captured byte spans/hash. Metadata tree использует отдельный API;
+соседние YAML/BSL не читаются. Общие snapshot guards, control отмены и deadline
+подключены без нового parser, индекса или dependency. 82 unit/file, 80 analyzer
+и 11 checker process tests прошли, всего 173; minimal — 66. Все 19 tool и 15 root
+gates прошли; root — 894/14. В 24 сценариях C1/C2/C3 RU/EN выполнены 144 pulls,
+проверены 768 узлов и равенство machine traces/форм. Saved/editor/empty/close,
+byte/UTF-16/hash и stale refusal согласованы. Bytes 12 выбранных оригиналов
+и их копий сохранены; временные проекты удалены. Полная семантика, общий memory
+budget, остальные IDE edits и Explorer остаются в работе; EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

@@ -2,7 +2,7 @@
 
 use super::*;
 
-/// Versioned edits and cancellation advertise separate contracts from the two language methods.
+/// Versioned edits and cancellation advertise separate contracts from language methods.
 fn open(client: &mut Client, root: &Path, text: &str) -> Value {
     let initialized = client.ask(&initialize_edits());
     let capabilities = &initialized["result"]["capabilities"]["experimental"]["eska"];
@@ -11,7 +11,8 @@ fn open(client: &mut Client, root: &Path, text: &str) -> Value {
         json!([
             "textDocument/diagnostic",
             "textDocument/completion",
-            "textDocument/definition"
+            "textDocument/definition",
+            "textDocument/documentSymbol"
         ])
     );
     assert_eq!(
@@ -20,6 +21,7 @@ fn open(client: &mut Client, root: &Path, text: &str) -> Value {
             "textDocument/diagnostic",
             "textDocument/completion",
             "textDocument/definition",
+            "textDocument/documentSymbol",
             METHOD
         ])
     );

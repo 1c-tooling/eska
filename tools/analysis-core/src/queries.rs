@@ -4,6 +4,7 @@
 #[path = "queries/cancellation_tests.rs"]
 mod cancellation_tests;
 pub mod definitions;
+mod document_symbols;
 mod metadata_definitions;
 
 use std::collections::BTreeMap;
@@ -47,6 +48,12 @@ pub enum QueryError {
     InconsistentNavigation {
         start_byte: u32,
         end_byte: u32,
+    },
+    InconsistentDocumentSymbol {
+        start_byte: u32,
+        end_byte: u32,
+        selection_start_byte: u32,
+        selection_end_byte: u32,
     },
     Cancelled,
     CancellationTokenInUse,

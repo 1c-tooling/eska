@@ -44,6 +44,9 @@
 использует общий таймер server/checker и сохраняет причину остановки.
 [Автодополнение](analyzer-completion.md) получает кандидатов из текущего
 YAML/BSL, учитывает возможности клиента и сообщает неполноту.
+[Структура текущего BSL](analyzer-document-symbols.md) подключена к стандартному
+documentSymbol: negotiated hierarchy/flat, текущие byte/UTF-16 ranges и общий
+request control, без второго parser или metadata IO.
 [Координаты объектов и свойств YAML](analyzer-metadata-locations.md) вычисляются
 из текущего разбора; metadata locate выбирает UUID/QName без чтения файла.
 [Переход из BSL к объекту YAML](analyzer-metadata-definitions.md) использует

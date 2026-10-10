@@ -11,10 +11,11 @@ use crate::{AnalysisSession, ModuleFailure, ModuleState, QueryError};
 
 use super::{documents, dto, protocol};
 
-pub const METHODS: [&str; 3] = [
+pub const METHODS: [&str; 4] = [
     "textDocument/diagnostic",
     "textDocument/completion",
     "textDocument/definition",
+    "textDocument/documentSymbol",
 ];
 
 #[derive(Clone, Copy)]
@@ -22,6 +23,7 @@ pub enum Method {
     Diagnostic,
     Completion,
     Definition,
+    DocumentSymbol,
 }
 
 impl Method {
@@ -31,6 +33,7 @@ impl Method {
             "textDocument/diagnostic" => Some(Self::Diagnostic),
             "textDocument/completion" => Some(Self::Completion),
             "textDocument/definition" => Some(Self::Definition),
+            "textDocument/documentSymbol" => Some(Self::DocumentSymbol),
             _ => None,
         }
     }
@@ -119,5 +122,16 @@ pub fn query_error(session: &AnalysisSession, id: &str, error: &QueryError) -> V
         QueryError::InvalidOffset { .. } => {
             protocol::error_value(-32602, "position_invalid", dto::snapshot(session, id))
         }
+        QueryError::InconsistentDocumentSymbol {
+            start_byte,
+            end_byte,
+            selection_start_byte,
+            selection_end_byte,
+        } => protocol::error_value(
+            -32603,
+            "document_symbol_inconsistent",
+            json!({"start_byte":start_byte,"end_byte":end_byte,
+                "selection_start_byte":selection_start_byte,"selection_end_byte":selection_end_byte}),
+        ),
     }
 }

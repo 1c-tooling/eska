@@ -516,6 +516,10 @@ metadata, full-sync YAML/BSL, syntax pull, [completion](research/eska-format/ana
 и [переход к текущему BSL-объявлению](research/eska-format/analyzer-definitions.md)
 из того же host. Языковые запросы имеют общий control отмены и deadline;
 неполнота чтения/моделей отделена от полной семантики.
+[Структура BSL-документа](research/eska-format/analyzer-document-symbols.md)
+использует item/region trees того же ядра. Transport согласует иерархию или
+плоский список и показывает текущие UTF-16/byte ranges/hash без чтения соседей;
+дерево метаданных сохраняет отдельный API.
 [Client file events](research/eska-format/analyzer-watched-files.md) проверяются
 транспортом; общая сессия инвалидирует saved inputs без I/O и сохраняет overlays.
 [Control events](research/eska-format/analyzer-project-changes.md) требуют

@@ -4,6 +4,7 @@ mod args;
 mod completion;
 mod definitions;
 mod diagnostics;
+mod document_symbols;
 mod documents;
 mod dto;
 mod language;

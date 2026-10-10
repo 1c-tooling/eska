@@ -145,6 +145,11 @@ C1/C2/C3 совпали с native reader; в RU/EN прошли 764 definition/l
 обязательные gates прошли; 12 сценариев C1/C2/C3 RU/EN подтвердили точные
 findings/coordinates/hash. Полный C1 sweep проверил 1 975 модулей без syntax
 findings; неполнота моделей сохранила exit 2. EF-18 остаётся `IN_PROGRESS`.
+[Структура текущего BSL](../research/eska-format/analyzer-document-symbols.md)
+получается из item/region trees общего ядра. Standard documentSymbol согласует
+hierarchy/flat и возвращает текущие ranges/hash без чтения соседей. 173 tool tests,
+19 tool gates и 15 root gates прошли; 24 сценария C1/C2/C3 RU/EN подтвердили
+144 pulls и 768 узлов. EF-18 остаётся `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

@@ -24,7 +24,9 @@ mod session;
 mod tool_metadata;
 
 pub use cancellation::{QueryCancellation, RequestCancellation};
-pub use ide::{CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, Locale};
+pub use ide::{
+    CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, DocumentSymbol, Locale,
+};
 pub use memory::{KernelMemoryReport, KernelMemoryTable};
 pub use metadata_diagnostics::{
     MetadataDiagnostic, MetadataDiagnosticIssue, MetadataDiagnostics, MetadataDiagnosticsError,

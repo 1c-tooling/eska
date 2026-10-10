@@ -9,8 +9,8 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    completion, definitions, diagnostics, documents, dto, language, metadata_locations,
-    property_edits, protocol,
+    completion, definitions, diagnostics, document_symbols, documents, dto, language,
+    metadata_locations, property_edits, protocol,
 };
 use super::Server;
 use crate::{AnalysisSession, RequestCancellation};
@@ -190,6 +190,24 @@ impl Server<'_> {
                     &request,
                     cancellation,
                     timeout,
+                )
+            }
+            language::Method::DocumentSymbol => {
+                let params: document_symbols::Params = protocol::params(value)?;
+                if let Some(expected) = &params.eska {
+                    validate_snapshot(session, &self.session_id, &expected.snapshot)?;
+                }
+                document_symbols::pull(
+                    session,
+                    &params,
+                    settings,
+                    &document_symbols::Options {
+                        session_id: &self.session_id,
+                        request: &request,
+                        cancellation,
+                        timeout,
+                        hierarchical: self.hierarchical_symbols,
+                    },
                 )
             }
         }

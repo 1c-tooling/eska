@@ -7,8 +7,9 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    completion, diagnostics, documents, dto, language, metadata_locations, project_changes,
-    property_edits, protocol, request_control, stream, watched_files, watcher_registration,
+    completion, diagnostics, document_symbols, documents, dto, language, metadata_locations,
+    project_changes, property_edits, protocol, request_control, stream, watched_files,
+    watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisSession, SessionOptions};
@@ -44,6 +45,7 @@ impl Server<'_> {
                 protocol::error_value(-32000, "analysis_session_open_failed", Value::Null)
             })?;
         let session_id = bsl_metadata::Uuid::new_v4().to_string();
+        let hierarchical_symbols = document_symbols::hierarchical(params);
         let mut result = json!({
             "capabilities":{"textDocumentSync":{"openClose":true,"change":1,"save":{"includeText":false}},
                 "positionEncoding":"utf-16",
@@ -79,9 +81,14 @@ impl Server<'_> {
             result["capabilities"]["completionProvider"] =
                 json!({"resolveProvider":false,"triggerCharacters":["."],"workDoneProgress":false});
             result["capabilities"]["definitionProvider"] = json!(true);
+            result["capabilities"]["documentSymbolProvider"] = json!(true);
+            result["capabilities"]["experimental"]["eska"]["documentSymbols"] = json!({
+                "scope":"current-bsl-module","profile":"structure",
+                "result":if hierarchical_symbols { "hierarchical" } else { "flat" }});
             result["capabilities"]["experimental"]["eska"]["definition"] = json!({"scope":"ready-bsl-and-canonical-metadata","metadataTargets":"typed-objects-and-members","incompleteResults":"error"});
         }
         self.completion = completion::Capabilities::negotiate(params);
+        self.hierarchical_symbols = hierarchical_symbols;
         self.project_inputs = Some(project_inputs);
         self.watcher = watcher;
         self.edit_plans = edit_plans;

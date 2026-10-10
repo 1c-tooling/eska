@@ -13,6 +13,7 @@ mod definition_queries;
 mod definition_register_queries;
 mod definition_union_queries;
 mod diagnostic_queries;
+mod document_symbol_queries;
 mod document_sync;
 mod metadata_diagnostic_queries;
 mod metadata_locations;
