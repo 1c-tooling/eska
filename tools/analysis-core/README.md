@@ -164,6 +164,9 @@ metadataTargets — typed-objects-and-members.
 [Планы характеристик, счетов и расчёта](../../docs/research/eska-format/analyzer-chart-objects.md)
 используют ту же объектную проекцию. Неявные строки не получают YAML UUID;
 реальные признаки счёта и субконто подтверждаются по своим физическим kind/parent.
+[Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
+сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
+Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.
 Полная семантика ещё не готова. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
 возвращают versioned WorkspaceEdit для ready открытого документа при независимо
 закреплённой базе и client documentChanges support. План не записывает файл и

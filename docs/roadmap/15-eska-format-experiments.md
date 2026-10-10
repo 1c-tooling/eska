@@ -1121,6 +1121,20 @@ editor/invalid/close/refresh и locale parity согласованы. Ориги
 полнота семантики, общий memory budget и Explorer остаются в работе.
 EF-18 — IN_PROGRESS; очередь остальных этапов не меняется.
 
+[Подробные ошибки моделей](../research/eska-format/analyzer-adapter-issues.md)
+добавляют `model_issue.issue` с конкретным machine tag и исходным свойством/QName.
+Прежние code/range и protocol 0.1 сохранены; core/адаптер не зависят от транспорта.
+Два unit-теста покрывают все 14 причин; RU/EN process test проверяет общее состояние
+страниц/чтения/уведомлений, текущие диапазоны, исправление и saved close.
+68 unit/file, 69 analyzer и девять checker process tests прошли, всего 146;
+minimal — 54. Все 19 tool и 15 root gates прошли; root 893/14, minimal 165/3,
+project-cli 181/3, build-cli 200/3. Шесть stdio-сценариев C1/C2/C3 в RU/EN проверили
+editor-only отказ реального свойства `Server`; оба `cfg:AnyRef` C1 передали точный
+namespace исходного XML и сохранили parsed tree. Bytes 5/3/3 выбранных оригиналов
+и копий сохранены; собственные временные проекты удалены. Граф — 206/214,
+release server — 49123168 bytes. Полная семантика и остальные условия EF-18
+ещё не завершены; очередь этапов не меняется.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

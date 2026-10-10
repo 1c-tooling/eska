@@ -1,5 +1,7 @@
 //! Protocol DTOs expose logical metadata and current source locations, never kernel tables or ASTs.
 
+mod adapter_issue;
+
 use eska::{
     analysis_core::{InputFailure, InputOrigin, InputState},
     project_core::{
@@ -67,9 +69,10 @@ pub fn state(view: &MetadataView) -> Value {
         }
     };
     let model_issue = match &view.model.state {
-        ModelState::Invalid { error, .. } => {
-            Some(json!({"code":"analysis_adapter_invalid", "range":error.range}))
-        }
+        ModelState::Invalid { error, .. } => Some(
+            json!({"code":"analysis_adapter_invalid", "range":error.range,
+                "issue":adapter_issue::value(&error.issue)}),
+        ),
         ModelState::Unsupported(kind) => {
             Some(json!({"code":"analysis_metadata_kind_unsupported", "kind":kind.as_str()}))
         }

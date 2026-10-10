@@ -1,0 +1,546 @@
+{
+  "schema_version": 1,
+  "status": "verified",
+  "date": "2026-10-10",
+  "protocol_version": "0.1",
+  "scope": "detailed current canonical model failures in shared metadata state",
+  "complete_semantic_analysis": false,
+  "source": "owned partial payload copies preserving full C1/C2/C3 compositions; independent native QName check for two C1 owners",
+  "application_tests": [
+    {
+      "profile": "all",
+      "passed": 893,
+      "ignored": 14
+    },
+    {
+      "profile": "minimal",
+      "passed": 165,
+      "ignored": 3
+    },
+    {
+      "profile": "project-cli",
+      "passed": 181,
+      "ignored": 3
+    },
+    {
+      "profile": "build-cli",
+      "passed": 200,
+      "ignored": 3
+    }
+  ],
+  "tool_tests": {
+    "unit_file": 68,
+    "analyzer_process": 69,
+    "checker_process": 9,
+    "total": 146,
+    "minimal_unit_file": 54
+  },
+  "contract": {
+    "adapter_causes": 14,
+    "existing_code_and_range_preserved": true,
+    "current_utf8_ranges": true,
+    "qualified_key_namespace_nullable": true,
+    "source_values_not_normalized": true,
+    "shared_pages_reads_notifications": true,
+    "unsupported_kind_shape_unchanged": true,
+    "locale_independent": true
+  },
+  "runtime": {
+    "package_names": 206,
+    "resolved_versions": 214,
+    "release_bytes": 49123168
+  },
+  "application_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9238545700063696
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4762321449961746
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2624499259982258
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 13.869869703004952
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 6.3272527099907165
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.22022991300036665
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5780556359968614
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.4508544290001737
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2548119519924512
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 1.814404945995193
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 7.872163717998774
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.30121450299338903
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 5.885496986011276
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 6.90689936200215
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.0047927629930200055
+    }
+  ],
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.4036172469932353
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 0.4901611390087055
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 1.8801592490053736
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 6.365022115991451,
+      "results": [
+        "ok. 68 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.53s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 69 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.11s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.792856102998485
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 0.15921886199794244
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 0.24884466899675317
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 1.5159513899998274,
+      "results": [
+        "ok. 54 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.15s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 1.8741590279969387
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.16262009598722216
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 0.24814540200168267
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 1.7422281799954362,
+      "results": [
+        "ok. 54 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.20s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.6982072649989277
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 0.584140770995873
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 1.988013009991846
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 10.000829080003314,
+      "results": [
+        "ok. 68 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.17s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 69 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.60s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.139904531999491
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 0.15761385000951122
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 7.210311895003542
+    }
+  ],
+  "real_cases": [
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "checked_invalid_property_states": 2,
+      "qualified_unsupported_type_owners": 2,
+      "qualified_unsupported_families": [
+        "Catalogs",
+        "ChartsOfCharacteristicTypes"
+      ],
+      "metadata_pages_reads_and_notifications_equal": true,
+      "current_byte_ranges_and_source_hashes": true,
+      "non_bmp_crlf_prefix": true,
+      "editor_authority_preserved": true,
+      "corrected_model_clears_cause": true,
+      "close_restores_saved": true,
+      "unsupported_preserves_parsed_tree": true,
+      "parsed_descriptor_counts": [
+        5,
+        7
+      ],
+      "complete_semantic_analysis": false,
+      "preserved_full_composition": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "original_corpus_files_written": false,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 53344,
+      "wall_seconds": 0.3513953980000224,
+      "corpus": "C1",
+      "normalized_locale_trace_equal": true,
+      "tracked_original_files": 5,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_unchanged": true,
+      "temporary_project_removed": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "checked_invalid_property_states": 2,
+      "qualified_unsupported_type_owners": 2,
+      "qualified_unsupported_families": [
+        "Catalogs",
+        "ChartsOfCharacteristicTypes"
+      ],
+      "metadata_pages_reads_and_notifications_equal": true,
+      "current_byte_ranges_and_source_hashes": true,
+      "non_bmp_crlf_prefix": true,
+      "editor_authority_preserved": true,
+      "corrected_model_clears_cause": true,
+      "close_restores_saved": true,
+      "unsupported_preserves_parsed_tree": true,
+      "parsed_descriptor_counts": [
+        5,
+        7
+      ],
+      "complete_semantic_analysis": false,
+      "preserved_full_composition": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "original_corpus_files_written": false,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 53512,
+      "wall_seconds": 0.3101243999990402,
+      "corpus": "C1",
+      "normalized_locale_trace_equal": true,
+      "tracked_original_files": 5,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_unchanged": true,
+      "temporary_project_removed": true
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "checked_invalid_property_states": 2,
+      "qualified_unsupported_type_owners": 0,
+      "qualified_unsupported_families": [],
+      "metadata_pages_reads_and_notifications_equal": true,
+      "current_byte_ranges_and_source_hashes": true,
+      "non_bmp_crlf_prefix": true,
+      "editor_authority_preserved": true,
+      "corrected_model_clears_cause": true,
+      "close_restores_saved": true,
+      "unsupported_preserves_parsed_tree": true,
+      "parsed_descriptor_counts": [],
+      "complete_semantic_analysis": false,
+      "preserved_full_composition": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "original_corpus_files_written": false,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 173192,
+      "wall_seconds": 0.7859477589954622,
+      "corpus": "C2",
+      "normalized_locale_trace_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_unchanged": true,
+      "temporary_project_removed": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "checked_invalid_property_states": 2,
+      "qualified_unsupported_type_owners": 0,
+      "qualified_unsupported_families": [],
+      "metadata_pages_reads_and_notifications_equal": true,
+      "current_byte_ranges_and_source_hashes": true,
+      "non_bmp_crlf_prefix": true,
+      "editor_authority_preserved": true,
+      "corrected_model_clears_cause": true,
+      "close_restores_saved": true,
+      "unsupported_preserves_parsed_tree": true,
+      "parsed_descriptor_counts": [],
+      "complete_semantic_analysis": false,
+      "preserved_full_composition": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "original_corpus_files_written": false,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 173724,
+      "wall_seconds": 0.7563625089969719,
+      "corpus": "C2",
+      "normalized_locale_trace_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_unchanged": true,
+      "temporary_project_removed": true
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "checked_invalid_property_states": 2,
+      "qualified_unsupported_type_owners": 0,
+      "qualified_unsupported_families": [],
+      "metadata_pages_reads_and_notifications_equal": true,
+      "current_byte_ranges_and_source_hashes": true,
+      "non_bmp_crlf_prefix": true,
+      "editor_authority_preserved": true,
+      "corrected_model_clears_cause": true,
+      "close_restores_saved": true,
+      "unsupported_preserves_parsed_tree": true,
+      "parsed_descriptor_counts": [],
+      "complete_semantic_analysis": false,
+      "preserved_full_composition": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "original_corpus_files_written": false,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 197092,
+      "wall_seconds": 0.8890515439998126,
+      "corpus": "C3",
+      "normalized_locale_trace_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_unchanged": true,
+      "temporary_project_removed": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "checked_invalid_property_states": 2,
+      "qualified_unsupported_type_owners": 0,
+      "qualified_unsupported_families": [],
+      "metadata_pages_reads_and_notifications_equal": true,
+      "current_byte_ranges_and_source_hashes": true,
+      "non_bmp_crlf_prefix": true,
+      "editor_authority_preserved": true,
+      "corrected_model_clears_cause": true,
+      "close_restores_saved": true,
+      "unsupported_preserves_parsed_tree": true,
+      "parsed_descriptor_counts": [],
+      "complete_semantic_analysis": false,
+      "preserved_full_composition": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "original_corpus_files_written": false,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 196880,
+      "wall_seconds": 0.869402918004198,
+      "corpus": "C3",
+      "normalized_locale_trace_equal": true,
+      "tracked_original_files": 3,
+      "tracked_original_bytes_unchanged": true,
+      "copied_payload_unchanged": true,
+      "temporary_project_removed": true
+    }
+  ],
+  "limits": {
+    "new_bsl_sources_tested": false,
+    "platform_runtime_tested": false,
+    "real_vscode_client_tested": false,
+    "os_watcher_tested": false,
+    "complete_semantics": false,
+    "all_ide_edits": false,
+    "global_heap_rss_budget": false,
+    "explorer_integration": false
+  }
+}

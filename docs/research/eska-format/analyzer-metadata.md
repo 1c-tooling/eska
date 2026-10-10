@@ -93,7 +93,9 @@ UUID каждого успешного открытия процесса; вто
 раздельно. Неполнота, unsupported/invalid projection и quota refusal остаются
 явными. Неудачный refresh заменяет прежнюю модель; результат не возвращает
 старые свойства или успешно пустое дерево. После исправления нужен новый refresh.
-`read` сам не повторяет failed-чтение.
+`read` сам не повторяет failed-чтение. [Подробная причина ошибки адаптера](analyzer-adapter-issues.md)
+содержит отдельный machine tag и исходное имя свойства/QName; она одинакова
+в страницах владельцев, чтении и уведомлениях текущего ввода.
 
 Metadata DTO содержит логические ID, kind/name/UUID/parent/children, synonyms,
 typed properties, references и parse issues по каждому native descriptor.
@@ -124,7 +126,8 @@ composition и ядро не входят в этот wire cap.
 BSL-текст поступает через document sync или lazy-чтение для диагностики.
 Отмена активной syntax-диагностики и её deadline подключены; полная семантика ещё не готова.
 Состав неизменяем до restart; structural changes manifest/configuration требуют
-перезапуска. Watcher и multi-project host пока не подключены.
+перезапуска. [Регистрация saved watcher](analyzer-saved-watcher.md) уже подключена
+в сервере; настоящий watcher клиента и multi-project host ещё не приняты.
 
 ## Реальные проверки
 
