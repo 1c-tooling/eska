@@ -97,6 +97,12 @@ pub fn provider(params: &Value) -> Value {
     }
 }
 
+/// The standard provider and its local proof contract are advertised together after authorization.
+pub fn advertise(result: &mut Value, params: &Value) {
+    result["capabilities"]["renameProvider"] = provider(params);
+    result["capabilities"]["experimental"]["eska"]["localRename"] = capability();
+}
+
 /// Rename scope is intrinsic to the method binding; metadata coverage remains separate and partial.
 pub fn capability() -> Value {
     json!({"scope":"method-local-bsl","openDocumentsOnly":true,"versioned":true,

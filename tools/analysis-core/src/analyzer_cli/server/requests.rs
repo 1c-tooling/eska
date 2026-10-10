@@ -10,7 +10,8 @@ use serde_json::{Value, json};
 
 use super::super::{
     args::Cli, completion, definitions, diagnostics, document_symbols, documents, dto, hover,
-    language, metadata_locations, property_edits, protocol, references, rename, signature_help,
+    kernel_memory, language, metadata_locations, property_edits, protocol, references, rename,
+    signature_help,
 };
 use super::Server;
 use crate::{AnalysisSession, RequestCancellation};
@@ -52,6 +53,11 @@ impl Server<'_> {
             .as_mut()
             .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
         match method {
+            kernel_memory::METHOD => {
+                let params: kernel_memory::Params = protocol::params(value)?;
+                validate_snapshot(session, &self.session_id, &params.snapshot)?;
+                Ok(kernel_memory::report(session, &self.session_id))
+            }
             metadata_locations::METHOD => {
                 let params: metadata_locations::Params = protocol::params(value)?;
                 validate_snapshot(session, &self.session_id, &params.snapshot)?;

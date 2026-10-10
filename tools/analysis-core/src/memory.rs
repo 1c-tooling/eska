@@ -6,7 +6,7 @@ mod tests;
 
 use crate::{AnalysisSession, SessionRevision};
 
-/// `None` distinguishes an absent heap hook from a measured empty table.
+/// Names may repeat; `None` distinguishes an absent heap hook from a measured empty table.
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct KernelMemoryTable {
     pub name: &'static str,
@@ -46,7 +46,16 @@ impl AnalysisSession {
                 },
             )
             .collect::<Vec<_>>();
-        tables.sort_unstable_by_key(|table| table.name);
+        // Salsa reports value types, which do not uniquely identify its ingredient tables.
+        tables.sort_unstable_by_key(|table| {
+            (
+                table.name,
+                table.entries,
+                table.metadata_bytes,
+                table.field_stack_bytes,
+                table.heap_bytes,
+            )
+        });
         KernelMemoryReport {
             revision: self.revision(),
             tables_without_heap_hook: tables

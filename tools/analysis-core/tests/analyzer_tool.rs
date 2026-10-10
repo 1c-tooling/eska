@@ -16,6 +16,7 @@ mod diagnostic_queries;
 mod document_symbol_queries;
 mod document_sync;
 mod hover_queries;
+mod kernel_memory_queries;
 mod metadata_diagnostic_queries;
 mod metadata_locations;
 mod project_changes;

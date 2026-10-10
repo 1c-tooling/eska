@@ -4,10 +4,14 @@
 существующую статистику закреплённого ядра BSL через ту же сессию YAML/BSL.
 Платформа, XML, Git и IDE transport не участвуют. Production API сессии
 экспериментальный; ни CLI-параметры, ни JSON checker не изменены.
+С 2026-10-11 эти же оценки доступны через
+[`eska/analysis/memory`](analyzer-kernel-memory.md); прежний замер ниже относится
+к SDK и ограниченному рабочему набору.
 
 Для каждой таблицы возвращаются имя реализации, число живых entries,
 `metadata_bytes`, `field_stack_bytes` и `heap_bytes: Option<usize>`.
-Таблицы отсортированы по имени. `None` означает отсутствие heap hook,
+Имена могут повторяться. Таблицы отсортированы по полным значениям: name,
+entries, metadata_bytes, field_stack_bytes, heap_bytes. `None` означает отсутствие heap hook,
 `Some(0)` — нулевую оценку. В отчёте отдельно показаны число всех таблиц без
 hook, число живых таблиц без hook и сумма доступных heap estimates.
 Снимок сопровождается текущим `SessionRevision`.

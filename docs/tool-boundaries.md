@@ -146,6 +146,12 @@ module permission тем же resolver, что защищённый экспор
 возвращает один versioned WorkspaceEdit с UTF-16 ranges. Применение остаётся
 за клиентом; server не записывает BSL и не выдаёт частичный поиск за полный план.
 
+[Наблюдение памяти](research/eska-format/analyzer-kernel-memory.md) принадлежит
+общей сессии и переиспользует штатные table estimates ядра. IDE transport
+добавляет текущий snapshot и source quota, сохраняя неполноту heap и отсутствие
+RSS. Клиент запрашивает снимок явно; background sampler и новая cache policy
+не добавлены. Имена таблиц не становятся устойчивыми доменными идентификаторами.
+
 VS Code предоставляет [TreeDataProvider](https://code.visualstudio.com/api/extension-guides/tree-view).
 Расширение запрашивает нужные дочерние узлы, преобразует их в TreeItem, хранит
 раскрытие и выделение, показывает свойства и пользовательские команды. Состав,

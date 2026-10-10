@@ -7,9 +7,10 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    completion, diagnostics, document_symbols, documents, dto, edit_authority, hover, language,
-    metadata_locations, project_changes, property_edits, protocol, references, rename,
-    request_control, signature_help, stream, watched_files, watcher_registration,
+    completion, diagnostics, document_symbols, documents, dto, edit_authority, hover,
+    kernel_memory, language, metadata_locations, project_changes, property_edits, protocol,
+    references, rename, request_control, signature_help, stream, watched_files,
+    watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisSession, SessionOptions};
@@ -60,6 +61,7 @@ impl Server<'_> {
                 "cancellableMethods":request_control::METHODS,"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
                 "requestTimeoutSeconds":self.cli.timeout_seconds,
                 "languageMethods":language::METHODS,
+                "kernelMemory":kernel_memory::capability(),
                 "analysis":diagnostics::availability(&settings),
                 "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT, project_changes::EVENT, watcher_registration::EVENT],
                 "watchedFiles":watched_files::capabilities(watcher.is_some()),
@@ -81,9 +83,7 @@ impl Server<'_> {
             "workspaceDiagnostics":false, "workDoneProgress":false});
         if settings.is_ok() {
             if edit_plans.is_some() {
-                result["capabilities"]["renameProvider"] = rename::provider(params);
-                result["capabilities"]["experimental"]["eska"]["localRename"] =
-                    rename::capability();
+                rename::advertise(&mut result, params);
             }
             result["capabilities"]["completionProvider"] =
                 json!({"resolveProvider":false,"triggerCharacters":["."],"workDoneProgress":false});

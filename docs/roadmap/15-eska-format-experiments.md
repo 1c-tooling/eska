@@ -1277,6 +1277,25 @@ Policy/память всей исходной конфигурации, реал
 этими сценариями не подтверждаются. Планы вне метода, полные модели/семантика,
 общий memory budget и Explorer ещё в работе; EF-18 — `IN_PROGRESS`.
 
+[Отчёт памяти сессии](../research/eska-format/analyzer-kernel-memory.md)
+подключает прежний SDK estimator к `eska/analysis/memory`. Params требуют
+текущий UUID/строковую revision; ответ сохраняет source quota и явно отделяет
+неполный heap estimate от недоступного RSS. Sampling не вычисляет queries,
+не загружает inputs и не меняет clock/кеши. Имена таблиц могут повторяться:
+порядок по полным значениям устраняет неоднозначность без объединения данных.
+Capability не зависит от accepted pin, BSL settings или query timeout;
+девять languageMethods и десять cancellableMethods не расширены.
+236 tool tests, все 19 tool/15 root gates и root 895/14 прошли.
+Normal graph прежний 206/214; release analyzer/checker — 50090504/46269312 bytes.
+Шесть процессов C1/C2/C3 RU/EN с полными composition headers и одним настоящим
+BSL input подтвердили 3006 изменений/поисков, 6012 Locations и 78 снимков.
+Machine reports совпали между локалями; 12 выбранных оригиналов и девять
+скопированных файлов сохранены, собственные проекты удалены. Native CLI
+проверил синтаксис трёх изменённых копий. Остальные владельцы оставались pending;
+память анализа всей конфигурации, 1С runtime и IDE-клиент здесь не проверялись.
+Общий memory budget, полные модели/семантика, остальные edits и Explorer
+ещё в работе; EF-18 остаётся `IN_PROGRESS`, очередь этапов не меняется.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

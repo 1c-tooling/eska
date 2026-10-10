@@ -9,6 +9,7 @@ mod documents;
 mod dto;
 mod edit_authority;
 mod hover;
+mod kernel_memory;
 mod language;
 mod markup;
 mod metadata_locations;

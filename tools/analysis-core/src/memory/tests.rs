@@ -53,6 +53,19 @@ fn memory_samples_do_not_evaluate_or_modify_current_input_and_trim_preserves_dia
             .any(|table| table.heap_bytes == Some(0))
     );
     assert_eq!(sample.revision, before.revision);
+    let mut independent = AnalysisSession::open(&root).unwrap();
+    independent
+        .load_module_saved(&module, independent.revision(), &InputRequest::default())
+        .unwrap();
+    independent
+        .module_diagnostics(
+            &module,
+            independent.revision(),
+            &config,
+            &QueryCancellation::default(),
+        )
+        .unwrap();
+    assert_eq!(sample, independent.kernel_memory());
     let resources = session.resources();
     session.trim_batch_caches();
     assert_eq!(session.revision(), before.revision);
