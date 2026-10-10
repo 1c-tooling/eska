@@ -13,6 +13,7 @@ use serde_json::{Value, json};
 
 use super::{Client, initialize, notification, request, snapshot, support};
 
+mod controls;
 mod fixture;
 use fixture::{OWNER, UUID};
 const METHOD: &str = "eska/metadata/preparePropertyEdit";

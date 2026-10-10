@@ -9,10 +9,10 @@ use serde_json::{Value, json};
 use crate::{AnalysisSession, CompletionItem, RequestCancellation, analysis_settings::Settings};
 
 use super::{
-    dto,
-    language::{self, Method},
+    dto, language,
     positions::Position,
     protocol,
+    request_control::{self, Method},
 };
 
 #[derive(Deserialize)]
@@ -69,18 +69,18 @@ pub fn pull(
         protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
     })?;
     let path = language::source_path(session, &params.text_document.uri)?;
-    let deadline = language::start(
+    let deadline = request_control::start(
         session,
         options.session_id,
-        Method::Completion,
+        Method::Language(language::Method::Completion),
         options.cancellation,
         options.timeout,
     )?;
     let result = analyze(session, &path, params.position, settings, options);
-    language::finish(
+    request_control::finish(
         session,
         options.session_id,
-        Method::Completion,
+        Method::Language(language::Method::Completion),
         &deadline,
         result,
     )

@@ -25,6 +25,12 @@ pub(super) struct Inventory {
 impl Inventory {
     /// Hash the entire chosen XML source tree without exclusions or guessed active objects.
     pub fn read(root: &Path) -> Result<Self, Error> {
+        Self::read_cancellable(root, &|| false)
+    }
+
+    /// A stopped verification never returns a partial inventory or skips required payloads.
+    pub fn read_cancellable(root: &Path, cancelled: &dyn Fn() -> bool) -> Result<Self, Error> {
+        check_cancelled(cancelled)?;
         if !fs::symlink_metadata(root)
             .map_err(|error| io(&error))?
             .file_type()
@@ -37,7 +43,9 @@ impl Inventory {
         let mut pending = vec![String::new()];
         let mut names = BTreeSet::new();
         while let Some(parent) = pending.pop() {
+            check_cancelled(cancelled)?;
             for entry in fs::read_dir(root.join(&parent)).map_err(|error| io(&error))? {
+                check_cancelled(cancelled)?;
                 let entry = entry.map_err(|error| io(&error))?;
                 let name = entry
                     .file_name()
@@ -56,7 +64,7 @@ impl Inventory {
                     directories.push(path.clone());
                     pending.push(path.as_str().into());
                 } else if kind.is_file() {
-                    let (bytes, sha256) = fingerprint(&root.join(path.as_path()))?;
+                    let (bytes, sha256) = fingerprint(&root.join(path.as_path()), cancelled)?;
                     files.insert(
                         path.clone(),
                         FileEntry {
@@ -73,6 +81,7 @@ impl Inventory {
         }
         directories.sort();
         let revision = revision(&files, &directories);
+        check_cancelled(cancelled)?;
         Ok(Self {
             files,
             directories,
@@ -88,13 +97,34 @@ pub(super) fn read_text(path: &Path) -> Result<String, Error> {
 
 /// A caller can tighten the source limit without weakening the format's hard bound.
 pub(super) fn read_text_limited(path: &Path, max_bytes: u64) -> Result<String, Error> {
+    read_text_cancellable(path, max_bytes, &|| false)
+}
+
+/// Read bounded text in chunks so a caller can stop before completing a large accepted blob.
+pub(super) fn read_text_cancellable(
+    path: &Path,
+    max_bytes: u64,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<String, Error> {
+    check_cancelled(cancelled)?;
     let max_bytes = max_bytes.min(MAX_TEXT_BYTES);
     let mut bytes = Vec::new();
-    fs::File::open(path)
+    let mut input = fs::File::open(path)
         .map_err(|error| io(&error))?
-        .take(max_bytes + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|error| io(&error))?;
+        .take(max_bytes + 1);
+    let mut chunk = [0_u8; 16 * 1024];
+    loop {
+        check_cancelled(cancelled)?;
+        let count = match input.read(&mut chunk) {
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            result => result.map_err(|error| io(&error))?,
+        };
+        if count == 0 {
+            break;
+        }
+        bytes.extend_from_slice(&chunk[..count]);
+    }
+    check_cancelled(cancelled)?;
     if bytes.len() as u64 > max_bytes {
         return Err(Error::root("source_document_too_large"));
     }
@@ -164,18 +194,33 @@ fn create_parent(path: &Path) -> Result<(), Error> {
 }
 
 /// Hash payloads without retaining binary resources in memory.
-fn fingerprint(path: &Path) -> Result<(u64, String), Error> {
+fn fingerprint(path: &Path, cancelled: &dyn Fn() -> bool) -> Result<(u64, String), Error> {
+    check_cancelled(cancelled)?;
     let mut input = fs::File::open(path).map_err(|error| io(&error))?;
     let mut digest = Sha256::new();
     let mut bytes = [0_u8; 16 * 1024];
     let mut length = 0;
     loop {
-        let count = input.read(&mut bytes).map_err(|error| io(&error))?;
+        check_cancelled(cancelled)?;
+        let count = match input.read(&mut bytes) {
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            result => result.map_err(|error| io(&error))?,
+        };
         if count == 0 {
+            check_cancelled(cancelled)?;
             return Ok((length, hex(&digest.finalize())));
         }
         digest.update(&bytes[..count]);
         length += count as u64;
+    }
+}
+
+/// Only an explicit caller stop has this code; ordinary storage failures retain their old codes.
+pub(super) fn check_cancelled(cancelled: &dyn Fn() -> bool) -> Result<(), Error> {
+    if cancelled() {
+        Err(Error::root("source_read_cancelled"))
+    } else {
+        Ok(())
     }
 }
 

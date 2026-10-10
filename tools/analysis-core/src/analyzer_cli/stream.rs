@@ -21,8 +21,8 @@ use crate::RequestCancellation;
 
 use super::{
     documents,
-    language::{self, Method},
     protocol::{self, Id, Message},
+    request_control::{self, Method},
 };
 
 pub const MAX_QUEUED_MESSAGES: usize = 4;
@@ -91,7 +91,7 @@ struct Cancel {
 struct Requests(Mutex<BTreeMap<Id, RequestCancellation>>);
 
 impl Requests {
-    /// Only current language requests own controls; unknown/completed IDs cannot poison reuse.
+    /// Current supported requests own controls; unknown/completed IDs cannot poison reuse.
     fn track(self: &Arc<Self>, message: Message) -> Envelope {
         let Some(id) = &message.id else {
             return Envelope::Message(message, None);
@@ -143,7 +143,7 @@ pub struct TrackedRequest {
     id: Id,
     requests: Arc<Requests>,
     pub control: RequestCancellation,
-    pub method: language::Method,
+    pub method: request_control::Method,
 }
 
 impl Drop for TrackedRequest {

@@ -2,10 +2,11 @@
 
 `eska-analyzer` принимает стандартный
 [`$/cancelRequest`](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/specification.md)
-для `textDocument/diagnostic` и [textDocument/completion](analyzer-completion.md).
+для `textDocument/diagnostic`, [textDocument/completion](analyzer-completion.md)
+и [eska/metadata/preparePropertyEdit](analyzer-property-cancellation.md).
 Initialize объявляет `requestCancellation=true`,
-`cancellableMethods=[textDocument/diagnostic,textDocument/completion]` и `maxQueuedMessages=4` внутри
-`experimental.eska`. Metadata requests, initialize и document notifications
+`cancellableMethods=[textDocument/diagnostic,textDocument/completion,eska/metadata/preparePropertyEdit]`
+и `maxQueuedMessages=4` внутри `experimental.eska`. Остальные metadata requests, initialize и document notifications
 не объявлены отменяемыми. Прежний IDE protocol не изменён.
 
 ## Владение и порядок
@@ -22,10 +23,10 @@ Initialize объявляет `requestCancellation=true`,
 обычным сообщением задержится до освобождения места. Отдельной гарантии времени
 реакции при перегруженном входе нет.
 
-ID хранится только на время конкретного языкового request. Числовые и строковые
+ID хранится только на время конкретного отменяемого request. Числовые и строковые
 ID различаются; Unicode сохраняется. Отмена неизвестного или завершённого ID
 игнорируется, не влияет на будущий запрос с таким же ID. Повторный текущий
-ID любой из двух операций отклоняется как `request_id_in_use`. Перед началом записи ответа guard удаляет ID.
+ID любой из трёх операций отклоняется как `request_id_in_use`. Перед началом записи ответа guard удаляет ID.
 
 `RequestCancellation` общий для checker и server: он связывает прежний сигнал
 ограниченного чтения и `QueryCancellation` текущего kernel handle. Это замена
@@ -55,6 +56,10 @@ transient saved-чтение. Missing, binary и остальные ошибки
 не удерживает CLI от завершения.
 
 ## Проверки
+
+Замеры первой отмены диагностики зафиксированы на commit `80e0e79`.
+Последующие проверки приведены в [completion](analyzer-completion.md) и
+[отмене property plan](analyzer-property-cancellation.md).
 
 29 unit/file, 22 analyzer process и 9 checker process tests прошли. Проверены
 signal handoff без задержек, ID lifetime/reuse, invalid cancellation,

@@ -1,7 +1,8 @@
 # Лимит времени диагностики и автодополнения
 
 `eska-analyzer --timeout-seconds 300` задаёт кооперативный лимит одного
-`textDocument/diagnostic` или [textDocument/completion](analyzer-completion.md).
+`textDocument/diagnostic`, [textDocument/completion](analyzer-completion.md) или
+[eska/metadata/preparePropertyEdit](analyzer-property-cancellation.md).
 Значение по умолчанию — 300 секунд; initialize
 объявляет его как `experimental.eska.requestTimeoutSeconds`. Ноль останавливает
 проверку до lazy-чтения BSL. Metadata requests и document notifications остаются

@@ -201,8 +201,29 @@ impl AcceptedBase {
     /// # Errors
     /// Returns missing, corrupt, untrusted or unsupported baseline errors without enabling edits.
     pub fn open(root: &Path, expected: &AcceptedRef) -> Result<Self, Error> {
-        let inventory =
-            Inventory::read(root).map_err(|_| Error::root("source_baseline_missing"))?;
+        Self::open_cancellable(root, expected, &|| false)
+    }
+
+    /// Verify the same complete base with caller-owned cooperative cancellation, without caching.
+    ///
+    /// The stop predicate is checked between filesystem entries, 16 KiB read chunks and parse
+    /// stages. An individual blocking read or parse cannot be interrupted by this interface.
+    ///
+    /// # Errors
+    /// Returns `source_read_cancelled` on a caller stop, or the same storage/trust errors as `open`.
+    /// No partly verified base escapes on any failure.
+    pub fn open_cancellable(
+        root: &Path,
+        expected: &AcceptedRef,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<Self, Error> {
+        let inventory = Inventory::read_cancellable(root, cancelled).map_err(|error| {
+            if error.code == "source_read_cancelled" {
+                error
+            } else {
+                Error::root("source_baseline_missing")
+            }
+        })?;
         let path = SourcePath::parse(BASE_MANIFEST)?;
         let entry = inventory
             .files
@@ -211,12 +232,17 @@ impl AcceptedBase {
         if entry.sha256 != expected.sha256 {
             return Err(Error::root("source_baseline_untrusted"));
         }
-        let text = files::read_text(&root.join(BASE_MANIFEST))?;
+        let text = files::read_text_cancellable(
+            &root.join(BASE_MANIFEST),
+            files::MAX_TEXT_BYTES,
+            cancelled,
+        )?;
         if files::hex(&Sha256::digest(text.as_bytes())) != expected.sha256 {
             return Err(Error::root("source_baseline_untrusted"));
         }
         let manifest: Manifest =
             serde_json::from_str(&text).map_err(|_| Error::root("source_baseline_corrupt"))?;
+        files::check_cancelled(cancelled)?;
         if manifest.schema_version != super::SCHEMA_VERSION
             || manifest.rules_version != super::RULES_VERSION
             || manifest.profile != super::PROFILE
@@ -230,13 +256,15 @@ impl AcceptedBase {
             .map(|file| (&file.path, file))
             .collect();
         let package = Package::from_snapshot(snapshot, |path| {
-            read_blob_entry(
+            read_blob_entry_cancellable(
                 root,
                 entries
                     .get(path)
                     .ok_or_else(|| Error::root("source_baseline_blob_missing"))?,
+                cancelled,
             )
         })?;
+        files::check_cancelled(cancelled)?;
         let root_document = package
             .documents
             .get(&SourcePath::parse("Configuration.xml")?)
@@ -248,27 +276,31 @@ impl AcceptedBase {
         }
         let objects = document_ownership(&package.documents)?;
         let policy = read_policy(&package, |path| {
-            read_blob_entry(
+            read_blob_entry_cancellable(
                 root,
                 package
                     .snapshot
                     .files
                     .get(path)
                     .ok_or_else(|| Error::root("source_baseline_blob_missing"))?,
+                cancelled,
             )
         })?;
+        files::check_cancelled(cancelled)?;
         if supplier_payloads(&package, policy.as_ref())? != manifest.suppliers {
             return Err(Error::root("source_baseline_corrupt"));
         }
         let mut frozen = BTreeSet::new();
         for uuid in &manifest.frozen {
+            files::check_cancelled(cancelled)?;
             if !objects.contains_key(&uuid.key()) || !frozen.insert(uuid.key()) {
                 return Err(Error::root("source_baseline_corrupt"));
             }
         }
-        if Inventory::read(root)? != inventory {
+        if Inventory::read_cancellable(root, cancelled)? != inventory {
             return Err(Error::root("source_input_changed"));
         }
+        files::check_cancelled(cancelled)?;
         Ok(Self {
             root: fs::canonicalize(root).map_err(|error| files::io(&error))?,
             reference: expected.clone(),
@@ -525,13 +557,22 @@ fn ownership(
 }
 
 /// Text parsing uses the exact pinned bytes, even if a blob changes after the first inventory.
-fn read_blob_entry(root: &Path, file: &FileEntry) -> Result<String, Error> {
-    let text = files::read_text(&root.join(blob_path(&file.sha256)?.as_path()))?;
+fn read_blob_entry_cancellable(
+    root: &Path,
+    file: &FileEntry,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<String, Error> {
+    let text = files::read_text_cancellable(
+        &root.join(blob_path(&file.sha256)?.as_path()),
+        files::MAX_TEXT_BYTES,
+        cancelled,
+    )?;
     if text.len() as u64 != file.bytes
         || files::hex(&Sha256::digest(text.as_bytes())) != file.sha256
     {
         return Err(Error::root("source_baseline_corrupt"));
     }
+    files::check_cancelled(cancelled)?;
     Ok(text)
 }
 

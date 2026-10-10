@@ -855,8 +855,21 @@ Rustdoc/release и полная root matrix прошли. Root — 888 passed / 
 В C1 RU/EN подтверждены разрешённый Comment, настоящий supplier restriction,
 stale/version/hash, no-op, didChange и восстановление после close; bytes сохранены.
 Каждый план пока полностью проверяет базу (3,7–4,2 с на C1), включая no-op/refusal.
-Адресная policy verification, управление временем этого IO, все IDE edits,
-полный memory budget и полнота анализа остаются в работе. EF-18 — `IN_PROGRESS`.
+На commit `39621b0` адресная policy verification, управление временем этого IO,
+все IDE edits, полный memory budget и полнота анализа оставались в работе.
+
+[Отмена проверки базы при property plan](../research/eska-format/analyzer-property-cancellation.md)
+добавляет checkpoints полного AcceptedBase reader и общий control/deadline
+для трёх transport methods. Preflight сохранён; partial/untrusted base никогда
+не разрешает plan. Отказ сохраняет текущие editor bytes/hash/version/revision;
+следующий запрос и ID reuse работают без нового процесса. Saved build/CLI не
+получают таймер автоматически. 35 unit/file, 35 analyzer process, 9 checker process
+и все tool gates прошли; root — 889 passed / 14 прежних ignored, вся matrix прошла.
+В C1 RU/EN cancel после подтверждённых 12–15 MB чтения получил ответ менее 1 ms;
+deadline 1 s — за 1,01 s. Нормальный повторный plan проверил базу за 3,7–3,8 s.
+Это локальные замеры; blocked read/parse/очередь не дают гарантии задержки.
+Адресная policy verification, все IDE edits, полный memory budget и полнота
+анализа остаются в работе. EF-18 — `IN_PROGRESS`.
 
 ## EF-19 Самостоятельный инструмент VCS
 

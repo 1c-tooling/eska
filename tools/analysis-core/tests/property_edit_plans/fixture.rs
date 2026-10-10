@@ -11,8 +11,22 @@ pub const UUID: &str = "20000000-0000-4000-8000-000000000001";
 
 /// A separately pinned base shares the same source fixture, with an optional accepted freeze.
 pub fn project(frozen: bool) -> (support::TestDirectory, PathBuf, AcceptedRef) {
+    project_with_payload(frozen, 0)
+}
+
+/// A large declared opaque payload makes actual baseline IO stoppable without growing wire input.
+pub fn project_with_payload(
+    frozen: bool,
+    payload_bytes: u64,
+) -> (support::TestDirectory, PathBuf, AcceptedRef) {
     let (directory, root) = support::project("// Saved module.\n", false);
     let native = directory.0.join("native");
+    if payload_bytes != 0 {
+        fs::File::create(native.join("Payload.bin"))
+            .unwrap()
+            .set_len(payload_bytes)
+            .unwrap();
+    }
     let path = native.join("CommonModules/Tools.xml");
     fs::write(
         &path,

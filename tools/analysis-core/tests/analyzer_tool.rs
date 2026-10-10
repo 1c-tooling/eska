@@ -228,9 +228,9 @@ fn help_and_version_are_localized_and_do_not_open_a_project() {
         assert!(help.contains("--max-retained-source-bytes"));
         assert!(help.contains("--timeout-seconds"));
         assert!(help.contains(if lang == "ru-RU" {
-            "ноль сразу останавливает проверку"
+            "ноль сразу останавливает операцию"
         } else {
-            "zero stops the check immediately"
+            "zero stops the operation immediately"
         }));
         let version = Command::new(env!("CARGO_BIN_EXE_eska-analyzer"))
             .current_dir(&directory.0)

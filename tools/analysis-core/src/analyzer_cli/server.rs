@@ -15,7 +15,8 @@ use serde_json::{Value, json};
 use crate::{AnalysisSession, RequestCancellation, SessionOptions, analysis_settings::Settings};
 
 use super::{
-    args::Cli, completion, diagnostics, documents, dto, language, property_edits, protocol, stream,
+    args::Cli, completion, diagnostics, documents, dto, language, property_edits, protocol,
+    request_control, stream,
 };
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -136,7 +137,7 @@ impl Server<'_> {
         fields.remove("result");
         fields.insert(
             "error".into(),
-            language::stopped(session, &self.session_id, request.method, reason),
+            request_control::stopped(session, &self.session_id, request.method, reason),
         );
         Ok(true)
     }
@@ -251,7 +252,7 @@ impl Server<'_> {
                 "sourceFormat":"eska", "scope":"selected-project",
                 "metadata":{"owners":true, "read":true, "refresh":true},
                 "documentSync":true, "languageQueries":true, "requestCancellation":true,
-                "cancellableMethods":language::METHODS,"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
+                "cancellableMethods":request_control::METHODS,"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
                 "requestTimeoutSeconds":self.cli.timeout_seconds,
                 "languageMethods":language::METHODS,
                 "analysis":diagnostics::availability(&settings),
@@ -326,13 +327,21 @@ impl Server<'_> {
                 .as_ref()
                 .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
             validate_snapshot(session, &self.session_id, &params.snapshot)?;
+            let cancellation = cancellation
+                .ok_or_else(|| protocol::error_value(-32603, "request_invariant", Value::Null))?;
             return self
                 .edit_plans
                 .as_ref()
                 .ok_or_else(|| {
                     protocol::error_value(-32000, "source_edit_plans_disabled", Value::Null)
                 })?
-                .prepare(session, &self.session_id, &params);
+                .prepare(
+                    session,
+                    &self.session_id,
+                    &params,
+                    cancellation,
+                    Duration::from_secs(self.cli.timeout_seconds),
+                );
         }
         let session = self
             .session

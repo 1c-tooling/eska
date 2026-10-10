@@ -1,4 +1,5 @@
 use std::{
+    cell::Cell,
     collections::BTreeMap,
     fmt::Write,
     fs,
@@ -53,6 +54,61 @@ pub(super) fn tree(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
     let mut result = BTreeMap::new();
     visit(root, root, &mut result);
     result
+}
+
+/// Early and late cancellation cannot grant permissions, alter storage or poison another open.
+#[test]
+fn accepted_verification_cancellation_keeps_trust_and_readonly_recovery() {
+    let test = TestDir::new();
+    let source = test.0.join("source");
+    import_designer(&fixture(&test.0), &source).unwrap();
+    let root = test.0.join("accepted");
+    let reference = accept_source(&source, &root, &[]).unwrap();
+    let before = tree(&root);
+    let absent = test.0.join("absent");
+    assert_eq!(
+        AcceptedBase::open_cancellable(&absent, &reference, &|| true)
+            .err()
+            .unwrap()
+            .code,
+        "source_read_cancelled"
+    );
+    assert_eq!(
+        AcceptedBase::open(&absent, &reference).err().unwrap().code,
+        "source_baseline_missing"
+    );
+    let observed = Cell::new(0);
+    let completed = AcceptedBase::open_cancellable(&root, &reference, &|| {
+        observed.set(observed.get() + 1);
+        false
+    })
+    .unwrap();
+    let expected = completed.permission(&uuid('2'), Operation::Module);
+    for stop_at in [1, observed.get() / 2, observed.get()] {
+        let checked = Cell::new(0);
+        let error = AcceptedBase::open_cancellable(&root, &reference, &|| {
+            checked.set(checked.get() + 1);
+            checked.get() >= stop_at
+        })
+        .err()
+        .unwrap();
+        assert_eq!(error.code, "source_read_cancelled");
+        assert_eq!(tree(&root), before);
+        let recovered = AcceptedBase::open(&root, &reference).unwrap();
+        assert_eq!(
+            recovered.permission(&uuid('2'), Operation::Module).reason,
+            expected.reason
+        );
+    }
+    let manifest = root.join("accepted.json");
+    fs::write(&manifest, b"corrupted independently pinned manifest").unwrap();
+    assert_eq!(
+        AcceptedBase::open_cancellable(&root, &reference, &|| false)
+            .err()
+            .unwrap()
+            .code,
+        "source_baseline_untrusted"
+    );
 }
 
 #[test]

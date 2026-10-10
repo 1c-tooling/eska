@@ -48,7 +48,7 @@ version, размер и SHA-256 текста. Invalid/pending input, закры
 другие bytes или версия не дают правку. Fallback на сохранённый файл запрещён.
 Запрос ограничен общим wire limit 4 MiB, включая JSON-экранирование.
 
-Затем `AcceptedBase::open` заново проверяет независимо закреплённый manifest
+Затем `AcceptedBase::open_cancellable` заново проверяет независимо закреплённый manifest
 и required blobs. UUID, owner и ancestry берутся из принятой базы. Политика
 supplier и дополнительная freeze ESKA сохраняются; Name/создание/удаление/
 rename/move не включены. Поддержаны только существующие typed Comment, Version
@@ -84,12 +84,15 @@ Closed/unavailable input, disabled plans, policy/value/base failures имеют
 `-32000` и структурированный code/location. Params/schema errors — `-32602`.
 Ни один отказ не возвращает пустой успешный plan и не заменяет текущую модель.
 
-Метод пока не входит в cancellableMethods и не использует language deadline:
-полная проверка базы не имеет кооперативных checkpoint. Очередь остаётся общей
-и ограниченной. Адресная проверка доверия policy reader и управление временем
-этого IO требуют отдельного следующего компонента; кеш без проверки не добавлен.
+Метод входит в cancellableMethods и использует общий `--timeout-seconds`.
+[Отмена проверки базы](analyzer-property-cancellation.md) описывает checkpoints,
+ошибки остановки и границы timer. Адресная проверка доверия policy reader
+остаётся в работе; кеш без проверки не добавлен.
 
 ## Проверки
+
+Этот раздел и машинный отчёт фиксируют первый plan на commit `39621b0`.
+Последующие проверки отмены и размеры приведены в [отдельном отчёте](analyzer-property-cancellation.md).
 
 35 unit/file, 33 analyzer process и 9 checker process tests прошли вместе с
 19 gates tool feature matrix, Rustdoc и release builds. Root: 888 passed /

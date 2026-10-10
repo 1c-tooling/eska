@@ -9,6 +9,7 @@ mod language;
 mod positions;
 mod property_edits;
 mod protocol;
+mod request_control;
 mod server;
 mod stream;
 mod text_edits;

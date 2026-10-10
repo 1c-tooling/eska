@@ -125,14 +125,15 @@ close перечитывает файл. `textDocument/diagnostic` исполь�
 возвращают versioned WorkspaceEdit для ready открытого документа при независимо
 закреплённой базе и client documentChanges support. План не записывает файл и
 не меняет input; он использует общий редактор project core. Полная проверка базы
-выполняется на каждый запрос; этот custom метод пока без отмены/deadline.
+выполняется на каждый запрос; [отмена и deadline](../../docs/research/eska-format/analyzer-property-cancellation.md)
+останавливают её кооперативно без потери текущего ввода.
 [`$/cancelRequest`](../../docs/research/eska-format/analyzer-cancellation.md) отменяет diagnostic/completion query
-через отдельный input thread; один worker сохраняет владение YAML/BSL и порядок изменений.
+и property plan через отдельный input thread; один worker сохраняет владение YAML/BSL и порядок изменений.
 Общий `RequestCancellation` заменяет неопубликованный `batch::BatchCancellation`.
 Один внутренний [таймер](../../docs/research/eska-format/analyzer-deadline.md) обслуживает
-server и checker. Лимит языкового запроса по умолчанию 300 секунд; timeout pull
-diagnostics возвращает `-32802` с `retriggerRequest=false`, timeout completion —
-`-32000` без этого поля; клиентская отмена обеих операций — `-32800`.
+server и checker. Лимит языкового запроса и property plan по умолчанию 300 секунд; timeout pull
+diagnostics возвращает `-32802` с `retriggerRequest=false`, timeout completion/plan —
+`-32000` без этого поля; клиентская отмена всех трёх операций — `-32800`.
 Из установленного комплекта бинарник не запускается автоматически.
 [Протокол, границы и проверка C1/C2/C3](../../docs/research/eska-format/analyzer-metadata.md).
 [Синхронизация документов и события состояния](../../docs/research/eska-format/analyzer-documents.md).

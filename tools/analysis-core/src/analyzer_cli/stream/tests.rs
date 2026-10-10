@@ -37,6 +37,14 @@ fn unknown_completed_and_reused_ids_do_not_poison_other_requests() {
     };
     assert_eq!(duplicate["id"], 7);
     assert_eq!(duplicate["error"]["data"]["kind"], "request_id_in_use");
+    let Envelope::Error(duplicate) = requests.track(message(
+        Some(json!(7)),
+        super::super::property_edits::METHOD,
+        &Value::Null,
+    )) else {
+        panic!("property plan reused an in-flight language ID");
+    };
+    assert_eq!(duplicate["error"]["data"]["kind"], "request_id_in_use");
     let Envelope::Message(_, Some(other)) = requests.track(message(
         Some(json!("7")),
         "textDocument/completion",
@@ -45,7 +53,10 @@ fn unknown_completed_and_reused_ids_do_not_poison_other_requests() {
         panic!("missing request");
     };
     requests.cancel(&Id::Number(7));
-    assert!(matches!(other.method, Method::Completion));
+    assert!(matches!(
+        other.method,
+        Method::Language(super::super::language::Method::Completion)
+    ));
     assert!(first.control.input.is_cancelled());
     assert!(first.control.query.is_cancelled());
     assert!(!other.control.is_cancelled());
@@ -60,6 +71,19 @@ fn unknown_completed_and_reused_ids_do_not_poison_other_requests() {
     };
     assert!(!reused.control.is_cancelled());
     drop(reused);
+    let Envelope::Message(_, Some(plan)) = requests.track(message(
+        Some(json!(7)),
+        super::super::property_edits::METHOD,
+        &Value::Null,
+    )) else {
+        panic!("property plan did not receive a control");
+    };
+    assert!(matches!(plan.method, Method::PropertyEdit));
+    assert!(!plan.control.is_cancelled());
+    requests.cancel(&Id::Number(7));
+    assert!(plan.control.is_cancelled());
+    assert!(!other.control.is_cancelled());
+    drop(plan);
     drop(other);
     assert!(requests.0.lock().unwrap().is_empty());
 }

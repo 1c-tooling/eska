@@ -1,6 +1,6 @@
 //! A selected independently pinned base enables read-only plans for versioned open YAML documents.
 
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Duration};
 
 use eska::{
     project_core::{
@@ -15,9 +15,9 @@ use eska::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use crate::{AnalysisSession, PropertyEditError};
+use crate::{AnalysisSession, PropertyEditError, RequestCancellation};
 
-use super::{documents, dto, protocol, text_edits};
+use super::{documents, dto, protocol, request_control, text_edits};
 
 pub const METHOD: &str = "eska/metadata/preparePropertyEdit";
 
@@ -75,6 +75,8 @@ impl Plans {
         session: &AnalysisSession,
         id: &str,
         params: &Params,
+        cancellation: &RequestCancellation,
+        timeout: Duration,
     ) -> Result<Value, Value> {
         let path = SourcePath::parse(&params.source)
             .map_err(|error| protocol::error_value(-32602, error.code, Value::Null))?;
@@ -86,23 +88,31 @@ impl Plans {
                 &params.text,
             )
             .map_err(error_value)?;
-        let base = AcceptedBase::open(&self.root, &self.reference).map_err(|error| {
-            protocol::error_value(-32000, error.code, json!({"location":error.location}))
-        })?;
-        let plan = input
-            .prepare(&base, &params.uuid, params.property, params.value.clone())
-            .map_err(error_value)?;
-        let edits = text_edits::between(&params.text, plan.preview.updated())?;
-        let uri = url::Url::from_file_path(session.root().join(plan.preview.path().as_path()))
-            .map_err(|()| {
-                protocol::error_value(-32603, "path_encoding_unsupported", Value::Null)
+        let method = request_control::Method::PropertyEdit;
+        let deadline = request_control::start(session, id, method, cancellation, timeout)?;
+        let result = (|| {
+            let base = AcceptedBase::open_cancellable(&self.root, &self.reference, &|| {
+                cancellation.is_cancelled()
+            })
+            .map_err(|error| {
+                protocol::error_value(-32000, error.code, json!({"location":error.location}))
             })?;
-        Ok(
-            json!({"snapshot":dto::snapshot(session,id),"source":plan.preview.path(),
+            let plan = input
+                .prepare(&base, &params.uuid, params.property, params.value.clone())
+                .map_err(error_value)?;
+            let edits = text_edits::between(&params.text, plan.preview.updated())?;
+            let uri = url::Url::from_file_path(session.root().join(plan.preview.path().as_path()))
+                .map_err(|()| {
+                    protocol::error_value(-32603, "path_encoding_unsupported", Value::Null)
+                })?;
+            Ok(
+                json!({"snapshot":dto::snapshot(session,id),"source":plan.preview.path(),
             "source_sha256":plan.source_sha256,"document_version":plan.document_version,
             "accepted_base":plan.preview.baseline(),"unchanged":plan.preview.is_empty(),
             "workspace_edit":{"documentChanges":[{"textDocument":{"uri":uri.as_str(),"version":params.document_version},"edits":edits}]}}),
-        )
+            )
+        })();
+        request_control::finish(session, id, method, &deadline, result)
     }
 }
 

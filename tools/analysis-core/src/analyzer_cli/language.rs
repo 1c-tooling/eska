@@ -1,6 +1,4 @@
-//! Language methods share bounded input, current query errors and a first-cause cooperative timer.
-
-use std::time::Duration;
+//! Language methods share declared module preflight, lazy reads and current kernel failures.
 
 use eska::{
     analysis_core::{InputFailure, InputOrigin, InputRequest},
@@ -9,11 +7,7 @@ use eska::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use crate::{
-    AnalysisSession, ModuleFailure, ModuleState, QueryError, RequestCancellation,
-    cancellation::RequestStop,
-    deadline::{Deadline, DeadlineError},
-};
+use crate::{AnalysisSession, ModuleFailure, ModuleState, QueryError};
 
 use super::{documents, dto, protocol};
 
@@ -26,7 +20,7 @@ pub enum Method {
 }
 
 impl Method {
-    /// Only supported language requests receive transport cancellation controls.
+    /// Parse the two supported language queries independently of property-plan requests.
     pub fn parse(name: &str) -> Option<Self> {
         match name {
             "textDocument/diagnostic" => Some(Self::Diagnostic),
@@ -77,64 +71,6 @@ pub fn load_module(
             .map_err(|error| documents::request_error(&error))?;
     }
     Ok(())
-}
-
-/// Zero expires before input reading, while an already accepted client cancellation retains priority.
-pub fn start(
-    session: &AnalysisSession,
-    id: &str,
-    method: Method,
-    cancellation: &RequestCancellation,
-    timeout: Duration,
-) -> Result<Deadline, Value> {
-    if let Some(reason) = cancellation.stop_reason() {
-        return Err(stopped(session, id, method, reason));
-    }
-    let deadline = Deadline::start(timeout, cancellation.clone()).map_err(|error| {
-        let kind = match error {
-            DeadlineError::TimerUnavailable => "analysis_timer_unavailable",
-            DeadlineError::TimeoutOutOfRange => "analysis_timeout_out_of_range",
-        };
-        protocol::error_value(-32000, kind, dto::snapshot(session, id))
-    })?;
-    if let Some(reason) = deadline.stop_reason() {
-        return Err(stopped(session, id, method, reason));
-    }
-    Ok(deadline)
-}
-
-/// Neither late findings nor a successful empty list may hide an elapsed deadline.
-pub fn finish(
-    session: &AnalysisSession,
-    id: &str,
-    method: Method,
-    deadline: &Deadline,
-    result: Result<Value, Value>,
-) -> Result<Value, Value> {
-    deadline
-        .stop_reason()
-        .map_or(result, |reason| Err(stopped(session, id, method, reason)))
-}
-
-/// `ServerCancelled` is specified for diagnostic pulls; other methods use the JSON-RPC server range.
-pub fn stopped(session: &AnalysisSession, id: &str, method: Method, reason: RequestStop) -> Value {
-    match reason {
-        RequestStop::Cancelled => {
-            protocol::error_value(-32800, "analysis_cancelled", dto::snapshot(session, id))
-        }
-        RequestStop::DeadlineExceeded => {
-            let diagnostic = matches!(method, Method::Diagnostic);
-            let mut error = protocol::error_value(
-                if diagnostic { -32802 } else { -32000 },
-                "analysis_deadline_exceeded",
-                dto::snapshot(session, id),
-            );
-            if diagnostic {
-                error["data"]["retriggerRequest"] = json!(false);
-            }
-            error
-        }
-    }
 }
 
 /// Missing/binary/refused modules remain coded failures with their current state, never empty items.

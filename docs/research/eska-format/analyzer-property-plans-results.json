@@ -362,5 +362,6 @@
     "no_watcher_or_multi_project_host",
     "not_installed_or_connected_to_explorer",
     "no_1c_execution_verification"
-  ]
+  ],
+  "state_at_commit": "39621b0"
 }

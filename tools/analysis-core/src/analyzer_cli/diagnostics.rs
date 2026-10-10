@@ -15,10 +15,10 @@ use crate::{
 };
 
 use super::{
-    dto,
-    language::{self, Method},
+    dto, language,
     positions::Positions,
     protocol,
+    request_control::{self, Method},
 };
 
 pub const IDENTIFIER: &str = "eska-syntax";
@@ -92,9 +92,21 @@ pub fn pull(
         ));
     }
     let path = language::source_path(session, &params.text_document.uri)?;
-    let deadline = language::start(session, id, Method::Diagnostic, cancellation, timeout)?;
+    let deadline = request_control::start(
+        session,
+        id,
+        Method::Language(language::Method::Diagnostic),
+        cancellation,
+        timeout,
+    )?;
     let result = analyze(session, id, &path, settings, &config, request, cancellation);
-    language::finish(session, id, Method::Diagnostic, &deadline, result)
+    request_control::finish(
+        session,
+        id,
+        Method::Language(language::Method::Diagnostic),
+        &deadline,
+        result,
+    )
 }
 
 /// Input reads, kernel queries and range conversion all run within the same cooperative deadline.
@@ -109,7 +121,12 @@ fn analyze(
 ) -> Result<Value, Value> {
     language::load_module(session, path, request)?;
     if let Some(reason) = cancellation.stop_reason() {
-        return Err(language::stopped(session, id, Method::Diagnostic, reason));
+        return Err(request_control::stopped(
+            session,
+            id,
+            Method::Language(language::Method::Diagnostic),
+            reason,
+        ));
     }
     let result = session
         .module_diagnostics(path, session.revision(), config, &cancellation.query)
