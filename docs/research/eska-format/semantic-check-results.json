@@ -1,0 +1,455 @@
+{
+  "schema_version": 1,
+  "scope": "configured semantic batch on declared saved inputs; not full language or 1C runtime validation",
+  "real": [
+    {
+      "corpus": "C1",
+      "locale": "ru-RU",
+      "exit_code": 2,
+      "wall_seconds": 17.07916916901013,
+      "peak_rss_kib": 475912,
+      "coverage": {
+        "binary_modules": 0,
+        "checked_modules": 1975,
+        "metadata_inputs_complete": true,
+        "metadata_models_complete": false,
+        "metadata_owners": 2645,
+        "modules": 1975,
+        "semantic_profile_complete": false,
+        "syntax_complete": false,
+        "unavailable_modules": 0,
+        "unchecked_modules": 0
+      },
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 46327997,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 115209818
+      },
+      "profile_enabled": true,
+      "stop": null,
+      "findings": {
+        "SelfAssign": 26
+      },
+      "metadata_issues": 1692,
+      "runtime_path": "empty",
+      "checked_original_files": 7829,
+      "locale_equal": true,
+      "observed_original_bytes_unchanged": true
+    },
+    {
+      "corpus": "C1",
+      "locale": "en-US",
+      "exit_code": 2,
+      "wall_seconds": 16.472981312006596,
+      "peak_rss_kib": 475572,
+      "coverage": {
+        "binary_modules": 0,
+        "checked_modules": 1975,
+        "metadata_inputs_complete": true,
+        "metadata_models_complete": false,
+        "metadata_owners": 2645,
+        "modules": 1975,
+        "semantic_profile_complete": false,
+        "syntax_complete": false,
+        "unavailable_modules": 0,
+        "unchecked_modules": 0
+      },
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 46327997,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 115209818
+      },
+      "profile_enabled": true,
+      "stop": null,
+      "findings": {
+        "SelfAssign": 26
+      },
+      "metadata_issues": 1692,
+      "runtime_path": "empty",
+      "checked_original_files": 7829,
+      "locale_equal": true,
+      "observed_original_bytes_unchanged": true
+    }
+  ],
+  "reference": {
+    "corpus": "C1",
+    "version": "0.3.0",
+    "exit_code": 0,
+    "wall_seconds": 2.6758916289982153,
+    "native_files": 1979,
+    "compared_declared_files": 1975,
+    "findings": 26,
+    "checked_native_original_files": 1976,
+    "observed_original_bytes_unchanged": true,
+    "rule_coordinates_and_severity_equal": true,
+    "selected_rules": [
+      "SelfAssign"
+    ],
+    "platform_help": "degraded_builtin_descriptions_empty"
+  },
+  "manual": {
+    "checks": [
+      {
+        "locale": "ru-RU",
+        "exit_code": 1,
+        "coverage": {
+          "binary_modules": 0,
+          "checked_modules": 2,
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": true,
+          "metadata_owners": 3,
+          "modules": 2,
+          "semantic_profile_complete": true,
+          "syntax_complete": false,
+          "unavailable_modules": 0,
+          "unchecked_modules": 0
+        },
+        "resources": {
+          "max_source_bytes": 268435456,
+          "metadata_source_bytes": 2908,
+          "module_text_bytes": 158,
+          "total_source_bytes": 3066
+        },
+        "rules": [
+          "SelfAssign",
+          "UnresolvedMethodCall"
+        ]
+      },
+      {
+        "locale": "en-US",
+        "exit_code": 1,
+        "coverage": {
+          "binary_modules": 0,
+          "checked_modules": 2,
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": true,
+          "metadata_owners": 3,
+          "modules": 2,
+          "semantic_profile_complete": true,
+          "syntax_complete": false,
+          "unavailable_modules": 0,
+          "unchecked_modules": 0
+        },
+        "resources": {
+          "max_source_bytes": 268435456,
+          "metadata_source_bytes": 2908,
+          "module_text_bytes": 158,
+          "total_source_bytes": 3066
+        },
+        "rules": [
+          "SelfAssign",
+          "UnresolvedMethodCall"
+        ]
+      }
+    ],
+    "json_locale_equal": true,
+    "observed_original_bytes_unchanged": true,
+    "installed_reference_version": "0.3.0",
+    "reference_checks": [
+      "ParseError",
+      "SelfAssign",
+      "UnresolvedMethodCall"
+    ],
+    "reference_findings_match": true,
+    "reference_platform_help": "degraded_builtin_descriptions_empty",
+    "runtime_path": "empty"
+  },
+  "validation": {
+    "tool_gates": [
+      {
+        "gate": "fmt",
+        "exit_code": 0
+      },
+      {
+        "gate": "all-check",
+        "exit_code": 0
+      },
+      {
+        "gate": "all-clippy",
+        "exit_code": 0
+      },
+      {
+        "gate": "all-test",
+        "exit_code": 0
+      },
+      {
+        "gate": "all-rustdoc",
+        "exit_code": 0
+      },
+      {
+        "gate": "minimal-check",
+        "exit_code": 0
+      },
+      {
+        "gate": "minimal-clippy",
+        "exit_code": 0
+      },
+      {
+        "gate": "minimal-test",
+        "exit_code": 0
+      },
+      {
+        "gate": "minimal-rustdoc",
+        "exit_code": 0
+      },
+      {
+        "gate": "checker-check",
+        "exit_code": 0
+      },
+      {
+        "gate": "checker-clippy",
+        "exit_code": 0
+      },
+      {
+        "gate": "checker-test",
+        "exit_code": 0
+      },
+      {
+        "gate": "checker-rustdoc",
+        "exit_code": 0
+      },
+      {
+        "gate": "analyzer-check",
+        "exit_code": 0
+      },
+      {
+        "gate": "analyzer-clippy",
+        "exit_code": 0
+      },
+      {
+        "gate": "analyzer-test",
+        "exit_code": 0
+      },
+      {
+        "gate": "analyzer-rustdoc",
+        "exit_code": 0
+      },
+      {
+        "gate": "release-checker",
+        "exit_code": 0
+      },
+      {
+        "gate": "release-analyzer",
+        "exit_code": 0
+      }
+    ],
+    "kernel_gates": [
+      {
+        "gate": "fmt",
+        "exit_code": 0
+      },
+      {
+        "gate": "check",
+        "exit_code": 0
+      },
+      {
+        "gate": "clippy",
+        "exit_code": 0
+      },
+      {
+        "gate": "test",
+        "exit_code": 0
+      },
+      {
+        "gate": "rustdoc",
+        "exit_code": 0
+      }
+    ],
+    "root_gates": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "test"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "doc",
+          "--no-deps"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--no-default-features",
+          "--all-targets",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--no-default-features"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "doc",
+          "--no-default-features",
+          "--no-deps"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--no-default-features",
+          "--features",
+          "project-cli",
+          "--all-targets",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--no-default-features",
+          "--features",
+          "project-cli"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "doc",
+          "--no-default-features",
+          "--features",
+          "project-cli",
+          "--no-deps"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--no-default-features",
+          "--features",
+          "build-cli",
+          "--all-targets",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--no-default-features",
+          "--features",
+          "build-cli"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "doc",
+          "--no-default-features",
+          "--features",
+          "build-cli",
+          "--no-deps"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "git",
+          "-c",
+          "core.whitespace=cr-at-eol",
+          "diff",
+          "--check"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "tests": {
+      "analysis_all": 246,
+      "analysis_unit_file": 113,
+      "analyzer_process": 119,
+      "checker_process": 14,
+      "analysis_minimal": 91,
+      "kernel": 1104,
+      "kernel_ignored": 4,
+      "base_db": 50,
+      "root": 895,
+      "root_ignored": 14
+    },
+    "matching_localization_keys": 2438
+  },
+  "normal_dependencies": [
+    {
+      "feature": "check-cli",
+      "normal_names": 206,
+      "normal_versions": 214,
+      "lsp_runtime_or_git_transport_dependencies": false,
+      "installed_platform_required": false
+    },
+    {
+      "feature": "analyzer-cli",
+      "normal_names": 206,
+      "normal_versions": 214,
+      "lsp_runtime_or_git_transport_dependencies": false,
+      "installed_platform_required": false
+    }
+  ],
+  "release_bytes": {
+    "eska-analyzer": 50073600,
+    "eska-check": 46271040
+  },
+  "limitations": [
+    "LSP pull remains syntax",
+    "selected rules are not full language or runtime coverage",
+    "source quota and LRU do not bound process RSS",
+    "workspace MCP unavailable; installed analyzer CLI used",
+    "native CLI platform help degraded",
+    "normal installation not connected"
+  ]
+}

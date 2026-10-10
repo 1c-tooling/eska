@@ -6,6 +6,78 @@ use eska::analysis_core::InputRequest;
 use crate::session::tests::{fixture, owner};
 use crate::{AnalysisSession, DiagnosticCode, DiagnosticsConfig, QueryCancellation};
 
+/// A semantic trim releases saved hints while editor hints, current bytes and source clocks survive.
+#[test]
+fn batch_trim_preserves_editor_hints_and_current_inputs_only() {
+    let (_directory, root) = fixture();
+    let mut session = AnalysisSession::open(&root).unwrap();
+    let saved = owner("CommonModules/Tools/Ext/Module.bsl");
+    let editor = owner("Catalogs/Sample/Ext/ObjectModule.bsl");
+    for path in [&saved, &editor] {
+        session
+            .load_module_saved(path, session.revision(), &InputRequest::default())
+            .unwrap();
+    }
+    session
+        .apply_module_overlay(
+            &editor,
+            session.revision(),
+            1,
+            "Procedure CurrentEditor() EndProcedure",
+            &InputRequest::default(),
+        )
+        .unwrap();
+    let config = DiagnosticsConfig {
+        only_enabled: Some(vec![DiagnosticCode::ParseError]),
+        ..DiagnosticsConfig::default()
+    };
+    for path in [&saved, &editor] {
+        session
+            .module_diagnostics(
+                path,
+                session.revision(),
+                &config,
+                &QueryCancellation::default(),
+            )
+            .unwrap();
+        assert!(
+            session
+                .database
+                .parse_snapshot(session.modules[path].file)
+                .is_some()
+        );
+    }
+    let before = session
+        .database
+        .parse_snapshot(session.modules[&editor].file)
+        .unwrap();
+    let revision = session.revision();
+    let resources = session.resources();
+    let inputs = [
+        session.module(&saved).unwrap().clone(),
+        session.module(&editor).unwrap().clone(),
+    ];
+    session.trim_batch_caches();
+    assert!(
+        session
+            .database
+            .parse_snapshot(session.modules[&saved].file)
+            .is_none()
+    );
+    assert_eq!(
+        session
+            .database
+            .parse_snapshot(session.modules[&editor].file)
+            .unwrap()
+            .text,
+        before.text
+    );
+    assert_eq!(session.revision(), revision);
+    assert_eq!(session.resources(), resources);
+    assert_eq!(session.module(&saved), Some(&inputs[0]));
+    assert_eq!(session.module(&editor), Some(&inputs[1]));
+}
+
 /// Sampling is read-only, and trim may discard computation without discarding current source.
 #[test]
 fn memory_samples_do_not_evaluate_or_modify_current_input_and_trim_preserves_diagnostics() {

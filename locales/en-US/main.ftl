@@ -946,9 +946,9 @@ metadata-rename-apply-about = Apply a reviewed rename plan against its source sn
 metadata-rename-recovery-about = Inspect or recover an interrupted rename
 
 # Standalone batch analysis.
-tool-check-about = Check saved ESKA module syntax without 1C, Git or an IDE server
+tool-check-about = Check saved ESKA modules with an explicit profile without 1C, Git or an IDE server
 tool-analyzer-about = Serve ESKA metadata, property edit plans, YAML diagnostics, BSL navigation, syntax diagnostics and completion over a versioned IDE connection without 1C or Git
-tool-option-profile = Explicit check profile; currently syntax
+tool-option-profile = Explicit check profile: syntax or semantic
 tool-option-config = Analyzer settings file; otherwise discover bsl-analyzer.toml at the selected project root
 tool-option-timeout-seconds = Cooperative operation time limit in seconds; zero stops the operation immediately
 tool-option-max-document-bytes = Maximum bytes per YAML or BSL document; the hard limit is 64 MiB
@@ -957,6 +957,9 @@ tool-check-status-passed = Syntax checked
 tool-check-status-findings = Syntax findings
 tool-check-status-incomplete = Check incomplete
 tool-check-result = { $status }. Modules: { $checked }/{ $total }; findings: { $findings }; incomplete metadata: { $metadata }.
+tool-check-semantic-passed = Profile completed
+tool-check-semantic-findings = Findings reported
+tool-check-semantic-result = Semantic profile: { $status }. Modules: { $checked }/{ $total }; findings: { $findings }; incomplete metadata: { $metadata }.
 tool-check-deadline = The analysis time limit was reached.
 tool-check-cancelled = The check was cancelled.
 tool-check-source-budget = Current inputs could not fit the source-byte quota; retained { $used }/{ $limit } bytes.

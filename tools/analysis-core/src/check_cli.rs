@@ -16,10 +16,10 @@ use eska::{
 
 use crate::{
     analysis_settings as settings,
-    batch::{BatchOptions, check_syntax},
+    batch::{BatchOptions, BatchProfile, check_semantic, check_syntax},
 };
 
-/// Select one ESKA project, run the explicit syntax profile and emit stable RU/EN results.
+/// Select one ESKA project, run its explicit profile and emit stable RU/EN results.
 #[must_use]
 pub fn run() -> ExitCode {
     let arguments = env::args_os().collect::<Vec<_>>();
@@ -63,10 +63,12 @@ pub fn run() -> ExitCode {
 /// Compose the selected reader once, without validating or reading an accepted binary baseline.
 fn execute(cli: &args::Cli, localizer: &Localizer) -> Result<ExitCode, Failure> {
     let selected = tool_cli::selected(&cli.project_dir, cli.project.as_deref())?;
+    let profile: BatchProfile = cli.profile.into();
     let settings = settings::load(
         selected.project.root(),
         cli.config.as_deref(),
         localizer.locale(),
+        profile,
     )?;
     let root = selected.project.root().to_owned();
     let scope = selected.scope.clone();
@@ -77,9 +79,10 @@ fn execute(cli: &args::Cli, localizer: &Localizer) -> Result<ExitCode, Failure> 
         max_retained_source_bytes: cli.max_retained_source_bytes,
         ..BatchOptions::default()
     };
-    let report = match cli.profile {
-        args::Profile::Syntax => {
-            check_syntax(source.into_reader(), &settings.diagnostics, &options)
+    let report = match profile {
+        BatchProfile::Syntax => check_syntax(source.into_reader(), &settings.diagnostics, &options),
+        BatchProfile::Semantic => {
+            check_semantic(source.into_reader(), &settings.diagnostics, &options)
         }
     }
     .map_err(presentation::batch_failure)?;

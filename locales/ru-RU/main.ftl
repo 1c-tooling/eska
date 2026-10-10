@@ -946,9 +946,9 @@ metadata-rename-apply-about = Применить проверенный план
 metadata-rename-recovery-about = Проверить или восстановить прерванное переименование
 
 # Самостоятельная пакетная проверка.
-tool-check-about = Проверка синтаксиса сохранённых модулей ESKA без 1С, Git и IDE-сервера
+tool-check-about = Проверка сохранённых модулей ESKA по явному профилю без 1С, Git и IDE-сервера
 tool-analyzer-about = Метаданные ESKA, планы правки свойств, диагностика YAML, навигация, диагностика синтаксиса и автодополнение BSL через версионированное соединение IDE без 1С и Git
-tool-option-profile = Явный профиль проверки; сейчас syntax
+tool-option-profile = Явный профиль проверки: syntax или semantic
 tool-option-config = Файл настроек анализатора; иначе искать bsl-analyzer.toml в корне выбранного проекта
 tool-option-timeout-seconds = Кооперативный лимит времени операции в секундах; ноль сразу останавливает операцию
 tool-option-max-document-bytes = Максимум байтов в одном YAML или BSL; жёсткий предел — 64 MiB
@@ -957,6 +957,9 @@ tool-check-status-passed = Синтаксис проверен
 tool-check-status-findings = Найдены ошибки синтаксиса
 tool-check-status-incomplete = Проверка неполная
 tool-check-result = { $status }. Модули: { $checked }/{ $total }; ошибки: { $findings }; неполные метаданные: { $metadata }.
+tool-check-semantic-passed = Профиль выполнен
+tool-check-semantic-findings = Найдены замечания
+tool-check-semantic-result = Семантический профиль: { $status }. Модули: { $checked }/{ $total }; замечания: { $findings }; неполные метаданные: { $metadata }.
 tool-check-deadline = Достигнут лимит времени анализа.
 tool-check-cancelled = Проверка отменена.
 tool-check-source-budget = Текущим входам не хватило квоты исходных байтов; удерживается { $used }/{ $limit } байт.

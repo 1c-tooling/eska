@@ -1,4 +1,4 @@
-# Самостоятельный syntax checker ESKA
+# Самостоятельная пакетная проверка ESKA
 
 Первый `eska-check` — отдельный бинарник общей библиотеки `eska-analysis`,
 собираемый feature `check-cli`. Он проверяет сохранённые исходники обычной
@@ -14,33 +14,39 @@ eska-check --profile syntax --format json
 eska-check --profile syntax --project-dir . --project main --lang ru-RU
 eska-check --profile syntax --timeout-seconds 300 --max-document-bytes 67108864
 eska-check --profile syntax --max-retained-source-bytes 268435456
+eska-check --profile semantic --format json
 ```
 
-`--profile` обязателен; сейчас поддержан только `syntax`, использующий
-`ParseError` общего ядра. Выбирается один проект тем же selector, что проектным
+`--profile` обязателен. `syntax` использует `ParseError` общего ядра;
+[`semantic`](semantic-check.md) выполняет настроенные native rules с текущими
+метаданными и загруженными соседними модулями. Выбирается один проект тем же selector, что проектным
 и сборочным инструментом: из workspace root нужен `--project`, внутри member
 он определяется по контексту. Workspace sweep и Designer XML не поддержаны.
 `--config` задаёт настройки относительно выбранного проекта; иначе читается
 `bsl-analyzer.toml` с прежним JSON fallback pinned config loader. Ошибка файла
-не подменяется настройками по умолчанию. Отключение `ParseError` даёт
-`profile_enabled=false` и неполную проверку, без обхода BSL.
+не подменяется настройками по умолчанию. Отключение `ParseError` для syntax
+или всех rules для semantic даёт `profile_enabled=false` и неполную проверку,
+без обхода BSL. Semantic сохраняет настройку `ParseError`; отключённая syntax
+диагностика не мешает проверке остальных выбранных rules.
 
 Настройки исключений исходников, дополнительных конфигураций, extensions,
 externals, Git diff/authors и diagnostic baseline пока отклоняются через
 `analysis_scope_unsupported`. Checker не игнорирует заданный неподдержанный scope.
-Полная семантика, formatter, платформенные проверки и VCS-политика не включаются
-в этот профиль. Их нельзя считать пройденными на основании exit 0.
+Formatter, платформенные проверки и VCS-политика не включаются в эти профили.
+Полнота всех возможностей языка/платформы не подтверждается выбранными native rules.
 
 | Exit | Результат |
 |---|---|
 | 0 | Профиль проверен, находок нет, требуемое покрытие дескрипторов полное |
-| 1 | При полном покрытии найдены ошибки синтаксиса |
+| 1 | При полном покрытии найдены замечания выбранного профиля |
 | 2 | Неполные модели метаданных, unread/binary input, отключённый профиль или остановка |
 | 3 | Ошибка аргументов, выбора проекта, настроек или запуска анализа |
 
 Неполнота имеет приоритет над findings; уже найденные ошибки остаются в отчёте.
 Help/version возвращают 0. Human output и help доступны на RU/EN; JSON не содержит
 локализованных сообщений или времени выполнения.
+Semantic findings показывают стабильные code/severity и позиции; произвольный
+текст native rules не переводится по догадке. Summary и причины YAML локализованы.
 
 ## Общие входы и bounded batch
 
@@ -56,12 +62,16 @@ YAML проходит прежний saved input/adapter. BSL читается v
 после независимой syntax-проверки; тяжёлые memo периодически очищаются между
 группами из 32 модулей. Счётчик проверенных файлов принадлежит результату batch,
 а не текущей резидентной полноте уже освобождённых тел. Это правило нельзя
-переносить на семантический профиль, которому нужны соседние модули.
+переносить на семантический профиль, которому нужны соседние модули: он сохраняет
+все доступные тела до первого query и не освобождает их между проверками.
+Batch trim удаляет saved reparse hints, сохраняя current inputs и editor hints.
 
 `--max-retained-source-bytes` задаёт [общую квоту текущих YAML/BSL-входов](source-budget.md),
 по умолчанию 256 MiB. `--max-document-bytes` уменьшает общий жёсткий предел документа 64 MiB.
-Текущие BSL-тексты также ограничены 64 MiB; модели YAML, результаты, parse trees
-и memo в эту квоту не входят. Это не общий предел heap или RSS.
+Для syntax действует дополнительный предел текущих BSL-текстов 64 MiB.
+В semantic их совокупный предел равен общей source-byte квоте; YAML использует
+тот же резерв. Результаты, parse trees и memo в квоту не входят.
+Это не общий предел heap или RSS.
 
 `--timeout-seconds` по умолчанию 300. Один timer отменяет bounded reads
 и активный query через `QueryCancellation`. Лимит начинается после выбора
@@ -78,12 +88,16 @@ wall-time лимита. Остановка сохраняет явные `stop` 
 Schema 1 содержит `tool=eska-check`, `command=check`, `status` и `data`.
 В `data` находятся `project_root`, `scope`, `settings_path`, `settings_sha256`,
 `position_encoding=unicode-scalar`, `metadata_position_encoding=utf-16` и `report`. Settings hash относится
-к нормализованным правилам профиля, а не к сырым байтам файла настроек.
+к нормализованным правилам и имени профиля, а не к сырым байтам файла настроек.
 Ошибки запуска используют общий error envelope проектных инструментов.
 
 `report` содержит profile/enabled/status, manifest hash, coverage, resources, stop,
 metadata issues и результаты файлов. Coverage раздельно показывает полноту
 чтения YAML, поддержанных моделей прочитанных дескрипторов и syntax-проверки.
+Только semantic добавляет `semantic_profile_complete`: все объявленные тела
+проверены, чтение YAML/BSL и модели дескрипторов полны, профиль включён и не
+остановлен. Это coverage выбранных правил, не всех возможностей ядра/платформы.
+У syntax поле отсутствует; прежняя schema 1 сохранена.
 `metadata_models_complete` имеет ограниченный смысл
 [`descriptor_models_complete`](shared-session.md): полнота ресурсов, всех
 семантических свойств, типов и BSL-анализа этим полем не подтверждается.

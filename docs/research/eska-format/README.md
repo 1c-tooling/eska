@@ -36,6 +36,9 @@
 и captured координаты, отдельно от BSL rules и без повторного чтения текущего текста.
 [Подробный отчёт CI](analyzer-checker-metadata.md) получает findings той же
 операцией и использует общую проекцию причин/координат с IDE.
+[Семантический профиль checker](semantic-check.md) выполняет настроенные native
+rules с загруженными соседними телами. Selected-profile coverage остаётся
+отдельной от syntax и платформенной исполнимости; LSP pull пока syntax.
 [Отдельный сервер метаданных](analyzer-metadata.md) согласует экспериментальный
 протокол; [синхронизация YAML/BSL](analyzer-documents.md) использует общую сессию,
 редакторские версии и квоту. [Pull-диагностика](analyzer-diagnostics.md) проверяет

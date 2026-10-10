@@ -32,8 +32,12 @@ fn cancelled_saved_read_retries_but_cancelled_overlay_does_not_fall_back_to_disk
     let body = "Procedure Current()\nEndProcedure\n";
     std::fs::write(root.join(MODULE), body).unwrap();
     let params:Params=protocol::params(&json!({"textDocument":{"uri":url::Url::from_file_path(root.join(MODULE)).unwrap().to_string()}})).unwrap();
-    let settings =
-        crate::analysis_settings::load(&root, None, eska::tool_cli::localization::Locale::EnUs);
+    let settings = crate::analysis_settings::load(
+        &root,
+        None,
+        eska::tool_cli::localization::Locale::EnUs,
+        crate::batch::BatchProfile::Syntax,
+    );
     let fresh = RequestCancellation::default();
     let localizer = eska::tool_cli::localization::Localizer::try_new(
         eska::tool_cli::localization::Locale::EnUs,
@@ -108,8 +112,12 @@ fn cancelled_metadata_saved_read_recovers_without_replacing_cancelled_editor_aut
     session
         .load_saved(&path, session.revision(), &request)
         .unwrap();
-    let settings =
-        crate::analysis_settings::load(&root, None, eska::tool_cli::localization::Locale::EnUs);
+    let settings = crate::analysis_settings::load(
+        &root,
+        None,
+        eska::tool_cli::localization::Locale::EnUs,
+        crate::batch::BatchProfile::Syntax,
+    );
     let localizer = eska::tool_cli::localization::Localizer::try_new(
         eska::tool_cli::localization::Locale::EnUs,
     )

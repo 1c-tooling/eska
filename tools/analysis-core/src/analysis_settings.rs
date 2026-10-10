@@ -7,7 +7,7 @@ use eska::tool_cli::{Failure, localization::Locale};
 use project_model::ProjectConfig;
 use sha2::{Digest, Sha256};
 
-use crate::DiagnosticsConfig;
+use crate::{DiagnosticsConfig, batch::BatchProfile};
 
 pub struct Settings {
     pub path: Option<PathBuf>,
@@ -16,7 +16,12 @@ pub struct Settings {
 }
 
 /// Read conventional analyzer settings at the selected root, with an optional explicit override.
-pub fn load(root: &Path, explicit: Option<&Path>, locale: Locale) -> Result<Settings, Failure> {
+pub fn load(
+    root: &Path,
+    explicit: Option<&Path>,
+    locale: Locale,
+    profile: BatchProfile,
+) -> Result<Settings, Failure> {
     let config = if let Some(path) = explicit {
         let path = root.join(path);
         ProjectConfig::load_from_file(&path)
@@ -44,7 +49,7 @@ pub fn load(root: &Path, explicit: Option<&Path>, locale: Locale) -> Result<Sett
         return Err(Failure::new("analysis_scope_unsupported"));
     }
     let rules = config.diagnostics.rules_json();
-    let bytes = serde_json::to_vec(&serde_json::json!({"profile":"syntax", "diagnostics":rules}))
+    let bytes = serde_json::to_vec(&serde_json::json!({"profile":profile, "diagnostics":rules}))
         .map_err(|_| Failure::new("analysis_config_invalid"))?;
     let mut diagnostics: DiagnosticsConfig =
         serde_json::from_value(rules).map_err(|_| Failure::new("analysis_config_invalid"))?;

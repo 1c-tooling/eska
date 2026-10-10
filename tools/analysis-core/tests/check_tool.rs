@@ -1,6 +1,7 @@
 //! Actual process contracts distinguish findings, incomplete input and environment errors in both locales.
 
 mod check_metadata;
+mod check_semantic;
 mod support;
 
 use std::{
@@ -57,7 +58,7 @@ fn help_version_and_required_profile_contract() {
         assert!(help.stderr.is_empty());
         let text = String::from_utf8(help.stdout).unwrap();
         assert!(text.contains(if lang == "ru-RU" {
-            "Проверка синтаксиса"
+            "Проверка сохранённых модулей"
         } else {
             "Check saved"
         }));

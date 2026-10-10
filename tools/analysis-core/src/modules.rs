@@ -207,9 +207,17 @@ impl AnalysisSession {
         Ok(())
     }
 
-    /// Trim computed source, parse and lowering memos after short-lived query handles dropped.
+    /// Trim computed memos and saved reparse hints after short-lived query handles dropped.
     pub fn trim_batch_caches(&mut self) {
         self.database.enforce_lru_deep();
+        let editor_files = self
+            .modules
+            .values()
+            .filter_map(|entry| {
+                matches!(entry.model.origin, InputOrigin::Overlay { .. }).then_some(entry.file)
+            })
+            .collect::<Vec<_>>();
+        self.database.retain_parse_snapshots(&editor_files);
     }
 
     /// Count readable, protected and unknown current input independently of semantic diagnostics.

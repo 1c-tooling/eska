@@ -1,5 +1,6 @@
-//! Read-only syntax batches use the resident session's exact input and diagnostic paths.
+//! Read-only batches share input and diagnostics; only independent syntax can release each body.
 
+mod profile;
 mod report;
 
 #[cfg(test)]
@@ -13,6 +14,7 @@ use eska::{
     project_core::source_format::{SourcePath, SourceReader},
 };
 
+pub use profile::BatchProfile;
 pub use report::{
     BatchCoverage, BatchFile, BatchFinding, BatchReport, BatchStatus, FileState, MetadataIssue,
     StopReason,
@@ -24,7 +26,7 @@ use crate::{
     deadline::{Deadline, DeadlineError},
 };
 
-/// A syntax sweep keeps one body resident and trims heavy memos between bounded chunks.
+/// Both profiles bound current source and time; syntax streams bodies, semantics retains them.
 #[derive(Clone, Debug)]
 pub struct BatchOptions {
     pub timeout: Duration,
@@ -76,6 +78,31 @@ pub fn check_syntax(
     config: &DiagnosticsConfig,
     options: &BatchOptions,
 ) -> Result<BatchReport, BatchError> {
+    check(reader, config, options, BatchProfile::Syntax)
+}
+
+/// Run the configured native rules with all readable declared bodies retained before any query.
+///
+/// Missing, binary, unsupported or rejected inputs remain explicit incomplete coverage. This
+/// profile does not substitute a syntax result for semantic analysis or validate the 1C runtime.
+///
+/// # Errors
+/// Returns the same setup and query-invariant failures as the syntax batch.
+pub fn check_semantic(
+    reader: SourceReader,
+    config: &DiagnosticsConfig,
+    options: &BatchOptions,
+) -> Result<BatchReport, BatchError> {
+    check(reader, config, options, BatchProfile::Semantic)
+}
+
+/// Both profiles own the same deadline, metadata snapshot and report; only body residency differs.
+fn check(
+    reader: SourceReader,
+    config: &DiagnosticsConfig,
+    options: &BatchOptions,
+    profile: BatchProfile,
+) -> Result<BatchReport, BatchError> {
     let deadline = Deadline::start(options.timeout, options.cancellation.clone()).map_err(
         |error| match error {
             DeadlineError::TimerUnavailable => BatchError::TimerUnavailable,
@@ -86,8 +113,11 @@ pub fn check_syntax(
     let mut session = AnalysisSession::from_reader(
         reader,
         SessionOptions {
+            max_loaded_module_bytes: match profile {
+                BatchProfile::Syntax => SessionOptions::default().max_loaded_module_bytes,
+                BatchProfile::Semantic => options.max_retained_source_bytes,
+            },
             max_retained_source_bytes: options.max_retained_source_bytes,
-            ..SessionOptions::default()
         },
     )
     .map_err(BatchError::Open)?;
@@ -105,11 +135,18 @@ pub fn check_syntax(
             .load_saved(&path, session.revision(), &request)
             .map_err(BatchError::Request)?;
     }
-    let (config, syntax_enabled) = syntax_profile(config);
+    let config = match profile {
+        BatchProfile::Syntax => syntax_profile(config).0,
+        BatchProfile::Semantic => config.clone(),
+    };
+    let profile_enabled = profile.enabled(&config);
     let paths = session.module_paths().cloned().collect::<Vec<_>>();
+    if profile == BatchProfile::Semantic && profile_enabled {
+        load_bodies(&mut session, &paths, &request, &deadline)?;
+    }
     let mut files = Vec::with_capacity(paths.len());
     for path in paths {
-        if !syntax_enabled || deadline.stop_reason().is_some() {
+        if !profile_enabled || deadline.stop_reason().is_some() {
             break;
         }
         let Some(file) = check_module(
@@ -118,6 +155,7 @@ pub fn check_syntax(
             &config,
             &request,
             &options.cancellation,
+            profile,
         )?
         else {
             break;
@@ -133,16 +171,44 @@ pub fn check_syntax(
         manifest_sha256,
         files,
         deadline.stop_reason().map(StopReason::from),
-        syntax_enabled,
+        &config,
         &options.cancellation.query,
+        profile,
     )?;
     // Constructing coverage can itself cross the deadline; check again before returning success.
     if let Some(stop) = deadline.stop_reason() {
         report.stop = Some(StopReason::from(stop));
         report.status = BatchStatus::Incomplete;
         report.coverage.syntax_complete = false;
+        if let Some(complete) = &mut report.coverage.semantic_profile_complete {
+            *complete = false;
+        }
     }
     Ok(report)
+}
+
+/// Freeze every readable body before cross-module rules run; quota failures remain current state.
+fn load_bodies(
+    session: &mut AnalysisSession,
+    paths: &[SourcePath],
+    request: &InputRequest,
+    deadline: &Deadline,
+) -> Result<(), BatchError> {
+    for path in paths {
+        if deadline.stop_reason().is_some() {
+            break;
+        }
+        if session
+            .module(path)
+            .is_some_and(|input| input.state == ModuleState::Binary)
+        {
+            continue;
+        }
+        session
+            .load_module_saved(path, session.revision(), request)
+            .map_err(BatchError::Request)?;
+    }
+    Ok(())
 }
 
 /// IDE and batch syntax consumers preserve rule disabling, severity, locale and parameters.
@@ -158,13 +224,14 @@ pub fn syntax_profile(config: &DiagnosticsConfig) -> (DiagnosticsConfig, bool) {
     (config, enabled)
 }
 
-/// One syntax file is independent of unread neighbors; never use this streaming rule for semantics.
+/// Only syntax reloads and releases one file; semantic queries retain the preloaded snapshot.
 fn check_module(
     session: &mut AnalysisSession,
     path: &SourcePath,
     config: &DiagnosticsConfig,
     request: &InputRequest,
     cancellation: &RequestCancellation,
+    profile: BatchProfile,
 ) -> Result<Option<BatchFile>, BatchError> {
     let initial = session
         .module(path)
@@ -172,9 +239,11 @@ fn check_module(
     if initial.state == ModuleState::Binary {
         return Ok(Some(BatchFile::unavailable(path, initial)));
     }
-    session
-        .load_module_saved(path, session.revision(), request)
-        .map_err(BatchError::Request)?;
+    if profile == BatchProfile::Syntax {
+        session
+            .load_module_saved(path, session.revision(), request)
+            .map_err(BatchError::Request)?;
+    }
     let input = session
         .module(path)
         .ok_or_else(|| BatchError::Request(SessionRequestError::UnknownModule(path.clone())))?;
@@ -209,8 +278,10 @@ fn check_module(
             )?);
         }
     }
-    session
-        .release_module_saved(path, session.revision())
-        .map_err(BatchError::Request)?;
+    if profile == BatchProfile::Syntax {
+        session
+            .release_module_saved(path, session.revision())
+            .map_err(BatchError::Request)?;
+    }
     Ok(Some(file))
 }

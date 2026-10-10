@@ -13,7 +13,7 @@ use super::super::{
     watcher_registration,
 };
 use super::{Phase, Server};
-use crate::{AnalysisSession, SessionOptions};
+use crate::{AnalysisSession, SessionOptions, analysis_settings, batch::BatchProfile};
 
 impl Server<'_> {
     /// Reject an incompatible ESKA protocol before project discovery or source reads.
@@ -24,8 +24,9 @@ impl Server<'_> {
                 protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
             })?;
         let workspace = selected.workspace_root;
+        let locale = self.localizer.locale();
         let settings =
-            crate::analysis_settings::load(selected.project.root(), None, self.localizer.locale());
+            analysis_settings::load(selected.project.root(), None, locale, BatchProfile::Syntax);
         let source = EskaSource::open(selected.project, selected.scope).map_err(|error| {
             protocol::error_value(-32000, error.code, json!({"location":error.location}))
         })?;

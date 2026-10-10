@@ -276,6 +276,11 @@ impl RootDatabaseImpl {
         self.set_sweep_lru(false);
     }
 
+    /// After exclusive trimming, discard saved-body hints while preserving editor-owned hints.
+    pub fn retain_parse_snapshots(&mut self, editor_files: &[FileId]) {
+        self.files.retain_parse_snapshots(editor_files);
+    }
+
     /// Switch the heaviest per-file LRU caps between the interactive profile and the
     /// small sweep profile. The caps take effect at the next eviction; switching
     /// evicts nothing by itself. Like any salsa write this cancels in-flight

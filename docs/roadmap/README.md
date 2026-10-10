@@ -202,6 +202,14 @@ window. Сравнение 128 крупных модулей каждого со
 Current inputs и 390 оригиналов сохранены; общий heap/RSS budget ещё в работе.
 Все 19 tool/15 root gates, 238 tool tests и kernel 1103/4 прошли;
 normal graph 206/214 сохранён, новых dependencies нет.
+[Семантический профиль checker](../research/eska-format/semantic-check.md)
+сохраняет доступные тела до первого query и выполняет настроенные native rules.
+Selected-profile coverage, source quota и неполнота остаются явными;
+saved reparse hints очищаются без изменения editor inputs. 246 tool tests,
+все 19 tool/15 root gates и kernel 1104/4 прошли. Все 1 975 объявленных модулей
+C1 проверены; 26 SelfAssign совпали с установленным анализатором по code/severity/
+координатам, JSON RU/EN совпал. Неполные модели сохранили exit 2; исходники
+сохранены. LSP pull остаётся syntax, EF-18 — `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

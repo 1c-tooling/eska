@@ -1,4 +1,4 @@
-//! Human diagnostics are localized; schema 1 machine output contains codes and precise source ranges.
+//! Human summaries are localized; schema 1 machine output contains codes and precise source ranges.
 
 use std::{
     io::{self, Write},
@@ -82,13 +82,17 @@ fn machine_report(report: &BatchReport) -> Result<serde_json::Value, Failure> {
     Ok(value)
 }
 
-/// Summarize coverage before listing ordinary localized syntax findings.
+/// Summarize profile coverage before listing findings in their supported presentation.
 fn human(report: &BatchReport, localizer: &Localizer) -> String {
     use std::fmt::Write;
-    let status = match report.status {
-        BatchStatus::Passed => "tool-check-status-passed",
-        BatchStatus::Findings => "tool-check-status-findings",
-        BatchStatus::Incomplete => "tool-check-status-incomplete",
+    let status = match (report.profile, report.status) {
+        (_, BatchStatus::Incomplete) => "tool-check-status-incomplete",
+        (crate::batch::BatchProfile::Syntax, BatchStatus::Passed) => "tool-check-status-passed",
+        (crate::batch::BatchProfile::Syntax, BatchStatus::Findings) => "tool-check-status-findings",
+        (crate::batch::BatchProfile::Semantic, BatchStatus::Passed) => "tool-check-semantic-passed",
+        (crate::batch::BatchProfile::Semantic, BatchStatus::Findings) => {
+            "tool-check-semantic-findings"
+        }
     };
     let status = localizer.text(status);
     let checked = report.coverage.checked_modules.to_string();
@@ -101,7 +105,10 @@ fn human(report: &BatchReport, localizer: &Localizer) -> String {
         .sum::<usize>()
         .to_string();
     let mut text = localizer.format(
-        "tool-check-result",
+        match report.profile {
+            crate::batch::BatchProfile::Syntax => "tool-check-result",
+            crate::batch::BatchProfile::Semantic => "tool-check-semantic-result",
+        },
         &[
             ("status", LocalizationValue::Text(&status)),
             ("checked", LocalizationValue::Text(&checked)),
@@ -141,14 +148,20 @@ fn human(report: &BatchReport, localizer: &Localizer) -> String {
     }
     for file in &report.files {
         for finding in &file.findings {
+            // Semantic kernel prose is opaque and not consistently localized; present stable
+            // rule/severity data in both locales until the kernel provides structured messages.
+            let (label, detail) = match report.profile {
+                crate::batch::BatchProfile::Syntax => (&finding.message, &finding.code),
+                crate::batch::BatchProfile::Semantic => (&finding.code, &finding.severity),
+            };
             let _ = writeln!(
                 text,
                 "{}:{}:{}: {} ({})",
                 file.source.as_str(),
                 finding.start_line + 1,
                 finding.start_column + 1,
-                finding.message,
-                finding.code
+                label,
+                detail
             );
         }
     }

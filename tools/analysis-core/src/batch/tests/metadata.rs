@@ -94,8 +94,9 @@ fn cancelled_metadata_report_preserves_incomplete_owner_without_findings() {
         "manifest".into(),
         vec![],
         Some(StopReason::Cancelled),
-        true,
+        &DiagnosticsConfig::default(),
         &cancellation,
+        BatchProfile::Syntax,
     )
     .unwrap();
     assert_eq!(report.status, BatchStatus::Incomplete);

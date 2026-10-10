@@ -94,20 +94,29 @@ cargo build --manifest-path tools/analysis-core/Cargo.toml --features check-cli 
 eska-check --profile syntax --format json
 eska-check --profile syntax --project main --timeout-seconds 300
 eska-check --profile syntax --max-retained-source-bytes 268435456
+eska-check --profile semantic --format json
 ```
 
 Его пока нет в установленном комплекте `eska`; путь к собранному бинарнику
 нужно указать самостоятельно. Exit codes: 0 — проверенный профиль без находок,
-1 — ошибки синтаксиса, 2 — неполная проверка, 3 — ошибка запуска или настроек.
+1 — находки выбранного профиля, 2 — неполная проверка, 3 — ошибка запуска или настроек.
 Неполнота метаданных не скрывается даже при отсутствии syntax findings.
 Подробные [причины ошибок YAML](../../docs/research/eska-format/analyzer-checker-metadata.md)
 совпадают с IDE: общий core возвращает typed findings, общий presentation —
 machine cause, severity и RU/EN объяснение. JSON schema 1 добавляет `findings`
 у metadata issues и отдельное `metadata_position_encoding=utf-16`; прежние BSL
 координаты и exit codes сохраняются. Недоступный YAML имеет `findings=null`.
-Профиль `syntax` не проверяет типы и платформенную исполнимость. Текст каждого
-модуля освобождается после проверки; это правило не подходит для семантического
-профиля. [Контракт и реальные результаты](../../docs/research/eska-format/check-cli.md).
+Профиль `syntax` проверяет `ParseError` и освобождает тело после независимого query.
+[`semantic`](../../docs/research/eska-format/semantic-check.md) выполняет настроенные
+native rules, загрузив все доступные объявленные тела до первого query. Общая
+квота текущих YAML/BSL по умолчанию 256 MiB ограничивает и загруженные тела этого
+профиля; per-document предел остаётся 64 MiB. Batch trim сохраняет input и
+редакторские reparse hints, освобождая saved hints. Это не общий heap/RSS budget.
+`semantic_profile_complete` появляется только у semantic и отражает выбранные
+правила и покрытие входов; платформенную исполнимость оно не подтверждает.
+Human semantic findings содержат rule code, severity и позиции; summary и причины
+YAML локализованы RU/EN. Текущий LSP pull остаётся syntax.
+[Общий контракт](../../docs/research/eska-format/check-cli.md).
 
 ## IDE transport метаданных
 

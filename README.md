@@ -753,7 +753,8 @@ preset = "trunk"
 В той же сессии доступны текущие метаданные для дерева/свойств и
 [BSL saved/overlay/close, diagnostics и completions](docs/research/eska-format/bsl-session.md).
 Она собирается отдельно. Первый [самостоятельный `eska-check`](docs/research/eska-format/check-cli.md)
-проверяет сохранённые модули явным профилем `syntax`; неполное покрытие даёт exit 2.
+проверяет сохранённые модули явным профилем `syntax` или
+[`semantic`](docs/research/eska-format/semantic-check.md); неполное покрытие даёт exit 2.
 Первый [самостоятельный `eska-analyzer`](docs/research/eska-format/analyzer-metadata.md)
 обслуживает чтение метаданных через явно согласованный протокол. Открытые
 [YAML и BSL синхронизируются](docs/research/eska-format/analyzer-documents.md)

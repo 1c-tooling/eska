@@ -1330,6 +1330,20 @@ metadata-only memos. EF-18 остаётся `IN_PROGRESS`, очередь эта
 Все 19 tool и 15 root gates прошли, 238 tool tests и kernel 1103/4.
 Normal graph остался 206/214; manifest/lock, версии и human strings прежние.
 
+[Семантический профиль checker](../research/eska-format/semantic-check.md)
+выполняет настроенные native rules с теми же SDK inputs. Все доступные тела
+сохраняются до первого query; shared YAML/BSL quota ограничивает их общий размер.
+Batch trim освобождает saved reparse hints, сохраняя current inputs/editor hints.
+Schema 1 добавляет coverage только semantic; syntax JSON/fingerprint сохранены.
+Human semantic findings используют code/severity/позиции, summary и YAML — RU/EN.
+246 tool tests, все 19 tool/15 root gates и kernel 1104/4 прошли.
+На C1 проверены все 1 975 объявленных тел; 26 SelfAssign совпали по code/severity/
+координатам с установленным bsl-analyzer-app 0.3.0. JSON RU/EN совпал, все 7 829
+ESKA и 1 976 наблюдаемых native originals сохранены. Неполные модели сохранили
+exit 2; полнота выбранных правил не означает полноту языка/платформы.
+Текущий LSP pull остаётся syntax; полная семантика, общий memory budget,
+остальные IDE edits и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

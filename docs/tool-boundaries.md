@@ -536,7 +536,9 @@ LSP runtime, Git transport или debugger; `eska-build` не включает �
 `eska-build` собирает сохранённые входы через общую библиотеку без Git и анализатора.
 Первый [самостоятельный `eska-check`](research/eska-format/check-cli.md) собирается
 отдельно с `check-cli`, использует общую сессию анализа для явного профиля `syntax`
-и возвращает неполноту метаданных. LSP runtime, Git, отладчик и платформа
+или [`semantic`](research/eska-format/semantic-check.md) и возвращает неполноту
+метаданных. Семантический batch сохраняет соседние тела до выполнения правил;
+текущий LSP pull остаётся syntax. LSP runtime, Git, отладчик и платформа
 не входят в его граф зависимостей; к комплектной установке он пока не подключён.
 Отдельный [eska-analyzer](research/eska-format/analyzer-metadata.md) уже обслуживает
 metadata, full-sync YAML/BSL, syntax pull, [completion](research/eska-format/analyzer-completion.md)

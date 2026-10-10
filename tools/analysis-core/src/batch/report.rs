@@ -3,11 +3,12 @@
 use eska::{analysis_core::InputFailure, project_core::source_format::SourcePath};
 
 use crate::{
-    AnalysisSession, Diagnostic, MetadataDiagnostic, MetadataDiagnosticsError, ModelState,
-    ModuleFailure, ModuleInput, ModuleState, QueryCancellation, ResourceSummary, SessionRevision,
+    AnalysisSession, Diagnostic, DiagnosticCode, DiagnosticsConfig, MetadataDiagnostic,
+    MetadataDiagnosticsError, ModelState, ModuleFailure, ModuleInput, ModuleState,
+    QueryCancellation, ResourceSummary, SessionRevision,
 };
 
-use super::BatchError;
+use super::{BatchError, BatchProfile};
 
 /// Findings and incompleteness are separate from a fatal setup error.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
@@ -93,12 +94,15 @@ pub struct BatchCoverage {
     pub unavailable_modules: usize,
     pub unchecked_modules: usize,
     pub syntax_complete: bool,
+    /// All configured rules ran over complete supported inputs; absent for the syntax profile.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub semantic_profile_complete: Option<bool>,
 }
 
-/// Syntax coverage does not claim complete semantic or platform validation.
+/// Profile coverage never claims platform or runtime validation.
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct BatchReport {
-    pub profile: &'static str,
+    pub profile: BatchProfile,
     pub profile_enabled: bool,
     pub status: BatchStatus,
     pub manifest_sha256: String,
@@ -174,8 +178,9 @@ pub fn finish(
     manifest_sha256: String,
     files: Vec<BatchFile>,
     stop: Option<StopReason>,
-    syntax_enabled: bool,
+    config: &DiagnosticsConfig,
     cancellation: &QueryCancellation,
+    profile: BatchProfile,
 ) -> Result<BatchReport, BatchError> {
     let summary = session.summary();
     let mut coverage = BatchCoverage {
@@ -193,9 +198,19 @@ pub fn finish(
         }
     }
     coverage.unchecked_modules = coverage.modules - files.len();
-    coverage.syntax_complete =
-        syntax_enabled && stop.is_none() && coverage.checked_modules == coverage.modules;
-    let status = if !coverage.metadata_models_complete || !coverage.syntax_complete {
+    let all_checked = stop.is_none() && coverage.checked_modules == coverage.modules;
+    coverage.syntax_complete = !config.is_disabled(DiagnosticCode::ParseError) && all_checked;
+    coverage.semantic_profile_complete = (profile == BatchProfile::Semantic).then(|| {
+        profile.enabled(config)
+            && all_checked
+            && coverage.metadata_inputs_complete
+            && coverage.metadata_models_complete
+            && session.module_summary().module_input_complete
+    });
+    let complete = coverage
+        .semantic_profile_complete
+        .unwrap_or(coverage.syntax_complete);
+    let status = if !coverage.metadata_models_complete || !complete {
         BatchStatus::Incomplete
     } else if files.iter().any(|file| !file.findings.is_empty()) {
         BatchStatus::Findings
@@ -207,8 +222,8 @@ pub fn finish(
         .filter_map(|path| metadata_issue(session, path, cancellation).transpose())
         .collect::<Result<Vec<_>, _>>()?;
     Ok(BatchReport {
-        profile: "syntax",
-        profile_enabled: syntax_enabled,
+        profile,
+        profile_enabled: profile.enabled(config),
         status,
         manifest_sha256,
         coverage,

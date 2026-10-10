@@ -8,6 +8,17 @@ use eska::tool_cli::OutputFormat;
 #[derive(Clone, Copy, Debug, ValueEnum)]
 pub enum Profile {
     Syntax,
+    Semantic,
+}
+
+impl From<Profile> for crate::batch::BatchProfile {
+    /// CLI parsing stays separate from the profile identity shared by batch consumers.
+    fn from(profile: Profile) -> Self {
+        match profile {
+            Profile::Syntax => Self::Syntax,
+            Profile::Semantic => Self::Semantic,
+        }
+    }
 }
 
 #[derive(Debug, Parser)]

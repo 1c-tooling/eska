@@ -187,6 +187,12 @@ impl Files {
         self.parse_snapshots.insert(file_id, snapshot);
     }
 
+    /// Retain reparse hints only for the host's explicit editor working set, preserving all inputs.
+    pub fn retain_parse_snapshots(&self, keep: &[FileId]) {
+        let keep: std::collections::HashSet<_> = keep.iter().copied().collect();
+        self.parse_snapshots.retain(|file, _| keep.contains(file));
+    }
+
     pub fn count_parse(&self, outcome: ParseOutcome) {
         let counters = &self.parse_counters;
         let cell = match outcome {
@@ -712,6 +718,29 @@ mod tests {
         assert_eq!(db.file_revision_input(file).revision(&db), revision);
         // No source root was registered: re-derivation must use the still-current resident input.
         assert_eq!(&*db.file_text(file), current);
+    }
+
+    /// Hint retention changes optimization state only, never resident text or input revisions.
+    #[test]
+    fn hint_retention_preserves_selected_snapshot_and_all_resident_input() {
+        let mut db = TestDatabase::default();
+        let saved = FileId(0);
+        let editor = FileId(1);
+        db.set_file_text(saved, "Procedure Saved() EndProcedure");
+        db.set_file_text(editor, "Procedure Editor() EndProcedure");
+        db.parse(saved);
+        db.parse(editor);
+        let before = db.parse_snapshot(editor).unwrap();
+        let revision = db.file_revision_input(saved).revision(&db);
+        db.files.retain_parse_snapshots(&[editor]);
+        assert!(db.parse_snapshot(saved).is_none());
+        assert_eq!(db.parse_snapshot(editor).unwrap().text, before.text);
+        assert_eq!(&*db.file_text(saved), "Procedure Saved() EndProcedure");
+        assert_eq!(db.file_revision_input(saved).revision(&db), revision);
+        assert!(!db.file_is_unread(saved));
+        db.files.retain_parse_snapshots(&[]);
+        assert!(db.parse_snapshot(editor).is_none());
+        assert_eq!(&*db.file_text(editor), "Procedure Editor() EndProcedure");
     }
 
     #[salsa::tracked(lru = 10, returns(copy))]
