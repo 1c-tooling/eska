@@ -142,6 +142,9 @@ fn canonical(
         | MetadataKind::BusinessProcess
         | MetadataKind::Task
         | MetadataKind::ExchangePlan
+        | MetadataKind::ChartOfCharacteristicTypes
+        | MetadataKind::ChartOfAccounts
+        | MetadataKind::ChartOfCalculationTypes
         | MetadataKind::DataProcessor
         | MetadataKind::Report => adapter::metadata_object(descriptor)
             .map(|model| CanonicalMetadata::Object(Arc::new(model))),

@@ -1,6 +1,7 @@
 //! Actual stdio sessions verify negotiation, lazy state and read-only metadata in both locales.
 
 mod completion_queries;
+mod definition_chart_queries;
 mod definition_member_queries;
 mod definition_metadata_queries;
 mod definition_namespace_queries;

@@ -1,5 +1,6 @@
 //! Native controls cover object fields while a known whitespace-caption bug is checked separately.
 
+mod charts;
 mod process;
 
 use super::*;

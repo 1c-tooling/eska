@@ -1,6 +1,8 @@
 //! Typed namespaces and metadata members resolve to current canonical slots and YAML coordinates.
 
 #[cfg(test)]
+mod chart_tests;
+#[cfg(test)]
 mod member_tests;
 mod members;
 #[cfg(test)]

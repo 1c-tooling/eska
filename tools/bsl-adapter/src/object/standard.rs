@@ -16,6 +16,7 @@ struct Settings {
     number_numeric: bool,
     description_length: Option<u32>,
     hierarchical: bool,
+    calculation_dependency: CalculationDependency,
     owners: Vec<AttributeType>,
 }
 
@@ -38,6 +39,7 @@ impl Settings {
             number_numeric: numeric_kind(&fields, "NumberType")?,
             description_length: fields.unsigned("DescriptionLength")?,
             hierarchical: fields.boolean("Hierarchical")?.unwrap_or(false),
+            calculation_dependency: calculation_dependency(object)?,
             owners,
         })
     }
@@ -55,8 +57,41 @@ impl Settings {
             }
             PresenceCondition::Hierarchical => Some(self.hierarchical),
             PresenceCondition::HasOwners => Some(!self.owners.is_empty()),
-            _ => None,
+            PresenceCondition::DependsOnCalculationTypes => {
+                Some(self.calculation_dependency.is_dependent())
+            }
+            PresenceCondition::IsPeriodic => None,
         }
+    }
+}
+
+/// Keep the three source modes distinct even though the current kernel only queries dependency presence.
+pub(super) enum CalculationDependency {
+    Independent,
+    ActionPeriod,
+    RegistrationPeriod,
+}
+
+impl CalculationDependency {
+    /// Both period-based modes require the implicit dependency fields and sections.
+    pub(super) const fn is_dependent(&self) -> bool {
+        !matches!(self, Self::Independent)
+    }
+}
+
+/// Only platform dependency modes can decide implicit fields/sections; unknown tokens are errors.
+pub(super) fn calculation_dependency(
+    object: &ParsedObject,
+) -> Result<CalculationDependency, AdapterError> {
+    let fields = Properties::new(object)?;
+    let Some(field) = fields.field("DependenceOnCalculationTypes")? else {
+        return Ok(CalculationDependency::Independent);
+    };
+    match fields.text("DependenceOnCalculationTypes")? {
+        Some("DontUse") => Ok(CalculationDependency::Independent),
+        Some("OnActionPeriod") => Ok(CalculationDependency::ActionPeriod),
+        Some("OnRegistrationPeriod") => Ok(CalculationDependency::RegistrationPeriod),
+        _ => Err(Properties::invalid(field)),
     }
 }
 
@@ -119,6 +154,23 @@ pub(super) fn attributes(
             name_en: Some(spec.kind.english_name().into()),
             attr_type,
         });
+    }
+    if kind == MdoType::ChartOfAccounts {
+        // These names are account-specific, not global standard names: other objects may declare a user field named «Вид».
+        for (name, name_en, attr_type) in [
+            (
+                "Вид",
+                "Type",
+                AttributeType::PlatformNamed("ВидСчета".into()),
+            ),
+            ("Забалансовый", "OffBalance", AttributeType::Boolean),
+        ] {
+            result.push(Attribute {
+                name: name.into(),
+                name_en: Some(name_en.into()),
+                attr_type,
+            });
+        }
     }
     Ok(result)
 }

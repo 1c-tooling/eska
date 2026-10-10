@@ -182,13 +182,37 @@ pub(super) fn selected_uuid(
         .find(|object| object.metadata.uuid().eq_ignore_ascii_case(root.as_str()))
         .ok_or(QueryError::UnsupportedNavigationTarget)?;
     let mut selected = &root_object.metadata;
+    // An ext-dimension flag is a real direct child of the account chart, despite its implicit BSL row parent.
+    let implicit_column = matches!(children,
+        [(MetadataKind::TabularSection, table), (MetadataKind::Attribute, _)]
+        if selected.kind() == MetadataKind::ChartOfAccounts && folded_eq(table, "ВидыСубконто")
+    );
+    let children = if implicit_column {
+        if document.descriptor.objects.iter().any(|object| {
+            object.metadata.parent() == Some(selected.id())
+                && object.metadata.kind() == MetadataKind::TabularSection
+                && folded_eq(object.metadata.name(), &children[0].1)
+        }) {
+            return Err(QueryError::UnsupportedNavigationTarget);
+        }
+        &children[1..]
+    } else {
+        children
+    };
     for (kind, name) in children {
         let mut candidates = document.descriptor.objects.iter().filter(|object| {
             object.metadata.parent() == Some(selected.id())
-                && (object.metadata.kind() == *kind
-                    || (*kind == MetadataKind::Attribute
-                        && selected.kind() == MetadataKind::Task
-                        && object.metadata.kind() == MetadataKind::AddressingAttribute))
+                && (if implicit_column {
+                    object.metadata.kind() == MetadataKind::ExtDimensionAccountingFlag
+                } else {
+                    object.metadata.kind() == *kind
+                        || (*kind == MetadataKind::Attribute
+                            && selected.kind() == MetadataKind::Task
+                            && object.metadata.kind() == MetadataKind::AddressingAttribute)
+                        || (*kind == MetadataKind::Attribute
+                            && selected.kind() == MetadataKind::ChartOfAccounts
+                            && object.metadata.kind() == MetadataKind::AccountingFlag)
+                })
                 && folded_eq(object.metadata.name(), name)
         });
         let Some(next) = candidates.next() else {

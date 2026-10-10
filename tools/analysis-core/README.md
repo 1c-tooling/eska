@@ -161,6 +161,9 @@ metadataTargets — typed-objects-and-members.
 загружаются в тот же `CanonicalMetadata::Object`; typed поля и адресные реквизиты
 задач открывают текущий дочерний YAML. Неявные стандартные поля без исходного
 объекта не получают диапазон или UUID.
+[Планы характеристик, счетов и расчёта](../../docs/research/eska-format/analyzer-chart-objects.md)
+используют ту же объектную проекцию. Неявные строки не получают YAML UUID;
+реальные признаки счёта и субконто подтверждаются по своим физическим kind/parent.
 Полная семантика ещё не готова. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
 возвращают versioned WorkspaceEdit для ready открытого документа при независимо
 закреплённой базе и client documentChanges support. План не записывает файл и

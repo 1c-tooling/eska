@@ -1,5 +1,6 @@
 //! Object models combine source fields with the pinned platform's standard-attribute catalogue.
 
+mod charts;
 mod standard;
 #[cfg(test)]
 mod tests;
@@ -26,24 +27,7 @@ use crate::{
 /// Returns unsupported kinds, incomplete descriptors, invalid identities or unsupported field values.
 pub fn metadata_object(descriptor: &ParsedDescriptor) -> Result<MetadataObject, AdapterError> {
     let root = identity::descriptor_root(descriptor)?;
-    let (kind, template) = match root.metadata.kind() {
-        MetadataKind::Catalog => (MdoType::Catalog, Some(MdoTemplateKind::Catalog)),
-        MetadataKind::Document => (MdoType::Document, Some(MdoTemplateKind::Document)),
-        MetadataKind::BusinessProcess => (
-            MdoType::BusinessProcess,
-            Some(MdoTemplateKind::BusinessProcess),
-        ),
-        MetadataKind::Task => (MdoType::Task, Some(MdoTemplateKind::Task)),
-        MetadataKind::ExchangePlan => (MdoType::ExchangePlan, Some(MdoTemplateKind::ExchangePlan)),
-        MetadataKind::DataProcessor => (MdoType::DataProcessor, None),
-        MetadataKind::Report => (MdoType::Report, None),
-        actual => {
-            return Err(AdapterError {
-                issue: AdapterIssue::WrongKind { actual },
-                range: root.range.clone(),
-            });
-        }
-    };
+    let (kind, template) = model_kind(root)?;
     let fields = Properties::new(root)?;
     let (belonging, extends) = identity::ownership(&fields)?;
     let mut model = MetadataObject::new(kind, root.metadata.name());
@@ -96,13 +80,53 @@ pub fn metadata_object(descriptor: &ParsedDescriptor) -> Result<MetadataObject, 
             MetadataKind::AddressingAttribute if kind == MdoType::Task => {
                 model.add_attribute(attribute(child)?);
             }
+            MetadataKind::AccountingFlag if kind == MdoType::ChartOfAccounts => {
+                model.add_attribute(attribute(child)?);
+            }
             MetadataKind::TabularSection => {
                 model.add_tabular_section(tabular_section(descriptor, child)?);
             }
             _ => {}
         }
     }
+    model
+        .tabular_sections
+        .extend(charts::sections(descriptor, root)?);
     Ok(model)
+}
+
+/// Actual source kinds choose a catalogue; unsupported declarations never acquire another kind's defaults.
+fn model_kind(object: &ParsedObject) -> Result<(MdoType, Option<MdoTemplateKind>), AdapterError> {
+    Ok(match object.metadata.kind() {
+        MetadataKind::Catalog => (MdoType::Catalog, Some(MdoTemplateKind::Catalog)),
+        MetadataKind::Document => (MdoType::Document, Some(MdoTemplateKind::Document)),
+        MetadataKind::BusinessProcess => (
+            MdoType::BusinessProcess,
+            Some(MdoTemplateKind::BusinessProcess),
+        ),
+        MetadataKind::Task => (MdoType::Task, Some(MdoTemplateKind::Task)),
+        MetadataKind::ExchangePlan => (MdoType::ExchangePlan, Some(MdoTemplateKind::ExchangePlan)),
+        MetadataKind::ChartOfCharacteristicTypes => (
+            MdoType::ChartOfCharacteristicTypes,
+            Some(MdoTemplateKind::ChartOfCharacteristicTypes),
+        ),
+        MetadataKind::ChartOfAccounts => (
+            MdoType::ChartOfAccounts,
+            Some(MdoTemplateKind::ChartOfAccounts),
+        ),
+        MetadataKind::ChartOfCalculationTypes => (
+            MdoType::ChartOfCalculationTypes,
+            Some(MdoTemplateKind::ChartOfCalculationTypes),
+        ),
+        MetadataKind::DataProcessor => (MdoType::DataProcessor, None),
+        MetadataKind::Report => (MdoType::Report, None),
+        actual => {
+            return Err(AdapterError {
+                issue: AdapterIssue::WrongKind { actual },
+                range: object.range.clone(),
+            });
+        }
+    })
 }
 
 /// Ordinary and task-addressing attributes share typed fields, while the source retains their distinct kinds/UUIDs.

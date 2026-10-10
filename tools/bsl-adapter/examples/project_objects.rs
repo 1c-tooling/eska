@@ -34,6 +34,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             "BusinessProcesses/",
             "Tasks/",
             "ExchangePlans/",
+            "ChartsOfCharacteristicTypes/",
+            "ChartsOfAccounts/",
+            "ChartsOfCalculationTypes/",
         ]
         .iter()
         .any(|prefix| path.as_str().starts_with(prefix))
@@ -66,16 +69,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Err(error) => return Err(format!("{}:{error:?}", path.as_str()).into()),
             };
             let xml = fs::read_to_string(native.join(document.path.as_path()))?;
-            let mut reference = match root.metadata.kind() {
-                MetadataKind::Catalog => xml_parser::parse_catalog_xml(&xml),
-                MetadataKind::Document => xml_parser::parse_document_xml(&xml),
-                MetadataKind::BusinessProcess => xml_parser::parse_business_process_xml(&xml),
-                MetadataKind::Task => xml_parser::parse_task_xml(&xml),
-                MetadataKind::ExchangePlan => xml_parser::parse_exchange_plan_xml(&xml),
-                MetadataKind::DataProcessor => xml_parser::parse_data_processor_xml(&xml),
-                MetadataKind::Report => xml_parser::parse_report_xml(&xml),
-                _ => return Err("wrong_object_kind".into()),
-            }?;
+            let mut reference = native_model(root.metadata.kind(), &xml)?;
             caption_differences += compare_captions(&converted, &reference)?;
             for model in [&mut converted, &mut reference] {
                 for section in &mut model.tabular_sections {
@@ -109,6 +103,28 @@ fn main() -> Result<(), Box<dyn Error>> {
         std::process::exit(2);
     }
     Ok(())
+}
+
+/// Pinned XML parsers provide independent controls; the production adapter never materializes XML.
+fn native_model(kind: MetadataKind, xml: &str) -> Result<MetadataObject, Box<dyn Error>> {
+    let model = match kind {
+        MetadataKind::Catalog => xml_parser::parse_catalog_xml(xml),
+        MetadataKind::Document => xml_parser::parse_document_xml(xml),
+        MetadataKind::BusinessProcess => xml_parser::parse_business_process_xml(xml),
+        MetadataKind::Task => xml_parser::parse_task_xml(xml),
+        MetadataKind::ExchangePlan => xml_parser::parse_exchange_plan_xml(xml),
+        MetadataKind::ChartOfCharacteristicTypes => {
+            xml_parser::parse_chart_of_characteristic_types_xml(xml)
+        }
+        MetadataKind::ChartOfAccounts => xml_parser::parse_chart_of_accounts_xml(xml),
+        MetadataKind::ChartOfCalculationTypes => {
+            xml_parser::parse_chart_of_calculation_types_xml(xml)
+        }
+        MetadataKind::DataProcessor => xml_parser::parse_data_processor_xml(xml),
+        MetadataKind::Report => xml_parser::parse_report_xml(xml),
+        _ => return Err("wrong_object_kind".into()),
+    };
+    Ok(model?)
 }
 
 /// Only the known caption defect may differ; all real section identities must already agree.

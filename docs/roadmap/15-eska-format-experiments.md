@@ -1100,6 +1100,27 @@ workspace MCP недоступен. Runtime graph прежний — 206/214; н
 все IDE edits, полнота семантики, общий memory budget и Explorer ещё в работе.
 Платформа 1С, настоящий client/OS watcher здесь не проверялись. EF-18 — IN_PROGRESS.
 
+[Планы характеристик, счетов и расчёта](../research/eska-format/analyzer-chart-objects.md)
+подключены к существующему CanonicalMetadata::Object. Стандартные поля и три
+режима зависимости расчёта сохранены; неявные строки повторяют модель ядра,
+их nil UUID не превращаются в исходные объявления. Реальные признаки объекта
+и субконто привязаны к собственным physical kind/parent/UUID, даже при одном имени.
+Пройдены 36 adapter unit/шесть файловых тестов; 66 unit/file, 68 analyzer process
+и девять checker process tests, все шесть adapter, 19 tool и 15 root gates.
+Root — 893/14, minimal 165/3, project-cli 181/3, build-cli 200/3.
+39 из 40 новых моделей C1/C2/C3 совпали с native reader; один план характеристик
+C1 имеет неподдержанный cfg:AnyRef. Всего таких C1-моделей теперь две с прежним
+справочником. Контроль десяти видов дал 235/2338/3057 готовых моделей.
+Шесть stdio-сценариев в RU/EN подтвердили 284 definition/locate и 184 отказа,
+включая явный отказ BSL-модели при доступном parsed tree. Current ranges/hash,
+editor/invalid/close/refresh и locale parity согласованы. Оригиналы сохранены,
+собственные проекты удалены; CLI bsl-analyzer-app 0.3.0 проверил 101 фрагмент:
+ноль ParseError, workspace MCP недоступен. Runtime graph прежний — 206/214.
+Платформа 1С и настоящий client/OS watcher здесь не проверялись. cfg:AnyRef,
+внешние источники, form data, predefined values, query text, все IDE edits,
+полнота семантики, общий memory budget и Explorer остаются в работе.
+EF-18 — IN_PROGRESS; очередь остальных этапов не меняется.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя
