@@ -1,5 +1,6 @@
 //! One resident metadata session connects the shared input controller to tracked kernel slots.
 
+mod analysis_inputs;
 #[cfg(test)]
 mod module_tests;
 mod saved_changes;

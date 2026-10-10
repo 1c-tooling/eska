@@ -2,6 +2,7 @@
 
 use std::path::PathBuf;
 
+use crate::tool_profile::Profile;
 use clap::{ArgAction, Parser};
 
 #[derive(Debug, Parser)]
@@ -17,6 +18,8 @@ pub struct Cli {
     pub project_dir: PathBuf,
     #[arg(long)]
     pub project: Option<String>,
+    #[arg(long, value_enum, default_value_t = Profile::Syntax)]
+    pub profile: Profile,
     #[arg(long)]
     pub accepted_base_sha256: Option<String>,
     #[arg(long, default_value_t = 300)]

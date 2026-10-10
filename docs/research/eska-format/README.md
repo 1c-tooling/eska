@@ -38,11 +38,14 @@
 операцией и использует общую проекцию причин/координат с IDE.
 [Семантический профиль checker](semantic-check.md) выполняет настроенные native
 rules с загруженными соседними телами. Selected-profile coverage остаётся
-отдельной от syntax и платформенной исполнимости; LSP pull пока syntax.
+отдельной от syntax и платформенной исполнимости.
+[Семантический LSP pull](analyzer-semantic-diagnostics.md) использует тот же
+набор правил с текущими YAML/BSL inputs; syntax сохранён по умолчанию.
 [Отдельный сервер метаданных](analyzer-metadata.md) согласует экспериментальный
 протокол; [синхронизация YAML/BSL](analyzer-documents.md) использует общую сессию,
 редакторские версии и квоту. [Pull-диагностика](analyzer-diagnostics.md) проверяет
-текущий BSL тем же профилем `syntax`, что checker. [Отмена запросов](analyzer-cancellation.md)
+текущий BSL выбранным профилем `syntax` или `semantic`, как checker.
+[Отмена запросов](analyzer-cancellation.md)
 передаётся ядру отдельным reader без второго project host. [Лимит времени](analyzer-deadline.md)
 использует общий таймер server/checker и сохраняет причину остановки.
 [Автодополнение](analyzer-completion.md) получает кандидатов из текущего

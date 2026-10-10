@@ -8,10 +8,11 @@
 Документ определяет целевые границы. Самостоятельный
 [eska-project](research/eska-format/project-cli.md) и
 [eska-build](research/eska-format/build-cli.md),
-[eska-check с профилем syntax](research/eska-format/check-cli.md) и
+[eska-check с профилями syntax/semantic](research/eska-format/check-cli.md) и
 [eska-analyzer для чтения метаданных](research/eska-format/analyzer-metadata.md)
 и [синхронизации черновиков YAML/BSL](research/eska-format/analyzer-documents.md)
-с [pull-диагностикой syntax](research/eska-format/analyzer-diagnostics.md),
+с [pull-диагностикой syntax](research/eska-format/analyzer-diagnostics.md)
+и [явным semantic-профилем](research/eska-format/analyzer-semantic-diagnostics.md),
 [отменой активного запроса](research/eska-format/analyzer-cancellation.md)
 и [общим таймером server/checker](research/eska-format/analyzer-deadline.md)
 доступны в экспериментальной сборке. Полный IDE-сервер, остальные точки входа
@@ -538,10 +539,11 @@ LSP runtime, Git transport или debugger; `eska-build` не включает �
 отдельно с `check-cli`, использует общую сессию анализа для явного профиля `syntax`
 или [`semantic`](research/eska-format/semantic-check.md) и возвращает неполноту
 метаданных. Семантический batch сохраняет соседние тела до выполнения правил;
-текущий LSP pull остаётся syntax. LSP runtime, Git, отладчик и платформа
+IDE использует тот же профиль при явном выборе, syntax остаётся default.
+LSP runtime, Git, отладчик и платформа
 не входят в его граф зависимостей; к комплектной установке он пока не подключён.
 Отдельный [eska-analyzer](research/eska-format/analyzer-metadata.md) уже обслуживает
-metadata, full-sync YAML/BSL, syntax pull, [completion](research/eska-format/analyzer-completion.md)
+metadata, full-sync YAML/BSL, syntax/semantic pull, [completion](research/eska-format/analyzer-completion.md)
 и [переход к текущему BSL-объявлению](research/eska-format/analyzer-definitions.md)
 из того же host. Языковые запросы имеют общий control отмены и deadline;
 неполнота чтения/моделей отделена от полной семантики.

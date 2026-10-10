@@ -13,7 +13,7 @@ use super::super::{
     watcher_registration,
 };
 use super::{Phase, Server};
-use crate::{AnalysisSession, SessionOptions, analysis_settings, batch::BatchProfile};
+use crate::{AnalysisSession, analysis_settings, batch::BatchProfile};
 
 impl Server<'_> {
     /// Reject an incompatible ESKA protocol before project discovery or source reads.
@@ -25,8 +25,8 @@ impl Server<'_> {
             })?;
         let workspace = selected.workspace_root;
         let locale = self.localizer.locale();
-        let settings =
-            analysis_settings::load(selected.project.root(), None, locale, BatchProfile::Syntax);
+        let profile: BatchProfile = self.cli.profile.into();
+        let settings = analysis_settings::load(selected.project.root(), None, locale, profile);
         let source = EskaSource::open(selected.project, selected.scope).map_err(|error| {
             protocol::error_value(-32000, error.code, json!({"location":error.location}))
         })?;
@@ -38,10 +38,7 @@ impl Server<'_> {
             self.cli.accepted_base_sha256.as_deref(),
             params,
         )?;
-        let options = SessionOptions {
-            max_retained_source_bytes: self.cli.max_retained_source_bytes,
-            ..SessionOptions::default()
-        };
+        let options = profile.session_options(self.cli.max_retained_source_bytes);
         let session =
             AnalysisSession::from_reader(source.into_reader(), options).map_err(|_| {
                 protocol::error_value(-32000, "analysis_session_open_failed", Value::Null)
@@ -63,7 +60,7 @@ impl Server<'_> {
                 "requestTimeoutSeconds":self.cli.timeout_seconds,
                 "languageMethods":language::METHODS,
                 "kernelMemory":kernel_memory::capability(),
-                "analysis":diagnostics::availability(&settings),
+                "analysis":diagnostics::availability(&settings, profile),
                 "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT, project_changes::EVENT, watcher_registration::EVENT],
                 "watchedFiles":watched_files::capabilities(watcher.is_some()),
                 "projectChanges":project_inputs.capability()?,
@@ -80,7 +77,7 @@ impl Server<'_> {
                 json!({"method":property_edits::METHOD,"scope":"open-document","versioned":true});
         }
         result["capabilities"]["diagnosticProvider"] = json!({
-            "identifier":diagnostics::IDENTIFIER, "interFileDependencies":false,
+            "identifier":diagnostics::identifier(profile), "interFileDependencies":profile==BatchProfile::Semantic,
             "workspaceDiagnostics":false, "workDoneProgress":false});
         if settings.is_ok() {
             if edit_plans.is_some() {

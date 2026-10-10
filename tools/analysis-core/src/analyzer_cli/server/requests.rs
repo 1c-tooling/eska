@@ -9,9 +9,11 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    args::Cli, completion, definitions, diagnostics, document_symbols, documents, dto, hover,
-    kernel_memory, language, metadata_locations, property_edits, protocol, references, rename,
-    signature_help,
+    args::Cli,
+    completion, definitions,
+    diagnostics::{self, Options as DiagnosticOptions},
+    document_symbols, documents, dto, hover, kernel_memory, language, metadata_locations,
+    property_edits, protocol, references, rename, signature_help,
 };
 use super::Server;
 use crate::{AnalysisSession, RequestCancellation};
@@ -128,24 +130,20 @@ impl Server<'_> {
         value: &Value,
         cancellation: Option<&RequestCancellation>,
     ) -> Result<Value, Value> {
-        let session = self
-            .session
-            .as_mut()
-            .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
-        let settings = self
-            .settings
-            .as_ref()
-            .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
+        let invariant = || protocol::error_value(-32603, "session_invariant", Value::Null);
+        let session = self.session.as_mut().ok_or_else(invariant)?;
+        let settings = self.settings.as_ref().ok_or_else(invariant)?;
         let (params, cancellation) =
             decode(session, &self.session_id, method, value, cancellation)?;
         let (request, timeout) = query_limits(self.cli, cancellation);
+        let profile = self.cli.profile.into();
         match params {
             language::Request::Diagnostic(params) => diagnostics::pull(
                 session,
                 &self.session_id,
                 &params,
                 settings,
-                &diagnostics::Options::new(&request, cancellation, timeout, self.localizer),
+                &DiagnosticOptions::new(&request, cancellation, timeout, self.localizer, profile),
             ),
             language::Request::Completion(params) => completion::pull(
                 session,

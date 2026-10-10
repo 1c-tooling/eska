@@ -773,7 +773,10 @@ preset = "trunk"
 [Лимит времени диагностики](docs/research/eska-format/analyzer-deadline.md)
 настраивается через `--timeout-seconds`; общий таймер используется и checker.
 [Диагностика синтаксиса BSL](docs/research/eska-format/analyzer-diagnostics.md)
-доступна через стандартный LSP pull. [Автодополнение](docs/research/eska-format/analyzer-completion.md)
+доступна через стандартный LSP pull; явный
+[`--profile semantic`](docs/research/eska-format/analyzer-semantic-diagnostics.md)
+добавляет настроенные rules с текущими соседними BSL/YAML. Syntax остаётся
+профилем по умолчанию. [Автодополнение](docs/research/eska-format/analyzer-completion.md)
 использует текущий YAML/BSL и явно сообщает неполноту.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.

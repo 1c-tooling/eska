@@ -209,7 +209,15 @@ saved reparse hints очищаются без изменения editor inputs. 
 все 19 tool/15 root gates и kernel 1104/4 прошли. Все 1 975 объявленных модулей
 C1 проверены; 26 SelfAssign совпали с установленным анализатором по code/severity/
 координатам, JSON RU/EN совпал. Неполные модели сохранили exit 2; исходники
-сохранены. LSP pull остаётся syntax, EF-18 — `IN_PROGRESS`.
+сохранены. В этом checker-срезе LSP pull ещё оставался syntax.
+[Семантическая диагностика IDE](../research/eska-format/analyzer-semantic-diagnostics.md)
+добавляет явный `--profile semantic`, общий loader pending saved YAML/BSL,
+inter-file dependencies и selected-profile coverage текущего документа.
+Ready/editor inputs, отменённые saved reads и прежний syntax default сохраняются.
+255 tool tests и все 19 tool/15 root gates прошли; root — 895/14.
+На полной копии C1 12 saved pulls дали те же 26 SelfAssign, что checker;
+повторы, current BSL/YAML и close проверены в обоих языках, исходники сохранены.
+EF-18 остаётся `IN_PROGRESS`: модели, общий memory budget, edits и Explorer ещё в работе.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

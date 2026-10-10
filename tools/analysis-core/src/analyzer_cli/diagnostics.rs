@@ -1,4 +1,4 @@
-//! Document pulls inspect current metadata or the same explicit BSL syntax profile as the checker.
+//! Document pulls inspect current metadata or the same selected BSL profile as the checker.
 
 mod metadata;
 #[cfg(test)]
@@ -14,8 +14,9 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::{
-    AnalysisSession, Diagnostic, RequestCancellation, analysis_settings::Settings,
-    batch::syntax_profile,
+    AnalysisSession, Diagnostic, RequestCancellation,
+    analysis_settings::Settings,
+    batch::{BatchProfile, syntax_profile},
 };
 
 use super::{
@@ -26,6 +27,14 @@ use super::{
 };
 
 pub const IDENTIFIER: &str = "eska-syntax";
+
+/// A process has one negotiated BSL profile, so incompatible cached client pulls are rejected.
+pub const fn identifier(profile: BatchProfile) -> &'static str {
+    match profile {
+        BatchProfile::Syntax => IDENTIFIER,
+        BatchProfile::Semantic => "eska-semantic",
+    }
+}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -47,6 +56,7 @@ pub struct Options<'a> {
     pub cancellation: &'a RequestCancellation,
     pub timeout: Duration,
     pub localizer: &'a Localizer,
+    pub profile: BatchProfile,
 }
 
 impl<'a> Options<'a> {
@@ -56,19 +66,21 @@ impl<'a> Options<'a> {
         cancellation: &'a RequestCancellation,
         timeout: Duration,
         localizer: &'a Localizer,
+        profile: BatchProfile,
     ) -> Self {
         Self {
             request,
             cancellation,
             timeout,
             localizer,
+            profile,
         }
     }
 }
 
 /// A configuration failure affects language analysis without disabling the independent metadata tree.
-pub fn availability(settings: &Result<Settings, Failure>) -> Value {
-    match settings {
+pub fn availability(settings: &Result<Settings, Failure>, profile: BatchProfile) -> Value {
+    let mut value = match settings {
         Ok(settings) => json!({"profiles":["syntax","metadata"], "metadataEnabled":true,
             "syntaxEnabled":!settings.diagnostics.is_disabled(crate::DiagnosticCode::ParseError),
             "configSha256":settings.sha256, "configPath":settings.path, "issue":null}),
@@ -76,7 +88,16 @@ pub fn availability(settings: &Result<Settings, Failure>) -> Value {
             json!({"profiles":["syntax","metadata"],"metadataEnabled":true,"syntaxEnabled":false,"configSha256":null,"configPath":null,
             "issue":{"code":error.code,"location":error.location}})
         }
+    };
+    if profile == BatchProfile::Semantic {
+        value["profiles"] = json!(["semantic", "metadata"]);
+        value["semanticEnabled"] = json!(
+            settings
+                .as_ref()
+                .is_ok_and(|settings| profile.enabled(&settings.diagnostics))
+        );
     }
+    value
 }
 
 /// Standard clients use the current ordered input; ESKA clients may require an exact snapshot too.
@@ -90,12 +111,12 @@ pub fn pull(
     if params
         .identifier
         .as_deref()
-        .is_some_and(|identifier| identifier != IDENTIFIER)
+        .is_some_and(|selected| selected != identifier(options.profile))
     {
         return Err(protocol::error_value(
             -32602,
             "analysis_profile_unsupported",
-            json!({"supported":IDENTIFIER}),
+            json!({"supported":identifier(options.profile)}),
         ));
     }
     let path = documents::source_path(session, &params.text_document.uri)?;
@@ -119,12 +140,15 @@ pub fn pull(
     let settings = settings.as_ref().map_err(|failure| {
         protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
     })?;
-    let (config, syntax_enabled) = syntax_profile(&settings.diagnostics);
-    if !syntax_enabled {
+    let config = match options.profile {
+        BatchProfile::Syntax => syntax_profile(&settings.diagnostics).0,
+        BatchProfile::Semantic => settings.diagnostics.clone(),
+    };
+    if !options.profile.enabled(&config) {
         return Err(protocol::error_value(
             -32000,
             "analysis_profile_disabled",
-            json!({"profile":"syntax"}),
+            json!({"profile":options.profile}),
         ));
     }
     let deadline = request_control::start(
@@ -134,15 +158,7 @@ pub fn pull(
         options.cancellation,
         options.timeout,
     )?;
-    let result = analyze(
-        session,
-        id,
-        &path,
-        settings,
-        &config,
-        options.request,
-        options.cancellation,
-    );
+    let result = analyze(session, id, &path, settings, &config, options);
     request_control::finish(
         session,
         id,
@@ -159,11 +175,16 @@ fn analyze(
     path: &eska::project_core::source_format::SourcePath,
     settings: &Settings,
     config: &crate::DiagnosticsConfig,
-    request: &InputRequest,
-    cancellation: &RequestCancellation,
+    options: &Options<'_>,
 ) -> Result<Value, Value> {
-    language::load_module(session, path, request)?;
-    if let Some(reason) = cancellation.stop_reason() {
+    if options.profile == BatchProfile::Semantic {
+        session
+            .load_semantic_inputs(session.revision(), options.request)
+            .map_err(|error| documents::request_error(&error))?;
+    } else {
+        language::load_module(session, path, options.request)?;
+    }
+    if let Some(reason) = options.cancellation.stop_reason() {
         return Err(request_control::stopped(
             session,
             id,
@@ -172,26 +193,48 @@ fn analyze(
         ));
     }
     let result = session
-        .module_diagnostics(path, session.revision(), config, &cancellation.query)
+        .module_diagnostics(
+            path,
+            session.revision(),
+            config,
+            &options.cancellation.query,
+        )
         .map_err(|error| language::query_error(session, id, &error))?;
     let items = session
-        .with_module_text(path, session.revision(), &cancellation.query, |text| {
-            items(&result.value, text)
-        })
+        .with_module_text(
+            path,
+            session.revision(),
+            &options.cancellation.query,
+            |text| items(&result.value, text, options.profile),
+        )
         .map_err(|error| language::query_error(session, id, &error))?
         .value?;
     let summary = session.summary();
+    let mut coverage = json!({"module_syntax_complete":!config.is_disabled(crate::DiagnosticCode::ParseError),
+        "metadata_inputs_complete":summary.inputs.metadata_input_complete,
+        "metadata_models_complete":summary.descriptor_models_complete,"module_inputs_complete":result.module_inputs_complete,
+        "semantic_complete":false});
+    if options.profile == BatchProfile::Semantic {
+        session.trim_batch_caches();
+        coverage["semantic_profile_complete"] = json!(
+            summary.inputs.metadata_input_complete
+                && summary.descriptor_models_complete
+                && result.module_inputs_complete
+        );
+    }
     Ok(json!({"kind":"full",
         "resultId":format!("{id}:{}:{}:{}",result.revision,settings.sha256,result.source_sha256),
-        "items":items,"eska":{"snapshot":dto::snapshot(session,id),"profile":"syntax",
+        "items":items,"eska":{"snapshot":dto::snapshot(session,id),"profile":options.profile,
         "source":result.source,"source_sha256":result.source_sha256,"config_sha256":settings.sha256,
-        "coverage":{"module_syntax_complete":true,"metadata_inputs_complete":summary.inputs.metadata_input_complete,
-            "metadata_models_complete":summary.descriptor_models_complete,"module_inputs_complete":result.module_inputs_complete,
-            "semantic_complete":false},"resources":session.resources()}}))
+        "coverage":coverage,"resources":session.resources()}}))
 }
 
 /// Build UTF-16 ranges once and preserve canonical byte offsets for checker parity and future plans.
-fn items(diagnostics: &[Diagnostic], text: &str) -> Result<Vec<Value>, Value> {
+fn items(
+    diagnostics: &[Diagnostic],
+    text: &str,
+    profile: BatchProfile,
+) -> Result<Vec<Value>, Value> {
     let offsets = diagnostics
         .iter()
         .flat_map(|diagnostic| {
@@ -211,8 +254,13 @@ fn items(diagnostics: &[Diagnostic], text: &str) -> Result<Vec<Value>, Value> {
             ide::Severity::Information => 3,
             ide::Severity::Hint => 4,
         };
+        // The native semantic prose has no uniform locale contract; rule identity stays readable.
+        let message = match profile {
+            BatchProfile::Syntax => diagnostic.message.clone(),
+            BatchProfile::Semantic => format!("{} ({})", diagnostic.code.as_str(), diagnostic.severity.as_str()),
+        };
         Ok(json!({"range":positions.range(start,end)?,"severity":severity,"code":diagnostic.code.as_str(),
-            "source":"eska-analyzer","message":diagnostic.message,"data":{"start_byte":start,"end_byte":end,
+            "source":"eska-analyzer","message":message,"data":{"start_byte":start,"end_byte":end,
                 "original_severity":diagnostic.severity.as_str()}}))
     }).collect()
 }

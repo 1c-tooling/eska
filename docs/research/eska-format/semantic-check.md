@@ -34,8 +34,9 @@ YAML/BSL inputs и модели дескрипторов полны, остан�
 прежний syntax fingerprint и JSON fields сохранены.
 
 Это coverage выбранных native rules на поддержанных входах. Оно не подтверждает
-все возможности языка, платформенную исполнимость или runtime. Текущий LSP pull
-остаётся syntax; семантическая приёмка реального IDE-клиента не выполнена.
+все возможности языка, платформенную исполнимость или runtime.
+[LSP pull](analyzer-semantic-diagnostics.md) использует тот же semantic-профиль
+при явном выборе; приёмка реального IDE-клиента не выполнена.
 Экспериментальный Rust API изменён: `BatchReport.profile` теперь `BatchProfile`
 вместо строки; `check_semantic` использует те же `BatchOptions` и результат.
 

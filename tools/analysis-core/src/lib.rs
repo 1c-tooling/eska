@@ -25,6 +25,8 @@ mod session;
 mod test_project;
 #[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
 mod tool_metadata;
+#[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
+mod tool_profile;
 
 pub use cancellation::{QueryCancellation, RequestCancellation};
 pub use ide::{

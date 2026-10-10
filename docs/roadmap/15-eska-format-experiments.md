@@ -1341,8 +1341,24 @@ Human semantic findings используют code/severity/позиции, summa
 координатам с установленным bsl-analyzer-app 0.3.0. JSON RU/EN совпал, все 7 829
 ESKA и 1 976 наблюдаемых native originals сохранены. Неполные модели сохранили
 exit 2; полнота выбранных правил не означает полноту языка/платформы.
-Текущий LSP pull остаётся syntax; полная семантика, общий memory budget,
-остальные IDE edits и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
+В этом checker-срезе LSP pull ещё оставался syntax; полная семантика, общий
+memory budget, остальные IDE edits и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
+
+[Семантическая диагностика IDE](../research/eska-format/analyzer-semantic-diagnostics.md)
+выбирается через `--profile semantic`; syntax остаётся default. Общий SDK-метод
+готовит pending saved YAML/BSL для IDE и checker, сохраняя ready/editor inputs
+и retry отменённых saved reads. Provider сообщает inter-file dependencies;
+selected-profile coverage относится к запрошенному модулю, full semantic false.
+Новые тесты подтверждают cross-module editor/file edits, текущие YAML, отмену,
+quota/timeout, guards, settings и checker parity с BOM/CRLF/UTF-16.
+255 tool tests, все 19 tool/15 root gates прошли; root — 895/14.
+На полной отдельной копии C1 подготовлены 2 645 YAML и 1 975 BSL; 12 saved pulls
+дали те же 26 SelfAssign, что полный checker sweep. Повторные pulls, current
+BSL/YAML и close проверены RU/EN; 7 829 originals/copies сохранены, свой проект
+удалён. Native CLI подтвердил новые BSL тела; 1С runtime и IDE-клиент не запускались.
+Normal graph прежний 206/214, manifest/lock и версии не менялись.
+Полные модели/семантика, общий memory budget, остальные edits и Explorer ещё
+в работе; EF-18 остаётся `IN_PROGRESS`, очередь этапов не меняется.
 
 ## EF-19 Самостоятельный инструмент VCS
 

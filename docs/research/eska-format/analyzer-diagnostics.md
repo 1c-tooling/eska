@@ -1,9 +1,11 @@
 # Диагностика BSL через общий сервер
 
 `eska-analyzer` поддерживает стандартный
-[pull diagnostics LSP 3.17](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/language/pullDiagnostics.md)
-через `textDocument/diagnostic`. Для BSL предоставляется профиль `syntax`
-(`identifier=eska-syntax`), а не полная семантическая проверка. Для YAML добавлен
+[pull diagnostics LSP 3.18](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.18/language/pullDiagnostics.md)
+через `textDocument/diagnostic`. Ниже описан профиль `syntax`
+(`identifier=eska-syntax`), сохранённый по умолчанию. Явный
+[`--profile semantic`](analyzer-semantic-diagnostics.md) добавляет выбранные native
+rules с текущими соседними inputs; полной семантикой языка это не является. Для YAML добавлен
 [независимый профиль метаданных](analyzer-metadata-diagnostics.md). Ядро и selector
 те же, что у `eska-check`; дублирования правил анализа нет.
 
@@ -83,7 +85,7 @@ Byte endpoints проверяются перед конвертацией; он�
 UTF-8 bytes файла. Core даёт borrowed callback над текущим текстом с revision/hash,
 не хранит LSP-модель и не создаёт дополнительную копию всего модуля.
 
-## Выполненные проверки
+## Исходная syntax-приёмка
 
 26 unit/file, 21 analyzer process и 9 checker process tests прошли. Проверены
 saved/editor/close, invalid/recovery, disabled/invalid/unsupported settings,

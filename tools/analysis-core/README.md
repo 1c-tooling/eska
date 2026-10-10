@@ -42,9 +42,9 @@ source-byte квоты и недоступного RSS. Имена таблиц 
 и их версии сохраняются. Это часть существующей LRU policy, не общий лимит RSS.
 `QueryCancellation` прерывает выполняющийся запрос на ближайшем checkpoint
 Salsa; один токен управляет одним запросом и не меняет исходники или ревизию.
-Первый самостоятельный checker выполняет явный профиль `syntax` с кооперативным
-deadline. Первый IDE transport читает метаданные этой же сессии. Общий бюджет
-памяти, полный сервер и семантическая проверка ещё не реализованы.
+Самостоятельные checker и IDE transport используют профили `syntax` и `semantic`
+этой же сессии с кооперативным deadline. Общий бюджет памяти, полные модели
+и семантика ещё не реализованы.
 Библиотека не опубликована и не входит в установленный комплект.
 
 Read-only пример `project_session` принимает каталог исходников ESKA, читает
@@ -115,7 +115,8 @@ native rules, загрузив все доступные объявленные 
 `semantic_profile_complete` появляется только у semantic и отражает выбранные
 правила и покрытие входов; платформенную исполнимость оно не подтверждает.
 Human semantic findings содержат rule code, severity и позиции; summary и причины
-YAML локализованы RU/EN. Текущий LSP pull остаётся syntax.
+YAML локализованы RU/EN. IDE использует те же правила при явном
+[`--profile semantic`](../../docs/research/eska-format/analyzer-semantic-diagnostics.md).
 [Общий контракт](../../docs/research/eska-format/check-cli.md).
 
 ## IDE transport метаданных
@@ -137,6 +138,7 @@ cargo build --manifest-path tools/analysis-core/Cargo.toml --features analyzer-c
 
 ```bash
 eska-analyzer --project-dir .
+eska-analyzer --project-dir . --profile semantic
 eska-analyzer --project-dir . --project main
 eska-analyzer --project-dir . --timeout-seconds 300
 eska-analyzer --project-dir . --accepted-base-sha256 <approved-base-sha256>
@@ -162,8 +164,10 @@ workspace manifest и отсутствующие кандидаты settings.
 binary остаются нечитаемыми. Manual policy сохраняет предел 200 и строгий отказ.
 Отказ регистрации не блокирует host. Интеграция клиента и автоматическое открытие
 нового состава ещё не приняты.
-`textDocument/diagnostic` использует общий профиль `syntax`
-и `bsl-analyzer.toml`; settings фиксируются при initialize. UTF-16 диапазоны
+`textDocument/diagnostic` использует выбранный `--profile syntax|semantic`
+и `bsl-analyzer.toml`; syntax остаётся default, settings фиксируются при initialize.
+Semantic загружает pending saved inputs до query и сохраняет editor authority;
+общий `load_semantic_inputs` используется также checker. UTF-16 диапазоны
 получены из текущих байтов без чтения диска. Ошибка settings не отключает дерево.
 `textDocument/completion` получает кандидатов из того же текущего YAML/BSL,
 учитывает client snippet support и явно сообщает неполноту.

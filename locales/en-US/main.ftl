@@ -947,8 +947,8 @@ metadata-rename-recovery-about = Inspect or recover an interrupted rename
 
 # Standalone batch analysis.
 tool-check-about = Check saved ESKA modules with an explicit profile without 1C, Git or an IDE server
-tool-analyzer-about = Serve ESKA metadata, property edit plans, YAML diagnostics, BSL navigation, syntax diagnostics and completion over a versioned IDE connection without 1C or Git
-tool-option-profile = Explicit check profile: syntax or semantic
+tool-analyzer-about = Serve ESKA metadata, property edit plans, YAML diagnostics, BSL navigation, selected-profile diagnostics and completion over a versioned IDE connection without 1C or Git
+tool-option-profile = Explicit analysis profile: syntax or semantic
 tool-option-config = Analyzer settings file; otherwise discover bsl-analyzer.toml at the selected project root
 tool-option-timeout-seconds = Cooperative operation time limit in seconds; zero stops the operation immediately
 tool-option-max-document-bytes = Maximum bytes per YAML or BSL document; the hard limit is 64 MiB

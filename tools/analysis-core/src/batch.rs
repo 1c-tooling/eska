@@ -112,13 +112,7 @@ fn check(
     let manifest_sha256 = reader.configuration().manifest_sha256.clone();
     let mut session = AnalysisSession::from_reader(
         reader,
-        SessionOptions {
-            max_loaded_module_bytes: match profile {
-                BatchProfile::Syntax => SessionOptions::default().max_loaded_module_bytes,
-                BatchProfile::Semantic => options.max_retained_source_bytes,
-            },
-            max_retained_source_bytes: options.max_retained_source_bytes,
-        },
+        profile.session_options(options.max_retained_source_bytes),
     )
     .map_err(BatchError::Open)?;
     let request = InputRequest {
@@ -126,24 +120,21 @@ fn check(
         cancellation: options.cancellation.input.clone(),
         source_budget: None,
     };
-    let owners = session.owner_paths().cloned().collect::<Vec<_>>();
-    for path in owners {
-        if deadline.stop_reason().is_some() {
-            break;
-        }
-        session
-            .load_saved(&path, session.revision(), &request)
-            .map_err(BatchError::Request)?;
-    }
     let config = match profile {
         BatchProfile::Syntax => syntax_profile(config).0,
         BatchProfile::Semantic => config.clone(),
     };
     let profile_enabled = profile.enabled(&config);
-    let paths = session.module_paths().cloned().collect::<Vec<_>>();
     if profile == BatchProfile::Semantic && profile_enabled {
-        load_bodies(&mut session, &paths, &request, &deadline)?;
+        session
+            .load_semantic_inputs(session.revision(), &request)
+            .map_err(BatchError::Request)?;
+    } else {
+        session
+            .load_pending_metadata_inputs(&request)
+            .map_err(BatchError::Request)?;
     }
+    let paths = session.module_paths().cloned().collect::<Vec<_>>();
     let mut files = Vec::with_capacity(paths.len());
     for path in paths {
         if !profile_enabled || deadline.stop_reason().is_some() {
@@ -185,30 +176,6 @@ fn check(
         }
     }
     Ok(report)
-}
-
-/// Freeze every readable body before cross-module rules run; quota failures remain current state.
-fn load_bodies(
-    session: &mut AnalysisSession,
-    paths: &[SourcePath],
-    request: &InputRequest,
-    deadline: &Deadline,
-) -> Result<(), BatchError> {
-    for path in paths {
-        if deadline.stop_reason().is_some() {
-            break;
-        }
-        if session
-            .module(path)
-            .is_some_and(|input| input.state == ModuleState::Binary)
-        {
-            continue;
-        }
-        session
-            .load_module_saved(path, session.revision(), request)
-            .map_err(BatchError::Request)?;
-    }
-    Ok(())
 }
 
 /// IDE and batch syntax consumers preserve rule disabling, severity, locale and parameters.

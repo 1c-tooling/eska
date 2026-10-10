@@ -26,6 +26,7 @@ mod rename_queries;
 mod request_cancellation;
 mod request_deadline;
 mod saved_watcher_registration;
+mod semantic_diagnostic_queries;
 mod signature_queries;
 mod support;
 mod watched_files;
@@ -279,6 +280,8 @@ fn help_and_version_are_localized_and_do_not_open_a_project() {
         }));
         assert!(help.contains("--max-retained-source-bytes"));
         assert!(help.contains("--timeout-seconds"));
+        assert!(help.contains("--profile"));
+        assert!(help.contains("semantic"));
         assert!(help.contains(if lang == "ru-RU" {
             "ноль сразу останавливает операцию"
         } else {
