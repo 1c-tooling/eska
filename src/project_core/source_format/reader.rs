@@ -308,15 +308,27 @@ impl SourceReader {
             let documents = semantic::documents(&source, &tree, &parents, mode)?;
             let offsets = documents
                 .iter()
-                .flat_map(|document| &document.descriptor.objects)
-                .flat_map(|object| {
-                    std::iter::once(&object.range).chain(
-                        object
-                            .properties
-                            .iter()
-                            .flatten()
-                            .map(|property| &property.range),
-                    )
+                .flat_map(|document| {
+                    document
+                        .descriptor
+                        .objects
+                        .iter()
+                        .flat_map(|object| {
+                            std::iter::once(&object.range).chain(
+                                object
+                                    .properties
+                                    .iter()
+                                    .flatten()
+                                    .map(|property| &property.range),
+                            )
+                        })
+                        .chain(
+                            document
+                                .descriptor
+                                .diagnostics
+                                .iter()
+                                .map(|diagnostic| &diagnostic.range),
+                        )
                 })
                 .flat_map(|range| [range.start, range.end])
                 .collect::<Vec<_>>();

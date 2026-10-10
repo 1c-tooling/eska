@@ -799,6 +799,9 @@ preset = "trunk"
 [Подробная ошибка модели](docs/research/eska-format/analyzer-adapter-issues.md)
 показывает причину и исходное свойство/QName в одном текущем состоянии дерева,
 чтения и уведомлений редактора.
+[Диагностика моделей YAML](docs/research/eska-format/analyzer-metadata-diagnostics.md)
+передаёт те же причины как ошибки/предупреждения текущего документа с точными
+координатами и сообщениями RU/EN; отключение BSL rules не скрывает эту проверку.
 Полная семантика
 и комплектная поставка ещё не готовы. [План правки свойства YAML](docs/research/eska-format/analyzer-property-plans.md)
 уже учитывает текущую editor version и отдельно закреплённую поддержку;

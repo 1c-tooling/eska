@@ -2,8 +2,9 @@
 
 `eska-analyzer` поддерживает стандартный
 [pull diagnostics LSP 3.17](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/language/pullDiagnostics.md)
-через `textDocument/diagnostic`. Пока предоставляется профиль `syntax`
-(`identifier=eska-syntax`), а не полная семантическая проверка. Ядро и selector
+через `textDocument/diagnostic`. Для BSL предоставляется профиль `syntax`
+(`identifier=eska-syntax`), а не полная семантическая проверка. Для YAML добавлен
+[независимый профиль метаданных](analyzer-metadata-diagnostics.md). Ядро и selector
 те же, что у `eska-check`; дублирования правил анализа нет.
 
 ## Настройки и согласование
@@ -11,17 +12,18 @@
 `bsl-analyzer.toml` читается один раз при initialize из корня выбранного project
 member. Общий loader и ограничение профиля переиспользуются checker/server.
 Config fingerprint совпадает при одинаковых rules, locale не меняет fingerprint.
-Изменение настроек требует restart; watcher/reload ещё не подключены.
+Изменение настроек требует [restart старого host](analyzer-project-changes.md);
+автоматический restart клиента ещё не подключён.
 
 Initialize объявляет `positionEncoding=utf-16`, `languageQueries=true`,
 `languageMethods=[textDocument/diagnostic]`, состояние syntax в
-`experimental.eska.analysis` и config fingerprint/path. Если settings корректны
-и ParseError включён, также объявляется стандартный `diagnosticProvider` с
+`experimental.eska.analysis` и config fingerprint/path. Стандартный `diagnosticProvider`
+теперь объявляется независимо от настроек BSL с
 `identifier=eska-syntax`, `interFileDependencies=false`, `workspaceDiagnostics=false`.
-Это свойство профиля syntax; полнота metadata/семантики из него не следует.
+URI выбирает профиль BSL или YAML; полнота metadata/семантики из provider не следует.
 
 Неверный config и неподдержанный scope дают coded issue; дерево и document sync
-остаются доступны. Disabled profile не объявляет diagnosticProvider и отвечает
+остаются доступны. Disabled BSL profile отвечает
 `analysis_profile_disabled` на явный pull. Неизвестный identifier отклоняется
 до чтения BSL. Source exclusions, extension/external/configuration dependencies,
 diff/author/baseline scopes пока не поддержаны, как и в checker.
@@ -44,7 +46,7 @@ diff/author/baseline scopes пока не поддержаны, как и в che
 }
 ```
 
-URI здесь синтетический. Действующий сервер принимает только declared local
+URI здесь синтетический. Для BSL действующий сервер принимает declared local
 module внутри своего канонического корня. Pending saved BSL читается один раз
 с общей quota; текущий editor input не заменяется диском. Missing/binary/refused
 input даёт error `module_unavailable` с текущим snapshot/state/resources.

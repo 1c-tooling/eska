@@ -11,6 +11,7 @@ mod cancellation;
 pub mod check_cli;
 mod deadline;
 mod memory;
+mod metadata_diagnostics;
 mod metadata_locations;
 mod modules;
 mod projection;
@@ -23,6 +24,9 @@ mod session;
 pub use cancellation::{QueryCancellation, RequestCancellation};
 pub use ide::{CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, Locale};
 pub use memory::{KernelMemoryReport, KernelMemoryTable};
+pub use metadata_diagnostics::{
+    MetadataDiagnostic, MetadataDiagnosticIssue, MetadataDiagnostics, MetadataDiagnosticsError,
+};
 pub use metadata_locations::{MetadataLocation, MetadataLocationError};
 pub use modules::{ModuleFailure, ModuleInput, ModuleState, ModuleSummary, SessionOptions};
 pub use projection::{MetadataView, ModelState, OwnerModel};

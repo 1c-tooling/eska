@@ -236,10 +236,9 @@ fn completion_settings_and_deadline_have_distinct_current_failures() {
         .unwrap();
         let mut client = Client::with_options(&root, lang, &[]);
         let init = client.ask(&initialize());
-        assert!(
-            init["result"]["capabilities"]
-                .get("diagnosticProvider")
-                .is_none()
+        assert_eq!(
+            init["result"]["capabilities"]["diagnosticProvider"]["identifier"],
+            "eska-syntax"
         );
         assert!(
             init["result"]["capabilities"]

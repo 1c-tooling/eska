@@ -8,7 +8,7 @@ use std::{
 use eska::{
     analysis_core::{InputRequest, InputState},
     project_core::{eska_source::EskaSource, source_format::SourcePath},
-    tool_cli::{self, Failure, localization::resolve_locale_from_environment, rpc_framing},
+    tool_cli::{self, Failure, localization::Localizer, rpc_framing},
 };
 use serde_json::{Value, json};
 
@@ -30,6 +30,7 @@ enum Phase {
 
 struct Server<'a> {
     cli: &'a Cli,
+    localizer: &'a Localizer,
     phase: Phase,
     session: Option<AnalysisSession>,
     session_id: String,
@@ -49,12 +50,18 @@ enum Step {
 }
 
 /// Keep stdout framed; malformed boundaries and lost pipes terminate without guessed resync.
-pub fn run(cli: &Cli, input: impl BufRead + Send + 'static, output: &mut impl Write) -> u8 {
+pub fn run(
+    cli: &Cli,
+    localizer: &Localizer,
+    input: impl BufRead + Send + 'static,
+    output: &mut impl Write,
+) -> u8 {
     let Ok(incoming) = stream::Incoming::start(input) else {
         return 1;
     };
     let mut server = Server {
         cli,
+        localizer,
         phase: Phase::New,
         session: None,
         session_id: String::new(),
@@ -221,11 +228,8 @@ impl Server<'_> {
                 protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
             })?;
         let workspace = selected.workspace_root;
-        let settings = crate::analysis_settings::load(
-            selected.project.root(),
-            None,
-            resolve_locale_from_environment(self.cli.lang.as_deref()),
-        );
+        let settings =
+            crate::analysis_settings::load(selected.project.root(), None, self.localizer.locale());
         let source = EskaSource::open(selected.project, selected.scope).map_err(|error| {
             protocol::error_value(-32000, error.code, json!({"location":error.location}))
         })?;
@@ -274,11 +278,9 @@ impl Server<'_> {
             result["capabilities"]["experimental"]["eska"]["propertyEditPlans"] =
                 json!({"method":property_edits::METHOD,"scope":"open-document","versioned":true});
         }
-        if diagnostics::enabled(&settings) {
-            result["capabilities"]["diagnosticProvider"] = json!({
-                "identifier":diagnostics::IDENTIFIER, "interFileDependencies":false,
-                "workspaceDiagnostics":false, "workDoneProgress":false});
-        }
+        result["capabilities"]["diagnosticProvider"] = json!({
+            "identifier":diagnostics::IDENTIFIER, "interFileDependencies":false,
+            "workspaceDiagnostics":false, "workDoneProgress":false});
         if settings.is_ok() {
             result["capabilities"]["completionProvider"] =
                 json!({"resolveProvider":false,"triggerCharacters":["."],"workDoneProgress":false});
@@ -541,9 +543,12 @@ impl Server<'_> {
                     &self.session_id,
                     &params,
                     settings,
-                    &request,
-                    cancellation,
-                    timeout,
+                    &diagnostics::Options {
+                        request: &request,
+                        cancellation,
+                        timeout,
+                        localizer: self.localizer,
+                    },
                 )
             }
             language::Method::Completion => {

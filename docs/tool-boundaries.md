@@ -560,6 +560,10 @@ Transport не выбирает первый одноимённый UUID и не
 остаются структурированными в core; transport отображает каждую причину в один
 стабильный machine tag с исходными полями и координатами. Клиент выбирает своё
 объяснение, не разбирая Debug или локализованный текст сервера.
+[Диагностика моделей YAML](research/eska-format/analyzer-metadata-diagnostics.md)
+получает текущие typed findings из общего core; сервер переводит их в LSP items
+и Fluent сообщения. SourceReader сохраняет только дополнительные нужные endpoints.
+BSL rules не отключают эту операцию; unavailable input остаётся явной ошибкой.
 [IDE protocol 1.x](ide-protocol.md) обслуживается командой `eska ide --stdio`.
 Это собственный JSON-RPC API с framing, похожим на LSP, но не реализация LSP.
 Explorer уже использует backend для состава дерева и свойств.

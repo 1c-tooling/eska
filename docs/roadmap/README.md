@@ -136,6 +136,10 @@ C1/C2/C3 совпали с native reader; в RU/EN прошли 764 definition/l
 передаются одной DTO в дерево/чтение/уведомления; зафиксированы все 14 вариантов.
 Шесть stdio-сценариев RU/EN подтвердили текущие ranges/hash, editor/close и два
 реальных `cfg:AnyRef` C1. Пройдены 146 tool tests, 19 tool gates и 15 root gates.
+[Диагностика текущих YAML-моделей](../research/eska-format/analyzer-metadata-diagnostics.md)
+использует общие typed findings и captured coordinates, отдельно от BSL settings.
+155 tool tests, 19 tool gates и 15 root gates прошли; 12 stdio-сценариев RU/EN
+подтвердили 144 pulls, editor/close/refresh, unsupported warnings и locale parity.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

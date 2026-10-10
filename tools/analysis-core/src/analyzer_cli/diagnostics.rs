@@ -1,11 +1,15 @@
-//! Standard document pulls execute the same explicit syntax profile as the standalone checker.
+//! Document pulls inspect current metadata or the same explicit BSL syntax profile as the checker.
 
+mod metadata;
 #[cfg(test)]
 mod tests;
 
 use std::time::Duration;
 
-use eska::{analysis_core::InputRequest, tool_cli::Failure};
+use eska::{
+    analysis_core::InputRequest,
+    tool_cli::{Failure, localization::Localizer},
+};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -15,7 +19,7 @@ use crate::{
 };
 
 use super::{
-    dto, language,
+    documents, dto, language,
     positions::Positions,
     protocol,
     request_control::{self, Method},
@@ -37,23 +41,22 @@ pub struct Params {
     pub eska: Option<language::Context>,
 }
 
-/// Invalid settings or a disabled rule cannot be advertised as a successful empty syntax profile.
-pub fn enabled(settings: &Result<Settings, Failure>) -> bool {
-    settings.as_ref().is_ok_and(|settings| {
-        !settings
-            .diagnostics
-            .is_disabled(crate::DiagnosticCode::ParseError)
-    })
+/// Metadata checks are independent of BSL rules; one request still uses one shared timer and token.
+pub struct Options<'a> {
+    pub request: &'a InputRequest,
+    pub cancellation: &'a RequestCancellation,
+    pub timeout: Duration,
+    pub localizer: &'a Localizer,
 }
 
 /// A configuration failure affects language analysis without disabling the independent metadata tree.
 pub fn availability(settings: &Result<Settings, Failure>) -> Value {
     match settings {
-        Ok(settings) => json!({"profiles":["syntax"],
+        Ok(settings) => json!({"profiles":["syntax","metadata"], "metadataEnabled":true,
             "syntaxEnabled":!settings.diagnostics.is_disabled(crate::DiagnosticCode::ParseError),
             "configSha256":settings.sha256, "configPath":settings.path, "issue":null}),
         Err(error) => {
-            json!({"profiles":["syntax"],"syntaxEnabled":false,"configSha256":null,"configPath":null,
+            json!({"profiles":["syntax","metadata"],"metadataEnabled":true,"syntaxEnabled":false,"configSha256":null,"configPath":null,
             "issue":{"code":error.code,"location":error.location}})
         }
     }
@@ -65,9 +68,7 @@ pub fn pull(
     id: &str,
     params: &Params,
     settings: &Result<Settings, Failure>,
-    request: &InputRequest,
-    cancellation: &RequestCancellation,
-    timeout: Duration,
+    options: &Options<'_>,
 ) -> Result<Value, Value> {
     if params
         .identifier
@@ -80,6 +81,24 @@ pub fn pull(
             json!({"supported":IDENTIFIER}),
         ));
     }
+    let path = documents::source_path(session, &params.text_document.uri)?;
+    if session.owner(&path).is_some() {
+        let deadline = request_control::start(
+            session,
+            id,
+            Method::Language(language::Method::Diagnostic),
+            options.cancellation,
+            options.timeout,
+        )?;
+        let result = metadata::pull(session, id, &path, options);
+        return request_control::finish(
+            session,
+            id,
+            Method::Language(language::Method::Diagnostic),
+            &deadline,
+            result,
+        );
+    }
     let settings = settings.as_ref().map_err(|failure| {
         protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
     })?;
@@ -91,15 +110,22 @@ pub fn pull(
             json!({"profile":"syntax"}),
         ));
     }
-    let path = language::source_path(session, &params.text_document.uri)?;
     let deadline = request_control::start(
         session,
         id,
         Method::Language(language::Method::Diagnostic),
-        cancellation,
-        timeout,
+        options.cancellation,
+        options.timeout,
     )?;
-    let result = analyze(session, id, &path, settings, &config, request, cancellation);
+    let result = analyze(
+        session,
+        id,
+        &path,
+        settings,
+        &config,
+        options.request,
+        options.cancellation,
+    );
     request_control::finish(
         session,
         id,

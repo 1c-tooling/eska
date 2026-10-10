@@ -58,6 +58,7 @@ pub fn run() -> ExitCode {
     let stdout = io::stdout();
     ExitCode::from(server::run(
         &cli,
+        &localizer,
         io::BufReader::new(stdin),
         &mut stdout.lock(),
     ))

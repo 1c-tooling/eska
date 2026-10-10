@@ -233,10 +233,13 @@ fn settings_failure_and_disabled_profile_do_not_claim_clean_analysis() {
     ] {
         fs::write(root.join("bsl-analyzer.toml"), config).unwrap();
         let (mut client, init) = start(&root, "en-US", &[]);
-        assert!(
-            init["result"]["capabilities"]
-                .get("diagnosticProvider")
-                .is_none()
+        assert_eq!(
+            init["result"]["capabilities"]["diagnosticProvider"]["identifier"],
+            "eska-syntax"
+        );
+        assert_eq!(
+            init["result"]["capabilities"]["experimental"]["eska"]["analysis"]["metadataEnabled"],
+            true
         );
         assert_eq!(client.ask(&pull(&root, "0"))["error"]["data"]["kind"], code);
         let tree = client.ask(&request(
@@ -333,10 +336,9 @@ fn settings_changes_do_not_silently_change_a_running_profile() {
     assert_eq!(same["result"], first["result"]);
     client.finish();
     let (mut next, init) = start(&root, "en-US", &[]);
-    assert!(
-        init["result"]["capabilities"]
-            .get("diagnosticProvider")
-            .is_none()
+    assert_eq!(
+        init["result"]["capabilities"]["diagnosticProvider"]["identifier"],
+        "eska-syntax"
     );
     assert_eq!(
         next.ask(&pull(&root, "0"))["error"]["data"]["kind"],

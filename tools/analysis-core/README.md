@@ -167,6 +167,10 @@ metadataTargets — typed-objects-and-members.
 [Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
 сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
 Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.
+[Диагностика моделей YAML](../../docs/research/eska-format/analyzer-metadata-diagnostics.md)
+подключена к `textDocument/diagnostic`: provider сохраняется при отключённых или
+повреждённых BSL settings. Core возвращает typed причины и captured координаты,
+transport добавляет сообщения RU/EN; failed input не получает выдуманного диапазона.
 Полная семантика ещё не готова. [Планы свойств YAML](../../docs/research/eska-format/analyzer-property-plans.md)
 возвращают versioned WorkspaceEdit для ready открытого документа при независимо
 закреплённой базе и client documentChanges support. План не записывает файл и

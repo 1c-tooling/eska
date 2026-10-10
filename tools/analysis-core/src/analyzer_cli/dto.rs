@@ -71,7 +71,7 @@ pub fn state(view: &MetadataView) -> Value {
     let model_issue = match &view.model.state {
         ModelState::Invalid { error, .. } => Some(
             json!({"code":"analysis_adapter_invalid", "range":error.range,
-                "issue":adapter_issue::value(&error.issue)}),
+                "issue":adapter_cause(&error.issue)}),
         ),
         ModelState::Unsupported(kind) => {
             Some(json!({"code":"analysis_metadata_kind_unsupported", "kind":kind.as_str()}))
@@ -89,6 +89,11 @@ pub fn state(view: &MetadataView) -> Value {
     json!({"origin":origin, "source_sha256":view.source_sha256, "input":input,
         "model":model, "model_issue":model_issue, "descriptors":view.model.descriptors,
         "modeled_descriptors":view.model.modeled_descriptors, "parse_issues":view.model.parse_issues})
+}
+
+/// Metadata state and document diagnostics use the same exhaustive transport shape.
+pub(super) fn adapter_cause(issue: &eska_bsl_adapter::AdapterIssue) -> Value {
+    adapter_issue::value(issue)
 }
 
 /// A module's current readability and byte count do not imply clean syntax or full analysis.

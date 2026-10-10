@@ -1135,6 +1135,22 @@ namespace исходного XML и сохранили parsed tree. Bytes 5/3/3 
 release server — 49123168 bytes. Полная семантика и остальные условия EF-18
 ещё не завершены; очередь этапов не меняется.
 
+[Диагностика текущих моделей YAML](../research/eska-format/analyzer-metadata-diagnostics.md)
+подключена к стандартному document pull через отдельный profile metadata;
+прежний identifier/provider используется для обоих declared типов документов.
+Общий core возвращает typed причины и captured native/physical coordinates;
+сервер добавляет локализованное сообщение. Дополнительные parse-issue endpoints
+сохраняются одним SourceReader. BSL settings не скрывают metadata checks;
+unavailable YAML не получает fabricated span или старые findings.
+73 unit/file, 73 analyzer и девять checker process tests прошли, всего 155;
+minimal — 58. Все 19 tool и 15 root gates прошли; root 893/14, minimal 165/3,
+project-cli 181/3, build-cli 200/3. Первая root-попытка встретила ExecutableFileBusy
+в прежнем update-тесте; полный повтор прошёл без изменения теста. В 12 сценариях
+C1/C2/C3 RU/EN выполнены 144 pulls с disabled/invalid BSL settings; editor/ranges/hash,
+invalid/close/refresh, unsupported role/AnyRef и machine locale parity согласованы.
+Bytes 6/4/4 выбранных оригиналов/копий сохранены, временные проекты удалены.
+Граф — 206/214, release server — 49125504 bytes; остальные условия EF-18 ещё в работе.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя
