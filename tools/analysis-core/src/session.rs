@@ -2,6 +2,8 @@
 
 mod analysis_inputs;
 #[cfg(test)]
+mod event_subscription_tests;
+#[cfg(test)]
 mod module_tests;
 mod saved_changes;
 #[cfg(test)]
@@ -19,8 +21,8 @@ use ide_db::{
     GraphConfigCache, RootDatabaseImpl,
     metadata::{
         CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, MetadataListingData,
-        MetadataListingInput, resolve_common_module, resolve_defined_type, resolve_metadata_object,
-        resolve_register,
+        MetadataListingInput, resolve_common_module, resolve_defined_type,
+        resolve_event_subscription, resolve_metadata_object, resolve_register,
     },
 };
 use salsa::Setter;
@@ -363,6 +365,10 @@ impl AnalysisSession {
             return Ok(None);
         };
         Ok(match value.as_ref() {
+            CanonicalMetadata::EventSubscription(_) => {
+                resolve_event_subscription(&self.database, self.listing, name.clone())
+                    .map(CanonicalMetadata::EventSubscription)
+            }
             CanonicalMetadata::Object(object) => {
                 resolve_metadata_object(&self.database, self.listing, object.mdo_type, name.clone())
                     .map(CanonicalMetadata::Object)

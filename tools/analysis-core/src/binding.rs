@@ -4,7 +4,9 @@ use std::collections::BTreeMap;
 
 use bsl_metadata::MdoType;
 use eska::project_core::{MetadataKind, source_format::SourcePath};
-use ide_db::metadata::{CommonModuleEntry, DefinedTypeEntry, MdoEntry, MetadataListingData};
+use ide_db::metadata::{
+    CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, MdoEntry, MetadataListingData,
+};
 use vfs::FileId;
 
 /// Every owner gets a stable slot; unsupported families keep an explicit unavailable value.
@@ -23,6 +25,12 @@ impl OwnerBinding {
             return;
         };
         match self.kind {
+            MetadataKind::EventSubscription => {
+                listing.event_subscriptions.push(EventSubscriptionEntry {
+                    name: name.clone(),
+                    main: self.main,
+                });
+            }
             MetadataKind::CommonModule => listing.common_modules.push(CommonModuleEntry {
                 name: name.clone(),
                 main: self.main,

@@ -41,6 +41,8 @@ rules с загруженными соседними телами. Selected-prof
 отдельной от syntax и платформенной исполнимости.
 [Семантический LSP pull](analyzer-semantic-diagnostics.md) использует тот же
 набор правил с текущими YAML/BSL inputs; syntax сохранён по умолчанию.
+[Подписки на события](analyzer-event-subscriptions.md) передают текущие
+Source/Event/Handler в каноническое ядро; IDE и checker используют одну проекцию.
 [Отдельный сервер метаданных](analyzer-metadata.md) согласует экспериментальный
 протокол; [синхронизация YAML/BSL](analyzer-documents.md) использует общую сессию,
 редакторские версии и квоту. [Pull-диагностика](analyzer-diagnostics.md) проверяет

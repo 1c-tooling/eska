@@ -218,6 +218,12 @@ Ready/editor inputs, отменённые saved reads и прежний syntax d
 На полной копии C1 12 saved pulls дали те же 26 SelfAssign, что checker;
 повторы, current BSL/YAML и close проверены в обоих языках, исходники сохранены.
 EF-18 остаётся `IN_PROGRESS`: модели, общий memory budget, edits и Explorer ещё в работе.
+[Подписки на события](../research/eska-format/analyzer-event-subscriptions.md)
+добавлены в canonical inputs. Все 1 084 модели C1/C2/C3 совпали с native reader;
+текущий YAML, invalid/close и completion проверены RU/EN. 257 tool tests,
+kernel 1105/4, все обязательные gates прошли. Полный checker C1 сохранил 26 findings
+и убрал ровно 91 отказ по подпискам; остальных 1 601 issues достаточно для exit 2.
+EF-18 остаётся `IN_PROGRESS`, следующие этапы не начаты.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

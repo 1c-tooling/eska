@@ -132,6 +132,8 @@ fn canonical(
         }));
     };
     Some(match kind {
+        MetadataKind::EventSubscription => adapter::event_subscription(root)
+            .map(|model| CanonicalMetadata::EventSubscription(Arc::new(model))),
         MetadataKind::CommonModule => adapter::common_module(root)
             .map(|model| CanonicalMetadata::CommonModule(Arc::new(model))),
         MetadataKind::DefinedType => {

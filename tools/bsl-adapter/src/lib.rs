@@ -2,6 +2,7 @@
 
 mod common_module;
 mod defined_type;
+mod event_subscription;
 mod identity;
 mod object;
 mod properties;
@@ -11,6 +12,7 @@ mod type_description;
 
 pub use common_module::common_module;
 pub use defined_type::defined_type;
+pub use event_subscription::event_subscription;
 pub use object::metadata_object;
 pub use register::register;
 pub use simple_object::{constant_object, enum_object};

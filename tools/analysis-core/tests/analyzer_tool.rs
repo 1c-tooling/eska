@@ -15,6 +15,7 @@ mod definition_union_queries;
 mod diagnostic_queries;
 mod document_symbol_queries;
 mod document_sync;
+mod event_subscription_queries;
 mod hover_queries;
 mod kernel_memory_queries;
 mod metadata_diagnostic_queries;

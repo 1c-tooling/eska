@@ -1,0 +1,698 @@
+{
+  "schema_version": 1,
+  "component": "event_subscription_canonical_inputs",
+  "milestone": "EF-18",
+  "status": "IN_PROGRESS",
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.6370026840013452
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 0.594254831012222
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 2.868827982005314
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 14.014889951999066,
+      "results": [
+        "ok. 117 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.57s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 126 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.00s",
+        "ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.768397974999971
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 10.003674469000543
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 1.4267376200004946
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 3.9357861109892838,
+      "results": [
+        "ok. 95 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.49s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.1706655120069627
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.6247152150026523
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 1.7999757539946586
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 5.7539268160035135,
+      "results": [
+        "ok. 97 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.57s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 4.10421791599947
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 1.000610749993939
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 2.7797998650057707
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 15.219678736000787,
+      "results": [
+        "ok. 117 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.45s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 124 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.68s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 4.234845246988698
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 61.906405449000886
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 7.688699125996209
+    }
+  ],
+  "adapter_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.2160391109937336
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.2386590890091611
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.7421544879907742
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 1.8139270119863795,
+      "results": [
+        "ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 1.8158056359970942
+    },
+    {
+      "gate": "release-model-example",
+      "exit_code": 0,
+      "seconds": 14.684467314000358
+    }
+  ],
+  "kernel_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.49653961800504476
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 5.801344995998079
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 8.820049089001259
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 4.592511420996743,
+      "results": [
+        "ok. 50 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 267 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 600 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 180 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 4.549609726003837
+    }
+  ],
+  "root_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9168386689998442
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.47230386300361715
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3177264620026108
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 14.16583302700019
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.102023986997665
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2133669469913002
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5653415970009519
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.458310526999412
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.19007882398727816
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 1.519920626989915
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.250859813007992
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.19806135700491723
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 5.523654912991333
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.3561119380028686
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.005046510006650351
+    }
+  ],
+  "root_tests": [
+    {
+      "profile": "default",
+      "passed": 895,
+      "ignored": 14
+    },
+    {
+      "profile": "minimal",
+      "passed": 165,
+      "ignored": 3
+    },
+    {
+      "profile": "project-cli",
+      "passed": 182,
+      "ignored": 3
+    },
+    {
+      "profile": "build-cli",
+      "passed": 201,
+      "ignored": 3
+    }
+  ],
+  "native_model_comparison": [
+    {
+      "corpus": "C1",
+      "subscriptions": 91,
+      "model_parity": true,
+      "native_uuid_comment_source_order_event_handler_equal": true,
+      "tracked_source_and_native_files": 184,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "wall_seconds": 0.10020103299757466
+    },
+    {
+      "corpus": "C2",
+      "subscriptions": 462,
+      "model_parity": true,
+      "native_uuid_comment_source_order_event_handler_equal": true,
+      "tracked_source_and_native_files": 926,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "wall_seconds": 0.8360470550105674
+    },
+    {
+      "corpus": "C3",
+      "subscriptions": 531,
+      "model_parity": true,
+      "native_uuid_comment_source_order_event_handler_equal": true,
+      "tracked_source_and_native_files": 1064,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "wall_seconds": 0.9562891090026824
+    }
+  ],
+  "ide_scenarios": [
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "ready_subscriptions": 91,
+      "subscription_completion_candidates": 91,
+      "current_source_event_handler_ready": true,
+      "invalid_source_clears_current_model": true,
+      "broken_editor_not_replaced_by_saved": true,
+      "close_restores_saved_model": true,
+      "current_source_hashes_and_utf16_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "semantic_self_assign_findings": 1,
+      "semantic_profile_complete": false,
+      "semantic_complete": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "full_composition_preserved": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 73556,
+      "wall_seconds": 0.5077970740094315,
+      "corpus": "C1",
+      "normalized_locale_machine_trace_equal": true,
+      "tracked_original_files": 95,
+      "tracked_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "original_files_written": false,
+      "temporary_project_removed": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "ready_subscriptions": 91,
+      "subscription_completion_candidates": 91,
+      "current_source_event_handler_ready": true,
+      "invalid_source_clears_current_model": true,
+      "broken_editor_not_replaced_by_saved": true,
+      "close_restores_saved_model": true,
+      "current_source_hashes_and_utf16_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "semantic_self_assign_findings": 1,
+      "semantic_profile_complete": false,
+      "semantic_complete": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "full_composition_preserved": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 73920,
+      "wall_seconds": 0.46014941501198336,
+      "corpus": "C1",
+      "normalized_locale_machine_trace_equal": true,
+      "tracked_original_files": 95,
+      "tracked_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "original_files_written": false,
+      "temporary_project_removed": true
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "ready_subscriptions": 462,
+      "subscription_completion_candidates": 462,
+      "current_source_event_handler_ready": true,
+      "invalid_source_clears_current_model": true,
+      "broken_editor_not_replaced_by_saved": true,
+      "close_restores_saved_model": true,
+      "current_source_hashes_and_utf16_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "semantic_self_assign_findings": 1,
+      "semantic_profile_complete": false,
+      "semantic_complete": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "full_composition_preserved": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 250916,
+      "wall_seconds": 11.54341156798182,
+      "corpus": "C2",
+      "normalized_locale_machine_trace_equal": true,
+      "tracked_original_files": 466,
+      "tracked_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "original_files_written": false,
+      "temporary_project_removed": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "ready_subscriptions": 462,
+      "subscription_completion_candidates": 462,
+      "current_source_event_handler_ready": true,
+      "invalid_source_clears_current_model": true,
+      "broken_editor_not_replaced_by_saved": true,
+      "close_restores_saved_model": true,
+      "current_source_hashes_and_utf16_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "semantic_self_assign_findings": 1,
+      "semantic_profile_complete": false,
+      "semantic_complete": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "full_composition_preserved": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 251352,
+      "wall_seconds": 11.488339309988078,
+      "corpus": "C2",
+      "normalized_locale_machine_trace_equal": true,
+      "tracked_original_files": 466,
+      "tracked_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "original_files_written": false,
+      "temporary_project_removed": true
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "ready_subscriptions": 531,
+      "subscription_completion_candidates": 531,
+      "current_source_event_handler_ready": true,
+      "invalid_source_clears_current_model": true,
+      "broken_editor_not_replaced_by_saved": true,
+      "close_restores_saved_model": true,
+      "current_source_hashes_and_utf16_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "semantic_self_assign_findings": 1,
+      "semantic_profile_complete": false,
+      "semantic_complete": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "full_composition_preserved": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 281540,
+      "wall_seconds": 15.605711047013756,
+      "corpus": "C3",
+      "normalized_locale_machine_trace_equal": true,
+      "tracked_original_files": 535,
+      "tracked_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "original_files_written": false,
+      "temporary_project_removed": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "ready_subscriptions": 531,
+      "subscription_completion_candidates": 531,
+      "current_source_event_handler_ready": true,
+      "invalid_source_clears_current_model": true,
+      "broken_editor_not_replaced_by_saved": true,
+      "close_restores_saved_model": true,
+      "current_source_hashes_and_utf16_ranges": true,
+      "non_bmp_crlf_editor": true,
+      "semantic_self_assign_findings": 1,
+      "semantic_profile_complete": false,
+      "semantic_complete": false,
+      "unrelated_payloads_intentionally_absent": true,
+      "full_composition_preserved": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 280876,
+      "wall_seconds": 15.337337273987941,
+      "corpus": "C3",
+      "normalized_locale_machine_trace_equal": true,
+      "tracked_original_files": 535,
+      "tracked_bytes_unchanged": true,
+      "copied_payload_restored": true,
+      "original_files_written": false,
+      "temporary_project_removed": true
+    }
+  ],
+  "full_saved_checker": [
+    {
+      "corpus": "C1",
+      "locale": "en-US",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "findings_equal_previous_checker": true,
+      "settings_hash_equal_previous": true,
+      "metadata_issues_before": 1692,
+      "metadata_issues_after": 1601,
+      "event_subscription_issues_removed": 91,
+      "other_metadata_issues_unchanged": true,
+      "semantic_profile_complete": false,
+      "metadata_models_complete": false,
+      "source_quota_unchanged": true,
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "locale_json_equal": true,
+      "wall_seconds": 14.496888088993728
+    },
+    {
+      "corpus": "C1",
+      "locale": "ru-RU",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "findings_equal_previous_checker": true,
+      "settings_hash_equal_previous": true,
+      "metadata_issues_before": 1692,
+      "metadata_issues_after": 1601,
+      "event_subscription_issues_removed": 91,
+      "other_metadata_issues_unchanged": true,
+      "semantic_profile_complete": false,
+      "metadata_models_complete": false,
+      "source_quota_unchanged": true,
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "locale_json_equal": true,
+      "wall_seconds": 14.673300009977538
+    }
+  ],
+  "footprint": {
+    "original_native_file_hashes_verified": 322,
+    "runtime_graph": [
+      {
+        "feature": "analyzer-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      },
+      {
+        "feature": "check-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      }
+    ],
+    "release_analyzer_bytes": 50231040,
+    "release_checker_bytes": 46302128
+  },
+  "native_cli": {
+    "version": "0.3.0",
+    "files": 3,
+    "parse_errors": 0,
+    "self_assign_findings": 3,
+    "failed_files": 0,
+    "workspace_mcp_available": false,
+    "platform_help_degraded": true,
+    "temporary_files_removed": true
+  },
+  "limitations": [
+    "source_is_native_opaque_string",
+    "handler_signature_not_validated",
+    "event_runtime_not_validated",
+    "other_metadata_models_incomplete",
+    "full_semantic_analysis_incomplete",
+    "shared_heap_rss_budget_incomplete",
+    "vscode_client_not_run",
+    "one_c_runtime_not_run"
+  ]
+}

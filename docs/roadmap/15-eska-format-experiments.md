@@ -1360,6 +1360,18 @@ Normal graph прежний 206/214, manifest/lock и версии не меня
 Полные модели/семантика, общий memory budget, остальные edits и Explorer ещё
 в работе; EF-18 остаётся `IN_PROGRESS`, очередь этапов не меняется.
 
+[Подписки на события](../research/eska-format/analyzer-event-subscriptions.md)
+подключены как отдельный tracked canonical input и устойчивый listing. Source,
+Event и Handler из saved/editor YAML передаются в native model без XML; invalid
+или unavailable не возвращают прежнюю модель. Все 1 084 подписки C1/C2/C3 совпали
+с native reader, имена и жизненный цикл проверены в IDE-процессе RU/EN на собственных
+частичных копиях. 257 tool tests, kernel 1105/4 и все 6 adapter/5 kernel/19 tool/
+15 root gates прошли. Полный checker C1 сохранил 26 findings и прежнюю source quota;
+ушли ровно 91 unsupported-kind issues, остальные 1 601 причины сохранили exit 2.
+JSON RU/EN совпал, все 7 829 исходных файлов C1 сохранены. Graph прежний 206/214,
+зависимости и версии не менялись. Сигнатуры обработчиков, полная семантика, прочие
+модели, общий memory budget, edits и Explorer ещё в работе; EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

@@ -8,11 +8,11 @@ use vfs::FileId;
 
 use crate::{
     metadata::{
-        common_module_index, config_index, defined_type_index, resolve_common_module,
-        resolve_common_module_by_file, resolve_defined_type, resolve_register,
-        resolve_register_by_name, CanonicalMetadata, CanonicalMetadataInput,
-        CanonicalMetadataInputs, CommonModuleEntry, DefinedTypeEntry, MdoEntry,
-        MetadataListingData, MetadataListingInput,
+        common_module_index, config_index, defined_type_index, event_subscription_index,
+        resolve_common_module, resolve_common_module_by_file, resolve_defined_type,
+        resolve_event_subscription, resolve_register, resolve_register_by_name, CanonicalMetadata,
+        CanonicalMetadataInput, CanonicalMetadataInputs, CommonModuleEntry, DefinedTypeEntry,
+        EventSubscriptionEntry, MdoEntry, MetadataListingData, MetadataListingInput,
     },
     RootDatabaseImpl,
 };
@@ -46,6 +46,70 @@ fn database() -> (RootDatabaseImpl, MetadataListingInput) {
 /// Bind one stable file identity to a host-provided tracked value.
 fn input(database: &RootDatabaseImpl, value: CanonicalMetadata) -> CanonicalMetadataInput {
     CanonicalMetadataInput::new(database, Some(Arc::new(value)), "saved".into())
+}
+
+/// Current subscription bindings replace only their own slot and never read an XML fallback.
+#[test]
+fn canonical_event_subscription_preserves_neighbors_and_rejects_unavailable_or_wrong_identity() {
+    let (mut database, listing) = database();
+    listing.set_event_subscriptions(&mut database).to(Arc::new(vec![
+        EventSubscriptionEntry { name: "Подписка".into(), main: FileId(4) },
+        EventSubscriptionEntry { name: "Neighbor".into(), main: FileId(5) },
+    ]));
+    let make = |name: &str, handler: &str| {
+        Arc::new(bsl_metadata::EventSubscription::from_parts(
+            bsl_metadata::Uuid::nil(),
+            name.into(),
+            None,
+            "cfg:CatalogObject.Items".into(),
+            "BeforeWrite".into(),
+            handler.into(),
+        ))
+    };
+    let saved = make("Подписка", "CommonModule.Tools.Saved");
+    let neighbor = make("Neighbor", "CommonModule.Tools.Other");
+    let provided = input(&database, CanonicalMetadata::EventSubscription(Arc::clone(&saved)));
+    let untouched = input(&database, CanonicalMetadata::EventSubscription(Arc::clone(&neighbor)));
+    listing
+        .set_canonical_metadata(&mut database)
+        .to(Arc::new([(FileId(4), provided), (FileId(5), untouched)].into_iter().collect()));
+    let index = Arc::clone(event_subscription_index(&database, listing));
+    assert!(Arc::ptr_eq(
+        &saved,
+        &resolve_event_subscription(&database, listing, "ПОДПИСКА".into()).expect("saved")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_event_subscription(&database, listing, "Neighbor".into()).expect("neighbor")
+    ));
+    assert!(database.salsa_events_reset());
+    let edited = make("Подписка", "CommonModule.Tools.Current");
+    provided
+        .set_value(&mut database)
+        .to(Some(Arc::new(CanonicalMetadata::EventSubscription(Arc::clone(&edited)))));
+    provided.set_source_revision(&mut database).to("editor".into());
+    assert!(Arc::ptr_eq(
+        &edited,
+        &resolve_event_subscription(&database, listing, "подписка".into()).expect("edited")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_event_subscription(&database, listing, "Neighbor".into())
+            .expect("unchanged neighbor")
+    ));
+    assert_eq!(database.salsa_family_churn("resolve_event_subscription").expect("events").0, 1);
+    assert!(Arc::ptr_eq(&index, event_subscription_index(&database, listing)));
+    provided.set_value(&mut database).to(None);
+    assert!(resolve_event_subscription(&database, listing, "Подписка".into()).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::EventSubscription(
+        make("Other", "CommonModule.Tools.Wrong"),
+    ))));
+    assert!(resolve_event_subscription(&database, listing, "Подписка".into()).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::CommonModule(
+        Arc::new(CommonModule::builder().name("Подписка").build()),
+    ))));
+    assert!(resolve_event_subscription(&database, listing, "Подписка".into()).is_none());
+    assert_eq!(database.salsa_family_churn("parse_event_subscription_query").expect("events").0, 0);
 }
 
 /// Supply typed register semantics directly, not through an XML-shaped VFS string.

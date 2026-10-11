@@ -778,6 +778,9 @@ preset = "trunk"
 добавляет настроенные rules с текущими соседними BSL/YAML. Syntax остаётся
 профилем по умолчанию. [Автодополнение](docs/research/eska-format/analyzer-completion.md)
 использует текущий YAML/BSL и явно сообщает неполноту.
+[Подписки на события](docs/research/eska-format/analyzer-event-subscriptions.md)
+используют тот же current YAML input; Source/Event/Handler согласованы с ядром,
+имена доступны в автодополнении коллекции метаданных.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

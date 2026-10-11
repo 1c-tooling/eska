@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EventSubscription {
     #[serde(rename = "uuid")]
     pub(crate) uuid: Uuid,
@@ -36,6 +36,18 @@ impl EventSubscriptionHandler {
 }
 
 impl EventSubscription {
+    /// Construct an already parsed subscription without an XML intermediary.
+    pub fn from_parts(
+        uuid: Uuid,
+        name: String,
+        comment: Option<String>,
+        source: String,
+        event: String,
+        handler: String,
+    ) -> Self {
+        Self { uuid, name, comment, source, event, handler }
+    }
+
     #[cfg(test)]
     pub fn new(name: impl Into<String>, handler: impl Into<String>) -> Self {
         Self {
