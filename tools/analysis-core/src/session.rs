@@ -14,6 +14,8 @@ mod scheduled_job_tests;
 mod subsystem_tests;
 #[cfg(test)]
 pub mod tests;
+#[cfg(test)]
+mod web_service_tests;
 
 use std::{collections::BTreeMap, path::Path, sync::Arc};
 
@@ -29,7 +31,7 @@ use ide_db::{
         CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, MetadataListingData,
         MetadataListingInput, resolve_common_module, resolve_defined_type,
         resolve_event_subscription, resolve_http_service, resolve_metadata_object,
-        resolve_register, resolve_scheduled_job, resolve_subsystem,
+        resolve_register, resolve_scheduled_job, resolve_subsystem, resolve_web_service,
     },
 };
 use salsa::Setter;
@@ -208,7 +210,7 @@ impl AnalysisSession {
         let modules =
             crate::binding::register_modules(reader, owners.len(), &mut database, &mut file_set)?;
         crate::binding::connect_common_bodies(&mut structure, &modules)?;
-        crate::binding::connect_http_bodies(&mut structure, &modules)?;
+        crate::binding::connect_service_bodies(&mut structure, &modules)?;
         database.set_source_root(SourceRootId(0), SourceRoot::new_local(file_set));
         database.set_metadata_listing(&root_key, structure);
         let listing = database
@@ -373,6 +375,10 @@ impl AnalysisSession {
             return Ok(None);
         };
         Ok(match value.as_ref() {
+            CanonicalMetadata::WebService(_) => {
+                resolve_web_service(&self.database, self.listing, name.clone())
+                    .map(CanonicalMetadata::WebService)
+            }
             CanonicalMetadata::HTTPService(_) => {
                 resolve_http_service(&self.database, self.listing, name.clone())
                     .map(CanonicalMetadata::HTTPService)

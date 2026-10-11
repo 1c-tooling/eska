@@ -1405,6 +1405,17 @@ C1/C2/C3 совпали с native reader; current/invalid/close, completion и �
 не доказаны; остальные модели, полная семантика, memory budget, edits и Explorer
 ещё в работе. EF-18 — `IN_PROGRESS`.
 
+[Web-сервисы](../research/eska-format/analyzer-web-services.md) публикуют
+Namespace, операции/ProcedureName и имена параметров как current canonical input.
+Name/file lookup согласованы; типы параметров и XDTO остаются в общей модели.
+Все 49 моделей C1/C2/C3 совпали с native reader; current/invalid/close, completion
+и координаты проверены RU/EN. 265 tool tests, kernel 1109/4 и все 6 adapter/5 kernel/
+19 tool/15 root gates прошли. Checker C1 сохранил 26 findings и все 7 829 исходных
+файлов; ушли десять отказов по Web-сервисам, осталось 1 498 metadata issues.
+JSON RU/EN совпал, graph 206/214 и версии прежние. SOAP/WSDL/XDTO, сигнатуры
+обработчиков, прочие модели, полная семантика, memory budget, edits и Explorer
+ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

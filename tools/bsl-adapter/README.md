@@ -114,6 +114,13 @@ C1/C2/C3 с native reader: полное равенство подтвержде�
 C1/C2/C3 с native reader: полное равенство подтверждено. 52 unit и шесть файловых
 тестов прошли. Session settings остаются в общей модели проекта.
 
+[`web_service`](../../docs/research/eska-format/analyzer-web-services.md)
+сохраняет имя, Namespace, операции/ProcedureName, имена параметров и логический
+URI модуля. Прямой parent отделяет одинаковые параметры разных операций.
+`project_web_services` сравнил все 10/19/20 моделей C1/C2/C3 с native reader:
+полное равенство подтверждено. 56 unit и шесть файловых тестов прошли. Типы
+параметров и XDTO не входят в эту native BSL-модель.
+
 Исходный API закреплён на bsl-analyzer `9021ba0`, пакет `bsl-metadata` заменён
 локальным расширением из `bsl-kernel`; библиотека моделей используется без
 IDE/LSP/MCP runtime. Для проверок нужен Rust; автоматические файловые

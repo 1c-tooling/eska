@@ -790,6 +790,8 @@ preset = "trunk"
 [HTTP-сервисы](docs/research/eska-format/analyzer-http-services.md) передают текущие
 маршруты и обработчики; разрешение по имени и объявленному BSL-модулю использует
 одно каноническое значение.
+[Web-сервисы](docs/research/eska-format/analyzer-web-services.md) передают текущие
+операции, ProcedureName и имена параметров через ту же сессию и связь с модулем BSL.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

@@ -49,6 +49,8 @@ Predefined/Use и тот же name listing; расписание не входи
 главного descriptor; вложенные descriptors сохраняют явную неполноту coverage.
 [HTTP-сервисы](analyzer-http-services.md) согласуют current маршруты/Handler
 и name/file lookup; модуль BSL загружается независимо от YAML-модели.
+[Web-сервисы](analyzer-web-services.md) согласуют Namespace, операции и имена
+параметров с тем же name/file lifecycle; XDTO semantics в native модель не входят.
 [Отдельный сервер метаданных](analyzer-metadata.md) согласует экспериментальный
 протокол; [синхронизация YAML/BSL](analyzer-documents.md) использует общую сессию,
 редакторские версии и квоту. [Pull-диагностика](analyzer-diagnostics.md) проверяет

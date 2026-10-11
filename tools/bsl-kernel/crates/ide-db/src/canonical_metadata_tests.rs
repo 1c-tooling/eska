@@ -12,10 +12,11 @@ use crate::{
         http_service_index, resolve_common_module, resolve_common_module_by_file,
         resolve_defined_type, resolve_event_subscription, resolve_http_service,
         resolve_http_service_by_file, resolve_register, resolve_register_by_name,
-        resolve_scheduled_job, resolve_subsystem, scheduled_job_index, subsystem_index,
-        CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, CommonModuleEntry,
-        DefinedTypeEntry, EventSubscriptionEntry, HTTPServiceEntry, MdoEntry, MetadataListingData,
-        MetadataListingInput, ScheduledJobEntry, SubsystemEntry,
+        resolve_scheduled_job, resolve_subsystem, resolve_web_service, resolve_web_service_by_file,
+        scheduled_job_index, subsystem_index, web_service_index, CanonicalMetadata,
+        CanonicalMetadataInput, CanonicalMetadataInputs, CommonModuleEntry, DefinedTypeEntry,
+        EventSubscriptionEntry, HTTPServiceEntry, MdoEntry, MetadataListingData,
+        MetadataListingInput, ScheduledJobEntry, SubsystemEntry, WebServiceEntry,
     },
     RootDatabaseImpl,
 };
@@ -323,6 +324,88 @@ fn canonical_http_service_is_current_by_name_and_module_without_xml_fallback() {
     ))));
     assert!(resolve_http_service_by_file(&database, listing, FileId(12)).is_none());
     assert_eq!(database.salsa_family_churn("parse_http_service_query").expect("events").0, 0);
+}
+
+/// Name and module-file resolvers share one current service while a neighbor remains memoised.
+#[test]
+fn canonical_web_service_is_current_by_name_and_module_without_xml_fallback() {
+    let (mut database, listing) = database();
+    listing.set_web_services(&mut database).to(Arc::new(vec![
+        WebServiceEntry {
+            name: "Сервис".into(), main: FileId(14), module_file: Some(FileId(16))
+        },
+        WebServiceEntry {
+            name: "Neighbor".into(),
+            main: FileId(15),
+            module_file: Some(FileId(17)),
+        },
+    ]));
+    let make = |name: &str, namespace: &str, parameter: &str, procedure: &str| {
+        Arc::new(
+            bsl_metadata::WebServiceBuilder::new()
+                .name(name)
+                .namespace(namespace)
+                .uri(format!("WebServices/{name}/Ext/Module.bsl"))
+                .add_operation(
+                    bsl_metadata::WebServiceOperationBuilder::new()
+                        .name("Call")
+                        .procedure_name(procedure)
+                        .add_parameter(bsl_metadata::WebServiceParameter::new(parameter))
+                        .build(),
+                )
+                .build(),
+        )
+    };
+    let saved = make("Сервис", "saved", "SavedParameter", "Saved");
+    let neighbor = make("Neighbor", "neighbor", "OtherParameter", "Other");
+    let provided = input(&database, CanonicalMetadata::WebService(Arc::clone(&saved)));
+    let untouched = input(&database, CanonicalMetadata::WebService(Arc::clone(&neighbor)));
+    listing
+        .set_canonical_metadata(&mut database)
+        .to(Arc::new([(FileId(14), provided), (FileId(15), untouched)].into_iter().collect()));
+    let index = Arc::clone(web_service_index(&database, listing));
+    assert!(Arc::ptr_eq(
+        &saved,
+        &resolve_web_service(&database, listing, "СЕРВИС".into()).expect("saved")
+    ));
+    assert!(Arc::ptr_eq(
+        &saved,
+        &resolve_web_service_by_file(&database, listing, FileId(16)).expect("saved by file")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_web_service_by_file(&database, listing, FileId(17)).expect("neighbor")
+    ));
+    assert!(database.salsa_events_reset());
+    let current = make("Сервис", "current", "CurrentParameter", "Current");
+    provided
+        .set_value(&mut database)
+        .to(Some(Arc::new(CanonicalMetadata::WebService(Arc::clone(&current)))));
+    provided.set_source_revision(&mut database).to("editor".into());
+    assert!(Arc::ptr_eq(
+        &current,
+        &resolve_web_service_by_file(&database, listing, FileId(16)).expect("current by file")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_web_service_by_file(&database, listing, FileId(17)).expect("unchanged neighbor")
+    ));
+    assert_eq!(database.salsa_family_churn("resolve_web_service").expect("events").0, 1);
+    assert!(Arc::ptr_eq(&index, web_service_index(&database, listing)));
+    provided.set_value(&mut database).to(None);
+    assert!(resolve_web_service_by_file(&database, listing, FileId(16)).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::WebService(make(
+        "Other",
+        "wrong",
+        "WrongParameter",
+        "Wrong",
+    )))));
+    assert!(resolve_web_service(&database, listing, "сервис".into()).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::CommonModule(
+        Arc::new(CommonModule::builder().name("Сервис").build()),
+    ))));
+    assert!(resolve_web_service_by_file(&database, listing, FileId(16)).is_none());
+    assert_eq!(database.salsa_family_churn("parse_web_service_query").expect("events").0, 0);
 }
 
 /// Supply typed register semantics directly, not through an XML-shaped VFS string.

@@ -6,7 +6,7 @@ use bsl_metadata::MdoType;
 use eska::project_core::{MetadataKind, source_format::SourcePath};
 use ide_db::metadata::{
     CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, HTTPServiceEntry, MdoEntry,
-    MetadataListingData, ScheduledJobEntry, SubsystemEntry,
+    MetadataListingData, ScheduledJobEntry, SubsystemEntry, WebServiceEntry,
 };
 use vfs::FileId;
 
@@ -26,6 +26,13 @@ impl OwnerBinding {
             return;
         };
         match self.kind {
+            MetadataKind::WebService => {
+                listing.web_services.push(WebServiceEntry {
+                    name: name.clone(),
+                    main: self.main,
+                    module_file: None,
+                });
+            }
             MetadataKind::HTTPService => {
                 listing.http_services.push(HTTPServiceEntry {
                     name: name.clone(),
@@ -149,14 +156,26 @@ pub fn connect_common_bodies(
 }
 
 /// Service module identities stay stable while tracked module inputs determine current readability.
-pub fn connect_http_bodies(
+pub fn connect_service_bodies(
     structure: &mut MetadataListingData,
     modules: &BTreeMap<SourcePath, crate::modules::ModuleEntry>,
 ) -> Result<(), crate::SessionError> {
     for entry in &mut structure.http_services {
-        let path = SourcePath::parse(&format!("HTTPServices/{}/Ext/Module.bsl", entry.name))
-            .map_err(crate::SessionError::Source)?;
-        entry.module_file = modules.get(&path).map(|module| module.file);
+        entry.module_file = declared_body(modules, "HTTPServices", &entry.name)?;
+    }
+    for entry in &mut structure.web_services {
+        entry.module_file = declared_body(modules, "WebServices", &entry.name)?;
     }
     Ok(())
+}
+
+/// Lookup is limited to the validated manifest's BSL identities; absent and binary bodies stay unlinked.
+fn declared_body(
+    modules: &BTreeMap<SourcePath, crate::modules::ModuleEntry>,
+    collection: &str,
+    name: &str,
+) -> Result<Option<FileId>, crate::SessionError> {
+    let path = SourcePath::parse(&format!("{collection}/{name}/Ext/Module.bsl"))
+        .map_err(crate::SessionError::Source)?;
+    Ok(modules.get(&path).map(|module| module.file))
 }

@@ -12,6 +12,7 @@ mod scheduled_job;
 mod simple_object;
 mod subsystem;
 mod type_description;
+mod web_service;
 
 pub use common_module::common_module;
 pub use defined_type::defined_type;
@@ -23,6 +24,7 @@ pub use scheduled_job::scheduled_job;
 pub use simple_object::{constant_object, enum_object};
 pub use subsystem::subsystem;
 pub use type_description::attribute_type;
+pub use web_service::web_service;
 
 use std::ops::Range;
 

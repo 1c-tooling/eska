@@ -243,6 +243,10 @@ YAML и имена BSL completions согласованы с тем же host. �
 `CanonicalMetadata::HTTPService` для current RootURL, шаблонов URL и методов.
 Name/file resolvers согласованы; объявленный BSL body имеет устойчивый backlink,
 а его чтение остаётся отдельным действием общей сессии.
+[Web-сервисы](../../docs/research/eska-format/analyzer-web-services.md) используют
+`CanonicalMetadata::WebService` для Namespace, операций и имён параметров.
+Name/file lookup имеет тот же lifecycle; типы параметров и XDTO остаются в общем
+descriptor, поскольку native модель хранит только имена.
 [Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
 сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
 Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.
