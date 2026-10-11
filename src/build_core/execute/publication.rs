@@ -120,7 +120,7 @@ fn remove_existing(path: &Path) -> Result<(), BuildError> {
     }
 }
 
-/// Remove partial new files and restore every destination that existed before publication.
+/// Attempt both restorations even if one fails, retaining any unrestored backup.
 fn restore_pair(
     output: &Path,
     output_backup: Option<&Path>,
@@ -129,8 +129,9 @@ fn restore_pair(
 ) -> Result<(), BuildError> {
     let _ = fs::remove_file(output);
     let _ = fs::remove_file(manifest);
-    restore_optional(output_backup, output)?;
-    restore_optional(manifest_backup, manifest)
+    let output_result = restore_optional(output_backup, output);
+    let manifest_result = restore_optional(manifest_backup, manifest);
+    output_result.and(manifest_result)
 }
 
 /// Restore an owned backup only when that destination existed before publication.
@@ -187,28 +188,4 @@ fn restore_backup(backup: &Path, output: &Path) -> Result<(), BuildError> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    /// Leave both previous destinations untouched when the manifest cannot be backed up.
-    fn pair_publication_preserves_previous_results_on_failure() {
-        let fixture = crate::test_support::TestDir::new();
-        let root = &fixture.0;
-        let artifact = root.join("staged.cf");
-        let staged_manifest = root.join("staged.json");
-        let output = root.join("result.cf");
-        let manifest = root.join("result.cf.manifest.json");
-        fs::write(&artifact, b"new artifact").expect("staged artifact");
-        fs::write(&staged_manifest, b"new manifest").expect("staged manifest");
-        fs::write(&output, b"old artifact").expect("old artifact");
-        fs::create_dir(&manifest).expect("invalid manifest target");
-
-        assert!(publish_pair(&artifact, &output, &staged_manifest, &manifest).is_err());
-        assert_eq!(
-            fs::read(&output).expect("preserved artifact"),
-            b"old artifact"
-        );
-        assert!(manifest.is_dir());
-    }
-}
+mod tests;
