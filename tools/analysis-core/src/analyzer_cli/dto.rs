@@ -69,7 +69,25 @@ pub fn state(view: &MetadataView) -> Value {
             json!({"kind":"unavailable", "failure":failure_value(failure)})
         }
     };
-    let model_issue = match &view.model.state {
+    let issue = model_issue(
+        &view.model.state,
+        matches!(view.input, InputState::Ready(_)),
+    );
+    let mut value = json!({"origin":origin, "source_sha256":view.source_sha256, "input":input,
+        "model":model_kind(&view.model.state), "model_issue":issue, "descriptors":view.model.descriptors,
+        "modeled_descriptors":view.model.modeled_descriptors, "parse_issues":view.model.parse_issues});
+    if !view.model.forms.is_empty() {
+        value["forms"] = json!(view.model.forms.iter().map(|form| {
+            json!({"native_path":form.native_path,"dialog":form.dialog,"revision":form.revision.to_string(),
+                "model":model_kind(&form.state),"model_issue":model_issue(&form.state, matches!(view.input, InputState::Ready(_)))})
+        }).collect::<Vec<_>>());
+    }
+    value
+}
+
+/// Leaf models expose their own failure while the enclosing main object can remain ready.
+fn model_issue(state: &ModelState, input_ready: bool) -> Option<Value> {
+    match state {
         ModelState::Invalid { error, .. } => Some(
             json!({"code":"analysis_adapter_invalid", "range":error.range,
                 "issue":crate::tool_metadata::adapter_cause(&error.issue)}),
@@ -77,22 +95,23 @@ pub fn state(view: &MetadataView) -> Value {
         ModelState::Unsupported(kind) => {
             Some(json!({"code":"analysis_metadata_kind_unsupported", "kind":kind.as_str()}))
         }
-        ModelState::Unavailable(failure) if matches!(view.input, InputState::Ready(_)) => Some(
+        ModelState::Unavailable(failure) if input_ready => Some(
             json!({"code":"analysis_metadata_dependency_unavailable", "failure":failure_value(failure)}),
         ),
         _ => None,
-    };
-    let model = match &view.model.state {
+    }
+}
+
+/// Ready raw input and a successful semantic projection use separate protocol fields.
+const fn model_kind(state: &ModelState) -> &'static str {
+    match state {
         ModelState::Pending => "pending",
         ModelState::Ready(_) => "ready",
         ModelState::StructureOnly => "structure_only",
         ModelState::Unsupported(_) => "unsupported",
         ModelState::Unavailable(_) => "unavailable",
         ModelState::Invalid { .. } => "invalid",
-    };
-    json!({"origin":origin, "source_sha256":view.source_sha256, "input":input,
-        "model":model, "model_issue":model_issue, "descriptors":view.model.descriptors,
-        "modeled_descriptors":view.model.modeled_descriptors, "parse_issues":view.model.parse_issues})
+    }
 }
 
 /// A module's current readability and byte count do not imply clean syntax or full analysis.

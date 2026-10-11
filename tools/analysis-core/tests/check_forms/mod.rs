@@ -83,3 +83,42 @@ fn current_saved_forms_and_resource_failures_have_locale_independent_reports() {
     }
     assert_eq!(fs::read(resource).unwrap(), saved);
 }
+
+/// Each nested failure keeps its own identity and dependency location while the main object is ready.
+#[test]
+fn nested_forms_report_current_dependency_failures_without_main_yaml_ranges() {
+    let (directory, root) = support::project(GOOD, false);
+    support::form_project::add_nested_forms(&root, &directory.0.join("native"), false);
+    let source = root.join("src-with-nested-forms");
+    let resource = "Catalogs/Items/Forms/Shared/Ext/Form.xml";
+    fs::write(source.join(resource), "<NotForm/>").unwrap();
+    let mut previous = None;
+    for lang in ["ru-RU", "en-US"] {
+        let value = report(
+            &run(&root, lang, &["--profile", "syntax", "--format", "json"]),
+            2,
+        );
+        let issues = value["data"]["report"]["metadata_issues"]
+            .as_array()
+            .unwrap();
+        assert_eq!(issues.len(), 1);
+        assert_eq!(issues[0]["source"], "Catalogs/Items/object.yaml");
+        assert_eq!(issues[0]["code"], "metadata_descriptors_unmodeled");
+        assert!(issues[0]["range"].is_null());
+        assert_eq!(
+            issues[0]["forms"],
+            json!([{"native_path":"Catalogs/Items/Forms/Shared.xml","code":"analysis_form_dialog_invalid","location":[resource],"range":null}])
+        );
+        assert_eq!(issues[0]["findings"], json!([]));
+        let human = run(&root, lang, &["--profile", "syntax"]);
+        assert_eq!(human.status.code(), Some(2));
+        assert!(human.stderr.is_empty());
+        let text = String::from_utf8(human.stdout).unwrap();
+        assert!(text.contains(resource));
+        assert!(text.contains("analysis_form_dialog_invalid"));
+        if let Some(previous) = &previous {
+            assert_eq!(&value, previous);
+        }
+        previous = Some(value);
+    }
+}

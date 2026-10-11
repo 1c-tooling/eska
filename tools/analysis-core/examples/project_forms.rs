@@ -23,6 +23,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             session
                 .metadata_resource(path)
                 .is_some_and(|input| input.kind == MetadataResourceKind::FormDialog)
+                && session
+                    .resource_owner(path)
+                    .is_some_and(|owner| owner.as_str().starts_with("CommonForms/"))
         })
         .map(|path| {
             session

@@ -3,6 +3,7 @@
 mod analysis_inputs;
 #[cfg(test)]
 mod event_subscription_tests;
+mod forms;
 #[cfg(test)]
 mod http_service_tests;
 #[cfg(test)]
@@ -27,7 +28,9 @@ use std::{collections::BTreeMap, path::Path, sync::Arc};
 use base_db::{SourceDatabase, SourceRoot, SourceRootId};
 use bsl_metadata::Configuration;
 use eska::{
-    analysis_core::{InputRequest, InputState, InputSummary, MetadataInputs, UpdateError},
+    analysis_core::{
+        InputRequest, InputRevision, InputState, InputSummary, MetadataInputs, UpdateError,
+    },
     project_core::source_format::{Error, SourcePath, SourceReader},
 };
 use ide_db::{
@@ -81,9 +84,18 @@ struct OwnerEntry {
     slot: CanonicalMetadataInput,
     model: OwnerModel,
     source_bytes: u64,
+    primary_revision: Option<ProjectionRevision>,
+    forms: BTreeMap<SourcePath, forms::FormEntry>,
 }
 
-/// The composition is immutable until reopening; updates replace exactly one canonical input.
+/// A resource edit must not recreate models whose current YAML and resource inputs did not change.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ProjectionRevision {
+    owner: InputRevision,
+    resource: Option<SessionRevision>,
+}
+
+/// The composition is immutable until reopening; updates publish only changed canonical dependencies.
 pub struct AnalysisSession {
     pub(super) inputs: MetadataInputs,
     pub(super) database: RootDatabaseImpl,
@@ -204,6 +216,7 @@ impl AnalysisSession {
                 parse_issues: 0,
                 modeled_descriptors: 0,
                 state: ModelState::Pending,
+                forms: Vec::new(),
             };
             owners.insert(
                 path.clone(),
@@ -212,11 +225,20 @@ impl AnalysisSession {
                     slot,
                     model,
                     source_bytes: 0,
+                    primary_revision: None,
+                    forms: BTreeMap::new(),
                 },
             );
         }
+        let first_module = forms::register(
+            reader,
+            &mut owners,
+            &mut database,
+            &mut file_set,
+            &mut slots,
+        )?;
         let modules =
-            crate::binding::register_modules(reader, owners.len(), &mut database, &mut file_set)?;
+            crate::binding::register_modules(reader, first_module, &mut database, &mut file_set)?;
         crate::binding::connect_common_bodies(&mut structure, &modules)?;
         crate::binding::connect_service_bodies(&mut structure, &modules)?;
         database.set_source_root(SourceRootId(0), SourceRoot::new_local(file_set));
@@ -511,26 +533,45 @@ impl AnalysisSession {
         let entry = self.owners.get_mut(path).ok_or_else(|| {
             SessionRequestError::Metadata(UpdateError::UnknownOwner(path.clone()))
         })?;
-        let model = projection::project(entry.binding.kind, input, next, resource);
+        let dependencies = ProjectionRevision {
+            owner: input.revision,
+            resource: resource.map(|(_, input)| input.revision),
+        };
+        let mut model = if entry.primary_revision == Some(dependencies) {
+            entry.model.clone()
+        } else {
+            let model = projection::project(entry.binding.kind, input, next, resource);
+            set_slot(&mut self.database, entry.slot, &model.state, next);
+            entry.primary_revision = Some(dependencies);
+            model
+        };
+        forms::publish(
+            &mut entry.forms,
+            input,
+            &self.metadata_resources,
+            &mut self.database,
+            next,
+        );
+        model.forms = entry
+            .forms
+            .values()
+            .map(|entry| entry.model.clone())
+            .collect();
+        model.modeled_descriptors = usize::from(matches!(
+            model.state,
+            ModelState::Ready(_) | ModelState::StructureOnly
+        )) + model
+            .forms
+            .iter()
+            .filter(|form| matches!(form.state, ModelState::Ready(_)))
+            .count();
+        model.revision = next;
         let source_bytes = match &input.state {
             InputState::Ready(snapshot) => snapshot.source_bytes,
             InputState::Pending | InputState::Unavailable(_) => 0,
         };
         let was_complete = entry.model.descriptors_complete();
         let is_complete = model.descriptors_complete();
-        let value = match &model.state {
-            ModelState::Ready(value) => Some(Arc::clone(value)),
-            _ => None,
-        };
-        entry.slot.set_value(&mut self.database).to(value);
-        entry
-            .slot
-            .set_source_revision(&mut self.database)
-            .to(format!(
-                "{:?}:{}",
-                model.revision,
-                model.source_sha256.as_deref().unwrap_or_default(),
-            ));
         self.loaded_metadata_source_bytes -= entry.source_bytes;
         self.loaded_metadata_source_bytes += source_bytes;
         entry.source_bytes = source_bytes;
@@ -543,4 +584,19 @@ impl AnalysisSession {
         self.revision = next;
         Ok(())
     }
+}
+
+/// Current unavailable values clear the slot; its clock tracks the dependencies actually published.
+fn set_slot(
+    database: &mut RootDatabaseImpl,
+    slot: CanonicalMetadataInput,
+    state: &ModelState,
+    revision: SessionRevision,
+) {
+    let value = match state {
+        ModelState::Ready(value) => Some(Arc::clone(value)),
+        _ => None,
+    };
+    slot.set_value(database).to(value);
+    slot.set_source_revision(database).to(revision.to_string());
 }

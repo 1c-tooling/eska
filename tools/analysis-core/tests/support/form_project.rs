@@ -63,3 +63,72 @@ pub fn add_forms(root: &Path, native: &Path, absent: bool) {
     )
     .unwrap();
 }
+
+/// Equal short names and sibling dialogs exercise full identities without modifying user fixtures.
+pub fn add_nested_forms(root: &Path, native: &Path, absent: bool) {
+    let configuration = fs::read_to_string(native.join("Configuration.xml")).unwrap();
+    fs::write(
+        native.join("Configuration.xml"),
+        configuration.replace(
+            "</ChildObjects>",
+            "<Catalog>Items</Catalog><Catalog>Orders</Catalog></ChildObjects>",
+        ),
+    )
+    .unwrap();
+    for (index, name) in ["Items", "Orders"].iter().enumerate() {
+        let mut forms = vec!["Shared"];
+        if *name == "Items" {
+            forms.push("Other");
+            if absent {
+                forms.extend(["Absent", "Binary"]);
+            }
+        }
+        let children = forms.iter().fold(String::new(), |mut children, form| {
+            write!(children, "<Form>{form}</Form>").unwrap();
+            children
+        });
+        fs::create_dir_all(native.join(format!("Catalogs/{name}/Forms"))).unwrap();
+        fs::write(native.join(format!("Catalogs/{name}.xml")), format!("<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" version=\"2.20\"><Catalog uuid=\"90000000-0000-4000-8000-{:012}\"><Properties><Name>{name}</Name></Properties><ChildObjects>{children}</ChildObjects></Catalog></MetaDataObject>", index + 1)).unwrap();
+        for (form_index, form) in forms.iter().enumerate() {
+            let form_type = if *form == "Binary" {
+                "Ordinary"
+            } else {
+                "Managed"
+            };
+            fs::write(native.join(format!("Catalogs/{name}/Forms/{form}.xml")), format!("<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" version=\"2.20\"><Form uuid=\"90000000-0000-4000-8000-{:012}\"><Properties><Name>{form}</Name><FormType>{form_type}</FormType></Properties></Form></MetaDataObject>", 10 * (index + 1) + form_index)).unwrap();
+            let directory = native.join(format!("Catalogs/{name}/Forms/{form}/Ext"));
+            fs::create_dir_all(directory.join("Form")).unwrap();
+            fs::write(directory.join("Form/Module.bsl"), BODY).unwrap();
+            if *form == "Binary" {
+                fs::write(directory.join("Form.bin"), [0xff, 0x00]).unwrap();
+            } else if *form != "Absent" {
+                fs::write(
+                    directory.join("Form.xml"),
+                    dialog(if *name == "Orders" {
+                        "CurrentHandler"
+                    } else {
+                        "SavedHandler"
+                    }),
+                )
+                .unwrap();
+            }
+        }
+    }
+    fs::create_dir_all(native.join("Catalogs/Items/Forms/Stray/Ext")).unwrap();
+    fs::write(
+        native.join("Catalogs/Items/Forms/Stray/Ext/Form.xml"),
+        dialog("StrayHandler"),
+    )
+    .unwrap();
+    eska::project_core::source_format::import_designer(native, &root.join("src-with-nested-forms"))
+        .unwrap();
+    let configuration = fs::read_to_string(root.join("eska.toml")).unwrap();
+    fs::write(
+        root.join("eska.toml"),
+        configuration.replace(
+            "source_format='eska'",
+            "source_format='eska'\nsource='src-with-nested-forms'",
+        ),
+    )
+    .unwrap();
+}

@@ -118,14 +118,16 @@ fn human(report: &BatchReport, localizer: &Localizer) -> String {
         ],
     );
     text.push('\n');
-    let quota_exceeded = report
-        .metadata_issues
-        .iter()
-        .any(|issue| issue.code == "analysis_source_budget_exceeded")
-        || report.files.iter().any(|file| {
-            matches!(&file.state, crate::batch::FileState::Unavailable { code, .. }
+    let quota_exceeded = report.metadata_issues.iter().any(|issue| {
+        issue.code == "analysis_source_budget_exceeded"
+            || issue
+                .forms
+                .iter()
+                .any(|form| form.code == "analysis_source_budget_exceeded")
+    }) || report.files.iter().any(|file| {
+        matches!(&file.state, crate::batch::FileState::Unavailable { code, .. }
                 if code == "analysis_source_budget_exceeded")
-        });
+    });
     if quota_exceeded {
         let used = report.resources.total_source_bytes.to_string();
         let limit = report.resources.max_source_bytes.to_string();
@@ -195,6 +197,25 @@ fn metadata_human(report: &BatchReport, localizer: &Localizer, text: &mut String
                     ("code", LocalizationValue::Text(&issue.code)),
                 ],
             ));
+            text.push('\n');
+        }
+        for form in &issue.forms {
+            text.push_str(
+                &localizer.format(
+                    "tool-check-metadata-incomplete",
+                    &[
+                        (
+                            "source",
+                            LocalizationValue::Text(
+                                form.location
+                                    .first()
+                                    .map_or(form.native_path.as_str(), String::as_str),
+                            ),
+                        ),
+                        ("code", LocalizationValue::Text(&form.code)),
+                    ],
+                ),
+            );
             text.push('\n');
         }
     }

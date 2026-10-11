@@ -1531,6 +1531,26 @@ binary форма C2 отмечена отдельно. 4 638/49 896/59 651 hash
 Schemas, protocol, graph, upstream hashes и версии прежние. Nested session
 slots/resources и прочие условия EF-18 ещё в работе; следующие этапы не начаты.
 
+[Producer nested форм](../research/eska-format/analyzer-nested-forms.md) затем
+добавил independent canonical slots по full descriptor identity и declared
+dialogs в общий resource controller. Пара ревизий owner YAML/dialog сохраняет
+main/sibling Arc и module-context memo при правке одной формы. YAML failure
+очищает все зависимые slots; resource failure — только свою форму. Tree/IDE
+получают `OwnerModel.forms` и optional `state.forms`; checker показывает separate
+nested failures с их paths/ranges. `modeled_descriptors` включает готовые формы.
+Protocol 0.1 добавляет `nestedFormModels`, checker schema 1 — optional forms;
+source schemas, Role JSON, versions/dependencies и graph 206/214 прежние.
+Четыре unit/два IDE/один checker tests добавлены; всего 298 tool tests,
+906/14 root и все 22 tool/15 root gates прошли. Все 18 186 nested XML-моделей
+C1/C2/C3, 978 общих форм и 1 641 роль снова совпали с native reader. Все hashes
+сохранились, шесть real stdio RU/EN-сценариев прошли. Checker C1 с SelfAssign
+снял 242 unmodeled owner issues: 1 202 → 960, сохранив 26 findings в 1 975 модулях,
+остальные issues, settings и JSON RU/EN. Nested dialogs добавили 16 248 034 source
+bytes; общий резерв 204 302 277 из 268 435 456. Binary/absent dialogs, другие
+модели, общий memory budget и остальные условия EF-18 ещё в работе. Платформа
+не запускалась; OS/client watcher и full C2/C3 semantic batch здесь не приняты.
+EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

@@ -309,6 +309,13 @@ Nested/binary формы, общий memory budget и прочие услови�
 binary форма C2 отмечена отдельно. Три root tests и один SDK guard, 906/14 root,
 291 tool tests и все 6 adapter/21 tool/15 root gates прошли. Checker и current
 common-form lifecycle сохраняются; nested session slots/resources ещё в работе.
+[Producer nested форм](../research/eska-format/analyzer-nested-forms.md) затем
+добавил отдельные slots и текущие dialogs в общую сессию. Правка одного ресурса
+сохраняет main/sibling Arc и memo; tree/checker показывают отдельные отказы форм.
+Все 18 186 XML-моделей, 978 общих форм и 1 641 роль совпали с native reader.
+298 tool tests, 22 tool/15 root gates и шесть stdio-сценариев прошли. Checker C1
+снял 242 owner issues, сохранив 26 findings и остальные 960 issues; все hashes
+и JSON RU/EN сохранились. Binary формы и остальные условия EF-18 ещё в работе.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

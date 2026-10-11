@@ -45,8 +45,18 @@ pub struct OwnerModel {
     pub source_sha256: Option<String>,
     pub descriptors: usize,
     pub parse_issues: usize,
-    /// Only the main descriptor is currently projected; nested descriptors remain visible here.
+    /// Count current canonical main and nested descriptors, excluding opaque resources.
     pub modeled_descriptors: usize,
+    pub state: ModelState,
+    pub forms: Vec<FormModel>,
+}
+
+/// A nested form keeps its full native identity and the revision of its own dependencies.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FormModel {
+    pub native_path: SourcePath,
+    pub dialog: Option<SourcePath>,
+    pub revision: crate::SessionRevision,
     pub state: ModelState,
 }
 
@@ -74,6 +84,7 @@ pub fn project(
         parse_issues: 0,
         modeled_descriptors: 0,
         state: ModelState::Pending,
+        forms: Vec::new(),
     };
     result.state = match &input.state {
         InputState::Pending => ModelState::Pending,
@@ -121,6 +132,30 @@ pub fn project(
         }
     };
     result
+}
+
+/// Only a current declared descriptor and its own dialog can produce a nested form value.
+pub fn form_state(
+    input: &OwnerInput,
+    descriptor: Option<&eska::project_core::source_format::NativeMetadata>,
+    native_path: &SourcePath,
+    resource: Option<(&SourcePath, &crate::MetadataResourceInput)>,
+) -> ModelState {
+    match &input.state {
+        InputState::Pending => ModelState::Pending,
+        InputState::Unavailable(failure) => ModelState::Unavailable(failure.clone()),
+        InputState::Ready(snapshot) => descriptor.map_or_else(
+            || resource_failure(native_path, "analysis_form_descriptor_undeclared"),
+            |document| {
+                resource_state(
+                    &snapshot.path,
+                    &document.descriptor,
+                    MetadataKind::Form,
+                    resource,
+                )
+            },
+        ),
+    }
 }
 
 /// A declared resource is an explicit dependency; its failure cannot become absent/default data.

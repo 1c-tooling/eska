@@ -78,9 +78,21 @@ pub struct MetadataIssue {
     pub code: String,
     pub location: Vec<String>,
     pub range: Option<std::ops::Range<usize>>,
+    /// Nested failures retain full descriptor identities and never borrow the main object's range.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub forms: Vec<FormIssue>,
     /// `None` means no current diagnostic walk completed; an empty vector is a checked local result.
     #[serde(skip)]
     pub diagnostics: Option<Vec<MetadataDiagnostic>>,
+}
+
+/// A form dependency failure is visible even when its enclosing metadata object is ready.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+pub struct FormIssue {
+    pub native_path: SourcePath,
+    pub code: String,
+    pub location: Vec<String>,
+    pub range: Option<std::ops::Range<usize>>,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize)]
@@ -280,6 +292,34 @@ fn metadata_issue(
         code,
         location,
         range,
+        forms: model
+            .forms
+            .iter()
+            .filter_map(|form| {
+                let (code, location, range) = match &form.state {
+                    ModelState::Pending => ("metadata_pending".into(), vec![], None),
+                    ModelState::Unavailable(failure) => {
+                        let (code, location) = input_failure(failure);
+                        (code, location, None)
+                    }
+                    ModelState::Invalid { error, .. } => (
+                        "metadata_projection_invalid".into(),
+                        vec![],
+                        Some(error.range.clone()),
+                    ),
+                    ModelState::Unsupported(_) => {
+                        ("metadata_projection_unsupported".into(), vec![], None)
+                    }
+                    ModelState::Ready(_) | ModelState::StructureOnly => return None,
+                };
+                Some(FormIssue {
+                    native_path: form.native_path.clone(),
+                    code,
+                    location,
+                    range,
+                })
+            })
+            .collect(),
         diagnostics,
     }))
 }

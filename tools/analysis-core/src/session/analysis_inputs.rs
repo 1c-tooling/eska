@@ -10,7 +10,7 @@ use crate::{
 };
 
 impl AnalysisSession {
-    /// Load pending or transiently cancelled saved YAML, role rights and BSL before cross-module queries.
+    /// Load pending or transiently cancelled saved YAML, metadata resources and BSL before cross-module queries.
     ///
     /// Ready inputs and editor-owned failures remain authoritative until an explicit change.
     /// Cancellation leaves unvisited inputs pending; callers inspect current coverage and stop state.

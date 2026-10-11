@@ -117,6 +117,25 @@ impl AnalysisSession {
                 _ => {}
             }
         }
+        for form in &view.model.forms {
+            check_cancelled(cancellation)?;
+            if let ModelState::Invalid { error, .. } = &form.state {
+                let document = snapshot
+                    .documents
+                    .iter()
+                    .find(|document| document.path == form.native_path);
+                if error.issue != AdapterIssue::IncompleteDescriptor
+                    || document.is_some_and(|document| document.descriptor.diagnostics.is_empty())
+                {
+                    findings.push(finding(
+                        snapshot,
+                        &form.native_path,
+                        error.range.clone(),
+                        MetadataDiagnosticIssue::Adapter(error.issue.clone()),
+                    )?);
+                }
+            }
+        }
         check_cancelled(cancellation)?;
         Ok(MetadataDiagnostics {
             revision: expected,

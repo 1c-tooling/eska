@@ -44,7 +44,7 @@ pub use metadata_diagnostics::{
 };
 pub use metadata_locations::{MetadataLocation, MetadataLocationError};
 pub use modules::{ModuleFailure, ModuleInput, ModuleState, ModuleSummary, SessionOptions};
-pub use projection::{MetadataView, ModelState, OwnerModel};
+pub use projection::{FormModel, MetadataView, ModelState, OwnerModel};
 pub use property_edits::{PropertyEditError, PropertyEditInput, PropertyEditPlan};
 pub use queries::definitions::DefinitionTarget;
 pub use queries::local_rename::{

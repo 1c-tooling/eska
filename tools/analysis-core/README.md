@@ -13,7 +13,7 @@ XML-экспорт не участвуют в чтении.
 учитывает каждое принятое изменение YAML, ресурса метаданных и BSL, включая неудачное чтение;
 внешний потребитель должен дополнять его идентичностью сессии после reopen.
 
-Пока подключены главные дескрипторы уже реализованных адаптеров. Полнота чтения,
+Подключены главные дескрипторы реализованных адаптеров и вложенные формы с XML dialog. Полнота чтения,
 полнота главных моделей и покрытие всех вложенных документов различаются.
 
 Для [общих форм](../../docs/research/eska-format/analyzer-forms.md) текущие YAML
@@ -71,6 +71,7 @@ cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --ex
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_memory -- /path/to/eska/source
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_roles -- /path/to/eska/source /path/to/native/source
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_forms -- /path/to/eska/source /path/to/native/source
+cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_nested_forms -- /path/to/eska/source /path/to/native/source
 ```
 
 Команды выполняются из корня `eska`; для тестов путь задаётся к соседнему
@@ -273,11 +274,16 @@ model failure видна в дереве и checker. В событиях рес�
 Dialog имеет `kind=form_dialog` и capability `formDialogSync`; current events
 и commands учитываются в native `UnusedLocalMethod`. Неверный XML очищает модель,
 сохраняя raw text/hash; ошибка не получает выдуманного диапазона YAML.
-Binary/absent dialogs и nested формы пока не моделируются в сессии.
+Binary/absent dialogs не моделируются в сессии.
 [Общий reader nested форм](../../docs/research/eska-format/nested-form-reader.md)
 уже сохраняет full descriptor identity и dialog отдельно от enclosing YAML.
-Сессия пока явно регистрирует только главный CommonForm; expanded reader не
-активирует nested inputs и не восстанавливает для них native disk fallback.
+[Текущие nested формы](../../docs/research/eska-format/analyzer-nested-forms.md)
+получают отдельные canonical slots и используют тот же resource lifecycle.
+Пара ревизий YAML/dialog сохраняет модели главного объекта и siblings при
+правке одного ресурса. `OwnerModel.forms` и protocol `state.forms` показывают
+отдельные states/full native identities; capability — `nestedFormModels`.
+`modeled_descriptors` учитывает готовые формы. JSON checker issue добавляет
+`forms` только при nested failures; native disk fallback остаётся закрытым.
 [Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
 сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
 Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.

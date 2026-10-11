@@ -15,9 +15,10 @@ dialog, canonical slot передаёт результат в контекст B
 bounded reader и source-byte квоту вместе с YAML/BSL. Это замена прежних
 неопубликованных Rust-типов/методов прав; compatibility aliases не добавлены.
 
-Открытие не читает payload. Только главный declared CommonForm регистрирует
-dialog; stray resources, nested и binary формы не становятся входами.
-Lazy metadata read готовит одну зависимость выбранного владельца. Пакетная
+Открытие не читает payload. Этот компонент первоначально регистрировал главный
+declared CommonForm. Последующий [producer вложенных форм](analyzer-nested-forms.md)
+подключил их dialogs к тому же контроллеру; stray и binary payloads остаются вне входа.
+Lazy metadata read готовит declared зависимости выбранного владельца. Пакетная
 подготовка читает pending и повторяет cancelled saved inputs; открытый редактор
 сохраняет authority даже после отказа по квоте или отмены. Saved invalidation
 проверяет весь batch до изменений и не читает bytes. Close читает текущий диск.
@@ -76,6 +77,6 @@ Exit остаётся 2 из-за неполного покрытия. Резу�
 [машинном отчёте](analyzer-forms-results.json).
 
 Source schema, версии и graph 206/214 прежние; все 495 upstream hashes проверены.
-Это приёмка current input и native model/module consumer. Nested forms, binary
+Это результаты приёмки common-form current input до [подключения nested forms](analyzer-nested-forms.md). Binary
 dialogs, полная семантика и общий memory budget остаются в работе;
 source-byte квота не ограничивает heap/RSS. EF-18 — `IN_PROGRESS`, EF-12 не начата.

@@ -1,0 +1,795 @@
+{
+  "schema_version": 1,
+  "component": "current_nested_forms_in_shared_analysis_session",
+  "milestone": "EF-18",
+  "status": "IN_PROGRESS",
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 2.1105010689934716
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 0.685303203004878
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 1.8492595379939303
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 15.64679765200708,
+      "results": [
+        "ok. 142 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.86s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 139 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.96s",
+        "ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 7.793636750022415
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 0.36436452498310246
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 1.048945229005767
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 4.800533486006316,
+      "results": [
+        "ok. 120 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.83s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.8949232330196537
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.4615397689922247
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 1.1433357439818792
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 6.126800583006116,
+      "results": [
+        "ok. 122 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.86s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.654847290017642
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 0.6420504940033425
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 2.2033998600090854
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 14.591353373019956,
+      "results": [
+        "ok. 142 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 135 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.29s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.778277161996812
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 4.901617296010954
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 8.046151185000781
+    },
+    {
+      "gate": "release-role-example",
+      "exit_code": 0,
+      "seconds": 4.43620926499716
+    },
+    {
+      "gate": "release-form-example",
+      "exit_code": 0,
+      "seconds": 1.0003484250046313
+    },
+    {
+      "gate": "release-nested-form-example",
+      "exit_code": 0,
+      "seconds": 1.0595722919970285
+    }
+  ],
+  "root_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.2380512100062333
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.43798958099796437
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3006735389935784
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 20.193599485995946
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 8.772073235013522
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.25259587398613803
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 2.804141005006386
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.3228462639963254
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.22268610299215652
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6856953630049247
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.192130285984604
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.25663590399199165
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 6.383457808988169
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 13.245285766985035
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.0204121139831841
+    }
+  ],
+  "tool_tests": {
+    "unit": 142,
+    "analyzer": 139,
+    "checker": 17,
+    "passed": 298,
+    "ignored": 0
+  },
+  "root_tests": {
+    "passed": 906,
+    "ignored": 14
+  },
+  "nested_form_models": [
+    {
+      "corpus": "C1",
+      "absent_xml_dialogs": 0,
+      "attribute_columns": 1564,
+      "attributes": 4318,
+      "command_handlers": 1881,
+      "elements": 13879,
+      "event_handlers": 3621,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "nested_forms": 740,
+      "owners": 294,
+      "peak_current_source_bytes": 881159,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 0,
+        "module_text_bytes": 0,
+        "total_source_bytes": 0
+      },
+      "xml_forms_compared": 740,
+      "preserved_nested_form_xml_resources": 741,
+      "tracked_source_native_control_files": 4638,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 3.9199682410107926
+    },
+    {
+      "corpus": "C2",
+      "absent_xml_dialogs": 1,
+      "attribute_columns": 114858,
+      "attributes": 101578,
+      "command_handlers": 44821,
+      "elements": 201633,
+      "event_handlers": 76795,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "nested_forms": 7782,
+      "owners": 2328,
+      "peak_current_source_bytes": 8951530,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 0,
+        "module_text_bytes": 0,
+        "total_source_bytes": 0
+      },
+      "xml_forms_compared": 7781,
+      "preserved_nested_form_xml_resources": 7781,
+      "tracked_source_native_control_files": 49896,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 75.34311222302495
+    },
+    {
+      "corpus": "C3",
+      "absent_xml_dialogs": 0,
+      "attribute_columns": 118285,
+      "attributes": 113575,
+      "command_handlers": 48198,
+      "elements": 248450,
+      "event_handlers": 89755,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "nested_forms": 9665,
+      "owners": 2940,
+      "peak_current_source_bytes": 8878863,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 0,
+        "module_text_bytes": 0,
+        "total_source_bytes": 0
+      },
+      "xml_forms_compared": 9665,
+      "preserved_nested_form_xml_resources": 9665,
+      "tracked_source_native_control_files": 59651,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 94.20162324098055
+    }
+  ],
+  "common_form_regression": [
+    {
+      "corpus": "C1",
+      "attribute_columns": 347,
+      "attributes": 653,
+      "command_handlers": 375,
+      "common_forms": 83,
+      "elements": 1649,
+      "event_handlers": 522,
+      "form_resources": 83,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 2436512,
+        "module_text_bytes": 0,
+        "total_source_bytes": 2436512
+      },
+      "preserved_form_xml_resources": 84,
+      "tracked_source_native_control_files": 706,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 0.32110685302177444
+    },
+    {
+      "corpus": "C2",
+      "attribute_columns": 1812,
+      "attributes": 4334,
+      "command_handlers": 1428,
+      "common_forms": 435,
+      "elements": 9341,
+      "event_handlers": 2893,
+      "form_resources": 435,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 14023707,
+        "module_text_bytes": 0,
+        "total_source_bytes": 14023707
+      },
+      "preserved_form_xml_resources": 435,
+      "tracked_source_native_control_files": 3114,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 1.7952560929988977
+    },
+    {
+      "corpus": "C3",
+      "attribute_columns": 1922,
+      "attributes": 4567,
+      "command_handlers": 1463,
+      "common_forms": 460,
+      "elements": 9688,
+      "event_handlers": 3067,
+      "form_resources": 460,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 14727191,
+        "module_text_bytes": 0,
+        "total_source_bytes": 14727191
+      },
+      "preserved_form_xml_resources": 460,
+      "tracked_source_native_control_files": 3348,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 1.9233599240251351
+    }
+  ],
+  "role_model_regression": [
+    {
+      "corpus": "C1",
+      "roles": 212,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 212,
+      "object_references": 223334,
+      "rls_conditions": 66,
+      "tracked_source_and_native_files": 850,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "metadata_source_bytes": 71336214,
+      "canonical_session_resolver": true,
+      "wall_seconds": 2.911671011999715
+    },
+    {
+      "corpus": "C2",
+      "roles": 676,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 676,
+      "object_references": 29458,
+      "rls_conditions": 4055,
+      "tracked_source_and_native_files": 2706,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "metadata_source_bytes": 116124743,
+      "canonical_session_resolver": true,
+      "wall_seconds": 3.995870320999529
+    },
+    {
+      "corpus": "C3",
+      "roles": 753,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 753,
+      "object_references": 155734,
+      "rls_conditions": 6495,
+      "tracked_source_and_native_files": 3014,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "metadata_source_bytes": 189861567,
+      "canonical_session_resolver": true,
+      "wall_seconds": 6.73452967297635
+    }
+  ],
+  "real_nested_stdio": [
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_only_current_form": true,
+      "main_model_remains_ready": true,
+      "sibling_form_revision_and_model_unchanged": true,
+      "full_descriptor_identity": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 53840,
+      "wall_seconds": 0.3207512090157252,
+      "corpus": "C1",
+      "tracked_owned_files": 6,
+      "tracked_original_files": 5,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_only_current_form": true,
+      "main_model_remains_ready": true,
+      "sibling_form_revision_and_model_unchanged": true,
+      "full_descriptor_identity": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 53568,
+      "wall_seconds": 0.22100052601308562,
+      "corpus": "C1",
+      "tracked_owned_files": 6,
+      "tracked_original_files": 5,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_only_current_form": true,
+      "main_model_remains_ready": true,
+      "sibling_form_revision_and_model_unchanged": true,
+      "full_descriptor_identity": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 211060,
+      "wall_seconds": 0.8906230799912009,
+      "corpus": "C2",
+      "tracked_owned_files": 6,
+      "tracked_original_files": 5,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_only_current_form": true,
+      "main_model_remains_ready": true,
+      "sibling_form_revision_and_model_unchanged": true,
+      "full_descriptor_identity": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 211396,
+      "wall_seconds": 0.9714342239894904,
+      "corpus": "C2",
+      "tracked_owned_files": 6,
+      "tracked_original_files": 5,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_only_current_form": true,
+      "main_model_remains_ready": true,
+      "sibling_form_revision_and_model_unchanged": true,
+      "full_descriptor_identity": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 244720,
+      "wall_seconds": 1.3396068750007544,
+      "corpus": "C3",
+      "tracked_owned_files": 6,
+      "tracked_original_files": 5,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_only_current_form": true,
+      "main_model_remains_ready": true,
+      "sibling_form_revision_and_model_unchanged": true,
+      "full_descriptor_identity": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 245000,
+      "wall_seconds": 1.3208477160078473,
+      "corpus": "C3",
+      "tracked_owned_files": 6,
+      "tracked_original_files": 5,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    }
+  ],
+  "current_checker_regression": [
+    {
+      "corpus": "C1",
+      "locale": "en-US",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "findings_equal_previous_checker": true,
+      "settings_hash_equal_previous": true,
+      "metadata_issues_before": 1202,
+      "metadata_issues_after": 960,
+      "form_metadata_issues_removed": 242,
+      "nested_xml_dialogs_loaded": 740,
+      "other_metadata_issues_unchanged": true,
+      "semantic_profile_complete": false,
+      "metadata_models_complete": false,
+      "additional_form_source_bytes": 16248034,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 135420456,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 204302277
+      },
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "locale_json_equal": true,
+      "wall_seconds": 18.431374757987214
+    },
+    {
+      "corpus": "C1",
+      "locale": "ru-RU",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "findings_equal_previous_checker": true,
+      "settings_hash_equal_previous": true,
+      "metadata_issues_before": 1202,
+      "metadata_issues_after": 960,
+      "form_metadata_issues_removed": 242,
+      "nested_xml_dialogs_loaded": 740,
+      "other_metadata_issues_unchanged": true,
+      "semantic_profile_complete": false,
+      "metadata_models_complete": false,
+      "additional_form_source_bytes": 16248034,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 135420456,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 204302277
+      },
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "locale_json_equal": true,
+      "wall_seconds": 17.82818734101602
+    }
+  ],
+  "footprint": {
+    "original_native_file_hashes_verified": 495,
+    "runtime_graph": [
+      {
+        "feature": "analyzer-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      },
+      {
+        "feature": "check-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      }
+    ],
+    "release_analyzer_bytes": 50541896,
+    "release_checker_bytes": 46579336
+  },
+  "source_schema_unchanged": true,
+  "protocol_version": "0.1",
+  "protocol_additions": [
+    "nestedFormModels",
+    "owner_state.forms"
+  ],
+  "checker_schema_version": 1,
+  "checker_additions": [
+    "metadata_issue.forms"
+  ],
+  "role_json_unchanged": true,
+  "versions_and_dependencies_unchanged": true,
+  "platform_invoked": false,
+  "limitations": [
+    "binary_or_absent_dialog_not_projected",
+    "other_nested_descriptors_can_remain_unmodeled",
+    "form_payload_still_preserved_xml",
+    "source_byte_quota_does_not_bound_rss",
+    "XML_pull_diagnostics_not_added",
+    "real_OS_and_editor_watcher_not_validated",
+    "full_semantic_C2_C3_batch_not_validated",
+    "full_EF18_conditions_not_complete"
+  ]
+}

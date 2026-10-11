@@ -802,6 +802,12 @@ preset = "trunk"
 синхронизируются с ролью в одной сессии IDE/checker; ошибки ресурса очищают модель.
 [Общий reader прав](docs/research/eska-format/role-rights-reader.md) связывает
 сохранённый ресурс с объявленной ролью и ограничивает чтение текущих байтов.
+[Общие](docs/research/eska-format/analyzer-forms.md) и
+[вложенные формы](docs/research/eska-format/analyzer-nested-forms.md) получают
+текущие YAML/dialog через тот же контроллер ресурсов. Отдельный slot каждой
+вложенной формы сохраняет главный объект и соседние формы при правке dialog;
+metadata read и checker показывают отдельные состояния и причины отказа.
+Текущие event/command handlers учитываются в native BSL-диагностике.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

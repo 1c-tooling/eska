@@ -70,7 +70,6 @@ pub(super) fn register(reader: &SourceReader) -> BTreeMap<SourcePath, MetadataRe
         .chain(reader.form_dialog_paths().filter_map(|path| {
             reader
                 .form_dialog_owner(path)
-                .filter(|owner| reader.form_dialog_path(owner) == Some(path))
                 .map(|owner| (path, owner, MetadataResourceKind::FormDialog))
         }))
         .map(|(path, owner, kind)| {
@@ -91,7 +90,7 @@ pub(super) fn register(reader: &SourceReader) -> BTreeMap<SourcePath, MetadataRe
         .collect()
 }
 
-/// An owner currently consumes at most one declared role or common-form resource.
+/// The primary slot consumes role rights or the main common form's dialog.
 pub(super) fn dependency<'a>(
     reader: &'a SourceReader,
     owner: &SourcePath,
@@ -126,18 +125,30 @@ impl AnalysisSession {
         owner: &SourcePath,
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
-        let Some(path) = dependency(self.inputs.source_reader(), owner).cloned() else {
-            return Ok(());
-        };
-        if self.metadata_resource(&path).is_some_and(|input| {
-            input.origin == InputOrigin::Saved
-                && matches!(
-                    input.state,
-                    MetadataResourceState::Pending
-                        | MetadataResourceState::Unavailable(InputFailure::Cancelled)
-                )
-        }) {
-            self.load_resource_saved(&path, self.revision(), request)?;
+        let paths = dependency(self.inputs.source_reader(), owner)
+            .into_iter()
+            .chain(self.owners.get(owner).into_iter().flat_map(|entry| {
+                entry
+                    .forms
+                    .values()
+                    .filter_map(|entry| entry.model.dialog.as_ref())
+            }))
+            .cloned()
+            .collect::<Vec<_>>();
+        for path in paths {
+            if request.cancellation.is_cancelled() {
+                break;
+            }
+            if self.metadata_resource(&path).is_some_and(|input| {
+                input.origin == InputOrigin::Saved
+                    && matches!(
+                        input.state,
+                        MetadataResourceState::Pending
+                            | MetadataResourceState::Unavailable(InputFailure::Cancelled)
+                    )
+            }) {
+                self.load_resource_saved(&path, self.revision(), request)?;
+            }
         }
         Ok(())
     }

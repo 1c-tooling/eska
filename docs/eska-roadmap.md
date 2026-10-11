@@ -108,7 +108,12 @@ Checker C1 снял 83 ошибки неподдержанной CommonForm, с�
 остальные 1 202 issues. Nested/binary формы и прочие условия EF-18 ещё в работе.
 [Reader вложенных форм](research/eska-format/nested-form-reader.md) получил
 full descriptor identity и declared dialog; все 18 186 XML-моделей C1/C2/C3
-совпали с native reader. Nested slots и resource lifecycle ещё не подключены.
+совпали с native reader. [Nested producer](research/eska-format/analyzer-nested-forms.md)
+затем подключил independent slots и общий resource lifecycle. Все 18 186 моделей
+общей сессии снова совпали с native reader. Checker C1 снял 242 owner issues,
+сохранив 26 findings и остальные 960 issues; source резерв — 204 302 277 bytes
+из 256 MiB. 298 tool tests, 22 tool/15 root gates и шесть stdio-сценариев прошли.
+Binary формы и остальные условия EF-18 ещё в работе; EF-12 не начата.
 
 Принята будущая поставка: обычная установка `eska` даёт оболочку и комплект
 отдельных инструментов; для CI/IDE доступны самостоятельные пакеты. В плане

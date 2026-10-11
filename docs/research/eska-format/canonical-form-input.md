@@ -14,7 +14,7 @@ wrong kind или другое имя дают `None`; XML и прежняя м�
 По FileId находится тот же mutable canonical slot, а `ModuleMetadata.form`
 получает его текущую модель.
 
-В canonical корне непредоставленная форма, включая ещё не подключённую nested
+В canonical корне непредоставленная форма, включая pending nested
 форму, остаётся `FormModule` с `form=None`. Данные preserved `Ext/Form.xml`
 самостоятельно с диска больше не загружаются. Это закрывает неверсированный
 обход input layer. В обычном Designer-корне без canonical slots прежний native
@@ -25,6 +25,7 @@ loader продолжает работать. Отдельный глобаль�
 dialog и этот slot. Готовность YAML отдельно от current resource по-прежнему
 не означает наличия модели в ядре. Результаты ниже относятся к компоненту
 canonical input до подключения producer; его нынешняя приёмка описана отдельно.
+Вложенные формы затем подключены к [отдельным slots общей сессии](analyzer-nested-forms.md).
 
 ## Проверки
 

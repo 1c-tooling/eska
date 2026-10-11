@@ -42,15 +42,21 @@ Wall time сценария с hashing и native reference — примерно 5
 
 ## Граница сессии анализа
 
-[Producer общих форм](analyzer-forms.md) явно выбирает только resource главного
-CommonForm из расширенного reader. Вложенные dialogs ещё не регистрируются как
-editor inputs и не публикуются в canonical slots; их BSL module context остаётся
-`form=None` без disk fallback. Полнота вложенных моделей остаётся ложной.
+[Последующий producer вложенных форм](analyzer-nested-forms.md) уже публикует
+independent slots, current resources и состояние каждой формы. Описание ниже
+фиксирует первоначальную границу reader до подключения этого producer.
 
-Следующий компонент должен публиковать отдельный slot по full descriptor
+[Producer общих форм](analyzer-forms.md) на момент приёмки reader явно выбирал
+только resource главного CommonForm из расширенного reader. Вложенные dialogs
+ещё не регистрировались как editor inputs и не публиковались в canonical slots;
+их BSL module context оставался
+`form=None` без disk fallback. Это историческое состояние до producer.
+
+Следующий компонент должен был публиковать отдельный slot по full descriptor
 identity, учитывать YAML владельца и именно этой формы resource, передавать
 его в соответствующий BSL body и сохранять адресную инвалидацию соседа.
-Reader и сверка адаптера сами по себе не означают готовность этого lifecycle.
+Этот последующий lifecycle теперь проверен отдельно. Reader и сверка адаптера
+сами по себе не означали его готовность.
 
 ## Проверки
 
@@ -69,5 +75,7 @@ exit 2. JSON RU/EN и 7 829 hashes совпали. Протокол, верси�
 495 upstream hashes прежние. Результаты — в [машинном отчёте](nested-form-reader-results.json).
 
 Платформа не запускалась: компонент читает source identity и модели.
-Nested slots/resources, binary dialog, общий memory budget и прочие условия
-EF-18 ещё в работе. EF-18 — `IN_PROGRESS`, EF-12 не начата.
+На момент этой приёмки nested slots/resources ещё не были подключены;
+[их последующая приёмка](analyzer-nested-forms.md) описана отдельно. Binary
+dialog, общий memory budget и прочие условия EF-18 ещё в работе.
+EF-18 — `IN_PROGRESS`, EF-12 не начата.

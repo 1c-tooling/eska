@@ -1,5 +1,7 @@
 //! Framed resource edits and saved notifications update the same form dependencies as the checker.
 
+mod nested;
+
 use super::*;
 
 const OWNER: &str = "CommonForms/Dialog/object.yaml";

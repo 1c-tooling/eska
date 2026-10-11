@@ -526,9 +526,9 @@ fn role_and_form_resources_share_budget_without_crossing_owner_boundaries() {
     assert_eq!(session.resource_owner(&form), Some(&owner(OWNER)));
 }
 
-/// Reader expansion does not silently publish nested resources through the main-form producer.
+/// A declared nested resource reaches its own slot and the physical BSL module context.
 #[test]
-fn nested_reader_resources_do_not_activate_main_only_session_inputs() {
+fn nested_descriptor_registers_its_own_canonical_input() {
     let (directory, _source, session) = fixture(false);
     drop(session);
     let native = directory.0.join("native");
@@ -562,33 +562,26 @@ fn nested_reader_resources_do_not_activate_main_only_session_inputs() {
     session
         .load_semantic_inputs(session.revision(), &request)
         .unwrap();
-    assert_eq!(session.resource_paths().count(), 2);
-    assert!(session.metadata_resource(&resource).is_none());
-    let revision = session.revision();
-    let resources = session.resources();
-    assert_eq!(
-        session.apply_resource_overlay(&resource, revision, 1, "<Form/>", &request),
-        Err(SessionRequestError::UnknownMetadataResource(
-            resource.clone()
-        ))
-    );
-    assert!(
-        session
-            .invalidate_saved_inputs(std::slice::from_ref(&resource), revision)
-            .is_err()
-    );
-    assert_eq!(session.revision(), revision);
-    assert_eq!(session.resources(), resources);
+    assert_eq!(session.resource_paths().count(), 3);
+    assert!(session.metadata_resource(&resource).is_some());
     let file = session.modules.get(&module).unwrap().file;
-    assert!(
+    assert_eq!(
         session
             .database
             .module_metadata(hir::ModuleId { file_id: file })
             .form
-            .is_none()
+            .as_ref()
+            .unwrap()
+            .event_handlers[0]
+            .handler_name,
+        "ShouldNeverReachKernel"
     );
     let catalog = session.owner(&owner("Catalogs/Items/object.yaml")).unwrap();
     assert!(matches!(catalog.state, ModelState::Ready(_)));
-    assert_eq!((catalog.descriptors, catalog.modeled_descriptors), (2, 1));
-    assert!(!session.summary().descriptor_models_complete);
+    assert_eq!((catalog.descriptors, catalog.modeled_descriptors), (2, 2));
+    assert_eq!(
+        catalog.forms[0].native_path,
+        owner("Catalogs/Items/Forms/Dialog.xml")
+    );
+    assert!(session.summary().descriptor_models_complete);
 }
