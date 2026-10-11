@@ -163,6 +163,18 @@ RU/EN проверили 3/1/1 реальных exports и текущие flags/
 полный JSON. Protocol 0.1 добавляет `commonModuleCompletion`; source schemas,
 версии, dependencies и graph 206/214 прежние. EF-18 остаётся `IN_PROGRESS`.
 
+[Первый запрос сигнатуры](research/eska-format/analyzer-targeted-signatures.md)
+подготавливает own context и прямой common/manager target через native callee
+и общий controller. Read-only call binding сохраняет original argument offset,
+порядок overloads и текущие параметры. SDK — 335 tests, kernel — 2 642/20,
+root — 910/14; все 23 tool/5 kernel/15 root gates прошли. Двенадцать stdio C1/C2/C3
+RU/EN проверили реальные saved signatures, current/invalid/close и watched recovery.
+Checker C1 сохранил полный JSON, 26 findings, 960 issues и source reserve.
+Protocol 0.1 добавляет `signatureHelp.inputPreparation=direct-member-targets`;
+source schemas, версии, dependencies и graph 206/214 прежние. Partial copies
+не подтверждают общий heap/RSS budget; платформа не запускалась. EF-18 остаётся
+`IN_PROGRESS`, следующие этапы не начаты.
+
 Принята будущая поставка: обычная установка `eska` даёт оболочку и комплект
 отдельных инструментов; для CI/IDE доступны самостоятельные пакеты. В плане
 экспериментов EF-20 проверяет CF → ESKA → CF и делегирование команд, EF-21 —

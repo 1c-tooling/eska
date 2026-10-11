@@ -4,7 +4,7 @@ use symbol_info::{
     build_signature_from_resolution, render_signature_help, resolve_callee_at,
     selected_signature_index, ParameterInfoView, SignatureHelpView,
 };
-use syntax::TextSize;
+use syntax::{SyntaxKind, TextSize};
 use vfs::FileId;
 
 #[derive(Debug, Clone)]
@@ -25,6 +25,24 @@ pub struct SignatureInformation {
 pub struct ParameterInfo {
     pub label: String,
     pub documentation: Option<String>,
+}
+
+/// Reuse direct-member dependency discovery at the callee's own dot, never at an argument's incidental receiver.
+pub(crate) fn dependency_offset<DB: RootDatabase>(
+    db: &DB,
+    file_id: FileId,
+    offset: TextSize,
+) -> Option<TextSize> {
+    let root = db.parse(file_id).syntax_node();
+    resolve_callee_at(&root, offset)?;
+    let token = root.token_at_offset(offset).left_biased()?;
+    let arguments = token.parent_ancestors().find(|node| node.kind() == SyntaxKind::ARG_LIST)?;
+    let call = arguments.parent().filter(|node| node.kind() == SyntaxKind::CALL_EXPR)?;
+    let callee = call.children().next().filter(|node| node.kind() == SyntaxKind::FIELD_EXPR)?;
+    callee
+        .children_with_tokens()
+        .find(|element| element.kind() == SyntaxKind::DOT)
+        .map(|dot| dot.text_range().end())
 }
 
 pub fn signature_help<DB: RootDatabase>(
@@ -67,6 +85,46 @@ mod tests {
     use ide_db::base_db::{SourceDatabase, SourceRoot, SourceRootId};
     use ide_db::vfs::{file_set::FileSet, VfsPath};
     use ide_db::RootDatabaseImpl;
+
+    /// The nearest active member call supplies its own receiver anchor, including nested argument lists.
+    #[test]
+    fn signature_dependency_anchor_belongs_to_the_actual_member_callee() {
+        for (body, receiver) in [
+            ("Procedure Run()\n Utility.Method($0);\nEndProcedure\n", "Utility."),
+            ("Procedure Run()\n Catalogs.Items.Method(1, $0);\nEndProcedure\n", "Catalogs.Items."),
+            (
+                "Procedure Run()\n Utility.Outer(Utility.Inner($0));\nEndProcedure\n",
+                "Utility.Inner(",
+            ),
+        ] {
+            let offset = TextSize::from(u32::try_from(body.find("$0").unwrap()).unwrap());
+            let body = body.replace("$0", "");
+            let (db, file) = setup_db(&body);
+            let anchor = usize::from(dependency_offset(&db, file, offset).unwrap());
+            let expected = if receiver.ends_with('(') {
+                body.rfind(receiver).unwrap() + "Utility.".len()
+            } else {
+                body.find(receiver).unwrap() + receiver.len()
+            };
+            assert_eq!(anchor, expected, "{body}");
+        }
+    }
+
+    /// Local calls, constructors, inactive delimiters and non-code text never inherit an argument's receiver anchor.
+    #[test]
+    fn signature_dependency_anchor_rejects_non_member_or_inactive_call_positions() {
+        for body in [
+            "Procedure Run()\n Local(Utility.$0);\nEndProcedure\n",
+            "Procedure Run()\n Value=New Structure($0);\nEndProcedure\n",
+            "Procedure Run()\n Utility.Method(1)$0;\nEndProcedure\n",
+            "Procedure Run()\n Value=\"Utility.Method($0)\";\nEndProcedure\n",
+            "Procedure Run()\n // Utility.Method($0)\nEndProcedure\n",
+        ] {
+            let offset = TextSize::from(u32::try_from(body.find("$0").unwrap()).unwrap());
+            let (db, file) = setup_db(&body.replace("$0", ""));
+            assert_eq!(dependency_offset(&db, file, offset), None, "{body}");
+        }
+    }
 
     fn setup_db(code: &str) -> (RootDatabaseImpl, FileId) {
         let mut db = RootDatabaseImpl::new();

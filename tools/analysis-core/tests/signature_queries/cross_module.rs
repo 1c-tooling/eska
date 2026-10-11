@@ -15,7 +15,7 @@ fn refuse_owner(
     at: usize,
 ) -> Vec<Value> {
     let mut refused = Vec::new();
-    for (version, text, revision) in [(1, renamed, "5"), (2, "invalid: [", "6")] {
+    for (version, text, revision) in [(1, renamed, "6"), (2, "invalid: [", "7")] {
         let update = if version == 1 {
             json!({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
                 "textDocument":{"uri":uri.as_str(),"version":version,"languageId":"yaml","text":text}}})
@@ -63,34 +63,15 @@ fn cross_module_signatures_follow_current_target_and_refuse_renamed_or_invalid_m
         let mut client = Client::with_options(&root, lang, &[]);
         client.ask(&initialize_signature("plaintext", false));
         client.send(&notification("initialized"));
-        client.ask(&request(
-            json!("owner"),
-            "eska/metadata/read",
-            json!({"snapshot":snapshot("0"),"source":owner}),
-        ));
         let at = CALLER_BODY.find(", );").unwrap() + 2;
-        let unread = client.ask(&pull(
-            &root,
-            CALLER,
-            "src-with-command",
-            "1",
-            position(CALLER_BODY, at),
-        ));
-        assert_eq!(unread["error"]["data"]["kind"], "signature_help_incomplete");
-        client.ask(&request(
-            json!("target"),
-            "textDocument/documentSymbol",
-            json!({
-            "textDocument":{"uri":target_uri.as_str()},"eska":{"snapshot":snapshot("2")}}),
-        ));
         let first = client.ask(&pull(
             &root,
             CALLER,
             "src-with-command",
-            "3",
+            "0",
             position(CALLER_BODY, at),
         ));
-        verify(&first["result"], CALLER_BODY, CALLER, "3", at, false);
+        verify(&first["result"], CALLER_BODY, CALLER, "4", at, false);
         assert_eq!(first["result"]["activeParameter"], 1);
         assert!(
             first["result"]["signatures"][0]["label"]
@@ -105,10 +86,10 @@ fn cross_module_signatures_follow_current_target_and_refuse_renamed_or_invalid_m
             &root,
             CALLER,
             "src-with-command",
-            "4",
+            "5",
             position(CALLER_BODY, at),
         ));
-        verify(&current["result"], CALLER_BODY, CALLER, "4", at, false);
+        verify(&current["result"], CALLER_BODY, CALLER, "5", at, false);
         assert!(
             current["result"]["signatures"][0]["label"]
                 .as_str()
@@ -124,14 +105,14 @@ fn cross_module_signatures_follow_current_target_and_refuse_renamed_or_invalid_m
             &root,
             CALLER,
             "src-with-command",
-            "7",
+            "8",
             position(CALLER_BODY, at),
         ));
         assert_eq!(
             restored["result"]["signatures"],
             current["result"]["signatures"]
         );
-        let trace = (unread, first, current, refused, restored);
+        let trace = (first, current, refused, restored);
         if let Some(previous) = &previous {
             assert_eq!(&trace, previous);
         }

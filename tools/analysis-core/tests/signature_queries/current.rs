@@ -12,7 +12,8 @@ fn negotiated(initialized: &Value, format: &str, offsets: bool) {
         initialized["result"]["capabilities"]["experimental"]["eska"]["signatureHelp"],
         json!({"scope":"current-bsl-call","documentationFormat":format,
             "parameterLabel":if offsets {"utf16-offsets"} else {"string"},
-            "incompleteResults":"error","clientHints":"recompute"})
+            "incompleteResults":"error","clientHints":"recompute",
+            "inputPreparation":"direct-member-targets"})
     );
 }
 
@@ -294,7 +295,17 @@ fn constructors_and_typed_platform_methods_preserve_native_signatures() {
         );
         let at = body.rfind(", );").unwrap() + 2;
         let method = client.ask(&pull(&root, MODULE, "src", "1", position(body, at)));
-        verify(&method["result"], body, MODULE, "1", at, true);
+        verify(&method["result"], body, MODULE, "2", at, true);
+        assert_eq!(
+            constructor["result"]["eska"]["resources"]["metadata_source_bytes"],
+            0
+        );
+        assert_eq!(
+            method["result"]["eska"]["resources"]["metadata_source_bytes"],
+            fs::metadata(root.join("src/CommonModules/Tools/object.yaml"))
+                .unwrap()
+                .len()
+        );
         assert_eq!(method["result"]["activeParameter"], 1);
         assert_eq!(method["result"]["signatures"].as_array().unwrap().len(), 1);
         assert!(

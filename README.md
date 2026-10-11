@@ -826,6 +826,11 @@ bounded current bytes. Все 305 ресурсов C1/C2/C3 совпали с na
 также подготавливается адресно: сначала текущие flags YAML, затем доступный body.
 Локальное имя сохраняет приоритет над одноимённым namespace.
 
+[Первый запрос параметров](docs/research/eska-format/analyzer-targeted-signatures.md)
+также подготавливает прямой common/manager вызов без предварительного чтения.
+Ядро выбирает callee, общий controller загружает текущий ввод; параметры и активный
+аргумент вычисляет native call binding с исходной позицией курсора.
+
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

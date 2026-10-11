@@ -3,6 +3,8 @@
 mod adapter_issues;
 #[cfg(feature = "check-cli")]
 mod checker_metadata_queries;
+#[path = "support/common_module_project.rs"]
+mod common_module_project;
 mod completion_queries;
 mod definition_chart_queries;
 mod definition_member_queries;
@@ -21,6 +23,8 @@ mod hover_queries;
 mod http_service_queries;
 mod integration_service_queries;
 mod kernel_memory_queries;
+#[path = "support/manager_project.rs"]
+mod manager_project;
 mod metadata_diagnostic_queries;
 mod metadata_locations;
 mod predefined_queries;
@@ -50,6 +54,7 @@ use std::{
 
 use eska::tool_cli::rpc_framing;
 use serde_json::{Value, json};
+use support::predefined_project;
 
 /// Valid MIME header variants establish a real session instead of terminating its input reader.
 #[test]

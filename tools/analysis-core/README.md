@@ -212,6 +212,10 @@ purpose сохраняет язык автора. Координаты/hash от
 не вычисляются вторым parser. Согласуются документация, UTF-16 parameter labels
 и nullable selection; изменения target BSL/YAML сохраняют caller hash.
 Прежняя карточка клиента игнорируется; неполное отсутствие даёт signature_help_incomplete.
+[Адресная подготовка](../../docs/research/eska-format/analyzer-targeted-signatures.md)
+в первом запросе загружает current own context и прямой common/manager target,
+выбранный native callee discovery. Original argument offset и read-only query
+сохраняются; non-member calls не читают metadata через эту подготовку.
 [`textDocument/references`](../../docs/research/eska-format/analyzer-references.md)
 использует typed native search с обязательным includeDeclaration. Каждый Location
 сохраняет current target/hash, kind и явные coverage/caps; пустой неполный поиск

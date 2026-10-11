@@ -469,6 +469,11 @@ impl Analysis {
         syntax_highlighting::highlight(&self.db, file_id)
     }
 
+    /// Select the current member call's dependency anchor without reading its target payload or guessing from arguments.
+    pub fn signature_help_dependency_offset(&self, file_id: FileId, offset: u32) -> Option<u32> {
+        signature_help::dependency_offset(&self.db, file_id, TextSize::from(offset)).map(u32::from)
+    }
+
     pub fn signature_help(&self, file_id: FileId, offset: u32) -> Option<SignatureHelp> {
         let offset = TextSize::from(offset);
         signature_help::signature_help(&self.db, file_id, offset)

@@ -5,7 +5,9 @@
 binding, выбирает перегрузки и активный аргумент. Core переносит готовые
 сигнатуры, параметры и документацию в `CallSignatures`; второго parser,
 семантического разрешения или локального ранжирования кандидатов нет.
-Запрос не читает XML и соседние inputs.
+Запрос ядра остаётся read-only. Сервер отдельно выполняет
+[адресную подготовку](analyzer-targeted-signatures.md) own context и прямого
+common/manager target для активного member call. Соседние inputs не читаются.
 
 Сигнатуры — каноническое BSL-представление закреплённого ядра. Ключевые слова
 и имена типов в нём русские независимо от locale CLI; это код, а не сообщения
@@ -46,7 +48,8 @@ noActiveParameterSupport разрешает null при отсутствии а�
 
 `experimental.eska.signatureHelp` сообщает scope `current-bsl-call`, выбранные
 documentationFormat и parameterLabel (`string`/`utf16-offsets`), incompleteResults
-`error` и clientHints `recompute`. Порядок signatures и activeSignature сохранены
+`error`, clientHints `recompute` и inputPreparation `direct-member-targets`.
+Порядок signatures и activeSignature сохранены
 из call binding. В сигнатуре метода, не выбранной ядром, per-item activeParameter
 не появляется. Сигнатура без параметров сохраняется с parameters=[];
 пустой список signatures не выдаётся как успешная подсказка.
@@ -92,7 +95,11 @@ native lexer завершает `//`-комментарий только на LF
 retriggerRequest, нулевой timeout до IO и обычный лимит 300 секунд.
 Отмена кооперативная; второй worker, host, индекс или dependency не добавлены.
 
-## Проверки
+## Исходная проверка native signatureHelp
+
+Приведённые ниже результаты относятся к первому подключению native query.
+Актуальные cold member inputs и проверки описаны в
+[адресной подготовке](analyzer-targeted-signatures.md).
 
 95 unit/file, 97 analyzer process и 11 checker process tests прошли: всего 203;
 minimal — 73. Проверены nested calls, comma внутри string, текущие parameter/docs,

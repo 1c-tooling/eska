@@ -2,8 +2,7 @@
 
 use super::*;
 
-#[path = "../support/common_module_project.rs"]
-mod project;
+use crate::common_module_project as project;
 
 const CALLER: &str = "CommonModules/Tools/Ext/Module.bsl";
 const TARGET: &str = "CommonModules/Utility/object.yaml";

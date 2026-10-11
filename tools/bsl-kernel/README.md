@@ -35,6 +35,12 @@ queries определяют экспортность и подсказки те
 доступного body. Shared positional ownership predicate применяется также к прежнему
 fast path: локальное значение больше не получает exports одноимённого namespace.
 
+[Подготовка сигнатуры](../../docs/research/eska-format/analyzer-targeted-signatures.md)
+добавляет `Analysis::signature_help_dependency_offset`: nearest active native call
+выбирает member anchor его собственного callee. Host использует прежние discovery
+и input controller; signature query сохраняет original argument offset и native
+call binding. Argument receivers, non-member/inactive calls не подбирают другую цель.
+
 Назначение локальных пакетов:
 
 - `ide`: [автодополнение сервисов интеграции](../../docs/research/eska-format/analyzer-integration-completion.md)

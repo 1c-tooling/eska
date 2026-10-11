@@ -5,6 +5,8 @@ mod common_module_tests;
 #[cfg(test)]
 mod manager_tests;
 #[cfg(test)]
+mod signature_tests;
+#[cfg(test)]
 mod tests;
 
 use eska::{
@@ -45,22 +47,7 @@ impl AnalysisSession {
         if request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
         }
-        let module = self
-            .inputs
-            .source_reader()
-            .declared_module(path)
-            .ok_or_else(|| QueryError::Request(SessionRequestError::UnknownModule(path.clone())))?;
-        let owner = module.owner.clone();
-        let dialog = self
-            .inputs
-            .source_reader()
-            .declared_form(module.native_descriptor)
-            .and_then(|form| form.dialog)
-            .cloned();
-        self.load_completion_owner(&owner, request)?;
-        if let Some(dialog) = dialog {
-            self.load_completion_resource(&dialog, request)?;
-        }
+        self.prepare_module_metadata(path, request)?;
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
         }
@@ -114,6 +101,78 @@ impl AnalysisSession {
         }
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
+        }
+        Ok(())
+    }
+
+    /// Prepare current own context and only an active member call's admitted target before read-only signature help.
+    ///
+    /// Argument expressions never select a different dependency; non-member or inactive calls perform no metadata reads.
+    /// # Errors
+    /// Rejects stale/unavailable caller input, invalid offset, cancellation or source publication failure.
+    pub fn prepare_signature_help_metadata(
+        &mut self,
+        path: &SourcePath,
+        expected: SessionRevision,
+        offset: u32,
+        request: &InputRequest,
+        cancellation: &QueryCancellation,
+    ) -> Result<(), QueryError> {
+        if !self
+            .with_module_text(path, expected, cancellation, |text| {
+                text.is_char_boundary(offset as usize)
+            })?
+            .value
+        {
+            return Err(QueryError::InvalidOffset { offset });
+        }
+        if request.cancellation.is_cancelled() {
+            return Err(QueryError::Cancelled);
+        }
+        let dependency = self
+            .query_module(path, self.revision(), cancellation, |analysis, file| {
+                Ok(analysis.signature_help_dependency_offset(file, offset))
+            })?
+            .value;
+        if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
+            return Err(QueryError::Cancelled);
+        }
+        if let Some(dependency) = dependency {
+            self.prepare_completion_metadata(
+                path,
+                self.revision(),
+                dependency,
+                request,
+                cancellation,
+            )?;
+        }
+        if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
+            return Err(QueryError::Cancelled);
+        }
+        Ok(())
+    }
+
+    /// Own metadata and the selected form dialog define the caller's native scope independently of its query kind.
+    fn prepare_module_metadata(
+        &mut self,
+        path: &SourcePath,
+        request: &InputRequest,
+    ) -> Result<(), QueryError> {
+        let module = self
+            .inputs
+            .source_reader()
+            .declared_module(path)
+            .ok_or_else(|| QueryError::Request(SessionRequestError::UnknownModule(path.clone())))?;
+        let owner = module.owner.clone();
+        let dialog = self
+            .inputs
+            .source_reader()
+            .declared_form(module.native_descriptor)
+            .and_then(|form| form.dialog)
+            .cloned();
+        self.load_completion_owner(&owner, request)?;
+        if let Some(dialog) = dialog {
+            self.load_completion_resource(&dialog, request)?;
         }
         Ok(())
     }

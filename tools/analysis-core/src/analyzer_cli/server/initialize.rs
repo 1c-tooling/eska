@@ -94,7 +94,8 @@ impl Server<'_> {
             result["capabilities"]["experimental"]["eska"]["signatureHelp"] = json!({
                 "scope":"current-bsl-call","documentationFormat":signature.documentation.as_str(),
                 "parameterLabel":if signature.parameters.label_offsets {"utf16-offsets"} else {"string"},
-                "incompleteResults":"error","clientHints":"recompute"});
+                "incompleteResults":"error","clientHints":"recompute",
+                "inputPreparation":"direct-member-targets"});
             result["capabilities"]["experimental"]["eska"]["hover"] = json!({
                 "scope":"resolved-bsl-symbol","contentFormat":hover_format.as_str(),
                 "incompleteResults":"error"});

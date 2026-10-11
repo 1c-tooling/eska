@@ -1,10 +1,7 @@
 //! Framed completion prepares one current manager body without a prior metadata or module read.
 
 use super::*;
-use support::predefined_project;
-
-#[path = "../support/manager_project.rs"]
-mod project;
+use crate::manager_project as project;
 
 const MODULE: &str = "CommonModules/Tools/Ext/Module.bsl";
 const MANAGER: &str = "Catalogs/Items/Ext/ManagerModule.bsl";
