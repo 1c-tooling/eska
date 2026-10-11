@@ -9,9 +9,9 @@ mod http_service_tests;
 mod integration_completion_tests;
 #[cfg(test)]
 mod integration_service_tests;
+pub mod metadata_resources;
 #[cfg(test)]
 mod module_tests;
-pub mod role_rights;
 mod saved_changes;
 #[cfg(test)]
 mod scheduled_job_tests;
@@ -91,8 +91,8 @@ pub struct AnalysisSession {
     pub(super) modules: BTreeMap<SourcePath, ModuleEntry>,
     pub(super) loaded_module_bytes: u64,
     pub(super) loaded_metadata_source_bytes: u64,
-    pub(super) loaded_role_rights_bytes: u64,
-    role_rights: BTreeMap<SourcePath, role_rights::RoleRightsEntry>,
+    pub(super) loaded_resource_bytes: u64,
+    metadata_resources: BTreeMap<SourcePath, metadata_resources::MetadataResourceEntry>,
     pub(super) options: SessionOptions,
     pub(super) incomplete_metadata: usize,
     pub(super) incomplete_modules: usize,
@@ -227,7 +227,7 @@ impl AnalysisSession {
         listing
             .set_canonical_metadata(&mut database)
             .to(Arc::new(slots));
-        let role_rights = role_rights::register(reader);
+        let metadata_resources = metadata_resources::register(reader);
         Ok(Self {
             incomplete_metadata: owners.len(),
             incomplete_modules: modules.len(),
@@ -239,8 +239,8 @@ impl AnalysisSession {
             revision: SessionRevision::default(),
             loaded_module_bytes: 0,
             loaded_metadata_source_bytes: 0,
-            loaded_role_rights_bytes: 0,
-            role_rights,
+            loaded_resource_bytes: 0,
+            metadata_resources,
             options,
         })
     }
@@ -501,19 +501,17 @@ impl AnalysisSession {
         let input = self.inputs.owner(path).ok_or_else(|| {
             SessionRequestError::Metadata(UpdateError::UnknownOwner(path.clone()))
         })?;
-        let rights = self
-            .inputs
-            .source_reader()
-            .role_rights_path(path)
-            .and_then(|resource| {
-                self.role_rights
+        let resource = metadata_resources::dependency(self.inputs.source_reader(), path).and_then(
+            |resource| {
+                self.metadata_resources
                     .get(resource)
                     .map(|entry| (resource, &entry.input))
-            });
+            },
+        );
         let entry = self.owners.get_mut(path).ok_or_else(|| {
             SessionRequestError::Metadata(UpdateError::UnknownOwner(path.clone()))
         })?;
-        let model = projection::project(entry.binding.kind, input, next, rights);
+        let model = projection::project(entry.binding.kind, input, next, resource);
         let source_bytes = match &input.state {
             InputState::Ready(snapshot) => snapshot.source_bytes,
             InputState::Pending | InputState::Unavailable(_) => 0,

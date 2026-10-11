@@ -23,10 +23,10 @@ impl AnalysisSession {
         for path in paths {
             let (origin, pending) = if let Some(input) = self.inputs.owner(path) {
                 (input.origin, matches!(input.state, InputState::Pending))
-            } else if let Some(input) = self.role_rights(path) {
+            } else if let Some(input) = self.metadata_resource(path) {
                 (
                     input.origin,
-                    matches!(input.state, crate::RoleRightsState::Pending),
+                    matches!(input.state, crate::MetadataResourceState::Pending),
                 )
             } else {
                 let input = self
@@ -53,8 +53,8 @@ impl AnalysisSession {
                     .invalidate_saved(path, self.inputs.revision())
                     .map_err(SessionRequestError::Metadata)?;
                 self.publish(path, next)?;
-            } else if self.role_rights.contains_key(path) {
-                self.release_role_rights_saved(path, self.revision())?;
+            } else if self.metadata_resources.contains_key(path) {
+                self.release_resource_saved(path, self.revision())?;
             } else {
                 self.release_module_saved(path, self.revision())?;
             }

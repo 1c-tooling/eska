@@ -296,6 +296,13 @@ canonical form input ещё в работе; EF-18 остаётся `IN_PROGRESS
 теста, kernel 2630/20 и 5 native/20 tool gates прошли. Checker C1 сохранил
 26 findings/1 285 issues, JSON RU/EN и 7 829 hashes; graph 206/214 прежний.
 Producer dialog в общей сессии ещё не подключён; EF-18 остаётся `IN_PROGRESS`.
+[Текущий dialog формы](../research/eska-format/analyzer-forms.md) затем подключён
+к сессии и canonical slot. Права/dialog используют общий контроллер, clock и
+source quota; current handlers меняют native BSL-диагностику. 978 форм и
+1 641 роль C1/C2/C3 совпали с native reader, шесть stdio-сценариев прошли.
+Checker C1 снял 83 CommonForm issues, сохранив 26 findings и остальные 1 202 issues.
+290 tool tests и все 21 tool/15 root gates прошли; source/protocol schemas прежние.
+Nested/binary формы, общий memory budget и прочие условия EF-18 остаются в работе.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

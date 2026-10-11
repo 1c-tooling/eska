@@ -54,7 +54,7 @@ impl AnalysisSession {
         &mut self,
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
-        self.load_pending_role_rights(request)?;
+        self.load_pending_resources(request)?;
         let paths = self
             .owners
             .iter()

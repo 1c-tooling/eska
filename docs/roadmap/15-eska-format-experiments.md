@@ -1505,6 +1505,20 @@ Core после reader не менялся, его 903/14 и 15 gates сохра
 Producer dialog lifecycle ещё не подключён; CommonForm сохраняет явную неполноту
 проекции. Остальные условия EF-18 остаются в работе, следующие этапы не начаты.
 
+[Текущий dialog общей формы](../research/eska-format/analyzer-forms.md) подключён
+к canonical slot и BSL module context. Права ролей и form dialogs используют
+один resource controller, clock и source-byte квоту. Saved/overlay/close,
+versions, cancellation и saved invalidation согласованы; current event/command
+handlers меняют native `UnusedLocalMethod` при неизменном BSL-тексте.
+290 tool tests, 21 tool/15 root gates и шесть реальных stdio-сценариев RU/EN прошли.
+Все 83/435/460 общих форм и 1 641 роль C1/C2/C3 совпали с native reader;
+source/native/control bytes сохранились. Checker C1 снял 83 CommonForm issues,
+сохранив 26 findings в 1 975 модулях и остальные 1 202 issues; JSON RU/EN и
+7 829 hashes совпали. Экспериментальный Rust API прав заменён общим resource API;
+Role JSON, protocol 0.1, source schema, graph 206/214 и версии сохраняются.
+Binary/absent dialogs, nested формы и прочие условия EF-18 ещё в работе;
+EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

@@ -8,10 +8,12 @@ XML дескриптор роли не генерируется, платфор�
 ## Ввод и модель
 
 Открытие сессии регистрирует pending resources без чтения payloads. Методы
-`role_rights_paths`, `role_rights_owner` и `role_rights` дают объявленную связь
-и текущие readiness/origin/revision/hash. `load_role_rights_saved`,
-`apply_role_rights_overlay` и `close_role_rights_overlay` используют тот же clock,
+`resource_paths`, `resource_owner` и `metadata_resource` дают объявленную связь
+и текущие readiness/origin/revision/hash. `MetadataResourceKind::RoleRights`
+отличает права от [dialog общих форм](analyzer-forms.md). `load_resource_saved`,
+`apply_resource_overlay` и `close_resource_overlay` используют тот же clock,
 проверку версии, bounded reader и source-byte резерв, что YAML/BSL.
+Прежние методы/типы прав заменены в неопубликованном Rust API; JSON роли сохраняется.
 
 Текст ресурса хранится verbatim в `Arc<str>`, с BOM/CRLF. Его `Ready` означает
 доступность текущих UTF-8 bytes. При проекции роли native `parse_rights_xml`

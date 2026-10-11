@@ -33,7 +33,7 @@ pub enum SessionRequestError {
     },
     Metadata(UpdateError),
     UnknownModule(SourcePath),
-    UnknownRoleRights(SourcePath),
+    UnknownMetadataResource(SourcePath),
     BinaryModule(SourcePath),
     StaleDocumentVersion {
         current: i64,

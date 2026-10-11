@@ -98,7 +98,7 @@ impl Registration {
     }
 }
 
-/// Generated owner/module and declared rights basenames are literal; parents remain in the base URI.
+/// Owner, module and metadata-resource basenames are literal; parents stay in the base URI.
 fn saved_watchers(source: &SourceReader) -> Result<Vec<Value>, Value> {
     let invalid = || protocol::error_value(-32603, "path_encoding_unsupported", Value::Null);
     let base = url::Url::from_directory_path(source.root()).map_err(|()| invalid())?;
@@ -106,6 +106,7 @@ fn saved_watchers(source: &SourceReader) -> Result<Vec<Value>, Value> {
         .owner_paths()
         .chain(source.module_paths())
         .chain(source.role_rights_paths())
+        .chain(source.form_dialog_paths())
         .filter(|path| path.as_str() != "configuration.yaml")
         .map(|path| {
             path.as_path()

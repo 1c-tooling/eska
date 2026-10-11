@@ -17,13 +17,14 @@
 
 - `eska/project-control-files` — прежние 6–7 точных control paths;
 - `eska/project-saved-inputs` — source-relative `**/<basename>` для объявленных
-  владельцев, прав ролей и модулей, например `**/object.yaml`, `**/Rights.xml`
-  и `**/Module.bsl`.
+  владельцев, прав ролей, dialog общих форм и модулей, например `**/object.yaml`,
+  `**/Rights.xml`, `**/Form.xml` и `**/Module.bsl`.
 
-Basenames берутся из `SourceReader.owner_paths()`, `role_rights_paths()` и `module_paths()` и
+Basenames берутся из `SourceReader.owner_paths()`, `role_rights_paths()`, `form_dialog_paths()` и `module_paths()` и
 объединяются. Configuration YAML остаётся control input. Двоичные модули
 включены; произвольные сохранённые ресурсы не превращаются в анализируемый ввод.
 [Ресурсы прав](analyzer-roles.md) регистрируются отдельно по declared role identity.
+[Dialog формы](analyzer-forms.md) — только по declared main CommonForm.
 При пустом saved inventory используется безвредный `**/object.yaml`.
 Подписка не перечисляет тысячи owners и не обходит файловую систему.
 Имена родительских каталогов остаются в base URI, а не попадают в glob.

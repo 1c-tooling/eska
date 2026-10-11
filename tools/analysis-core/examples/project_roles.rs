@@ -3,7 +3,7 @@
 use std::{collections::BTreeMap, error::Error, fs, path::PathBuf, time::Instant};
 
 use eska::analysis_core::InputRequest;
-use eska_analysis::AnalysisSession;
+use eska_analysis::{AnalysisSession, MetadataResourceKind};
 use ide_db::metadata::CanonicalMetadata;
 
 /// Use explicit session inputs; native XML is read only for independent model comparison.
@@ -18,10 +18,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     let started = Instant::now();
     let mut session = AnalysisSession::open(source).map_err(|error| format!("{error:?}"))?;
     let resources = session
-        .role_rights_paths()
+        .resource_paths()
+        .filter(|path| {
+            session
+                .metadata_resource(path)
+                .is_some_and(|input| input.kind == MetadataResourceKind::RoleRights)
+        })
         .map(|path| {
             session
-                .role_rights_owner(path)
+                .resource_owner(path)
                 .map(|owner| (owner.clone(), path.clone()))
                 .ok_or("missing_role_owner")
         })
@@ -38,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let request = InputRequest::default();
         if let Some(resource) = resources.get(&path) {
             session
-                .load_role_rights_saved(resource, session.revision(), &request)
+                .load_resource_saved(resource, session.revision(), &request)
                 .map_err(|error| format!("{error:?}"))?;
         }
         session

@@ -96,12 +96,16 @@ source-byte резерв общий с YAML/BSL. Остальные модели
 
 [Адаптер формы](research/eska-format/form-adapter.md) проверяет текущую identity
 из YAML и явно переданные данные dialog. Все 978 общих форм совпали с native
-reader; canonical input и согласованный resource lifecycle ещё не подключены.
+reader.
 Объявленный dialog и bounded current bytes уже получает
 [общий reader](research/eska-format/form-dialog-reader.md).
 [Canonical slot формы](research/eska-format/canonical-form-input.md) уже обновляет
 BSL module context и закрывает самостоятельное чтение dialog в ESKA-корне.
-Producer текущего ресурса формы в сессии ещё не подключён.
+[Producer общей формы](research/eska-format/analyzer-forms.md) подключён:
+права ролей и dialogs используют общий resource controller, source quota и clock.
+Current handler меняет native диагностику BSL; invalid XML очищает модель.
+Checker C1 снял 83 ошибки неподдержанной CommonForm, сохранил 26 findings и
+остальные 1 202 issues. Nested/binary формы и прочие условия EF-18 ещё в работе.
 
 Принята будущая поставка: обычная установка `eska` даёт оболочку и комплект
 отдельных инструментов; для CI/IDE доступны самостоятельные пакеты. В плане

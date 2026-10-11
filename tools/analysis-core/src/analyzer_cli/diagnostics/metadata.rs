@@ -31,7 +31,7 @@ pub(super) fn pull(
             .map_err(|error| documents::request_error(&error))?;
     }
     session
-        .load_pending_role_rights_for_owner(path, options.request)
+        .load_pending_resource_for_owner(path, options.request)
         .map_err(|error| documents::request_error(&error))?;
     let report = session
         .metadata_diagnostics(path, session.revision(), &options.cancellation.query)

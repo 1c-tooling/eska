@@ -64,7 +64,7 @@ pub fn project(
     kind: MetadataKind,
     input: &OwnerInput,
     revision: crate::SessionRevision,
-    rights: Option<(&SourcePath, &crate::RoleRightsInput)>,
+    resource: Option<(&SourcePath, &crate::MetadataResourceInput)>,
 ) -> OwnerModel {
     let mut result = OwnerModel {
         revision,
@@ -89,8 +89,9 @@ pub fn project(
                 result.modeled_descriptors = 1;
                 ModelState::StructureOnly
             } else if let Some(document) = snapshot.documents.first() {
-                if kind == MetadataKind::Role {
-                    let state = role_state(&snapshot.path, &document.descriptor, rights);
+                if matches!(kind, MetadataKind::Role | MetadataKind::CommonForm) {
+                    let state =
+                        resource_state(&snapshot.path, &document.descriptor, kind, resource);
                     if matches!(state, ModelState::Ready(_)) {
                         result.modeled_descriptors = 1;
                     }
@@ -122,13 +123,14 @@ pub fn project(
     result
 }
 
-/// Current rights are an explicit dependency; a failed declared resource is never absent/default data.
-fn role_state(
+/// A declared resource is an explicit dependency; its failure cannot become absent/default data.
+fn resource_state(
     source: &SourcePath,
     descriptor: &eska::project_core::metadata_parser::ParsedDescriptor,
-    rights: Option<(&SourcePath, &crate::RoleRightsInput)>,
+    kind: MetadataKind,
+    resource: Option<(&SourcePath, &crate::MetadataResourceInput)>,
 ) -> ModelState {
-    use crate::RoleRightsState;
+    use crate::{MetadataResourceKind, MetadataResourceState};
     if let Some(issue) = descriptor.diagnostics.first() {
         return ModelState::Invalid {
             source: source.clone(),
@@ -138,47 +140,62 @@ fn role_state(
             },
         };
     }
-    let data = match rights {
-        None => bsl_metadata::RoleData::default(),
-        Some((
-            _,
-            crate::RoleRightsInput {
-                state: RoleRightsState::Unavailable(failure),
-                ..
-            },
-        )) => return ModelState::Unavailable(failure.clone()),
-        Some((
-            path,
-            crate::RoleRightsInput {
-                state: RoleRightsState::Ready(text),
-                ..
-            },
-        )) => match bsl_metadata::xml_parser::parse_rights_xml(text) {
-            Ok(data) => data,
-            Err(_) => {
-                return ModelState::Unavailable(InputFailure::Source(
-                    eska::project_core::source_format::Error {
-                        code: "analysis_role_rights_invalid",
-                        location: vec![path.as_str().to_owned()],
-                    },
-                ));
+    let current = match resource {
+        None => None,
+        Some((path, input)) => {
+            let expected = if kind == MetadataKind::Role {
+                MetadataResourceKind::RoleRights
+            } else {
+                MetadataResourceKind::FormDialog
+            };
+            if input.kind != expected {
+                return resource_failure(path, "analysis_metadata_resource_kind_mismatch");
             }
-        },
-        Some((
-            _,
-            crate::RoleRightsInput {
-                state: RoleRightsState::Pending,
-                ..
-            },
-        )) => return ModelState::Pending,
+            match &input.state {
+                MetadataResourceState::Pending => return ModelState::Pending,
+                MetadataResourceState::Unavailable(failure) => {
+                    return ModelState::Unavailable(failure.clone());
+                }
+                MetadataResourceState::Ready(text) => Some((path, text)),
+            }
+        }
     };
-    match eska_bsl_adapter::role(descriptor, data) {
-        Ok(role) => ModelState::Ready(Arc::new(CanonicalMetadata::Role(Arc::new(role)))),
+    let value = if kind == MetadataKind::Role {
+        let data = match current {
+            None => bsl_metadata::RoleData::default(),
+            Some((path, text)) => match bsl_metadata::xml_parser::parse_rights_xml(text) {
+                Ok(data) => data,
+                Err(_) => return resource_failure(path, "analysis_role_rights_invalid"),
+            },
+        };
+        eska_bsl_adapter::role(descriptor, data).map(|role| CanonicalMetadata::Role(Arc::new(role)))
+    } else {
+        let Some((path, text)) = current else {
+            // An absent/binary dialog does not contain the managed form's current bindings.
+            return resource_failure(source, "analysis_form_dialog_undeclared");
+        };
+        let Ok(data) = bsl_metadata::xml_parser::parse_form_xml(text) else {
+            return resource_failure(path, "analysis_form_dialog_invalid");
+        };
+        eska_bsl_adapter::form(descriptor, data).map(|form| CanonicalMetadata::Form(Arc::new(form)))
+    };
+    match value {
+        Ok(value) => ModelState::Ready(Arc::new(value)),
         Err(error) => ModelState::Invalid {
             source: source.clone(),
             error,
         },
     }
+}
+
+/// Resource failures have their own source and never manufacture a range in the owner YAML.
+fn resource_failure(path: &SourcePath, code: &'static str) -> ModelState {
+    ModelState::Unavailable(InputFailure::Source(
+        eska::project_core::source_format::Error {
+            code,
+            location: vec![path.as_str().to_owned()],
+        },
+    ))
 }
 
 /// Match only implemented adapters; a parsed unknown family is not an empty successful model.

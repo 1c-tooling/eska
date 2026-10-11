@@ -1,4 +1,4 @@
-//! Bound current source reservations across YAML, role rights and BSL without claiming RSS control.
+//! Bound current source reservations across YAML, metadata resources and BSL without claiming RSS control.
 
 #[cfg(test)]
 #[path = "resources/tests.rs"]
@@ -18,15 +18,14 @@ pub struct ResourceSummary {
 }
 
 impl AnalysisSession {
-    /// Count current YAML snapshots and declared rights once, including failed or pending projections.
+    /// Count current YAML and resource bytes once, including failed or pending projections.
     #[must_use]
     pub const fn resources(&self) -> ResourceSummary {
         ResourceSummary {
-            metadata_source_bytes: self.loaded_metadata_source_bytes
-                + self.loaded_role_rights_bytes,
+            metadata_source_bytes: self.loaded_metadata_source_bytes + self.loaded_resource_bytes,
             module_text_bytes: self.loaded_module_bytes,
             total_source_bytes: self.loaded_metadata_source_bytes
-                + self.loaded_role_rights_bytes
+                + self.loaded_resource_bytes
                 + self.loaded_module_bytes,
             max_source_bytes: self.options.max_retained_source_bytes,
         }
@@ -39,7 +38,7 @@ impl AnalysisSession {
         request: &InputRequest,
     ) -> InputRequest {
         let occupied = (self.loaded_metadata_source_bytes
-            + self.loaded_role_rights_bytes
+            + self.loaded_resource_bytes
             + self.loaded_module_bytes)
             - previous;
         request.with_source_budget(

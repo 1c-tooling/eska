@@ -195,8 +195,8 @@ impl Documents {
         let revision = session.revision();
         if session.owner(&path).is_some() {
             session.close_overlay(&path, revision, request)
-        } else if session.role_rights(&path).is_some() {
-            session.close_role_rights_overlay(&path, revision, request)
+        } else if session.metadata_resource(&path).is_some() {
+            session.close_resource_overlay(&path, revision, request)
         } else {
             session.close_module_overlay(&path, revision, request)
         }
@@ -253,14 +253,14 @@ pub fn declared_path(session: &AnalysisSession, file: &Path) -> Result<SourcePat
         .map_err(|error| protocol::error_value(-32602, error.code, Value::Null))?;
     if session.owner(&path).is_none()
         && session.module(&path).is_none()
-        && session.role_rights(&path).is_none()
+        && session.metadata_resource(&path).is_none()
     {
         return Err(protocol::error_value(-32602, "unknown_source", Value::Null));
     }
     Ok(path)
 }
 
-/// YAML, declared role rights and BSL enter the same revisioned session and source-byte budget.
+/// YAML, declared metadata resources and BSL enter the same revisioned session and byte budget.
 fn overlay(
     session: &mut AnalysisSession,
     path: &SourcePath,
@@ -271,8 +271,8 @@ fn overlay(
     let revision = session.revision();
     if session.owner(path).is_some() {
         session.apply_overlay(path, revision, i64::from(version), text, request)
-    } else if session.role_rights(path).is_some() {
-        session.apply_role_rights_overlay(path, revision, i64::from(version), text, request)
+    } else if session.metadata_resource(path).is_some() {
+        session.apply_resource_overlay(path, revision, i64::from(version), text, request)
     } else {
         session.apply_module_overlay(path, revision, i64::from(version), text, request)
     }
@@ -287,8 +287,8 @@ pub fn current(session: &AnalysisSession, path: &SourcePath) -> Value {
     if let Some(module) = session.module(path) {
         return json!({"kind":"module", "state":dto::module(module)});
     }
-    if let Some(input) = session.role_rights(path) {
-        return json!({"kind":"role_rights", "owner":session.role_rights_owner(path), "state":dto::role_rights(input)});
+    if let Some(input) = session.metadata_resource(path) {
+        return json!({"kind":input.kind, "owner":session.resource_owner(path), "state":dto::metadata_resource(input)});
     }
     json!({"kind":"unavailable"})
 }
@@ -312,7 +312,7 @@ pub fn request_error(error: &SessionRequestError) -> Value {
         ),
         SessionRequestError::BinaryModule(_) => (-32602, "binary_module", Value::Null),
         SessionRequestError::UnknownModule(_)
-        | SessionRequestError::UnknownRoleRights(_)
+        | SessionRequestError::UnknownMetadataResource(_)
         | SessionRequestError::Metadata(UpdateError::UnknownOwner(_)) => {
             (-32602, "unknown_source", Value::Null)
         }

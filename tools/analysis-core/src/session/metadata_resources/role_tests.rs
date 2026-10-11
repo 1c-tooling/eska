@@ -38,11 +38,11 @@ fn declared_pending_rights_and_absent_rights_have_distinct_models() {
     let path = owner("Roles/Reader/object.yaml");
     let resource = owner("Roles/Reader/Ext/Rights.xml");
     let request = InputRequest::default();
-    assert_eq!(session.role_rights_paths().count(), 2);
+    assert_eq!(session.resource_paths().count(), 2);
     assert_eq!(session.resources().total_source_bytes, 0);
     assert!(matches!(
-        session.role_rights(&resource).unwrap().state,
-        RoleRightsState::Pending
+        session.metadata_resource(&resource).unwrap().state,
+        MetadataResourceState::Pending
     ));
     session
         .load_saved(&path, session.revision(), &request)
@@ -60,14 +60,14 @@ fn declared_pending_rights_and_absent_rights_have_distinct_models() {
     );
     let saved_yaml = session.owner(&path).unwrap().source_sha256.clone();
     session
-        .load_role_rights_saved(&resource, session.revision(), &request)
+        .load_resource_saved(&resource, session.revision(), &request)
         .unwrap();
     let saved_text = fs::read_to_string(source.join(resource.as_path())).unwrap();
-    let current = session.role_rights(&resource).unwrap();
+    let current = session.metadata_resource(&resource).unwrap();
     assert_eq!(current.bytes(), saved_text.len() as u64);
     assert_eq!(
         current.state,
-        RoleRightsState::Ready(Arc::from(saved_text.clone()))
+        MetadataResourceState::Ready(Arc::from(saved_text.clone()))
     );
     assert_eq!(current.revision, session.revision());
     assert_eq!(session.owner(&path).unwrap().source_sha256, saved_yaml);
@@ -109,7 +109,7 @@ fn rights_overlay_updates_the_role_without_changing_yaml_or_neighbors() {
     let saved_bytes = fs::read(source.join(resource.as_path())).unwrap();
     let changed = test_role_project::rights("Document.Current", true);
     session
-        .apply_role_rights_overlay(&resource, session.revision(), 7, &changed, &request)
+        .apply_resource_overlay(&resource, session.revision(), 7, &changed, &request)
         .unwrap();
     let current = role(&session, &path);
     assert_eq!(current.uuid(), saved.uuid());
@@ -124,14 +124,14 @@ fn rights_overlay_updates_the_role_without_changing_yaml_or_neighbors() {
     assert_eq!(model.origin, InputOrigin::Saved);
     assert_eq!(model.source_sha256, yaml.source_sha256);
     assert_eq!(
-        session.role_rights(&resource).unwrap().origin,
+        session.metadata_resource(&resource).unwrap().origin,
         InputOrigin::Overlay {
             document_version: 7
         }
     );
     assert_ne!(
         session
-            .role_rights(&resource)
+            .metadata_resource(&resource)
             .unwrap()
             .source_sha256
             .as_deref(),
@@ -144,16 +144,16 @@ fn rights_overlay_updates_the_role_without_changing_yaml_or_neighbors() {
     let current_revision = session.revision();
     let resources = session.resources();
     for result in [
-        session.apply_role_rights_overlay(&resource, current_revision, 7, "invalid", &request),
-        session.load_role_rights_saved(&resource, current_revision, &request),
-        session.apply_role_rights_overlay(
+        session.apply_resource_overlay(&resource, current_revision, 7, "invalid", &request),
+        session.load_resource_saved(&resource, current_revision, &request),
+        session.apply_resource_overlay(
             &resource,
             SessionRevision(current_revision.0 - 1),
             8,
             "invalid",
             &request,
         ),
-        session.apply_role_rights_overlay(
+        session.apply_resource_overlay(
             &owner("Roles/Absent/Ext/Rights.xml"),
             current_revision,
             8,
@@ -167,11 +167,11 @@ fn rights_overlay_updates_the_role_without_changing_yaml_or_neighbors() {
     assert_eq!(session.resources(), resources);
     assert!(Arc::ptr_eq(&current, &role(&session, &path)));
     session
-        .close_role_rights_overlay(&resource, session.revision(), &request)
+        .close_resource_overlay(&resource, session.revision(), &request)
         .unwrap();
     assert_eq!(*role(&session, &path), *saved);
     assert_eq!(
-        session.role_rights(&resource).unwrap().origin,
+        session.metadata_resource(&resource).unwrap().origin,
         InputOrigin::Saved
     );
 }
@@ -188,11 +188,11 @@ fn invalid_rights_clear_only_the_current_role_and_close_reads_current_disk() {
         .unwrap();
     fs::write(source.join("Roles/Reader.xml"), "stray XML fallback").unwrap();
     session
-        .apply_role_rights_overlay(&resource, session.revision(), 1, "<NotRights/>", &request)
+        .apply_resource_overlay(&resource, session.revision(), 1, "<NotRights/>", &request)
         .unwrap();
     assert!(matches!(
-        session.role_rights(&resource).unwrap().state,
-        RoleRightsState::Ready(_)
+        session.metadata_resource(&resource).unwrap().state,
+        MetadataResourceState::Ready(_)
     ));
     let failure = InputFailure::Source(eska::project_core::source_format::Error {
         code: "analysis_role_rights_invalid",
@@ -221,14 +221,14 @@ fn invalid_rights_clear_only_the_current_role_and_close_reads_current_disk() {
     let changed = test_role_project::rights("Catalog.DiskCurrent", true);
     fs::write(source.join(resource.as_path()), changed).unwrap();
     session
-        .close_role_rights_overlay(&resource, session.revision(), &request)
+        .close_resource_overlay(&resource, session.revision(), &request)
         .unwrap();
     assert_eq!(role(&session, &path).objects()[0].name, "DiskCurrent");
     session
         .apply_overlay(&path, session.revision(), 1, "document: [", &request)
         .unwrap();
     session
-        .apply_role_rights_overlay(&resource, session.revision(), 2, "<Rights/>", &request)
+        .apply_resource_overlay(&resource, session.revision(), 2, "<Rights/>", &request)
         .unwrap();
     assert!(
         session
@@ -265,9 +265,9 @@ fn saved_resource_invalidation_is_atomic_and_failures_clear_canonical_data() {
     assert_eq!(session.resources(), resources);
     assert!(Arc::ptr_eq(&saved, &role(&session, &path)));
     session
-        .apply_role_rights_overlay(&neighbor, session.revision(), 1, "<Rights/>", &request)
+        .apply_resource_overlay(&neighbor, session.revision(), 1, "<Rights/>", &request)
         .unwrap();
-    let old_bytes = session.role_rights(&resource).unwrap().bytes();
+    let old_bytes = session.metadata_resource(&resource).unwrap().bytes();
     let before_bytes = session.resources().total_source_bytes;
     fs::remove_file(source.join(resource.as_path())).unwrap();
     assert_eq!(
@@ -295,8 +295,8 @@ fn saved_resource_invalidation_is_atomic_and_failures_clear_canonical_data() {
         .load_semantic_inputs(session.revision(), &request)
         .unwrap();
     assert!(matches!(
-        session.role_rights(&resource).unwrap().state,
-        RoleRightsState::Unavailable(InputFailure::Source(_))
+        session.metadata_resource(&resource).unwrap().state,
+        MetadataResourceState::Unavailable(InputFailure::Source(_))
     ));
     assert!(
         session
@@ -306,10 +306,10 @@ fn saved_resource_invalidation_is_atomic_and_failures_clear_canonical_data() {
     );
     fs::write(source.join(resource.as_path()), [0xff]).unwrap();
     session
-        .load_role_rights_saved(&resource, session.revision(), &request)
+        .load_resource_saved(&resource, session.revision(), &request)
         .unwrap();
     assert!(
-        matches!(&session.role_rights(&resource).unwrap().state, RoleRightsState::Unavailable(InputFailure::Source(error)) if error.code == "source_encoding_unsupported")
+        matches!(&session.metadata_resource(&resource).unwrap().state, MetadataResourceState::Unavailable(InputFailure::Source(error)) if error.code == "source_encoding_unsupported")
     );
     let cancellation = Cancellation::default();
     cancellation.cancel();
@@ -318,11 +318,11 @@ fn saved_resource_invalidation_is_atomic_and_failures_clear_canonical_data() {
         ..InputRequest::default()
     };
     session
-        .apply_role_rights_overlay(&resource, session.revision(), 2, "<Rights/>", &cancelled)
+        .apply_resource_overlay(&resource, session.revision(), 2, "<Rights/>", &cancelled)
         .unwrap();
     assert_eq!(
-        session.role_rights(&resource).unwrap().state,
-        RoleRightsState::Unavailable(InputFailure::Cancelled)
+        session.metadata_resource(&resource).unwrap().state,
+        MetadataResourceState::Unavailable(InputFailure::Cancelled)
     );
     session
         .load_semantic_inputs(session.revision(), &request)
@@ -334,7 +334,7 @@ fn saved_resource_invalidation_is_atomic_and_failures_clear_canonical_data() {
             .is_none()
     );
     session
-        .close_role_rights_overlay(&resource, session.revision(), &request)
+        .close_resource_overlay(&resource, session.revision(), &request)
         .unwrap();
     fs::write(source.join(resource.as_path()), "<Rights/>").unwrap();
     session
@@ -367,7 +367,7 @@ fn rights_use_the_shared_source_budget_and_clock_preflight() {
     .unwrap();
     let request = InputRequest::default();
     session
-        .load_role_rights_saved(&resource, session.revision(), &request)
+        .load_resource_saved(&resource, session.revision(), &request)
         .unwrap();
     session
         .load_saved(&path, session.revision(), &request)
@@ -382,14 +382,14 @@ fn rights_use_the_shared_source_budget_and_clock_preflight() {
     ));
     let text = fs::read_to_string(source.join(resource.as_path())).unwrap();
     session
-        .apply_role_rights_overlay(&resource, session.revision(), 1, &text, &request)
+        .apply_resource_overlay(&resource, session.revision(), 1, &text, &request)
         .unwrap();
     assert_eq!(session.resources().total_source_bytes, limit);
     session
-        .apply_role_rights_overlay(&resource, session.revision(), 2, &(text + " "), &request)
+        .apply_resource_overlay(&resource, session.revision(), 2, &(text + " "), &request)
         .unwrap();
     assert!(
-        matches!(session.role_rights(&resource).unwrap().state, RoleRightsState::Unavailable(InputFailure::SourceBudgetExceeded { limit: actual }) if actual == limit)
+        matches!(session.metadata_resource(&resource).unwrap().state, MetadataResourceState::Unavailable(InputFailure::SourceBudgetExceeded { limit: actual }) if actual == limit)
     );
     assert_eq!(session.resources().total_source_bytes, yaml_bytes);
     assert!(
@@ -399,10 +399,10 @@ fn rights_use_the_shared_source_budget_and_clock_preflight() {
             .is_none()
     );
     session.revision = SessionRevision(u64::MAX);
-    let before = session.role_rights(&resource).unwrap().clone();
+    let before = session.metadata_resource(&resource).unwrap().clone();
     assert_eq!(
-        session.close_role_rights_overlay(&resource, session.revision(), &request),
+        session.close_resource_overlay(&resource, session.revision(), &request),
         Err(SessionRequestError::RevisionExhausted)
     );
-    assert_eq!(session.role_rights(&resource), Some(&before));
+    assert_eq!(session.metadata_resource(&resource), Some(&before));
 }

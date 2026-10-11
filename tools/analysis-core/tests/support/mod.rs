@@ -5,6 +5,7 @@ use std::path::PathBuf;
 #[path = "../../../bsl-adapter/tests/support/mod.rs"]
 mod directory;
 pub use directory::TestDirectory;
+pub mod form_project;
 #[cfg(feature = "check-cli")]
 pub mod metadata;
 mod project;

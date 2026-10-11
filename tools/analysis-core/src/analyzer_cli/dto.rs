@@ -10,8 +10,8 @@ use eska::{
 use serde_json::{Value, json};
 
 use crate::{
-    AnalysisSession, MetadataView, ModelState, ModuleFailure, ModuleInput, ModuleState,
-    RoleRightsInput, RoleRightsState,
+    AnalysisSession, MetadataResourceInput, MetadataResourceState, MetadataView, ModelState,
+    ModuleFailure, ModuleInput, ModuleState,
 };
 
 /// The transport's fresh identity disambiguates equal revisions from different server processes.
@@ -112,12 +112,12 @@ pub fn module(input: &ModuleInput) -> Value {
     json!({"origin":origin(input.origin), "source_sha256":input.source_sha256, "input":state})
 }
 
-/// Resource readiness describes raw bytes; its owning role reports native parse failure separately.
-pub fn role_rights(input: &RoleRightsInput) -> Value {
+/// Resource readiness describes raw bytes; its owner reports native parse failure separately.
+pub fn metadata_resource(input: &MetadataResourceInput) -> Value {
     let state = match &input.state {
-        RoleRightsState::Pending => json!({"kind":"pending"}),
-        RoleRightsState::Ready(text) => json!({"kind":"ready","bytes":text.len()}),
-        RoleRightsState::Unavailable(failure) => {
+        MetadataResourceState::Pending => json!({"kind":"pending"}),
+        MetadataResourceState::Ready(text) => json!({"kind":"ready","bytes":text.len()}),
+        MetadataResourceState::Unavailable(failure) => {
             json!({"kind":"unavailable","failure":failure_value(failure)})
         }
     };

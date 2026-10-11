@@ -10,14 +10,14 @@ XML-экспорт не участвуют в чтении.
 Сохранённые файлы и черновики используют одни преобразователи. Неверный текущий
 ввод очищает канонический slot; прежняя модель не используется как fallback.
 Результат kernel resolve и координаты имеют явную ревизию. Общий `SessionRevision`
-учитывает каждое принятое изменение YAML, прав роли и BSL, включая неудачное чтение;
+учитывает каждое принятое изменение YAML, ресурса метаданных и BSL, включая неудачное чтение;
 внешний потребитель должен дополнять его идентичностью сессии после reopen.
 
 Пока подключены главные дескрипторы уже реализованных адаптеров. Полнота чтения,
 полнота главных моделей и покрытие всех вложенных документов различаются.
 
-Для [форм](../../docs/research/eska-format/canonical-form-input.md) в ядре готов
-canonical slot и BSL module consumer; session producer dialog ещё не подключён.
+Для [общих форм](../../docs/research/eska-format/analyzer-forms.md) текущие YAML
+и declared dialog публикуют canonical slot в контекст BSL-модуля.
 Непредоставленные формы canonical корня больше не читают preserved XML с диска.
 `metadata` возвращает текущий YAML-снимок для дерева и свойств, включая виды,
 для которых BSL-проекция ещё не поддержана. Объявленные текстовые модули проходят
@@ -25,7 +25,7 @@ saved/overlay/close; diagnostics и completions используют те же �
 канонические метаданные. Бинарные и непрочитанные тела имеют явное состояние.
 Лимит текущих загруженных текстов — 64 MiB по умолчанию; это не бюджет RSS.
 Общая [квота текущих входов](../../docs/research/eska-format/source-budget.md)
-считает исходный размер готовых YAML-моделей, declared rights и BSL-текстов,
+считает исходный размер готовых YAML-моделей, declared rights/dialog и BSL-текстов,
 по умолчанию 256 MiB.
 Замены переиспользуют свой резерв; недостаточная квота очищает прежний вход.
 `kernel_memory()` возвращает отдельный снимок таблиц Salsa: число instances,
@@ -70,6 +70,7 @@ cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --ex
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_module -- /path/to/eska/source
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_memory -- /path/to/eska/source
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_roles -- /path/to/eska/source /path/to/native/source
+cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_forms -- /path/to/eska/source /path/to/native/source
 ```
 
 Команды выполняются из корня `eska`; для тестов путь задаётся к соседнему
@@ -264,6 +265,15 @@ Current binding учитывается в UnusedLocalMethod; saved batch и resi
 свою canonical роль, invalid/missing права очищают slot без default/XML fallback.
 Full document sync и saved watcher используют ту же сессию и квоту; current
 model failure видна в дереве и checker. В событиях ресурс имеет `kind=role_rights`.
+[Общие формы](../../docs/research/eska-format/analyzer-forms.md) используют тот же
+контроллер ресурсов: `MetadataResourceInput/State/Kind`, `resource_paths`,
+`resource_owner`, `metadata_resource`, `load_resource_saved`, `apply_resource_overlay`
+и `close_resource_overlay`. Это изменение неопубликованного Rust API заменяет
+прежние методы и типы для прав ролей; их JSON-контракт сохраняется.
+Dialog имеет `kind=form_dialog` и capability `formDialogSync`; current events
+и commands учитываются в native `UnusedLocalMethod`. Неверный XML очищает модель,
+сохраняя raw text/hash; ошибка не получает выдуманного диапазона YAML.
+Binary/absent dialogs и nested формы пока не моделируются в сессии.
 [Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
 сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
 Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.

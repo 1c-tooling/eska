@@ -108,7 +108,7 @@ impl Server<'_> {
                         .map_err(|error| documents::request_error(&error))?;
                 }
                 session
-                    .load_pending_role_rights_for_owner(&path, &request)
+                    .load_pending_resource_for_owner(&path, &request)
                     .map_err(|error| documents::request_error(&error))?;
                 let current = session
                     .metadata(&path, session.revision())

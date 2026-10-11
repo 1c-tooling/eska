@@ -21,6 +21,9 @@ mod request;
 mod resources;
 mod session;
 #[cfg(test)]
+#[path = "../tests/support/form_project.rs"]
+mod test_form_project;
+#[cfg(test)]
 #[path = "../tests/support/project.rs"]
 mod test_project;
 #[cfg(test)]
@@ -53,5 +56,7 @@ pub use queries::symbol_hover::{HoverKind, SymbolHover};
 pub use queries::{ModuleResult, QueryError};
 pub use request::{SessionRequestError, SessionRevision};
 pub use resources::ResourceSummary;
-pub use session::role_rights::{RoleRightsInput, RoleRightsState};
+pub use session::metadata_resources::{
+    MetadataResourceInput, MetadataResourceKind, MetadataResourceState,
+};
 pub use session::{AnalysisSession, SessionError, SessionSummary};
