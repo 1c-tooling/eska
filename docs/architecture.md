@@ -168,6 +168,7 @@ tools/analysis-core/src/
     ├── server.rs                # жизненный цикл соединения и последовательный worker
     ├── server/initialize.rs     # выбор проекта и согласование возможностей
     ├── server/requests.rs       # проверка snapshot и маршрутизация запросов
+    ├── server/response.rs       # лимит сериализованных байтов и ошибка переполнения
     ├── documents.rs             # синхронизация открытых YAML/BSL
     └── stream.rs                # ограниченная очередь ввода и отмена запросов
 ```

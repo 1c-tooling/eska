@@ -17,6 +17,7 @@ use super::{
 
 mod initialize;
 mod requests;
+mod response;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum Phase {
@@ -98,32 +99,28 @@ pub fn run(
                 {
                     return 1;
                 }
-                let mut body = LimitedBody(Vec::new());
-                if serde_json::to_writer(&mut body, &response).is_err() {
-                    let current = server
-                        .session
-                        .as_ref()
-                        .map(|session| dto::snapshot(session, &server.session_id));
-                    let error = json!({"jsonrpc":"2.0", "id":response["id"],
-                        "error":protocol::error_value(-32000,"response_too_large",
-                            json!({"limit":rpc_framing::MAX_RESPONSE,"snapshot":current}))});
-                    body.0.clear();
-                    if serde_json::to_writer(&mut body, &error).is_err() {
-                        return 1;
-                    }
-                }
+                let current = server
+                    .session
+                    .as_ref()
+                    .map(|session| dto::snapshot(session, &server.session_id));
+                let Ok(mut body) =
+                    response::encode(&response, current.as_ref(), rpc_framing::MAX_RESPONSE)
+                else {
+                    return 1;
+                };
                 match server.cancel_response(&mut response, tracked.as_ref()) {
                     Err(()) => return 1,
                     Ok(true) => {
-                        body.0.clear();
-                        if serde_json::to_writer(&mut body, &response).is_err() {
+                        if response::serialize(&response, &mut body, rpc_framing::MAX_RESPONSE)
+                            .is_err()
+                        {
                             return 1;
                         }
                     }
                     Ok(false) => (),
                 }
                 drop(tracked);
-                if rpc_framing::write_frame(output, &body.0).is_err() {
+                if rpc_framing::write_frame(output, &body).is_err() {
                     return 1;
                 }
             }
@@ -291,23 +288,5 @@ impl Server<'_> {
                 ))
             }
         }
-    }
-}
-
-struct LimitedBody(Vec<u8>);
-
-impl Write for LimitedBody {
-    /// Serialization never grows the wire buffer beyond the advertised response cap.
-    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
-        if bytes.len() > rpc_framing::MAX_RESPONSE.saturating_sub(self.0.len()) {
-            return Err(std::io::Error::other("response_too_large"));
-        }
-        self.0.extend_from_slice(bytes);
-        Ok(bytes.len())
-    }
-
-    /// The in-memory buffer has no deferred output.
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
     }
 }

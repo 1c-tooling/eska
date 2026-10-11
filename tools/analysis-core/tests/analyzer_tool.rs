@@ -41,6 +41,7 @@ mod semantic_diagnostic_queries;
 mod signature_queries;
 mod subsystem_queries;
 mod support;
+mod transport_failures;
 mod watched_files;
 mod watcher_registration;
 mod web_service_queries;
