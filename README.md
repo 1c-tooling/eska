@@ -797,6 +797,8 @@ preset = "trunk"
 привязки учитываются в диагностике неиспользуемых процедур.
 [Автодополнение имён сервисов](docs/research/eska-format/analyzer-integration-completion.md)
 работает через языковое ядро, сохраняет локальное затенение и не загружает каналы.
+[Адаптер роли](docs/research/eska-format/role-adapter.md) сохраняет UUID, флаги,
+ссылки и RLS из явно переданных прав; resource lifecycle сервера ещё в работе.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

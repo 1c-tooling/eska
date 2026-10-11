@@ -1438,6 +1438,17 @@ tests, kernel 2626/20 и все 5 kernel/19 tool/15 root gates прошли. Ш�
 issues, JSON RU/EN одинаков. Graph 206/214 прежний; full inference, навигация к
 этим ссылкам, memory budget, остальные edits и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
 
+[Адаптер роли](../research/eska-format/role-adapter.md) соединяет общий YAML
+descriptor и явно переданный current `RoleData`. В локальной модели открыт
+constructor с исходным UUID; default не подставляется вместо ошибочного ресурса.
+Все 212/676/753 роли C1/C2/C3 совпали с native reader по identity, флагам, ссылкам
+и RLS; проверена сохранность 850/2706/3014 source/native/control files.
+64 unit/7 file tests адаптера, прежние 270 SDK tests, kernel 2626/20 и все
+45 gates прошли, включая root и feature matrix.
+Версии, serialized shape, dependencies и protocol не менялись. Сервер и checker
+пока не используют адаптер: согласованный lifecycle `Rights.xml` ещё в работе.
+Остальные модели, общий memory budget, edits и Explorer не завершены; EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

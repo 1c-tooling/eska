@@ -61,7 +61,8 @@ impl Role {
         Self { uuid: Uuid::new_v4(), name: name.into(), data: RoleData::default() }
     }
 
-    pub(crate) fn with_data(uuid: Uuid, name: String, data: RoleData) -> Self {
+    /// Construct a role from its source identity and explicitly supplied current rights data.
+    pub fn with_data(uuid: Uuid, name: String, data: RoleData) -> Self {
         Self { uuid, name, data }
     }
 

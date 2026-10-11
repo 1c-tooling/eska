@@ -262,6 +262,10 @@ invalid каналы. RU/EN, shadowing и строки/комментарии п
 C1/C2/C3 не меняли исходники; checker C1 сохранил 26 findings и 1 497 issues.
 Версии и graph 206/214 прежние; provenance содержит 495 исходных hashes.
 Полная семантика, memory budget, edits и Explorer ещё в работе; EF-18 — `IN_PROGRESS`.
+[Адаптер роли](../research/eska-format/role-adapter.md) сохраняет исходные UUID,
+три флага, объектные ссылки и RLS из отдельно переданного `RoleData`. Все 1 641
+модели C1/C2/C3 совпали с native reader. Сервер и checker пока не используют
+этот адаптер: lifecycle сохранённого `Rights.xml` ещё в работе. EF-18 — `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

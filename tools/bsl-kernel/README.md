@@ -6,6 +6,10 @@ bsl-analyzer закреплены на той же Git-ревизии. Это и
 экспериментального адаптера, а не опубликованный analyzer/check или LSP-сервер.
 Главный workspace ESKA и его минимальный project core от ядра не зависят.
 
+Для [адаптера роли](../../docs/research/eska-format/role-adapter.md) открыт
+`Role::with_data`: source UUID и current rights передаются явно; serialized
+shape и прежний XML reader не изменены.
+
 Назначение локальных пакетов:
 
 - `ide`: [автодополнение сервисов интеграции](../../docs/research/eska-format/analyzer-integration-completion.md)

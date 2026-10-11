@@ -55,6 +55,8 @@ Predefined/Use и тот же name listing; расписание не входи
 receive handlers; bindings используются в UnusedLocalMethod.
 [Автодополнение сервисов интеграции](analyzer-integration-completion.md) использует
 native root/context checks и те же объявленные identities без чтения каналов.
+[Адаптер роли](role-adapter.md) соединяет YAML identity с явно переданными
+правами сохранённого ресурса; canonical resource lifecycle пока не подключён.
 [Отдельный сервер метаданных](analyzer-metadata.md) согласует экспериментальный
 протокол; [синхронизация YAML/BSL](analyzer-documents.md) использует общую сессию,
 редакторские версии и квоту. [Pull-диагностика](analyzer-diagnostics.md) проверяет
