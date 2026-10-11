@@ -70,6 +70,7 @@ pub(super) fn register(reader: &SourceReader) -> BTreeMap<SourcePath, MetadataRe
         .chain(reader.form_dialog_paths().filter_map(|path| {
             reader
                 .form_dialog_owner(path)
+                .filter(|owner| reader.form_dialog_path(owner) == Some(path))
                 .map(|owner| (path, owner, MetadataResourceKind::FormDialog))
         }))
         .map(|(path, owner, kind)| {

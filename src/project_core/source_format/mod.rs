@@ -33,8 +33,8 @@ pub use protected::{
     SourceMap, export_protected, prepare_protected,
 };
 pub use reader::{
-    DeclaredModule, DeclaredOwner, MetadataDeclaration, MetadataSnapshot, NativeMetadata,
-    OwnerSnapshot, SourceReader,
+    DeclaredForm, DeclaredModule, DeclaredOwner, MetadataDeclaration, MetadataSnapshot,
+    NativeMetadata, OwnerSnapshot, SourceReader,
 };
 
 pub use model::{

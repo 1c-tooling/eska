@@ -1,5 +1,9 @@
 # Объявленные данные общих форм
 
+Результаты первоначального reader общих форм. Последующее
+[расширение на nested identities](nested-form-reader.md) добавило full descriptor
+lookup и чтение вложенных dialogs; его API и проверки описаны отдельно.
+
 `SourceReader` связывает preserved `Ext/Form.xml` только с объявленным главным
 descriptor вида `CommonForm`. Регистрация использует validated manifest и
 configuration composition, не читает YAML формы или dialog. Лишний native
@@ -37,8 +41,8 @@ symlink rejection. Все 903 root tests прошли, 14 прежних ignored
 В C1 84 preserved ресурса, но активируются только 83 объявленные формы.
 Результаты — в [машинном отчёте](form-dialog-reader-results.json).
 
-Этот ввод пока ограничен главными общими формами и XML dialog. Nested формы и
-binary dialog не подключены; наличие/тип обычной формы должен проверять caller
-по текущему descriptor. Current resource lifecycle в сессии, canonical form
-input и общий memory budget ещё не готовы. Source/protocol schemas, версии,
+Этот первоначальный компонент ограничен главными общими формами и XML dialog.
+Их [current lifecycle и canonical input](analyzer-forms.md) затем подключены
+к сессии. Nested reader описан отдельно выше; nested lifecycle, binary dialog
+и общий memory budget ещё в работе. Source/protocol schemas, версии,
 зависимости и native workspace не менялись. EF-18 остаётся `IN_PROGRESS`.

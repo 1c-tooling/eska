@@ -303,6 +303,12 @@ source quota; current handlers меняют native BSL-диагностику. 9
 Checker C1 снял 83 CommonForm issues, сохранив 26 findings и остальные 1 202 issues.
 290 tool tests и все 21 tool/15 root gates прошли; source/protocol schemas прежние.
 Nested/binary формы, общий memory budget и прочие условия EF-18 остаются в работе.
+[Reader nested форм](../research/eska-format/nested-form-reader.md) сохраняет
+полные identity при одинаковых коротких именах и связывает dialog с descriptor
+и enclosing YAML. Все 18 186 XML-моделей C1/C2/C3 совпали с native reader;
+binary форма C2 отмечена отдельно. Три root tests и один SDK guard, 906/14 root,
+291 tool tests и все 6 adapter/21 tool/15 root gates прошли. Checker и current
+common-form lifecycle сохраняются; nested session slots/resources ещё в работе.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

@@ -106,6 +106,9 @@ BSL module context и закрывает самостоятельное чтен
 Current handler меняет native диагностику BSL; invalid XML очищает модель.
 Checker C1 снял 83 ошибки неподдержанной CommonForm, сохранил 26 findings и
 остальные 1 202 issues. Nested/binary формы и прочие условия EF-18 ещё в работе.
+[Reader вложенных форм](research/eska-format/nested-form-reader.md) получил
+full descriptor identity и declared dialog; все 18 186 XML-моделей C1/C2/C3
+совпали с native reader. Nested slots и resource lifecycle ещё не подключены.
 
 Принята будущая поставка: обычная установка `eska` даёт оболочку и комплект
 отдельных инструментов; для CI/IDE доступны самостоятельные пакеты. В плане

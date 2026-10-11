@@ -525,3 +525,70 @@ fn role_and_form_resources_share_budget_without_crossing_owner_boundaries() {
     );
     assert_eq!(session.resource_owner(&form), Some(&owner(OWNER)));
 }
+
+/// Reader expansion does not silently publish nested resources through the main-form producer.
+#[test]
+fn nested_reader_resources_do_not_activate_main_only_session_inputs() {
+    let (directory, _source, session) = fixture(false);
+    drop(session);
+    let native = directory.0.join("native");
+    let configuration = fs::read_to_string(native.join("Configuration.xml")).unwrap();
+    fs::write(
+        native.join("Configuration.xml"),
+        configuration.replace("</ChildObjects>", "<Catalog>Items</Catalog></ChildObjects>"),
+    )
+    .unwrap();
+    fs::create_dir_all(native.join("Catalogs/Items/Forms/Dialog/Ext/Form")).unwrap();
+    fs::write(native.join("Catalogs/Items.xml"), "<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" version=\"2.20\"><Catalog uuid=\"90000000-0000-4000-8000-000000000001\"><Properties><Name>Items</Name></Properties><ChildObjects><Form>Dialog</Form></ChildObjects></Catalog></MetaDataObject>").unwrap();
+    fs::write(native.join("Catalogs/Items/Forms/Dialog.xml"), "<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" version=\"2.20\"><Form uuid=\"90000000-0000-4000-8000-000000000002\"><Properties><Name>Dialog</Name><FormType>Managed</FormType></Properties></Form></MetaDataObject>").unwrap();
+    fs::write(
+        native.join("Catalogs/Items/Forms/Dialog/Ext/Form.xml"),
+        test_form_project::dialog("ShouldNeverReachKernel"),
+    )
+    .unwrap();
+    let module = owner("Catalogs/Items/Forms/Dialog/Ext/Form/Module.bsl");
+    fs::write(native.join(module.as_path()), test_form_project::BODY).unwrap();
+    let source = directory.0.join("nested-source");
+    eska::project_core::source_format::import_designer(&native, &source).unwrap();
+    let reader = SourceReader::open(&source).unwrap();
+    assert_eq!(reader.form_dialog_paths().count(), 3);
+    let resource = owner("Catalogs/Items/Forms/Dialog/Ext/Form.xml");
+    assert_eq!(
+        reader.form_for_dialog(&resource).unwrap().owner,
+        &owner("Catalogs/Items/object.yaml")
+    );
+    let mut session = AnalysisSession::open(&source).unwrap();
+    let request = InputRequest::default();
+    session
+        .load_semantic_inputs(session.revision(), &request)
+        .unwrap();
+    assert_eq!(session.resource_paths().count(), 2);
+    assert!(session.metadata_resource(&resource).is_none());
+    let revision = session.revision();
+    let resources = session.resources();
+    assert_eq!(
+        session.apply_resource_overlay(&resource, revision, 1, "<Form/>", &request),
+        Err(SessionRequestError::UnknownMetadataResource(
+            resource.clone()
+        ))
+    );
+    assert!(
+        session
+            .invalidate_saved_inputs(std::slice::from_ref(&resource), revision)
+            .is_err()
+    );
+    assert_eq!(session.revision(), revision);
+    assert_eq!(session.resources(), resources);
+    let file = session.modules.get(&module).unwrap().file;
+    assert!(
+        session
+            .database
+            .module_metadata(hir::ModuleId { file_id: file })
+            .form
+            .is_none()
+    );
+    let catalog = session.owner(&owner("Catalogs/Items/object.yaml")).unwrap();
+    assert!(matches!(catalog.state, ModelState::Ready(_)));
+    assert_eq!((catalog.descriptors, catalog.modeled_descriptors), (2, 1));
+    assert!(!session.summary().descriptor_models_complete);
+}

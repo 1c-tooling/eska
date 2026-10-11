@@ -29,6 +29,7 @@ use super::{
     files, yaml,
 };
 
+pub use form_dialog::DeclaredForm;
 pub use modules::DeclaredModule;
 pub use semantic::{MetadataSnapshot, NativeMetadata};
 
@@ -74,7 +75,6 @@ struct OwnerSpec {
     parent: Option<NativeUuid>,
     descriptors: BTreeMap<SourcePath, NativeUuid>,
     rights: Option<SourcePath>,
-    dialog: Option<SourcePath>,
 }
 
 /// An explicit manifest/configuration snapshot, with other owners read only when requested.
@@ -90,6 +90,7 @@ pub struct SourceReader {
     owners: BTreeMap<SourcePath, OwnerSpec>,
     modules: BTreeMap<SourcePath, modules::ModuleSpec>,
     role_rights: BTreeMap<SourcePath, SourcePath>,
+    forms: BTreeMap<SourcePath, form_dialog::FormSpec>,
     form_dialogs: BTreeMap<SourcePath, SourcePath>,
 }
 
@@ -114,7 +115,6 @@ impl SourceReader {
             name: None,
             parent: None,
             rights: None,
-            dialog: None,
             descriptors: groups
                 .remove(&root_path)
                 .ok_or_else(|| Error::root("source_descriptor_missing"))?,
@@ -144,7 +144,6 @@ impl SourceReader {
                     name: Some(name),
                     parent: Some(parent.clone()),
                     rights: None,
-                    dialog: None,
                     descriptors,
                 },
             );
@@ -155,7 +154,8 @@ impl SourceReader {
         owners.insert(root_path, root_spec);
         let modules = modules::declared_modules(&manifest, &owners)?;
         let role_rights = role_rights::declared_role_rights(&manifest, &mut owners)?;
-        let form_dialogs = form_dialog::declared_form_dialogs(&manifest, &mut owners)?;
+        let mut forms = form_dialog::declared_forms(&owners)?;
+        let form_dialogs = form_dialog::declared_form_dialogs(&manifest, &mut forms)?;
         Ok(Self {
             root,
             manifest,
@@ -164,6 +164,7 @@ impl SourceReader {
             owners,
             modules,
             role_rights,
+            forms,
             form_dialogs,
         })
     }
@@ -287,7 +288,26 @@ impl SourceReader {
         read_text_limited(&self.root, path, max_bytes)
     }
 
-    /// Enumerate preserved dialogs attached to declared main common-form descriptors.
+    /// Enumerate full form descriptor paths, including nested forms, without opening their owners.
+    pub fn form_paths(&self) -> impl Iterator<Item = &SourcePath> {
+        self.forms.keys()
+    }
+
+    /// Read a form's stable owner, native identity and optional dialog without loading payloads.
+    #[must_use]
+    pub fn declared_form(&self, native: &SourcePath) -> Option<DeclaredForm<'_>> {
+        let (path, spec) = self.forms.get_key_value(native)?;
+        Some(DeclaredForm {
+            owner: &spec.owner,
+            native_descriptor: path,
+            kind: spec.kind,
+            name: &spec.name,
+            uuid: &spec.uuid,
+            dialog: spec.dialog.as_ref(),
+        })
+    }
+
+    /// Enumerate preserved dialogs attached to declared common and nested forms.
     pub fn form_dialog_paths(&self) -> impl Iterator<Item = &SourcePath> {
         self.form_dialogs.keys()
     }
@@ -295,18 +315,26 @@ impl SourceReader {
     /// Return a common form's declared dialog; a missing declared file remains distinguishable.
     #[must_use]
     pub fn form_dialog_path(&self, owner: &SourcePath) -> Option<&SourcePath> {
-        self.owners.get(owner).and_then(|spec| spec.dialog.as_ref())
+        let main = &self.owners.get(owner)?.main;
+        self.forms.get(main).and_then(|spec| spec.dialog.as_ref())
     }
 
-    /// Bind one declared common-form dialog to its YAML owner without reading either payload.
+    /// Bind one declared form dialog to its YAML owner without reading either payload.
     #[must_use]
     pub fn form_dialog_owner(&self, path: &SourcePath) -> Option<&SourcePath> {
-        self.form_dialogs.get(path)
+        let form = self.form_dialogs.get(path)?;
+        self.forms.get(form).map(|spec| &spec.owner)
+    }
+
+    /// Resolve a dialog to its full form identity, preserving equal names in different owners.
+    #[must_use]
+    pub fn form_for_dialog(&self, path: &SourcePath) -> Option<DeclaredForm<'_>> {
+        self.declared_form(self.form_dialogs.get(path)?)
     }
 
     /// Read current verbatim UTF-8 dialog bytes through the shared path, encoding and size checks.
     ///
-    /// Only declared main common-form XML dialogs are currently bound. XML validation and
+    /// Only declared common/nested form XML dialogs are bound. XML validation and
     /// interpretation belong to the analysis consumer, not to this platform-independent reader.
     ///
     /// # Errors

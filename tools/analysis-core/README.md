@@ -274,6 +274,10 @@ Dialog имеет `kind=form_dialog` и capability `formDialogSync`; current eve
 и commands учитываются в native `UnusedLocalMethod`. Неверный XML очищает модель,
 сохраняя raw text/hash; ошибка не получает выдуманного диапазона YAML.
 Binary/absent dialogs и nested формы пока не моделируются в сессии.
+[Общий reader nested форм](../../docs/research/eska-format/nested-form-reader.md)
+уже сохраняет full descriptor identity и dialog отдельно от enclosing YAML.
+Сессия пока явно регистрирует только главный CommonForm; expanded reader не
+активирует nested inputs и не восстанавливает для них native disk fallback.
 [Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
 сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
 Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.

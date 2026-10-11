@@ -1519,6 +1519,18 @@ Role JSON, protocol 0.1, source schema, graph 206/214 и версии сохра
 Binary/absent dialogs, nested формы и прочие условия EF-18 ещё в работе;
 EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
 
+[Reader nested форм](../research/eska-format/nested-form-reader.md) сохраняет
+full descriptor identity, UUID, enclosing owner и declared dialog, включая
+одинаковые короткие имена разных объектов. Регистрация не читает payload;
+module backlink адресует тот же descriptor. Пример читает один snapshot на
+owner и сравнивает все 740/7 781/9 665 XML-моделей C1/C2/C3 с native reader;
+binary форма C2 отмечена отдельно. 4 638/49 896/59 651 hashes сохранены.
+Три root tests и один SDK guard, 906/14 root, 69/8 adapter, 291 tool tests и
+все 6 adapter/21 tool/15 root gates прошли. Checker C1 сохранил 26 findings,
+1 202 issues и квоту; шесть real stdio-сценариев common-form lifecycle прошли.
+Schemas, protocol, graph, upstream hashes и версии прежние. Nested session
+slots/resources и прочие условия EF-18 ещё в работе; следующие этапы не начаты.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

@@ -1,0 +1,650 @@
+{
+  "schema_version": 1,
+  "component": "declared_nested_form_identity_and_dialog_reader",
+  "milestone": "EF-18",
+  "status": "IN_PROGRESS",
+  "adapter_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.0049167470133398
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 1.6253197210025974
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.8395994600141421
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 6.923469569010194,
+      "results": [
+        "ok. 69 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 3.157342142018024
+    },
+    {
+      "gate": "release-model-example",
+      "exit_code": 0,
+      "seconds": 12.22860925301211
+    }
+  ],
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 3.5738628940016497
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 3.625324713997543
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 5.414147031027824
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 29.865725021983963,
+      "results": [
+        "ok. 138 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.39s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 137 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.66s",
+        "ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.69s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 11.879176459013252
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 2.835437546018511
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 2.1594098010100424
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 11.479709487000946,
+      "results": [
+        "ok. 116 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.2807538969791494
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.7800880029972177
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 2.384686549019534
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 8.50681995000923,
+      "results": [
+        "ok. 118 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.03s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 6.010097935009981
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 1.2921517159848008
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 4.232174647011561
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 19.63304211499053,
+      "results": [
+        "ok. 138 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.05s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 134 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.31s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 6.359693009988405
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 15.342691261001164
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 8.659024341002805
+    },
+    {
+      "gate": "release-role-example",
+      "exit_code": 0,
+      "seconds": 14.323582015989814
+    },
+    {
+      "gate": "release-form-example",
+      "exit_code": 0,
+      "seconds": 1.2587410050036851
+    }
+  ],
+  "root_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9183062140073162
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2877809019992128
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 16.379325802001404
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 40.12516674300423
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.757038620999083
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.4050671020231675
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 8.478377874009311
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.198968779994175
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 5.226862486015307
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 13.991553528001532
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 12.06585959601216
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 5.449841143999947
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 16.257138428016333
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 8.44908678799402
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.09208524899440818
+    }
+  ],
+  "tests": {
+    "root_passed": 906,
+    "root_ignored": 14,
+    "adapter_unit_passed": 69,
+    "adapter_file_passed": 8,
+    "tool_unit_passed": 138,
+    "analyzer_passed": 137,
+    "checker_passed": 16,
+    "tool_all_features_passed": 291
+  },
+  "native_nested_models": [
+    {
+      "corpus": "C1",
+      "absent_xml_dialogs": 0,
+      "attribute_columns": 1564,
+      "attributes": 4318,
+      "command_handlers": 1881,
+      "compared_forms": 740,
+      "elements": 13879,
+      "enclosing_owners_read_once": 294,
+      "event_handlers": 3621,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "nested_forms": 740,
+      "preserved_nested_form_xml_resources": 741,
+      "tracked_source_native_control_files": 4638,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 5.200295604998246
+    },
+    {
+      "corpus": "C2",
+      "absent_xml_dialogs": 1,
+      "attribute_columns": 114858,
+      "attributes": 101578,
+      "command_handlers": 44821,
+      "compared_forms": 7781,
+      "elements": 201633,
+      "enclosing_owners_read_once": 2328,
+      "event_handlers": 76795,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "nested_forms": 7782,
+      "preserved_nested_form_xml_resources": 7781,
+      "tracked_source_native_control_files": 49896,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 118.60877555300249
+    },
+    {
+      "corpus": "C3",
+      "absent_xml_dialogs": 0,
+      "attribute_columns": 118285,
+      "attributes": 113575,
+      "command_handlers": 48198,
+      "compared_forms": 9665,
+      "elements": 248450,
+      "enclosing_owners_read_once": 2940,
+      "event_handlers": 89755,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "nested_forms": 9665,
+      "preserved_nested_form_xml_resources": 9665,
+      "tracked_source_native_control_files": 59651,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 81.45271472400054
+    }
+  ],
+  "current_common_form_session_regression": [
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 41528,
+      "wall_seconds": 0.13428927600034513,
+      "corpus": "C1",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 34740,
+      "wall_seconds": 0.15090688597410917,
+      "corpus": "C1",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 174044,
+      "wall_seconds": 0.7763427160098217,
+      "corpus": "C2",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 179160,
+      "wall_seconds": 0.762059656000929,
+      "corpus": "C2",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 202724,
+      "wall_seconds": 0.8819703109911643,
+      "corpus": "C3",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "declared_form_and_dialog_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 196900,
+      "wall_seconds": 0.8652195339964237,
+      "corpus": "C3",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    }
+  ],
+  "current_checker_regression": [
+    {
+      "corpus": "C1",
+      "locale": "en-US",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "findings_equal_previous_checker": true,
+      "settings_hash_equal_previous": true,
+      "metadata_issues_before": 1202,
+      "metadata_issues_after": 1202,
+      "form_metadata_issues_removed": 0,
+      "other_metadata_issues_unchanged": true,
+      "semantic_profile_complete": false,
+      "metadata_models_complete": false,
+      "additional_form_source_bytes": 0,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 119172422,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 188054243
+      },
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "locale_json_equal": true,
+      "wall_seconds": 17.163985830993624
+    },
+    {
+      "corpus": "C1",
+      "locale": "ru-RU",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "findings_equal_previous_checker": true,
+      "settings_hash_equal_previous": true,
+      "metadata_issues_before": 1202,
+      "metadata_issues_after": 1202,
+      "form_metadata_issues_removed": 0,
+      "other_metadata_issues_unchanged": true,
+      "semantic_profile_complete": false,
+      "metadata_models_complete": false,
+      "additional_form_source_bytes": 0,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 119172422,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 188054243
+      },
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "locale_json_equal": true,
+      "wall_seconds": 17.43333197000902
+    }
+  ],
+  "footprint": {
+    "original_native_file_hashes_verified": 495,
+    "runtime_graph": [
+      {
+        "feature": "analyzer-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      },
+      {
+        "feature": "check-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      }
+    ],
+    "release_analyzer_bytes": 50476816,
+    "release_checker_bytes": 46527272
+  },
+  "source_schema_unchanged": true,
+  "protocol_unchanged": true,
+  "versions_and_dependencies_unchanged": true,
+  "platform_invoked": false,
+  "limitations": [
+    "nested_form_session_slots_and_resource_lifecycle_not_connected",
+    "binary_form_dialog_not_parsed",
+    "structural_registration_does_not_validate_unread_owner_yaml",
+    "source_byte_quota_does_not_bound_rss",
+    "full_EF18_conditions_not_complete"
+  ]
+}

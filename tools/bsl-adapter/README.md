@@ -21,8 +21,13 @@ UUID и тип задаёт YAML, элементы, реквизиты, коло
 Все 978 объявленных общих форм C1/C2/C3 совпали с native reader; диск и основной
 XML адаптер не использует. Объявленный dialog и bounded current bytes даёт
 [общий reader](../../docs/research/eska-format/form-dialog-reader.md).
-Общий resource lifecycle и canonical form input
-пока не подключены; это не полная YAML-модель формы из EF-12.
+[Resource lifecycle и canonical input общих форм](../../docs/research/eska-format/analyzer-forms.md)
+подключены к сессии; это не полная YAML-модель формы из EF-12.
+[Reader вложенных форм](../../docs/research/eska-format/nested-form-reader.md)
+даёт full descriptor identity, enclosing owner и declared dialog.
+Пример `project_nested_forms` читает каждый owner один раз и сравнивает
+18 186 моделей с XML; единственная binary форма C2 отмечается отдельно.
+Их slots и resource lifecycle в сессии ещё не подключены.
 
 Первый преобразователь `common_module` принимает `ParsedObject` с загруженными
 properties. UUID, имя, контекст выполнения, повторное использование результатов
