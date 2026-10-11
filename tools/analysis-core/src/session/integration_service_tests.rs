@@ -1,7 +1,7 @@
 //! Receive bindings update through both resolver entry points and the actual native diagnostic.
 
 #[path = "../../tests/support/integration_service_project.rs"]
-mod fixture;
+pub mod fixture;
 
 use super::*;
 use crate::session::tests::{owner, support::TestDirectory};

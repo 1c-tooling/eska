@@ -1,4 +1,4 @@
-//! IDE pulls and metadata diagnostics share the current canonical integration service inputs.
+//! IDE completions and metadata diagnostics share the current integration-service inputs.
 
 #[path = "../support/integration_service_project.rs"]
 mod fixture;
@@ -24,6 +24,23 @@ fn diagnostic(source: &Path, path: &str, snap: &Value) -> Value {
     )
 }
 
+/// Complete at the current collection dot using the negotiated snapshot.
+fn completion_names(
+    client: &mut Client,
+    source: &Path,
+    snap: &Value,
+) -> std::collections::BTreeSet<String> {
+    let result = client.ask(&request(json!(31), "textDocument/completion", json!({
+        "textDocument":{"uri":uri(source,MODULE)}, "position":{"line":1,"character":" Value = Metadata.IntegrationServices.".len()},
+        "eska":{"snapshot":snap}})));
+    result["result"]["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item["label"].as_str().unwrap().to_owned())
+        .collect()
+}
+
 /// Invalid current receive handlers affect shared coverage and localized metadata findings on both locales.
 #[test]
 fn integration_service_inputs_reach_current_metadata_diagnostics() {
@@ -47,6 +64,10 @@ fn integration_service_inputs_reach_current_metadata_diagnostics() {
             true
         );
         let snap = &ready["result"]["eska"]["snapshot"];
+        assert_eq!(
+            completion_names(&mut client, &source, snap),
+            ["Bus".into(), "Neighbor".into()].into_iter().collect()
+        );
         let metadata = client.ask(&request(
             json!(32),
             "eska/metadata/read",
@@ -57,6 +78,11 @@ fn integration_service_inputs_reach_current_metadata_diagnostics() {
             "textDocument":{"uri":uri(&source,OWNER),"languageId":"yaml","version":7,"text":invalid}}}));
         let snap = &changed["params"]["snapshot"];
         assert_eq!(changed["params"]["input"]["state"]["model"], "invalid");
+        // Failed channel payloads cannot erase a valid declared service identity or revive old channels.
+        assert_eq!(
+            completion_names(&mut client, &source, snap),
+            ["Bus".into(), "Neighbor".into()].into_iter().collect()
+        );
         let partial = client.ask(&diagnostic(&source, MODULE, snap));
         assert_eq!(
             partial["result"]["eska"]["coverage"]["semantic_profile_complete"],

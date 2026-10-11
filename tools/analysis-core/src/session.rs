@@ -6,6 +6,8 @@ mod event_subscription_tests;
 #[cfg(test)]
 mod http_service_tests;
 #[cfg(test)]
+mod integration_completion_tests;
+#[cfg(test)]
 mod integration_service_tests;
 #[cfg(test)]
 mod module_tests;

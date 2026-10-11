@@ -1423,9 +1423,20 @@ JSON RU/EN совпал, graph 206/214 и версии прежние. SOAP/WSDL
 saved batch и resident session совпали. 268 tool tests, kernel 1110/4 и все
 6 adapter/5 kernel/19 tool/15 root gates прошли. Checker C1 сохранил 26 findings
 и bytes 7 829 файлов; убран один отказ по виду, осталось 1 497 metadata issues.
-JSON RU/EN, graph 206/214 и версии прежние. Native completion имён этой коллекции
-пока отсутствует; сигнатуры handlers, transport/message runtime, прочие модели,
+JSON RU/EN, graph 206/214 и версии прежние. Обнаруженный пробел native completion
+закрыт отдельным исправлением ниже; сигнатуры handlers, transport/message runtime, прочие модели,
 полная семантика, memory budget, edits и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
+
+[Автодополнение сервисов интеграции](../research/eska-format/analyzer-integration-completion.md)
+использует native semantic root claim, availability mask и getter общего listing.
+Объявленные имена доступны без активации каналов; invalid payload не возвращает
+старую модель. Проверены RU/EN, pending, shadowing и строки/комментарии. В локальный
+kernel workspace включена уже используемая `ide` той же ревизии: 173 исходных
+файла, всего 495 provenance hashes, без обновления версий и JSON schema. 270 tool
+tests, kernel 2626/20 и все 5 kernel/19 tool/15 root gates прошли. Шесть stdio
+сценариев C1/C2/C3 сохранили исходники; checker C1 — прежние 26 findings и 1 497
+issues, JSON RU/EN одинаков. Graph 206/214 прежний; full inference, навигация к
+этим ссылкам, memory budget, остальные edits и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
 
 ## EF-19 Самостоятельный инструмент VCS
 

@@ -86,6 +86,9 @@ pub trait RootDatabase:
         module_file_id: FileId,
     ) -> Option<Arc<bsl_metadata::IntegrationService>>;
 
+    /// Visible integration-service identities, preserving the same root precedence as service lookup.
+    fn integration_service_names(&self, file_id: FileId) -> Vec<String>;
+
     /// The `Ext/Module.bsl` bodies of the common module `name` visible to `file_id`
     /// (base + the file's own extension), each carrying whether its bytes could be
     /// read. For method/parameter validation that must read the module body, scoped

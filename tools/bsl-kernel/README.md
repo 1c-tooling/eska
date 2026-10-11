@@ -1,6 +1,6 @@
 # Закреплённое ядро BSL для ESKA
 
-Этот отдельный Cargo workspace содержит пять изменённых пакетов bsl-analyzer из
+Этот отдельный Cargo workspace содержит шесть изменённых пакетов bsl-analyzer из
 ревизии `9021ba07471eee8a2614bed2105a2c8699f60780`. Остальные зависимости на
 bsl-analyzer закреплены на той же Git-ревизии. Это исходники библиотек для
 экспериментального адаптера, а не опубликованный analyzer/check или LSP-сервер.
@@ -8,6 +8,10 @@ bsl-analyzer закреплены на той же Git-ревизии. Это и
 
 Назначение локальных пакетов:
 
+- `ide`: [автодополнение сервисов интеграции](../../docs/research/eska-format/analyzer-integration-completion.md)
+  использует прежний semantic root claim, context masks и новый getter видимых
+  объявленных имён. YAML каналов и BSL bodies целей не читаются. Detail RU/EN
+  формируется в native completion; private/unresolved Rustdoc links исправлены.
 - `base-db`: недоступный ввод освобождает прежний reparse snapshot после
   exclusive input write. Снимок больше не держит старое BSL-дерево при release,
   пропавшем файле или отказе по квоте. Повторная загрузка и hints других файлов
@@ -42,7 +46,7 @@ bsl-analyzer закреплены на той же Git-ревизии. Это и
 
 [`eska-bsl-adapter`](../bsl-adapter/README.md) уже использует локальный
 `bsl-metadata` через Cargo patch. [`eska-analysis`](../analysis-core/README.md)
-применяет все пять patch и закрепление Salsa в собственном корневом manifest:
+применяет все шесть patch и закрепление Salsa в собственном корневом manifest:
 Cargo не наследует patch зависимости. Контроллер ввода, адаптер и ядро сведены
 в общей библиотеке; самостоятельные `eska-analyzer` и `eska-check` подключены
 экспериментально. Полная семантика и общий бюджет памяти пока не завершены.

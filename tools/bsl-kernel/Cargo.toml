@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/base-db", "crates/bsl-metadata", "crates/hir-ty", "crates/ide-db", "crates/parser-error"]
+members = ["crates/base-db", "crates/bsl-metadata", "crates/hir-ty", "crates/ide-db", "crates/parser-error", "crates/ide"]
 
 [workspace.package]
 version = "0.2.85"
@@ -27,6 +27,12 @@ expect-test = "1.4"
 hir = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 hir-def = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 hir-ty = { path = "crates/hir-ty" }
+ide = { path = "crates/ide" }
+ide-db = { path = "crates/ide-db" }
+ide-assists = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
+ide-diagnostics = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
+code-chunk = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
+symbol-info = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 indexmap = "2.1"
 intern = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 la-arena = "0.3"
@@ -41,6 +47,9 @@ rustc-hash = "2.0"
 salsa = { version = "=0.28.2", features = ["rayon", "macros", "salsa_unstable"] }
 sdbl-hir = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
+nucleo-matcher = "0.3"
 smol_str = "0.3.2"
 smallvec = "1.13"
 text-size = "1.1"
@@ -57,6 +66,7 @@ base-db = { path = "crates/base-db" }
 bsl-metadata = { path = "crates/bsl-metadata" }
 hir-ty = { path = "crates/hir-ty" }
 ide-db = { path = "crates/ide-db" }
+ide = { path = "crates/ide" }
 parser-error = { path = "crates/parser-error" }
 
 [patch.crates-io]

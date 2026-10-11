@@ -253,8 +253,15 @@ EF-18 остаётся `IN_PROGRESS`; SOAP/WSDL/XDTO и сигнатуры не 
 Все три модели и 12 каналов C1/C2/C3 совпали с native reader. Правка binding
 обновляет UnusedLocalMethod; saved batch/resident согласованы RU/EN. 268 tool tests,
 kernel 1110/4 и все gates прошли; checker C1 сохранил 26 findings и убрал один отказ
-по виду, осталось 1 497 issues. Completion имён этой коллекции пока отсутствует.
+по виду, осталось 1 497 issues. Обнаруженный пробел completion закрыт ниже.
 EF-18 остаётся `IN_PROGRESS`; сигнатуры и message runtime не проверены.
+[Автодополнение сервисов интеграции](../research/eska-format/analyzer-integration-completion.md)
+получает объявленные имена через native IDE и общий listing, включая pending и
+invalid каналы. RU/EN, shadowing и строки/комментарии проверены; transport schema
+сохранена. 270 tool tests, kernel 2626/20 и все 39 gates прошли. Шесть сценариев
+C1/C2/C3 не меняли исходники; checker C1 сохранил 26 findings и 1 497 issues.
+Версии и graph 206/214 прежние; provenance содержит 495 исходных hashes.
+Полная семантика, memory budget, edits и Explorer ещё в работе; EF-18 — `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

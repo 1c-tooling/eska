@@ -44,7 +44,7 @@ ide-db = { path = "../bsl-kernel/crates/ide-db" }
 salsa = "=0.28.2"
 vfs = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 base-db = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
-ide = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
+ide = { path = "../bsl-kernel/crates/ide" }
 hir = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 parser = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 bsl-types = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
@@ -63,6 +63,7 @@ base-db = { path = "../bsl-kernel/crates/base-db" }
 bsl-metadata = { path = "../bsl-kernel/crates/bsl-metadata" }
 hir-ty = { path = "../bsl-kernel/crates/hir-ty" }
 ide-db = { path = "../bsl-kernel/crates/ide-db" }
+ide = { path = "../bsl-kernel/crates/ide" }
 parser-error = { path = "../bsl-kernel/crates/parser-error" }
 
 [patch.crates-io]

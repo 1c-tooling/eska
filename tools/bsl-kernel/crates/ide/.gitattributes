@@ -1,0 +1,4 @@
+# Native formatting snapshots deliberately contain mixed indentation and blank tabs.
+src/formatting/tests.rs whitespace=-blank-at-eol,-space-before-tab
+# This BSL fixture verifies declaration lookup with trailing spaces in the source.
+tests/symbol_info.rs whitespace=-blank-at-eol

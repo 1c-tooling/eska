@@ -1371,6 +1371,39 @@ impl RootDatabaseImpl {
         )
     }
 
+    /// Enumerate declared service names without reading canonical channel payloads or module bodies.
+    pub fn integration_service_names_for_file(&self, file_id: FileId) -> Vec<String> {
+        let Some((main_listing, chain_listings, bootstrapped)) =
+            self.metadata_listings_for_file(file_id)
+        else {
+            return Vec::new();
+        };
+        if !bootstrapped {
+            use hir::ConfigsDatabase;
+            return self
+                .merged_visible_configuration(file_id)
+                .map(|config| {
+                    config
+                        .integration_services()
+                        .iter()
+                        .map(|service| service.name().to_string())
+                        .collect()
+                })
+                .unwrap_or_default();
+        }
+        Self::dedup_names(
+            Self::substrate_listings(main_listing, &chain_listings).into_iter().flat_map(
+                |listing| {
+                    listing
+                        .integration_services(self)
+                        .iter()
+                        .map(|entry| entry.name.clone())
+                        .collect::<Vec<_>>()
+                },
+            ),
+        )
+    }
+
     pub fn resolve_integration_service_for_file(
         &self,
         file_id: FileId,
@@ -3418,6 +3451,10 @@ impl RootDatabase for RootDatabaseImpl {
         module_file_id: FileId,
     ) -> Option<Arc<bsl_metadata::IntegrationService>> {
         RootDatabaseImpl::integration_service_for_file_id(self, module_file_id)
+    }
+
+    fn integration_service_names(&self, file_id: FileId) -> Vec<String> {
+        RootDatabaseImpl::integration_service_names_for_file(self, file_id)
     }
 
     fn resolve_common_module_files(&self, file_id: FileId, name: &str) -> hir::CommonModuleBodies {

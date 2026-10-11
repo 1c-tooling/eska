@@ -52,8 +52,9 @@ Predefined/Use и тот же name listing; расписание не входи
 [Web-сервисы](analyzer-web-services.md) согласуют Namespace, операции и имена
 параметров с тем же name/file lifecycle; XDTO semantics в native модель не входят.
 [Сервисы интеграции](analyzer-integration-services.md) передают current каналы и
-receive handlers; bindings используются в UnusedLocalMethod. Completion имён
-этой коллекции остаётся отдельным пробелом закреплённого языкового ядра.
+receive handlers; bindings используются в UnusedLocalMethod.
+[Автодополнение сервисов интеграции](analyzer-integration-completion.md) использует
+native root/context checks и те же объявленные identities без чтения каналов.
 [Отдельный сервер метаданных](analyzer-metadata.md) согласует экспериментальный
 протокол; [синхронизация YAML/BSL](analyzer-documents.md) использует общую сессию,
 редакторские версии и квоту. [Pull-диагностика](analyzer-diagnostics.md) проверяет
