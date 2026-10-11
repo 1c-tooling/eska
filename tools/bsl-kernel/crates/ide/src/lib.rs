@@ -17,6 +17,7 @@ mod inlay_hints;
 pub mod jsonl;
 mod name_lookup;
 pub mod partitioned_diagnostics_baseline;
+mod receiver_scope;
 mod reference_kind;
 mod references;
 mod rename;
@@ -467,6 +468,11 @@ impl Analysis {
 
     pub fn highlight(&self, file_id: FileId) -> HighlightResult {
         syntax_highlighting::highlight(&self.db, file_id)
+    }
+
+    /// Select a hovered member callee's native dependency at either name boundary without reading its body.
+    pub fn symbol_hover_dependency_offset(&self, file_id: FileId, offset: u32) -> Option<u32> {
+        symbol_info::hover_offset(&self.db, file_id, TextSize::from(offset)).map(u32::from)
     }
 
     /// Select the current member call's dependency anchor without reading its target payload or guessing from arguments.

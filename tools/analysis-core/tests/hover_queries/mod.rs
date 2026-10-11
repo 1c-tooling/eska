@@ -3,6 +3,7 @@
 mod controls;
 mod cross_module;
 mod current;
+mod dependencies;
 
 use sha2::{Digest, Sha256};
 use std::fmt::Write as _;

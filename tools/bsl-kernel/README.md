@@ -35,6 +35,13 @@ queries определяют экспортность и подсказки те
 доступного body. Shared positional ownership predicate применяется также к прежнему
 fast path: локальное значение больше не получает exports одноимённого namespace.
 
+[Подготовка hover](../../docs/research/eska-format/analyzer-targeted-hover.md)
+добавляет `Analysis::symbol_hover_dependency_offset`: текущий called-member token
+выбирает свой completion anchor, включая оба края имени. Позиционная карточка
+сначала использует native typed method resolution; textual namespace route
+проверяет владение root через общий с completion predicate. Локальный receiver
+не получает метод одноимённого модуля; его платформенный метод сохраняется.
+
 [Подготовка сигнатуры](../../docs/research/eska-format/analyzer-targeted-signatures.md)
 добавляет `Analysis::signature_help_dependency_offset`: nearest active native call
 выбирает member anchor его собственного callee. Host использует прежние discovery

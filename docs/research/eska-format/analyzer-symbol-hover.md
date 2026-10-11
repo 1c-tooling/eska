@@ -19,6 +19,10 @@ native XML locations и graph ids в карточку не попадают. К�
 position в UTF-16 и необязательный `eska.snapshot`. Snapshot/URI проверяются
 до lazy IO. Pending caller читается по запросу, saved CancelledSaved допускает
 повтор, editor input сохраняет приоритет. Settings фиксируются при initialize.
+Для called-member token [адресная подготовка](analyzer-targeted-hover.md)
+загружает current own context и доступный прямой common/manager target.
+Непрямые зависимости и соседние bodies не загружаются; read-only query остаётся
+отдельным API. Остальные токены не вызывают metadata IO через эту подготовку.
 Повреждённая конфигурация анализа запрещает hover и не публикует provider;
 отключённый ParseError не отключает карточку.
 
@@ -31,7 +35,8 @@ workDoneToken принимается; progress не отправляется. pa
 не является параметром hover и отклоняется как rpc_invalid_params.
 
 `experimental.eska.hover` сообщает scope `resolved-bsl-symbol`, согласованный
-contentFormat и incompleteResults `error`. Native вид преобразуется в закрытый
+contentFormat, incompleteResults `error` и inputPreparation `direct-member-callees`.
+Native вид преобразуется в закрытый
 машинный enum: method, module_variable, parameter, local_variable,
 platform_function, module, metadata_object, manager_module, field.
 Заголовки и названия разделов есть в RU/EN; имена JSON и значения enum не переводятся.
@@ -68,6 +73,11 @@ Scope ограничен разрешёнными символами позиц�
 созданные только присваиванием, этим API пока не разрешаются; явно объявленные
 `Перем`, параметры и переменные модуля проверены. Объявление публикуется только
 для методов: labels остальных видов содержат native human prose.
+Для called-member token typed method resolution сохраняет тип receiver;
+textual namespace route проверяет владение root общим с completion predicate.
+Локальное затенение не возвращает метод уже готового чужого модуля. Named query
+и plain-field resolution этой правкой не изменены. Method label остаётся кратким
+объявлением без параметров; их список предоставляет signatureHelp.
 Возвращаемый тип сейчас доступен только для метода; тип локальной переменной,
 подсказки keyword/expression и полная platform documentation ещё не подключены.
 semantic_complete всегда false; null не означает полную семантическую проверку.
@@ -80,7 +90,7 @@ semantic_complete всегда false; null не означает полную с
 
 ## Проверки
 
-89 unit/file, 87 analyzer process и 11 checker process tests прошли: всего 187;
+Первоначальная приёмка: 89 unit/file, 87 analyzer process и 11 checker process tests прошли: всего 187;
 minimal — 70. Проверены docs/type из текущего BSL, оба края имени, разные EOL,
 связь двух модулей, изменение YAML, сохранение bytes, locale machine parity,
 negotiation/escaping, invalid settings, incomplete/null и stop controls.

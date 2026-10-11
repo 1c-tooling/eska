@@ -3,6 +3,8 @@
 #[cfg(test)]
 mod common_module_tests;
 #[cfg(test)]
+mod hover_tests;
+#[cfg(test)]
 mod manager_tests;
 #[cfg(test)]
 mod signature_tests;
@@ -36,17 +38,7 @@ impl AnalysisSession {
         request: &InputRequest,
         cancellation: &QueryCancellation,
     ) -> Result<(), QueryError> {
-        if !self
-            .with_module_text(path, expected, cancellation, |text| {
-                text.is_char_boundary(offset as usize)
-            })?
-            .value
-        {
-            return Err(QueryError::InvalidOffset { offset });
-        }
-        if request.cancellation.is_cancelled() {
-            return Err(QueryError::Cancelled);
-        }
+        self.validate_preparation(path, expected, offset, request, cancellation)?;
         self.prepare_module_metadata(path, request)?;
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
@@ -118,6 +110,48 @@ impl AnalysisSession {
         request: &InputRequest,
         cancellation: &QueryCancellation,
     ) -> Result<(), QueryError> {
+        self.validate_preparation(path, expected, offset, request, cancellation)?;
+        self.prepare_member_call_metadata(
+            path,
+            offset,
+            request,
+            cancellation,
+            ide::Analysis::signature_help_dependency_offset,
+        )
+    }
+
+    /// Prepare only a current hovered member callee's own context and admitted direct target before its read-only card.
+    ///
+    /// Non-callee tokens do not load metadata; native resolution retains ownership of symbols, docs and types.
+    /// # Errors
+    /// Rejects stale/unavailable caller input, invalid offset, cancellation or source publication failure.
+    pub fn prepare_symbol_hover_metadata(
+        &mut self,
+        path: &SourcePath,
+        expected: SessionRevision,
+        offset: u32,
+        request: &InputRequest,
+        cancellation: &QueryCancellation,
+    ) -> Result<(), QueryError> {
+        self.validate_preparation(path, expected, offset, request, cancellation)?;
+        self.prepare_member_call_metadata(
+            path,
+            offset,
+            request,
+            cancellation,
+            ide::Analysis::symbol_hover_dependency_offset,
+        )
+    }
+
+    /// Every preparation consumer rejects the same invalid input before reading a dependency or publishing metadata.
+    fn validate_preparation(
+        &self,
+        path: &SourcePath,
+        expected: SessionRevision,
+        offset: u32,
+        request: &InputRequest,
+        cancellation: &QueryCancellation,
+    ) -> Result<(), QueryError> {
         if !self
             .with_module_text(path, expected, cancellation, |text| {
                 text.is_char_boundary(offset as usize)
@@ -129,9 +163,21 @@ impl AnalysisSession {
         if request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
         }
+        Ok(())
+    }
+
+    /// Signature and hover discovery choose their own native anchor and share the exact current-input publication path.
+    fn prepare_member_call_metadata(
+        &mut self,
+        path: &SourcePath,
+        offset: u32,
+        request: &InputRequest,
+        cancellation: &QueryCancellation,
+        discover: fn(&ide::Analysis, vfs::FileId, u32) -> Option<u32>,
+    ) -> Result<(), QueryError> {
         let dependency = self
             .query_module(path, self.revision(), cancellation, |analysis, file| {
-                Ok(analysis.signature_help_dependency_offset(file, offset))
+                Ok(discover(analysis, file, offset))
             })?
             .value;
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {

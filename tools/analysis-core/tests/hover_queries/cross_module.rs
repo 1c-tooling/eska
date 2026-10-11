@@ -27,34 +27,15 @@ fn cross_module_hover_uses_current_target_and_refuses_renamed_metadata_without_x
         let mut client = Client::with_options(&root, lang, &[]);
         client.ask(&initialize());
         client.send(&notification("initialized"));
-        client.ask(&request(
-            json!("owner"),
-            "eska/metadata/read",
-            json!({"snapshot":snapshot("0"),"source":owner}),
-        ));
         let at = CALLER_BODY.find("Значение").unwrap();
-        let unread = client.ask(&pull(
-            &root,
-            CALLER,
-            "src-with-command",
-            "1",
-            position(CALLER_BODY, at),
-        ));
-        assert_eq!(unread["error"]["data"]["kind"], "hover_incomplete");
-        client.ask(&request(
-            json!("target"),
-            "textDocument/documentSymbol",
-            json!({
-            "textDocument":{"uri":target_uri.as_str()},"eska":{"snapshot":snapshot("2")}}),
-        ));
         let first = client.ask(&pull(
             &root,
             CALLER,
             "src-with-command",
-            "3",
+            "0",
             position(CALLER_BODY, at),
         ));
-        verify(&first["result"], CALLER_BODY, CALLER, "3", at, "Значение");
+        verify(&first["result"], CALLER_BODY, CALLER, "4", at, "Значение");
         assert!(
             first["result"]["contents"]["value"]
                 .as_str()
@@ -68,10 +49,10 @@ fn cross_module_hover_uses_current_target_and_refuses_renamed_metadata_without_x
             &root,
             CALLER,
             "src-with-command",
-            "4",
+            "5",
             position(CALLER_BODY, at),
         ));
-        verify(&current["result"], CALLER_BODY, CALLER, "4", at, "Значение");
+        verify(&current["result"], CALLER_BODY, CALLER, "5", at, "Значение");
         assert!(
             current["result"]["contents"]["value"]
                 .as_str()
@@ -84,7 +65,7 @@ fn cross_module_hover_uses_current_target_and_refuses_renamed_metadata_without_x
             &root,
             CALLER,
             "src-with-command",
-            "5",
+            "6",
             position(CALLER_BODY, at),
         ));
         assert_eq!(missing["error"]["data"]["kind"], "hover_incomplete");
@@ -96,7 +77,7 @@ fn cross_module_hover_uses_current_target_and_refuses_renamed_metadata_without_x
             &root,
             CALLER,
             "src-with-command",
-            "6",
+            "7",
             position(CALLER_BODY, at),
         ));
         assert_eq!(

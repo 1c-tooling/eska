@@ -7,7 +7,10 @@
 //! applies the output budget, and serializes. Resolution is resident-led: the card is servable
 //! whenever the resident host is `Ready`, independent of the call graph.
 
+mod dependency;
 pub(crate) mod form;
+
+pub(crate) use dependency::hover_offset;
 
 use bsl_metadata::{AttributeType, MdoType};
 use bsl_platform::{PlatformCatalogStatus, PlatformGlobalCatalog};
@@ -1313,7 +1316,19 @@ fn resolve_position(
     let token = root.token_at_offset(offset).right_biased()?;
 
     let sema = Semantics::new(db);
-    let def = sema.resolve_name_to_definition(pos.file_id, &token)?;
+    // A called member belongs to its inferred receiver. The textual qualified-name
+    // resolver can otherwise borrow a foreign export when a local shadows its module.
+    let def = match hir::classify_token(&token) {
+        hir::NameClass::FieldName { receiver, is_call: true, .. } => {
+            sema.resolve_method_call_to_definition(pos.file_id, &token).or_else(|| {
+                // Qualified namespaces may be lowered as one path without a separately
+                // typed receiver. Their textual route is valid only when its root is unclaimed.
+                crate::receiver_scope::unclaimed_namespace_root(db, pos.file_id, offset, &receiver)
+                    .and_then(|_| sema.resolve_name_to_definition(pos.file_id, &token))
+            })?
+        }
+        _ => sema.resolve_name_to_definition(pos.file_id, &token)?,
+    };
 
     let name = def.name(db).map(|n| n.as_str().to_string()).unwrap_or_else(|| token.text().into());
     let kind = kind_for_definition(&def);

@@ -1634,6 +1634,19 @@ source schemas, версии, dependencies и graph 206/214 прежние. Part
 не подтверждают общий heap/RSS budget; платформа не запускалась. EF-18 остаётся
 `IN_PROGRESS`, следующие этапы не начаты.
 
+[Первое наведение на метод](../research/eska-format/analyzer-targeted-hover.md)
+подготавливает current own context и прямой common/manager target по native callee
+token. Позиционная карточка использует typed receiver и общий с completion
+ownership predicate; ready foreign module больше не подменяет локальный receiver.
+SDK — 341 tests, kernel — 2 646/20, root — 910/14; все 23 tool/5 kernel/15 root
+gates прошли. Двенадцать stdio C1/C2/C3 RU/EN проверили реальные saved cards,
+current docs/type, invalid/close, loaded-target shadowing и watched recovery.
+Checker C1 сохранил полный JSON, 26 findings, 960 issues и source reserve.
+Protocol 0.1 добавляет `hover.inputPreparation=direct-member-callees`; source/result
+schemas, версии, dependencies и graph 206/214 прежние. Partial copies не подтверждают
+общий heap/RSS budget; платформа не запускалась. EF-18 — `IN_PROGRESS`, следующие
+этапы не начаты.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

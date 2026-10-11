@@ -510,24 +510,8 @@ fn unclaimed_receiver_ident<DB: RootDatabase>(
     receiver: &SyntaxNode,
 ) -> Option<String> {
     let name = extract_receiver_ident(receiver)?;
-    let module = hir::ModuleId::new(position.file_id);
-    let bodies = db.module_bodies_ref(module);
-    let tree = db.item_tree(position.file_id);
-    let lower = match hir::bare_root::method_item_at(&tree, position.offset) {
-        Some(method) => bodies.lower_result(method.key()),
-        None => bodies.module_code_result(),
-    };
-    let scope = lower.map(|result| hir::BodyShadowScope {
-        body: result.body(),
-        source_map: result.source_map(),
-        read_offset: receiver.text_range().start(),
-    });
-    // A workspace namespace is the candidate itself, not a shadow. The shared claim predicate
-    // still judges body bindings, module members and form/object members with their usual rules.
-    let resolver = hir::Resolver::for_module(module);
-    hir::bare_global_name_claim(db, &resolver, scope.as_ref(), &Name::new(&name))
-        .is_none()
-        .then_some(name)
+    crate::receiver_scope::unclaimed_namespace_root(db, position.file_id, position.offset, receiver)
+        .map(|_| name)
 }
 
 fn complete_common_module_methods(

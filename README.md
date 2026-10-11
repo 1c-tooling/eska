@@ -831,6 +831,11 @@ bounded current bytes. Все 305 ресурсов C1/C2/C3 совпали с na
 Ядро выбирает callee, общий controller загружает текущий ввод; параметры и активный
 аргумент вычисляет native call binding с исходной позицией курсора.
 
+[Первое наведение на метод](docs/research/eska-format/analyzer-targeted-hover.md)
+подготавливает ту же прямую цель по native callee token. Карточка сохраняет
+координаты caller и текущие docs/type; локальное имя не получает чужой метод
+даже после загрузки одноимённого общего модуля.
+
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

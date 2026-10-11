@@ -204,7 +204,10 @@ Semantic загружает pending saved inputs до query и сохраняе�
 [`textDocument/hover`](../../docs/research/eska-format/analyzer-symbol-hover.md)
 возвращает typed карточку разрешённого BSL-символа из того же текущего ядра.
 IDE presentation согласует plaintext/markdown и переводит заголовки RU/EN;
-purpose сохраняет язык автора. Координаты/hash относятся к caller, в том числе
+purpose сохраняет язык автора. [Первое наведение на member callee](../../docs/research/eska-format/analyzer-targeted-hover.md)
+подготавливает own context и прямой common/manager target через native discovery
+и общий controller. `module_symbol_hover` остаётся отдельным read-only query;
+non-callee tokens не читают metadata через эту подготовку. Координаты/hash относятся к caller, в том числе
 для карточки другого ready модуля. Неполное отсутствие даёт hover_incomplete;
 типы локальных переменных и полный native hover пока не подключены.
 [`textDocument/signatureHelp`](../../docs/research/eska-format/analyzer-call-signatures.md)

@@ -1225,6 +1225,62 @@ fn positional_out_of_range_column_is_a_miss() {
     assert!(card.is_none(), "out-of-range column must be a miss, got {card:?}");
 }
 
+/// A positional member query uses the receiver's type, even when another module owns the same textual name.
+fn member_call_card(body: &str, method: &str) -> Option<ide::SymbolInfoCard> {
+    let at = body.rfind(method).expect("member call in fixture");
+    let prefix = &body[..at];
+    let fixture = format!(
+        "//- /test.bsl\n{body}//- /CommonModules/Utility/Ext/Module.bsl\n// Foreign module purpose.\nFunction {method}() Export\n Return 1;\nEndFunction\n"
+    );
+    let (db, file_id) = setup_bsl(&fixture);
+    symbol_info(
+        &db,
+        &SymbolInfoRequest {
+            symbol: None,
+            position: Some(SymbolPosition {
+                file_id,
+                line: prefix.bytes().filter(|b| *b == b'\n').count() as u32,
+                column: prefix.rsplit('\n').next().unwrap().encode_utf16().count() as u32,
+            }),
+            locale: ide::Locale::En,
+            sections: SymbolInfoSections::all(),
+            workspace_root: None,
+        },
+    )
+}
+
+/// Parameter, local, module-variable and reaching-assignment ownership cannot borrow a ready foreign method.
+#[test]
+fn positional_member_call_respects_local_receiver_ownership() {
+    for body in [
+        "Procedure Run(Utility)\n Utility.SavedExport();\nEndProcedure\n",
+        "Procedure Run()\n Var Utility;\n Utility.SavedExport();\nEndProcedure\n",
+        "Var Utility;\nProcedure Run()\n Utility.SavedExport();\nEndProcedure\n",
+        "Procedure Run()\n Utility = 1;\n Utility.SavedExport();\nEndProcedure\n",
+    ] {
+        let card = member_call_card(body, "SavedExport");
+        assert!(card.is_none(), "{body}: {card:?}");
+    }
+}
+
+/// Typed member resolution retains real common-module calls and a shadowing local's platform method.
+#[test]
+fn positional_member_call_preserves_native_and_platform_methods() {
+    let native =
+        member_call_card("Procedure Run()\n Utility.SavedExport();\nEndProcedure\n", "SavedExport")
+            .expect("unshadowed common-module export");
+    assert_eq!(native.kind, "method");
+    assert_eq!(native.doc.as_deref(), Some("Foreign module purpose."));
+
+    let platform = member_call_card(
+        "Procedure Run()\n Utility = New Array();\n Utility.Count();\nEndProcedure\n",
+        "Count",
+    )
+    .expect("typed local's platform member");
+    assert_eq!(platform.kind, "platform function");
+    assert_ne!(platform.doc.as_deref(), Some("Foreign module purpose."));
+}
+
 #[test]
 fn exported_object_module_method_resolves_and_private_does_not() {
     let (db, _) = setup_bsl(OBJECT_MODULE);

@@ -80,6 +80,15 @@ pub fn pull(
                 error["data"]["details"] = dto::snapshot(session, options.session_id);
                 error
             })?;
+        session
+            .prepare_symbol_hover_metadata(
+                &path,
+                session.revision(),
+                offset,
+                options.request,
+                &options.cancellation.query,
+            )
+            .map_err(|error| language::query_error(session, options.session_id, &error))?;
         let result = session
             .module_symbol_hover(
                 &path,
