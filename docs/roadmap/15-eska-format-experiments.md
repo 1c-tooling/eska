@@ -1484,6 +1484,16 @@ root 899/14 и все 6 adapter/5 consumer/15 root gates прошли. Native wo
 canonical form input, реальные nested формы и остальные условия EF-18 ещё
 в работе. EF-18 — `IN_PROGRESS`; EF-12 и следующие этапы не начаты.
 
+[Reader dialog](../research/eska-format/form-dialog-reader.md) связывает preserved
+`Ext/Form.xml` только с declared main CommonForm. Регистрация не читает YAML или
+resource; bounded current text использует прежние path/encoding/size checks.
+Пример формы получил этот общий ввод, все 978 моделей C1/C2/C3 снова совпали с
+native reader, source/native/control bytes сохранились. Четыре новых root tests,
+903/14 root, прежние 69/8 adapter и 279 consumer tests и все 26 gates прошли.
+Schemas, версии, dependencies и native workspace прежние. Current dialog lifecycle,
+canonical form input, nested формы и прочие условия EF-18 остаются в работе;
+EF-18 — `IN_PROGRESS`, очередь этапов сохраняется.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

@@ -97,6 +97,8 @@ source-byte резерв общий с YAML/BSL. Остальные модели
 [Адаптер формы](research/eska-format/form-adapter.md) проверяет текущую identity
 из YAML и явно переданные данные dialog. Все 978 общих форм совпали с native
 reader; canonical input и согласованный resource lifecycle ещё не подключены.
+Объявленный dialog и bounded current bytes уже получает
+[общий reader](research/eska-format/form-dialog-reader.md).
 
 Принята будущая поставка: обычная установка `eska` даёт оболочку и комплект
 отдельных инструментов; для CI/IDE доступны самостоятельные пакеты. В плане

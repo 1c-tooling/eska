@@ -285,6 +285,11 @@ Explorer ещё в работе; EF-18 остаётся `IN_PROGRESS`.
 общих форм C1/C2/C3 совпали с native reader, 69 unit/8 file tests прошли;
 5 consumer/6 adapter/15 root gates сохранены. Canonical form input и ресурсный
 lifecycle ещё в работе; EF-18 остаётся `IN_PROGRESS`, EF-12 не начата.
+[Reader общих форм](../research/eska-format/form-dialog-reader.md) регистрирует
+declared dialogs и читает bounded current bytes; пример адаптера использует
+этот вход. Четыре новых теста и 26 gates прошли, root — 903/14. Все 978 моделей
+снова совпали с native reader, исходники сохранены. Current lifecycle и
+canonical form input ещё в работе; EF-18 остаётся `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

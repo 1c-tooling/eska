@@ -1,0 +1,340 @@
+{
+  "schema_version": 1,
+  "component": "declared_main_common_form_dialog_reader",
+  "milestone": "EF-18",
+  "status": "IN_PROGRESS",
+  "adapter_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.8776708320074249
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.8211775180243421
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.5785514030139893
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 4.870979242987232,
+      "results": [
+        "ok. 69 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 3.5163847600051668
+    },
+    {
+      "gate": "release-model-example",
+      "exit_code": 0,
+      "seconds": 12.377256667998154
+    }
+  ],
+  "consumer_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 3.037840757984668
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 3.4213748890033457
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 3.055775259010261
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 17.79251416499028,
+      "results": [
+        "ok. 131 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.94s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 133 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.35s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 7.39200266401167
+    }
+  ],
+  "root_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8145066809956916
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.9409136209869757
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 7.4288099910190795
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 33.46626862999983
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.639354571001604
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.793450216006022
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 5.323197417019401
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.5581335150054656
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 2.0627091829956044
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 6.440290887025185
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.6292680999904405
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 2.6233500220114365
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 12.368685730994912
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 12.99566229400807
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008015769999474287
+    }
+  ],
+  "root_test_totals": {
+    "all": [
+      903,
+      14
+    ],
+    "minimal": [
+      173,
+      3
+    ],
+    "project-cli": [
+      190,
+      3
+    ],
+    "build-cli": [
+      209,
+      3
+    ]
+  },
+  "real_common_form_models": [
+    {
+      "corpus": "C1",
+      "attribute_columns": 347,
+      "attributes": 653,
+      "command_handlers": 375,
+      "common_forms": 83,
+      "elements": 1649,
+      "event_handlers": 522,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "preserved_form_xml_resources": 84,
+      "tracked_source_native_control_files": 706,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 0.239236366993282
+    },
+    {
+      "corpus": "C2",
+      "attribute_columns": 1812,
+      "attributes": 4334,
+      "command_handlers": 1428,
+      "common_forms": 435,
+      "elements": 9341,
+      "event_handlers": 2893,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "preserved_form_xml_resources": 435,
+      "tracked_source_native_control_files": 3114,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 1.7903742420021445
+    },
+    {
+      "corpus": "C3",
+      "attribute_columns": 1922,
+      "attributes": 4567,
+      "command_handlers": 1463,
+      "common_forms": 460,
+      "elements": 9688,
+      "event_handlers": 3067,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "preserved_form_xml_resources": 460,
+      "tracked_source_native_control_files": 3348,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 3.113781113992445
+    }
+  ],
+  "verification": {
+    "final_gates_passed": 26,
+    "root_tests_added": 4,
+    "adapter_unit_tests": 69,
+    "adapter_file_tests": 8,
+    "consumer_tests": 279,
+    "resource_registration_payload_reads": false,
+    "declared_paths_preserved": true,
+    "verbatim_bom_crlf": true,
+    "bounded_current_reads": true,
+    "nested_forms_registered": false,
+    "binary_dialogs_registered": false,
+    "source_and_protocol_schemas_unchanged": true,
+    "native_workspace_unchanged": true,
+    "dependency_versions_unchanged": true,
+    "current_resource_lifecycle_connected": false,
+    "canonical_form_input_connected": false,
+    "platform_invoked": false
+  }
+}

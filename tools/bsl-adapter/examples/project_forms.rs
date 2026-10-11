@@ -1,11 +1,9 @@
 //! Compare declared common forms against the pinned native reader without editing source corpora.
 
-use std::{error::Error, fs, path::PathBuf, time::Instant};
+use std::{error::Error, path::PathBuf, time::Instant};
 
 use eska::project_core::{
-    MetadataKind,
-    metadata_parser::PropertiesMode,
-    source_format::{FileRole, SourceReader},
+    MetadataKind, metadata_parser::PropertiesMode, source_format::SourceReader,
 };
 
 /// Supply only preserved resources belonging to declared common forms, never stray native files.
@@ -46,17 +44,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             .as_str()
             .strip_suffix(".xml")
             .ok_or("invalid_common_form_path")?;
-        let expected = format!("{prefix}/Ext/Form.xml");
         let resource = reader
-            .manifest()
-            .files
-            .iter()
-            .find(|file| {
-                file.role == FileRole::Preserved
-                    && file.path.as_str().eq_ignore_ascii_case(&expected)
-            })
+            .form_dialog_path(path)
             .ok_or("missing_declared_form_resource")?;
-        let text = fs::read_to_string(source.join(resource.path.as_path()))?;
+        let text = reader.read_form_dialog_text(resource, 64 * 1024 * 1024)?;
         let data = bsl_metadata::xml_parser::parse_form_xml(&text)?;
         let current = eska_bsl_adapter::form(&document.descriptor, data)
             .map_err(|error| format!("{}: {error:?}", path.as_str()))?;

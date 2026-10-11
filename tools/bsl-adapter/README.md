@@ -19,7 +19,9 @@ descriptor с явно переданным `RoleData`: исходный UUID, �
 UUID и тип задаёт YAML, элементы, реквизиты, колонки и обработчики сохраняются
 из dialog input. Неизвестный явный `FormType` вызывает адресную ошибку.
 Все 978 объявленных общих форм C1/C2/C3 совпали с native reader; диск и основной
-XML адаптер не использует. Общий resource lifecycle и canonical form input
+XML адаптер не использует. Объявленный dialog и bounded current bytes даёт
+[общий reader](../../docs/research/eska-format/form-dialog-reader.md).
+Общий resource lifecycle и canonical form input
 пока не подключены; это не полная YAML-модель формы из EF-12.
 
 Первый преобразователь `common_module` принимает `ParsedObject` с загруженными

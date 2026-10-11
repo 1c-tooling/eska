@@ -1,5 +1,6 @@
 //! Owner-local metadata snapshots; opening a tree never reads modules, resources or a baseline.
 
+mod form_dialog;
 mod modules;
 mod projection;
 mod role_rights;
@@ -73,6 +74,7 @@ struct OwnerSpec {
     parent: Option<NativeUuid>,
     descriptors: BTreeMap<SourcePath, NativeUuid>,
     rights: Option<SourcePath>,
+    dialog: Option<SourcePath>,
 }
 
 /// An explicit manifest/configuration snapshot, with other owners read only when requested.
@@ -88,6 +90,7 @@ pub struct SourceReader {
     owners: BTreeMap<SourcePath, OwnerSpec>,
     modules: BTreeMap<SourcePath, modules::ModuleSpec>,
     role_rights: BTreeMap<SourcePath, SourcePath>,
+    form_dialogs: BTreeMap<SourcePath, SourcePath>,
 }
 
 impl SourceReader {
@@ -111,6 +114,7 @@ impl SourceReader {
             name: None,
             parent: None,
             rights: None,
+            dialog: None,
             descriptors: groups
                 .remove(&root_path)
                 .ok_or_else(|| Error::root("source_descriptor_missing"))?,
@@ -140,6 +144,7 @@ impl SourceReader {
                     name: Some(name),
                     parent: Some(parent.clone()),
                     rights: None,
+                    dialog: None,
                     descriptors,
                 },
             );
@@ -150,6 +155,7 @@ impl SourceReader {
         owners.insert(root_path, root_spec);
         let modules = modules::declared_modules(&manifest, &owners)?;
         let role_rights = role_rights::declared_role_rights(&manifest, &mut owners)?;
+        let form_dialogs = form_dialog::declared_form_dialogs(&manifest, &mut owners)?;
         Ok(Self {
             root,
             manifest,
@@ -158,6 +164,7 @@ impl SourceReader {
             owners,
             modules,
             role_rights,
+            form_dialogs,
         })
     }
 
@@ -276,6 +283,41 @@ impl SourceReader {
     ) -> Result<String, Error> {
         if self.role_rights_owner(path).is_none() {
             return Err(Error::root("source_role_rights_undeclared").in_field(path.as_str()));
+        }
+        read_text_limited(&self.root, path, max_bytes)
+    }
+
+    /// Enumerate preserved dialogs attached to declared main common-form descriptors.
+    pub fn form_dialog_paths(&self) -> impl Iterator<Item = &SourcePath> {
+        self.form_dialogs.keys()
+    }
+
+    /// Return a common form's declared dialog; a missing declared file remains distinguishable.
+    #[must_use]
+    pub fn form_dialog_path(&self, owner: &SourcePath) -> Option<&SourcePath> {
+        self.owners.get(owner).and_then(|spec| spec.dialog.as_ref())
+    }
+
+    /// Bind one declared common-form dialog to its YAML owner without reading either payload.
+    #[must_use]
+    pub fn form_dialog_owner(&self, path: &SourcePath) -> Option<&SourcePath> {
+        self.form_dialogs.get(path)
+    }
+
+    /// Read current verbatim UTF-8 dialog bytes through the shared path, encoding and size checks.
+    ///
+    /// Only declared main common-form XML dialogs are currently bound. XML validation and
+    /// interpretation belong to the analysis consumer, not to this platform-independent reader.
+    ///
+    /// # Errors
+    /// Returns undeclared/unsafe paths, missing files, unsupported encoding or an exceeded byte limit.
+    pub fn read_form_dialog_text(
+        &self,
+        path: &SourcePath,
+        max_bytes: u64,
+    ) -> Result<String, Error> {
+        if self.form_dialog_owner(path).is_none() {
+            return Err(Error::root("source_form_dialog_undeclared").in_field(path.as_str()));
         }
         read_text_limited(&self.root, path, max_bytes)
     }

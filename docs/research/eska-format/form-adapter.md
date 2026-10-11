@@ -20,9 +20,10 @@ kind и неверный UUID не превращаются в готовую п
 В существующем ESKA-импорте управляемый dialog хранится как preserved
 `Ext/Form.xml`, а основной и вложенные descriptors — в YAML владельца.
 Проверочный пример `project_forms` читает только ресурс, сопоставленный
-объявленной общей форме через manifest. Он сравнивает полную модель с
+объявленной общей форме через [общий reader](form-dialog-reader.md). Он сравнивает полную модель с
 [закреплённым native reader](https://raw.githubusercontent.com/1c-tooling/bsl-analyzer/9021ba07471eee8a2614bed2105a2c8699f60780/crates/bsl-metadata/src/xml_parser/form.rs).
-Это исследовательский пример; общий bounded reader, версии ресурса, overlays,
+Это исследовательский пример; bounded reader подключён отдельным изменением,
+но версии ресурса, overlays,
 source quota и публикация canonical form input ещё не подключены.
 
 ## Границы модели
