@@ -26,6 +26,10 @@ parser, extraction semantics и Designer callers сохранены.
 добавляет `Analysis::completion_metadata_target`: native syntax, root ownership
 и environment rules определяют прямую MDO dependency без загрузки её payload.
 Host готовит текущие inputs; существующий completion query остаётся read-only.
+[Методы менеджера](../../docs/research/eska-format/analyzer-manager-completion.md)
+добавляют `Analysis::completion_manager_module`: тот же native context и resident
+module index выбирают объявленный FileId без чтения BSL. Прежние symbol/signature
+queries определяют экспортность и подсказки текущего текста.
 
 Назначение локальных пакетов:
 

@@ -250,6 +250,19 @@ impl Analysis {
         )
     }
 
+    /// Discover the admitted direct object's manager body without reading its text or exports.
+    pub fn completion_manager_module(&self, file_id: FileId, offset: u32) -> Option<FileId> {
+        completion::manager_module_target(
+            &self.db,
+            completion::CompletionPosition {
+                file_id,
+                offset: TextSize::from(offset),
+                workspace_root: None,
+                locale: Locale::Ru,
+            },
+        )
+    }
+
     pub fn completions(
         &self,
         file_id: FileId,

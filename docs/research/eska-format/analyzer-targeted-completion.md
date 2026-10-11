@@ -22,7 +22,9 @@ root ownership и execution-environment rules. Строка, комментар�
 учесть текущий модульный контекст. Затем native target связывается через уже
 существующий frozen `config_index` с FileId главного descriptor и его владельцем.
 Контроллер загружает только этот YAML и primary resource, если они ожидают чтения.
-Загрузка целевого объекта не активирует его соседние nested dialogs или BSL bodies.
+Загрузка целевого объекта не активирует его соседние nested dialogs.
+Позднее добавлена [адресная подготовка manager body](analyzer-manager-completion.md)
+для текущих экспортных методов; остальные BSL bodies не читаются.
 Поиск FileId использует resident identities; новый index/cache не добавлен.
 
 Transport преобразует текущую UTF-16 позицию, вызывает подготовку и обычный
@@ -55,7 +57,10 @@ Protocol `0.1` добавляет capability `targetedCompletionMetadata: true` 
 packages и зависимости не изменены. Native facade и shared preparation API
 добавлены; API read-only query сохранён.
 
-## Приёмка
+## Первоначальная приёмка
+
+Следующие результаты относятся к первоначальному компоненту в `8eae2f0`,
+до подключения адресной загрузки manager body.
 
 Семь shared tests проверяют cold source coverage, обе локали, case-insensitive
 native lookup, строки/комментарии/локальное затенение, client/server form context,
@@ -104,7 +109,7 @@ Release analyzer — 50 578 712 bytes, checker — 46 590 480 bytes.
 [Машинный отчёт](analyzer-targeted-completion-results.json) сохраняет результаты.
 
 Подготовка ограничена текущим модулем и прямым manager-object access, распознанным
-native ядром. Transitive inference через переменные, чтение чужих module exports,
+native ядром. Transitive inference через переменные, exports остальных модулей,
 SDBL, остальные виды metadata, все IDE edits и общий memory budget не принимаются
 этим компонентом. Платформа 1С не запускалась: проверены входы и подсказки,
 не исполнение BSL. EF-18 остаётся `IN_PROGRESS`; EF-12 и следующие этапы не начаты.

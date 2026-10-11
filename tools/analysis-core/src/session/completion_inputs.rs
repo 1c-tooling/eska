@@ -1,6 +1,8 @@
 //! Native completion discovery selects current dependencies; the host retains source I/O and authority.
 
 #[cfg(test)]
+mod manager_tests;
+#[cfg(test)]
 mod tests;
 
 use eska::{
@@ -10,12 +12,15 @@ use eska::{
 use ide_db::metadata::config_index;
 
 use super::{AnalysisSession, metadata_resources};
-use crate::{QueryCancellation, QueryError, SessionRequestError, SessionRevision};
+use crate::{
+    ModuleFailure, ModuleState, QueryCancellation, QueryError, SessionRequestError, SessionRevision,
+};
 
 impl AnalysisSession {
     /// Prepare the module's own metadata and an admitted direct manager-access target only.
     ///
-    /// This does not refresh ready or editor-owned input, load sibling dialogs, scan payloads,
+    /// This also prepares the admitted object's own manager body, keeping other modules unread.
+    /// It does not refresh ready or editor-owned input, load sibling dialogs, scan payloads,
     /// or claim transitive metadata inference is complete. The read-only query stays separate.
     /// # Errors
     /// Rejects stale/unknown/unavailable module input, an invalid offset, cancellation or publication failure.
@@ -84,6 +89,23 @@ impl AnalysisSession {
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
         }
+        let manager = self
+            .query_module(path, self.revision(), cancellation, |analysis, file| {
+                let target = analysis.completion_manager_module(file, offset);
+                Ok(target.and_then(|file| {
+                    self.modules
+                        .iter()
+                        .find(|(_, entry)| entry.file == file)
+                        .map(|(path, _)| path.clone())
+                }))
+            })?
+            .value;
+        if let Some(manager) = manager {
+            self.load_completion_module(&manager, request)?;
+        }
+        if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
+            return Err(QueryError::Cancelled);
+        }
         Ok(())
     }
 
@@ -129,6 +151,27 @@ impl AnalysisSession {
         }) && !request.cancellation.is_cancelled()
         {
             self.load_resource_saved(path, self.revision(), request)
+                .map_err(QueryError::Request)?;
+        }
+        Ok(())
+    }
+
+    /// Only declared saved pending/transiently cancelled bodies may be read; editor and binary input stay authoritative.
+    fn load_completion_module(
+        &mut self,
+        path: &SourcePath,
+        request: &InputRequest,
+    ) -> Result<(), QueryError> {
+        if self.module(path).is_some_and(|input| {
+            input.origin == InputOrigin::Saved
+                && matches!(
+                    input.state,
+                    ModuleState::Pending
+                        | ModuleState::Unavailable(ModuleFailure::Input(InputFailure::Cancelled))
+                )
+        }) && !request.cancellation.is_cancelled()
+        {
+            self.load_module_saved(path, self.revision(), request)
                 .map_err(QueryError::Request)?;
         }
         Ok(())

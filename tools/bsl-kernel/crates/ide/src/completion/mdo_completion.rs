@@ -30,6 +30,18 @@ pub(crate) fn metadata_target<DB: RootDatabase>(
     }
 }
 
+/// Select only the admitted direct object's manager from the resident native module index.
+pub(crate) fn manager_module_target<DB: RootDatabase>(
+    db: &DB,
+    position: CompletionPosition,
+) -> Option<vfs::FileId> {
+    let file = position.file_id;
+    let (kind, name) = metadata_target(db, position)?;
+    let manager = ManagerType::from_mdo_type(kind)?;
+    let root = db.file_source_root_input(file).source_root_id(db);
+    db.module_index(root).resolve_manager(manager, &Name::new(&name))
+}
+
 pub(super) fn mdo_completions<DB: RootDatabase>(
     db: &DB,
     position: CompletionPosition,

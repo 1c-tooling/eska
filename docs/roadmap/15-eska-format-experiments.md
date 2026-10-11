@@ -1596,6 +1596,19 @@ dependencies и graph 206/214 прежние. Partial copies не подтвер
 budget; платформа не запускалась. Остальные условия EF-18 остаются в работе;
 EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
 
+[Текущий manager body](../research/eska-format/analyzer-manager-completion.md)
+подготавливается перед прямым native manager completion через общий controller.
+Resident module index выбирает FileId; read-only query использует прежние native
+exports/signatures. Ready/editor authority, binary/failure states и общий budget
+сохранены; остальные bodies/dialogs не читаются. Четыре shared, два native и два
+process tests добавлены. SDK — 322 tests, kernel — 2 636/20, root — 910/14;
+все 23 tool/5 kernel/15 root gates прошли. Шесть stdio C1/C2/C3 RU/EN проверили
+2/2/1 настоящих saved exports, current/invalid/close и watched recovery.
+Checker C1 сохранил полный JSON, 26 findings, 960 issues и source reserve.
+Protocol 0.1 добавляет `managerModuleCompletion`; source/result schemas, версии,
+dependencies и graph 206/214 прежние. Partial copies не подтверждают общий RSS
+budget; платформа не запускалась. EF-18 — `IN_PROGRESS`, следующие этапы не начаты.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

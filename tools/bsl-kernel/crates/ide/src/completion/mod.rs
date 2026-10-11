@@ -2,7 +2,7 @@ mod bsl_completion;
 pub(crate) mod env_filter;
 mod fuzzy;
 mod mdo_completion;
-pub(crate) use mdo_completion::metadata_target;
+pub(crate) use mdo_completion::{manager_module_target, metadata_target};
 mod new_expr_completion;
 mod platform_completion;
 mod sdbl;

@@ -53,6 +53,41 @@ fn direct_completion_dependency_discovery_rejects_unclaimed_or_unavailable_roots
     }
 }
 
+/// A direct manager dependency uses the same native case-insensitive structural module index as completion.
+#[test]
+fn direct_completion_manager_discovery_selects_only_the_named_declared_body() {
+    let (analysis,file,offset)=setup_with_config("//- /test.bsl\nProcedure Run()\n Value = сПрАвОчНиКи.iTeMs.$0;\nEndProcedure\n//- /Catalogs/Items/Ext/ManagerModule.bsl\nProcedure SavedMethod() Export\nEndProcedure\n//- /Catalogs/Neighbor/Ext/ManagerModule.bsl\nProcedure NeighborMethod() Export\nEndProcedure\n");
+    let target = analysis.completion_manager_module(file, offset).unwrap();
+    assert_ne!(target, file);
+    let items = analysis.completions(file, offset, None, ide::Locale::En);
+    assert!(items.iter().any(|item| item.label == "SavedMethod"));
+    assert!(!items.iter().any(|item| item.label == "NeighborMethod"));
+    let root = analysis.database().file_source_root_input(file).source_root_id(analysis.database());
+    assert!(analysis
+        .database()
+        .source_root_input(root)
+        .root(analysis.database())
+        .file_set()
+        .path_for_file(&target)
+        .unwrap()
+        .as_path()
+        .ends_with("Catalogs/Items/Ext/ManagerModule.bsl"));
+}
+
+/// No admitted object or no manager declaration means no manager-body dependency.
+#[test]
+fn direct_completion_manager_discovery_rejects_shadowing_non_object_and_missing_manager() {
+    for body in [
+        "Procedure Run(Catalogs)\n Value=Catalogs.Items.$0;\nEndProcedure\n",
+        "Procedure Run()\n Value=Catalogs.$0;\nEndProcedure\n",
+        "Procedure Run()\n Value=Catalogs.Absent.$0;\nEndProcedure\n",
+    ] {
+        let text=format!("//- /test.bsl\n{body}//- /Catalogs/Items/Ext/ManagerModule.bsl\nProcedure SavedMethod() Export\nEndProcedure\n");
+        let (analysis, file, offset) = setup_with_config(&text);
+        assert_eq!(analysis.completion_manager_module(file, offset), None, "{body}");
+    }
+}
+
 fn designer_fixture_path() -> PathBuf {
     PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../bsl-metadata/fixtures/designer"))
 }

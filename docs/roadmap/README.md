@@ -349,6 +349,15 @@ RU/EN сохранили 2/4/1 pending dialogs, текущие native items и h
 `targetedCompletionMetadata`; source schemas, версии и dependencies прежние.
 Общий memory budget и остальные условия EF-18 ещё в работе; следующие этапы не начаты.
 
+[Текущие методы менеджера](../research/eska-format/analyzer-manager-completion.md)
+появляются при первом прямом completion без module read: native index выбирает
+объявленный body, общий controller сохраняет editor authority и failure states.
+Остальные bodies/dialogs остаются pending. SDK — 322 tests, kernel — 2 636/20,
+root — 910/14; все 23 tool/5 kernel/15 root gates прошли. Шесть stdio C1/C2/C3
+RU/EN проверили 2/2/1 реальных exports и текущий lifecycle; checker C1 сохранил
+полный JSON. Protocol 0.1 добавляет `managerModuleCompletion`; graph 206/214,
+версии и source schemas прежние. EF-18 остаётся `IN_PROGRESS`.
+
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

@@ -24,6 +24,9 @@ mod session;
 #[path = "../tests/support/form_project.rs"]
 mod test_form_project;
 #[cfg(test)]
+#[path = "../tests/support/manager_project.rs"]
+mod test_manager_project;
+#[cfg(test)]
 #[path = "../tests/support/predefined_project.rs"]
 mod test_predefined_project;
 #[cfg(test)]
@@ -32,6 +35,8 @@ mod test_project;
 #[cfg(test)]
 #[path = "../tests/support/role_project.rs"]
 mod test_role_project;
+#[cfg(test)]
+use test_predefined_project as predefined_project;
 #[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
 mod tool_metadata;
 #[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]

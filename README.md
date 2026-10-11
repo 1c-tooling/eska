@@ -818,8 +818,10 @@ bounded current bytes. Все 305 ресурсов C1/C2/C3 совпали с na
 
 [Первый completion](docs/research/eska-format/analyzer-targeted-completion.md)
 для прямого manager access сам подготавливает текущий объект и predefined data.
-Языковое ядро выбирает зависимость; общий controller загружает её без чтения
-чужих dialog/BSL payloads. Предварительный metadata read не требуется.
+Языковое ядро выбирает зависимость; общий controller загружает её и
+[объявленный модуль менеджера](docs/research/eska-format/analyzer-manager-completion.md).
+Экспортные методы учитывают текущий BSL. Остальные bodies и соседние dialogs
+остаются pending; предварительный metadata/module read не требуется.
 
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.

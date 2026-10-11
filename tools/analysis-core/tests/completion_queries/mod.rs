@@ -12,6 +12,7 @@ use serde_json::{Value, json};
 use super::{Client, initialize, notification, request, snapshot, support};
 
 mod fixture;
+mod managers;
 mod targeted;
 
 const MODULE: &str = "Catalogs/Sample/Ext/ObjectModule.bsl";

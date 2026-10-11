@@ -38,7 +38,8 @@ module_inputs_complete, semantic_complete. Последний пока всег�
 Lazy-чтение целевого BSL и [адресная подготовка метаданных](analyzer-targeted-completion.md)
 могут изменить ревизию; ответ сообщает новую. Сервер подготавливает YAML своего
 модуля, его primary resource/текущий dialog и прямой manager target, определённый
-native ядром. Полный metadata scan не выполняется.
+native ядром. [Объявленный manager body](analyzer-manager-completion.md) загружается
+адресно для текущих экспортных методов. Полный metadata scan не выполняется.
 
 Open/change/close YAML и BSL меняют тот же host: имя реквизита из черновика
 заменяет сохранённое в подсказках; неверный текущий YAML очищает модель;
