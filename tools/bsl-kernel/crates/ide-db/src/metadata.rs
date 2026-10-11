@@ -218,8 +218,8 @@ pub(crate) mod heap_estimate {
         0
     }
 
-    /// A `resolve_role` result is a clone of an `Arc` owned by `parse_role_query`;
-    /// the payload is counted there once.
+    /// A `resolve_role` result shares the canonical input or `parse_role_query` allocation;
+    /// the owning input/query counts the payload once.
     pub(crate) fn shared_role_heap(_v: &Option<Arc<bsl_metadata::Role>>) -> usize {
         0
     }
@@ -927,6 +927,7 @@ pub enum CanonicalMetadata {
     HTTPService(Arc<bsl_metadata::HTTPService>),
     WebService(Arc<bsl_metadata::WebService>),
     IntegrationService(Arc<bsl_metadata::IntegrationService>),
+    Role(Arc<bsl_metadata::Role>),
 }
 
 impl CanonicalMetadata {
@@ -943,6 +944,7 @@ impl CanonicalMetadata {
             Self::HTTPService(value) => value.estimated_heap_size(),
             Self::WebService(value) => value.estimated_heap_size(),
             Self::IntegrationService(value) => value.estimated_heap_size(),
+            Self::Role(value) => value.estimated_heap_size(),
         }
     }
 }
@@ -1934,6 +1936,17 @@ pub fn resolve_role(
 
     let index = role_index(db, listing);
     let ids = index.lookup(&name)?;
+    if let Some(input) = listing.canonical_metadata(db).get(&ids.main) {
+        let _source_revision = input.source_revision(db);
+        let value = input.value(db).as_ref()?;
+        let CanonicalMetadata::Role(role) = value.as_ref() else {
+            return None;
+        };
+        if !stdx::case::eq_ignore_case(role.name(), &name) {
+            return None;
+        }
+        return Some(Arc::clone(role));
+    }
     let files = RoleFiles::new(db, ids.main, ids.rights);
     let role = parse_role_query(db, files)?;
     warn_on_stem_name_divergence("Role", &name, role.name());

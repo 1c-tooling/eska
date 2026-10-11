@@ -58,6 +58,7 @@ Clippy/Rustdoc, tests и feature matrix. Адаптер — 64 unit/7 file tests
 SDK — прежние 270 tests, kernel — 2626 passed/20 прежних ignored вместе с
 Rustdoc examples, root — 895 passed/14 прежних ignored.
 
-Сервер и checker пока не считают роли готовыми canonical inputs. EF-18 остаётся
-`IN_PROGRESS`: зависимые resources, остальные модели, общая память, edits и
-Explorer ещё в работе.
+При приёмке адаптера сервер и checker ещё не использовали canonical роли.
+Теперь [общая сессия](analyzer-roles.md) подключает current rights lifecycle.
+EF-18 остаётся `IN_PROGRESS`: остальные модели, общая память, edits и Explorer
+ещё в работе.

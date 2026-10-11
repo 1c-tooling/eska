@@ -3,7 +3,7 @@
 use eska::project_core::source_format::{Child, Namespace, Section, XmlFragment};
 
 use super::*;
-use crate::{MetadataDiagnosticIssue, session::tests::fixture};
+use crate::{MetadataDiagnosticIssue, session::tests::fixture_with_unmodeled_family};
 
 /// Main, nested and unsupported findings use the same current saved query without claiming full coverage.
 #[test]
@@ -11,9 +11,9 @@ fn batch_metadata_findings_match_resident_queries() {
     for (path, nested) in [
         ("CommonModules/Tools/object.yaml", false),
         ("Catalogs/Sample/object.yaml", true),
-        ("Roles/Reader/object.yaml", false),
+        ("CommonPictures/Reader/object.yaml", false),
     ] {
-        let (_directory, source) = fixture();
+        let (_directory, source) = fixture_with_unmodeled_family();
         let path = SourcePath::parse(path).unwrap();
         let file = source.join(path.as_path());
         let before = fs::read_to_string(&file).unwrap();
@@ -81,8 +81,8 @@ fn batch_metadata_findings_match_resident_queries() {
 /// Stopping a detailed walk keeps the existing incomplete owner and never manufactures an empty clean result.
 #[test]
 fn cancelled_metadata_report_preserves_incomplete_owner_without_findings() {
-    let (_directory, source) = fixture();
-    let path = SourcePath::parse("Roles/Reader/object.yaml").unwrap();
+    let (_directory, source) = fixture_with_unmodeled_family();
+    let path = SourcePath::parse("CommonPictures/Reader/object.yaml").unwrap();
     let mut session = AnalysisSession::open(&source).unwrap();
     session
         .load_saved(&path, session.revision(), &InputRequest::default())

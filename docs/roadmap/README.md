@@ -264,12 +264,22 @@ C1/C2/C3 не меняли исходники; checker C1 сохранил 26 fi
 Полная семантика, memory budget, edits и Explorer ещё в работе; EF-18 — `IN_PROGRESS`.
 [Адаптер роли](../research/eska-format/role-adapter.md) сохраняет исходные UUID,
 три флага, объектные ссылки и RLS из отдельно переданного `RoleData`. Все 1 641
-модели C1/C2/C3 совпали с native reader. Сервер и checker пока не используют
-этот адаптер: lifecycle сохранённого `Rights.xml` ещё в работе. EF-18 — `IN_PROGRESS`.
+модели C1/C2/C3 совпали с native reader. При приёмке адаптера сервер и checker
+ещё не использовали current rights lifecycle; он подключён ниже. EF-18 — `IN_PROGRESS`.
 [Общий reader прав](../research/eska-format/role-rights-reader.md) регистрирует
 ресурсы по manifest/role composition и читает текущие bytes с прежними path/size
 checks. Четыре новых теста и 40 gates прошли; root — 899/14, SDK — прежние 270.
-Canonical resource lifecycle ещё не подключён; EF-18 — `IN_PROGRESS`.
+Current resource lifecycle подключён следующим логическим изменением.
+[Роли общей сессии](../research/eska-format/analyzer-roles.md) используют current
+YAML и отдельно версионированные declared права; resource-only edits и saved
+invalidation обновляют свой canonical slot, ошибки не получают defaults/XML fallback.
+Full document sync, metadata read/pull и watcher используют тот же clock и quota.
+Protocol 0.1 получил resource capability/summary и dependency failure; source
+schemas и версии прежние. Все 1 641 модели совпали с native reader, шесть stdio
+сценариев прошли. Checker C1 сохранил 26 findings, убрал 212 отказов Role и оставил
+1 285 issues; 7 829 hashes и JSON RU/EN совпали. Все 46 gates прошли: 279 tool,
+kernel 2627/20, root 899/14, adapter 64/7. Полные модели, memory budget, edits и
+Explorer ещё в работе; EF-18 остаётся `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

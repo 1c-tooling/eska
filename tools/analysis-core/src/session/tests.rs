@@ -97,6 +97,33 @@ pub fn fixture() -> (support::TestDirectory, PathBuf) {
     (directory, source)
 }
 
+/// Keep an actually unmodeled family available after roles gain their own canonical adapter.
+pub fn fixture_with_unmodeled_family() -> (support::TestDirectory, PathBuf) {
+    let (directory, _) = fixture();
+    let native = directory.0.join("native");
+    let configuration = fs::read_to_string(native.join("Configuration.xml")).unwrap();
+    fs::write(
+        native.join("Configuration.xml"),
+        configuration.replace(
+            "<Role>Reader</Role>",
+            "<CommonPicture>Reader</CommonPicture>",
+        ),
+    )
+    .unwrap();
+    let role = fs::read_to_string(native.join("Roles/Reader.xml")).unwrap();
+    fs::create_dir(native.join("CommonPictures")).unwrap();
+    fs::write(
+        native.join("CommonPictures/Reader.xml"),
+        role.replace("<Role ", "<CommonPicture ")
+            .replace("</Role>", "</CommonPicture>"),
+    )
+    .unwrap();
+    fs::remove_file(native.join("Roles/Reader.xml")).unwrap();
+    let source = directory.0.join("source-with-picture");
+    import_designer(&native, &source).unwrap();
+    (directory, source)
+}
+
 /// Copy only the tiny public fixture, never an existing playground project.
 fn copy_tree(source: &Path, destination: &Path) {
     fs::create_dir(destination).unwrap();
@@ -188,9 +215,9 @@ fn opening_is_lazy_and_resolves_only_declared_slots() {
     );
 }
 
-/// All existing adapters reach the actual canonical resolver families in the same database.
+/// All main adapters reach canonical resolvers; nested descriptors still retain explicit coverage.
 #[test]
-fn supported_models_and_unsupported_coverage_stay_distinct() {
+fn supported_main_models_and_nested_coverage_stay_distinct() {
     let (_directory, root) = fixture();
     let mut session = AnalysisSession::open(&root).unwrap();
     load(&mut session);
@@ -230,22 +257,20 @@ fn supported_models_and_unsupported_coverage_stay_distinct() {
             .unwrap(),
         Some(CanonicalMetadata::CommonModule(_))
     ));
-    let unsupported = owner("Roles/Reader/object.yaml");
+    let role = owner("Roles/Reader/object.yaml");
     assert!(matches!(
-        session.owner(&unsupported).unwrap().state,
-        ModelState::Unsupported(_)
+        session.owner(&role).unwrap().state,
+        ModelState::Ready(_)
     ));
-    assert!(
-        session
-            .resolve(&unsupported, session.revision())
-            .unwrap()
-            .is_none()
-    );
+    assert!(matches!(
+        session.resolve(&role, session.revision()).unwrap(),
+        Some(CanonicalMetadata::Role(_))
+    ));
     let summary = session.summary();
     assert!(summary.inputs.metadata_input_complete);
-    assert_eq!(summary.ready_models, 7);
-    assert_eq!(summary.unsupported, 1);
-    assert!(!summary.main_models_complete);
+    assert_eq!(summary.ready_models, 8);
+    assert_eq!(summary.unsupported, 0);
+    assert!(summary.main_models_complete);
     assert!(!summary.descriptor_models_complete);
     assert!(summary.descriptors > summary.modeled_descriptors);
 }
@@ -466,15 +491,15 @@ fn unrelated_owner_changes_preserve_the_index_and_neighbor_query() {
 /// IDE metadata remains available for a valid unsupported family and shares current draft failure.
 #[test]
 fn metadata_views_share_current_snapshots_without_requiring_bsl_projection() {
-    let (_directory, root) = fixture();
+    let (_directory, root) = fixture_with_unmodeled_family();
     let mut session = AnalysisSession::open(&root).unwrap();
-    let path = owner("Roles/Reader/object.yaml");
+    let path = owner("CommonPictures/Reader/object.yaml");
     session
         .load_saved(&path, session.revision(), &InputRequest::default())
         .unwrap();
     let saved = session.metadata(&path, session.revision()).unwrap();
     let eska::analysis_core::InputState::Ready(snapshot) = &saved.input else {
-        panic!("readable role metadata");
+        panic!("readable picture metadata");
     };
     assert_eq!(
         snapshot.documents[0].descriptor.objects[0].metadata.name(),

@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::metadata_object::MdoType;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Role {
     #[serde(rename = "uuid")]
     pub(crate) uuid: Uuid,
@@ -15,7 +15,7 @@ pub struct Role {
     pub(crate) data: RoleData,
 }
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct RoleData {
     #[serde(rename = "setForNewObjects", default)]
     set_for_new_objects: bool,
@@ -38,7 +38,7 @@ pub struct RoleData {
 /// texts attached to that object's rights (if any). The condition text is row-level-security
 /// query text that may name further objects; it is resolved lazily by the graph build, not
 /// here.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RoleObjectRef {
     pub mdo_type: MdoType,
     pub name: String,

@@ -1,6 +1,7 @@
 //! Batch coverage, disk immutability and exact saved IDE parity use actual shared queries.
 
 mod metadata;
+mod roles;
 mod semantic;
 
 use std::fs;

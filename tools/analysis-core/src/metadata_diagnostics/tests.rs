@@ -238,8 +238,8 @@ fn nested_parse_issue_preserves_native_identity_and_does_not_invalidate_ready_ma
 /// Unsupported projection is explicit at the actual root span rather than a fabricated empty clean report.
 #[test]
 fn unsupported_metadata_kind_preserves_its_real_root_location() {
-    let (_directory, root) = fixture();
-    let path = owner("Roles/Reader/object.yaml");
+    let (_directory, root) = crate::session::tests::fixture_with_unmodeled_family();
+    let path = owner("CommonPictures/Reader/object.yaml");
     let mut session = AnalysisSession::open(&root).unwrap();
     session
         .load_saved(&path, session.revision(), &InputRequest::default())
@@ -251,7 +251,7 @@ fn unsupported_metadata_kind_preserves_its_real_root_location() {
     assert_eq!(result.findings.len(), 1);
     assert_eq!(
         result.findings[0].issue,
-        MetadataDiagnosticIssue::UnsupportedKind(MetadataKind::Role)
+        MetadataDiagnosticIssue::UnsupportedKind(MetadataKind::CommonPicture)
     );
     let saved = fs::read_to_string(root.join(path.as_path())).unwrap();
     assert!(saved[result.findings[0].byte_range.clone()].contains("Reader"));

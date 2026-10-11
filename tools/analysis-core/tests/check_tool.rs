@@ -1,6 +1,7 @@
 //! Actual process contracts distinguish findings, incomplete input and environment errors in both locales.
 
 mod check_metadata;
+mod check_roles;
 mod check_semantic;
 mod support;
 

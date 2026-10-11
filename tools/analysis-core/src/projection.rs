@@ -64,6 +64,7 @@ pub fn project(
     kind: MetadataKind,
     input: &OwnerInput,
     revision: crate::SessionRevision,
+    rights: Option<(&SourcePath, &crate::RoleRightsInput)>,
 ) -> OwnerModel {
     let mut result = OwnerModel {
         revision,
@@ -88,16 +89,24 @@ pub fn project(
                 result.modeled_descriptors = 1;
                 ModelState::StructureOnly
             } else if let Some(document) = snapshot.documents.first() {
-                match canonical(kind, &document.descriptor) {
-                    Some(Ok(value)) => {
+                if kind == MetadataKind::Role {
+                    let state = role_state(&snapshot.path, &document.descriptor, rights);
+                    if matches!(state, ModelState::Ready(_)) {
                         result.modeled_descriptors = 1;
-                        ModelState::Ready(Arc::new(value))
                     }
-                    Some(Err(error)) => ModelState::Invalid {
-                        source: snapshot.path.clone(),
-                        error,
-                    },
-                    None => ModelState::Unsupported(kind),
+                    state
+                } else {
+                    match canonical(kind, &document.descriptor) {
+                        Some(Ok(value)) => {
+                            result.modeled_descriptors = 1;
+                            ModelState::Ready(Arc::new(value))
+                        }
+                        Some(Err(error)) => ModelState::Invalid {
+                            source: snapshot.path.clone(),
+                            error,
+                        },
+                        None => ModelState::Unsupported(kind),
+                    }
                 }
             } else {
                 ModelState::Invalid {
@@ -111,6 +120,65 @@ pub fn project(
         }
     };
     result
+}
+
+/// Current rights are an explicit dependency; a failed declared resource is never absent/default data.
+fn role_state(
+    source: &SourcePath,
+    descriptor: &eska::project_core::metadata_parser::ParsedDescriptor,
+    rights: Option<(&SourcePath, &crate::RoleRightsInput)>,
+) -> ModelState {
+    use crate::RoleRightsState;
+    if let Some(issue) = descriptor.diagnostics.first() {
+        return ModelState::Invalid {
+            source: source.clone(),
+            error: AdapterError {
+                issue: eska_bsl_adapter::AdapterIssue::IncompleteDescriptor,
+                range: issue.range.clone(),
+            },
+        };
+    }
+    let data = match rights {
+        None => bsl_metadata::RoleData::default(),
+        Some((
+            _,
+            crate::RoleRightsInput {
+                state: RoleRightsState::Unavailable(failure),
+                ..
+            },
+        )) => return ModelState::Unavailable(failure.clone()),
+        Some((
+            path,
+            crate::RoleRightsInput {
+                state: RoleRightsState::Ready(text),
+                ..
+            },
+        )) => match bsl_metadata::xml_parser::parse_rights_xml(text) {
+            Ok(data) => data,
+            Err(_) => {
+                return ModelState::Unavailable(InputFailure::Source(
+                    eska::project_core::source_format::Error {
+                        code: "analysis_role_rights_invalid",
+                        location: vec![path.as_str().to_owned()],
+                    },
+                ));
+            }
+        },
+        Some((
+            _,
+            crate::RoleRightsInput {
+                state: RoleRightsState::Pending,
+                ..
+            },
+        )) => return ModelState::Pending,
+    };
+    match eska_bsl_adapter::role(descriptor, data) {
+        Ok(role) => ModelState::Ready(Arc::new(CanonicalMetadata::Role(Arc::new(role)))),
+        Err(error) => ModelState::Invalid {
+            source: source.clone(),
+            error,
+        },
+    }
 }
 
 /// Match only implemented adapters; a parsed unknown family is not an empty successful model.

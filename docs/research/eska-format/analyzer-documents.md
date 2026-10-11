@@ -1,8 +1,9 @@
-# Черновики YAML и BSL в отдельном сервере
+# Черновики YAML, прав роли и BSL в отдельном сервере
 
 `eska-analyzer` объявляет `textDocumentSync` с `openClose=true`, `change=1`
 (full text) и `save.includeText=false`. Экспериментальный ESKA protocol `0.1`
-сохраняется; `documentSync=true`. Теперь отдельно подключена
+сохраняется; `documentSync=true`. [Права роли](analyzer-roles.md) подключены
+через `roleRightsSync=true`. Теперь отдельно подключена
 [pull-диагностика syntax](analyzer-diagnostics.md) и [отмена запросов](analyzer-cancellation.md);
 [Completion](analyzer-completion.md), [definition](analyzer-definitions.md),
 [property plans](analyzer-property-plans.md) и [saved file events](analyzer-watched-files.md)
@@ -19,20 +20,20 @@ document sync. Старый IDE protocol приложения не изменё�
 
 | Уведомление | Поведение |
 |---|---|
-| `textDocument/didOpen` | Один declared YAML/BSL становится editor input; повторное открытие отклоняется |
+| `textDocument/didOpen` | Один declared YAML/rights/BSL становится editor input; повторное открытие отклоняется |
 | `textDocument/didChange` | Ровно одна полная замена, без range/rangeLength; версия должна вырасти |
 | `textDocument/didSave` | Подтверждает текущее состояние без смены версии/ревизии и чтения диска |
 | `textDocument/didClose` | Убирает редакторскую authority и читает актуальный saved файл, включая отказ чтения |
 
 URI должен быть local `file:` внутри канонического source root выбранного
 проекта, без query/fragment. Percent encoding декодируется библиотекой `url`,
-включая Unicode и пробелы. Только объявленные владельцы YAML и BSL-модули
+включая Unicode и пробелы. Только объявленные владельцы YAML, права ролей и BSL-модули
 являются входами; `languageId` непустой, но не переопределяет классификацию.
 Необъявленные ресурсы, binary modules и внешние файлы отклоняются. Сам файл
 может отсутствовать: open использует переданные редактором байты, не disk read.
 
 Версия документа — signed 32-bit integer LSP; версия сессии — прежняя непрозрачная
-десятичная строка. YAML и BSL меняют один `snapshot`. Accepted update, включая
+десятичная строка. YAML, права и BSL меняют один `snapshot`. Accepted update, включая
 невалидный YAML или quota refusal, повышает ревизию и очищает прежнюю модель/текст.
 Отклонённая версия, URI или lifecycle не меняют текущие входы.
 
@@ -50,7 +51,7 @@ notification, без `id`. Это не response на клиентское уве
 Имена объявлены в `experimental.eska.inputNotifications`.
 
 `eska/inputChanged` содержит `snapshot`, `source`, `input` и `resources`.
-`input.kind` различает metadata/module; state сохраняет origin/document version,
+`input.kind` различает metadata/role_rights/module; state сохраняет origin/document version,
 source hash, readiness и coded failure. Для metadata отдельно видны adapter
 readiness и неполнота. Текст BSL в событие не копируется, свойства YAML клиент
 получает metadata request. Для `didSave` snapshot остаётся прежним.

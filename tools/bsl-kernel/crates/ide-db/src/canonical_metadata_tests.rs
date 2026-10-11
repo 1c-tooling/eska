@@ -13,12 +13,12 @@ use crate::{
         resolve_common_module_by_file, resolve_defined_type, resolve_event_subscription,
         resolve_http_service, resolve_http_service_by_file, resolve_integration_service,
         resolve_integration_service_by_file, resolve_register, resolve_register_by_name,
-        resolve_scheduled_job, resolve_subsystem, resolve_web_service, resolve_web_service_by_file,
-        scheduled_job_index, subsystem_index, web_service_index, CanonicalMetadata,
-        CanonicalMetadataInput, CanonicalMetadataInputs, CommonModuleEntry, DefinedTypeEntry,
-        EventSubscriptionEntry, HTTPServiceEntry, IntegrationServiceEntry, MdoEntry,
-        MetadataListingData, MetadataListingInput, ScheduledJobEntry, SubsystemEntry,
-        WebServiceEntry,
+        resolve_role, resolve_scheduled_job, resolve_subsystem, resolve_web_service,
+        resolve_web_service_by_file, role_index, scheduled_job_index, subsystem_index,
+        web_service_index, CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs,
+        CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, HTTPServiceEntry,
+        IntegrationServiceEntry, MdoEntry, MetadataListingData, MetadataListingInput, RoleEntry,
+        ScheduledJobEntry, SubsystemEntry, WebServiceEntry,
     },
     RootDatabaseImpl,
 };
@@ -52,6 +52,69 @@ fn database() -> (RootDatabaseImpl, MetadataListingInput) {
 /// Bind one stable file identity to a host-provided tracked value.
 fn input(database: &RootDatabaseImpl, value: CanonicalMetadata) -> CanonicalMetadataInput {
     CanonicalMetadataInput::new(database, Some(Arc::new(value)), "saved".into())
+}
+
+/// Canonical roles carry current rights under stable identities and never read legacy XML slots.
+#[test]
+fn canonical_roles_preserve_neighbors_and_reject_unavailable_or_wrong_identity() {
+    let (mut database, listing) = database();
+    listing.set_roles(&mut database).to(Arc::new(vec![
+        RoleEntry { name: "Читатель".into(), main: FileId(4), rights: Some(FileId(6)) },
+        RoleEntry { name: "Neighbor".into(), main: FileId(5), rights: None },
+    ]));
+    let make = |name: &str, member: &str| {
+        Arc::new(bsl_metadata::Role::with_data(
+            bsl_metadata::Uuid::nil(),
+            name.into(),
+            bsl_metadata::xml_parser::parse_rights_xml(&format!(
+                "<Rights><object><name>Catalog.{member}</name></object></Rights>"
+            ))
+            .expect("current rights"),
+        ))
+    };
+    let saved = make("Читатель", "Saved");
+    let neighbor = make("Neighbor", "Other");
+    let provided = input(&database, CanonicalMetadata::Role(Arc::clone(&saved)));
+    let untouched = input(&database, CanonicalMetadata::Role(Arc::clone(&neighbor)));
+    listing
+        .set_canonical_metadata(&mut database)
+        .to(Arc::new([(FileId(4), provided), (FileId(5), untouched)].into_iter().collect()));
+    let index = Arc::clone(role_index(&database, listing));
+    assert!(Arc::ptr_eq(
+        &saved,
+        &resolve_role(&database, listing, "ЧИТАТЕЛЬ".into()).expect("saved")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_role(&database, listing, "Neighbor".into()).expect("neighbor")
+    ));
+    assert!(database.salsa_events_reset());
+    let current = make("Читатель", "Current");
+    provided
+        .set_value(&mut database)
+        .to(Some(Arc::new(CanonicalMetadata::Role(Arc::clone(&current)))));
+    provided.set_source_revision(&mut database).to("editor rights".into());
+    assert!(Arc::ptr_eq(
+        &current,
+        &resolve_role(&database, listing, "читатель".into()).expect("current")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_role(&database, listing, "Neighbor".into()).expect("unchanged")
+    ));
+    assert_eq!(database.salsa_family_churn("resolve_role").expect("events").0, 1);
+    assert!(Arc::ptr_eq(&index, role_index(&database, listing)));
+    provided.set_value(&mut database).to(None);
+    assert!(resolve_role(&database, listing, "Читатель".into()).is_none());
+    provided
+        .set_value(&mut database)
+        .to(Some(Arc::new(CanonicalMetadata::Role(make("Other", "Wrong")))));
+    assert!(resolve_role(&database, listing, "Читатель".into()).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::CommonModule(
+        Arc::new(CommonModule::builder().name("Читатель").build()),
+    ))));
+    assert!(resolve_role(&database, listing, "Читатель".into()).is_none());
+    assert_eq!(database.salsa_family_churn("parse_role_query").expect("events").0, 0);
 }
 
 /// Current subscription bindings replace only their own slot and never read an XML fallback.

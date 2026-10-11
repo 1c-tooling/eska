@@ -34,5 +34,6 @@ gates прошли, включая strict Clippy/Rustdoc и feature matrix; nati
 замеры и проверки сохранности исходников приведены в
 [машинном отчёте](role-rights-reader-results.json).
 Версии, dependencies, формат manifest, XML export и protocol не менялись.
-Это структурный ввод для EF-18. Current rights lifecycle, canonical role resolver,
-остальные модели, общий memory budget, edits и Explorer остаются в работе.
+Это структурный ввод для EF-18. [Current rights lifecycle и canonical resolver](analyzer-roles.md)
+подключены следующим логическим изменением; остальные модели, общий memory
+budget, edits и Explorer остаются в работе.

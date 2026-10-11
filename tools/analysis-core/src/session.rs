@@ -11,6 +11,7 @@ mod integration_completion_tests;
 mod integration_service_tests;
 #[cfg(test)]
 mod module_tests;
+pub mod role_rights;
 mod saved_changes;
 #[cfg(test)]
 mod scheduled_job_tests;
@@ -35,8 +36,8 @@ use ide_db::{
         CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, MetadataListingData,
         MetadataListingInput, resolve_common_module, resolve_defined_type,
         resolve_event_subscription, resolve_http_service, resolve_integration_service,
-        resolve_metadata_object, resolve_register, resolve_scheduled_job, resolve_subsystem,
-        resolve_web_service,
+        resolve_metadata_object, resolve_register, resolve_role, resolve_scheduled_job,
+        resolve_subsystem, resolve_web_service,
     },
 };
 use salsa::Setter;
@@ -90,6 +91,8 @@ pub struct AnalysisSession {
     pub(super) modules: BTreeMap<SourcePath, ModuleEntry>,
     pub(super) loaded_module_bytes: u64,
     pub(super) loaded_metadata_source_bytes: u64,
+    pub(super) loaded_role_rights_bytes: u64,
+    role_rights: BTreeMap<SourcePath, role_rights::RoleRightsEntry>,
     pub(super) options: SessionOptions,
     pub(super) incomplete_metadata: usize,
     pub(super) incomplete_modules: usize,
@@ -224,6 +227,7 @@ impl AnalysisSession {
         listing
             .set_canonical_metadata(&mut database)
             .to(Arc::new(slots));
+        let role_rights = role_rights::register(reader);
         Ok(Self {
             incomplete_metadata: owners.len(),
             incomplete_modules: modules.len(),
@@ -235,6 +239,8 @@ impl AnalysisSession {
             revision: SessionRevision::default(),
             loaded_module_bytes: 0,
             loaded_metadata_source_bytes: 0,
+            loaded_role_rights_bytes: 0,
+            role_rights,
             options,
         })
     }
@@ -380,6 +386,8 @@ impl AnalysisSession {
             return Ok(None);
         };
         Ok(match value.as_ref() {
+            CanonicalMetadata::Role(_) => resolve_role(&self.database, self.listing, name.clone())
+                .map(CanonicalMetadata::Role),
             CanonicalMetadata::IntegrationService(_) => {
                 resolve_integration_service(&self.database, self.listing, name.clone())
                     .map(CanonicalMetadata::IntegrationService)
@@ -489,10 +497,19 @@ impl AnalysisSession {
         let input = self.inputs.owner(path).ok_or_else(|| {
             SessionRequestError::Metadata(UpdateError::UnknownOwner(path.clone()))
         })?;
+        let rights = self
+            .inputs
+            .source_reader()
+            .role_rights_path(path)
+            .and_then(|resource| {
+                self.role_rights
+                    .get(resource)
+                    .map(|entry| (resource, &entry.input))
+            });
         let entry = self.owners.get_mut(path).ok_or_else(|| {
             SessionRequestError::Metadata(UpdateError::UnknownOwner(path.clone()))
         })?;
-        let model = projection::project(entry.binding.kind, input, next);
+        let model = projection::project(entry.binding.kind, input, next, rights);
         let source_bytes = match &input.state {
             InputState::Ready(snapshot) => snapshot.source_bytes,
             InputState::Pending | InputState::Unavailable(_) => 0,

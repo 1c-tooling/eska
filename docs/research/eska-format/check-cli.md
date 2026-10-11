@@ -57,7 +57,9 @@ Semantic findings показывают стабильные code/severity и п�
 файлы необъявленных объектов остаются ресурсами и не становятся активными
 модулями при файловом обходе.
 
-YAML проходит прежний saved input/adapter. BSL читается verbatim, с BOM/CRLF,
+YAML проходит прежний saved input/adapter. [Права ролей](analyzer-roles.md)
+готовятся как отдельные declared saved dependencies; ошибки не заменяются defaults.
+BSL читается verbatim, с BOM/CRLF,
 получает source hash и проверяется тем же `module_diagnostics`. Тело освобождается
 после независимой syntax-проверки; тяжёлые memo периодически очищаются между
 группами из 32 модулей. Счётчик проверенных файлов принадлежит результату batch,
@@ -66,10 +68,10 @@ YAML проходит прежний saved input/adapter. BSL читается v
 все доступные тела до первого query и не освобождает их между проверками.
 Batch trim удаляет saved reparse hints, сохраняя current inputs и editor hints.
 
-`--max-retained-source-bytes` задаёт [общую квоту текущих YAML/BSL-входов](source-budget.md),
+`--max-retained-source-bytes` задаёт [общую квоту текущих YAML/rights/BSL-входов](source-budget.md),
 по умолчанию 256 MiB. `--max-document-bytes` уменьшает общий жёсткий предел документа 64 MiB.
 Для syntax действует дополнительный предел текущих BSL-текстов 64 MiB.
-В semantic их совокупный предел равен общей source-byte квоте; YAML использует
+В semantic их совокупный предел равен общей source-byte квоте; YAML и права используют
 тот же резерв. Результаты, parse trees и memo в квоту не входят.
 Это не общий предел heap или RSS.
 

@@ -5,7 +5,7 @@ use super::*;
 #[path = "../../../tests/support/semantic_project.rs"]
 mod fixture;
 
-const BODY: &str = "\u{feff}Процедура Проверка()\r\n\tЗначение = 1;\r\n\tЗначение = Значение;\r\nКонецПроцедуры\r\n";
+pub(super) const BODY: &str = "\u{feff}Процедура Проверка()\r\n\tЗначение = 1;\r\n\tЗначение = Значение;\r\nКонецПроцедуры\r\n";
 
 /// A non-syntax rule and its exact localized findings agree with the shared resident session.
 #[test]

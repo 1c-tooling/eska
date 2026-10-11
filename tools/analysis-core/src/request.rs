@@ -1,4 +1,4 @@
-//! A session token covers every accepted YAML and BSL update, including current failures.
+//! A session token covers accepted YAML, role rights and BSL updates, including current failures.
 
 use eska::{analysis_core::UpdateError, project_core::source_format::SourcePath};
 use std::fmt;
@@ -33,6 +33,7 @@ pub enum SessionRequestError {
     },
     Metadata(UpdateError),
     UnknownModule(SourcePath),
+    UnknownRoleRights(SourcePath),
     BinaryModule(SourcePath),
     StaleDocumentVersion {
         current: i64,

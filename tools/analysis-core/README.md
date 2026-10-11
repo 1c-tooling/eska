@@ -10,7 +10,7 @@ XML-экспорт не участвуют в чтении.
 Сохранённые файлы и черновики используют одни преобразователи. Неверный текущий
 ввод очищает канонический slot; прежняя модель не используется как fallback.
 Результат kernel resolve и координаты имеют явную ревизию. Общий `SessionRevision`
-учитывает каждое принятое изменение YAML и BSL, включая неудачное чтение;
+учитывает каждое принятое изменение YAML, прав роли и BSL, включая неудачное чтение;
 внешний потребитель должен дополнять его идентичностью сессии после reopen.
 
 Пока подключены главные дескрипторы уже реализованных адаптеров. Полнота чтения,
@@ -21,7 +21,8 @@ saved/overlay/close; diagnostics и completions используют те же �
 канонические метаданные. Бинарные и непрочитанные тела имеют явное состояние.
 Лимит текущих загруженных текстов — 64 MiB по умолчанию; это не бюджет RSS.
 Общая [квота текущих входов](../../docs/research/eska-format/source-budget.md)
-считает исходный размер готовых YAML-моделей и BSL-текстов, по умолчанию 256 MiB.
+считает исходный размер готовых YAML-моделей, declared rights и BSL-текстов,
+по умолчанию 256 MiB.
 Замены переиспользуют свой резерв; недостаточная квота очищает прежний вход.
 `kernel_memory()` возвращает отдельный снимок таблиц Salsa: число instances,
 размеры полей и optional heap estimate. `entries` включает memo с вытесненным
@@ -64,6 +65,7 @@ ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test --manifest-path tools
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_session -- /path/to/eska/source
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_module -- /path/to/eska/source
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_memory -- /path/to/eska/source
+cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_roles -- /path/to/eska/source /path/to/native/source
 ```
 
 Команды выполняются из корня `eska`; для тестов путь задаётся к соседнему
@@ -253,6 +255,11 @@ Current binding учитывается в UnusedLocalMethod; saved batch и resi
 согласованы. [Native completion](../../docs/research/eska-format/analyzer-integration-completion.md)
 предлагает видимые объявленные имена этой коллекции в RU/EN без загрузки каналов;
 локальное затенение и non-code boundaries остаются у языкового ядра.
+[Роли](../../docs/research/eska-format/analyzer-roles.md) связывают текущий YAML
+с отдельно версионированным declared `Rights.xml`. Правка ресурса меняет только
+свою canonical роль, invalid/missing права очищают slot без default/XML fallback.
+Full document sync и saved watcher используют ту же сессию и квоту; current
+model failure видна в дереве и checker. В событиях ресурс имеет `kind=role_rights`.
 [Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
 сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
 Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.

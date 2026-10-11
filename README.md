@@ -798,7 +798,8 @@ preset = "trunk"
 [Автодополнение имён сервисов](docs/research/eska-format/analyzer-integration-completion.md)
 работает через языковое ядро, сохраняет локальное затенение и не загружает каналы.
 [Адаптер роли](docs/research/eska-format/role-adapter.md) сохраняет UUID, флаги,
-ссылки и RLS из явно переданных прав; resource lifecycle сервера ещё в работе.
+ссылки и RLS из явно переданных прав. [Текущие права](docs/research/eska-format/analyzer-roles.md)
+синхронизируются с ролью в одной сессии IDE/checker; ошибки ресурса очищают модель.
 [Общий reader прав](docs/research/eska-format/role-rights-reader.md) связывает
 сохранённый ресурс с объявленной ролью и ограничивает чтение текущих байтов.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)

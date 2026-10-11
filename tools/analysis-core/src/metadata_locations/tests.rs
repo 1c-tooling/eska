@@ -122,9 +122,9 @@ fn metadata_locations_follow_current_owner_text_and_never_read_changed_disk() {
 /// Unsupported BSL families keep locations; duplicate properties invalidate the current input.
 #[test]
 fn metadata_locations_keep_unsupported_families_and_reject_invalid_current_properties() {
-    let (_directory, root) = fixture();
+    let (_directory, root) = crate::session::tests::fixture_with_unmodeled_family();
     let mut session = AnalysisSession::open(&root).unwrap();
-    let role = SourcePath::parse("Roles/Reader/object.yaml").unwrap();
+    let role = SourcePath::parse("CommonPictures/Reader/object.yaml").unwrap();
     session
         .load_saved(&role, session.revision(), &InputRequest::default())
         .unwrap();

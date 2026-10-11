@@ -98,15 +98,18 @@ impl Server<'_> {
                         .input,
                     InputState::Pending
                 );
+                let request = InputRequest {
+                    max_document_bytes: self.cli.max_document_bytes,
+                    ..InputRequest::default()
+                };
                 if method == "eska/metadata/refresh" || pending {
-                    let request = InputRequest {
-                        max_document_bytes: self.cli.max_document_bytes,
-                        ..InputRequest::default()
-                    };
                     session
                         .load_saved(&path, session.revision(), &request)
                         .map_err(|error| documents::request_error(&error))?;
                 }
+                session
+                    .load_pending_role_rights_for_owner(&path, &request)
+                    .map_err(|error| documents::request_error(&error))?;
                 let current = session
                     .metadata(&path, session.revision())
                     .map_err(|_| protocol::error_value(-32603, "session_invariant", Value::Null))?;

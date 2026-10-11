@@ -9,7 +9,10 @@ use eska::{
 };
 use serde_json::{Value, json};
 
-use crate::{AnalysisSession, MetadataView, ModelState, ModuleFailure, ModuleInput, ModuleState};
+use crate::{
+    AnalysisSession, MetadataView, ModelState, ModuleFailure, ModuleInput, ModuleState,
+    RoleRightsInput, RoleRightsState,
+};
 
 /// The transport's fresh identity disambiguates equal revisions from different server processes.
 pub fn snapshot(session: &AnalysisSession, id: &str) -> Value {
@@ -74,6 +77,9 @@ pub fn state(view: &MetadataView) -> Value {
         ModelState::Unsupported(kind) => {
             Some(json!({"code":"analysis_metadata_kind_unsupported", "kind":kind.as_str()}))
         }
+        ModelState::Unavailable(failure) if matches!(view.input, InputState::Ready(_)) => Some(
+            json!({"code":"analysis_metadata_dependency_unavailable", "failure":failure_value(failure)}),
+        ),
         _ => None,
     };
     let model = match &view.model.state {
@@ -104,6 +110,18 @@ pub fn module(input: &ModuleInput) -> Value {
         }
     };
     json!({"origin":origin(input.origin), "source_sha256":input.source_sha256, "input":state})
+}
+
+/// Resource readiness describes raw bytes; its owning role reports native parse failure separately.
+pub fn role_rights(input: &RoleRightsInput) -> Value {
+    let state = match &input.state {
+        RoleRightsState::Pending => json!({"kind":"pending"}),
+        RoleRightsState::Ready(text) => json!({"kind":"ready","bytes":text.len()}),
+        RoleRightsState::Unavailable(failure) => {
+            json!({"kind":"unavailable","failure":failure_value(failure)})
+        }
+    };
+    json!({"origin":origin(input.origin),"source_sha256":input.source_sha256,"input":state})
 }
 
 /// Metadata and module summaries use the same editor authority and document-version contract.

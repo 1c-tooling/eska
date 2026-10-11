@@ -23,6 +23,9 @@ mod session;
 #[cfg(test)]
 #[path = "../tests/support/project.rs"]
 mod test_project;
+#[cfg(test)]
+#[path = "../tests/support/role_project.rs"]
+mod test_role_project;
 #[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
 mod tool_metadata;
 #[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
@@ -50,4 +53,5 @@ pub use queries::symbol_hover::{HoverKind, SymbolHover};
 pub use queries::{ModuleResult, QueryError};
 pub use request::{SessionRequestError, SessionRevision};
 pub use resources::ResourceSummary;
+pub use session::role_rights::{RoleRightsInput, RoleRightsState};
 pub use session::{AnalysisSession, SessionError, SessionSummary};

@@ -98,13 +98,14 @@ impl Registration {
     }
 }
 
-/// Generated owner/module basenames contain no glob syntax; arbitrary parent names remain in the base URI.
+/// Generated owner/module and declared rights basenames are literal; parents remain in the base URI.
 fn saved_watchers(source: &SourceReader) -> Result<Vec<Value>, Value> {
     let invalid = || protocol::error_value(-32603, "path_encoding_unsupported", Value::Null);
     let base = url::Url::from_directory_path(source.root()).map_err(|()| invalid())?;
     let names = source
         .owner_paths()
         .chain(source.module_paths())
+        .chain(source.role_rights_paths())
         .filter(|path| path.as_str() != "configuration.yaml")
         .map(|path| {
             path.as_path()

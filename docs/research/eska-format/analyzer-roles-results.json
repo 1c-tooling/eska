@@ -1,0 +1,674 @@
+{
+  "schema_version": 1,
+  "component": "current_role_resource_and_canonical_session",
+  "milestone": "EF-18",
+  "status": "IN_PROGRESS",
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 2.21488284697989
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 1.26428566800314
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 0.22278228000504896
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 28.126377945998684,
+      "results": [
+        "ok. 131 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.87s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 133 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.12s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.54s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 8.592087527998956
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 10.500500398979057
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 2.0189052109781187
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 20.677688035997562,
+      "results": [
+        "ok. 109 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.83s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.9514216639799997
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.749028732010629
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 1.9348503240034916
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 6.840811791975284,
+      "results": [
+        "ok. 111 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.75s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.118427010020241
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 1.165045536996331
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 3.2826758620212786
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 16.826311698008794,
+      "results": [
+        "ok. 131 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.67s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 131 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.15s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.489958630991168
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 60.197843430010835
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 7.671556456014514
+    },
+    {
+      "gate": "release-role-example",
+      "exit_code": 0,
+      "seconds": 57.282504563976545
+    }
+  ],
+  "kernel_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.9510989960108418
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 12.558005433005746
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 16.32955990199116
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 99.14672254200559,
+      "passed": 2627,
+      "ignored": 20
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 8.729687423998257
+    }
+  ],
+  "adapter_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.9725702229770832
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 1.078525852994062
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.6092104739800561
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 2.9386282699997537,
+      "results": [
+        "ok. 64 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 2.350917745003244
+    },
+    {
+      "gate": "release-model-example",
+      "exit_code": 0,
+      "seconds": 7.027868261007825
+    }
+  ],
+  "root_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8590586170030292
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3083553010073956
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.27189466598792933
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 16.445588297006907
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 11.979436446999898
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.253872114000842
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6380931719904765
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.95610177598428
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2062301259720698
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7299012349976692
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.0329454760067165
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.21446598798502237
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 5.722072690026835
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.284475255000871
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.010826747980900109
+    }
+  ],
+  "gate_count": 46,
+  "tool_tests": {
+    "all_features_unit": 131,
+    "analyzer_process": 133,
+    "checker_process": 15,
+    "total": 279
+  },
+  "kernel_tests": {
+    "passed": 2627,
+    "ignored": 20
+  },
+  "root_tests": {
+    "passed": 899,
+    "ignored": 14
+  },
+  "real_models": [
+    {
+      "corpus": "C1",
+      "roles": 212,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 212,
+      "object_references": 223334,
+      "rls_conditions": 66,
+      "tracked_source_and_native_files": 850,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "metadata_source_bytes": 71336214,
+      "canonical_session_resolver": true,
+      "wall_seconds": 1.9999489910260309
+    },
+    {
+      "corpus": "C2",
+      "roles": 676,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 676,
+      "object_references": 29458,
+      "rls_conditions": 4055,
+      "tracked_source_and_native_files": 2706,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "metadata_source_bytes": 116124743,
+      "canonical_session_resolver": true,
+      "wall_seconds": 3.7043720390065573
+    },
+    {
+      "corpus": "C3",
+      "roles": 753,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 753,
+      "object_references": 155734,
+      "rls_conditions": 6495,
+      "tracked_source_and_native_files": 3014,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "metadata_source_bytes": 189861567,
+      "canonical_session_resolver": true,
+      "wall_seconds": 5.86527705800836
+    }
+  ],
+  "real_stdio": [
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "declared_role_and_rights_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 40572,
+      "wall_seconds": 0.2600956189853605,
+      "corpus": "C1",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "declared_role_and_rights_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 35104,
+      "wall_seconds": 0.15692631900310516,
+      "corpus": "C1",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "declared_role_and_rights_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 174272,
+      "wall_seconds": 0.9859518280136399,
+      "corpus": "C2",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "declared_role_and_rights_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 174372,
+      "wall_seconds": 0.9631652810203377,
+      "corpus": "C2",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "declared_role_and_rights_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 197568,
+      "wall_seconds": 1.4077319460047875,
+      "corpus": "C3",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "declared_role_and_rights_ready": true,
+      "current_raw_hash_and_owner_yaml_hash": true,
+      "invalid_xml_clears_current_model": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_saved_bytes": true,
+      "saved_deletion_and_recreation_current": true,
+      "non_bmp_crlf_editor": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 197680,
+      "wall_seconds": 1.789450542011764,
+      "corpus": "C3",
+      "tracked_owned_files": 5,
+      "tracked_original_files": 4,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true
+    }
+  ],
+  "real_checker": [
+    {
+      "corpus": "C1",
+      "locale": "en-US",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "findings_equal_previous_checker": true,
+      "settings_hash_equal_previous": true,
+      "metadata_issues_before": 1497,
+      "metadata_issues_after": 1285,
+      "role_unsupported_issues_removed": 212,
+      "other_metadata_issues_unchanged": true,
+      "semantic_profile_complete": false,
+      "metadata_models_complete": false,
+      "additional_rights_source_bytes": 70735893,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 117063890,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 185945711
+      },
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "locale_json_equal": true,
+      "wall_seconds": 19.38650805799989
+    },
+    {
+      "corpus": "C1",
+      "locale": "ru-RU",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "findings_equal_previous_checker": true,
+      "settings_hash_equal_previous": true,
+      "metadata_issues_before": 1497,
+      "metadata_issues_after": 1285,
+      "role_unsupported_issues_removed": 212,
+      "other_metadata_issues_unchanged": true,
+      "semantic_profile_complete": false,
+      "metadata_models_complete": false,
+      "additional_rights_source_bytes": 70735893,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 117063890,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 185945711
+      },
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "locale_json_equal": true,
+      "wall_seconds": 25.545168881013524
+    }
+  ],
+  "build_footprint": {
+    "original_native_file_hashes_verified": 495,
+    "runtime_graph": [
+      {
+        "feature": "analyzer-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      },
+      {
+        "feature": "check-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      }
+    ],
+    "release_analyzer_bytes": 50372032,
+    "release_checker_bytes": 46421064
+  },
+  "version_changed": false,
+  "source_schemas_changed": false,
+  "protocol_version": "0.1",
+  "protocol_additions": [
+    "experimental.eska.roleRightsSync",
+    "input.kind=role_rights",
+    "role_rights input.owner",
+    "ready YAML model_issue dependency failure"
+  ],
+  "resource_summary_keys_unchanged": true,
+  "metadata_source_bytes_includes_declared_rights": true,
+  "permissions_evaluated": false,
+  "rls_runtime_validated": false,
+  "xml_pull_diagnostics": false,
+  "global_heap_or_rss_budget": false,
+  "platform_invoked": false
+}

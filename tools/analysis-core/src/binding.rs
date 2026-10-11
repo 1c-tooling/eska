@@ -6,8 +6,8 @@ use bsl_metadata::MdoType;
 use eska::project_core::{MetadataKind, source_format::SourcePath};
 use ide_db::metadata::{
     CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, HTTPServiceEntry,
-    IntegrationServiceEntry, MdoEntry, MetadataListingData, ScheduledJobEntry, SubsystemEntry,
-    WebServiceEntry,
+    IntegrationServiceEntry, MdoEntry, MetadataListingData, RoleEntry, ScheduledJobEntry,
+    SubsystemEntry, WebServiceEntry,
 };
 use vfs::FileId;
 
@@ -27,6 +27,13 @@ impl OwnerBinding {
             return;
         };
         match self.kind {
+            MetadataKind::Role => {
+                listing.roles.push(RoleEntry {
+                    name: name.clone(),
+                    main: self.main,
+                    rights: None,
+                });
+            }
             MetadataKind::IntegrationService => {
                 listing.integration_services.push(IntegrationServiceEntry {
                     name: name.clone(),

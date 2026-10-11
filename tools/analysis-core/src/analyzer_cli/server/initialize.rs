@@ -55,7 +55,7 @@ impl Server<'_> {
                 "sourceFormat":"eska", "scope":"selected-project",
                 "metadata":{"owners":true, "read":true, "refresh":true,
                     "locate":{"method":metadata_locations::METHOD,"scope":"current-ready-owner","positionEncoding":"utf-16","lazyRead":false}},
-                "documentSync":true, "languageQueries":true, "requestCancellation":true,
+                "documentSync":true, "roleRightsSync":true, "languageQueries":true, "requestCancellation":true,
                 "cancellableMethods":request_control::METHODS,"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
                 "requestTimeoutSeconds":self.cli.timeout_seconds,
                 "languageMethods":language::METHODS,

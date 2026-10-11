@@ -1445,8 +1445,8 @@ constructor с исходным UUID; default не подставляется в
 и RLS; проверена сохранность 850/2706/3014 source/native/control files.
 64 unit/7 file tests адаптера, прежние 270 SDK tests, kernel 2626/20 и все
 45 gates прошли, включая root и feature matrix.
-Версии, serialized shape, dependencies и protocol не менялись. Сервер и checker
-пока не используют адаптер: согласованный lifecycle `Rights.xml` ещё в работе.
+Версии, serialized shape, dependencies и protocol не менялись. При приёмке адаптера
+сервер и checker ещё не использовали согласованный lifecycle `Rights.xml`.
 Остальные модели, общий memory budget, edits и Explorer не завершены; EF-18 — `IN_PROGRESS`.
 
 [Общий reader прав](../research/eska-format/role-rights-reader.md) регистрирует
@@ -1455,8 +1455,22 @@ preserved resources по validated manifest и роли, без активаци
 bounded current reads сохраняют BOM/CRLF и прежние path/encoding/size failures.
 Пример роли использует этот общий вход вместо собственного manifest scan/чтения.
 Четыре новых теста, root 899/14, прежние 270 SDK и 64/7 adapter tests прошли
-вместе с 40 gates. Current rights lifecycle и canonical resolver ещё в работе;
+вместе с 40 gates. При приёмке reader current rights lifecycle ещё не был подключён;
 native workspace, версии, source/protocol schemas прежние. EF-18 — `IN_PROGRESS`.
+
+[Текущие роли](../research/eska-format/analyzer-roles.md) соединяют YAML и declared
+rights resource в одной сессии и clock. Saved/editor/close, source quota и lazy
+saved invalidation перепроецируют только свою роль; pending/missing/invalid
+resource не заменяется defaults. Native resolver не читает XML fallback.
+Metadata read/pull готовит одну dependency, watcher добавляет basename rights.
+Protocol 0.1 получил `roleRightsSync`, `kind=role_rights`, owner и dependency failure;
+source schemas, версии и graph 206/214 прежние. Все 1 641 модели совпали с native
+reader; шесть C1/C2/C3 stdio сценариев сохранили original/owned bytes. Checker C1
+сохранил 26 findings и 7 829 hashes; 212 отказов Role удалены, осталось 1 285 issues.
+Rights входят в metadata source-byte резерв, total C1 — 185 945 711 байт.
+279 tool tests, kernel 2627/20, adapter 64/7, root 899/14 и все 46 gates прошли.
+Эффективные права, RLS runtime и XML pull diagnostics не реализованы. Остальные
+модели, общий memory budget, edits и Explorer ещё в работе; EF-18 — `IN_PROGRESS`.
 
 ## EF-19 Самостоятельный инструмент VCS
 

@@ -8,6 +8,7 @@ pub use directory::TestDirectory;
 #[cfg(feature = "check-cli")]
 pub mod metadata;
 mod project;
+pub mod role_project;
 pub use project::inline_command_project;
 
 /// Populate a new, test-owned minimal project without a binary accepted base.

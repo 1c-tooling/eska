@@ -1,13 +1,15 @@
 # Общая квота текущих входов анализа
 
-Сессия IDE и `eska-check` используют одну квоту исходных байтов YAML/BSL.
+Сессия IDE и `eska-check` используют одну квоту исходных байтов YAML/rights/BSL.
 `SessionOptions.max_retained_source_bytes` и
 `BatchOptions.max_retained_source_bytes` по умолчанию равны 256 MiB.
 Checker задаёт её через `--max-retained-source-bytes`; локальный предел документа
 64 MiB и отдельная квота BSL-текстов 64 MiB сохраняются.
 
 Квота учитывает точный размер owning YAML для каждого текущего `Ready`
-metadata snapshot и размер каждого текущего BSL-текста. `MetadataSnapshot.source_bytes`
+metadata snapshot, verbatim текст [прав роли](analyzer-roles.md) и размер каждого
+текущего BSL-текста. Invalid rights XML остаётся читаемым ресурсом и занимает
+свой резерв; unavailable ресурс его освобождает. `MetadataSnapshot.source_bytes`
 получается из тех же verbatim UTF-8 bytes, что hash и координаты. Парсер метаданных
 не хранит исходный текст целиком, поэтому это учёт размера входов, а не их heap.
 Unsupported/invalid BSL-проекция не освобождает успешно разобранный YAML:
@@ -24,6 +26,7 @@ version и обновление диска поверх черновика от�
 
 `resources()` и поле `report.resources` показывают
 `metadata_source_bytes`, `module_text_bytes`, `total_source_bytes`, `max_source_bytes`.
+`metadata_source_bytes` включает YAML и права роли, включая ресурс pending владельца.
 Сумма текущих резервов не превышает установленный предел. Checker освобождает
 независимо проверенное тело после syntax query, поэтому завершённый batch
 обычно имеет нулевой `module_text_bytes`. Это не число всех проверенных байтов:
@@ -50,6 +53,9 @@ Human output объясняет отказ на RU/EN и показывает т
 сессии анализа. Проектное ядро не получает зависимости от анализатора.
 
 ## Проверки
+
+Ниже — исходная приёмка YAML/BSL-квоты, до подключения прав. Текущие результаты
+с ресурсами роли приведены в [приёмке роли](analyzer-roles.md).
 
 Новый тест контроллера различает document limit и source quota для saved/overlay,
 проверяет очистку и восстановление входа. Тест общей сессии заполняет квоту YAML
