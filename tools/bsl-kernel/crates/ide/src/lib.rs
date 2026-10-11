@@ -232,7 +232,7 @@ impl Analysis {
         selection_range::selection_ranges(&self.db, file_id, offsets)
     }
 
-    /// Discover a direct metadata-object dependency without loading its current descriptor.
+    /// Discover a direct manager or unclaimed common-module owner without loading its current descriptor.
     pub fn completion_metadata_target(
         &self,
         file_id: FileId,
@@ -253,6 +253,19 @@ impl Analysis {
     /// Discover the admitted direct object's manager body without reading its text or exports.
     pub fn completion_manager_module(&self, file_id: FileId, offset: u32) -> Option<FileId> {
         completion::manager_module_target(
+            &self.db,
+            completion::CompletionPosition {
+                file_id,
+                offset: TextSize::from(offset),
+                workspace_root: None,
+                locale: Locale::Ru,
+            },
+        )
+    }
+
+    /// Discover an admitted direct common-module body using current flags without reading its text or exports.
+    pub fn completion_common_module(&self, file_id: FileId, offset: u32) -> Option<FileId> {
+        completion::common_module_body_target(
             &self.db,
             completion::CompletionPosition {
                 file_id,

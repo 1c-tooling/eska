@@ -1,6 +1,8 @@
 //! Native completion discovery selects current dependencies; the host retains source I/O and authority.
 
 #[cfg(test)]
+mod common_module_tests;
+#[cfg(test)]
 mod manager_tests;
 #[cfg(test)]
 mod tests;
@@ -9,7 +11,7 @@ use eska::{
     analysis_core::{InputFailure, InputOrigin, InputRequest, InputState},
     project_core::source_format::SourcePath,
 };
-use ide_db::metadata::config_index;
+use ide_db::metadata::{common_module_index, config_index};
 
 use super::{AnalysisSession, metadata_resources};
 use crate::{
@@ -17,9 +19,9 @@ use crate::{
 };
 
 impl AnalysisSession {
-    /// Prepare the module's own metadata and an admitted direct manager-access target only.
+    /// Prepare the module's own metadata and a direct manager/common-module target only.
     ///
-    /// This also prepares the admitted object's own manager body, keeping other modules unread.
+    /// This also prepares the admitted target body, keeping other modules unread.
     /// It does not refresh ready or editor-owned input, load sibling dialogs, scan payloads,
     /// or claim transitive metadata inference is complete. The read-only query stays separate.
     /// # Errors
@@ -67,16 +69,21 @@ impl AnalysisSession {
                 let Some((kind, name)) = analysis.completion_metadata_target(file, offset) else {
                     return Ok(None);
                 };
-                let Some(files) =
-                    config_index(analysis.database(), self.listing).lookup(kind, &name)
-                else {
+                let main = if kind == bsl_metadata::MdoType::CommonModule {
+                    common_module_index(analysis.database(), self.listing).lookup(&name)
+                } else {
+                    config_index(analysis.database(), self.listing)
+                        .lookup(kind, &name)
+                        .map(|files| files.main)
+                };
+                let Some(main) = main else {
                     return Ok(None);
                 };
                 // Frozen identities are resident; resolving a FileId never examines owner payloads.
                 Ok(self
                     .owners
                     .iter()
-                    .find(|(_, entry)| entry.binding.main == files.main)
+                    .find(|(_, entry)| entry.binding.main == main)
                     .map(|(path, _)| path.clone()))
             })?
             .value;
@@ -89,9 +96,11 @@ impl AnalysisSession {
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
         }
-        let manager = self
+        let dependency = self
             .query_module(path, self.revision(), cancellation, |analysis, file| {
-                let target = analysis.completion_manager_module(file, offset);
+                let target = analysis
+                    .completion_manager_module(file, offset)
+                    .or_else(|| analysis.completion_common_module(file, offset));
                 Ok(target.and_then(|file| {
                     self.modules
                         .iter()
@@ -100,8 +109,8 @@ impl AnalysisSession {
                 }))
             })?
             .value;
-        if let Some(manager) = manager {
-            self.load_completion_module(&manager, request)?;
+        if let Some(dependency) = dependency {
+            self.load_completion_module(&dependency, request)?;
         }
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);

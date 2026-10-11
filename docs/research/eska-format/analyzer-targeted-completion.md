@@ -15,6 +15,8 @@ root ownership и execution-environment rules. Строка, комментар�
 локальное затенение, недоступный глобальный manager root, `Catalogs.` и
 `Metadata.Catalogs.` не становятся запросом на payload конкретного объекта.
 Обнаружение зависимости не читает целевой файл и не возвращает LSP DTO.
+Позднее discovery расширен [прямыми common-module namespaces](analyzer-common-module-completion.md):
+их YAML готовится перед проверкой доступности body по текущим флагам.
 
 `AnalysisSession::prepare_completion_metadata` выполняет явную подготовку:
 сначала YAML владельца текущего модуля и его primary resource, затем dialog

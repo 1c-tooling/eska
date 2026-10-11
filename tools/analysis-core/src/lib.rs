@@ -21,6 +21,9 @@ mod request;
 mod resources;
 mod session;
 #[cfg(test)]
+#[path = "../tests/support/common_module_project.rs"]
+mod test_common_module_project;
+#[cfg(test)]
 #[path = "../tests/support/form_project.rs"]
 mod test_form_project;
 #[cfg(test)]

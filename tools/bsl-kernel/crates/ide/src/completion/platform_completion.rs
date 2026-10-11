@@ -19,6 +19,41 @@ use super::env_filter::EnvFilter;
 use super::fuzzy::{MatchTier, PrefixMatcher};
 use super::{CompletionItem, CompletionItemKind, CompletionPosition};
 
+/// Discover only an unclaimed bare name present in the resident module index; payload visibility is resolved later.
+pub(crate) fn common_module_target<DB: RootDatabase>(
+    db: &DB,
+    position: CompletionPosition,
+) -> Option<String> {
+    let root = db.parse(position.file_id).syntax_node();
+    let token = root.token_at_offset(position.offset).left_biased()?;
+    let (dot, _) = resolve_dot_anchor(&token, position.offset)?;
+    let receiver = find_receiver_expr(&dot)?;
+    let name = unclaimed_receiver_ident(db, &position, &receiver)?;
+    let source_root = db.file_source_root_input(position.file_id).source_root_id(db);
+    db.module_index(source_root).resolve_common_module(&Name::new(&name))?;
+    Some(name)
+}
+
+/// Admit a declared common-module body using current canonical flags and the caller's execution environments.
+pub(crate) fn common_module_body_target<DB: RootDatabase>(
+    db: &DB,
+    position: CompletionPosition,
+) -> Option<FileId> {
+    let name = common_module_target(db, position.clone())?;
+    let resolver = hir::Resolver::with_workspace_scope(hir::ModuleId::new(position.file_id));
+    if !resolver.user_common_module_exists(db, &Name::new(&name))
+        || !EnvFilter::at(db, position.file_id, position.offset).admits_common_module(
+            db,
+            position.file_id,
+            &name,
+        )
+    {
+        return None;
+    }
+    let root = db.file_source_root_input(position.file_id).source_root_id(db);
+    db.module_index(root).resolve_common_module(&Name::new(&name))
+}
+
 pub(super) fn platform_completions<DB: RootDatabase>(
     db: &DB,
     position: CompletionPosition,
@@ -37,7 +72,7 @@ pub(super) fn platform_completions<DB: RootDatabase>(
 
     let receiver_expr = find_receiver_expr(&dot_token)?;
 
-    if let Some(receiver_name) = extract_receiver_ident(&receiver_expr) {
+    if let Some(receiver_name) = unclaimed_receiver_ident(db, &position, &receiver_expr) {
         tracing::debug!(receiver_name = %receiver_name, "Trying CommonModule fast path");
         // A statically named module the caller's environments cannot reach
         // offers no members — the diagnostic would underline any such call
@@ -466,6 +501,33 @@ fn extract_receiver_ident(node: &SyntaxNode) -> Option<String> {
         }
     }
     ident
+}
+
+/// Textual namespace lookup cannot override the user symbol owning the receiver at this exact read.
+fn unclaimed_receiver_ident<DB: RootDatabase>(
+    db: &DB,
+    position: &CompletionPosition,
+    receiver: &SyntaxNode,
+) -> Option<String> {
+    let name = extract_receiver_ident(receiver)?;
+    let module = hir::ModuleId::new(position.file_id);
+    let bodies = db.module_bodies_ref(module);
+    let tree = db.item_tree(position.file_id);
+    let lower = match hir::bare_root::method_item_at(&tree, position.offset) {
+        Some(method) => bodies.lower_result(method.key()),
+        None => bodies.module_code_result(),
+    };
+    let scope = lower.map(|result| hir::BodyShadowScope {
+        body: result.body(),
+        source_map: result.source_map(),
+        read_offset: receiver.text_range().start(),
+    });
+    // A workspace namespace is the candidate itself, not a shadow. The shared claim predicate
+    // still judges body bindings, module members and form/object members with their usual rules.
+    let resolver = hir::Resolver::for_module(module);
+    hir::bare_global_name_claim(db, &resolver, scope.as_ref(), &Name::new(&name))
+        .is_none()
+        .then_some(name)
 }
 
 fn complete_common_module_methods(

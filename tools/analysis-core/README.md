@@ -28,6 +28,9 @@ target, выбранный native ядром. Предварительный met
 также загружается адресно для текущих exports. Остальные bodies и соседние dialogs
 остаются pending; ready/editor inputs не перечитываются.
 Read-only `module_completions` сохраняет отдельный контракт.
+[Прямой common-module namespace](../../docs/research/eska-format/analyzer-common-module-completion.md)
+читает owner через прежний frozen common-module index; current native flags
+разрешают или запрещают body preparation. Shadowing не загружает чужой namespace.
 
 Для [общих форм](../../docs/research/eska-format/analyzer-forms.md) текущие YAML
 и declared dialog публикуют canonical slot в контекст BSL-модуля.

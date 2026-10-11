@@ -1609,6 +1609,19 @@ Protocol 0.1 добавляет `managerModuleCompletion`; source/result schemas
 dependencies и graph 206/214 прежние. Partial copies не подтверждают общий RSS
 budget; платформа не запускалась. EF-18 — `IN_PROGRESS`, следующие этапы не начаты.
 
+[Прямой общий модуль](../research/eska-format/analyzer-common-module-completion.md)
+подготавливает owner через прежний frozen index, затем доступный body по current
+native flags. Исправлено получение exports при локальном затенении namespace;
+shared positional ownership сохраняет поля собственного значения. Четыре shared,
+четыре native и два process tests добавлены. SDK — 328 tests, kernel — 2 640/20,
+root — 910/14; все 23 tool/5 kernel/15 root gates прошли. Шесть stdio C1/C2/C3
+RU/EN проверили 3/1/1 реальных exports, current BSL/YAML, local ownership и watched
+recovery. Checker C1 сохранил полный JSON, 26 findings, 960 issues и source reserve.
+Protocol 0.1 добавляет `commonModuleCompletion`; native owner discovery может
+вернуть `CommonModule`. Source/result schemas, версии, dependencies и graph 206/214
+прежние. Partial copies не подтверждают общий RSS budget; платформа не запускалась.
+EF-18 — `IN_PROGRESS`, следующие этапы не начаты.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

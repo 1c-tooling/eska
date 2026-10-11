@@ -40,6 +40,8 @@ Lazy-чтение целевого BSL и [адресная подготовка
 модуля, его primary resource/текущий dialog и прямой manager target, определённый
 native ядром. [Объявленный manager body](analyzer-manager-completion.md) загружается
 адресно для текущих экспортных методов. Полный metadata scan не выполняется.
+[Прямой общий модуль](analyzer-common-module-completion.md) получает body после
+подготовки его YAML и native проверки доступности; локальное затенение сохранено.
 
 Open/change/close YAML и BSL меняют тот же host: имя реквизита из черновика
 заменяет сохранённое в подсказках; неверный текущий YAML очищает модель;

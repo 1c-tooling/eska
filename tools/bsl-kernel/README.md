@@ -30,6 +30,10 @@ Host готовит текущие inputs; существующий completion q
 добавляют `Analysis::completion_manager_module`: тот же native context и resident
 module index выбирают объявленный FileId без чтения BSL. Прежние symbol/signature
 queries определяют экспортность и подсказки текущего текста.
+[Общий модуль](../../docs/research/eska-format/analyzer-common-module-completion.md)
+расширяет owner discovery и добавляет `Analysis::completion_common_module` для
+доступного body. Shared positional ownership predicate применяется также к прежнему
+fast path: локальное значение больше не получает exports одноимённого namespace.
 
 Назначение локальных пакетов:
 

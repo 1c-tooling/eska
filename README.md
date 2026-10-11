@@ -822,6 +822,9 @@ bounded current bytes. Все 305 ресурсов C1/C2/C3 совпали с na
 [объявленный модуль менеджера](docs/research/eska-format/analyzer-manager-completion.md).
 Экспортные методы учитывают текущий BSL. Остальные bodies и соседние dialogs
 остаются pending; предварительный metadata/module read не требуется.
+[Общий модуль](docs/research/eska-format/analyzer-common-module-completion.md)
+также подготавливается адресно: сначала текущие flags YAML, затем доступный body.
+Локальное имя сохраняет приоритет над одноимённым namespace.
 
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.

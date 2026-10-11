@@ -2,11 +2,23 @@ mod bsl_completion;
 pub(crate) mod env_filter;
 mod fuzzy;
 mod mdo_completion;
-pub(crate) use mdo_completion::{manager_module_target, metadata_target};
+pub(crate) use mdo_completion::manager_module_target;
+pub(crate) use platform_completion::common_module_body_target;
 mod new_expr_completion;
 mod platform_completion;
 mod sdbl;
 mod templates;
+
+/// Both direct namespace kinds select an owner before the host loads payload-dependent visibility.
+pub(crate) fn metadata_target<DB: ide_db::RootDatabase>(
+    db: &DB,
+    position: CompletionPosition,
+) -> Option<(bsl_metadata::MdoType, String)> {
+    mdo_completion::metadata_target(db, position.clone()).or_else(|| {
+        platform_completion::common_module_target(db, position)
+            .map(|name| (bsl_metadata::MdoType::CommonModule, name))
+    })
+}
 
 use ide_db::base_db::Locale;
 use ide_db::RootDatabase;

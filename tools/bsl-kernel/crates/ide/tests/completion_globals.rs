@@ -52,6 +52,63 @@ fn complete(fixture: &str) -> Vec<CompletionItem> {
     analysis.completions(file_id, offset, None, ide::Locale::Ru)
 }
 
+/// A local value sharing a module's name must not inherit that module's exported methods.
+#[test]
+fn direct_common_module_completion_respects_local_receiver_ownership() {
+    for body in [
+        "Procedure Run(Utility)\n Value = Utility.$0;\nEndProcedure\n",
+        "Procedure Run()\n Var Utility;\n Value = Utility.$0;\nEndProcedure\n",
+        "Var Utility;\nProcedure Run()\n Value = Utility.$0;\nEndProcedure\n",
+        "Procedure Run()\n Utility = 1;\n Value = Utility.$0;\nEndProcedure\n",
+    ] {
+        let text=format!("//- /test.bsl\n{body}//- /CommonModules/Utility/Ext/Module.bsl\nProcedure SavedExport() Export\nEndProcedure\n");
+        assert!(!complete(&text).iter().any(|item| item.label == "SavedExport"), "{body}");
+    }
+}
+
+/// Dependency discovery shares the direct native receiver and case-insensitive resident module identity.
+#[test]
+fn direct_common_module_dependency_selects_declared_owner_and_body_with_prefix() {
+    let (analysis,file,offset)=setup("//- /test.bsl\nProcedure Run()\n Value = uTiLiTy.Sav$0;\nEndProcedure\n//- /CommonModules/Utility/Ext/Module.bsl\nProcedure SavedExport() Export\nEndProcedure\nProcedure HiddenMethod()\nEndProcedure\n//- /CommonModules/Neighbor/Ext/Module.bsl\nProcedure NeighborExport() Export\nEndProcedure\n");
+    assert_eq!(
+        analysis.completion_metadata_target(file, offset),
+        Some((bsl_metadata::MdoType::CommonModule, "uTiLiTy".into()))
+    );
+    let module = analysis.completion_common_module(file, offset).unwrap();
+    assert_ne!(module, file);
+    assert_eq!(analysis.completion_manager_module(file, offset), None);
+    let items = analysis.completions(file, offset, None, ide::Locale::En);
+    assert!(items.iter().any(|item| item.label == "SavedExport"));
+    assert!(!items
+        .iter()
+        .any(|item| item.label == "HiddenMethod" || item.label == "NeighborExport"));
+}
+
+/// Non-code tokens, shadowing, unknown modules and chained receivers do not request direct namespace payloads.
+#[test]
+fn direct_common_module_dependency_rejects_non_namespace_receivers() {
+    for body in [
+        "Procedure Run(Utility)\n Value = Utility.$0;\nEndProcedure\n",
+        "Procedure Run()\n Value = \"Utility.$0\";\nEndProcedure\n",
+        "Procedure Run()\n // Utility.$0\nEndProcedure\n",
+        "Procedure Run()\n Value = Missing.$0;\nEndProcedure\n",
+        "Procedure Run()\n Value = Utility.Factory().$0;\nEndProcedure\n",
+    ] {
+        let text=format!("//- /test.bsl\n{body}//- /CommonModules/Utility/Ext/Module.bsl\nProcedure SavedExport() Export\nEndProcedure\n");
+        let (analysis, file, offset) = setup(&text);
+        assert_eq!(analysis.completion_metadata_target(file, offset), None, "{body}");
+        assert_eq!(analysis.completion_common_module(file, offset), None, "{body}");
+    }
+}
+
+/// Removing a textual namespace override must preserve the actual typed local value's fields.
+#[test]
+fn shadowed_common_module_completion_uses_the_local_structure_value() {
+    let items=complete("//- /test.bsl\nProcedure Run()\n Var Utility;\n Utility = New Structure(\"UserField\",1);\n Utility.$0;\nEndProcedure\n//- /CommonModules/Utility/Ext/Module.bsl\nProcedure SavedExport() Export\nEndProcedure\n");
+    assert!(items.iter().any(|item| item.label == "UserField"));
+    assert!(!items.iter().any(|item| item.label == "SavedExport"));
+}
+
 fn find_item<'a>(items: &'a [CompletionItem], label: &str) -> Option<&'a CompletionItem> {
     items.iter().find(|i| i.label == label)
 }

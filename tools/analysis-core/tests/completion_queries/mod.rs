@@ -11,6 +11,7 @@ use serde_json::{Value, json};
 
 use super::{Client, initialize, notification, request, snapshot, support};
 
+mod common_modules;
 mod fixture;
 mod managers;
 mod targeted;

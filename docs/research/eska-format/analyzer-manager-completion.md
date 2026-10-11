@@ -86,3 +86,6 @@ transitive inference через переменные, остальные BSL bod
 семантика не принимаются этим компонентом. Partial copies не подтверждают полный
 resident RSS или общий memory budget. Проверены явные watcher events; OS watcher
 и платформа 1С не запускались. EF-18 остаётся `IN_PROGRESS`; следующие этапы не начаты.
+
+Прямые [common-module namespaces](analyzer-common-module-completion.md) подключены
+следующим компонентом через ту же shared preparation.

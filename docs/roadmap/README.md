@@ -358,6 +358,14 @@ RU/EN проверили 2/2/1 реальных exports и текущий lifecy
 полный JSON. Protocol 0.1 добавляет `managerModuleCompletion`; graph 206/214,
 версии и source schemas прежние. EF-18 остаётся `IN_PROGRESS`.
 
+[Прямой общий модуль](../research/eska-format/analyzer-common-module-completion.md)
+читает сначала current YAML, затем доступный body; native ownership исправляет
+exports при локальном затенении namespace. SDK — 328 tests, kernel — 2 640/20,
+root — 910/14; все 23 tool/5 kernel/15 root gates прошли. Шесть stdio C1/C2/C3
+RU/EN проверили 3/1/1 реальных exports и текущие flags/BSL; checker C1 сохранил
+полный JSON. Protocol 0.1 добавляет `commonModuleCompletion`; source schemas,
+версии, dependencies и graph 206/214 прежние. EF-18 остаётся `IN_PROGRESS`.
+
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.
