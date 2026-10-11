@@ -9,9 +9,18 @@
 descriptor с явно переданным `RoleData`: исходный UUID, три флага, объектные
 ссылки и RLS. `Rights.xml` остаётся сохранённым ресурсом; `project_roles` проверяет
 все 1 641 модели C1/C2/C3. Адаптер не читает ресурс и не подменяет его ошибку
-пустыми данными. Его lifecycle в SDK и canonical resolver ещё не подключены.
+пустыми данными. В общей сессии resource lifecycle и canonical resolver уже
+[подключены](../../docs/research/eska-format/analyzer-roles.md).
 Объявленный путь и bounded current bytes берутся из
 [общего reader](../../docs/research/eska-format/role-rights-reader.md).
+
+[`form`](../../docs/research/eska-format/form-adapter.md) соединяет текущий
+`Form`/`CommonForm` descriptor с явно переданным `bsl_metadata::Form`. Имя,
+UUID и тип задаёт YAML, элементы, реквизиты, колонки и обработчики сохраняются
+из dialog input. Неизвестный явный `FormType` вызывает адресную ошибку.
+Все 978 объявленных общих форм C1/C2/C3 совпали с native reader; диск и основной
+XML адаптер не использует. Общий resource lifecycle и canonical form input
+пока не подключены; это не полная YAML-модель формы из EF-12.
 
 Первый преобразователь `common_module` принимает `ParsedObject` с загруженными
 properties. UUID, имя, контекст выполнения, повторное использование результатов

@@ -1472,6 +1472,18 @@ Rights входят в metadata source-byte резерв, total C1 — 185 945 7
 Эффективные права, RLS runtime и XML pull diagnostics не реализованы. Остальные
 модели, общий memory budget, edits и Explorer ещё в работе; EF-18 — `IN_PROGRESS`.
 
+[Адаптер формы](../research/eska-format/form-adapter.md) соединяет общий
+`Form`/`CommonForm` descriptor с явно переданным current dialog. Name/UUID/type
+задаёт YAML, payload сохраняет элементы, реквизиты/колонки и event/command
+handlers. Invalid/duplicate/unknown FormType имеют текущие координаты.
+Все 83/435/460 объявленных общих форм C1/C2/C3 совпали с native reader;
+706/3114/3348 source/native/control hashes сохранены, лишний ресурс C1 не
+активирует форму. 69 unit/8 file tests адаптера, прежние 279 consumer tests,
+root 899/14 и все 6 adapter/5 consumer/15 root gates прошли. Native workspace,
+версии, зависимости и source/protocol schemas прежние. Общий resource lifecycle,
+canonical form input, реальные nested формы и остальные условия EF-18 ещё
+в работе. EF-18 — `IN_PROGRESS`; EF-12 и следующие этапы не начаты.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

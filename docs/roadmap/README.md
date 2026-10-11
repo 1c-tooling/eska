@@ -280,6 +280,11 @@ schemas и версии прежние. Все 1 641 модели совпали
 1 285 issues; 7 829 hashes и JSON RU/EN совпали. Все 46 gates прошли: 279 tool,
 kernel 2627/20, root 899/14, adapter 64/7. Полные модели, memory budget, edits и
 Explorer ещё в работе; EF-18 остаётся `IN_PROGRESS`.
+Адаптер [`form`](../research/eska-format/form-adapter.md) соединяет текущие
+`Form`/`CommonForm` descriptors с явными данными dialog. Все 978 объявленных
+общих форм C1/C2/C3 совпали с native reader, 69 unit/8 file tests прошли;
+5 consumer/6 adapter/15 root gates сохранены. Canonical form input и ресурсный
+lifecycle ещё в работе; EF-18 остаётся `IN_PROGRESS`, EF-12 не начата.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

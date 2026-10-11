@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "component": "form_declaration_and_supplied_dialog_adapter",
+  "milestone": "EF-18",
+  "status": "IN_PROGRESS",
+  "adapter_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.9031289519916754
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.23632955198991112
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.8576862800109666
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 2.7957661089894827,
+      "results": [
+        "ok. 69 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 2.6434447299980093
+    },
+    {
+      "gate": "release-model-example",
+      "exit_code": 0,
+      "seconds": 1.6548527560080402
+    }
+  ],
+  "consumer_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 2.474075306992745
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 0.8019203649892006
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 2.0631998070166446
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 15.538783492986113,
+      "results": [
+        "ok. 131 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.72s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 133 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.85s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 7.247215051000239
+    }
+  ],
+  "root_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8191249670053367
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2518189320107922
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2656640700006392
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 12.412504886015086
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.854101339005865
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2059096919838339
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5321026019810233
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.7977864489948843
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.22294560898444615
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6692611970065627
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.1421115300036035
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.18841078400146216
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 5.538060489023337
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 6.63557755202055
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.004809108009794727
+    }
+  ],
+  "real_common_form_models": [
+    {
+      "corpus": "C1",
+      "attribute_columns": 347,
+      "attributes": 653,
+      "command_handlers": 375,
+      "common_forms": 83,
+      "elements": 1649,
+      "event_handlers": 522,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "preserved_form_xml_resources": 84,
+      "tracked_source_native_control_files": 706,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 0.15337354099028744
+    },
+    {
+      "corpus": "C2",
+      "attribute_columns": 1812,
+      "attributes": 4334,
+      "command_handlers": 1428,
+      "common_forms": 435,
+      "elements": 9341,
+      "event_handlers": 2893,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "preserved_form_xml_resources": 435,
+      "tracked_source_native_control_files": 3114,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 1.0826414549956098
+    },
+    {
+      "corpus": "C3",
+      "attribute_columns": 1922,
+      "attributes": 4567,
+      "command_handlers": 1463,
+      "common_forms": 460,
+      "elements": 9688,
+      "event_handlers": 3067,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "preserved_form_xml_resources": 460,
+      "tracked_source_native_control_files": 3348,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 1.230542755976785
+    }
+  ],
+  "verification": {
+    "final_gates_passed": 26,
+    "adapter_unit_tests": 69,
+    "adapter_file_tests": 8,
+    "consumer_tests": 279,
+    "root_passed": 899,
+    "root_ignored": 14,
+    "test_fixtures_owned_inside_playground": true,
+    "source_and_protocol_schemas_unchanged": true,
+    "dependency_versions_unchanged": true,
+    "native_workspace_unchanged": true,
+    "human_strings_added": false,
+    "platform_runtime_checked": false
+  },
+  "limits": {
+    "common_form_canonical_input_connected": false,
+    "resource_lifecycle_connected": false,
+    "nested_form_real_corpus_parity_checked": false,
+    "binary_dialog_parsed": false,
+    "full_typed_yaml_form_model": false,
+    "full_rss_budget": false
+  },
+  "references": {
+    "metadata": "9021ba07471eee8a2614bed2105a2c8699f60780",
+    "source": "tools/bsl-kernel/crates/bsl-metadata/src/xml_parser/form.rs"
+  }
+}
