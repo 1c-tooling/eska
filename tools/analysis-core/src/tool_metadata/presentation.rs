@@ -8,6 +8,9 @@ use eska_bsl_adapter::AdapterIssue;
 
 use crate::MetadataDiagnosticIssue;
 
+#[cfg(test)]
+mod tests;
+
 /// Unsupported engine coverage is a warning; malformed required metadata remains an error.
 pub(super) const fn adapter_severity(issue: &AdapterIssue) -> u8 {
     match issue {
