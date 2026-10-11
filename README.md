@@ -808,6 +808,12 @@ preset = "trunk"
 вложенной формы сохраняет главный объект и соседние формы при правке dialog;
 metadata read и checker показывают отдельные состояния и причины отказа.
 Текущие event/command handlers учитываются в native BSL-диагностике.
+
+[Reader предопределённых данных](docs/research/eska-format/predefined-reader.md)
+связывает preserved XML с объявленными справочниками и планами, возвращает
+bounded current bytes. Все 305 ресурсов C1/C2/C3 совпали с native файлами;
+подключение их current model к анализатору ещё в работе.
+
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

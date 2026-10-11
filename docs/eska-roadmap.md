@@ -115,6 +115,12 @@ full descriptor identity и declared dialog; все 18 186 XML-моделей C1
 из 256 MiB. 298 tool tests, 22 tool/15 root gates и шесть stdio-сценариев прошли.
 Binary формы и остальные условия EF-18 ещё в работе; EF-12 не начата.
 
+[Reader предопределённых данных](research/eska-format/predefined-reader.md)
+прочитал все 305 объявленных ресурсов C1/C2/C3, сохранил их байты и связи
+с владельцами. Четыре root tests и SDK guard, 910/14 root, 299 tool tests
+и 22 tool/15 root gates прошли. Checker C1 сохранил полный JSON и квоту;
+XML parser и current producer этих элементов ещё в работе.
+
 Принята будущая поставка: обычная установка `eska` даёт оболочку и комплект
 отдельных инструментов; для CI/IDE доступны самостоятельные пакеты. В плане
 экспериментов EF-20 проверяет CF → ESKA → CF и делегирование команд, EF-21 —

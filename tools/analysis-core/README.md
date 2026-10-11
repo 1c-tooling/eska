@@ -16,6 +16,11 @@ XML-экспорт не участвуют в чтении.
 Подключены главные дескрипторы реализованных адаптеров и вложенные формы с XML dialog. Полнота чтения,
 полнота главных моделей и покрытие всех вложенных документов различаются.
 
+[Reader предопределённых данных](../../docs/research/eska-format/predefined-reader.md)
+уже связывает declared ресурс и YAML владельца. До подключения producer эти
+ресурсы ещё не регистрируются как versioned inputs сессии; модели объектов
+сохраняют прежний пустой список predefined items.
+
 Для [общих форм](../../docs/research/eska-format/analyzer-forms.md) текущие YAML
 и declared dialog публикуют canonical slot в контекст BSL-модуля.
 Непредоставленные формы canonical корня больше не читают preserved XML с диска.

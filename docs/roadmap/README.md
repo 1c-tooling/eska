@@ -316,6 +316,14 @@ common-form lifecycle сохраняются; nested session slots/resources е�
 298 tool tests, 22 tool/15 root gates и шесть stdio-сценариев прошли. Checker C1
 снял 242 owner issues, сохранив 26 findings и остальные 960 issues; все hashes
 и JSON RU/EN сохранились. Binary формы и остальные условия EF-18 ещё в работе.
+
+[Reader предопределённых данных](../research/eska-format/predefined-reader.md)
+связывает declared preserved ресурс со справочником или планом без чтения payload.
+Все 305 ресурсов C1/C2/C3 совпали по байтам с native файлами. Четыре root tests
+и SDK guard, 910/14 root, 299 tool tests и 22 tool/15 root gates прошли.
+Checker C1 сохранил полный JSON RU/EN и квоту. XML parser и current producer
+элементов ещё в работе; EF-18 — `IN_PROGRESS`, следующие этапы не начаты.
+
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

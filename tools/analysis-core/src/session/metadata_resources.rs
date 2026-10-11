@@ -3,6 +3,8 @@
 #[cfg(test)]
 mod form_tests;
 #[cfg(test)]
+mod predefined_tests;
+#[cfg(test)]
 mod role_tests;
 
 use std::{collections::BTreeMap, fmt::Write as _, sync::Arc};

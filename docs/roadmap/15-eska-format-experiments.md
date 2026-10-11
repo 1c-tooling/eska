@@ -1551,6 +1551,20 @@ bytes; общий резерв 204 302 277 из 268 435 456. Binary/absent dialo
 не запускалась; OS/client watcher и full C2/C3 semantic batch здесь не приняты.
 EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
 
+[Reader предопределённых данных](../research/eska-format/predefined-reader.md)
+связывает preserved `Predefined.xml` с declared catalog/chart descriptor и YAML
+без чтения payload. Прямые/обратные identities и bounded UTF-8 read сохраняют
+BOM/CRLF, различают absent/undeclared/deleted inputs и исключают stray resources.
+Все 24/114/167 ресурсов C1/C2/C3 совпали по байтам с native файлами;
+99/459/671 hashes сохранились. Четыре root tests и SDK boundary guard добавлены;
+910/14 root, 299 tool tests и 22 tool/15 root gates прошли. Checker C1 сохранил
+полный JSON RU/EN: 1 975 модулей, 26 findings, 960 issues, exit 2 и квоту
+204 302 277 bytes. Graph 206/214 и 495 upstream hashes прежние; schemas и
+зависимости не менялись. XML parser и current producer элементов ещё в работе:
+reader сам по себе не активирует session inputs или disk fallback.
+Общий memory budget и остальные условия EF-18 ещё в работе; платформа
+не запускалась. EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

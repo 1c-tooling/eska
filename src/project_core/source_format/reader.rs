@@ -2,6 +2,7 @@
 
 mod form_dialog;
 mod modules;
+mod predefined;
 mod projection;
 mod role_rights;
 mod semantic;
@@ -75,6 +76,7 @@ struct OwnerSpec {
     parent: Option<NativeUuid>,
     descriptors: BTreeMap<SourcePath, NativeUuid>,
     rights: Option<SourcePath>,
+    predefined: Option<SourcePath>,
 }
 
 /// An explicit manifest/configuration snapshot, with other owners read only when requested.
@@ -90,6 +92,7 @@ pub struct SourceReader {
     owners: BTreeMap<SourcePath, OwnerSpec>,
     modules: BTreeMap<SourcePath, modules::ModuleSpec>,
     role_rights: BTreeMap<SourcePath, SourcePath>,
+    predefined: BTreeMap<SourcePath, SourcePath>,
     forms: BTreeMap<SourcePath, form_dialog::FormSpec>,
     form_dialogs: BTreeMap<SourcePath, SourcePath>,
 }
@@ -115,6 +118,7 @@ impl SourceReader {
             name: None,
             parent: None,
             rights: None,
+            predefined: None,
             descriptors: groups
                 .remove(&root_path)
                 .ok_or_else(|| Error::root("source_descriptor_missing"))?,
@@ -144,6 +148,7 @@ impl SourceReader {
                     name: Some(name),
                     parent: Some(parent.clone()),
                     rights: None,
+                    predefined: None,
                     descriptors,
                 },
             );
@@ -154,6 +159,7 @@ impl SourceReader {
         owners.insert(root_path, root_spec);
         let modules = modules::declared_modules(&manifest, &owners)?;
         let role_rights = role_rights::declared_role_rights(&manifest, &mut owners)?;
+        let predefined = predefined::declared_predefined(&manifest, &mut owners)?;
         let mut forms = form_dialog::declared_forms(&owners)?;
         let form_dialogs = form_dialog::declared_form_dialogs(&manifest, &mut forms)?;
         Ok(Self {
@@ -164,6 +170,7 @@ impl SourceReader {
             owners,
             modules,
             role_rights,
+            predefined,
             forms,
             form_dialogs,
         })
@@ -284,6 +291,36 @@ impl SourceReader {
     ) -> Result<String, Error> {
         if self.role_rights_owner(path).is_none() {
             return Err(Error::root("source_role_rights_undeclared").in_field(path.as_str()));
+        }
+        read_text_limited(&self.root, path, max_bytes)
+    }
+
+    /// Enumerate preserved predefined-data sidecars attached to declared catalog/chart owners.
+    pub fn predefined_paths(&self) -> impl Iterator<Item = &SourcePath> {
+        self.predefined.keys()
+    }
+
+    /// A missing declaration differs from a declared resource whose current bytes are unavailable.
+    #[must_use]
+    pub fn predefined_path(&self, owner: &SourcePath) -> Option<&SourcePath> {
+        self.owners
+            .get(owner)
+            .and_then(|spec| spec.predefined.as_ref())
+    }
+
+    /// Bind current predefined data to its enclosing YAML independently of either payload's validity.
+    #[must_use]
+    pub fn predefined_owner(&self, resource: &SourcePath) -> Option<&SourcePath> {
+        self.predefined.get(resource)
+    }
+
+    /// Read exact current UTF-8 bytes without interpreting XML or manufacturing predefined names.
+    ///
+    /// # Errors
+    /// Returns undeclared/unsafe paths, missing files, unsupported encoding or an exceeded byte limit.
+    pub fn read_predefined_text(&self, path: &SourcePath, max_bytes: u64) -> Result<String, Error> {
+        if self.predefined_owner(path).is_none() {
+            return Err(Error::root("source_predefined_undeclared").in_field(path.as_str()));
         }
         read_text_limited(&self.root, path, max_bytes)
     }
