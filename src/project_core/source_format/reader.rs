@@ -6,6 +6,7 @@ mod predefined;
 mod projection;
 mod role_rights;
 mod semantic;
+mod standalone;
 
 #[cfg(test)]
 mod measurement;
@@ -22,6 +23,7 @@ use std::{
 use sha2::{Digest, Sha256};
 
 use crate::project_core::MetadataKind;
+use crate::project_core::metadata_model::ObjectId;
 
 use super::{
     Error, FileRole, MetadataNode, NativeDocument, NativeUuid, ObjectSource, PropertyName,
@@ -66,6 +68,8 @@ pub struct DeclaredOwner<'a> {
     pub name: Option<&'a str>,
     pub native_path: &'a SourcePath,
     pub uuid: &'a NativeUuid,
+    /// Nested physical files retain the logical parent's context; top-level IDs stay unqualified.
+    pub parent: Option<&'a ObjectId>,
 }
 
 /// A declared owner has one main descriptor and the complete native identities of its family.
@@ -77,6 +81,9 @@ struct OwnerSpec {
     descriptors: BTreeMap<SourcePath, NativeUuid>,
     rights: Option<SourcePath>,
     predefined: Option<SourcePath>,
+    logical_parent: Option<ObjectId>,
+    /// Separated files validate their external declarations against mandatory reverse contexts.
+    external: Option<BTreeMap<SourcePath, (MetadataKind, String)>>,
 }
 
 /// An explicit manifest/configuration snapshot, with other owners read only when requested.
@@ -90,6 +97,7 @@ pub struct SourceReader {
     manifest_sha256: String,
     configuration: OwnerSnapshot,
     owners: BTreeMap<SourcePath, OwnerSpec>,
+    native_owners: BTreeMap<SourcePath, SourcePath>,
     modules: BTreeMap<SourcePath, modules::ModuleSpec>,
     role_rights: BTreeMap<SourcePath, SourcePath>,
     predefined: BTreeMap<SourcePath, SourcePath>,
@@ -104,10 +112,24 @@ impl SourceReader {
     /// Returns unsupported schema, unsafe path, root composition or native identity failures.
     pub fn open(root: &Path) -> Result<Self, Error> {
         require_directory(root)?;
+        let pending = match fs::symlink_metadata(root.join(super::layout::PENDING_RECEIPT)) {
+            Ok(_) => true,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+            Err(error) => return Err(files::io(&error)),
+        };
         let root = fs::canonicalize(root).map_err(|error| files::io(&error))?;
-        let text = read_text(&root, &SourcePath::parse(files::MANIFEST)?)?;
+        let text = read_text(&root, &SourcePath::parse(files::MANIFEST)?).map_err(|error| {
+            if pending {
+                Error::root("source_layout_incomplete")
+            } else {
+                error
+            }
+        })?;
         let manifest: SourceManifest =
             serde_json::from_str(&text).map_err(|_| Error::root("source_schema_invalid"))?;
+        if pending && manifest.schema_version == super::DESCRIPTOR_LAYOUT_VERSION {
+            return Err(Error::root("source_layout_incomplete"));
+        }
         manifest.validate()?;
         let manifest_sha256 = files::hex(&Sha256::digest(text.as_bytes()));
         let mut groups = descriptor_groups(&manifest)?;
@@ -119,6 +141,8 @@ impl SourceReader {
             parent: None,
             rights: None,
             predefined: None,
+            logical_parent: None,
+            external: None,
             descriptors: groups
                 .remove(&root_path)
                 .ok_or_else(|| Error::root("source_descriptor_missing"))?,
@@ -129,34 +153,16 @@ impl SourceReader {
             &manifest_sha256,
             &root_spec,
         )?;
-        let parent = &configuration.source.document.descriptor.object.uuid;
-        let mut owners = BTreeMap::new();
-        for (kind, name) in references(&configuration.source.document.descriptor.object)? {
-            let main = reference_path("", kind, &name)?;
-            let path = source_path(&main)?;
-            let descriptors = groups
-                .remove(&path)
-                .ok_or_else(|| Error::root("source_descriptor_missing").in_field(main.as_str()))?;
-            if !descriptors.contains_key(&main) {
-                return Err(Error::root("source_identity_mismatch").in_field(path.as_str()));
-            }
-            owners.insert(
-                path,
-                OwnerSpec {
-                    main,
-                    kind,
-                    name: Some(name),
-                    parent: Some(parent.clone()),
-                    rights: None,
-                    predefined: None,
-                    descriptors,
-                },
-            );
-        }
-        if !groups.is_empty() {
-            return Err(Error::root("source_descriptor_undeclared"));
-        }
-        owners.insert(root_path, root_spec);
+        let owners = if manifest.schema_version == super::DESCRIPTOR_LAYOUT_VERSION {
+            standalone::owners(&manifest, &configuration, groups, root_spec)?
+        } else {
+            family_owners(&configuration, groups, root_spec)?
+        };
+        let mut owners = owners;
+        let native_owners = owners
+            .iter()
+            .map(|(source, spec)| (spec.main.clone(), source.clone()))
+            .collect();
         let modules = modules::declared_modules(&manifest, &owners)?;
         let role_rights = role_rights::declared_role_rights(&manifest, &mut owners)?;
         let predefined = predefined::declared_predefined(&manifest, &mut owners)?;
@@ -168,6 +174,7 @@ impl SourceReader {
             manifest_sha256,
             configuration,
             owners,
+            native_owners,
             modules,
             role_rights,
             predefined,
@@ -199,19 +206,11 @@ impl SourceReader {
         self.owners.keys()
     }
 
-    /// Resolve only a declared main descriptor to its physical owner, without reading its text.
-    /// Nested descriptors are not main analysis slots; callers must carry their enclosing owner.
+    /// Resolve a declared main descriptor to its exact mapped physical file without reading text.
+    /// Legacy nested documents remain family members; separated documents have independent slots.
     #[must_use]
     pub fn owner_for_native_main(&self, native: &SourcePath) -> Option<&SourcePath> {
-        let candidate = if native == &self.configuration.source.document.path {
-            self.configuration.path.clone()
-        } else {
-            source_path(native).ok()?
-        };
-        self.owners
-            .get_key_value(&candidate)
-            .filter(|(_, spec)| &spec.main == native)
-            .map(|(path, _)| path)
+        self.native_owners.get(native)
     }
 
     /// Read structural identity without opening the selected YAML or inferring a directory name.
@@ -229,6 +228,7 @@ impl SourceReader {
             name: spec.name.as_deref(),
             native_path: &spec.main,
             uuid,
+            parent: spec.logical_parent.as_ref(),
         })
     }
 
@@ -453,7 +453,13 @@ impl SourceReader {
             {
                 return Err(Error::root("source_declaration_mismatch"));
             }
-            let documents = semantic::documents(&source, &tree, &parents, mode)?;
+            let documents = semantic::documents(
+                &source,
+                &tree,
+                &parents,
+                self.spec(path)?.logical_parent.as_ref(),
+                mode,
+            )?;
             let offsets = documents
                 .iter()
                 .flat_map(|document| {
@@ -500,6 +506,45 @@ impl SourceReader {
             .get(path)
             .ok_or_else(|| Error::root("source_descriptor_undeclared").in_field(path.as_str()))
     }
+}
+
+/// Keep legacy family grouping and deferred reads unchanged until an explicit layout migration.
+fn family_owners(
+    configuration: &OwnerSnapshot,
+    mut groups: BTreeMap<SourcePath, BTreeMap<SourcePath, NativeUuid>>,
+    root_spec: OwnerSpec,
+) -> Result<BTreeMap<SourcePath, OwnerSpec>, Error> {
+    let parent = &configuration.source.document.descriptor.object.uuid;
+    let mut owners = BTreeMap::new();
+    for (kind, name) in references(&configuration.source.document.descriptor.object)? {
+        let main = reference_path("", kind, &name)?;
+        let path = source_path(&main)?;
+        let descriptors = groups
+            .remove(&path)
+            .ok_or_else(|| Error::root("source_descriptor_missing").in_field(main.as_str()))?;
+        if !descriptors.contains_key(&main) {
+            return Err(Error::root("source_identity_mismatch").in_field(path.as_str()));
+        }
+        owners.insert(
+            path,
+            OwnerSpec {
+                main,
+                kind,
+                name: Some(name),
+                parent: Some(parent.clone()),
+                rights: None,
+                predefined: None,
+                logical_parent: None,
+                external: None,
+                descriptors,
+            },
+        );
+    }
+    if !groups.is_empty() {
+        return Err(Error::root("source_descriptor_undeclared"));
+    }
+    owners.insert(configuration.path.clone(), root_spec);
+    Ok(owners)
 }
 
 /// Index only descriptor identities; the manifest does not activate undeclared owners.
@@ -577,6 +622,29 @@ fn validate_owner(
         let node = &part.descriptor.object;
         identities(node, &mut uuids)?;
         let children = references(node)?;
+        if let Some(external) = &spec.external {
+            let base = if node.kind == MetadataKind::Configuration {
+                ""
+            } else {
+                part.path
+                    .as_str()
+                    .strip_suffix(".xml")
+                    .ok_or_else(|| Error::root("source_path_invalid"))?
+            };
+            let mut actual = BTreeMap::new();
+            for (kind, name) in children {
+                if actual
+                    .insert(reference_path(base, kind, &name)?, (kind, name))
+                    .is_some()
+                {
+                    return Err(Error::root("source_descriptor_duplicate"));
+                }
+            }
+            if actual != *external {
+                return Err(Error::root("source_declaration_mismatch"));
+            }
+            continue;
+        }
         if node.kind == MetadataKind::Configuration {
             // Other top-level owners are indexed at opening, not parsed as part of the root.
             continue;
@@ -615,7 +683,7 @@ fn check_declaration(
 }
 
 /// Only the verified Name property identifies an object; opaque fragments are not consulted.
-fn node_name(node: &MetadataNode) -> Result<&str, Error> {
+pub(super) fn node_name(node: &MetadataNode) -> Result<&str, Error> {
     match node.property(PropertyName::Name) {
         Some(PropertyValue::Text(name)) => Ok(name),
         _ => Err(Error::root("source_name_missing")),

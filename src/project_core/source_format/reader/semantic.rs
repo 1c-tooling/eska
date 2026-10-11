@@ -57,9 +57,10 @@ pub(super) fn documents(
     source: &ObjectSource,
     tree: &YamlFile,
     parents: &BTreeMap<SourcePath, Option<NativeUuid>>,
+    logical_parent: Option<&ObjectId>,
     mode: PropertiesMode,
 ) -> Result<Vec<NativeMetadata>, Error> {
-    let roots = root_objects(source, parents)?;
+    let roots = root_objects(source, parents, logical_parent)?;
     let mut result = Vec::new();
     for (index, part) in std::iter::once(&source.document)
         .chain(&source.nested)
@@ -108,6 +109,7 @@ pub(super) fn documents(
 fn root_objects(
     source: &ObjectSource,
     parents: &BTreeMap<SourcePath, Option<NativeUuid>>,
+    logical_parent: Option<&ObjectId>,
 ) -> Result<BTreeMap<SourcePath, MetadataObject>, Error> {
     let mut children: BTreeMap<String, Vec<&NativeDocument>> = BTreeMap::new();
     for part in &source.nested {
@@ -118,7 +120,7 @@ fn root_objects(
         children.entry(parent.key()).or_default().push(part);
     }
     let mut result = BTreeMap::new();
-    let mut pending = vec![(&source.document, None)];
+    let mut pending = vec![(&source.document, logical_parent.cloned())];
     while let Some((part, parent)) = pending.pop() {
         let node = &part.descriptor.object;
         let metadata = metadata_object(node, parent)?;

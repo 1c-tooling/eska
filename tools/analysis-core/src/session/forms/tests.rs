@@ -30,6 +30,89 @@ fn fixture(absent: bool) -> (TestDirectory, PathBuf, AnalysisSession) {
     (directory, source, session)
 }
 
+/// A separated form owns its YAML revision and dialog, without invalidating a sibling or parent.
+#[test]
+fn separated_form_yaml_and_dialog_drive_only_their_own_current_module_bindings() {
+    let (directory, legacy, _) = fixture(false);
+    let source = directory.0.join("separated");
+    eska::project_core::source_format::prepare_descriptor_layout(&legacy)
+        .unwrap()
+        .publish(&source)
+        .unwrap();
+    let mut session = AnalysisSession::open(&source).unwrap();
+    let form = owner("Catalogs/Items/Forms/Shared/form.yaml");
+    let request = InputRequest::default();
+    session
+        .load_semantic_inputs(session.revision(), &request)
+        .unwrap();
+    assert!(session.summary().descriptor_models_complete);
+    assert_eq!(session.resource_owner(&owner(DIALOG)), Some(&form));
+    let model = session.owner(&form).unwrap();
+    assert_eq!((model.descriptors, model.modeled_descriptors), (1, 1));
+    assert!(model.forms.is_empty());
+    let initial = module_metadata(&session, MODULE);
+    let expected = bsl_metadata::xml_parser::parse_form_from_bsl_path(
+        &directory.0.join("native").join(MODULE),
+    )
+    .unwrap();
+    assert_eq!(**initial.form.as_ref().unwrap(), expected);
+    let parent = session
+        .resolve(&owner(OWNER), session.revision())
+        .unwrap()
+        .unwrap();
+    let neighbor = module_metadata(&session, OTHER);
+    let foreign = module_metadata(&session, FOREIGN);
+    let saved = fs::read_to_string(source.join(form.as_path())).unwrap();
+    let bsl = fs::read(source.join(MODULE)).unwrap();
+    assert_eq!(unused_method(&session), "CurrentHandler");
+    session
+        .apply_overlay(&form, session.revision(), 1, "[", &request)
+        .unwrap();
+    assert!(module_metadata(&session, MODULE).form.is_none());
+    assert!(Arc::ptr_eq(&neighbor, &module_metadata(&session, OTHER)));
+    assert!(Arc::ptr_eq(&foreign, &module_metadata(&session, FOREIGN)));
+    session
+        .apply_overlay(&form, session.revision(), 2, &saved, &request)
+        .unwrap();
+    session
+        .apply_resource_overlay(
+            &owner(DIALOG),
+            session.revision(),
+            7,
+            &test_form_project::dialog("CurrentHandler"),
+            &request,
+        )
+        .unwrap();
+    assert_eq!(unused_method(&session), "SavedHandler");
+    assert!(Arc::ptr_eq(&neighbor, &module_metadata(&session, OTHER)));
+    assert!(Arc::ptr_eq(&foreign, &module_metadata(&session, FOREIGN)));
+    let CanonicalMetadata::Object(parent) = parent else {
+        panic!("catalog")
+    };
+    let Some(CanonicalMetadata::Object(current)) =
+        session.resolve(&owner(OWNER), session.revision()).unwrap()
+    else {
+        panic!("current catalog")
+    };
+    assert!(Arc::ptr_eq(&parent, &current));
+    assert_eq!(fs::read(source.join(MODULE)).unwrap(), bsl);
+    assert_eq!(
+        fs::read_to_string(source.join(form.as_path())).unwrap(),
+        saved
+    );
+    let snapshot = session.metadata(&form, session.revision()).unwrap();
+    let eska::analysis_core::InputState::Ready(input) = snapshot.input else {
+        panic!("current YAML")
+    };
+    assert_eq!(
+        input.documents[0].descriptor.objects[0]
+            .metadata
+            .id()
+            .as_str(),
+        "catalog:Items/form:Shared"
+    );
+}
+
 /// Query the real physical module consumer rather than only inspecting the tree projection.
 fn module_metadata(session: &AnalysisSession, module: &str) -> Arc<hir::ModuleMetadata> {
     let file_id = session.modules.get(&owner(module)).unwrap().file;

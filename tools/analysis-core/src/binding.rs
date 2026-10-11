@@ -18,11 +18,16 @@ pub struct OwnerBinding {
     pub name: Option<String>,
     pub main: FileId,
     pub native_path: SourcePath,
+    /// Only top-level owners enter global resolver collections; nested slots retain their context.
+    pub nested: bool,
 }
 
 impl OwnerBinding {
     /// Register supported resolver families without activating unrelated files.
     pub fn add_to_listing(&self, listing: &mut MetadataListingData) {
+        if self.nested {
+            return;
+        }
         let Some(name) = &self.name else {
             return;
         };

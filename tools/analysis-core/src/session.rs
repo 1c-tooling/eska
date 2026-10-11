@@ -199,6 +199,7 @@ impl AnalysisSession {
                 name: identity.name.map(str::to_owned),
                 main,
                 native_path: identity.native_path.clone(),
+                nested: identity.parent.is_some(),
             };
             file_set.insert(
                 main,

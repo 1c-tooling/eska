@@ -123,6 +123,9 @@ pub struct SourceManifest {
     pub input_revision: String,
     pub directories: Vec<SourcePath>,
     pub files: Vec<FileEntry>,
+    /// Reverse context is required for separated descriptors, never inferred by scanning files.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub descriptor_contexts: Vec<super::DescriptorContext>,
 }
 
 /// Original byte fingerprints record the input, rather than claiming edited YAML is unchanged.
@@ -152,7 +155,9 @@ impl SourceManifest {
     /// # Errors
     /// Returns unsupported versions or malformed, colliding file-map entries.
     pub fn validate(&self) -> Result<(), Error> {
-        if self.schema_version != SCHEMA_VERSION {
+        if self.schema_version != SCHEMA_VERSION
+            && self.schema_version != super::DESCRIPTOR_LAYOUT_VERSION
+        {
             return Err(Error::root("source_schema_unsupported"));
         }
         if self.rules_version != RULES_VERSION {
@@ -179,8 +184,23 @@ impl SourceManifest {
                 return Err(Error::root("source_hash_invalid"));
             }
         }
+        super::layout::validate_map(self)?;
         Ok(())
     }
+}
+
+/// Provenance is machine data; compact v2 avoids exceeding the reader quota on large configurations.
+pub(super) fn manifest_text(manifest: &SourceManifest) -> Result<String, Error> {
+    let text = if manifest.schema_version == super::DESCRIPTOR_LAYOUT_VERSION {
+        serde_json::to_string(manifest)
+    } else {
+        serde_json::to_string_pretty(manifest)
+    }
+    .map_err(|_| Error::root("source_schema_invalid"))?;
+    if text.len() as u64 > super::files::MAX_TEXT_BYTES {
+        return Err(Error::root("source_document_too_large"));
+    }
+    Ok(text)
 }
 
 /// SHA-256 fingerprints use one stable lowercase hexadecimal spelling.

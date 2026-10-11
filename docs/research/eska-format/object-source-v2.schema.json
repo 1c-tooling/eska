@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ESKA standalone descriptor source for reverse-map version 2",
+  "allOf": [
+    {
+      "$ref": "object-source.schema.json"
+    },
+    {
+      "properties": {
+        "nested": {
+          "maxItems": 0
+        }
+      }
+    }
+  ]
+}

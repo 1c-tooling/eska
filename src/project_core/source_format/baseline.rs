@@ -593,6 +593,7 @@ fn verified_snapshot(manifest: &Manifest, inventory: &Inventory) -> Result<Inven
         input_revision: manifest.input_revision.clone(),
         directories: manifest.directories.clone(),
         files: manifest.files.clone(),
+        descriptor_contexts: Vec::new(),
     }
     .validate()
     .map_err(|_| Error::root("source_baseline_corrupt"))?;

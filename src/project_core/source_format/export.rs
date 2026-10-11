@@ -121,6 +121,7 @@ impl Package {
         }
         validate_sources(&manifest, &snapshot, &owners, &documents)?;
         validate_composition(&documents)?;
+        super::layout::validate_documents(&manifest, &documents)?;
         Ok(Self {
             manifest,
             snapshot,

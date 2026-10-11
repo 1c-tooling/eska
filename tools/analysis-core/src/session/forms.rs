@@ -42,7 +42,13 @@ pub(super) fn register(
         let identity = reader
             .declared_form(path)
             .ok_or(SessionError::MissingListing)?;
-        if identity.kind != MetadataKind::Form {
+        if identity.kind != MetadataKind::Form
+            || reader
+                .declared_owner(identity.owner)
+                .map_err(SessionError::Source)?
+                .native_path
+                == path
+        {
             continue;
         }
         let file = FileId(u32::try_from(next_file).map_err(|_| SessionError::TooManyFiles)?);

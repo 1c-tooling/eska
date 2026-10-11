@@ -36,11 +36,12 @@ pub(super) fn declared_forms(
         for (path, uuid) in &spec.descriptors {
             let kind = if path == &spec.main && spec.kind == MetadataKind::CommonForm {
                 MetadataKind::CommonForm
-            } else if path != &spec.main
-                && path
-                    .as_str()
-                    .rsplit_once("/Forms/")
-                    .is_some_and(|(_, name)| !name.contains('/'))
+            } else if spec.kind == MetadataKind::Form && path == &spec.main
+                || path != &spec.main
+                    && path
+                        .as_str()
+                        .rsplit_once("/Forms/")
+                        .is_some_and(|(_, name)| !name.contains('/'))
             {
                 MetadataKind::Form
             } else {

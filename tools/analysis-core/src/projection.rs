@@ -104,6 +104,7 @@ pub fn project(
                     kind,
                     MetadataKind::Role
                         | MetadataKind::CommonForm
+                        | MetadataKind::Form
                         | MetadataKind::Catalog
                         | MetadataKind::ChartOfAccounts
                         | MetadataKind::ChartOfCalculationTypes

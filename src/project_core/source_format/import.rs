@@ -24,6 +24,25 @@ use super::{
 /// Returns profile, composition, path, identity, changed-input or I/O failures. On an ordinary
 /// write failure only the newly claimed output is removed; cleanup failures are reported.
 pub fn import_designer(input: &Path, destination: &Path) -> Result<SourceManifest, Error> {
+    import(input, destination, false)
+}
+
+/// Import independently saved descriptors into separate authoring files with reverse-map v2.
+///
+/// Existing family projects are not changed; both layouts use the same native validation rules.
+/// Resource bytes and native paths remain unchanged in this first separated-layout profile.
+///
+/// # Errors
+/// Returns the same profile, composition, destination and changed-input failures as family import.
+pub fn import_designer_separated(
+    input: &Path,
+    destination: &Path,
+) -> Result<SourceManifest, Error> {
+    import(input, destination, true)
+}
+
+/// Stage all parsed descriptors before publishing either explicitly selected physical layout.
+fn import(input: &Path, destination: &Path, separated: bool) -> Result<SourceManifest, Error> {
     let inventory = Inventory::read(input)?;
     let input = fs::canonicalize(input).map_err(|error| files::io(&error))?;
     let destination = destination_path(&input, destination)?;
@@ -52,15 +71,33 @@ pub fn import_designer(input: &Path, destination: &Path) -> Result<SourceManifes
         sources.insert(source_path(&path)?, family);
     }
     sources.insert(SourcePath::parse("configuration.yaml")?, configuration);
-    let manifest = importer.manifest(&sources)?;
+    let sources = if separated {
+        super::layout::separate(sources)?
+    } else {
+        sources
+    };
+    let mut manifest = importer.manifest(&sources)?;
+    if separated {
+        manifest.schema_version = super::DESCRIPTOR_LAYOUT_VERSION;
+        manifest.descriptor_contexts =
+            super::layout::contexts(&super::layout::documents(&sources))?;
+    }
     manifest.validate()?;
     let yaml: BTreeMap<_, _> = sources
         .iter()
         .map(|(path, source)| Ok((path, source.to_yaml()?)))
         .collect::<Result<_, Error>>()?;
     validate_output(&manifest, &sources)?;
+    let manifest_text = super::package::manifest_text(&manifest)?;
     fs::create_dir(&destination).map_err(|error| files::io(&error))?;
-    let result = materialize(&input, &destination, &inventory, &manifest, &yaml);
+    let result = materialize(
+        &input,
+        &destination,
+        &inventory,
+        &manifest,
+        &yaml,
+        &manifest_text,
+    );
     if let Err(error) = result {
         fs::remove_dir_all(&destination).map_err(|_| {
             Error::root("source_cleanup_failed")
@@ -158,6 +195,7 @@ impl Importer<'_> {
             input_revision: self.inventory.revision.clone(),
             directories: self.inventory.directories.clone(),
             files: files.into_values().collect(),
+            descriptor_contexts: Vec::new(),
         })
     }
 }
@@ -242,6 +280,7 @@ fn materialize(
     inventory: &Inventory,
     manifest: &SourceManifest,
     yaml: &BTreeMap<&SourcePath, String>,
+    manifest_text: &str,
 ) -> Result<(), Error> {
     for (path, source) in yaml {
         files::write(&destination.join(path.as_path()), source.as_bytes())?;
@@ -254,7 +293,5 @@ fn materialize(
     if Inventory::read(input)? != *inventory {
         return Err(Error::root("source_input_changed"));
     }
-    let json =
-        serde_json::to_vec_pretty(manifest).map_err(|_| Error::root("source_schema_invalid"))?;
-    files::write(&destination.join(files::MANIFEST), &json)
+    files::write(&destination.join(files::MANIFEST), manifest_text.as_bytes())
 }

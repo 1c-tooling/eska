@@ -16,6 +16,12 @@ XML-экспорт не участвуют в чтении.
 Подключены главные дескрипторы реализованных адаптеров и вложенные формы с XML dialog. Полнота чтения,
 полнота главных моделей и покрытие всех вложенных документов различаются.
 
+[Раздельное расположение EF-24](../../docs/research/eska-format/descriptor-layout.md)
+поддерживается тем же reader/controller. Самостоятельный `form.yaml` получает
+один canonical slot с собственной зависимостью на dialog, без второго slot
+у родителя. Invalid/overlay формы меняет её текущий контекст BSL; модели родителя
+и соседей сохраняются. Native identities модулей остаются прежними.
+
 [Текущие предопределённые данные](../../docs/research/eska-format/analyzer-predefined.md)
 связывают declared ресурс и YAML владельца через общий controller. Их items
 публикуются в главном `MetadataObject` и меняют native completion. Неверный XML

@@ -10,7 +10,10 @@ use super::{
     config::{self, ProjectConfig},
     platform_settings::{BuildSettings, PlatformVersion},
     publish::{self, PublishError},
-    source_format::{AcceptedRef, Error, NativeUuid, SourcePath, accept_source, import_designer},
+    source_format::{
+        AcceptedRef, Error, NativeUuid, SourcePath, accept_source, import_designer,
+        import_designer_separated,
+    },
     transport::TransportPlan,
 };
 
@@ -40,6 +43,35 @@ pub fn import_project(
     platform: Option<&PlatformVersion>,
     frozen: &[NativeUuid],
 ) -> Result<ImportedProject, Error> {
+    create_project(input, destination, name, platform, frozen, false)
+}
+
+/// Create a new experimental project with separate descriptor files and an independently pinned base.
+///
+/// Native input is the supplied authority, not an existing editable source tree. The legacy
+/// creation API retains family layout; neither path upgrades an existing checkout when opening it.
+///
+/// # Errors
+/// Returns the same source, exclusive destination, policy and publication failures as family import.
+pub fn import_separated_project(
+    input: &Path,
+    destination: &Path,
+    name: ProjectName,
+    platform: Option<&PlatformVersion>,
+    frozen: &[NativeUuid],
+) -> Result<ImportedProject, Error> {
+    create_project(input, destination, name, platform, frozen, true)
+}
+
+/// Project settings and authority publication are identical for both explicit descriptor layouts.
+fn create_project(
+    input: &Path,
+    destination: &Path,
+    name: ProjectName,
+    platform: Option<&PlatformVersion>,
+    frozen: &[NativeUuid],
+    separated: bool,
+) -> Result<ImportedProject, Error> {
     let mut config = ProjectConfig::new(ProjectType::Configuration)
         .with_name(name)
         .with_source_format(SourceFormat::Eska {
@@ -57,7 +89,7 @@ pub fn import_project(
         .map_err(|_| Error::root("source_schema_invalid"))?;
     let root = destination_path(input, destination)?;
     fs::create_dir(&root).map_err(|error| io_error(&error))?;
-    let result = populate(input, &root, config, &manifest, frozen);
+    let result = populate(input, &root, config, &manifest, frozen, separated);
     if let Err(error) = result {
         fs::remove_dir_all(&root)
             .map_err(|_| Error::root("source_cleanup_failed").in_field(error.code))?;
@@ -73,9 +105,14 @@ fn populate(
     config: ProjectConfig,
     manifest: &str,
     frozen: &[NativeUuid],
+    separated: bool,
 ) -> Result<ImportedProject, Error> {
     let source = root.join(config.source());
-    import_designer(input, &source)?;
+    if separated {
+        import_designer_separated(input, &source)?;
+    } else {
+        import_designer(input, &source)?;
+    }
     fs::create_dir(root.join(".eska")).map_err(|error| io_error(&error))?;
     let accepted = accept_source(&source, &root.join(ACCEPTED_DIRECTORY), frozen)?;
     let project = config

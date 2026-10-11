@@ -8,6 +8,7 @@ mod export;
 mod files;
 mod fragment;
 mod import;
+mod layout;
 mod model;
 mod native_writer;
 mod package;
@@ -26,7 +27,11 @@ pub use edit::{
     SourceEditPlan, SourcePropertyEdit, prepare_property_edit, prepare_property_edit_text,
 };
 pub use export::export_designer;
-pub use import::import_designer;
+pub use import::{import_designer, import_designer_separated};
+pub use layout::{
+    DESCRIPTOR_LAYOUT_VERSION, DescriptorContext, DescriptorLayoutPlan, LayoutChange,
+    LayoutPublication, prepare_descriptor_layout,
+};
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 pub use protected::{
     Exclusion, ExclusionAction, FileOrigin, InputAuthority, InputFile, MappedFile, OriginTexts,
