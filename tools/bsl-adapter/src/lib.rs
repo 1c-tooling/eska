@@ -9,6 +9,7 @@ mod properties;
 mod register;
 mod scheduled_job;
 mod simple_object;
+mod subsystem;
 mod type_description;
 
 pub use common_module::common_module;
@@ -18,6 +19,7 @@ pub use object::metadata_object;
 pub use register::register;
 pub use scheduled_job::scheduled_job;
 pub use simple_object::{constant_object, enum_object};
+pub use subsystem::subsystem;
 pub use type_description::attribute_type;
 
 use std::ops::Range;

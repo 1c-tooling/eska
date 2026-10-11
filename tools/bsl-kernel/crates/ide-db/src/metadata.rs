@@ -923,6 +923,7 @@ pub enum CanonicalMetadata {
     DefinedType(Arc<bsl_metadata::DefinedType>),
     EventSubscription(Arc<bsl_metadata::EventSubscription>),
     ScheduledJob(Arc<bsl_metadata::ScheduledJob>),
+    Subsystem(Arc<bsl_metadata::Subsystem>),
 }
 
 impl CanonicalMetadata {
@@ -935,6 +936,7 @@ impl CanonicalMetadata {
             Self::DefinedType(value) => value.estimated_heap_size(),
             Self::EventSubscription(value) => value.estimated_heap_size(),
             Self::ScheduledJob(value) => value.estimated_heap_size(),
+            Self::Subsystem(value) => value.estimated_heap_size(),
         }
     }
 }
@@ -1975,6 +1977,17 @@ pub fn resolve_subsystem(
 
     let index = subsystem_index(db, listing);
     let main = index.lookup(&name)?;
+    if let Some(input) = listing.canonical_metadata(db).get(&main) {
+        let _source_revision = input.source_revision(db);
+        let value = input.value(db).as_ref()?;
+        let CanonicalMetadata::Subsystem(subsystem) = value.as_ref() else {
+            return None;
+        };
+        if !stdx::case::eq_ignore_case(subsystem.name(), &name) {
+            return None;
+        }
+        return Some(Arc::clone(subsystem));
+    }
     let file = SubsystemFile::new(db, main);
     let subsystem = parse_subsystem_query(db, file)?;
     warn_on_stem_name_divergence("Subsystem", &name, subsystem.name());

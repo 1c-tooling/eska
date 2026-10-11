@@ -230,6 +230,12 @@ reader; current flags/callback и completion проверены RU/EN. 259 tool 
 kernel 1106/4 и все обязательные gates прошли. Checker C1 сохранил 26 findings
 и убрал ещё 83 отказа по моделям; остальные 1 518 issues сохранили exit 2.
 EF-18 остаётся `IN_PROGRESS`; расписание и запуск заданий не реализованы анализатором.
+[Главные модели подсистем](../research/eska-format/analyzer-subsystems.md)
+передают Content и прямые дочерние имена. 197 моделей C1/C2/C3 совпали с native
+reader; current YAML и completion проверены RU/EN. 261 tool tests, kernel 1107/4
+и все обязательные gates прошли. Checker C1 сохранил 26 findings; вместо 13
+отказов по виду осталось семь отказов по nested coverage, всего 1 512 issues.
+1 775 вложенных descriptors пока без canonical model; EF-18 — `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

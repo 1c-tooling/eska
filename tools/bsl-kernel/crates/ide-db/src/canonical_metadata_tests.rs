@@ -11,9 +11,10 @@ use crate::{
         common_module_index, config_index, defined_type_index, event_subscription_index,
         resolve_common_module, resolve_common_module_by_file, resolve_defined_type,
         resolve_event_subscription, resolve_register, resolve_register_by_name,
-        resolve_scheduled_job, scheduled_job_index, CanonicalMetadata, CanonicalMetadataInput,
-        CanonicalMetadataInputs, CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry,
-        MdoEntry, MetadataListingData, MetadataListingInput, ScheduledJobEntry,
+        resolve_scheduled_job, resolve_subsystem, scheduled_job_index, subsystem_index,
+        CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, CommonModuleEntry,
+        DefinedTypeEntry, EventSubscriptionEntry, MdoEntry, MetadataListingData,
+        MetadataListingInput, ScheduledJobEntry, SubsystemEntry,
     },
     RootDatabaseImpl,
 };
@@ -176,6 +177,66 @@ fn canonical_scheduled_job_preserves_neighbors_and_rejects_unavailable_or_wrong_
     ))));
     assert!(resolve_scheduled_job(&database, listing, "Задание".into()).is_none());
     assert_eq!(database.salsa_family_churn("parse_scheduled_job_query").expect("events").0, 0);
+}
+
+/// Subsystem members and child names publish one current value without recomputing a neighbor.
+#[test]
+fn canonical_subsystem_preserves_neighbors_and_rejects_unavailable_or_wrong_identity() {
+    let (mut database, listing) = database();
+    listing.set_subsystems(&mut database).to(Arc::new(vec![
+        SubsystemEntry { name: "Подсистема".into(), main: FileId(8) },
+        SubsystemEntry { name: "Neighbor".into(), main: FileId(9) },
+    ]));
+    let make = |name: &str, member: &str, child: &str| {
+        Arc::new(
+            bsl_metadata::Subsystem::new(name)
+                .with_content(vec![(MdoType::Catalog, member.into())])
+                .with_child_subsystems(vec![child.into()]),
+        )
+    };
+    let saved = make("Подсистема", "Saved", "First");
+    let neighbor = make("Neighbor", "Other", "Untouched");
+    let provided = input(&database, CanonicalMetadata::Subsystem(Arc::clone(&saved)));
+    let untouched = input(&database, CanonicalMetadata::Subsystem(Arc::clone(&neighbor)));
+    listing
+        .set_canonical_metadata(&mut database)
+        .to(Arc::new([(FileId(8), provided), (FileId(9), untouched)].into_iter().collect()));
+    let index = Arc::clone(subsystem_index(&database, listing));
+    assert!(Arc::ptr_eq(
+        &saved,
+        &resolve_subsystem(&database, listing, "ПОДСИСТЕМА".into()).expect("saved")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_subsystem(&database, listing, "Neighbor".into()).expect("neighbor")
+    ));
+    assert!(database.salsa_events_reset());
+    let current = make("Подсистема", "Current", "Edited");
+    provided
+        .set_value(&mut database)
+        .to(Some(Arc::new(CanonicalMetadata::Subsystem(Arc::clone(&current)))));
+    provided.set_source_revision(&mut database).to("editor".into());
+    assert!(Arc::ptr_eq(
+        &current,
+        &resolve_subsystem(&database, listing, "подсистема".into()).expect("current")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_subsystem(&database, listing, "Neighbor".into()).expect("unchanged neighbor")
+    ));
+    assert_eq!(database.salsa_family_churn("resolve_subsystem").expect("events").0, 1);
+    assert!(Arc::ptr_eq(&index, subsystem_index(&database, listing)));
+    provided.set_value(&mut database).to(None);
+    assert!(resolve_subsystem(&database, listing, "Подсистема".into()).is_none());
+    provided
+        .set_value(&mut database)
+        .to(Some(Arc::new(CanonicalMetadata::Subsystem(make("Other", "Wrong", "Wrong")))));
+    assert!(resolve_subsystem(&database, listing, "Подсистема".into()).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::CommonModule(
+        Arc::new(CommonModule::builder().name("Подсистема").build()),
+    ))));
+    assert!(resolve_subsystem(&database, listing, "Подсистема".into()).is_none());
+    assert_eq!(database.salsa_family_churn("parse_subsystem_query").expect("events").0, 0);
 }
 
 /// Supply typed register semantics directly, not through an XML-shaped VFS string.

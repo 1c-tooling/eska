@@ -30,6 +30,7 @@ mod saved_watcher_registration;
 mod scheduled_job_queries;
 mod semantic_diagnostic_queries;
 mod signature_queries;
+mod subsystem_queries;
 mod support;
 mod watched_files;
 mod watcher_registration;

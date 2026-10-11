@@ -6,7 +6,7 @@ use bsl_metadata::MdoType;
 use eska::project_core::{MetadataKind, source_format::SourcePath};
 use ide_db::metadata::{
     CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, MdoEntry, MetadataListingData,
-    ScheduledJobEntry,
+    ScheduledJobEntry, SubsystemEntry,
 };
 use vfs::FileId;
 
@@ -26,6 +26,12 @@ impl OwnerBinding {
             return;
         };
         match self.kind {
+            MetadataKind::Subsystem => {
+                listing.subsystems.push(SubsystemEntry {
+                    name: name.clone(),
+                    main: self.main,
+                });
+            }
             MetadataKind::ScheduledJob => {
                 listing.scheduled_jobs.push(ScheduledJobEntry {
                     name: name.clone(),

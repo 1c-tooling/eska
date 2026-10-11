@@ -1383,6 +1383,17 @@ JSON RU/EN и все 7 829 исходных файлов сохранены. Gra
 не доказаны. Остальные модели, полная семантика, общий memory budget, edits и
 Explorer ещё в работе; EF-18 — `IN_PROGRESS`, очередь этапов не меняется.
 
+[Главные модели подсистем](../research/eska-format/analyzer-subsystems.md)
+подключены как current canonical inputs: Content и прямые дочерние имена
+сохраняются без XML. Все 197 моделей C1/C2/C3 совпали с native reader; listing,
+editor lifecycle, invalid/close и координаты проверены в IDE-процессах RU/EN.
+261 tool tests, kernel 1107/4 и все 6 adapter/5 kernel/19 tool/15 root gates прошли.
+Полный checker C1 сохранил 26 findings и все 7 829 исходных файлов; 13 отказов
+по виду заменились семью отказами по nested descriptors, осталось 1 512 issues.
+JSON RU/EN совпал, graph 206/214 и версии прежние. 1 775 вложенных descriptors
+ещё не имеют canonical model; прочие модели, полная семантика, общий memory
+budget, edits и Explorer остаются в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

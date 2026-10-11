@@ -784,6 +784,9 @@ preset = "trunk"
 [Регламентные задания](docs/research/eska-format/analyzer-scheduled-jobs.md)
 передают текущие MethodName/Predefined/Use в ту же сессию; имена также доступны
 в автодополнении метаданных.
+[Подсистемы](docs/research/eska-format/analyzer-subsystems.md) передают Content
+и имена прямых детей из главного YAML descriptor; вложенные descriptors сохраняют
+явную неполноту покрытия.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

@@ -235,6 +235,10 @@ invalid input очищает прежнюю модель, BSL completion исп�
 используют `CanonicalMetadata::ScheduledJob`; MethodName/Predefined/Use из current
 YAML и имена BSL completions согласованы с тем же host. Расписание в эту BSL-модель
 не входит, исходные свойства остаются в общем descriptor.
+[Подсистемы](../../docs/research/eska-format/analyzer-subsystems.md) используют
+`CanonicalMetadata::Subsystem` для главного descriptor: current Content и имена
+прямых детей согласованы с metadata listing. Вложенные descriptors сохраняют
+`metadata_descriptors_unmodeled`; готовая главная модель не скрывает неполноту.
 [Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
 сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
 Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.

@@ -132,6 +132,8 @@ fn canonical(
         }));
     };
     Some(match kind {
+        MetadataKind::Subsystem => adapter::subsystem(descriptor)
+            .map(|model| CanonicalMetadata::Subsystem(Arc::new(model))),
         MetadataKind::ScheduledJob => adapter::scheduled_job(root)
             .map(|model| CanonicalMetadata::ScheduledJob(Arc::new(model))),
         MetadataKind::EventSubscription => adapter::event_subscription(root)

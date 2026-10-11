@@ -7,7 +7,7 @@ use crate::metadata_object::{MdoType, Name};
 /// metadata objects belonging to it and its directly-nested child subsystems. Subsystems
 /// are not data-bearing objects (no manager, ref type, or attributes); they exist here so
 /// the call graph can answer "which subsystems contain this object" for impact analysis.
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Subsystem {
     name: String,
     /// Member metadata objects from `<Content>`, as the (type, name) pairs that parsed.
