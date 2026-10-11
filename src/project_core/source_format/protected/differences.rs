@@ -65,16 +65,13 @@ pub(super) fn exclusion(
     );
     let baseline = base.reference().sha256.clone();
     let operation_key = match operation {
-        Operation::Property(PropertyName::Name) => "property:Name",
-        Operation::Property(PropertyName::Comment) => "property:Comment",
-        Operation::Property(PropertyName::Version) => "property:Version",
-        Operation::Property(PropertyName::Synonym) => "property:Synonym",
-        Operation::Module => "module",
-        Operation::Resource => "resource",
-        Operation::Create => "create",
-        Operation::Delete => "delete",
-        Operation::Rename => "rename",
-        Operation::Move => "move",
+        Operation::Property(name) => format!("property:{}", name.as_str()),
+        Operation::Module => "module".into(),
+        Operation::Resource => "resource".into(),
+        Operation::Create => "create".into(),
+        Operation::Delete => "delete".into(),
+        Operation::Rename => "rename".into(),
+        Operation::Move => "move".into(),
     };
     let action_key = match action {
         ExclusionAction::Restored => "restored",
@@ -85,7 +82,7 @@ pub(super) fn exclusion(
         baseline.as_str(),
         path.as_str(),
         uuid.as_ref().map_or("", NativeUuid::as_str),
-        operation_key,
+        operation_key.as_str(),
         action_key,
         code,
     ]
@@ -144,7 +141,7 @@ impl Walker<'_> {
                 && let Some(name) = value
                     .get("name")
                     .and_then(Value::as_str)
-                    .and_then(property_name)
+                    .and_then(PropertyName::from_native)
             {
                 operation = Operation::Property(name);
             }
@@ -206,16 +203,5 @@ impl Walker<'_> {
                 ));
             }
         }
-    }
-}
-
-/// Match exact schema names; locale never changes a property coordinate or permission.
-fn property_name(name: &str) -> Option<PropertyName> {
-    match name {
-        "Name" => Some(PropertyName::Name),
-        "Comment" => Some(PropertyName::Comment),
-        "Version" => Some(PropertyName::Version),
-        "Synonym" => Some(PropertyName::Synonym),
-        _ => None,
     }
 }

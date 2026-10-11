@@ -82,9 +82,10 @@ fn current_common_module_visibility_controls_cold_completion_body_loading_in_bot
         .unwrap()
         .to_string();
     let saved = fs::read_to_string(source.join(TARGET)).unwrap();
-    let denied = saved.replace(
-        "<ServerCall>true</ServerCall>",
-        "<ServerCall>false</ServerCall>",
+    let denied = support::property::boolean_value(
+        &saved,
+        eska::project_core::source_format::PropertyName::ServerCall,
+        false,
     );
     assert_ne!(denied, saved);
     for lang in ["en-US", "ru-RU"] {

@@ -124,7 +124,13 @@ impl Writer {
         };
         let tag = name.as_str();
         match value {
-            PropertyValue::Text(value) => self.text_element(tag, value, indent),
+            PropertyValue::Text(value) | PropertyValue::Enumeration(value) => {
+                self.text_element(tag, value, indent);
+            }
+            PropertyValue::Boolean(value) => {
+                self.text_element(tag, if *value { "true" } else { "false" }, indent);
+            }
+            PropertyValue::Integer(value) => self.text_element(tag, value.as_str(), indent),
             PropertyValue::Empty => {
                 self.indent(indent);
                 let _ = write!(self.output, "<{tag}/>{}", self.eol);

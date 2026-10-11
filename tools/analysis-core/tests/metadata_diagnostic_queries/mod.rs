@@ -80,7 +80,7 @@ fn metadata_diagnostics_follow_editor_correction_invalid_and_missing_close() {
     let saved = fs::read_to_string(&file).unwrap();
     let draft = format!(
         "# Я😀 current diagnostics\r\n{}",
-        saved.replace("<Server>true</Server>", "<Server>Future</Server>")
+        support::property::server_value(&saved, "Future")
     );
     assert_ne!(draft, saved);
     let mut previous = None;

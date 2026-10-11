@@ -4,7 +4,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::project_core::MetadataKind;
 
-use super::Error;
+use super::{Error, ExactUnsigned};
 
 /// A checked native UUID; no path-derived replacement identity is introduced.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -159,13 +159,41 @@ pub enum Property {
     },
 }
 
-/// The initial verified property vocabulary; adding a name requires its own inverse rule.
+/// Verified native properties; each additional name has an owner-specific inverse rule.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum PropertyName {
     Name,
     Comment,
     Version,
     Synonym,
+    Global,
+    ClientManagedApplication,
+    ClientOrdinaryApplication,
+    Server,
+    ExternalConnection,
+    ServerCall,
+    Privileged,
+    Hierarchical,
+    Autonumbering,
+    CheckUnique,
+    LimitLevelCount,
+    MultiLine,
+    PasswordMode,
+    MarkNegatives,
+    FillFromFillingValue,
+    CodeLength,
+    DescriptionLength,
+    NumberLength,
+    LineNumberLength,
+    LevelCount,
+    CodeType,
+    NumberType,
+    CodeAllowedLength,
+    NumberAllowedLength,
+    InformationRegisterPeriodicity,
+    ReturnValuesReuse,
+    FillChecking,
+    Indexing,
 }
 
 impl PropertyName {
@@ -177,6 +205,34 @@ impl PropertyName {
             Self::Comment => "Comment",
             Self::Version => "Version",
             Self::Synonym => "Synonym",
+            Self::Global => "Global",
+            Self::ClientManagedApplication => "ClientManagedApplication",
+            Self::ClientOrdinaryApplication => "ClientOrdinaryApplication",
+            Self::Server => "Server",
+            Self::ExternalConnection => "ExternalConnection",
+            Self::ServerCall => "ServerCall",
+            Self::Privileged => "Privileged",
+            Self::Hierarchical => "Hierarchical",
+            Self::Autonumbering => "Autonumbering",
+            Self::CheckUnique => "CheckUnique",
+            Self::LimitLevelCount => "LimitLevelCount",
+            Self::MultiLine => "MultiLine",
+            Self::PasswordMode => "PasswordMode",
+            Self::MarkNegatives => "MarkNegatives",
+            Self::FillFromFillingValue => "FillFromFillingValue",
+            Self::CodeLength => "CodeLength",
+            Self::DescriptionLength => "DescriptionLength",
+            Self::NumberLength => "NumberLength",
+            Self::LineNumberLength => "LineNumberLength",
+            Self::LevelCount => "LevelCount",
+            Self::CodeType => "CodeType",
+            Self::NumberType => "NumberType",
+            Self::CodeAllowedLength => "CodeAllowedLength",
+            Self::NumberAllowedLength => "NumberAllowedLength",
+            Self::InformationRegisterPeriodicity => "InformationRegisterPeriodicity",
+            Self::ReturnValuesReuse => "ReturnValuesReuse",
+            Self::FillChecking => "FillChecking",
+            Self::Indexing => "Indexing",
         }
     }
 }
@@ -191,6 +247,9 @@ impl PropertyName {
 )]
 pub enum PropertyValue {
     Text(String),
+    Boolean(bool),
+    Integer(ExactUnsigned),
+    Enumeration(String),
     Empty,
     Nil,
     Localized(Vec<LocalizedText>),

@@ -236,6 +236,56 @@
             "value"
           ],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "boolean"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "integer"
+            },
+            "value": {
+              "type": "string",
+              "pattern": "^[0-9]+(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "enumeration"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "additionalProperties": false
         }
       ]
     },
@@ -252,7 +302,35 @@
                 "Name",
                 "Comment",
                 "Version",
-                "Synonym"
+                "Synonym",
+                "Global",
+                "ClientManagedApplication",
+                "ClientOrdinaryApplication",
+                "Server",
+                "ExternalConnection",
+                "ServerCall",
+                "Privileged",
+                "Hierarchical",
+                "Autonumbering",
+                "CheckUnique",
+                "LimitLevelCount",
+                "MultiLine",
+                "PasswordMode",
+                "MarkNegatives",
+                "FillFromFillingValue",
+                "CodeLength",
+                "DescriptionLength",
+                "NumberLength",
+                "LineNumberLength",
+                "LevelCount",
+                "CodeType",
+                "NumberType",
+                "CodeAllowedLength",
+                "NumberAllowedLength",
+                "InformationRegisterPeriodicity",
+                "ReturnValuesReuse",
+                "FillChecking",
+                "Indexing"
               ]
             },
             "value": {

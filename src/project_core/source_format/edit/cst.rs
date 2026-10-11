@@ -27,27 +27,60 @@ pub(super) fn replace(
     if original_text.contains("\r\n") && original_text.replace("\r\n", "").contains('\n') {
         return Err(unsupported());
     }
+    update_value(mapping, previous, next)?;
+    let mut replacement = mapping.to_string();
+    // yaml-edit's literal factory omits the terminating transport newline when the
+    // semantic string has strip chomping. Retain the original subtree boundary.
+    if original_text.ends_with('\n') && !replacement.ends_with('\n') {
+        replacement.push('\n');
+    }
+    if scalar(previous).is_some() && matches!(next, PropertyValue::Empty | PropertyValue::Nil) {
+        remove_scalar(mapping, &mut replacement)?;
+    }
+    // Newly manufactured CST tokens use LF. Only this subtree adopts its original EOL;
+    // mixed surrounding text and unrelated scalar escape spellings remain untouched.
+    if original_text.contains("\r\n") {
+        replacement = replacement.replace("\r\n", "\n").replace('\n', "\r\n");
+    }
+    if comments(original_text) != comments(&replacement) {
+        return Err(unsupported());
+    }
+    let mut output = input.to_owned();
+    output.get(original.clone()).ok_or_else(unsupported)?;
+    output.replace_range(original, &replacement);
+    Ok(output)
+}
+
+/// Change one scalar domain or localized text sequence without regenerating its enclosing owner.
+fn update_value(
+    mapping: &Mapping,
+    previous: &PropertyValue,
+    next: &PropertyValue,
+) -> Result<(), Error> {
+    if let Some((state, value)) = scalar(next) {
+        if matches!(previous, PropertyValue::Empty | PropertyValue::Nil) {
+            set_string(mapping, "state", state)?;
+            mapping.set("value", value);
+            return Ok(());
+        }
+        if scalar(previous).is_some_and(|(old_state, _)| old_state == state) {
+            match next {
+                PropertyValue::Boolean(value) => mapping.set("value", ScalarValue::from(*value)),
+                PropertyValue::Text(value) | PropertyValue::Enumeration(value) => {
+                    set_string(mapping, "value", value)?;
+                }
+                PropertyValue::Integer(value) => set_string(mapping, "value", value.as_str())?,
+                _ => return Err(unsupported()),
+            }
+            return Ok(());
+        }
+    }
     match (previous, next) {
-        (PropertyValue::Text(_), PropertyValue::Text(value)) => {
-            set_string(mapping, "value", value)?;
+        (PropertyValue::Empty | PropertyValue::Nil, PropertyValue::Empty | PropertyValue::Nil) => {
+            set_empty_state(mapping, next)?;
         }
-        (PropertyValue::Empty | PropertyValue::Nil, PropertyValue::Text(value)) => {
-            set_string(mapping, "state", "text")?;
-            mapping.set("value", ScalarValue::string(value));
-        }
-        (
-            PropertyValue::Empty | PropertyValue::Nil | PropertyValue::Text(_),
-            PropertyValue::Empty | PropertyValue::Nil,
-        ) => {
-            set_string(
-                mapping,
-                "state",
-                if matches!(next, PropertyValue::Empty) {
-                    "empty"
-                } else {
-                    "nil"
-                },
-            )?;
+        (_, PropertyValue::Empty | PropertyValue::Nil) if scalar(previous).is_some() => {
+            set_empty_state(mapping, next)?;
         }
         (PropertyValue::Localized(old), PropertyValue::Localized(new))
             if old.len() == new.len()
@@ -69,41 +102,49 @@ pub(super) fn replace(
         }
         _ => return Err(unsupported()),
     }
-    let mut replacement = mapping.to_string();
-    // yaml-edit's literal factory omits the terminating transport newline when the
-    // semantic string has strip chomping. Retain the original subtree boundary.
-    if original_text.ends_with('\n') && !replacement.ends_with('\n') {
-        replacement.push('\n');
+    Ok(())
+}
+
+/// Native integers and enum spellings remain strings; booleans use an actual YAML boolean token.
+fn scalar(value: &PropertyValue) -> Option<(&'static str, ScalarValue)> {
+    match value {
+        PropertyValue::Text(value) => Some(("text", ScalarValue::string(value))),
+        PropertyValue::Boolean(value) => Some(("boolean", ScalarValue::from(*value))),
+        PropertyValue::Integer(value) => Some(("integer", ScalarValue::string(value.as_str()))),
+        PropertyValue::Enumeration(value) => Some(("enumeration", ScalarValue::string(value))),
+        _ => None,
     }
-    if matches!(previous, PropertyValue::Text(_))
-        && matches!(next, PropertyValue::Empty | PropertyValue::Nil)
-    {
-        // Keep comments and trivia when removing the value field. Detaching a MappingEntry
-        // would discard comments which the CST associates with that entry.
-        if mapping.is_flow_style() {
-            return Err(unsupported());
-        }
-        let entry = mapping.find_entry_by_key("value").ok_or_else(unsupported)?;
-        let key = range(&entry.key_node().ok_or_else(unsupported)?)?;
-        let value = range(&entry.value_node().ok_or_else(unsupported)?)?;
-        let start = range(mapping)?.start;
-        let removal = key.start.checked_sub(start).ok_or_else(unsupported)?
-            ..value.end.checked_sub(start).ok_or_else(unsupported)?;
-        replacement.get(removal.clone()).ok_or_else(unsupported)?;
-        replacement.replace_range(removal, "");
-    }
-    // Newly manufactured CST tokens use LF. Only this subtree adopts its original EOL;
-    // mixed surrounding text and unrelated scalar escape spellings remain untouched.
-    if original_text.contains("\r\n") {
-        replacement = replacement.replace("\r\n", "\n").replace('\n', "\r\n");
-    }
-    if comments(original_text) != comments(&replacement) {
+}
+
+/// Empty and nil have no scalar value field and retain their original state-token style.
+fn set_empty_state(mapping: &Mapping, next: &PropertyValue) -> Result<(), Error> {
+    set_string(
+        mapping,
+        "state",
+        if matches!(next, PropertyValue::Empty) {
+            "empty"
+        } else {
+            "nil"
+        },
+    )
+}
+
+/// Removing only key/value syntax keeps comments attached to the old scalar entry.
+fn remove_scalar(mapping: &Mapping, replacement: &mut String) -> Result<(), Error> {
+    // Keep comments and trivia when removing the value field. Detaching a MappingEntry
+    // would discard comments which the CST associates with that entry.
+    if mapping.is_flow_style() {
         return Err(unsupported());
     }
-    let mut output = input.to_owned();
-    output.get(original.clone()).ok_or_else(unsupported)?;
-    output.replace_range(original, &replacement);
-    Ok(output)
+    let entry = mapping.find_entry_by_key("value").ok_or_else(unsupported)?;
+    let key = range(&entry.key_node().ok_or_else(unsupported)?)?;
+    let value = range(&entry.value_node().ok_or_else(unsupported)?)?;
+    let start = range(mapping)?.start;
+    let removal = key.start.checked_sub(start).ok_or_else(unsupported)?
+        ..value.end.checked_sub(start).ok_or_else(unsupported)?;
+    replacement.get(removal.clone()).ok_or_else(unsupported)?;
+    replacement.replace_range(removal, "");
+    Ok(())
 }
 
 /// Keep existing scalar style; the strict semantic reader verifies escaping after the splice.

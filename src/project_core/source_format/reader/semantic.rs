@@ -330,7 +330,11 @@ fn typed_property(name: PropertyName, value: &PropertyValue) -> MetadataProperty
                 })
                 .collect(),
         ),
-        PropertyValue::Text(value) => MetadataValue::Text(value.clone()),
+        PropertyValue::Text(value) | PropertyValue::Enumeration(value) => {
+            MetadataValue::Text(value.clone())
+        }
+        PropertyValue::Boolean(value) => MetadataValue::Text(value.to_string()),
+        PropertyValue::Integer(value) => MetadataValue::Text(value.as_str().into()),
         PropertyValue::Empty | PropertyValue::Nil if name == PropertyName::Synonym => {
             MetadataValue::Localized(Vec::new())
         }

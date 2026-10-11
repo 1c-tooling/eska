@@ -38,7 +38,7 @@ fn batch_metadata_findings_match_resident_queries() {
                 }]));
             serde_json::to_string(&owner).unwrap()
         } else if path.as_str().starts_with("CommonModules/") {
-            before.replace("<Server>true</Server>", "<Server>Future</Server>")
+            crate::test_property::server_value(&before, "Future")
         } else {
             before
         };

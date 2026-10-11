@@ -190,12 +190,7 @@ fn semantic_profile_reports_incomplete_input_in_both_locales() {
     settings(&root, &[DiagnosticCode::SelfAssign]);
     let path = root.join("src/CommonModules/Tools/object.yaml");
     let saved = fs::read_to_string(&path).unwrap();
-    assert!(saved.contains("<Server>true</Server>"));
-    fs::write(
-        &path,
-        saved.replacen("<Server>true</Server>", "<Server>Future</Server>", 1),
-    )
-    .unwrap();
+    fs::write(&path, support::property::server_value(&saved, "Future")).unwrap();
     let mut values = vec![];
     for lang in ["ru-RU", "en-US"] {
         let value = report(

@@ -79,7 +79,7 @@ fn object(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> Result<Me
             section_attributes(child)?;
             Section::Properties(
                 meaningful(child)?
-                    .map(|part| property(part, input, &context))
+                    .map(|part| property(part, input, &context, kind))
                     .collect(),
             )
         } else if child.has_tag_name((MD_NAMESPACE, "ChildObjects")) {
@@ -130,20 +130,20 @@ fn child_object(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> Res
 }
 
 /// Promote only values with a proven inverse rule; retain every other shape as opaque XML.
-pub(super) fn property(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> Property {
+pub(super) fn property(
+    node: Node<'_, '_>,
+    input: &str,
+    inherited: &[Namespace],
+    owner: MetadataKind,
+) -> Property {
     let name = if node.is_element() && node.tag_name().namespace() == Some(MD_NAMESPACE) {
-        match node.tag_name().name() {
-            "Name" => Some(PropertyName::Name),
-            "Comment" => Some(PropertyName::Comment),
-            "Version" => Some(PropertyName::Version),
-            "Synonym" => Some(PropertyName::Synonym),
-            _ => None,
-        }
+        PropertyName::from_native(node.tag_name().name())
     } else {
         None
     };
     if let Some(name) = name
-        && let Some(value) = typed_value(node, name)
+        && let Some(kind) = name.value_kind(owner)
+        && let Some(value) = typed_value(node, kind)
     {
         return Property::Typed { name, value };
     }
@@ -153,7 +153,7 @@ pub(super) fn property(node: Node<'_, '_>, input: &str, inherited: &[Namespace])
 }
 
 /// Preserve empty, nil and language-keyed values without default inference or numeric coercion.
-fn typed_value(node: Node<'_, '_>, name: PropertyName) -> Option<PropertyValue> {
+fn typed_value(node: Node<'_, '_>, kind: super::property::ValueKind) -> Option<PropertyValue> {
     if node.attributes().len() == 1
         && matches!(node.attribute((XSI_NAMESPACE, "nil")), Some("true" | "1"))
         && node.children().all(|child| {
@@ -168,16 +168,18 @@ fn typed_value(node: Node<'_, '_>, name: PropertyName) -> Option<PropertyValue> 
     if node.children().next().is_none() {
         return Some(PropertyValue::Empty);
     }
-    if name == PropertyName::Synonym {
+    if matches!(kind, super::property::ValueKind::Localized) {
         let parts = meaningful(node)
             .ok()?
             .map(localized)
             .collect::<Option<Vec<_>>>()?;
         return Some(PropertyValue::Localized(parts));
     }
-    node.children()
-        .all(|child| child.is_text())
-        .then(|| PropertyValue::Text(text(node)))
+    if node.children().all(|child| child.is_text()) {
+        kind.parse(text(node))
+    } else {
+        None
+    }
 }
 
 /// Language and text are recognized only in the native localized-string namespace and order.

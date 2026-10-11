@@ -36,6 +36,9 @@ mod test_predefined_project;
 #[path = "../tests/support/project.rs"]
 mod test_project;
 #[cfg(test)]
+#[path = "../tests/support/property.rs"]
+mod test_property;
+#[cfg(test)]
 #[path = "../tests/support/role_project.rs"]
 mod test_role_project;
 #[cfg(test)]

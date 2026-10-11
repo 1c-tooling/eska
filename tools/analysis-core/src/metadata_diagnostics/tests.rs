@@ -35,10 +35,9 @@ fn adapter_diagnostics_follow_editor_authority_and_clear_after_correction() {
     let (_directory, root) = fixture();
     let path = owner("CommonModules/Tools/object.yaml");
     let saved = fs::read_to_string(root.join(path.as_path())).unwrap();
-    assert!(saved.contains("<Server>true</Server>"));
     let draft = format!(
         "# Я😀 current diagnostic\r\n{}",
-        saved.replace("<Server>true</Server>", "<Server>Future</Server>")
+        crate::test_property::server_value(&saved, "Future")
     );
     let mut session = AnalysisSession::open(&root).unwrap();
     let cancellation = QueryCancellation::default();

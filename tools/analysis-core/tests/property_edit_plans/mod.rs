@@ -108,6 +108,54 @@ fn plans_require_an_independent_pin_and_versioned_client_before_lazy_base_read()
     }
 }
 
+/// The existing transport delegates new scalar domains to the shared editor in both locales.
+#[test]
+fn boolean_property_plans_preserve_cst_and_reject_text_coercion() {
+    let (_directory, root, reference) = fixture::project(false);
+    let path = root.join("src-plans").join(OWNER);
+    let saved = fs::read_to_string(&path).unwrap();
+    let text = format!("# Я😀\r\n{}", saved.replace('\n', "\r\n"))
+        .replace("\"value\": true", "\"value\": TRUE # boolean");
+    let uri = url::Url::from_file_path(&path).unwrap().to_string();
+    let mut previous = None;
+    for lang in ["en-US", "ru-RU"] {
+        let mut client =
+            Client::with_options(&root, lang, &["--accepted-base-sha256", &reference.sha256]);
+        client.ask(&initialize_edits());
+        client.send(&notification("initialized"));
+        client.ask(&json!({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":uri,"version":1,"languageId":"yaml","text":text}}}));
+        let mut operation = prepare(&text, "1", 1, "unused");
+        operation["params"]["property"] = json!("Server");
+        operation["params"]["value"] = json!({"state":"boolean","value":false});
+        let response = client.ask(&operation);
+        assert!(response.get("error").is_none(), "{response}");
+        let plan = &response["result"];
+        assert_eq!(
+            apply(&text, plan),
+            text.replace("TRUE # boolean", "false # boolean")
+        );
+        assert_eq!(plan["unchanged"], false);
+        if let Some(previous) = &previous {
+            assert_eq!(previous, plan);
+        }
+        previous = Some(plan.clone());
+        operation["params"]["value"] = json!({"state":"boolean","value":true});
+        let no_op = client.ask(&operation);
+        assert_eq!(no_op["result"]["unchanged"], true);
+        assert_eq!(
+            no_op["result"]["workspace_edit"]["documentChanges"][0]["edits"],
+            json!([])
+        );
+        operation["params"]["value"] = json!({"state":"text","value":"false"});
+        assert_eq!(
+            client.ask(&operation)["error"]["data"]["kind"],
+            "source_property_type_invalid"
+        );
+        assert_eq!(fs::read_to_string(&path).unwrap(), saved);
+        client.finish();
+    }
+}
+
 /// Exact current versions precede baseline IO; a valid plan changes only the intended property.
 #[test]
 fn versioned_property_plan_matches_core_and_changes_neither_input_nor_disk_in_both_locales() {

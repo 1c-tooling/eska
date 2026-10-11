@@ -10,6 +10,7 @@ pub mod form_project;
 pub mod metadata;
 pub mod predefined_project;
 mod project;
+pub mod property;
 pub mod role_project;
 pub use project::inline_command_project;
 

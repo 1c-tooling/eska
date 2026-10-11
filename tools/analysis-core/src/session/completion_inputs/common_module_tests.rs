@@ -102,9 +102,10 @@ fn cold_common_module_completion_loads_only_its_current_declared_owner_and_body(
 fn current_common_module_flags_gate_loading_and_remove_inaccessible_or_invalid_exports() {
     let (_directory, source, mut session) = fixture(BODY);
     let saved = fs::read_to_string(source.join(TARGET)).unwrap();
-    let denied = saved.replace(
-        "<ServerCall>true</ServerCall>",
-        "<ServerCall>false</ServerCall>",
+    let denied = crate::test_property::boolean_value(
+        &saved,
+        eska::project_core::source_format::PropertyName::ServerCall,
+        false,
     );
     assert_ne!(saved, denied);
     let request = InputRequest::default();

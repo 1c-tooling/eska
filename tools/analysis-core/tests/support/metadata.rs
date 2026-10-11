@@ -58,7 +58,7 @@ pub fn text(root: &Path, parse_issue: bool) -> String {
     let text = if parse_issue {
         text
     } else {
-        text.replace("<Server>true</Server>", "<Server>Future</Server>")
+        super::property::server_value(&text, "Future")
     };
     format!("# Я😀 current check\r\n{text}")
 }

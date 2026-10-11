@@ -8,7 +8,7 @@ fn metadata_diagnostics_ignore_disabled_invalid_and_unsupported_bsl_settings() {
     let (_directory, root) = support::project("// Saved caller.\n", false);
     let file = root.join("src").join(OWNER);
     let saved = fs::read_to_string(&file).unwrap();
-    let draft = saved.replace("<Server>true</Server>", "<Server>Future</Server>");
+    let draft = support::property::server_value(&saved, "Future");
     for lang in ["en-US", "ru-RU"] {
         for (config, code) in [
             (

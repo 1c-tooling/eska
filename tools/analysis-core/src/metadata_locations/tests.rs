@@ -156,7 +156,7 @@ fn metadata_locations_keep_unsupported_families_and_reject_invalid_current_prope
         ObjectSource::from_yaml(&fs::read_to_string(root.join(path.as_path())).unwrap()).unwrap();
     for section in &mut owner.document.descriptor.object.sections {
         if let Section::Properties(properties) = section {
-            let server = properties.iter().find(|property| matches!(property, Property::Preserved { fragment } if fragment.xml.contains("<Server>"))).unwrap().clone();
+            let server = properties.iter().find(|property| matches!(property, Property::Typed { name, .. } if name.as_str() == "Server")).unwrap().clone();
             properties.push(server);
         }
     }

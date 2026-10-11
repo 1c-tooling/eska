@@ -131,12 +131,7 @@ fn invalid_metadata_keeps_semantic_coverage_incomplete() {
     let source = root.join("src");
     let path = source.join("CommonModules/Tools/object.yaml");
     let saved = fs::read_to_string(&path).unwrap();
-    assert!(saved.contains("<Server>true</Server>"));
-    fs::write(
-        &path,
-        saved.replacen("<Server>true</Server>", "<Server>Future</Server>", 1),
-    )
-    .unwrap();
+    fs::write(&path, crate::test_property::server_value(&saved, "Future")).unwrap();
     let config = DiagnosticsConfig {
         only_enabled: Some(vec![DiagnosticCode::SelfAssign]),
         ..DiagnosticsConfig::default()

@@ -119,7 +119,7 @@ fn yaml_and_bsl_share_revision_and_save_keeps_editor_authority() {
     let saved_body = "// Saved body.\r\n";
     let (_directory, root) = support::project(saved_body, false);
     let saved = fs::read_to_string(root.join("src").join(OWNER)).unwrap();
-    let draft = saved.replace("<Server>true</Server>", "<Server>false</Server>");
+    let draft = support::property::server_value(&saved, "false");
     assert_ne!(saved, draft);
     let owner_uri = uri(&root, OWNER);
     let module_uri = uri(&root, MODULE);

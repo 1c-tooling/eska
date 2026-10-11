@@ -746,6 +746,10 @@ preset = "trunk"
 импортирует проект, читает настройки и готовит проверенный XML без платформы
 и Git. Самостоятельный [eska-build](docs/research/eska-format/build-cli.md)
 собирает проверенный snapshot и сохраняет карту исходников в manifest.
+Общий [typed writer](docs/research/eska-format/typed-scalars.md) поддерживает
+32 свойства, включая bool, точные целые и enum с проверкой владельца;
+старая preserved-запись не мигрирует при открытии. Разделение descriptors
+и новая структура EF-24 ещё не завершены.
 Инструменты собираются отдельно с features `project-cli`/`build-cli`;
 комплектная поставка и делегирование оболочки ещё не подключены.
 Общая [библиотека анализа](docs/research/eska-format/shared-session.md) уже

@@ -11,6 +11,7 @@ mod import;
 mod model;
 mod native_writer;
 mod package;
+mod property;
 mod protected;
 mod reader;
 mod validation;
@@ -41,6 +42,7 @@ pub use model::{
     Child, Descriptor, LineEnding, LocalizedText, MetadataNode, Namespace, NativeUuid, Property,
     PropertyName, PropertyValue, Section, XmlAttribute, XmlFragment, XmlProfile,
 };
+pub use property::ExactUnsigned;
 
 /// The experimental source schema and conversion rules evolve independently.
 pub const SCHEMA_VERSION: u32 = 1;

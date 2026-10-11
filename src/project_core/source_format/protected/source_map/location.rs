@@ -12,6 +12,7 @@ use sha2::{Digest, Sha256};
 use yaml_edit::YamlFile;
 
 use super::{FileOrigin, InputAuthority, InputFile, MappedFile, validate_origin};
+use crate::project_core::MetadataKind;
 use crate::project_core::source_format::{
     Error, MD_NAMESPACE, Namespace, NativeUuid, ObjectSource, Property, PropertyName,
     PropertyValue, SourcePath, files, xml,
@@ -212,7 +213,13 @@ fn native_hit(node: Node<'_, '_>, text: &str, offset: usize) -> Result<Hit, Erro
                     return Ok(Hit::Property {
                         uuid,
                         index,
-                        property: xml::property(property, text, &context),
+                        property: xml::property(
+                            property,
+                            text,
+                            &context,
+                            MetadataKind::from_xml_tag(node.tag_name().name())
+                                .map_err(|_| Error::root("source_map_origin_mismatch"))?,
+                        ),
                     });
                 }
             }
@@ -404,7 +411,11 @@ fn property_range(
     let mut steps = steps.to_vec();
     match property {
         Property::Typed {
-            value: PropertyValue::Text(_),
+            value:
+                PropertyValue::Text(_)
+                | PropertyValue::Boolean(_)
+                | PropertyValue::Integer(_)
+                | PropertyValue::Enumeration(_),
             ..
         } => steps.extend([Step::Key("value"), Step::Key("value")]),
         Property::Typed { .. } => steps.push(Step::Key("value")),

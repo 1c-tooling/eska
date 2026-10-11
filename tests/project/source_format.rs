@@ -18,6 +18,7 @@ mod edit;
 mod measure;
 mod platform;
 mod protected;
+mod scalars;
 
 /// Work on a private copy so adverse input tests cannot modify the shared fixture corpus.
 fn fixture(root: &Path) -> PathBuf {

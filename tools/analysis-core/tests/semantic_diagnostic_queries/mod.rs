@@ -173,7 +173,7 @@ fn semantic_editor_and_metadata_inputs_remain_current_until_close() {
             data["eska"]["source_sha256"]
         );
         assert_eq!(client.ask(&pull(&source, MODULE)), editor);
-        let invalid = yaml.replacen("<Server>true</Server>", "<Server>Future</Server>", 1);
+        let invalid = support::property::server_value(&yaml, "Future");
         assert_ne!(invalid, yaml);
         client.ask(&open(&source, OWNER, 1, &invalid));
         let partial = client.ask(&pull(&source, MODULE));

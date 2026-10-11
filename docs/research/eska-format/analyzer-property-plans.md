@@ -51,8 +51,10 @@ version, размер и SHA-256 текста. Invalid/pending input, закры
 Затем `AcceptedBase::open_cancellable` заново проверяет независимо закреплённый manifest
 и required blobs. UUID, owner и ancestry берутся из принятой базы. Политика
 supplier и дополнительная freeze ESKA сохраняются; Name/создание/удаление/
-rename/move не включены. Поддержаны только существующие typed Comment, Version
-и Synonym в прежнем scope EF-07, включая проверенные состояния и языки.
+rename/move не включены. Поддержаны существующие typed Comment, Version,
+Synonym и [28 скалярных свойств](typed-scalars.md) с проверкой владельца и домена.
+Новые состояния значения — `boolean`, `integer`, `enumeration`; формат ответа
+и версии плана не изменены. Проверенные пустые состояния и языки сохраняются.
 
 Результат содержит snapshot, source, source_sha256 исходного editor text,
 document_version, accepted_base.sha256, unchanged и workspace_edit. Последний —

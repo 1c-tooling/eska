@@ -71,7 +71,7 @@ fn node(
                     return Err(Error::root("source_section_duplicate"));
                 }
                 has_properties = true;
-                properties(values, &context)?;
+                properties(values, &context, object.kind)?;
             }
             Section::Children(values) => {
                 if has_children {
@@ -99,13 +99,23 @@ fn node(
 }
 
 /// Reject duplicate typed properties and invalid value kinds without guessing coercions.
-fn properties(values: &[Property], context: &[Namespace]) -> Result<(), Error> {
+fn properties(
+    values: &[Property],
+    context: &[Namespace],
+    owner: MetadataKind,
+) -> Result<(), Error> {
     let mut names = BTreeSet::new();
     for value in values {
         match value {
             Property::Typed { name, value } => {
                 if !names.insert((MD_NAMESPACE.to_owned(), name.as_str().to_owned())) {
                     return Err(Error::root("source_property_duplicate"));
+                }
+                if name
+                    .value_kind(owner)
+                    .is_none_or(|kind| !kind.accepts(value))
+                {
+                    return Err(Error::root("source_property_type_invalid").in_field(name.as_str()));
                 }
                 match (name, value) {
                     (PropertyName::Synonym, PropertyValue::Localized(items)) => {
@@ -128,7 +138,14 @@ fn properties(values: &[Property], context: &[Namespace]) -> Result<(), Error> {
                         }
                         xml_text(text)?;
                     }
-                    (_, PropertyValue::Empty | PropertyValue::Nil) => {}
+                    (
+                        _,
+                        PropertyValue::Empty
+                        | PropertyValue::Nil
+                        | PropertyValue::Boolean(_)
+                        | PropertyValue::Integer(_),
+                    ) => {}
+                    (_, PropertyValue::Enumeration(text)) => xml_text(text)?,
                 }
             }
             Property::Preserved { fragment: value } => {
