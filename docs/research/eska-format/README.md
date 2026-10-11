@@ -57,6 +57,8 @@ receive handlers; bindings используются в UnusedLocalMethod.
 native root/context checks и те же объявленные identities без чтения каналов.
 [Адаптер роли](role-adapter.md) соединяет YAML identity с явно переданными
 правами сохранённого ресурса; canonical resource lifecycle пока не подключён.
+[Reader прав](role-rights-reader.md) даёт общую declared identity и bounded
+source bytes с явными missing/unsafe/encoding/size failures.
 [Отдельный сервер метаданных](analyzer-metadata.md) согласует экспериментальный
 протокол; [синхронизация YAML/BSL](analyzer-documents.md) использует общую сессию,
 редакторские версии и квоту. [Pull-диагностика](analyzer-diagnostics.md) проверяет

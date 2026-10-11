@@ -10,6 +10,8 @@ descriptor с явно переданным `RoleData`: исходный UUID, �
 ссылки и RLS. `Rights.xml` остаётся сохранённым ресурсом; `project_roles` проверяет
 все 1 641 модели C1/C2/C3. Адаптер не читает ресурс и не подменяет его ошибку
 пустыми данными. Его lifecycle в SDK и canonical resolver ещё не подключены.
+Объявленный путь и bounded current bytes берутся из
+[общего reader](../../docs/research/eska-format/role-rights-reader.md).
 
 Первый преобразователь `common_module` принимает `ParsedObject` с загруженными
 properties. UUID, имя, контекст выполнения, повторное использование результатов

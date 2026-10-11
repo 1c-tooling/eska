@@ -799,6 +799,8 @@ preset = "trunk"
 работает через языковое ядро, сохраняет локальное затенение и не загружает каналы.
 [Адаптер роли](docs/research/eska-format/role-adapter.md) сохраняет UUID, флаги,
 ссылки и RLS из явно переданных прав; resource lifecycle сервера ещё в работе.
+[Общий reader прав](docs/research/eska-format/role-rights-reader.md) связывает
+сохранённый ресурс с объявленной ролью и ограничивает чтение текущих байтов.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

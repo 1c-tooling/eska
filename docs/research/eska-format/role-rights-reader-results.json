@@ -1,0 +1,417 @@
+{
+  "schema_version": 1,
+  "component": "declared_role_rights_source_reader",
+  "milestone": "EF-18",
+  "status": "IN_PROGRESS",
+  "adapter_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.4310724920069333
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 1.122486365988152
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.7514869049773552
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 4.966999320022296,
+      "results": [
+        "ok. 64 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 3.5131476020033006
+    },
+    {
+      "gate": "release-model-example",
+      "exit_code": 0,
+      "seconds": 13.934937629994238
+    }
+  ],
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 2.8792565860203467
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 2.6960008530004416
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 4.45705303302384
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 27.454705242998898,
+      "results": [
+        "ok. 125 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.13s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 131 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.18s",
+        "ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.75s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 11.034681877004914
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 1.3771753409819212
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 1.5017382180085406
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 7.770323759003077,
+      "results": [
+        "ok. 103 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.89s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.0796065049944445
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.5873925269988831
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 1.6981802770169452
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 8.73189341800753,
+      "results": [
+        "ok. 105 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.28s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.74s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 6.501546381012304
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 0.9399778929946478
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 2.890351587004261
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 18.779287195997313,
+      "results": [
+        "ok. 125 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.97s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 129 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.42s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.810955856984947
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 13.735933289019158
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 7.565482772013638
+    }
+  ],
+  "root_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.2050813460082281
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.460542449989589
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 9.953913108998677
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 54.277220609015785
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.770667223987402
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 2.1679825960018206
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 5.917495153989876
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 3.5410945790063124
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 2.283898040011991
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 10.068559701001504
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.614734194998164
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 2.514404539979296
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 15.81045811000513
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 6.9162978540116455
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.0071494950097985566
+    }
+  ],
+  "root_tests": {
+    "passed": 899,
+    "failed": 0,
+    "ignored": 14,
+    "minimal_passed": 169,
+    "project_cli_passed": 186,
+    "build_cli_passed": 205
+  },
+  "adapter_tests": {
+    "unit": 64,
+    "file": 7,
+    "total": 71,
+    "failed": 0
+  },
+  "tool_tests": {
+    "unit_file": 125,
+    "analyzer": 131,
+    "checker": 14,
+    "total": 270,
+    "failed": 0
+  },
+  "native_model_comparison": [
+    {
+      "corpus": "C1",
+      "roles": 212,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 212,
+      "object_references": 223334,
+      "rls_conditions": 66,
+      "tracked_source_and_native_files": 850,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "wall_seconds": 1.271193733002292
+    },
+    {
+      "corpus": "C2",
+      "roles": 676,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 676,
+      "object_references": 29458,
+      "rls_conditions": 4055,
+      "tracked_source_and_native_files": 2706,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "wall_seconds": 2.1674547779839486
+    },
+    {
+      "corpus": "C3",
+      "roles": 753,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 753,
+      "object_references": 155734,
+      "rls_conditions": 6495,
+      "tracked_source_and_native_files": 3014,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "wall_seconds": 3.4201390170201194
+    }
+  ],
+  "roles": 1641,
+  "native_workspace_unchanged": true,
+  "versions_unchanged": true,
+  "dependencies_unchanged": true,
+  "manifest_schema_unchanged": true,
+  "protocol_unchanged": true,
+  "current_rights_lifecycle_connected": false,
+  "canonical_role_resolver_connected": false,
+  "limitations": [
+    "The source reader supplies identity and bounded current bytes; consumers validate XML and semantic rights.",
+    "Manifest/configuration changes still require reopening.",
+    "The server/checker resource lifecycle remains incomplete.",
+    "1C runtime and actual editor not invoked."
+  ]
+}

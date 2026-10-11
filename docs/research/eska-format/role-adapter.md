@@ -16,6 +16,8 @@
 Pending, unreadable и invalid объявленного ресурса нельзя заменять пустыми
 правами. Пример `project_roles` читает только объявленный manifest ресурс и
 возвращает ошибку разбора; мягкий fallback legacy loader не используется.
+Объявленный путь и bounded source bytes получает
+[общий reader](role-rights-reader.md), не самостоятельный поиск в примере.
 Контроль происхождения, версий и сохранности editor input относится к общей
 сессии. Подключение этого lifecycle и canonical resolver ещё не выполнено.
 

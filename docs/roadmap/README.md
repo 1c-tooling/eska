@@ -266,6 +266,10 @@ C1/C2/C3 не меняли исходники; checker C1 сохранил 26 fi
 три флага, объектные ссылки и RLS из отдельно переданного `RoleData`. Все 1 641
 модели C1/C2/C3 совпали с native reader. Сервер и checker пока не используют
 этот адаптер: lifecycle сохранённого `Rights.xml` ещё в работе. EF-18 — `IN_PROGRESS`.
+[Общий reader прав](../research/eska-format/role-rights-reader.md) регистрирует
+ресурсы по manifest/role composition и читает текущие bytes с прежними path/size
+checks. Четыре новых теста и 40 gates прошли; root — 899/14, SDK — прежние 270.
+Canonical resource lifecycle ещё не подключён; EF-18 — `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

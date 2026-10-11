@@ -1449,6 +1449,15 @@ constructor с исходным UUID; default не подставляется в
 пока не используют адаптер: согласованный lifecycle `Rights.xml` ещё в работе.
 Остальные модели, общий memory budget, edits и Explorer не завершены; EF-18 — `IN_PROGRESS`.
 
+[Общий reader прав](../research/eska-format/role-rights-reader.md) регистрирует
+preserved resources по validated manifest и роли, без активации payloads.
+Прямой и обратный lookup сохраняют native ASCII case variants и exact path;
+bounded current reads сохраняют BOM/CRLF и прежние path/encoding/size failures.
+Пример роли использует этот общий вход вместо собственного manifest scan/чтения.
+Четыре новых теста, root 899/14, прежние 270 SDK и 64/7 adapter tests прошли
+вместе с 40 gates. Current rights lifecycle и canonical resolver ещё в работе;
+native workspace, версии, source/protocol schemas прежние. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

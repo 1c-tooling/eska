@@ -2,6 +2,7 @@
 
 mod modules;
 mod projection;
+mod role_rights;
 mod semantic;
 
 #[cfg(test)]
@@ -71,6 +72,7 @@ struct OwnerSpec {
     name: Option<String>,
     parent: Option<NativeUuid>,
     descriptors: BTreeMap<SourcePath, NativeUuid>,
+    rights: Option<SourcePath>,
 }
 
 /// An explicit manifest/configuration snapshot, with other owners read only when requested.
@@ -85,6 +87,7 @@ pub struct SourceReader {
     configuration: OwnerSnapshot,
     owners: BTreeMap<SourcePath, OwnerSpec>,
     modules: BTreeMap<SourcePath, modules::ModuleSpec>,
+    role_rights: BTreeMap<SourcePath, SourcePath>,
 }
 
 impl SourceReader {
@@ -107,6 +110,7 @@ impl SourceReader {
             kind: MetadataKind::Configuration,
             name: None,
             parent: None,
+            rights: None,
             descriptors: groups
                 .remove(&root_path)
                 .ok_or_else(|| Error::root("source_descriptor_missing"))?,
@@ -135,6 +139,7 @@ impl SourceReader {
                     kind,
                     name: Some(name),
                     parent: Some(parent.clone()),
+                    rights: None,
                     descriptors,
                 },
             );
@@ -144,6 +149,7 @@ impl SourceReader {
         }
         owners.insert(root_path, root_spec);
         let modules = modules::declared_modules(&manifest, &owners)?;
+        let role_rights = role_rights::declared_role_rights(&manifest, &mut owners)?;
         Ok(Self {
             root,
             manifest,
@@ -151,6 +157,7 @@ impl SourceReader {
             configuration,
             owners,
             modules,
+            role_rights,
         })
     }
 
@@ -235,6 +242,40 @@ impl SourceReader {
             .ok_or_else(|| Error::root("source_module_undeclared").in_field(path.as_str()))?;
         if module.binary {
             return Err(Error::root("source_module_binary").in_field(path.as_str()));
+        }
+        read_text_limited(&self.root, path, max_bytes)
+    }
+
+    /// Enumerate preserved rights attached to declared roles without reading any payload.
+    pub fn role_rights_paths(&self) -> impl Iterator<Item = &SourcePath> {
+        self.role_rights.keys()
+    }
+
+    /// Return a role's declared resource; absence differs from a mapped but unreadable file.
+    #[must_use]
+    pub fn role_rights_path(&self, owner: &SourcePath) -> Option<&SourcePath> {
+        self.owners.get(owner).and_then(|spec| spec.rights.as_ref())
+    }
+
+    /// Bind a declared rights resource to its authoritative YAML owner without reading either file.
+    #[must_use]
+    pub fn role_rights_owner(&self, path: &SourcePath) -> Option<&SourcePath> {
+        self.role_rights.get(path)
+    }
+
+    /// Read current verbatim UTF-8 rights bytes through the same path and size checks as metadata.
+    ///
+    /// This method does not validate XML or interpret permissions; those are consumer concerns.
+    ///
+    /// # Errors
+    /// Returns undeclared/unsafe paths, missing files, unsupported encoding or an exceeded byte limit.
+    pub fn read_role_rights_text(
+        &self,
+        path: &SourcePath,
+        max_bytes: u64,
+    ) -> Result<String, Error> {
+        if self.role_rights_owner(path).is_none() {
+            return Err(Error::root("source_role_rights_undeclared").in_field(path.as_str()));
         }
         read_text_limited(&self.root, path, max_bytes)
     }

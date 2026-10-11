@@ -3,9 +3,7 @@
 use std::{error::Error, fs, path::PathBuf, time::Instant};
 
 use eska::project_core::{
-    MetadataKind,
-    metadata_parser::PropertiesMode,
-    source_format::{FileRole, SourceReader},
+    MetadataKind, metadata_parser::PropertiesMode, source_format::SourceReader,
 };
 
 /// Read only declared role inputs, without generating a main XML descriptor or changing source bytes.
@@ -39,19 +37,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         if object.metadata.kind() != MetadataKind::Role {
             return Err("unexpected_role_kind".into());
         }
-        let prefix = document
-            .path
-            .as_str()
-            .strip_suffix(".xml")
-            .ok_or("invalid_role_path")?;
-        let expected = format!("{prefix}/Ext/Rights.xml");
-        let resource = reader
-            .manifest()
-            .files
-            .iter()
-            .find(|file| file.role == FileRole::Preserved && file.path.as_str() == expected);
+        let resource = reader.role_rights_path(path);
         let rights = resource
-            .map(|file| fs::read_to_string(source.join(file.path.as_path())))
+            .map(|path| reader.read_role_rights_text(path, 64 * 1024 * 1024))
             .transpose()?;
         // A declared malformed resource is an error, never the legacy reader's default role data.
         let data = rights
@@ -63,7 +51,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .map_err(|error| format!("{}: {error:?}", path.as_str()))?;
         let main_xml = fs::read_to_string(native.join(document.path.as_path()))?;
         let native_rights = resource
-            .map(|file| fs::read_to_string(native.join(file.path.as_path())))
+            .map(|path| fs::read_to_string(native.join(path.as_path())))
             .transpose()?;
         let reference = bsl_metadata::parse_role_from_texts(&main_xml, native_rights.as_deref())
             .ok_or("invalid_native_role")?;
