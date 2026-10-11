@@ -1,5 +1,9 @@
 //! Pinned complete source bytes and policy; working metadata never grants itself permission.
 
+mod layout;
+
+pub use layout::{AcceptedDescriptorLayoutPlan, prepare_accepted_descriptor_layout};
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
@@ -185,6 +189,7 @@ impl AcceptedBase {
     pub(super) fn verify(&self) -> Result<(), Error> {
         verify_manifest(&self.root, &self.reference)?;
         let inventory = Inventory::read(&self.root)?;
+        reject_pending_layout(&inventory)?;
         if verified_snapshot(&self.manifest, &inventory)? != self.package.snapshot {
             return Err(Error::root("source_baseline_corrupt"));
         }
@@ -224,6 +229,7 @@ impl AcceptedBase {
                 Error::root("source_baseline_missing")
             }
         })?;
+        reject_pending_layout(&inventory)?;
         let path = SourcePath::parse(BASE_MANIFEST)?;
         let entry = inventory
             .files
@@ -406,6 +412,22 @@ impl AcceptedBase {
         verify_manifest(&self.root, &self.reference)?;
         Ok(())
     }
+}
+
+/// An operation receipt is never a completed accepted authority, even if its marker was copied.
+fn reject_pending_layout(inventory: &Inventory) -> Result<(), Error> {
+    if inventory
+        .files
+        .keys()
+        .chain(&inventory.directories)
+        .any(|path| {
+            path.as_str()
+                .eq_ignore_ascii_case(super::layout::PENDING_RECEIPT)
+        })
+    {
+        return Err(Error::root("source_layout_incomplete"));
+    }
+    Ok(())
 }
 
 /// Persist each distinct payload once; a ready metadata file is created only after complete copies.

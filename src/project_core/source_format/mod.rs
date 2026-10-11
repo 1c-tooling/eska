@@ -20,7 +20,8 @@ mod xml;
 mod yaml;
 
 pub use baseline::{
-    AcceptedBase, AcceptedRef, Operation, Permission, PermissionReason, accept_source,
+    AcceptedBase, AcceptedDescriptorLayoutPlan, AcceptedRef, Operation, Permission,
+    PermissionReason, accept_source, prepare_accepted_descriptor_layout,
 };
 pub use coordinates::{CoordinateError, TextCoordinates, TextPosition, TextRange};
 pub use edit::{

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-12",
+  "milestone": "EF-24",
+  "slice": "accepted-layout",
+  "milestone_complete": false,
+  "authority": {
+    "input": "independently pinned accepted blobs",
+    "working_values_reaccepted": false,
+    "old_and_new_pins_differ": true,
+    "supplier_rules_preserved": true,
+    "supplier_payloads_preserved": true,
+    "explicit_and_inherited_freeze_preserved": true,
+    "project_and_ci_pins_updated_automatically": false
+  },
+  "validation": {
+    "root_gates_passed": 15,
+    "root_default": {
+      "unit_passed": 400,
+      "integration_passed": 537,
+      "ignored": 18
+    },
+    "root_minimal_passed": 199,
+    "root_project_cli_passed": 216,
+    "root_build_cli_passed": 239,
+    "sdk_gates_passed": 14,
+    "sdk_all_features_passed": 355,
+    "sdk_minimal_passed": 149,
+    "sdk_check_cli_passed": 173,
+    "sdk_analyzer_cli_passed": 333
+  },
+  "real_migration": {
+    "case": "C1",
+    "metadata_objects": 8330,
+    "native_bytes_equal": true,
+    "native_descriptors": 3595,
+    "next_plan": "empty",
+    "old_accepted_storage_unchanged": true,
+    "old_and_new_pins_differ": true,
+    "policy_decisions_equal": 33320,
+    "project_and_ci_pins_updated": false,
+    "protected_exclusions": 0,
+    "repeat": "unchanged",
+    "semantic_parity": "All"
+  },
+  "platform": {
+    "version": "8.3.27.2325",
+    "artifact_type": "CF",
+    "old_base_native_and_migrated_eska_routes_succeeded": true,
+    "fresh_dump_files": 8769,
+    "fresh_dump_directories": 8064,
+    "dump_version_exception": {
+      "versioned_entries": 7011,
+      "changed_versions": 7011,
+      "all_other_bytes_equal": true
+    },
+    "all_other_bytes_equal": true,
+    "support_rules_and_supplier_artifacts_byte_equal": true,
+    "old_and_migrated_accepted_storage_unchanged": true,
+    "working_source_and_original_native_unchanged": true,
+    "project_version_unchanged": true,
+    "artifact_checksums_match_manifests": true
+  },
+  "limitations": [
+    "Project orchestration and the public migration command remain unimplemented.",
+    "CI trust references must be selected explicitly; they are not updated by the layout plan.",
+    "Resource path separation, readable envelope, composite domains and structural edits remain unimplemented.",
+    "C2/C3 accepted migration was not run.",
+    "Power-loss durability, infobase application, client execution, full BSL platform checking and CFE/EPF/ERF were not validated."
+  ]
+}

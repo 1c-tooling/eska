@@ -1,7 +1,7 @@
 //! Expected-byte migration publishes a new source tree; it never rewrites the selected input.
 
 mod cst;
-pub(super) mod publication;
+pub(in crate::project_core::source_format) mod publication;
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -47,7 +47,7 @@ pub struct DescriptorLayoutPlan {
 }
 
 #[derive(Debug)]
-pub(super) struct Projection {
+pub(in crate::project_core::source_format) struct Projection {
     pub manifest: SourceManifest,
     pub snapshot: Inventory,
     pub text: BTreeMap<SourcePath, String>,
@@ -135,20 +135,23 @@ impl DescriptorLayoutPlan {
     /// # Errors
     /// Returns changed-input, unsafe/overlapping destination, foreign output or I/O failures.
     pub fn publish(&self, destination: &Path) -> Result<LayoutPublication, Error> {
-        publication::publish(self, destination)
+        publication::publish(self.publication_view(), destination)
     }
 
-    /// No cached parse can authorize copying after any input or directory composition changed.
-    fn recheck(&self) -> Result<(), Error> {
-        if Inventory::read(&self.root)? != self.original {
-            return Err(Error::root("source_input_changed"));
+    /// Source and accepted-storage migrations share the same exact-byte publication rules.
+    pub(in crate::project_core::source_format) fn publication_view(&self) -> publication::View<'_> {
+        publication::View {
+            root: &self.root,
+            input: &self.original,
+            output: &self.projection.snapshot,
+            text: &self.projection.text,
+            ready: files::MANIFEST,
         }
-        Ok(())
     }
 }
 
 /// The same pure transformation can later migrate pinned bytes without trusting the working tree.
-fn project(
+pub(in crate::project_core::source_format) fn project(
     package: &Package,
     mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
 ) -> Result<Projection, Error> {
@@ -270,7 +273,10 @@ fn validate_paths(
 }
 
 /// Compare sorted path maps; unchanged paths do not appear in a migration preview.
-fn changes(before: &Inventory, after: &Inventory) -> Vec<LayoutChange> {
+pub(in crate::project_core::source_format) fn changes(
+    before: &Inventory,
+    after: &Inventory,
+) -> Vec<LayoutChange> {
     before
         .files
         .keys()

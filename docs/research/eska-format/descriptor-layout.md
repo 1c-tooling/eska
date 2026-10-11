@@ -115,8 +115,9 @@ input/output revisions. До применения исходники остаю�
 
 Этот API мигрирует каталог исходников. Он не преобразует project manifest,
 CI pin или accepted base и не принимает текущие локальные изменения за новый
-эталон поддержки. Полный перенос существующего проекта с отдельно мигрированной
-trusted base ещё нужен. Свежий `import_separated_project` создаёт новый проект
+эталон поддержки. [Отдельный план trusted base](accepted-layout.md) переносит
+только pinned blobs и возвращает новый pin. Orchestration существующего проекта
+и явное обновление настроек ещё нужны. Свежий `import_separated_project` создаёт новый проект
 из supplied native input и собственную candidate base обычным проверенным путём.
 
 ## Проверки

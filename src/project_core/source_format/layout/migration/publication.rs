@@ -1,12 +1,32 @@
 //! A receipt owns incomplete output; staging files are linked without replacing authoring files.
 
-use super::{
-    DescriptorLayoutPlan, Error, Inventory, LayoutPublication, Path, PathBuf, SourcePath, files, fs,
-};
+use std::collections::BTreeMap;
+
+use super::{Error, Inventory, LayoutPublication, Path, PathBuf, SourcePath, files, fs};
 use serde::{Deserialize, Serialize};
 
 pub(super) const RECEIPT: &str = super::super::PENDING_RECEIPT;
 pub(super) const TEMPORARY: &str = super::super::PENDING_WRITE;
+
+/// The two current storage consumers supply complete snapshots and their own final ready marker.
+#[derive(Clone, Copy)]
+pub(in crate::project_core::source_format) struct View<'a> {
+    pub root: &'a Path,
+    pub input: &'a Inventory,
+    pub output: &'a Inventory,
+    pub text: &'a BTreeMap<SourcePath, String>,
+    pub ready: &'a str,
+}
+
+impl View<'_> {
+    /// Every original storage byte remains required until the complete destination is published.
+    fn recheck(self) -> Result<(), Error> {
+        if Inventory::read(self.root)? != *self.input {
+            return Err(Error::root("source_input_changed"));
+        }
+        Ok(())
+    }
+}
 
 /// Recovery is tied to complete before/after revisions, never to a caller-supplied directory name.
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -18,19 +38,19 @@ struct Receipt {
 }
 
 /// Recheck before every destination decision; completed output is never rewritten.
-pub(super) fn publish(
-    plan: &DescriptorLayoutPlan,
+pub(in crate::project_core::source_format) fn publish(
+    view: View<'_>,
     destination: &Path,
 ) -> Result<LayoutPublication, Error> {
-    plan.recheck()?;
-    let destination = destination_path(plan, destination)?;
-    let expected = &plan.projection.snapshot;
-    let receipt = receipt(plan);
+    view.recheck()?;
+    let destination = destination_path(view, destination)?;
+    let expected = view.output;
+    let receipt = receipt(view);
     let status = match fs::symlink_metadata(&destination) {
         Ok(metadata) if metadata.file_type().is_dir() => {
             let mut current = Inventory::read(&destination)?;
             if current == *expected {
-                plan.recheck()?;
+                view.recheck()?;
                 return Ok(LayoutPublication::Unchanged);
             }
             if !current.files.contains_key(&SourcePath::parse(RECEIPT)?) {
@@ -64,22 +84,22 @@ pub(super) fn publish(
     for path in &expected.directories {
         fs::create_dir_all(destination.join(path.as_path())).map_err(|error| files::io(&error))?;
     }
-    let manifest = SourcePath::parse(files::MANIFEST)?;
+    let manifest = SourcePath::parse(view.ready)?;
     for (path, entry) in expected.files.iter().filter(|(path, _)| **path != manifest) {
-        stage_file(plan, &destination, path, entry)?;
+        stage_file(view, &destination, path, entry)?;
     }
-    plan.recheck()?;
+    view.recheck()?;
     let entry = expected
         .files
         .get(&manifest)
         .ok_or_else(|| Error::root("source_descriptor_missing"))?;
-    stage_file(plan, &destination, &manifest, entry)?;
+    stage_file(view, &destination, &manifest, entry)?;
     let mut current = Inventory::read(&destination)?;
     current.files.remove(&SourcePath::parse(RECEIPT)?);
     if current.files != expected.files || current.directories != expected.directories {
         return Err(Error::root("source_layout_destination_mismatch"));
     }
-    plan.recheck()?;
+    view.recheck()?;
     fs::remove_file(destination.join(RECEIPT)).map_err(|error| files::io(&error))?;
     if Inventory::read(&destination)? != *expected {
         return Err(Error::root("source_layout_destination_mismatch"));
@@ -89,7 +109,7 @@ pub(super) fn publish(
 
 /// Each final name is installed atomically without replacing a file; only private staging may fail.
 fn stage_file(
-    plan: &DescriptorLayoutPlan,
+    view: View<'_>,
     destination: &Path,
     path: &SourcePath,
     entry: &super::FileEntry,
@@ -98,10 +118,10 @@ fn stage_file(
         return Ok(());
     }
     let temporary = destination.join(TEMPORARY);
-    if let Some(text) = plan.projection.text.get(path) {
+    if let Some(text) = view.text.get(path) {
         files::write(&temporary, text.as_bytes())?;
     } else {
-        files::copy_to(&plan.root, &temporary, entry)?;
+        files::copy_to(view.root, &temporary, entry)?;
     }
     fs::hard_link(&temporary, destination.join(path.as_path()))
         .map_err(|error| files::io(&error))?;
@@ -126,7 +146,7 @@ fn validate_partial(current: &Inventory, expected: &Inventory) -> Result<(), Err
 }
 
 /// Resolve an existing parent while refusing aliases and writes into either side of the input tree.
-fn destination_path(plan: &DescriptorLayoutPlan, destination: &Path) -> Result<PathBuf, Error> {
+fn destination_path(view: View<'_>, destination: &Path) -> Result<PathBuf, Error> {
     let name = destination
         .file_name()
         .and_then(|name| name.to_str())
@@ -139,34 +159,31 @@ fn destination_path(plan: &DescriptorLayoutPlan, destination: &Path) -> Result<P
     let destination = fs::canonicalize(parent)
         .map_err(|error| files::io(&error))?
         .join(name);
-    if destination == plan.root && plan.is_empty() {
+    if destination == view.root && view.input == view.output {
         return Ok(destination);
     }
-    if destination.starts_with(&plan.root) || plan.root.starts_with(&destination) {
+    if destination.starts_with(view.root) || view.root.starts_with(&destination) {
         return Err(Error::root("source_tree_overlap"));
     }
     Ok(destination)
 }
 
 /// A bounded operation receipt contains no machine-specific input/output paths.
-fn receipt(plan: &DescriptorLayoutPlan) -> Receipt {
+fn receipt(view: View<'_>) -> Receipt {
     Receipt {
         schema_version: 1,
-        input_revision: plan.input_revision().into(),
-        output_revision: plan.output_revision().into(),
+        input_revision: view.input.revision.clone(),
+        output_revision: view.output.revision.clone(),
     }
 }
 
 #[cfg(test)]
 /// Simulate a process stop before ready publication without adding a production fault-injection API.
-pub(in crate::project_core::source_format::layout) fn interrupt(
-    plan: &DescriptorLayoutPlan,
-    destination: &Path,
-) {
+pub(in crate::project_core::source_format) fn interrupt(view: View<'_>, destination: &Path) {
     fs::create_dir(destination).unwrap();
     files::write(
         &destination.join(RECEIPT),
-        &serde_json::to_vec(&receipt(plan)).unwrap(),
+        &serde_json::to_vec(&receipt(view)).unwrap(),
     )
     .unwrap();
 }

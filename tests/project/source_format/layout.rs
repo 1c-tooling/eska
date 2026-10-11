@@ -10,9 +10,10 @@ use eska::project_core::{
     metadata_parser::{self, ParsedDescriptor, PropertiesMode},
     platform_settings::PlatformVersion,
     source_format::{
-        AcceptedBase, LayoutPublication, MD_NAMESPACE, NativeUuid, Operation, PropertyName,
-        PropertyValue, SourcePath, SourceReader, export_designer, prepare_descriptor_layout,
-        prepare_property_edit, prepare_protected,
+        AcceptedBase, AcceptedRef, LayoutPublication, MD_NAMESPACE, NativeUuid, Operation,
+        PropertyName, PropertyValue, SourcePath, SourceReader, export_designer,
+        prepare_accepted_descriptor_layout, prepare_descriptor_layout, prepare_property_edit,
+        prepare_protected,
     },
 };
 
@@ -111,22 +112,7 @@ fn real_descriptor_migration_acceptance() {
     assert!(prepare_descriptor_layout(&source).unwrap().is_empty());
     let original = SourceReader::open(&input).unwrap();
     let migrated = SourceReader::open(&source).unwrap();
-    let mut descriptors = 0;
-    let mut objects = 0;
-    for owner in original.owner_paths() {
-        let snapshot = original.read_metadata(owner, PropertiesMode::All).unwrap();
-        for document in snapshot.documents {
-            let owner = migrated.owner_for_native_main(&document.path).unwrap();
-            let current = migrated.read_metadata(owner, PropertiesMode::All).unwrap();
-            assert_eq!(current.documents.len(), 1);
-            assert_eq!(
-                unlocated(document.descriptor.clone()),
-                unlocated(current.documents[0].descriptor.clone())
-            );
-            objects += document.descriptor.objects.len();
-            descriptors += 1;
-        }
-    }
+    let (objects, descriptors) = migration_parity(&original, &migrated);
     export_designer(&input, &output.join("native-before")).unwrap();
     export_designer(&source, &output.join("native-after")).unwrap();
     assert_eq!(
@@ -147,6 +133,117 @@ fn real_descriptor_migration_acceptance() {
     )
     .unwrap();
     println!("{report}");
+}
+
+/// Relocate real independently pinned C1 evidence and validate the complete protected consumer.
+#[test]
+#[ignore = "Requires explicit real accepted input, independent old pin and a new playground output"]
+fn real_accepted_descriptor_migration_acceptance() {
+    let (input, output) = paths("ESKA_FORMAT_ACCEPTED_INPUT");
+    let reference = AcceptedRef {
+        sha256: std::env::var("ESKA_FORMAT_ACCEPTED_SHA256").unwrap(),
+    };
+    let before = super::baseline::tree(&input);
+    let base = AcceptedBase::open(&input, &reference).unwrap();
+    let plan = prepare_accepted_descriptor_layout(&base).unwrap();
+    assert!(!plan.is_empty());
+    assert_eq!(plan.previous_reference(), &reference);
+    assert_ne!(plan.accepted_reference(), &reference);
+    let accepted = output.join("accepted");
+    assert_eq!(plan.publish(&accepted).unwrap(), LayoutPublication::Created);
+    assert_eq!(
+        plan.publish(&accepted).unwrap(),
+        LayoutPublication::Unchanged
+    );
+    let migrated_base = AcceptedBase::open(&accepted, plan.accepted_reference()).unwrap();
+    assert!(
+        prepare_accepted_descriptor_layout(&migrated_base)
+            .unwrap()
+            .is_empty()
+    );
+    let original = output.join("original-source");
+    let migrated = output.join("source");
+    base.restore(&original).unwrap();
+    migrated_base.restore(&migrated).unwrap();
+    let reader = SourceReader::open(&original).unwrap();
+    let (objects, descriptors) = migration_parity(&reader, &SourceReader::open(&migrated).unwrap());
+    let decisions = policy_parity(&reader, &base, &migrated_base);
+    let old_generation =
+        prepare_protected(&original, &base, &output.join("old-generations"), true).unwrap();
+    let new_generation =
+        prepare_protected(&migrated, &migrated_base, &output.join("generations"), true).unwrap();
+    assert!(old_generation.diagnostics().is_empty());
+    assert!(new_generation.diagnostics().is_empty());
+    assert_eq!(
+        super::baseline::tree(old_generation.xml()),
+        super::baseline::tree(new_generation.xml())
+    );
+    assert_eq!(super::baseline::tree(&input), before);
+    let report = serde_json::json!({
+        "schema_version":1,"source_layout_version":2,
+        "native_descriptors":descriptors,"metadata_objects":objects,
+        "semantic_parity":"All","native_bytes_equal":true,
+        "old_accepted_storage_unchanged":true,"old_and_new_pins_differ":true,
+        "policy_decisions_equal":decisions,"repeat":"unchanged","next_plan":"empty",
+        "protected_exclusions":0,"project_and_ci_pins_updated":false
+    });
+    fs::write(
+        output.join("accepted-reference.json"),
+        serde_json::to_vec_pretty(plan.accepted_reference()).unwrap(),
+    )
+    .unwrap();
+    fs::write(
+        output.join("migration.json"),
+        serde_json::to_vec_pretty(&report).unwrap(),
+    )
+    .unwrap();
+    println!("{report}");
+}
+
+/// Compare complete family and separated snapshots without confusing source byte coordinates.
+fn migration_parity(original: &SourceReader, migrated: &SourceReader) -> (usize, usize) {
+    let mut descriptors = 0;
+    let mut objects = 0;
+    for owner in original.owner_paths() {
+        let snapshot = original.read_metadata(owner, PropertiesMode::All).unwrap();
+        for document in snapshot.documents {
+            let owner = migrated.owner_for_native_main(&document.path).unwrap();
+            let current = migrated.read_metadata(owner, PropertiesMode::All).unwrap();
+            assert_eq!(current.documents.len(), 1);
+            assert_eq!(
+                unlocated(document.descriptor.clone()),
+                unlocated(current.documents[0].descriptor.clone())
+            );
+            objects += document.descriptor.objects.len();
+            descriptors += 1;
+        }
+    }
+    assert_eq!(migrated.owner_paths().count(), descriptors);
+    (objects, descriptors)
+}
+
+/// Every accepted inline and external identity retains operation-specific policy after relocation.
+fn policy_parity(reader: &SourceReader, original: &AcceptedBase, migrated: &AcceptedBase) -> usize {
+    let mut decisions = 0;
+    for owner in reader.owner_paths() {
+        for declaration in reader.read_owner(owner).unwrap().declarations {
+            for operation in [
+                Operation::Property(PropertyName::Comment),
+                Operation::Module,
+                Operation::Resource,
+                Operation::Create,
+            ] {
+                let old = original.permission(&declaration.uuid, operation);
+                let new = migrated.permission(&declaration.uuid, operation);
+                assert_eq!(
+                    (old.allowed, old.state, old.native_reason, old.reason),
+                    (new.allowed, new.state, new.native_reason, new.reason)
+                );
+                decisions += 1;
+            }
+        }
+    }
+    decisions
 }
 
 /// Native paths and accepted UUIDs identify one independently editable form.

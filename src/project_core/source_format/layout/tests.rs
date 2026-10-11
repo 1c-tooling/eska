@@ -275,7 +275,7 @@ fn migration_recovers_an_interrupted_write_and_refuses_foreign_or_edited_output(
     import_designer(&native(&directory), &family).unwrap();
     let plan = prepare_descriptor_layout(&family).unwrap();
     let separate = directory.0.join("separate");
-    migration::publication::interrupt(&plan, &separate);
+    migration::publication::interrupt(plan.publication_view(), &separate);
     fs::write(
         separate.join(".eska-layout.write"),
         b"interrupted partial payload",
@@ -291,7 +291,7 @@ fn migration_recovers_an_interrupted_write_and_refuses_foreign_or_edited_output(
         plan.output_revision()
     );
     let edited = directory.0.join("edited");
-    migration::publication::interrupt(&plan, &edited);
+    migration::publication::interrupt(plan.publication_view(), &edited);
     fs::write(edited.join("configuration.yaml"), b"user edit").unwrap();
     let before = Inventory::read(&edited).unwrap();
     assert_eq!(
@@ -464,12 +464,21 @@ fn separated_map_refuses_payload_aliases_before_materialization() {
         "Catalogs/Sample/Forms/Main/FORM.YAML",
         "Catalogs/Sample/Forms/Main/form.yaml/raw.bin",
         ".eska-layout.pending.json",
+        ".eska-layout.pending.json/raw.bin",
         ".eska-layout.write",
     ] {
         let mut invalid = manifest.clone();
         let mut extra = payload.clone();
         extra.path = path(alias);
         invalid.files.push(extra);
+        assert_eq!(
+            invalid.validate().unwrap_err().code,
+            "source_path_collision"
+        );
+    }
+    for alias in [PENDING_RECEIPT, PENDING_WRITE] {
+        let mut invalid = manifest.clone();
+        invalid.directories.push(path(alias));
         assert_eq!(
             invalid.validate().unwrap_err().code,
             "source_path_collision"

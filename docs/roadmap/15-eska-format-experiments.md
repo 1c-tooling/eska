@@ -1861,7 +1861,7 @@ writer/reader/CST/policy/source map принимают 28 новых bool/intege
 contexts; общий reader/editor/policy/source map и SDK работают с отдельными
 формами, командами, макетами и подсистемами. Старые проекты не меняются при
 открытии; публичный CLI импорта сохраняет семейное расположение. Далее нужны
-перенос trusted base и разделение физических путей ресурсов. Новая читаемая
+orchestration проекта и разделение физических путей ресурсов. Новая читаемая
 оболочка, составные типы, ссылки,
 коллекции и create/delete/rename ещё не реализованы. EF-18 остаётся отложенной.
 
@@ -1884,6 +1884,23 @@ CF собраны и выгружены на 1С 8.3.27.2325: 8 769 файлов
 кроме прежних `configVersion`. Платформенный цикл не изменил рабочие исходники,
 accepted base, исходный XML или версию. Большие C2/C3 и CFE/EPF/ERF в этой части
 не запускались. [Обезличенные результаты](../research/eska-format/descriptor-layout-results.json).
+
+Третья часть — [миграция trusted base](../research/eska-format/accepted-layout.md).
+План читает только independently pinned blobs, сохраняет native evidence,
+supplier rules/payloads и inherited freeze. Он возвращает новый pin до записи;
+рабочие изменения не становятся эталоном. Общий publisher служит исходникам и
+accepted storage: exact repeat/no-op, matching recovery, early marker refusal,
+stale/foreign/edited output и reserved names. Project settings и CI pin не
+обновляются автоматически; публичной команды миграции ещё нет.
+
+Проверки третьей части: 400 unit + 537 integration (18 opt-in пропущены),
+15 root/14 SDK gates прошли, SDK all-features — 355 тестов. Перенос реальной C1
+сохранил 3 595 descriptors/8 330 объектов в `All`, 33 320 policy decisions
+и все bytes strict protected XML. Старые blobs не изменены, repeat/no-op прошли.
+Старая native версия и ESKA с мигрированной базой и новым pin собраны в CF,
+выгружены на 1С 8.3.27.2325: 8 769 файлов/8 064 каталогов совпали, кроме
+`configVersion`. Базы, рабочие исходники, исходный XML и версия сохранены.
+[Обезличенные результаты](../research/eska-format/accepted-layout-results.json).
 
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.

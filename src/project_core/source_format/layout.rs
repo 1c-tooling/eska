@@ -188,10 +188,11 @@ fn validate_physical_paths(manifest: &SourceManifest) -> Result<(), Error> {
     let mut spellings = BTreeMap::new();
     let mut physical_files = BTreeSet::new();
     for path in &paths {
-        if [PENDING_RECEIPT, PENDING_WRITE]
-            .iter()
-            .any(|reserved| path.eq_ignore_ascii_case(reserved))
-            || !physical_files.insert(path.to_lowercase())
+        if [PENDING_RECEIPT, PENDING_WRITE].iter().any(|reserved| {
+            path.split('/')
+                .next()
+                .is_some_and(|root| root.eq_ignore_ascii_case(reserved))
+        }) || !physical_files.insert(path.to_lowercase())
         {
             return Err(Error::root("source_path_collision").in_field(*path));
         }
@@ -212,7 +213,10 @@ fn validate_physical_paths(manifest: &SourceManifest) -> Result<(), Error> {
     }
     for directory in &manifest.directories {
         let path = directory.as_str();
-        if physical_files.contains(&path.to_lowercase())
+        if [PENDING_RECEIPT, PENDING_WRITE]
+            .iter()
+            .any(|reserved| path.eq_ignore_ascii_case(reserved))
+            || physical_files.contains(&path.to_lowercase())
             || spellings
                 .insert(path.to_lowercase(), path)
                 .is_some_and(|previous| previous != path)

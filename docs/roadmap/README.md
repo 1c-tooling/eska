@@ -15,7 +15,9 @@
 Первая часть расширяет [typed writer](../research/eska-format/typed-scalars.md)
 на 28 bool/integer/enum свойств с прежней защитой и точечными правками.
 Вторая часть добавляет [самостоятельные descriptors и миграцию исходников](../research/eska-format/descriptor-layout.md)
-с обратной картой версии 2 и общим reader/editor/SDK. Перенос trusted base,
+с обратной картой версии 2 и общим reader/editor/SDK.
+[Третья часть](../research/eska-format/accepted-layout.md) переносит trusted base
+из pinned blobs с прежними policy/freeze и явным новым pin. Orchestration проекта,
 пути ресурсов и читаемые составные свойства ещё нужны; публичный CLI импорта
 сохраняет прежнее расположение.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
