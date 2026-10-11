@@ -1372,6 +1372,17 @@ JSON RU/EN совпал, все 7 829 исходных файлов C1 сохр�
 зависимости и версии не менялись. Сигнатуры обработчиков, полная семантика, прочие
 модели, общий memory budget, edits и Explorer ещё в работе; EF-18 — `IN_PROGRESS`.
 
+[Регламентные задания](../research/eska-format/analyzer-scheduled-jobs.md)
+подключены как отдельный canonical input с current MethodName/Predefined/Use.
+Все 456 моделей C1/C2/C3 совпали с native reader; shared lifecycle, invalid/close
+и имена completion проверены RU/EN. 259 tool tests, kernel 1106/4 и все 6 adapter/
+5 kernel/19 tool/15 root gates прошли. Полный checker C1 сохранил 26 findings,
+settings/source quota и coverage; ушли ещё 83 отказа, осталось 1 518 metadata issues.
+JSON RU/EN и все 7 829 исходных файлов сохранены. Graph 206/214 и версии прежние.
+Расписание остаётся в общей модели, сигнатура/запуск обработчика этим адаптером
+не доказаны. Остальные модели, полная семантика, общий memory budget, edits и
+Explorer ещё в работе; EF-18 — `IN_PROGRESS`, очередь этапов не меняется.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

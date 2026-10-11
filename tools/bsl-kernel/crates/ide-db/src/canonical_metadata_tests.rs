@@ -10,9 +10,10 @@ use crate::{
     metadata::{
         common_module_index, config_index, defined_type_index, event_subscription_index,
         resolve_common_module, resolve_common_module_by_file, resolve_defined_type,
-        resolve_event_subscription, resolve_register, resolve_register_by_name, CanonicalMetadata,
-        CanonicalMetadataInput, CanonicalMetadataInputs, CommonModuleEntry, DefinedTypeEntry,
-        EventSubscriptionEntry, MdoEntry, MetadataListingData, MetadataListingInput,
+        resolve_event_subscription, resolve_register, resolve_register_by_name,
+        resolve_scheduled_job, scheduled_job_index, CanonicalMetadata, CanonicalMetadataInput,
+        CanonicalMetadataInputs, CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry,
+        MdoEntry, MetadataListingData, MetadataListingInput, ScheduledJobEntry,
     },
     RootDatabaseImpl,
 };
@@ -110,6 +111,71 @@ fn canonical_event_subscription_preserves_neighbors_and_rejects_unavailable_or_w
     ))));
     assert!(resolve_event_subscription(&database, listing, "Подписка".into()).is_none());
     assert_eq!(database.salsa_family_churn("parse_event_subscription_query").expect("events").0, 0);
+}
+
+/// A job callback and its flags publish one current value without recomputing an unrelated job.
+#[test]
+fn canonical_scheduled_job_preserves_neighbors_and_rejects_unavailable_or_wrong_identity() {
+    let (mut database, listing) = database();
+    listing.set_scheduled_jobs(&mut database).to(Arc::new(vec![
+        ScheduledJobEntry { name: "Задание".into(), main: FileId(6) },
+        ScheduledJobEntry { name: "Neighbor".into(), main: FileId(7) },
+    ]));
+    let make = |name: &str, method: &str, predefined, enabled| {
+        Arc::new(bsl_metadata::ScheduledJob::from_parts(
+            bsl_metadata::Uuid::nil(),
+            name.into(),
+            method.into(),
+            predefined,
+            enabled,
+        ))
+    };
+    let saved = make("Задание", "CommonModule.Tools.Saved", false, true);
+    let neighbor = make("Neighbor", "CommonModule.Tools.Other", false, true);
+    let provided = input(&database, CanonicalMetadata::ScheduledJob(Arc::clone(&saved)));
+    let untouched = input(&database, CanonicalMetadata::ScheduledJob(Arc::clone(&neighbor)));
+    listing
+        .set_canonical_metadata(&mut database)
+        .to(Arc::new([(FileId(6), provided), (FileId(7), untouched)].into_iter().collect()));
+    let index = Arc::clone(scheduled_job_index(&database, listing));
+    assert!(Arc::ptr_eq(
+        &saved,
+        &resolve_scheduled_job(&database, listing, "ЗАДАНИЕ".into()).expect("saved")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_scheduled_job(&database, listing, "Neighbor".into()).expect("neighbor")
+    ));
+    assert!(database.salsa_events_reset());
+    let current = make("Задание", "CommonModule.Tools.Current", true, false);
+    provided
+        .set_value(&mut database)
+        .to(Some(Arc::new(CanonicalMetadata::ScheduledJob(Arc::clone(&current)))));
+    provided.set_source_revision(&mut database).to("editor".into());
+    assert!(Arc::ptr_eq(
+        &current,
+        &resolve_scheduled_job(&database, listing, "задание".into()).expect("current")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_scheduled_job(&database, listing, "Neighbor".into()).expect("unchanged neighbor")
+    ));
+    assert_eq!(database.salsa_family_churn("resolve_scheduled_job").expect("events").0, 1);
+    assert!(Arc::ptr_eq(&index, scheduled_job_index(&database, listing)));
+    provided.set_value(&mut database).to(None);
+    assert!(resolve_scheduled_job(&database, listing, "Задание".into()).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::ScheduledJob(make(
+        "Other",
+        "CommonModule.Tools.Wrong",
+        true,
+        false,
+    )))));
+    assert!(resolve_scheduled_job(&database, listing, "Задание".into()).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::CommonModule(
+        Arc::new(CommonModule::builder().name("Задание").build()),
+    ))));
+    assert!(resolve_scheduled_job(&database, listing, "Задание".into()).is_none());
+    assert_eq!(database.salsa_family_churn("parse_scheduled_job_query").expect("events").0, 0);
 }
 
 /// Supply typed register semantics directly, not through an XML-shaped VFS string.

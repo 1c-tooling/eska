@@ -224,6 +224,12 @@ EF-18 остаётся `IN_PROGRESS`: модели, общий memory budget, ed
 kernel 1105/4, все обязательные gates прошли. Полный checker C1 сохранил 26 findings
 и убрал ровно 91 отказ по подпискам; остальных 1 601 issues достаточно для exit 2.
 EF-18 остаётся `IN_PROGRESS`, следующие этапы не начаты.
+[Регламентные задания](../research/eska-format/analyzer-scheduled-jobs.md)
+получили тот же canonical lifecycle. Все 456 моделей C1/C2/C3 совпали с native
+reader; current flags/callback и completion проверены RU/EN. 259 tool tests,
+kernel 1106/4 и все обязательные gates прошли. Checker C1 сохранил 26 findings
+и убрал ещё 83 отказа по моделям; остальные 1 518 issues сохранили exit 2.
+EF-18 остаётся `IN_PROGRESS`; расписание и запуск заданий не реализованы анализатором.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

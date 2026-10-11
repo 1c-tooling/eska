@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScheduledJob {
     #[serde(rename = "uuid")]
     pub(crate) uuid: Uuid,
@@ -33,6 +33,17 @@ impl ScheduledJobHandler {
 }
 
 impl ScheduledJob {
+    /// Construct an already parsed job without a Designer XML intermediary.
+    pub fn from_parts(
+        uuid: Uuid,
+        name: String,
+        method_name: String,
+        predefined: bool,
+        use_flag: bool,
+    ) -> Self {
+        Self { uuid, name, method_name, predefined, use_flag }
+    }
+
     #[cfg(test)]
     pub fn new(name: impl Into<String>, method_name: impl Into<String>) -> Self {
         Self {

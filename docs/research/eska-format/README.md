@@ -43,6 +43,8 @@ rules с загруженными соседними телами. Selected-prof
 набор правил с текущими YAML/BSL inputs; syntax сохранён по умолчанию.
 [Подписки на события](analyzer-event-subscriptions.md) передают текущие
 Source/Event/Handler в каноническое ядро; IDE и checker используют одну проекцию.
+[Регламентные задания](analyzer-scheduled-jobs.md) согласуют current MethodName/
+Predefined/Use и тот же name listing; расписание не входит в BSL-модель ядра.
 [Отдельный сервер метаданных](analyzer-metadata.md) согласует экспериментальный
 протокол; [синхронизация YAML/BSL](analyzer-documents.md) использует общую сессию,
 редакторские версии и квоту. [Pull-диагностика](analyzer-diagnostics.md) проверяет

@@ -231,6 +231,10 @@ metadataTargets — typed-objects-and-members.
 добавлены в устойчивый listing и `CanonicalMetadata::EventSubscription`.
 Текущие Source/Event/Handler из YAML проходят общий saved/editor lifecycle;
 invalid input очищает прежнюю модель, BSL completion использует тот же состав.
+[Регламентные задания](../../docs/research/eska-format/analyzer-scheduled-jobs.md)
+используют `CanonicalMetadata::ScheduledJob`; MethodName/Predefined/Use из current
+YAML и имена BSL completions согласованы с тем же host. Расписание в эту BSL-модель
+не входит, исходные свойства остаются в общем descriptor.
 [Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
 сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
 Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.

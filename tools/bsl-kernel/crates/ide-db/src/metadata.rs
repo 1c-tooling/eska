@@ -922,6 +922,7 @@ pub enum CanonicalMetadata {
     CommonModule(Arc<bsl_metadata::CommonModule>),
     DefinedType(Arc<bsl_metadata::DefinedType>),
     EventSubscription(Arc<bsl_metadata::EventSubscription>),
+    ScheduledJob(Arc<bsl_metadata::ScheduledJob>),
 }
 
 impl CanonicalMetadata {
@@ -933,6 +934,7 @@ impl CanonicalMetadata {
             Self::CommonModule(value) => value.estimated_heap_size(),
             Self::DefinedType(value) => value.estimated_heap_size(),
             Self::EventSubscription(value) => value.estimated_heap_size(),
+            Self::ScheduledJob(value) => value.estimated_heap_size(),
         }
     }
 }
@@ -1815,6 +1817,17 @@ pub fn resolve_scheduled_job(
 
     let index = scheduled_job_index(db, listing);
     let main = index.lookup(&name)?;
+    if let Some(input) = listing.canonical_metadata(db).get(&main) {
+        let _source_revision = input.source_revision(db);
+        let value = input.value(db).as_ref()?;
+        let CanonicalMetadata::ScheduledJob(job) = value.as_ref() else {
+            return None;
+        };
+        if !stdx::case::eq_ignore_case(job.name(), &name) {
+            return None;
+        }
+        return Some(Arc::clone(job));
+    }
     let file = ScheduledJobFile::new(db, main);
     let job = parse_scheduled_job_query(db, file)?;
     warn_on_stem_name_divergence("ScheduledJob", &name, job.name());

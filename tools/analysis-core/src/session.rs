@@ -7,6 +7,8 @@ mod event_subscription_tests;
 mod module_tests;
 mod saved_changes;
 #[cfg(test)]
+mod scheduled_job_tests;
+#[cfg(test)]
 pub mod tests;
 
 use std::{collections::BTreeMap, path::Path, sync::Arc};
@@ -23,6 +25,7 @@ use ide_db::{
         CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, MetadataListingData,
         MetadataListingInput, resolve_common_module, resolve_defined_type,
         resolve_event_subscription, resolve_metadata_object, resolve_register,
+        resolve_scheduled_job,
     },
 };
 use salsa::Setter;
@@ -365,6 +368,10 @@ impl AnalysisSession {
             return Ok(None);
         };
         Ok(match value.as_ref() {
+            CanonicalMetadata::ScheduledJob(_) => {
+                resolve_scheduled_job(&self.database, self.listing, name.clone())
+                    .map(CanonicalMetadata::ScheduledJob)
+            }
             CanonicalMetadata::EventSubscription(_) => {
                 resolve_event_subscription(&self.database, self.listing, name.clone())
                     .map(CanonicalMetadata::EventSubscription)

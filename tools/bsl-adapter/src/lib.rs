@@ -7,6 +7,7 @@ mod identity;
 mod object;
 mod properties;
 mod register;
+mod scheduled_job;
 mod simple_object;
 mod type_description;
 
@@ -15,6 +16,7 @@ pub use defined_type::defined_type;
 pub use event_subscription::event_subscription;
 pub use object::metadata_object;
 pub use register::register;
+pub use scheduled_job::scheduled_job;
 pub use simple_object::{constant_object, enum_object};
 pub use type_description::attribute_type;
 

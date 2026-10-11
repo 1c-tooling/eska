@@ -781,6 +781,9 @@ preset = "trunk"
 [Подписки на события](docs/research/eska-format/analyzer-event-subscriptions.md)
 используют тот же current YAML input; Source/Event/Handler согласованы с ядром,
 имена доступны в автодополнении коллекции метаданных.
+[Регламентные задания](docs/research/eska-format/analyzer-scheduled-jobs.md)
+передают текущие MethodName/Predefined/Use в ту же сессию; имена также доступны
+в автодополнении метаданных.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

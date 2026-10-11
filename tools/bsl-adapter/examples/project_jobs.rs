@@ -1,0 +1,55 @@
+//! Compare complete job models with the pinned native reader on read-only corpora.
+
+use std::{error::Error, fs, path::PathBuf, time::Instant};
+
+use eska::project_core::{
+    MetadataKind, metadata_parser::PropertiesMode, source_format::SourceReader,
+};
+
+/// Inspect declared jobs without XML export, platform invocation or source changes.
+fn main() -> Result<(), Box<dyn Error>> {
+    let arguments = std::env::args_os()
+        .skip(1)
+        .map(PathBuf::from)
+        .collect::<Vec<_>>();
+    let [source, native] = arguments.as_slice() else {
+        return Err("expected_source_and_native_roots".into());
+    };
+    let started = Instant::now();
+    let reader = SourceReader::open(source)?;
+    let mut jobs = 0;
+    for path in reader
+        .owner_paths()
+        .filter(|path| path.as_str().starts_with("ScheduledJobs/"))
+    {
+        let snapshot = reader.read_metadata(path, PropertiesMode::All)?;
+        for document in &snapshot.documents {
+            let object = document
+                .descriptor
+                .objects
+                .first()
+                .ok_or("missing_job_root")?;
+            if object.metadata.kind() != MetadataKind::ScheduledJob
+                || !document.descriptor.diagnostics.is_empty()
+            {
+                return Err("incomplete_job_projection".into());
+            }
+            let converted = eska_bsl_adapter::scheduled_job(object)
+                .map_err(|error| format!("{}: {error:?}", path.as_str()))?;
+            let xml = fs::read_to_string(native.join(document.path.as_path()))?;
+            let reference = bsl_metadata::xml_parser::parse_scheduled_job_xml(&xml)?;
+            if converted != reference {
+                return Err(format!("job_model_mismatch:{}", path.as_str()).into());
+            }
+            jobs += 1;
+        }
+    }
+    if jobs == 0 {
+        return Err("no_scheduled_jobs".into());
+    }
+    println!(
+        "{}",
+        serde_json::json!({"jobs":jobs,"model_parity":true,"xml_exported":false,"seconds":started.elapsed().as_secs_f64()})
+    );
+    Ok(())
+}
