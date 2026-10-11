@@ -9,14 +9,16 @@ use vfs::FileId;
 use crate::{
     metadata::{
         common_module_index, config_index, defined_type_index, event_subscription_index,
-        http_service_index, resolve_common_module, resolve_common_module_by_file,
-        resolve_defined_type, resolve_event_subscription, resolve_http_service,
-        resolve_http_service_by_file, resolve_register, resolve_register_by_name,
+        http_service_index, integration_service_index, resolve_common_module,
+        resolve_common_module_by_file, resolve_defined_type, resolve_event_subscription,
+        resolve_http_service, resolve_http_service_by_file, resolve_integration_service,
+        resolve_integration_service_by_file, resolve_register, resolve_register_by_name,
         resolve_scheduled_job, resolve_subsystem, resolve_web_service, resolve_web_service_by_file,
         scheduled_job_index, subsystem_index, web_service_index, CanonicalMetadata,
         CanonicalMetadataInput, CanonicalMetadataInputs, CommonModuleEntry, DefinedTypeEntry,
-        EventSubscriptionEntry, HTTPServiceEntry, MdoEntry, MetadataListingData,
-        MetadataListingInput, ScheduledJobEntry, SubsystemEntry, WebServiceEntry,
+        EventSubscriptionEntry, HTTPServiceEntry, IntegrationServiceEntry, MdoEntry,
+        MetadataListingData, MetadataListingInput, ScheduledJobEntry, SubsystemEntry,
+        WebServiceEntry,
     },
     RootDatabaseImpl,
 };
@@ -406,6 +408,95 @@ fn canonical_web_service_is_current_by_name_and_module_without_xml_fallback() {
     ))));
     assert!(resolve_web_service_by_file(&database, listing, FileId(16)).is_none());
     assert_eq!(database.salsa_family_churn("parse_web_service_query").expect("events").0, 0);
+}
+
+/// Channel edits invalidate only their own resolver; file lookup never bypasses the current canonical slot.
+#[test]
+fn canonical_integration_channels_are_current_by_name_and_body_without_xml_fallback() {
+    let (mut database, listing) = database();
+    listing.set_integration_services(&mut database).to(Arc::new(vec![
+        IntegrationServiceEntry {
+            name: "Сервис".into(),
+            main: FileId(18),
+            module_file: Some(FileId(20)),
+        },
+        IntegrationServiceEntry {
+            name: "Neighbor".into(),
+            main: FileId(19),
+            module_file: Some(FileId(21)),
+        },
+    ]));
+    let make = |name: &str, channel: &str, handler: &str| {
+        Arc::new(
+            bsl_metadata::IntegrationServiceBuilder::new()
+                .name(name)
+                .add_channel(
+                    bsl_metadata::IntegrationServiceChannelBuilder::new()
+                        .name(channel)
+                        .receive_message_processing(handler)
+                        .build(),
+                )
+                .build(),
+        )
+    };
+    let saved = make("Сервис", "Incoming", "Saved");
+    let neighbor = make("Neighbor", "Other", "Untouched");
+    let provided = input(&database, CanonicalMetadata::IntegrationService(Arc::clone(&saved)));
+    let inputs: CanonicalMetadataInputs = [
+        (FileId(18), provided),
+        (
+            FileId(19),
+            input(&database, CanonicalMetadata::IntegrationService(Arc::clone(&neighbor))),
+        ),
+    ]
+    .into_iter()
+    .collect();
+    listing.set_canonical_metadata(&mut database).to(Arc::new(inputs));
+    let index = Arc::clone(integration_service_index(&database, listing));
+    assert!(Arc::ptr_eq(
+        &saved,
+        &resolve_integration_service(&database, listing, "сервис".into()).expect("by name")
+    ));
+    assert!(Arc::ptr_eq(
+        &saved,
+        &resolve_integration_service_by_file(&database, listing, FileId(20)).expect("by file")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_integration_service_by_file(&database, listing, FileId(21)).expect("neighbor")
+    ));
+    assert!(database.salsa_events_reset());
+    let current = make("Сервис", "CurrentIncoming", "Current");
+    provided
+        .set_value(&mut database)
+        .to(Some(Arc::new(CanonicalMetadata::IntegrationService(Arc::clone(&current)))));
+    provided.set_source_revision(&mut database).to("editor".into());
+    assert!(Arc::ptr_eq(
+        &current,
+        &resolve_integration_service_by_file(&database, listing, FileId(20))
+            .expect("current by file")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_integration_service_by_file(&database, listing, FileId(21))
+            .expect("unchanged neighbor")
+    ));
+    assert_eq!(database.salsa_family_churn("resolve_integration_service").expect("events").0, 1);
+    assert!(Arc::ptr_eq(&index, integration_service_index(&database, listing)));
+    provided.set_value(&mut database).to(None);
+    assert!(resolve_integration_service_by_file(&database, listing, FileId(20)).is_none());
+    provided
+        .set_value(&mut database)
+        .to(Some(Arc::new(CanonicalMetadata::IntegrationService(make("Other", "Wrong", "Wrong")))));
+    assert!(resolve_integration_service(&database, listing, "сервис".into()).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::CommonModule(
+        Arc::new(CommonModule::builder().name("Сервис").build()),
+    ))));
+    assert!(resolve_integration_service_by_file(&database, listing, FileId(20)).is_none());
+    assert_eq!(
+        database.salsa_family_churn("parse_integration_service_query").expect("events").0,
+        0
+    );
 }
 
 /// Supply typed register semantics directly, not through an XML-shaped VFS string.

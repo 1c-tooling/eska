@@ -121,6 +121,13 @@ URI модуля. Прямой parent отделяет одинаковые па
 полное равенство подтверждено. 56 unit и шесть файловых тестов прошли. Типы
 параметров и XDTO не входят в эту native BSL-модель.
 
+[`integration_service`](../../docs/research/eska-format/analyzer-integration-services.md)
+сохраняет имя сервиса, порядок каналов и ReceiveMessageProcessing. Пустые bindings
+остаются в канале и пропускаются native handler iterator. `project_integration_services`
+сравнил все три модели и 12 каналов C1/C2/C3 с native reader: полное равенство.
+60 unit и шесть файловых тестов прошли; транспорт и направление остаются в общей
+модели проекта.
+
 Исходный API закреплён на bsl-analyzer `9021ba0`, пакет `bsl-metadata` заменён
 локальным расширением из `bsl-kernel`; библиотека моделей используется без
 IDE/LSP/MCP runtime. Для проверок нужен Rust; автоматические файловые

@@ -792,6 +792,9 @@ preset = "trunk"
 одно каноническое значение.
 [Web-сервисы](docs/research/eska-format/analyzer-web-services.md) передают текущие
 операции, ProcedureName и имена параметров через ту же сессию и связь с модулем BSL.
+[Сервисы интеграции](docs/research/eska-format/analyzer-integration-services.md)
+передают каналы и обработчики получения сообщений в общую сессию IDE/checker;
+привязки учитываются в диагностике неиспользуемых процедур.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

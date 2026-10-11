@@ -6,6 +6,8 @@ mod event_subscription_tests;
 #[cfg(test)]
 mod http_service_tests;
 #[cfg(test)]
+mod integration_service_tests;
+#[cfg(test)]
 mod module_tests;
 mod saved_changes;
 #[cfg(test)]
@@ -30,8 +32,9 @@ use ide_db::{
     metadata::{
         CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, MetadataListingData,
         MetadataListingInput, resolve_common_module, resolve_defined_type,
-        resolve_event_subscription, resolve_http_service, resolve_metadata_object,
-        resolve_register, resolve_scheduled_job, resolve_subsystem, resolve_web_service,
+        resolve_event_subscription, resolve_http_service, resolve_integration_service,
+        resolve_metadata_object, resolve_register, resolve_scheduled_job, resolve_subsystem,
+        resolve_web_service,
     },
 };
 use salsa::Setter;
@@ -375,6 +378,10 @@ impl AnalysisSession {
             return Ok(None);
         };
         Ok(match value.as_ref() {
+            CanonicalMetadata::IntegrationService(_) => {
+                resolve_integration_service(&self.database, self.listing, name.clone())
+                    .map(CanonicalMetadata::IntegrationService)
+            }
             CanonicalMetadata::WebService(_) => {
                 resolve_web_service(&self.database, self.listing, name.clone())
                     .map(CanonicalMetadata::WebService)

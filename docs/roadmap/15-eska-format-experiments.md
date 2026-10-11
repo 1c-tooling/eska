@@ -1416,6 +1416,17 @@ JSON RU/EN совпал, graph 206/214 и версии прежние. SOAP/WSDL
 обработчиков, прочие модели, полная семантика, memory budget, edits и Explorer
 ещё в работе. EF-18 — `IN_PROGRESS`.
 
+[Сервисы интеграции](../research/eska-format/analyzer-integration-services.md)
+публикуют каналы и ReceiveMessageProcessing через canonical name/file resolver.
+Три модели и 12 каналов C1/C2/C3 совпали с native reader; current/invalid/close и
+координаты проверены RU/EN. Правка binding меняет UnusedLocalMethod без правки BSL;
+saved batch и resident session совпали. 268 tool tests, kernel 1110/4 и все
+6 adapter/5 kernel/19 tool/15 root gates прошли. Checker C1 сохранил 26 findings
+и bytes 7 829 файлов; убран один отказ по виду, осталось 1 497 metadata issues.
+JSON RU/EN, graph 206/214 и версии прежние. Native completion имён этой коллекции
+пока отсутствует; сигнатуры handlers, transport/message runtime, прочие модели,
+полная семантика, memory budget, edits и Explorer ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

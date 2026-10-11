@@ -247,6 +247,10 @@ Name/file resolvers согласованы; объявленный BSL body им
 `CanonicalMetadata::WebService` для Namespace, операций и имён параметров.
 Name/file lookup имеет тот же lifecycle; типы параметров и XDTO остаются в общем
 descriptor, поскольку native модель хранит только имена.
+[Сервисы интеграции](../../docs/research/eska-format/analyzer-integration-services.md)
+используют `CanonicalMetadata::IntegrationService` для каналов и receive handlers.
+Current binding учитывается в UnusedLocalMethod; saved batch и resident session
+согласованы. Native completion имён этой коллекции пока отсутствует.
 [Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
 сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
 Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.

@@ -926,6 +926,7 @@ pub enum CanonicalMetadata {
     Subsystem(Arc<bsl_metadata::Subsystem>),
     HTTPService(Arc<bsl_metadata::HTTPService>),
     WebService(Arc<bsl_metadata::WebService>),
+    IntegrationService(Arc<bsl_metadata::IntegrationService>),
 }
 
 impl CanonicalMetadata {
@@ -941,6 +942,7 @@ impl CanonicalMetadata {
             Self::Subsystem(value) => value.estimated_heap_size(),
             Self::HTTPService(value) => value.estimated_heap_size(),
             Self::WebService(value) => value.estimated_heap_size(),
+            Self::IntegrationService(value) => value.estimated_heap_size(),
         }
     }
 }
@@ -1671,6 +1673,17 @@ pub fn resolve_integration_service(
 
     let index = integration_service_index(db, listing);
     let main = index.lookup(&name)?;
+    if let Some(input) = listing.canonical_metadata(db).get(&main) {
+        let _source_revision = input.source_revision(db);
+        let value = input.value(db).as_ref()?;
+        let CanonicalMetadata::IntegrationService(service) = value.as_ref() else {
+            return None;
+        };
+        if !stdx::case::eq_ignore_case(service.name(), &name) {
+            return None;
+        }
+        return Some(Arc::clone(service));
+    }
     let file = IntegrationServiceFile::new(db, main);
     parse_integration_service_query(db, file)
 }
@@ -1685,9 +1698,7 @@ pub fn resolve_integration_service_by_file(
 
     let index = integration_service_index(db, listing);
     let name = index.name_for_module_file(module_file)?;
-    let main = index.lookup(name)?;
-    let file = IntegrationServiceFile::new(db, main);
-    parse_integration_service_query(db, file)
+    resolve_integration_service(db, listing, name.to_owned())
 }
 
 /// The main XML file of a single event subscription, interned so

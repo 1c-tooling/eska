@@ -5,8 +5,9 @@ use std::collections::BTreeMap;
 use bsl_metadata::MdoType;
 use eska::project_core::{MetadataKind, source_format::SourcePath};
 use ide_db::metadata::{
-    CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, HTTPServiceEntry, MdoEntry,
-    MetadataListingData, ScheduledJobEntry, SubsystemEntry, WebServiceEntry,
+    CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, HTTPServiceEntry,
+    IntegrationServiceEntry, MdoEntry, MetadataListingData, ScheduledJobEntry, SubsystemEntry,
+    WebServiceEntry,
 };
 use vfs::FileId;
 
@@ -26,6 +27,13 @@ impl OwnerBinding {
             return;
         };
         match self.kind {
+            MetadataKind::IntegrationService => {
+                listing.integration_services.push(IntegrationServiceEntry {
+                    name: name.clone(),
+                    main: self.main,
+                    module_file: None,
+                });
+            }
             MetadataKind::WebService => {
                 listing.web_services.push(WebServiceEntry {
                     name: name.clone(),
@@ -165,6 +173,9 @@ pub fn connect_service_bodies(
     }
     for entry in &mut structure.web_services {
         entry.module_file = declared_body(modules, "WebServices", &entry.name)?;
+    }
+    for entry in &mut structure.integration_services {
+        entry.module_file = declared_body(modules, "IntegrationServices", &entry.name)?;
     }
     Ok(())
 }

@@ -248,6 +248,13 @@ EF-18 остаётся `IN_PROGRESS`; endpoint runtime и сигнатура Han
 265 tool tests, kernel 1109/4 и все обязательные gates прошли. Checker C1 сохранил
 26 findings, убрал десять отказов по виду; 1 498 issues сохранили exit 2.
 EF-18 остаётся `IN_PROGRESS`; SOAP/WSDL/XDTO и сигнатуры не проверены.
+[Сервисы интеграции](../research/eska-format/analyzer-integration-services.md)
+публикуют каналы/ReceiveMessageProcessing через canonical name/file resolver.
+Все три модели и 12 каналов C1/C2/C3 совпали с native reader. Правка binding
+обновляет UnusedLocalMethod; saved batch/resident согласованы RU/EN. 268 tool tests,
+kernel 1110/4 и все gates прошли; checker C1 сохранил 26 findings и убрал один отказ
+по виду, осталось 1 497 issues. Completion имён этой коллекции пока отсутствует.
+EF-18 остаётся `IN_PROGRESS`; сигнатуры и message runtime не проверены.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

@@ -132,6 +132,8 @@ fn canonical(
         }));
     };
     Some(match kind {
+        MetadataKind::IntegrationService => adapter::integration_service(descriptor)
+            .map(|model| CanonicalMetadata::IntegrationService(Arc::new(model))),
         MetadataKind::WebService => adapter::web_service(descriptor)
             .map(|model| CanonicalMetadata::WebService(Arc::new(model))),
         MetadataKind::HTTPService => adapter::http_service(descriptor)
