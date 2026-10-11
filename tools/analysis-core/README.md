@@ -239,6 +239,10 @@ YAML и имена BSL completions согласованы с тем же host. �
 `CanonicalMetadata::Subsystem` для главного descriptor: current Content и имена
 прямых детей согласованы с metadata listing. Вложенные descriptors сохраняют
 `metadata_descriptors_unmodeled`; готовая главная модель не скрывает неполноту.
+[HTTP-сервисы](../../docs/research/eska-format/analyzer-http-services.md) используют
+`CanonicalMetadata::HTTPService` для current RootURL, шаблонов URL и методов.
+Name/file resolvers согласованы; объявленный BSL body имеет устойчивый backlink,
+а его чтение остаётся отдельным действием общей сессии.
 [Подробная ошибка модели](../../docs/research/eska-format/analyzer-adapter-issues.md)
 сохраняет общий code/range и добавляет конкретный machine tag, свойство или QName.
 Та же DTO используется в страницах, чтении и уведомлениях текущего YAML.

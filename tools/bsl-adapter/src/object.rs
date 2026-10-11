@@ -140,7 +140,7 @@ fn attribute(object: &ParsedObject) -> Result<Attribute, AdapterError> {
 }
 
 /// Direct parent identity distinguishes a tabular field from a same-named object attribute.
-fn children<'a>(
+pub fn children<'a>(
     descriptor: &'a ParsedDescriptor,
     parent: &'a ParsedObject,
 ) -> impl Iterator<Item = &'a ParsedObject> {

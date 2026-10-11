@@ -9,11 +9,12 @@ use vfs::FileId;
 use crate::{
     metadata::{
         common_module_index, config_index, defined_type_index, event_subscription_index,
-        resolve_common_module, resolve_common_module_by_file, resolve_defined_type,
-        resolve_event_subscription, resolve_register, resolve_register_by_name,
+        http_service_index, resolve_common_module, resolve_common_module_by_file,
+        resolve_defined_type, resolve_event_subscription, resolve_http_service,
+        resolve_http_service_by_file, resolve_register, resolve_register_by_name,
         resolve_scheduled_job, resolve_subsystem, scheduled_job_index, subsystem_index,
         CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, CommonModuleEntry,
-        DefinedTypeEntry, EventSubscriptionEntry, MdoEntry, MetadataListingData,
+        DefinedTypeEntry, EventSubscriptionEntry, HTTPServiceEntry, MdoEntry, MetadataListingData,
         MetadataListingInput, ScheduledJobEntry, SubsystemEntry,
     },
     RootDatabaseImpl,
@@ -237,6 +238,91 @@ fn canonical_subsystem_preserves_neighbors_and_rejects_unavailable_or_wrong_iden
     ))));
     assert!(resolve_subsystem(&database, listing, "Подсистема".into()).is_none());
     assert_eq!(database.salsa_family_churn("parse_subsystem_query").expect("events").0, 0);
+}
+
+/// Name and module-file resolvers share one current service while a neighbor remains memoised.
+#[test]
+fn canonical_http_service_is_current_by_name_and_module_without_xml_fallback() {
+    let (mut database, listing) = database();
+    listing.set_http_services(&mut database).to(Arc::new(vec![
+        HTTPServiceEntry {
+            name: "Сервис".into(), main: FileId(10), module_file: Some(FileId(12))
+        },
+        HTTPServiceEntry {
+            name: "Neighbor".into(),
+            main: FileId(11),
+            module_file: Some(FileId(13)),
+        },
+    ]));
+    let make = |name: &str, root: &str, route: &str, handler: &str| {
+        Arc::new(
+            bsl_metadata::HTTPServiceBuilder::new()
+                .name(name)
+                .root_url(root)
+                .uri(format!("HTTPServices/{name}/Ext/Module.bsl"))
+                .add_url_template(
+                    bsl_metadata::HTTPServiceURLTemplateBuilder::new()
+                        .name("Route")
+                        .template(route)
+                        .add_method(
+                            bsl_metadata::HTTPServiceMethodBuilder::new()
+                                .name("Get")
+                                .http_method("GET")
+                                .handler(handler)
+                                .build(),
+                        )
+                        .build(),
+                )
+                .build(),
+        )
+    };
+    let saved = make("Сервис", "saved", "/saved", "Saved");
+    let neighbor = make("Neighbor", "neighbor", "/untouched", "Other");
+    let provided = input(&database, CanonicalMetadata::HTTPService(Arc::clone(&saved)));
+    let untouched = input(&database, CanonicalMetadata::HTTPService(Arc::clone(&neighbor)));
+    listing
+        .set_canonical_metadata(&mut database)
+        .to(Arc::new([(FileId(10), provided), (FileId(11), untouched)].into_iter().collect()));
+    let index = Arc::clone(http_service_index(&database, listing));
+    assert!(Arc::ptr_eq(
+        &saved,
+        &resolve_http_service(&database, listing, "СЕРВИС".into()).expect("saved")
+    ));
+    assert!(Arc::ptr_eq(
+        &saved,
+        &resolve_http_service_by_file(&database, listing, FileId(12)).expect("saved by file")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_http_service_by_file(&database, listing, FileId(13)).expect("neighbor")
+    ));
+    assert!(database.salsa_events_reset());
+    let current = make("Сервис", "current", "/edited", "Current");
+    provided
+        .set_value(&mut database)
+        .to(Some(Arc::new(CanonicalMetadata::HTTPService(Arc::clone(&current)))));
+    provided.set_source_revision(&mut database).to("editor".into());
+    assert!(Arc::ptr_eq(
+        &current,
+        &resolve_http_service_by_file(&database, listing, FileId(12)).expect("current by file")
+    ));
+    assert!(Arc::ptr_eq(
+        &neighbor,
+        &resolve_http_service_by_file(&database, listing, FileId(13)).expect("unchanged neighbor")
+    ));
+    assert_eq!(database.salsa_family_churn("resolve_http_service").expect("events").0, 1);
+    assert!(Arc::ptr_eq(&index, http_service_index(&database, listing)));
+    provided.set_value(&mut database).to(None);
+    assert!(resolve_http_service_by_file(&database, listing, FileId(12)).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::HTTPService(make(
+        "Other", "wrong", "/wrong", "Wrong",
+    )))));
+    assert!(resolve_http_service(&database, listing, "сервис".into()).is_none());
+    provided.set_value(&mut database).to(Some(Arc::new(CanonicalMetadata::CommonModule(
+        Arc::new(CommonModule::builder().name("Сервис").build()),
+    ))));
+    assert!(resolve_http_service_by_file(&database, listing, FileId(12)).is_none());
+    assert_eq!(database.salsa_family_churn("parse_http_service_query").expect("events").0, 0);
 }
 
 /// Supply typed register semantics directly, not through an XML-shaped VFS string.

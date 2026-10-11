@@ -4,6 +4,8 @@ mod analysis_inputs;
 #[cfg(test)]
 mod event_subscription_tests;
 #[cfg(test)]
+mod http_service_tests;
+#[cfg(test)]
 mod module_tests;
 mod saved_changes;
 #[cfg(test)]
@@ -26,8 +28,8 @@ use ide_db::{
     metadata::{
         CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, MetadataListingData,
         MetadataListingInput, resolve_common_module, resolve_defined_type,
-        resolve_event_subscription, resolve_metadata_object, resolve_register,
-        resolve_scheduled_job, resolve_subsystem,
+        resolve_event_subscription, resolve_http_service, resolve_metadata_object,
+        resolve_register, resolve_scheduled_job, resolve_subsystem,
     },
 };
 use salsa::Setter;
@@ -206,6 +208,7 @@ impl AnalysisSession {
         let modules =
             crate::binding::register_modules(reader, owners.len(), &mut database, &mut file_set)?;
         crate::binding::connect_common_bodies(&mut structure, &modules)?;
+        crate::binding::connect_http_bodies(&mut structure, &modules)?;
         database.set_source_root(SourceRootId(0), SourceRoot::new_local(file_set));
         database.set_metadata_listing(&root_key, structure);
         let listing = database
@@ -370,6 +373,10 @@ impl AnalysisSession {
             return Ok(None);
         };
         Ok(match value.as_ref() {
+            CanonicalMetadata::HTTPService(_) => {
+                resolve_http_service(&self.database, self.listing, name.clone())
+                    .map(CanonicalMetadata::HTTPService)
+            }
             CanonicalMetadata::Subsystem(_) => {
                 resolve_subsystem(&self.database, self.listing, name.clone())
                     .map(CanonicalMetadata::Subsystem)

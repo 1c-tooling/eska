@@ -924,6 +924,7 @@ pub enum CanonicalMetadata {
     EventSubscription(Arc<bsl_metadata::EventSubscription>),
     ScheduledJob(Arc<bsl_metadata::ScheduledJob>),
     Subsystem(Arc<bsl_metadata::Subsystem>),
+    HTTPService(Arc<bsl_metadata::HTTPService>),
 }
 
 impl CanonicalMetadata {
@@ -937,6 +938,7 @@ impl CanonicalMetadata {
             Self::EventSubscription(value) => value.estimated_heap_size(),
             Self::ScheduledJob(value) => value.estimated_heap_size(),
             Self::Subsystem(value) => value.estimated_heap_size(),
+            Self::HTTPService(value) => value.estimated_heap_size(),
         }
     }
 }
@@ -1469,6 +1471,17 @@ pub fn resolve_http_service(
 
     let index = http_service_index(db, listing);
     let main = index.lookup(&name)?;
+    if let Some(input) = listing.canonical_metadata(db).get(&main) {
+        let _source_revision = input.source_revision(db);
+        let value = input.value(db).as_ref()?;
+        let CanonicalMetadata::HTTPService(service) = value.as_ref() else {
+            return None;
+        };
+        if !stdx::case::eq_ignore_case(service.name(), &name) {
+            return None;
+        }
+        return Some(Arc::clone(service));
+    }
     let file = HTTPServiceFile::new(db, main);
     parse_http_service_query(db, file)
 }
@@ -1483,9 +1496,7 @@ pub fn resolve_http_service_by_file(
 
     let index = http_service_index(db, listing);
     let name = index.name_for_module_file(module_file)?;
-    let main = index.lookup(name)?;
-    let file = HTTPServiceFile::new(db, main);
-    parse_http_service_query(db, file)
+    resolve_http_service(db, listing, name.to_owned())
 }
 
 #[salsa::interned(debug, heap_size = stdx::heap::zero)]

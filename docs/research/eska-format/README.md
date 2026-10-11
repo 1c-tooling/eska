@@ -47,6 +47,8 @@ Source/Event/Handler в каноническое ядро; IDE и checker исп
 Predefined/Use и тот же name listing; расписание не входит в BSL-модель ядра.
 [Подсистемы](analyzer-subsystems.md) передают Content и прямые дочерние имена
 главного descriptor; вложенные descriptors сохраняют явную неполноту coverage.
+[HTTP-сервисы](analyzer-http-services.md) согласуют current маршруты/Handler
+и name/file lookup; модуль BSL загружается независимо от YAML-модели.
 [Отдельный сервер метаданных](analyzer-metadata.md) согласует экспериментальный
 протокол; [синхронизация YAML/BSL](analyzer-documents.md) использует общую сессию,
 редакторские версии и квоту. [Pull-диагностика](analyzer-diagnostics.md) проверяет

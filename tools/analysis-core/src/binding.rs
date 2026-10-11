@@ -5,8 +5,8 @@ use std::collections::BTreeMap;
 use bsl_metadata::MdoType;
 use eska::project_core::{MetadataKind, source_format::SourcePath};
 use ide_db::metadata::{
-    CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, MdoEntry, MetadataListingData,
-    ScheduledJobEntry, SubsystemEntry,
+    CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, HTTPServiceEntry, MdoEntry,
+    MetadataListingData, ScheduledJobEntry, SubsystemEntry,
 };
 use vfs::FileId;
 
@@ -26,6 +26,13 @@ impl OwnerBinding {
             return;
         };
         match self.kind {
+            MetadataKind::HTTPService => {
+                listing.http_services.push(HTTPServiceEntry {
+                    name: name.clone(),
+                    main: self.main,
+                    module_file: None,
+                });
+            }
             MetadataKind::Subsystem => {
                 listing.subsystems.push(SubsystemEntry {
                     name: name.clone(),
@@ -137,6 +144,19 @@ pub fn connect_common_bodies(
         {
             entry.unread_module_file = Some(module.file);
         }
+    }
+    Ok(())
+}
+
+/// Service module identities stay stable while tracked module inputs determine current readability.
+pub fn connect_http_bodies(
+    structure: &mut MetadataListingData,
+    modules: &BTreeMap<SourcePath, crate::modules::ModuleEntry>,
+) -> Result<(), crate::SessionError> {
+    for entry in &mut structure.http_services {
+        let path = SourcePath::parse(&format!("HTTPServices/{}/Ext/Module.bsl", entry.name))
+            .map_err(crate::SessionError::Source)?;
+        entry.module_file = modules.get(&path).map(|module| module.file);
     }
     Ok(())
 }

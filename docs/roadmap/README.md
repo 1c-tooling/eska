@@ -236,6 +236,12 @@ reader; current YAML и completion проверены RU/EN. 261 tool tests, ker
 и все обязательные gates прошли. Checker C1 сохранил 26 findings; вместо 13
 отказов по виду осталось семь отказов по nested coverage, всего 1 512 issues.
 1 775 вложенных descriptors пока без canonical model; EF-18 — `IN_PROGRESS`.
+[HTTP-сервисы](../research/eska-format/analyzer-http-services.md) получили
+current маршруты/Handler и согласованный name/file lookup. Все 27 моделей
+C1/C2/C3 совпали с native reader; IDE lifecycle проверен RU/EN. 263 tool tests,
+kernel 1108/4 и все обязательные gates прошли. Checker C1 сохранил 26 findings,
+убрал четыре отказа по виду; остальные 1 508 issues сохранили exit 2.
+EF-18 остаётся `IN_PROGRESS`; endpoint runtime и сигнатура Handler не проверены.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

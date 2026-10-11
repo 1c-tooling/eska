@@ -1394,6 +1394,17 @@ JSON RU/EN совпал, graph 206/214 и версии прежние. 1 775 в�
 ещё не имеют canonical model; прочие модели, полная семантика, общий memory
 budget, edits и Explorer остаются в работе. EF-18 — `IN_PROGRESS`.
 
+[HTTP-сервисы](../research/eska-format/analyzer-http-services.md) публикуют
+RootURL, шаблоны URL, методы и Handler как один current canonical input.
+Name/file lookup согласованы без чтения тела при загрузке YAML. Все 27 моделей
+C1/C2/C3 совпали с native reader; current/invalid/close, completion и координаты
+проверены RU/EN. 263 tool tests, kernel 1108/4 и все 6 adapter/5 kernel/19 tool/
+15 root gates прошли. Checker C1 сохранил 26 findings и все 7 829 исходных файлов;
+ушли четыре отказа по HTTP-сервисам, осталось 1 508 metadata issues. JSON RU/EN
+совпал, graph 206/214 и версии прежние. Исполнимость endpoint и сигнатура Handler
+не доказаны; остальные модели, полная семантика, memory budget, edits и Explorer
+ещё в работе. EF-18 — `IN_PROGRESS`.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

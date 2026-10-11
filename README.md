@@ -787,6 +787,9 @@ preset = "trunk"
 [Подсистемы](docs/research/eska-format/analyzer-subsystems.md) передают Content
 и имена прямых детей из главного YAML descriptor; вложенные descriptors сохраняют
 явную неполноту покрытия.
+[HTTP-сервисы](docs/research/eska-format/analyzer-http-services.md) передают текущие
+маршруты и обработчики; разрешение по имени и объявленному BSL-модулю использует
+одно каноническое значение.
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

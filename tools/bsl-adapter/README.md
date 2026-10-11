@@ -107,6 +107,13 @@ false defaults; неверные явные значения и дубли да�
 C1/C2/C3 с native reader: полное равенство подтверждено. 48 unit и шесть файловых
 тестов прошли. Nested descriptors не получают отдельных канонических моделей.
 
+[`http_service`](../../docs/research/eska-format/analyzer-http-services.md)
+сохраняет имя, RootURL, шаблоны URL, методы/Handler и логический URI модуля.
+Прямой parent отделяет одинаковые имена методов в разных шаблонах; неверные scalars
+дают текущие typed issues. `project_http_services` сравнил все 4/12/11 моделей
+C1/C2/C3 с native reader: полное равенство подтверждено. 52 unit и шесть файловых
+тестов прошли. Session settings остаются в общей модели проекта.
+
 Исходный API закреплён на bsl-analyzer `9021ba0`, пакет `bsl-metadata` заменён
 локальным расширением из `bsl-kernel`; библиотека моделей используется без
 IDE/LSP/MCP runtime. Для проверок нужен Rust; автоматические файловые

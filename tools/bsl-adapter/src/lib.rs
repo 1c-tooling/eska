@@ -3,6 +3,7 @@
 mod common_module;
 mod defined_type;
 mod event_subscription;
+mod http_service;
 mod identity;
 mod object;
 mod properties;
@@ -15,6 +16,7 @@ mod type_description;
 pub use common_module::common_module;
 pub use defined_type::defined_type;
 pub use event_subscription::event_subscription;
+pub use http_service::http_service;
 pub use object::metadata_object;
 pub use register::register;
 pub use scheduled_job::scheduled_job;

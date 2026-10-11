@@ -132,6 +132,8 @@ fn canonical(
         }));
     };
     Some(match kind {
+        MetadataKind::HTTPService => adapter::http_service(descriptor)
+            .map(|model| CanonicalMetadata::HTTPService(Arc::new(model))),
         MetadataKind::Subsystem => adapter::subsystem(descriptor)
             .map(|model| CanonicalMetadata::Subsystem(Arc::new(model))),
         MetadataKind::ScheduledJob => adapter::scheduled_job(root)
