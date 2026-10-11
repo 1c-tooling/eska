@@ -21,6 +21,12 @@ XML-экспорт не участвуют в чтении.
 публикуются в главном `MetadataObject` и меняют native completion. Неверный XML
 очищает этот slot без disk fallback; сосед и nested forms сохраняют свои memos.
 
+[Адресная подготовка completion](../../docs/research/eska-format/analyzer-targeted-completion.md)
+загружает YAML своего модуля, его primary resource/текущий dialog и прямой manager
+target, выбранный native ядром. Предварительный metadata read для такого доступа
+не требуется. Чужие dialog/BSL payloads остаются pending; ready/editor inputs
+не перечитываются. Read-only `module_completions` сохраняет отдельный контракт.
+
 Для [общих форм](../../docs/research/eska-format/analyzer-forms.md) текущие YAML
 и declared dialog публикуют canonical slot в контекст BSL-модуля.
 Непредоставленные формы canonical корня больше не читают preserved XML с диска.

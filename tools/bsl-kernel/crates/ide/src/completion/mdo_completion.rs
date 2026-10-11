@@ -10,6 +10,26 @@ use syntax::{SyntaxKind, SyntaxNode, SyntaxToken};
 use super::env_filter::EnvFilter;
 use super::{CompletionItem, CompletionItemKind, CompletionPosition};
 
+/// Expose only a direct object dependency admitted by the same native root and environment rules.
+/// Hosts may prepare that current input before completion; discovery performs no source I/O.
+pub(crate) fn metadata_target<DB: RootDatabase>(
+    db: &DB,
+    position: CompletionPosition,
+) -> Option<(MdoType, String)> {
+    let parse = db.parse(position.file_id);
+    let token = parse.syntax_node().token_at_offset(position.offset).left_biased()?;
+    let MdoContext::Object { mdo_type, object_name, collection_root } = detect_mdo_context(&token)?
+    else {
+        return None;
+    };
+    let env_filter = EnvFilter::at(db, position.file_id, position.offset);
+    match collection_root_claim(db, &position, &collection_root, mdo_type) {
+        RootClaim::Global if !env_filter.admits(hir::manager_collection_env(mdo_type)) => None,
+        RootClaim::ShadowedOther => None,
+        RootClaim::Global | RootClaim::ShadowedSameType => Some((mdo_type, object_name)),
+    }
+}
+
 pub(super) fn mdo_completions<DB: RootDatabase>(
     db: &DB,
     position: CompletionPosition,

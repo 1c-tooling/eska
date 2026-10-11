@@ -1580,6 +1580,22 @@ Protocol 0.1 добавляет `predefinedDataSync`/`predefined_data`; source s
 items вторым аргументом. Платформа не запускалась. Остальные условия EF-18
 ещё в работе; EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
 
+[Адресная подготовка completion](../research/eska-format/analyzer-targeted-completion.md)
+подключена к native discovery и общему контроллеру. Первый прямой manager access
+загружает YAML своего модуля и указанного объекта с их primary resources;
+текущий form body получает только собственный dialog. Read-only query не читает
+source; ready/editor inputs сохраняют приоритет, чужие dialogs/bodies остаются pending.
+Семь shared, два native и два process tests добавлены; cancellation учитывает
+актуальные часы после own YAML. SDK — 316 tests, kernel — 2 634/20, root — 910/14;
+все 23 tool/5 kernel/15 root gates прошли. Шесть stdio C1/C2/C3 RU/EN проверили
+первый request без metadata read, 56 739/72 324/29 449 source bytes и 2/4/1 pending
+dialogs; editor invalid/close, saved deletion/recreation и hashes сохранены.
+Checker C1 сохранил полный JSON, 26 findings, 960 issues и 204 388 259 source bytes.
+Protocol 0.1 добавляет `targetedCompletionMetadata`; версии, source/result schemas,
+dependencies и graph 206/214 прежние. Partial copies не подтверждают полный RSS
+budget; платформа не запускалась. Остальные условия EF-18 остаются в работе;
+EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

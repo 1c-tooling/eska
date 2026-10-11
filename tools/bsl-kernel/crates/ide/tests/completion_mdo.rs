@@ -5,6 +5,54 @@ use std::path::{Path, PathBuf};
 use test_fixture::Fixture;
 use vfs::{FileId, FileSet};
 
+/// Dependency discovery uses native root ownership and context without reading the target object.
+#[test]
+fn direct_completion_dependency_discovery_preserves_native_names_and_kinds() {
+    for (access, kind, name) in [
+        ("Catalogs.Items.$0", bsl_metadata::MdoType::Catalog, "Items"),
+        ("сПрАвОчНиКи.Товары.Sa$0", bsl_metadata::MdoType::Catalog, "Товары"),
+        ("ChartsOfAccounts.Accounts.$0", bsl_metadata::MdoType::ChartOfAccounts, "Accounts"),
+        (
+            "ChartsOfCalculationTypes.Calculations.$0",
+            bsl_metadata::MdoType::ChartOfCalculationTypes,
+            "Calculations",
+        ),
+        (
+            "ChartsOfCharacteristicTypes.Characteristics.$0",
+            bsl_metadata::MdoType::ChartOfCharacteristicTypes,
+            "Characteristics",
+        ),
+    ] {
+        let fixture = format!("//- /test.bsl\nProcedure Run()\n Value = {access};\nEndProcedure\n");
+        let (analysis, file, offset) = setup_with_config(&fixture);
+        assert_eq!(
+            analysis.completion_metadata_target(file, offset),
+            Some((kind, name.to_owned())),
+            "{access}"
+        );
+    }
+}
+
+/// Collection names, non-code tokens, local shadowing and client-only code do not admit an object dependency.
+#[test]
+fn direct_completion_dependency_discovery_rejects_unclaimed_or_unavailable_roots() {
+    for (path, body) in [
+        ("/test.bsl", "Procedure Run()\n Value = Catalogs.$0;\nEndProcedure\n"),
+        ("/test.bsl", "Procedure Run()\n Value = Metadata.Catalogs.$0;\nEndProcedure\n"),
+        ("/test.bsl", "Procedure Run(Catalogs)\n Value = Catalogs.Items.$0;\nEndProcedure\n"),
+        ("/test.bsl", "Procedure Run()\n Value = \"Catalogs.Items.$0\";\nEndProcedure\n"),
+        ("/test.bsl", "Procedure Run()\n // Catalogs.Items.$0\nEndProcedure\n"),
+        (
+            "/Catalogs/Items/Forms/Main/Ext/Form/Module.bsl",
+            "&AtClient\nProcedure Run()\n Value = Catalogs.Items.$0;\nEndProcedure\n",
+        ),
+    ] {
+        let fixture = format!("//- {path}\n{body}");
+        let (analysis, file, offset) = setup_with_config(&fixture);
+        assert_eq!(analysis.completion_metadata_target(file, offset), None, "{body}");
+    }
+}
+
 fn designer_fixture_path() -> PathBuf {
     PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../bsl-metadata/fixtures/designer"))
 }

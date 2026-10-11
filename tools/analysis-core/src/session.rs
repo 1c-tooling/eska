@@ -1,6 +1,7 @@
 //! One resident metadata session connects the shared input controller to tracked kernel slots.
 
 mod analysis_inputs;
+mod completion_inputs;
 #[cfg(test)]
 mod event_subscription_tests;
 mod forms;

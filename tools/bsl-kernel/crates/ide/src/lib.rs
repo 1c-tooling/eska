@@ -232,6 +232,24 @@ impl Analysis {
         selection_range::selection_ranges(&self.db, file_id, offsets)
     }
 
+    /// Discover a direct metadata-object dependency without loading its current descriptor.
+    pub fn completion_metadata_target(
+        &self,
+        file_id: FileId,
+        offset: u32,
+    ) -> Option<(bsl_metadata::MdoType, String)> {
+        completion::metadata_target(
+            &self.db,
+            completion::CompletionPosition {
+                file_id,
+                offset: TextSize::from(offset),
+                workspace_root: None,
+                // Discovery has no localized output; locale cannot affect its target identity.
+                locale: Locale::Ru,
+            },
+        )
+    }
+
     pub fn completions(
         &self,
         file_id: FileId,

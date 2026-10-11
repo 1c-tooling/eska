@@ -12,6 +12,7 @@ use serde_json::{Value, json};
 use super::{Client, initialize, notification, request, snapshot, support};
 
 mod fixture;
+mod targeted;
 
 const MODULE: &str = "Catalogs/Sample/Ext/ObjectModule.bsl";
 const OWNER: &str = "Catalogs/Sample/object.yaml";
@@ -191,6 +192,8 @@ fn cursor_and_preflight_failures_never_return_successful_empty_completion() {
             clamped["result"]["eska"]["position_byte"],
             body.find('\r').unwrap()
         );
+        assert_eq!(clamped["result"]["eska"]["snapshot"], snapshot("2"));
+        bad["params"]["eska"]["snapshot"] = snapshot("2");
         for position in [
             json!({"line":9,"character":0}),
             json!({"line":0,"character":-1}),
@@ -199,7 +202,7 @@ fn cursor_and_preflight_failures_never_return_successful_empty_completion() {
             bad["params"]["position"] = position;
             assert!(client.ask(&bad).get("error").is_some());
         }
-        bad = pull(&source, module, "1", "\u{feff}// Я😀");
+        bad = pull(&source, module, "2", "\u{feff}// Я😀");
         bad["params"]["context"] = json!({"triggerKind":2});
         assert_eq!(
             client.ask(&bad)["error"]["data"]["kind"],

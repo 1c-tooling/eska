@@ -35,8 +35,10 @@ Optional context с triggerKind 1–3, workDoneToken и partialResultToken пр�
 resources и coverage: metadata_inputs_complete, metadata_models_complete,
 module_inputs_complete, semantic_complete. Последний пока всегда false.
 `isIncomplete=true`, если модели метаданных или входы модулей неполны.
-Lazy-чтение только целевого BSL может изменить ревизию; ответ сообщает новую.
-Ожидающие YAML не читаются автоматически ради одной подсказки.
+Lazy-чтение целевого BSL и [адресная подготовка метаданных](analyzer-targeted-completion.md)
+могут изменить ревизию; ответ сообщает новую. Сервер подготавливает YAML своего
+модуля, его primary resource/текущий dialog и прямой manager target, определённый
+native ядром. Полный metadata scan не выполняется.
 
 Open/change/close YAML и BSL меняют тот же host: имя реквизита из черновика
 заменяет сохранённое в подсказках; неверный текущий YAML очищает модель;
@@ -67,10 +69,12 @@ analysis_cancelled. Timeout `--timeout-seconds` по умолчанию 300, н�
 операцию до lazy-чтения. Для completion ошибка timeout — `-32000` с
 analysis_deadline_exceeded и текущим snapshot; retriggerRequest отсутствует.
 `-32802`/retriggerRequest=false остаются специальным ответом diagnostic pull.
-Первый stop cause сохраняется. Snapshot/bytes/quota редактора не меняются;
-новый запрос получает новый control. Остановка кооперативная, без SLA ответа.
+Первый stop cause сохраняется. Байты и document version редакторского BSL
+сохраняются; принятые до остановки metadata inputs учитываются в актуальном
+snapshot ответа. Новый запрос получает новый control. Остановка кооперативная,
+без SLA ответа.
 
-## Проверки и ограничения
+## Первоначальная приёмка и ограничения
 
 34 unit/file, 28 analyzer process и 9 checker process tests прошли вместе с
 19 gates tool feature matrix, Rustdoc и release builds. Root: 887 passed /

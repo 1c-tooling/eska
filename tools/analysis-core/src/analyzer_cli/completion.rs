@@ -106,7 +106,7 @@ pub fn pull(
     )
 }
 
-/// Current bytes are borrowed for position conversion; completion does not scan or load all YAML.
+/// Borrow current coordinates, then prepare only native direct dependencies before the read-only query.
 fn analyze(
     session: &mut AnalysisSession,
     path: &eska::project_core::source_format::SourcePath,
@@ -128,6 +128,15 @@ fn analyze(
             error["data"]["details"] = dto::snapshot(session, options.session_id);
             error
         })?;
+    session
+        .prepare_completion_metadata(
+            path,
+            session.revision(),
+            offset,
+            &options.request,
+            &options.cancellation.query,
+        )
+        .map_err(|error| language::query_error(session, options.session_id, &error))?;
     let result = session
         .module_completions(
             path,

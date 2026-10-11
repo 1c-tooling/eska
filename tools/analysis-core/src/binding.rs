@@ -91,7 +91,7 @@ impl OwnerBinding {
                         kind,
                         name: name.clone(),
                         main: self.main,
-                        // Predefined resources are outside the current adapter's coverage.
+                        // Canonical objects carry current items in their slot; this XML path is unused.
                         predefined: None,
                     });
                 }

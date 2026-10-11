@@ -816,6 +816,11 @@ bounded current bytes. Все 305 ресурсов C1/C2/C3 совпали с na
 к объекту и native completion через общий resource controller. Неверный XML
 очищает модель без старых items; правка сохраняет YAML, соседа и формы.
 
+[Первый completion](docs/research/eska-format/analyzer-targeted-completion.md)
+для прямого manager access сам подготавливает текущий объект и predefined data.
+Языковое ядро выбирает зависимость; общий controller загружает её без чтения
+чужих dialog/BSL payloads. Предварительный metadata read не требуется.
+
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.
 [Переход к объекту или свойству YAML](docs/research/eska-format/analyzer-metadata-locations.md)

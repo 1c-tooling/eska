@@ -48,14 +48,14 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
         let cancelled = client.receive();
         assert_eq!(cancelled["id"], id);
         assert_eq!(cancelled["error"]["code"], -32800, "{cancelled}");
-        assert_eq!(cancelled["error"]["data"]["details"], snapshot("1"));
+        let stopped = cancelled["error"]["data"]["details"].clone();
+        let stopped_revision = stopped["revision"].as_str().unwrap();
         let owners = client.ask(&request(
             id.clone(),
             "eska/metadata/owners",
-            json!({"snapshot":snapshot("1"),"limit":1}),
+            json!({"snapshot":stopped,"limit":1}),
         ));
-        assert_eq!(owners["result"]["snapshot"], snapshot("1"));
-        assert_eq!(owners["result"]["resources"], opened["params"]["resources"]);
+        let own_ready = verify_cancelled_inputs(method, &stopped, &owners, &opened);
         let text = if method == "textDocument/signatureHelp" {
             "Procedure Test()\nEndProcedure\nTest();\n"
         } else {
@@ -65,9 +65,17 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
             &json!({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
             "textDocument":{"uri":uri,"version":2},"contentChanges":[{"text":text}]}}),
         );
-        assert_eq!(changed["params"]["snapshot"], snapshot("2"));
+        let changed_revision = stopped_revision.parse::<u64>().unwrap() + 1;
+        assert_eq!(
+            changed["params"]["snapshot"],
+            snapshot(&changed_revision.to_string())
+        );
         client.send(&json!({"jsonrpc":"2.0","method":"$/cancelRequest","params":{"id":"reuse"}}));
-        let later = client.ask(&request(json!("reuse"), method, params(method, &uri, "2")));
+        let later = client.ask(&request(
+            json!("reuse"),
+            method,
+            params(method, &uri, &changed_revision.to_string()),
+        ));
         assert!(later.get("result").is_some(), "{later}");
         let current = if matches!(
             method,
@@ -77,12 +85,50 @@ fn cancelled_language_requests_preserve_input_and_allow_later_requests() {
         } else {
             &later["result"]["eska"]["snapshot"]
         };
-        assert_eq!(current, &snapshot("2"));
+        let expected =
+            changed_revision + u64::from(method == "textDocument/completion" && !own_ready);
+        assert_eq!(current, &snapshot(&expected.to_string()));
         if method == "textDocument/diagnostic" {
             assert_eq!(later["result"]["items"], json!([]));
         }
         client.finish();
     }
+}
+
+/// The own YAML may publish before parsing is cancelled; accepted metadata never changes editor BSL.
+fn verify_cancelled_inputs(method: &str, stopped: &Value, owners: &Value, opened: &Value) -> bool {
+    let revision = stopped["revision"].as_str().unwrap();
+    if method == "textDocument/completion" {
+        assert!(["1", "2"].contains(&revision));
+    } else {
+        assert_eq!(stopped, &snapshot("1"));
+    }
+    assert_eq!(&owners["result"]["snapshot"], stopped);
+    assert_eq!(
+        owners["result"]["resources"]["module_text_bytes"],
+        opened["params"]["resources"]["module_text_bytes"]
+    );
+    let owner = &owners["result"]["owners"][0];
+    let ready = owner["state"]["input"]["kind"] == "ready";
+    if revision == "1" {
+        assert_eq!(owners["result"]["resources"], opened["params"]["resources"]);
+        assert_eq!(owner["state"]["input"]["kind"], "pending");
+    } else {
+        assert_eq!(owner["source"], "CommonModules/Tools/object.yaml");
+        assert!(matches!(
+            owner["state"]["input"]["kind"].as_str(),
+            Some("ready" | "unavailable")
+        ));
+        assert_eq!(owner["state"]["origin"], json!({"kind":"saved"}));
+        assert_eq!(
+            owners["result"]["resources"]["metadata_source_bytes"]
+                .as_u64()
+                .unwrap()
+                > 0,
+            ready
+        );
+    }
+    ready
 }
 
 /// All language methods use one current URI/snapshot; cursor queries add a position.

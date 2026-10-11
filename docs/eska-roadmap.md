@@ -136,6 +136,16 @@ items вторым аргументом. Платформа не запуска�
 ещё в работе; EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
 
 
+[Адресный completion](research/eska-format/analyzer-targeted-completion.md)
+подготавливает только YAML текущего модуля, прямой native manager target и нужные
+primary resources/текущий dialog. Первый request работает без metadata read;
+ready/editor input не перечитывается. SDK — 316 tests, kernel — 2 634/20,
+root — 910/14 и все 23 tool/5 kernel/15 root gates прошли. Шесть stdio C1/C2/C3
+RU/EN сохранили 2/4/1 pending dialogs, текущие native items и hashes; checker C1
+сохранил полный JSON, 26 findings, 960 issues и квоту. Protocol 0.1 добавляет
+`targetedCompletionMetadata`; source schemas, версии и dependencies прежние.
+Общий memory budget и остальные условия EF-18 ещё в работе; следующие этапы не начаты.
+
 Принята будущая поставка: обычная установка `eska` даёт оболочку и комплект
 отдельных инструментов; для CI/IDE доступны самостоятельные пакеты. В плане
 экспериментов EF-20 проверяет CF → ESKA → CF и делегирование команд, EF-21 —

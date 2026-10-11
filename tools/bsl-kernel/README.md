@@ -22,6 +22,11 @@ wrong identity/kind и непредоставленная nested форма в c
 Добавлен `try_parse_predefined_xml` с явным syntax/root failure; legacy tolerant
 parser, extraction semantics и Designer callers сохранены.
 
+[Адресный completion](../../docs/research/eska-format/analyzer-targeted-completion.md)
+добавляет `Analysis::completion_metadata_target`: native syntax, root ownership
+и environment rules определяют прямую MDO dependency без загрузки её payload.
+Host готовит текущие inputs; существующий completion query остаётся read-only.
+
 Назначение локальных пакетов:
 
 - `ide`: [автодополнение сервисов интеграции](../../docs/research/eska-format/analyzer-integration-completion.md)

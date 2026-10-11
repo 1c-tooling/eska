@@ -189,7 +189,7 @@ impl AnalysisSession {
     }
 
     /// Validate the exact source and clock before cloning a short-lived kernel handle.
-    fn query_module<T>(
+    pub(crate) fn query_module<T>(
         &self,
         path: &SourcePath,
         expected: SessionRevision,
