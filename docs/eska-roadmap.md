@@ -121,6 +121,21 @@ Binary формы и остальные условия EF-18 ещё в рабо�
 и 22 tool/15 root gates прошли. Checker C1 сохранил полный JSON и квоту;
 XML parser и current producer этих элементов ещё в работе.
 
+[Текущие предопределённые элементы](research/eska-format/analyzer-predefined.md)
+подключены к главному `MetadataObject` через общий ресурсный controller.
+YAML/resource revisions сохраняют соседа и nested form memos; invalid XML
+очищает объект без прежних items. Native completion использует current список.
+Все 305 composed objects и 12 756 items C1/C2/C3 совпали с native reader;
+978 общих форм и 1 641 роль сохранили parity. Шесть real stdio RU/EN-сценариев
+прошли; checker C1 сохранил 26 findings и 960 issues, добавив 85 982 source bytes
+(резерв 204 388 259). SDK — 307 tests, adapter — 70/8, kernel — 2 632/20,
+root — 910/14; все 23 tool/6 adapter/5 kernel/15 root gates прошли.
+Protocol 0.1 добавляет `predefinedDataSync`/`predefined_data`; source schemas,
+версии, зависимости и graph 206/214 прежние. API адаптера теперь принимает
+items вторым аргументом. Платформа не запускалась. Остальные условия EF-18
+ещё в работе; EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
+
+
 Принята будущая поставка: обычная установка `eska` даёт оболочку и комплект
 отдельных инструментов; для CI/IDE доступны самостоятельные пакеты. В плане
 экспериментов EF-20 проверяет CF → ESKA → CF и делегирование команд, EF-21 —

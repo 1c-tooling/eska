@@ -52,22 +52,23 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .objects
                 .first()
                 .ok_or("missing_object_root")?;
-            let mut converted = match eska_bsl_adapter::metadata_object(&document.descriptor) {
-                Ok(value) => value,
-                Err(error)
-                    if matches!(
-                        error.issue,
-                        AdapterIssue::UnsupportedType { .. }
-                            | AdapterIssue::UnsupportedTypeField { .. }
-                            | AdapterIssue::UnsupportedStandardAttribute { .. }
-                            | AdapterIssue::UnsupportedPropertyValue { .. }
-                    ) =>
-                {
-                    *unsupported.entry(format!("{:?}", error.issue)).or_default() += 1;
-                    continue;
-                }
-                Err(error) => return Err(format!("{}:{error:?}", path.as_str()).into()),
-            };
+            let mut converted =
+                match eska_bsl_adapter::metadata_object(&document.descriptor, Vec::new()) {
+                    Ok(value) => value,
+                    Err(error)
+                        if matches!(
+                            error.issue,
+                            AdapterIssue::UnsupportedType { .. }
+                                | AdapterIssue::UnsupportedTypeField { .. }
+                                | AdapterIssue::UnsupportedStandardAttribute { .. }
+                                | AdapterIssue::UnsupportedPropertyValue { .. }
+                        ) =>
+                    {
+                        *unsupported.entry(format!("{:?}", error.issue)).or_default() += 1;
+                        continue;
+                    }
+                    Err(error) => return Err(format!("{}:{error:?}", path.as_str()).into()),
+                };
             let xml = fs::read_to_string(native.join(document.path.as_path()))?;
             let mut reference = native_model(root.metadata.kind(), &xml)?;
             caption_differences += compare_captions(&converted, &reference)?;

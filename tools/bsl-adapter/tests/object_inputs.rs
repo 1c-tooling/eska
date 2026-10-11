@@ -38,7 +38,7 @@ fn object_and_tabular_drafts_have_current_types_and_exact_yaml_failures() {
         panic!("expected saved model");
     };
     let saved = std::sync::Arc::clone(saved);
-    let saved_model = metadata_object(&saved.documents[0].descriptor).unwrap();
+    let saved_model = metadata_object(&saved.documents[0].descriptor, Vec::new()).unwrap();
     let text = fs::read_to_string(source.join(path.as_path())).unwrap();
     let draft = text
         .replace("<CodeType>String</CodeType>", "<CodeType>Number</CodeType>")
@@ -50,7 +50,7 @@ fn object_and_tabular_drafts_have_current_types_and_exact_yaml_failures() {
     let InputState::Ready(changed) = &inputs.owner(&path).unwrap().state else {
         panic!("expected current draft model");
     };
-    let model = metadata_object(&changed.documents[0].descriptor).unwrap();
+    let model = metadata_object(&changed.documents[0].descriptor, Vec::new()).unwrap();
     assert!(model.attributes.iter().any(|field| {
         field.name == "Код"
             && field.attr_type
@@ -86,7 +86,7 @@ fn object_and_tabular_drafts_have_current_types_and_exact_yaml_failures() {
     let InputState::Ready(parsed) = &inputs.owner(&path).unwrap().state else {
         panic!("expected a parsed source whose conversion fails");
     };
-    let error = metadata_object(&parsed.documents[0].descriptor).unwrap_err();
+    let error = metadata_object(&parsed.documents[0].descriptor, Vec::new()).unwrap_err();
     assert_eq!(
         error.issue,
         AdapterIssue::InvalidProperty {

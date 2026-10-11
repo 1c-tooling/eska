@@ -14,7 +14,13 @@ shape и прежний XML reader не изменены.
 передаёт текущий `Form` через slot и существующий BSL module context. Pending,
 wrong identity/kind и непредоставленная nested форма в canonical корне не
 читают dialog с диска. Прежний native loader для Designer-корней сохраняется;
-producer dialog input в общей сессии ещё не подключён.
+[producer общих](../../docs/research/eska-format/analyzer-forms.md) и
+[вложенных форм](../../docs/research/eska-format/analyzer-nested-forms.md) подключены.
+
+[Предопределённые элементы](../../docs/research/eska-format/analyzer-predefined.md)
+используют существующий `MetadataObject.predefined_items` и native completion.
+Добавлен `try_parse_predefined_xml` с явным syntax/root failure; legacy tolerant
+parser, extraction semantics и Designer callers сохранены.
 
 Назначение локальных пакетов:
 

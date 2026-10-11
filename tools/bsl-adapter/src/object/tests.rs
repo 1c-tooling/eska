@@ -17,7 +17,34 @@ fn xml(kind: &str, properties: &str, children: &str) -> String {
 
 /// Convert only a fully loaded, issue-free descriptor.
 fn model(text: &str) -> Result<MetadataObject, AdapterError> {
-    metadata_object(&metadata_parser::parse(text, None, PropertiesMode::All).unwrap())
+    metadata_object(
+        &metadata_parser::parse(text, None, PropertiesMode::All).unwrap(),
+        Vec::new(),
+    )
+}
+
+/// Explicit current items preserve the same complete native model in each predefined-data family.
+#[test]
+fn supplied_predefined_items_match_native_composed_object_models() {
+    let data = "<PredefinedData><Item id=\"10000000-0000-4000-8000-000000000010\"><Name>Saved</Name></Item></PredefinedData>";
+    for (tag, kind) in [
+        ("Catalog", MdoType::Catalog),
+        ("ChartOfAccounts", MdoType::ChartOfAccounts),
+        ("ChartOfCalculationTypes", MdoType::ChartOfCalculationTypes),
+        (
+            "ChartOfCharacteristicTypes",
+            MdoType::ChartOfCharacteristicTypes,
+        ),
+    ] {
+        let text = xml(tag, "", "");
+        let descriptor = metadata_parser::parse(&text, None, PropertiesMode::All).unwrap();
+        let items = xml_parser::try_parse_predefined_xml(data).unwrap();
+        let current = metadata_object(&descriptor, items).unwrap();
+        assert_eq!(
+            Some(current),
+            bsl_metadata::parse_metadata_object_from_texts(kind, &text, Some(data))
+        );
+    }
 }
 
 /// Numeric/string codes, standard-field conditions, owner unions and real user types match the core.
@@ -157,7 +184,7 @@ fn object_descriptors_require_supported_kinds_and_loaded_properties() {
     let descriptor =
         metadata_parser::parse(&xml("Catalog", "", ""), None, PropertiesMode::Summary).unwrap();
     assert_eq!(
-        metadata_object(&descriptor).unwrap_err().issue,
+        metadata_object(&descriptor, Vec::new()).unwrap_err().issue,
         AdapterIssue::PropertiesNotLoaded
     );
     assert_eq!(

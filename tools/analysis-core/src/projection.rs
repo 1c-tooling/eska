@@ -100,7 +100,15 @@ pub fn project(
                 result.modeled_descriptors = 1;
                 ModelState::StructureOnly
             } else if let Some(document) = snapshot.documents.first() {
-                if matches!(kind, MetadataKind::Role | MetadataKind::CommonForm) {
+                if matches!(
+                    kind,
+                    MetadataKind::Role
+                        | MetadataKind::CommonForm
+                        | MetadataKind::Catalog
+                        | MetadataKind::ChartOfAccounts
+                        | MetadataKind::ChartOfCalculationTypes
+                        | MetadataKind::ChartOfCharacteristicTypes
+                ) {
                     let state =
                         resource_state(&snapshot.path, &document.descriptor, kind, resource);
                     if matches!(state, ModelState::Ready(_)) {
@@ -178,10 +186,10 @@ fn resource_state(
     let current = match resource {
         None => None,
         Some((path, input)) => {
-            let expected = if kind == MetadataKind::Role {
-                MetadataResourceKind::RoleRights
-            } else {
-                MetadataResourceKind::FormDialog
+            let expected = match kind {
+                MetadataKind::Role => MetadataResourceKind::RoleRights,
+                MetadataKind::CommonForm | MetadataKind::Form => MetadataResourceKind::FormDialog,
+                _ => MetadataResourceKind::PredefinedData,
             };
             if input.kind != expected {
                 return resource_failure(path, "analysis_metadata_resource_kind_mismatch");
@@ -204,7 +212,7 @@ fn resource_state(
             },
         };
         eska_bsl_adapter::role(descriptor, data).map(|role| CanonicalMetadata::Role(Arc::new(role)))
-    } else {
+    } else if matches!(kind, MetadataKind::CommonForm | MetadataKind::Form) {
         let Some((path, text)) = current else {
             // An absent/binary dialog does not contain the managed form's current bindings.
             return resource_failure(source, "analysis_form_dialog_undeclared");
@@ -213,6 +221,16 @@ fn resource_state(
             return resource_failure(path, "analysis_form_dialog_invalid");
         };
         eska_bsl_adapter::form(descriptor, data).map(|form| CanonicalMetadata::Form(Arc::new(form)))
+    } else {
+        let items = match current {
+            None => Vec::new(),
+            Some((path, text)) => match bsl_metadata::xml_parser::try_parse_predefined_xml(text) {
+                Ok(items) => items,
+                Err(_) => return resource_failure(path, "analysis_predefined_data_invalid"),
+            },
+        };
+        eska_bsl_adapter::metadata_object(descriptor, items)
+            .map(|model| CanonicalMetadata::Object(Arc::new(model)))
     };
     match value {
         Ok(value) => ModelState::Ready(Arc::new(value)),
@@ -278,7 +296,7 @@ fn canonical(
         | MetadataKind::ChartOfAccounts
         | MetadataKind::ChartOfCalculationTypes
         | MetadataKind::DataProcessor
-        | MetadataKind::Report => adapter::metadata_object(descriptor)
+        | MetadataKind::Report => adapter::metadata_object(descriptor, Vec::new())
             .map(|model| CanonicalMetadata::Object(Arc::new(model))),
         MetadataKind::Constant => adapter::constant_object(descriptor)
             .map(|model| CanonicalMetadata::Object(Arc::new(model))),

@@ -24,6 +24,9 @@ mod session;
 #[path = "../tests/support/form_project.rs"]
 mod test_form_project;
 #[cfg(test)]
+#[path = "../tests/support/predefined_project.rs"]
+mod test_predefined_project;
+#[cfg(test)]
 #[path = "../tests/support/project.rs"]
 mod test_project;
 #[cfg(test)]

@@ -1,5 +1,7 @@
+use crate::error::{MetadataError, Result};
 use crate::metadata_object::PredefinedItem;
 
+/// Preserve the native loader's tolerant legacy behavior for Designer inputs.
 pub fn parse_predefined_xml(xml: &str) -> Vec<PredefinedItem> {
     let doc = match roxmltree::Document::parse(xml) {
         Ok(doc) => doc,
@@ -18,6 +20,26 @@ pub fn parse_predefined_xml(xml: &str) -> Vec<PredefinedItem> {
     items
 }
 
+/// Parse an explicit current resource without treating malformed XML as a valid empty list.
+///
+/// # Errors
+/// Returns XML syntax errors or a root other than `PredefinedData`.
+/// Item extraction retains the native loader's name, UUID and hierarchy semantics.
+pub fn try_parse_predefined_xml(xml: &str) -> Result<Vec<PredefinedItem>> {
+    let doc = super::helpers::parse_xml(xml)?;
+    let root = doc.root_element();
+    if root.tag_name().name() != "PredefinedData" {
+        return Err(MetadataError::InvalidFormat(format!(
+            "expected a PredefinedData element, found {}",
+            root.tag_name().name()
+        )));
+    }
+    let mut items = Vec::new();
+    collect_items(&root, &mut items);
+    Ok(items)
+}
+
+/// Keep the same ordered native item projection for both tolerant and checked entry points.
 fn collect_items(node: &roxmltree::Node<'_, '_>, items: &mut Vec<PredefinedItem>) {
     for child in node.children() {
         if !child.is_element() || child.tag_name().name() != "Item" {
@@ -48,6 +70,27 @@ fn collect_items(node: &roxmltree::Node<'_, '_>, items: &mut Vec<PredefinedItem>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A checked current resource must distinguish wrong-root and malformed input from no items.
+    #[test]
+    fn checked_predefined_xml_rejects_invalid_resources() {
+        for text in ["<PredefinedData>", "<Other/>", "not XML", ""] {
+            assert!(try_parse_predefined_xml(text).is_err());
+        }
+        assert!(try_parse_predefined_xml("<PredefinedData/>").unwrap().is_empty());
+    }
+
+    /// BOM, Unicode, UUID strings and hierarchy order use the same extraction as the native loader.
+    #[test]
+    fn checked_predefined_xml_retains_native_item_semantics() {
+        let xml = "\u{feff}<PredefinedData><!-- Я😀 --><Item id=\"parent\"><Name>Parent</Name><ChildItems><Item id=\"child\"><Name>Child</Name></Item><Item id=\"empty\"><Name/></Item></ChildItems></Item></PredefinedData>\r\n";
+        let current = try_parse_predefined_xml(xml).unwrap();
+        assert_eq!(current, parse_predefined_xml(xml));
+        assert_eq!(current.len(), 2);
+        assert_eq!(current[1].name, "Child");
+        assert_eq!(current[1].uuid, "child");
+        assert!(current.iter().all(|item| item.name_en.is_none()));
+    }
 
     #[test]
     fn test_parse_predefined_xml_flat() {

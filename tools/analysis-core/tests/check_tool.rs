@@ -2,6 +2,7 @@
 
 mod check_forms;
 mod check_metadata;
+mod check_predefined;
 mod check_roles;
 mod check_semantic;
 mod support;

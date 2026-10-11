@@ -24,6 +24,7 @@ use crate::{SessionRequestError, SessionRevision};
 pub enum MetadataResourceKind {
     RoleRights,
     FormDialog,
+    PredefinedData,
 }
 
 /// Readiness describes current bytes; native XML validity belongs to the owning projection.
@@ -74,6 +75,11 @@ pub(super) fn register(reader: &SourceReader) -> BTreeMap<SourcePath, MetadataRe
                 .form_dialog_owner(path)
                 .map(|owner| (path, owner, MetadataResourceKind::FormDialog))
         }))
+        .chain(reader.predefined_paths().filter_map(|path| {
+            reader
+                .predefined_owner(path)
+                .map(|owner| (path, owner, MetadataResourceKind::PredefinedData))
+        }))
         .map(|(path, owner, kind)| {
             (
                 path.clone(),
@@ -92,7 +98,7 @@ pub(super) fn register(reader: &SourceReader) -> BTreeMap<SourcePath, MetadataRe
         .collect()
 }
 
-/// The primary slot consumes role rights or the main common form's dialog.
+/// The primary slot consumes its declared rights, main dialog or predefined-data resource.
 pub(super) fn dependency<'a>(
     reader: &'a SourceReader,
     owner: &SourcePath,
@@ -100,6 +106,7 @@ pub(super) fn dependency<'a>(
     reader
         .role_rights_path(owner)
         .or_else(|| reader.form_dialog_path(owner))
+        .or_else(|| reader.predefined_path(owner))
 }
 
 impl AnalysisSession {
@@ -309,6 +316,9 @@ impl AnalysisSession {
                 }
                 MetadataResourceKind::FormDialog => {
                     reader.read_form_dialog_text(path, request.source_limit())
+                }
+                MetadataResourceKind::PredefinedData => {
+                    reader.read_predefined_text(path, request.source_limit())
                 }
             };
             match text {

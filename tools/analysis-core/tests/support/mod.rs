@@ -8,6 +8,7 @@ pub use directory::TestDirectory;
 pub mod form_project;
 #[cfg(feature = "check-cli")]
 pub mod metadata;
+pub mod predefined_project;
 mod project;
 pub mod role_project;
 pub use project::inline_command_project;

@@ -51,7 +51,7 @@ notification, без `id`. Это не response на клиентское уве
 Имена объявлены в `experimental.eska.inputNotifications`.
 
 `eska/inputChanged` содержит `snapshot`, `source`, `input` и `resources`.
-`input.kind` различает metadata/role_rights/module; state сохраняет origin/document version,
+`input.kind` различает metadata/role_rights/form_dialog/predefined_data/module; state сохраняет origin/document version,
 source hash, readiness и coded failure. Для metadata отдельно видны adapter
 readiness и неполнота. Текст BSL в событие не копируется, свойства YAML клиент
 получает metadata request. Для `didSave` snapshot остаётся прежним.

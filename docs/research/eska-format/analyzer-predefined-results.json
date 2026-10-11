@@ -1,0 +1,965 @@
+{
+  "schema_version": 1,
+  "component": "current_predefined_data_in_shared_analysis_session",
+  "milestone": "EF-18",
+  "status": "IN_PROGRESS",
+  "contracts": {
+    "source_schema_changed": false,
+    "protocol_version": "0.1",
+    "new_capability": "predefinedDataSync",
+    "resource_kind": "predefined_data",
+    "checker_schema_version": 1,
+    "new_dependencies": false,
+    "adapter_metadata_object_arguments": [
+      "descriptor",
+      "predefined_items"
+    ],
+    "native_legacy_parser_changed": false,
+    "checked_native_parser": "try_parse_predefined_xml",
+    "checked_parser_scope": [
+      "XML syntax",
+      "PredefinedData root",
+      "native ordered item extraction"
+    ]
+  },
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.9467672430037055
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 0.17432751500746235
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 1.309303660003934
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 14.487744375976035,
+      "results": [
+        "ok. 147 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.81s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 142 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.39s",
+        "ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.56s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 7.653184288996272
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 7.591312275995733
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 1.3130720329936594
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 17.379507070989348,
+      "results": [
+        "ok. 125 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.89s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 3.14995188798639
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.5213974910147954
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 1.5038509370060638
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 7.7463045549811795,
+      "results": [
+        "ok. 127 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.64s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.696848855994176
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 0.8365545340056997
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 2.694987969007343
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 16.586679216998164,
+      "results": [
+        "ok. 147 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.77s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 138 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.01s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.91123834301834
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 60.226577408000594
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 8.515596592013026
+    },
+    {
+      "gate": "release-role-example",
+      "exit_code": 0,
+      "seconds": 51.5474258470058
+    },
+    {
+      "gate": "release-form-example",
+      "exit_code": 0,
+      "seconds": 1.0854043700092006
+    },
+    {
+      "gate": "release-nested-form-example",
+      "exit_code": 0,
+      "seconds": 1.0447994120186195
+    },
+    {
+      "gate": "release-predefined-example",
+      "exit_code": 0,
+      "seconds": 1.003256469994085
+    }
+  ],
+  "adapter_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.0909009239985608
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 1.0719619630253874
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 0.9568930539826397
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 5.880084548989544,
+      "results": [
+        "ok. 70 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 3.334239402989624
+    },
+    {
+      "gate": "release-model-example",
+      "exit_code": 0,
+      "seconds": 15.144479699985823
+    }
+  ],
+  "kernel_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.0471058870025445
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 8.491440944984788
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 11.556153968005674
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 84.99818144598976,
+      "results": [
+        "ok. 50 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 269 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 600 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 598 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.45s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s",
+        "ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 36 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s",
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s",
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 22 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 21.38s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.24s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.00s",
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 7 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s",
+        "ok. 50 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s",
+        "ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s",
+        "ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 189 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.36s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 11.053217852982925
+    }
+  ],
+  "root_gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8765964680060279
+    },
+    {
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2350631839944981
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3841585939808283
+    },
+    {
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 13.635932315984974
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 4.595782466989476
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2609272050030995
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features"
+      ],
+      "exit_code": 0,
+      "seconds": 1.568764772004215
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 2.709291220002342
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.29654513698187657
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "project-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 1.9493318269960582
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "project-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.356224193004891
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2929991229902953
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--no-default-features",
+        "--features",
+        "build-cli"
+      ],
+      "exit_code": 0,
+      "seconds": 6.125438205024693
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--no-default-features",
+        "--features",
+        "build-cli",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 5.2314657749957405
+    },
+    {
+      "command": [
+        "git",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.011607135005760938
+    }
+  ],
+  "real_models": [
+    {
+      "corpus": "C1",
+      "composed_objects_compared": 24,
+      "composed_objects_equal_native_except_tabular_caption": true,
+      "current_invalid_owners": 0,
+      "items_equal_native": true,
+      "kinds": {
+        "catalog": 22,
+        "chart-of-characteristic-types": 2
+      },
+      "main_xml_generated": false,
+      "peak_selected_owner_source_bytes": 367670,
+      "predefined_items": 329,
+      "remaining_source_bytes": 0,
+      "resources": 24,
+      "tracked_source_native_control_files": 99,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 0.6206626420025714
+    },
+    {
+      "corpus": "C2",
+      "composed_objects_compared": 114,
+      "composed_objects_equal_native_except_tabular_caption": true,
+      "current_invalid_owners": 0,
+      "items_equal_native": true,
+      "kinds": {
+        "catalog": 106,
+        "chart-of-accounts": 1,
+        "chart-of-calculation-types": 1,
+        "chart-of-characteristic-types": 6
+      },
+      "main_xml_generated": false,
+      "peak_selected_owner_source_bytes": 1019344,
+      "predefined_items": 5435,
+      "remaining_source_bytes": 0,
+      "resources": 114,
+      "tracked_source_native_control_files": 459,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 3.6579283089959063
+    },
+    {
+      "corpus": "C3",
+      "composed_objects_compared": 167,
+      "composed_objects_equal_native_except_tabular_caption": true,
+      "current_invalid_owners": 0,
+      "items_equal_native": true,
+      "kinds": {
+        "catalog": 150,
+        "chart-of-accounts": 2,
+        "chart-of-calculation-types": 1,
+        "chart-of-characteristic-types": 14
+      },
+      "main_xml_generated": false,
+      "peak_selected_owner_source_bytes": 1025945,
+      "predefined_items": 6992,
+      "remaining_source_bytes": 0,
+      "resources": 167,
+      "tracked_source_native_control_files": 671,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 6.727519793988904
+    }
+  ],
+  "real_stdio": [
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "current_item_completion_replaced": true,
+      "invalid_xml_removes_stale_completion": true,
+      "invalid_xml_clears_current_object": true,
+      "nested_forms_unchanged_by_resource_edit": true,
+      "current_raw_hash_and_yaml_hash": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_current_saved_data": true,
+      "saved_deletion_and_recreation_current": true,
+      "utf16_non_bmp_crlf_module": true,
+      "non_bmp_crlf_resource_overlay": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 74080,
+      "wall_seconds": 0.23355992100550793,
+      "corpus": "C1",
+      "tracked_owned_files": 8,
+      "tracked_original_files": 7,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true,
+      "nested_form_count": 2
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "current_item_completion_replaced": true,
+      "invalid_xml_removes_stale_completion": true,
+      "invalid_xml_clears_current_object": true,
+      "nested_forms_unchanged_by_resource_edit": true,
+      "current_raw_hash_and_yaml_hash": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_current_saved_data": true,
+      "saved_deletion_and_recreation_current": true,
+      "utf16_non_bmp_crlf_module": true,
+      "non_bmp_crlf_resource_overlay": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 73944,
+      "wall_seconds": 0.22212255399790592,
+      "corpus": "C1",
+      "tracked_owned_files": 8,
+      "tracked_original_files": 7,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true,
+      "nested_form_count": 2
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "current_item_completion_replaced": true,
+      "invalid_xml_removes_stale_completion": true,
+      "invalid_xml_clears_current_object": true,
+      "nested_forms_unchanged_by_resource_edit": true,
+      "current_raw_hash_and_yaml_hash": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_current_saved_data": true,
+      "saved_deletion_and_recreation_current": true,
+      "utf16_non_bmp_crlf_module": true,
+      "non_bmp_crlf_resource_overlay": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 256108,
+      "wall_seconds": 0.9284627939923666,
+      "corpus": "C2",
+      "tracked_owned_files": 10,
+      "tracked_original_files": 9,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true,
+      "nested_form_count": 4
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "current_item_completion_replaced": true,
+      "invalid_xml_removes_stale_completion": true,
+      "invalid_xml_clears_current_object": true,
+      "nested_forms_unchanged_by_resource_edit": true,
+      "current_raw_hash_and_yaml_hash": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_current_saved_data": true,
+      "saved_deletion_and_recreation_current": true,
+      "utf16_non_bmp_crlf_module": true,
+      "non_bmp_crlf_resource_overlay": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 256596,
+      "wall_seconds": 1.0322427760111168,
+      "corpus": "C2",
+      "tracked_owned_files": 10,
+      "tracked_original_files": 9,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true,
+      "nested_form_count": 4
+    },
+    {
+      "locale": "en-US",
+      "exit_code": 0,
+      "current_item_completion_replaced": true,
+      "invalid_xml_removes_stale_completion": true,
+      "invalid_xml_clears_current_object": true,
+      "nested_forms_unchanged_by_resource_edit": true,
+      "current_raw_hash_and_yaml_hash": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_current_saved_data": true,
+      "saved_deletion_and_recreation_current": true,
+      "utf16_non_bmp_crlf_module": true,
+      "non_bmp_crlf_resource_overlay": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 291464,
+      "wall_seconds": 1.2328178099996876,
+      "corpus": "C3",
+      "tracked_owned_files": 7,
+      "tracked_original_files": 6,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true,
+      "nested_form_count": 1
+    },
+    {
+      "locale": "ru-RU",
+      "exit_code": 0,
+      "current_item_completion_replaced": true,
+      "invalid_xml_removes_stale_completion": true,
+      "invalid_xml_clears_current_object": true,
+      "nested_forms_unchanged_by_resource_edit": true,
+      "current_raw_hash_and_yaml_hash": true,
+      "overlay_survives_saved_refresh_and_watcher": true,
+      "close_restores_current_saved_data": true,
+      "saved_deletion_and_recreation_current": true,
+      "utf16_non_bmp_crlf_module": true,
+      "non_bmp_crlf_resource_overlay": true,
+      "full_composition_preserved": true,
+      "unrelated_payloads_intentionally_absent": true,
+      "native_main_xml_absent_from_server": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "normal_exit_without_stdin_eof": true,
+      "peak_rss_kib": 291996,
+      "wall_seconds": 1.242300290003186,
+      "corpus": "C3",
+      "tracked_owned_files": 7,
+      "tracked_original_files": 6,
+      "tracked_bytes_unchanged": true,
+      "locale_machine_equal": true,
+      "nested_form_count": 1
+    }
+  ],
+  "checker_regression": [
+    {
+      "corpus": "C1",
+      "locale": "en-US",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "metadata_issues": 960,
+      "findings_and_metadata_issues_equal_previous": true,
+      "settings_hash_equal_previous": true,
+      "coverage_equal_previous": true,
+      "predefined_resources_loaded": 24,
+      "additional_predefined_source_bytes": 85982,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 135506438,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 204388259
+      },
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "locale_json_equal": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "wall_seconds": 16.58992979998584
+    },
+    {
+      "corpus": "C1",
+      "locale": "ru-RU",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "metadata_issues": 960,
+      "findings_and_metadata_issues_equal_previous": true,
+      "settings_hash_equal_previous": true,
+      "coverage_equal_previous": true,
+      "predefined_resources_loaded": 24,
+      "additional_predefined_source_bytes": 85982,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 135506438,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 204388259
+      },
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "locale_json_equal": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "wall_seconds": 16.067429327988066
+    }
+  ],
+  "common_form_regression": [
+    {
+      "corpus": "C1",
+      "attribute_columns": 347,
+      "attributes": 653,
+      "command_handlers": 375,
+      "common_forms": 83,
+      "elements": 1649,
+      "event_handlers": 522,
+      "form_resources": 83,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 2436512,
+        "module_text_bytes": 0,
+        "total_source_bytes": 2436512
+      },
+      "preserved_form_xml_resources": 84,
+      "tracked_source_native_control_files": 706,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 0.3602396110072732
+    },
+    {
+      "corpus": "C2",
+      "attribute_columns": 1812,
+      "attributes": 4334,
+      "command_handlers": 1428,
+      "common_forms": 435,
+      "elements": 9341,
+      "event_handlers": 2893,
+      "form_resources": 435,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 14023707,
+        "module_text_bytes": 0,
+        "total_source_bytes": 14023707
+      },
+      "preserved_form_xml_resources": 435,
+      "tracked_source_native_control_files": 3114,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 1.4620229560241569
+    },
+    {
+      "corpus": "C3",
+      "attribute_columns": 1922,
+      "attributes": 4567,
+      "command_handlers": 1463,
+      "common_forms": 460,
+      "elements": 9688,
+      "event_handlers": 3067,
+      "form_resources": 460,
+      "main_xml_generated": false,
+      "model_parity": true,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 14727191,
+        "module_text_bytes": 0,
+        "total_source_bytes": 14727191
+      },
+      "preserved_form_xml_resources": 460,
+      "tracked_source_native_control_files": 3348,
+      "tracked_bytes_unchanged": true,
+      "platform_invoked": false,
+      "runtime_path": "empty",
+      "wall_seconds": 2.0441519010055345
+    }
+  ],
+  "role_regression": [
+    {
+      "corpus": "C1",
+      "roles": 212,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 212,
+      "object_references": 223334,
+      "rls_conditions": 66,
+      "tracked_source_and_native_files": 850,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "metadata_source_bytes": 71336214,
+      "canonical_session_resolver": true,
+      "wall_seconds": 2.155576238001231
+    },
+    {
+      "corpus": "C2",
+      "roles": 676,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 676,
+      "object_references": 29458,
+      "rls_conditions": 4055,
+      "tracked_source_and_native_files": 2706,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "metadata_source_bytes": 116124743,
+      "canonical_session_resolver": true,
+      "wall_seconds": 3.240970893006306
+    },
+    {
+      "corpus": "C3",
+      "roles": 753,
+      "model_parity": true,
+      "native_identity_flags_object_references_rls_equal": true,
+      "rights_resources": 753,
+      "object_references": 155734,
+      "rls_conditions": 6495,
+      "tracked_source_and_native_files": 3014,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "xml_exported": false,
+      "platform_invoked": false,
+      "metadata_source_bytes": 189861567,
+      "canonical_session_resolver": true,
+      "wall_seconds": 4.703134573996067
+    }
+  ],
+  "build_footprint": {
+    "original_native_file_hashes_verified": 495,
+    "runtime_graph": [
+      {
+        "feature": "analyzer-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      },
+      {
+        "feature": "check-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      }
+    ],
+    "release_analyzer_bytes": 50560280,
+    "release_checker_bytes": 46594432
+  },
+  "test_totals": {
+    "root_passed": 910,
+    "root_ignored": 14,
+    "sdk_passed": 307,
+    "sdk_ignored": 0,
+    "adapter_unit_passed": 70,
+    "adapter_file_passed": 8,
+    "kernel_passed": 2632,
+    "kernel_ignored": 20
+  },
+  "limitations": [
+    "Checked native parser does not validate all 1C predefined-data properties or platform schema",
+    "Item semantic model contains native names and UUIDs, not every resource property",
+    "Binary/absent form dialogs and other metadata models remain incomplete",
+    "No new platform invocation or real OS/client watcher validation",
+    "Real C2/C3 full semantic batch and process RSS budget not accepted"
+  ]
+}

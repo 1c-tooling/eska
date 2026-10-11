@@ -812,7 +812,9 @@ metadata read и checker показывают отдельные состоян�
 [Reader предопределённых данных](docs/research/eska-format/predefined-reader.md)
 связывает preserved XML с объявленными справочниками и планами, возвращает
 bounded current bytes. Все 305 ресурсов C1/C2/C3 совпали с native файлами;
-подключение их current model к анализатору ещё в работе.
+[Текущие элементы](docs/research/eska-format/analyzer-predefined.md) уже подключены
+к объекту и native completion через общий resource controller. Неверный XML
+очищает модель без старых items; правка сохраняет YAML, соседа и формы.
 
 [Переход к объявлению BSL](docs/research/eska-format/analyzer-definitions.md)
 возвращает диапазон готового текущего модуля; неполные данные дают явный отказ.

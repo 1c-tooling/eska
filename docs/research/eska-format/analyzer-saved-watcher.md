@@ -20,7 +20,7 @@
   владельцев, прав ролей, dialog общих форм и модулей, например `**/object.yaml`,
   `**/Rights.xml`, `**/Form.xml` и `**/Module.bsl`.
 
-Basenames берутся из `SourceReader.owner_paths()`, `role_rights_paths()`, `form_dialog_paths()` и `module_paths()` и
+Basenames берутся из `SourceReader.owner_paths()`, `role_rights_paths()`, `form_dialog_paths()`, `predefined_paths()` и `module_paths()` и
 объединяются. Configuration YAML остаётся control input. Двоичные модули
 включены; произвольные сохранённые ресурсы не превращаются в анализируемый ввод.
 [Ресурсы прав](analyzer-roles.md) регистрируются отдельно по declared role identity.

@@ -46,7 +46,10 @@ SDK — 299 passed. Checker C1 на обоих языках сохранил п�
 495 original upstream hashes проверены. Результаты — в
 [машинном отчёте](predefined-reader-results.json).
 
-## Следующий компонент
+## Граница при первоначальной приёмке reader
+
+[Последующий producer](analyzer-predefined.md) уже подключён к current object
+и native completion. Ниже сохранена исходная граница до его подключения.
 
 Current resource producer и преобразование предопределённых элементов в модель
 объекта пока не подключены. Для них нужен явный отказ при неверном XML:

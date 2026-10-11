@@ -107,6 +107,7 @@ fn saved_watchers(source: &SourceReader) -> Result<Vec<Value>, Value> {
         .chain(source.module_paths())
         .chain(source.role_rights_paths())
         .chain(source.form_dialog_paths())
+        .chain(source.predefined_paths())
         .filter(|path| path.as_str() != "configuration.yaml")
         .map(|path| {
             path.as_path()

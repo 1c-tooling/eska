@@ -23,6 +23,7 @@ mod integration_service_queries;
 mod kernel_memory_queries;
 mod metadata_diagnostic_queries;
 mod metadata_locations;
+mod predefined_queries;
 mod project_changes;
 mod property_edit_plans;
 mod reference_queries;

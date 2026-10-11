@@ -8,7 +8,7 @@ mod tests;
 use bsl_metadata::{
     MdoType, MetadataObject,
     enums::CodeSeries,
-    metadata_object::Attribute,
+    metadata_object::{Attribute, PredefinedItem},
     tabular_section::{TabularSection, TabularSectionAttribute},
 };
 use bsl_platform::MdoTemplateKind;
@@ -21,16 +21,22 @@ use crate::{
     AdapterError, AdapterIssue, identity, properties::Properties, type_description::required_type,
 };
 
-/// Convert supported object descriptors, including typed attributes and ordered tabular sections.
+/// Combine a captured object descriptor with explicitly supplied current predefined items.
+///
+/// The caller distinguishes an absent resource from an unavailable declared one before projection.
 ///
 /// # Errors
 /// Returns unsupported kinds, incomplete descriptors, invalid identities or unsupported field values.
-pub fn metadata_object(descriptor: &ParsedDescriptor) -> Result<MetadataObject, AdapterError> {
+pub fn metadata_object(
+    descriptor: &ParsedDescriptor,
+    predefined_items: Vec<PredefinedItem>,
+) -> Result<MetadataObject, AdapterError> {
     let root = identity::descriptor_root(descriptor)?;
     let (kind, template) = model_kind(root)?;
     let fields = Properties::new(root)?;
     let (belonging, extends) = identity::ownership(&fields)?;
     let mut model = MetadataObject::new(kind, root.metadata.name());
+    model.predefined_items = predefined_items;
     model.set_uuid(identity::uuid(root)?);
     model.set_object_belonging(belonging);
     if let Some(uuid) = extends {

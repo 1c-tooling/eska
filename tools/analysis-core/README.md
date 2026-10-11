@@ -16,10 +16,10 @@ XML-экспорт не участвуют в чтении.
 Подключены главные дескрипторы реализованных адаптеров и вложенные формы с XML dialog. Полнота чтения,
 полнота главных моделей и покрытие всех вложенных документов различаются.
 
-[Reader предопределённых данных](../../docs/research/eska-format/predefined-reader.md)
-уже связывает declared ресурс и YAML владельца. До подключения producer эти
-ресурсы ещё не регистрируются как versioned inputs сессии; модели объектов
-сохраняют прежний пустой список predefined items.
+[Текущие предопределённые данные](../../docs/research/eska-format/analyzer-predefined.md)
+связывают declared ресурс и YAML владельца через общий controller. Их items
+публикуются в главном `MetadataObject` и меняют native completion. Неверный XML
+очищает этот slot без disk fallback; сосед и nested forms сохраняют свои memos.
 
 Для [общих форм](../../docs/research/eska-format/analyzer-forms.md) текущие YAML
 и declared dialog публикуют canonical slot в контекст BSL-модуля.
@@ -30,7 +30,7 @@ saved/overlay/close; diagnostics и completions используют те же �
 канонические метаданные. Бинарные и непрочитанные тела имеют явное состояние.
 Лимит текущих загруженных текстов — 64 MiB по умолчанию; это не бюджет RSS.
 Общая [квота текущих входов](../../docs/research/eska-format/source-budget.md)
-считает исходный размер готовых YAML-моделей, declared rights/dialog и BSL-текстов,
+считает исходный размер готовых YAML-моделей, declared rights/dialog/predefined и BSL-текстов,
 по умолчанию 256 MiB.
 Замены переиспользуют свой резерв; недостаточная квота очищает прежний вход.
 `kernel_memory()` возвращает отдельный снимок таблиц Salsa: число instances,
@@ -77,6 +77,7 @@ cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --ex
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_roles -- /path/to/eska/source /path/to/native/source
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_forms -- /path/to/eska/source /path/to/native/source
 cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_nested_forms -- /path/to/eska/source /path/to/native/source
+cargo run --manifest-path tools/analysis-core/Cargo.toml --release --locked --example project_predefined -- /path/to/eska/source /path/to/native/source
 ```
 
 Команды выполняются из корня `eska`; для тестов путь задаётся к соседнему
