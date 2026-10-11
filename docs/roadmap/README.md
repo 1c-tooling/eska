@@ -290,6 +290,12 @@ declared dialogs и читает bounded current bytes; пример адапт�
 этот вход. Четыре новых теста и 26 gates прошли, root — 903/14. Все 978 моделей
 снова совпали с native reader, исходники сохранены. Current lifecycle и
 canonical form input ещё в работе; EF-18 остаётся `IN_PROGRESS`.
+[Вход формы в ядро](../research/eska-format/canonical-form-input.md) передаёт
+текущий slot в BSL module context; pending и непредоставленные формы canonical
+корня не читают disk fallback, обычный Designer loader сохранён. Три новых native
+теста, kernel 2630/20 и 5 native/20 tool gates прошли. Checker C1 сохранил
+26 findings/1 285 issues, JSON RU/EN и 7 829 hashes; graph 206/214 прежний.
+Producer dialog в общей сессии ещё не подключён; EF-18 остаётся `IN_PROGRESS`.
 До реализации определены [границы инструментов](../tool-boundaries.md):
 общая модель проекта, отдельные анализ/сборка/VCS и будущая отладка.
 EF-17–EF-19 добавляют выбор языкового ядра, IDE/пакетные точки входа и выделение VCS.

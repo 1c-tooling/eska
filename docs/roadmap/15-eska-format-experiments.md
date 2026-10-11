@@ -1494,6 +1494,17 @@ Schemas, версии, dependencies и native workspace прежние. Current 
 canonical form input, nested формы и прочие условия EF-18 остаются в работе;
 EF-18 — `IN_PROGRESS`, очередь этапов сохраняется.
 
+[Canonical форма](../research/eska-format/canonical-form-input.md) получила
+текущий tracked slot и BSL module consumer. Unavailable/wrong input и
+непредоставленные nested формы canonical корня не читают resource с диска;
+legacy Designer loader и standalone формы сохраняются. Три native tests,
+kernel 2630/20, прежние 279 tool tests и все 5 native/20 tool gates прошли.
+Core после reader не менялся, его 903/14 и 15 gates сохранены. Checker C1
+сохранил 26 findings/1 285 issues и source quota, JSON RU/EN и все 7 829 hashes
+совпали. Graph 206/214, upstream hashes 495, версии и schemas прежние.
+Producer dialog lifecycle ещё не подключён; CommonForm сохраняет явную неполноту
+проекции. Остальные условия EF-18 остаются в работе, следующие этапы не начаты.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 Выделить текущие Git/workflow-операции в отдельную библиотеку и CLI-потребителя

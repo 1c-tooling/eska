@@ -386,6 +386,10 @@ impl AnalysisSession {
             return Ok(None);
         };
         Ok(match value.as_ref() {
+            CanonicalMetadata::Form(_) => {
+                ide_db::metadata::resolve_form(&self.database, entry.slot, name.clone())
+                    .map(CanonicalMetadata::Form)
+            }
             CanonicalMetadata::Role(_) => resolve_role(&self.database, self.listing, name.clone())
                 .map(CanonicalMetadata::Role),
             CanonicalMetadata::IntegrationService(_) => {

@@ -1,0 +1,367 @@
+{
+  "schema_version": 1,
+  "component": "canonical_form_slot_and_module_context",
+  "milestone": "EF-18",
+  "status": "IN_PROGRESS",
+  "native_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 0.8903594260045793
+    },
+    {
+      "gate": "check",
+      "exit_code": 0,
+      "seconds": 3.4722082169901114
+    },
+    {
+      "gate": "clippy",
+      "exit_code": 0,
+      "seconds": 6.100025071005803
+    },
+    {
+      "gate": "test",
+      "exit_code": 0,
+      "seconds": 85.21464120701421,
+      "results": [
+        "ok. 50 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 267 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.17s",
+        "ok. 600 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 598 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.49s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s",
+        "ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s",
+        "ok. 36 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.18s",
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s",
+        "ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.54s",
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s",
+        "ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s",
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 22 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 24.88s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.94s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.00s",
+        "ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s",
+        "ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 7 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 50 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s",
+        "ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s",
+        "ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s",
+        "ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "ok. 189 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.19s",
+        "ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "rustdoc",
+      "exit_code": 0,
+      "seconds": 5.453416107018711
+    }
+  ],
+  "tool_gates": [
+    {
+      "gate": "fmt",
+      "exit_code": 0,
+      "seconds": 1.9985372340015601
+    },
+    {
+      "gate": "all-check",
+      "exit_code": 0,
+      "seconds": 6.910265465005068
+    },
+    {
+      "gate": "all-clippy",
+      "exit_code": 0,
+      "seconds": 3.957256191992201
+    },
+    {
+      "gate": "all-test",
+      "exit_code": 0,
+      "seconds": 27.91079668200109,
+      "results": [
+        "ok. 131 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.66s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 133 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.80s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.49s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "all-rustdoc",
+      "exit_code": 0,
+      "seconds": 7.687255308992462
+    },
+    {
+      "gate": "minimal-check",
+      "exit_code": 0,
+      "seconds": 6.499385820992757
+    },
+    {
+      "gate": "minimal-clippy",
+      "exit_code": 0,
+      "seconds": 1.8107411160017364
+    },
+    {
+      "gate": "minimal-test",
+      "exit_code": 0,
+      "seconds": 17.190532806009287,
+      "results": [
+        "ok. 109 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.67s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "minimal-rustdoc",
+      "exit_code": 0,
+      "seconds": 2.977295796998078
+    },
+    {
+      "gate": "checker-check",
+      "exit_code": 0,
+      "seconds": 0.7777271890081465
+    },
+    {
+      "gate": "checker-clippy",
+      "exit_code": 0,
+      "seconds": 2.0098481189925224
+    },
+    {
+      "gate": "checker-test",
+      "exit_code": 0,
+      "seconds": 6.894521690002875,
+      "results": [
+        "ok. 111 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.73s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "checker-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.275684867985547
+    },
+    {
+      "gate": "analyzer-check",
+      "exit_code": 0,
+      "seconds": 1.0827037270064466
+    },
+    {
+      "gate": "analyzer-clippy",
+      "exit_code": 0,
+      "seconds": 3.6972789389838
+    },
+    {
+      "gate": "analyzer-test",
+      "exit_code": 0,
+      "seconds": 17.15913582398207,
+      "results": [
+        "ok. 131 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.68s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "ok. 131 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.81s",
+        "ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "gate": "analyzer-rustdoc",
+      "exit_code": 0,
+      "seconds": 5.7062401569855865
+    },
+    {
+      "gate": "release-checker",
+      "exit_code": 0,
+      "seconds": 39.56986335600959
+    },
+    {
+      "gate": "release-analyzer",
+      "exit_code": 0,
+      "seconds": 7.517671445995802
+    },
+    {
+      "gate": "release-role-example",
+      "exit_code": 0,
+      "seconds": 38.276795376004884
+    }
+  ],
+  "root_verification": {
+    "reused_from": "form-dialog-reader-results.json",
+    "root_application_unchanged_since_reader": true,
+    "passed": 903,
+    "ignored": 14,
+    "gates": 15
+  },
+  "real_checker": [
+    {
+      "corpus": "C1",
+      "locale": "en-US",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "findings_equal_previous_checker": true,
+      "settings_hash_equal_previous": true,
+      "metadata_issues_before": 1285,
+      "metadata_issues_after": 1285,
+      "metadata_issue_count_unchanged": true,
+      "other_metadata_issues_unchanged": true,
+      "semantic_profile_complete": false,
+      "metadata_models_complete": false,
+      "additional_rights_source_bytes": 0,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 117063890,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 185945711
+      },
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "locale_json_equal": true,
+      "wall_seconds": 16.04675975398277
+    },
+    {
+      "corpus": "C1",
+      "locale": "ru-RU",
+      "exit_code": 2,
+      "checked_modules": 1975,
+      "findings": 26,
+      "findings_equal_previous_checker": true,
+      "settings_hash_equal_previous": true,
+      "metadata_issues_before": 1285,
+      "metadata_issues_after": 1285,
+      "metadata_issue_count_unchanged": true,
+      "other_metadata_issues_unchanged": true,
+      "semantic_profile_complete": false,
+      "metadata_models_complete": false,
+      "additional_rights_source_bytes": 0,
+      "resources": {
+        "max_source_bytes": 268435456,
+        "metadata_source_bytes": 117063890,
+        "module_text_bytes": 68881821,
+        "total_source_bytes": 185945711
+      },
+      "tracked_source_files": 7829,
+      "tracked_bytes_unchanged": true,
+      "runtime_path": "empty",
+      "platform_invoked": false,
+      "locale_json_equal": true,
+      "wall_seconds": 15.774193390010623
+    }
+  ],
+  "footprint": {
+    "original_native_file_hashes_verified": 495,
+    "runtime_graph": [
+      {
+        "feature": "analyzer-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      },
+      {
+        "feature": "check-cli",
+        "package_names": 206,
+        "resolved_versions": 214
+      }
+    ],
+    "release_analyzer_bytes": 50446464,
+    "release_checker_bytes": 46499120
+  },
+  "verification": {
+    "native_passed": 2630,
+    "native_ignored": 20,
+    "native_tests_added": 3,
+    "tool_tests": 279,
+    "canonical_form_module_context": true,
+    "unprovided_nested_forms_explicitly_unavailable": true,
+    "legacy_designer_loader_preserved": true,
+    "unrelated_root_cannot_claim_standalone_form": true,
+    "resource_lifecycle_connected": false,
+    "producer_common_form_models_ready": false,
+    "source_and_protocol_schemas_unchanged": true,
+    "dependency_versions_unchanged": true,
+    "platform_runtime_checked": false
+  }
+}

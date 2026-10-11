@@ -99,6 +99,9 @@ source-byte резерв общий с YAML/BSL. Остальные модели
 reader; canonical input и согласованный resource lifecycle ещё не подключены.
 Объявленный dialog и bounded current bytes уже получает
 [общий reader](research/eska-format/form-dialog-reader.md).
+[Canonical slot формы](research/eska-format/canonical-form-input.md) уже обновляет
+BSL module context и закрывает самостоятельное чтение dialog в ESKA-корне.
+Producer текущего ресурса формы в сессии ещё не подключён.
 
 Принята будущая поставка: обычная установка `eska` даёт оболочку и комплект
 отдельных инструментов; для CI/IDE доступны самостоятельные пакеты. В плане

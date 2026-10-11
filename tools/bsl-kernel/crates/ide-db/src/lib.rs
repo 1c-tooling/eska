@@ -55,4 +55,6 @@ pub use effective_exports::{
 pub use metadata::build_module_metadata;
 
 #[cfg(test)]
+mod canonical_form_tests;
+#[cfg(test)]
 mod canonical_metadata_tests;

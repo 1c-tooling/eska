@@ -10,6 +10,12 @@ bsl-analyzer закреплены на той же Git-ревизии. Это и
 `Role::with_data`: source UUID и current rights передаются явно; serialized
 shape и прежний XML reader не изменены.
 
+[Canonical форма](../../docs/research/eska-format/canonical-form-input.md)
+передаёт текущий `Form` через slot и существующий BSL module context. Pending,
+wrong identity/kind и непредоставленная nested форма в canonical корне не
+читают dialog с диска. Прежний native loader для Designer-корней сохраняется;
+producer dialog input в общей сессии ещё не подключён.
+
 Назначение локальных пакетов:
 
 - `ide`: [автодополнение сервисов интеграции](../../docs/research/eska-format/analyzer-integration-completion.md)

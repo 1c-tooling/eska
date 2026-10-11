@@ -2571,6 +2571,35 @@ impl RootDatabaseImpl {
         Some(PathBuf::from(vfs_path.as_path()))
     }
 
+    /// Canonical roots route every form module through tracked slots, including unavailable forms.
+    pub(crate) fn canonical_form_module_metadata(
+        &self,
+        file_id: FileId,
+        path: &Path,
+    ) -> Option<Arc<hir::ModuleMetadata>> {
+        let (rank, _) = self.config_root_rank_for_path(path)?;
+        let roots = self.workspace_configs_snapshot();
+        let root = &roots.paths[*roots.topological_order.get(rank)?].1;
+        let listing = self.metadata_listing(root.to_str()?)?;
+        let inputs = listing.canonical_metadata(self);
+        if inputs.is_empty() {
+            return None;
+        }
+        let mut module = hir::ModuleMetadata::unknown(bsl_metadata::ModuleType::FormModule);
+        // Main descriptors have stable VFS identities even though the host never creates their XML.
+        module.form =
+            path.parent().and_then(Path::parent).and_then(Path::parent).and_then(|directory| {
+                let name = directory.file_name()?.to_str()?;
+                let main = directory.parent()?.join(format!("{name}.xml"));
+                let source_root_id = self.file_source_root_input(file_id).source_root_id(self);
+                let source_root = self.source_root_input(source_root_id).root(self);
+                let main = source_root.file_set().file_for_path(&vfs::VfsPath::new(main))?;
+                let input = inputs.get(main)?;
+                metadata::resolve_form(self, *input, name.into())
+            });
+        Some(Arc::new(module))
+    }
+
     /// The whole-config load key for `file_path`: the root attributed from disk,
     /// carried at the revision of the declared root the file sits under.
     ///

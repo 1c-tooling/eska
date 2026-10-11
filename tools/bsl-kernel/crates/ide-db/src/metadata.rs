@@ -62,6 +62,10 @@ pub(crate) mod heap_estimate {
         v.as_ref().map_or(0, |r| r.estimated_heap_size())
     }
 
+    pub(crate) fn form_heap(v: &Option<Arc<bsl_metadata::Form>>) -> usize {
+        v.as_ref().map_or(0, |form| form.estimated_heap_size())
+    }
+
     pub(crate) fn subsystem_heap(v: &Option<Arc<bsl_metadata::Subsystem>>) -> usize {
         v.as_ref().map_or(0, |s| s.estimated_heap_size())
     }
@@ -928,6 +932,7 @@ pub enum CanonicalMetadata {
     WebService(Arc<bsl_metadata::WebService>),
     IntegrationService(Arc<bsl_metadata::IntegrationService>),
     Role(Arc<bsl_metadata::Role>),
+    Form(Arc<bsl_metadata::Form>),
 }
 
 impl CanonicalMetadata {
@@ -945,6 +950,7 @@ impl CanonicalMetadata {
             Self::WebService(value) => value.estimated_heap_size(),
             Self::IntegrationService(value) => value.estimated_heap_size(),
             Self::Role(value) => value.estimated_heap_size(),
+            Self::Form(value) => value.estimated_heap_size(),
         }
     }
 }
@@ -959,6 +965,21 @@ pub struct CanonicalMetadataInput {
 
 /// Stable main-file identities map to mutable Salsa inputs, not untracked payloads.
 pub type CanonicalMetadataInputs = FxHashMap<vfs::FileId, CanonicalMetadataInput>;
+
+/// Resolve one explicit form slot; an unavailable or incompatible value never reads native XML.
+#[salsa::tracked(lru = 8192, heap_size = heap_estimate::form_heap, returns(clone))]
+pub fn resolve_form(
+    db: &dyn base_db::SourceDatabase,
+    input: CanonicalMetadataInput,
+    name: String,
+) -> Option<Arc<bsl_metadata::Form>> {
+    let _source_revision = input.source_revision(db);
+    let value = input.value(db).as_ref()?;
+    let CanonicalMetadata::Form(form) = value.as_ref() else {
+        return None;
+    };
+    stdx::case::eq_ignore_case(form.name(), &name).then(|| Arc::clone(form))
+}
 
 /// The per-config-root *structure* input: the MDOs and defined types that exist in
 /// one config root (base config or one extension). Set out-of-query by the

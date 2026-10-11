@@ -216,6 +216,17 @@ pub fn module_metadata_query<'db>(
         }
     };
 
+    if crate::metadata::get_module_type_from_uri(&file_path.to_string_lossy())
+        == Some(bsl_metadata::ModuleType::FormModule)
+    {
+        let canonical = db
+            .as_any()
+            .downcast_ref::<crate::RootDatabaseImpl>()
+            .and_then(|database| database.canonical_form_module_metadata(file_id, &file_path));
+        if let Some(metadata) = canonical {
+            return metadata;
+        }
+    }
     let mut metadata = crate::metadata::build_module_metadata(&file_path, None);
 
     match metadata.module_type {
