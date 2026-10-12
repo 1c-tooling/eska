@@ -776,6 +776,9 @@ members и блокирует незавершённую публикацию.
 [Создание реквизитов Catalog/Document](docs/research/eska-format/attribute-creation.md)
 использует закрытый профиль Name/Synonym/Comment/Type, права принятого владельца
 и проверки UUID, имён, типов и сдвига членов.
+[Создание колонок существующей табличной части](docs/research/eska-format/column-creation.md)
+использует её принятые UUID/parentage, supplier/freeze policy и namespace context;
+старые колонки и generated identities сохраняются.
 Остальные structural/compound profiles и завершение структуры EF-24 ещё в работе.
 Инструменты собираются отдельно с features `project-cli`/`build-cli`;
 комплектная поставка и делегирование оболочки ещё не подключены.

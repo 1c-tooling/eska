@@ -35,6 +35,8 @@ YAML и физические resources. Без параметра сохраня
 сохраняет exact root/member manifests и наследование с отдельными approved pins.
 [Создание реквизитов](attribute-creation.md) принимает минимальный Attribute
 у Catalog/Document, сохраняя policy, UUID, typed Type и Working координаты.
+[Новые колонки](column-creation.md) используют принятую табличную часть того же
+владельца и её локальный namespace context, сохраняя старые колонки/identities.
 Остальные structural/compound profiles ещё не приняты.
 
 Внешние источники проверены 2026-10-11:

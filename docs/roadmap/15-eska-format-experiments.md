@@ -2283,6 +2283,31 @@ minimal project — 332 unit + 31 CLI; SDK — 359; adapter — 70 + 12.
 Schemas/rules/tool protocol версии сохранены. EF-24 остаётся `IN_PROGRESS`:
 остальные structural/compound profiles ещё нужны.
 
+Двадцать первая часть — [колонки существующих табличных частей](../research/eska-format/column-creation.md)
+принятого Catalog/Document. Общий selector использует действительный UUID,
+прямой parentage и полный namespace context табличной части. Новые Attribute
+сохраняют закрытый Name/Synonym/Comment/Type профиль; старые колонки, generated
+identities и supplier/freeze policy остаются принятыми. Native правило табличной
+части не наследует запрет корня; ESKA freeze наследуется как прежде.
+1С 8.3.27.2325 до реализации приняла восемь минимальных native колонок;
+инвентаризация C1 — 532 колонки/114 табличных частей с 26 native свойствами.
+Добавлены восемь core, один supplier integration и два CLI tests; оба envelopes,
+пустая таблица, freeze/сдвиг, profile/names/Type targets, неподдержанный parent,
+unknown slots, смешанные edits, local namespace shadowing, Working coordinates
+и saved/overlay проверены. Прошли 16 root/14 SDK/5 adapter gates и две release
+сборки: 533 unit + 565 integration, 24 opt-in пропущены; minimal project —
+340 unit + 33 CLI, SDK — 359, adapter — 70 + 12.
+Реальная C1: двенадцать колонок/два YAML совпали с независимым native контролем
+по 8 778 файлам/8 077 каталогам, без exclusions. Stationary/displaced freeze
+и ru/en recovery сохранены; 3 595 YAML прошли schemas, 3 595 descriptors/
+8 342 объектов равны в saved/overlay All/Summary. Две CF/build/dump routes
+на 1С 8.3.27.2325 дали 8 769 файлов/8 064 каталога, кроме 7 011 configVersion.
+Новые UUID/имена/типы/qualifiers, generated identities таблицы, порядок старых
+колонок, checksums, inputs/settings/версия сохранены; порядок qualifier groups
+канонизирует платформа. [Результаты](../research/eska-format/column-creation-results.json).
+Schemas/rules/protocol прежние. EF-24 — `IN_PROGRESS`: прочие structural/compound
+profiles ещё нужны; клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

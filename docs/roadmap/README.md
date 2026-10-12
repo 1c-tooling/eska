@@ -100,6 +100,11 @@ Attribute у Catalog/Document по минимальному Name/Synonym/Comment
 проверяет общий selector; schemas/rules/protocol прежние.
 Двенадцать полей/два YAML C1 прошли независимый byte/semantic/schema контроль
 и CF/build/dump на 1С 8.3.27.2325 с сохранением новых UUID/типов, inputs и версии.
+[Двадцать первая часть](../research/eska-format/column-creation.md) создаёт
+колонки принятой табличной части Catalog/Document с её UUID, parentage,
+namespace context и прежней supplier/freeze policy.
+Двенадцать колонок C1 прошли независимый native/schema/semantic контроль и два
+CF/build/dump цикла на 1С 8.3.27.2325; UUID/типы, generated identities и inputs сохранены.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи
 не открываются заново, но не подтверждают новое расширенное покрытие MVP.

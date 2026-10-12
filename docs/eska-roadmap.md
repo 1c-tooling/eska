@@ -143,7 +143,9 @@ root/member manifests, inheritance и отдельные approved pins. Общи
 через независимые controls и два CF/build/dump цикла на 1С 8.3.27.2325.
 [Создание Attribute](research/eska-format/attribute-creation.md) у принятого
 Catalog/Document сохраняет UUID/policy и использует минимальный профиль
-Name/Synonym/Comment/Type с проверкой имён, типов и порядка. Прочие
+Name/Synonym/Comment/Type с проверкой имён, типов и порядка.
+[Новые колонки](research/eska-format/column-creation.md) создаются в принятой
+табличной части тех же владельцев с её UUID/parentage и namespace context. Прочие
 structural/compound profiles ещё нужны; EF-24 остаётся `IN_PROGRESS`.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные

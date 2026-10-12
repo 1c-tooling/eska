@@ -222,8 +222,8 @@ fn created_location(
         },
         nested: Vec::new(),
     };
-    let Some(kind) =
-        super::super::super::child_creation::child_kind(selected.document.descriptor.object.kind)
+    let Some((kind, context)) =
+        super::super::super::child_creation::created_context(&selected.document.descriptor, uuid)?
     else {
         return Err(Error::root("source_map_origin_mismatch"));
     };
@@ -235,13 +235,7 @@ fn created_location(
         return Err(Error::root("source_map_origin_mismatch"));
     }
     super::super::super::child_creation::validate_new_node(location.node)?;
-    super::super::super::child_creation::validate_new_types(
-        location.node,
-        &super::super::super::validation::scope(
-            &selected.document.descriptor.xml.namespaces,
-            &selected.document.descriptor.object.namespaces,
-        )?,
-    )?;
+    super::super::super::child_creation::validate_new_types(location.node, &context)?;
     let mut steps = location.steps.clone();
     let range = if let Some((index, property)) = property {
         steps.extend(document_paths::property_steps(

@@ -276,3 +276,99 @@ fn locked_native_catalog_cannot_create_attributes_or_mask_allowed_child_properti
         assert_eq!(tree(&input), native_input);
     }
 }
+
+/// Native supplier state remains independent for a table beneath a locked root and its editable columns.
+#[test]
+fn column_creation_obeys_accepted_table_supplier_rule_without_inheriting_root_lock() {
+    for readable in [false, true] {
+        for locked in [false, true] {
+            let test = TestDir::new();
+            let input = super::baseline::fixture(&test.0);
+            let file = input.join("Catalogs/Sample.xml");
+            fs::write(
+                &file,
+                fs::read_to_string(&file).unwrap().replace(
+                    "xmlns:xsi=",
+                    "xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=",
+                ),
+            )
+            .unwrap();
+            if locked {
+                let policy = input.join("Ext/ParentConfigurations.bin");
+                let identity = format!("2,0,{0},{0}", uuid('4').as_str());
+                fs::write(
+                    &policy,
+                    fs::read_to_string(&policy)
+                        .unwrap()
+                        .replace(&identity, &format!("0,0,{0},{0}", uuid('4').as_str())),
+                )
+                .unwrap();
+            }
+            let source = test.0.join("source");
+            if readable {
+                import_designer_readable(&input, &source).unwrap();
+            } else {
+                import_designer(&input, &source).unwrap();
+            }
+            let base_root = test.0.join("accepted");
+            let pin = accept_source(&source, &base_root, &[]).unwrap();
+            let base = AcceptedBase::open(&base_root, &pin).unwrap();
+            assert_eq!(
+                base.permission(&uuid('2'), Operation::Create).reason,
+                PermissionReason::NativeRestriction
+            );
+            assert_eq!(
+                base.permission(&uuid('4'), Operation::Create).allowed,
+                !locked
+            );
+            let path = source.join("Catalogs/Sample/object.yaml");
+            let mut owner = ObjectSource::from_yaml(&fs::read_to_string(&path).unwrap()).unwrap();
+            let Section::Children(children) = &mut owner.document.descriptor.object.sections[2]
+            else {
+                unreachable!()
+            };
+            let Child::Inline { object } = &mut children[1] else {
+                unreachable!()
+            };
+            let Section::Children(columns) = &mut object.sections[1] else {
+                unreachable!()
+            };
+            let Child::Inline { object } = &mut columns[0] else {
+                unreachable!()
+            };
+            let Section::Properties(properties) = &mut object.sections[0] else {
+                unreachable!()
+            };
+            let Property::Typed { value, .. } = &mut properties[1] else {
+                unreachable!()
+            };
+            *value = PropertyValue::Text("Independent allowed column edit".into());
+            let addition = Descriptor::from_xml(&format!("<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" xmlns:v8=\"http://v8.1c.ru/8.1/data/core\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" version=\"2.20\"><Attribute uuid=\"{}\"><Properties><Name>NewColumn</Name><Synonym/><Comment/><Type><v8:Type>xs:boolean</v8:Type></Type></Properties></Attribute></MetaDataObject>", uuid('9').as_str())).unwrap();
+            columns.push(Child::Inline {
+                object: Box::new(addition.object),
+            });
+            fs::write(path, owner.to_yaml().unwrap()).unwrap();
+            let authored = tree(&source);
+            let accepted = tree(&base_root);
+            let output = test.0.join("generations");
+            if locked {
+                let failure = prepare_protected(&source, &base, &output, true).unwrap_err();
+                assert_eq!(failure.error.code, "source_changes_excluded");
+                assert_eq!(failure.diagnostics.len(), 1);
+                assert_eq!(failure.diagnostics[0].operation, Operation::Create);
+                assert_eq!(failure.diagnostics[0].uuid, Some(uuid('4')));
+                assert_eq!(
+                    failure.diagnostics[0].reason,
+                    PermissionReason::NativeRestriction
+                );
+                assert!(!output.exists());
+            }
+            let prepared = prepare_protected(&source, &base, &output, !locked).unwrap();
+            let xml = fs::read_to_string(prepared.xml().join("Catalogs/Sample.xml")).unwrap();
+            assert_eq!(xml.contains("NewColumn"), !locked);
+            assert!(xml.contains("Independent allowed column edit"));
+            assert_eq!(tree(&source), authored);
+            assert_eq!(tree(&base_root), accepted);
+        }
+    }
+}

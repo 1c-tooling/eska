@@ -2,6 +2,8 @@
 
 #[path = "project_tool/attribute_creation.rs"]
 mod attribute_creation;
+#[path = "project_tool/column_creation.rs"]
+mod column_creation;
 #[path = "project_tool/creation.rs"]
 mod creation;
 #[path = "project_tool/deletion.rs"]

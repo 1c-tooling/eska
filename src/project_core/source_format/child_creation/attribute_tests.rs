@@ -23,7 +23,7 @@ const BOOLEAN: &str = "<v8:Type>xs:boolean</v8:Type>";
 const STRING: &str = "<v8:Type>xs:string</v8:Type><v8:StringQualifiers><v8:Length>40</v8:Length><v8:AllowedLength>Variable</v8:AllowedLength></v8:StringQualifiers>";
 
 /// Fields have no generated identities or payloads; native qualifier declarations remain explicit.
-fn attribute_xml(index: u32, name: &str, types: &str) -> String {
+pub(super) fn attribute_xml(index: u32, name: &str, types: &str) -> String {
     format!(
         "<Attribute uuid=\"{}\"><Properties><Name>{name}</Name><Synonym/><Comment/><Type>{types}</Type></Properties></Attribute>",
         uuid(index).as_str()
@@ -31,7 +31,7 @@ fn attribute_xml(index: u32, name: &str, types: &str) -> String {
 }
 
 /// Reuse the native decoder for the public type transport without copying qualifier values into slots.
-fn attribute(index: u32, name: &str, types: &str) -> Child {
+pub(super) fn attribute(index: u32, name: &str, types: &str) -> Child {
     let descriptor = Descriptor::from_xml(&format!(
         "<MetaDataObject xmlns=\"{}\" xmlns:v8=\"http://v8.1c.ru/8.1/data/core\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" version=\"2.20\">{}</MetaDataObject>",
         super::super::MD_NAMESPACE,
@@ -44,7 +44,7 @@ fn attribute(index: u32, name: &str, types: &str) -> Child {
 }
 
 /// An ordinary configuration has two proven parent classes and a declared named type target.
-fn fixture(
+pub(super) fn fixture(
     test: &TestDir,
     readable: bool,
     frozen: &[NativeUuid],
@@ -106,7 +106,7 @@ fn fixture(
 }
 
 /// Authoring keeps caller comments and line endings, bypassing editor gates for negative inputs.
-fn edit(source: &Path, path: &str, change: impl FnOnce(&mut ObjectSource)) -> String {
+pub(super) fn edit(source: &Path, path: &str, change: impl FnOnce(&mut ObjectSource)) -> String {
     let path = source.join(path);
     let mut owner = ObjectSource::from_yaml(&fs::read_to_string(&path).unwrap()).unwrap();
     change(&mut owner);

@@ -11,8 +11,13 @@ use super::{
 };
 use crate::project_core::MetadataKind;
 
+mod scope;
+pub(super) use scope::created_context;
+
 #[cfg(test)]
 mod attribute_tests;
+#[cfg(test)]
+mod column_tests;
 #[cfg(test)]
 mod tests;
 
@@ -25,7 +30,9 @@ pub(super) const fn supported_owner(kind: MetadataKind) -> bool {
 pub(super) const fn child_kind(owner: MetadataKind) -> Option<MetadataKind> {
     match owner {
         MetadataKind::Enum => Some(MetadataKind::EnumValue),
-        MetadataKind::Catalog | MetadataKind::Document => Some(MetadataKind::Attribute),
+        MetadataKind::Catalog | MetadataKind::Document | MetadataKind::TabularSection => {
+            Some(MetadataKind::Attribute)
+        }
         _ => None,
     }
 }
@@ -39,15 +46,13 @@ pub(super) fn select(
     working: Option<&Vec<Value>>,
     schema: u32,
 ) -> Result<(), Error> {
-    let Some(document) = base
-        .package
-        .documents
-        .get(native)
-        .filter(|document| document.descriptor.object.uuid.key() == owner.key())
-    else {
+    let Some(document) = base.package.documents.get(native) else {
         return Ok(());
     };
-    let Some(kind) = child_kind(document.descriptor.object.kind) else {
+    let Some(accepted_owner) = scope::owner(&document.descriptor, owner) else {
+        return Ok(());
+    };
+    let Some(kind) = child_kind(accepted_owner.kind) else {
         return Ok(());
     };
     let (Some(before), Some(after)) = (
@@ -61,10 +66,7 @@ pub(super) fn select(
     {
         return Ok(());
     }
-    let context = super::validation::scope(
-        &document.descriptor.xml.namespaces,
-        &document.descriptor.object.namespaces,
-    )?;
+    let context = scope::context(&document.descriptor, accepted_owner)?;
     let values = working.ok_or_else(|| Error::root("source_schema_invalid"))?;
     let accepted: BTreeMap<_, _> = before.iter().zip(children.iter()).collect();
     let mut additions = BTreeMap::new();

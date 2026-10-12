@@ -25,6 +25,8 @@ namespace зависимости; [именованный FillValue](enum-fill-v
 одной строкой с прежними QName helpers и проверкой конечной цели.
 [Создание Attribute](attribute-creation.md) у Catalog/Document использует закрытый
 профиль Name/Synonym/Comment/Type и прежнюю policy с проверкой типов, имён и порядка.
+[Создание колонок](column-creation.md) использует принятую табличную часть
+Catalog/Document с её UUID, parentage и native namespace context.
 Другие structural profiles и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.

@@ -373,11 +373,7 @@ impl AcceptedBase {
         } else if matches!(
             operation,
             Operation::Move | Operation::Property(PropertyName::Name)
-        ) || (operation == Operation::Create
-            && self
-                .objects
-                .get(&uuid.key())
-                .is_none_or(|object| !super::child_creation::supported_owner(object.kind)))
+        ) || (operation == Operation::Create && !self.creation_supported(uuid))
             || (operation == Operation::Delete
                 && self
                     .objects
@@ -417,6 +413,24 @@ impl AcceptedBase {
             return Err(error);
         }
         Ok(())
+    }
+
+    /// Tabular-section capability follows accepted direct parentage, not an editable root class.
+    fn creation_supported(&self, uuid: &NativeUuid) -> bool {
+        let Some(object) = self.objects.get(&uuid.key()) else {
+            return false;
+        };
+        if object.kind == MetadataKind::TabularSection {
+            object
+                .parent
+                .as_ref()
+                .and_then(|parent| self.objects.get(parent))
+                .is_some_and(|parent| {
+                    matches!(parent.kind, MetadataKind::Catalog | MetadataKind::Document)
+                })
+        } else {
+            super::child_creation::supported_owner(object.kind)
+        }
     }
 
     /// Additional freeze inherits to owned inline descendants; native supplier rules stay per UUID.
