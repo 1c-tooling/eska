@@ -22,7 +22,7 @@ pub(in crate::project_core::source_format) struct View<'a> {
 
 impl View<'_> {
     /// Every original storage byte remains required until the complete destination is published.
-    fn recheck(self) -> Result<(), Error> {
+    pub(in crate::project_core::source_format) fn recheck(self) -> Result<(), Error> {
         if Inventory::read(self.root)? != *self.input {
             return Err(Error::root("source_input_changed"));
         }
@@ -44,45 +44,24 @@ pub(in crate::project_core::source_format) fn publish(
     view: View<'_>,
     destination: &Path,
 ) -> Result<LayoutPublication, Error> {
-    view.recheck()?;
-    let destination = destination_path(view, destination)?;
+    let (destination, status) = preflight(view, destination)?;
     let expected = view.output;
     let receipt = receipt(view);
-    let status = match fs::symlink_metadata(&destination) {
-        Ok(metadata) if metadata.file_type().is_dir() => {
-            let mut current = Inventory::read(&destination)?;
-            if current == *expected {
-                view.recheck()?;
-                return Ok(LayoutPublication::Unchanged);
-            }
-            if !current.files.contains_key(&SourcePath::parse(RECEIPT)?) {
-                return Err(Error::root("source_destination_exists"));
-            }
-            let stored: Receipt =
-                serde_json::from_str(&files::read_text(&destination.join(RECEIPT))?)
-                    .map_err(|_| Error::root("source_layout_receipt_invalid"))?;
-            if stored != receipt {
-                return Err(Error::root("source_layout_receipt_invalid"));
-            }
-            current.files.remove(&SourcePath::parse(RECEIPT)?);
-            current.files.remove(&SourcePath::parse(TEMPORARY)?);
-            validate_partial(&current, expected)?;
+    match status {
+        LayoutPublication::Unchanged => return Ok(status),
+        LayoutPublication::Resumed => {
             if destination.join(TEMPORARY).exists() {
                 // This reserved operation-owned file was never published as an authoring input.
                 fs::remove_file(destination.join(TEMPORARY)).map_err(|error| files::io(&error))?;
             }
-            LayoutPublication::Resumed
         }
-        Ok(_) => return Err(Error::root("source_destination_exists")),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+        LayoutPublication::Created => {
             fs::create_dir(&destination).map_err(|error| files::io(&error))?;
             let text =
                 serde_json::to_vec(&receipt).map_err(|_| Error::root("source_schema_invalid"))?;
             files::write(&destination.join(RECEIPT), &text)?;
-            LayoutPublication::Created
         }
-        Err(error) => return Err(files::io(&error)),
-    };
+    }
     for path in &expected.directories {
         fs::create_dir_all(destination.join(path.as_path())).map_err(|error| files::io(&error))?;
     }
@@ -107,6 +86,42 @@ pub(in crate::project_core::source_format) fn publish(
         return Err(Error::root("source_layout_destination_mismatch"));
     }
     Ok(status)
+}
+
+/// Project orchestration can check both independent outputs before publishing either one.
+pub(in crate::project_core::source_format) fn preflight(
+    view: View<'_>,
+    destination: &Path,
+) -> Result<(PathBuf, LayoutPublication), Error> {
+    view.recheck()?;
+    let destination = destination_path(view, destination)?;
+    let status = match fs::symlink_metadata(&destination) {
+        Ok(metadata) if metadata.file_type().is_dir() => {
+            let mut current = Inventory::read(&destination)?;
+            if current == *view.output {
+                LayoutPublication::Unchanged
+            } else {
+                if !current.files.contains_key(&SourcePath::parse(RECEIPT)?) {
+                    return Err(Error::root("source_destination_exists"));
+                }
+                let stored: Receipt =
+                    serde_json::from_str(&files::read_text(&destination.join(RECEIPT))?)
+                        .map_err(|_| Error::root("source_layout_receipt_invalid"))?;
+                if stored != receipt(view) {
+                    return Err(Error::root("source_layout_receipt_invalid"));
+                }
+                current.files.remove(&SourcePath::parse(RECEIPT)?);
+                current.files.remove(&SourcePath::parse(TEMPORARY)?);
+                validate_partial(&current, view.output)?;
+                LayoutPublication::Resumed
+            }
+        }
+        Ok(_) => return Err(Error::root("source_destination_exists")),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => LayoutPublication::Created,
+        Err(error) => return Err(files::io(&error)),
+    };
+    view.recheck()?;
+    Ok((destination, status))
 }
 
 /// Each final name is installed atomically without replacing a file; only private staging may fail.

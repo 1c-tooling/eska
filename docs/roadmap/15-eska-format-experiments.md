@@ -2061,6 +2061,25 @@ machine identifiers без изменения tool envelope и прежних п
 Миграция проекта через CLI, structural operations и остальные составные домены
 ещё нужны; EF-24 — `IN_PROGRESS`.
 
+Двенадцатая часть — [миграция standalone-проекта](../research/eska-format/project-migration.md).
+`eska-project migrate destination` показывает два независимых expected-byte
+плана; `--write` создаёт readable копию с прежними относительными source/base
+paths, exact settings/transport и отдельным новым pin. Рабочие правки не
+принимаются в базу. Project receipt связывает полные before/after inventories,
+оба outputs проверяются до записи, manifest публикуется последним; interruption
+возобновляется, exact repeat — `unchanged`. Незавершённый проект блокируется
+в общем входе `EskaSource`. Workspace inheritance отказывает явно.
+Прошли 15 root/14 SDK/5 adapter gates: 443 unit + 552 integration (24 opt-in
+пропущены), minimal project CLI — 250 unit + 16 integration. На C1 отдельный
+release CLI без платформы/Git/оболочки сохранил рабочую правку, freeze и отдельный
+accepted pin; 3 595 YAML прошли схемы, native XML совпал с независимым контролем
+по 8 778 файлам/8 077 каталогам. Контроль и мигрированный проект собраны в CF
+и выгружены на 1С 8.3.27.2325: 8 769 файлов/8 064 каталога равны кроме
+7 011 configVersion, source/base/settings/версия сохранены.
+[Результаты](../research/eska-format/project-migration-results.json).
+Structural operations, прочие составные домены и workspace migration ещё нужны;
+EF-24 — `IN_PROGRESS`. Новые CFE/EPF/ERF, клиент и обновление рабочей ИБ не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

@@ -57,10 +57,11 @@ YAML и storage bytes сохраняются, включая посторонн�
 а эталонные values берутся исключительно из pinned базы. Protected preparation
 сравнивает оба результата по прежним native UUID и support rules.
 
-Project orchestration ещё нужна: перенести обе части, проверить текущие правки
-и только затем явно обновить путь accepted base и independently supplied pin.
-Обновление существующего проекта, CI trust reference и публичная команда миграции
-в этой части не реализованы. Открытие старого проекта остаётся read-only.
+[Позднейшая orchestration standalone-проекта](project-migration.md) связывает оба
+плана в новую readable копию через preview/`--write` с отдельным новым pin.
+Рабочие values и native authority остаются раздельными. Workspace migration,
+переключение исходного проекта и CI trust reference не реализованы;
+открытие старого проекта остаётся read-only. Проверки ниже относятся к третьей части.
 
 ## Проверки
 

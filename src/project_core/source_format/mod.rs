@@ -14,6 +14,7 @@ mod metadata_reference;
 mod model;
 mod native_writer;
 mod package;
+mod project_migration;
 mod property;
 mod protected;
 mod readable;
@@ -58,6 +59,8 @@ pub use model::{
     Child, Descriptor, LineEnding, LocalizedText, MetadataNode, Namespace, NativeUuid, Property,
     PropertyName, PropertyValue, Section, XmlAttribute, XmlFragment, XmlProfile,
 };
+pub(crate) use project_migration::require_project_ready;
+pub use project_migration::{PROJECT_LAYOUT_RECEIPT, ProjectLayoutPlan, prepare_readable_project};
 pub use property::ExactUnsigned;
 pub use type_description::{
     DateQualifiers, NumberQualifiers, StringQualifiers, TypeAllowedLength, TypeAllowedSign,

@@ -24,6 +24,7 @@ impl EskaSource {
         let SourceFormat::Eska { accepted_base } = project.configuration().source_format() else {
             return Err(Error::root("source_format_mismatch"));
         };
+        super::source_format::require_project_ready(project.root())?;
         if project.configuration().project_type() != ProjectType::Configuration {
             return Err(Error::root("source_profile_unsupported"));
         }

@@ -24,6 +24,10 @@ eska-project import designer-xml new-project --name demo
 eska-project import designer-xml another-project --name demo \
   --platform-version 8.3.27.2325
 eska-project import designer-xml readable-project --name demo --layout readable
+eska-project --project-dir old-project migrate new-project \
+  --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" --format json
+eska-project --project-dir old-project migrate new-project \
+  --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" --write --format json
 eska-project --project-dir new-project inspect --format json
 eska-project --project-dir new-project prepare \
   --accepted-base-sha256 "$APPROVED_BASE_SHA256" --format json
@@ -48,6 +52,13 @@ Manifest публикуется последним. Ошибка удаляет 
 Оба варианта используют общее ядро, поддержку/freeze и самостоятельный pin.
 Это не миграция существующего проекта; промежуточные layout API не становятся
 дополнительными CLI choices.
+
+[`migrate`](project-migration.md) переносит standalone-проект в новую readable
+копию: рабочие исходники и pinned base используют отдельные expected-byte планы.
+Preview не пишет файлы; `--write` публикует или возобновляет matching output,
+затем manifest. Settings/transport сохраняются побайтно, возвращённый новый
+pin нужно одобрить отдельно. Исходный проект и CI approval не переключаются;
+Git/прочие файлы проекта не копируются. Workspace migration отказывает явно.
 
 `import` возвращает кандидат на принятую базу и её SHA-256. CI получает
 одобренную сумму отдельно; editable TOML не хранит approval digest.
@@ -82,6 +93,7 @@ Name, UUID, owner count и SHA-256 текста. Полный набор owners,
 и сообщает `effective_git_policy_verified = false`. `capabilities` перечисляет
 только текущие команды, профиль и ограничения. Структурное редактирование,
 baseline update и unpack нативных артефактов не добавлены.
+Layout migration переносит прежнюю базу; это не baseline update с новой политикой.
 
 Пути machine interface должны представляться lossless UTF-8. Неподдержанный
 root encoding отклоняется до создания проекта. Нативные относительные пути
@@ -115,11 +127,16 @@ Capabilities добавляет `import_layouts = ["family", "readable"]`,
 `source_layout_versions = [1, 2, 3]` и `descriptor_schema_versions = [1, 2]`.
 Tool envelope и прежние поля, включая `source_schema_version = 1`, сохранены;
 для выбора поддерживаемых версий используются новые списки.
+Capabilities также содержит `migrate`, `migration_layouts = ["readable"]` и
+`migration_scopes = ["standalone"]`. Schema 1 для новой команды описана в
+[контракте миграции](project-migration.md#machine-interface).
 
 ## Проверки
 
 Актуальная проверка обоих layout choices, 12 CLI integration tests и читаемой
 C1 приведена в [одиннадцатой части EF-24](readable-project-import.md).
+Актуальная миграция, 16 CLI integration tests и сохранение независимой базы —
+в [двенадцатой части](project-migration.md).
 Ниже сохранены результаты первоначальной EF-10.
 
 Три core tests проверяют полное создание, сохранение name/UUID/BSL/каталогов,

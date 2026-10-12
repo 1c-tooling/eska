@@ -1,5 +1,7 @@
 //! The independently compiled project tool requires neither the facade nor native runners.
 
+#[path = "project_tool/migration.rs"]
+mod migration;
 #[path = "project_tool/readable.rs"]
 mod readable;
 mod support;
@@ -81,7 +83,14 @@ fn help_and_capabilities_work_without_a_project() {
         assert_eq!(output.status.code(), Some(0), "{output:?}");
         assert!(output.stderr.is_empty());
         assert!(String::from_utf8_lossy(&output.stdout).contains(phrase));
-        for command in ["import", "inspect", "prepare", "transport", "capabilities"] {
+        for command in [
+            "import",
+            "migrate",
+            "inspect",
+            "prepare",
+            "transport",
+            "capabilities",
+        ] {
             let output = tool(&test.0, locale, &[command, "--help"]);
             assert_eq!(output.status.code(), Some(0), "{output:?}");
             assert!(output.stderr.is_empty());

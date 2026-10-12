@@ -31,6 +31,8 @@ pub(super) enum Command {
     #[command(disable_help_flag = true)]
     Import(Import),
     #[command(disable_help_flag = true)]
+    Migrate(Migrate),
+    #[command(disable_help_flag = true)]
     Inspect(Selector),
     #[command(disable_help_flag = true)]
     Prepare(Prepare),
@@ -45,6 +47,7 @@ impl Command {
     pub const fn name(&self) -> &'static str {
         match self {
             Self::Import(_) => "import",
+            Self::Migrate(_) => "migrate",
             Self::Inspect(_) => "inspect",
             Self::Prepare(_) => "prepare",
             Self::Transport(_) => "transport",
@@ -88,6 +91,18 @@ impl ImportLayout {
 pub(super) struct Selector {
     #[arg(long)]
     pub project: Option<String>,
+}
+
+/// Project migration requires an independently approved old base; preview never publishes files.
+#[derive(Debug, Args)]
+pub(super) struct Migrate {
+    pub destination: PathBuf,
+    #[command(flatten)]
+    pub selector: Selector,
+    #[arg(long)]
+    pub accepted_base_sha256: Option<String>,
+    #[arg(long)]
+    pub write: bool,
 }
 
 #[derive(Debug, Args)]

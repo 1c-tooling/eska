@@ -759,7 +759,9 @@ preset = "trunk"
 отделяет именованные значения от native sections; CST, защита, координаты и SDK
 используют общую модель. [Явный `import --layout readable`](docs/research/eska-format/readable-project-import.md)
 создаёт проект в читаемой структуре; без параметра остаётся семейное расположение.
-Миграция проекта через CLI и завершение структуры EF-24 ещё в работе.
+[Миграция standalone-проекта через CLI](docs/research/eska-format/project-migration.md)
+сохраняет рабочие правки и независимо переносит базу в новую копию; по умолчанию
+показывается план. Workspace и завершение структуры EF-24 ещё в работе.
 Инструменты собираются отдельно с features `project-cli`/`build-cli`;
 комплектная поставка и делегирование оболочки ещё не подключены.
 Общая [библиотека анализа](docs/research/eska-format/shared-session.md) уже

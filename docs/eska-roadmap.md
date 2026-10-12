@@ -114,8 +114,10 @@ native category: вложенные DefinedType/Characteristic в DefinedType о
 с обеими alternative spellings; допустимые записи сохраняются без нормализации.
 [Явный CLI import](research/eska-format/readable-project-import.md) выбирает
 читаемые YAML и физические resources через `--layout readable`; default family
-сохранён. Миграция проекта через CLI, остальные составные домены и structural
-operations ещё нужны.
+сохранён. [Миграция standalone через CLI](research/eska-format/project-migration.md)
+переносит рабочие values и pinned base отдельно, сохраняет settings и выдаёт
+новый pin для явного принятия. Workspace migration, остальные составные домены
+и structural operations ещё нужны.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)

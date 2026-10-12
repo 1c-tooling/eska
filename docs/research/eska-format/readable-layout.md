@@ -95,6 +95,8 @@ SDK использует ту же semantic projection; новый analyzer prot
 [Создание полного проекта через `eska-project import --layout readable`](readable-project-import.md)
 использует тот же writer и самостоятельный accepted pin; default CLI import
 сохраняет семейную структуру. Существующие проекты при открытии не мигрируют.
+[Явная команда `migrate`](project-migration.md) публикует новую standalone копию,
+перенося рабочие values и pinned base независимо; CI выбирает новый pin отдельно.
 `prepare_readable_layout` строит expected-byte план исходников: отделяет descriptors,
 переносит resources и переводит envelope. `prepare_accepted_readable_layout`
 читает только pinned blobs и возвращает отдельный новый pin. Рабочие правки

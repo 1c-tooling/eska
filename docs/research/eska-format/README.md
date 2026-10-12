@@ -10,7 +10,9 @@ values и политику, возвращая новый pin. [Карта ве�
 отделяет физические payload paths от native identity, сохраняя байты, защиту,
 reader/source map и контекст SDK. [Явный CLI import](readable-project-import.md)
 выбирает читаемую структуру через `--layout readable`; default family сохранён.
-Миграция проекта через CLI и остальные составные домены ещё в работе.
+[Миграция standalone-проекта](project-migration.md) связывает рабочие исходники
+и pinned base в новую readable копию с preview, repeat/recovery и отдельным pin.
+Workspace migration и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.
 Обе части `PLANNED`; текущие реализации и результаты перечислены ниже.

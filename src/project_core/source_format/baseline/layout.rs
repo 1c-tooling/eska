@@ -160,7 +160,7 @@ impl AcceptedLayoutPlan {
     }
 
     /// Reuse concrete publication machinery without exposing a plugin or storage abstraction.
-    fn publication_view(&self) -> publication::View<'_> {
+    pub(in crate::project_core::source_format) fn publication_view(&self) -> publication::View<'_> {
         publication::View {
             root: &self.root,
             input: &self.input,

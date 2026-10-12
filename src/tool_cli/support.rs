@@ -239,6 +239,8 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         "source_baseline_corrupt" => Some("tool-error-base-corrupt"),
         "source_destination_exists" => Some("tool-error-destination-exists"),
         "source_format_mismatch" => Some("tool-error-format"),
+        "source_migration_scope_unsupported" => Some("tool-error-migration-scope"),
+        "source_migration_incomplete" => Some("tool-error-migration-incomplete"),
         "project_selection_failed" => Some("tool-error-selection"),
         "project_discovery_failed" => Some("tool-error-discovery"),
         "analysis_config_invalid" => Some("tool-error-analysis-config"),
