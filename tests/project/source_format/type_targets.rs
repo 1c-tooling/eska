@@ -11,8 +11,9 @@ use super::{
 };
 use crate::support::TestDir;
 use eska::project::source_format::{
-    AcceptedBase, ObjectSource, PropertyName, PropertyValue, Section, accept_source,
-    import_designer, import_designer_readable, prepare_property_edit, prepare_protected,
+    AcceptedBase, ObjectSource, PropertyName, PropertyValue, Section, TypeAlternativeKind,
+    accept_source, import_designer, import_designer_readable, prepare_property_edit,
+    prepare_protected,
 };
 
 /// Both envelopes share native type declarations; only the pinned owner can grant edit permission.
@@ -52,7 +53,7 @@ fn prepare(root: &Path, readable: bool, frozen: bool) -> (PathBuf, AcceptedBase)
             "DefinedTypes"
         };
         fs::write(input.join(format!("{collection}/{name}.xml")), format!(
-            r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:r="http://v8.1c.ru/8.3/xcf/readable" version="2.20"><{kind} uuid="{}"><InternalInfo><r:GeneratedType name="{type_name}" category="{category}"/></InternalInfo><Properties><Name>{name}</Name></Properties></{kind}></MetaDataObject>"#, uuid(prefix).as_str())).unwrap();
+            r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:r="http://v8.1c.ru/8.3/xcf/readable" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" version="2.20"><{kind} uuid="{}"><InternalInfo><r:GeneratedType name="{type_name}" category="{category}"/></InternalInfo><Properties><Name>{name}</Name>{}</Properties></{kind}></MetaDataObject>"#, uuid(prefix).as_str(), if kind == "DefinedType" { "<Type><v8:Type>xs:decimal</v8:Type></Type>" } else { "" })).unwrap();
     }
     let source = root.join("source");
     if readable {
@@ -64,6 +65,172 @@ fn prepare(root: &Path, readable: bool, frozen: bool) -> (PathBuf, AcceptedBase)
     let frozen = if frozen { vec![uuid('2')] } else { Vec::new() };
     let reference = accept_source(&source, &storage, &frozen).unwrap();
     (source, AcceptedBase::open(&storage, &reference).unwrap())
+}
+
+/// Alternative element spelling remains editable even when the platform later normalizes it.
+#[test]
+fn named_targets_preserve_both_native_alternative_spellings() {
+    for readable in [false, true] {
+        let test = TestDir::new();
+        let (source, base) = prepare(&test.0, readable, false);
+        let accepted_before = tree(&test.0.join("accepted"));
+        for (index, kind) in [
+            (0, TypeAlternativeKind::TypeSet),
+            (1, TypeAlternativeKind::Type),
+        ] {
+            let mut next = description(&source);
+            next.data.alternatives[index].kind = kind;
+            let edit = prepare_property_edit(
+                &source,
+                &base,
+                &uuid('3'),
+                PropertyName::Type,
+                PropertyValue::TypeDescription(next),
+            )
+            .unwrap();
+            edit.publish(&base).unwrap();
+        }
+        let working = tree(&source);
+        let output = test.0.join("generations");
+        let prepared = prepare_protected(&source, &base, &output, true).unwrap();
+        assert!(prepared.diagnostics().is_empty());
+        let xml = fs::read_to_string(prepared.xml().join("Catalogs/Sample.xml")).unwrap();
+        assert!(xml.contains("<v8:TypeSet>cfg:CatalogRef.Sample</v8:TypeSet>"));
+        assert!(xml.contains("<v8:Type>alias:DefinedType.Narrow</v8:Type>"));
+        assert_eq!(tree(&source), working);
+        assert_eq!(tree(&test.0.join("accepted")), accepted_before);
+    }
+}
+
+/// Nested defined sets are invalid even without a cycle; neither editor nor raw export writes them.
+#[test]
+fn defined_type_owners_refuse_self_and_acyclic_named_sets() {
+    for readable in [false, true] {
+        let test = TestDir::new();
+        let (source, base) = prepare(&test.0, readable, false);
+        let before = tree(&source);
+        let accepted_before = tree(&test.0.join("accepted"));
+        let file = source.join("DefinedTypes/Narrow/object.yaml");
+        let original = fs::read_to_string(&file).unwrap();
+        let mut owner = ObjectSource::from_yaml(&original).unwrap();
+        let Some(PropertyValue::TypeDescription(value)) = owner
+            .document
+            .descriptor
+            .object
+            .property(PropertyName::Type)
+        else {
+            panic!("defined type description");
+        };
+        for name in ["cfg:DefinedType.Narrow", "cfg:DefinedType.Wide"] {
+            for kind in [TypeAlternativeKind::Type, TypeAlternativeKind::TypeSet] {
+                let mut next = value.clone();
+                next.data.alternatives[0].kind = kind;
+                next.data.alternatives[0].name = name.into();
+                let error = prepare_property_edit(
+                    &source,
+                    &base,
+                    &uuid('a'),
+                    PropertyName::Type,
+                    PropertyValue::TypeDescription(next),
+                )
+                .unwrap_err();
+                assert_eq!(error.code, "source_type_set_owner_invalid");
+                assert_eq!(tree(&source), before);
+            }
+        }
+        for section in &mut owner.document.descriptor.object.sections {
+            if let Section::Properties(properties) = section {
+                for property in properties {
+                    if let eska::project::source_format::Property::Typed {
+                        value: PropertyValue::TypeDescription(value),
+                        ..
+                    } = property
+                    {
+                        value.data.alternatives[0].kind = TypeAlternativeKind::TypeSet;
+                        value.data.alternatives[0].name = "cfg:DefinedType.Wide".into();
+                    }
+                }
+            }
+            if let Section::Preserved(value) = section {
+                value.xml = value
+                    .xml
+                    .replace("category=\"DefinedType\"", "category=\"Ref\"");
+            }
+        }
+        fs::write(&file, owner.to_yaml().unwrap()).unwrap();
+        let working = tree(&source);
+        let output = test.0.join("generations");
+        let error = prepare_protected(&source, &base, &output, false).unwrap_err();
+        assert_eq!(error.error.code, "source_type_set_owner_invalid");
+        assert!(!output.exists());
+        assert_eq!(tree(&source), working);
+        assert_eq!(tree(&test.0.join("accepted")), accepted_before);
+    }
+}
+
+/// Import preserves native input for inspection, but invalid kinds cannot become an accepted base.
+#[test]
+fn nested_native_type_sets_refuse_acceptance_in_both_envelopes() {
+    for readable in [false, true] {
+        let test = TestDir::new();
+        let (source, _) = prepare(&test.0, readable, false);
+        let source_before = tree(&source);
+        let native = test.0.join("xml/DefinedTypes/Narrow.xml");
+        fs::write(
+            &native,
+            fs::read_to_string(&native).unwrap().replace(
+                "<v8:Type>xs:decimal</v8:Type>",
+                "<v8:TypeSet>cfg:DefinedType.Wide</v8:TypeSet>",
+            ),
+        )
+        .unwrap();
+        let before = tree(&test.0.join("xml"));
+        let output = test.0.join("invalid");
+        if readable {
+            import_designer_readable(&test.0.join("xml"), &output)
+        } else {
+            import_designer(&test.0.join("xml"), &output)
+        }
+        .unwrap();
+        let working = tree(&output);
+        let refused = test.0.join("refused");
+        let error = accept_source(&output, &refused, &[]).unwrap_err();
+        assert_eq!(error.code, "source_type_set_owner_invalid");
+        assert!(!refused.exists());
+        assert_eq!(tree(&output), working);
+        assert_eq!(tree(&test.0.join("xml")), before);
+        assert_eq!(tree(&source), source_before);
+    }
+}
+
+/// Frozen values are restored before named-set validation; strict mode still reports the edit.
+#[test]
+fn protected_defined_type_sets_restore_frozen_values_before_validation() {
+    for readable in [false, true] {
+        let test = TestDir::new();
+        let (source, _) = prepare(&test.0, readable, false);
+        let storage = test.0.join("frozen-accepted");
+        let reference = accept_source(&source, &storage, &[uuid('a')]).unwrap();
+        let base = AcceptedBase::open(&storage, &reference).unwrap();
+        let accepted_before = tree(&storage);
+        let file = source.join("DefinedTypes/Narrow/object.yaml");
+        fs::write(
+            &file,
+            fs::read_to_string(&file)
+                .unwrap()
+                .replace("xs:decimal", "cfg:DefinedType.Wide"),
+        )
+        .unwrap();
+        let before = tree(&source);
+        let prepared = prepare_protected(&source, &base, &test.0.join("allowed"), false).unwrap();
+        assert_eq!(prepared.diagnostics().len(), 1);
+        let xml = fs::read_to_string(prepared.xml().join("DefinedTypes/Narrow.xml")).unwrap();
+        assert!(xml.contains("<v8:Type>xs:decimal</v8:Type>"));
+        assert!(!xml.contains("cfg:DefinedType.Wide"));
+        assert!(prepare_protected(&source, &base, &test.0.join("strict"), true).is_err());
+        assert_eq!(tree(&source), before);
+        assert_eq!(tree(&storage), accepted_before);
+    }
 }
 
 /// Existing alternative leaves retain quoting and comments; missing targets cause no file writes.

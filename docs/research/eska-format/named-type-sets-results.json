@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "task": "EF-24",
+  "part": 10,
+  "status": "IN_PROGRESS",
+  "feature": "named_type_set_owner_validation",
+  "wire": {
+    "descriptor_versions": [
+      1,
+      2
+    ],
+    "source_layout_version": 3,
+    "source_map_version": 2,
+    "rules_version": 1,
+    "single_value_authority": true,
+    "legacy_preserved_promotion": false
+  },
+  "validation": {
+    "root_gates": 15,
+    "unit_tests": 434,
+    "integration_tests": 552,
+    "opt_in_ignored": 24,
+    "sdk_gates": 14,
+    "sdk_all_features_tests": 359,
+    "adapter_gates": 5,
+    "adapter_unit_tests": 70,
+    "adapter_integration_tests": 12,
+    "schema_validated_descriptors": 3595
+  },
+  "real_c1": {
+    "native_descriptors": 3595,
+    "metadata_objects": 8330,
+    "semantic_parity": "All",
+    "generated_type_declarations": 3507,
+    "named_alternatives": {
+      "type": 1129,
+      "type_set": 114
+    },
+    "changed_source_files": 2,
+    "changed_native_files": 2,
+    "no_op": true,
+    "protected_exclusions": 0,
+    "native_input_unchanged": true,
+    "native_bytes_equal": true,
+    "source_and_base_unchanged": true
+  },
+  "platform": {
+    "version": "8.3.27.2325",
+    "artifact": "CF",
+    "control_and_eska_build_dump_passed": true,
+    "native_files": 8769,
+    "native_directories": 8064,
+    "ignored_dump_versions": 7011,
+    "all_other_bytes_equal": true,
+    "manifest_checksums_valid": true,
+    "source_and_base_unchanged": true,
+    "settings_and_project_version_unchanged": true
+  },
+  "native_probes": {
+    "unused_defined_type_numeric_controls": 3,
+    "nested_set_refusals": {
+      "self_reference": 2,
+      "mutual_references": 2,
+      "acyclic_chain": 2,
+      "characteristic_reference": 2
+    },
+    "refusal_stage": "import_sources",
+    "refusal_code": "platform_command_failed",
+    "alternative_spellings": [
+      "type",
+      "type_set"
+    ],
+    "accepted_constant_cases": 3,
+    "constant_native_dumps": 3,
+    "platform_normalized_spellings": 2,
+    "original_native_unchanged": true
+  },
+  "limits": [
+    "Unknown generated categories and other namespaces retain existence validation only",
+    "No bare set or characteristic dependency validation",
+    "No named-set expansion or dependent form and predefined-data compatibility validation",
+    "No structural metadata operations or new CLI orchestration",
+    "No implicit legacy fragment promotion",
+    "C2/C3 and CFE/EPF/ERF not accepted",
+    "No client execution, full BSL analysis or infobase update validation"
+  ]
+}

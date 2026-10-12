@@ -1,6 +1,6 @@
 //! Target lookup follows declared identity and ancestry, never a filesystem scan or value heuristic.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 #[cfg(test)]
 mod tests;
@@ -39,7 +39,7 @@ pub(in crate::project_core::source_format) fn validate_edit(
 struct Index<'a> {
     names: BTreeMap<String, Entry<'a>>,
     paths: BTreeMap<String, String>,
-    type_names: BTreeSet<String>,
+    type_names: BTreeMap<String, bool>,
 }
 
 /// Effective namespaces come from the selected native composition, including for edit previews.
@@ -58,7 +58,7 @@ impl<'a> Index<'a> {
         let mut index = Self {
             names: BTreeMap::new(),
             paths: BTreeMap::new(),
-            type_names: BTreeSet::new(),
+            type_names: BTreeMap::new(),
         };
         index.add(
             "",
@@ -87,8 +87,12 @@ impl<'a> Index<'a> {
             return Err(Error::root("source_metadata_reference_ambiguous"));
         }
         let context = scope(inherited, &node.namespaces)?;
-        for name in type_description::generated_names(node, &context)? {
-            if !self.type_names.insert(name) {
+        for generated in type_description::generated_types(node, &context)? {
+            if self
+                .type_names
+                .insert(generated.name, generated.is_named_set)
+                .is_some()
+            {
                 return Err(Error::root("source_type_target_ambiguous"));
             }
         }
@@ -163,9 +167,9 @@ impl<'a> Index<'a> {
                         {
                             if let Some(target) =
                                 type_description::named_target(alternative, context)?
-                                && !self.type_names.contains(target)
+                                && let Err(error) = self.validate_type_target(target, node.kind)
                             {
-                                return Err(Error::root("source_type_target_missing")
+                                return Err(error
                                     .in_field(index.to_string())
                                     .in_field("alternatives")
                                     .in_field(name.as_str())
@@ -206,6 +210,18 @@ impl<'a> Index<'a> {
                     }
                 }
             }
+        }
+        Ok(())
+    }
+
+    /// The native profile forbids named sets inside a defined type with either alternative spelling.
+    fn validate_type_target(&self, target: &str, owner: MetadataKind) -> Result<(), Error> {
+        let is_named_set = self
+            .type_names
+            .get(target)
+            .ok_or_else(|| Error::root("source_type_target_missing"))?;
+        if *is_named_set && owner == MetadataKind::DefinedType {
+            return Err(Error::root("source_type_set_owner_invalid"));
         }
         Ok(())
     }

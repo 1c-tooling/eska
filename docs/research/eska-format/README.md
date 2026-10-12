@@ -24,6 +24,9 @@ EF-23 отвечает за файлы/обратную сборку, EF-27 — 
 raw edits до проверки итогового состава.
 [Цели Type/TypeSet](type-targets.md) проверяются по native GeneratedType и
 действительному URI namespace; lookup общий со ссылками метаданных.
+[Именованные наборы](named-type-sets.md) проверяются по native category:
+DefinedType не принимает вложенные DefinedType/Characteristic с обеими записями
+alternative; ESKA не нормализует допустимые native element names.
 Остальные составные домены и structural operations ещё нужны.
 
 [Основа анализа EF-17](analysis-kernel.md) выбрана по реальному API,

@@ -53,8 +53,10 @@ edits. Запрещённая dangling alternative восстанавливае�
 
 ## Границы
 
-Это проверка существования объявленного типа. Раскрытие DefinedType/Characteristic,
-циклы, совместимость Type versus TypeSet, platform limits/cross-qualifiers,
+Девятая часть проверяет существование объявленного типа.
+[Десятая часть](named-type-sets.md) дополнительно отказывает для вложенного
+именованного набора внутри DefinedType, сохраняя обе native alternative spellings.
+Раскрытие DefinedType/Characteristic, зависимости характеристик, platform limits/cross-qualifiers,
 неизвестные native domains и structural create/delete/rename ещё не проверяются.
 Публичная orchestration проекта остаётся в EF-24; новые C2/C3, CFE/EPF/ERF,
 client execution и обновление ИБ этой частью не принимаются.

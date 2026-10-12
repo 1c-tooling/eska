@@ -47,6 +47,8 @@ alternatives и qualifiers; его native bindings сохраняются отд
 последовательностью строк; отдельный slot списка сохраняет только XML prefixes.
 [Цели Type/TypeSet](type-targets.md) разрешаются по native GeneratedType
 из объявленного состава после восстановления запрещённых правок.
+[Именованные наборы](named-type-sets.md) внутри DefinedType отказываются по native
+category с обеими alternative spellings; разрешённые записи сохраняются.
 Строки и enum — строки, boolean — bool, integer — точная строка ASCII-цифр.
 Числа с ведущими нулями и произвольным количеством цифр не проходят через
 float/u64. `Synonym` — упорядоченная последовательность language/text.

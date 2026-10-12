@@ -2026,6 +2026,25 @@ exclusions и прошли CF/build/dump на 1С 8.3.27.2325: 8 769 файло�
 Остальные selectors/collections, structural operations и публичная orchestration
 ещё нужны; EF-24 — `IN_PROGRESS`.
 
+Десятая часть — [именованные наборы типов](../research/eska-format/named-type-sets.md).
+GeneratedType category определяет известные DefinedType/Characteristic;
+DefinedType.Type отказывает для их вложенного использования с обеими XML-записями
+alternative. Native probes на 1С 8.3.27.2325 подтвердили отказ для self, взаимных
+ссылок, цепочки без цикла и ссылки на характеристику на новых неиспользуемых
+определяемых типах; числовые контроли собраны. Константа принимает обе alternative
+spellings, платформа нормализует их при выгрузке; ESKA сохраняет исходную запись.
+Неизвестные категории остаются без заявленной семантики; frozen values
+восстанавливаются перед проверкой, рабочая подмена category не даёт разрешений.
+Прошли 15 root/14 SDK/5 adapter gates: 434 unit + 552 integration (24 opt-in
+пропущены), SDK — 359, adapter — 70 + 12. Полное раскрытие типов, зависимости
+характеристик ещё не заявлены. Свежая C1 сохранила 3 595 descriptors/8 330 объектов
+и All-семантику, две правки совпали с native control и прошли CF/build/dump:
+8 769 файлов/8 064 каталога равны кроме configVersion, 3 595 YAML прошли схемы,
+sources/base/settings/версия сохранены.
+[Результаты](../research/eska-format/named-type-sets-results.json).
+Structural operations и публичная orchestration ещё нужны;
+EF-24 — `IN_PROGRESS`.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

@@ -15,7 +15,7 @@ mod targets;
 mod tests;
 
 pub(super) use native::decode;
-pub(super) use targets::{generated_names, named_target};
+pub(super) use targets::{generated_types, named_target};
 
 /// Alternatives and qualifiers are edited once; native layout contains only reconstruction slots.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

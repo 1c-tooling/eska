@@ -109,6 +109,9 @@ EF-24: [28 новых typed-скаляров](research/eska-format/typed-scalars
 запрещённых правок; общие editor/migration/semantic/source map сохраняют bindings.
 [Цели Type/TypeSet](research/eska-format/type-targets.md) разрешаются по native
 GeneratedType и действительному namespace URI в том же проверенном составе.
+[Именованные наборы](research/eska-format/named-type-sets.md) проверяются по
+native category: вложенные DefinedType/Characteristic в DefinedType отказываются
+с обеими alternative spellings; допустимые записи сохраняются без нормализации.
 Orchestration, остальные составные домены и structural operations ещё нужны.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные

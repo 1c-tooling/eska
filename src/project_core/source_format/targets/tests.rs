@@ -1,7 +1,7 @@
 //! Type targets are declared native names with accepted namespace scopes and composition.
 
 use super::*;
-use crate::project_core::source_format::Descriptor;
+use crate::project_core::source_format::{Descriptor, TypeAlternativeKind};
 
 /// Small complete compositions give generated types their real declaring objects and namespaces.
 fn documents(alternative: &str) -> BTreeMap<SourcePath, NativeDocument> {
@@ -11,28 +11,40 @@ fn documents(alternative: &str) -> BTreeMap<SourcePath, NativeDocument> {
             "Configuration.xml",
             "Configuration",
             '1',
-            "<Properties><Name>Root</Name></Properties><ChildObjects><Catalog>Sample</Catalog><Catalog>Other</Catalog><DefinedType>Alias</DefinedType></ChildObjects>".to_owned(),
+            "<Properties><Name>Root</Name></Properties><ChildObjects><Catalog>Sample</Catalog><Catalog>Other</Catalog><DefinedType>Alias</DefinedType><Constant>Value</Constant><ChartOfCharacteristicTypes>Properties</ChartOfCharacteristicTypes></ChildObjects>".to_owned(),
         ),
         (
             "Catalogs/Sample.xml",
             "Catalog",
             '2',
-            generated("Sample", "CatalogRef.Sample"),
+            generated("Sample", "CatalogRef.Sample", "Ref"),
         ),
         (
             "Catalogs/Other.xml",
             "Catalog",
             '3',
-            generated("Other", "CatalogRef.Other"),
+            generated("Other", "CatalogRef.Other", "Ref"),
         ),
         (
             "DefinedTypes/Alias.xml",
             "DefinedType",
             '4',
-            generated("Alias", "DefinedType.Alias").replace(
+            generated("Alias", "DefinedType.Alias", "DefinedType").replace(
                 "</Properties>",
-                &format!("<Type><v8:TypeSet>{alternative}</v8:TypeSet></Type></Properties>"),
+                "<Type><v8:Type>q:CatalogRef.Sample</v8:Type></Type></Properties>",
             ),
+        ),
+        (
+            "Constants/Value.xml",
+            "Constant",
+            '5',
+            format!("<Properties><Name>Value</Name><Type><v8:Type>{alternative}</v8:Type></Type></Properties>"),
+        ),
+        (
+            "ChartsOfCharacteristicTypes/Properties.xml",
+            "ChartOfCharacteristicTypes",
+            '6',
+            generated("Properties", "Characteristic.Properties", "Characteristic"),
         ),
     ] {
         let path = SourcePath::parse(path).unwrap();
@@ -51,9 +63,9 @@ fn documents(alternative: &str) -> BTreeMap<SourcePath, NativeDocument> {
 }
 
 /// Generated type spellings belong to native `InternalInfo`, rather than property or path guesses.
-fn generated(name: &str, value: &str) -> String {
+fn generated(name: &str, value: &str, category: &str) -> String {
     format!(
-        r#"<InternalInfo><r:GeneratedType name="{value}" category="Ref"><r:TypeId>90000000-0000-4000-8000-000000000001</r:TypeId></r:GeneratedType></InternalInfo><Properties><Name>{name}</Name></Properties>"#
+        r#"<InternalInfo><r:GeneratedType name="{value}" category="{category}"><r:TypeId>90000000-0000-4000-8000-000000000001</r:TypeId></r:GeneratedType></InternalInfo><Properties><Name>{name}</Name></Properties>"#
     )
 }
 
@@ -63,7 +75,6 @@ fn type_targets_use_generated_declarations_and_effective_namespace_uris() {
     for name in [
         "q:CatalogRef.Sample",
         "alias:CatalogRef.Other",
-        "q:DefinedType.Alias",
         "q:AnyRef",
         "q:CatalogRef",
         "q:ConstantsSet",
@@ -76,12 +87,97 @@ fn type_targets_use_generated_declarations_and_effective_namespace_uris() {
     assert_eq!(
         error.location,
         [
-            "40000000-0000-4000-8000-000000000001",
+            "50000000-0000-4000-8000-000000000001",
             "Type",
             "alternatives",
             "0"
         ]
     );
+}
+
+/// The platform accepts both element spellings and normalizes them when exporting native XML.
+#[test]
+fn type_targets_preserve_both_alternative_spellings_for_named_targets() {
+    for name in [
+        "q:CatalogRef.Sample",
+        "alias:DefinedType.Alias",
+        "q:Characteristic.Properties",
+    ] {
+        for kind in [TypeAlternativeKind::Type, TypeAlternativeKind::TypeSet] {
+            let mut values = documents(name);
+            let value = values
+                .get_mut(&SourcePath::parse("Constants/Value.xml").unwrap())
+                .unwrap();
+            set_alternative(&mut value.descriptor.object, kind, name);
+            validate_documents(&values).unwrap();
+        }
+    }
+}
+
+/// The current native profile refuses even acyclic named sets inside a defined type.
+#[test]
+fn defined_types_refuse_nested_named_sets_before_export_and_edit() {
+    let accepted = documents("q:CatalogRef.Sample");
+    let path = SourcePath::parse("DefinedTypes/Alias.xml").unwrap();
+    for name in ["q:DefinedType.Alias", "q:Characteristic.Properties"] {
+        for kind in [TypeAlternativeKind::Type, TypeAlternativeKind::TypeSet] {
+            let mut updated = accepted[&path].descriptor.object.clone();
+            set_alternative(&mut updated, kind, name);
+            let error = validate_edit(&accepted, &updated).unwrap_err();
+            assert_eq!(error.code, "source_type_set_owner_invalid");
+            assert_eq!(error.location.last().unwrap(), "0");
+            let mut values = accepted.clone();
+            values.get_mut(&path).unwrap().descriptor.object = updated;
+            assert_eq!(
+                validate_documents(&values).unwrap_err().code,
+                "source_type_set_owner_invalid"
+            );
+        }
+    }
+}
+
+/// Unknown categories retain existence validation; known set categories must have a valid owner.
+#[test]
+fn type_targets_preserve_unknown_categories_and_refuse_invalid_known_owners() {
+    for (category, expected) in [
+        ("Future", None),
+        ("DefinedType", Some("source_type_definition_invalid")),
+        ("Characteristic", Some("source_type_definition_invalid")),
+    ] {
+        let mut values = documents("q:CatalogRef.Sample");
+        let sample = values
+            .get_mut(&SourcePath::parse("Catalogs/Sample.xml").unwrap())
+            .unwrap();
+        for section in &mut sample.descriptor.object.sections {
+            if let Section::Preserved(value) = section {
+                value.xml = value
+                    .xml
+                    .replace("category=\"Ref\"", &format!("category=\"{category}\""));
+            }
+        }
+        match expected {
+            Some(code) => assert_eq!(validate_documents(&values).unwrap_err().code, code),
+            None => validate_documents(&values).unwrap(),
+        }
+    }
+}
+
+/// Test mutations use the model's actual property and leave the native slot index unchanged.
+fn set_alternative(node: &mut MetadataNode, kind: TypeAlternativeKind, name: &str) {
+    for section in &mut node.sections {
+        if let Section::Properties(properties) = section {
+            for property in properties {
+                if let Property::Typed {
+                    value: PropertyValue::TypeDescription(value),
+                    ..
+                } = property
+                {
+                    value.data.alternatives[0].kind = kind;
+                    value.data.alternatives[0].name = name.into();
+                }
+            }
+        }
+    }
 }
 
 /// Undeclared descriptors and unrelated preserved sections cannot supply a missing type target.

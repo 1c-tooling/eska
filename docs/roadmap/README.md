@@ -39,6 +39,10 @@ alternatives/qualifiers, единственные editable values, native bindin
 Type/TypeSet по native GeneratedType из trusted composition, сохраняя namespace
 scopes и прежние схемы. Две правки C1 прошли CF/build/dump. Отрицательный probe
 подтвердил, что существование типа не заменяет проверку зависимых форм.
+[Десятая часть](../research/eska-format/named-type-sets.md) запрещает вложенные
+DefinedType/Characteristic внутри DefinedType по native category. Обе XML-записи
+alternative сохраняются: платформа принимает и нормализует их. Проверки root,
+SDK и адаптера прошли; ограничения подтверждены независимыми native probes.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи
 не открываются заново, но не подтверждают новое расширенное покрытие MVP.
