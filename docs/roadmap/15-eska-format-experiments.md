@@ -2235,6 +2235,11 @@ native контролем; freeze и неверные цели отказали 
 Остальные compound/structural profiles и workspace migration ещё нужны;
 EF-24 — `IN_PROGRESS`. Клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
 
+Дополнительно уточнены документационные JSON schemas FillValue: до исправления
+шесть C1 файлов каждого envelope ошибочно отклонялись, после него все
+2 645 family и 3 595 readable YAML прошли. Closed reference/state/native helpers
+проверены отдельно; версии и Rust-поведение не менялись.
+
 Девятнадцатая часть — [миграция всего workspace](../research/eska-format/workspace-migration.md).
 `migrate --workspace --accepted-bases` использует строгую карту approved pins
 каждого member, обычную discovery/inheritance и прежние независимые source/base

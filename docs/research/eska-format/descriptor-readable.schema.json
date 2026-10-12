@@ -234,6 +234,9 @@
                 }
               ]
             },
+            "FillValue": {
+              "$ref": "enum-fill-value.schema.json#/$defs/reference"
+            },
             "DefaultLanguage": {
               "oneOf": [
                 {
@@ -539,6 +542,22 @@
                               "required": [
                                 "name",
                                 "references"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "const": "FillValue"
+                                },
+                                "enum_fill": {
+                                  "$ref": "enum-fill-value.schema.json#/$defs/layout"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "enum_fill"
                               ],
                               "additionalProperties": false
                             },

@@ -134,5 +134,21 @@
     "workspace_migration_pending",
     "no_new_cfe_epf_erf_runtime_acceptance",
     "no_client_or_live_infobase_execution"
-  ]
+  ],
+  "json_schema_correction": {
+    "date": "2026-10-13",
+    "schema_versions_unchanged": true,
+    "application_behavior_unchanged": true,
+    "family_source_files": 2645,
+    "readable_source_files": 3595,
+    "invalid_source_files_before": {
+      "family": 6,
+      "readable": 6
+    },
+    "invalid_source_files_after": {
+      "family": 0,
+      "readable": 0
+    },
+    "closed_reference_and_state_and_helper_examples_passed": true
+  }
 }

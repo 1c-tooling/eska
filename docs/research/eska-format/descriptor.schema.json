@@ -334,6 +334,9 @@
             "value"
           ],
           "additionalProperties": false
+        },
+        {
+          "$ref": "enum-fill-value.schema.json#/$defs/typed"
         }
       ]
     },
@@ -392,7 +395,8 @@
                 "DefaultRoles",
                 "Content",
                 "Owners",
-                "RegisterRecords"
+                "RegisterRecords",
+                "FillValue"
               ]
             },
             "value": {
@@ -404,7 +408,28 @@
             "name",
             "value"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "name": {
+                    "const": "FillValue"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "value": {
+                    "$ref": "enum-fill-value.schema.json#/$defs/typed"
+                  }
+                }
+              }
+            }
+          ]
         },
         {
           "type": "object",

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ESKA named enum filling value",
+  "$ref": "#/$defs/value",
+  "$defs": {
+    "reference": {
+      "allOf": [
+        {
+          "$ref": "metadata-reference.schema.json#/$defs/value"
+        },
+        {
+          "pattern": "^Enum\\.[^.]+\\.EnumValue\\.[^.]+$",
+          "not": {
+            "pattern": "\\s"
+          }
+        }
+      ]
+    },
+    "layout": {
+      "type": "object",
+      "properties": {
+        "xsi_prefix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type_prefix": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "xsi_prefix",
+        "type_prefix"
+      ],
+      "additionalProperties": false
+    },
+    "value": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "$ref": "#/$defs/reference"
+        },
+        "native": {
+          "$ref": "#/$defs/layout"
+        }
+      },
+      "required": [
+        "reference",
+        "native"
+      ],
+      "additionalProperties": false
+    },
+    "typed": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "const": "enum_fill_value"
+        },
+        "value": {
+          "$ref": "#/$defs/value"
+        }
+      },
+      "required": [
+        "state",
+        "value"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

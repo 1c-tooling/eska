@@ -52,6 +52,17 @@ typed автоматически. Классификация закреплён�
 
 ## Чтение и проверки
 
+[JSON schema значения](enum-fill-value.schema.json) описывает closed reference,
+два native prefixes и family state; обе descriptor schemas принимают этот профиль.
+Readable значение — scalar с отдельным обязательным `enum_fill` slot. Schema
+проверяет форму данных; NCName/URI bindings, owner kind, существование цели,
+права и совместимость типов остаются проверками core/платформы.
+
+Пропуск в документационных schemas исправлен 2026-10-13: до этого шесть C1
+источников каждого envelope ошибочно отклонялись. После уточнения прошли все
+2 645 family и 3 595 readable YAML. Отдельно проверены закрытая форма ссылки,
+отказы nil/empty/text и missing/extra helpers; версии schemas и Rust-поведение прежние.
+
 Saved/unsaved All/Summary сохраняют native `DesignTimeRef` qualifiers и typed
 text семантику. Source map показывает точную рабочую строку ссылки, включая
 legacy `value.reference`; служебные координаты не становятся editable values.
