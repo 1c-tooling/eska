@@ -304,6 +304,14 @@ fn anchored_node<'a>(
         if accepted.property(property).is_none() {
             return Err(Error::root("source_edit_property_missing"));
         }
+        if let (
+            Some(PropertyValue::TypeDescription(current)),
+            Some(PropertyValue::TypeDescription(anchor)),
+        ) = (working.property(property), accepted.property(property))
+            && current.native != anchor.native
+        {
+            return Err(Error::root("source_edit_structure_changed"));
+        }
         return Ok(working);
     };
     let accepted_child = inline_child(accepted, section, index)

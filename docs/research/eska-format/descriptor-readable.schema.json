@@ -223,6 +223,16 @@
                   "$ref": "#/$defs/state"
                 }
               ]
+            },
+            "Type": {
+              "oneOf": [
+                {
+                  "$ref": "type-description.schema.json#/$defs/data"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
             }
           },
           "additionalProperties": false
@@ -348,8 +358,25 @@
                                 "InformationRegisterPeriodicity",
                                 "ReturnValuesReuse",
                                 "FillChecking",
-                                "Indexing"
+                                "Indexing",
+                                "Type"
                               ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "const": "Type"
+                                },
+                                "layout": {
+                                  "$ref": "type-description.schema.json#/$defs/layout"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "layout"
+                              ],
+                              "additionalProperties": false
                             },
                             {
                               "type": "object",

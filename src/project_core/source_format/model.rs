@@ -243,6 +243,7 @@ pub enum PropertyName {
     ReturnValuesReuse,
     FillChecking,
     Indexing,
+    Type,
 }
 
 impl PropertyName {
@@ -282,6 +283,7 @@ impl PropertyName {
             Self::ReturnValuesReuse => "ReturnValuesReuse",
             Self::FillChecking => "FillChecking",
             Self::Indexing => "Indexing",
+            Self::Type => "Type",
         }
     }
 }
@@ -302,6 +304,7 @@ pub enum PropertyValue {
     Empty,
     Nil,
     Localized(Vec<LocalizedText>),
+    TypeDescription(Box<super::TypeDescription>),
 }
 
 /// A native language key is preserved verbatim, without locale normalization.

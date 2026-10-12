@@ -23,10 +23,14 @@
 source map и SDK используют эти привязки. [Пятая часть](../research/eska-format/readable-layout.md)
 добавляет именованные свойства в descriptor schema 2 с отдельными native details,
 общими CST/semantic paths, pinned миграцией и поддержкой SDK. Orchestration проекта,
-составные типы/ссылки/коллекции и structural operations
+остальные составные домены, ссылки/коллекции и structural operations
 ещё нужны; публичный CLI импорта сохраняет прежнее расположение.
 [Шестая часть](../research/eska-format/annotation-migration.md) переносит аннотации
 legacy YAML с привязкой к исходному полю/объекту, сохраняя значения и CST styles.
+[Седьмая часть](../research/eska-format/type-description.md) добавляет Type:
+alternatives/qualifiers, единственные editable values, native bindings,
+точечные edits и защиту с прежними source origins. Три реальные правки C1
+собраны в CF и сверены с независимым XML-контролем на 1С 8.3.27.2325.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи
 не открываются заново, но не подтверждают новое расширенное покрытие MVP.

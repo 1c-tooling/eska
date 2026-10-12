@@ -286,6 +286,22 @@
             "value"
           ],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "type_description"
+            },
+            "value": {
+              "$ref": "type-description.schema.json"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "additionalProperties": false
         }
       ]
     },
@@ -330,7 +346,8 @@
                 "InformationRegisterPeriodicity",
                 "ReturnValuesReuse",
                 "FillChecking",
-                "Indexing"
+                "Indexing",
+                "Type"
               ]
             },
             "value": {

@@ -102,7 +102,9 @@ EF-24: [28 новых typed-скаляров](research/eska-format/typed-scalars
 физические пути модулей/ресурсов, защищённую сборку и оба плана миграции.
 [Именованные свойства descriptor schema 2](research/eska-format/readable-layout.md)
 используют общую модель, editor/semantic coordinates и pinned миграцию.
-Orchestration, составные домены и structural operations ещё нужны.
+[Описание Type](research/eska-format/type-description.md) связывает alternatives,
+квалификаторы и отдельные native slots с общими writer/editor/policy/source map.
+Orchestration, остальные составные домены, ссылки и structural operations ещё нужны.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)

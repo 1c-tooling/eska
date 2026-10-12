@@ -143,7 +143,7 @@ pub(super) fn property(
     };
     if let Some(name) = name
         && let Some(kind) = name.value_kind(owner)
-        && let Some(value) = typed_value(node, kind)
+        && let Some(value) = typed_value(node, kind, input, inherited)
     {
         return Property::Typed { name, value };
     }
@@ -153,7 +153,12 @@ pub(super) fn property(
 }
 
 /// Preserve empty, nil and language-keyed values without default inference or numeric coercion.
-fn typed_value(node: Node<'_, '_>, kind: super::property::ValueKind) -> Option<PropertyValue> {
+fn typed_value(
+    node: Node<'_, '_>,
+    kind: super::property::ValueKind,
+    input: &str,
+    context: &[Namespace],
+) -> Option<PropertyValue> {
     if node.attributes().len() == 1
         && matches!(node.attribute((XSI_NAMESPACE, "nil")), Some("true" | "1"))
         && node.children().all(|child| {
@@ -174,6 +179,10 @@ fn typed_value(node: Node<'_, '_>, kind: super::property::ValueKind) -> Option<P
             .map(localized)
             .collect::<Option<Vec<_>>>()?;
         return Some(PropertyValue::Localized(parts));
+    }
+    if matches!(kind, super::property::ValueKind::TypeDescription) {
+        return super::type_description::decode(node, input, context)
+            .map(|value| PropertyValue::TypeDescription(Box::new(value)));
     }
     if node.children().all(|child| child.is_text()) {
         kind.parse(text(node))

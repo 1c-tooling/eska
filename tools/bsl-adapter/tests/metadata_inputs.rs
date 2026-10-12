@@ -138,6 +138,17 @@ fn module_drafts(readable: bool) {
 /// Defined-type edits use exact YAML coordinates and restore the same saved canonical value.
 #[test]
 fn defined_type_drafts_change_underlying_type_and_report_unsupported_values_in_yaml() {
+    defined_type_drafts(false);
+}
+
+/// Readable types retain the same canonical model, overlay lifecycle and failure ranges.
+#[test]
+fn readable_defined_type_drafts_change_underlying_type_and_report_unsupported_values_in_yaml() {
+    defined_type_drafts(true);
+}
+
+/// Both envelopes change the single qualified value without assuming an XML representation.
+fn defined_type_drafts(readable: bool) {
     let directory = TestDirectory::new();
     let native = directory.0.join("native");
     fs::create_dir(&native).unwrap();
@@ -146,7 +157,11 @@ fn defined_type_drafts_change_underlying_type_and_report_unsupported_values_in_y
     let xml = r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" version="2.20"><DefinedType uuid="20000000-0000-4000-8000-000000000001"><Properties><Name>Value</Name><Type><v8:Type>xs:decimal</v8:Type><v8:NumberQualifiers><v8:Digits>15</v8:Digits><v8:FractionDigits>2</v8:FractionDigits></v8:NumberQualifiers></Type></Properties></DefinedType></MetaDataObject>"#;
     fs::write(native.join("DefinedTypes/Value.xml"), xml).unwrap();
     let source = directory.0.join("source");
-    import_designer(&native, &source).unwrap();
+    if readable {
+        import_designer_readable(&native, &source).unwrap();
+    } else {
+        import_designer(&native, &source).unwrap();
+    }
     let mut inputs = MetadataInputs::open(&source).unwrap();
     let path = inputs
         .owner_paths()
@@ -168,10 +183,7 @@ fn defined_type_drafts_change_underlying_type_and_report_unsupported_values_in_y
         .apply_overlay(&path, inputs.revision(), 1, &text, &request)
         .unwrap();
     assert_eq!(ready(&inputs, &path), saved);
-    let draft = text.replace(
-        "<v8:Type>xs:decimal</v8:Type>",
-        "<v8:Type>xs:boolean</v8:Type>",
-    );
+    let draft = text.replace("xs:decimal", "xs:boolean");
     assert_ne!(draft, text);
     inputs
         .apply_overlay(&path, inputs.revision(), 2, &draft, &request)
@@ -190,10 +202,7 @@ fn defined_type_drafts_change_underlying_type_and_report_unsupported_values_in_y
             scale: 2
         }
     );
-    let unsupported = text.replace(
-        "<v8:Type>xs:decimal</v8:Type>",
-        "<v8:Type>cfg:Future.Value</v8:Type>",
-    );
+    let unsupported = text.replace("xs:decimal", "cfg:Future.Value");
     inputs
         .apply_overlay(&path, inputs.revision(), 3, &unsupported, &request)
         .unwrap();
@@ -201,9 +210,11 @@ fn defined_type_drafts_change_underlying_type_and_report_unsupported_values_in_y
     let error = defined_type(&snapshot.documents[0].descriptor.objects[0]).unwrap_err();
     assert!(matches!(error.issue, AdapterIssue::UnsupportedType { .. }));
     assert!(unsupported[error.range].contains("cfg:Future.Value"));
-    let invalid = text.replace(
-        "</v8:NumberQualifiers>",
-        "<v8:AllowedSign>Future</v8:AllowedSign></v8:NumberQualifiers>",
+    let invalid = property::replace(
+        &text, PropertyName::Type, Property::Preserved {fragment: XmlFragment {
+            xml: "<Type><v8:Type>xs:decimal</v8:Type><v8:NumberQualifiers><v8:Digits>15</v8:Digits><v8:FractionDigits>2</v8:FractionDigits><v8:AllowedSign>Future</v8:AllowedSign></v8:NumberQualifiers></Type>".into(),
+            namespaces:Vec::new(),
+        }},
     );
     inputs
         .apply_overlay(&path, inputs.revision(), 4, &invalid, &request)
@@ -232,6 +243,17 @@ fn defined_type_drafts_change_underlying_type_and_report_unsupported_values_in_y
 /// Register fields use the same YAML snapshot as modes, while prior model holders keep their value.
 #[test]
 fn register_yaml_and_drafts_preserve_types_and_address_invalid_modes() {
+    register_drafts(false);
+}
+
+/// Readable register types and native modes use the same converter without exported XML.
+#[test]
+fn readable_register_yaml_and_drafts_preserve_types_and_address_invalid_modes() {
+    register_drafts(true);
+}
+
+/// Capture nested type leaves and opaque modes through each supported source envelope.
+fn register_drafts(readable: bool) {
     let directory = TestDirectory::new();
     let native = directory.0.join("native");
     fs::create_dir(&native).unwrap();
@@ -240,7 +262,11 @@ fn register_yaml_and_drafts_preserve_types_and_address_invalid_modes() {
     let xml = r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" version="2.20"><InformationRegister uuid="20000000-0000-4000-8000-000000000001"><Properties><Name>Rates</Name><InformationRegisterPeriodicity>Month</InformationRegisterPeriodicity><WriteMode>Independent</WriteMode></Properties><ChildObjects><Dimension uuid="30000000-0000-4000-8000-000000000001"><Properties><Name>Item</Name><Type><v8:Type>cfg:CatalogRef.Items</v8:Type></Type></Properties></Dimension></ChildObjects></InformationRegister></MetaDataObject>"#;
     fs::write(native.join("InformationRegisters/Rates.xml"), xml).unwrap();
     let source = directory.0.join("source");
-    import_designer(&native, &source).unwrap();
+    if readable {
+        import_designer_readable(&native, &source).unwrap();
+    } else {
+        import_designer(&native, &source).unwrap();
+    }
     let mut inputs = MetadataInputs::open(&source).unwrap();
     let path = inputs
         .owner_paths()
@@ -258,15 +284,10 @@ fn register_yaml_and_drafts_preserve_types_and_address_invalid_modes() {
         bsl_metadata::xml_parser::parse_information_register_xml(xml).unwrap()
     );
     let text = fs::read_to_string(source.join(path.as_path())).unwrap();
-    let draft = text
-        .replace(
-            "<v8:Type>cfg:CatalogRef.Items</v8:Type>",
-            "<v8:Type>xs:boolean</v8:Type>",
-        )
-        .replace(
-            "<WriteMode>Independent</WriteMode>",
-            "<WriteMode>RecorderSubordinate</WriteMode>",
-        );
+    let draft = text.replace("cfg:CatalogRef.Items", "xs:boolean").replace(
+        "<WriteMode>Independent</WriteMode>",
+        "<WriteMode>RecorderSubordinate</WriteMode>",
+    );
     assert_ne!(draft, text);
     inputs
         .apply_overlay(&path, inputs.revision(), 1, &draft, &request)

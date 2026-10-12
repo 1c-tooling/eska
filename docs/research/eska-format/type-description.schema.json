@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ESKA exact type description",
+  "$ref": "#/$defs/complete",
+  "$defs": {
+    "complete": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/$defs/data"
+        },
+        "native": {
+          "$ref": "#/$defs/layout"
+        }
+      },
+      "required": [
+        "data",
+        "native"
+      ],
+      "additionalProperties": false
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "type",
+                  "type_set"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "kind",
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "string": {
+          "$ref": "#/$defs/string"
+        },
+        "number": {
+          "$ref": "#/$defs/number"
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        }
+      },
+      "required": [
+        "alternatives"
+      ],
+      "additionalProperties": false
+    },
+    "layout": {
+      "type": "object",
+      "properties": {
+        "prefix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "alternative"
+                  },
+                  "index": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "kind",
+                  "index"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "string",
+                      "number",
+                      "date"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "string_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "length",
+              "allowed_length"
+            ]
+          }
+        },
+        "number_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "digits",
+              "fraction_digits",
+              "allowed_sign"
+            ]
+          }
+        },
+        "date_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "fractions"
+            ]
+          }
+        }
+      },
+      "required": [
+        "prefix",
+        "parts",
+        "string_fields",
+        "number_fields",
+        "date_fields"
+      ],
+      "additionalProperties": false
+    },
+    "string": {
+      "type": "object",
+      "properties": {
+        "length": {
+          "type": "string",
+          "pattern": "^[0-9]+(?![\\s\\S])"
+        },
+        "allowed_length": {
+          "enum": [
+            "Variable",
+            "Fixed"
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "number": {
+      "type": "object",
+      "properties": {
+        "digits": {
+          "type": "string",
+          "pattern": "^[0-9]+(?![\\s\\S])"
+        },
+        "fraction_digits": {
+          "type": "string",
+          "pattern": "^[0-9]+(?![\\s\\S])"
+        },
+        "allowed_sign": {
+          "enum": [
+            "Any",
+            "Nonnegative"
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "date": {
+      "type": "object",
+      "properties": {
+        "fractions": {
+          "enum": [
+            "Date",
+            "Time",
+            "DateTime"
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "minProperties": 1
+    }
+  }
+}

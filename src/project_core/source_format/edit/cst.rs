@@ -8,6 +8,8 @@ use super::super::{Error, PropertyValue, yaml};
 
 pub(super) use super::super::yaml::Step;
 
+mod type_value;
+
 /// Mutate the selected value only and preserve its surrounding YAML verbatim.
 pub(super) fn replace(
     input: &str,
@@ -73,6 +75,9 @@ pub(super) fn replace_direct(
         .ok_or_else(unsupported)?;
     let mut flow_replacement = None;
     match (previous, next) {
+        (PropertyValue::TypeDescription(old), PropertyValue::TypeDescription(new)) => {
+            type_value::replace(node.as_mapping().ok_or_else(unsupported)?, old, new)?;
+        }
         (PropertyValue::Localized(old), PropertyValue::Localized(new))
             if old.len() == new.len()
                 && old.iter().zip(new).all(|(a, b)| a.language == b.language) =>
@@ -92,7 +97,8 @@ pub(super) fn replace_direct(
                 }
             }
         }
-        (_, PropertyValue::Localized(_)) | (PropertyValue::Localized(_), _) => {
+        (_, PropertyValue::Localized(_) | PropertyValue::TypeDescription(_))
+        | (PropertyValue::Localized(_) | PropertyValue::TypeDescription(_), _) => {
             return Err(unsupported());
         }
         (_, PropertyValue::Boolean(value)) => mapping.set(*key, ScalarValue::from(*value)),
@@ -183,6 +189,15 @@ fn update_value(
         }
     }
     match (previous, next) {
+        (PropertyValue::TypeDescription(old), PropertyValue::TypeDescription(new)) => {
+            let data = mapping
+                .get("value")
+                .and_then(|node| node.as_mapping().cloned())
+                .and_then(|value| value.get("data"))
+                .and_then(|node| node.as_mapping().cloned())
+                .ok_or_else(unsupported)?;
+            type_value::replace(&data, old, new)?;
+        }
         (PropertyValue::Empty | PropertyValue::Nil, PropertyValue::Empty | PropertyValue::Nil) => {
             set_empty_state(mapping, next)?;
         }

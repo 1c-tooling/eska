@@ -4,7 +4,7 @@ use std::fmt::Write;
 
 use super::{
     Child, Descriptor, Error, LineEnding, MetadataNode, Namespace, Property, PropertyValue,
-    Section, XmlAttribute, XmlFragment, validation::scope,
+    Section, TypeDescription, TypePart, XmlAttribute, XmlFragment, validation::scope,
 };
 
 const V8_NAMESPACE: &str = "http://v8.1c.ru/8.1/data/core";
@@ -131,6 +131,7 @@ impl Writer {
                 self.text_element(tag, if *value { "true" } else { "false" }, indent);
             }
             PropertyValue::Integer(value) => self.text_element(tag, value.as_str(), indent),
+            PropertyValue::TypeDescription(value) => self.type_description(value, indent)?,
             PropertyValue::Empty => {
                 self.indent(indent);
                 let _ = write!(self.output, "<{tag}/>{}", self.eol);
@@ -160,6 +161,78 @@ impl Writer {
                 self.close(tag, indent);
             }
         }
+        Ok(())
+    }
+
+    /// Type values use stored slots and prefixes; no XML copy or default qualifier is materialized.
+    fn type_description(&mut self, value: &TypeDescription, indent: usize) -> Result<(), Error> {
+        self.open("Type", indent);
+        let prefix = &value.native.prefix;
+        for part in &value.native.parts {
+            match part {
+                TypePart::Alternative(index) => {
+                    let alternative = value
+                        .data
+                        .alternatives
+                        .get(*index)
+                        .ok_or_else(|| Error::root("source_type_layout_invalid"))?;
+                    self.text_element(
+                        &format!("{prefix}:{}", alternative.kind.tag()),
+                        &alternative.name,
+                        indent + 1,
+                    );
+                }
+                TypePart::String => self.type_fields(
+                    prefix,
+                    "StringQualifiers",
+                    indent + 1,
+                    value
+                        .native
+                        .string_fields
+                        .iter()
+                        .map(|field| value.string_field(*field)),
+                )?,
+                TypePart::Number => self.type_fields(
+                    prefix,
+                    "NumberQualifiers",
+                    indent + 1,
+                    value
+                        .native
+                        .number_fields
+                        .iter()
+                        .map(|field| value.number_field(*field)),
+                )?,
+                TypePart::Date => self.type_fields(
+                    prefix,
+                    "DateQualifiers",
+                    indent + 1,
+                    value
+                        .native
+                        .date_fields
+                        .iter()
+                        .map(|field| value.date_field(*field)),
+                )?,
+            }
+        }
+        self.close("Type", indent);
+        Ok(())
+    }
+
+    /// Qualifier field order comes from slots while their single values come from editable data.
+    fn type_fields<'a>(
+        &mut self,
+        prefix: &str,
+        tag: &str,
+        indent: usize,
+        fields: impl Iterator<Item = Option<(&'static str, &'a str)>>,
+    ) -> Result<(), Error> {
+        let tag = format!("{prefix}:{tag}");
+        self.open(&tag, indent);
+        for field in fields {
+            let (name, value) = field.ok_or_else(|| Error::root("source_type_layout_invalid"))?;
+            self.text_element(&format!("{prefix}:{name}"), value, indent + 1);
+        }
+        self.close(&tag, indent);
         Ok(())
     }
 

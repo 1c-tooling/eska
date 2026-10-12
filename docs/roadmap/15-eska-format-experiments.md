@@ -1970,6 +1970,24 @@ descriptors/8 330 объектов и 33 320 решений по правам. �
 Составные домены, structural operations и публичная orchestration ещё нужны;
 EF-24 остаётся `IN_PROGRESS`. C2/C3, новые CFE/EPF/ERF и client execution не приняты.
 
+Седьмая часть — [описание Type](../research/eska-format/type-description.md).
+Alternatives/TypeSet и квалификаторы строки, числа, даты имеют единственные
+editable values; отдельные native slots сохраняют prefix и порядок. Общие
+writer/semantic/CST/policy/source map используют эту модель в обеих оболочках.
+Unknown shapes остаются целым XML; legacy preserved Type не продвигается при
+миграции. Protected selector восстанавливает native bindings из pinned base.
+
+Проверки седьмой части: 419 unit + 544 integration (22 opt-in пропущены),
+15 root/14 SDK/5 adapter gates прошли; SDK — 359, adapter — 70 + 12 тестов.
+Свежая C1 сохранила native bytes и All-семантику 3 595 descriptors/8 330 объектов;
+типизировано 3 738 описаний, отдельно сохранены Empty и unknown shapes.
+Три правки qualifiers изменили три YAML/XML без exclusions, совпали с независимым
+XML-контролем и прошли CF/build/dump на 1С 8.3.27.2325: 8 769 файлов/8 064 каталога
+равны кроме `configVersion`. Input/base/settings/версия сохранены.
+[Результаты](../research/eska-format/type-description-results.json).
+Проверки существования ссылок, остальные составные домены/коллекции, structural
+operations и публичная orchestration ещё нужны; EF-24 — `IN_PROGRESS`.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

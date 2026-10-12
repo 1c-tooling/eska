@@ -17,6 +17,7 @@ mod property;
 mod protected;
 mod readable;
 mod reader;
+mod type_description;
 mod validation;
 mod xml;
 mod yaml;
@@ -55,6 +56,11 @@ pub use model::{
     PropertyName, PropertyValue, Section, XmlAttribute, XmlFragment, XmlProfile,
 };
 pub use property::ExactUnsigned;
+pub use type_description::{
+    DateQualifiers, NumberQualifiers, StringQualifiers, TypeAllowedLength, TypeAllowedSign,
+    TypeAlternative, TypeAlternativeKind, TypeData, TypeDateField, TypeDateFractions,
+    TypeDescription, TypeLayout, TypeNumberField, TypePart, TypeStringField,
+};
 
 /// The experimental source schema and conversion rules evolve independently.
 pub const SCHEMA_VERSION: u32 = 1;

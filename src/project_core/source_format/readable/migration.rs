@@ -9,6 +9,8 @@ use super::super::{
     yaml::{self, Step},
 };
 
+mod types;
+
 /// A field has a concrete new address; unchanged value subtrees can retain their authored syntax.
 struct Binding {
     before: Vec<Step>,
@@ -274,6 +276,27 @@ fn property_bindings(
                 let after = append(owner, [Step::Key("properties"), Step::Key(name.as_str())]);
                 add(result, before.clone(), after.clone(), false);
                 let value_path = append(&before, [Step::Key("value")]);
+                if let PropertyValue::TypeDescription(value) = value {
+                    let content = append(&value_path, [Step::Key("value")]);
+                    add(result, value_path, after.clone(), false);
+                    add(result, content.clone(), after.clone(), false);
+                    types::data(
+                        result,
+                        &value.data,
+                        &append(&content, [Step::Key("data")]),
+                        &after,
+                    );
+                    types::layout(
+                        result,
+                        &value.native,
+                        &append(&content, [Step::Key("native")]),
+                        &append(
+                            new,
+                            [Step::Key("items"), Step::Index(index), Step::Key("layout")],
+                        ),
+                    );
+                    continue;
+                }
                 let leaf = match value {
                     PropertyValue::Empty | PropertyValue::Nil => value_path,
                     _ => append(&value_path, [Step::Key("value")]),

@@ -278,7 +278,9 @@ impl Projection<'_> {
                     ));
                     let range = range_at(self.tree, &location)?;
                     let property = match property {
-                        Property::Typed { name, value } => Some(typed_property(*name, value)),
+                        Property::Typed { name, value } => {
+                            Some(typed_property(*name, value, context)?)
+                        }
                         Property::Preserved { fragment } => opaque_property(
                             fragment,
                             context,
@@ -306,7 +308,11 @@ impl Projection<'_> {
 }
 
 /// Empty and nil retain their previous semantic value and explicit xsi:nil qualifier.
-fn typed_property(name: PropertyName, value: &PropertyValue) -> MetadataProperty {
+fn typed_property(
+    name: PropertyName,
+    value: &PropertyValue,
+    context: &[Namespace],
+) -> Result<MetadataProperty, Error> {
     let qualifiers = if value == &PropertyValue::Nil {
         vec![(
             PropertyKey {
@@ -333,19 +339,20 @@ fn typed_property(name: PropertyName, value: &PropertyValue) -> MetadataProperty
         }
         PropertyValue::Boolean(value) => MetadataValue::Text(value.to_string()),
         PropertyValue::Integer(value) => MetadataValue::Text(value.as_str().into()),
+        PropertyValue::TypeDescription(value) => value.to_metadata(context)?,
         PropertyValue::Empty | PropertyValue::Nil if name == PropertyName::Synonym => {
             MetadataValue::Localized(Vec::new())
         }
         PropertyValue::Empty | PropertyValue::Nil => MetadataValue::Text(String::new()),
     };
-    MetadataProperty {
+    Ok(MetadataProperty {
         key: PropertyKey {
             namespace: Some(MD_NAMESPACE.into()),
             name: name.as_str().into(),
         },
         qualifiers,
         value,
-    }
+    })
 }
 
 /// Reuse `QName`, record and unsupported-value semantics, mapping diagnostics to the YAML slot.

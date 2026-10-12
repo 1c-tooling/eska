@@ -335,6 +335,10 @@ fn property_range(
         Property::Typed { .. }
             if schema == crate::project_core::source_format::READABLE_SCHEMA_VERSION => {}
         Property::Typed {
+            value: PropertyValue::TypeDescription(_),
+            ..
+        } => steps.extend([Step::Key("value"), Step::Key("value"), Step::Key("data")]),
+        Property::Typed {
             value:
                 PropertyValue::Text(_)
                 | PropertyValue::Boolean(_)

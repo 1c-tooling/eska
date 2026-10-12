@@ -149,6 +149,7 @@ fn properties(
                         | PropertyValue::Integer(_),
                     ) => {}
                     (_, PropertyValue::Enumeration(text)) => xml_text(text)?,
+                    (_, PropertyValue::TypeDescription(value)) => value.validate(context)?,
                 }
             }
             Property::Preserved { fragment: value } => {

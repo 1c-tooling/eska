@@ -21,6 +21,7 @@ mod platform;
 mod protected;
 mod readable;
 mod scalars;
+mod types;
 
 /// Work on a private copy so adverse input tests cannot modify the shared fixture corpus.
 fn fixture(root: &Path) -> PathBuf {

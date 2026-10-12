@@ -48,6 +48,7 @@ pub(super) enum ValueKind {
     Boolean,
     Integer,
     Enumeration(&'static [&'static str]),
+    TypeDescription,
 }
 
 impl PropertyName {
@@ -87,6 +88,7 @@ impl PropertyName {
             "ReturnValuesReuse" => Self::ReturnValuesReuse,
             "FillChecking" => Self::FillChecking,
             "Indexing" => Self::Indexing,
+            "Type" => Self::Type,
             _ => return None,
         })
     }
@@ -96,6 +98,22 @@ impl PropertyName {
         match self {
             Self::Name | Self::Comment | Self::Version => Some(ValueKind::Text),
             Self::Synonym => Some(ValueKind::Localized),
+            Self::Type
+                if matches!(
+                    owner,
+                    MetadataKind::Attribute
+                        | MetadataKind::CommonAttribute
+                        | MetadataKind::Constant
+                        | MetadataKind::DefinedType
+                        | MetadataKind::Dimension
+                        | MetadataKind::Resource
+                        | MetadataKind::ChartOfCharacteristicTypes
+                        | MetadataKind::FilterCriterion
+                        | MetadataKind::SessionParameter
+                ) =>
+            {
+                Some(ValueKind::TypeDescription)
+            }
             _ if boolean_property(self, owner) => Some(ValueKind::Boolean),
             _ if integer_property(self, owner) => Some(ValueKind::Integer),
             _ => enum_property(self, owner),
@@ -226,7 +244,7 @@ impl ValueKind {
             Self::Enumeration(values) if values.contains(&text.as_str()) => {
                 Some(PropertyValue::Enumeration(text))
             }
-            Self::Localized | Self::Enumeration(_) => None,
+            Self::Localized | Self::Enumeration(_) | Self::TypeDescription => None,
         }
     }
 
@@ -237,7 +255,8 @@ impl ValueKind {
             | (Self::Text, PropertyValue::Text(_))
             | (Self::Localized, PropertyValue::Localized(_))
             | (Self::Boolean, PropertyValue::Boolean(_))
-            | (Self::Integer, PropertyValue::Integer(_)) => true,
+            | (Self::Integer, PropertyValue::Integer(_))
+            | (Self::TypeDescription, PropertyValue::TypeDescription(_)) => true,
             (Self::Enumeration(values), PropertyValue::Enumeration(value)) => {
                 values.contains(&value.as_str())
             }

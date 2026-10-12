@@ -264,8 +264,21 @@ fn merge_properties(
                 return Err(Error::root("source_property_duplicate"));
             }
             if let Some(candidate) = candidate {
-                *value = serde_json::from_value::<PropertyValue>(candidate.clone())
+                let mut candidate = serde_json::from_value::<PropertyValue>(candidate.clone())
                     .map_err(|_| Error::root("source_property_invalid").in_field(name.as_str()))?;
+                match (&*value, &mut candidate) {
+                    (PropertyValue::TypeDescription(old), PropertyValue::TypeDescription(new)) => {
+                        new.native.clone_from(&old.native);
+                    }
+                    (PropertyValue::TypeDescription(_), _)
+                    | (_, PropertyValue::TypeDescription(_)) => {
+                        return Err(
+                            Error::root("source_property_type_invalid").in_field(name.as_str())
+                        );
+                    }
+                    _ => {}
+                }
+                *value = candidate;
             }
         }
     }
@@ -285,7 +298,13 @@ fn merge_named_properties(
             && base.permission(uuid, Operation::Property(*name)).allowed
             && let Some(candidate) = current.and_then(|properties| properties.get(name.as_str()))
         {
-            *value = super::super::readable::value_from_wire(*name, kind, candidate.clone())?;
+            let layout = if let PropertyValue::TypeDescription(value) = &*value {
+                Some(&value.native)
+            } else {
+                None
+            };
+            *value =
+                super::super::readable::value_from_wire(*name, kind, candidate.clone(), layout)?;
         }
     }
     Ok(())

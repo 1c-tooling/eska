@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "task": "EF-24",
+  "part": 7,
+  "status": "IN_PROGRESS",
+  "feature": "type_description",
+  "wire": {
+    "descriptor_versions": [
+      1,
+      2
+    ],
+    "source_layout_version": 3,
+    "source_map_version": 2,
+    "rules_version": 1,
+    "single_value_authority": true,
+    "legacy_preserved_promotion": false
+  },
+  "validation": {
+    "root_gates": 15,
+    "unit_tests": 419,
+    "integration_tests": 544,
+    "opt_in_ignored": 22,
+    "sdk_gates": 14,
+    "sdk_all_features_tests": 359,
+    "adapter_gates": 5,
+    "adapter_unit_tests": 70,
+    "adapter_integration_tests": 12
+  },
+  "real_c1": {
+    "native_descriptors": 3595,
+    "metadata_objects": 8330,
+    "semantic_parity": "All",
+    "declared_type_states": {
+      "description": 3738,
+      "empty": 13,
+      "preserved": 100
+    },
+    "fresh_import_native_bytes_equal": true,
+    "qualifier_edits": [
+      "number",
+      "string",
+      "date"
+    ],
+    "changed_source_files": 3,
+    "changed_native_files": 3,
+    "no_op": true,
+    "protected_exclusions": 0,
+    "native_input_unchanged": true,
+    "unclaimed_payload_type_fields_preserved": 4
+  },
+  "platform": {
+    "version": "8.3.27.2325",
+    "artifact": "CF",
+    "control_and_eska_build_dump_passed": true,
+    "native_files": 8769,
+    "native_directories": 8064,
+    "ignored_dump_versions": 7011,
+    "all_other_bytes_equal": true,
+    "manifest_checksums_valid": true,
+    "source_and_base_unchanged": true,
+    "settings_and_project_version_unchanged": true
+  },
+  "limits": [
+    "No metadata reference existence validation",
+    "No platform size and cross-qualifier validation",
+    "No structural type edits",
+    "No implicit legacy fragment promotion",
+    "No new CLI orchestration",
+    "C2/C3 and CFE/EPF/ERF not accepted",
+    "No client execution or full BSL analysis",
+    "No infobase update validation"
+  ]
+}

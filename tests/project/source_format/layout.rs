@@ -1,5 +1,7 @@
 //! Real separated-descriptor acceptance; platform execution remains an explicit external gate.
 
+mod types;
+
 use std::{
     fs,
     path::{Path, PathBuf},

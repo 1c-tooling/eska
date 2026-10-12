@@ -28,8 +28,8 @@ object:
 Именованные `properties` содержат единственную редактируемую копию значения.
 `native_xml` сохраняет профиль XML, BOM/EOL и root namespace bindings;
 `object.native` — namespaces, attributes и native sections. Служебные slots
-properties содержат только имена typed-свойств или opaque fragments, без второй
-копии значений. Slot children указывает место секции; сами children объявлены
+properties содержат имена typed-свойств, bindings составного `Type` или opaque
+fragments, без второй копии значений. Slot children указывает место секции; сами children объявлены
 один раз, в смысловом порядке. Inline descendants используют ту же оболочку.
 
 Writer YAML ставит identity и обычные свойства перед native details.
@@ -38,7 +38,9 @@ JSON schemas: [descriptor](descriptor-readable.schema.json),
 проверяет точное соответствие slots/значений, UUID, namespace context, native
 порядок, owner-specific домены и правила preserved XML.
 
-Матрица [32 typed-свойств](typed-scalars.md) не расширяется этой оболочкой.
+Оболочка сама не расширяет [32 typed-свойства](typed-scalars.md).
+[Седьмая часть EF-24](type-description.md) добавляет составной `Type` с
+alternatives и qualifiers; его native bindings сохраняются отдельно от data.
 Строки и enum — строки, boolean — bool, integer — точная строка ASCII-цифр.
 Числа с ведущими нулями и произвольным количеством цифр не проходят через
 float/u64. `Synonym` — упорядоченная последовательность language/text.
@@ -60,7 +62,8 @@ Reader/declarations/semantic projection, CST editor и source coordinates исп
 общие schema paths. Свойства версии 2 адресуются по именам; неизвестные фрагменты
 сохраняют native ordinal. Inline identity и logical parents не меняются.
 
-CST-правка заменяет выбранный direct scalar, state wrapper или localized text.
+CST-правка заменяет выбранный direct scalar, state wrapper, localized text или
+существующие листья составного Type без смены его layout/состава.
 Соседние байты, комментарии, CRLF и языковой состав остаются прежними. Для строки
 с переводом строки выбирается quoting, сохраняющий точное значение. Необработанное
 оформление отказывается до записи. Equal-value edit не публикует файл.

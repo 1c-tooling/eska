@@ -7,8 +7,8 @@ use serde_json::Value;
 
 use super::{
     Child, Descriptor, Error, ExactUnsigned, MetadataNode, Namespace, NativeUuid, Property,
-    PropertyName, PropertyValue, Section, XmlAttribute, XmlFragment, XmlProfile,
-    property::ValueKind,
+    PropertyName, PropertyValue, Section, TypeData, TypeDescription, TypeLayout, XmlAttribute,
+    XmlFragment, XmlProfile, property::ValueKind,
 };
 use crate::project_core::MetadataKind;
 
@@ -109,7 +109,13 @@ enum NativeSection {
 #[serde(untagged, deny_unknown_fields)]
 enum PropertySlot {
     Name(PropertyName),
-    Preserved { fragment: XmlFragment },
+    Type {
+        name: PropertyName,
+        layout: TypeLayout,
+    },
+    Preserved {
+        fragment: XmlFragment,
+    },
 }
 
 #[derive(Serialize, Deserialize)]
@@ -169,7 +175,14 @@ fn encode_node(node: &MetadataNode) -> Result<Node, Error> {
                     .map(|item| match item {
                         Property::Typed { name, value } => {
                             properties.insert(*name, value_to_wire(value)?);
-                            Ok(PropertySlot::Name(*name))
+                            Ok(if let PropertyValue::TypeDescription(value) = value {
+                                PropertySlot::Type {
+                                    name: *name,
+                                    layout: value.native.clone(),
+                                }
+                            } else {
+                                PropertySlot::Name(*name)
+                            })
                         }
                         Property::Preserved { fragment } => Ok(PropertySlot::Preserved {
                             fragment: fragment.clone(),
@@ -231,7 +244,19 @@ fn decode_node(node: Node) -> Result<MetadataNode, Error> {
                                 .ok_or_else(|| Error::root("source_property_binding_invalid"))?;
                             Ok(Property::Typed {
                                 name,
-                                value: value_from_wire(name, node.kind, value)?,
+                                value: value_from_wire(name, node.kind, value, None)?,
+                            })
+                        }
+                        PropertySlot::Type { name, layout } => {
+                            if name != PropertyName::Type {
+                                return Err(Error::root("source_property_binding_invalid"));
+                            }
+                            let value = properties
+                                .remove(&name)
+                                .ok_or_else(|| Error::root("source_property_binding_invalid"))?;
+                            Ok(Property::Typed {
+                                name,
+                                value: value_from_wire(name, node.kind, value, Some(&layout))?,
                             })
                         }
                         PropertySlot::Preserved { fragment } => {
@@ -286,6 +311,9 @@ pub(super) fn value_to_wire(value: &PropertyValue) -> Result<Value, Error> {
         PropertyValue::Localized(items) => {
             serde_json::to_value(items).map_err(|_| Error::root("source_schema_invalid"))?
         }
+        PropertyValue::TypeDescription(value) => {
+            serde_json::to_value(&value.data).map_err(|_| Error::root("source_schema_invalid"))?
+        }
         PropertyValue::Empty => serde_json::json!({"state":"empty"}),
         PropertyValue::Nil => serde_json::json!({"state":"nil"}),
     })
@@ -296,11 +324,13 @@ pub(super) fn value_from_wire(
     name: PropertyName,
     owner: MetadataKind,
     value: Value,
+    layout: Option<&TypeLayout>,
 ) -> Result<PropertyValue, Error> {
     let kind = name
         .value_kind(owner)
         .ok_or_else(|| Error::root("source_property_type_invalid"))?;
-    if let Value::Object(mapping) = &value
+    if layout.is_none()
+        && let Value::Object(mapping) = &value
         && mapping.len() == 1
         && let Some(state) = mapping.get("state").and_then(Value::as_str)
     {
@@ -321,6 +351,14 @@ pub(super) fn value_from_wire(
         (ValueKind::Localized, Value::Array(value)) => serde_json::from_value(Value::Array(value))
             .map(PropertyValue::Localized)
             .map_err(|_| invalid()),
+        (ValueKind::TypeDescription, value) => {
+            let native = layout.ok_or_else(|| Error::root("source_property_binding_invalid"))?;
+            let data: TypeData = serde_json::from_value(value).map_err(|_| invalid())?;
+            Ok(PropertyValue::TypeDescription(Box::new(TypeDescription {
+                data,
+                native: native.clone(),
+            })))
+        }
         _ => Err(invalid()),
     }
 }
