@@ -80,7 +80,7 @@ pub(super) fn select(
             },
         );
     }
-    validate_names(children, &additions)?;
+    validate_names(children.iter().chain(additions.values()))?;
     let mut selected: BTreeMap<_, _> = before.into_iter().zip(std::mem::take(children)).collect();
     selected.extend(additions);
     for identity in after {
@@ -170,7 +170,7 @@ pub(super) fn validate_new_node(node: &MetadataNode) -> Result<(), Error> {
 }
 
 /// Native identifiers admit Unicode letters, digits after the first character, and underscores.
-fn identifier(value: &str) -> bool {
+pub(super) fn identifier(value: &str) -> bool {
     let mut chars = value.chars();
     chars
         .next()
@@ -179,9 +179,11 @@ fn identifier(value: &str) -> bool {
 }
 
 /// New names cannot shadow any accepted sibling value under case-insensitive native lookup.
-fn validate_names(children: &[Child], additions: &BTreeMap<Identity, Child>) -> Result<(), Error> {
+pub(super) fn validate_names<'a>(
+    children: impl IntoIterator<Item = &'a Child>,
+) -> Result<(), Error> {
     let mut names = BTreeSet::new();
-    for child in children.iter().chain(additions.values()) {
+    for child in children {
         if let Child::Inline { object } = child
             && object.kind == MetadataKind::EnumValue
             && let Some(PropertyValue::Text(name)) = object.property(PropertyName::Name)

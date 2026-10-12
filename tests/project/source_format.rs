@@ -25,6 +25,7 @@ mod protected;
 mod readable;
 mod reference_clear;
 mod references;
+mod rename;
 mod scalars;
 mod type_targets;
 mod types;

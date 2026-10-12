@@ -187,11 +187,17 @@ fn merge_node(
                         merge_node(base, object, candidate, schema, native)?;
                     }
                 }
+                let renamed = super::super::child_rename::select(
+                    base, native, &node.uuid, children, values, schema,
+                )?;
                 super::super::child_order::select(base, native, &node.uuid, children, values)?;
                 super::super::child_creation::select(
                     base, native, &node.uuid, children, values, schema,
                 )?;
                 super::super::child_deletion::select(base, native, &node.uuid, children, values)?;
+                if renamed {
+                    super::super::child_creation::validate_names(children.iter())?;
+                }
             }
             Section::Preserved(_) => {}
         }

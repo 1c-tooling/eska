@@ -372,7 +372,7 @@ impl AcceptedBase {
             PermissionReason::NativeRestriction
         } else if matches!(
             operation,
-            Operation::Rename | Operation::Move | Operation::Property(PropertyName::Name)
+            Operation::Move | Operation::Property(PropertyName::Name)
         ) || (operation == Operation::Create
             && self
                 .objects
@@ -383,6 +383,11 @@ impl AcceptedBase {
                     .objects
                     .get(&uuid.key())
                     .is_none_or(|object| !super::child_deletion::supported_object(object.kind)))
+            || (operation == Operation::Rename
+                && self
+                    .objects
+                    .get(&uuid.key())
+                    .is_none_or(|object| !super::child_rename::supported_object(object.kind)))
         {
             PermissionReason::UnsupportedOperation
         } else {

@@ -129,6 +129,10 @@ native category: вложенные DefinedType/Characteristic в DefinedType о
 [Очистка принятого списка ссылок](research/eska-format/reference-clear.md)
 разрешает `Empty` без редактирования прежних native bindings, сохраняя
 policy/freeze, source locations и проверку окончательного состава.
+[Переименование EnumValue](research/eska-format/enum-value-rename.md) сохраняет
+UUID, проверяет права namespace/значения, конечные коллизии и старые зависимости.
+Смена только регистра не инвалидирует прежний ключ; ссылки на отсутствующее имя
+отказывают до публикации. Другие structural profiles и составные домены ещё нужны.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)

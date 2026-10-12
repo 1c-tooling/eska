@@ -2195,6 +2195,27 @@ Native probe с удалением единственного регистрат
 Rename, другие structural profiles, составные домены и workspace migration
 остаются в незавершённой EF-24.
 
+Семнадцатая часть — [переименование принятого EnumValue](../research/eska-format/enum-value-rename.md).
+Family/readable принимают Name по прежним UUID/class и закрытому native профилю;
+нужны права владельца и значения. Коллизии проверяются после выбора состава,
+поэтому поддержаны обмен именами и повторное использование освобождённого имени.
+Общий structural guard сохраняет UUID при rename и проверяет прежний полный путь;
+смена только регистра сохраняет case-insensitive namespace. Остальные классы
+и обычный property editor сохраняют прежние ограничения. Схемы/команды прежние,
+экспериментальные permission и диагностика Name используют Operation::Rename.
+Прошли 16 root/14 SDK/5 adapter gates и оба release build: 493 unit + 562
+integration, 24 opt-in пропущены; minimal project — 300 unit + 24 CLI tests,
+SDK — 359, adapter — 70 + 12. Добавлены 14 core, один supplier и два CLI tests.
+Три переименования C1 в одном YAML совпали с независимым native контролем по
+8 778 файлам/8 077 каталогам. Freeze-отказ/восстановление и существующий FillValue
+проверены в обеих локалях; сохранение ссылок по UUID покрыто core-тестами.
+Все 3 595 descriptors/8 330 объектов совпали в saved/unsaved All/Summary.
+Контроль и ESKA собраны в CF и выгружены на 1С 8.3.27.2325: 8 769 файлов/8 064
+каталога равны кроме 7 011 configVersion; checksums/inputs/settings/версия сохранены.
+[Результаты](../research/eska-format/enum-value-rename-results.json).
+Другие structural profiles, составные домены и workspace migration ещё нужны;
+EF-24 — `IN_PROGRESS`. Клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

@@ -4,41 +4,18 @@ use std::{collections::BTreeMap, path::Path};
 
 use crate::project_core::{MetadataKind, source_format::PropertyValue};
 
-use super::super::{
+use super::{
     AcceptedBase, Child, Error, MetadataNode, Namespace, NativeUuid, Property, PropertyName,
     Section, SourcePath, XmlFragment, export::Package, fragment, validation::scope,
 };
 
-/// Validate selected references only when accepted enum values were actually removed.
-pub(in crate::project_core::source_format) fn validate_references(
+/// Validate selected references only when removal or renaming invalidates an accepted dependency key.
+pub(super) fn validate_references(
     base: &AcceptedBase,
     package: &Package,
     mut read_payload: impl FnMut(&SourcePath) -> Result<String, Error>,
 ) -> Result<(), Error> {
-    let mut removed = BTreeMap::new();
-    for (path, accepted) in &base.package.documents {
-        let owner = &accepted.descriptor.object;
-        if owner.kind != MetadataKind::Enum {
-            continue;
-        }
-        let selected = package
-            .documents
-            .get(path)
-            .ok_or_else(|| Error::root("source_descriptor_missing"))?;
-        for node in super::removed_values(owner, &selected.descriptor.object) {
-            let (Some(PropertyValue::Text(parent)), Some(PropertyValue::Text(name))) = (
-                owner.property(PropertyName::Name),
-                node.property(PropertyName::Name),
-            ) else {
-                return Err(Error::root("source_name_missing"));
-            };
-            removed.insert(node.uuid.key(), node.uuid.clone());
-            removed.insert(
-                format!("Enum.{parent}.EnumValue.{name}").to_lowercase(),
-                node.uuid.clone(),
-            );
-        }
-    }
+    let removed = invalidated_keys(base, package)?;
     if removed.is_empty() {
         return Ok(());
     }
@@ -61,6 +38,53 @@ pub(in crate::project_core::source_format) fn validate_references(
         validate_xml(&text, native, &removed)?;
     }
     Ok(())
+}
+
+/// Removed values invalidate UUID and name; renamed values keep UUID and case-insensitive identity.
+fn invalidated_keys(
+    base: &AcceptedBase,
+    package: &Package,
+) -> Result<BTreeMap<String, NativeUuid>, Error> {
+    let mut result = BTreeMap::new();
+    for (path, accepted) in &base.package.documents {
+        let owner = &accepted.descriptor.object;
+        if owner.kind != MetadataKind::Enum {
+            continue;
+        }
+        let selected = &package
+            .documents
+            .get(path)
+            .ok_or_else(|| Error::root("source_descriptor_missing"))?
+            .descriptor
+            .object;
+        let values: BTreeMap<_, _> = super::child_rename::values(selected)
+            .map(|node| (node.uuid.key(), node))
+            .collect();
+        for node in super::child_rename::values(owner) {
+            let next = values.get(&node.uuid.key());
+            let (Some(PropertyValue::Text(parent)), Some(PropertyValue::Text(name))) = (
+                owner.property(PropertyName::Name),
+                node.property(PropertyName::Name),
+            ) else {
+                return Err(Error::root("source_name_missing"));
+            };
+            if let Some(next) = next {
+                let Some(PropertyValue::Text(next_name)) = next.property(PropertyName::Name) else {
+                    return Err(Error::root("source_name_missing"));
+                };
+                if name.to_lowercase() == next_name.to_lowercase() {
+                    continue;
+                }
+            } else {
+                result.insert(node.uuid.key(), node.uuid.clone());
+            }
+            result.insert(
+                format!("Enum.{parent}.EnumValue.{name}").to_lowercase(),
+                node.uuid.clone(),
+            );
+        }
+    }
+    Ok(result)
 }
 
 /// Metadata bindings distinguish preserved XML from typed fields already checked by the target index.
@@ -110,7 +134,7 @@ fn validate_fragment(
     validate_xml(&fragment::wrap(value, inherited)?, path, removed)
 }
 
-/// Matches in decoded text or attributes refuse removal; comments and processing instructions have no authority.
+/// Decoded mentions refuse an invalidated reference; comments and processing instructions have no authority.
 fn validate_xml(
     text: &str,
     path: &SourcePath,

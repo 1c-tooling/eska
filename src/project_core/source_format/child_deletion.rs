@@ -5,13 +5,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde_json::Value;
 
 use super::{
-    AcceptedBase, Child, Error, MetadataNode, NativeUuid, Operation, SourcePath,
+    AcceptedBase, Child, Error, NativeUuid, Operation, SourcePath,
     child_order::{self, Identity},
 };
 use crate::project_core::MetadataKind;
-
-mod references;
-pub(super) use references::validate_references;
 
 #[cfg(test)]
 mod tests;
@@ -110,49 +107,4 @@ pub(super) fn denied_permission(
         }
     }
     Ok(None)
-}
-
-/// Dependency keys come only from accepted values missing in the selected native descriptor.
-fn removed_values<'a>(before: &'a MetadataNode, after: &MetadataNode) -> Vec<&'a MetadataNode> {
-    let retained: BTreeSet<_> = after
-        .sections
-        .iter()
-        .filter_map(|section| {
-            if let super::Section::Children(children) = section {
-                Some(children)
-            } else {
-                None
-            }
-        })
-        .flatten()
-        .filter_map(|child| {
-            if let Child::Inline { object } = child {
-                Some(object.uuid.key())
-            } else {
-                None
-            }
-        })
-        .collect();
-    before
-        .sections
-        .iter()
-        .filter_map(|section| {
-            if let super::Section::Children(children) = section {
-                Some(children)
-            } else {
-                None
-            }
-        })
-        .flatten()
-        .filter_map(|child| {
-            if let Child::Inline { object } = child
-                && supported_object(object.kind)
-                && !retained.contains(&object.uuid.key())
-            {
-                Some(object.as_ref())
-            } else {
-                None
-            }
-        })
-        .collect()
 }

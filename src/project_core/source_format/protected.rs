@@ -141,10 +141,12 @@ pub fn prepare_protected(
         payloads: base.package.payloads.clone(),
         payload_sources: base.package.payload_sources.clone(),
     };
-    super::child_deletion::validate_references(base, &package, |path| match origins.get(path) {
-        Some(Origin::Working) => read_working(&source, &working, path),
-        Some(Origin::Accepted) => base.read_file(path),
-        None => Err(Error::root("source_file_undeclared")),
+    super::structural_references::validate_references(base, &package, |path| {
+        match origins.get(path) {
+            Some(Origin::Working) => read_working(&source, &working, path),
+            Some(Origin::Accepted) => base.read_file(path),
+            None => Err(Error::root("source_file_undeclared")),
+        }
     })?;
     let xml = package.native_xml()?;
     let native = package.output_inventory(&xml)?;

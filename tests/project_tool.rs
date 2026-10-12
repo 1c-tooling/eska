@@ -12,6 +12,8 @@ mod order;
 mod readable;
 #[path = "project_tool/reference_clear.rs"]
 mod reference_clear;
+#[path = "project_tool/rename.rs"]
+mod rename;
 mod support;
 
 use serde_json::Value;

@@ -1,4 +1,4 @@
-//! Shared enum fixtures serve creation and removal through the same public source/base boundaries.
+//! Shared enum fixtures serve structural changes through the same public source/base boundaries.
 
 use std::{fs, path::PathBuf};
 

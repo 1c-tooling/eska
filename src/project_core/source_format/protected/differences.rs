@@ -206,28 +206,47 @@ impl Walker<'_> {
                     coordinate.pop();
                 }
             }
-            _ => {
-                let action = if expected.is_none() {
-                    ExclusionAction::Excluded
-                } else {
-                    ExclusionAction::Restored
-                };
-                let operation = if current.is_none() {
-                    Operation::Delete
-                } else {
-                    operation
-                };
-                self.diagnostics.push(exclusion(
-                    self.base,
-                    self.path,
-                    coordinate.clone(),
-                    Some(uuid),
-                    operation,
-                    action,
-                    "source_change_excluded",
-                ));
-            }
+            _ => self.residual(expected, current, uuid, operation, native, coordinate),
         }
+    }
+
+    /// A residual field retains its operation, while a supported value's Name uses namespace authority.
+    fn residual(
+        &mut self,
+        expected: Option<&Value>,
+        current: Option<&Value>,
+        uuid: NativeUuid,
+        operation: Operation,
+        native: Option<&str>,
+        coordinate: &[String],
+    ) {
+        let action = if expected.is_none() {
+            ExclusionAction::Excluded
+        } else {
+            ExclusionAction::Restored
+        };
+        let operation = if current.is_none() {
+            Operation::Delete
+        } else {
+            operation
+        };
+        let (uuid, operation) = if operation == Operation::Property(PropertyName::Name)
+            && let Some(blocking) =
+                super::super::child_rename::diagnostic_uuid(self.base, native, &uuid)
+        {
+            (blocking, Operation::Rename)
+        } else {
+            (uuid, operation)
+        };
+        self.diagnostics.push(exclusion(
+            self.base,
+            self.path,
+            coordinate.to_vec(),
+            Some(uuid),
+            operation,
+            action,
+            "source_change_excluded",
+        ));
     }
 
     /// Compare existing members by identity so a denied order cannot hide independent property edits.
