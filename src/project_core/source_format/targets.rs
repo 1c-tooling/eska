@@ -1,13 +1,17 @@
 //! Target lookup follows declared identity and ancestry, never a filesystem scan or value heuristic.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
-use super::{Domain, ReferenceKind, kind, validate_value};
+#[cfg(test)]
+mod tests;
+
+use super::metadata_reference::{Domain, ReferenceKind, kind, validate_value};
 use crate::project_core::{
     MetadataKind,
     source_format::{
-        Child, Error, MetadataNode, NativeDocument, Property, PropertyName, PropertyValue, Section,
-        SourcePath, composition::reference_path,
+        Child, Error, MetadataNode, Namespace, NativeDocument, Property, PropertyName,
+        PropertyValue, Section, SourcePath, composition::reference_path, type_description,
+        validation::scope,
     },
 };
 
@@ -16,8 +20,8 @@ pub(in crate::project_core::source_format) fn validate_documents(
     documents: &BTreeMap<SourcePath, NativeDocument>,
 ) -> Result<(), Error> {
     let index = Index::build(documents)?;
-    for (path, node) in &index.names {
-        index.validate_node(path, node)?;
+    for (path, entry) in &index.names {
+        index.validate_node(path, entry.node, &entry.context)?;
     }
     Ok(())
 }
@@ -33,24 +37,36 @@ pub(in crate::project_core::source_format) fn validate_edit(
 
 /// One bounded derived lookup exists only for the current operation; values stay in their owners.
 struct Index<'a> {
-    names: BTreeMap<String, &'a MetadataNode>,
+    names: BTreeMap<String, Entry<'a>>,
     paths: BTreeMap<String, String>,
+    type_names: BTreeSet<String>,
+}
+
+/// Effective namespaces come from the selected native composition, including for edit previews.
+struct Entry<'a> {
+    node: &'a MetadataNode,
+    context: Vec<Namespace>,
 }
 
 impl<'a> Index<'a> {
     /// Resolve children through the accepted declaration graph and mandatory native coordinates.
     fn build(documents: &'a BTreeMap<SourcePath, NativeDocument>) -> Result<Self, Error> {
         let root = SourcePath::parse("Configuration.xml")?;
-        let node = &documents
+        let document = documents
             .get(&root)
-            .ok_or_else(|| Error::root("source_descriptor_missing"))?
-            .descriptor
-            .object;
+            .ok_or_else(|| Error::root("source_descriptor_missing"))?;
         let mut index = Self {
             names: BTreeMap::new(),
             paths: BTreeMap::new(),
+            type_names: BTreeSet::new(),
         };
-        index.add("", &root, node, documents)?;
+        index.add(
+            "",
+            &root,
+            &document.descriptor.object,
+            &document.descriptor.xml.namespaces,
+            documents,
+        )?;
         Ok(index)
     }
 
@@ -60,15 +76,21 @@ impl<'a> Index<'a> {
         path: &str,
         native: &SourcePath,
         node: &'a MetadataNode,
+        inherited: &[Namespace],
         documents: &'a BTreeMap<SourcePath, NativeDocument>,
     ) -> Result<(), Error> {
-        if self.names.insert(path.to_owned(), node).is_some()
-            || self
-                .paths
-                .insert(node.uuid.key(), path.to_owned())
-                .is_some()
+        if self
+            .paths
+            .insert(node.uuid.key(), path.to_owned())
+            .is_some()
         {
             return Err(Error::root("source_metadata_reference_ambiguous"));
+        }
+        let context = scope(inherited, &node.namespaces)?;
+        for name in type_description::generated_names(node, &context)? {
+            if !self.type_names.insert(name) {
+                return Err(Error::root("source_type_target_ambiguous"));
+            }
         }
         for section in &node.sections {
             if let Section::Children(children) = section {
@@ -80,6 +102,7 @@ impl<'a> Index<'a> {
                                 &child_path(path, object.kind, name),
                                 native,
                                 object,
+                                &context,
                                 documents,
                             )?;
                         }
@@ -96,15 +119,14 @@ impl<'a> Index<'a> {
                                     .ok_or_else(|| Error::root("source_path_invalid"))?
                             };
                             let native = reference_path(base, *metadata_kind, name)?;
-                            let object = &documents
+                            let document = documents
                                 .get(&native)
-                                .ok_or_else(|| Error::root("source_descriptor_missing"))?
-                                .descriptor
-                                .object;
+                                .ok_or_else(|| Error::root("source_descriptor_missing"))?;
                             self.add(
                                 &child_path(path, *metadata_kind, name),
                                 &native,
-                                object,
+                                &document.descriptor.object,
+                                &document.descriptor.xml.namespaces,
                                 documents,
                             )?;
                         }
@@ -113,17 +135,44 @@ impl<'a> Index<'a> {
                 }
             }
         }
+        if self
+            .names
+            .insert(path.to_owned(), Entry { node, context })
+            .is_some()
+        {
+            return Err(Error::root("source_metadata_reference_ambiguous"));
+        }
         Ok(())
     }
 
     /// Validate only known typed reference properties; opaque native semantics remain unclaimed.
-    fn validate_node(&self, path: &str, node: &MetadataNode) -> Result<(), Error> {
+    fn validate_node(
+        &self,
+        path: &str,
+        node: &MetadataNode,
+        context: &[Namespace],
+    ) -> Result<(), Error> {
         for section in &node.sections {
             if let Section::Properties(properties) = section {
                 for property in properties {
                     let Property::Typed { name, value } = property else {
                         continue;
                     };
+                    if let PropertyValue::TypeDescription(description) = value {
+                        for (index, alternative) in description.data.alternatives.iter().enumerate()
+                        {
+                            if let Some(target) =
+                                type_description::named_target(alternative, context)?
+                                && !self.type_names.contains(target)
+                            {
+                                return Err(Error::root("source_type_target_missing")
+                                    .in_field(index.to_string())
+                                    .in_field("alternatives")
+                                    .in_field(name.as_str())
+                                    .in_field(node.uuid.as_str()));
+                            }
+                        }
+                    }
                     let Some(shape) = kind(*name, node.kind) else {
                         continue;
                     };
@@ -167,7 +216,11 @@ impl<'a> Index<'a> {
             .paths
             .get(&node.uuid.key())
             .ok_or_else(|| Error::root("source_identity_mismatch"))?;
-        self.validate_node(path, node)?;
+        let entry = self
+            .names
+            .get(path)
+            .ok_or_else(|| Error::root("source_identity_mismatch"))?;
+        self.validate_node(path, node, &entry.context)?;
         for section in &node.sections {
             if let Section::Children(children) = section {
                 for child in children {

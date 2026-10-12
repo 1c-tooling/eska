@@ -18,6 +18,7 @@ mod property;
 mod protected;
 mod readable;
 mod reader;
+mod targets;
 mod type_description;
 mod validation;
 mod xml;

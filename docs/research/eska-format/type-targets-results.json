@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "task": "EF-24",
+  "part": 9,
+  "status": "IN_PROGRESS",
+  "feature": "named_type_targets",
+  "wire": {
+    "descriptor_versions": [
+      1,
+      2
+    ],
+    "source_layout_version": 3,
+    "source_map_version": 2,
+    "rules_version": 1,
+    "single_value_authority": true,
+    "legacy_preserved_promotion": false
+  },
+  "validation": {
+    "root_gates": 15,
+    "unit_tests": 431,
+    "integration_tests": 548,
+    "opt_in_ignored": 24,
+    "sdk_gates": 14,
+    "sdk_all_features_tests": 359,
+    "adapter_gates": 5,
+    "adapter_unit_tests": 70,
+    "adapter_integration_tests": 12,
+    "schema_validated_descriptors": 3595
+  },
+  "real_c1": {
+    "native_descriptors": 3595,
+    "metadata_objects": 8330,
+    "semantic_parity": "All",
+    "generated_type_declarations": 3507,
+    "named_alternatives": {
+      "type": 1129,
+      "type_set": 114
+    },
+    "changed_source_files": 2,
+    "changed_native_files": 2,
+    "no_op": true,
+    "protected_exclusions": 0,
+    "native_input_unchanged": true,
+    "fresh_import_native_bytes_equal": true,
+    "edit_domains": [
+      "defined_type",
+      "reference"
+    ]
+  },
+  "platform": {
+    "version": "8.3.27.2325",
+    "artifact": "CF",
+    "control_and_eska_build_dump_passed": true,
+    "native_files": 8769,
+    "native_directories": 8064,
+    "ignored_dump_versions": 7011,
+    "all_other_bytes_equal": true,
+    "manifest_checksums_valid": true,
+    "source_and_base_unchanged": true,
+    "settings_and_project_version_unchanged": true
+  },
+  "limits": [
+    "Only named current-config alternatives receive existence validation",
+    "No expansion, cycles or Type versus TypeSet compatibility validation",
+    "No dependent form or cross-qualifier validation",
+    "No structural metadata operations",
+    "No implicit legacy fragment promotion",
+    "No new CLI orchestration",
+    "C2/C3 and CFE/EPF/ERF not accepted",
+    "No client execution, full BSL analysis or infobase update validation"
+  ],
+  "negative_native_probe": {
+    "stage": "import_sources",
+    "error_code": "platform_command_failed",
+    "reason": "Aggregate form column requires a numeric type",
+    "named_target_existed": true,
+    "core_validates_dependent_form_compatibility": false
+  }
+}

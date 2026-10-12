@@ -47,7 +47,7 @@ fn prepare(root: &Path, readable: bool, supported: bool, frozen: bool) -> (PathB
 }
 
 /// Select the inline attribute's actual property rather than a coincidental YAML string.
-fn description(source: &Path) -> Box<TypeDescription> {
+pub(super) fn description(source: &Path) -> Box<TypeDescription> {
     let owner = ObjectSource::from_yaml(
         &fs::read_to_string(source.join("Catalogs/Sample/object.yaml")).unwrap(),
     )

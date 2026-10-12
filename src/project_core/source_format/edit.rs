@@ -217,16 +217,17 @@ fn property_text(
     object.validate()?;
     if matches!(
         previous,
-        PropertyValue::Reference(_) | PropertyValue::ReferenceList(_)
+        PropertyValue::Reference(_)
+            | PropertyValue::ReferenceList(_)
+            | PropertyValue::TypeDescription(_)
     ) || matches!(
         candidate,
-        PropertyValue::Reference(_) | PropertyValue::ReferenceList(_)
+        PropertyValue::Reference(_)
+            | PropertyValue::ReferenceList(_)
+            | PropertyValue::TypeDescription(_)
     ) {
         for document in std::iter::once(&object.document).chain(&object.nested) {
-            super::metadata_reference::validate_edit(
-                &base.package.documents,
-                &document.descriptor.object,
-            )?;
+            super::targets::validate_edit(&base.package.documents, &document.descriptor.object)?;
         }
     }
     let updated = if previous == candidate {

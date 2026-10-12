@@ -10,10 +10,12 @@ pub(super) const CORE_NAMESPACE: &str = "http://v8.1c.ru/8.1/data/core";
 
 mod native;
 mod semantic;
+mod targets;
 #[cfg(test)]
 mod tests;
 
 pub(super) use native::decode;
+pub(super) use targets::{generated_names, named_target};
 
 /// Alternatives and qualifiers are edited once; native layout contains only reconstruction slots.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -364,10 +366,10 @@ impl TypeDescription {
 }
 
 /// `QName` resolution uses namespace identity, preserving exact spelling for native text output.
-pub(super) fn qualified_name<'a>(
-    value: &'a str,
-    context: &'a [Namespace],
-) -> Result<(&'a str, &'a str), Error> {
+pub(super) fn qualified_name<'value, 'context>(
+    value: &'value str,
+    context: &'context [Namespace],
+) -> Result<(&'context str, &'value str), Error> {
     let text = value.trim();
     let (prefix, local) = text
         .split_once(':')

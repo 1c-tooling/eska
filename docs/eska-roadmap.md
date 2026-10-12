@@ -107,6 +107,8 @@ EF-24: [28 новых typed-скаляров](research/eska-format/typed-scalars
 [Ссылки метаданных](research/eska-format/metadata-reference.md) хранят одиночные
 значения и списки, проверяют цели по объявленному составу после восстановления
 запрещённых правок; общие editor/migration/semantic/source map сохраняют bindings.
+[Цели Type/TypeSet](research/eska-format/type-targets.md) разрешаются по native
+GeneratedType и действительному namespace URI в том же проверенном составе.
 Orchestration, остальные составные домены и structural operations ещё нужны.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные

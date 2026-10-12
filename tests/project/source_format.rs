@@ -22,6 +22,7 @@ mod protected;
 mod readable;
 mod references;
 mod scalars;
+mod type_targets;
 mod types;
 
 /// Work on a private copy so adverse input tests cannot modify the shared fixture corpus.

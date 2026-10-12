@@ -6,12 +6,10 @@ use super::{Error, Namespace, PropertyName, validation::ncname};
 use crate::project_core::MetadataKind;
 
 mod native;
-mod targets;
 #[cfg(test)]
 mod tests;
 
 pub(super) use native::decode_list;
-pub(super) use targets::{validate_documents, validate_edit};
 
 pub(super) const READABLE_NAMESPACE: &str = "http://v8.1c.ru/8.3/xcf/readable";
 pub(super) const XSI_NAMESPACE: &str = "http://www.w3.org/2001/XMLSchema-instance";

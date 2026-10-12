@@ -2007,6 +2007,25 @@ exclusions и прошли CF/build/dump на 1С 8.3.27.2325: 8 769 файло�
 Цели Type alternatives, остальные selectors/collections, structural operations
 и публичная orchestration ещё нужны; EF-24 — `IN_PROGRESS`.
 
+Девятая часть — [цели Type/TypeSet](../research/eska-format/type-targets.md).
+Именованные alternatives текущей конфигурации должны иметь native GeneratedType
+в объявленном дереве. Общий lookup с metadata references использует реальный URI
+и pinned namespace scopes; рабочие native declarations не создают разрешений.
+Проверка проходит после восстановления forbidden edits, без нового wire/version.
+
+Проверки девятой части: 431 unit + 548 integration (24 opt-in пропущены),
+15 root/14 SDK/5 adapter gates прошли; SDK — 359, adapter — 70 + 12.
+Свежая C1 сохранила 3 595 descriptors/8 330 объектов и All-семантику;
+3 507 generated declarations разрешают 1 129 Type/114 TypeSet alternatives.
+Две правки ссылочного/числового определяемого типа совпали с native control
+и прошли CF/build/dump на 1С 8.3.27.2325: 8 769 файлов/8 064 каталога равны
+кроме `configVersion`, source/base/settings/версия сохранены, exclusions нет.
+Отрицательный native probe получил отказ платформы для нечислового типа
+колонки с итогом: совместимость зависимых форм ещё не проверяется core.
+[Результаты](../research/eska-format/type-targets-results.json).
+Остальные selectors/collections, structural operations и публичная orchestration
+ещё нужны; EF-24 — `IN_PROGRESS`.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.
