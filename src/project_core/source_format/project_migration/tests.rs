@@ -1,4 +1,4 @@
-use super::super::files::Inventory;
+use super::super::{LayoutPublication, files::Inventory, layout::migration::publication};
 use super::*;
 use crate::{
     project_core::source_format::{
@@ -253,6 +253,161 @@ fn foreign_or_edited_outputs_never_get_overwritten_or_partially_accepted() {
     fs::write(&yaml, "edited output").unwrap();
     assert!(plan.publish().is_err());
     assert_eq!(fs::read_to_string(yaml).unwrap(), "edited output");
+}
+
+/// Recovery creates the shared declared ancestors and preserves absent transport files.
+#[test]
+fn nested_project_paths_resume_with_shared_parents_and_absent_transport_files() {
+    for publish_source in [false, true] {
+        let test = TestDir::new();
+        let imported = fixture(&test, &[]);
+        let root = imported.project.root();
+        let source = "storage/working/source";
+        let base = "storage/trusted/base";
+        fs::create_dir_all(root.join("storage/working")).unwrap();
+        fs::create_dir_all(root.join("storage/trusted")).unwrap();
+        fs::rename(root.join("src"), root.join(source)).unwrap();
+        fs::rename(root.join(".eska/accepted"), root.join(base)).unwrap();
+        for name in [".gitattributes", ".gitignore"] {
+            fs::remove_file(root.join(name)).unwrap();
+        }
+        let config = ProjectConfig::from_toml(&fs::read_to_string(root.join("eska.toml")).unwrap())
+            .unwrap()
+            .with_source(PathBuf::from(source))
+            .unwrap()
+            .with_source_format(SourceFormat::Eska {
+                accepted_base: SourcePath::parse(base).unwrap(),
+            })
+            .unwrap();
+        let manifest = format!(
+            "# Nested project paths\r\n{}",
+            config.to_workspace_member_toml().unwrap()
+        );
+        fs::write(root.join("eska.toml"), &manifest).unwrap();
+        let project = config.into_project(root.to_owned()).unwrap();
+        let before = Inventory::read(root).unwrap();
+        let destination = test.0.join("new");
+        let plan = prepare_readable_project(
+            &project,
+            &ProjectScope::Standalone,
+            &imported.accepted,
+            &destination,
+        )
+        .unwrap();
+        fs::create_dir(&destination).unwrap();
+        publish_new(
+            &destination,
+            PROJECT_LAYOUT_RECEIPT,
+            &serde_json::to_string(&plan.receipt).unwrap(),
+        )
+        .unwrap();
+        if publish_source {
+            fs::create_dir_all(destination.join("storage/working")).unwrap();
+            plan.source.publish(&plan.source_destination()).unwrap();
+        }
+        let resumed = prepare_readable_project(
+            &project,
+            &ProjectScope::Standalone,
+            &imported.accepted,
+            &destination,
+        )
+        .unwrap();
+        assert_eq!(resumed.publish().unwrap(), LayoutPublication::Resumed);
+        assert_eq!(resumed.publish().unwrap(), LayoutPublication::Unchanged);
+        assert_eq!(Inventory::read(root).unwrap(), before);
+        assert_eq!(
+            fs::read_to_string(destination.join("eska.toml")).unwrap(),
+            manifest
+        );
+        for name in [".gitattributes", ".gitignore", PROJECT_LAYOUT_RECEIPT] {
+            assert!(!destination.join(name).exists());
+        }
+        let copied = discover(&destination).unwrap();
+        assert_eq!(copied.configuration(), project.configuration());
+        assert_eq!(copied.source(), destination.join(source));
+        EskaSource::open(copied, ProjectScope::Standalone).unwrap();
+        AcceptedBase::open(&destination.join(base), resumed.accepted_reference()).unwrap();
+    }
+}
+
+/// Recovery rejects a damaged receipt or foreign data before publishing either storage tree.
+#[test]
+fn interrupted_project_refuses_invalid_receipts_and_foreign_entries_without_writes() {
+    for corruption in ["invalid-json", "different-plan", "settings", "directory"] {
+        let test = TestDir::new();
+        let imported = fixture(&test, &[]);
+        let plan = prepare_readable_project(
+            &imported.project,
+            &ProjectScope::Standalone,
+            &imported.accepted,
+            &test.0.join("new"),
+        )
+        .unwrap();
+        fs::create_dir(plan.destination()).unwrap();
+        let receipt = plan.destination().join(PROJECT_LAYOUT_RECEIPT);
+        fs::write(&receipt, serde_json::to_vec(&plan.receipt).unwrap()).unwrap();
+        let expected = match corruption {
+            "invalid-json" => {
+                fs::write(&receipt, "{").unwrap();
+                "source_layout_receipt_invalid"
+            }
+            "different-plan" => {
+                let mut stored = serde_json::to_value(&plan.receipt).unwrap();
+                stored["accepted_pin"] = "0".repeat(64).into();
+                fs::write(&receipt, serde_json::to_vec(&stored).unwrap()).unwrap();
+                "source_layout_receipt_invalid"
+            }
+            "settings" => {
+                fs::write(plan.destination().join(".gitignore"), "User changes").unwrap();
+                "source_layout_destination_mismatch"
+            }
+            "directory" => {
+                fs::create_dir(plan.destination().join(".git")).unwrap();
+                "source_layout_destination_mismatch"
+            }
+            _ => unreachable!(),
+        };
+        let input = Inventory::read(imported.project.root()).unwrap();
+        let output = Inventory::read(plan.destination()).unwrap();
+        assert_eq!(plan.publish().unwrap_err().code, expected, "{corruption}");
+        assert_eq!(Inventory::read(imported.project.root()).unwrap(), input);
+        assert_eq!(Inventory::read(plan.destination()).unwrap(), output);
+        assert!(!plan.source_destination().exists());
+        assert!(!plan.base_destination().exists());
+    }
+}
+
+/// A missing receipt never grants permission to repair an incomplete previously published copy.
+#[test]
+fn completed_project_with_missing_outputs_is_refused_without_repairs() {
+    for missing in [
+        "src/configuration.yaml",
+        ".eska/accepted/accepted.json",
+        "eska.toml",
+        ".gitignore",
+    ] {
+        let test = TestDir::new();
+        let imported = fixture(&test, &[]);
+        let plan = prepare_readable_project(
+            &imported.project,
+            &ProjectScope::Standalone,
+            &imported.accepted,
+            &test.0.join("new"),
+        )
+        .unwrap();
+        plan.publish().unwrap();
+        fs::remove_file(plan.destination().join(missing)).unwrap();
+        let input = Inventory::read(imported.project.root()).unwrap();
+        let output = Inventory::read(plan.destination()).unwrap();
+        assert_eq!(
+            plan.publish().unwrap_err().code,
+            "source_destination_exists",
+            "{missing}"
+        );
+        assert_eq!(Inventory::read(imported.project.root()).unwrap(), input);
+        assert_eq!(Inventory::read(plan.destination()).unwrap(), output);
+        assert!(!plan.destination().join(PROJECT_LAYOUT_RECEIPT).exists());
+    }
 }
 
 /// Every selected input, including optional-file absence, remains part of publication authority.

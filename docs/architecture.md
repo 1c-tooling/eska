@@ -21,6 +21,8 @@ src/
 │   ├── metadata_model/          # logical identity и общие значения
 │   ├── metadata_parser.rs       # общая семантическая проекция XML
 │   ├── source_format/           # YAML/XML, принятая база, protected export и source map
+│   │   ├── project_migration.rs # подготовка плана и проверка независимых входов
+│   │   └── project_migration/publication.rs # публикация и восстановление копии проекта
 │   ├── native.rs                # распознавание Designer XML и модулей
 │   ├── native_version.rs        # чтение и изменение версии Designer XML
 │   ├── platform_settings.rs     # переносимые build settings
@@ -176,6 +178,12 @@ tools/analysis-core/src/
 `server` сохраняет единственного владельца сессии. Его внутренние модули
 разделяют обработчики по обязанностям, не вводя второй state или публичный API.
 Локализованное представление остаётся в CLI, а ядро возвращает typed результаты.
+
+`source_format/project_migration.rs` готовит два независимых плана: рабочие
+исходники и принятую базу по внешнему pin. Внутренний модуль `publication`
+проверяет принадлежность незавершённого выхода операции, публикует обе части
+и записывает настройки последними. Он использует общий publisher отдельных
+хранилищ; публичный `ProjectLayoutPlan` и формат квитанции остаются едиными.
 
 `validate.rs` — обработчик существующего запуска `eska` без подкоманды,
 а не новая команда `validate` или запланированная `check`. `vcs/git.rs` содержит
