@@ -1947,6 +1947,29 @@ XML-контролем. Обе CF собраны и выгружены на 1С 
 accepted bases и build inputs не изменены. [Результаты](../research/eska-format/readable-layout-results.json).
 C2/C3, новые CFE/EPF/ERF и client execution не приняты.
 
+Шестая часть — [перенос аннотаций](../research/eska-format/annotation-migration.md):
+legacy comments следуют concrete fields, children и native slots. Совместимые
+value subtrees сохраняют кавычки/literal content/localized order. Полная модель
+и exact comment tokens проверяются до публикации; legacy mixed LF/CRLF отказывается
+до семейного splitter. Оба независимых плана миграции сохраняют authority и policy.
+У readable input остаётся exact no-op; schema/rules/protocol не изменены.
+
+Проверки шестой части: 413 unit + 542 integration (21 opt-in пропущен),
+15 root gates с последним default подтверждением, 14 SDK gates (359 тестов),
+пять gates адаптера BSL (80 тестов). Покрыты каждый fixture field, UUID/property
+binding, repeated comments, nested/mixed envelopes, quoting/literals/CRLF,
+обе миграции и сохранность при отказе. Единичный `ETXTBSY` existing update-test
+не повторился в isolated и полном прогонах; update-код не изменялся.
+
+Реальная C1 перенесла четыре аннотации одной legacy формы, сохранила 3 595
+descriptors/8 330 объектов и 33 320 решений по правам. Рабочая миграция использует
+отдельно перенесённый pinned base; одна разрешённая правка совпала с XML-контролем.
+Обе CF собраны/выгружены на 1С 8.3.27.2325: 8 769 файлов/8 064 каталога совпали,
+кроме `configVersion`; source/base/версия сохранены, exclusions отсутствуют.
+[Результаты](../research/eska-format/annotation-migration-results.json).
+Составные домены, structural operations и публичная orchestration ещё нужны;
+EF-24 остаётся `IN_PROGRESS`. C2/C3, новые CFE/EPF/ERF и client execution не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

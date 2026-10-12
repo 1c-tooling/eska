@@ -12,6 +12,7 @@ use super::{
 };
 use crate::project_core::MetadataKind;
 
+mod migration;
 #[cfg(test)]
 mod tests;
 
@@ -20,6 +21,20 @@ pub(super) fn upgrade(source: &mut super::ObjectSource) {
     for part in std::iter::once(&mut source.document).chain(&mut source.nested) {
         part.descriptor.schema_version = super::READABLE_SCHEMA_VERSION;
     }
+}
+
+/// Check the original authoring transport before the family splitter can manufacture EOL tokens.
+pub(super) fn check_transport(input: &str) -> Result<(), Error> {
+    if input.contains("\r\n") && input.replace("\r\n", "").contains('\n') {
+        let source = super::ObjectSource::from_yaml(input)?;
+        if std::iter::once(&source.document)
+            .chain(&source.nested)
+            .any(|part| part.descriptor.schema_version != super::READABLE_SCHEMA_VERSION)
+        {
+            return Err(Error::root("source_layout_trivia_unsupported"));
+        }
+    }
+    Ok(())
 }
 
 /// An explicit schema change may reserialize syntax, but cannot discard unhandled annotations.
@@ -31,14 +46,16 @@ pub(super) fn upgrade_text(input: &str) -> Result<String, Error> {
     {
         return Ok(input.into());
     }
-    if yaml_edit::lex(input)
+    check_transport(input)?;
+    let annotated = yaml_edit::lex(input)
         .iter()
-        .any(|(kind, _)| *kind == yaml_edit::SyntaxKind::COMMENT)
-    {
-        return Err(Error::root("source_layout_trivia_unsupported"));
-    }
+        .any(|(kind, _)| *kind == yaml_edit::SyntaxKind::COMMENT);
+    let original = annotated.then(|| source.clone());
     upgrade(&mut source);
     let text = source.to_yaml()?;
+    if let Some(original) = original {
+        return migration::transfer(input, &original, &source, &text);
+    }
     Ok(if input.contains("\r\n") {
         text.replace('\n', "\r\n")
     } else {

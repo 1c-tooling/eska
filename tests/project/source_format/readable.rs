@@ -204,3 +204,111 @@ fn readable_raw_edits_restore_restrictions_and_report_the_native_property() {
     assert!(!result.contains("Forbidden"));
     assert!(prepare_protected(&source, &base, &directory.0.join("strict"), true).is_err());
 }
+
+/// Both authorities migrate authored annotations while edits remain pinned to native support.
+#[test]
+fn annotated_source_and_accepted_migrations_keep_comments_and_supported_edits() {
+    let directory = TestDir::new();
+    let native = super::baseline::fixture(&directory.0);
+    let legacy = directory.0.join("legacy");
+    import_designer(&native, &legacy).unwrap();
+    let owner = SourcePath::parse("Catalogs/Sample/object.yaml").unwrap();
+    let path = legacy.join(owner.as_path());
+    let saved = fs::read_to_string(&path).unwrap();
+    let annotated = format!("# Family note\n{saved}# Footer note\n")
+        .replace(
+            "\"value\": \"Editable part\"",
+            "\"value\": 'Editable part' # Attribute note",
+        )
+        .replace('\n', "\r\n");
+    assert_ne!(saved, annotated);
+    assert_eq!(
+        ObjectSource::from_yaml(&saved).unwrap(),
+        ObjectSource::from_yaml(&annotated).unwrap()
+    );
+    fs::write(&path, &annotated).unwrap();
+    let before = super::baseline::tree(&legacy);
+    let storage = directory.0.join("accepted");
+    let reference = accept_source(&legacy, &storage, &[super::baseline::uuid('4')]).unwrap();
+    let original = AcceptedBase::open(&storage, &reference).unwrap();
+    let accepted_before = super::baseline::tree(&storage);
+    let working_plan = prepare_readable_layout(&legacy).unwrap();
+    let source = directory.0.join("readable");
+    working_plan.publish(&source).unwrap();
+    let accepted_plan = prepare_accepted_readable_layout(&original).unwrap();
+    let accepted = directory.0.join("new-accepted");
+    accepted_plan.publish(&accepted).unwrap();
+    let base = AcceptedBase::open(&accepted, accepted_plan.accepted_reference()).unwrap();
+    let restored = directory.0.join("restored");
+    base.restore(&restored).unwrap();
+    assert_eq!(
+        super::baseline::tree(&source),
+        super::baseline::tree(&restored)
+    );
+    let text = fs::read_to_string(source.join(owner.as_path())).unwrap();
+    assert!(text.starts_with("# Family note\r\n"));
+    assert!(text.contains("# Footer note\r\n"));
+    assert!(text.contains("# Attribute note\r\n              \"Comment\": 'Editable part'"));
+    assert!(!text.replace("\r\n", "").contains('\n'));
+    assert!(prepare_readable_layout(&source).unwrap().is_empty());
+    assert!(prepare_accepted_readable_layout(&base).unwrap().is_empty());
+    let old_native = directory.0.join("old-native");
+    let new_native = directory.0.join("new-native");
+    export_designer(&legacy, &old_native).unwrap();
+    export_designer(&source, &new_native).unwrap();
+    equal_native(&old_native, &new_native);
+    let edit = prepare_property_edit(
+        &source,
+        &base,
+        &super::baseline::uuid('3'),
+        PropertyName::Comment,
+        PropertyValue::Text("Changed part".into()),
+    )
+    .unwrap();
+    assert_eq!(
+        edit.updated(),
+        text.replace("'Editable part'", "'Changed part'")
+    );
+    edit.publish(&base).unwrap();
+    let generation =
+        prepare_protected(&source, &base, &directory.0.join("generations"), true).unwrap();
+    assert!(generation.diagnostics().is_empty());
+    assert_eq!(
+        fs::read_to_string(generation.xml().join("Catalogs/Sample.xml")).unwrap(),
+        fs::read_to_string(old_native.join("Catalogs/Sample.xml"))
+            .unwrap()
+            .replace(
+                "<Comment>Editable part</Comment>",
+                "<Comment>Changed part</Comment>"
+            )
+    );
+    assert_eq!(super::baseline::tree(&legacy), before);
+    assert_eq!(super::baseline::tree(&storage), accepted_before);
+}
+
+/// Unsafe transport fails during preparation, retaining both authored source and pinned blobs.
+#[test]
+fn annotated_migration_refuses_mixed_transport_before_publication() {
+    let test = TestDir::new();
+    let native = super::baseline::fixture(&test.0);
+    let source = test.0.join("source");
+    import_designer(&native, &source).unwrap();
+    let path = source.join("Catalogs/Sample/object.yaml");
+    let mixed = format!("# Mixed\r\n{}", fs::read_to_string(&path).unwrap());
+    fs::write(&path, mixed).unwrap();
+    let storage = test.0.join("accepted");
+    let reference = accept_source(&source, &storage, &[]).unwrap();
+    let base = AcceptedBase::open(&storage, &reference).unwrap();
+    let source_before = super::baseline::tree(&source);
+    let accepted_before = super::baseline::tree(&storage);
+    assert_eq!(
+        prepare_readable_layout(&source).unwrap_err().code,
+        "source_layout_trivia_unsupported"
+    );
+    assert_eq!(
+        prepare_accepted_readable_layout(&base).unwrap_err().code,
+        "source_layout_trivia_unsupported"
+    );
+    assert_eq!(super::baseline::tree(&source), source_before);
+    assert_eq!(super::baseline::tree(&storage), accepted_before);
+}

@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-12",
+  "task": "EF-24",
+  "status": "IN_PROGRESS",
+  "slice": "legacy_yaml_annotations",
+  "descriptor_schema_version": 2,
+  "source_layout_version": 3,
+  "source_map_version": 2,
+  "rules_version": 1,
+  "default_cli_layout": 1,
+  "implemented": [
+    "concrete field annotation binding",
+    "CST value syntax and exact model verification",
+    "comments preserved with multiplicity",
+    "legacy LF/CRLF preflight before family split",
+    "independent working/pinned migrations"
+  ],
+  "checks": {
+    "root_gates": 15,
+    "root_final_confirmation_gates": 6,
+    "root_all_passed": true,
+    "root_unit_passed": 413,
+    "root_integration_passed": 542,
+    "root_opt_in_ignored": 21,
+    "minimal_unit_passed": 212,
+    "project_cli_unit_passed": 220,
+    "project_cli_integration_passed": 9,
+    "build_cli_unit_passed": 243,
+    "build_cli_integration_passed": 9,
+    "sdk_gates": 14,
+    "sdk_all_passed": true,
+    "sdk_all_features_unit_passed": 184,
+    "sdk_analyzer_process_passed": 157,
+    "sdk_checker_process_passed": 18,
+    "adapter_gates": 5,
+    "adapter_all_passed": true,
+    "adapter_unit_passed": 70,
+    "adapter_integration_passed": 10,
+    "annotated_documents_schema_validated": 1,
+    "manifest_schema_validated": true,
+    "local_markdown_targets_validated": 390
+  },
+  "cases": [
+    {
+      "annotated_owners": 1,
+      "annotation_tokens": 4,
+      "authored_input_unchanged": true,
+      "changed_native_files": 1,
+      "metadata_objects": 8330,
+      "native_bytes_equal": true,
+      "native_descriptors": 3595,
+      "next_plan": "empty",
+      "old_accepted_storage_unchanged": true,
+      "policy_decisions_equal": 33320,
+      "protected_exclusions": 0,
+      "repeat": "unchanged",
+      "schema_version": 1,
+      "semantic_parity": "All",
+      "source_layout_version": 3,
+      "source_schema_version": 2,
+      "transport": "CRLF",
+      "case": "C1",
+      "platform": "8.3.27.2325",
+      "cf_build_and_redump": true,
+      "redump_files": 8769,
+      "redump_directories": 8064,
+      "all_other_redump_bytes_equal": true,
+      "dump_versions": {
+        "versioned_entries": 7011,
+        "changed_versions": 7011,
+        "all_other_bytes_equal": true
+      },
+      "artifact_checksums_valid": true,
+      "configuration_version_unchanged": true,
+      "build_inputs_unchanged": true,
+      "native_input_unchanged": true,
+      "client_execution": false
+    }
+  ],
+  "transient_validation_failure": {
+    "test": "cli::update::unix::current_release_is_read_only_and_concurrent_update_is_rejected",
+    "error": "ETXTBSY",
+    "isolated_retry_passed": true,
+    "full_retry_passed": true,
+    "test_unchanged": true
+  },
+  "limitations": [
+    "unsupported CST reindentation or changed values refuse publication",
+    "legacy mixed LF/CRLF refuses migration",
+    "legacy blank lines and complete byte style may normalize",
+    "composite types/references/collections and structural operations not implemented",
+    "new C2/C3 layouts and CFE/EPF/ERF profiles not validated",
+    "client execution and full platform BSL checks not validated",
+    "process recovery does not guarantee fsync or power-loss recovery"
+  ],
+  "experimental_rust_api_changes": [
+    "explicit readable migrations now accept handled legacy annotations; schema and protocol versions unchanged"
+  ]
+}

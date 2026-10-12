@@ -86,14 +86,14 @@ SDK использует ту же semantic projection; новый analyzer prot
 
 Публикация использует существующий exclusive publisher: входные fingerprints,
 новый owned output, ready marker последним, repeat/no-op и процессное recovery.
-У уже читаемого descriptor сохраняется exact text. Перевод старого envelope
-пока отказывается при YAML comments: нет молчаливой потери аннотаций. LF/CRLF
-переносятся, значения и native XML проверяются независимо. CST-миграция legacy
-comments остаётся отдельным незавершённым пунктом EF-24.
+У уже читаемого descriptor сохраняется exact text. [Миграция аннотаций](annotation-migration.md)
+переносит legacy comments к тем же полям/объектам, сохраняет подходящие CST values,
+кавычки, localized order и LF/CRLF. Значения и native XML проверяются независимо;
+смешанный transport и неподдержанное оформление дают отказ до публикации.
 
 ## Проверки и границы
 
-Прошли 15 root/14 SDK gates: fmt/check/strict Clippy/test/Rustdoc, minimal и
+В пятой части прошли 15 root/14 SDK gates: fmt/check/strict Clippy/test/Rustdoc, minimal и
 отдельные CLI. Root — 410 unit + 540 integration, 20 opt-in пропущены обычным
 запуском. SDK all-features — 359 тестов. Проверены strict bindings/типы, точные
 числа, unknown XML, empty/nil, native bytes, две pinned/source migrations,
@@ -120,7 +120,7 @@ schema 2/descriptor version 2 проверены; exclusions отсутству�
 [Обезличенные результаты](readable-layout-results.json) отделяют платформенный
 цикл от выполнения в клиенте и новых профилей.
 
-Составные типы, новые ссылки/коллекции, structural create/delete/rename,
-публичная orchestration и перенос legacy annotations ещё не выполнены.
+Составные типы, новые ссылки/коллекции, structural create/delete/rename
+и публичная orchestration ещё не выполнены.
 Новые C2/C3, CFE/EPF/ERF и клиентское выполнение этой частью не принимаются.
 EF-24 остаётся `IN_PROGRESS`.

@@ -216,6 +216,115 @@ fn real_readable_layout_acceptance() {
     real_layout_acceptance(true);
 }
 
+/// Real annotations use independently migrated pinned authority and an exact native edit control.
+#[test]
+#[ignore = "Requires explicit real native input and a new exclusively owned playground output"]
+fn real_annotated_readable_layout_acceptance() {
+    let (input, output) = paths("ESKA_FORMAT_ACCEPTED_INPUT");
+    let reference = AcceptedRef {
+        sha256: std::env::var("ESKA_FORMAT_ACCEPTED_SHA256").unwrap(),
+    };
+    let before = super::baseline::tree(&input);
+    let base = AcceptedBase::open(&input, &reference).unwrap();
+    let plan = prepare_accepted_readable_layout(&base).unwrap();
+    let storage = output.join("accepted");
+    plan.publish(&storage).unwrap();
+    let accepted = AcceptedBase::open(&storage, plan.accepted_reference()).unwrap();
+    let original = output.join("original-source");
+    base.restore(&original).unwrap();
+    let legacy = output.join("annotated-source");
+    prepare_resource_layout(&original)
+        .unwrap()
+        .publish(&legacy)
+        .unwrap();
+    let native = PathBuf::from(std::env::var_os("ESKA_FORMAT_XML_INPUT").unwrap());
+    let corpus = parity(&native, &SourceReader::open(&legacy).unwrap(), &base);
+    annotate_real_owner(&legacy, &corpus.target);
+    let source_before = super::baseline::tree(&legacy);
+    let working = prepare_readable_layout(&legacy).unwrap();
+    let source = output.join("source");
+    assert_eq!(
+        working.publish(&source).unwrap(),
+        LayoutPublication::Created
+    );
+    assert_eq!(
+        working.publish(&source).unwrap(),
+        LayoutPublication::Unchanged
+    );
+    assert!(prepare_readable_layout(&source).unwrap().is_empty());
+    assert!(
+        prepare_accepted_readable_layout(&accepted)
+            .unwrap()
+            .is_empty()
+    );
+    let current = SourceReader::open(&source).unwrap();
+    let (objects, descriptors) = migration_parity(&SourceReader::open(&legacy).unwrap(), &current);
+    assert_eq!((objects, descriptors), (corpus.objects, corpus.descriptors));
+    let decisions = policy_parity(&SourceReader::open(&original).unwrap(), &base, &accepted);
+    let old_generation =
+        prepare_protected(&original, &base, &output.join("old-generations"), true).unwrap();
+    let generation =
+        prepare_protected(&source, &accepted, &output.join("generations"), true).unwrap();
+    assert!(generation.diagnostics().is_empty());
+    assert_eq!(
+        super::baseline::tree(old_generation.xml()),
+        super::baseline::tree(generation.xml())
+    );
+    check_payload_origins(&generation, &source);
+    let target = parity(&native, &current, &accepted).target;
+    let text = fs::read_to_string(source.join(target.owner.as_path())).unwrap();
+    for note in [
+        "# C1 header",
+        "# C1 footer",
+        "# C1 identity",
+        "# C1 property",
+    ] {
+        assert_eq!(text.matches(note).count(), 1);
+    }
+    assert!(text.contains("\r\n") && !text.replace("\r\n", "").contains('\n'));
+    real_readable_edit(&output, old_generation.xml(), &source, &accepted, &target);
+    assert_eq!(super::baseline::tree(&legacy), source_before);
+    assert_eq!(super::baseline::tree(&input), before);
+    fs::write(
+        output.join("accepted-reference.json"),
+        serde_json::to_vec_pretty(plan.accepted_reference()).unwrap(),
+    )
+    .unwrap();
+    let report = serde_json::json!({"schema_version":1,"source_layout_version":3,"source_schema_version":2,
+        "native_descriptors":descriptors,"metadata_objects":objects,"policy_decisions_equal":decisions,
+        "annotated_owners":1,"annotation_tokens":4,"transport":"CRLF","semantic_parity":"All",
+        "native_bytes_equal":true,"old_accepted_storage_unchanged":true,"authored_input_unchanged":true,
+        "repeat":"unchanged","next_plan":"empty","protected_exclusions":0,"changed_native_files":1,
+        "platform_build_and_dump":"pending"});
+    fs::write(
+        output.join("migration.json"),
+        serde_json::to_vec_pretty(&report).unwrap(),
+    )
+    .unwrap();
+    println!("{report}");
+}
+
+/// Annotate one detached legacy form without changing identity, values or any user corpus.
+fn annotate_real_owner(source: &Path, target: &Target) {
+    let path = source.join(target.owner.as_path());
+    let original = fs::read_to_string(&path).unwrap();
+    let annotated = format!("# C1 header\n{original}# C1 footer\n")
+        .replace(
+            &format!("\"uuid\": \"{}\"", target.uuid.as_str()),
+            &format!("\"uuid\": \"{}\" # C1 identity", target.uuid.as_str()),
+        )
+        .replace(
+            "\"name\": \"Comment\"",
+            "\"name\": \"Comment\" # C1 property",
+        )
+        .replace('\n', "\r\n");
+    assert_eq!(
+        eska::project_core::source_format::ObjectSource::from_yaml(&original).unwrap(),
+        eska::project_core::source_format::ObjectSource::from_yaml(&annotated).unwrap()
+    );
+    fs::write(path, annotated).unwrap();
+}
+
 /// The same complete corpus checks physical paths separately from descriptor envelope versions.
 fn real_layout_acceptance(readable: bool) {
     let (input, output) = paths("ESKA_FORMAT_ACCEPTED_INPUT");

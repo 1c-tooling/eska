@@ -81,8 +81,8 @@ pub fn prepare_resource_layout(source: &Path) -> Result<SourceLayoutPlan, Error>
 
 /// Prepare named property envelopes without promoting any preserved value to a typed property.
 ///
-/// Physical paths use layout 3. Existing v2 descriptor text is an exact no-op; unhandled legacy
-/// YAML comments refuse migration before publication instead of losing user annotations.
+/// Physical paths use layout 3. Existing v2 descriptor text is an exact no-op; legacy annotations
+/// follow their concrete fields. Mixed transport or unsafe CST reindentation refuses publication.
 ///
 /// # Errors
 /// Returns unsupported authored trivia, invalid inputs, collisions or changed-source failures.
@@ -188,6 +188,13 @@ pub(in crate::project_core::source_format) fn project_layout(
     target: Layout,
     mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
 ) -> Result<Projection, Error> {
+    let mut read = |path: &SourcePath| {
+        let text = read(path)?;
+        if matches!(target, Layout::Readable) {
+            crate::project_core::source_format::readable::check_transport(&text)?;
+        }
+        Ok(text)
+    };
     let mut projection = project_descriptors(package, &mut read)?;
     if target.version() <= projection.manifest.schema_version {
         if matches!(target, Layout::Readable) {

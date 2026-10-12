@@ -16,8 +16,8 @@ EF-23 отвечает за файлы/обратную сборку, EF-27 — 
 
 [Именованные свойства EF-24](readable-layout.md) используют descriptor schema 2
 с отдельными native details, общими CST/semantic coordinates и обеими явными
-миграциями. Карта путей остаётся версии 3; legacy YAML comments пока отказываются
-при переводе. Составные домены и structural operations ещё нужны.
+миграциями. Карта путей остаётся версии 3; [legacy annotations](annotation-migration.md)
+переносятся по concrete schema paths. Составные домены и structural operations ещё нужны.
 
 [Основа анализа EF-17](analysis-kernel.md) выбрана по реальному API,
 несохранённым YAML/BSL, лицензиям и измерениям C1/C2/C3. Проверенный prototype
