@@ -53,7 +53,7 @@ impl<'de> Deserialize<'de> for SourcePath {
     }
 }
 
-/// An external native descriptor is embedded in its main owner's source document.
+/// Native descriptor identity remains independent of its physical authoring file.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct NativeDocument {
@@ -61,7 +61,7 @@ pub struct NativeDocument {
     pub descriptor: Descriptor,
 }
 
-/// Native form, template, command and subsystem descriptions remain with their main owner.
+/// One authoring file contains a primary descriptor and optional legacy family members.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ObjectSource {
@@ -147,6 +147,27 @@ pub enum FileRole {
         uuid: NativeUuid,
     },
     Preserved,
+    /// Exact payload bytes live at an explicit authoring location instead of the native path.
+    Relocated {
+        source: SourcePath,
+    },
+}
+
+impl FileEntry {
+    /// Resolve the physical authoring file without confusing it with native output identity.
+    #[must_use]
+    pub const fn source_path(&self) -> &SourcePath {
+        match &self.role {
+            FileRole::Descriptor { source, .. } | FileRole::Relocated { source } => source,
+            FileRole::Preserved => &self.path,
+        }
+    }
+
+    /// Opaque payloads retain their bytes regardless of their physical authoring location.
+    #[must_use]
+    pub const fn is_payload(&self) -> bool {
+        !matches!(self.role, FileRole::Descriptor { .. })
+    }
 }
 
 impl SourceManifest {
@@ -157,6 +178,7 @@ impl SourceManifest {
     pub fn validate(&self) -> Result<(), Error> {
         if self.schema_version != SCHEMA_VERSION
             && self.schema_version != super::DESCRIPTOR_LAYOUT_VERSION
+            && self.schema_version != super::RESOURCE_LAYOUT_VERSION
         {
             return Err(Error::root("source_schema_unsupported"));
         }
@@ -191,7 +213,7 @@ impl SourceManifest {
 
 /// Provenance is machine data; compact v2 avoids exceeding the reader quota on large configurations.
 pub(super) fn manifest_text(manifest: &SourceManifest) -> Result<String, Error> {
-    let text = if manifest.schema_version == super::DESCRIPTOR_LAYOUT_VERSION {
+    let text = if manifest.schema_version >= super::DESCRIPTOR_LAYOUT_VERSION {
         serde_json::to_string(manifest)
     } else {
         serde_json::to_string_pretty(manifest)

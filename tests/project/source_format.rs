@@ -67,7 +67,7 @@ fn import_follows_declarations_and_preserves_every_other_file() {
     );
     for file in &manifest.files {
         match &file.role {
-            FileRole::Preserved => {
+            FileRole::Preserved | FileRole::Relocated { .. } => {
                 let original = fs::read(input.join(file.path.as_path())).unwrap();
                 assert_eq!(original, fs::read(first.join(file.path.as_path())).unwrap());
                 assert_eq!(
@@ -470,7 +470,7 @@ fn native_export_restores_every_file_and_empty_directory_without_rewrites() {
                         Descriptor::from_xml(&fs::read_to_string(&output).unwrap()).unwrap()
                     );
                 }
-                FileRole::Preserved => assert_eq!(
+                FileRole::Preserved | FileRole::Relocated { .. } => assert_eq!(
                     fs::read(input.join(file.path.as_path())).unwrap(),
                     fs::read(&output).unwrap()
                 ),

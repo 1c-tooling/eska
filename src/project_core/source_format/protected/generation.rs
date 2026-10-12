@@ -120,13 +120,26 @@ impl Plan<'_> {
             if let Some(xml) = self.xml.get(&entry.path) {
                 files::write(&destination, xml.as_bytes())?;
             } else {
+                let source = self
+                    .base
+                    .package
+                    .payload_sources
+                    .get(&entry.path)
+                    .ok_or_else(|| Error::root("source_file_missing"))?;
                 match self
                     .origins
-                    .get(&entry.path)
+                    .get(source)
                     .ok_or_else(|| Error::root("source_file_missing"))?
                 {
-                    Origin::Accepted => self.base.copy_file(&entry.path, &destination)?,
-                    Origin::Working => files::copy(self.source, &xml_root, entry)?,
+                    Origin::Accepted => self.base.copy_file(source, &destination)?,
+                    Origin::Working => {
+                        let input = self
+                            .working
+                            .files
+                            .get(source)
+                            .ok_or_else(|| Error::root("source_file_missing"))?;
+                        files::copy_to(self.source, &destination, input)?;
+                    }
                 }
             }
         }

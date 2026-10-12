@@ -57,7 +57,11 @@ pub(super) fn current_target(
     start_byte: u32,
     end_byte: u32,
 ) -> Result<DefinitionTarget, QueryError> {
-    let source = source_for_file(session, analysis, file)?;
+    let source = session
+        .module_sources
+        .get(&file)
+        .cloned()
+        .ok_or(QueryError::UnsupportedNavigationTarget)?;
     let entry = session
         .modules
         .get(&source)

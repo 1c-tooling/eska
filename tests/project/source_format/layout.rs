@@ -10,10 +10,11 @@ use eska::project_core::{
     metadata_parser::{self, ParsedDescriptor, PropertiesMode},
     platform_settings::PlatformVersion,
     source_format::{
-        AcceptedBase, AcceptedRef, LayoutPublication, MD_NAMESPACE, NativeUuid, Operation,
-        PropertyName, PropertyValue, SourcePath, SourceReader, export_designer,
-        prepare_accepted_descriptor_layout, prepare_descriptor_layout, prepare_property_edit,
-        prepare_protected,
+        AcceptedBase, AcceptedRef, FileOrigin, LayoutPublication, MD_NAMESPACE, NativeUuid,
+        Operation, PropertyName, PropertyValue, SourcePath, SourceReader, export_designer,
+        import_designer_resources, prepare_accepted_descriptor_layout,
+        prepare_accepted_resource_layout, prepare_descriptor_layout, prepare_property_edit,
+        prepare_protected, prepare_resource_layout,
     },
 };
 
@@ -198,6 +199,125 @@ fn real_accepted_descriptor_migration_acceptance() {
     )
     .unwrap();
     println!("{report}");
+}
+
+/// Fresh import and both migration authorities preserve real payload bytes, context and support.
+#[test]
+#[ignore = "Requires real XML/accepted input, independent old pin and a new playground output"]
+fn real_resource_layout_acceptance() {
+    let (input, output) = paths("ESKA_FORMAT_ACCEPTED_INPUT");
+    let reference = AcceptedRef {
+        sha256: std::env::var("ESKA_FORMAT_ACCEPTED_SHA256").unwrap(),
+    };
+    let before = super::baseline::tree(&input);
+    let base = AcceptedBase::open(&input, &reference).unwrap();
+    let plan = prepare_accepted_resource_layout(&base).unwrap();
+    let accepted = output.join("accepted");
+    assert_eq!(plan.publish(&accepted).unwrap(), LayoutPublication::Created);
+    assert_eq!(
+        plan.publish(&accepted).unwrap(),
+        LayoutPublication::Unchanged
+    );
+    let relocated = AcceptedBase::open(&accepted, plan.accepted_reference()).unwrap();
+    assert!(
+        prepare_accepted_resource_layout(&relocated)
+            .unwrap()
+            .is_empty()
+    );
+    let original = output.join("original-source");
+    let source = output.join("source");
+    base.restore(&original).unwrap();
+    relocated.restore(&source).unwrap();
+    let reader = SourceReader::open(&original).unwrap();
+    let current = SourceReader::open(&source).unwrap();
+    let (objects, descriptors) = migration_parity(&reader, &current);
+    let decisions = policy_parity(&reader, &base, &relocated);
+    let working = prepare_resource_layout(&original).unwrap();
+    let migrated = output.join("migrated-source");
+    assert_eq!(
+        working.publish(&migrated).unwrap(),
+        LayoutPublication::Created
+    );
+    assert_eq!(
+        working.publish(&migrated).unwrap(),
+        LayoutPublication::Unchanged
+    );
+    assert!(prepare_resource_layout(&migrated).unwrap().is_empty());
+    assert_eq!(
+        super::baseline::tree(&source),
+        super::baseline::tree(&migrated)
+    );
+    let old_generation =
+        prepare_protected(&original, &base, &output.join("old-generations"), true).unwrap();
+    let generation =
+        prepare_protected(&source, &relocated, &output.join("generations"), true).unwrap();
+    assert!(generation.diagnostics().is_empty());
+    assert_eq!(
+        super::baseline::tree(old_generation.xml()),
+        super::baseline::tree(generation.xml())
+    );
+    let (payloads, moved) = real_resource_import(&output, &base, (objects, descriptors));
+    for file in &generation.source_map().files {
+        if let FileOrigin::Payload { input, .. } = &file.origin {
+            assert_eq!(
+                fs::read(source.join(input.path.as_path())).unwrap(),
+                fs::read(generation.xml().join(file.path.as_path())).unwrap()
+            );
+        }
+    }
+    assert_eq!(super::baseline::tree(&input), before);
+    fs::write(
+        output.join("accepted-reference.json"),
+        serde_json::to_vec_pretty(plan.accepted_reference()).unwrap(),
+    )
+    .unwrap();
+    let report = serde_json::json!({"schema_version":1,"source_layout_version":3,"source_map_version":2,
+        "native_descriptors":descriptors,"metadata_objects":objects,"semantic_parity":"All",
+        "policy_decisions_equal":decisions,"payloads":payloads,"relocated_payloads":moved,
+        "native_bytes_equal":true,"fresh_import_payload_bytes_equal":true,"working_and_accepted_layouts_equal":true,
+        "old_accepted_storage_unchanged":true,"native_input_unchanged":true,"repeat":"unchanged","next_plan":"empty",
+        "protected_exclusions":0,"platform_build_and_dump":"pending"});
+    fs::write(
+        output.join("migration.json"),
+        serde_json::to_vec_pretty(&report).unwrap(),
+    )
+    .unwrap();
+    println!("{report}");
+}
+
+/// Independent native XML parsing and byte comparison validate a fresh v3 import separately.
+fn real_resource_import(
+    output: &Path,
+    base: &AcceptedBase,
+    counts: (usize, usize),
+) -> (usize, usize) {
+    let xml = PathBuf::from(std::env::var_os("ESKA_FORMAT_XML_INPUT").unwrap())
+        .canonicalize()
+        .unwrap();
+    assert!(
+        xml.starts_with(
+            PathBuf::from(std::env::var_os("ESKA_TEST_ROOT").unwrap())
+                .canonicalize()
+                .unwrap()
+        )
+    );
+    let xml_before = super::baseline::tree(&xml);
+    let fresh = output.join("fresh");
+    let manifest = import_designer_resources(&xml, &fresh).unwrap();
+    let corpus = parity(&xml, &SourceReader::open(&fresh).unwrap(), base);
+    assert_eq!((corpus.objects, corpus.descriptors), counts);
+    let mut payloads = 0;
+    let mut moved = 0;
+    for file in manifest.files.iter().filter(|file| file.is_payload()) {
+        assert_eq!(
+            fs::read(fresh.join(file.source_path().as_path())).unwrap(),
+            fs::read(xml.join(file.path.as_path())).unwrap()
+        );
+        payloads += 1;
+        moved += usize::from(file.source_path() != &file.path);
+    }
+    assert_eq!(super::baseline::tree(&xml), xml_before);
+    (payloads, moved)
 }
 
 /// Compare complete family and separated snapshots without confusing source byte coordinates.

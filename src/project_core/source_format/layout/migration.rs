@@ -12,7 +12,10 @@ use std::{
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use super::{DESCRIPTOR_LAYOUT_VERSION, contexts, descriptor_path};
+use super::{
+    DESCRIPTOR_LAYOUT_VERSION, contexts, descriptor_path,
+    resources::{self, Layout},
+};
 use crate::project_core::source_format::{
     Error, FileEntry, FileRole, SourceManifest, SourcePath,
     export::Package,
@@ -39,7 +42,7 @@ pub enum LayoutPublication {
 
 /// Migration authority is bound to a complete source inventory and exact output bytes.
 #[derive(Debug)]
-pub struct DescriptorLayoutPlan {
+pub struct SourceLayoutPlan {
     root: PathBuf,
     original: Inventory,
     projection: Projection,
@@ -51,6 +54,7 @@ pub(in crate::project_core::source_format) struct Projection {
     pub manifest: SourceManifest,
     pub snapshot: Inventory,
     pub text: BTreeMap<SourcePath, String>,
+    pub renamed: BTreeMap<SourcePath, FileEntry>,
 }
 
 /// Prepare a separated layout from a completely validated family or separated source tree.
@@ -60,10 +64,26 @@ pub(in crate::project_core::source_format) struct Projection {
 ///
 /// # Errors
 /// Returns invalid composition, path collisions, unsupported schemas or changed-input failures.
-pub fn prepare_descriptor_layout(source: &Path) -> Result<DescriptorLayoutPlan, Error> {
+pub fn prepare_descriptor_layout(source: &Path) -> Result<SourceLayoutPlan, Error> {
+    prepare(source, Layout::Descriptors)
+}
+
+/// Prepare separate descriptors and mapped payload paths from a validated v1, v2 or v3 source.
+///
+/// Existing authoring text, opaque bytes and native provenance are preserved; the accepted base
+/// requires its own independently pinned plan. Changes publish into a new owned directory.
+///
+/// # Errors
+/// Returns invalid composition, path collisions, unsupported trivia, schemas or changed input.
+pub fn prepare_resource_layout(source: &Path) -> Result<SourceLayoutPlan, Error> {
+    prepare(source, Layout::Resources)
+}
+
+/// Both explicit targets share validation, exact preview and resumable publication.
+fn prepare(source: &Path, target: Layout) -> Result<SourceLayoutPlan, Error> {
     let package = Package::read(source)?;
     let root = fs::canonicalize(source).map_err(|error| files::io(&error))?;
-    let projection = project(&package, |path| {
+    let projection = project_layout(&package, target, |path| {
         files::read_text(&root.join(path.as_path()))
     })?;
     for path in projection
@@ -81,7 +101,7 @@ pub fn prepare_descriptor_layout(source: &Path) -> Result<DescriptorLayoutPlan, 
     }
     package.recheck(&root)?;
     let changes = changes(&package.snapshot, &projection.snapshot);
-    Ok(DescriptorLayoutPlan {
+    Ok(SourceLayoutPlan {
         root,
         original: package.snapshot,
         projection,
@@ -89,7 +109,7 @@ pub fn prepare_descriptor_layout(source: &Path) -> Result<DescriptorLayoutPlan, 
     })
 }
 
-impl DescriptorLayoutPlan {
+impl SourceLayoutPlan {
     /// Return deterministic exact-byte changes; no change means the input already has this layout.
     #[must_use]
     pub fn changes(&self) -> &[LayoutChange] {
@@ -120,7 +140,7 @@ impl DescriptorLayoutPlan {
         &self.projection.snapshot.revision
     }
 
-    /// An already separated source is preserved byte-for-byte, including hand-written YAML style.
+    /// An already selected layout is preserved byte-for-byte, including hand-written YAML style.
     #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.changes.is_empty()
@@ -146,17 +166,70 @@ impl DescriptorLayoutPlan {
             output: &self.projection.snapshot,
             text: &self.projection.text,
             ready: files::MANIFEST,
+            renamed: Some(&self.projection.renamed),
         }
     }
 }
 
-/// The same pure transformation can later migrate pinned bytes without trusting the working tree.
-pub(in crate::project_core::source_format) fn project(
+/// Upgrade physical paths after descriptor splitting; never downgrade an already newer layout.
+pub(in crate::project_core::source_format) fn project_layout(
+    package: &Package,
+    target: Layout,
+    read: impl FnMut(&SourcePath) -> Result<String, Error>,
+) -> Result<Projection, Error> {
+    let mut projection = project_descriptors(package, read)?;
+    if target.version() <= projection.manifest.schema_version {
+        return Ok(projection);
+    }
+    let before = projection.manifest.clone();
+    resources::relocate(&mut projection.manifest)?;
+    projection.manifest.validate()?;
+    for (old, new) in before
+        .files
+        .iter()
+        .zip(&projection.manifest.files)
+        .filter(|(_, new)| new.is_payload())
+    {
+        if old.source_path() != new.source_path() {
+            let mut entry = projection
+                .snapshot
+                .files
+                .remove(old.source_path())
+                .ok_or_else(|| Error::root("source_file_missing"))?;
+            projection
+                .renamed
+                .insert(new.source_path().clone(), entry.clone());
+            entry.path = new.source_path().clone();
+            if projection
+                .snapshot
+                .files
+                .insert(entry.path.clone(), entry)
+                .is_some()
+            {
+                return Err(Error::root("source_path_collision"));
+            }
+        }
+    }
+    let marker = SourcePath::parse(files::MANIFEST)?;
+    let text = crate::project_core::source_format::package::manifest_text(&projection.manifest)?;
+    projection
+        .snapshot
+        .files
+        .insert(marker.clone(), fingerprint(&marker, &text));
+    projection.text.insert(marker, text);
+    projection.snapshot.directories = resources::source_directories(&projection.manifest)?;
+    projection.snapshot.revision =
+        files::revision(&projection.snapshot.files, &projection.snapshot.directories);
+    Ok(projection)
+}
+
+/// Preserve current separated YAML exactly; family sources use the lossless CST splitter.
+fn project_descriptors(
     package: &Package,
     mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
 ) -> Result<Projection, Error> {
     let mut manifest = package.manifest.clone();
-    if manifest.schema_version == DESCRIPTOR_LAYOUT_VERSION {
+    if manifest.schema_version >= DESCRIPTOR_LAYOUT_VERSION {
         return Ok(Projection {
             manifest,
             snapshot: Inventory {
@@ -165,6 +238,7 @@ pub(in crate::project_core::source_format) fn project(
                 revision: package.snapshot.revision.clone(),
             },
             text: BTreeMap::new(),
+            renamed: BTreeMap::new(),
         });
     }
     let documents = package
@@ -242,6 +316,7 @@ pub(in crate::project_core::source_format) fn project(
             revision,
         },
         text: sources,
+        renamed: BTreeMap::new(),
     })
 }
 

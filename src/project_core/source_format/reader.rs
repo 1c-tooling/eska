@@ -127,7 +127,7 @@ impl SourceReader {
         })?;
         let manifest: SourceManifest =
             serde_json::from_str(&text).map_err(|_| Error::root("source_schema_invalid"))?;
-        if pending && manifest.schema_version == super::DESCRIPTOR_LAYOUT_VERSION {
+        if pending && manifest.schema_version >= super::DESCRIPTOR_LAYOUT_VERSION {
             return Err(Error::root("source_layout_incomplete"));
         }
         manifest.validate()?;
@@ -153,7 +153,7 @@ impl SourceReader {
             &manifest_sha256,
             &root_spec,
         )?;
-        let owners = if manifest.schema_version == super::DESCRIPTOR_LAYOUT_VERSION {
+        let owners = if manifest.schema_version >= super::DESCRIPTOR_LAYOUT_VERSION {
             standalone::owners(&manifest, &configuration, groups, root_spec)?
         } else {
             family_owners(&configuration, groups, root_spec)?
@@ -243,6 +243,7 @@ impl SourceReader {
         self.modules.get(path).map(|module| DeclaredModule {
             owner: &module.owner,
             native_descriptor: &module.native_descriptor,
+            native_path: &module.native_path,
             binary: module.binary,
         })
     }

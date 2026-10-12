@@ -16,6 +16,8 @@ pub(in crate::project_core::source_format) struct View<'a> {
     pub output: &'a Inventory,
     pub text: &'a BTreeMap<SourcePath, String>,
     pub ready: &'a str,
+    /// Only source migration changes paths; content-addressed accepted blobs keep their names.
+    pub renamed: Option<&'a BTreeMap<SourcePath, super::FileEntry>>,
 }
 
 impl View<'_> {
@@ -121,7 +123,11 @@ fn stage_file(
     if let Some(text) = view.text.get(path) {
         files::write(&temporary, text.as_bytes())?;
     } else {
-        files::copy_to(view.root, &temporary, entry)?;
+        let input = view
+            .renamed
+            .and_then(|renamed| renamed.get(path))
+            .unwrap_or(entry);
+        files::copy_to(view.root, &temporary, input)?;
     }
     fs::hard_link(&temporary, destination.join(path.as_path()))
         .map_err(|error| files::io(&error))?;

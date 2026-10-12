@@ -131,11 +131,6 @@ pub(super) fn read_text_cancellable(
     String::from_utf8(bytes).map_err(|_| Error::root("source_encoding_unsupported"))
 }
 
-/// Stream resource bytes once, checking the exact snapshot while exclusively creating output.
-pub(super) fn copy(root: &Path, destination: &Path, entry: &FileEntry) -> Result<(), Error> {
-    copy_to(root, &destination.join(entry.path.as_path()), entry)
-}
-
 /// Copy a verified payload to its physical storage path without intermediate trees.
 pub(super) fn copy_to(root: &Path, path: &Path, entry: &FileEntry) -> Result<(), Error> {
     create_parent(path)?;

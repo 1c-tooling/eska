@@ -29,8 +29,8 @@ use crate::project_core::{
 
 pub use prepared::PreparedSource;
 pub use source_map::{
-    FileOrigin, InputAuthority, InputFile, MappedFile, OriginTexts, SOURCE_MAP_VERSION,
-    SourceLocation, SourceMap,
+    FileOrigin, InputAuthority, InputFile, MappedFile, OriginTexts, RELOCATED_SOURCE_MAP_VERSION,
+    SOURCE_MAP_VERSION, SourceLocation, SourceMap,
 };
 
 /// Every excluded working change states the performed action rather than silently disappearing.
@@ -138,6 +138,8 @@ pub fn prepare_protected(
         snapshot,
         documents,
         owners: base.package.owners.clone(),
+        payloads: base.package.payloads.clone(),
+        payload_sources: base.package.payload_sources.clone(),
     };
     let xml = package.native_xml()?;
     let native = package.output_inventory(&xml)?;
@@ -212,14 +214,15 @@ fn select_files(
             origins.insert(path.clone(), Origin::Working);
             continue;
         }
-        let uuid = file_owner(base, path);
-        let operation = if native::is_module_path(path.as_path()) {
+        let native = base.package.payloads.get(path).unwrap_or(path);
+        let uuid = native_file_owner(base, native);
+        let operation = if native::is_module_path(native.as_path()) {
             Operation::Module
         } else {
             Operation::Resource
         };
-        let native_policy = path.as_str() == "Ext/ParentConfigurations.bin"
-            || path.as_str().starts_with("Ext/ParentConfigurations/");
+        let native_policy = native.as_str() == "Ext/ParentConfigurations.bin"
+            || native.as_str().starts_with("Ext/ParentConfigurations/");
         let binary_module = operation == Operation::Module
             && !path
                 .as_path()
@@ -307,8 +310,13 @@ pub(super) fn module_permission(
     base: &AcceptedBase,
     path: &SourcePath,
 ) -> Result<super::Permission, Error> {
-    if !native::is_module_path(path.as_path())
-        || !path
+    let native = base
+        .package
+        .payloads
+        .get(path)
+        .ok_or_else(|| Error::root("source_edit_module_unsupported"))?;
+    if !native::is_module_path(native.as_path())
+        || !native
             .as_path()
             .extension()
             .is_some_and(|extension| extension.eq_ignore_ascii_case("bsl"))
@@ -316,12 +324,13 @@ pub(super) fn module_permission(
     {
         return Err(Error::root("source_edit_module_unsupported"));
     }
-    let uuid = file_owner(base, path).ok_or_else(|| Error::root("source_edit_owner_unknown"))?;
+    let uuid =
+        native_file_owner(base, native).ok_or_else(|| Error::root("source_edit_owner_unknown"))?;
     Ok(base.permission(&uuid, Operation::Module))
 }
 
 /// Resolve the longest declared native owner before considering a configuration root payload.
-fn file_owner(base: &AcceptedBase, path: &SourcePath) -> Option<NativeUuid> {
+fn native_file_owner(base: &AcceptedBase, path: &SourcePath) -> Option<NativeUuid> {
     for (end, _) in path.as_str().match_indices('/').rev() {
         let descriptor = SourcePath::parse(&format!("{}.xml", &path.as_str()[..end])).ok()?;
         if let Some(document) = base.package.documents.get(&descriptor) {

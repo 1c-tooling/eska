@@ -12,12 +12,13 @@ use super::{
 use crate::project_core::source_format::{
     LayoutChange, LayoutPublication,
     layout::migration::{self, Projection, publication},
+    layout::resources::Layout,
 };
 use sha2::{Digest, Sha256};
 
 /// An exact layout plan preserves the old native evidence, supplier rules and explicit freeze.
 #[derive(Debug)]
-pub struct AcceptedDescriptorLayoutPlan {
+pub struct AcceptedLayoutPlan {
     root: PathBuf,
     input: Inventory,
     output: Inventory,
@@ -37,7 +38,23 @@ pub struct AcceptedDescriptorLayoutPlan {
 /// Returns corrupt or changed old storage, invalid layout, unsupported trivia or schema failures.
 pub fn prepare_accepted_descriptor_layout(
     base: &AcceptedBase,
-) -> Result<AcceptedDescriptorLayoutPlan, Error> {
+) -> Result<AcceptedLayoutPlan, Error> {
+    prepare(base, Layout::Descriptors)
+}
+
+/// Migrate verified accepted blobs to explicit payload paths without accepting working changes.
+///
+/// Policy, supplier evidence, freeze and original native fingerprints remain independently pinned.
+/// The returned new pin must be selected explicitly by the caller after publication.
+///
+/// # Errors
+/// Returns invalid or changed accepted storage, unsupported layouts or path collisions.
+pub fn prepare_accepted_resource_layout(base: &AcceptedBase) -> Result<AcceptedLayoutPlan, Error> {
+    prepare(base, Layout::Resources)
+}
+
+/// Source and accepted migrations use the same pure projection for each explicit target.
+fn prepare(base: &AcceptedBase, target: Layout) -> Result<AcceptedLayoutPlan, Error> {
     base.verify()?;
     let input = Inventory::read(&base.root)?;
     for path in input.files.keys().chain(&input.directories) {
@@ -51,7 +68,8 @@ pub fn prepare_accepted_descriptor_layout(
         manifest,
         snapshot,
         text: source_text,
-    } = migration::project(&base.package, |path| {
+        ..
+    } = migration::project_layout(&base.package, target, |path| {
         let entry = base
             .package
             .snapshot
@@ -77,7 +95,7 @@ pub fn prepare_accepted_descriptor_layout(
     if Inventory::read(&base.root)? != input {
         return Err(Error::root("source_input_changed"));
     }
-    Ok(AcceptedDescriptorLayoutPlan {
+    Ok(AcceptedLayoutPlan {
         root: base.root.clone(),
         input,
         output,
@@ -89,7 +107,7 @@ pub fn prepare_accepted_descriptor_layout(
     })
 }
 
-impl AcceptedDescriptorLayoutPlan {
+impl AcceptedLayoutPlan {
     /// Review physical source paths and exact bytes independently of content-addressed blob names.
     #[must_use]
     pub fn source_changes(&self) -> &[LayoutChange] {
@@ -139,6 +157,7 @@ impl AcceptedDescriptorLayoutPlan {
             output: &self.output,
             text: &self.text,
             ready: BASE_MANIFEST,
+            renamed: None,
         }
     }
 }

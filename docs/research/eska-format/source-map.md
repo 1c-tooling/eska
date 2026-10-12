@@ -18,6 +18,12 @@ descriptor XML, BSL, ресурсы, политика поддержки, suppli
 или запрещённый модуль относится к принятой базе даже при наличии рабочего файла.
 Байты payload и input обязаны совпадать.
 
+Map schema 1 сохраняет равенство native/input paths для исходных layouts 1/2.
+[Layout 3](resource-layout.md) использует map schema 2: native `MappedFile.path`
+и физический `origin.input.path` различаются, fingerprints/offsets совпадают.
+`source_schema_version` описывает descriptor envelope и остаётся 1; это не
+версия reverse map из `source.json`. Prepared artifact schema остаётся 2.
+
 Для metadata XML записываются UUID, принятый YAML input, имеющийся рабочий YAML
 input и `uses_working_values`. Принятая структура сохраняется всегда;
 флаг отмечает отличие выбранных разрешённых значений от базы. Это составное

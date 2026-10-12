@@ -1,12 +1,14 @@
 //! Physical descriptor boundaries retain native context independently of authoring filenames.
 
 pub(super) mod migration;
+pub(super) mod resources;
 
 #[cfg(test)]
 mod tests;
 
 pub use migration::{
-    DescriptorLayoutPlan, LayoutChange, LayoutPublication, prepare_descriptor_layout,
+    LayoutChange, LayoutPublication, SourceLayoutPlan, prepare_descriptor_layout,
+    prepare_resource_layout,
 };
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -23,6 +25,8 @@ use super::{
 
 /// Version of the separated reverse map; descriptor envelopes retain their own schema version.
 pub const DESCRIPTOR_LAYOUT_VERSION: u32 = 2;
+/// Explicit payload source paths extend the separated reverse map without changing old schemas.
+pub const RESOURCE_LAYOUT_VERSION: u32 = 3;
 pub(super) const PENDING_RECEIPT: &str = ".eska-layout.pending.json";
 pub(super) const PENDING_WRITE: &str = ".eska-layout.write";
 
@@ -99,7 +103,8 @@ pub(super) fn descriptor_path(
 
 /// Validate complete reverse contexts; neither a directory nor an unmapped file activates metadata.
 pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
-    if manifest.schema_version != DESCRIPTOR_LAYOUT_VERSION {
+    resources::validate(manifest)?;
+    if manifest.schema_version < DESCRIPTOR_LAYOUT_VERSION {
         return if manifest.descriptor_contexts.is_empty() {
             Ok(())
         } else {
@@ -111,7 +116,7 @@ pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
         .iter()
         .filter_map(|file| match &file.role {
             FileRole::Descriptor { source, uuid } => Some((&file.path, (source, uuid))),
-            FileRole::Preserved => None,
+            FileRole::Preserved | FileRole::Relocated { .. } => None,
         })
         .collect::<BTreeMap<_, _>>();
     let contexts = manifest
@@ -177,10 +182,7 @@ pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
 fn validate_physical_paths(manifest: &SourceManifest) -> Result<(), Error> {
     let mut paths = BTreeSet::from(["source.json"]);
     for file in &manifest.files {
-        let path = match &file.role {
-            FileRole::Descriptor { source, .. } => source.as_str(),
-            FileRole::Preserved => file.path.as_str(),
-        };
+        let path = file.source_path().as_str();
         if !paths.insert(path) {
             return Err(Error::root("source_path_collision").in_field(path));
         }
@@ -211,7 +213,8 @@ fn validate_physical_paths(manifest: &SourceManifest) -> Result<(), Error> {
             }
         }
     }
-    for directory in &manifest.directories {
+    let directories = resources::source_directories(manifest)?;
+    for directory in &directories {
         let path = directory.as_str();
         if [PENDING_RECEIPT, PENDING_WRITE]
             .iter()
@@ -232,7 +235,7 @@ pub(super) fn validate_documents(
     manifest: &SourceManifest,
     documents: &BTreeMap<SourcePath, NativeDocument>,
 ) -> Result<(), Error> {
-    if manifest.schema_version != DESCRIPTOR_LAYOUT_VERSION {
+    if manifest.schema_version < DESCRIPTOR_LAYOUT_VERSION {
         return Ok(());
     }
     let mut declared = manifest.descriptor_contexts.clone();

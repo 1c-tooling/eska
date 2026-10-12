@@ -71,6 +71,7 @@ impl ModuleInput {
 pub struct ModuleEntry {
     pub file: FileId,
     pub owner: SourcePath,
+    pub native_path: SourcePath,
     pub model: ModuleInput,
 }
 

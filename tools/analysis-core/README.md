@@ -21,6 +21,10 @@ XML-экспорт не участвуют в чтении.
 один canonical slot с собственной зависимостью на dialog, без второго slot
 у родителя. Invalid/overlay формы меняет её текущий контекст BSL; модели родителя
 и соседей сохраняются. Native identities модулей остаются прежними.
+[Payload layout 3](../../docs/research/eska-format/resource-layout.md) использует
+физические paths для чтения, editor buffers и navigation; виртуальные native
+paths остаются у ядра для module/form conventions. Common/service backlinks
+и current definitions сохраняют объявленные идентификаторы файлов без disk fallback.
 
 [Текущие предопределённые данные](../../docs/research/eska-format/analyzer-predefined.md)
 связывают declared ресурс и YAML владельца через общий controller. Их items

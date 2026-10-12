@@ -129,7 +129,11 @@ pub fn register_modules(
         let identity = reader
             .declared_module(path)
             .ok_or(SessionError::MissingListing)?;
-        file_set.insert(file, VfsPath::new(reader.root().join(path.as_path())));
+        // Kernel conventions use virtual native paths; transport and disk reads use source paths.
+        file_set.insert(
+            file,
+            VfsPath::new(reader.root().join(identity.native_path.as_path())),
+        );
         database.set_file_source_root(file, SourceRootId(0));
         database.set_file_unreadable(file);
         let model = ModuleInput {
@@ -147,6 +151,7 @@ pub fn register_modules(
             ModuleEntry {
                 file,
                 owner: identity.owner.clone(),
+                native_path: identity.native_path.clone(),
                 model,
             },
         );
@@ -160,14 +165,18 @@ pub fn connect_common_bodies(
     modules: &std::collections::BTreeMap<SourcePath, crate::modules::ModuleEntry>,
 ) -> Result<(), crate::SessionError> {
     use crate::SessionError;
+    let bodies = modules
+        .values()
+        .map(|module| (&module.native_path, module))
+        .collect::<BTreeMap<_, _>>();
     for entry in &mut structure.common_modules {
         let prefix = format!("CommonModules/{}/Ext/Module", entry.name);
         if let Some(module) =
-            modules.get(&SourcePath::parse(&format!("{prefix}.bsl")).map_err(SessionError::Source)?)
+            bodies.get(&SourcePath::parse(&format!("{prefix}.bsl")).map_err(SessionError::Source)?)
         {
             entry.module_file = Some(module.file);
         } else if let Some(module) =
-            modules.get(&SourcePath::parse(&format!("{prefix}.bin")).map_err(SessionError::Source)?)
+            bodies.get(&SourcePath::parse(&format!("{prefix}.bin")).map_err(SessionError::Source)?)
         {
             entry.unread_module_file = Some(module.file);
         }
@@ -180,25 +189,39 @@ pub fn connect_service_bodies(
     structure: &mut MetadataListingData,
     modules: &BTreeMap<SourcePath, crate::modules::ModuleEntry>,
 ) -> Result<(), crate::SessionError> {
+    let bodies = modules
+        .values()
+        .map(|module| (&module.native_path, module))
+        .collect::<BTreeMap<_, _>>();
     for entry in &mut structure.http_services {
-        entry.module_file = declared_body(modules, "HTTPServices", &entry.name)?;
+        entry.module_file = declared_body(&bodies, "HTTPServices", &entry.name)?;
     }
     for entry in &mut structure.web_services {
-        entry.module_file = declared_body(modules, "WebServices", &entry.name)?;
+        entry.module_file = declared_body(&bodies, "WebServices", &entry.name)?;
     }
     for entry in &mut structure.integration_services {
-        entry.module_file = declared_body(modules, "IntegrationServices", &entry.name)?;
+        entry.module_file = declared_body(&bodies, "IntegrationServices", &entry.name)?;
     }
     Ok(())
 }
 
 /// Lookup is limited to the validated manifest's BSL identities; absent and binary bodies stay unlinked.
 fn declared_body(
-    modules: &BTreeMap<SourcePath, crate::modules::ModuleEntry>,
+    modules: &BTreeMap<&SourcePath, &crate::modules::ModuleEntry>,
     collection: &str,
     name: &str,
 ) -> Result<Option<FileId>, crate::SessionError> {
     let path = SourcePath::parse(&format!("{collection}/{name}/Ext/Module.bsl"))
         .map_err(crate::SessionError::Source)?;
     Ok(modules.get(&path).map(|module| module.file))
+}
+
+/// Navigation maps registered kernel identities back to physical authoring inputs in logarithmic time.
+pub fn source_paths_by_file(
+    modules: &BTreeMap<SourcePath, crate::modules::ModuleEntry>,
+) -> BTreeMap<FileId, SourcePath> {
+    modules
+        .iter()
+        .map(|(path, entry)| (entry.file, path.clone()))
+        .collect()
 }

@@ -30,10 +30,20 @@ fn fixture(body: &str) -> (TestDirectory, PathBuf, AnalysisSession) {
 
 /// Prepare only the dependency at the cursor, then run the distinct native read-only completion query.
 fn complete(session: &mut AnalysisSession, body: &str, locale: Locale) -> BTreeSet<String> {
+    complete_at(session, CALLER, body, locale)
+}
+
+/// Completion uses the declared physical source path independently of native module conventions.
+fn complete_at(
+    session: &mut AnalysisSession,
+    caller: &str,
+    body: &str,
+    locale: Locale,
+) -> BTreeSet<String> {
     let offset = u32::try_from(body.find(".;").unwrap() + 1).unwrap();
     session
         .prepare_completion_metadata(
-            &owner(CALLER),
+            &owner(caller),
             session.revision(),
             offset,
             &InputRequest::default(),
@@ -42,7 +52,7 @@ fn complete(session: &mut AnalysisSession, body: &str, locale: Locale) -> BTreeS
         .unwrap();
     session
         .module_completions(
-            &owner(CALLER),
+            &owner(caller),
             session.revision(),
             offset,
             locale,
@@ -215,4 +225,55 @@ fn common_module_preparation_keeps_missing_binary_and_bodyless_dependencies_expl
             ModuleState::Pending
         );
     }
+}
+
+/// Relocated common bodies retain kernel scope, exported completions and physical navigation targets.
+#[test]
+fn relocated_common_bodies_complete_and_navigate_to_current_source_paths() {
+    let (directory, legacy, _) = fixture(BODY);
+    let source = directory.0.join("relocated-common");
+    eska::project_core::source_format::prepare_resource_layout(&legacy)
+        .unwrap()
+        .publish(&source)
+        .unwrap();
+    let mut session = AnalysisSession::open(&source).unwrap();
+    let caller = "CommonModules/Tools/Module.bsl";
+    let target = owner("CommonModules/Utility/Module.bsl");
+    let request = InputRequest::default();
+    session
+        .load_module_saved(&owner(caller), session.revision(), &request)
+        .unwrap();
+    for locale in [Locale::En, Locale::Ru] {
+        assert!(complete_at(&mut session, caller, BODY, locale).contains("SavedUtility"));
+    }
+    session
+        .apply_module_overlay(&target, session.revision(), 1, project::CURRENT, &request)
+        .unwrap();
+    assert!(complete_at(&mut session, caller, BODY, Locale::En).contains("CurrentUtility"));
+    let body = "Procedure Run()\nUtility.CurrentUtility();\nEndProcedure\n";
+    session
+        .apply_module_overlay(&owner(caller), session.revision(), 1, body, &request)
+        .unwrap();
+    let offset = u32::try_from(body.find("CurrentUtility").unwrap() + 1).unwrap();
+    let result = session
+        .module_definition(
+            &owner(caller),
+            session.revision(),
+            offset,
+            &QueryCancellation::default(),
+        )
+        .unwrap()
+        .value
+        .unwrap();
+    assert_eq!(result.source, target);
+    assert!(
+        session
+            .module_paths()
+            .all(|path| !path.as_str().contains("/Ext/"))
+    );
+    assert!(
+        session
+            .module(&owner("CommonModules/Neighbor/Module.bsl"))
+            .is_some_and(|input| input.state == ModuleState::Pending)
+    );
 }

@@ -5,7 +5,7 @@ mod tests;
 
 use std::collections::BTreeMap;
 
-use super::{Error, FileRole, MetadataKind, OwnerSpec, SourceManifest, SourcePath};
+use super::{Error, MetadataKind, OwnerSpec, SourceManifest, SourcePath};
 
 /// Register forward and reverse identities once; neither role YAML nor resources are read here.
 pub(super) fn declared_role_rights(
@@ -28,7 +28,7 @@ pub(super) fn declared_role_rights(
         .collect::<Result<BTreeMap<_, _>, Error>>()?;
     let mut rights = BTreeMap::new();
     for file in &manifest.files {
-        if file.role != FileRole::Preserved {
+        if !file.is_payload() {
             continue;
         }
         let Some(owner) = locations.get(&file.path.as_str().to_ascii_lowercase()) else {
@@ -37,8 +37,8 @@ pub(super) fn declared_role_rights(
         let spec = owners
             .get_mut(owner)
             .ok_or_else(|| Error::root("source_descriptor_undeclared").in_field(owner.as_str()))?;
-        spec.rights = Some(file.path.clone());
-        rights.insert(file.path.clone(), owner.clone());
+        spec.rights = Some(file.source_path().clone());
+        rights.insert(file.source_path().clone(), owner.clone());
     }
     Ok(rights)
 }

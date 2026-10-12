@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-12",
+  "task": "EF-24",
+  "status": "IN_PROGRESS",
+  "slice": "explicit_payload_source_paths",
+  "source_map_version": 2,
+  "source_layout_version": 3,
+  "descriptor_schema_version": 1,
+  "rules_version": 1,
+  "default_cli_layout": 1,
+  "implemented": [
+    "explicit native-to-source payload paths",
+    "verbatim resource sets",
+    "source import and versioned migrations",
+    "independently pinned accepted migration",
+    "shared lazy reader and structured inputs",
+    "native policy/freeze and protected generation",
+    "physical origins and offsets",
+    "virtual native kernel scope with physical editor/navigation inputs"
+  ],
+  "checks": {
+    "root_gates": 15,
+    "root_all_passed": true,
+    "root_unit_passed": 405,
+    "root_integration_passed": 537,
+    "root_opt_in_ignored": 19,
+    "minimal_unit_passed": 204,
+    "project_cli_unit_passed": 212,
+    "project_cli_integration_passed": 9,
+    "build_cli_unit_passed": 235,
+    "build_cli_integration_passed": 9,
+    "sdk_gates": 14,
+    "sdk_all_passed": true,
+    "sdk_all_features_unit_passed": 183,
+    "sdk_analyzer_process_passed": 157,
+    "sdk_checker_process_passed": 18,
+    "sdk_minimal_unit_passed": 152,
+    "sdk_check_cli_unit_passed": 158,
+    "sdk_check_cli_integration_passed": 18,
+    "sdk_analyzer_cli_unit_passed": 183,
+    "sdk_analyzer_cli_integration_passed": 153
+  },
+  "cases": [
+    {
+      "case": "C1",
+      "fresh_import": true,
+      "source_migration": true,
+      "accepted_migration": true,
+      "metadata_objects": 8330,
+      "native_descriptors": 3595,
+      "semantic_parity": "All",
+      "policy_decisions_equal": 33320,
+      "payloads": 5183,
+      "relocated_payloads": 5173,
+      "source_manifest_bytes": 4540685,
+      "native_bytes_equal": true,
+      "fresh_import_payload_bytes_equal": true,
+      "working_and_accepted_layouts_equal": true,
+      "repeat": "unchanged",
+      "next_plan": "empty",
+      "original_sources_and_storage_unchanged": true,
+      "protected_exclusions": 0,
+      "platform": "8.3.27.2325",
+      "cf_build_and_redump": true,
+      "artifact_checksums_valid": true,
+      "configuration_version_unchanged": true,
+      "redump_files": 8769,
+      "redump_directories": 8064,
+      "all_other_redump_bytes_equal": true,
+      "dump_versions": {
+        "versioned_entries": 7011,
+        "changed_versions": 7011,
+        "all_other_bytes_equal": true
+      }
+    }
+  ],
+  "limitations": [
+    "public project orchestration and migration CLI not implemented",
+    "readable property envelope and composites/references/collections not implemented",
+    "structural create/delete/rename not implemented",
+    "new C2/C3 layouts not validated",
+    "CFE/EPF/ERF layout/platform cycles not validated",
+    "no infobase application, client execution or full platform BSL check",
+    "process interruption recovery does not guarantee fsync or power loss recovery"
+  ],
+  "experimental_rust_api_changes": [
+    "DescriptorLayoutPlan renamed to SourceLayoutPlan",
+    "AcceptedDescriptorLayoutPlan renamed to AcceptedLayoutPlan",
+    "DeclaredModule exposes native_path",
+    "FileRole adds Relocated for reverse-map schema 3"
+  ]
+}

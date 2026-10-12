@@ -2,7 +2,9 @@
 
 mod layout;
 
-pub use layout::{AcceptedDescriptorLayoutPlan, prepare_accepted_descriptor_layout};
+pub use layout::{
+    AcceptedLayoutPlan, prepare_accepted_descriptor_layout, prepare_accepted_resource_layout,
+};
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -454,11 +456,11 @@ fn read_policy(
     mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
 ) -> Result<Option<Support>, Error> {
     let path = SourcePath::parse("Ext/ParentConfigurations.bin")?;
-    if !package.snapshot.files.contains_key(&path) {
+    let Some(source) = package.payload_sources.get(&path) else {
         return Ok(None);
-    }
+    };
     unchanged_payload(package, &path)?;
-    Support::parse(&read(&path)?)
+    Support::parse(&read(source)?)
         .map(Some)
         .map_err(|_| Error::root("source_baseline_support_invalid"))
 }
@@ -469,8 +471,7 @@ fn supplier_payloads(
     policy: Option<&Support>,
 ) -> Result<Vec<SupplierPayload>, Error> {
     let actual: BTreeSet<_> = package
-        .snapshot
-        .files
+        .payload_sources
         .keys()
         .filter(|path| {
             path.as_str().starts_with("Ext/ParentConfigurations/")
@@ -493,7 +494,7 @@ fn supplier_payloads(
         if !ids.insert(supplier.id.to_ascii_lowercase()) || !paths.insert(path.clone()) {
             return Err(Error::root("source_baseline_support_invalid"));
         }
-        if !package.snapshot.files.contains_key(&path) {
+        if !package.payload_sources.contains_key(&path) {
             return Err(Error::root("source_baseline_supplier_missing").in_field(path.as_str()));
         }
         let file = unchanged_payload(package, &path)?;
@@ -522,9 +523,9 @@ fn unchanged_payload<'a>(package: &'a Package, path: &SourcePath) -> Result<&'a 
     let current = package
         .snapshot
         .files
-        .get(path)
+        .get(original.source_path())
         .ok_or_else(|| Error::root("source_baseline_support_invalid"))?;
-    if original.role != FileRole::Preserved
+    if !original.is_payload()
         || original.bytes != current.bytes
         || original.sha256 != current.sha256
     {

@@ -102,6 +102,8 @@ pub struct AnalysisSession {
     pub(super) database: RootDatabaseImpl,
     pub(super) revision: SessionRevision,
     pub(super) modules: BTreeMap<SourcePath, ModuleEntry>,
+    /// Navigation converts kernel `FileId` values to physical authoring paths without path guesses.
+    pub(super) module_sources: BTreeMap<FileId, SourcePath>,
     pub(super) loaded_module_bytes: u64,
     pub(super) loaded_metadata_source_bytes: u64,
     pub(super) loaded_resource_bytes: u64,
@@ -259,6 +261,7 @@ impl AnalysisSession {
             database,
             listing,
             owners,
+            module_sources: crate::binding::source_paths_by_file(&modules),
             modules,
             revision: SessionRevision::default(),
             loaded_module_bytes: 0,

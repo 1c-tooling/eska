@@ -6,6 +6,7 @@ mod fixture;
 use super::*;
 use crate::ModuleState;
 use crate::session::tests::{owner, support::TestDirectory};
+use hir::DefDatabase;
 
 /// Observe the real tracked resolver, separately from the projection retained for the metadata tree.
 fn service(session: &AnalysisSession, path: &SourcePath) -> Arc<bsl_metadata::HTTPService> {
@@ -27,6 +28,51 @@ fn service_by_file(
         session.listing,
         session.modules.get(path).unwrap().file,
     )
+}
+
+/// Relocated service bodies remain linked by native identity while editor paths stay physical.
+#[test]
+fn relocated_http_service_body_uses_the_current_declared_metadata_slot() {
+    let directory = TestDirectory::new();
+    let root = crate::test_project::project(&directory.0, "// Current body.\n", false);
+    fixture::add_http_services(&root, &directory.0.join("native"));
+    let source = directory.0.join("relocated-http");
+    eska::project_core::source_format::prepare_resource_layout(&root.join("src-with-http"))
+        .unwrap()
+        .publish(&source)
+        .unwrap();
+    let mut session = AnalysisSession::open(&source).unwrap();
+    let owner = owner("HTTPServices/API/object.yaml");
+    let module = crate::session::tests::owner("HTTPServices/API/Module.bsl");
+    let request = InputRequest::default();
+    assert!(service_by_file(&session, &module).is_none());
+    session
+        .load_saved(&owner, session.revision(), &request)
+        .unwrap();
+    let current = service(&session, &owner);
+    assert!(Arc::ptr_eq(
+        &current,
+        &service_by_file(&session, &module).unwrap()
+    ));
+    session
+        .load_module_saved(&module, session.revision(), &request)
+        .unwrap();
+    let metadata = session.database.module_metadata(hir::ModuleId {
+        file_id: session.modules[&module].file,
+    });
+    assert!(
+        metadata
+            .http_service
+            .as_ref()
+            .is_some_and(|value| Arc::ptr_eq(value, &current))
+    );
+    assert!(
+        session
+            .module(&crate::session::tests::owner(
+                "HTTPServices/API/Ext/Module.bsl"
+            ))
+            .is_none()
+    );
 }
 
 /// Routes and handlers update by name and module; failed editors clear both without touching a neighbor.

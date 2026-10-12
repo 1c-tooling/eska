@@ -20,24 +20,24 @@ mod xml;
 mod yaml;
 
 pub use baseline::{
-    AcceptedBase, AcceptedDescriptorLayoutPlan, AcceptedRef, Operation, Permission,
-    PermissionReason, accept_source, prepare_accepted_descriptor_layout,
+    AcceptedBase, AcceptedLayoutPlan, AcceptedRef, Operation, Permission, PermissionReason,
+    accept_source, prepare_accepted_descriptor_layout, prepare_accepted_resource_layout,
 };
 pub use coordinates::{CoordinateError, TextCoordinates, TextPosition, TextRange};
 pub use edit::{
     SourceEditPlan, SourcePropertyEdit, prepare_property_edit, prepare_property_edit_text,
 };
 pub use export::export_designer;
-pub use import::{import_designer, import_designer_separated};
+pub use import::{import_designer, import_designer_resources, import_designer_separated};
 pub use layout::{
-    DESCRIPTOR_LAYOUT_VERSION, DescriptorContext, DescriptorLayoutPlan, LayoutChange,
-    LayoutPublication, prepare_descriptor_layout,
+    DESCRIPTOR_LAYOUT_VERSION, DescriptorContext, LayoutChange, LayoutPublication,
+    RESOURCE_LAYOUT_VERSION, SourceLayoutPlan, prepare_descriptor_layout, prepare_resource_layout,
 };
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 pub use protected::{
     Exclusion, ExclusionAction, FileOrigin, InputAuthority, InputFile, MappedFile, OriginTexts,
-    PreparedSource, ProtectedExport, ProtectedFailure, SOURCE_MAP_VERSION, SourceLocation,
-    SourceMap, export_protected, prepare_protected,
+    PreparedSource, ProtectedExport, ProtectedFailure, RELOCATED_SOURCE_MAP_VERSION,
+    SOURCE_MAP_VERSION, SourceLocation, SourceMap, export_protected, prepare_protected,
 };
 pub use reader::{
     DeclaredForm, DeclaredModule, DeclaredOwner, MetadataDeclaration, MetadataSnapshot,

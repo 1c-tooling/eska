@@ -5,7 +5,7 @@ mod tests;
 
 use std::collections::BTreeMap;
 
-use super::{Error, FileRole, MetadataKind, OwnerSpec, SourceManifest, SourcePath};
+use super::{Error, MetadataKind, OwnerSpec, SourceManifest, SourcePath};
 
 /// Structural registration reads no owner YAML, item names or resource bytes.
 pub(super) fn declared_predefined(
@@ -27,7 +27,7 @@ pub(super) fn declared_predefined(
         .collect::<Result<BTreeMap<_, _>, Error>>()?;
     let mut resources = BTreeMap::new();
     for file in &manifest.files {
-        if file.role != FileRole::Preserved {
+        if !file.is_payload() {
             continue;
         }
         let Some(owner) = locations.get(&file.path.as_str().to_ascii_lowercase()) else {
@@ -36,8 +36,8 @@ pub(super) fn declared_predefined(
         let spec = owners
             .get_mut(owner)
             .ok_or_else(|| Error::root("source_descriptor_undeclared").in_field(owner.as_str()))?;
-        spec.predefined = Some(file.path.clone());
-        resources.insert(file.path.clone(), owner.clone());
+        spec.predefined = Some(file.source_path().clone());
+        resources.insert(file.source_path().clone(), owner.clone());
     }
     Ok(resources)
 }

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ESKA explicit payload reverse map 3",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 3
+    },
+    "rules_version": {
+      "const": 1
+    },
+    "profile": {
+      "const": "designer-2.20-configuration"
+    },
+    "input_revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "directories": {
+      "type": "array",
+      "items": {
+        "$ref": "object-source.schema.json#/$defs/path"
+      },
+      "uniqueItems": true
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "$ref": "object-source.schema.json#/$defs/path"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "role": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "descriptor"
+                  },
+                  "source": {
+                    "$ref": "object-source.schema.json#/$defs/path"
+                  },
+                  "uuid": {
+                    "$ref": "descriptor.schema.json#/$defs/uuid"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "source",
+                  "uuid"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "preserved"
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "relocated"
+                  },
+                  "source": {
+                    "$ref": "object-source.schema.json#/$defs/path"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "source"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "bytes",
+          "sha256",
+          "role"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "descriptor_contexts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "$ref": "object-source.schema.json#/$defs/path"
+          },
+          "metadata_kind": {
+            "$ref": "descriptor.schema.json#/$defs/metadata_kind"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent": {
+            "oneOf": [
+              {
+                "$ref": "object-source.schema.json#/$defs/path"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "metadata_kind",
+          "name",
+          "parent"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "rules_version",
+    "profile",
+    "input_revision",
+    "directories",
+    "files",
+    "descriptor_contexts"
+  ],
+  "additionalProperties": false
+}

@@ -1860,8 +1860,7 @@ writer/reader/CST/policy/source map принимают 28 новых bool/intege
 и expected-byte план миграции исходников. Карта версии 2 сохраняет native
 contexts; общий reader/editor/policy/source map и SDK работают с отдельными
 формами, командами, макетами и подсистемами. Старые проекты не меняются при
-открытии; публичный CLI импорта сохраняет семейное расположение. Далее нужны
-orchestration проекта и разделение физических путей ресурсов. Новая читаемая
+открытии; публичный CLI импорта сохраняет семейное расположение. Новая читаемая
 оболочка, составные типы, ссылки,
 коллекции и create/delete/rename ещё не реализованы. EF-18 остаётся отложенной.
 
@@ -1901,6 +1900,25 @@ stale/foreign/edited output и reserved names. Project settings и CI pin не
 выгружены на 1С 8.3.27.2325: 8 769 файлов/8 064 каталогов совпали, кроме
 `configVersion`. Базы, рабочие исходники, исходный XML и версия сохранены.
 [Обезличенные результаты](../research/eska-format/accepted-layout-results.json).
+
+Четвёртая часть — [пути модулей и ресурсов](../research/eska-format/resource-layout.md).
+Карта версии 3 явно связывает payload source с native path; универсальный `Ext`
+убирается у объявленных владельцев, внутренние наборы сохраняются. Импорт,
+миграция исходников и pinned base, reader/controller, policy, native export
+и source map используют эту привязку. SDK сохраняет виртуальные native paths
+для контекста ядра, а физические исходники — для редактора и navigation.
+Старая версия не меняется при открытии. Orchestration проекта, читаемая оболочка,
+составные типы, ссылки/коллекции и create/delete/rename ещё нужны.
+
+Проверки четвёртой части: 405 unit + 537 integration (19 opt-in пропущены),
+15 root/14 SDK gates, SDK all-features — 358 тестов. Свежий импорт C1 и оба
+плана миграции сохранили 3 595 descriptors/8 330 объектов, 33 320 policy decisions,
+все 5 183 payload и exact native bytes; 5 173 файла получили новые paths.
+Исходники и pinned migration дали одинаковый layout. CF контроля и layout 3
+собраны и выгружены на 1С 8.3.27.2325: 8 769 файлов/8 064 каталога совпали,
+кроме `configVersion`. Старые/новые базы, исходники и версия не изменены.
+Публичный CLI, C2/C3, CFE/EPF/ERF и client execution этим не приняты.
+[Обезличенные результаты](../research/eska-format/resource-layout-results.json).
 
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.

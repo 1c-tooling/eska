@@ -33,12 +33,27 @@ fn fixture(absent: bool) -> (TestDirectory, PathBuf, AnalysisSession) {
 /// A separated form owns its YAML revision and dialog, without invalidating a sibling or parent.
 #[test]
 fn separated_form_yaml_and_dialog_drive_only_their_own_current_module_bindings() {
+    assert_separated_form_state(false);
+}
+
+/// Relocated physical inputs retain native module/form scope for current and unsaved metadata.
+#[test]
+fn relocated_form_yaml_and_dialog_drive_only_their_own_current_module_bindings() {
+    assert_separated_form_state(true);
+}
+
+/// Exercise real kernel diagnostics and canonical bindings for both explicit source layouts.
+fn assert_separated_form_state(relocated: bool) {
     let (directory, legacy, _) = fixture(false);
     let source = directory.0.join("separated");
-    eska::project_core::source_format::prepare_descriptor_layout(&legacy)
-        .unwrap()
-        .publish(&source)
-        .unwrap();
+    let plan = if relocated {
+        eska::project_core::source_format::prepare_resource_layout(&legacy)
+    } else {
+        eska::project_core::source_format::prepare_descriptor_layout(&legacy)
+    }
+    .unwrap();
+    plan.publish(&source).unwrap();
+    let [dialog, module, other, foreign_path] = form_paths(relocated);
     let mut session = AnalysisSession::open(&source).unwrap();
     let form = owner("Catalogs/Items/Forms/Shared/form.yaml");
     let request = InputRequest::default();
@@ -46,11 +61,11 @@ fn separated_form_yaml_and_dialog_drive_only_their_own_current_module_bindings()
         .load_semantic_inputs(session.revision(), &request)
         .unwrap();
     assert!(session.summary().descriptor_models_complete);
-    assert_eq!(session.resource_owner(&owner(DIALOG)), Some(&form));
+    assert_eq!(session.resource_owner(&owner(dialog)), Some(&form));
     let model = session.owner(&form).unwrap();
     assert_eq!((model.descriptors, model.modeled_descriptors), (1, 1));
     assert!(model.forms.is_empty());
-    let initial = module_metadata(&session, MODULE);
+    let initial = module_metadata(&session, module);
     let expected = bsl_metadata::xml_parser::parse_form_from_bsl_path(
         &directory.0.join("native").join(MODULE),
     )
@@ -60,32 +75,38 @@ fn separated_form_yaml_and_dialog_drive_only_their_own_current_module_bindings()
         .resolve(&owner(OWNER), session.revision())
         .unwrap()
         .unwrap();
-    let neighbor = module_metadata(&session, OTHER);
-    let foreign = module_metadata(&session, FOREIGN);
+    let neighbor = module_metadata(&session, other);
+    let foreign = module_metadata(&session, foreign_path);
     let saved = fs::read_to_string(source.join(form.as_path())).unwrap();
-    let bsl = fs::read(source.join(MODULE)).unwrap();
-    assert_eq!(unused_method(&session), "CurrentHandler");
+    let bsl = fs::read(source.join(module)).unwrap();
+    assert_eq!(unused_method_at(&session, module), "CurrentHandler");
     session
         .apply_overlay(&form, session.revision(), 1, "[", &request)
         .unwrap();
-    assert!(module_metadata(&session, MODULE).form.is_none());
-    assert!(Arc::ptr_eq(&neighbor, &module_metadata(&session, OTHER)));
-    assert!(Arc::ptr_eq(&foreign, &module_metadata(&session, FOREIGN)));
+    assert!(module_metadata(&session, module).form.is_none());
+    assert!(Arc::ptr_eq(&neighbor, &module_metadata(&session, other)));
+    assert!(Arc::ptr_eq(
+        &foreign,
+        &module_metadata(&session, foreign_path)
+    ));
     session
         .apply_overlay(&form, session.revision(), 2, &saved, &request)
         .unwrap();
     session
         .apply_resource_overlay(
-            &owner(DIALOG),
+            &owner(dialog),
             session.revision(),
             7,
             &test_form_project::dialog("CurrentHandler"),
             &request,
         )
         .unwrap();
-    assert_eq!(unused_method(&session), "SavedHandler");
-    assert!(Arc::ptr_eq(&neighbor, &module_metadata(&session, OTHER)));
-    assert!(Arc::ptr_eq(&foreign, &module_metadata(&session, FOREIGN)));
+    assert_eq!(unused_method_at(&session, module), "SavedHandler");
+    assert!(Arc::ptr_eq(&neighbor, &module_metadata(&session, other)));
+    assert!(Arc::ptr_eq(
+        &foreign,
+        &module_metadata(&session, foreign_path)
+    ));
     let CanonicalMetadata::Object(parent) = parent else {
         panic!("catalog")
     };
@@ -95,7 +116,7 @@ fn separated_form_yaml_and_dialog_drive_only_their_own_current_module_bindings()
         panic!("current catalog")
     };
     assert!(Arc::ptr_eq(&parent, &current));
-    assert_eq!(fs::read(source.join(MODULE)).unwrap(), bsl);
+    assert_eq!(fs::read(source.join(module)).unwrap(), bsl);
     assert_eq!(
         fs::read_to_string(source.join(form.as_path())).unwrap(),
         saved
@@ -113,6 +134,20 @@ fn separated_form_yaml_and_dialog_drive_only_their_own_current_module_bindings()
     );
 }
 
+/// Both layouts use the same declared form identities and different explicit physical payload paths.
+fn form_paths(relocated: bool) -> [&'static str; 4] {
+    if relocated {
+        [
+            "Catalogs/Items/Forms/Shared/Form.xml",
+            "Catalogs/Items/Forms/Shared/Module.bsl",
+            "Catalogs/Items/Forms/Other/Module.bsl",
+            "Catalogs/Orders/Forms/Shared/Module.bsl",
+        ]
+    } else {
+        [DIALOG, MODULE, OTHER, FOREIGN]
+    }
+}
+
 /// Query the real physical module consumer rather than only inspecting the tree projection.
 fn module_metadata(session: &AnalysisSession, module: &str) -> Arc<hir::ModuleMetadata> {
     let file_id = session.modules.get(&owner(module)).unwrap().file;
@@ -121,9 +156,14 @@ fn module_metadata(session: &AnalysisSession, module: &str) -> Arc<hir::ModuleMe
 
 /// Current form event/command handlers must change a native rule without changing BSL bytes.
 fn unused_method(session: &AnalysisSession) -> String {
+    unused_method_at(session, MODULE)
+}
+
+/// Diagnostics address the physical authoring path while the kernel retains native context.
+fn unused_method_at(session: &AnalysisSession, module: &str) -> String {
     let value = session
         .module_diagnostics(
-            &owner(MODULE),
+            &owner(module),
             session.revision(),
             &DiagnosticsConfig {
                 only_enabled: Some(vec![DiagnosticCode::UnusedLocalMethod]),

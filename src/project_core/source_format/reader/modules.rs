@@ -4,19 +4,21 @@ use std::collections::BTreeMap;
 
 use crate::project_core::native;
 
-use super::{Error, FileRole, OwnerSpec, SourceManifest, SourcePath};
+use super::{Error, OwnerSpec, SourceManifest, SourcePath};
 
 /// Module identity is available even while its body or enclosing YAML is unreadable.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct DeclaredModule<'a> {
     pub owner: &'a SourcePath,
     pub native_descriptor: &'a SourcePath,
+    pub native_path: &'a SourcePath,
     pub binary: bool,
 }
 
 pub(super) struct ModuleSpec {
     pub owner: SourcePath,
     pub native_descriptor: SourcePath,
+    pub native_path: SourcePath,
     pub binary: bool,
 }
 
@@ -35,7 +37,7 @@ pub(super) fn declared_modules(
         .collect::<BTreeMap<_, _>>();
     let mut result = BTreeMap::new();
     for file in &manifest.files {
-        if file.role != FileRole::Preserved || !native::is_module_path(file.path.as_path()) {
+        if !file.is_payload() || !native::is_module_path(file.path.as_path()) {
             continue;
         }
         let Some(descriptor) = descriptor_for(&file.path, &descriptors)? else {
@@ -45,10 +47,11 @@ pub(super) fn declared_modules(
             continue;
         };
         result.insert(
-            file.path.clone(),
+            file.source_path().clone(),
             ModuleSpec {
                 owner: owner.clone(),
                 native_descriptor: descriptor,
+                native_path: file.path.clone(),
                 binary: file
                     .path
                     .as_path()

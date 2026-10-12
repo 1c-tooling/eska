@@ -60,6 +60,10 @@ pub(super) struct Package {
     pub snapshot: Inventory,
     pub documents: BTreeMap<SourcePath, NativeDocument>,
     pub owners: BTreeMap<SourcePath, Vec<SourcePath>>,
+    /// Physical payload paths resolve to native identity for policy and publication.
+    pub payloads: BTreeMap<SourcePath, SourcePath>,
+    /// Native output paths resolve to the selected physical payload without repeated full scans.
+    pub payload_sources: BTreeMap<SourcePath, SourcePath>,
 }
 
 impl Package {
@@ -122,11 +126,25 @@ impl Package {
         validate_sources(&manifest, &snapshot, &owners, &documents)?;
         validate_composition(&documents)?;
         super::layout::validate_documents(&manifest, &documents)?;
+        let payloads = manifest
+            .files
+            .iter()
+            .filter(|file| file.is_payload())
+            .map(|file| (file.source_path().clone(), file.path.clone()))
+            .collect();
+        let payload_sources = manifest
+            .files
+            .iter()
+            .filter(|file| file.is_payload())
+            .map(|file| (file.path.clone(), file.source_path().clone()))
+            .collect();
         Ok(Self {
             manifest,
             snapshot,
             documents,
             owners: owner_documents,
+            payloads,
+            payload_sources,
         })
     }
 
@@ -164,10 +182,12 @@ impl Package {
             } else {
                 self.snapshot
                     .files
-                    .get(&file.path)
+                    .get(file.source_path())
                     .ok_or_else(|| Error::root("source_file_missing"))?
                     .clone()
             };
+            let mut entry = entry;
+            entry.path.clone_from(&file.path);
             for (end, _) in entry.path.as_str().match_indices('/') {
                 directories.insert(SourcePath::parse(&entry.path.as_str()[..end])?);
             }
@@ -198,7 +218,16 @@ impl Package {
             if let Some(text) = xml.get(&entry.path) {
                 files::write(&destination.join(entry.path.as_path()), text.as_bytes())?;
             } else {
-                files::copy(source, destination, entry)?;
+                let path = self
+                    .payload_sources
+                    .get(&entry.path)
+                    .ok_or_else(|| Error::root("source_file_missing"))?;
+                let input = self
+                    .snapshot
+                    .files
+                    .get(path)
+                    .ok_or_else(|| Error::root("source_file_missing"))?;
+                files::copy_to(source, &destination.join(entry.path.as_path()), input)?;
             }
         }
         self.recheck(source)?;
@@ -228,8 +257,8 @@ fn validate_sources(
     paths.extend(owners.iter().map(|path| (*path).clone()));
     for file in &manifest.files {
         match &file.role {
-            FileRole::Preserved => {
-                paths.insert(file.path.clone());
+            FileRole::Preserved | FileRole::Relocated { .. } => {
+                paths.insert(file.source_path().clone());
             }
             FileRole::Descriptor { .. } if !documents.contains_key(&file.path) => {
                 return Err(Error::root("source_descriptor_missing").in_field(file.path.as_str()));
@@ -240,7 +269,9 @@ fn validate_sources(
     if snapshot.files.keys().collect::<BTreeSet<_>>() != paths.iter().collect() {
         return Err(Error::root("source_file_map_mismatch"));
     }
-    let mut directories: BTreeSet<_> = manifest.directories.iter().cloned().collect();
+    let mut directories: BTreeSet<_> = super::layout::resources::source_directories(manifest)?
+        .into_iter()
+        .collect();
     for path in &paths {
         for (end, _) in path.as_str().match_indices('/') {
             directories.insert(SourcePath::parse(&path.as_str()[..end])?);

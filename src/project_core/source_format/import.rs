@@ -1,4 +1,4 @@
-//! Import declared composition into a newly owned source tree; resources keep native paths.
+//! Import declared composition into a new source tree; payloads retain exact native identity.
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -13,6 +13,7 @@ use super::{
     PropertyValue, RULES_VERSION, SCHEMA_VERSION, SourceManifest, SourcePath,
     composition::{identities, reference_path, references, source_path},
     files::{self, Inventory},
+    layout::resources::{self, Layout},
 };
 
 /// Convert a supported ordinary configuration into a new ESKA source directory.
@@ -24,7 +25,7 @@ use super::{
 /// Returns profile, composition, path, identity, changed-input or I/O failures. On an ordinary
 /// write failure only the newly claimed output is removed; cleanup failures are reported.
 pub fn import_designer(input: &Path, destination: &Path) -> Result<SourceManifest, Error> {
-    import(input, destination, false)
+    import(input, destination, Layout::Family)
 }
 
 /// Import independently saved descriptors into separate authoring files with reverse-map v2.
@@ -38,11 +39,25 @@ pub fn import_designer_separated(
     input: &Path,
     destination: &Path,
 ) -> Result<SourceManifest, Error> {
-    import(input, destination, true)
+    import(input, destination, Layout::Descriptors)
 }
 
-/// Stage all parsed descriptors before publishing either explicitly selected physical layout.
-fn import(input: &Path, destination: &Path, separated: bool) -> Result<SourceManifest, Error> {
+/// Import separate descriptors and explicit payload paths without the universal `Ext` directory.
+///
+/// Opaque bytes and the internal paths of resource sets are preserved. Existing projects and the
+/// default import remain unchanged; the caller explicitly selects this reverse-map v3 layout.
+///
+/// # Errors
+/// Returns unsupported native input, composition, collisions, destination or changed-input failures.
+pub fn import_designer_resources(
+    input: &Path,
+    destination: &Path,
+) -> Result<SourceManifest, Error> {
+    import(input, destination, Layout::Resources)
+}
+
+/// Stage all parsed descriptors before publishing the explicitly selected physical layout.
+fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceManifest, Error> {
     let inventory = Inventory::read(input)?;
     let input = fs::canonicalize(input).map_err(|error| files::io(&error))?;
     let destination = destination_path(&input, destination)?;
@@ -71,16 +86,19 @@ fn import(input: &Path, destination: &Path, separated: bool) -> Result<SourceMan
         sources.insert(source_path(&path)?, family);
     }
     sources.insert(SourcePath::parse("configuration.yaml")?, configuration);
-    let sources = if separated {
+    let sources = if layout.version() >= super::DESCRIPTOR_LAYOUT_VERSION {
         super::layout::separate(sources)?
     } else {
         sources
     };
     let mut manifest = importer.manifest(&sources)?;
-    if separated {
-        manifest.schema_version = super::DESCRIPTOR_LAYOUT_VERSION;
+    if layout.version() >= super::DESCRIPTOR_LAYOUT_VERSION {
+        manifest.schema_version = layout.version();
         manifest.descriptor_contexts =
             super::layout::contexts(&super::layout::documents(&sources))?;
+    }
+    if matches!(layout, Layout::Resources) {
+        resources::relocate(&mut manifest)?;
     }
     manifest.validate()?;
     let yaml: BTreeMap<_, _> = sources
@@ -234,8 +252,8 @@ fn validate_output(
         manifest
             .files
             .iter()
-            .filter(|file| matches!(file.role, FileRole::Preserved))
-            .map(|file| file.path.as_str()),
+            .filter(|file| file.is_payload())
+            .map(|file| file.source_path().as_str()),
     ) {
         if !paths.insert(path.to_lowercase()) {
             return Err(Error::root("source_path_collision").in_field(path));
@@ -253,8 +271,8 @@ fn validate_output(
         manifest
             .files
             .iter()
-            .filter(|file| matches!(file.role, FileRole::Preserved))
-            .map(|file| file.path.as_str()),
+            .filter(|file| file.is_payload())
+            .map(|file| file.source_path().as_str()),
     ) {
         for end in path
             .match_indices('/')
@@ -286,8 +304,14 @@ fn materialize(
         files::write(&destination.join(path.as_path()), source.as_bytes())?;
     }
     for file in &manifest.files {
-        if matches!(file.role, FileRole::Preserved) {
-            files::copy(input, destination, file)?;
+        if file.is_payload() {
+            files::copy_to(input, &destination.join(file.source_path().as_path()), file)?;
+        }
+    }
+    if manifest.schema_version == super::RESOURCE_LAYOUT_VERSION {
+        for directory in resources::source_directories(manifest)? {
+            fs::create_dir_all(destination.join(directory.as_path()))
+                .map_err(|error| files::io(&error))?;
         }
     }
     if Inventory::read(input)? != *inventory {

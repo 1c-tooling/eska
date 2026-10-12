@@ -5,7 +5,7 @@ mod tests;
 
 use std::collections::BTreeMap;
 
-use super::{Error, FileRole, MetadataKind, NativeUuid, OwnerSpec, SourceManifest, SourcePath};
+use super::{Error, MetadataKind, NativeUuid, OwnerSpec, SourceManifest, SourcePath};
 
 /// A form's full descriptor path disambiguates equal names belonging to different objects.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -89,7 +89,7 @@ pub(super) fn declared_form_dialogs(
         .collect::<Result<BTreeMap<_, _>, Error>>()?;
     let mut dialogs = BTreeMap::new();
     for file in &manifest.files {
-        if file.role != FileRole::Preserved {
+        if !file.is_payload() {
             continue;
         }
         let Some(descriptor) = locations.get(&file.path.as_str().to_ascii_lowercase()) else {
@@ -98,8 +98,8 @@ pub(super) fn declared_form_dialogs(
         let spec = forms.get_mut(descriptor).ok_or_else(|| {
             Error::root("source_descriptor_undeclared").in_field(descriptor.as_str())
         })?;
-        spec.dialog = Some(file.path.clone());
-        dialogs.insert(file.path.clone(), descriptor.clone());
+        spec.dialog = Some(file.source_path().clone());
+        dialogs.insert(file.source_path().clone(), descriptor.clone());
     }
     Ok(dialogs)
 }

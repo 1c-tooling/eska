@@ -18,7 +18,7 @@ use std::{
 };
 
 /// Keep all synthetic inputs and resources within one exclusively owned playground directory.
-fn native(directory: &TestDir) -> PathBuf {
+pub(super) fn native(directory: &TestDir) -> PathBuf {
     let destination = directory.0.join("native");
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/eska-format/designer");
     let mut pending = vec![PathBuf::new()];

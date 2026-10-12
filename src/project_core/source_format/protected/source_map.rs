@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use super::{Origin, file_owner};
+use super::{Origin, native_file_owner};
 use crate::project_core::{
     native,
     source_format::{
@@ -21,6 +21,8 @@ use crate::project_core::{
 
 /// The version of native-file origin records, independent of source and conversion schemas.
 pub const SOURCE_MAP_VERSION: u32 = 1;
+/// Relocated payload inputs have physical source paths distinct from their native output paths.
+pub const RELOCATED_SOURCE_MAP_VERSION: u32 = 2;
 
 /// Exact authoring bytes addressed relative to a working tree or its pinned accepted snapshot.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -110,8 +112,10 @@ impl SourceMap {
     /// # Errors
     /// Returns unsupported versions, malformed fingerprints, inconsistent origins or inventory.
     pub fn validate(&self) -> Result<(), Error> {
-        if self.schema_version != SOURCE_MAP_VERSION
-            || self.source_schema_version != super::super::SCHEMA_VERSION
+        if !matches!(
+            self.schema_version,
+            SOURCE_MAP_VERSION | RELOCATED_SOURCE_MAP_VERSION
+        ) || self.source_schema_version != super::super::SCHEMA_VERSION
             || self.rules_version != super::super::RULES_VERSION
             || self.profile != super::super::PROFILE
         {
@@ -156,6 +160,11 @@ impl SourceMap {
         for entry in &self.files {
             require_digest(&entry.sha256)?;
             validate_origin(entry)?;
+            if self.schema_version == SOURCE_MAP_VERSION
+                && matches!(&entry.origin, FileOrigin::Payload { input, .. } if input.path != entry.path)
+            {
+                return Err(Error::root("source_map_origin_invalid"));
+            }
             if let FileOrigin::Metadata { uuid, .. } = &entry.origin
                 && !identities.insert(uuid.key())
             {
@@ -236,7 +245,12 @@ pub(super) fn create(
                     uses_working_values,
                 }
             } else {
-                let (authority, snapshot) = match origins.get(&entry.path) {
+                let source = base
+                    .package
+                    .payload_sources
+                    .get(&entry.path)
+                    .ok_or_else(|| Error::root("source_map_origin_missing"))?;
+                let (authority, snapshot) = match origins.get(source) {
                     Some(Origin::Working) => (InputAuthority::Working, working),
                     Some(Origin::Accepted) => (InputAuthority::Accepted, &base.package.snapshot),
                     None => {
@@ -247,13 +261,13 @@ pub(super) fn create(
                 };
                 let input = snapshot
                     .files
-                    .get(&entry.path)
+                    .get(source)
                     .ok_or_else(|| Error::root("source_map_origin_missing"))?;
                 FileOrigin::Payload {
                     authority,
                     input: input.into(),
                     module: native::is_module_path(entry.path.as_path()),
-                    owner: file_owner(base, &entry.path),
+                    owner: native_file_owner(base, &entry.path),
                 }
             };
             Ok(MappedFile {
@@ -265,7 +279,13 @@ pub(super) fn create(
         })
         .collect::<Result<_, Error>>()?;
     let map = SourceMap {
-        schema_version: SOURCE_MAP_VERSION,
+        schema_version: if base.package.manifest.schema_version
+            == super::super::RESOURCE_LAYOUT_VERSION
+        {
+            RELOCATED_SOURCE_MAP_VERSION
+        } else {
+            SOURCE_MAP_VERSION
+        },
         source_schema_version: super::super::SCHEMA_VERSION,
         rules_version: super::super::RULES_VERSION,
         profile: super::super::PROFILE.into(),
@@ -285,8 +305,7 @@ fn validate_origin(entry: &MappedFile) -> Result<(), Error> {
     match &entry.origin {
         FileOrigin::Payload { input, module, .. } => {
             require_digest(&input.sha256)?;
-            if input.path != entry.path
-                || input.bytes != entry.bytes
+            if input.bytes != entry.bytes
                 || input.sha256 != entry.sha256
                 || *module != native::is_module_path(entry.path.as_path())
             {

@@ -212,7 +212,7 @@ fn source_map_rejects_forged_hashes_missing_entries_and_unknown_schema() {
         "source_map_inventory_invalid"
     );
     let mut invalid = parsed.clone();
-    invalid.schema_version += 1;
+    invalid.schema_version = u32::MAX;
     assert_eq!(
         invalid.validate().expect_err("unknown schema").code,
         "source_map_schema_unsupported"
