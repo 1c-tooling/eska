@@ -90,6 +90,7 @@ tool-option-format = Output representation: human or json
 tool-option-input = Read-only Designer XML directory
 tool-option-destination = New project directory; existing paths are not overwritten
 tool-option-name = Project label; native metadata names are preserved
+tool-option-layout = Source layout: family (default) or readable (named YAML and explicit resources)
 tool-option-platform-version = Exact 1C platform version for this operation
 tool-option-freeze = Native UUID to freeze in the accepted base; may be repeated
 tool-option-project = Select one workspace member by project name

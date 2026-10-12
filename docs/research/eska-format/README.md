@@ -8,8 +8,9 @@
 исходников. [Отдельный план trusted base](accepted-layout.md) сохраняет pinned
 values и политику, возвращая новый pin. [Карта версии 3](resource-layout.md)
 отделяет физические payload paths от native identity, сохраняя байты, защиту,
-reader/source map и контекст SDK. Orchestration проекта и читаемые составные
-свойства ещё в работе; публичный CLI импорта сохраняет прежнее расположение.
+reader/source map и контекст SDK. [Явный CLI import](readable-project-import.md)
+выбирает читаемую структуру через `--layout readable`; default family сохранён.
+Миграция проекта через CLI и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.
 Обе части `PLANNED`; текущие реализации и результаты перечислены ниже.

@@ -43,6 +43,11 @@ scopes и прежние схемы. Две правки C1 прошли CF/buil
 DefinedType/Characteristic внутри DefinedType по native category. Обе XML-записи
 alternative сохраняются: платформа принимает и нормализует их. Проверки root,
 SDK и адаптера прошли; ограничения подтверждены независимыми native probes.
+[Одиннадцатая часть](../research/eska-format/readable-project-import.md) добавляет
+`eska-project import --layout readable`, сохраняя default family, freeze и
+самостоятельный pin. Независимый бинарник восстановил C1 побайтно без платформы
+и Git; обе локали и полные Rust gates прошли. Миграция через CLI и structural
+operations остаются в EF-24.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи
 не открываются заново, но не подтверждают новое расширенное покрытие MVP.

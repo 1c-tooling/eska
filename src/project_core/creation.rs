@@ -12,7 +12,7 @@ use super::{
     publish::{self, PublishError},
     source_format::{
         AcceptedRef, Error, NativeUuid, SourcePath, accept_source, import_designer,
-        import_designer_separated,
+        import_designer_readable, import_designer_separated,
     },
     transport::TransportPlan,
 };
@@ -20,6 +20,14 @@ use super::{
 /// Disposable generations are separate from both tracked input authorities.
 pub const DEFAULT_GENERATIONS_DIRECTORY: &str = ".eska/generations";
 const ACCEPTED_DIRECTORY: &str = ".eska/accepted";
+
+/// Only implemented authoring layouts can be selected; opening a project never upgrades it.
+#[derive(Clone, Copy)]
+enum Layout {
+    Family,
+    Separated,
+    Readable,
+}
 
 /// Creation reports a candidate pin; CI approval must still be supplied independently.
 #[derive(Debug)]
@@ -43,7 +51,7 @@ pub fn import_project(
     platform: Option<&PlatformVersion>,
     frozen: &[NativeUuid],
 ) -> Result<ImportedProject, Error> {
-    create_project(input, destination, name, platform, frozen, false)
+    create_project(input, destination, name, platform, frozen, Layout::Family)
 }
 
 /// Create a new experimental project with separate descriptor files and an independently pinned base.
@@ -60,17 +68,41 @@ pub fn import_separated_project(
     platform: Option<&PlatformVersion>,
     frozen: &[NativeUuid],
 ) -> Result<ImportedProject, Error> {
-    create_project(input, destination, name, platform, frozen, true)
+    create_project(
+        input,
+        destination,
+        name,
+        platform,
+        frozen,
+        Layout::Separated,
+    )
 }
 
-/// Project settings and authority publication are identical for both explicit descriptor layouts.
+/// Create a new project with named YAML properties and explicit module/resource authoring paths.
+///
+/// Native UUIDs, version, support and resource bytes are preserved. The independently pinned base
+/// uses the same readable layout; no existing project or native input is migrated in place.
+///
+/// # Errors
+/// Returns unsupported input, composition, path collision, policy or exclusive-publication failures.
+pub fn import_readable_project(
+    input: &Path,
+    destination: &Path,
+    name: ProjectName,
+    platform: Option<&PlatformVersion>,
+    frozen: &[NativeUuid],
+) -> Result<ImportedProject, Error> {
+    create_project(input, destination, name, platform, frozen, Layout::Readable)
+}
+
+/// Project settings and authority publication are shared by the explicit authoring layouts.
 fn create_project(
     input: &Path,
     destination: &Path,
     name: ProjectName,
     platform: Option<&PlatformVersion>,
     frozen: &[NativeUuid],
-    separated: bool,
+    layout: Layout,
 ) -> Result<ImportedProject, Error> {
     let mut config = ProjectConfig::new(ProjectType::Configuration)
         .with_name(name)
@@ -89,7 +121,7 @@ fn create_project(
         .map_err(|_| Error::root("source_schema_invalid"))?;
     let root = destination_path(input, destination)?;
     fs::create_dir(&root).map_err(|error| io_error(&error))?;
-    let result = populate(input, &root, config, &manifest, frozen, separated);
+    let result = populate(input, &root, config, &manifest, frozen, layout);
     if let Err(error) = result {
         fs::remove_dir_all(&root)
             .map_err(|_| Error::root("source_cleanup_failed").in_field(error.code))?;
@@ -105,14 +137,14 @@ fn populate(
     config: ProjectConfig,
     manifest: &str,
     frozen: &[NativeUuid],
-    separated: bool,
+    layout: Layout,
 ) -> Result<ImportedProject, Error> {
     let source = root.join(config.source());
-    if separated {
-        import_designer_separated(input, &source)?;
-    } else {
-        import_designer(input, &source)?;
-    }
+    match layout {
+        Layout::Family => import_designer(input, &source)?,
+        Layout::Separated => import_designer_separated(input, &source)?,
+        Layout::Readable => import_designer_readable(input, &source)?,
+    };
     fs::create_dir(root.join(".eska")).map_err(|error| io_error(&error))?;
     let accepted = accept_source(&source, &root.join(ACCEPTED_DIRECTORY), frozen)?;
     let project = config

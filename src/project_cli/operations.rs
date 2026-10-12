@@ -1,13 +1,16 @@
 //! Process-boundary selection and reports, with one source implementation in `project_core`.
 
-use super::args::{Cli, Command, Import, Prepare, Selector, Transport};
+use super::args::{Cli, Command, Import, ImportLayout, Prepare, Selector, Transport};
 use crate::{
     project_core::{
         ProjectName, SourceFormat,
         creation::{self, DEFAULT_GENERATIONS_DIRECTORY},
         eska_source::EskaSource,
         platform_settings::PlatformVersion,
-        source_format::{NativeUuid, PROFILE, RULES_VERSION, SCHEMA_VERSION},
+        source_format::{
+            DESCRIPTOR_LAYOUT_VERSION, NativeUuid, PROFILE, READABLE_SCHEMA_VERSION,
+            RESOURCE_LAYOUT_VERSION, RULES_VERSION, SCHEMA_VERSION,
+        },
         transport::TransportPlan,
     },
     tool_cli::{
@@ -33,6 +36,9 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
             "commands":["import","inspect","prepare","transport","capabilities"],
             "platform_required":false,"git_required":false,"ide_required":false,
             "creation_project_types":["configuration"], "metadata_formats":["eska"],
+            "import_layouts":["family","readable"],
+            "source_layout_versions":[SCHEMA_VERSION,DESCRIPTOR_LAYOUT_VERSION,RESOURCE_LAYOUT_VERSION],
+            "descriptor_schema_versions":[SCHEMA_VERSION,READABLE_SCHEMA_VERSION],
             "structural_edits":false}),
             localizer.text("tool-project-capabilities"),
         )),
@@ -65,7 +71,11 @@ fn import(args: &Import, localizer: &Localizer) -> Result<(Value, String), Failu
         .iter()
         .map(|uuid| NativeUuid::parse(uuid))
         .collect::<Result<Vec<_>, _>>()?;
-    let imported = creation::import_project(
+    let import = match args.layout {
+        ImportLayout::Family => creation::import_project,
+        ImportLayout::Readable => creation::import_readable_project,
+    };
+    let imported = import(
         &args.input,
         &args.destination,
         name,
@@ -82,6 +92,7 @@ fn import(args: &Import, localizer: &Localizer) -> Result<(Value, String), Failu
     );
     Ok((
         json!({"root":root,"name":args.name,"source_format":"eska",
+        "source_layout":args.layout.as_str(),
         "source":path_text(imported.project.source())?,"accepted_base":".eska/accepted",
         "accepted_base_sha256":imported.accepted.sha256}),
         human,

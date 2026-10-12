@@ -23,6 +23,7 @@ Git engine, native runner или IDE runtime. Новых dependencies не до�
 eska-project import designer-xml new-project --name demo
 eska-project import designer-xml another-project --name demo \
   --platform-version 8.3.27.2325
+eska-project import designer-xml readable-project --name demo --layout readable
 eska-project --project-dir new-project inspect --format json
 eska-project --project-dir new-project prepare \
   --accepted-base-sha256 "$APPROVED_BASE_SHA256" --format json
@@ -40,6 +41,13 @@ Manifest публикуется последним. Ошибка удаляет 
 Если версия не передана, пустой override не записывается: будущий member
 наследует настройки workspace. `--freeze UUID` можно повторять;
 неизвестный UUID отклоняет создание. Profile пока configuration / Designer 2.20.
+
+`--layout family` либо отсутствие параметра сохраняет layout 1/descriptor 1.
+[Явный `--layout readable`](readable-project-import.md) создаёт именованные
+свойства, самостоятельные descriptors и физические resources: layout 3/descriptor 2.
+Оба варианта используют общее ядро, поддержку/freeze и самостоятельный pin.
+Это не миграция существующего проекта; промежуточные layout API не становятся
+дополнительными CLI choices.
 
 `import` возвращает кандидат на принятую базу и её SHA-256. CI получает
 одобренную сумму отдельно; editable TOML не хранит approval digest.
@@ -102,7 +110,17 @@ revision, `source_map_sha256` и exclusions. Inspection, prepare и refusals
 для одинаковых входов дают тот же JSON при ru/en. Это отдельный tool protocol;
 прежние JSON-схемы приложения и IDE protocol не изменены.
 
+Import дополнительно возвращает `data.source_layout = "family" | "readable"`.
+Capabilities добавляет `import_layouts = ["family", "readable"]`,
+`source_layout_versions = [1, 2, 3]` и `descriptor_schema_versions = [1, 2]`.
+Tool envelope и прежние поля, включая `source_schema_version = 1`, сохранены;
+для выбора поддерживаемых версий используются новые списки.
+
 ## Проверки
+
+Актуальная проверка обоих layout choices, 12 CLI integration tests и читаемой
+C1 приведена в [одиннадцатой части EF-24](readable-project-import.md).
+Ниже сохранены результаты первоначальной EF-10.
 
 Три core tests проверяют полное создание, сохранение name/UUID/BSL/каталогов,
 offline mode, exclusive destination и cleanup при ошибке. Девять integration

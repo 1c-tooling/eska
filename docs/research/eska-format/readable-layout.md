@@ -92,6 +92,9 @@ SDK использует ту же semantic projection; новый analyzer prot
 ## Явная миграция
 
 `import_designer_readable` создаёт layout 3/descriptor 2 из native XML.
+[Создание полного проекта через `eska-project import --layout readable`](readable-project-import.md)
+использует тот же writer и самостоятельный accepted pin; default CLI import
+сохраняет семейную структуру. Существующие проекты при открытии не мигрируют.
 `prepare_readable_layout` строит expected-byte план исходников: отделяет descriptors,
 переносит resources и переводит envelope. `prepare_accepted_readable_layout`
 читает только pinned blobs и возвращает отдельный новый pin. Рабочие правки

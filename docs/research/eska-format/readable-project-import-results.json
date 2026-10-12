@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "task": "EF-24",
+  "part": 11,
+  "status": "IN_PROGRESS",
+  "feature": "explicit_readable_project_import",
+  "wire": {
+    "tool_protocol_version": 1,
+    "default_layout": "family",
+    "import_layouts": ["family", "readable"],
+    "family_source_layout_version": 1,
+    "family_descriptor_schema_version": 1,
+    "readable_source_layout_version": 3,
+    "readable_descriptor_schema_version": 2,
+    "source_map_version": 2,
+    "rules_version": 1,
+    "single_value_authority": true,
+    "independent_accepted_base_pin": true
+  },
+  "validation": {
+    "root_gates": 15,
+    "unit_tests": 436,
+    "integration_tests": 552,
+    "opt_in_ignored": 24,
+    "minimal_project_cli_unit_tests": 243,
+    "minimal_project_cli_integration_tests": 12,
+    "sdk_gates": 14,
+    "sdk_all_features_tests": 359,
+    "adapter_gates": 5,
+    "adapter_unit_tests": 70,
+    "adapter_integration_tests": 12,
+    "both_locales_checked": true
+  },
+  "real_c1": {
+    "independent_release_cli": true,
+    "platform_git_and_facade_absent_from_path": true,
+    "native_descriptors": 3595,
+    "schema_validated_descriptors": 3595,
+    "native_files": 8778,
+    "native_directories": 8077,
+    "native_bytes_equal": true,
+    "source_and_base_revisions_unchanged": true,
+    "same_pin_as_library_import": true,
+    "generation_reused": true,
+    "protected_exclusions": 0,
+    "locale_free_capabilities_inspect_prepare": true,
+    "platform_version_preserved": "8.3.27.2325",
+    "git_repository_created": false,
+    "platform_invoked": false
+  },
+  "limits": [
+    "Designer XML input only, CF unpacking belongs to the build tool",
+    "Explicit readable selection, default family import preserved",
+    "No CLI migration, structural edits, new/init or artifact reimport",
+    "No bundled installation or facade delegation",
+    "No new CF build, client run or infobase update in this part",
+    "C2/C3 and CFE/EPF/ERF not accepted"
+  ]
+}

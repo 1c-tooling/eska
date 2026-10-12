@@ -1,7 +1,7 @@
 //! Explicit offline project commands and selectors; no native artifact or Git options.
 
 use crate::tool_cli::OutputFormat;
-use clap::{ArgAction, Args, Parser, Subcommand};
+use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
@@ -59,10 +59,29 @@ pub(super) struct Import {
     pub destination: PathBuf,
     #[arg(long)]
     pub name: String,
+    #[arg(long, value_enum, default_value_t = ImportLayout::Family)]
+    pub layout: ImportLayout,
     #[arg(long)]
     pub platform_version: Option<String>,
     #[arg(long)]
     pub freeze: Vec<String>,
+}
+
+/// Layout names are stable CLI values; native conversion rules remain in the project core.
+#[derive(Clone, Copy, Debug, ValueEnum)]
+pub(super) enum ImportLayout {
+    Family,
+    Readable,
+}
+
+impl ImportLayout {
+    /// Report the explicit selection without localizing machine-facing layout identifiers.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Family => "family",
+            Self::Readable => "readable",
+        }
+    }
 }
 
 #[derive(Debug, Args)]

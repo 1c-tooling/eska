@@ -19,6 +19,8 @@
 `src/protected-language.ts` и `docs/support-policy.md`. `eska-project import`
 создаёт только новый каталог из Designer XML; это не `new/init` нового формата
 и не обновление существующего проекта из нативного артефакта.
+[Параметр `--layout readable`](readable-project-import.md) выбирает именованные
+YAML и физические resources. Без параметра сохраняется family layout.
 
 Внешние источники проверены 2026-10-11:
 

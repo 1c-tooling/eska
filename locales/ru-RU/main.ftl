@@ -90,6 +90,7 @@ tool-option-format = Представление результата: human ил
 tool-option-input = Каталог Designer XML, доступный только для чтения
 tool-option-destination = Новый каталог проекта; существующие пути не перезаписываются
 tool-option-name = Имя проекта; имена нативных метаданных сохраняются
+tool-option-layout = Структура исходников: family (по умолчанию) или readable (именованный YAML и отдельные ресурсы)
 tool-option-platform-version = Точная версия платформы 1С для этой операции
 tool-option-freeze = Нативный UUID для запрета изменений в принятой базе; можно указать несколько раз
 tool-option-project = Выбрать один member workspace по имени проекта

@@ -1,8 +1,12 @@
 use super::*;
 use crate::{
     project_core::{
-        discovery::discover, eska_source::EskaSource, metadata_model::ProjectScope,
-        source_format::AcceptedBase,
+        discovery::discover,
+        eska_source::EskaSource,
+        metadata_model::ProjectScope,
+        source_format::{
+            AcceptedBase, Descriptor, FileRole, Operation, PermissionReason, PropertyName,
+        },
     },
     test_support::TestDir,
 };
@@ -22,6 +26,30 @@ fn native(root: &Path) -> PathBuf {
 /// Parse a checked project label without confusing it with the native metadata name.
 fn name() -> ProjectName {
     ProjectName::parse("project-label".into()).expect("project label")
+}
+
+/// Copy the incomplete supplier fixture into an own native test input without support rules.
+fn readable_native(root: &Path) -> PathBuf {
+    let original =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/eska-format/designer");
+    let input = root.join("native");
+    copy_tree(&original, &input);
+    fs::remove_file(input.join("Ext/ParentConfigurations.bin")).unwrap();
+    input
+}
+
+/// Tests mutate only their own native fixture, preserving the repository's input bytes.
+fn copy_tree(input: &Path, output: &Path) {
+    fs::create_dir(output).unwrap();
+    for entry in fs::read_dir(input).unwrap() {
+        let entry = entry.unwrap();
+        let destination = output.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_tree(&entry.path(), &destination);
+        } else {
+            fs::copy(entry.path(), destination).unwrap();
+        }
+    }
 }
 
 #[test]
@@ -144,4 +172,100 @@ fn failed_import_cleans_its_own_incomplete_project() {
         "source_profile_unsupported"
     );
     assert!(!destination.exists());
+}
+
+/// The opt-in creation path publishes readable source, its same-layout base and byte-safe transport.
+#[test]
+fn readable_project_preserves_native_transport_and_frozen_policy() {
+    let test = TestDir::new();
+    let input = readable_native(&test.0);
+    let destination = test.0.join("readable");
+    let frozen = NativeUuid::parse("20000000-0000-4000-8000-000000000001").unwrap();
+    let imported = import_readable_project(
+        &input,
+        &destination,
+        name(),
+        None,
+        std::slice::from_ref(&frozen),
+    )
+    .unwrap();
+    assert_eq!(discover(&destination).unwrap(), imported.project);
+    let base =
+        AcceptedBase::open(&destination.join(ACCEPTED_DIRECTORY), &imported.accepted).unwrap();
+    assert_eq!(
+        base.permission(&frozen, Operation::Property(PropertyName::Comment))
+            .reason,
+        PermissionReason::EskaFrozen
+    );
+    let source = EskaSource::open(imported.project, ProjectScope::Standalone).unwrap();
+    assert_eq!(source.reader().manifest().schema_version, 3);
+    for owner in source.reader().owner_paths() {
+        let snapshot = source.reader().read_owner(owner).unwrap();
+        assert_eq!(snapshot.source.document.descriptor.schema_version, 2);
+        assert!(snapshot.source.nested.is_empty());
+    }
+    assert_eq!(
+        fs::read(destination.join("src/CommonModules/Tools/Module.bsl")).unwrap(),
+        fs::read(input.join("CommonModules/Tools/Ext/Module.bsl")).unwrap()
+    );
+    assert!(
+        destination
+            .join("src/Catalogs/Sample/Forms/Main/form.yaml")
+            .is_file()
+    );
+    assert!(!destination.join("src/Ext").exists());
+    let prepared = source
+        .prepare(
+            &imported.accepted,
+            &destination.join(DEFAULT_GENERATIONS_DIRECTORY),
+            true,
+        )
+        .unwrap();
+    assert!(prepared.diagnostics().is_empty());
+    for file in prepared.files() {
+        let actual = fs::read(prepared.xml().join(file.path.as_path())).unwrap();
+        let original = fs::read(input.join(file.path.as_path())).unwrap();
+        let descriptor = source.reader().manifest().files.iter().any(|entry| {
+            entry.path == file.path && matches!(entry.role, FileRole::Descriptor { .. })
+        });
+        if descriptor {
+            // The synthetic fixture mixes inline/minified whitespace; compare native model facts.
+            assert_eq!(
+                Descriptor::from_xml(std::str::from_utf8(&actual).unwrap()).unwrap(),
+                Descriptor::from_xml(std::str::from_utf8(&original).unwrap()).unwrap()
+            );
+        } else {
+            assert_eq!(actual, original);
+        }
+    }
+    assert!(!destination.join(".git").exists());
+    assert!(!destination.join("build").exists());
+}
+
+/// A readable import failure still removes only the project exclusively claimed by this operation.
+#[test]
+fn readable_import_failure_preserves_input_and_existing_destinations() {
+    let test = TestDir::new();
+    let input = native(&test.0);
+    let original = fs::read(input.join("Configuration.xml")).unwrap();
+    let unknown = NativeUuid::parse("90000000-0000-4000-8000-000000000001").unwrap();
+    let failed = test.0.join("failed");
+    assert_eq!(
+        import_readable_project(&input, &failed, name(), None, &[unknown])
+            .unwrap_err()
+            .code,
+        "source_freeze_object_unknown"
+    );
+    assert!(!failed.exists());
+    let existing = test.0.join("existing");
+    fs::create_dir(&existing).unwrap();
+    fs::write(existing.join("sentinel"), b"user bytes").unwrap();
+    assert_eq!(
+        import_readable_project(&input, &existing, name(), None, &[])
+            .unwrap_err()
+            .code,
+        "source_destination_exists"
+    );
+    assert_eq!(fs::read(existing.join("sentinel")).unwrap(), b"user bytes");
+    assert_eq!(fs::read(input.join("Configuration.xml")).unwrap(), original);
 }

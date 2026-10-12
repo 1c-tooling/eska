@@ -2045,6 +2045,22 @@ sources/base/settings/версия сохранены.
 Structural operations и публичная orchestration ещё нужны;
 EF-24 — `IN_PROGRESS`.
 
+Одиннадцатая часть — [читаемый import через CLI](../research/eska-format/readable-project-import.md).
+`eska-project import --layout readable` создаёт layout 3/descriptor 2 с физическими
+resources, accepted base и самостоятельным pin. Без параметра/с `family`
+сохраняется прежняя структура. CLI выбирает общий writer; manifest публикуется
+последним, freeze и cleanup остаются в ядре. JSON import/capabilities дополнены
+machine identifiers без изменения tool envelope и прежних полей.
+Прошли 15 root/14 SDK/5 adapter gates: 436 unit + 552 integration (24 opt-in
+пропущены), minimal project CLI — 243 unit + 12 integration. Независимый release
+бинарник без платформы, Git и оболочки создал 3 595 readable descriptors C1,
+восстановил 8 778 файлов/8 077 каталогов побайтно и повторно использовал generation.
+Обе локали, прежние default/family bytes, schemas, freeze и exclusive destination
+проверены. Новая сборка 1С этой частью не запускалась.
+[Результаты](../research/eska-format/readable-project-import-results.json).
+Миграция проекта через CLI, structural operations и остальные составные домены
+ещё нужны; EF-24 — `IN_PROGRESS`.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

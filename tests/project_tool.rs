@@ -1,5 +1,7 @@
 //! The independently compiled project tool requires neither the facade nor native runners.
 
+#[path = "project_tool/readable.rs"]
+mod readable;
 mod support;
 
 use serde_json::Value;
@@ -93,6 +95,10 @@ fn help_and_capabilities_work_without_a_project() {
     assert_eq!(reports[0], reports[1]);
     assert_eq!(reports[0]["data"]["platform_required"], false);
     assert_eq!(reports[0]["data"]["git_required"], false);
+    assert_eq!(
+        reports[0]["data"]["import_layouts"],
+        serde_json::json!(["family", "readable"])
+    );
     assert!(!test.0.join("eska.toml").exists());
 }
 
