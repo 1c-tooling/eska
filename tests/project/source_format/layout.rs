@@ -11,10 +11,11 @@ use eska::project_core::{
     platform_settings::PlatformVersion,
     source_format::{
         AcceptedBase, AcceptedRef, FileOrigin, LayoutPublication, MD_NAMESPACE, NativeUuid,
-        Operation, PropertyName, PropertyValue, SourcePath, SourceReader, export_designer,
-        import_designer_resources, prepare_accepted_descriptor_layout,
+        Operation, PreparedSource, PropertyName, PropertyValue, SourcePath, SourceReader,
+        export_designer, import_designer_readable, import_designer_resources,
+        prepare_accepted_descriptor_layout, prepare_accepted_readable_layout,
         prepare_accepted_resource_layout, prepare_descriptor_layout, prepare_property_edit,
-        prepare_protected, prepare_resource_layout,
+        prepare_protected, prepare_readable_layout, prepare_resource_layout,
     },
 };
 
@@ -205,13 +206,30 @@ fn real_accepted_descriptor_migration_acceptance() {
 #[test]
 #[ignore = "Requires real XML/accepted input, independent old pin and a new playground output"]
 fn real_resource_layout_acceptance() {
+    real_layout_acceptance(false);
+}
+
+/// Readable descriptors retain pinned native semantics and permit one independently controlled edit.
+#[test]
+#[ignore = "Requires explicit real native input and a new exclusively owned playground output"]
+fn real_readable_layout_acceptance() {
+    real_layout_acceptance(true);
+}
+
+/// The same complete corpus checks physical paths separately from descriptor envelope versions.
+fn real_layout_acceptance(readable: bool) {
     let (input, output) = paths("ESKA_FORMAT_ACCEPTED_INPUT");
     let reference = AcceptedRef {
         sha256: std::env::var("ESKA_FORMAT_ACCEPTED_SHA256").unwrap(),
     };
     let before = super::baseline::tree(&input);
     let base = AcceptedBase::open(&input, &reference).unwrap();
-    let plan = prepare_accepted_resource_layout(&base).unwrap();
+    let plan = if readable {
+        prepare_accepted_readable_layout(&base)
+    } else {
+        prepare_accepted_resource_layout(&base)
+    }
+    .unwrap();
     let accepted = output.join("accepted");
     assert_eq!(plan.publish(&accepted).unwrap(), LayoutPublication::Created);
     assert_eq!(
@@ -220,9 +238,13 @@ fn real_resource_layout_acceptance() {
     );
     let relocated = AcceptedBase::open(&accepted, plan.accepted_reference()).unwrap();
     assert!(
-        prepare_accepted_resource_layout(&relocated)
-            .unwrap()
-            .is_empty()
+        if readable {
+            prepare_accepted_readable_layout(&relocated)
+        } else {
+            prepare_accepted_resource_layout(&relocated)
+        }
+        .unwrap()
+        .is_empty()
     );
     let original = output.join("original-source");
     let source = output.join("source");
@@ -232,7 +254,12 @@ fn real_resource_layout_acceptance() {
     let current = SourceReader::open(&source).unwrap();
     let (objects, descriptors) = migration_parity(&reader, &current);
     let decisions = policy_parity(&reader, &base, &relocated);
-    let working = prepare_resource_layout(&original).unwrap();
+    let working = if readable {
+        prepare_readable_layout(&original)
+    } else {
+        prepare_resource_layout(&original)
+    }
+    .unwrap();
     let migrated = output.join("migrated-source");
     assert_eq!(
         working.publish(&migrated).unwrap(),
@@ -242,7 +269,15 @@ fn real_resource_layout_acceptance() {
         working.publish(&migrated).unwrap(),
         LayoutPublication::Unchanged
     );
-    assert!(prepare_resource_layout(&migrated).unwrap().is_empty());
+    assert!(
+        if readable {
+            prepare_readable_layout(&migrated)
+        } else {
+            prepare_resource_layout(&migrated)
+        }
+        .unwrap()
+        .is_empty()
+    );
     assert_eq!(
         super::baseline::tree(&source),
         super::baseline::tree(&migrated)
@@ -256,14 +291,12 @@ fn real_resource_layout_acceptance() {
         super::baseline::tree(old_generation.xml()),
         super::baseline::tree(generation.xml())
     );
-    let (payloads, moved) = real_resource_import(&output, &base, (objects, descriptors));
-    for file in &generation.source_map().files {
-        if let FileOrigin::Payload { input, .. } = &file.origin {
-            assert_eq!(
-                fs::read(source.join(input.path.as_path())).unwrap(),
-                fs::read(generation.xml().join(file.path.as_path())).unwrap()
-            );
-        }
+    let (payloads, moved) = real_resource_import(&output, &base, (objects, descriptors), readable);
+    check_payload_origins(&generation, &source);
+    if readable {
+        let native = PathBuf::from(std::env::var_os("ESKA_FORMAT_XML_INPUT").unwrap());
+        let target = parity(&native, &current, &relocated).target;
+        real_readable_edit(&output, old_generation.xml(), &source, &relocated, &target);
     }
     assert_eq!(super::baseline::tree(&input), before);
     fs::write(
@@ -272,7 +305,7 @@ fn real_resource_layout_acceptance() {
     )
     .unwrap();
     let report = serde_json::json!({"schema_version":1,"source_layout_version":3,"source_map_version":2,
-        "native_descriptors":descriptors,"metadata_objects":objects,"semantic_parity":"All",
+        "source_schema_version": if readable {2} else {1}, "changed_source_files": usize::from(readable), "changed_native_files": usize::from(readable), "native_descriptors":descriptors,"metadata_objects":objects,"semantic_parity":"All",
         "policy_decisions_equal":decisions,"payloads":payloads,"relocated_payloads":moved,
         "native_bytes_equal":true,"fresh_import_payload_bytes_equal":true,"working_and_accepted_layouts_equal":true,
         "old_accepted_storage_unchanged":true,"native_input_unchanged":true,"repeat":"unchanged","next_plan":"empty",
@@ -290,6 +323,7 @@ fn real_resource_import(
     output: &Path,
     base: &AcceptedBase,
     counts: (usize, usize),
+    readable: bool,
 ) -> (usize, usize) {
     let xml = PathBuf::from(std::env::var_os("ESKA_FORMAT_XML_INPUT").unwrap())
         .canonicalize()
@@ -303,7 +337,12 @@ fn real_resource_import(
     );
     let xml_before = super::baseline::tree(&xml);
     let fresh = output.join("fresh");
-    let manifest = import_designer_resources(&xml, &fresh).unwrap();
+    let manifest = if readable {
+        import_designer_readable(&xml, &fresh)
+    } else {
+        import_designer_resources(&xml, &fresh)
+    }
+    .unwrap();
     let corpus = parity(&xml, &SourceReader::open(&fresh).unwrap(), base);
     assert_eq!((corpus.objects, corpus.descriptors), counts);
     let mut payloads = 0;
@@ -318,6 +357,66 @@ fn real_resource_import(
     }
     assert_eq!(super::baseline::tree(&xml), xml_before);
     (payloads, moved)
+}
+
+/// Captured payload origins identify the exact native bytes by their physical source paths.
+fn check_payload_origins(generation: &PreparedSource, source: &Path) {
+    for file in &generation.source_map().files {
+        if let FileOrigin::Payload { input, .. } = &file.origin {
+            assert_eq!(
+                fs::read(source.join(input.path.as_path())).unwrap(),
+                fs::read(generation.xml().join(file.path.as_path())).unwrap()
+            );
+        }
+    }
+}
+
+/// Compare a permitted YAML edit with an independently patched native scalar before platform work.
+fn real_readable_edit(
+    output: &Path,
+    native: &Path,
+    source: &Path,
+    base: &AcceptedBase,
+    target: &Target,
+) {
+    let control = output.join("control");
+    super::copy_tree(native, &control);
+    let file = control.join(target.native.as_path());
+    let after = "ESKA named property acceptance";
+    fs::write(
+        &file,
+        native_comment(
+            &fs::read_to_string(&file).unwrap(),
+            target.uuid.as_str(),
+            &target.before,
+            after,
+        ),
+    )
+    .unwrap();
+    let before = super::baseline::tree(source);
+    let edit = prepare_property_edit(
+        source,
+        base,
+        &target.uuid,
+        PropertyName::Comment,
+        PropertyValue::Text(after.into()),
+    )
+    .unwrap();
+    edit.publish(base).unwrap();
+    let mut expected = before;
+    expected.insert(
+        target.owner.as_path().into(),
+        Some(edit.updated().as_bytes().to_vec()),
+    );
+    assert_eq!(super::baseline::tree(source), expected);
+    let generation =
+        prepare_protected(source, base, &output.join("edited-generations"), true).unwrap();
+    assert_eq!(generation.source_map().source_schema_version, 2);
+    assert!(generation.diagnostics().is_empty());
+    assert_eq!(
+        super::baseline::tree(&control),
+        super::baseline::tree(generation.xml())
+    );
 }
 
 /// Compare complete family and separated snapshots without confusing source byte coordinates.

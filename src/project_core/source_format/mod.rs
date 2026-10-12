@@ -3,6 +3,7 @@
 mod baseline;
 mod composition;
 mod coordinates;
+mod document_paths;
 mod edit;
 mod export;
 mod files;
@@ -14,6 +15,7 @@ mod native_writer;
 mod package;
 mod property;
 mod protected;
+mod readable;
 mod reader;
 mod validation;
 mod xml;
@@ -21,17 +23,21 @@ mod yaml;
 
 pub use baseline::{
     AcceptedBase, AcceptedLayoutPlan, AcceptedRef, Operation, Permission, PermissionReason,
-    accept_source, prepare_accepted_descriptor_layout, prepare_accepted_resource_layout,
+    accept_source, prepare_accepted_descriptor_layout, prepare_accepted_readable_layout,
+    prepare_accepted_resource_layout,
 };
 pub use coordinates::{CoordinateError, TextCoordinates, TextPosition, TextRange};
 pub use edit::{
     SourceEditPlan, SourcePropertyEdit, prepare_property_edit, prepare_property_edit_text,
 };
 pub use export::export_designer;
-pub use import::{import_designer, import_designer_resources, import_designer_separated};
+pub use import::{
+    import_designer, import_designer_readable, import_designer_resources, import_designer_separated,
+};
 pub use layout::{
     DESCRIPTOR_LAYOUT_VERSION, DescriptorContext, LayoutChange, LayoutPublication,
-    RESOURCE_LAYOUT_VERSION, SourceLayoutPlan, prepare_descriptor_layout, prepare_resource_layout,
+    RESOURCE_LAYOUT_VERSION, SourceLayoutPlan, prepare_descriptor_layout, prepare_readable_layout,
+    prepare_resource_layout,
 };
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 pub use protected::{
@@ -52,6 +58,8 @@ pub use property::ExactUnsigned;
 
 /// The experimental source schema and conversion rules evolve independently.
 pub const SCHEMA_VERSION: u32 = 1;
+/// Named property values separate everyday editing from native reconstruction details.
+pub const READABLE_SCHEMA_VERSION: u32 = 2;
 /// The currently implemented conversion rules.
 pub const RULES_VERSION: u32 = 1;
 /// The first accepted ordinary-configuration XML profile.
@@ -133,7 +141,11 @@ impl Descriptor {
     pub fn to_yaml(&self) -> Result<String, Error> {
         self.validate()?;
         let value = serde_json::to_value(self).map_err(|_| Error::root("source_schema_invalid"))?;
-        yaml::encode(&value)
+        if self.schema_version == READABLE_SCHEMA_VERSION {
+            yaml::encode_readable(&value)
+        } else {
+            yaml::encode(&value)
+        }
     }
 }
 

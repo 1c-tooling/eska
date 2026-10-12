@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ESKA readable standalone source with reverse-map layout 3",
+  "type": "object",
+  "properties": {
+    "document": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "$ref": "object-source.schema.json#/$defs/path"
+        },
+        "descriptor": {
+          "$ref": "descriptor-readable.schema.json"
+        }
+      },
+      "required": [
+        "path",
+        "descriptor"
+      ],
+      "additionalProperties": false
+    },
+    "nested": {
+      "type": "array",
+      "maxItems": 0
+    }
+  },
+  "required": [
+    "document",
+    "nested"
+  ],
+  "additionalProperties": false
+}

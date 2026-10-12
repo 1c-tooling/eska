@@ -1,0 +1,486 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ESKA readable descriptor 2",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 2
+    },
+    "rules_version": {
+      "const": 1
+    },
+    "profile": {
+      "const": "designer-2.20-configuration"
+    },
+    "object": {
+      "$ref": "#/$defs/node"
+    },
+    "native_xml": {
+      "$ref": "descriptor.schema.json#/$defs/xml_profile"
+    }
+  },
+  "required": [
+    "schema_version",
+    "rules_version",
+    "profile",
+    "object",
+    "native_xml"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "node": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "descriptor.schema.json#/$defs/metadata_kind"
+        },
+        "uuid": {
+          "$ref": "descriptor.schema.json#/$defs/uuid"
+        },
+        "properties": {
+          "type": "object",
+          "properties": {
+            "Name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "Comment": {
+              "$ref": "#/$defs/text_value"
+            },
+            "Version": {
+              "$ref": "#/$defs/text_value"
+            },
+            "Synonym": {
+              "$ref": "#/$defs/localized_value"
+            },
+            "Global": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "ClientManagedApplication": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "ClientOrdinaryApplication": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "Server": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "ExternalConnection": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "ServerCall": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "Privileged": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "Hierarchical": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "Autonumbering": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "CheckUnique": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "LimitLevelCount": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "MultiLine": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "PasswordMode": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "MarkNegatives": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "FillFromFillingValue": {
+              "$ref": "#/$defs/boolean_value"
+            },
+            "CodeLength": {
+              "$ref": "#/$defs/integer_value"
+            },
+            "DescriptionLength": {
+              "$ref": "#/$defs/integer_value"
+            },
+            "NumberLength": {
+              "$ref": "#/$defs/integer_value"
+            },
+            "LineNumberLength": {
+              "$ref": "#/$defs/integer_value"
+            },
+            "LevelCount": {
+              "$ref": "#/$defs/integer_value"
+            },
+            "CodeType": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "String",
+                    "Number"
+                  ]
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "NumberType": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "String",
+                    "Number"
+                  ]
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "CodeAllowedLength": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "Variable",
+                    "Fixed"
+                  ]
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "NumberAllowedLength": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "Variable",
+                    "Fixed"
+                  ]
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "InformationRegisterPeriodicity": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "Nonperiodical",
+                    "Second",
+                    "RecorderPosition",
+                    "Day",
+                    "Month",
+                    "Quarter",
+                    "Year"
+                  ]
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "ReturnValuesReuse": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "DontUse",
+                    "DuringSession",
+                    "DuringRequest"
+                  ]
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "FillChecking": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "DontCheck",
+                    "ShowError"
+                  ]
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "Indexing": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "DontIndex",
+                    "Index",
+                    "IndexWithAdditionalOrder"
+                  ]
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "inline"
+                  },
+                  "object": {
+                    "$ref": "#/$defs/node"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "object"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "reference"
+                  },
+                  "metadata_kind": {
+                    "$ref": "descriptor.schema.json#/$defs/metadata_kind"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "metadata_kind",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "preserved"
+                  },
+                  "fragment": {
+                    "$ref": "descriptor.schema.json#/$defs/fragment"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "fragment"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "native": {
+          "type": "object",
+          "properties": {
+            "namespaces": {
+              "type": "array",
+              "items": {
+                "$ref": "descriptor.schema.json#/$defs/namespace"
+              }
+            },
+            "attributes": {
+              "type": "array",
+              "items": {
+                "$ref": "descriptor.schema.json#/$defs/attribute"
+              }
+            },
+            "sections": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "properties"
+                      },
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "oneOf": [
+                            {
+                              "enum": [
+                                "Name",
+                                "Comment",
+                                "Version",
+                                "Synonym",
+                                "Global",
+                                "ClientManagedApplication",
+                                "ClientOrdinaryApplication",
+                                "Server",
+                                "ExternalConnection",
+                                "ServerCall",
+                                "Privileged",
+                                "Hierarchical",
+                                "Autonumbering",
+                                "CheckUnique",
+                                "LimitLevelCount",
+                                "MultiLine",
+                                "PasswordMode",
+                                "MarkNegatives",
+                                "FillFromFillingValue",
+                                "CodeLength",
+                                "DescriptionLength",
+                                "NumberLength",
+                                "LineNumberLength",
+                                "LevelCount",
+                                "CodeType",
+                                "NumberType",
+                                "CodeAllowedLength",
+                                "NumberAllowedLength",
+                                "InformationRegisterPeriodicity",
+                                "ReturnValuesReuse",
+                                "FillChecking",
+                                "Indexing"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "fragment": {
+                                  "$ref": "descriptor.schema.json#/$defs/fragment"
+                                }
+                              },
+                              "required": [
+                                "fragment"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "items"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "children"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "preserved"
+                      },
+                      "items": {
+                        "$ref": "descriptor.schema.json#/$defs/fragment"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "items"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "namespaces",
+            "attributes",
+            "sections"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "kind",
+        "uuid",
+        "properties",
+        "children",
+        "native"
+      ],
+      "additionalProperties": false
+    },
+    "text_value": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "$ref": "#/$defs/state"
+        }
+      ]
+    },
+    "localized_value": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "descriptor.schema.json#/$defs/localized"
+          }
+        },
+        {
+          "$ref": "#/$defs/state"
+        }
+      ]
+    },
+    "boolean_value": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/$defs/state"
+        }
+      ]
+    },
+    "integer_value": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        },
+        {
+          "$ref": "#/$defs/state"
+        }
+      ]
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "enum": [
+            "empty",
+            "nil"
+          ]
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

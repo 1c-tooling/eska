@@ -53,6 +53,16 @@ pub fn prepare_accepted_resource_layout(base: &AcceptedBase) -> Result<AcceptedL
     prepare(base, Layout::Resources)
 }
 
+/// Convert pinned source blobs to readable envelopes without accepting any current working edits.
+///
+/// Native policy/freeze and evidence remain pinned; selecting the new trust reference is explicit.
+///
+/// # Errors
+/// Returns changed/corrupt storage, invalid bindings or unsupported authored migration trivia.
+pub fn prepare_accepted_readable_layout(base: &AcceptedBase) -> Result<AcceptedLayoutPlan, Error> {
+    prepare(base, Layout::Readable)
+}
+
 /// Source and accepted migrations use the same pure projection for each explicit target.
 fn prepare(base: &AcceptedBase, target: Layout) -> Result<AcceptedLayoutPlan, Error> {
     base.verify()?;

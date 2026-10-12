@@ -124,8 +124,13 @@ fn merge_document(
     let node = current
         .and_then(|value| value.get("descriptor"))
         .and_then(|value| value.get("object"));
-    merge_node(base, &mut document.descriptor.object, node)
-        .map_err(|error| error.in_field(document.path.as_str()))
+    merge_node(
+        base,
+        &mut document.descriptor.object,
+        node,
+        document.descriptor.schema_version,
+    )
+    .map_err(|error| error.in_field(document.path.as_str()))
 }
 
 /// Preserve protected structure, and recurse into individually permitted inline parts.
@@ -133,6 +138,7 @@ fn merge_node(
     base: &AcceptedBase,
     node: &mut MetadataNode,
     current: Option<&Value>,
+    schema: u32,
 ) -> Result<(), Error> {
     let sections = current
         .and_then(|value| value.get("sections"))
@@ -140,11 +146,27 @@ fn merge_node(
     for section in &mut node.sections {
         match section {
             Section::Properties(properties) => {
-                let values = section_items(sections, "properties")?;
-                merge_properties(base, &node.uuid, properties, values)?;
+                if schema == super::super::READABLE_SCHEMA_VERSION {
+                    merge_named_properties(
+                        base,
+                        &node.uuid,
+                        node.kind,
+                        properties,
+                        current.and_then(|node| node.get("properties")),
+                    )?;
+                } else {
+                    let values = section_items(sections, "properties")?;
+                    merge_properties(base, &node.uuid, properties, values)?;
+                }
             }
             Section::Children(children) => {
-                let values = section_items(sections, "children")?;
+                let values = if schema == super::super::READABLE_SCHEMA_VERSION {
+                    current
+                        .and_then(|node| node.get("children"))
+                        .and_then(Value::as_array)
+                } else {
+                    section_items(sections, "children")?
+                };
                 let known: BTreeSet<_> = children
                     .iter()
                     .filter_map(|child| {
@@ -159,7 +181,7 @@ fn merge_node(
                     if let Child::Inline { object } = child {
                         let candidate =
                             inline_candidate(values, index, &object.uuid.key(), &known)?;
-                        merge_node(base, object, candidate)?;
+                        merge_node(base, object, candidate, schema)?;
                     }
                 }
             }
@@ -245,6 +267,25 @@ fn merge_properties(
                 *value = serde_json::from_value::<PropertyValue>(candidate.clone())
                     .map_err(|_| Error::root("source_property_invalid").in_field(name.as_str()))?;
             }
+        }
+    }
+    Ok(())
+}
+
+/// Named values inherit the accepted native owner/domain; editable schema fields grant no rights.
+fn merge_named_properties(
+    base: &AcceptedBase,
+    uuid: &super::super::NativeUuid,
+    kind: crate::project_core::MetadataKind,
+    properties: &mut [Property],
+    current: Option<&Value>,
+) -> Result<(), Error> {
+    for property in properties {
+        if let Property::Typed { name, value } = property
+            && base.permission(uuid, Operation::Property(*name)).allowed
+            && let Some(candidate) = current.and_then(|properties| properties.get(name.as_str()))
+        {
+            *value = super::super::readable::value_from_wire(*name, kind, candidate.clone())?;
         }
     }
     Ok(())

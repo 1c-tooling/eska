@@ -146,7 +146,12 @@ impl Walker<'_> {
                 operation = Operation::Property(name);
             }
         }
-        let scalar_property = coordinate.last().is_some_and(|field| field == "value")
+        let scalar_property = (coordinate.last().is_some_and(|field| field == "value")
+            || coordinate
+                .len()
+                .checked_sub(2)
+                .and_then(|index| coordinate.get(index))
+                .is_some_and(|field| field == "properties"))
             && matches!(operation, Operation::Property(_));
         match (expected, current) {
             (Some(Value::Object(left)), Some(Value::Object(right))) if !scalar_property => {
@@ -155,6 +160,14 @@ impl Walker<'_> {
                     coordinate.push(key.clone());
                     let operation = if matches!(key.as_str(), "path" | "uuid") {
                         Operation::Move
+                    } else if coordinate
+                        .len()
+                        .checked_sub(2)
+                        .and_then(|index| coordinate.get(index))
+                        .is_some_and(|field| field == "properties")
+                        && let Some(name) = PropertyName::from_native(key)
+                    {
+                        Operation::Property(name)
                     } else {
                         operation
                     };

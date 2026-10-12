@@ -115,7 +115,11 @@ impl SourceMap {
         if !matches!(
             self.schema_version,
             SOURCE_MAP_VERSION | RELOCATED_SOURCE_MAP_VERSION
-        ) || self.source_schema_version != super::super::SCHEMA_VERSION
+        ) || !matches!(
+            self.source_schema_version,
+            super::super::SCHEMA_VERSION | super::super::READABLE_SCHEMA_VERSION
+        ) || (self.schema_version == SOURCE_MAP_VERSION
+            && self.source_schema_version != super::super::SCHEMA_VERSION)
             || self.rules_version != super::super::RULES_VERSION
             || self.profile != super::super::PROFILE
         {
@@ -278,15 +282,24 @@ pub(super) fn create(
             })
         })
         .collect::<Result<_, Error>>()?;
+    let source_schema_version = base
+        .package
+        .documents
+        .values()
+        .chain(package.documents.values())
+        .map(|document| document.descriptor.schema_version)
+        .max()
+        .ok_or_else(|| Error::root("source_map_origin_invalid"))?;
     let map = SourceMap {
         schema_version: if base.package.manifest.schema_version
             == super::super::RESOURCE_LAYOUT_VERSION
+            || source_schema_version == super::super::READABLE_SCHEMA_VERSION
         {
             RELOCATED_SOURCE_MAP_VERSION
         } else {
             SOURCE_MAP_VERSION
         },
-        source_schema_version: super::super::SCHEMA_VERSION,
+        source_schema_version,
         rules_version: super::super::RULES_VERSION,
         profile: super::super::PROFILE.into(),
         generation,

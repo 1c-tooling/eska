@@ -5,6 +5,11 @@
 в корне владельцы связываются с его native paths и UUID. BSL, ресурсы, принятая
 база и YAML остальных владельцев при открытии не читаются.
 
+[Descriptor schema 2](readable-layout.md) использует именованные значения
+и отдельные native slots. Declarations и semantic projection используют общие
+schema paths с editor/source map, сохраняя native identities, logical parents
+и semantic values. Legacy schema 1 продолжает читаться без миграции.
+
 [Раздельное расположение EF-24](descriptor-layout.md) использует обязательные
 native contexts карты версии 2. Форма, команда, макет и вложенная подсистема
 получают собственные физические владельцы, прежнюю logical ancestry и native

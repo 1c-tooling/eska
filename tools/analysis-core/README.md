@@ -16,6 +16,11 @@ XML-экспорт не участвуют в чтении.
 Подключены главные дескрипторы реализованных адаптеров и вложенные формы с XML dialog. Полнота чтения,
 полнота главных моделей и покрытие всех вложенных документов различаются.
 
+[Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
+дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
+common completion, unsaved named flags и переход к физическому BSL input;
+protocol и native kernel conventions не изменены.
+
 [Раздельное расположение EF-24](../../docs/research/eska-format/descriptor-layout.md)
 поддерживается тем же reader/controller. Самостоятельный `form.yaml` получает
 один canonical slot с собственной зависимостью на dialog, без второго slot

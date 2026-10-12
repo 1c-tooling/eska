@@ -66,16 +66,12 @@ pub(super) fn documents(
         .chain(&source.nested)
         .enumerate()
     {
-        let mut steps = if index == 0 {
-            vec![Step::Key("document")]
-        } else {
-            vec![Step::Key("nested"), Step::Index(index - 1)]
-        };
-        steps.extend([Step::Key("descriptor"), Step::Key("object")]);
+        let mut steps = super::super::document_paths::root_steps(index);
         let root = roots
             .get(&part.path)
             .ok_or_else(|| Error::root("source_identity_mismatch"))?;
         let mut builder = Projection {
+            schema: part.descriptor.schema_version,
             tree,
             mode,
             identities: HashSet::new(),
@@ -147,6 +143,7 @@ fn metadata_object(node: &MetadataNode, parent: Option<ObjectId>) -> Result<Meta
 }
 
 struct Projection<'a> {
+    schema: u32,
     tree: &'a YamlFile,
     mode: PropertiesMode,
     identities: HashSet<ObjectId>,
@@ -182,12 +179,11 @@ impl Projection<'_> {
             if let Section::Children(children) = value {
                 for (item, child) in children.iter().enumerate() {
                     let previous = steps.len();
-                    steps.extend([
-                        Step::Key("sections"),
-                        Step::Index(section),
-                        Step::Key("items"),
-                        Step::Index(item),
-                    ]);
+                    steps.extend(super::super::document_paths::child_entry_steps(
+                        self.schema,
+                        section,
+                        item,
+                    ));
                     let parent = (node.kind != MetadataKind::Configuration).then(|| id.clone());
                     let child_id = match child {
                         Child::Inline { object } => {
@@ -274,12 +270,12 @@ impl Projection<'_> {
             if let Section::Properties(properties) = value {
                 for (index, property) in properties.iter().enumerate() {
                     let mut location = steps.to_vec();
-                    location.extend([
-                        Step::Key("sections"),
-                        Step::Index(section),
-                        Step::Key("items"),
-                        Step::Index(index),
-                    ]);
+                    location.extend(super::super::document_paths::property_steps(
+                        self.schema,
+                        section,
+                        index,
+                        property,
+                    ));
                     let range = range_at(self.tree, &location)?;
                     let property = match property {
                         Property::Typed { name, value } => Some(typed_property(*name, value)),

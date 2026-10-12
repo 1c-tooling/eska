@@ -56,6 +56,16 @@ pub fn import_designer_resources(
     import(input, destination, Layout::Resources)
 }
 
+/// Import named typed properties with native details separated, using explicit resource paths.
+///
+/// This opt-in descriptor schema does not alter existing projects or the default import layout.
+///
+/// # Errors
+/// Returns native profile, identity, composition, path collision or publication failures.
+pub fn import_designer_readable(input: &Path, destination: &Path) -> Result<SourceManifest, Error> {
+    import(input, destination, Layout::Readable)
+}
+
 /// Stage all parsed descriptors before publishing the explicitly selected physical layout.
 fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceManifest, Error> {
     let inventory = Inventory::read(input)?;
@@ -86,7 +96,7 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
         sources.insert(source_path(&path)?, family);
     }
     sources.insert(SourcePath::parse("configuration.yaml")?, configuration);
-    let sources = if layout.version() >= super::DESCRIPTOR_LAYOUT_VERSION {
+    let mut sources = if layout.version() >= super::DESCRIPTOR_LAYOUT_VERSION {
         super::layout::separate(sources)?
     } else {
         sources
@@ -97,8 +107,13 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
         manifest.descriptor_contexts =
             super::layout::contexts(&super::layout::documents(&sources))?;
     }
-    if matches!(layout, Layout::Resources) {
+    if matches!(layout, Layout::Resources | Layout::Readable) {
         resources::relocate(&mut manifest)?;
+    }
+    if matches!(layout, Layout::Readable) {
+        for source in sources.values_mut() {
+            super::readable::upgrade(source);
+        }
     }
     manifest.validate()?;
     let yaml: BTreeMap<_, _> = sources

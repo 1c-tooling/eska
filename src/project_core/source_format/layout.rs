@@ -8,7 +8,7 @@ mod tests;
 
 pub use migration::{
     LayoutChange, LayoutPublication, SourceLayoutPlan, prepare_descriptor_layout,
-    prepare_resource_layout,
+    prepare_readable_layout, prepare_resource_layout,
 };
 
 use std::collections::{BTreeMap, BTreeSet};

@@ -230,12 +230,26 @@ fn common_module_preparation_keeps_missing_binary_and_bodyless_dependencies_expl
 /// Relocated common bodies retain kernel scope, exported completions and physical navigation targets.
 #[test]
 fn relocated_common_bodies_complete_and_navigate_to_current_source_paths() {
+    migrated_common_bodies_complete_and_navigate(false);
+}
+
+/// Named property envelopes feed the same lazy completion and native resolver as legacy descriptors.
+#[test]
+fn readable_common_properties_complete_and_navigate_to_current_source_paths() {
+    migrated_common_bodies_complete_and_navigate(true);
+}
+
+/// Both explicit migrations retain the same module identity, scopes, overlays and source paths.
+fn migrated_common_bodies_complete_and_navigate(readable: bool) {
     let (directory, legacy, _) = fixture(BODY);
     let source = directory.0.join("relocated-common");
-    eska::project_core::source_format::prepare_resource_layout(&legacy)
-        .unwrap()
-        .publish(&source)
-        .unwrap();
+    let plan = if readable {
+        eska::project_core::source_format::prepare_readable_layout(&legacy)
+    } else {
+        eska::project_core::source_format::prepare_resource_layout(&legacy)
+    }
+    .unwrap();
+    plan.publish(&source).unwrap();
     let mut session = AnalysisSession::open(&source).unwrap();
     let caller = "CommonModules/Tools/Module.bsl";
     let target = owner("CommonModules/Utility/Module.bsl");
@@ -245,6 +259,20 @@ fn relocated_common_bodies_complete_and_navigate_to_current_source_paths() {
         .unwrap();
     for locale in [Locale::En, Locale::Ru] {
         assert!(complete_at(&mut session, caller, BODY, locale).contains("SavedUtility"));
+    }
+    if readable {
+        let path = source.join(TARGET);
+        let saved = fs::read_to_string(&path).unwrap();
+        assert!(saved.contains("\"ServerCall\": true"));
+        let denied = saved.replace("\"ServerCall\": true", "\"ServerCall\": false");
+        session
+            .apply_overlay(&owner(TARGET), session.revision(), 1, &denied, &request)
+            .unwrap();
+        assert!(!complete_at(&mut session, caller, BODY, Locale::En).contains("SavedUtility"));
+        session
+            .apply_overlay(&owner(TARGET), session.revision(), 2, &saved, &request)
+            .unwrap();
+        assert!(complete_at(&mut session, caller, BODY, Locale::Ru).contains("SavedUtility"));
     }
     session
         .apply_module_overlay(&target, session.revision(), 1, project::CURRENT, &request)

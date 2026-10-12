@@ -1,6 +1,6 @@
 //! Lossless source values, separate from the existing semantic metadata projection.
 
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, ser::SerializeStruct};
 
 use crate::project_core::MetadataKind;
 
@@ -52,14 +52,63 @@ impl<'de> Deserialize<'de> for NativeUuid {
 }
 
 /// One main-object YAML also contains its inline and external nested descriptors.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Descriptor {
     pub schema_version: u32,
     pub rules_version: u32,
     pub profile: String,
     pub xml: XmlProfile,
     pub object: MetadataNode,
+}
+
+/// The original wire representation remains readable without implicitly changing its schema.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LegacyDescriptor {
+    schema_version: u32,
+    rules_version: u32,
+    profile: String,
+    xml: XmlProfile,
+    object: MetadataNode,
+}
+
+impl Serialize for Descriptor {
+    /// Schema selects a wire envelope; the lossless native model remains shared by all consumers.
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        if self.schema_version == super::READABLE_SCHEMA_VERSION {
+            return super::readable::serialize(self, serializer);
+        }
+        let mut fields = serializer.serialize_struct("Descriptor", 5)?;
+        fields.serialize_field("schema_version", &self.schema_version)?;
+        fields.serialize_field("rules_version", &self.rules_version)?;
+        fields.serialize_field("profile", &self.profile)?;
+        fields.serialize_field("xml", &self.xml)?;
+        fields.serialize_field("object", &self.object)?;
+        fields.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Descriptor {
+    /// A readable envelope cannot fall back to legacy fields or silently promote preserved XML.
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        if value
+            .get("schema_version")
+            .and_then(serde_json::Value::as_u64)
+            == Some(u64::from(super::READABLE_SCHEMA_VERSION))
+        {
+            return super::readable::deserialize(value).map_err(serde::de::Error::custom);
+        }
+        let legacy: LegacyDescriptor =
+            serde_json::from_value(value).map_err(serde::de::Error::custom)?;
+        Ok(Self {
+            schema_version: legacy.schema_version,
+            rules_version: legacy.rules_version,
+            profile: legacy.profile,
+            xml: legacy.xml,
+            object: legacy.object,
+        })
+    }
 }
 
 /// XML transport details are distinct from the 1C project's own Version property.

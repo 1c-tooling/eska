@@ -2,12 +2,18 @@
 
 mod support;
 
+#[path = "support/property.rs"]
+mod property;
+
 use std::fs;
 
 use bsl_metadata::AttributeType;
 use eska::{
     analysis_core::{InputRequest, InputState, MetadataInputs},
-    project_core::source_format::import_designer,
+    project_core::source_format::{
+        Property, PropertyName, PropertyValue, XmlFragment, import_designer,
+        import_designer_readable,
+    },
 };
 use eska_bsl_adapter::{AdapterIssue, metadata_object};
 use support::TestDirectory;
@@ -15,15 +21,19 @@ use support::TestDirectory;
 /// A draft changes catalogue settings and a tabular type without affecting disk or retained models.
 #[test]
 fn object_and_tabular_drafts_have_current_types_and_exact_yaml_failures() {
+    object_drafts(false);
+}
+
+/// Named values and nested types keep the same canonical identities and diagnostic coordinates.
+#[test]
+fn readable_object_and_tabular_drafts_have_current_types_and_exact_yaml_failures() {
+    object_drafts(true);
+}
+
+/// Draft fixtures select a declared scalar regardless of its wire envelope.
+fn object_drafts(readable: bool) {
     let directory = TestDirectory::new();
-    let native = directory.0.join("native");
-    fs::create_dir(&native).unwrap();
-    fs::create_dir(native.join("Catalogs")).unwrap();
-    fs::write(native.join("Configuration.xml"), r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" version="2.20"><Configuration uuid="10000000-0000-4000-8000-000000000001"><Properties><Name>ObjectProbe</Name></Properties><ChildObjects><Catalog>Items</Catalog></ChildObjects></Configuration></MetaDataObject>"#).unwrap();
-    let xml = r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="2.20"><Catalog uuid="20000000-0000-4000-8000-000000000001"><Properties><Name>Items</Name><CodeLength>10</CodeLength><CodeType>String</CodeType></Properties><ChildObjects><TabularSection uuid="30000000-0000-4000-8000-000000000001"><Properties><Name>Rows</Name><Synonym><v8:item><v8:lang>ru</v8:lang><v8:content>Строки</v8:content></v8:item></Synonym></Properties><ChildObjects><Attribute uuid="40000000-0000-4000-8000-000000000001"><Properties><Name>Value</Name><Type><v8:Type>xs:string</v8:Type></Type></Properties></Attribute></ChildObjects></TabularSection></ChildObjects></Catalog></MetaDataObject>"#;
-    fs::write(native.join("Catalogs/Items.xml"), xml).unwrap();
-    let source = directory.0.join("source");
-    import_designer(&native, &source).unwrap();
+    let source = fixture(&directory.0, readable);
     let mut inputs = MetadataInputs::open(&source).unwrap();
     let path = inputs
         .owner_paths()
@@ -40,9 +50,15 @@ fn object_and_tabular_drafts_have_current_types_and_exact_yaml_failures() {
     let saved = std::sync::Arc::clone(saved);
     let saved_model = metadata_object(&saved.documents[0].descriptor, Vec::new()).unwrap();
     let text = fs::read_to_string(source.join(path.as_path())).unwrap();
-    let draft = text
-        .replace("<CodeType>String</CodeType>", "<CodeType>Number</CodeType>")
-        .replace("xs:string", "xs:boolean");
+    let draft = property::replace(
+        &text,
+        PropertyName::CodeType,
+        Property::Typed {
+            name: PropertyName::CodeType,
+            value: PropertyValue::Enumeration("Number".into()),
+        },
+    )
+    .replace("xs:string", "xs:boolean");
     assert_ne!(draft, text);
     inputs
         .apply_overlay(&path, inputs.revision(), 1, &draft, &request)
@@ -76,9 +92,15 @@ fn object_and_tabular_drafts_have_current_types_and_exact_yaml_failures() {
         &AttributeType::String { length: None }
     );
     assert_eq!(model.tabular_sections[0].synonym(), Some("Строки"));
-    let invalid = text.replace(
-        "<CodeLength>10</CodeLength>",
-        "<CodeLength>-10</CodeLength>",
+    let invalid = property::replace(
+        &text,
+        PropertyName::CodeLength,
+        Property::Preserved {
+            fragment: XmlFragment {
+                xml: "<CodeLength>-10</CodeLength>".into(),
+                namespaces: vec![],
+            },
+        },
     );
     inputs
         .apply_overlay(&path, inputs.revision(), 2, &invalid, &request)
@@ -106,4 +128,21 @@ fn object_and_tabular_drafts_have_current_types_and_exact_yaml_failures() {
         text
     );
     assert!(!source.join("Catalogs/Items.xml").exists());
+}
+
+/// Import a private native corpus with the selected explicit envelope.
+fn fixture(directory: &std::path::Path, readable: bool) -> std::path::PathBuf {
+    let native = directory.join("native");
+    fs::create_dir(&native).unwrap();
+    fs::create_dir(native.join("Catalogs")).unwrap();
+    fs::write(native.join("Configuration.xml"), r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" version="2.20"><Configuration uuid="10000000-0000-4000-8000-000000000001"><Properties><Name>ObjectProbe</Name></Properties><ChildObjects><Catalog>Items</Catalog></ChildObjects></Configuration></MetaDataObject>"#).unwrap();
+    let xml = r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="2.20"><Catalog uuid="20000000-0000-4000-8000-000000000001"><Properties><Name>Items</Name><CodeLength>10</CodeLength><CodeType>String</CodeType></Properties><ChildObjects><TabularSection uuid="30000000-0000-4000-8000-000000000001"><Properties><Name>Rows</Name><Synonym><v8:item><v8:lang>ru</v8:lang><v8:content>Строки</v8:content></v8:item></Synonym></Properties><ChildObjects><Attribute uuid="40000000-0000-4000-8000-000000000001"><Properties><Name>Value</Name><Type><v8:Type>xs:string</v8:Type></Type></Properties></Attribute></ChildObjects></TabularSection></ChildObjects></Catalog></MetaDataObject>"#;
+    fs::write(native.join("Catalogs/Items.xml"), xml).unwrap();
+    let source = directory.join("source");
+    if readable {
+        import_designer_readable(&native, &source).unwrap();
+    } else {
+        import_designer(&native, &source).unwrap();
+    }
+    source
 }

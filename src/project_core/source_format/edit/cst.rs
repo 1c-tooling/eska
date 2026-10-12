@@ -51,6 +51,113 @@ pub(super) fn replace(
     Ok(output)
 }
 
+/// Splice a named direct value, preserving neighboring keys, comments and scalar styles.
+pub(super) fn replace_direct(
+    input: &str,
+    steps: &[Step],
+    previous: &PropertyValue,
+    next: &PropertyValue,
+) -> Result<String, Error> {
+    let (_, file) = yaml::decode_with_tree(input)?;
+    let node = yaml::at(&file, steps).ok_or_else(unsupported)?;
+    let original = range(&node)?;
+    let original_text = input.get(original.clone()).ok_or_else(unsupported)?;
+    if original_text.contains("\r\n") && original_text.replace("\r\n", "").contains('\n') {
+        return Err(unsupported());
+    }
+    let Some((Step::Key(key), parent)) = steps.split_last() else {
+        return Err(unsupported());
+    };
+    let mapping = yaml::at(&file, parent)
+        .and_then(|node| node.as_mapping().cloned())
+        .ok_or_else(unsupported)?;
+    let mut flow_replacement = None;
+    match (previous, next) {
+        (PropertyValue::Localized(old), PropertyValue::Localized(new))
+            if old.len() == new.len()
+                && old.iter().zip(new).all(|(a, b)| a.language == b.language) =>
+        {
+            let sequence = node.as_sequence().ok_or_else(unsupported)?;
+            for (index, (old, new)) in old.iter().zip(new).enumerate() {
+                if old.text != new.text {
+                    let entry = sequence
+                        .get(index)
+                        .and_then(|node| node.as_mapping().cloned())
+                        .ok_or_else(unsupported)?;
+                    let scalar = entry
+                        .get("text")
+                        .and_then(|node| node.as_scalar().cloned())
+                        .ok_or_else(unsupported)?;
+                    set_direct_string(&entry, "text", &new.text, Some(&scalar));
+                }
+            }
+        }
+        (_, PropertyValue::Localized(_)) | (PropertyValue::Localized(_), _) => {
+            return Err(unsupported());
+        }
+        (_, PropertyValue::Boolean(value)) => mapping.set(*key, ScalarValue::from(*value)),
+        (_, PropertyValue::Text(value) | PropertyValue::Enumeration(value)) => {
+            set_direct_string(&mapping, key, value, node.as_scalar());
+        }
+        (_, PropertyValue::Integer(value)) => {
+            set_direct_string(&mapping, key, value.as_str(), node.as_scalar());
+        }
+        (_, PropertyValue::Empty | PropertyValue::Nil) => {
+            if let Some(state) = node.as_mapping() {
+                set_empty_state(state, next)?;
+            } else {
+                flow_replacement = Some(
+                    serde_json::to_string(&super::super::readable::value_to_wire(next)?)
+                        .map_err(|_| unsupported())?,
+                );
+            }
+        }
+    }
+    let updated = yaml::at(&file, steps).ok_or_else(unsupported)?;
+    let mut replacement = match flow_replacement {
+        Some(value) => value,
+        None => updated.as_node().ok_or_else(unsupported)?.to_string(),
+    };
+    if original_text.ends_with('\n') && !replacement.ends_with('\n') {
+        replacement.push('\n');
+    }
+    if original_text.contains("\r\n") {
+        replacement = replacement.replace("\r\n", "\n").replace('\n', "\r\n");
+    }
+    if comments(original_text) != comments(&replacement) {
+        return Err(unsupported());
+    }
+    let mut output = input.to_owned();
+    output.replace_range(original, &replacement);
+    Ok(output)
+}
+
+/// Keep a present string's style; a state wrapper has no string style to preserve.
+fn set_direct_string(
+    mapping: &Mapping,
+    key: &str,
+    value: &str,
+    scalar: Option<&yaml_edit::Scalar>,
+) {
+    let replacement = scalar.map_or_else(
+        || ScalarValue::string(value),
+        |scalar| {
+            let style = ScalarValue::from_scalar(scalar).style();
+            let style = if value.contains('\n')
+                && matches!(
+                    style,
+                    yaml_edit::ScalarStyle::SingleQuoted | yaml_edit::ScalarStyle::Plain
+                ) {
+                yaml_edit::ScalarStyle::DoubleQuoted
+            } else {
+                style
+            };
+            ScalarValue::with_style(value, style)
+        },
+    );
+    mapping.set(key, replacement);
+}
+
 /// Change one scalar domain or localized text sequence without regenerating its enclosing owner.
 fn update_value(
     mapping: &Mapping,
@@ -180,6 +287,99 @@ fn unsupported() -> Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Direct value edits retain surrounding annotations and original scalar transport styles.
+    #[test]
+    fn direct_scalars_and_empty_states_preserve_neighboring_bytes() {
+        for (input, previous, next) in [
+            (
+                "value: 'old' # inline\nother: keep\n",
+                PropertyValue::Text("old".into()),
+                PropertyValue::Text("new 'quoted'".into()),
+            ),
+            (
+                "value: \"old\" # inline\r\nother: keep\r\n",
+                PropertyValue::Text("old".into()),
+                PropertyValue::Text("new\nline\t\\\"".into()),
+            ),
+            (
+                "value: |-\n  old\nother: keep # neighbor\n",
+                PropertyValue::Text("old".into()),
+                PropertyValue::Text("new\nsecond".into()),
+            ),
+            (
+                "value: true # inline\nother: keep\n",
+                PropertyValue::Boolean(true),
+                PropertyValue::Boolean(false),
+            ),
+            (
+                "value: '0009' # inline\nother: keep\n",
+                PropertyValue::Integer(super::super::super::ExactUnsigned::parse("0009").unwrap()),
+                PropertyValue::Integer(
+                    super::super::super::ExactUnsigned::parse("000123456789012345678901234567890")
+                        .unwrap(),
+                ),
+            ),
+            (
+                "value: 'old' # inline\nother: keep\n",
+                PropertyValue::Text("old".into()),
+                PropertyValue::Nil,
+            ),
+            (
+                "value: {state: nil} # inline\nother: keep\n",
+                PropertyValue::Nil,
+                PropertyValue::Text("true".into()),
+            ),
+            (
+                "value: {state: empty} # inline\nother: keep\n",
+                PropertyValue::Empty,
+                PropertyValue::Nil,
+            ),
+        ] {
+            let updated = replace_direct(input, &[Step::Key("value")], &previous, &next).unwrap();
+            assert_eq!(
+                yaml::decode(&updated).unwrap()["value"],
+                super::super::super::readable::value_to_wire(&next).unwrap()
+            );
+            assert_eq!(comments(input), comments(&updated));
+            assert_eq!(updated.split("other:").nth(1), input.split("other:").nth(1));
+        }
+    }
+
+    /// Language composition is fixed; changing one localized text preserves the adjacent language.
+    #[test]
+    fn direct_localized_edits_preserve_order_and_literal_text() {
+        let input = "value:\n  - language: ru\n    text: 'Старое' # local\n  - language: en\n    text: 'Keep' # neighbor\nother: keep\n";
+        let previous = PropertyValue::Localized(vec![
+            super::super::super::LocalizedText {
+                language: "ru".into(),
+                text: "Старое".into(),
+            },
+            super::super::super::LocalizedText {
+                language: "en".into(),
+                text: "Keep".into(),
+            },
+        ]);
+        let mut next = previous.clone();
+        let PropertyValue::Localized(items) = &mut next else {
+            unreachable!()
+        };
+        items[0].text = "Новое\nмногострочное".into();
+        let updated = replace_direct(input, &[Step::Key("value")], &previous, &next).unwrap();
+        assert_eq!(
+            yaml::decode(&updated).unwrap()["value"],
+            super::super::super::readable::value_to_wire(&next).unwrap()
+        );
+        assert!(updated.ends_with("  - language: en\n    text: 'Keep' # neighbor\nother: keep\n"));
+        assert_eq!(comments(input), comments(&updated));
+        let mixed = input.replacen("language: ru\n", "language: ru\r\n", 1);
+        assert_eq!(
+            replace_direct(&mixed, &[Step::Key("value")], &previous, &next)
+                .unwrap_err()
+                .code,
+            "source_edit_value_unsupported"
+        );
+    }
 
     #[test]
     fn removed_text_keeps_entry_comments_and_outside_trivia() {

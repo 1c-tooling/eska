@@ -2,11 +2,17 @@
 
 mod support;
 
+#[path = "support/property.rs"]
+mod property;
+
 use std::{fs, sync::Arc};
 
 use eska::{
     analysis_core::{InputRequest, InputState, MetadataInputs},
-    project_core::source_format::{MetadataSnapshot, SourcePath, import_designer},
+    project_core::source_format::{
+        MetadataSnapshot, Property, PropertyName, PropertyValue, SourcePath, XmlFragment,
+        import_designer, import_designer_readable,
+    },
 };
 use eska_bsl_adapter::{AdapterIssue, common_module, defined_type, register};
 use support::TestDirectory;
@@ -22,11 +28,26 @@ fn ready(inputs: &MetadataInputs, path: &SourcePath) -> Arc<MetadataSnapshot> {
 /// Exercise equality, context changes, exact error locations and restoration without XML export.
 #[test]
 fn module_drafts_share_saved_semantics_and_invalid_inputs_have_no_stale_model() {
+    module_drafts(false);
+}
+
+/// Named property envelopes use the same native semantics and never retain an invalid draft.
+#[test]
+fn readable_module_drafts_share_saved_semantics_and_invalid_inputs_have_no_stale_model() {
+    module_drafts(true);
+}
+
+/// Change the fixture's declared property without relying on its legacy serialized XML shape.
+fn module_drafts(readable: bool) {
     let directory = TestDirectory::new();
     let source = directory.0.join("source");
     let corpus = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../tests/fixtures/eska-format/designer");
-    import_designer(&corpus, &source).unwrap();
+    if readable {
+        import_designer_readable(&corpus, &source).unwrap();
+    } else {
+        import_designer(&corpus, &source).unwrap();
+    }
     let mut inputs = MetadataInputs::open(&source).unwrap();
     let path = inputs
         .owner_paths()
@@ -55,8 +76,14 @@ fn module_drafts_share_saved_semantics_and_invalid_inputs_have_no_stale_model() 
         saved_model
     );
 
-    assert_eq!(text.matches("<Server>true</Server>").count(), 1);
-    let draft = text.replace("<Server>true</Server>", "<Server>false</Server>");
+    let draft = property::replace(
+        &text,
+        PropertyName::Server,
+        Property::Typed {
+            name: PropertyName::Server,
+            value: PropertyValue::Boolean(false),
+        },
+    );
     inputs
         .apply_overlay(&path, inputs.revision(), 2, &draft, &request)
         .unwrap();
@@ -66,7 +93,16 @@ fn module_drafts_share_saved_semantics_and_invalid_inputs_have_no_stale_model() 
     assert!(saved_model.is_server());
     assert_ne!(changed.source_sha256, saved.source_sha256);
 
-    let invalid = text.replace("<Server>true</Server>", "<Server>TRUE</Server>");
+    let invalid = property::replace(
+        &text,
+        PropertyName::Server,
+        Property::Preserved {
+            fragment: XmlFragment {
+                xml: "<Server>Future</Server>".into(),
+                namespaces: vec![],
+            },
+        },
+    );
     inputs
         .apply_overlay(&path, inputs.revision(), 3, &invalid, &request)
         .unwrap();
@@ -78,7 +114,7 @@ fn module_drafts_share_saved_semantics_and_invalid_inputs_have_no_stale_model() 
             name: "Server".into()
         }
     );
-    assert!(invalid[error.range].contains("<Server>TRUE</Server>"));
+    assert!(invalid[error.range].contains("<Server>Future</Server>"));
 
     inputs
         .apply_overlay(&path, inputs.revision(), 4, "document: [", &request)

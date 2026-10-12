@@ -20,8 +20,11 @@
 из pinned blobs с прежними policy/freeze и явным новым pin.
 [Четвёртая часть](../research/eska-format/resource-layout.md) отделяет физические
 пути модулей/ресурсов от native paths с картой версии 3; общий reader, защита,
-source map и SDK используют эти привязки. Orchestration проекта и читаемые
-составные свойства ещё нужны; публичный CLI импорта сохраняет прежнее расположение.
+source map и SDK используют эти привязки. [Пятая часть](../research/eska-format/readable-layout.md)
+добавляет именованные свойства в descriptor schema 2 с отдельными native details,
+общими CST/semantic paths, pinned миграцией и поддержкой SDK. Orchestration проекта,
+составные типы/ссылки/коллекции, structural operations и legacy comments migration
+ещё нужны; публичный CLI импорта сохраняет прежнее расположение.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи
 не открываются заново, но не подтверждают новое расширенное покрытие MVP.

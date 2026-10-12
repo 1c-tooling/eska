@@ -7,7 +7,6 @@ use std::ops::Range;
 
 use roxmltree::Node;
 use serde::Serialize;
-use serde_json::Value;
 use sha2::{Digest, Sha256};
 use yaml_edit::YamlFile;
 
@@ -15,7 +14,7 @@ use super::{FileOrigin, InputAuthority, InputFile, MappedFile, validate_origin};
 use crate::project_core::MetadataKind;
 use crate::project_core::source_format::{
     Error, MD_NAMESPACE, Namespace, NativeUuid, ObjectSource, Property, PropertyName,
-    PropertyValue, SourcePath, files, xml,
+    PropertyValue, Section, document_paths, files, xml,
     yaml::{self, Step},
 };
 
@@ -107,7 +106,7 @@ fn metadata_location(
 ) -> Result<SourceLocation, Error> {
     verify_bytes(texts.accepted.as_bytes(), accepted.bytes, &accepted.sha256)?;
     let (accepted_value, accepted_tree) = yaml::decode_with_tree(texts.accepted)?;
-    let owner = ObjectSource::from_value(accepted_value.clone())?;
+    let owner = ObjectSource::from_value(accepted_value)?;
     let accepted_object = std::iter::once(&owner.document)
         .chain(&owner.nested)
         .find(|part| part.path == file.path)
@@ -161,21 +160,19 @@ fn metadata_location(
             property,
         } => (uuid, Some((index, property))),
     };
-    let steps = object_steps(&accepted_value, &file.path, &uuid)?
+    let location = document_paths::locate(&owner, &file.path, &uuid)
         .ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
     result.uuid = Some(uuid.clone());
-    result.range = Some(yaml::range_at(&accepted_tree, &steps)?);
+    result.range = Some(yaml::range_at(&accepted_tree, &location.steps)?);
     if let Some((index, property)) = property {
-        let steps = accepted_property_steps(&accepted_value, &steps, index)?;
-        let original: Property = serde_json::from_value(value_at(&accepted_value, &steps)?.clone())
-            .map_err(|_| Error::root("source_map_origin_mismatch"))?;
+        let (original, steps) = accepted_property(&location, index)?;
         if let (
             Property::Typed { name, value },
             Property::Typed {
                 name: original_name,
                 value: original_value,
             },
-        ) = (&property, &original)
+        ) = (&property, original)
         {
             if name != original_name {
                 return Err(Error::root("source_map_origin_mismatch"));
@@ -184,7 +181,12 @@ fn metadata_location(
                 return working_location(file, &uuid, *name, value, working, texts.working);
             }
         }
-        result.range = Some(property_range(&accepted_tree, &steps, &original)?);
+        result.range = Some(property_range(
+            &accepted_tree,
+            &steps,
+            original,
+            location.schema,
+        )?);
     }
     Ok(result)
 }
@@ -265,151 +267,73 @@ fn working_location(
         range: None,
         uuid: Some(uuid.clone()),
     };
-    if let Some(node_steps) = object_steps(&value, &file.path, uuid)? {
-        let node = value_at(&value, &node_steps)?;
-        let mut matching = Vec::new();
-        for (section, values) in sections(node, "properties") {
-            for (index, property) in values.iter().enumerate() {
-                if property.get("kind").and_then(Value::as_str) == Some("typed")
-                    && property.get("name").and_then(Value::as_str) == Some(name.as_str())
-                {
-                    let mut steps = node_steps.clone();
-                    steps.extend(property_steps(section, index));
-                    matching.push(steps);
+    let owner = ObjectSource::from_value(value)?;
+    if let Some(location) = document_paths::locate(&owner, &file.path, uuid) {
+        for (section, contents) in location.node.sections.iter().enumerate() {
+            if let Section::Properties(items) = contents {
+                for (index, property) in items.iter().enumerate() {
+                    if let Property::Typed {
+                        name: candidate_name,
+                        value,
+                    } = property
+                        && *candidate_name == name
+                    {
+                        if value != selected {
+                            return Err(Error::root("source_map_origin_mismatch"));
+                        }
+                        let mut steps = location.steps.clone();
+                        steps.extend(document_paths::property_steps(
+                            location.schema,
+                            section,
+                            index,
+                            property,
+                        ));
+                        result.range =
+                            Some(property_range(&tree, &steps, property, location.schema)?);
+                        return Ok(result);
+                    }
                 }
             }
         }
-        if matching.len() != 1 {
-            return Ok(result);
-        }
-        let steps = &matching[0];
-        let candidate: PropertyValue = serde_json::from_value(
-            value_at(&value, steps)?
-                .get("value")
-                .ok_or_else(|| Error::root("source_map_origin_mismatch"))?
-                .clone(),
-        )
-        .map_err(|_| Error::root("source_map_origin_mismatch"))?;
-        if &candidate != selected {
-            return Err(Error::root("source_map_origin_mismatch"));
-        }
-        result.range = Some(property_range(
-            &tree,
-            steps,
-            &Property::Typed {
-                name,
-                value: candidate,
-            },
-        )?);
     }
     Ok(result)
 }
 
-/// A descriptor path and native UUID select one modeled node in this exact owner family.
-fn object_steps(
-    value: &Value,
-    path: &SourcePath,
-    uuid: &NativeUuid,
-) -> Result<Option<Vec<Step>>, Error> {
-    let mut found = Vec::new();
-    let parts = value
-        .get("document")
-        .map(|part| (part, vec![Step::Key("document")]));
-    let nested = value
-        .get("nested")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .enumerate()
-        .map(|(index, part)| (part, vec![Step::Key("nested"), Step::Index(index)]));
-    for (part, mut steps) in parts.into_iter().chain(nested) {
-        if part.get("path").and_then(Value::as_str) == Some(path.as_str()) {
-            steps.extend([Step::Key("descriptor"), Step::Key("object")]);
-            collect_objects(value_at(value, &steps)?, uuid, &mut steps, &mut found);
+/// The generated native ordinal resolves against accepted slots, independent of YAML key order.
+fn accepted_property<'a>(
+    location: &document_paths::NodeLocation<'a>,
+    index: usize,
+) -> Result<(&'a Property, Vec<Step>), Error> {
+    for (section, contents) in location.node.sections.iter().enumerate() {
+        if let Section::Properties(items) = contents {
+            let property = items
+                .get(index)
+                .ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
+            let mut steps = location.steps.clone();
+            steps.extend(document_paths::property_steps(
+                location.schema,
+                section,
+                index,
+                property,
+            ));
+            return Ok((property, steps));
         }
     }
-    match found.len() {
-        0 => Ok(None),
-        1 => Ok(found.pop()),
-        _ => Err(Error::root("source_map_location_ambiguous")),
-    }
+    Err(Error::root("source_map_origin_mismatch"))
 }
 
-/// Only modeled child-object fields participate in native identity lookup.
-fn collect_objects(
-    node: &Value,
-    uuid: &NativeUuid,
-    steps: &mut Vec<Step>,
-    found: &mut Vec<Vec<Step>>,
-) {
-    if node
-        .get("uuid")
-        .and_then(Value::as_str)
-        .is_some_and(|value| value.eq_ignore_ascii_case(uuid.as_str()))
-    {
-        found.push(steps.clone());
-    }
-    for (section, values) in sections(node, "children") {
-        for (index, child) in values.iter().enumerate() {
-            if let Some(object) = child.get("object") {
-                let previous = steps.len();
-                steps.extend(property_steps(section, index));
-                steps.push(Step::Key("object"));
-                collect_objects(object, uuid, steps, found);
-                steps.truncate(previous);
-            }
-        }
-    }
-}
-
-/// Keep serialized section positions even when properties occur after a preserved slot.
-fn sections<'a>(node: &'a Value, kind: &'a str) -> impl Iterator<Item = (usize, &'a Vec<Value>)> {
-    node.get("sections")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .enumerate()
-        .filter(move |(_, section)| section.get("kind").and_then(Value::as_str) == Some(kind))
-        .filter_map(|(index, section)| {
-            section
-                .get("items")
-                .and_then(Value::as_array)
-                .map(|items| (index, items))
-        })
-}
-
-/// Native property ordinals correspond to the accepted properties section, not YAML field order.
-fn accepted_property_steps(value: &Value, node: &[Step], index: usize) -> Result<Vec<Step>, Error> {
-    let mut sections = sections(value_at(value, node)?, "properties");
-    let (section, values) = sections
-        .next()
-        .ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
-    if index >= values.len() || sections.next().is_some() {
-        return Err(Error::root("source_map_origin_mismatch"));
-    }
-    let mut result = node.to_vec();
-    result.extend(property_steps(section, index));
-    Ok(result)
-}
-
-/// Share owner schema coordinates for properties and inline child positions.
-const fn property_steps(section: usize, index: usize) -> [Step; 4] {
-    [
-        Step::Key("sections"),
-        Step::Index(section),
-        Step::Key("items"),
-        Step::Index(index),
-    ]
-}
-
-/// Typed values and opaque fragments keep one conservative YAML range; no XML column is copied.
+/// Named typed values use their own scalar/collection range; opaque native XML keeps its slot.
 fn property_range(
     tree: &YamlFile,
     steps: &[Step],
     property: &Property,
+    schema: u32,
 ) -> Result<Range<usize>, Error> {
     let mut steps = steps.to_vec();
     match property {
+        Property::Preserved { .. } => steps.extend([Step::Key("fragment"), Step::Key("xml")]),
+        Property::Typed { .. }
+            if schema == crate::project_core::source_format::READABLE_SCHEMA_VERSION => {}
         Property::Typed {
             value:
                 PropertyValue::Text(_)
@@ -419,20 +343,8 @@ fn property_range(
             ..
         } => steps.extend([Step::Key("value"), Step::Key("value")]),
         Property::Typed { .. } => steps.push(Step::Key("value")),
-        Property::Preserved { .. } => steps.extend([Step::Key("fragment"), Step::Key("xml")]),
     }
     yaml::range_at(tree, &steps)
-}
-
-/// Schema navigation applies the same actual fields to semantic values and CST ranges.
-fn value_at<'a>(value: &'a Value, steps: &[Step]) -> Result<&'a Value, Error> {
-    steps.iter().try_fold(value, |value, step| {
-        match step {
-            Step::Key(key) => value.get(*key),
-            Step::Index(index) => value.get(*index),
-        }
-        .ok_or_else(|| Error::root("source_map_origin_mismatch"))
-    })
 }
 
 /// Verification happens before decoding, so coordinates cannot silently follow a newer file.

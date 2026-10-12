@@ -146,8 +146,18 @@ fn scalar(value: &Scalar) -> Result<Value, Error> {
 
 /// Emit the accepted subset deterministically, without floating-point or timestamp coercion.
 pub(super) fn encode(value: &Value) -> Result<String, Error> {
+    encode_order(value, false)
+}
+
+/// Ordinary property values precede reconstruction details only in the explicitly new envelope.
+pub(super) fn encode_readable(value: &Value) -> Result<String, Error> {
+    encode_order(value, true)
+}
+
+/// Both wire versions use the same strict scalar rendering and document quota.
+fn encode_order(value: &Value, readable: bool) -> Result<String, Error> {
     let mut output = String::new();
-    write(value, 0, &mut output)?;
+    write(value, 0, &mut output, readable)?;
     output.push('\n');
     if output.len() > MAX_DOCUMENT_BYTES {
         return Err(Error::root("source_document_too_large"));
@@ -156,10 +166,14 @@ pub(super) fn encode(value: &Value) -> Result<String, Error> {
 }
 
 /// Render nonempty collections in block form and all scalar strings with JSON escaping.
-fn write(value: &Value, indent: usize, output: &mut String) -> Result<(), Error> {
+fn write(value: &Value, indent: usize, output: &mut String, readable: bool) -> Result<(), Error> {
     match value {
         Value::Object(mapping) if !mapping.is_empty() => {
-            for (index, (key, value)) in mapping.iter().enumerate() {
+            let mut entries: Vec<_> = mapping.iter().collect();
+            if readable {
+                entries.sort_by_key(|(key, _)| field_order(key));
+            }
+            for (index, (key, value)) in entries.into_iter().enumerate() {
                 if index > 0 {
                     output.push('\n');
                 }
@@ -168,7 +182,7 @@ fn write(value: &Value, indent: usize, output: &mut String) -> Result<(), Error>
                     &serde_json::to_string(key).map_err(|_| Error::root("source_yaml_invalid"))?,
                 );
                 output.push(':');
-                write_entry(value, indent, output)?;
+                write_entry(value, indent, output, readable)?;
             }
         }
         Value::Array(values) if !values.is_empty() => {
@@ -178,7 +192,7 @@ fn write(value: &Value, indent: usize, output: &mut String) -> Result<(), Error>
                 }
                 output.push_str(&" ".repeat(indent));
                 output.push('-');
-                write_entry(value, indent, output)?;
+                write_entry(value, indent, output, readable)?;
             }
         }
         _ => {
@@ -191,7 +205,12 @@ fn write(value: &Value, indent: usize, output: &mut String) -> Result<(), Error>
 }
 
 /// Keep scalar entries inline; nested blocks receive an explicit increased indentation.
-fn write_entry(value: &Value, indent: usize, output: &mut String) -> Result<(), Error> {
+fn write_entry(
+    value: &Value,
+    indent: usize,
+    output: &mut String,
+    readable: bool,
+) -> Result<(), Error> {
     let block = matches!(value, Value::Object(values) if !values.is_empty())
         || matches!(value, Value::Array(values) if !values.is_empty());
     if block {
@@ -199,6 +218,33 @@ fn write_entry(value: &Value, indent: usize, output: &mut String) -> Result<(), 
     } else {
         output.push(' ');
     }
-    write(value, indent + 2, output)?;
+    write(value, indent + 2, output, readable)?;
     Ok(())
+}
+
+/// Stable priorities keep identity and ordinary values before native XML and ordering slots.
+fn field_order(key: &str) -> usize {
+    [
+        "schema_version",
+        "rules_version",
+        "profile",
+        "document",
+        "path",
+        "descriptor",
+        "object",
+        "kind",
+        "uuid",
+        "Name",
+        "Synonym",
+        "Comment",
+        "Version",
+        "properties",
+        "children",
+        "nested",
+        "native",
+        "native_xml",
+    ]
+    .iter()
+    .position(|field| *field == key)
+    .unwrap_or(12)
 }

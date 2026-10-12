@@ -1,5 +1,11 @@
 # Карта фактически собранных файлов
 
+[Именованные свойства EF-24](readable-layout.md) используют source map schema 2
+с `source_schema_version = 2`. Legacy descriptors сохраняют значение 1;
+map schema 1 не принимает descriptor schema 2. Типизированные диапазоны новой
+оболочки указывают direct value, preserved XML — native fragment. Правила
+fingerprints и выбора accepted/working сохраняются.
+
 `PreparedSource::source_map` возвращает карту полного native inventory:
 descriptor XML, BSL, ресурсы, политика поддержки, supplier CF, файлы вне
 объявленного состава и пустые каталоги. Пути относительные; абсолютных путей

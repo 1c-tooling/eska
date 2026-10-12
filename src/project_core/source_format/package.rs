@@ -92,7 +92,15 @@ impl ObjectSource {
     /// Returns a validation failure before creating a source file.
     pub fn to_yaml(&self) -> Result<String, Error> {
         self.validate()?;
-        yaml::encode(&serde_json::to_value(self).map_err(|_| Error::root("source_schema_invalid"))?)
+        let value = serde_json::to_value(self).map_err(|_| Error::root("source_schema_invalid"))?;
+        if std::iter::once(&self.document)
+            .chain(&self.nested)
+            .any(|part| part.descriptor.schema_version == super::READABLE_SCHEMA_VERSION)
+        {
+            yaml::encode_readable(&value)
+        } else {
+            yaml::encode(&value)
+        }
     }
 
     /// Reject a repeated physical descriptor inside an owner's document.

@@ -11,7 +11,8 @@ use crate::project_core::publish::{self, PublishError};
 
 use super::{
     AcceptedBase, AcceptedRef, Child, Error, MetadataNode, NativeUuid, ObjectSource, Operation,
-    PermissionReason, Property, PropertyName, PropertyValue, Section, SourcePath, files,
+    PermissionReason, Property, PropertyName, PropertyValue, Section, SourcePath, document_paths,
+    files,
 };
 
 /// A prepared single-file edit retains exact bytes for preview and conflict detection.
@@ -202,20 +203,26 @@ fn property_text(
         .get(&target.native)
         .ok_or_else(|| Error::root("source_descriptor_missing"))?;
     steps.extend([cst::Step::Key("descriptor"), cst::Step::Key("object")]);
+    let schema = document.descriptor.schema_version;
     let node = anchored_node(
         &mut document.descriptor.object,
         &accepted.descriptor.object,
         &target.inline,
         &mut steps,
         property,
+        schema,
     )?;
     let candidate = value.clone();
-    let previous = change_property(node, property, value, &mut steps)?;
+    let previous = change_property(node, property, value, &mut steps, schema)?;
     object.validate()?;
     let updated = if previous == candidate {
         original.to_owned()
     } else {
-        let updated = cst::replace(original, &steps, &previous, &candidate)?;
+        let updated = if schema == super::READABLE_SCHEMA_VERSION {
+            cst::replace_direct(original, &steps, &previous, &candidate)?
+        } else {
+            cst::replace(original, &steps, &previous, &candidate)?
+        };
         if ObjectSource::from_yaml(&updated)? != object {
             return Err(Error::root("source_edit_value_unsupported"));
         }
@@ -285,6 +292,7 @@ fn anchored_node<'a>(
     path: &[(usize, usize)],
     steps: &mut Vec<cst::Step>,
     property: PropertyName,
+    schema: u32,
 ) -> Result<&'a mut MetadataNode, Error> {
     if working.uuid.key() != accepted.uuid.key()
         || working.kind != accepted.kind
@@ -306,14 +314,8 @@ fn anchored_node<'a>(
     let Some(Child::Inline { object }) = items.get_mut(index) else {
         return Err(Error::root("source_edit_structure_changed"));
     };
-    steps.extend([
-        cst::Step::Key("sections"),
-        cst::Step::Index(section),
-        cst::Step::Key("items"),
-        cst::Step::Index(index),
-        cst::Step::Key("object"),
-    ]);
-    anchored_node(object, accepted_child, tail, steps, property)
+    steps.extend(document_paths::child_steps(schema, section, index));
+    anchored_node(object, accepted_child, tail, steps, property, schema)
 }
 
 /// Resolve an inline coordinate without interpreting external references or opaque children.
@@ -333,6 +335,7 @@ fn change_property(
     property: PropertyName,
     value: PropertyValue,
     steps: &mut Vec<cst::Step>,
+    schema: u32,
 ) -> Result<PropertyValue, Error> {
     for (section, contents) in node.sections.iter_mut().enumerate() {
         if let Section::Properties(items) = contents {
@@ -343,13 +346,17 @@ fn change_property(
                 } = entry
                     && *name == property
                 {
-                    steps.extend([
-                        cst::Step::Key("sections"),
-                        cst::Step::Index(section),
-                        cst::Step::Key("items"),
-                        cst::Step::Index(index),
-                        cst::Step::Key("value"),
-                    ]);
+                    if schema == super::READABLE_SCHEMA_VERSION {
+                        steps.extend([cst::Step::Key("properties"), cst::Step::Key(name.as_str())]);
+                    } else {
+                        steps.extend([
+                            cst::Step::Key("sections"),
+                            cst::Step::Index(section),
+                            cst::Step::Key("items"),
+                            cst::Step::Index(index),
+                            cst::Step::Key("value"),
+                        ]);
+                    }
                     return Ok(std::mem::replace(previous, value));
                 }
             }

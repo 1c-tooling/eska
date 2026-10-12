@@ -10,7 +10,9 @@ format `eska.toml` и не публичная команда конвертац�
 сохраняет descriptor версии 1, `nested` пуст. Семейный источник версии 1
 по-прежнему читается; явная миграция не запускается при открытии.
 [Карта версии 3](resource-layout.md) добавляет явный payload source path;
-descriptor и conversion rules остаются версии 1.
+descriptor и conversion rules остаются версии 1 в этой части. [Читаемая оболочка](readable-layout.md)
+добавляет descriptor schema 2 поверх той же карты версии 3; rules не меняются.
+Версии 1/2 имеют строгие отдельные wire schemas и одну lossless модель.
 
 [JSON Schema](descriptor.schema.json) описывает один descriptor. Семантические
 ограничения дополнительно проверяет `Descriptor::validate`: уникальность UUID,

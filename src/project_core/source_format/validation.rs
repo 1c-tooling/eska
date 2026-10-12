@@ -17,7 +17,10 @@ impl Descriptor {
     /// # Errors
     /// Returns a structured error without normalizing or migrating any document.
     pub fn validate(&self) -> Result<(), Error> {
-        if self.schema_version != SCHEMA_VERSION {
+        if !matches!(
+            self.schema_version,
+            SCHEMA_VERSION | super::READABLE_SCHEMA_VERSION
+        ) {
             return Err(Error::root("source_schema_unsupported"));
         }
         if self.rules_version != RULES_VERSION {

@@ -79,6 +79,17 @@ pub fn prepare_resource_layout(source: &Path) -> Result<SourceLayoutPlan, Error>
     prepare(source, Layout::Resources)
 }
 
+/// Prepare named property envelopes without promoting any preserved value to a typed property.
+///
+/// Physical paths use layout 3. Existing v2 descriptor text is an exact no-op; unhandled legacy
+/// YAML comments refuse migration before publication instead of losing user annotations.
+///
+/// # Errors
+/// Returns unsupported authored trivia, invalid inputs, collisions or changed-source failures.
+pub fn prepare_readable_layout(source: &Path) -> Result<SourceLayoutPlan, Error> {
+    prepare(source, Layout::Readable)
+}
+
 /// Both explicit targets share validation, exact preview and resumable publication.
 fn prepare(source: &Path, target: Layout) -> Result<SourceLayoutPlan, Error> {
     let package = Package::read(source)?;
@@ -175,10 +186,13 @@ impl SourceLayoutPlan {
 pub(in crate::project_core::source_format) fn project_layout(
     package: &Package,
     target: Layout,
-    read: impl FnMut(&SourcePath) -> Result<String, Error>,
+    mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
 ) -> Result<Projection, Error> {
-    let mut projection = project_descriptors(package, read)?;
+    let mut projection = project_descriptors(package, &mut read)?;
     if target.version() <= projection.manifest.schema_version {
+        if matches!(target, Layout::Readable) {
+            project_readable(&mut projection, &mut read)?;
+        }
         return Ok(projection);
     }
     let before = projection.manifest.clone();
@@ -220,7 +234,43 @@ pub(in crate::project_core::source_format) fn project_layout(
     projection.snapshot.directories = resources::source_directories(&projection.manifest)?;
     projection.snapshot.revision =
         files::revision(&projection.snapshot.files, &projection.snapshot.directories);
+    if matches!(target, Layout::Readable) {
+        project_readable(&mut projection, &mut read)?;
+    }
     Ok(projection)
+}
+
+/// Envelope version and physical-map version are independent; only explicitly selected YAML moves.
+fn project_readable(
+    projection: &mut Projection,
+    mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
+) -> Result<(), Error> {
+    let owners: BTreeSet<_> = projection
+        .manifest
+        .files
+        .iter()
+        .filter_map(|file| match &file.role {
+            FileRole::Descriptor { source, .. } => Some(source.clone()),
+            _ => None,
+        })
+        .collect();
+    for owner in owners {
+        let original = match projection.text.get(&owner) {
+            Some(text) => text.clone(),
+            None => read(&owner)?,
+        };
+        let updated = crate::project_core::source_format::readable::upgrade_text(&original)?;
+        if original != updated {
+            projection
+                .snapshot
+                .files
+                .insert(owner.clone(), fingerprint(&owner, &updated));
+            projection.text.insert(owner, updated);
+        }
+    }
+    projection.snapshot.revision =
+        files::revision(&projection.snapshot.files, &projection.snapshot.directories);
+    Ok(())
 }
 
 /// Preserve current separated YAML exactly; family sources use the lossless CST splitter.

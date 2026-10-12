@@ -100,7 +100,9 @@ EF-24: [28 новых typed-скаляров](research/eska-format/typed-scalars
 сохраняет прежние values, policy/freeze и выдаёт новый pin отдельно от рабочего
 проекта. [Карта версии 3](research/eska-format/resource-layout.md) добавляет
 физические пути модулей/ресурсов, защищённую сборку и оба плана миграции.
-Orchestration и читаемые составные свойства ещё нужны.
+[Именованные свойства descriptor schema 2](research/eska-format/readable-layout.md)
+используют общую модель, editor/semantic coordinates и pinned миграцию.
+Orchestration, составные домены и structural operations ещё нужны.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)

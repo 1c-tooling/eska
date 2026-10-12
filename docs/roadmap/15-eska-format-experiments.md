@@ -1920,6 +1920,33 @@ stale/foreign/edited output и reserved names. Project settings и CI pin не
 Публичный CLI, C2/C3, CFE/EPF/ERF и client execution этим не приняты.
 [Обезличенные результаты](../research/eska-format/resource-layout-results.json).
 
+Пятая часть — [именованные свойства](../research/eska-format/readable-layout.md):
+descriptor schema 2 с единственной копией значений, отдельными native details,
+общими schema paths для declarations/semantic projection/CST/source map.
+Оба плана миграции и свежий импорт сохраняют native модель; рабочие данные
+не становятся trusted base. Protected selector применяет owner-specific domains
+и сообщает `property:<Name>` при запрещённой raw-правке. Source map schema 2
+передаёт descriptor version 2; SDK использует прежний protocol и native context.
+При переводе legacy YAML comments пока возвращается явный отказ без потери текста.
+
+Проверки пятой части: 410 unit + 540 integration (20 opt-in пропущены),
+15 root/14 SDK gates, SDK all-features — 359 тестов. Проверены binding collisions,
+точные типы/числа, unknown XML, empty/nil, исходники/pinned migrations, no-op,
+комментарии/CRLF правок, native policy/freeze/raw bypass, typed/preserved ranges,
+RU/EN completion, unsaved named flags и BSL navigation через настоящее ядро.
+Адаптер BSL прошёл пять отдельных gates: 70 unit + 10 integration;
+устаревшие scalar fixtures исправлены, overlays проверены на обеих схемах.
+Составные домены, structural operations, legacy comments migration и публичная
+orchestration остаются частью незавершённой EF-24.
+
+Реальные C1 source/pinned migrations и fresh import сохранили 3 595 descriptors,
+8 330 объектов, 33 320 решений по правам и все payload bytes. Разрешённая правка
+одного Comment изменила один YAML/native descriptor и совпала с независимым
+XML-контролем. Обе CF собраны и выгружены на 1С 8.3.27.2325: 8 769 файлов/
+8 064 каталога совпали, кроме прежних `configVersion`. Версия, исходный XML,
+accepted bases и build inputs не изменены. [Результаты](../research/eska-format/readable-layout-results.json).
+C2/C3, новые CFE/EPF/ERF и client execution не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

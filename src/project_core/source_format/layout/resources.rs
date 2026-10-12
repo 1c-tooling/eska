@@ -157,6 +157,7 @@ pub(in crate::project_core::source_format) enum Layout {
     Family,
     Descriptors,
     Resources,
+    Readable,
 }
 
 impl Layout {
@@ -165,7 +166,7 @@ impl Layout {
         match self {
             Self::Family => crate::project_core::source_format::SCHEMA_VERSION,
             Self::Descriptors => DESCRIPTOR_LAYOUT_VERSION,
-            Self::Resources => RESOURCE_LAYOUT_VERSION,
+            Self::Resources | Self::Readable => RESOURCE_LAYOUT_VERSION,
         }
     }
 }

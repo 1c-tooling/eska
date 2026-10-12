@@ -19,6 +19,7 @@ mod layout;
 mod measure;
 mod platform;
 mod protected;
+mod readable;
 mod scalars;
 
 /// Work on a private copy so adverse input tests cannot modify the shared fixture corpus.
