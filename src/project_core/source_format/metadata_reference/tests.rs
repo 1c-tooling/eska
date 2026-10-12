@@ -74,6 +74,42 @@ fn reference_values_round_trip_in_both_envelopes() {
     }
 }
 
+/// Clearing retains old aliases without permitting Nil or inventing a missing native binding.
+#[test]
+fn readable_empty_clears_each_existing_reference_list_domain_without_new_bindings() {
+    for (owner, property, target) in [
+        ("Configuration", "DefaultRoles", "Role.First"),
+        ("Catalog", "Owners", "Catalog.Other"),
+        ("Document", "RegisterRecords", "InformationRegister.First"),
+        ("Sequence", "RegisterRecords", "InformationRegister.First"),
+        ("Subsystem", "Content", "Catalog.First"),
+    ] {
+        let mut source = descriptor(
+            owner,
+            &format!("<{property}><x:Item i:type=\"t:MDObjectRef\">{target}</x:Item></{property}>"),
+        );
+        source.schema_version = 2;
+        let mut wire = yaml::decode(&source.to_yaml().unwrap()).unwrap();
+        let binding = wire["object"]["native"].clone();
+        wire["object"]["properties"][property] = serde_json::json!({"state":"empty"});
+        let cleared = readable::deserialize(wire.clone())
+            .unwrap_or_else(|error| panic!("{owner}/{property}: {error:?}"));
+        assert_eq!(
+            cleared,
+            Descriptor::from_yaml(&yaml::encode(&wire).unwrap()).unwrap()
+        );
+        assert!(
+            cleared
+                .to_xml()
+                .unwrap()
+                .contains(&format!("<{property}/>"))
+        );
+        assert_eq!(wire["object"]["native"], binding);
+        wire["object"]["properties"][property] = serde_json::json!({"state":"nil"});
+        assert!(Descriptor::from_yaml(&yaml::encode(&wire).unwrap()).is_err());
+    }
+}
+
 /// Unsupported targets, attributes, namespaces and mixed envelopes preserve the whole property.
 #[test]
 fn unknown_reference_envelopes_are_not_partly_promoted() {

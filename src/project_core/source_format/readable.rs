@@ -13,7 +13,9 @@ use super::{
 };
 use crate::project_core::MetadataKind;
 
+mod cleared_references;
 mod migration;
+pub(super) use cleared_references::cleared_reference_bindings;
 #[cfg(test)]
 mod tests;
 
@@ -376,14 +378,13 @@ pub(super) fn value_from_wire(
         .value_kind(owner)
         .ok_or_else(|| Error::root("source_property_type_invalid"))?;
     if layout.is_none()
-        && references.is_none()
         && let Value::Object(mapping) = &value
         && mapping.len() == 1
         && let Some(state) = mapping.get("state").and_then(Value::as_str)
     {
         return match state {
             "empty" => Ok(PropertyValue::Empty),
-            "nil" => Ok(PropertyValue::Nil),
+            "nil" if references.is_none() => Ok(PropertyValue::Nil),
             _ => Err(Error::root("source_property_type_invalid")),
         };
     }

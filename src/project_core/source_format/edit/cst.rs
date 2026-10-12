@@ -32,6 +32,12 @@ pub(super) fn replace(
     if original_text.contains("\r\n") && original_text.replace("\r\n", "").contains('\n') {
         return Err(unsupported());
     }
+    if matches!(
+        (previous, next),
+        (PropertyValue::ReferenceList(_), PropertyValue::Empty)
+    ) {
+        return clear_reference(input, original, original_text);
+    }
     update_value(mapping, previous, next)?;
     let mut replacement = mapping.to_string();
     // yaml-edit's literal factory omits the terminating transport newline when the
@@ -39,16 +45,7 @@ pub(super) fn replace(
     if scalar(previous).is_some() && matches!(next, PropertyValue::Empty | PropertyValue::Nil) {
         remove_scalar(mapping, &mut replacement)?;
     }
-    // Newly manufactured CST tokens use LF. Only this subtree adopts its original EOL;
-    // mixed surrounding text and unrelated scalar escape spellings remain untouched.
-    transport(original_text, &mut replacement);
-
-    if comments(original_text) != comments(&replacement) {
-        return Err(unsupported());
-    }
-    let mut output = input.to_owned();
-    output.get(original.clone()).ok_or_else(unsupported)?;
-    output.replace_range(original, &replacement);
+    let output = splice(input, original, original_text, replacement)?;
     if let (PropertyValue::ReferenceList(old), PropertyValue::ReferenceList(new)) = (previous, next)
     {
         let steps = steps
@@ -74,6 +71,12 @@ pub(super) fn replace_direct(
     let original_text = input.get(original.clone()).ok_or_else(unsupported)?;
     if original_text.contains("\r\n") && original_text.replace("\r\n", "").contains('\n') {
         return Err(unsupported());
+    }
+    if matches!(
+        (previous, next),
+        (PropertyValue::ReferenceList(_), PropertyValue::Empty)
+    ) {
+        return clear_reference(input, original, original_text);
     }
     let Some((Step::Key(key), parent)) = steps.split_last() else {
         return Err(unsupported());
@@ -150,21 +153,45 @@ pub(super) fn replace_direct(
         }
     }
     let updated = yaml::at(&file, steps).ok_or_else(unsupported)?;
-    let mut replacement = match flow_replacement {
+    let replacement = match flow_replacement {
         Some(value) => value,
         None => updated.as_node().ok_or_else(unsupported)?.to_string(),
     };
-    transport(original_text, &mut replacement);
+    let output = splice(input, original, original_text, replacement)?;
+    if let (PropertyValue::ReferenceList(old), PropertyValue::ReferenceList(new)) = (previous, next)
+    {
+        return reference_value::membership(&output, steps, &old.items, &new.items);
+    }
+    Ok(output)
+}
 
+/// Empty replaces the entire bound value; annotations on removed members require manual resolution.
+fn clear_reference(
+    input: &str,
+    original: Range<usize>,
+    original_text: &str,
+) -> Result<String, Error> {
+    splice(
+        input,
+        original,
+        original_text,
+        String::from("{\"state\": \"empty\"}"),
+    )
+}
+
+/// New tokens adopt the subtree's transport; surrounding bytes and comment content stay exact.
+fn splice(
+    input: &str,
+    original: Range<usize>,
+    original_text: &str,
+    mut replacement: String,
+) -> Result<String, Error> {
+    transport(original_text, &mut replacement);
     if comments(original_text) != comments(&replacement) {
         return Err(unsupported());
     }
     let mut output = input.to_owned();
     output.replace_range(original, &replacement);
-    if let (PropertyValue::ReferenceList(old), PropertyValue::ReferenceList(new)) = (previous, next)
-    {
-        return reference_value::membership(&output, steps, &old.items, &new.items);
-    }
     Ok(output)
 }
 

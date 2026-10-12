@@ -71,10 +71,12 @@ Native list prefixes выбираются из pinned base, а не из раб�
 списка меняются по CST; добавление/удаление trailing members непустого block list
 использует явный splice строк. Это обходит потерю newline/comment у CST factory.
 Изменение длины flow list, multiline member, удаление аннотированного элемента,
-переход list ↔ Empty/Nil и правка native bindings этим editor отказываются.
+переход Empty/Nil → list, list → Nil и правка native bindings этим editor отказываются.
 Raw YAML меняет число элементов непустого list с сохранением native binding и
-валидных целей. Protected selector пока не разрешает переход принятого
-reference_list в Empty/Nil. [Создание](enum-value-creation.md) и
+валидных целей. [Очистка принятого reference_list до Empty](reference-clear.md)
+разрешена общими editor и protected selector. Прежние readable native bindings
+можно оставить неизменными: после очистки они не участвуют в сборке.
+[Создание](enum-value-creation.md) и
 [удаление EnumValue](enum-value-deletion.md) проверяются отдельными structural
 правилами; остальные профили создания/удаления ещё нужны.
 

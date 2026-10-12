@@ -5,8 +5,8 @@ use crate::{
     project_core::{
         metadata_parser::PropertiesMode,
         source_format::{
-            Descriptor, InputAuthority, MetadataReference, ObjectSource, OriginTexts,
-            PermissionReason, Property, PropertyName, PropertyValue, Section, SourceReader,
+            Descriptor, InputAuthority, ObjectSource, OriginTexts, PermissionReason, Property,
+            PropertyName, PropertyValue, Section, SourceReader,
             enum_test_support::{children, edit, fixture, fixture_with, native, uuid, value},
             export_designer,
             files::Inventory,
@@ -395,11 +395,7 @@ fn typed_dependency_requires_an_allowed_fix_in_the_same_selected_composition() {
                                 value,
                             } = property
                             {
-                                let PropertyValue::ReferenceList(references) = value else {
-                                    unreachable!()
-                                };
-                                references.items[0] =
-                                    MetadataReference::parse("Enum.Other").unwrap();
+                                *value = PropertyValue::Empty;
                             }
                         }
                     }

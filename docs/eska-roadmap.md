@@ -126,6 +126,9 @@ native category: вложенные DefinedType/Characteristic в DefinedType о
 [Удаление EnumValue](research/eska-format/enum-value-deletion.md) использует
 принятые права владельца/членов и проверку зависимостей выбранного состава.
 Остальные structural profiles/rename ещё нужны.
+[Очистка принятого списка ссылок](research/eska-format/reference-clear.md)
+разрешает `Empty` без редактирования прежних native bindings, сохраняя
+policy/freeze, source locations и проверку окончательного состава.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)

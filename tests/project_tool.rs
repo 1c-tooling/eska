@@ -10,6 +10,8 @@ mod migration;
 mod order;
 #[path = "project_tool/readable.rs"]
 mod readable;
+#[path = "project_tool/reference_clear.rs"]
+mod reference_clear;
 mod support;
 
 use serde_json::Value;

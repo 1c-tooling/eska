@@ -2176,6 +2176,25 @@ descriptors/8 327 объектов совпали с контролем в saved
 Rename, прочие structural profiles, составные домены и workspace migration ещё
 нужны; EF-24 — `IN_PROGRESS`. Клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
 
+Шестнадцатая часть — [очистка принятого списка ссылок](../research/eska-format/reference-clear.md).
+Family/readable и общий editor/protected selector принимают list → Empty;
+отсутствие, Nil и пустой массив сохраняют прежние отдельные правила. Неизменные
+readable bindings можно оставить или убрать канонически; их правки остаются
+исключением, а выбранный native Empty не использует prefixes. Policy/freeze,
+typed target index и source origins сохраняются. Схемы/команды не меняются.
+Root gates: 479 unit + 561 integration (24 opt-in пропущены обычным запуском),
+minimal project — 286 unit + 22 CLI tests; SDK — 359, adapter — 70 + 12.
+Четыре очистки C1 в четырёх YAML совпали с независимым native контролем по
+8 778 файлам/8 077 каталогам; прежние bindings/manifest/settings/base сохранены.
+Все 3 595 descriptors/8 330 объектов совпали в saved/unsaved All/Summary.
+Контроль и ESKA собраны в CF и выгружены на 1С 8.3.27.2325: 8 769 файлов/8 064
+каталога равны кроме 7 011 configVersion; inputs/checksums/версия сохранены.
+Native probe с удалением единственного регистратора отказал на import_sources;
+специфические ограничения регистратора остаются платформенной проверкой.
+[Результаты](../research/eska-format/reference-clear-results.json).
+Rename, другие structural profiles, составные домены и workspace migration
+остаются в незавершённой EF-24.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

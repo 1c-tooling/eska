@@ -14,7 +14,7 @@ use eska::project::source_format::{
 };
 
 /// Independent declared targets cover owner-local forms, named scalars and reference list domains.
-fn prepare(root: &Path, readable: bool, frozen: bool) -> (PathBuf, AcceptedBase) {
+pub(super) fn prepare(root: &Path, readable: bool, frozen: bool) -> (PathBuf, AcceptedBase) {
     let input = super::fixture(root);
     fs::remove_file(input.join("Ext/ParentConfigurations.bin")).unwrap();
     let root_file = input.join("Configuration.xml");

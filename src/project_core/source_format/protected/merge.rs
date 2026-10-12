@@ -64,8 +64,9 @@ pub(super) fn documents(
         family
             .validate()
             .map_err(|error| error.in_field(path.as_str()))?;
-        let expected =
+        let mut expected =
             serde_json::to_value(&family).map_err(|_| Error::root("source_schema_invalid"))?;
+        super::super::readable::cleared_reference_bindings(base, &mut expected, current.as_ref())?;
         differences::collect(
             base,
             path,
@@ -280,6 +281,7 @@ fn merge_properties(
                     (PropertyValue::ReferenceList(old), PropertyValue::ReferenceList(new)) => {
                         new.native.clone_from(&old.native);
                     }
+                    (PropertyValue::ReferenceList(_), PropertyValue::Empty) => {}
                     (PropertyValue::TypeDescription(_) | PropertyValue::ReferenceList(_), _)
                     | (_, PropertyValue::TypeDescription(_) | PropertyValue::ReferenceList(_)) => {
                         return Err(

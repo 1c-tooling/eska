@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-12",
+  "task": "EF-24",
+  "part": 16,
+  "scope": "accepted_reference_list_to_empty",
+  "source_envelopes": [
+    1,
+    2
+  ],
+  "manifest_schemas_unchanged": true,
+  "baseline_rules_unchanged": true,
+  "root_gates": 16,
+  "sdk_gates": 14,
+  "adapter_gates": 5,
+  "release_builds": 2,
+  "all_gates_passed": true,
+  "root_tests": {
+    "unit": 479,
+    "integration": 561,
+    "ignored_opt_in": 24
+  },
+  "minimal_project_tests": {
+    "unit": 286,
+    "cli": 22
+  },
+  "sdk_tests": 359,
+  "adapter_tests": {
+    "unit": 70,
+    "integration": 12
+  },
+  "added_tests": {
+    "unit": 1,
+    "integration": 4,
+    "cli": 1
+  },
+  "independent_release_cli": {
+    "cleared_lists": 4,
+    "changed_source_files": 4,
+    "domains": [
+      "Content",
+      "DefaultRoles",
+      "Owners",
+      "RegisterRecords"
+    ],
+    "native_bindings_untouched": true,
+    "native_files": 8778,
+    "native_directories": 8077,
+    "native_control_bytes_equal": true,
+    "protected_exclusions": 0,
+    "both_locales_checked": true,
+    "platform_git_and_facade_absent_from_path": true,
+    "generation_reused": true
+  },
+  "semantic": {
+    "descriptors": 3595,
+    "objects": 8330,
+    "all_and_summary_equal": true,
+    "saved_and_unsaved_equal": true
+  },
+  "platform_round_trip": {
+    "platform": "8.3.27.2325",
+    "native_files": 8769,
+    "native_directories": 8064,
+    "other_bytes_equal": true,
+    "dump_versions": {
+      "versioned_entries": 7011,
+      "changed_versions": 7011,
+      "all_other_bytes_equal": true
+    },
+    "source_and_base_unchanged": true,
+    "original_native_unchanged": true,
+    "protected_exclusions": 0
+  },
+  "artifact_checksums_valid": true,
+  "project_version_preserved": true,
+  "source_manifest_unchanged": true,
+  "native_negative_probe": {
+    "sole_recorder_removal_refused": true,
+    "stage": "import_sources",
+    "code": "platform_command_failed",
+    "specific_recorder_constraints_checked_by_platform": true
+  },
+  "limitations": [
+    "inverse_recorder_constraints_still_require_platform_validation",
+    "accepted_reference_list_to_nil_unsupported",
+    "empty_to_new_reference_list_binding_unsupported",
+    "other_structural_profiles_pending",
+    "other_compound_domains_pending",
+    "workspace_migration_pending",
+    "no_new_cfe_epf_erf_runtime_acceptance",
+    "no_client_or_live_infobase_execution"
+  ]
+}
