@@ -145,8 +145,11 @@ root/member manifests, inheritance и отдельные approved pins. Общи
 Catalog/Document сохраняет UUID/policy и использует минимальный профиль
 Name/Synonym/Comment/Type с проверкой имён, типов и порядка.
 [Новые колонки](research/eska-format/column-creation.md) создаются в принятой
-табличной части тех же владельцев с её UUID/parentage и namespace context. Прочие
-structural/compound profiles ещё нужны; EF-24 остаётся `IN_PROGRESS`.
+табличной части тех же владельцев с её UUID/parentage и namespace context.
+[Служебные UUID табличной части](research/eska-format/tabular-section-identities.md)
+типизированы отдельно; generated names выводятся из metadata Name реального
+родителя и таблицы. Служебные UUID не дают полномочий, raw edits восстанавливаются.
+Прочие structural/compound profiles ещё нужны; EF-24 остаётся `IN_PROGRESS`.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)

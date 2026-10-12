@@ -245,7 +245,7 @@ fn node_bindings(result: &mut Vec<Binding>, node: &MetadataNode, before: &[Step]
         match section {
             Section::Properties(items) => property_bindings(result, items, &old, &new, after),
             Section::Children(items) => child_bindings(result, items, &old, after),
-            Section::Preserved(_) => add(
+            Section::Preserved(_) | Section::TabularSectionIdentities(_) => add(
                 result,
                 append(&old, [Step::Key("items")]),
                 append(&new, [Step::Key("items")]),

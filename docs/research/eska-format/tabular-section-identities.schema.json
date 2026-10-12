@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tabular-section-identities.schema.json",
+  "title": "Native tabular section identities",
+  "type": "object",
+  "properties": {
+    "prefix": {
+      "type": "string",
+      "minLength": 1
+    },
+    "table": {
+      "$ref": "#/$defs/identity"
+    },
+    "row": {
+      "$ref": "#/$defs/identity"
+    }
+  },
+  "required": [
+    "prefix",
+    "table",
+    "row"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "properties": {
+        "type_id": {
+          "$ref": "descriptor.schema.json#/$defs/uuid"
+        },
+        "value_id": {
+          "$ref": "descriptor.schema.json#/$defs/uuid"
+        }
+      },
+      "required": [
+        "type_id",
+        "value_id"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

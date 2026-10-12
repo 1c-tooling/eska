@@ -21,6 +21,8 @@ mod reference_clear;
 #[path = "project_tool/rename.rs"]
 mod rename;
 mod support;
+#[path = "project_tool/tabular_identities.rs"]
+mod tabular_identities;
 #[path = "project_tool/workspace_migration.rs"]
 mod workspace_migration;
 

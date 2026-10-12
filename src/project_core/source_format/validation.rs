@@ -39,8 +39,14 @@ impl Descriptor {
             return Err(Error::root("source_namespace_invalid"));
         }
         attributes(&self.xml.attributes, &["version"], &self.xml.namespaces)?;
-        node(&self.object, 0, &mut BTreeSet::new(), &self.xml.namespaces)
-            .map_err(|error| error.in_field("object"))
+        node(
+            &self.object,
+            0,
+            &mut BTreeSet::new(),
+            &self.xml.namespaces,
+            None,
+        )
+        .map_err(|error| error.in_field("object"))
     }
 }
 
@@ -50,6 +56,7 @@ fn node(
     depth: usize,
     uuids: &mut BTreeSet<String>,
     inherited: &[Namespace],
+    parent: Option<&MetadataNode>,
 ) -> Result<(), Error> {
     if depth > MAX_DEPTH {
         return Err(Error::root("source_depth_exceeded"));
@@ -67,6 +74,8 @@ fn node(
     attributes(&object.attributes, &["uuid"], &context)?;
     let mut has_properties = false;
     let mut has_children = false;
+    let mut has_internal_info = false;
+    let mut typed_identities = false;
     for section in &object.sections {
         match section {
             Section::Properties(values) => {
@@ -81,10 +90,32 @@ fn node(
                     return Err(Error::root("source_section_duplicate"));
                 }
                 has_children = true;
-                children(values, depth, uuids, &context)?;
+                children(values, depth, uuids, &context, object)?;
+            }
+            Section::TabularSectionIdentities(identities) => {
+                if has_internal_info {
+                    return Err(Error::root("source_section_duplicate"));
+                }
+                has_internal_info = true;
+                typed_identities = true;
+                identities.validate(object, parent, &context)?;
+                for identity in identities.uuids() {
+                    if !uuids.insert(identity.key()) {
+                        return Err(Error::root("native_uuid_duplicate"));
+                    }
+                }
             }
             Section::Preserved(value) => {
-                if fragment(value, &context)?.is_some_and(|(namespace, tag)| {
+                let name = fragment(value, &context)?;
+                if name.as_ref().is_some_and(|(namespace, tag)| {
+                    namespace == MD_NAMESPACE && tag == "InternalInfo"
+                }) {
+                    if typed_identities {
+                        return Err(Error::root("source_section_duplicate"));
+                    }
+                    has_internal_info = true;
+                }
+                if name.is_some_and(|(namespace, tag)| {
                     namespace == MD_NAMESPACE
                         && (matches!(tag.as_str(), "Properties" | "ChildObjects")
                             || MetadataKind::from_xml_tag(&tag).is_ok())
@@ -174,11 +205,12 @@ fn children(
     depth: usize,
     uuids: &mut BTreeSet<String>,
     context: &[Namespace],
+    owner: &MetadataNode,
 ) -> Result<(), Error> {
     let mut references = BTreeSet::new();
     for value in values {
         match value {
-            Child::Inline { object } => node(object, depth + 1, uuids, context)?,
+            Child::Inline { object } => node(object, depth + 1, uuids, context, Some(owner))?,
             Child::Reference {
                 metadata_kind,
                 name,

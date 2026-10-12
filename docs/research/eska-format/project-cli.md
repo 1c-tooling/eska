@@ -137,6 +137,10 @@ UUID и namespace context относятся к принятой табличн�
 проверяет новый field profile. Имена, QName/Type targets и неизвестная native
 семантика не обходятся через
 `--allow-exclusions`.
+[Typed service identities](tabular-section-identities.md) табличной части
+используют прежние import/prepare/migrate без дополнительных параметров.
+Изменение принятого service UUID даёт прежний resource exclusion;
+восстановление сохраняет независимые разрешённые свойства.
 Запрещённое [удаление EnumValue](enum-value-deletion.md) восстанавливается с
 `{"kind":"delete"}`. Оставшиеся typed/preserved XML зависимости отказывают
 до публикации, включая режим `--allow-exclusions`.

@@ -610,6 +610,22 @@
                       "items"
                     ],
                     "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "tabular_section_identities"
+                      },
+                      "items": {
+                        "$ref": "tabular-section-identities.schema.json"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "items"
+                    ],
+                    "additionalProperties": false
                   }
                 ]
               }

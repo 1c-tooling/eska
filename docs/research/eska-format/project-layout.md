@@ -37,6 +37,9 @@ YAML и физические resources. Без параметра сохраня
 у Catalog/Document, сохраняя policy, UUID, typed Type и Working координаты.
 [Новые колонки](column-creation.md) используют принятую табличную часть того же
 владельца и её локальный namespace context, сохраняя старые колонки/identities.
+[Typed identities](tabular-section-identities.md) хранят service UUID один раз;
+generated table/row names выводятся из единственных Name владельца/табличной части.
+Прежний preserved YAML не преобразуется при открытии или миграции.
 Остальные structural/compound profiles ещё не приняты.
 
 Внешние источники проверены 2026-10-11:

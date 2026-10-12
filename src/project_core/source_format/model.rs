@@ -176,6 +176,7 @@ pub struct MetadataNode {
 pub enum Section {
     Properties(Vec<Property>),
     Children(Vec<Child>),
+    TabularSectionIdentities(super::TabularSectionIdentities),
     Preserved(XmlFragment),
 }
 

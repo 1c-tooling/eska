@@ -66,6 +66,7 @@ impl<'a> Index<'a> {
             &document.descriptor.object,
             &document.descriptor.xml.namespaces,
             documents,
+            None,
         )?;
         Ok(index)
     }
@@ -78,6 +79,7 @@ impl<'a> Index<'a> {
         node: &'a MetadataNode,
         inherited: &[Namespace],
         documents: &'a BTreeMap<SourcePath, NativeDocument>,
+        parent: Option<&'a MetadataNode>,
     ) -> Result<(), Error> {
         if self
             .paths
@@ -87,7 +89,7 @@ impl<'a> Index<'a> {
             return Err(Error::root("source_metadata_reference_ambiguous"));
         }
         let context = scope(inherited, &node.namespaces)?;
-        for generated in type_description::generated_types(node, &context)? {
+        for generated in type_description::generated_types(node, &context, parent)? {
             if self
                 .type_names
                 .insert(generated.name, generated.is_named_set)
@@ -108,6 +110,7 @@ impl<'a> Index<'a> {
                                 object,
                                 &context,
                                 documents,
+                                Some(node),
                             )?;
                         }
                         Child::Reference {
@@ -132,6 +135,7 @@ impl<'a> Index<'a> {
                                 &document.descriptor.object,
                                 &document.descriptor.xml.namespaces,
                                 documents,
+                                Some(node),
                             )?;
                         }
                         Child::Preserved { .. } => {}

@@ -199,7 +199,7 @@ fn merge_node(
                     super::super::child_creation::validate_names(children.iter())?;
                 }
             }
-            Section::Preserved(_) => {}
+            Section::Preserved(_) | Section::TabularSectionIdentities(_) => {}
         }
     }
     Ok(())

@@ -27,6 +27,7 @@ mod protected;
 mod readable;
 mod reader;
 mod structural_references;
+mod tabular_identities;
 mod targets;
 mod type_description;
 mod validation;
@@ -75,6 +76,7 @@ pub use project_migration::{
     prepare_readable_workspace,
 };
 pub use property::ExactUnsigned;
+pub use tabular_identities::{GeneratedIdentity, TabularSectionIdentities};
 pub use type_description::{
     DateQualifiers, NumberQualifiers, StringQualifiers, TypeAllowedLength, TypeAllowedSign,
     TypeAlternative, TypeAlternativeKind, TypeData, TypeDateField, TypeDateFractions,

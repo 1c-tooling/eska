@@ -779,6 +779,10 @@ members и блокирует незавершённую публикацию.
 [Создание колонок существующей табличной части](docs/research/eska-format/column-creation.md)
 использует её принятые UUID/parentage, supplier/freeze policy и namespace context;
 старые колонки и generated identities сохраняются.
+[Служебные идентификаторы табличной части](docs/research/eska-format/tabular-section-identities.md)
+хранят четыре UUID отдельно; generated names выводятся из единственных Name
+реального родителя и табличной части. Новые native imports используют typed
+профиль, прежний preserved YAML сохраняется при открытии и миграции.
 Остальные structural/compound profiles и завершение структуры EF-24 ещё в работе.
 Инструменты собираются отдельно с features `project-cli`/`build-cli`;
 комплектная поставка и делегирование оболочки ещё не подключены.

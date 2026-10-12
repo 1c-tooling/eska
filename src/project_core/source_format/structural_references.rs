@@ -119,6 +119,7 @@ fn validate_node(
                 }
             }
             Section::Preserved(value) => validate_fragment(value, &context, path, removed)?,
+            Section::TabularSectionIdentities(_) => {}
         }
     }
     Ok(())

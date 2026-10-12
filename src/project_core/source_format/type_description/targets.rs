@@ -30,9 +30,22 @@ pub(in crate::project_core::source_format) fn named_target<'a>(
 pub(in crate::project_core::source_format) fn generated_types(
     node: &MetadataNode,
     context: &[Namespace],
+    parent: Option<&MetadataNode>,
 ) -> Result<Vec<GeneratedType>, Error> {
     let mut names = Vec::new();
     for section in &node.sections {
+        if let Section::TabularSectionIdentities(identities) = section {
+            identities.validate(node, parent, context)?;
+            names.extend(
+                super::super::tabular_identities::names(node, parent)?
+                    .into_iter()
+                    .map(|name| GeneratedType {
+                        name,
+                        is_named_set: false,
+                    }),
+            );
+            continue;
+        }
         let Section::Preserved(value) = section else {
             continue;
         };

@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "status": "partial_ef24",
+  "profile": "designer-2.20-configuration",
+  "descriptor_schemas": [
+    1,
+    2
+  ],
+  "source_layouts": [
+    1,
+    2,
+    3
+  ],
+  "rules_version": 1,
+  "source_map_version": 2,
+  "tool_protocol_version": 1,
+  "native_profile": {
+    "owners": [
+      "Catalog",
+      "Document"
+    ],
+    "child": "TabularSection",
+    "section": "tabular_section_identities",
+    "native_roles": [
+      "TabularSection",
+      "TabularSectionRow"
+    ],
+    "uuid_slots": [
+      "type_id",
+      "value_id"
+    ],
+    "explicit_uuid_count_per_table": 4,
+    "generated_names_derived_from_actual_owner_and_table_name": true,
+    "generated_names_not_stored_again": true,
+    "existing_preserved_yaml_not_promoted": true,
+    "service_uuid_not_registered_as_metadata_object": true,
+    "creation_still_not_enabled": true,
+    "new_commands": 0,
+    "new_dependencies": 0
+  },
+  "preimplementation_platform_probe": {
+    "platform": "8.3.27.2325",
+    "without_internal_info_refused": true,
+    "explicit_internal_info_accepted": true,
+    "two_independent_generated_identity_sets_equal": true,
+    "table_properties_materialized_by_platform": true
+  },
+  "new_tests": {
+    "core": 9,
+    "cli": 1
+  },
+  "verification": {
+    "root_gates": [
+      {
+        "stage": "fmt",
+        "exit_code": 0,
+        "seconds": 0.99
+      },
+      {
+        "stage": "check",
+        "exit_code": 0,
+        "seconds": 0.27
+      },
+      {
+        "stage": "clippy",
+        "exit_code": 0,
+        "seconds": 2.7
+      },
+      {
+        "stage": "default-test",
+        "exit_code": 0,
+        "seconds": 61.27
+      },
+      {
+        "stage": "all-features-test",
+        "exit_code": 0,
+        "seconds": 69.97
+      },
+      {
+        "stage": "doc",
+        "exit_code": 0,
+        "seconds": 5.59
+      },
+      {
+        "stage": "minimal-clippy",
+        "exit_code": 0,
+        "seconds": 4.98
+      },
+      {
+        "stage": "minimal-test",
+        "exit_code": 0,
+        "seconds": 16.69
+      },
+      {
+        "stage": "minimal-doc",
+        "exit_code": 0,
+        "seconds": 3.38
+      },
+      {
+        "stage": "project-clippy",
+        "exit_code": 0,
+        "seconds": 2.27
+      },
+      {
+        "stage": "project-test",
+        "exit_code": 0,
+        "seconds": 8.82
+      },
+      {
+        "stage": "project-doc",
+        "exit_code": 0,
+        "seconds": 6.23
+      },
+      {
+        "stage": "build-clippy",
+        "exit_code": 0,
+        "seconds": 5.58
+      },
+      {
+        "stage": "build-test",
+        "exit_code": 0,
+        "seconds": 29.48
+      },
+      {
+        "stage": "build-doc",
+        "exit_code": 0,
+        "seconds": 6.32
+      },
+      {
+        "stage": "diff",
+        "exit_code": 0,
+        "seconds": 0.02
+      }
+    ],
+    "sdk_and_adapter_gates": [
+      {
+        "stage": "sdk-fmt",
+        "exit_code": 0,
+        "seconds": 0.36
+      },
+      {
+        "stage": "sdk-check",
+        "exit_code": 0,
+        "seconds": 4.05
+      },
+      {
+        "stage": "sdk-clippy",
+        "exit_code": 0,
+        "seconds": 3.94
+      },
+      {
+        "stage": "sdk-test",
+        "exit_code": 0,
+        "seconds": 35.11
+      },
+      {
+        "stage": "sdk-doc",
+        "exit_code": 0,
+        "seconds": 3.08
+      },
+      {
+        "stage": "sdk-core-clippy",
+        "exit_code": 0,
+        "seconds": 4.25
+      },
+      {
+        "stage": "sdk-core-test",
+        "exit_code": 0,
+        "seconds": 15.47
+      },
+      {
+        "stage": "sdk-core-doc",
+        "exit_code": 0,
+        "seconds": 1.27
+      },
+      {
+        "stage": "sdk-check-cli-clippy",
+        "exit_code": 0,
+        "seconds": 2.04
+      },
+      {
+        "stage": "sdk-check-cli-test",
+        "exit_code": 0,
+        "seconds": 12.47
+      },
+      {
+        "stage": "sdk-check-cli-doc",
+        "exit_code": 0,
+        "seconds": 2.36
+      },
+      {
+        "stage": "sdk-analyzer-cli-clippy",
+        "exit_code": 0,
+        "seconds": 3.95
+      },
+      {
+        "stage": "sdk-analyzer-cli-test",
+        "exit_code": 0,
+        "seconds": 24.0
+      },
+      {
+        "stage": "sdk-analyzer-cli-doc",
+        "exit_code": 0,
+        "seconds": 2.69
+      },
+      {
+        "stage": "adapter-fmt",
+        "exit_code": 0,
+        "seconds": 0.13
+      },
+      {
+        "stage": "adapter-check",
+        "exit_code": 0,
+        "seconds": 2.66
+      },
+      {
+        "stage": "adapter-clippy",
+        "exit_code": 0,
+        "seconds": 1.26
+      },
+      {
+        "stage": "adapter-test",
+        "exit_code": 0,
+        "seconds": 11.17
+      },
+      {
+        "stage": "adapter-doc",
+        "exit_code": 0,
+        "seconds": 0.54
+      }
+    ],
+    "release_gates": [
+      {
+        "stage": "release-project",
+        "exit_code": 0,
+        "seconds": 45.93
+      },
+      {
+        "stage": "release-platform",
+        "exit_code": 0,
+        "seconds": 169.09
+      }
+    ],
+    "root_unit_passed": 542,
+    "root_integration_passed": 565,
+    "root_opt_in_ignored": 24,
+    "minimal_core_unit_passed": 341,
+    "minimal_project_unit_passed": 349,
+    "standalone_project_cli_passed": 34,
+    "sdk_passed": 359,
+    "adapter_unit_passed": 70,
+    "adapter_integration_passed": 12,
+    "locale_keys_equal": true
+  },
+  "real_c1": {
+    "native_files": 8778,
+    "native_directories": 8077,
+    "descriptors": 3595,
+    "objects": 8330,
+    "tables": 114,
+    "service_uuid_count": 456,
+    "family_source_files": 2645,
+    "readable_source_files": 3595,
+    "both_layouts_exact_original_native_noop": true,
+    "changed_source_files": 2,
+    "native_control_bytes_equal": true,
+    "both_locales_checked": true,
+    "protected_exclusions": 0,
+    "forbidden_service_uuid_strict_refused_before_generation": true,
+    "recovery_restores_service_uuid_and_keeps_independent_comments": true,
+    "typed_identities_preserved_by_family_to_readable_migration": true,
+    "migration_repeat_unchanged": true,
+    "schema": {
+      "validated_source_files": {
+        "readable": 3595,
+        "family": 2645,
+        "migrated": 3595
+      },
+      "invalid_source_files": 0,
+      "public_example_valid": true,
+      "negative_identity_shapes_refused": 5
+    },
+    "semantic": {
+      "descriptors": 3595,
+      "objects": 8330,
+      "all_and_summary_equal": true,
+      "saved_and_unsaved_equal": true
+    },
+    "source_locations": {
+      "table_comments_working": 2,
+      "service_identity_objects_accepted": 2,
+      "exact_revisions_and_actual_table_uuids": true
+    },
+    "working_and_accepted_and_native_and_settings_unchanged": true,
+    "source_manifest_unchanged": true,
+    "independent_release_cli_without_platform_git_shell_or_machine_config": true
+  },
+  "platform_cycle": {
+    "platform": "8.3.27.2325",
+    "native_files": 8769,
+    "native_directories": 8064,
+    "other_bytes_equal": true,
+    "dump_versions": {
+      "versioned_entries": 7011,
+      "changed_versions": 7011,
+      "all_other_bytes_equal": true
+    },
+    "all_explicit_service_ids_retained": 456,
+    "both_routes_match_original_ids_and_roles": true,
+    "artifact_checksums_valid": true,
+    "project_version_unchanged": true,
+    "sources_and_accepted_base_unchanged": true,
+    "stages": [
+      {
+        "stage": "init-control",
+        "exit_code": 0,
+        "seconds": 0.4485881159998826
+      },
+      {
+        "stage": "build-control",
+        "exit_code": 0,
+        "seconds": 21.74010619099863
+      },
+      {
+        "stage": "dump-control",
+        "exit_code": 0,
+        "seconds": 18.810812810999778
+      },
+      {
+        "stage": "build-eska",
+        "exit_code": 0,
+        "seconds": 27.789309064999543
+      },
+      {
+        "stage": "dump-eska",
+        "exit_code": 0,
+        "seconds": 18.311458787000447
+      },
+      {
+        "stage": "compare-dumps",
+        "exit_code": 0,
+        "seconds": 1.3916444649985351
+      }
+    ]
+  },
+  "not_accepted": [
+    "new_table_creation",
+    "accepted_table_rename_or_deletion",
+    "other_owner_classes",
+    "new_CFE_EPF_ERF_profiles",
+    "client_execution",
+    "production_infobase_update",
+    "full_BSL_analysis"
+  ]
+}

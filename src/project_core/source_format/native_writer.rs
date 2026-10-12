@@ -4,7 +4,8 @@ use std::fmt::Write;
 
 use super::{
     Child, Descriptor, Error, LineEnding, MetadataNode, Namespace, Property, PropertyValue,
-    Section, TypeDescription, TypePart, XmlAttribute, XmlFragment, validation::scope,
+    Section, TabularSectionIdentities, TypeDescription, TypePart, XmlAttribute, XmlFragment,
+    validation::scope,
 };
 
 const V8_NAMESPACE: &str = "http://v8.1c.ru/8.1/data/core";
@@ -32,7 +33,7 @@ pub(super) fn encode(source: &Descriptor) -> Result<String, Error> {
     writer.attributes(&source.xml.attributes);
     writer.output.push('>');
     writer.output.push_str(writer.eol);
-    writer.object(&source.object, 1, &source.xml.namespaces)?;
+    writer.object(&source.object, 1, &source.xml.namespaces, None)?;
     writer.output.push_str("</MetaDataObject>");
     writer.output.push_str(writer.eol);
     crate::project_core::native::check_envelope(&writer.output)
@@ -60,6 +61,7 @@ impl Writer {
         node: &MetadataNode,
         indent: usize,
         inherited: &[Namespace],
+        parent: Option<&MetadataNode>,
     ) -> Result<(), Error> {
         let context = scope(inherited, &node.namespaces)?;
         self.indent(indent);
@@ -71,7 +73,7 @@ impl Writer {
         self.output.push('>');
         self.output.push_str(self.eol);
         for section in &node.sections {
-            self.section(section, indent + 1, &context)?;
+            self.section(section, indent + 1, &context, node, parent)?;
         }
         self.close(node.kind.designer_tag(), indent);
         Ok(())
@@ -83,6 +85,8 @@ impl Writer {
         section: &Section,
         indent: usize,
         context: &[Namespace],
+        node: &MetadataNode,
+        parent: Option<&MetadataNode>,
     ) -> Result<(), Error> {
         match section {
             Section::Properties(values) => {
@@ -96,7 +100,9 @@ impl Writer {
                 self.open("ChildObjects", indent);
                 for value in values {
                     match value {
-                        Child::Inline { object } => self.object(object, indent + 1, context)?,
+                        Child::Inline { object } => {
+                            self.object(object, indent + 1, context, Some(node))?;
+                        }
                         Child::Reference {
                             metadata_kind,
                             name,
@@ -107,7 +113,49 @@ impl Writer {
                 self.close("ChildObjects", indent);
             }
             Section::Preserved(fragment) => self.fragment(fragment, indent)?,
+            Section::TabularSectionIdentities(identities) => {
+                self.tabular_identities(identities, node, parent, indent)?;
+            }
         }
+        Ok(())
+    }
+
+    /// The service names use authoritative metadata names; native UUIDs and category order remain explicit.
+    fn tabular_identities(
+        &mut self,
+        identities: &TabularSectionIdentities,
+        node: &MetadataNode,
+        parent: Option<&MetadataNode>,
+        indent: usize,
+    ) -> Result<(), Error> {
+        let names = super::tabular_identities::names(node, parent)?;
+        self.open("InternalInfo", indent);
+        let prefix = &identities.prefix;
+        let tag = format!("{prefix}:GeneratedType");
+        for (name, category, ids) in [
+            (&names[0], "TabularSection", &identities.table),
+            (&names[1], "TabularSectionRow", &identities.row),
+        ] {
+            self.indent(indent + 1);
+            self.output.push('<');
+            self.output.push_str(&tag);
+            self.attribute("name", name);
+            self.attribute("category", category);
+            self.output.push('>');
+            self.output.push_str(self.eol);
+            self.text_element(
+                &format!("{prefix}:TypeId"),
+                ids.type_id.as_str(),
+                indent + 2,
+            );
+            self.text_element(
+                &format!("{prefix}:ValueId"),
+                ids.value_id.as_str(),
+                indent + 2,
+            );
+            self.close(&tag, indent + 1);
+        }
+        self.close("InternalInfo", indent);
         Ok(())
     }
 

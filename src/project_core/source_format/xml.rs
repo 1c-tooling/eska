@@ -89,6 +89,8 @@ fn object(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> Result<Me
                     .map(|part| child_object(part, input, &context))
                     .collect::<Result<_, _>>()?,
             )
+        } else if let Some(identities) = super::tabular_identities::decode(child, input, &context) {
+            Section::TabularSectionIdentities(identities)
         } else {
             Section::Preserved(fragment(child, input, &context))
         };

@@ -27,6 +27,10 @@ namespace зависимости; [именованный FillValue](enum-fill-v
 профиль Name/Synonym/Comment/Type и прежнюю policy с проверкой типов, имён и порядка.
 [Создание колонок](column-creation.md) использует принятую табличную часть
 Catalog/Document с её UUID, parentage и native namespace context.
+[Служебные идентификаторы табличной части](tabular-section-identities.md)
+сохраняют четыре UUID без повторных generated names; writer/target lookup
+используют единственные metadata Name. Preserved YAML не меняет классификацию
+при открытии/миграции; служебные UUID не дают policy authority.
 Другие structural profiles и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.

@@ -2308,6 +2308,33 @@ unknown slots, смешанные edits, local namespace shadowing, Working coor
 Schemas/rules/protocol прежние. EF-24 — `IN_PROGRESS`: прочие structural/compound
 profiles ещё нужны; клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
 
+Двадцать вторая часть — [служебные идентификаторы табличной части](../research/eska-format/tabular-section-identities.md)
+прямого Catalog/Document. Наблюдаемый InternalInfo хранит четыре UUID один раз;
+generated table/row names выводятся из единственных Name реального родителя
+и таблицы. Общие writer/target lookup/reader и source map используют профиль;
+служебные UUID не регистрируются как metadata objects. Raw edits восстанавливаются
+с прежними resource exclusions; независимый разрешённый Comment сохраняется.
+Прежний preserved YAML не продвигается при открытии/миграции. Добавлены
+экспериментальные Rust types/вариант Section; схемы/rules/protocol версии прежние.
+До реализации 1С 8.3.27.2325 отказала для таблицы без InternalInfo и приняла
+два независимых CF/build/dump цикла с явными четырьмя UUID каждого владельца.
+В C1 — 114 табличных частей/456 service UUID без коллизий. Девять core и один
+CLI tests проверяют envelopes, parentage/namespace, unknown profiles, collisions,
+защиту, annotations/CRLF, saved/overlay, обе локали и сохранность.
+Прошли 16 root/14 SDK/5 adapter gates и две release-сборки: 542 unit +
+565 integration, 24 opt-in пропущены; minimal project — 349 unit + 34 CLI,
+SDK — 359, adapter — 70 + 12. C1 восстановлена побайтно в family/readable:
+8 778 файлов/8 077 каталогов; typed profile и bytes сохранены при migration/repeat.
+Два Comment/два YAML прошли independent native контроль; запрещённый service UUID
+восстановлен без потери Comment. Все 3 595 readable/2 645 family/3 595 migrated
+YAML прошли schemas; 3 595 descriptors/8 330 объектов равны в saved/overlay
+All/Summary, source coordinates проверены. Обе CF/build/dump routes дали
+8 769 файлов/8 064 каталога кроме 7 011 configVersion; все 456 UUID/roles/names
+сохранены, checksums верны, inputs/settings/версия не изменились.
+[Результаты](../research/eska-format/tabular-section-identities-results.json).
+EF-24 — `IN_PROGRESS`: создание самих табличных частей и прочие structural/compound
+profiles ещё нужны; клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

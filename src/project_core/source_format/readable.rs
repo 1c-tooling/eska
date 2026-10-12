@@ -105,6 +105,7 @@ struct NativeNode {
 enum NativeSection {
     Properties(Vec<PropertySlot>),
     Children,
+    TabularSectionIdentities(super::TabularSectionIdentities),
     Preserved(XmlFragment),
 }
 
@@ -239,6 +240,9 @@ fn encode_node(node: &MetadataNode) -> Result<Node, Error> {
                 NativeSection::Children
             }
             Section::Preserved(fragment) => NativeSection::Preserved(fragment.clone()),
+            Section::TabularSectionIdentities(identities) => {
+                NativeSection::TabularSectionIdentities(identities.clone())
+            }
         });
     }
     Ok(Node {
@@ -288,6 +292,9 @@ fn decode_node(node: Node) -> Result<MetadataNode, Error> {
                     .collect::<Result<_, Error>>()?,
             ),
             NativeSection::Preserved(fragment) => Section::Preserved(fragment),
+            NativeSection::TabularSectionIdentities(identities) => {
+                Section::TabularSectionIdentities(identities)
+            }
         });
     }
     if !properties.is_empty() || children.is_some_and(|items| !items.is_empty()) {

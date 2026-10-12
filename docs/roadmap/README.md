@@ -105,6 +105,11 @@ Attribute у Catalog/Document по минимальному Name/Synonym/Comment
 namespace context и прежней supplier/freeze policy.
 Двенадцать колонок C1 прошли независимый native/schema/semantic контроль и два
 CF/build/dump цикла на 1С 8.3.27.2325; UUID/типы, generated identities и inputs сохранены.
+[Двадцать вторая часть](../research/eska-format/tabular-section-identities.md)
+типизирует четыре service UUID прямой табличной части Catalog/Document;
+generated names выводятся из единственных metadata Name. Preserved YAML
+не преобразуется при открытии/миграции; UUID не дают policy authority.
+Создание самой табличной части остаётся следующим профилем EF-24.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи
 не открываются заново, но не подтверждают новое расширенное покрытие MVP.

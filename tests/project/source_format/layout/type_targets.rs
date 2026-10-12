@@ -236,7 +236,7 @@ fn visit(
                     }
                 }
             }
-            Section::Preserved(_) => {}
+            Section::Preserved(_) | Section::TabularSectionIdentities(_) => {}
         }
     }
 }
