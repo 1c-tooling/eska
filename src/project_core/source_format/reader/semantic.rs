@@ -340,6 +340,37 @@ fn typed_property(
         PropertyValue::Boolean(value) => MetadataValue::Text(value.to_string()),
         PropertyValue::Integer(value) => MetadataValue::Text(value.as_str().into()),
         PropertyValue::TypeDescription(value) => value.to_metadata(context)?,
+        PropertyValue::Reference(value) => MetadataValue::Text(value.as_str().into()),
+        PropertyValue::ReferenceList(value) => MetadataValue::Record(
+            value
+                .items
+                .iter()
+                .map(|item| MetadataProperty {
+                    key: PropertyKey {
+                        namespace: Some(
+                            super::super::metadata_reference::READABLE_NAMESPACE.into(),
+                        ),
+                        name: "Item".into(),
+                    },
+                    qualifiers: vec![(
+                        PropertyKey {
+                            namespace: Some(super::super::metadata_reference::XSI_NAMESPACE.into()),
+                            name: "type".into(),
+                        },
+                        format!("{}:MDObjectRef", value.native.type_prefix),
+                    )],
+                    value: MetadataValue::TypedText {
+                        text: item.as_str().into(),
+                        key: PropertyKey {
+                            namespace: Some(
+                                super::super::metadata_reference::READABLE_NAMESPACE.into(),
+                            ),
+                            name: "MDObjectRef".into(),
+                        },
+                    },
+                })
+                .collect(),
+        ),
         PropertyValue::Empty | PropertyValue::Nil if name == PropertyName::Synonym => {
             MetadataValue::Localized(Vec::new())
         }

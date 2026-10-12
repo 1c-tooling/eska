@@ -131,6 +131,26 @@ impl Writer {
                 self.text_element(tag, if *value { "true" } else { "false" }, indent);
             }
             PropertyValue::Integer(value) => self.text_element(tag, value.as_str(), indent),
+            PropertyValue::Reference(value) => self.text_element(tag, value.as_str(), indent),
+            PropertyValue::ReferenceList(value) => {
+                self.open(tag, indent);
+                let item = format!("{}:Item", value.native.item_prefix);
+                for reference in &value.items {
+                    self.indent(indent + 1);
+                    let _ = write!(self.output, "<{item}");
+                    self.attribute(
+                        &format!("{}:type", value.native.xsi_prefix),
+                        &format!("{}:MDObjectRef", value.native.type_prefix),
+                    );
+                    let _ = write!(
+                        self.output,
+                        ">{}</{item}>{}",
+                        escape(reference.as_str()),
+                        self.eol
+                    );
+                }
+                self.close(tag, indent);
+            }
             PropertyValue::TypeDescription(value) => self.type_description(value, indent)?,
             PropertyValue::Empty => {
                 self.indent(indent);

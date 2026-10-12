@@ -28,7 +28,8 @@ object:
 Именованные `properties` содержат единственную редактируемую копию значения.
 `native_xml` сохраняет профиль XML, BOM/EOL и root namespace bindings;
 `object.native` — namespaces, attributes и native sections. Служебные slots
-properties содержат имена typed-свойств, bindings составного `Type` или opaque
+properties содержат имена typed-свойств, bindings составного `Type`,
+списков ссылок метаданных или opaque
 fragments, без второй копии значений. Slot children указывает место секции; сами children объявлены
 один раз, в смысловом порядке. Inline descendants используют ту же оболочку.
 
@@ -41,6 +42,9 @@ JSON schemas: [descriptor](descriptor-readable.schema.json),
 Оболочка сама не расширяет [32 typed-свойства](typed-scalars.md).
 [Седьмая часть EF-24](type-description.md) добавляет составной `Type` с
 alternatives и qualifiers; его native bindings сохраняются отдельно от data.
+[Восьмая часть](metadata-reference.md) добавляет 13 имён для одиночных ссылок
+и списков: всего поддержано 46 имён свойств. Ссылка хранится строкой, список —
+последовательностью строк; отдельный slot списка сохраняет только XML prefixes.
 Строки и enum — строки, boolean — bool, integer — точная строка ASCII-цифр.
 Числа с ведущими нулями и произвольным количеством цифр не проходят через
 float/u64. `Synonym` — упорядоченная последовательность language/text.
@@ -63,7 +67,9 @@ Reader/declarations/semantic projection, CST editor и source coordinates исп
 сохраняют native ordinal. Inline identity и logical parents не меняются.
 
 CST-правка заменяет выбранный direct scalar, state wrapper, localized text или
-существующие листья составного Type без смены его layout/состава.
+существующие листья составного Type без смены его layout/состава. Ссылки
+метаданных проверяются по принятому дереву; элементы списка сохраняют quoting
+и комментарии. Изменение длины block list имеет [явные ограничения](metadata-reference.md).
 Соседние байты, комментарии, CRLF и языковой состав остаются прежними. Для строки
 с переводом строки выбирается quoting, сохраняющий точное значение. Необработанное
 оформление отказывается до записи. Equal-value edit не публикует файл.
@@ -123,7 +129,8 @@ schema 2/descriptor version 2 проверены; exclusions отсутству�
 [Обезличенные результаты](readable-layout-results.json) отделяют платформенный
 цикл от выполнения в клиенте и новых профилей.
 
-Составные типы, новые ссылки/коллекции, structural create/delete/rename
-и публичная orchestration ещё не выполнены.
+Описание Type и выбранные ссылки/списки добавлены последующими частями.
+Остальные составные домены, structural create/delete/rename и публичная
+orchestration ещё не выполнены.
 Новые C2/C3, CFE/EPF/ERF и клиентское выполнение этой частью не принимаются.
 EF-24 остаётся `IN_PROGRESS`.

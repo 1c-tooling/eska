@@ -10,6 +10,7 @@ mod files;
 mod fragment;
 mod import;
 mod layout;
+mod metadata_reference;
 mod model;
 mod native_writer;
 mod package;
@@ -51,6 +52,7 @@ pub use reader::{
     NativeMetadata, OwnerSnapshot, SourceReader,
 };
 
+pub use metadata_reference::{MetadataReference, MetadataReferenceLayout, MetadataReferenceList};
 pub use model::{
     Child, Descriptor, LineEnding, LocalizedText, MetadataNode, Namespace, NativeUuid, Property,
     PropertyName, PropertyValue, Section, XmlAttribute, XmlFragment, XmlProfile,

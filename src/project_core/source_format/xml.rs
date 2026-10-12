@@ -144,6 +144,7 @@ pub(super) fn property(
     if let Some(name) = name
         && let Some(kind) = name.value_kind(owner)
         && let Some(value) = typed_value(node, kind, input, inherited)
+        && super::metadata_reference::validate_property(name, owner, &value, inherited).is_ok()
     {
         return Property::Typed { name, value };
     }
@@ -159,6 +160,17 @@ fn typed_value(
     input: &str,
     context: &[Namespace],
 ) -> Option<PropertyValue> {
+    if matches!(
+        kind,
+        super::property::ValueKind::Reference | super::property::ValueKind::ReferenceList
+    ) && input
+        .get(node.range())?
+        .split_once('>')?
+        .0
+        .contains("xmlns")
+    {
+        return None;
+    }
     if node.attributes().len() == 1
         && matches!(node.attribute((XSI_NAMESPACE, "nil")), Some("true" | "1"))
         && node.children().all(|child| {
@@ -183,6 +195,10 @@ fn typed_value(
     if matches!(kind, super::property::ValueKind::TypeDescription) {
         return super::type_description::decode(node, input, context)
             .map(|value| PropertyValue::TypeDescription(Box::new(value)));
+    }
+    if matches!(kind, super::property::ValueKind::ReferenceList) {
+        return super::metadata_reference::decode_list(node, input, context)
+            .map(|value| PropertyValue::ReferenceList(Box::new(value)));
     }
     if node.children().all(|child| child.is_text()) {
         kind.parse(text(node))
@@ -310,4 +326,32 @@ fn text(node: Node<'_, '_>) -> String {
         .filter(Node::is_text)
         .filter_map(|child| child.text())
         .collect()
+}
+
+/// Comments, processing instructions and meaningful mixed text have no typed inverse rule.
+pub(super) fn typed_elements<'a, 'input>(node: Node<'a, 'input>) -> Option<Vec<Node<'a, 'input>>> {
+    if node.children().any(|child| {
+        !(child.is_element()
+            || child.is_text() && child.text().is_none_or(|text| text.trim().is_empty()))
+    }) {
+        return None;
+    }
+    Some(node.children().filter(Node::is_element).collect())
+}
+
+/// Do not erase attributes or local namespace declarations, even when their effective URI agrees.
+pub(super) fn plain_element_name<'a>(node: Node<'_, '_>, input: &'a str) -> Option<&'a str> {
+    if !node.is_element() || node.attributes().len() != 0 {
+        return None;
+    }
+    let head = input
+        .get(node.range())?
+        .strip_prefix('<')?
+        .split_once('>')?
+        .0;
+    let name = head
+        .split(|ch: char| ch.is_whitespace() || ch == '/')
+        .next()?;
+    let rest = head.strip_prefix(name)?.trim();
+    (rest.is_empty() || rest == "/").then_some(name)
 }

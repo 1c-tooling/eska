@@ -40,3 +40,45 @@ pub fn add_subsystems(root: &Path, native: &Path) {
     )
     .unwrap();
 }
+
+/// Invalid native content reaches the adapter in either envelope without assuming embedded XML.
+pub fn invalid_content(input: &str) -> String {
+    use eska::project_core::source_format::{
+        ObjectSource, Property, PropertyName, Section, XmlFragment,
+    };
+    let mut source = ObjectSource::from_yaml(input).unwrap();
+    let property = source
+        .document
+        .descriptor
+        .object
+        .sections
+        .iter_mut()
+        .find_map(|section| {
+            let Section::Properties(items) = section else {
+                return None;
+            };
+            items.iter_mut().find(|property| {
+                matches!(
+                    property,
+                    Property::Typed {
+                        name: PropertyName::Content,
+                        ..
+                    }
+                )
+            })
+        })
+        .unwrap();
+    *property = Property::Preserved {
+        fragment: XmlFragment {
+            xml: concat!(
+                "<Content><xr:Future xsi:type=\"xr:MDObjectRef\">",
+                "Catalog.Items</xr:Future></Content>"
+            )
+            .into(),
+            namespaces: Vec::new(),
+        },
+    };
+    let updated = serde_json::to_string(&source).unwrap();
+    assert_ne!(input, updated);
+    updated
+}

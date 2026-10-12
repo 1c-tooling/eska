@@ -120,6 +120,7 @@ fn properties(
                 {
                     return Err(Error::root("source_property_type_invalid").in_field(name.as_str()));
                 }
+                super::metadata_reference::validate_property(*name, owner, value, context)?;
                 match (name, value) {
                     (PropertyName::Synonym, PropertyValue::Localized(items)) => {
                         let mut languages = BTreeSet::new();
@@ -146,7 +147,9 @@ fn properties(
                         PropertyValue::Empty
                         | PropertyValue::Nil
                         | PropertyValue::Boolean(_)
-                        | PropertyValue::Integer(_),
+                        | PropertyValue::Integer(_)
+                        | PropertyValue::Reference(_)
+                        | PropertyValue::ReferenceList(_),
                     ) => {}
                     (_, PropertyValue::Enumeration(text)) => xml_text(text)?,
                     (_, PropertyValue::TypeDescription(value)) => value.validate(context)?,
@@ -318,4 +321,20 @@ fn xml_text(value: &str) -> Result<(), Error> {
         return Err(Error::root("source_xml_character_invalid"));
     }
     Ok(())
+}
+
+/// XML 1.0 Fifth Edition names admit native Unicode identifiers, excluding namespace separators.
+pub(super) fn ncname(value: &str) -> bool {
+    let mut characters = value.chars();
+    characters.next().is_some_and(name_start) && characters.all(|ch| name_start(ch)
+        || matches!(ch, '-' | '.' | '0'..='9' | '\u{b7}' | '\u{300}'..='\u{36f}' | '\u{203f}'..='\u{2040}'))
+}
+
+/// Keep the normative `NameStartChar` ranges independent from Unicode letter classifications.
+const fn name_start(ch: char) -> bool {
+    matches!(ch, 'A'..='Z' | '_' | 'a'..='z' | '\u{c0}'..='\u{d6}' | '\u{d8}'..='\u{f6}'
+        | '\u{f8}'..='\u{2ff}' | '\u{370}'..='\u{37d}' | '\u{37f}'..='\u{1fff}'
+        | '\u{200c}'..='\u{200d}' | '\u{2070}'..='\u{218f}' | '\u{2c00}'..='\u{2fef}'
+        | '\u{3001}'..='\u{d7ff}' | '\u{f900}'..='\u{fdcf}' | '\u{fdf0}'..='\u{fffd}'
+        | '\u{10000}'..='\u{effff}')
 }

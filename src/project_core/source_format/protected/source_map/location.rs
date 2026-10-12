@@ -339,8 +339,13 @@ fn property_range(
             ..
         } => steps.extend([Step::Key("value"), Step::Key("value"), Step::Key("data")]),
         Property::Typed {
+            value: PropertyValue::ReferenceList(_),
+            ..
+        } => steps.extend([Step::Key("value"), Step::Key("value"), Step::Key("items")]),
+        Property::Typed {
             value:
-                PropertyValue::Text(_)
+                PropertyValue::Reference(_)
+                | PropertyValue::Text(_)
                 | PropertyValue::Boolean(_)
                 | PropertyValue::Integer(_)
                 | PropertyValue::Enumeration(_),

@@ -8,6 +8,9 @@ use super::super::{Error, PropertyValue, yaml};
 
 pub(super) use super::super::yaml::Step;
 
+#[cfg(test)]
+mod reference_tests;
+mod reference_value;
 mod type_value;
 
 /// Mutate the selected value only and preserve its surrounding YAML verbatim.
@@ -33,23 +36,28 @@ pub(super) fn replace(
     let mut replacement = mapping.to_string();
     // yaml-edit's literal factory omits the terminating transport newline when the
     // semantic string has strip chomping. Retain the original subtree boundary.
-    if original_text.ends_with('\n') && !replacement.ends_with('\n') {
-        replacement.push('\n');
-    }
     if scalar(previous).is_some() && matches!(next, PropertyValue::Empty | PropertyValue::Nil) {
         remove_scalar(mapping, &mut replacement)?;
     }
     // Newly manufactured CST tokens use LF. Only this subtree adopts its original EOL;
     // mixed surrounding text and unrelated scalar escape spellings remain untouched.
-    if original_text.contains("\r\n") {
-        replacement = replacement.replace("\r\n", "\n").replace('\n', "\r\n");
-    }
+    transport(original_text, &mut replacement);
+
     if comments(original_text) != comments(&replacement) {
         return Err(unsupported());
     }
     let mut output = input.to_owned();
     output.get(original.clone()).ok_or_else(unsupported)?;
     output.replace_range(original, &replacement);
+    if let (PropertyValue::ReferenceList(old), PropertyValue::ReferenceList(new)) = (previous, next)
+    {
+        let steps = steps
+            .iter()
+            .cloned()
+            .chain([Step::Key("value"), Step::Key("items")])
+            .collect::<Vec<_>>();
+        return reference_value::membership(&output, &steps, &old.items, &new.items);
+    }
     Ok(output)
 }
 
@@ -78,6 +86,15 @@ pub(super) fn replace_direct(
         (PropertyValue::TypeDescription(old), PropertyValue::TypeDescription(new)) => {
             type_value::replace(node.as_mapping().ok_or_else(unsupported)?, old, new)?;
         }
+        (PropertyValue::ReferenceList(old), PropertyValue::ReferenceList(new))
+            if old.native == new.native =>
+        {
+            reference_items(
+                node.as_sequence().ok_or_else(unsupported)?,
+                &old.items,
+                &new.items,
+            )?;
+        }
         (PropertyValue::Localized(old), PropertyValue::Localized(new))
             if old.len() == new.len()
                 && old.iter().zip(new).all(|(a, b)| a.language == b.language) =>
@@ -97,8 +114,18 @@ pub(super) fn replace_direct(
                 }
             }
         }
-        (_, PropertyValue::Localized(_) | PropertyValue::TypeDescription(_))
-        | (PropertyValue::Localized(_) | PropertyValue::TypeDescription(_), _) => {
+        (
+            _,
+            PropertyValue::Localized(_)
+            | PropertyValue::TypeDescription(_)
+            | PropertyValue::ReferenceList(_),
+        )
+        | (
+            PropertyValue::Localized(_)
+            | PropertyValue::TypeDescription(_)
+            | PropertyValue::ReferenceList(_),
+            _,
+        ) => {
             return Err(unsupported());
         }
         (_, PropertyValue::Boolean(value)) => mapping.set(*key, ScalarValue::from(*value)),
@@ -106,6 +133,9 @@ pub(super) fn replace_direct(
             set_direct_string(&mapping, key, value, node.as_scalar());
         }
         (_, PropertyValue::Integer(value)) => {
+            set_direct_string(&mapping, key, value.as_str(), node.as_scalar());
+        }
+        (_, PropertyValue::Reference(value)) => {
             set_direct_string(&mapping, key, value.as_str(), node.as_scalar());
         }
         (_, PropertyValue::Empty | PropertyValue::Nil) => {
@@ -124,18 +154,28 @@ pub(super) fn replace_direct(
         Some(value) => value,
         None => updated.as_node().ok_or_else(unsupported)?.to_string(),
     };
-    if original_text.ends_with('\n') && !replacement.ends_with('\n') {
-        replacement.push('\n');
-    }
-    if original_text.contains("\r\n") {
-        replacement = replacement.replace("\r\n", "\n").replace('\n', "\r\n");
-    }
+    transport(original_text, &mut replacement);
+
     if comments(original_text) != comments(&replacement) {
         return Err(unsupported());
     }
     let mut output = input.to_owned();
     output.replace_range(original, &replacement);
+    if let (PropertyValue::ReferenceList(old), PropertyValue::ReferenceList(new)) = (previous, next)
+    {
+        return reference_value::membership(&output, steps, &old.items, &new.items);
+    }
     Ok(output)
+}
+
+/// Manufactured tokens adopt only the selected subtree's existing newline boundary and EOL.
+fn transport(original: &str, replacement: &mut String) {
+    if original.ends_with('\n') && !replacement.ends_with('\n') {
+        replacement.push('\n');
+    }
+    if original.contains("\r\n") {
+        *replacement = replacement.replace("\r\n", "\n").replace('\n', "\r\n");
+    }
 }
 
 /// Keep a present string's style; a state wrapper has no string style to preserve.
@@ -183,6 +223,7 @@ fn update_value(
                     set_string(mapping, "value", value)?;
                 }
                 PropertyValue::Integer(value) => set_string(mapping, "value", value.as_str())?,
+                PropertyValue::Reference(value) => set_string(mapping, "value", value.as_str())?,
                 _ => return Err(unsupported()),
             }
             return Ok(());
@@ -197,6 +238,17 @@ fn update_value(
                 .and_then(|node| node.as_mapping().cloned())
                 .ok_or_else(unsupported)?;
             type_value::replace(&data, old, new)?;
+        }
+        (PropertyValue::ReferenceList(old), PropertyValue::ReferenceList(new))
+            if old.native == new.native =>
+        {
+            let items = mapping
+                .get("value")
+                .and_then(|node| node.as_mapping().cloned())
+                .and_then(|node| node.get("items"))
+                .and_then(|node| node.as_sequence().cloned())
+                .ok_or_else(unsupported)?;
+            reference_items(&items, &old.items, &new.items)?;
         }
         (PropertyValue::Empty | PropertyValue::Nil, PropertyValue::Empty | PropertyValue::Nil) => {
             set_empty_state(mapping, next)?;
@@ -234,8 +286,30 @@ fn scalar(value: &PropertyValue) -> Option<(&'static str, ScalarValue)> {
         PropertyValue::Boolean(value) => Some(("boolean", ScalarValue::from(*value))),
         PropertyValue::Integer(value) => Some(("integer", ScalarValue::string(value.as_str()))),
         PropertyValue::Enumeration(value) => Some(("enumeration", ScalarValue::string(value))),
+        PropertyValue::Reference(value) => Some(("reference", ScalarValue::string(value.as_str()))),
         _ => None,
     }
+}
+
+/// Scalar sequence mutation retains existing styles; outer guards refuse lost or moved annotations.
+fn reference_items(
+    sequence: &yaml_edit::Sequence,
+    old: &[super::super::MetadataReference],
+    new: &[super::super::MetadataReference],
+) -> Result<(), Error> {
+    for (index, (previous, next)) in old.iter().zip(new).enumerate() {
+        if previous != next {
+            let scalar = sequence
+                .get(index)
+                .and_then(|node| node.as_scalar().cloned())
+                .ok_or_else(unsupported)?;
+            let style = ScalarValue::from_scalar(&scalar).style();
+            if !sequence.set(index, ScalarValue::with_style(next.as_str(), style)) {
+                return Err(unsupported());
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Empty and nil have no scalar value field and retain their original state-token style.

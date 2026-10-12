@@ -19,6 +19,9 @@ EF-23 отвечает за файлы/обратную сборку, EF-27 — 
 миграциями. Карта путей остаётся версии 3; [legacy annotations](annotation-migration.md)
 переносятся по concrete schema paths. [Описание Type](type-description.md)
 добавляет alternatives и qualifiers с native bindings и общими edits/origins.
+[Ссылки метаданных](metadata-reference.md) добавляют одиночные значения и списки,
+проверку целей по объявленному дереву, CST-правки и восстановление запрещённых
+raw edits до проверки итогового состава.
 Остальные составные домены и structural operations ещё нужны.
 
 [Основа анализа EF-17](analysis-kernel.md) выбрана по реальному API,

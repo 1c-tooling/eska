@@ -244,6 +244,19 @@ pub enum PropertyName {
     FillChecking,
     Indexing,
     Type,
+    DefaultLanguage,
+    DefaultStyle,
+    DefaultRoles,
+    DefaultObjectForm,
+    DefaultListForm,
+    DefaultChoiceForm,
+    DefaultForm,
+    DefaultRecordForm,
+    DefaultFolderForm,
+    DefaultFolderChoiceForm,
+    Content,
+    Owners,
+    RegisterRecords,
 }
 
 impl PropertyName {
@@ -284,6 +297,19 @@ impl PropertyName {
             Self::FillChecking => "FillChecking",
             Self::Indexing => "Indexing",
             Self::Type => "Type",
+            Self::DefaultLanguage => "DefaultLanguage",
+            Self::DefaultStyle => "DefaultStyle",
+            Self::DefaultRoles => "DefaultRoles",
+            Self::DefaultObjectForm => "DefaultObjectForm",
+            Self::DefaultListForm => "DefaultListForm",
+            Self::DefaultChoiceForm => "DefaultChoiceForm",
+            Self::DefaultForm => "DefaultForm",
+            Self::DefaultRecordForm => "DefaultRecordForm",
+            Self::DefaultFolderForm => "DefaultFolderForm",
+            Self::DefaultFolderChoiceForm => "DefaultFolderChoiceForm",
+            Self::Content => "Content",
+            Self::Owners => "Owners",
+            Self::RegisterRecords => "RegisterRecords",
         }
     }
 }
@@ -305,6 +331,8 @@ pub enum PropertyValue {
     Nil,
     Localized(Vec<LocalizedText>),
     TypeDescription(Box<super::TypeDescription>),
+    Reference(super::MetadataReference),
+    ReferenceList(Box<super::MetadataReferenceList>),
 }
 
 /// A native language key is preserved verbatim, without locale normalization.

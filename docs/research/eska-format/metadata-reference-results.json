@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "task": "EF-24",
+  "part": 8,
+  "status": "IN_PROGRESS",
+  "feature": "metadata_references",
+  "wire": {
+    "descriptor_versions": [1, 2],
+    "source_layout_version": 3,
+    "source_map_version": 2,
+    "rules_version": 1,
+    "single_value_authority": true,
+    "legacy_preserved_promotion": false
+  },
+  "validation": {
+    "root_gates": 15,
+    "unit_tests": 426,
+    "integration_tests": 546,
+    "opt_in_ignored": 23,
+    "sdk_gates": 14,
+    "sdk_all_features_tests": 359,
+    "adapter_gates": 5,
+    "adapter_unit_tests": 70,
+    "adapter_integration_tests": 12,
+    "schema_validated_descriptors": 3595
+  },
+  "real_c1": {
+    "native_descriptors": 3595,
+    "metadata_objects": 8330,
+    "semantic_parity": "All",
+    "reference_states": {"single": 472, "list": 123},
+    "typed_list_members": 2334,
+    "preserved_subsystem_content_lists": 9,
+    "unknown_uuid_only_references": 11,
+    "fresh_import_native_bytes_equal": true,
+    "reference_edits": ["single", "list"],
+    "changed_source_files": 2,
+    "changed_native_files": 2,
+    "no_op": true,
+    "protected_exclusions": 0,
+    "native_input_unchanged": true
+  },
+  "platform": {
+    "version": "8.3.27.2325",
+    "artifact": "CF",
+    "control_and_eska_build_dump_passed": true,
+    "native_files": 8769,
+    "native_directories": 8064,
+    "ignored_dump_versions": 7011,
+    "all_other_bytes_equal": true,
+    "manifest_checksums_valid": true,
+    "source_and_base_unchanged": true,
+    "settings_and_project_version_unchanged": true
+  },
+  "limits": [
+    "No Type alternative target existence validation",
+    "Unsupported reference domains and UUID-only links stay opaque",
+    "No structural metadata operations",
+    "CST membership edits require a nonempty block list and unannotated removals",
+    "No implicit legacy fragment promotion",
+    "No new CLI orchestration",
+    "C2/C3 and CFE/EPF/ERF not accepted",
+    "No client execution or full BSL analysis",
+    "No infobase update validation"
+  ]
+}

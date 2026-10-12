@@ -297,6 +297,40 @@ fn property_bindings(
                     );
                     continue;
                 }
+                if let PropertyValue::ReferenceList(value) = value {
+                    let content = append(&value_path, [Step::Key("value")]);
+                    add(result, value_path, after.clone(), false);
+                    add(result, content.clone(), after.clone(), false);
+                    let items = append(&content, [Step::Key("items")]);
+                    add(result, items.clone(), after.clone(), false);
+                    for index in 0..value.items.len() {
+                        add(
+                            result,
+                            append(&items, [Step::Index(index)]),
+                            append(&after, [Step::Index(index)]),
+                            true,
+                        );
+                    }
+                    let old_native = append(&content, [Step::Key("native")]);
+                    let new_native = append(
+                        new,
+                        [
+                            Step::Key("items"),
+                            Step::Index(index),
+                            Step::Key("references"),
+                        ],
+                    );
+                    add(result, old_native.clone(), new_native.clone(), false);
+                    for key in ["item_prefix", "xsi_prefix", "type_prefix"] {
+                        add(
+                            result,
+                            append(&old_native, [Step::Key(key)]),
+                            append(&new_native, [Step::Key(key)]),
+                            true,
+                        );
+                    }
+                    continue;
+                }
                 let leaf = match value {
                     PropertyValue::Empty | PropertyValue::Nil => value_path,
                     _ => append(&value_path, [Step::Key("value")]),
@@ -373,14 +407,26 @@ fn add(result: &mut Vec<Binding>, before: Vec<Step>, after: Vec<Step>, copy: boo
 
 /// Factory reindentation is accepted only when a full model comparison proves exact values.
 fn copy(tree: &YamlFile, steps: &[Step], value: YamlNode) -> Result<(), Error> {
-    let Some((Step::Key(key), parent)) = steps.split_last() else {
+    let Some((step, parent)) = steps.split_last() else {
         return Err(unsupported());
     };
     let parent = yaml::at(tree, parent).ok_or_else(unsupported)?;
-    parent
-        .as_mapping()
-        .ok_or_else(unsupported)?
-        .set(*key, value);
+    match step {
+        Step::Key(key) => parent
+            .as_mapping()
+            .ok_or_else(unsupported)?
+            .set(*key, value),
+        Step::Index(index) => {
+            let scalar = value.as_scalar().ok_or_else(unsupported)?;
+            if !parent
+                .as_sequence()
+                .ok_or_else(unsupported)?
+                .set(*index, yaml_edit::ScalarValue::from_scalar(scalar))
+            {
+                return Err(unsupported());
+            }
+        }
+    }
     Ok(())
 }
 

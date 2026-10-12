@@ -49,6 +49,8 @@ pub(super) enum ValueKind {
     Integer,
     Enumeration(&'static [&'static str]),
     TypeDescription,
+    Reference,
+    ReferenceList,
 }
 
 impl PropertyName {
@@ -89,6 +91,19 @@ impl PropertyName {
             "FillChecking" => Self::FillChecking,
             "Indexing" => Self::Indexing,
             "Type" => Self::Type,
+            "DefaultLanguage" => Self::DefaultLanguage,
+            "DefaultStyle" => Self::DefaultStyle,
+            "DefaultRoles" => Self::DefaultRoles,
+            "DefaultObjectForm" => Self::DefaultObjectForm,
+            "DefaultListForm" => Self::DefaultListForm,
+            "DefaultChoiceForm" => Self::DefaultChoiceForm,
+            "DefaultForm" => Self::DefaultForm,
+            "DefaultRecordForm" => Self::DefaultRecordForm,
+            "DefaultFolderForm" => Self::DefaultFolderForm,
+            "DefaultFolderChoiceForm" => Self::DefaultFolderChoiceForm,
+            "Content" => Self::Content,
+            "Owners" => Self::Owners,
+            "RegisterRecords" => Self::RegisterRecords,
             _ => return None,
         })
     }
@@ -116,7 +131,15 @@ impl PropertyName {
             }
             _ if boolean_property(self, owner) => Some(ValueKind::Boolean),
             _ if integer_property(self, owner) => Some(ValueKind::Integer),
-            _ => enum_property(self, owner),
+            _ => match super::metadata_reference::kind(self, owner) {
+                Some(super::metadata_reference::ReferenceKind::One(_)) => {
+                    Some(ValueKind::Reference)
+                }
+                Some(super::metadata_reference::ReferenceKind::Many(_)) => {
+                    Some(ValueKind::ReferenceList)
+                }
+                None => enum_property(self, owner),
+            },
         }
     }
 }
@@ -239,12 +262,18 @@ impl ValueKind {
     pub(super) fn parse(self, text: String) -> Option<PropertyValue> {
         match self {
             Self::Text => Some(PropertyValue::Text(text)),
+            Self::Reference => super::MetadataReference::parse(&text)
+                .ok()
+                .map(PropertyValue::Reference),
             Self::Boolean => text.parse().ok().map(PropertyValue::Boolean),
             Self::Integer => ExactUnsigned::parse(&text).ok().map(PropertyValue::Integer),
             Self::Enumeration(values) if values.contains(&text.as_str()) => {
                 Some(PropertyValue::Enumeration(text))
             }
-            Self::Localized | Self::Enumeration(_) | Self::TypeDescription => None,
+            Self::Localized
+            | Self::Enumeration(_)
+            | Self::TypeDescription
+            | Self::ReferenceList => None,
         }
     }
 
@@ -256,7 +285,9 @@ impl ValueKind {
             | (Self::Localized, PropertyValue::Localized(_))
             | (Self::Boolean, PropertyValue::Boolean(_))
             | (Self::Integer, PropertyValue::Integer(_))
-            | (Self::TypeDescription, PropertyValue::TypeDescription(_)) => true,
+            | (Self::TypeDescription, PropertyValue::TypeDescription(_))
+            | (Self::Reference, PropertyValue::Reference(_))
+            | (Self::ReferenceList, PropertyValue::ReferenceList(_)) => true,
             (Self::Enumeration(values), PropertyValue::Enumeration(value)) => {
                 values.contains(&value.as_str())
             }

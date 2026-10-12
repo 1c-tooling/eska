@@ -233,6 +233,136 @@
                   "$ref": "#/$defs/state"
                 }
               ]
+            },
+            "DefaultLanguage": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/value"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "DefaultStyle": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/value"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "DefaultObjectForm": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/value"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "DefaultListForm": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/value"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "DefaultChoiceForm": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/value"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "DefaultForm": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/value"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "DefaultRecordForm": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/value"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "DefaultFolderForm": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/value"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "DefaultFolderChoiceForm": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/value"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "DefaultRoles": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/items"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "Content": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/items"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "Owners": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/items"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
+            },
+            "RegisterRecords": {
+              "oneOf": [
+                {
+                  "$ref": "metadata-reference.schema.json#/$defs/items"
+                },
+                {
+                  "$ref": "#/$defs/state"
+                }
+              ]
             }
           },
           "additionalProperties": false
@@ -359,7 +489,20 @@
                                 "ReturnValuesReuse",
                                 "FillChecking",
                                 "Indexing",
-                                "Type"
+                                "Type",
+                                "DefaultLanguage",
+                                "DefaultStyle",
+                                "DefaultObjectForm",
+                                "DefaultListForm",
+                                "DefaultChoiceForm",
+                                "DefaultForm",
+                                "DefaultRecordForm",
+                                "DefaultFolderForm",
+                                "DefaultFolderChoiceForm",
+                                "DefaultRoles",
+                                "Content",
+                                "Owners",
+                                "RegisterRecords"
                               ]
                             },
                             {
@@ -375,6 +518,27 @@
                               "required": [
                                 "name",
                                 "layout"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "enum": [
+                                    "DefaultRoles",
+                                    "Content",
+                                    "Owners",
+                                    "RegisterRecords"
+                                  ]
+                                },
+                                "references": {
+                                  "$ref": "metadata-reference.schema.json#/$defs/layout"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "references"
                               ],
                               "additionalProperties": false
                             },

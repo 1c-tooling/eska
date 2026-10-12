@@ -1,5 +1,6 @@
 //! Real separated-descriptor acceptance; platform execution remains an explicit external gate.
 
+mod references;
 mod types;
 
 use std::{

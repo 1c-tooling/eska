@@ -325,7 +325,7 @@ pub(super) fn validate_composition(
     if visited.len() != documents.len() {
         return Err(Error::root("source_descriptor_undeclared"));
     }
-    Ok(())
+    super::metadata_reference::validate_documents(documents)
 }
 
 /// Resolve an output next to an existing parent, independently of process-relative input spelling.

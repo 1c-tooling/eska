@@ -270,8 +270,11 @@ fn merge_properties(
                     (PropertyValue::TypeDescription(old), PropertyValue::TypeDescription(new)) => {
                         new.native.clone_from(&old.native);
                     }
-                    (PropertyValue::TypeDescription(_), _)
-                    | (_, PropertyValue::TypeDescription(_)) => {
+                    (PropertyValue::ReferenceList(old), PropertyValue::ReferenceList(new)) => {
+                        new.native.clone_from(&old.native);
+                    }
+                    (PropertyValue::TypeDescription(_) | PropertyValue::ReferenceList(_), _)
+                    | (_, PropertyValue::TypeDescription(_) | PropertyValue::ReferenceList(_)) => {
                         return Err(
                             Error::root("source_property_type_invalid").in_field(name.as_str())
                         );
@@ -303,8 +306,18 @@ fn merge_named_properties(
             } else {
                 None
             };
-            *value =
-                super::super::readable::value_from_wire(*name, kind, candidate.clone(), layout)?;
+            let references = if let PropertyValue::ReferenceList(value) = &*value {
+                Some(&value.native)
+            } else {
+                None
+            };
+            *value = super::super::readable::value_from_wire(
+                *name,
+                kind,
+                candidate.clone(),
+                layout,
+                references,
+            )?;
         }
     }
     Ok(())

@@ -215,6 +215,20 @@ fn property_text(
     let candidate = value.clone();
     let previous = change_property(node, property, value, &mut steps, schema)?;
     object.validate()?;
+    if matches!(
+        previous,
+        PropertyValue::Reference(_) | PropertyValue::ReferenceList(_)
+    ) || matches!(
+        candidate,
+        PropertyValue::Reference(_) | PropertyValue::ReferenceList(_)
+    ) {
+        for document in std::iter::once(&object.document).chain(&object.nested) {
+            super::metadata_reference::validate_edit(
+                &base.package.documents,
+                &document.descriptor.object,
+            )?;
+        }
+    }
     let updated = if previous == candidate {
         original.to_owned()
     } else {
@@ -307,6 +321,14 @@ fn anchored_node<'a>(
         if let (
             Some(PropertyValue::TypeDescription(current)),
             Some(PropertyValue::TypeDescription(anchor)),
+        ) = (working.property(property), accepted.property(property))
+            && current.native != anchor.native
+        {
+            return Err(Error::root("source_edit_structure_changed"));
+        }
+        if let (
+            Some(PropertyValue::ReferenceList(current)),
+            Some(PropertyValue::ReferenceList(anchor)),
         ) = (working.property(property), accepted.property(property))
             && current.native != anchor.native
         {

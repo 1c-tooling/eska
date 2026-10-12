@@ -61,7 +61,8 @@ fn subsystems_use_current_yaml_and_preserve_unrelated_models() {
         &[(bsl_metadata::MdoType::Catalog, "Items".into())]
     );
     assert!(Arc::ptr_eq(&untouched, &subsystem(&session, &neighbor)));
-    let invalid = changed.replace("xr:Item", "xr:Future");
+    let invalid = fixture::invalid_content(&changed);
+    assert_ne!(invalid, changed);
     session
         .apply_overlay(&path, session.revision(), 8, &invalid, &request)
         .unwrap();

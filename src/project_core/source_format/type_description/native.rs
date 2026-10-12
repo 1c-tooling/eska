@@ -9,7 +9,10 @@ use super::{
     TypeAlternativeKind, TypeData, TypeDateField, TypeDescription, TypeLayout, TypeNumberField,
     TypePart, TypeStringField,
 };
-use crate::project_core::source_format::Namespace;
+use crate::project_core::source_format::{
+    Namespace,
+    xml::{plain_element_name, typed_elements},
+};
 
 /// Decode only fields whose namespace, order, absence and lexical value have a known inverse.
 pub(in crate::project_core::source_format) fn decode(
@@ -17,10 +20,13 @@ pub(in crate::project_core::source_format) fn decode(
     input: &str,
     context: &[Namespace],
 ) -> Option<TypeDescription> {
-    plain_name(node, input)?;
-    let children = elements(node)?;
+    plain_element_name(node, input)?;
+    let children = typed_elements(node)?;
     let first = *children.first()?;
-    let prefix = plain_name(first, input)?.split_once(':')?.0.to_owned();
+    let prefix = plain_element_name(first, input)?
+        .split_once(':')?
+        .0
+        .to_owned();
     let mut result = TypeDescription {
         data: TypeData {
             alternatives: Vec::new(),
@@ -121,7 +127,7 @@ fn qualifiers<T: DeserializeOwned>(
 ) -> Option<(T, Vec<&'static str>)> {
     let mut values = Map::new();
     let mut order = Vec::new();
-    for field in elements(node)? {
+    for field in typed_elements(node)? {
         let name = core_name(field, input, prefix)?;
         let (_, key) = names.iter().find(|(tag, _)| *tag == name)?;
         if values
@@ -135,37 +141,9 @@ fn qualifiers<T: DeserializeOwned>(
     Some((serde_json::from_value(Value::Object(values)).ok()?, order))
 }
 
-/// Comments, processing instructions and meaningful mixed text have no typed inverse rule.
-fn elements<'a, 'input>(node: Node<'a, 'input>) -> Option<Vec<Node<'a, 'input>>> {
-    if node.children().any(|child| {
-        !(child.is_element()
-            || child.is_text() && child.text().is_none_or(|text| text.trim().is_empty()))
-    }) {
-        return None;
-    }
-    Some(node.children().filter(Node::is_element).collect())
-}
-
-/// Do not erase attributes or local namespace declarations, even when their effective URI agrees.
-fn plain_name<'a>(node: Node<'_, '_>, input: &'a str) -> Option<&'a str> {
-    if !node.is_element() || node.attributes().len() != 0 {
-        return None;
-    }
-    let head = input
-        .get(node.range())?
-        .strip_prefix('<')?
-        .split_once('>')?
-        .0;
-    let name = head
-        .split(|ch: char| ch.is_whitespace() || ch == '/')
-        .next()?;
-    let rest = head.strip_prefix(name)?.trim();
-    (rest.is_empty() || rest == "/").then_some(name)
-}
-
 /// URI identity and exact native prefix spelling are both required by the stored layout.
 fn core_name<'a>(node: Node<'a, '_>, input: &str, prefix: &str) -> Option<&'a str> {
-    let (actual, _) = plain_name(node, input)?.split_once(':')?;
+    let (actual, _) = plain_element_name(node, input)?.split_once(':')?;
     (node.tag_name().namespace() == Some(CORE_NAMESPACE) && actual == prefix)
         .then(|| node.tag_name().name())
 }

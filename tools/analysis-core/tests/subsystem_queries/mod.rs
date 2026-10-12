@@ -52,7 +52,8 @@ fn subsystem_inputs_reach_ide_completions_and_current_metadata_diagnostics() {
     fixture::add_subsystems(&root, &directory.0.join("native"));
     let source = root.join("src-with-subsystems");
     let saved = fs::read_to_string(source.join(OWNER)).unwrap();
-    let invalid = saved.replace("xr:Item", "xr:Future");
+    let invalid = fixture::invalid_content(&saved);
+    assert_ne!(invalid, saved);
     let mut previous = None;
     for lang in ["en-US", "ru-RU"] {
         let mut client = Client::with_options(&root, lang, &["--profile", "semantic"]);

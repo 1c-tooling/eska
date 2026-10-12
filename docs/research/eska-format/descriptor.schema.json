@@ -302,6 +302,38 @@
             "value"
           ],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "reference"
+            },
+            "value": {
+              "$ref": "metadata-reference.schema.json#/$defs/value"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "reference_list"
+            },
+            "value": {
+              "$ref": "metadata-reference.schema.json#/$defs/list"
+            }
+          },
+          "required": [
+            "state",
+            "value"
+          ],
+          "additionalProperties": false
         }
       ]
     },
@@ -347,7 +379,20 @@
                 "ReturnValuesReuse",
                 "FillChecking",
                 "Indexing",
-                "Type"
+                "Type",
+                "DefaultLanguage",
+                "DefaultStyle",
+                "DefaultObjectForm",
+                "DefaultListForm",
+                "DefaultChoiceForm",
+                "DefaultForm",
+                "DefaultRecordForm",
+                "DefaultFolderForm",
+                "DefaultFolderChoiceForm",
+                "DefaultRoles",
+                "Content",
+                "Owners",
+                "RegisterRecords"
               ]
             },
             "value": {

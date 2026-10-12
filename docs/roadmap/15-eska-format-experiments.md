@@ -1988,6 +1988,25 @@ XML-контролем и прошли CF/build/dump на 1С 8.3.27.2325: 8 769
 Проверки существования ссылок, остальные составные домены/коллекции, structural
 operations и публичная orchestration ещё нужны; EF-24 — `IN_PROGRESS`.
 
+Восьмая часть — [ссылки метаданных](../research/eska-format/metadata-reference.md).
+Добавлены 13 имён одиночных ссылок и списков; native bindings хранят prefixes,
+значения объявлены один раз. Проверка целей использует дерево ChildObjects,
+а не сканирование файлов; owner формы, классы и существование проверяются после
+восстановления forbidden raw edits. CST сохраняет quoting/comments/CRLF,
+добавление/удаление trailing members block list имеет явные ограничения.
+Миграция и source origins используют concrete fields; unknown XML остаётся целым.
+
+Проверки восьмой части: 426 unit + 546 integration (23 opt-in пропущены),
+15 root/14 SDK/5 adapter gates прошли; SDK — 359, adapter — 70 + 12 тестов.
+Свежая C1 сохранила native bytes и All-семантику 3 595 descriptors/8 330 объектов:
+472 одиночные ссылки, 123 списка/2 334 элемента. Девять Content с неизвестными
+UUID-only ссылками сохранены целиком. Две правки изменили два YAML/XML без
+exclusions и прошли CF/build/dump на 1С 8.3.27.2325: 8 769 файлов/8 064 каталога
+равны кроме `configVersion`; input/base/settings/версия сохранены.
+[Результаты](../research/eska-format/metadata-reference-results.json).
+Цели Type alternatives, остальные selectors/collections, structural operations
+и публичная orchestration ещё нужны; EF-24 — `IN_PROGRESS`.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.
