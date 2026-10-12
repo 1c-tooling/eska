@@ -12,11 +12,22 @@ use super::{
 use crate::project_core::MetadataKind;
 
 #[cfg(test)]
+mod attribute_tests;
+#[cfg(test)]
 mod tests;
 
-/// An enum value has no generated type or separate payload; other classes need their own inverse rules.
+/// Supported inline children introduce neither generated identities nor separate payloads.
 pub(super) const fn supported_owner(kind: MetadataKind) -> bool {
-    matches!(kind, MetadataKind::Enum)
+    child_kind(kind).is_some()
+}
+
+/// Creation authority follows the accepted parent class rather than the authored child class.
+pub(super) const fn child_kind(owner: MetadataKind) -> Option<MetadataKind> {
+    match owner {
+        MetadataKind::Enum => Some(MetadataKind::EnumValue),
+        MetadataKind::Catalog | MetadataKind::Document => Some(MetadataKind::Attribute),
+        _ => None,
+    }
 }
 
 /// Add fresh members without deleting, renaming, substituting or reordering accepted siblings.
@@ -28,12 +39,17 @@ pub(super) fn select(
     working: Option<&Vec<Value>>,
     schema: u32,
 ) -> Result<(), Error> {
-    if !base.package.documents.get(native).is_some_and(|document| {
-        supported_owner(document.descriptor.object.kind)
-            && document.descriptor.object.uuid.key() == owner.key()
-    }) {
+    let Some(document) = base
+        .package
+        .documents
+        .get(native)
+        .filter(|document| document.descriptor.object.uuid.key() == owner.key())
+    else {
         return Ok(());
-    }
+    };
+    let Some(kind) = child_kind(document.descriptor.object.kind) else {
+        return Ok(());
+    };
     let (Some(before), Some(after)) = (
         child_order::from_children(children),
         working.and_then(|values| child_order::from_values(values)),
@@ -45,14 +61,17 @@ pub(super) fn select(
     {
         return Ok(());
     }
+    let context = super::validation::scope(
+        &document.descriptor.xml.namespaces,
+        &document.descriptor.object.namespaces,
+    )?;
     let values = working.ok_or_else(|| Error::root("source_schema_invalid"))?;
     let accepted: BTreeMap<_, _> = before.iter().zip(children.iter()).collect();
     let mut additions = BTreeMap::new();
     let mut seen_other_class = false;
     for (identity, value) in after.iter().zip(values) {
         if let Some(child) = accepted.get(identity) {
-            if !matches!(child, Child::Inline { object } if object.kind == MetadataKind::EnumValue)
-            {
+            if !matches!(child, Child::Inline { object } if object.kind == kind) {
                 seen_other_class = true;
             }
             continue;
@@ -72,7 +91,11 @@ pub(super) fn select(
         } else {
             serde_json::from_value(value).map_err(|_| Error::root("source_schema_invalid"))?
         };
+        if object.kind != kind {
+            return Err(Error::root("source_child_creation_profile_unsupported"));
+        }
         validate_new_node(&object)?;
+        validate_new_types(&object, &context)?;
         additions.insert(
             identity.clone(),
             Child::Inline {
@@ -133,7 +156,7 @@ pub(super) fn denied_permission(
     Ok(None)
 }
 
-/// Only the observed three-property enum-value shape can introduce native bytes without accepted slots.
+/// A closed inline profile avoids guessing generated identities, defaults or opaque inverse rules.
 pub(super) fn validate_new_node(node: &MetadataNode) -> Result<(), Error> {
     let [Section::Properties(properties)] = node.sections.as_slice() else {
         return Err(Error::root("source_child_creation_profile_unsupported"));
@@ -151,11 +174,23 @@ pub(super) fn validate_new_node(node: &MetadataNode) -> Result<(), Error> {
             name: PropertyName::Comment,
             value: comment,
         },
+        rest @ ..,
     ] = properties.as_slice()
     else {
         return Err(Error::root("source_child_creation_profile_unsupported"));
     };
-    if node.kind != MetadataKind::EnumValue
+    let supported = match node.kind {
+        MetadataKind::EnumValue => rest.is_empty(),
+        MetadataKind::Attribute => matches!(
+            rest,
+            [Property::Typed {
+                name: PropertyName::Type,
+                value: PropertyValue::TypeDescription(_),
+            }]
+        ),
+        _ => false,
+    };
+    if !supported
         || !node.namespaces.is_empty()
         || !node.attributes.is_empty()
         || !matches!(synonym, PropertyValue::Empty | PropertyValue::Localized(_))
@@ -169,6 +204,31 @@ pub(super) fn validate_new_node(node: &MetadataNode) -> Result<(), Error> {
     Ok(())
 }
 
+/// Fresh fields admit observed primitive types and declared configuration types, never arbitrary namespace values.
+pub(super) fn validate_new_types(
+    node: &MetadataNode,
+    context: &[super::Namespace],
+) -> Result<(), Error> {
+    if let Some(PropertyValue::TypeDescription(value)) = node.property(PropertyName::Type) {
+        value.validate(context)?;
+        for alternative in &value.data.alternatives {
+            let (namespace, local) =
+                super::type_description::qualified_name(&alternative.name, context)?;
+            let primitive = namespace == "http://www.w3.org/2001/XMLSchema"
+                && alternative.kind == super::TypeAlternativeKind::Type
+                && matches!(local, "boolean" | "string" | "decimal" | "dateTime");
+            if !primitive && super::type_description::named_target(alternative, context)?.is_none()
+            {
+                return Err(Error::root("source_child_creation_profile_unsupported"));
+            }
+        }
+        if value.data.alternatives.is_empty() {
+            return Err(Error::root("source_child_creation_profile_unsupported"));
+        }
+    }
+    Ok(())
+}
+
 /// Native identifiers admit Unicode letters, digits after the first character, and underscores.
 pub(super) fn identifier(value: &str) -> bool {
     let mut chars = value.chars();
@@ -178,16 +238,26 @@ pub(super) fn identifier(value: &str) -> bool {
         && chars.all(|ch| ch == '_' || ch.is_alphanumeric())
 }
 
-/// New names cannot shadow any accepted sibling value under case-insensitive native lookup.
+/// Attributes and tabular sections share a field namespace; enum values have a separate namespace.
 pub(super) fn validate_names<'a>(
     children: impl IntoIterator<Item = &'a Child>,
 ) -> Result<(), Error> {
     let mut names = BTreeSet::new();
     for child in children {
         if let Child::Inline { object } = child
-            && object.kind == MetadataKind::EnumValue
+            && matches!(
+                object.kind,
+                MetadataKind::EnumValue | MetadataKind::Attribute | MetadataKind::TabularSection
+            )
             && let Some(PropertyValue::Text(name)) = object.property(PropertyName::Name)
-            && !names.insert(name.to_lowercase())
+            && !names.insert((
+                if object.kind == MetadataKind::EnumValue {
+                    MetadataKind::EnumValue
+                } else {
+                    MetadataKind::Attribute
+                },
+                name.to_lowercase(),
+            ))
         {
             return Err(
                 Error::root("source_metadata_name_collision").in_field(object.uuid.as_str())

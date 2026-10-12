@@ -33,6 +33,8 @@ YAML и физические resources. Без параметра сохраня
 [Именованный FillValue](enum-fill-value.md) принимает прямую ссылку на значение
 с проверкой окончательного состава. [Миграция всего workspace](workspace-migration.md)
 сохраняет exact root/member manifests и наследование с отдельными approved pins.
+[Создание реквизитов](attribute-creation.md) принимает минимальный Attribute
+у Catalog/Document, сохраняя policy, UUID, typed Type и Working координаты.
 Остальные structural/compound profiles ещё не приняты.
 
 Внешние источники проверены 2026-10-11:

@@ -94,6 +94,12 @@ migration остаются в EF-24.
 блокирует частичную публикацию. Mixed family/readable workspace двух CF members
 на C1 прошёл independent native/semantic/authority контроль и два CF round trips
 на 1С 8.3.27.2325. Другие structural/compound profiles ещё нужны; EF-24 незавершена.
+[Двадцатая часть](../research/eska-format/attribute-creation.md) принимает новые
+Attribute у Catalog/Document по минимальному Name/Synonym/Comment/Type профилю.
+Права принятого владельца, свежие UUID, имена, Type targets и сдвигаемые члены
+проверяет общий selector; schemas/rules/protocol прежние.
+Двенадцать полей/два YAML C1 прошли независимый byte/semantic/schema контроль
+и CF/build/dump на 1С 8.3.27.2325 с сохранением новых UUID/типов, inputs и версии.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи
 не открываются заново, но не подтверждают новое расширенное покрытие MVP.

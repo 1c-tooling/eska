@@ -2261,6 +2261,28 @@ freeze/pins и двумя рабочими FillValue правками прове
 Прочие structural/compound profiles ещё нужны; EF-24 — `IN_PROGRESS`.
 Клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
 
+Двадцатая часть — [создание реквизитов](../research/eska-format/attribute-creation.md)
+принятого Catalog/Document. Минимальный Attribute имеет Name/Synonym/Comment/Type,
+без opaque sections, namespaces, attributes и generated identities. Свежие UUID,
+field namespace, QName/Type targets и class group проверяются общим selector;
+владелец и каждый сдвигаемый член сохраняют supplier/freeze policy. Новый UUID
+не становится accepted authority. Reader и Working source locations общие.
+До реализации 1С 8.3.27.2325 приняла восемь минимальных native полей двух владельцев.
+Добавлены десять core, один supplier integration и два CLI tests; оба envelopes,
+пустой состав, имена/тип/профиль, policy/freeze, перенос/сдвиг, неизвестные slots,
+source coordinates, saved/overlay и ru/en проверены. Прошли 16 root/14 SDK/5
+adapter gates и оба release build: 525 unit + 564 integration, 24 opt-in пропущены;
+minimal project — 332 unit + 31 CLI; SDK — 359; adapter — 70 + 12.
+Реальная C1: двенадцать полей/два YAML и весь native контроль совпали по
+8 778 файлам/8 077 каталогам, без exclusions; stationary/displaced freeze и ru/en
+восстановление проверены. 3 595 readable YAML прошли schemas; 3 595 descriptors/
+8 342 объектов равны в saved/overlay All/Summary. Обе CF через 1С 8.3.27.2325
+дали 8 769 файлов/8 064 каталога, кроме 7 011 configVersion. Все новые UUID,
+имена/типы/qualifiers, checksums, исходники/база/settings/native/версия сохранены.
+[Результаты](../research/eska-format/attribute-creation-results.json).
+Schemas/rules/tool protocol версии сохранены. EF-24 остаётся `IN_PROGRESS`:
+остальные structural/compound profiles ещё нужны.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

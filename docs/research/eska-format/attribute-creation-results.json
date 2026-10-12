@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "experiment": "EF-24 inline Attribute creation",
+  "date": "2026-10-13",
+  "envelopes": [
+    "family",
+    "readable"
+  ],
+  "source_layouts": [
+    1,
+    2,
+    3
+  ],
+  "created_node_kind": "Attribute",
+  "accepted_owner_kinds": [
+    "Catalog",
+    "Document"
+  ],
+  "closed_properties": [
+    "Name",
+    "Synonym",
+    "Comment",
+    "Type"
+  ],
+  "fresh_uuid_is_not_accepted_authority": true,
+  "schema_and_rules_and_tool_protocol_versions_unchanged": true,
+  "validation": {
+    "root_gates": 16,
+    "sdk_gates": 14,
+    "adapter_gates": 5,
+    "release_builds": 2,
+    "all_passed": true,
+    "root_unit_tests": 525,
+    "root_integration_tests": 564,
+    "root_opt_in_tests_ignored": 24,
+    "minimal_project_unit_tests": 332,
+    "minimal_project_cli_tests": 31,
+    "sdk_tests": 359,
+    "adapter_unit_tests": 70,
+    "adapter_integration_tests": 12,
+    "new_core_tests": 10,
+    "new_supplier_integration_tests": 1,
+    "new_cli_tests": 2,
+    "both_envelopes_and_empty_collection": true,
+    "native_supplier_restriction": true,
+    "owner_and_ancestor_and_displaced_member_freezes": true,
+    "field_name_and_uuid_and_profile_and_type_target_checks": true,
+    "unknown_slots_and_class_positions": true,
+    "independent_allowed_edits_retained": true,
+    "working_source_locations": true,
+    "saved_overlay_projection": true,
+    "both_locales_and_locale_independent_json": true
+  },
+  "native_profile_probe": {
+    "platform": "8.3.27.2325",
+    "owners": 2,
+    "attributes": 8,
+    "minimal_profile_accepted": true,
+    "standard_properties_materialized_by_platform": true,
+    "types": [
+      "Boolean",
+      "String",
+      "Number",
+      "Date"
+    ]
+  },
+  "real_c1": {
+    "native_descriptors": 3595,
+    "native_files": 8778,
+    "native_directories": 8077,
+    "created_attributes": 12,
+    "changed_source_files": 2,
+    "native_control_bytes_equal": true,
+    "protected_exclusions": 0,
+    "both_locales_checked": true,
+    "generation_reused": true,
+    "working_and_accepted_and_native_and_settings_unchanged": true,
+    "source_manifest_unchanged": true,
+    "freeze_stationary_allowed": true,
+    "freeze_displaced_refused": true,
+    "negative_recovery_matches_native_control": true,
+    "independent_release_cli": true,
+    "platform_git_and_facade_absent_from_path": true,
+    "tested_types": [
+      "Boolean",
+      "String",
+      "Number",
+      "Date",
+      "named_enum_reference",
+      "String_Number_composite"
+    ],
+    "english_and_cyrillic_names": true,
+    "empty_and_localized_synonym_and_comment": true
+  },
+  "semantics": {
+    "descriptors": 3595,
+    "objects": 8342,
+    "all_and_summary_equal": true,
+    "saved_and_unsaved_equal": true
+  },
+  "schemas": {
+    "readable_source_files": 3595,
+    "invalid_source_files": 0
+  },
+  "platform_cycle": {
+    "platform": "8.3.27.2325",
+    "routes": [
+      "native_control",
+      "eska"
+    ],
+    "native_files": 8769,
+    "native_directories": 8064,
+    "only_dump_config_versions_differ": true,
+    "dump_versions": {
+      "versioned_entries": 7011,
+      "changed_versions": 7011,
+      "all_other_bytes_equal": true
+    },
+    "artifact_manifest_checksums_valid": true,
+    "project_versions_preserved": true,
+    "created_attribute_identities_and_names_and_types_and_qualifiers_retained_on_both_routes": true,
+    "standard_properties_materialized_by_platform": true,
+    "source_and_base_and_native_and_settings_unchanged": true,
+    "protected_exclusions": 0
+  },
+  "limitations": [
+    "not_all_native_attribute_properties_are_editable_at_creation",
+    "attribute_deletion_and_rename_not_accepted",
+    "tabular_section_columns_and_other_owners_not_accepted",
+    "new_standalone_descriptors_not_accepted",
+    "all_standard_names_and_type_compatibility_and_platform_limits_not_verified_by_core",
+    "no_automatic_bsl_or_form_rewrite",
+    "other_structural_and_compound_profiles_pending",
+    "no_new_cfe_epf_erf_runtime_acceptance",
+    "no_client_or_live_infobase_execution"
+  ]
+}

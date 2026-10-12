@@ -130,6 +130,10 @@ strict prepare возвращает полный массив exclusions в `err
 `--allow-exclusions` восстанавливает порядок с диагностикой.
 Для запрещённых [новых значений перечисления](enum-value-creation.md) используется
 существующая operation `{"kind":"create"}`. Новые параметры не добавлены.
+Она же используется для запрещённого [создания Attribute](attribute-creation.md)
+у принятого Catalog/Document. Новый field profile проверяется общим selector;
+имена, QName/Type targets и неизвестная native семантика не обходятся через
+`--allow-exclusions`.
 Запрещённое [удаление EnumValue](enum-value-deletion.md) восстанавливается с
 `{"kind":"delete"}`. Оставшиеся typed/preserved XML зависимости отказывают
 до публикации, включая режим `--allow-exclusions`.

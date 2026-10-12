@@ -148,9 +148,9 @@ fn locked_native_enum_cannot_create_values_or_mask_allowed_child_property_edits(
     }
 }
 
-/// Working class edits cannot upgrade an unrestricted catalog into an accepted creation profile.
+/// Working class edits cannot substitute enum-value creation for an accepted catalog's attribute profile.
 #[test]
-fn unsupported_accepted_owner_refuses_new_values_even_with_a_working_enum_class() {
+fn accepted_catalog_refuses_enum_values_even_with_a_working_enum_class() {
     let test = TestDir::new();
     let input = super::fixture(&test.0);
     fs::remove_file(input.join("Ext/ParentConfigurations.bin")).unwrap();
@@ -161,23 +161,118 @@ fn unsupported_accepted_owner_refuses_new_values_even_with_a_working_enum_class(
     let base = AcceptedBase::open(&base_root, &pin).unwrap();
     assert_eq!(
         base.permission(&uuid('2'), Operation::Create).reason,
-        PermissionReason::UnsupportedOperation
+        PermissionReason::Allowed
     );
     let path = source.join("Catalogs/Sample/object.yaml");
     let mut owner = ObjectSource::from_yaml(&fs::read_to_string(&path).unwrap()).unwrap();
     owner.document.descriptor.object.kind = MetadataKind::Enum;
     for section in &mut owner.document.descriptor.object.sections {
         if let Section::Children(children) = section {
-            children.push(addition());
+            children.insert(1, addition());
         }
     }
     fs::write(path, serde_json::to_string_pretty(&owner).unwrap()).unwrap();
     let before = tree(&source);
-    assert!(prepare_protected(&source, &base, &test.0.join("generations"), true).is_err());
-    assert!(!test.0.join("generations").exists());
-    let restored = prepare_protected(&source, &base, &test.0.join("generations"), false).unwrap();
-    let native = fs::read_to_string(restored.xml().join("Catalogs/Sample.xml")).unwrap();
-    assert!(!native.contains("NewValue"));
-    assert!(native.contains("<Catalog uuid="));
+    for strict in [false, true] {
+        let failure =
+            prepare_protected(&source, &base, &test.0.join("generations"), strict).unwrap_err();
+        assert_eq!(
+            failure.error.code,
+            "source_child_creation_profile_unsupported"
+        );
+        assert!(!test.0.join("generations").exists());
+    }
     assert_eq!(tree(&source), before);
+}
+
+/// Supplier permission stays authoritative for new attributes and independently editable accepted fields.
+#[test]
+fn locked_native_catalog_cannot_create_attributes_or_mask_allowed_child_properties() {
+    for readable in [false, true] {
+        let test = TestDir::new();
+        let input = super::baseline::fixture(&test.0);
+        let file = input.join("Catalogs/Sample.xml");
+        fs::write(
+            &file,
+            fs::read_to_string(&file).unwrap().replace(
+                "xmlns:xsi=",
+                "xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=",
+            ),
+        )
+        .unwrap();
+        let source = test.0.join("source");
+        if readable {
+            import_designer_readable(&input, &source).unwrap();
+        } else {
+            import_designer(&input, &source).unwrap();
+        }
+        let base_root = test.0.join("accepted");
+        let pin = accept_source(&source, &base_root, &[]).unwrap();
+        let base = AcceptedBase::open(&base_root, &pin).unwrap();
+        assert_eq!(
+            base.permission(&uuid('2'), Operation::Create).reason,
+            PermissionReason::NativeRestriction
+        );
+        let path = source.join("Catalogs/Sample/object.yaml");
+        let mut owner = ObjectSource::from_yaml(&fs::read_to_string(&path).unwrap()).unwrap();
+        let addition = Descriptor::from_xml(&format!("<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" xmlns:v8=\"http://v8.1c.ru/8.1/data/core\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" version=\"2.20\"><Attribute uuid=\"{}\"><Properties><Name>NewField</Name><Synonym/><Comment/><Type><v8:Type>xs:boolean</v8:Type></Type></Properties></Attribute></MetaDataObject>",uuid('9').as_str())).unwrap();
+        let children = owner
+            .document
+            .descriptor
+            .object
+            .sections
+            .iter_mut()
+            .find_map(|section| {
+                if let Section::Children(children) = section {
+                    Some(children)
+                } else {
+                    None
+                }
+            })
+            .unwrap();
+        let Child::Inline { object } = &mut children[0] else {
+            unreachable!()
+        };
+        for section in &mut object.sections {
+            if let Section::Properties(properties) = section {
+                for property in properties {
+                    if let Property::Typed {
+                        name: PropertyName::Comment,
+                        value,
+                    } = property
+                    {
+                        *value = PropertyValue::Text("Allowed child edit".into());
+                    }
+                }
+            }
+        }
+        children.insert(
+            1,
+            Child::Inline {
+                object: Box::new(addition.object),
+            },
+        );
+        fs::write(path, owner.to_yaml().unwrap()).unwrap();
+        let authored = tree(&source);
+        let accepted = tree(&base_root);
+        let native_input = tree(&input);
+        let output = test.0.join("generations");
+        let failure = prepare_protected(&source, &base, &output, true).unwrap_err();
+        assert_eq!(failure.error.code, "source_changes_excluded");
+        assert_eq!(failure.diagnostics.len(), 1);
+        assert_eq!(failure.diagnostics[0].operation, Operation::Create);
+        assert_eq!(failure.diagnostics[0].uuid, Some(uuid('2')));
+        assert_eq!(
+            failure.diagnostics[0].reason,
+            PermissionReason::NativeRestriction
+        );
+        assert!(!output.exists());
+        let prepared = prepare_protected(&source, &base, &output, false).unwrap();
+        let xml = fs::read_to_string(prepared.xml().join("Catalogs/Sample.xml")).unwrap();
+        assert!(!xml.contains("NewField"));
+        assert!(xml.contains("Allowed child edit"));
+        assert_eq!(tree(&source), authored);
+        assert_eq!(tree(&base_root), accepted);
+        assert_eq!(tree(&input), native_input);
+    }
 }

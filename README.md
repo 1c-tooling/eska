@@ -773,6 +773,9 @@ members и блокирует незавершённую публикацию.
 [Переименование EnumValue](docs/research/eska-format/enum-value-rename.md)
 сохраняет UUID и проверяет оставшиеся зависимости; [FillValue](docs/research/eska-format/enum-fill-value.md)
 принимает именованную ссылку на значение с проверкой окончательного состава.
+[Создание реквизитов Catalog/Document](docs/research/eska-format/attribute-creation.md)
+использует закрытый профиль Name/Synonym/Comment/Type, права принятого владельца
+и проверки UUID, имён, типов и сдвига членов.
 Остальные structural/compound profiles и завершение структуры EF-24 ещё в работе.
 Инструменты собираются отдельно с features `project-cli`/`build-cli`;
 комплектная поставка и делегирование оболочки ещё не подключены.

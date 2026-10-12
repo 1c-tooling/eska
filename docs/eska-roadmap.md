@@ -141,7 +141,10 @@ UUID, проверяет права namespace/значения, конечные
 root/member manifests, inheritance и отдельные approved pins. Общий receipt
 блокирует частичный результат; mixed layouts двух CF members на C1 приняты
 через независимые controls и два CF/build/dump цикла на 1С 8.3.27.2325.
-Прочие structural/compound profiles ещё нужны; EF-24 остаётся `IN_PROGRESS`.
+[Создание Attribute](research/eska-format/attribute-creation.md) у принятого
+Catalog/Document сохраняет UUID/policy и использует минимальный профиль
+Name/Synonym/Comment/Type с проверкой имён, типов и порядка. Прочие
+structural/compound profiles ещё нужны; EF-24 остаётся `IN_PROGRESS`.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)
