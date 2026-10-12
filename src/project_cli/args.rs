@@ -101,6 +101,10 @@ pub(super) struct Migrate {
     pub selector: Selector,
     #[arg(long)]
     pub accepted_base_sha256: Option<String>,
+    #[arg(long, conflicts_with_all = ["project", "accepted_base_sha256"])]
+    pub workspace: bool,
+    #[arg(long, requires = "workspace")]
+    pub accepted_bases: Option<PathBuf>,
     #[arg(long)]
     pub write: bool,
 }

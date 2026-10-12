@@ -137,6 +137,11 @@ UUID, проверяет права namespace/значения, конечные
 строкой в readable YAML, сохраняет QName helpers и проверяется по выбранному
 составу. Старый preserved профиль и остальные типы заполнения сохраняют
 свои ограничения; две разрешённые правки C1 прошли независимый CF/build/dump.
+[Миграция workspace](research/eska-format/workspace-migration.md) сохраняет exact
+root/member manifests, inheritance и отдельные approved pins. Общий receipt
+блокирует частичный результат; mixed layouts двух CF members на C1 приняты
+через независимые controls и два CF/build/dump цикла на 1С 8.3.27.2325.
+Прочие structural/compound profiles ещё нужны; EF-24 остаётся `IN_PROGRESS`.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)

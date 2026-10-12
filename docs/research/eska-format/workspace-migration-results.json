@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-13",
+  "task": "EF-24",
+  "part": 19,
+  "scope": "complete_workspace_readable_migration",
+  "source_schema_versions_unchanged": true,
+  "workspace_config_unchanged": true,
+  "pin_document_schema_version": 1,
+  "root_gates": 16,
+  "sdk_gates": 14,
+  "adapter_gates": 5,
+  "release_builds": 2,
+  "all_gates_passed": true,
+  "root_tests": {
+    "unit": 515,
+    "integration": 563,
+    "ignored_opt_in": 24
+  },
+  "minimal_project_tests": {
+    "unit": 322,
+    "cli": 29
+  },
+  "sdk_tests": 359,
+  "adapter_tests": {
+    "unit": 70,
+    "integration": 12
+  },
+  "added_tests": {
+    "unit": 10,
+    "cli": 3
+  },
+  "real_workspace": {
+    "native_files_per_member": 8778,
+    "native_directories_per_member": 8077,
+    "working_edits": 2,
+    "mixed_layouts": true,
+    "independent_pins": true,
+    "inherited_settings_preserved": true,
+    "settings_bytes_equal": true,
+    "preview_read_only": true,
+    "publication_repeated_without_changes": true,
+    "invalid_pin_refused_without_output": true,
+    "source_and_base_and_native_unchanged": true,
+    "offline_no_platform_git_or_facade": true,
+    "members": [
+      {
+        "name": "base",
+        "layout_changed": true,
+        "native_files": 8778,
+        "native_directories": 8077,
+        "independent_native_equal": true,
+        "exclusions": 0
+      },
+      {
+        "name": "reference",
+        "layout_changed": false,
+        "native_files": 8778,
+        "native_directories": 8077,
+        "independent_native_equal": true,
+        "exclusions": 0
+      }
+    ]
+  },
+  "semantic_authority": {
+    "schema_version": 1,
+    "members": [
+      {
+        "name": "base",
+        "semantic": {
+          "descriptors": 3595,
+          "objects": 8330,
+          "all_and_summary_equal": true,
+          "saved_and_unsaved_equal": true
+        },
+        "accepted_native_equal_original": true,
+        "independent_freeze_verified": true
+      },
+      {
+        "name": "reference",
+        "semantic": {
+          "descriptors": 3595,
+          "objects": 8330,
+          "all_and_summary_equal": true,
+          "saved_and_unsaved_equal": true
+        },
+        "accepted_native_equal_original": true,
+        "independent_freeze_verified": true
+      }
+    ],
+    "source_and_base_unchanged": true
+  },
+  "platform_round_trip": {
+    "platform": "8.3.27.2325",
+    "source_and_base_and_native_unchanged": true,
+    "settings_and_approval_unchanged": true,
+    "project_versions_preserved": true,
+    "exclusions": 0,
+    "members": [
+      {
+        "name": "base",
+        "native_files": 8769,
+        "native_directories": 8064,
+        "other_bytes_equal": true,
+        "dump_versions": {
+          "versioned_entries": 7011,
+          "changed_versions": 7011,
+          "all_other_bytes_equal": true
+        },
+        "artifact_checksums_valid": true,
+        "project_version_preserved": true
+      },
+      {
+        "name": "reference",
+        "native_files": 8769,
+        "native_directories": 8064,
+        "other_bytes_equal": true,
+        "dump_versions": {
+          "versioned_entries": 7011,
+          "changed_versions": 7011,
+          "all_other_bytes_equal": true
+        },
+        "artifact_checksums_valid": true,
+        "project_version_preserved": true
+      }
+    ]
+  },
+  "limitations": [
+    "configuration_profile_only",
+    "selective_member_detachment_unsupported",
+    "foreign_files_and_git_state_not_copied",
+    "effective_git_policy_not_verified",
+    "hard_links_required",
+    "no_power_loss_transaction",
+    "other_structural_and_compound_profiles_pending",
+    "no_new_cfe_epf_erf_acceptance",
+    "no_client_or_live_infobase_execution"
+  ]
+}

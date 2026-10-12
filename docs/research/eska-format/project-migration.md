@@ -34,10 +34,11 @@ paths. `eska.toml`, существующие `.gitattributes` и `.gitignore` к
 артефакты и generations не копируются. Отсутствие transport files тоже входит
 в ожидаемый снимок; effective Git policy эта операция не подтверждает.
 
-Первый orchestration поддерживает standalone scope. Member workspace отклоняется
+Standalone orchestration поддерживает только standalone scope. Member workspace отклоняется
 с `source_migration_scope_unsupported`: точное копирование его TOML потеряло бы
-унаследованные настройки. Автоматическое переключение исходного проекта,
-workspace migration и изменение CI approval не реализованы.
+унаследованные настройки. [Перенос всего workspace](workspace-migration.md)
+выполняется отдельно через `--workspace --accepted-bases`. Автоматическое
+переключение исходного проекта и изменение CI approval не реализованы.
 
 ## Публикация и восстановление
 

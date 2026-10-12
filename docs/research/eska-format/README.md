@@ -12,14 +12,18 @@ reader/source map и контекст SDK. [Явный CLI import](readable-proj
 выбирает читаемую структуру через `--layout readable`; default family сохранён.
 [Миграция standalone-проекта](project-migration.md) связывает рабочие исходники
 и pinned base в новую readable копию с preview, repeat/recovery и отдельным pin.
+[Миграция workspace](workspace-migration.md) сохраняет exact root/member manifests
+и наследование, требует отдельные approved pins и блокирует частичную публикацию.
 [Порядок существующих детей](child-order.md) редактируется по native UUID и
 декларациям с проверкой поддержки/freeze владельца и перемещённых элементов;
 состав и позиции native классов сохраняются. [Новые EnumValue](enum-value-creation.md)
 создаются через права принятого владельца по закрытому native профилю с проверкой
 UUID/имён и Working координатами. [Удаление EnumValue](enum-value-deletion.md)
 проверяет поддержку/freeze владельца и членов, typed/decoded XML зависимости.
-Workspace migration, другие structural profiles/rename и остальные составные
-домены ещё в работе.
+[Переименование EnumValue](enum-value-rename.md) сохраняет UUID и проверяет старые
+namespace зависимости; [именованный FillValue](enum-fill-value.md) редактируется
+одной строкой с прежними QName helpers и проверкой конечной цели.
+Другие structural profiles и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.
 Обе части `PLANNED`; текущие реализации и результаты перечислены ниже.

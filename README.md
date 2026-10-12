@@ -761,14 +761,19 @@ preset = "trunk"
 создаёт проект в читаемой структуре; без параметра остаётся семейное расположение.
 [Миграция standalone-проекта через CLI](docs/research/eska-format/project-migration.md)
 сохраняет рабочие правки и независимо переносит базу в новую копию; по умолчанию
-показывается план. [Порядок существующих детей](docs/research/eska-format/child-order.md)
+показывается план. [Миграция всего workspace](docs/research/eska-format/workspace-migration.md)
+сохраняет наследование и точные manifests, требует отдельные approved pins всех
+members и блокирует незавершённую публикацию.
+[Порядок существующих детей](docs/research/eska-format/child-order.md)
 редактируется при прежнем составе, с проверкой поддержки/freeze владельца и
 перемещённых элементов. [Новые значения перечисления](docs/research/eska-format/enum-value-creation.md)
 создаются через права принятого владельца, с проверкой UUID, имён и native профиля.
 [Удаление EnumValue](docs/research/eska-format/enum-value-deletion.md) проверяет
 владельца, соседей и оставшиеся metadata/XML ссылки до публикации поколения.
-Workspace, остальные structural profiles/rename и завершение структуры
-EF-24 ещё в работе.
+[Переименование EnumValue](docs/research/eska-format/enum-value-rename.md)
+сохраняет UUID и проверяет оставшиеся зависимости; [FillValue](docs/research/eska-format/enum-fill-value.md)
+принимает именованную ссылку на значение с проверкой окончательного состава.
+Остальные structural/compound profiles и завершение структуры EF-24 ещё в работе.
 Инструменты собираются отдельно с features `project-cli`/`build-cli`;
 комплектная поставка и делегирование оболочки ещё не подключены.
 Общая [библиотека анализа](docs/research/eska-format/shared-session.md) уже

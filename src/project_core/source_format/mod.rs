@@ -69,7 +69,11 @@ pub use model::{
     PropertyName, PropertyValue, Section, XmlAttribute, XmlFragment, XmlProfile,
 };
 pub(crate) use project_migration::require_project_ready;
-pub use project_migration::{PROJECT_LAYOUT_RECEIPT, ProjectLayoutPlan, prepare_readable_project};
+pub use project_migration::{
+    PROJECT_LAYOUT_RECEIPT, ProjectLayoutPlan, WORKSPACE_LAYOUT_RECEIPT, WorkspaceAcceptedRefs,
+    WorkspaceLayoutMember, WorkspaceLayoutPlan, prepare_readable_project,
+    prepare_readable_workspace,
+};
 pub use property::ExactUnsigned;
 pub use type_description::{
     DateQualifiers, NumberQualifiers, StringQualifiers, TypeAllowedLength, TypeAllowedSign,

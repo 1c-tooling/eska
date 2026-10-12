@@ -11,7 +11,7 @@
 |---|---|---|
 | Designer XML | Коллекции типов; descriptor объекта и каталог его ресурсов; `Ext`, формы, модули, макеты. Запросы находятся внутри XML формы/СКД | Сохранить узнаваемые коллекции, родные identity и обратную карту; отделить редактируемые тексты от XML-оболочки |
 | EDT, опубликованный пример 1С | `.mdo` содержит свойства, реквизиты и описания форм/макетов; содержимое лежит в `Forms/.../Form.form`, `Module.bsl`, `Templates/.../Template.dcs`; модули объекта лежат рядом с `.mdo`. Проверенные запросы остаются внутри XML `.form`/`.dcs` | Полезна близость файлов одного владельца. Специальное расширение само по себе не делает XML удобнее для ручной правки |
-| Текущая экспериментальная ESKA | Семейная версия 1 сохраняет `ObjectSource.nested`. [Версия 2](descriptor-layout.md) даёт самостоятельным descriptors собственные YAML; [версия 3](resource-layout.md) явно переносит модули и ресурсные наборы; [descriptor schema 2](readable-layout.md) использует именованные значения и отдельные native details. Writer типизирует [32 скаляра](typed-scalars.md) и [Type с qualifiers](type-description.md), [ссылки и списки метаданных](metadata-reference.md), [цели Type/TypeSet](type-targets.md) и [запрет вложенных именованных наборов](named-type-sets.md); [аннотации YAML](annotation-migration.md) мигрируют вместе с исходными полями | Импорт, reader/SDK, protected export и оба плана миграции сохраняют native evidence, байты и политику. Остальные составные домены/коллекции, совместимость типов, orchestration проекта и структурные операции ещё нужны |
+| Текущая экспериментальная ESKA | Семейная версия 1 сохраняет `ObjectSource.nested`. [Версия 2](descriptor-layout.md) даёт самостоятельным descriptors собственные YAML; [версия 3](resource-layout.md) явно переносит модули и ресурсные наборы; [descriptor schema 2](readable-layout.md) использует именованные значения и отдельные native details. Writer типизирует [32 скаляра](typed-scalars.md) и [Type с qualifiers](type-description.md), [ссылки и списки метаданных](metadata-reference.md), [цели Type/TypeSet](type-targets.md) и [запрет вложенных именованных наборов](named-type-sets.md); [аннотации YAML](annotation-migration.md) мигрируют вместе с исходными полями | Импорт, reader/SDK, protected export и оба плана миграции сохраняют native evidence, байты и политику. Остальные составные домены/коллекции, совместимость типов и structural profiles ещё нужны |
 | Текущий Explorer | Дерево и поддержка получаются из `eska ide`; есть защищённые вкладки и мост к языковым провайдерам. В `package.json` нет собственных `languages`/`grammars` | Наличие дерева сейчас не подтверждает подсветку и анализ нового формата. Их поставка и работа в защищённых вкладках требуют отдельной приёмки EF-11 |
 
 Проверены исходники `project_core/source_format/{package,import,model}.rs`,
@@ -28,8 +28,12 @@ YAML и физические resources. Без параметра сохраня
 [Создание значений перечисления](enum-value-creation.md) применяет права принятого
 владельца и проверенный native профиль, не требуя ручных hashes/manifest edits.
 [Удаление EnumValue](enum-value-deletion.md) сохраняет права владельца и проверяет
-зависимости итогового выбранного состава. Workspace, остальные structural profiles
-и rename ещё не приняты.
+зависимости итогового выбранного состава. [Переименование EnumValue](enum-value-rename.md)
+сохраняет родной UUID и проверяет старые namespace зависимости.
+[Именованный FillValue](enum-fill-value.md) принимает прямую ссылку на значение
+с проверкой окончательного состава. [Миграция всего workspace](workspace-migration.md)
+сохраняет exact root/member manifests и наследование с отдельными approved pins.
+Остальные structural/compound profiles ещё не приняты.
 
 Внешние источники проверены 2026-10-11:
 

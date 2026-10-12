@@ -2235,6 +2235,27 @@ native контролем; freeze и неверные цели отказали 
 Остальные compound/structural profiles и workspace migration ещё нужны;
 EF-24 — `IN_PROGRESS`. Клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
 
+Девятнадцатая часть — [миграция всего workspace](../research/eska-format/workspace-migration.md).
+`migrate --workspace --accepted-bases` использует строгую карту approved pins
+каждого member, обычную discovery/inheritance и прежние независимые source/base
+планы. Exact root/member TOML и transport files сохраняются; все destinations
+проверяются до первого member. Outer receipt блокирует частичный workspace,
+root manifest публикуется последним. Preview/repeat/recovery сохраняют оригинал
+и CI approval; публичные member previews не позволяют отдельную публикацию.
+Прошли 16 root/14 SDK/5 adapter gates и оба release build: 515 unit + 563
+integration, 24 opt-in пропущены; minimal project — 322 unit + 29 CLI,
+SDK — 359, adapter — 70 + 12. Добавлены 10 core и три CLI tests.
+Реальный mixed family/readable workspace двух CF members на C1 с отдельными
+freeze/pins и двумя рабочими FillValue правками проверен без платформы/Git/оболочки.
+Для каждого member 8 778 файлов/8 077 каталогов равны независимому контролю;
+3 595 descriptors/8 330 объектов совпали в saved/unsaved All/Summary. Обе bases
+восстановлены до исходного C1 с прежними freezes. Два CF round trips через
+1С 8.3.27.2325 дали по 8 769 файлов/8 064 каталога, кроме 7 011 configVersion;
+четыре artifact checksums, inputs/settings/approval/версии сохранены.
+[Результаты](../research/eska-format/workspace-migration-results.json).
+Прочие structural/compound profiles ещё нужны; EF-24 — `IN_PROGRESS`.
+Клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

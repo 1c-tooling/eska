@@ -28,6 +28,8 @@ eska-project --project-dir old-project migrate new-project \
   --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" --format json
 eska-project --project-dir old-project migrate new-project \
   --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" --write --format json
+eska-project --project-dir old-workspace migrate new-workspace --workspace \
+  --accepted-bases approved-bases.json --write --format json
 eska-project --project-dir new-project inspect --format json
 eska-project --project-dir new-project prepare \
   --accepted-base-sha256 "$APPROVED_BASE_SHA256" --format json
@@ -58,7 +60,12 @@ Manifest публикуется последним. Ошибка удаляет 
 Preview не пишет файлы; `--write` публикует или возобновляет matching output,
 затем manifest. Settings/transport сохраняются побайтно, возвращённый новый
 pin нужно одобрить отдельно. Исходный проект и CI approval не переключаются;
-Git/прочие файлы проекта не копируются. Workspace migration отказывает явно.
+Git/прочие файлы проекта не копируются. [Workspace migration](workspace-migration.md)
+включается явно через `--workspace --accepted-bases`: точные root/member settings
+сохраняют наследование, каждый member требует свой approved pin, destinations
+проверяются до публикации первого member. Root manifest записывается последним;
+общий receipt блокирует частично опубликованные проекты. Выборочный перенос
+member в standalone по-прежнему отказывает.
 
 `import` возвращает кандидат на принятую базу и её SHA-256. CI получает
 одобренную сумму отдельно; editable TOML не хранит approval digest.
@@ -84,7 +91,8 @@ Name, UUID, owner count и SHA-256 текста. Полный набор owners,
 `metadata = null`. Общая discovery/selection сохраняет поддержку старого формата.
 
 Команды над существующим проектом выбирают один member через `--project NAME`
-или текущий каталог member. На workspace root без выбора возвращается отказ.
+или текущий каталог member. На workspace root без выбора возвращается отказ,
+кроме явной миграции всего workspace.
 Настройки и пути базы относятся к выбранному member, platform inheritance
 берётся из общей модели. YAML других member не открываются.
 

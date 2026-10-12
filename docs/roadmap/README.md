@@ -88,6 +88,12 @@ migration остаются в EF-24.
 окончательного состава. Reader/editor/source map и миграция аннотаций общие;
 старые preserved поля не типизируются при открытии. Две правки C1 прошли
 независимый native контроль и CF/build/dump на 1С 8.3.27.2325.
+[Девятнадцатая часть](../research/eska-format/workspace-migration.md) добавляет
+миграцию всего workspace с exact root/member settings, прежним наследованием
+и отдельными approved pins. До записи проверяются все members; outer receipt
+блокирует частичную публикацию. Mixed family/readable workspace двух CF members
+на C1 прошёл independent native/semantic/authority контроль и два CF round trips
+на 1С 8.3.27.2325. Другие structural/compound profiles ещё нужны; EF-24 незавершена.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи
 не открываются заново, но не подтверждают новое расширенное покрытие MVP.

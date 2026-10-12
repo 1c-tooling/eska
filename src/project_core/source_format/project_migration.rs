@@ -1,6 +1,12 @@
 //! Project migration plans keep working values and independently pinned authority separate.
 
 mod publication;
+mod workspace;
+
+pub use workspace::{
+    WORKSPACE_LAYOUT_RECEIPT, WorkspaceAcceptedRefs, WorkspaceLayoutMember, WorkspaceLayoutPlan,
+    prepare_readable_workspace,
+};
 
 #[cfg(test)]
 mod tests;
@@ -19,14 +25,18 @@ use super::{
     SourcePath, files, prepare_accepted_readable_layout, prepare_readable_layout,
 };
 use crate::project_core::{
-    Project, SourceFormat, config::ProjectConfig, metadata_model::ProjectScope, publish,
+    Project, SourceFormat,
+    config::{ProjectConfig, WorkspaceConfig},
+    discovery::resolve_member_configuration,
+    metadata_model::ProjectScope,
+    publish,
 };
 
 /// A project is not ready while its independently resumable source and base are being published.
 pub const PROJECT_LAYOUT_RECEIPT: &str = ".eska-project-layout.json";
 
 /// The receipt binds both storage plans and exact settings, without absolute paths or editable data.
-#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Receipt {
     schema_version: u32,
@@ -69,6 +79,16 @@ pub fn prepare_readable_project(
     if *scope != ProjectScope::Standalone {
         return Err(Error::root("source_migration_scope_unsupported"));
     }
+    prepare_project(project, expected, destination, None)
+}
+
+/// A workspace supplies verified defaults and a destination below its already resolved new root.
+fn prepare_project(
+    project: &Project,
+    expected: &AcceptedRef,
+    destination: &Path,
+    workspace: Option<&WorkspaceConfig>,
+) -> Result<ProjectLayoutPlan, Error> {
     let SourceFormat::Eska { accepted_base } = project.configuration().source_format() else {
         return Err(Error::root("source_format_mismatch"));
     };
@@ -93,10 +113,18 @@ pub fn prepare_readable_project(
         .get(&SourcePath::parse("eska.toml")?)
         .and_then(Option::as_deref)
         .ok_or_else(|| Error::root("source_file_missing"))?;
-    let loaded = ProjectConfig::from_toml(manifest)
-        .map_err(|_| Error::root("source_schema_invalid"))?
-        .into_project(root.clone())
-        .map_err(|_| Error::root("source_path_invalid"))?;
+    let config =
+        ProjectConfig::from_toml(manifest).map_err(|_| Error::root("source_schema_invalid"))?;
+    let loaded = if let Some(workspace) = workspace {
+        let configuration = resolve_member_configuration(workspace, &config)
+            .map_err(|_| Error::root("source_schema_invalid"))?;
+        Project::new(root.clone(), root.join(config.source()), configuration)
+            .map_err(|_| Error::root("source_path_invalid"))?
+    } else {
+        config
+            .into_project(root.clone())
+            .map_err(|_| Error::root("source_path_invalid"))?
+    };
     if loaded != *project {
         return Err(Error::root("source_input_changed"));
     }
@@ -125,7 +153,11 @@ pub fn prepare_readable_project(
             .collect(),
     };
     let plan = ProjectLayoutPlan {
-        destination: destination_path(&root, destination)?,
+        destination: if workspace.is_some() {
+            destination.to_owned()
+        } else {
+            destination_path(&root, destination)?
+        },
         root,
         source_path,
         base_path,
@@ -195,7 +227,16 @@ impl ProjectLayoutPlan {
 
 /// Even a published manifest cannot expose a project whose outer operation is incomplete.
 pub fn require_project_ready(root: &Path) -> Result<(), Error> {
-    match fs::symlink_metadata(root.join(PROJECT_LAYOUT_RECEIPT)) {
+    require_marker_absent(root, PROJECT_LAYOUT_RECEIPT)?;
+    for ancestor in root.ancestors() {
+        require_marker_absent(ancestor, WORKSPACE_LAYOUT_RECEIPT)?;
+    }
+    Ok(())
+}
+
+/// A containing workspace remains unavailable even before its root manifest has appeared.
+fn require_marker_absent(root: &Path, name: &str) -> Result<(), Error> {
+    match fs::symlink_metadata(root.join(name)) {
         Ok(_) => Err(Error::root("source_migration_incomplete")),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(files::io(&error)),
@@ -222,6 +263,30 @@ fn read_optional(path: &Path) -> Result<Option<String>, Error> {
 
 /// Root settings and the operation receipt cannot become source/base directory names.
 fn validate_paths(source: &SourcePath, base: &SourcePath) -> Result<(), Error> {
+    validate_distinct_paths(source, base)?;
+    for path in [source, base] {
+        if [
+            "eska.toml",
+            ".gitattributes",
+            ".gitignore",
+            PROJECT_LAYOUT_RECEIPT,
+            WORKSPACE_LAYOUT_RECEIPT,
+        ]
+        .iter()
+        .any(|name| {
+            path.as_str()
+                .split('/')
+                .next()
+                .is_some_and(|root| root.eq_ignore_ascii_case(name))
+        }) {
+            return Err(Error::root("source_path_collision"));
+        }
+    }
+    Ok(())
+}
+
+/// Two owned trees must neither overlap nor spell a shared ancestor differently by case.
+fn validate_distinct_paths(source: &SourcePath, base: &SourcePath) -> Result<(), Error> {
     for (left, right) in source.as_str().split('/').zip(base.as_str().split('/')) {
         if left.to_lowercase() != right.to_lowercase() {
             break;
@@ -237,23 +302,6 @@ fn validate_paths(source: &SourcePath, base: &SourcePath) -> Result<(), Error> {
         || right.starts_with(&format!("{left}/"))
     {
         return Err(Error::root("source_baseline_overlap"));
-    }
-    for path in [source, base] {
-        if [
-            "eska.toml",
-            ".gitattributes",
-            ".gitignore",
-            PROJECT_LAYOUT_RECEIPT,
-        ]
-        .iter()
-        .any(|name| {
-            path.as_str()
-                .split('/')
-                .next()
-                .is_some_and(|root| root.eq_ignore_ascii_case(name))
-        }) {
-            return Err(Error::root("source_path_collision"));
-        }
     }
     Ok(())
 }

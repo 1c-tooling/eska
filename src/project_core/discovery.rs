@@ -263,7 +263,8 @@ fn load_workspace_member(
     Ok(WorkspaceMember::new(name, project))
 }
 
-fn resolve_member_configuration(
+/// Share the exact inheritance policy with workspace-preserving source migration.
+pub(crate) fn resolve_member_configuration(
     workspace: &WorkspaceConfig,
     member: &ProjectConfig,
 ) -> Result<ProjectConfiguration, ContextDiscoveryError> {

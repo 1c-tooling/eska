@@ -17,6 +17,8 @@ mod reference_clear;
 #[path = "project_tool/rename.rs"]
 mod rename;
 mod support;
+#[path = "project_tool/workspace_migration.rs"]
+mod workspace_migration;
 
 use serde_json::Value;
 use std::{

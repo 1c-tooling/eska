@@ -1,6 +1,8 @@
 //! Process-boundary selection and reports, with one source implementation in `project_core`.
 
-use super::args::{Cli, Command, Import, ImportLayout, Migrate, Prepare, Selector, Transport};
+mod migration;
+
+use super::args::{Cli, Command, Import, ImportLayout, Prepare, Selector, Transport};
 use crate::{
     project_core::{
         ProjectName, SourceFormat,
@@ -9,7 +11,7 @@ use crate::{
         platform_settings::PlatformVersion,
         source_format::{
             DESCRIPTOR_LAYOUT_VERSION, NativeUuid, PROFILE, READABLE_SCHEMA_VERSION,
-            RESOURCE_LAYOUT_VERSION, RULES_VERSION, SCHEMA_VERSION, prepare_readable_project,
+            RESOURCE_LAYOUT_VERSION, RULES_VERSION, SCHEMA_VERSION,
         },
         transport::TransportPlan,
     },
@@ -26,7 +28,7 @@ use std::path::Path;
 pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String), Failure> {
     match &cli.command {
         Command::Import(args) => import(args, localizer),
-        Command::Migrate(args) => migrate(&cli.project_dir, args, localizer),
+        Command::Migrate(args) => migration::migrate(&cli.project_dir, args, localizer),
         Command::Inspect(args) => inspect(&cli.project_dir, args, localizer),
         Command::Prepare(args) => prepare(&cli.project_dir, args, localizer),
         Command::Transport(args) => transport(&cli.project_dir, args, localizer),
@@ -40,65 +42,11 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
             "import_layouts":["family","readable"],
             "source_layout_versions":[SCHEMA_VERSION,DESCRIPTOR_LAYOUT_VERSION,RESOURCE_LAYOUT_VERSION],
             "descriptor_schema_versions":[SCHEMA_VERSION,READABLE_SCHEMA_VERSION],
-            "migration_layouts":["readable"], "migration_scopes":["standalone"],
+            "migration_layouts":["readable"], "migration_scopes":["standalone","workspace"], "workspace_pin_schema_version":1,
             "structural_edits":false}),
             localizer.text("tool-project-capabilities"),
         )),
     }
-}
-
-/// Select one project; independent core plans own all conversion, validation and publication.
-fn migrate(
-    start: &Path,
-    args: &Migrate,
-    localizer: &Localizer,
-) -> Result<(Value, String), Failure> {
-    path_text(&args.destination)?;
-    let pin = tool_cli::accepted_ref(args.accepted_base_sha256.as_deref())?;
-    let selection = selected(start, args.selector.project.as_deref())?;
-    let source = EskaSource::open(selection.project, selection.scope)?;
-    let plan = prepare_readable_project(source.project(), source.scope(), &pin, &args.destination)?;
-    let destination = path_text(plan.destination())?;
-    let publication = args.write.then(|| plan.publish()).transpose()?;
-    let key = if args.write {
-        "tool-project-migrated"
-    } else {
-        "tool-project-migration-preview"
-    };
-    let human = localizer.format(
-        key,
-        &[
-            ("path", LocalizationValue::Text(destination)),
-            (
-                "pin",
-                LocalizationValue::Text(&plan.accepted_reference().sha256),
-            ),
-            (
-                "source_count",
-                LocalizationValue::Number(
-                    i64::try_from(plan.source_changes().len()).unwrap_or(i64::MAX),
-                ),
-            ),
-            (
-                "base_count",
-                LocalizationValue::Number(
-                    i64::try_from(plan.accepted_changes().len()).unwrap_or(i64::MAX),
-                ),
-            ),
-        ],
-    );
-    Ok((
-        json!({"root":path_text(source.project().root())?, "destination":destination,
-        "source_layout":"readable", "source_layout_version":RESOURCE_LAYOUT_VERSION,
-        "descriptor_schema_version":READABLE_SCHEMA_VERSION,
-        "previous_baseline":plan.previous_reference().sha256,
-        "baseline":plan.accepted_reference().sha256, "layout_changed":plan.layout_changed(),
-        "written":args.write, "publication":publication,
-        "source_changes":plan.source_changes(), "accepted_changes":plan.accepted_changes(),
-        "copied_project_files":plan.ancillary_files().collect::<Vec<_>>(),
-        "ci_pin_updated":false, "effective_git_policy_verified":false}),
-        human,
-    ))
 }
 
 /// Import into an exclusively new directory, returning a pin for independent approval/storage.
