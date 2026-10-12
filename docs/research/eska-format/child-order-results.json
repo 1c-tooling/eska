@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task": "EF-24",
+  "part": 13,
+  "status": "IN_PROGRESS",
+  "feature": "existing_child_collection_order",
+  "wire": {
+    "operation_kind": "reorder",
+    "descriptor_schema_versions": [
+      1,
+      2
+    ],
+    "source_layout_versions": [
+      1,
+      2,
+      3
+    ],
+    "source_map_version": 2,
+    "rules_version": 1,
+    "tool_protocol_version": 1,
+    "cli_options_unchanged": true,
+    "accepted_members_and_native_class_slots_preserved": true,
+    "owner_and_displaced_member_permissions_checked": true
+  },
+  "validation": {
+    "root_gates": 16,
+    "unit_tests": 455,
+    "integration_tests": 554,
+    "opt_in_ignored": 24,
+    "minimal_project_cli_unit_tests": 262,
+    "minimal_project_cli_integration_tests": 17,
+    "all_features_build_cli_tests": 9,
+    "new_core_tests": 9,
+    "new_integration_tests": 2,
+    "new_cli_tests": 1,
+    "sdk_gates": 14,
+    "sdk_all_features_tests": 359,
+    "adapter_gates": 5,
+    "adapter_unit_tests": 70,
+    "adapter_integration_tests": 12,
+    "release_builds": 2
+  },
+  "real_c1": {
+    "native_descriptors": 3595,
+    "native_files": 8778,
+    "native_directories": 8077,
+    "changed_collections": 4,
+    "changed_source_files": 3,
+    "freeze_stationary_allowed": true,
+    "freeze_displaced_refused": true,
+    "working_and_accepted_and_native_unchanged": true,
+    "source_manifest_unchanged": true,
+    "native_control_bytes_equal": true,
+    "protected_exclusions": 0,
+    "both_locales_checked": true,
+    "independent_release_cli": true,
+    "platform_git_and_facade_absent_from_path": true,
+    "negative_recovery_matches_native_control": true,
+    "generation_reused": true
+  },
+  "semantic": {
+    "descriptors": 3595,
+    "objects": 8330,
+    "all_and_summary_equal": true,
+    "saved_and_unsaved_equal": true
+  },
+  "platform": {
+    "version": "8.3.27.2325",
+    "artifact": "CF",
+    "control_and_eska_build_dump_passed": true,
+    "native_files": 8769,
+    "native_directories": 8064,
+    "ignored_dump_versions": 7011,
+    "all_other_bytes_equal": true,
+    "manifest_checksums_valid": true,
+    "source_and_base_unchanged": true,
+    "original_native_unchanged": true,
+    "project_version_unchanged": true,
+    "protected_exclusions": 0
+  },
+  "limits": [
+    "Existing members only; no create/delete/rename or cross-owner transfer",
+    "Native class and inline/reference storage form remain fixed in each slot",
+    "A preserved child retains the entire accepted collection order",
+    "No new CST order command or UI",
+    "Workspace migration and other compound domains remain in EF-24",
+    "C2/C3 and new CFE/EPF/ERF not accepted",
+    "No client execution, full BSL analysis or working infobase update validation"
+  ]
+}

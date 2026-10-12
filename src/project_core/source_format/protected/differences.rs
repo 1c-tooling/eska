@@ -30,6 +30,7 @@ pub(super) fn collect(
         current,
         identity.clone(),
         Operation::Resource,
+        None,
         &mut Vec::new(),
     );
 }
@@ -72,6 +73,7 @@ pub(super) fn exclusion(
         Operation::Delete => "delete".into(),
         Operation::Rename => "rename".into(),
         Operation::Move => "move".into(),
+        Operation::Reorder => "reorder".into(),
     };
     let action_key = match action {
         ExclusionAction::Restored => "restored",
@@ -123,11 +125,16 @@ impl Walker<'_> {
         current: Option<&Value>,
         mut uuid: NativeUuid,
         mut operation: Operation,
+        native: Option<&str>,
         coordinate: &mut Vec<String>,
     ) {
         if expected == current {
             return;
         }
+        let native = expected
+            .and_then(|value| value.get("path"))
+            .and_then(Value::as_str)
+            .or(native);
         if let Some(value) = expected {
             if let Some(identity) = value
                 .get("uuid")
@@ -176,12 +183,16 @@ impl Walker<'_> {
                         right.get(key),
                         uuid.clone(),
                         operation,
+                        native,
                         coordinate,
                     );
                     coordinate.pop();
                 }
             }
             (Some(Value::Array(left)), Some(Value::Array(right))) if !scalar_property => {
+                if self.children(left, right, &uuid, native, coordinate) {
+                    return;
+                }
                 for index in 0..left.len().max(right.len()) {
                     coordinate.push(index.to_string());
                     self.walk(
@@ -189,6 +200,7 @@ impl Walker<'_> {
                         right.get(index),
                         uuid.clone(),
                         operation,
+                        native,
                         coordinate,
                     );
                     coordinate.pop();
@@ -216,5 +228,59 @@ impl Walker<'_> {
                 ));
             }
         }
+    }
+
+    /// Compare existing members by identity so a denied order cannot hide independent property edits.
+    fn children(
+        &mut self,
+        expected: &[Value],
+        current: &[Value],
+        owner: &NativeUuid,
+        native: Option<&str>,
+        coordinate: &mut Vec<String>,
+    ) -> bool {
+        use super::super::child_order;
+
+        let (Some(before), Some(after)) = (
+            child_order::from_values(expected),
+            child_order::from_values(current),
+        ) else {
+            return false;
+        };
+        if !child_order::same_members(&before, &after) {
+            return false;
+        }
+        if before != after {
+            let denied = native
+                .and_then(|path| SourcePath::parse(path).ok())
+                .and_then(|path| {
+                    child_order::denied_permission(self.base, &path, owner, &before, &after).ok()
+                })
+                .flatten()
+                .unwrap_or_else(|| owner.clone());
+            self.diagnostics.push(exclusion(
+                self.base,
+                self.path,
+                coordinate.clone(),
+                Some(denied),
+                Operation::Reorder,
+                ExclusionAction::Restored,
+                "source_change_excluded",
+            ));
+        }
+        let members: std::collections::BTreeMap<_, _> = after.iter().zip(current).collect();
+        for (index, (identity, expected)) in before.iter().zip(expected).enumerate() {
+            coordinate.push(index.to_string());
+            self.walk(
+                Some(expected),
+                members.get(identity).copied(),
+                owner.clone(),
+                Operation::Resource,
+                native,
+                coordinate,
+            );
+            coordinate.pop();
+        }
+        true
     }
 }

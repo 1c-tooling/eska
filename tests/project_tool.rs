@@ -2,6 +2,8 @@
 
 #[path = "project_tool/migration.rs"]
 mod migration;
+#[path = "project_tool/order.rs"]
+mod order;
 #[path = "project_tool/readable.rs"]
 mod readable;
 mod support;

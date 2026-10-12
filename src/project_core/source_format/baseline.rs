@@ -74,6 +74,7 @@ pub enum Operation {
     Delete,
     Rename,
     Move,
+    Reorder,
 }
 
 /// Native policy and additional freeze remain separate machine-facing reasons.

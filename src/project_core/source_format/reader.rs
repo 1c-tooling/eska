@@ -413,8 +413,10 @@ impl SourceReader {
     pub fn parse_owner(&self, path: &SourcePath, text: &str) -> Result<OwnerSnapshot, Error> {
         let result = snapshot(path, text, &self.manifest_sha256, self.spec(path)?)?;
         if result.source.document.descriptor.object.kind == MetadataKind::Configuration
-            && references(&result.source.document.descriptor.object)?
-                != references(&self.configuration.source.document.descriptor.object)?
+            && !super::composition::same_reference_members(
+                &result.source.document.descriptor.object,
+                &self.configuration.source.document.descriptor.object,
+            )?
         {
             return Err(Error::root("source_declaration_mismatch").in_field(path.as_str()));
         }
@@ -449,8 +451,10 @@ impl SourceReader {
             let source = ObjectSource::from_value(value)?;
             let parents = validate_owner(&source, self.spec(path)?)?;
             if source.document.descriptor.object.kind == MetadataKind::Configuration
-                && references(&source.document.descriptor.object)?
-                    != references(&self.configuration.source.document.descriptor.object)?
+                && !super::composition::same_reference_members(
+                    &source.document.descriptor.object,
+                    &self.configuration.source.document.descriptor.object,
+                )?
             {
                 return Err(Error::root("source_declaration_mismatch"));
             }

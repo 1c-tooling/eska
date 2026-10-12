@@ -69,6 +69,18 @@ pub(super) fn references(node: &MetadataNode) -> Result<Vec<(MetadataKind, Strin
     Ok(values)
 }
 
+/// Reader bindings retain the same declared members while an unsaved document changes their order.
+pub(super) fn same_reference_members(
+    left: &MetadataNode,
+    right: &MetadataNode,
+) -> Result<bool, Error> {
+    let mut left = references(left)?;
+    let mut right = references(right)?;
+    left.sort_unstable();
+    right.sort_unstable();
+    Ok(left == right)
+}
+
 /// Check every active native UUID across main and inline objects, independently of file paths.
 pub(super) fn identities(node: &MetadataNode, values: &mut BTreeSet<String>) -> Result<(), Error> {
     if !values.insert(node.uuid.key()) {

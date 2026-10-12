@@ -17,6 +17,7 @@ mod baseline;
 mod edit;
 mod layout;
 mod measure;
+mod order;
 mod platform;
 mod protected;
 mod readable;

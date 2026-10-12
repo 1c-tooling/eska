@@ -117,6 +117,9 @@ Tool envelope имеет schema 1:
 При ошибке parsing `command = null`; `diagnostics.parser` сохраняет machine
 identifier категории Clap. Core failures сохраняют `code` и `location`;
 strict prepare возвращает полный массив exclusions в `error.diagnostics`.
+Запрещённая [перестановка детей](child-order.md) использует operation
+`{"kind":"reorder"}`; strict отказывает до публикации, а явный
+`--allow-exclusions` восстанавливает порядок с диагностикой.
 При успехе prepare возвращаются `xml`, `baseline`, `generation`, input/native
 revision, `source_map_sha256` и exclusions. Inspection, prepare и refusals
 для одинаковых входов дают тот же JSON при ru/en. Это отдельный tool protocol;

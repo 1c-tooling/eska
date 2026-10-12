@@ -1,4 +1,4 @@
-//! The accepted tree is the structural anchor; only existing supported property values vary.
+//! Accepted members anchor structure; permitted property values and same-class order may vary.
 
 use serde_json::Value;
 use std::{
@@ -129,6 +129,7 @@ fn merge_document(
         &mut document.descriptor.object,
         node,
         document.descriptor.schema_version,
+        &document.path,
     )
     .map_err(|error| error.in_field(document.path.as_str()))
 }
@@ -139,6 +140,7 @@ fn merge_node(
     node: &mut MetadataNode,
     current: Option<&Value>,
     schema: u32,
+    native: &SourcePath,
 ) -> Result<(), Error> {
     let sections = current
         .and_then(|value| value.get("sections"))
@@ -181,9 +183,10 @@ fn merge_node(
                     if let Child::Inline { object } = child {
                         let candidate =
                             inline_candidate(values, index, &object.uuid.key(), &known)?;
-                        merge_node(base, object, candidate, schema)?;
+                        merge_node(base, object, candidate, schema, native)?;
                     }
                 }
+                super::super::child_order::select(base, native, &node.uuid, children, values)?;
             }
             Section::Preserved(_) => {}
         }

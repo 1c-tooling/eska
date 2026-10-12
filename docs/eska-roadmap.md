@@ -117,7 +117,9 @@ native category: вложенные DefinedType/Characteristic в DefinedType о
 сохранён. [Миграция standalone через CLI](research/eska-format/project-migration.md)
 переносит рабочие values и pinned base отдельно, сохраняет settings и выдаёт
 новый pin для явного принятия. Workspace migration, остальные составные домены
-и structural operations ещё нужны.
+и create/delete/rename ещё нужны. [Порядок существующих детей](research/eska-format/child-order.md)
+уже выбирается по прежнему составу и native позициям классов с проверкой
+поддержки/freeze владельца и каждого перемещённого элемента.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)
