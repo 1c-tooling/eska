@@ -219,11 +219,13 @@ fn property_text(
         previous,
         PropertyValue::Reference(_)
             | PropertyValue::ReferenceList(_)
+            | PropertyValue::EnumFillValue(_)
             | PropertyValue::TypeDescription(_)
     ) || matches!(
         candidate,
         PropertyValue::Reference(_)
             | PropertyValue::ReferenceList(_)
+            | PropertyValue::EnumFillValue(_)
             | PropertyValue::TypeDescription(_)
     ) {
         for document in std::iter::once(&object.document).chain(&object.nested) {
@@ -330,6 +332,14 @@ fn anchored_node<'a>(
         if let (
             Some(PropertyValue::ReferenceList(current)),
             Some(PropertyValue::ReferenceList(anchor)),
+        ) = (working.property(property), accepted.property(property))
+            && current.native != anchor.native
+        {
+            return Err(Error::root("source_edit_structure_changed"));
+        }
+        if let (
+            Some(PropertyValue::EnumFillValue(current)),
+            Some(PropertyValue::EnumFillValue(anchor)),
         ) = (working.property(property), accepted.property(property))
             && current.native != anchor.native
         {

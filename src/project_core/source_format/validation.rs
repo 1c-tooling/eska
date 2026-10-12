@@ -153,6 +153,7 @@ fn properties(
                     ) => {}
                     (_, PropertyValue::Enumeration(text)) => xml_text(text)?,
                     (_, PropertyValue::TypeDescription(value)) => value.validate(context)?,
+                    (_, PropertyValue::EnumFillValue(value)) => value.validate(context)?,
                 }
             }
             Property::Preserved { fragment: value } => {

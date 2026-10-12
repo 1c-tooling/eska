@@ -6,10 +6,10 @@ use serde::{Deserialize, Serialize, Serializer};
 use serde_json::Value;
 
 use super::{
-    Child, Descriptor, Error, ExactUnsigned, MetadataNode, MetadataReference,
-    MetadataReferenceLayout, MetadataReferenceList, Namespace, NativeUuid, Property, PropertyName,
-    PropertyValue, Section, TypeData, TypeDescription, TypeLayout, XmlAttribute, XmlFragment,
-    XmlProfile, property::ValueKind,
+    Child, Descriptor, EnumFillValue, EnumFillValueLayout, Error, ExactUnsigned, MetadataNode,
+    MetadataReference, MetadataReferenceLayout, MetadataReferenceList, Namespace, NativeUuid,
+    Property, PropertyName, PropertyValue, Section, TypeData, TypeDescription, TypeLayout,
+    XmlAttribute, XmlFragment, XmlProfile, property::ValueKind,
 };
 use crate::project_core::MetadataKind;
 
@@ -120,6 +120,10 @@ enum PropertySlot {
         name: PropertyName,
         references: MetadataReferenceLayout,
     },
+    Filling {
+        name: PropertyName,
+        enum_fill: EnumFillValueLayout,
+    },
     Preserved {
         fragment: XmlFragment,
     },
@@ -198,6 +202,11 @@ fn encode_node(node: &MetadataNode) -> Result<Node, Error> {
                                     name: *name,
                                     references: value.native.clone(),
                                 }
+                            } else if let PropertyValue::EnumFillValue(value) = value {
+                                PropertySlot::Filling {
+                                    name: *name,
+                                    enum_fill: value.native.clone(),
+                                }
                             } else {
                                 PropertySlot::Name(*name)
                             })
@@ -255,57 +264,7 @@ fn decode_node(node: Node) -> Result<MetadataNode, Error> {
             NativeSection::Properties(items) => Section::Properties(
                 items
                     .into_iter()
-                    .map(|item| match item {
-                        PropertySlot::Name(name) => {
-                            let value = properties
-                                .remove(&name)
-                                .ok_or_else(|| Error::root("source_property_binding_invalid"))?;
-                            Ok(Property::Typed {
-                                name,
-                                value: value_from_wire(name, node.kind, value, None, None)?,
-                            })
-                        }
-                        PropertySlot::Type { name, layout } => {
-                            if name != PropertyName::Type {
-                                return Err(Error::root("source_property_binding_invalid"));
-                            }
-                            let value = properties
-                                .remove(&name)
-                                .ok_or_else(|| Error::root("source_property_binding_invalid"))?;
-                            Ok(Property::Typed {
-                                name,
-                                value: value_from_wire(
-                                    name,
-                                    node.kind,
-                                    value,
-                                    Some(&layout),
-                                    None,
-                                )?,
-                            })
-                        }
-                        PropertySlot::References { name, references } => {
-                            if !matches!(name.value_kind(node.kind), Some(ValueKind::ReferenceList))
-                            {
-                                return Err(Error::root("source_property_binding_invalid"));
-                            }
-                            let value = properties
-                                .remove(&name)
-                                .ok_or_else(|| Error::root("source_property_binding_invalid"))?;
-                            Ok(Property::Typed {
-                                name,
-                                value: value_from_wire(
-                                    name,
-                                    node.kind,
-                                    value,
-                                    None,
-                                    Some(&references),
-                                )?,
-                            })
-                        }
-                        PropertySlot::Preserved { fragment } => {
-                            Ok(Property::Preserved { fragment })
-                        }
-                    })
+                    .map(|item| decode_property(item, node.kind, &mut properties))
                     .collect::<Result<_, Error>>()?,
             ),
             NativeSection::Children => Section::Children(
@@ -343,6 +302,49 @@ fn decode_node(node: Node) -> Result<MetadataNode, Error> {
     })
 }
 
+/// Every slot consumes one property, with only its native domain's reconstruction binding.
+fn decode_property(
+    slot: PropertySlot,
+    owner: crate::project_core::MetadataKind,
+    properties: &mut BTreeMap<PropertyName, Value>,
+) -> Result<Property, Error> {
+    let invalid = || Error::root("source_property_binding_invalid");
+    let (name, layout, references, filling) = match slot {
+        PropertySlot::Name(name) => (name, None, None, None),
+        PropertySlot::Type { name, layout } => {
+            if name != PropertyName::Type {
+                return Err(invalid());
+            }
+            (name, Some(layout), None, None)
+        }
+        PropertySlot::References { name, references } => {
+            if !matches!(name.value_kind(owner), Some(ValueKind::ReferenceList)) {
+                return Err(invalid());
+            }
+            (name, None, Some(references), None)
+        }
+        PropertySlot::Filling { name, enum_fill } => {
+            if !matches!(name.value_kind(owner), Some(ValueKind::EnumFillValue)) {
+                return Err(invalid());
+            }
+            (name, None, None, Some(enum_fill))
+        }
+        PropertySlot::Preserved { fragment } => return Ok(Property::Preserved { fragment }),
+    };
+    let value = properties.remove(&name).ok_or_else(invalid)?;
+    Ok(Property::Typed {
+        name,
+        value: value_from_wire(
+            name,
+            owner,
+            value,
+            layout.as_ref(),
+            references.as_ref(),
+            filling.as_ref(),
+        )?,
+    })
+}
+
 /// Exact integers stay quoted digits; empty/nil use explicit wrappers distinct from strings/null.
 pub(super) fn value_to_wire(value: &PropertyValue) -> Result<Value, Error> {
     Ok(match value {
@@ -351,6 +353,7 @@ pub(super) fn value_to_wire(value: &PropertyValue) -> Result<Value, Error> {
         }
         PropertyValue::Integer(value) => Value::String(value.as_str().into()),
         PropertyValue::Reference(value) => Value::String(value.as_str().into()),
+        PropertyValue::EnumFillValue(value) => Value::String(value.reference.as_str().into()),
         PropertyValue::ReferenceList(value) => {
             serde_json::to_value(&value.items).map_err(|_| Error::root("source_schema_invalid"))?
         }
@@ -373,11 +376,13 @@ pub(super) fn value_from_wire(
     value: Value,
     layout: Option<&TypeLayout>,
     references: Option<&MetadataReferenceLayout>,
+    filling: Option<&EnumFillValueLayout>,
 ) -> Result<PropertyValue, Error> {
     let kind = name
         .value_kind(owner)
         .ok_or_else(|| Error::root("source_property_type_invalid"))?;
-    if layout.is_none()
+    if !matches!(kind, ValueKind::EnumFillValue)
+        && layout.is_none()
         && let Value::Object(mapping) = &value
         && mapping.len() == 1
         && let Some(state) = mapping.get("state").and_then(Value::as_str)
@@ -409,6 +414,13 @@ pub(super) fn value_from_wire(
         }
         (ValueKind::Reference, Value::String(value)) => {
             MetadataReference::parse(&value).map(PropertyValue::Reference)
+        }
+        (ValueKind::EnumFillValue, Value::String(value)) => {
+            let native = filling.ok_or_else(|| Error::root("source_property_binding_invalid"))?;
+            Ok(PropertyValue::EnumFillValue(Box::new(EnumFillValue {
+                reference: MetadataReference::parse(&value)?,
+                native: native.clone(),
+            })))
         }
         (ValueKind::ReferenceList, value) => {
             let native =

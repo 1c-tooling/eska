@@ -13,6 +13,7 @@ mod edit;
 mod enum_test_support;
 mod export;
 mod files;
+mod fill_value;
 mod fragment;
 mod import;
 mod layout;
@@ -61,6 +62,7 @@ pub use reader::{
     NativeMetadata, OwnerSnapshot, SourceReader,
 };
 
+pub use fill_value::{EnumFillValue, EnumFillValueLayout};
 pub use metadata_reference::{MetadataReference, MetadataReferenceLayout, MetadataReferenceList};
 pub use model::{
     Child, Descriptor, LineEnding, LocalizedText, MetadataNode, Namespace, NativeUuid, Property,

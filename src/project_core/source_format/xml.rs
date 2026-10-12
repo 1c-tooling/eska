@@ -160,6 +160,10 @@ fn typed_value(
     input: &str,
     context: &[Namespace],
 ) -> Option<PropertyValue> {
+    if matches!(kind, super::property::ValueKind::EnumFillValue) {
+        return super::fill_value::decode(node, input, context)
+            .map(|value| PropertyValue::EnumFillValue(Box::new(value)));
+    }
     if matches!(
         kind,
         super::property::ValueKind::Reference | super::property::ValueKind::ReferenceList

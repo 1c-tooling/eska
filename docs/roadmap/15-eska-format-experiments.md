@@ -2216,6 +2216,25 @@ SDK — 359, adapter — 70 + 12. Добавлены 14 core, один supplier 
 Другие structural profiles, составные домены и workspace migration ещё нужны;
 EF-24 — `IN_PROGRESS`. Клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
 
+Восемнадцатая часть — [именованный EnumValue в FillValue](../research/eska-format/enum-fill-value.md).
+Attribute/CommonAttribute/Dimension/Resource принимают закрытый `DesignTimeRef`
+профиль со ссылкой и отдельными native prefixes. Reader/editor/source map,
+protected selector и миграция аннотаций используют общий model. Цель проверяется
+по окончательному составу, включая rename/delete и case-only identity;
+непринятый тип заполнения и старые preserved поля сохраняют прежние ограничения.
+Прошли 16 root/14 SDK/5 adapter gates и оба release build: 505 unit + 563
+integration, 24 opt-in пропущены; minimal project — 312 unit + 26 CLI tests,
+SDK — 359, adapter — 70 + 12. Добавлены 12 core, один supplier и два CLI tests.
+В C1 найдены шесть подходящих metadata references; два разрешённых Attribute
+изменены в двух YAML. Все 8 778 файлов/8 077 каталогов совпали с независимым
+native контролем; freeze и неверные цели отказали в RU/EN до публикации.
+Все 3 595 descriptors/8 330 объектов совпали в saved/unsaved All/Summary.
+Контроль и ESKA собраны в CF и выгружены на 1С 8.3.27.2325: 8 769 файлов/8 064
+каталога равны кроме 7 011 configVersion; checksums/inputs/settings/версия сохранены.
+[Результаты](../research/eska-format/enum-fill-value-results.json).
+Остальные compound/structural profiles и workspace migration ещё нужны;
+EF-24 — `IN_PROGRESS`. Клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

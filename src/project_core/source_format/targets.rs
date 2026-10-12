@@ -162,6 +162,13 @@ impl<'a> Index<'a> {
                     let Property::Typed { name, value } = property else {
                         continue;
                     };
+                    if let PropertyValue::EnumFillValue(value) = value
+                        && !self.has_enum_fill_target(value.reference.as_str())
+                    {
+                        return Err(Error::root("source_metadata_reference_missing")
+                            .in_field(name.as_str())
+                            .in_field(node.uuid.as_str()));
+                    }
                     if let PropertyValue::TypeDescription(description) = value {
                         for (index, alternative) in description.data.alternatives.iter().enumerate()
                         {
@@ -212,6 +219,17 @@ impl<'a> Index<'a> {
             }
         }
         Ok(())
+    }
+
+    /// Canonical spelling is the fast path; enum names retain their native case-insensitive identity.
+    fn has_enum_fill_target(&self, target: &str) -> bool {
+        if self.names.contains_key(target) {
+            return true;
+        }
+        let target = target.to_lowercase();
+        self.names.iter().any(|(path, entry)| {
+            entry.node.kind == MetadataKind::EnumValue && path.to_lowercase() == target
+        })
     }
 
     /// The native profile forbids named sets inside a defined type with either alternative spelling.

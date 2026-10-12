@@ -102,20 +102,7 @@ pub(super) fn replace_direct(
             if old.len() == new.len()
                 && old.iter().zip(new).all(|(a, b)| a.language == b.language) =>
         {
-            let sequence = node.as_sequence().ok_or_else(unsupported)?;
-            for (index, (old, new)) in old.iter().zip(new).enumerate() {
-                if old.text != new.text {
-                    let entry = sequence
-                        .get(index)
-                        .and_then(|node| node.as_mapping().cloned())
-                        .ok_or_else(unsupported)?;
-                    let scalar = entry
-                        .get("text")
-                        .and_then(|node| node.as_scalar().cloned())
-                        .ok_or_else(unsupported)?;
-                    set_direct_string(&entry, "text", &new.text, Some(&scalar));
-                }
-            }
+            localized_direct(&node, old, new)?;
         }
         (
             _,
@@ -141,6 +128,14 @@ pub(super) fn replace_direct(
         (_, PropertyValue::Reference(value)) => {
             set_direct_string(&mapping, key, value.as_str(), node.as_scalar());
         }
+        (PropertyValue::EnumFillValue(old), PropertyValue::EnumFillValue(new))
+            if old.native == new.native =>
+        {
+            set_direct_string(&mapping, key, new.reference.as_str(), node.as_scalar());
+        }
+        (_, PropertyValue::EnumFillValue(_)) | (PropertyValue::EnumFillValue(_), _) => {
+            return Err(unsupported());
+        }
         (_, PropertyValue::Empty | PropertyValue::Nil) => {
             if let Some(state) = node.as_mapping() {
                 set_empty_state(state, next)?;
@@ -163,6 +158,29 @@ pub(super) fn replace_direct(
         return reference_value::membership(&output, steps, &old.items, &new.items);
     }
     Ok(output)
+}
+
+/// Updating localized contents retains each scalar's style and the unchanged language-key order.
+fn localized_direct(
+    node: &yaml_edit::YamlNode,
+    old: &[super::super::LocalizedText],
+    new: &[super::super::LocalizedText],
+) -> Result<(), Error> {
+    let sequence = node.as_sequence().ok_or_else(unsupported)?;
+    for (index, (before, after)) in old.iter().zip(new).enumerate() {
+        if before.text != after.text {
+            let entry = sequence
+                .get(index)
+                .and_then(|node| node.as_mapping().cloned())
+                .ok_or_else(unsupported)?;
+            let scalar = entry
+                .get("text")
+                .and_then(|node| node.as_scalar().cloned())
+                .ok_or_else(unsupported)?;
+            set_direct_string(&entry, "text", &after.text, Some(&scalar));
+        }
+    }
+    Ok(())
 }
 
 /// Empty replaces the entire bound value; annotations on removed members require manual resolution.
@@ -257,6 +275,15 @@ fn update_value(
         }
     }
     match (previous, next) {
+        (PropertyValue::EnumFillValue(old), PropertyValue::EnumFillValue(new))
+            if old.native == new.native =>
+        {
+            let content = mapping
+                .get("value")
+                .and_then(|node| node.as_mapping().cloned())
+                .ok_or_else(unsupported)?;
+            set_string(&content, "reference", new.reference.as_str())?;
+        }
         (PropertyValue::TypeDescription(old), PropertyValue::TypeDescription(new)) => {
             let data = mapping
                 .get("value")

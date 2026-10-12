@@ -230,6 +230,7 @@ pub enum PropertyName {
     PasswordMode,
     MarkNegatives,
     FillFromFillingValue,
+    FillValue,
     CodeLength,
     DescriptionLength,
     NumberLength,
@@ -283,6 +284,7 @@ impl PropertyName {
             Self::PasswordMode => "PasswordMode",
             Self::MarkNegatives => "MarkNegatives",
             Self::FillFromFillingValue => "FillFromFillingValue",
+            Self::FillValue => "FillValue",
             Self::CodeLength => "CodeLength",
             Self::DescriptionLength => "DescriptionLength",
             Self::NumberLength => "NumberLength",
@@ -333,6 +335,7 @@ pub enum PropertyValue {
     TypeDescription(Box<super::TypeDescription>),
     Reference(super::MetadataReference),
     ReferenceList(Box<super::MetadataReferenceList>),
+    EnumFillValue(Box<super::EnumFillValue>),
 }
 
 /// A native language key is preserved verbatim, without locale normalization.

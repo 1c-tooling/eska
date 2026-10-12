@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-12",
+  "task": "EF-24",
+  "part": 18,
+  "scope": "named_enum_value_filling_reference",
+  "source_envelopes": [
+    1,
+    2
+  ],
+  "manifest_schemas_unchanged": true,
+  "experimental_rust_api_extended": true,
+  "root_gates": 16,
+  "sdk_gates": 14,
+  "adapter_gates": 5,
+  "release_builds": 2,
+  "all_gates_passed": true,
+  "root_tests": {
+    "unit": 505,
+    "integration": 563,
+    "ignored_opt_in": 24
+  },
+  "minimal_project_tests": {
+    "unit": 312,
+    "cli": 26
+  },
+  "sdk_tests": 359,
+  "adapter_tests": {
+    "unit": 70,
+    "integration": 12
+  },
+  "added_tests": {
+    "unit": 12,
+    "integration": 1,
+    "cli": 2
+  },
+  "native_inventory": {
+    "metadata_fill_values": 2598,
+    "named_enum_value_references": 6,
+    "descriptor_files": 6,
+    "observed_owner_kinds": [
+      "Attribute",
+      "Resource"
+    ],
+    "editable_fields": 2
+  },
+  "independent_release_cli": {
+    "retargeted_fields": 2,
+    "changed_source_files": 2,
+    "native_files": 8778,
+    "native_directories": 8077,
+    "native_control_bytes_equal": true,
+    "protected_exclusions": 0,
+    "both_locales_checked": true,
+    "frozen_field_refused": true,
+    "negative_recovery_matches_native_control": true,
+    "source_manifest_unchanged": true,
+    "working_and_accepted_and_native_unchanged": true,
+    "platform_git_and_facade_absent_from_path": true,
+    "generation_reused": true,
+    "invalid_target_refusals": [
+      {
+        "case": "missing",
+        "strict": true,
+        "locales": [
+          "ru",
+          "en"
+        ],
+        "code": "source_metadata_reference_missing",
+        "generation_absent": true
+      },
+      {
+        "case": "missing",
+        "strict": false,
+        "locales": [
+          "ru",
+          "en"
+        ],
+        "code": "source_metadata_reference_missing",
+        "generation_absent": true
+      },
+      {
+        "case": "foreign",
+        "strict": true,
+        "locales": [
+          "ru",
+          "en"
+        ],
+        "code": "source_metadata_reference_invalid",
+        "generation_absent": true
+      },
+      {
+        "case": "foreign",
+        "strict": false,
+        "locales": [
+          "ru",
+          "en"
+        ],
+        "code": "source_metadata_reference_invalid",
+        "generation_absent": true
+      }
+    ]
+  },
+  "semantic": {
+    "descriptors": 3595,
+    "objects": 8330,
+    "all_and_summary_equal": true,
+    "saved_and_unsaved_equal": true
+  },
+  "platform_round_trip": {
+    "platform": "8.3.27.2325",
+    "native_files": 8769,
+    "native_directories": 8064,
+    "other_bytes_equal": true,
+    "dump_versions": {
+      "versioned_entries": 7011,
+      "changed_versions": 7011,
+      "all_other_bytes_equal": true
+    },
+    "source_and_base_unchanged": true,
+    "original_native_unchanged": true,
+    "protected_exclusions": 0
+  },
+  "artifact_checksums_valid": true,
+  "project_version_preserved": true,
+  "limitations": [
+    "non_enum_value_fill_profiles_preserved",
+    "nil_empty_and_type_changes_unsupported",
+    "field_type_compatibility_requires_platform_validation",
+    "real_resource_mutation_not_accepted",
+    "existing_preserved_classification_not_promoted",
+    "other_structural_profiles_pending",
+    "other_compound_domains_pending",
+    "workspace_migration_pending",
+    "no_new_cfe_epf_erf_runtime_acceptance",
+    "no_client_or_live_infobase_execution"
+  ]
+}

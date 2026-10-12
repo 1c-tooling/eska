@@ -132,6 +132,20 @@ impl Writer {
             }
             PropertyValue::Integer(value) => self.text_element(tag, value.as_str(), indent),
             PropertyValue::Reference(value) => self.text_element(tag, value.as_str(), indent),
+            PropertyValue::EnumFillValue(value) => {
+                self.indent(indent);
+                let _ = write!(self.output, "<{tag}");
+                self.attribute(
+                    &format!("{}:type", value.native.xsi_prefix),
+                    &format!("{}:DesignTimeRef", value.native.type_prefix),
+                );
+                let _ = write!(
+                    self.output,
+                    ">{}</{tag}>{}",
+                    escape(value.reference.as_str()),
+                    self.eol
+                );
+            }
             PropertyValue::ReferenceList(value) => {
                 self.open(tag, indent);
                 let item = format!("{}:Item", value.native.item_prefix);

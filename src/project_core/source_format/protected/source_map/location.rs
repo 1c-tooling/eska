@@ -407,6 +407,14 @@ fn property_range(
             ..
         } => steps.extend([Step::Key("value"), Step::Key("value"), Step::Key("items")]),
         Property::Typed {
+            value: PropertyValue::EnumFillValue(_),
+            ..
+        } => steps.extend([
+            Step::Key("value"),
+            Step::Key("value"),
+            Step::Key("reference"),
+        ]),
+        Property::Typed {
             value:
                 PropertyValue::Reference(_)
                 | PropertyValue::Text(_)

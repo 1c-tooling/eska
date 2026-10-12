@@ -287,9 +287,22 @@ fn merge_properties(
                     (PropertyValue::ReferenceList(old), PropertyValue::ReferenceList(new)) => {
                         new.native.clone_from(&old.native);
                     }
+                    (PropertyValue::EnumFillValue(old), PropertyValue::EnumFillValue(new)) => {
+                        new.native.clone_from(&old.native);
+                    }
                     (PropertyValue::ReferenceList(_), PropertyValue::Empty) => {}
-                    (PropertyValue::TypeDescription(_) | PropertyValue::ReferenceList(_), _)
-                    | (_, PropertyValue::TypeDescription(_) | PropertyValue::ReferenceList(_)) => {
+                    (
+                        PropertyValue::TypeDescription(_)
+                        | PropertyValue::ReferenceList(_)
+                        | PropertyValue::EnumFillValue(_),
+                        _,
+                    )
+                    | (
+                        _,
+                        PropertyValue::TypeDescription(_)
+                        | PropertyValue::ReferenceList(_)
+                        | PropertyValue::EnumFillValue(_),
+                    ) => {
                         return Err(
                             Error::root("source_property_type_invalid").in_field(name.as_str())
                         );
@@ -326,12 +339,18 @@ fn merge_named_properties(
             } else {
                 None
             };
+            let filling = if let PropertyValue::EnumFillValue(value) = &*value {
+                Some(&value.native)
+            } else {
+                None
+            };
             *value = super::super::readable::value_from_wire(
                 *name,
                 kind,
                 candidate.clone(),
                 layout,
                 references,
+                filling,
             )?;
         }
     }

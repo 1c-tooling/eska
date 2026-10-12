@@ -313,7 +313,15 @@ fn typed_property(
     value: &PropertyValue,
     context: &[Namespace],
 ) -> Result<MetadataProperty, Error> {
-    let qualifiers = if value == &PropertyValue::Nil {
+    let qualifiers = if let PropertyValue::EnumFillValue(value) = value {
+        vec![(
+            PropertyKey {
+                namespace: Some(XSI_NAMESPACE.into()),
+                name: "type".into(),
+            },
+            format!("{}:DesignTimeRef", value.native.type_prefix),
+        )]
+    } else if value == &PropertyValue::Nil {
         vec![(
             PropertyKey {
                 namespace: Some(XSI_NAMESPACE.into()),
@@ -341,6 +349,13 @@ fn typed_property(
         PropertyValue::Integer(value) => MetadataValue::Text(value.as_str().into()),
         PropertyValue::TypeDescription(value) => value.to_metadata(context)?,
         PropertyValue::Reference(value) => MetadataValue::Text(value.as_str().into()),
+        PropertyValue::EnumFillValue(value) => MetadataValue::TypedText {
+            text: value.reference.as_str().into(),
+            key: PropertyKey {
+                namespace: Some(super::super::metadata_reference::READABLE_NAMESPACE.into()),
+                name: "DesignTimeRef".into(),
+            },
+        },
         PropertyValue::ReferenceList(value) => MetadataValue::Record(
             value
                 .items

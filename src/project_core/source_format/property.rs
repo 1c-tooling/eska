@@ -51,6 +51,7 @@ pub(super) enum ValueKind {
     TypeDescription,
     Reference,
     ReferenceList,
+    EnumFillValue,
 }
 
 impl PropertyName {
@@ -77,6 +78,7 @@ impl PropertyName {
             "PasswordMode" => Self::PasswordMode,
             "MarkNegatives" => Self::MarkNegatives,
             "FillFromFillingValue" => Self::FillFromFillingValue,
+            "FillValue" => Self::FillValue,
             "CodeLength" => Self::CodeLength,
             "DescriptionLength" => Self::DescriptionLength,
             "NumberLength" => Self::NumberLength,
@@ -113,6 +115,17 @@ impl PropertyName {
         match self {
             Self::Name | Self::Comment | Self::Version => Some(ValueKind::Text),
             Self::Synonym => Some(ValueKind::Localized),
+            Self::FillValue
+                if matches!(
+                    owner,
+                    MetadataKind::Attribute
+                        | MetadataKind::CommonAttribute
+                        | MetadataKind::Dimension
+                        | MetadataKind::Resource
+                ) =>
+            {
+                Some(ValueKind::EnumFillValue)
+            }
             Self::Type
                 if matches!(
                     owner,
@@ -273,12 +286,16 @@ impl ValueKind {
             Self::Localized
             | Self::Enumeration(_)
             | Self::TypeDescription
-            | Self::ReferenceList => None,
+            | Self::ReferenceList
+            | Self::EnumFillValue => None,
         }
     }
 
     /// Preserve absent/empty/nil states while refusing values from another scalar domain.
     pub(super) fn accepts(self, value: &PropertyValue) -> bool {
+        if matches!(self, Self::EnumFillValue) {
+            return matches!(value, PropertyValue::EnumFillValue(_));
+        }
         match (self, value) {
             (_, PropertyValue::Empty | PropertyValue::Nil)
             | (Self::Text, PropertyValue::Text(_))

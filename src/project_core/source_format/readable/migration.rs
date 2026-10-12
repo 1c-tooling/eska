@@ -276,6 +276,10 @@ fn property_bindings(
                 let after = append(owner, [Step::Key("properties"), Step::Key(name.as_str())]);
                 add(result, before.clone(), after.clone(), false);
                 let value_path = append(&before, [Step::Key("value")]);
+                if matches!(value, PropertyValue::EnumFillValue(_)) {
+                    enum_fill_bindings(result, &value_path, &after, new, index);
+                    continue;
+                }
                 if let PropertyValue::TypeDescription(value) = value {
                     let content = append(&value_path, [Step::Key("value")]);
                     add(result, value_path, after.clone(), false);
@@ -348,6 +352,43 @@ fn property_bindings(
                 );
             }
         }
+    }
+}
+
+/// One enum target becomes a direct scalar; annotations on its native prefixes follow the binding.
+fn enum_fill_bindings(
+    result: &mut Vec<Binding>,
+    before: &[Step],
+    after: &[Step],
+    slots: &[Step],
+    index: usize,
+) {
+    let content = append(before, [Step::Key("value")]);
+    add(result, before.to_vec(), after.to_vec(), false);
+    add(result, content.clone(), after.to_vec(), false);
+    add(
+        result,
+        append(&content, [Step::Key("reference")]),
+        after.to_vec(),
+        true,
+    );
+    let old_native = append(&content, [Step::Key("native")]);
+    let new_native = append(
+        slots,
+        [
+            Step::Key("items"),
+            Step::Index(index),
+            Step::Key("enum_fill"),
+        ],
+    );
+    add(result, old_native.clone(), new_native.clone(), false);
+    for key in ["xsi_prefix", "type_prefix"] {
+        add(
+            result,
+            append(&old_native, [Step::Key(key)]),
+            append(&new_native, [Step::Key(key)]),
+            true,
+        );
     }
 }
 
