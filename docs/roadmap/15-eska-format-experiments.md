@@ -2332,8 +2332,34 @@ All/Summary, source coordinates проверены. Обе CF/build/dump routes 
 8 769 файлов/8 064 каталога кроме 7 011 configVersion; все 456 UUID/roles/names
 сохранены, checksums верны, inputs/settings/версия не изменились.
 [Результаты](../research/eska-format/tabular-section-identities-results.json).
-EF-24 — `IN_PROGRESS`: создание самих табличных частей и прочие structural/compound
-profiles ещё нужны; клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
+EF-24 — `IN_PROGRESS`: остальные structural/compound profiles ещё нужны;
+клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
+
+Двадцать третья часть — [создание табличных частей](../research/eska-format/table-creation.md)
+Catalog/Document: пустой/заполненный closed subtree с явными service UUID и новыми
+Attribute. Проверяются принятый parent/class/context, свежие UUID всех ролей/колонок,
+прежние и новые имена, порядок native классов, Type targets и displaced permissions.
+Legacy preserved GeneratedType UUID slots остаются reserved без переклассификации.
+Source map использует фактическую секцию Properties после InternalInfo.
+
+Десять core/один supplier integration/два CLI tests проверяют оба envelopes,
+unknown/extra profiles, UUID collisions, имена/типы/порядок, supplier/freeze/сдвиги,
+recovery с независимыми правками, saved/overlay и Working coordinates.
+Прошли 16 root/14 SDK/5 adapter gates и две release-сборки: 552 unit +
+566 integration, 24 opt-in пропущены; minimal project — 359 unit + 36 CLI,
+SDK — 359, adapter — 70 + 12. Native минимальный профиль двух таблиц/восьми колонок
+с явными service UUID прошёл два независимых CF/build/dump цикла на 1С 8.3.27.2325.
+В C1 две таблицы/12 колонок/восемь service UUID изменили два YAML; XML побайтно
+совпал с independent control: 8 778 файлов/8 077 каталогов. Parent freeze
+и service collision отказали до generation; recovery сохранил независимую таблицу.
+Все 3 595 YAML и пример прошли schemas, 3 595 descriptors/8 344 объектов равны
+в saved/overlay All/Summary; проверены десять Working spans новых узлов/полей.
+Обе CF/build/dump routes дали 8 769 файлов/8 064 каталога кроме 7 011 configVersion;
+metadata/service UUID, типы/qualifiers и старые 114 таблиц/456 service UUID сохранены.
+Checksums верны, inputs/settings/base/source manifest и версия не изменены.
+[Результаты](../research/eska-format/table-creation-results.json).
+EF-24 — `IN_PROGRESS`: другие structural/compound profiles ещё нужны;
+клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
 
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.

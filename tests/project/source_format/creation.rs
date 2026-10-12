@@ -5,9 +5,9 @@ use std::fs;
 use eska::project_core::{
     MetadataKind,
     source_format::{
-        AcceptedBase, Child, Descriptor, MetadataNode, ObjectSource, Operation, PermissionReason,
-        Property, PropertyName, PropertyValue, Section, accept_source, import_designer,
-        import_designer_readable, prepare_protected,
+        AcceptedBase, Child, Descriptor, GeneratedIdentity, MetadataNode, ObjectSource, Operation,
+        PermissionReason, Property, PropertyName, PropertyValue, Section, TabularSectionIdentities,
+        accept_source, import_designer, import_designer_readable, prepare_protected,
     },
 };
 
@@ -274,6 +274,123 @@ fn locked_native_catalog_cannot_create_attributes_or_mask_allowed_child_properti
         assert_eq!(tree(&source), authored);
         assert_eq!(tree(&base_root), accepted);
         assert_eq!(tree(&input), native_input);
+    }
+}
+
+/// Construct a closed table subtree with independently chosen native role and column identities.
+fn table_addition() -> Child {
+    let column = Descriptor::from_xml(&format!("<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" xmlns:v8=\"http://v8.1c.ru/8.1/data/core\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" version=\"2.20\"><Attribute uuid=\"{}\"><Properties><Name>NewColumn</Name><Synonym/><Comment/><Type><v8:Type>xs:boolean</v8:Type></Type></Properties></Attribute></MetaDataObject>", uuid('e').as_str())).unwrap();
+    let Child::Inline { object } = addition() else {
+        unreachable!()
+    };
+    let mut table = *object;
+    table.kind = MetadataKind::TabularSection;
+    let Section::Properties(properties) = &mut table.sections[0] else {
+        unreachable!()
+    };
+    let Property::Typed { value, .. } = &mut properties[0] else {
+        unreachable!()
+    };
+    *value = PropertyValue::Text("NewRows".into());
+    table.sections.insert(
+        0,
+        Section::TabularSectionIdentities(TabularSectionIdentities {
+            prefix: "xr".into(),
+            table: GeneratedIdentity {
+                type_id: uuid('a'),
+                value_id: uuid('b'),
+            },
+            row: GeneratedIdentity {
+                type_id: uuid('c'),
+                value_id: uuid('d'),
+            },
+        }),
+    );
+    table.sections.push(Section::Children(vec![Child::Inline {
+        object: Box::new(column.object),
+    }]));
+    Child::Inline {
+        object: Box::new(table),
+    }
+}
+
+/// A fresh table and its columns share accepted parent authority, independently of their new service UUIDs.
+#[test]
+fn locked_native_catalog_cannot_create_tables_or_mask_allowed_child_properties() {
+    for readable in [false, true] {
+        let test = TestDir::new();
+        let input = super::baseline::fixture(&test.0);
+        let file = input.join("Catalogs/Sample.xml");
+        fs::write(
+            &file,
+            fs::read_to_string(&file).unwrap().replace(
+                "xmlns:xsi=",
+                "xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xr=\"http://v8.1c.ru/8.3/xcf/readable\" xmlns:xsi=",
+            ),
+        )
+        .unwrap();
+        let source = test.0.join("source");
+        if readable {
+            import_designer_readable(&input, &source).unwrap();
+        } else {
+            import_designer(&input, &source).unwrap();
+        }
+        let base_root = test.0.join("accepted");
+        let pin = accept_source(&source, &base_root, &[]).unwrap();
+        let base = AcceptedBase::open(&base_root, &pin).unwrap();
+        let path = source.join("Catalogs/Sample/object.yaml");
+        let mut owner = ObjectSource::from_yaml(&fs::read_to_string(&path).unwrap()).unwrap();
+        let children = owner
+            .document
+            .descriptor
+            .object
+            .sections
+            .iter_mut()
+            .find_map(|section| match section {
+                Section::Children(children) => Some(children),
+                _ => None,
+            })
+            .unwrap();
+        let Child::Inline { object } = &mut children[0] else {
+            unreachable!()
+        };
+        for section in &mut object.sections {
+            if let Section::Properties(properties) = section {
+                for property in properties {
+                    if let Property::Typed {
+                        name: PropertyName::Comment,
+                        value,
+                    } = property
+                    {
+                        *value = PropertyValue::Text("Allowed child edit".into());
+                    }
+                }
+            }
+        }
+        children.insert(2, table_addition());
+        fs::write(path, owner.to_yaml().unwrap()).unwrap();
+        let authored = tree(&source);
+        let accepted = tree(&base_root);
+        let native = tree(&input);
+        let output = test.0.join("generations");
+        let failure = prepare_protected(&source, &base, &output, true).unwrap_err();
+        assert_eq!(failure.error.code, "source_changes_excluded");
+        assert_eq!(failure.diagnostics.len(), 1);
+        assert_eq!(failure.diagnostics[0].operation, Operation::Create);
+        assert_eq!(failure.diagnostics[0].uuid, Some(uuid('2')));
+        assert_eq!(
+            failure.diagnostics[0].reason,
+            PermissionReason::NativeRestriction
+        );
+        assert!(!output.exists());
+        let prepared = prepare_protected(&source, &base, &output, false).unwrap();
+        let xml = fs::read_to_string(prepared.xml().join("Catalogs/Sample.xml")).unwrap();
+        assert!(!xml.contains("NewRows"));
+        assert!(!xml.contains("NewColumn"));
+        assert!(xml.contains("Allowed child edit"));
+        assert_eq!(tree(&source), authored);
+        assert_eq!(tree(&base_root), accepted);
+        assert_eq!(tree(&input), native);
     }
 }
 

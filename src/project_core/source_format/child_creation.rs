@@ -5,13 +5,18 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde_json::Value;
 
 use super::{
-    AcceptedBase, Child, Error, MetadataNode, NativeUuid, Operation, Property, PropertyName,
-    PropertyValue, Section, SourcePath,
+    AcceptedBase, Child, Error, MetadataNode, NativeUuid, Operation, PropertyName, PropertyValue,
+    SourcePath,
     child_order::{self, Identity},
 };
+#[cfg(test)]
+use super::{Property, Section};
 use crate::project_core::MetadataKind;
 
+mod identities;
+mod profiles;
 mod scope;
+pub(super) use profiles::{validate_new_node, validate_new_types};
 pub(super) use scope::created_context;
 
 #[cfg(test)]
@@ -19,21 +24,33 @@ mod attribute_tests;
 #[cfg(test)]
 mod column_tests;
 #[cfg(test)]
+mod table_tests;
+#[cfg(test)]
 mod tests;
 
-/// Supported inline children introduce neither generated identities nor separate payloads.
+/// The observed inline profiles include explicit table identities and no separate payloads.
 pub(super) const fn supported_owner(kind: MetadataKind) -> bool {
-    child_kind(kind).is_some()
+    matches!(
+        kind,
+        MetadataKind::Enum
+            | MetadataKind::Catalog
+            | MetadataKind::Document
+            | MetadataKind::TabularSection
+    )
 }
 
 /// Creation authority follows the accepted parent class rather than the authored child class.
-pub(super) const fn child_kind(owner: MetadataKind) -> Option<MetadataKind> {
+pub(super) const fn supported_child(owner: MetadataKind, child: MetadataKind) -> bool {
     match owner {
-        MetadataKind::Enum => Some(MetadataKind::EnumValue),
-        MetadataKind::Catalog | MetadataKind::Document | MetadataKind::TabularSection => {
-            Some(MetadataKind::Attribute)
+        MetadataKind::Enum => matches!(child, MetadataKind::EnumValue),
+        MetadataKind::Catalog | MetadataKind::Document => {
+            matches!(
+                child,
+                MetadataKind::Attribute | MetadataKind::TabularSection
+            )
         }
-        _ => None,
+        MetadataKind::TabularSection => matches!(child, MetadataKind::Attribute),
+        _ => false,
     }
 }
 
@@ -52,9 +69,6 @@ pub(super) fn select(
     let Some(accepted_owner) = scope::owner(&document.descriptor, owner) else {
         return Ok(());
     };
-    let Some(kind) = child_kind(accepted_owner.kind) else {
-        return Ok(());
-    };
     let (Some(before), Some(after)) = (
         child_order::from_children(children),
         working.and_then(|values| child_order::from_values(values)),
@@ -70,18 +84,21 @@ pub(super) fn select(
     let values = working.ok_or_else(|| Error::root("source_schema_invalid"))?;
     let accepted: BTreeMap<_, _> = before.iter().zip(children.iter()).collect();
     let mut additions = BTreeMap::new();
-    let mut seen_other_class = false;
+    let services = identities::accepted_services(base)?;
+    let mut previous_rank = 0;
     for (identity, value) in after.iter().zip(values) {
         if let Some(child) = accepted.get(identity) {
-            if !matches!(child, Child::Inline { object } if object.kind == kind) {
-                seen_other_class = true;
+            let rank = class_rank(accepted_owner.kind, child);
+            if rank < previous_rank {
+                return Ok(());
             }
+            previous_rank = rank;
             continue;
         }
         let Identity::Inline(uuid) = identity else {
             return Ok(());
         };
-        if seen_other_class || base.contains_object(&NativeUuid::parse(uuid)?) {
+        if base.contains_object(&NativeUuid::parse(uuid)?) {
             return Ok(());
         }
         let value = value
@@ -93,17 +110,21 @@ pub(super) fn select(
         } else {
             serde_json::from_value(value).map_err(|_| Error::root("source_schema_invalid"))?
         };
-        if object.kind != kind {
+        if !supported_child(accepted_owner.kind, object.kind) {
             return Err(Error::root("source_child_creation_profile_unsupported"));
         }
         validate_new_node(&object)?;
         validate_new_types(&object, &context)?;
-        additions.insert(
-            identity.clone(),
-            Child::Inline {
-                object: Box::new(object),
-            },
-        );
+        identities::validate(base, &object, &services)?;
+        let child = Child::Inline {
+            object: Box::new(object),
+        };
+        let rank = class_rank(accepted_owner.kind, &child);
+        if rank < previous_rank {
+            return Ok(());
+        }
+        previous_rank = rank;
+        additions.insert(identity.clone(), child);
     }
     validate_names(children.iter().chain(additions.values()))?;
     let mut selected: BTreeMap<_, _> = before.into_iter().zip(std::mem::take(children)).collect();
@@ -116,6 +137,22 @@ pub(super) fn select(
         );
     }
     Ok(())
+}
+
+/// Native class groups keep attributes before tables and both before existing payload-bearing references.
+fn class_rank(owner: MetadataKind, child: &Child) -> u8 {
+    match child {
+        Child::Inline { object } if supported_child(owner, object.kind) => {
+            u8::from(object.kind == MetadataKind::TabularSection)
+        }
+        _ => {
+            if matches!(owner, MetadataKind::Catalog | MetadataKind::Document) {
+                2
+            } else {
+                1
+            }
+        }
+    }
 }
 
 /// A collection extension retains every old member exactly once and in its previous relative order.
@@ -156,79 +193,6 @@ pub(super) fn denied_permission(
         }
     }
     Ok(None)
-}
-
-/// A closed inline profile avoids guessing generated identities, defaults or opaque inverse rules.
-pub(super) fn validate_new_node(node: &MetadataNode) -> Result<(), Error> {
-    let [Section::Properties(properties)] = node.sections.as_slice() else {
-        return Err(Error::root("source_child_creation_profile_unsupported"));
-    };
-    let [
-        Property::Typed {
-            name: PropertyName::Name,
-            value: PropertyValue::Text(name),
-        },
-        Property::Typed {
-            name: PropertyName::Synonym,
-            value: synonym,
-        },
-        Property::Typed {
-            name: PropertyName::Comment,
-            value: comment,
-        },
-        rest @ ..,
-    ] = properties.as_slice()
-    else {
-        return Err(Error::root("source_child_creation_profile_unsupported"));
-    };
-    let supported = match node.kind {
-        MetadataKind::EnumValue => rest.is_empty(),
-        MetadataKind::Attribute => matches!(
-            rest,
-            [Property::Typed {
-                name: PropertyName::Type,
-                value: PropertyValue::TypeDescription(_),
-            }]
-        ),
-        _ => false,
-    };
-    if !supported
-        || !node.namespaces.is_empty()
-        || !node.attributes.is_empty()
-        || !matches!(synonym, PropertyValue::Empty | PropertyValue::Localized(_))
-        || !matches!(comment, PropertyValue::Empty | PropertyValue::Text(_))
-    {
-        return Err(Error::root("source_child_creation_profile_unsupported"));
-    }
-    if !identifier(name) {
-        return Err(Error::root("source_metadata_name_invalid").in_field(node.uuid.as_str()));
-    }
-    Ok(())
-}
-
-/// Fresh fields admit observed primitive types and declared configuration types, never arbitrary namespace values.
-pub(super) fn validate_new_types(
-    node: &MetadataNode,
-    context: &[super::Namespace],
-) -> Result<(), Error> {
-    if let Some(PropertyValue::TypeDescription(value)) = node.property(PropertyName::Type) {
-        value.validate(context)?;
-        for alternative in &value.data.alternatives {
-            let (namespace, local) =
-                super::type_description::qualified_name(&alternative.name, context)?;
-            let primitive = namespace == "http://www.w3.org/2001/XMLSchema"
-                && alternative.kind == super::TypeAlternativeKind::Type
-                && matches!(local, "boolean" | "string" | "decimal" | "dateTime");
-            if !primitive && super::type_description::named_target(alternative, context)?.is_none()
-            {
-                return Err(Error::root("source_child_creation_profile_unsupported"));
-            }
-        }
-        if value.data.alternatives.is_empty() {
-            return Err(Error::root("source_child_creation_profile_unsupported"));
-        }
-    }
-    Ok(())
 }
 
 /// Native identifiers admit Unicode letters, digits after the first character, and underscores.

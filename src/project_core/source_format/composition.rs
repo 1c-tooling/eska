@@ -81,12 +81,19 @@ pub(super) fn same_reference_members(
     Ok(left == right)
 }
 
-/// Check every active native UUID across main and inline objects, independently of file paths.
+/// Check modeled object and service identities across the declared composition without granting policy authority.
 pub(super) fn identities(node: &MetadataNode, values: &mut BTreeSet<String>) -> Result<(), Error> {
     if !values.insert(node.uuid.key()) {
         return Err(Error::root("native_uuid_duplicate"));
     }
     for section in &node.sections {
+        if let Section::TabularSectionIdentities(identities) = section {
+            for uuid in identities.uuids() {
+                if !values.insert(uuid.key()) {
+                    return Err(Error::root("native_uuid_duplicate"));
+                }
+            }
+        }
         if let Section::Children(children) = section {
             for child in children {
                 if let Child::Inline { object } = child {

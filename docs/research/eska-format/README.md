@@ -31,6 +31,9 @@ Catalog/Document с её UUID, parentage и native namespace context.
 сохраняют четыре UUID без повторных generated names; writer/target lookup
 используют единственные metadata Name. Preserved YAML не меняет классификацию
 при открытии/миграции; служебные UUID не дают policy authority.
+[Создание табличных частей](table-creation.md) принимает новый закрытый subtree
+Catalog/Document с явными service UUID и новыми колонками; авторитет даёт принятый
+родитель, все UUID/имена/типы проверяются до публикации.
 Другие structural profiles и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.

@@ -84,6 +84,11 @@ member в standalone по-прежнему отказывает.
 не служит fallback. JSON содержит отчёт, а не передаваемое разрешение на сборку;
 сборщик повторяет protected prepare и проверяет собственный snapshot.
 
+[Создание табличных частей](table-creation.md) использует прежний `prepare`:
+новый пустой/заполненный subtree Catalog/Document с явными service UUID проверяется
+по принятому родителю, UUID всего состава, именам и типам колонок. Ошибка профиля,
+коллизия или отсутствующая цель типа не обходится `--allow-exclusions`.
+
 `inspect` читает настройки и для ESKA только manifest/configuration snapshot:
 Name, UUID, owner count и SHA-256 текста. Полный набор owners, база и payloads
 не читаются. `validation = "manifest_and_configuration_only"` не объявляет

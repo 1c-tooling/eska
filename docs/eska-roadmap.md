@@ -149,6 +149,9 @@ Name/Synonym/Comment/Type с проверкой имён, типов и поря
 [Служебные UUID табличной части](research/eska-format/tabular-section-identities.md)
 типизированы отдельно; generated names выводятся из metadata Name реального
 родителя и таблицы. Служебные UUID не дают полномочий, raw edits восстанавливаются.
+[Создание табличных частей](research/eska-format/table-creation.md) принимает
+пустой или заполненный новый subtree Catalog/Document с явными service UUID,
+свежими UUID колонок и прежней проверкой принятого родителя/типов/имён.
 Прочие structural/compound profiles ещё нужны; EF-24 остаётся `IN_PROGRESS`.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные

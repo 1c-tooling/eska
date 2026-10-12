@@ -52,10 +52,13 @@ pub(in crate::project_core::source_format) fn created_context(
     let Some(parent) = parent else {
         return Ok(None);
     };
-    let Some(kind) = super::child_kind(parent.kind) else {
+    let Some(created) = inline_children(parent).find(|node| node.uuid.key() == child.key()) else {
         return Ok(None);
     };
-    Ok(Some((kind, context(descriptor, parent)?)))
+    if !super::supported_child(parent.kind, created.kind) {
+        return Ok(None);
+    }
+    Ok(Some((created.kind, context(descriptor, parent)?)))
 }
 
 /// Only direct modeled children carry parentage; references and opaque slots do not become owners.

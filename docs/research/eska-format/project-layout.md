@@ -40,6 +40,9 @@ YAML и физические resources. Без параметра сохраня
 [Typed identities](tabular-section-identities.md) хранят service UUID один раз;
 generated table/row names выводятся из единственных Name владельца/табличной части.
 Прежний preserved YAML не преобразуется при открытии или миграции.
+[Новые табличные части](table-creation.md) у Catalog/Document имеют единственные
+Name и явные service UUID; новый closed subtree допускает пустой состав или
+колонки Attribute, с прежними проверками policy/freeze, имён и типов.
 Остальные structural/compound profiles ещё не приняты.
 
 Внешние источники проверены 2026-10-11:

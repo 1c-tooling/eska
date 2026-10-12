@@ -238,9 +238,15 @@ fn created_location(
     super::super::super::child_creation::validate_new_types(location.node, &context)?;
     let mut steps = location.steps.clone();
     let range = if let Some((index, property)) = property {
+        let section = location
+            .node
+            .sections
+            .iter()
+            .position(|section| matches!(section, Section::Properties(_)))
+            .ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
         steps.extend(document_paths::property_steps(
             location.schema,
-            0,
+            section,
             index,
             &property,
         ));
