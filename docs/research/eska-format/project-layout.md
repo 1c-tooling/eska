@@ -27,7 +27,9 @@ YAML и физические resources. Без параметра сохраня
 проверкой native class каждой позиции и поддержки/freeze.
 [Создание значений перечисления](enum-value-creation.md) применяет права принятого
 владельца и проверенный native профиль, не требуя ручных hashes/manifest edits.
-Workspace, остальные structural profiles и delete/rename ещё не приняты.
+[Удаление EnumValue](enum-value-deletion.md) сохраняет права владельца и проверяет
+зависимости итогового выбранного состава. Workspace, остальные structural profiles
+и rename ещё не приняты.
 
 Внешние источники проверены 2026-10-11:
 

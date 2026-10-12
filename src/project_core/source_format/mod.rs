@@ -2,11 +2,14 @@
 
 mod baseline;
 mod child_creation;
+mod child_deletion;
 mod child_order;
 mod composition;
 mod coordinates;
 mod document_paths;
 mod edit;
+#[cfg(test)]
+mod enum_test_support;
 mod export;
 mod files;
 mod fragment;

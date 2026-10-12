@@ -9,7 +9,7 @@ const OWNER: &str = "20000000-0000-4000-8000-000000000001";
 const CREATED: &str = "40000000-0000-4000-8000-000000000001";
 
 /// The minimal native profile contains every property required for new enum-value construction.
-fn fixture(root: &Path) {
+pub fn fixture(root: &Path) {
     fs::create_dir_all(root.join("native/Enums")).unwrap();
     fs::write(root.join("native/Configuration.xml"),
         "<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" version=\"2.20\"><Configuration uuid=\"10000000-0000-4000-8000-000000000001\"><Properties><Name>Sample</Name></Properties><ChildObjects><Enum>Status</Enum></ChildObjects></Configuration></MetaDataObject>"

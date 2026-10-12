@@ -2142,6 +2142,40 @@ exclusions восстановили прежний состав с сохран�
 ещё нужны; EF-24 — `IN_PROGRESS`. Клиент/обновление рабочей ИБ и новые CFE/EPF/ERF
 этой частью не приняты.
 
+Пятнадцатая часть — [удаление значений перечисления](../research/eska-format/enum-value-deletion.md).
+Уникальный ordered subset сохраняет оставшиеся UUID/порядок и внешние descriptors.
+Удаляется только проверенный inline профиль EnumValue; владелец подтверждается
+принятой class/identity. Проверяются Reorder владельца, Delete удаляемых членов
+и Reorder сдвигаемых соседей. Запрещённая редукция восстанавливается с одной
+`delete` диагностикой на отсутствующий член, сохраняя независимые свойства.
+Permission API допускает принятый EnumValue/Delete как необходимое условие;
+прочие классы и профили удаления не разрешены. Schemas/rules/protocol прежние.
+
+Typed-ссылки разрешаются по итоговому выбранному составу. Дополнительный guard
+проверяет упоминания принятого UUID/полного пути в decoded preserved XML,
+transport attributes и выбранных XML resources. Остаточная/неизвестная inverse
+семантика не угадывается: reference либо неразбираемый XML отказывают до
+публикации и не обходятся явными exclusions. Консервативный guard не обещает
+проверку binary/non-XML, BSL/SDBL и вычисляемых ссылок; ConfigDumpInfo остаётся
+производным service index. Без удаления дополнительные payload не читаются.
+
+Прошли 16 root/14 SDK/5 adapter gates и оба release build: 478 unit + 557
+integration, 24 opt-in пропущены; minimal project CLI — 285 unit + 21 integration,
+SDK — 359, adapter — 70 + 12. Двенадцать новых core, один supplier integration
+и два CLI tests проверяют обе оболочки, empty/reduced composition, профиль/
+identity, policy/freeze, typed/decoded dependencies, выбранные payload,
+source locations, saved/unsaved reader и обе локали.
+Три удаления C1 в двух YAML, включая перед внешней формой, побайтно совпали
+с независимым native контролем по 8 778 файлам/8 077 каталогам. Freeze-отказ
+и восстановление сохранили независимое удаление. Существующая DesignTimeRef
+C1 отказала в strict/exclusions и обеих локалях без публикации. Все 3 595
+descriptors/8 327 объектов совпали с контролем в saved/unsaved All/Summary.
+Контроль и ESKA собраны в CF и выгружены на 1С 8.3.27.2325: 8 769 файлов/8 064
+каталога равны кроме 7 011 configVersion, checksums/inputs/settings/версия сохранены.
+[Результаты](../research/eska-format/enum-value-deletion-results.json).
+Rename, прочие structural profiles, составные домены и workspace migration ещё
+нужны; EF-24 — `IN_PROGRESS`. Клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

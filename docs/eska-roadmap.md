@@ -123,6 +123,9 @@ native category: вложенные DefinedType/Characteristic в DefinedType о
 [Новые EnumValue](research/eska-format/enum-value-creation.md) добавляются по
 проверенному native профилю через права принятого владельца, без правки manifest
 или принятия рабочих UUID в базу. Другие structural profiles/delete/rename ещё нужны.
+[Удаление EnumValue](research/eska-format/enum-value-deletion.md) использует
+принятые права владельца/членов и проверку зависимостей выбранного состава.
+Остальные structural profiles/rename ещё нужны.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)

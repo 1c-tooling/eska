@@ -190,6 +190,7 @@ fn merge_node(
                 super::super::child_creation::select(
                     base, native, &node.uuid, children, values, schema,
                 )?;
+                super::super::child_deletion::select(base, native, &node.uuid, children, values)?;
             }
             Section::Preserved(_) => {}
         }

@@ -187,6 +187,17 @@ impl AcceptedBase {
         self.objects.contains_key(&uuid.key())
     }
 
+    /// Structural dependency checks read the selected accepted text with its pinned fingerprint.
+    pub(super) fn read_file(&self, path: &SourcePath) -> Result<String, Error> {
+        let file = self
+            .package
+            .snapshot
+            .files
+            .get(path)
+            .ok_or_else(|| Error::root("source_baseline_blob_missing"))?;
+        read_blob_entry_cancellable(&self.root, file, &|| false)
+    }
+
     /// Copy one pinned payload directly into a new immutable generation.
     pub(super) fn copy_file(&self, path: &SourcePath, destination: &Path) -> Result<(), Error> {
         let mut entry = self
@@ -361,15 +372,17 @@ impl AcceptedBase {
             PermissionReason::NativeRestriction
         } else if matches!(
             operation,
-            Operation::Delete
-                | Operation::Rename
-                | Operation::Move
-                | Operation::Property(PropertyName::Name)
+            Operation::Rename | Operation::Move | Operation::Property(PropertyName::Name)
         ) || (operation == Operation::Create
             && self
                 .objects
                 .get(&uuid.key())
                 .is_none_or(|object| !super::child_creation::supported_owner(object.kind)))
+            || (operation == Operation::Delete
+                && self
+                    .objects
+                    .get(&uuid.key())
+                    .is_none_or(|object| !super::child_deletion::supported_object(object.kind)))
         {
             PermissionReason::UnsupportedOperation
         } else {

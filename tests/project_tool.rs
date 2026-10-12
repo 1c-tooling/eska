@@ -2,6 +2,8 @@
 
 #[path = "project_tool/creation.rs"]
 mod creation;
+#[path = "project_tool/deletion.rs"]
+mod deletion;
 #[path = "project_tool/migration.rs"]
 mod migration;
 #[path = "project_tool/order.rs"]

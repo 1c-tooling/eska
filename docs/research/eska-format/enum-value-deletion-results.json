@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "task": "EF-24",
+  "part": 15,
+  "status": "IN_PROGRESS",
+  "feature": "accepted_inline_enum_value_deletion",
+  "wire": {
+    "operation_kind": "delete",
+    "descriptor_schema_versions": [
+      1,
+      2
+    ],
+    "source_layout_versions": [
+      1,
+      2,
+      3
+    ],
+    "source_map_version": 2,
+    "rules_version": 1,
+    "tool_protocol_version": 1,
+    "cli_options_unchanged": true,
+    "accepted_owner_class_and_uuid_required": true,
+    "accepted_ordered_subset_required": true,
+    "owner_deleted_and_displaced_member_permissions_checked": true,
+    "selected_typed_and_preserved_xml_dependencies_checked": true
+  },
+  "validation": {
+    "root_gates": 16,
+    "unit_tests": 478,
+    "integration_tests": 557,
+    "opt_in_ignored": 24,
+    "minimal_project_cli_unit_tests": 285,
+    "minimal_project_cli_integration_tests": 21,
+    "all_features_build_cli_tests": 9,
+    "new_core_tests": 12,
+    "new_integration_tests": 1,
+    "new_cli_tests": 2,
+    "sdk_gates": 14,
+    "sdk_all_features_tests": 359,
+    "adapter_gates": 5,
+    "adapter_unit_tests": 70,
+    "adapter_integration_tests": 12,
+    "release_builds": 2
+  },
+  "real_c1": {
+    "native_descriptors": 3595,
+    "native_files": 8778,
+    "native_directories": 8077,
+    "deleted_values": 3,
+    "changed_source_files": 2,
+    "english_and_cyrillic_names": true,
+    "deletion_before_external_form": true,
+    "freeze_stationary_allowed": true,
+    "freeze_deleted_refused": true,
+    "working_and_accepted_and_native_unchanged": true,
+    "source_manifest_unchanged": true,
+    "native_control_bytes_equal": true,
+    "protected_exclusions": 0,
+    "both_locales_checked": true,
+    "independent_release_cli": true,
+    "platform_git_and_facade_absent_from_path": true,
+    "negative_recovery_matches_native_control": true,
+    "generation_reused": true
+  },
+  "semantic": {
+    "descriptors": 3595,
+    "objects": 8327,
+    "all_and_summary_equal": true,
+    "saved_and_unsaved_equal": true
+  },
+  "platform": {
+    "version": "8.3.27.2325",
+    "artifact": "CF",
+    "control_and_eska_build_dump_passed": true,
+    "native_files": 8769,
+    "native_directories": 8064,
+    "ignored_dump_versions": 7011,
+    "all_other_bytes_equal": true,
+    "manifest_checksums_valid": true,
+    "source_and_base_unchanged": true,
+    "original_native_unchanged": true,
+    "project_version_unchanged": true,
+    "protected_exclusions": 0
+  },
+  "limits": [
+    "Removal is limited to accepted inline EnumValue with a closed Name/Synonym/Comment profile",
+    "Only a unique ordered subset; no creation mixed with deletion or accepted-member reordering",
+    "Preserved XML mentions are conservative refusals, not inferred inverse rules",
+    "ConfigDumpInfo is a derivative service index and is excluded from XML dependency checks",
+    "Binary and non-XML resource dependencies, BSL/SDBL and computed references not validated",
+    "Other structural profiles, rename, compound domains and workspace migration remain in EF-24",
+    "C2/C3 and new CFE/EPF/ERF not accepted",
+    "No client execution, full BSL analysis or working infobase update validation"
+  ],
+  "real_dependency_refusal": {
+    "real_existing_xml_dependency_refused": true,
+    "strict_and_explicit_exclusions_refused": true,
+    "both_locales_checked": true,
+    "authoring_unchanged": true,
+    "generation_absent": true
+  }
+}

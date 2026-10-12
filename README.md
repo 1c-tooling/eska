@@ -765,7 +765,9 @@ preset = "trunk"
 редактируется при прежнем составе, с проверкой поддержки/freeze владельца и
 перемещённых элементов. [Новые значения перечисления](docs/research/eska-format/enum-value-creation.md)
 создаются через права принятого владельца, с проверкой UUID, имён и native профиля.
-Workspace, остальные structural profiles/delete/rename и завершение структуры
+[Удаление EnumValue](docs/research/eska-format/enum-value-deletion.md) проверяет
+владельца, соседей и оставшиеся metadata/XML ссылки до публикации поколения.
+Workspace, остальные structural profiles/rename и завершение структуры
 EF-24 ещё в работе.
 Инструменты собираются отдельно с features `project-cli`/`build-cli`;
 комплектная поставка и делегирование оболочки ещё не подключены.

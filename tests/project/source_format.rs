@@ -15,6 +15,7 @@ use crate::support::TestDir;
 
 mod baseline;
 mod creation;
+mod deletion;
 mod edit;
 mod layout;
 mod measure;

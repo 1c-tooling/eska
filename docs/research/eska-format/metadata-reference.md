@@ -72,8 +72,11 @@ Native list prefixes выбираются из pinned base, а не из раб�
 использует явный splice строк. Это обходит потерю newline/comment у CST factory.
 Изменение длины flow list, multiline member, удаление аннотированного элемента,
 переход list ↔ Empty/Nil и правка native bindings этим editor отказываются.
-Raw YAML может менять число элементов с сохранением native binding и валидных
-целей; добавление/удаление самих metadata objects ещё не реализовано.
+Raw YAML меняет число элементов непустого list с сохранением native binding и
+валидных целей. Protected selector пока не разрешает переход принятого
+reference_list в Empty/Nil. [Создание](enum-value-creation.md) и
+[удаление EnumValue](enum-value-deletion.md) проверяются отдельными structural
+правилами; остальные профили создания/удаления ещё нужны.
 
 Миграция связывает каждый list scalar и native prefix с новым полем, сохраняет
 quote styles, comment tokens и однородный CRLF/LF; весь `ObjectSource` проверяется
