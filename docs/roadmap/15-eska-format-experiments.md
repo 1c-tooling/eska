@@ -2112,6 +2112,36 @@ adapter — 70 + 12. Девять новых core, два integration и оди�
 Create/delete/rename, прочие составные домены и workspace migration ещё нужны;
 EF-24 — `IN_PROGRESS`. Новые CFE/EPF/ERF и client execution этой частью не приняты.
 
+Четырнадцатая часть — [создание значений перечисления](../research/eska-format/enum-value-creation.md).
+Новый inline `EnumValue` допускается у принятого `Enum` с разрешением `Create`:
+профиль Name/Synonym/Comment, новый глобальный UUID, допустимое уникальное имя,
+сохранение прежнего состава/относительного порядка и проверка сдвигаемых членов.
+Native class владельца подтверждается принятой базой; подмена рабочего class
+или перенос чужого UUID не дают разрешения. Запрещённые добавления получают
+`create` с UUID действительного владельца/сдвигаемого члена; независимые правки
+сохраняются. Новые узлы отображаются на проверенные Working CST coordinates
+при точном равенстве выбранной native модели. Прямое permission нового UUID
+остаётся `unknown_object`; CST-команда создания этой частью не добавлена.
+Schemas/rules/protocol и CLI options прежние; экспериментальный permission API
+расширил существующий `Create` для принятого владельца Enum.
+
+Прошли 16 root/14 SDK/5 adapter gates и оба release build: 466 unit + 556
+integration, 24 opt-in пропущены; minimal project CLI — 273 unit + 19 integration,
+SDK — 359, adapter — 70 + 12. Одиннадцать новых core, два integration и два CLI
+tests проверяют обе оболочки, empty collection, профиль/имена/UUID, поддержку,
+freeze, смешанные правки, source map, saved/unsaved reader и обе локали.
+Три новых значения C1 в двух YAML, включая вставку перед отдельной формой,
+побайтно совпали с независимым native контролем по 8 778 файлам/8 077 каталогам.
+Stationary freeze допускает append; его сдвиг отказал до публикации, а явные
+exclusions восстановили прежний состав с сохранением другого добавления.
+Все 3 595 descriptors/8 333 объектов сохранили saved/unsaved `All`/`Summary`
+семантику. Обе CF собраны и выгружены на 1С 8.3.27.2325: 8 769 файлов/8 064
+каталога равны кроме 7 011 configVersion, checksums/inputs/settings/версия
+сохранены. [Результаты](../research/eska-format/enum-value-creation-results.json).
+Остальные creation profiles, delete/rename, составные домены и workspace migration
+ещё нужны; EF-24 — `IN_PROGRESS`. Клиент/обновление рабочей ИБ и новые CFE/EPF/ERF
+этой частью не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

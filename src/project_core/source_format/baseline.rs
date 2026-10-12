@@ -105,9 +105,15 @@ pub struct AcceptedBase {
     reference: AcceptedRef,
     manifest: Manifest,
     policy: Option<Support>,
-    objects: BTreeMap<String, Option<String>>,
+    objects: BTreeMap<String, AcceptedObject>,
     frozen: BTreeSet<String>,
     pub(super) package: Package,
+}
+
+/// Accepted class and ancestry determine operation capabilities and inherited freeze together.
+struct AcceptedObject {
+    parent: Option<String>,
+    kind: MetadataKind,
 }
 
 /// Pin a validated complete ESKA source tree in a new directory, with an explicit freeze list.
@@ -174,6 +180,11 @@ impl AcceptedBase {
     /// Bind protected output to the caller's independently selected policy.
     pub(super) const fn reference(&self) -> &AcceptedRef {
         &self.reference
+    }
+
+    /// A new inline identity cannot reuse any object already owned by the accepted configuration.
+    pub(super) fn contains_object(&self, uuid: &NativeUuid) -> bool {
+        self.objects.contains_key(&uuid.key())
     }
 
     /// Copy one pinned payload directly into a new immutable generation.
@@ -350,12 +361,16 @@ impl AcceptedBase {
             PermissionReason::NativeRestriction
         } else if matches!(
             operation,
-            Operation::Create
-                | Operation::Delete
+            Operation::Delete
                 | Operation::Rename
                 | Operation::Move
                 | Operation::Property(PropertyName::Name)
-        ) {
+        ) || (operation == Operation::Create
+            && self
+                .objects
+                .get(&uuid.key())
+                .is_none_or(|object| !super::child_creation::supported_owner(object.kind)))
+        {
             PermissionReason::UnsupportedOperation
         } else {
             PermissionReason::Allowed
@@ -393,7 +408,10 @@ impl AcceptedBase {
             if self.frozen.contains(&key) {
                 return true;
             }
-            current = self.objects.get(&key).and_then(Clone::clone);
+            current = self
+                .objects
+                .get(&key)
+                .and_then(|object| object.parent.clone());
         }
         false
     }
@@ -539,7 +557,7 @@ fn unchanged_payload<'a>(package: &'a Package, path: &SourcePath) -> Result<&'a 
 /// Use validated native references for external ancestry, preserving per-UUID supplier rules.
 fn document_ownership(
     documents: &BTreeMap<SourcePath, NativeDocument>,
-) -> Result<BTreeMap<String, Option<String>>, Error> {
+) -> Result<BTreeMap<String, AcceptedObject>, Error> {
     let mut parents = BTreeMap::new();
     for (path, document) in documents {
         let node = &document.descriptor.object;
@@ -572,9 +590,18 @@ fn document_ownership(
 fn ownership(
     node: &MetadataNode,
     parent: Option<String>,
-    values: &mut BTreeMap<String, Option<String>>,
+    values: &mut BTreeMap<String, AcceptedObject>,
 ) -> Result<(), Error> {
-    if values.insert(node.uuid.key(), parent).is_some() {
+    if values
+        .insert(
+            node.uuid.key(),
+            AcceptedObject {
+                parent,
+                kind: node.kind,
+            },
+        )
+        .is_some()
+    {
         return Err(Error::root("native_uuid_duplicate"));
     }
     for section in &node.sections {

@@ -248,6 +248,17 @@ impl Walker<'_> {
             return false;
         };
         if !child_order::same_members(&before, &after) {
+            if super::super::child_creation::is_extension(&before, &after) {
+                self.added_children(
+                    expected,
+                    current,
+                    owner,
+                    native,
+                    coordinate,
+                    (&before, &after),
+                );
+                return true;
+            }
             return false;
         }
         if before != after {
@@ -282,5 +293,56 @@ impl Walker<'_> {
             coordinate.pop();
         }
         true
+    }
+
+    /// Denied additions align retained siblings and report creation authority rather than UUID guesses.
+    fn added_children(
+        &mut self,
+        expected: &[Value],
+        current: &[Value],
+        owner: &NativeUuid,
+        native: Option<&str>,
+        coordinate: &mut Vec<String>,
+        identities: (
+            &[super::super::child_order::Identity],
+            &[super::super::child_order::Identity],
+        ),
+    ) {
+        let (before, after) = identities;
+        let denied = native
+            .and_then(|path| SourcePath::parse(path).ok())
+            .and_then(|path| {
+                super::super::child_creation::denied_permission(
+                    self.base, &path, owner, before, after,
+                )
+                .ok()
+            })
+            .flatten()
+            .unwrap_or_else(|| owner.clone());
+        let retained: std::collections::BTreeMap<_, _> = before.iter().zip(expected).collect();
+        for (index, (identity, value)) in after.iter().zip(current).enumerate() {
+            coordinate.push(index.to_string());
+            if let Some(expected) = retained.get(identity) {
+                self.walk(
+                    Some(expected),
+                    Some(value),
+                    owner.clone(),
+                    Operation::Resource,
+                    native,
+                    coordinate,
+                );
+            } else {
+                self.diagnostics.push(exclusion(
+                    self.base,
+                    self.path,
+                    coordinate.clone(),
+                    Some(denied.clone()),
+                    Operation::Create,
+                    ExclusionAction::Excluded,
+                    "source_change_excluded",
+                ));
+            }
+            coordinate.pop();
+        }
     }
 }

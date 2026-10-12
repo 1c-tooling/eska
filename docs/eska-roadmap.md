@@ -120,6 +120,9 @@ native category: вложенные DefinedType/Characteristic в DefinedType о
 и create/delete/rename ещё нужны. [Порядок существующих детей](research/eska-format/child-order.md)
 уже выбирается по прежнему составу и native позициям классов с проверкой
 поддержки/freeze владельца и каждого перемещённого элемента.
+[Новые EnumValue](research/eska-format/enum-value-creation.md) добавляются по
+проверенному native профилю через права принятого владельца, без правки manifest
+или принятия рабочих UUID в базу. Другие structural profiles/delete/rename ещё нужны.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)

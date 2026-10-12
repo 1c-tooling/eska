@@ -14,8 +14,10 @@ reader/source map и контекст SDK. [Явный CLI import](readable-proj
 и pinned base в новую readable копию с preview, repeat/recovery и отдельным pin.
 [Порядок существующих детей](child-order.md) редактируется по native UUID и
 декларациям с проверкой поддержки/freeze владельца и перемещённых элементов;
-состав и позиции native классов сохраняются. Workspace migration,
-create/delete/rename и остальные составные домены ещё в работе.
+состав и позиции native классов сохраняются. [Новые EnumValue](enum-value-creation.md)
+создаются через права принятого владельца по закрытому native профилю с проверкой
+UUID/имён и Working координатами. Workspace migration, другие structural profiles,
+delete/rename и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.
 Обе части `PLANNED`; текущие реализации и результаты перечислены ниже.

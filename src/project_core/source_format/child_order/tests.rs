@@ -205,12 +205,7 @@ fn permitted_order_matches_raw_export_without_rewriting_working_or_accepted_byte
         assert_eq!(Inventory::read(&test.0.join("accepted")).unwrap(), accepted);
         assert_eq!(Inventory::read(&test.0.join("native")).unwrap(), native);
         assert_eq!(fs::read(source.join("source.json")).unwrap(), manifest);
-        for operation in [
-            Operation::Create,
-            Operation::Delete,
-            Operation::Rename,
-            Operation::Move,
-        ] {
+        for operation in [Operation::Delete, Operation::Rename, Operation::Move] {
             assert_eq!(
                 base.permission(&uuid(2), operation).reason,
                 PermissionReason::UnsupportedOperation

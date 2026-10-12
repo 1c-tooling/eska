@@ -1,5 +1,7 @@
 //! The independently compiled project tool requires neither the facade nor native runners.
 
+#[path = "project_tool/creation.rs"]
+mod creation;
 #[path = "project_tool/migration.rs"]
 mod migration;
 #[path = "project_tool/order.rs"]

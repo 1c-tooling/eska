@@ -187,6 +187,9 @@ fn merge_node(
                     }
                 }
                 super::super::child_order::select(base, native, &node.uuid, children, values)?;
+                super::super::child_creation::select(
+                    base, native, &node.uuid, children, values, schema,
+                )?;
             }
             Section::Preserved(_) => {}
         }

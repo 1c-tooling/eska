@@ -167,6 +167,12 @@ pub(super) fn deserialize(value: Value) -> Result<Descriptor, Error> {
     })
 }
 
+/// New inline members use the same bindings as a complete readable descriptor, without XML fallback.
+pub(super) fn node_from_value(value: Value) -> Result<MetadataNode, Error> {
+    let node = serde_json::from_value(value).map_err(|_| Error::root("source_schema_invalid"))?;
+    decode_node(node)
+}
+
 /// Native order and unsupported syntax remain separate from the named everyday property mapping.
 fn encode_node(node: &MetadataNode) -> Result<Node, Error> {
     let mut properties = BTreeMap::new();

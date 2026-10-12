@@ -31,11 +31,14 @@ Map schema 1 сохраняет равенство native/input paths для и�
 версия reverse map из `source.json`. Prepared artifact schema остаётся 2.
 
 Для metadata XML записываются UUID, принятый YAML input, имеющийся рабочий YAML
-input и `uses_working_values`. Принятый состав и native bindings сохраняются;
+input и `uses_working_values`. Принятые members и native bindings сохраняются;
 флаг отмечает отличие выбранных разрешённых значений или
-[порядка существующих детей](child-order.md) от базы. Это составное
+[порядка существующих детей](child-order.md) от базы. [Новые значения перечисления](enum-value-creation.md)
+также выбираются из рабочего input по закрытому профилю создания. Это составное
 происхождение: флаг не объявляет весь рабочий YAML собранным или разрешённым.
 Координаты свойств после перестановки разрешаются по UUID рабочего объекта.
+Для нового inline узла проверяется совпадение working/native моделей;
+координаты объекта и свойства относятся к Working без выдуманного accepted span.
 
 Карта содержит версии map/source/rules, профиль, generation, рабочую ревизию,
 base pin и native revision. Файлы и каталоги упорядочены по native path.

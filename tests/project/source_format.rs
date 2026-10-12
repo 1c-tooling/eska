@@ -14,6 +14,7 @@ use eska::project::{
 use crate::support::TestDir;
 
 mod baseline;
+mod creation;
 mod edit;
 mod layout;
 mod measure;

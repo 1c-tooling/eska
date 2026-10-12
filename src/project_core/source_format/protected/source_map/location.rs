@@ -37,9 +37,9 @@ pub struct SourceLocation {
 impl MappedFile {
     /// Map a native byte span to selected BSL/resource bytes or an object/property in owner YAML.
     ///
-    /// Payload offsets remain unchanged. Metadata uses accepted composition and only selects
-    /// working YAML for a typed value that differs from accepted bytes. A changed working
-    /// identity can retain a selected value but has no inferred object coordinate.
+    /// Payload offsets remain unchanged. Existing metadata uses accepted bindings and selects
+    /// working YAML for changed typed values. Fresh supported inline nodes require matching
+    /// working/native models. A changed accepted identity has no inferred working coordinate.
     ///
     /// # Errors
     /// Returns changed input bytes, invalid spans, missing origin text or inconsistent metadata.
@@ -160,8 +160,9 @@ fn metadata_location(
             property,
         } => (uuid, Some((index, property))),
     };
-    let location = document_paths::locate(&owner, &file.path, &uuid)
-        .ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
+    let Some(location) = document_paths::locate(&owner, &file.path, &uuid) else {
+        return created_location(file, text, &uuid, property, working, texts.working);
+    };
     result.uuid = Some(uuid.clone());
     result.range = Some(yaml::range_at(&accepted_tree, &location.steps)?);
     if let Some((index, property)) = property {
@@ -189,6 +190,69 @@ fn metadata_location(
         )?);
     }
     Ok(result)
+}
+
+/// A fresh inline node belongs entirely to verified working bytes and must match the selected native node.
+fn created_location(
+    file: &MappedFile,
+    native: &str,
+    uuid: &NativeUuid,
+    property: Option<(usize, Property)>,
+    input: Option<&InputFile>,
+    text: Option<&str>,
+) -> Result<SourceLocation, Error> {
+    if !matches!(
+        file.origin,
+        FileOrigin::Metadata {
+            uses_working_values: true,
+            ..
+        }
+    ) {
+        return Err(Error::root("source_map_origin_mismatch"));
+    }
+    let input = input.ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
+    let text = text.ok_or_else(|| Error::root("source_map_origin_text_missing"))?;
+    verify_bytes(text.as_bytes(), input.bytes, &input.sha256)?;
+    let (value, tree) = yaml::decode_with_tree(text)?;
+    let working = ObjectSource::from_value(value)?;
+    let selected = ObjectSource {
+        document: super::super::super::NativeDocument {
+            path: file.path.clone(),
+            descriptor: super::super::super::Descriptor::from_xml(native)?,
+        },
+        nested: Vec::new(),
+    };
+    if !super::super::super::child_creation::supported_owner(
+        selected.document.descriptor.object.kind,
+    ) {
+        return Err(Error::root("source_map_origin_mismatch"));
+    }
+    let location = document_paths::locate(&working, &file.path, uuid)
+        .ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
+    let selected_location = document_paths::locate(&selected, &file.path, uuid)
+        .ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
+    if location.node != selected_location.node {
+        return Err(Error::root("source_map_origin_mismatch"));
+    }
+    super::super::super::child_creation::validate_new_node(location.node)?;
+    let mut steps = location.steps.clone();
+    let range = if let Some((index, property)) = property {
+        steps.extend(document_paths::property_steps(
+            location.schema,
+            0,
+            index,
+            &property,
+        ));
+        property_range(&tree, &steps, &property, location.schema)?
+    } else {
+        yaml::range_at(&tree, &steps)?
+    };
+    Ok(SourceLocation {
+        authority: InputAuthority::Working,
+        input: input.clone(),
+        range: Some(range),
+        uuid: Some(uuid.clone()),
+    })
 }
 
 /// Descend only real metadata children; UUID-like text inside opaque XML is never an identity.

@@ -1,4 +1,4 @@
-//! Native-file origins describe selected bytes; metadata always retains accepted structure.
+//! Native-file origins describe accepted bindings with selected values and supported inline creation.
 
 mod location;
 
@@ -52,7 +52,7 @@ pub enum InputAuthority {
     Accepted,
 }
 
-/// A generated descriptor can combine accepted composition and permitted working values.
+/// A generated descriptor can combine accepted bindings, selected values and supported new inline nodes.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum FileOrigin {

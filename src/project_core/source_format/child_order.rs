@@ -138,7 +138,7 @@ pub(super) fn denied_permission(
 }
 
 /// An external child's permission comes from its declared descriptor, not the containing folder.
-fn member_uuid(
+pub(super) fn member_uuid(
     base: &AcceptedBase,
     native: &SourcePath,
     identity: &Identity,

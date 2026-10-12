@@ -1,6 +1,7 @@
 //! Experimental, reversible source documents, independent of IDE and platform runners.
 
 mod baseline;
+mod child_creation;
 mod child_order;
 mod composition;
 mod coordinates;
