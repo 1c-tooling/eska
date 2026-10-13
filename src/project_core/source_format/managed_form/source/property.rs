@@ -9,7 +9,7 @@ use roxmltree::{Document, Node};
 use serde::{Deserialize, Serialize};
 
 use super::{Error, ManagedFormSource, Part, decode};
-use crate::project_core::source_format::{native_writer, xml::text};
+use crate::project_core::source_format::{lexical, native_writer, xml::text};
 
 #[cfg(test)]
 mod tests;
@@ -309,7 +309,7 @@ pub(super) fn render(
 fn text_frame(node: Node<'_, '_>, input: &str) -> Option<TextFrame> {
     let range = node.range();
     let value = input.get(range.clone())?;
-    let (qname, _) = decode::opening_name(input, range.start).ok()?;
+    let (qname, _) = lexical::opening_name(input, range.start)?;
     if let Some(prefix) = value.strip_suffix("/>") {
         return Some(TextFrame {
             open: format!("{prefix}>"),
@@ -317,7 +317,7 @@ fn text_frame(node: Node<'_, '_>, input: &str) -> Option<TextFrame> {
             empty: Some(value.into()),
         });
     }
-    let start = decode::opening_end(input, range.clone()).ok()?;
+    let start = lexical::opening_end(input, range.clone())?;
     let end = range.start + value.rfind("</")?;
     Some(TextFrame {
         open: input.get(range.start..start)?.into(),

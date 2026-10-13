@@ -20,6 +20,7 @@ mod fill_value;
 mod fragment;
 mod import;
 mod layout;
+mod lexical;
 mod managed_form;
 mod metadata_reference;
 mod model;
@@ -28,6 +29,7 @@ mod package;
 mod project_migration;
 mod property;
 mod protected;
+mod queries;
 mod readable;
 mod reader;
 mod structural_references;
@@ -74,6 +76,7 @@ pub use protected::{
     ProtectedFailure, RELOCATED_SOURCE_MAP_VERSION, SOURCE_MAP_VERSION, SourceLocation, SourceMap,
     export_protected, prepare_protected,
 };
+pub use queries::{NativeQuery, NativeQueryDocument, QuerySlot};
 pub use reader::{
     DeclaredForm, DeclaredModule, DeclaredOwner, MetadataDeclaration, MetadataSnapshot,
     NativeMetadata, OwnerSnapshot, SourceReader,

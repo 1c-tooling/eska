@@ -8,7 +8,9 @@ use super::{
     ChildFrame, Error, FormDefinition, ManagedFormSource, NativeForm, Part, Stencil, binding,
     property,
 };
-use crate::project_core::source_format::{FormElementKind, FormId, ManagedFormLayout, Namespace};
+use crate::project_core::source_format::{
+    FormElementKind, FormId, ManagedFormLayout, Namespace, lexical,
+};
 
 struct Hole {
     range: Range<usize>,
@@ -186,7 +188,7 @@ fn parts(
 /// Both native tag occurrences consume the same typed class, retaining the original namespace prefix.
 fn class_holes(node: Node<'_, '_>, input: &str, holes: &mut Vec<Hole>) -> Result<(), Error> {
     let range = node.range();
-    let (qname, opening) = opening_name(input, range.start)?;
+    let (qname, opening) = lexical::opening_name(input, range.start).ok_or_else(binding)?;
     let prefix = qname
         .rsplit_once(':')
         .map_or_else(String::new, |(prefix, _)| format!("{prefix}:"));
@@ -215,7 +217,7 @@ fn class_holes(node: Node<'_, '_>, input: &str, holes: &mut Vec<Hole>) -> Result
 fn child_frame(node: Node<'_, '_>, input: &str) -> Result<ChildFrame, Error> {
     let range = node.range();
     let text = slice(input, range.clone())?;
-    let (qname, _) = opening_name(input, range.start)?;
+    let (qname, _) = lexical::opening_name(input, range.start).ok_or_else(binding)?;
     if let Some(prefix) = text.strip_suffix("/>") {
         return Ok(ChildFrame {
             open: format!("{prefix}>"),
@@ -224,7 +226,7 @@ fn child_frame(node: Node<'_, '_>, input: &str) -> Result<ChildFrame, Error> {
             empty: Some(text.into()),
         });
     }
-    let start = opening_end(input, range.clone())?;
+    let start = lexical::opening_end(input, range.clone()).ok_or_else(binding)?;
     let end = range.start + text.rfind("</").ok_or_else(binding)?;
     let mut cursor = start;
     let mut gaps = Vec::new();
@@ -245,30 +247,7 @@ fn child_frame(node: Node<'_, '_>, input: &str) -> Result<ChildFrame, Error> {
     })
 }
 
-/// Native `QName` ranges end before attributes or closing punctuation, never by a guessed class suffix.
-pub(super) fn opening_name(input: &str, start: usize) -> Result<(&str, Range<usize>), Error> {
-    let tail = input.get(start + 1..).ok_or_else(binding)?;
-    let length = tail
-        .find(|character: char| character.is_ascii_whitespace() || matches!(character, '/' | '>'))
-        .ok_or_else(binding)?;
-    Ok((&tail[..length], start + 1..start + 1 + length))
-}
-
 /// All native parser offsets must remain ordered UTF-8 boundaries in the exact input text.
 fn slice(input: &str, range: Range<usize>) -> Result<&str, Error> {
     input.get(range).ok_or_else(binding)
-}
-
-/// Quoted greater-than signs belong to attributes, not to the start tag's closing punctuation.
-pub(super) fn opening_end(input: &str, range: Range<usize>) -> Result<usize, Error> {
-    let mut quote = None;
-    for (offset, character) in slice(input, range.clone())?.char_indices() {
-        match (quote, character) {
-            (None, '>') => return Ok(range.start + offset + 1),
-            (None, '\'' | '"') => quote = Some(character),
-            (Some(delimiter), value) if delimiter == value => quote = None,
-            _ => {}
-        }
-    }
-    Err(binding())
 }

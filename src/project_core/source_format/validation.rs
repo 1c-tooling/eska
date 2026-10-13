@@ -346,7 +346,7 @@ pub(super) fn scope(inherited: &[Namespace], local: &[Namespace]) -> Result<Vec<
 }
 
 /// XML 1.0 cannot round-trip control characters merely because YAML accepts their escapes.
-fn xml_text(value: &str) -> Result<(), Error> {
+pub(super) fn xml_text(value: &str) -> Result<(), Error> {
     if value.chars().any(|character| {
         !matches!(character, '\t' | '\n' | '\r')
             && (character < ' ' || matches!(character, '\u{fffe}' | '\u{ffff}'))

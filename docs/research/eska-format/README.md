@@ -2,7 +2,9 @@
 
 [Структура и MVP](project-layout.md) фиксируют приоритет от 2026-10-11:
 структура и файловый цикл CF/CFE/EPF/ERF → анализатор → Explorer → fmt → VCS.
-Следующая задача — EF-23 (`NEXT`). [EF-12 принята](managed-form-acceptance.md)
+Текущая задача — EF-23 (`IN_PROGRESS`): [native slots/query codec](native-query-codec.md)
+проверены на 150 запросах C1; source bindings и `.sdbl` ещё нужны.
+[EF-12 принята](managed-form-acceptance.md)
 для configuration/C1/logform 2.20 на 1С 8.3.27.2325.
 [Native ID/ссылки](managed-form-inventory.md) и
 [общая модель layout](managed-form-layout.md) и
@@ -64,7 +66,7 @@ identities и координаты сохраняются.
 Другие structural profiles и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.
-EF-23 — `NEXT`, EF-27 — `PLANNED`; текущие реализации и результаты перечислены ниже.
+EF-23 — `IN_PROGRESS`, EF-27 — `PLANNED`; текущие реализации и результаты перечислены ниже.
 
 [Именованные свойства EF-24](readable-layout.md) используют descriptor schema 2
 с отдельными native details, общими CST/semantic coordinates и обеими явными

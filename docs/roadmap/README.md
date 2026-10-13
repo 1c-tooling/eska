@@ -11,7 +11,11 @@
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка
 и анализ кода. После этого — fmt, затем VCS.
 
-**Следующая задача: EF-23 (`NEXT`) — запросы СКД/динамических списков в `.sdbl`.**
+**Текущая задача: EF-23 (`IN_PROGRESS`) — запросы СКД/динамических списков в `.sdbl`.**
+[Native bindings и codec](../research/eska-format/native-query-codec.md) проверены
+на 823 формах/51 схеме СКД C1: 27 запросов СКД и 123 списка прошли no-op и
+text edits/reparse. Далее — source references, `.sdbl`, reader/writer/protection/
+source map/миграция и отдельная платформенная приёмка.
 [EF-12 принята](../research/eska-format/managed-form-acceptance.md) для C1/logform 2.20:
 единый form.yaml, reader/codec/editor, protected writer/source map, явная миграция
 и независимый CF/build/dump изменённой формы на 1С 8.3.27.2325.
@@ -731,7 +735,7 @@ TUI разделён на обработку клавиш, отрисовку и
 
 | Порядок | Задачи | Результат |
 |---|---|---|
-| 1 | EF-24 (`DONE`) → EF-12 (`DONE`) → EF-23 (`NEXT`) → T83/T84 → EF-14 → EF-15 → EF-25 → EF-20 | Завершённая структура, миграция, new/init, повторный импорт и сборка CF/CFE/EPF/ERF |
+| 1 | EF-24 (`DONE`) → EF-12 (`DONE`) → EF-23 (`IN_PROGRESS`) → T83/T84 → EF-14 → EF-15 → EF-25 → EF-20 | Завершённая структура, миграция, new/init, повторный импорт и сборка CF/CFE/EPF/ERF |
 | 2 | Продолжить EF-18 → EF-27 | Общий IDE/batch анализатор и контекстная проверка .sdbl |
 | 3 | EF-11 → EF-21 → EF-16 | Установленный Explorer: дерево, поддержка, подсветка, анализ; приёмка MVP |
 | 4 | T26 → форматирование в EF-22 | fmt для CLI и IDE |
