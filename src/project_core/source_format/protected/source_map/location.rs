@@ -80,6 +80,12 @@ impl MappedFile {
                 &range,
                 texts.ok_or_else(|| Error::root("source_map_origin_text_missing"))?,
             ),
+            FileOrigin::ManagedForm { .. } => super::form::locate(
+                self,
+                native,
+                &range,
+                texts.ok_or_else(|| Error::root("source_map_origin_text_missing"))?,
+            ),
         }
     }
 }
@@ -214,7 +220,7 @@ fn created_location(
     let text = text.ok_or_else(|| Error::root("source_map_origin_text_missing"))?;
     verify_bytes(text.as_bytes(), input.bytes, &input.sha256)?;
     let (value, tree) = yaml::decode_with_tree(text)?;
-    let working = ObjectSource::from_value(value)?;
+    let working = metadata_owner(value)?;
     let selected = ObjectSource {
         form: None,
         document: super::super::super::NativeDocument {
@@ -398,7 +404,7 @@ fn working_location(
         range: None,
         uuid: Some(uuid.clone()),
     };
-    let owner = ObjectSource::from_value(value)?;
+    let owner = metadata_owner(value)?;
     if let Some(location) = document_paths::locate(&owner, &file.path, uuid) {
         for (section, contents) in location.node.sections.iter().enumerate() {
             if let Section::Properties(items) = contents {
@@ -495,8 +501,16 @@ fn property_range(
     yaml::range_at(tree, &steps)
 }
 
+/// A metadata coordinate has no dialog authority; rejected body edits cannot hide selected metadata.
+fn metadata_owner(mut value: serde_json::Value) -> Result<ObjectSource, Error> {
+    if let Some(object) = value.as_object_mut() {
+        object.remove("form");
+    }
+    ObjectSource::from_value(value)
+}
+
 /// Verification happens before decoding, so coordinates cannot silently follow a newer file.
-fn verify_bytes(bytes: &[u8], size: u64, checksum: &str) -> Result<(), Error> {
+pub(super) fn verify_bytes(bytes: &[u8], size: u64, checksum: &str) -> Result<(), Error> {
     if u64::try_from(bytes.len()).ok() != Some(size)
         || files::hex(&Sha256::digest(bytes)) != checksum
     {

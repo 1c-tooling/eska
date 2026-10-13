@@ -19,7 +19,8 @@ descriptor и conversion rules остаются версии 1 в этой ча�
 descriptor schema 2 и optional body schema 2 в `ObjectSource.form`, роль
 `managed_form` с native descriptor identity. [Combined schema](managed-form-source.schema.json)
 не заменяет прежние схемы. Новый импорт доступен как opt-in core API;
-protected export, миграция и публичный CLI для map 4 ещё не приняты.
+[protected export/source map 3](managed-form-protected.md) подключены к принятой
+identity. Миграция и публичный CLI import для map 4 ещё не приняты.
 
 [JSON Schema](descriptor.schema.json) описывает один descriptor. Семантические
 ограничения дополнительно проверяет `Descriptor::validate`: уникальность UUID,

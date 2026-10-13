@@ -67,9 +67,10 @@ pub use managed_form::{
 };
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 pub use protected::{
-    Exclusion, ExclusionAction, FileOrigin, InputAuthority, InputFile, MappedFile, OriginTexts,
-    PreparedSource, ProtectedExport, ProtectedFailure, RELOCATED_SOURCE_MAP_VERSION,
-    SOURCE_MAP_VERSION, SourceLocation, SourceMap, export_protected, prepare_protected,
+    Exclusion, ExclusionAction, FileOrigin, InputAuthority, InputFile,
+    MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile, OriginTexts, PreparedSource, ProtectedExport,
+    ProtectedFailure, RELOCATED_SOURCE_MAP_VERSION, SOURCE_MAP_VERSION, SourceLocation, SourceMap,
+    export_protected, prepare_protected,
 };
 pub use reader::{
     DeclaredForm, DeclaredModule, DeclaredOwner, MetadataDeclaration, MetadataSnapshot,

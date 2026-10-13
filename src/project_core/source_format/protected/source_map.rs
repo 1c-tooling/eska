@@ -1,5 +1,6 @@
 //! Native-file origins describe accepted bindings with selected values and supported inline creation.
 
+mod form;
 mod location;
 
 pub use location::{OriginTexts, SourceLocation};
@@ -23,6 +24,8 @@ use crate::project_core::{
 pub const SOURCE_MAP_VERSION: u32 = 1;
 /// Relocated payload inputs have physical source paths distinct from their native output paths.
 pub const RELOCATED_SOURCE_MAP_VERSION: u32 = 2;
+/// A generated dialog shares authoring bytes and metadata UUID with its declared form descriptor.
+pub const MANAGED_FORM_SOURCE_MAP_VERSION: u32 = 3;
 
 /// Exact authoring bytes addressed relative to a working tree or its pinned accepted snapshot.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -64,6 +67,14 @@ pub enum FileOrigin {
     },
     Metadata {
         uuid: NativeUuid,
+        accepted: InputFile,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        working: Option<InputFile>,
+        uses_working_values: bool,
+    },
+    ManagedForm {
+        uuid: NativeUuid,
+        descriptor: SourcePath,
         accepted: InputFile,
         #[serde(skip_serializing_if = "Option::is_none")]
         working: Option<InputFile>,
@@ -114,7 +125,7 @@ impl SourceMap {
     pub fn validate(&self) -> Result<(), Error> {
         if !matches!(
             self.schema_version,
-            SOURCE_MAP_VERSION | RELOCATED_SOURCE_MAP_VERSION
+            SOURCE_MAP_VERSION | RELOCATED_SOURCE_MAP_VERSION | MANAGED_FORM_SOURCE_MAP_VERSION
         ) || !matches!(
             self.source_schema_version,
             super::super::SCHEMA_VERSION | super::super::READABLE_SCHEMA_VERSION
@@ -122,6 +133,11 @@ impl SourceMap {
             && self.source_schema_version != super::super::SCHEMA_VERSION)
             || self.rules_version != super::super::RULES_VERSION
             || self.profile != super::super::PROFILE
+        {
+            return Err(Error::root("source_map_schema_unsupported"));
+        }
+        if self.schema_version == MANAGED_FORM_SOURCE_MAP_VERSION
+            && self.source_schema_version != super::super::READABLE_SCHEMA_VERSION
         {
             return Err(Error::root("source_map_schema_unsupported"));
         }
@@ -184,6 +200,7 @@ impl SourceMap {
                 },
             );
         }
+        self.validate_forms()?;
         if files::revision(&entries, &self.directories) != self.native_revision {
             return Err(Error::root("source_map_inventory_invalid"));
         }
@@ -191,6 +208,29 @@ impl SourceMap {
         if !matches!(root.map(|entry| &entry.origin), Some(FileOrigin::Metadata { accepted, .. }) if accepted.path.as_str() == "configuration.yaml")
         {
             return Err(Error::root("source_map_origin_invalid"));
+        }
+        Ok(())
+    }
+
+    /// A dialog and its descriptor share one native owner and the exact same authoring snapshots.
+    fn validate_forms(&self) -> Result<(), Error> {
+        let mut descriptors = BTreeSet::new();
+        for entry in &self.files {
+            if let FileOrigin::ManagedForm {
+                uuid,
+                descriptor,
+                accepted,
+                working,
+                ..
+            } = &entry.origin
+                && (self.schema_version != MANAGED_FORM_SOURCE_MAP_VERSION
+                    || !descriptors.insert(descriptor)
+                    || !matches!(self.file(descriptor).map(|file| &file.origin),
+                        Some(FileOrigin::Metadata { uuid: owner, accepted: input, working: overlay, .. })
+                        if owner == uuid && input == accepted && overlay == working))
+            {
+                return Err(Error::root("source_map_origin_invalid"));
+            }
         }
         Ok(())
     }
@@ -229,6 +269,19 @@ pub(super) fn create(
             }
         })
         .collect();
+    let forms = base
+        .package
+        .manifest
+        .files
+        .iter()
+        .filter_map(|file| {
+            if let FileRole::ManagedForm { source, descriptor } = &file.role {
+                Some((&file.path, (source, descriptor)))
+            } else {
+                None
+            }
+        })
+        .collect::<BTreeMap<_, _>>();
     let mapped = native
         .files
         .values()
@@ -248,31 +301,26 @@ pub(super) fn create(
                     working: working.files.get(*source).map(InputFile::from),
                     uses_working_values,
                 }
-            } else {
-                let source = base
+            } else if let Some((source, descriptor)) = forms.get(&entry.path) {
+                let (_, uuid) = descriptors
+                    .get(*descriptor)
+                    .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
+                let accepted = base
                     .package
-                    .payload_sources
-                    .get(&entry.path)
-                    .ok_or_else(|| Error::root("source_map_origin_missing"))?;
-                let (authority, snapshot) = match origins.get(source) {
-                    Some(Origin::Working) => (InputAuthority::Working, working),
-                    Some(Origin::Accepted) => (InputAuthority::Accepted, &base.package.snapshot),
-                    None => {
-                        return Err(
-                            Error::root("source_map_origin_missing").in_field(entry.path.as_str())
-                        );
-                    }
-                };
-                let input = snapshot
+                    .snapshot
                     .files
-                    .get(source)
-                    .ok_or_else(|| Error::root("source_map_origin_missing"))?;
-                FileOrigin::Payload {
-                    authority,
-                    input: input.into(),
-                    module: native::is_module_path(entry.path.as_path()),
-                    owner: native_file_owner(base, &entry.path),
+                    .get(*source)
+                    .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
+                FileOrigin::ManagedForm {
+                    uuid: (*uuid).clone(),
+                    descriptor: (*descriptor).clone(),
+                    accepted: accepted.into(),
+                    working: working.files.get(*source).map(InputFile::from),
+                    uses_working_values: package.forms.get(&entry.path)
+                        != base.package.forms.get(&entry.path),
                 }
+            } else {
+                payload_origin(base, working, origins, entry)?
             };
             Ok(MappedFile {
                 path: entry.path.clone(),
@@ -291,14 +339,7 @@ pub(super) fn create(
         .max()
         .ok_or_else(|| Error::root("source_map_origin_invalid"))?;
     let map = SourceMap {
-        schema_version: if base.package.manifest.schema_version
-            == super::super::RESOURCE_LAYOUT_VERSION
-            || source_schema_version == super::super::READABLE_SCHEMA_VERSION
-        {
-            RELOCATED_SOURCE_MAP_VERSION
-        } else {
-            SOURCE_MAP_VERSION
-        },
+        schema_version: map_version(base.package.manifest.schema_version, source_schema_version),
         source_schema_version,
         rules_version: super::super::RULES_VERSION,
         profile: super::super::PROFILE.into(),
@@ -311,6 +352,48 @@ pub(super) fn create(
     };
     map.validate()?;
     Ok(map)
+}
+
+/// Origin schema follows actual physical mappings while descriptor envelope versions stay independent.
+const fn map_version(layout: u32, descriptor: u32) -> u32 {
+    if layout == super::super::MANAGED_FORM_LAYOUT_VERSION {
+        MANAGED_FORM_SOURCE_MAP_VERSION
+    } else if layout == super::super::RESOURCE_LAYOUT_VERSION
+        || descriptor == super::super::READABLE_SCHEMA_VERSION
+    {
+        RELOCATED_SOURCE_MAP_VERSION
+    } else {
+        SOURCE_MAP_VERSION
+    }
+}
+
+/// Byte-preserved payloads retain the selector's exact input authority and physical source path.
+fn payload_origin(
+    base: &AcceptedBase,
+    working: &Inventory,
+    origins: &BTreeMap<SourcePath, Origin>,
+    entry: &FileEntry,
+) -> Result<FileOrigin, Error> {
+    let source = base
+        .package
+        .payload_sources
+        .get(&entry.path)
+        .ok_or_else(|| Error::root("source_map_origin_missing"))?;
+    let (authority, snapshot) = match origins.get(source) {
+        Some(Origin::Working) => (InputAuthority::Working, working),
+        Some(Origin::Accepted) => (InputAuthority::Accepted, &base.package.snapshot),
+        None => return Err(Error::root("source_map_origin_missing").in_field(entry.path.as_str())),
+    };
+    let input = snapshot
+        .files
+        .get(source)
+        .ok_or_else(|| Error::root("source_map_origin_missing"))?;
+    Ok(FileOrigin::Payload {
+        authority,
+        input: input.into(),
+        module: native::is_module_path(entry.path.as_path()),
+        owner: native_file_owner(base, &entry.path),
+    })
 }
 
 /// A payload's origin must identify the same exact native bytes; metadata records remain composite.
@@ -330,10 +413,20 @@ fn validate_origin(entry: &MappedFile) -> Result<(), Error> {
             working,
             uses_working_values,
             ..
+        }
+        | FileOrigin::ManagedForm {
+            accepted,
+            working,
+            uses_working_values,
+            ..
         } => {
             require_digest(&accepted.sha256)?;
             if accepted.path.as_path().extension() != Some(std::ffi::OsStr::new("yaml"))
-                || entry.path.as_path().extension() != Some(std::ffi::OsStr::new("xml"))
+                || !entry
+                    .path
+                    .as_path()
+                    .extension()
+                    .is_some_and(|extension| extension.eq_ignore_ascii_case("xml"))
                 || accepted.bytes == 0
             {
                 return Err(Error::root("source_map_origin_invalid"));
@@ -346,6 +439,13 @@ fn validate_origin(entry: &MappedFile) -> Result<(), Error> {
                 if working.path != accepted.path {
                     return Err(Error::root("source_map_origin_invalid"));
                 }
+            }
+            if let FileOrigin::ManagedForm { descriptor, .. } = &entry.origin
+                && !super::super::layout::forms::native_path(descriptor)?
+                    .as_str()
+                    .eq_ignore_ascii_case(entry.path.as_str())
+            {
+                return Err(Error::root("source_map_origin_invalid"));
             }
         }
     }

@@ -6,6 +6,13 @@ map schema 1 не принимает descriptor schema 2. Типизирован
 оболочки указывают direct value, preserved XML — native fragment. Правила
 fingerprints и выбора accepted/working сохраняются.
 
+[Управляемые формы EF-12](managed-form-protected.md) добавляют source map schema 3
+для reverse map 4. Origin `managed_form` связывает body XML с тем же metadata UUID
+и YAML, что descriptor origin `metadata`; selected-value flags независимы.
+`source_schema_version` остаётся 2. Проверяются native descriptor linkage,
+captured inputs, scalar/formatted/language coordinates и текущие layout entries.
+Прежние source maps 1/2 и prepared artifact envelope 2 сохранены.
+
 `PreparedSource::source_map` возвращает карту полного native inventory:
 descriptor XML, BSL, ресурсы, политика поддержки, supplier CF, файлы вне
 объявленного состава и пустые каталоги. Пути относительные; абсолютных путей

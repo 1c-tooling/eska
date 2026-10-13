@@ -8,10 +8,9 @@ use std::{
 use super::*;
 use crate::{
     project_core::source_format::{
-        AcceptedBase, Descriptor, FormPropertyName, FormPropertyValue, Property, PropertyName,
-        PropertyValue, Section, SourceReader, accept_source, export_designer, files::Inventory,
-        import_designer_forms, import_designer_readable, prepare_protected,
-        prepare_readable_layout,
+        Descriptor, FormPropertyName, FormPropertyValue, Property, PropertyName, PropertyValue,
+        Section, SourceReader, export_designer, files::Inventory, import_designer_forms,
+        import_designer_readable, prepare_readable_layout,
     },
     test_support::TestDir,
 };
@@ -448,22 +447,10 @@ fn same_named_common_and_nested_forms_and_absent_dialog_keep_independent_binding
     );
 }
 
-/// Pending protected selection and migration cannot silently discard the new authoritative body.
+/// Pending migration cannot silently discard the new authoritative body.
 #[test]
-fn unsupported_protected_and_migration_consumers_refuse_map_v4() {
-    let (directory, _native, root) = source();
-    let accepted = directory.0.join("accepted");
-    let reference = accept_source(&root, &accepted, &[]).unwrap();
-    let base = AcceptedBase::open(&accepted, &reference).unwrap();
-    let output = directory.0.join("generations");
-    assert_eq!(
-        prepare_protected(&root, &base, &output, false)
-            .unwrap_err()
-            .error
-            .code,
-        "source_schema_unsupported"
-    );
-    assert!(!output.exists());
+fn unsupported_migration_consumer_refuses_map_v4() {
+    let (_directory, _native, root) = source();
     assert_eq!(
         prepare_readable_layout(&root).unwrap_err().code,
         "source_schema_unsupported"

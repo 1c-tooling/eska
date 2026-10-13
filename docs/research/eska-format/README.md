@@ -8,7 +8,9 @@
 [readable properties body v2](managed-form-properties.md) — на 12 317 values,
 чтение v1 сохранено. [Единый form.yaml](managed-form-project.md) объединяет
 metadata descriptor и dialog body через карту версии 4; project reader/export
-проверены на всех 823 формах C1. Protected writer, source map, миграция и
+проверены на всех 823 формах C1. [Protected writer и source map](managed-form-protected.md)
+выбирают body по принятому metadata UUID: 183 формы получили разрешённые правки,
+637 запрещённых форм восстановлены из базы. Точечный editor, миграция и
 платформенная приёмка изменённой формы ещё нужны.
 [EF-24 принята](structure-acceptance.md)
 для configuration/Designer 2.20. [28 новых typed-скаляров](typed-scalars.md)

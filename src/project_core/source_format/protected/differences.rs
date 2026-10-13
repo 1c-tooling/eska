@@ -167,11 +167,12 @@ impl Walker<'_> {
                     coordinate.push(key.clone());
                     let operation = if matches!(key.as_str(), "path" | "uuid") {
                         Operation::Move
-                    } else if coordinate
-                        .len()
-                        .checked_sub(2)
-                        .and_then(|index| coordinate.get(index))
-                        .is_some_and(|field| field == "properties")
+                    } else if coordinate.first().is_none_or(|field| field != "form")
+                        && coordinate
+                            .len()
+                            .checked_sub(2)
+                            .and_then(|index| coordinate.get(index))
+                            .is_some_and(|field| field == "properties")
                         && let Some(name) = PropertyName::from_native(key)
                     {
                         Operation::Property(name)
@@ -225,7 +226,9 @@ impl Walker<'_> {
         } else {
             ExclusionAction::Restored
         };
-        let operation = if current.is_none() {
+        let operation = if coordinate.first().is_some_and(|field| field == "form") {
+            Operation::Resource
+        } else if current.is_none() {
             Operation::Delete
         } else {
             operation

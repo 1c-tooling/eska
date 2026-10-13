@@ -43,7 +43,10 @@ Acceptance export создаёт оба native файла из этого YAML, 
 совпадении ранее созданных native bytes. Body no-op сохраняет BOM/CRLF; metadata
 writer сохраняет прежний договор нормализации descriptor, не byte-equal XML.
 
-## Граница этой части
+## Граница части 5
+
+Ограничения ниже описывают часть 5. [Часть 6](managed-form-protected.md)
+подключает protected writer и source map; migration остаётся незавершённой.
 
 Protected writer для map 4 пока явно возвращает `source_schema_unsupported`.
 Прежние migration APIs также отказывают map 4, чтобы не потерять тело формы.

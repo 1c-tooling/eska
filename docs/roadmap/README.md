@@ -31,10 +31,13 @@ values. 751 форма прошла codec edits/reparse.
 metadata descriptor и body v2 через обратную карту версии 4. Все 823 формы
 прошли project reader/export; no-op совпал с прежним readable контролем,
 правки properties/layout изменили только 799 native dialog XML.
-Следующий шаг — protected selection/source map, точечные edits и миграция
-source/base/workspace, затем независимый XML и реальный CF цикл изменённых форм.
-CLI defaults сохранены; map 4 явно отклоняется незавершёнными protected/migration
-consumers. EF-12 и MVP остаются незавершёнными.
+[Protected writer и source map 3](../research/eska-format/managed-form-protected.md)
+подключены к map 4: права определяет принятый metadata UUID формы, native bindings
+закреплены, разрешённые properties/layout имеют Working координаты. В C1 2 720
+values и 169 перестановок выбраны для 183 форм; 637 запрещённых форм восстановлены.
+Следующий шаг — точечные edits и миграция source/base/workspace, затем независимый
+XML и реальный CF цикл изменённых форм. CLI defaults сохранены; migration пока
+явно отклоняет map 4. EF-12 и MVP остаются незавершёнными.
 
 Первая часть расширяет [typed writer](../research/eska-format/typed-scalars.md)
 на 28 bool/integer/enum свойств с прежней защитой и точечными правками.

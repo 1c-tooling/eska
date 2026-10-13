@@ -1,6 +1,7 @@
 //! Protected selection precedes platform work; only completed immutable generations are returned.
 
 mod differences;
+mod forms;
 mod generation;
 mod merge;
 mod prepared;
@@ -29,8 +30,8 @@ use crate::project_core::{
 
 pub use prepared::PreparedSource;
 pub use source_map::{
-    FileOrigin, InputAuthority, InputFile, MappedFile, OriginTexts, RELOCATED_SOURCE_MAP_VERSION,
-    SOURCE_MAP_VERSION, SourceLocation, SourceMap,
+    FileOrigin, InputAuthority, InputFile, MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile,
+    OriginTexts, RELOCATED_SOURCE_MAP_VERSION, SOURCE_MAP_VERSION, SourceLocation, SourceMap,
 };
 
 /// Every excluded working change states the performed action rather than silently disappearing.
@@ -118,14 +119,11 @@ pub fn prepare_protected(
     strict: bool,
 ) -> Result<PreparedSource, ProtectedFailure> {
     base.verify()?;
-    if base.package.manifest.schema_version == super::MANAGED_FORM_LAYOUT_VERSION {
-        return Err(Error::root("source_schema_unsupported").into());
-    }
     let source = fs::canonicalize(source).map_err(|error| files::io(&error))?;
     let working = Inventory::read(&source)?;
     let mut diagnostics = Vec::new();
-    let documents = merge::documents(&source, &working, base, &mut diagnostics)?;
-    validate_composition(&documents)?;
+    let selected = merge::sources(&source, &working, base, &mut diagnostics)?;
+    validate_composition(&selected.documents)?;
     let (snapshot, origins) = select_files(&working, base, &mut diagnostics);
     diagnostics.sort_by(|left, right| {
         (&left.path, &left.coordinate, &left.id).cmp(&(&right.path, &right.coordinate, &right.id))
@@ -139,8 +137,8 @@ pub fn prepare_protected(
     let package = Package {
         manifest: base.package.manifest.clone(),
         snapshot,
-        documents,
-        forms: BTreeMap::new(),
+        documents: selected.documents,
+        forms: selected.forms,
         owners: base.package.owners.clone(),
         payloads: base.package.payloads.clone(),
         payload_sources: base.package.payload_sources.clone(),

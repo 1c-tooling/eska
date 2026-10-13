@@ -27,6 +27,18 @@ pub enum FormPropertyName {
 }
 
 impl FormPropertyName {
+    /// Stable native spelling is also the authoritative YAML property key.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Title => "Title",
+            Self::ToolTip => "ToolTip",
+            Self::Visible => "Visible",
+            Self::ReadOnly => "ReadOnly",
+            Self::Enabled => "Enabled",
+        }
+    }
+
     /// Foreign properties cannot acquire native semantics from the same local tag spelling.
     fn from_node(node: Node<'_, '_>) -> Option<Self> {
         if node.tag_name().namespace() != Some(super::super::NAMESPACE) {

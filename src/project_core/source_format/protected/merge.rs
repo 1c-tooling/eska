@@ -7,35 +7,43 @@ use std::{
 };
 
 use super::super::{
-    AcceptedBase, Child, Error, MetadataNode, NativeDocument, ObjectSource, Operation, Property,
-    PropertyValue, Section, SourcePath, files::Inventory, yaml,
+    AcceptedBase, Child, Error, FileRole, ManagedFormSource, MetadataNode, NativeDocument,
+    ObjectSource, Operation, Property, PropertyValue, Section, SourcePath, files::Inventory, yaml,
 };
-use super::{Exclusion, differences, read_working};
+use super::{Exclusion, differences, forms, read_working};
+
+/// Selected descriptors and dialogs share one captured owner input and its accepted identity.
+pub(super) struct SelectedSources {
+    pub documents: BTreeMap<SourcePath, NativeDocument>,
+    pub forms: BTreeMap<SourcePath, ManagedFormSource>,
+}
 
 /// Read partial working owners without trusting their declared UUID, file map or supplier status.
-pub(super) fn documents(
+pub(super) fn sources(
     root: &Path,
     working: &Inventory,
     base: &AcceptedBase,
     diagnostics: &mut Vec<Exclusion>,
-) -> Result<BTreeMap<SourcePath, NativeDocument>, Error> {
-    let mut result = BTreeMap::new();
+) -> Result<SelectedSources, Error> {
+    let mut result = SelectedSources {
+        documents: BTreeMap::new(),
+        forms: BTreeMap::new(),
+    };
+    let dialogs = base
+        .package
+        .manifest
+        .files
+        .iter()
+        .filter_map(|file| {
+            if let FileRole::ManagedForm { source, .. } = &file.role {
+                Some((source, &file.path))
+            } else {
+                None
+            }
+        })
+        .collect::<BTreeMap<_, _>>();
     for (path, parts) in &base.package.owners {
-        let mut parts = parts.iter().map(|path| {
-            base.package
-                .documents
-                .get(path)
-                .cloned()
-                .ok_or_else(|| Error::root("source_baseline_corrupt"))
-        });
-        let document = parts
-            .next()
-            .ok_or_else(|| Error::root("source_baseline_corrupt"))??;
-        let mut family = ObjectSource {
-            form: None,
-            document,
-            nested: parts.collect::<Result<_, _>>()?,
-        };
+        let mut family = accepted_owner(base, parts, dialogs.get(path).copied())?;
         let current = if working.files.contains_key(path) {
             Some(
                 yaml::decode(&read_working(root, working, path)?)
@@ -49,6 +57,15 @@ pub(super) fn documents(
             &mut family.document,
             current.as_ref().and_then(|value| value.get("document")),
         )?;
+        if let Some(form) = &mut family.form {
+            forms::select(
+                base,
+                &family.document.descriptor.object.uuid,
+                form,
+                current.as_ref().and_then(|value| value.get("form")),
+            )
+            .map_err(|error| error.in_field("form").in_field(path.as_str()))?;
+        }
         let nested = current
             .as_ref()
             .and_then(|value| value.get("nested"))
@@ -76,11 +93,47 @@ pub(super) fn documents(
             &family.document.descriptor.object.uuid,
             diagnostics,
         );
+        if let Some(form) = family.form {
+            let dialog = dialogs
+                .get(path)
+                .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
+            result.forms.insert((*dialog).clone(), form);
+        }
         for document in std::iter::once(family.document).chain(family.nested) {
-            result.insert(document.path.clone(), document);
+            result.documents.insert(document.path.clone(), document);
         }
     }
     Ok(result)
+}
+
+/// Assemble the exact accepted descriptor/body pair before reading untrusted working fields.
+fn accepted_owner(
+    base: &AcceptedBase,
+    paths: &[SourcePath],
+    dialog: Option<&SourcePath>,
+) -> Result<ObjectSource, Error> {
+    let mut parts = paths.iter().map(|path| {
+        base.package
+            .documents
+            .get(path)
+            .cloned()
+            .ok_or_else(|| Error::root("source_baseline_corrupt"))
+    });
+    Ok(ObjectSource {
+        document: parts
+            .next()
+            .ok_or_else(|| Error::root("source_baseline_corrupt"))??,
+        nested: parts.collect::<Result<_, _>>()?,
+        form: dialog
+            .map(|path| {
+                base.package
+                    .forms
+                    .get(path)
+                    .cloned()
+                    .ok_or_else(|| Error::root("source_baseline_corrupt"))
+            })
+            .transpose()?,
+    })
 }
 
 /// Ambiguous external identities fail instead of selecting the first copy of an allowed value.

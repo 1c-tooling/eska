@@ -594,6 +594,17 @@ Protected/migration пока явно отказывают map 4. Следующ
 EF-12 остаётся `IN_PROGRESS`, EF-24 — `DONE`; границы protected/migration для map 4
 и очередь следующих частей не менялись. Новая платформенная приёмка не выполнялась.
 
+[Шестая часть: protected writer/source map](../research/eska-format/managed-form-protected.md)
+подключает body к выбору прав по принятому UUID формы. Native bindings, ID/name,
+property/language slots остаются pinned; разрешённые values/layout выбираются
+независимо от восстановления запрещённых полей. Source map 3 связывает descriptor
+и dialog с тем же YAML/UUID, различает их selected-value flags и даёт byte-verified
+Working/Accepted координаты. C1: из 823 форм 186 разрешены, 637 запрещены;
+2 720 values и 169 перестановок изменили 183 формы. Strict отказал в publication,
+обычный export сохранил запрещённые формы и input bytes; повторная generation
+совпала. Следующее — точечный editor и source/base/workspace migration, затем
+независимый XML контроль и CF цикл. EF-12 остаётся `IN_PROGRESS`.
+
 Обязательная часть структуры MVP после EF-24. Зафиксировать матрицу реальных
 управляемых форм выбранного платформенного профиля. Разделить устойчивые
 определения `elements` и упорядоченный `layout` в одном `form.yaml`, вместе

@@ -40,7 +40,7 @@ pub enum FormElementKind {
 
 impl FormElementKind {
     /// Native tag spelling is independent of the Rust identifier and remains exact for XML output.
-    pub(super) const fn native_name(self) -> &'static str {
+    pub(in crate::project_core::source_format) const fn native_name(self) -> &'static str {
         match self {
             Self::AutoCommandBar => "AutoCommandBar",
             Self::Button => "Button",
