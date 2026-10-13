@@ -116,6 +116,11 @@ fn export_configuration(arguments: &[OsString]) -> Result<(), String> {
         }) {
             contents = empty_configuration("f0000000-0000-4000-8000-000000000001").into_bytes();
         }
+        if env_flag("FAKE_IBCMD_TRUNCATED_PROBE_DESCRIPTOR")
+            && let Some(closing_tag) = contents.iter().rposition(|byte| *byte == b'<')
+        {
+            contents.truncate(closing_tag);
+        }
         if !env_flag("FAKE_IBCMD_NO_PROBE_DESCRIPTOR") {
             fs::write(destination.join("Configuration.xml"), contents)
                 .map_err(|error| error.to_string())?;

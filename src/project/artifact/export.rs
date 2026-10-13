@@ -100,7 +100,16 @@ where
         return probe.map(|()| true);
     }
     let identity = if destination.is_dir() {
-        inspect_identity(destination)?
+        match inspect_identity(destination) {
+            Ok(identity) => identity,
+            Err(error) => {
+                // Failed exports may leave truncated XML; retain the actual native diagnostic.
+                for (stream, bytes) in buffered {
+                    output(stream, &bytes);
+                }
+                return Err(error);
+            }
+        }
     } else {
         None
     };

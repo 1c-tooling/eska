@@ -104,6 +104,7 @@ fn refuses_incomplete_registered_extensions_without_changing_project_or_input() 
             ("FAKE_IBCMD_WRONG_EXPORTED_IDENTITY", "invalid-descriptor"),
             ("FAKE_IBCMD_MISSING_DUMP_INFO", "missing-descriptor"),
             ("FAKE_IBCMD_NO_PROBE_DESCRIPTOR", "platform-failed"),
+            ("FAKE_IBCMD_TRUNCATED_PROBE_DESCRIPTOR", "invalid-descriptor"),
         ] {
             let output = Command::new(env!("CARGO_BIN_EXE_eska"))
                 .current_dir(&root)
@@ -124,6 +125,13 @@ fn refuses_incomplete_registered_extensions_without_changing_project_or_input() 
             assert_eq!(output.status.code(), Some(1), "{output:?}");
             let document: Value = serde_json::from_slice(&output.stdout).unwrap();
             assert_eq!(document["error"]["code"], code);
+            if flag == "FAKE_IBCMD_TRUNCATED_PROBE_DESCRIPTOR" {
+                assert!(
+                    String::from_utf8_lossy(&output.stderr)
+                        .contains("incomplete fixture file export"),
+                    "{output:?}"
+                );
+            }
             assert_eq!(
                 fs::read(root.join("src/Configuration.xml")).unwrap(),
                 descriptor
