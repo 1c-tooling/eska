@@ -216,6 +216,7 @@ fn created_location(
     let (value, tree) = yaml::decode_with_tree(text)?;
     let working = ObjectSource::from_value(value)?;
     let selected = ObjectSource {
+        form: None,
         document: super::super::super::NativeDocument {
             path: file.path.clone(),
             descriptor: super::super::super::Descriptor::from_xml(native)?,

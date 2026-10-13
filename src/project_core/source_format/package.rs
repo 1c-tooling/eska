@@ -1,4 +1,4 @@
-//! One YAML per main owner, with an explicit reversible map for every native input file.
+//! Versioned owner YAML with an explicit reversible map for every native input file.
 
 use std::{collections::BTreeSet, path::Path};
 
@@ -67,6 +67,9 @@ pub struct NativeDocument {
 pub struct ObjectSource {
     pub document: NativeDocument,
     pub nested: Vec<NativeDocument>,
+    /// A standalone form owns its dialog; other resources and modules remain separate files.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub form: Option<super::ManagedFormSource>,
 }
 
 impl ObjectSource {
@@ -108,6 +111,20 @@ impl ObjectSource {
     /// # Errors
     /// Returns invalid descriptor content or `source_descriptor_duplicate`.
     pub fn validate(&self) -> Result<(), Error> {
+        if let Some(form) = &self.form {
+            if !self.nested.is_empty()
+                || !matches!(
+                    self.document.descriptor.object.kind,
+                    crate::project_core::MetadataKind::Form
+                        | crate::project_core::MetadataKind::CommonForm
+                )
+                || self.document.descriptor.schema_version != super::READABLE_SCHEMA_VERSION
+                || form.schema_version != 2
+            {
+                return Err(Error::root("source_form_schema_invalid"));
+            }
+            form.validate()?;
+        }
         let mut paths = BTreeSet::new();
         for part in std::iter::once(&self.document).chain(&self.nested) {
             if !paths.insert(&part.path) {
@@ -146,7 +163,7 @@ pub struct FileEntry {
     pub role: FileRole,
 }
 
-/// Declared descriptors are rebuilt; every other file remains an exact separate payload.
+/// Descriptors and mapped dialogs are rebuilt; opaque resources remain exact separate payloads.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum FileRole {
@@ -159,6 +176,11 @@ pub enum FileRole {
     Relocated {
         source: SourcePath,
     },
+    /// This generated dialog shares exactly one declared standalone metadata authoring file.
+    ManagedForm {
+        source: SourcePath,
+        descriptor: SourcePath,
+    },
 }
 
 impl FileEntry {
@@ -166,7 +188,9 @@ impl FileEntry {
     #[must_use]
     pub const fn source_path(&self) -> &SourcePath {
         match &self.role {
-            FileRole::Descriptor { source, .. } | FileRole::Relocated { source } => source,
+            FileRole::Descriptor { source, .. }
+            | FileRole::Relocated { source }
+            | FileRole::ManagedForm { source, .. } => source,
             FileRole::Preserved => &self.path,
         }
     }
@@ -174,7 +198,7 @@ impl FileEntry {
     /// Opaque payloads retain their bytes regardless of their physical authoring location.
     #[must_use]
     pub const fn is_payload(&self) -> bool {
-        !matches!(self.role, FileRole::Descriptor { .. })
+        matches!(self.role, FileRole::Preserved | FileRole::Relocated { .. })
     }
 }
 
@@ -187,6 +211,7 @@ impl SourceManifest {
         if self.schema_version != SCHEMA_VERSION
             && self.schema_version != super::DESCRIPTOR_LAYOUT_VERSION
             && self.schema_version != super::RESOURCE_LAYOUT_VERSION
+            && self.schema_version != super::MANAGED_FORM_LAYOUT_VERSION
         {
             return Err(Error::root("source_schema_unsupported"));
         }

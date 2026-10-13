@@ -128,6 +128,7 @@ fn readable_type_bindings_and_qualifier_domains_refuse_ambiguous_values() {
 fn annotated_type_migration_retains_one_value_authority_and_native_layout() {
     use crate::project_core::source_format::{NativeDocument, ObjectSource, SourcePath};
     let source = ObjectSource {
+        form: None,
         document: NativeDocument {
             path: SourcePath::parse("Constants/Amount.xml").unwrap(),
             descriptor: descriptor(

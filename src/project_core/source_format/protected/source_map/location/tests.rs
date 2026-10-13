@@ -5,6 +5,7 @@ use crate::project_core::source_format::{Descriptor, LocalizedText, NativeDocume
 /// Parse the public owner family without creating a project or inventing platform acceptance.
 fn owner() -> ObjectSource {
     ObjectSource {
+        form: None,
         document: NativeDocument {
             path: SourcePath::parse("Catalogs/Sample.xml").expect("catalog path"),
             descriptor: Descriptor::from_xml(include_str!(concat!(

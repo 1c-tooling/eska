@@ -20,7 +20,7 @@ pub(super) fn owners(
         .iter()
         .filter_map(|file| match &file.role {
             FileRole::Descriptor { source, uuid } => Some((&file.path, (source, uuid))),
-            FileRole::Preserved | FileRole::Relocated { .. } => None,
+            FileRole::Preserved | FileRole::Relocated { .. } | FileRole::ManagedForm { .. } => None,
         })
         .collect::<BTreeMap<_, _>>();
     let mut children: BTreeMap<&SourcePath, Vec<&DescriptorContext>> = BTreeMap::new();

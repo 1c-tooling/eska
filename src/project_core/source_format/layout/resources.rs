@@ -97,7 +97,7 @@ pub(in crate::project_core::source_format) fn relocate(
 pub(super) fn validate(manifest: &SourceManifest) -> Result<(), Error> {
     let locations = Locations::new(manifest);
     for file in &manifest.files {
-        if manifest.schema_version != RESOURCE_LAYOUT_VERSION {
+        if manifest.schema_version < RESOURCE_LAYOUT_VERSION {
             if matches!(file.role, FileRole::Relocated { .. }) {
                 return Err(Error::root("source_layout_payload_invalid"));
             }
@@ -158,6 +158,7 @@ pub(in crate::project_core::source_format) enum Layout {
     Descriptors,
     Resources,
     Readable,
+    Forms,
 }
 
 impl Layout {
@@ -167,6 +168,7 @@ impl Layout {
             Self::Family => crate::project_core::source_format::SCHEMA_VERSION,
             Self::Descriptors => DESCRIPTOR_LAYOUT_VERSION,
             Self::Resources | Self::Readable => RESOURCE_LAYOUT_VERSION,
+            Self::Forms => super::MANAGED_FORM_LAYOUT_VERSION,
         }
     }
 }

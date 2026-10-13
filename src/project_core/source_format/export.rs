@@ -59,6 +59,7 @@ pub(super) struct Package {
     pub manifest: SourceManifest,
     pub snapshot: Inventory,
     pub documents: BTreeMap<SourcePath, NativeDocument>,
+    pub forms: BTreeMap<SourcePath, super::ManagedFormSource>,
     pub owners: BTreeMap<SourcePath, Vec<SourcePath>>,
     /// Physical payload paths resolve to native identity for policy and publication.
     pub payloads: BTreeMap<SourcePath, SourcePath>,
@@ -96,6 +97,18 @@ impl Package {
             })
             .collect();
         let mut documents = BTreeMap::new();
+        let mut forms = BTreeMap::new();
+        let form_paths = manifest
+            .files
+            .iter()
+            .filter_map(|file| {
+                if let FileRole::ManagedForm { source, .. } = &file.role {
+                    Some((source, &file.path))
+                } else {
+                    None
+                }
+            })
+            .collect::<BTreeMap<_, _>>();
         let mut owner_documents = BTreeMap::new();
         let entries: BTreeMap<_, _> = manifest
             .files
@@ -105,6 +118,14 @@ impl Package {
         for owner in &owners {
             let object = ObjectSource::from_yaml(&read(owner)?)
                 .map_err(|error| error.in_field(owner.as_str()))?;
+            super::layout::forms::validate_source(&object, form_paths.contains_key(owner))
+                .map_err(|error| error.in_field(owner.as_str()))?;
+            if let Some(form) = object.form {
+                let native = form_paths
+                    .get(owner)
+                    .ok_or_else(|| Error::root("source_form_schema_invalid"))?;
+                forms.insert((*native).clone(), form);
+            }
             let mut paths = Vec::with_capacity(1 + object.nested.len());
             for part in std::iter::once(object.document).chain(object.nested) {
                 paths.push(part.path.clone());
@@ -142,6 +163,7 @@ impl Package {
             manifest,
             snapshot,
             documents,
+            forms,
             owners: owner_documents,
             payloads,
             payload_sources,
@@ -161,6 +183,13 @@ impl Package {
                         .map_err(|error| error.in_field(path.as_str()))?,
                 ))
             })
+            .chain(self.forms.iter().map(|(path, form)| {
+                Ok((
+                    path.clone(),
+                    form.to_xml()
+                        .map_err(|error| error.in_field(path.as_str()))?,
+                ))
+            }))
             .collect()
     }
 
@@ -263,7 +292,7 @@ fn validate_sources(
             FileRole::Descriptor { .. } if !documents.contains_key(&file.path) => {
                 return Err(Error::root("source_descriptor_missing").in_field(file.path.as_str()));
             }
-            FileRole::Descriptor { .. } => {}
+            FileRole::Descriptor { .. } | FileRole::ManagedForm { .. } => {}
         }
     }
     if snapshot.files.keys().collect::<BTreeSet<_>>() != paths.iter().collect() {

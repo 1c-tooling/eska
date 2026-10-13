@@ -87,7 +87,7 @@ fn import_follows_declarations_and_preserves_every_other_file() {
                     fs::read(second.join(file.path.as_path())).unwrap()
                 );
             }
-            FileRole::Descriptor { source, .. } => {
+            FileRole::Descriptor { source, .. } | FileRole::ManagedForm { source, .. } => {
                 assert!(!first.join(file.path.as_path()).exists());
                 assert_eq!(
                     fs::read(first.join(source.as_path())).unwrap(),
@@ -482,10 +482,12 @@ fn native_export_restores_every_file_and_empty_directory_without_rewrites() {
                         Descriptor::from_xml(&fs::read_to_string(&output).unwrap()).unwrap()
                     );
                 }
-                FileRole::Preserved | FileRole::Relocated { .. } => assert_eq!(
-                    fs::read(input.join(file.path.as_path())).unwrap(),
-                    fs::read(&output).unwrap()
-                ),
+                FileRole::Preserved | FileRole::Relocated { .. } | FileRole::ManagedForm { .. } => {
+                    assert_eq!(
+                        fs::read(input.join(file.path.as_path())).unwrap(),
+                        fs::read(&output).unwrap()
+                    );
+                }
             }
             (
                 output.clone(),

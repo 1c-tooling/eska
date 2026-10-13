@@ -1,0 +1,217 @@
+"document":
+  "path": "Catalogs/Sample/Forms/Main.xml"
+  "descriptor":
+    "schema_version": 2
+    "rules_version": 1
+    "profile": "designer-2.20-configuration"
+    "object":
+      "kind": "Form"
+      "uuid": "70000000-0000-4000-8000-000000000001"
+      "properties":
+        "Name": "Main"
+        "Comment": "Preserved form"
+      "children": []
+      "native":
+        "attributes": []
+        "namespaces": []
+        "sections":
+          -
+            "kind": "properties"
+            "items":
+              - "Name"
+              - "Comment"
+              -
+                "fragment":
+                  "namespaces": []
+                  "xml": "<FormType>Managed</FormType>"
+    "native_xml":
+      "attributes": []
+      "bom": true
+      "line_ending": "crlf"
+      "namespaces":
+        -
+          "prefix": null
+          "uri": "http://v8.1c.ru/8.3/MDClasses"
+      "version": "2.20"
+"form":
+  "schema_version": 2
+  "elements":
+    "-1":
+      "kind": "AutoCommandBar"
+      "name": "FormBar"
+    "1":
+      "kind": "InputField"
+      "name": "Value"
+      "properties":
+        "Enabled": false
+        "ReadOnly": true
+        "Title":
+          "formatted": false
+          "text":
+            "ru": "Название поля"
+        "ToolTip":
+          "text":
+            "ru": ""
+        "Visible": false
+  "layout":
+    "roots":
+      - "1"
+    "children": {}
+  "native":
+    "elements":
+      "-1":
+        "parts":
+          -
+            "kind": "xml"
+            "value": "<"
+          -
+            "kind": "class"
+            "prefix": ""
+          -
+            "kind": "xml"
+            "value": " name=\""
+          -
+            "kind": "name"
+          -
+            "kind": "xml"
+            "value": "\" id=\""
+          -
+            "kind": "id"
+          -
+            "kind": "xml"
+            "value": "\"/>"
+      "1":
+        "parts":
+          -
+            "kind": "xml"
+            "value": "<"
+          -
+            "kind": "class"
+            "prefix": ""
+          -
+            "kind": "xml"
+            "value": " name=\""
+          -
+            "kind": "name"
+          -
+            "kind": "xml"
+            "value": "\" id=\""
+          -
+            "kind": "id"
+          -
+            "kind": "xml"
+            "value": "\">"
+          -
+            "kind": "property"
+            "name": "Title"
+            "stencil":
+              "parts":
+                -
+                  "kind": "xml"
+                  "value": "<Title formatted=\""
+                -
+                  "kind": "formatted"
+                -
+                  "kind": "xml"
+                  "value": "\"><v8:item><v8:lang>ru</v8:lang>"
+                -
+                  "kind": "text"
+                  "frame":
+                    "close": "</v8:content>"
+                    "open": "<v8:content>"
+                  "language": "ru"
+                -
+                  "kind": "xml"
+                  "value": "</v8:item></Title>"
+          -
+            "kind": "property"
+            "name": "ToolTip"
+            "stencil":
+              "parts":
+                -
+                  "kind": "xml"
+                  "value": "<ToolTip><v8:item><v8:lang>ru</v8:lang>"
+                -
+                  "kind": "text"
+                  "frame":
+                    "close": "</v8:content>"
+                    "empty": "<v8:content/>"
+                    "open": "<v8:content>"
+                  "language": "ru"
+                -
+                  "kind": "xml"
+                  "value": "</v8:item></ToolTip>"
+          -
+            "kind": "property"
+            "name": "Visible"
+            "stencil":
+              "parts":
+                -
+                  "kind": "xml"
+                  "value": "<Visible>"
+                -
+                  "kind": "boolean"
+                -
+                  "kind": "xml"
+                  "value": "</Visible>"
+          -
+            "kind": "property"
+            "name": "ReadOnly"
+            "stencil":
+              "parts":
+                -
+                  "kind": "xml"
+                  "value": "<ReadOnly>"
+                -
+                  "kind": "boolean"
+                -
+                  "kind": "xml"
+                  "value": "</ReadOnly>"
+          -
+            "kind": "property"
+            "name": "Enabled"
+            "stencil":
+              "parts":
+                -
+                  "kind": "xml"
+                  "value": "<Enabled>"
+                -
+                  "kind": "boolean"
+                -
+                  "kind": "xml"
+                  "value": "</Enabled>"
+          -
+            "kind": "xml"
+            "value": "</"
+          -
+            "kind": "class"
+            "prefix": ""
+          -
+            "kind": "xml"
+            "value": ">"
+    "namespaces":
+      -
+        "prefix": null
+        "uri": "http://v8.1c.ru/8.3/xcf/logform"
+      -
+        "prefix": "v8"
+        "uri": "http://v8.1c.ru/8.1/data/core"
+    "root":
+      -
+        "kind": "xml"
+        "value": "<Form xmlns=\"http://v8.1c.ru/8.3/xcf/logform\" xmlns:v8=\"http://v8.1c.ru/8.1/data/core\" version=\"2.20\">"
+      -
+        "kind": "element"
+        "id": "-1"
+      -
+        "kind": "children"
+        "frame":
+          "close": "</ChildItems>"
+          "gaps":
+            - ""
+            - ""
+          "open": "<ChildItems>"
+      -
+        "kind": "xml"
+        "value": "</Form>"
+"nested": []

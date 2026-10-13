@@ -370,10 +370,9 @@ impl SourceReader {
         self.declared_form(self.form_dialogs.get(path)?)
     }
 
-    /// Read current verbatim UTF-8 dialog bytes through the shared path, encoding and size checks.
+    /// Read native dialog XML, deriving mapped v4 dialogs from their sole form YAML source.
     ///
-    /// Only declared common/nested form XML dialogs are bound. XML validation and
-    /// interpretation belong to the analysis consumer, not to this platform-independent reader.
+    /// Earlier layouts return verbatim XML. Both physical input and generated XML obey the limit.
     ///
     /// # Errors
     /// Returns undeclared/unsafe paths, missing files, unsupported encoding or an exceeded byte limit.
@@ -382,10 +381,16 @@ impl SourceReader {
         path: &SourcePath,
         max_bytes: u64,
     ) -> Result<String, Error> {
-        if self.form_dialog_owner(path).is_none() {
-            return Err(Error::root("source_form_dialog_undeclared").in_field(path.as_str()));
+        let text = self.read_form_authoring_text(path, max_bytes)?;
+        if self.embedded_form(path) {
+            let xml = self.parse_form_source(path, &text)?.to_xml()?;
+            if xml.len() as u64 > max_bytes {
+                return Err(Error::root("source_document_too_large").in_field(path.as_str()));
+            }
+            Ok(xml)
+        } else {
+            Ok(text)
         }
-        read_text_limited(&self.root, path, max_bytes)
     }
 
     /// Read one declared dialog's typed identity/layout while keeping opaque resources unchanged.
@@ -397,11 +402,11 @@ impl SourceReader {
         path: &SourcePath,
         max_bytes: u64,
     ) -> Result<super::ManagedFormLayout, Error> {
-        let text = self.read_form_dialog_text(path, max_bytes)?;
+        let text = self.read_form_authoring_text(path, max_bytes)?;
         self.parse_form_layout(path, &text)
     }
 
-    /// Read the lossless dialog codec at one existing declared resource, without changing project file-map ownership.
+    /// Read the declared native dialog or its mapped standalone YAML body, without opening neighbors.
     ///
     /// # Errors
     /// Returns bounded text-read failures, unverified lexical bindings or an invalid managed form.
@@ -410,11 +415,11 @@ impl SourceReader {
         path: &SourcePath,
         max_bytes: u64,
     ) -> Result<super::ManagedFormSource, Error> {
-        let text = self.read_form_dialog_text(path, max_bytes)?;
+        let text = self.read_form_authoring_text(path, max_bytes)?;
         self.parse_form_source(path, &text)
     }
 
-    /// Decode an unsaved native dialog while preserving the same declared form identity and inverse rules.
+    /// Decode the declared format of an unsaved dialog; v4 expects complete standalone form YAML.
     ///
     /// # Errors
     /// Returns an undeclared dialog or invalid/unverified native source bindings.
@@ -426,7 +431,14 @@ impl SourceReader {
         if self.form_dialog_owner(path).is_none() {
             return Err(Error::root("source_form_dialog_undeclared").in_field(path.as_str()));
         }
-        super::ManagedFormSource::from_xml(text).map_err(|error| error.in_field(path.as_str()))
+        if self.embedded_form(path) {
+            self.parse_owner(path, text)?
+                .source
+                .form
+                .ok_or_else(|| Error::root("source_form_schema_invalid").in_field(path.as_str()))
+        } else {
+            super::ManagedFormSource::from_xml(text).map_err(|error| error.in_field(path.as_str()))
+        }
     }
 
     /// Parse an addressed editor overlay without discovering new resources or reading neighboring forms.
@@ -441,7 +453,24 @@ impl SourceReader {
         if self.form_dialog_owner(path).is_none() {
             return Err(Error::root("source_form_dialog_undeclared").in_field(path.as_str()));
         }
+        if self.embedded_form(path) {
+            return self.parse_form_source(path, text)?.layout_snapshot();
+        }
         super::ManagedFormLayout::from_xml(text).map_err(|error| error.in_field(path.as_str()))
+    }
+
+    /// Manifest ownership selects YAML explicitly; content sniffing cannot change a document's kind.
+    fn embedded_form(&self, path: &SourcePath) -> bool {
+        self.manifest.schema_version == super::MANAGED_FORM_LAYOUT_VERSION
+            && self.form_dialogs.contains_key(path)
+    }
+
+    /// All addressed dialog reads check declaration before touching a physical file.
+    fn read_form_authoring_text(&self, path: &SourcePath, max_bytes: u64) -> Result<String, Error> {
+        if self.form_dialog_owner(path).is_none() {
+            return Err(Error::root("source_form_dialog_undeclared").in_field(path.as_str()));
+        }
+        read_text_limited(&self.root, path, max_bytes)
     }
 
     /// Read exact declared-owner bytes for a bounded analysis request or editor snapshot.
@@ -468,6 +497,8 @@ impl SourceReader {
     /// Returns strict YAML or identity/composition failures; never falls back to earlier bytes.
     pub fn parse_owner(&self, path: &SourcePath, text: &str) -> Result<OwnerSnapshot, Error> {
         let result = snapshot(path, text, &self.manifest_sha256, self.spec(path)?)?;
+        super::layout::forms::validate_source(&result.source, self.embedded_form(path))
+            .map_err(|error| error.in_field(path.as_str()))?;
         if result.source.document.descriptor.object.kind == MetadataKind::Configuration
             && !super::composition::same_reference_members(
                 &result.source.document.descriptor.object,
@@ -505,6 +536,7 @@ impl SourceReader {
         let result = (|| {
             let (value, tree) = yaml::decode_with_tree(text)?;
             let source = ObjectSource::from_value(value)?;
+            super::layout::forms::validate_source(&source, self.embedded_form(path))?;
             let parents = validate_owner(&source, self.spec(path)?)?;
             if source.document.descriptor.object.kind == MetadataKind::Configuration
                 && !super::composition::same_reference_members(

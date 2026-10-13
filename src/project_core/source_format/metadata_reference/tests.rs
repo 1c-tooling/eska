@@ -197,6 +197,7 @@ fn reference_migration_preserves_annotations_and_exact_values() {
         r#"<DefaultRoles><x:Item i:type="t:MDObjectRef">Role.First</x:Item><x:Item i:type="t:MDObjectRef">Role.Second</x:Item></DefaultRoles>"#,
     );
     let old = ObjectSource {
+        form: None,
         document: NativeDocument {
             path: SourcePath::parse("Configuration.xml").unwrap(),
             descriptor: value,

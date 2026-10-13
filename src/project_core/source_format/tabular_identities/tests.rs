@@ -219,6 +219,7 @@ fn unrecognized_native_identity_profiles_remain_preserved() {
             _ => unreachable!(),
         }
         let mut owner = ObjectSource {
+            form: None,
             document: super::super::NativeDocument {
                 path: SourcePath::parse("Catalogs/Records.xml").unwrap(),
                 descriptor: Descriptor::from_xml(&xml).unwrap(),

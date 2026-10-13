@@ -66,6 +66,17 @@ pub fn import_designer_readable(input: &Path, destination: &Path) -> Result<Sour
     import(input, destination, Layout::Readable)
 }
 
+/// Import each declared managed dialog and its readable metadata into one standalone form YAML.
+///
+/// This explicit acceptance layout uses reverse-map v4; no existing import default is changed.
+/// Unverified dialog profiles refuse the entire import before the destination is created.
+///
+/// # Errors
+/// Returns native profile, dialog codec, composition, collision or changed-input failures.
+pub fn import_designer_forms(input: &Path, destination: &Path) -> Result<SourceManifest, Error> {
+    import(input, destination, Layout::Forms)
+}
+
 /// Stage all parsed descriptors before publishing the explicitly selected physical layout.
 fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceManifest, Error> {
     let inventory = Inventory::read(input)?;
@@ -83,6 +94,7 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
     let configuration = ObjectSource {
         document: root,
         nested: Vec::new(),
+        form: None,
     };
     let references = references(&configuration.document.descriptor.object)?;
     for (kind, name) in references {
@@ -91,6 +103,7 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
         let mut family = ObjectSource {
             document,
             nested: Vec::new(),
+            form: None,
         };
         importer.nested(&mut family)?;
         sources.insert(source_path(&path)?, family);
@@ -107,13 +120,16 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
         manifest.descriptor_contexts =
             super::layout::contexts(&super::layout::documents(&sources))?;
     }
-    if matches!(layout, Layout::Resources | Layout::Readable) {
+    if matches!(layout, Layout::Resources | Layout::Readable | Layout::Forms) {
         resources::relocate(&mut manifest)?;
     }
-    if matches!(layout, Layout::Readable) {
+    if matches!(layout, Layout::Readable | Layout::Forms) {
         for source in sources.values_mut() {
             super::readable::upgrade(source);
         }
+    }
+    if matches!(layout, Layout::Forms) {
+        super::layout::forms::attach(&input, &mut manifest, &mut sources)?;
     }
     manifest.validate()?;
     let yaml: BTreeMap<_, _> = sources
@@ -323,7 +339,7 @@ fn materialize(
             files::copy_to(input, &destination.join(file.source_path().as_path()), file)?;
         }
     }
-    if manifest.schema_version == super::RESOURCE_LAYOUT_VERSION {
+    if manifest.schema_version >= super::RESOURCE_LAYOUT_VERSION {
         for directory in resources::source_directories(manifest)? {
             fs::create_dir_all(destination.join(directory.as_path()))
                 .map_err(|error| files::io(&error))?;

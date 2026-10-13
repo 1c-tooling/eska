@@ -85,7 +85,8 @@ fn owner(source: &Path, native: &Path) -> PathBuf {
             source.as_path().into()
         }
         eska::project::source_format::FileRole::Preserved
-        | eska::project::source_format::FileRole::Relocated { .. } => {
+        | eska::project::source_format::FileRole::Relocated { .. }
+        | eska::project::source_format::FileRole::ManagedForm { .. } => {
             panic!("selected file must be a native descriptor")
         }
     }

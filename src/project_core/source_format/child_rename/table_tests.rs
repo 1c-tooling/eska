@@ -162,6 +162,7 @@ fn table_names_reject_invalid_identifiers_and_collisions_but_allow_unreferenced_
             prepare_protected(&source, &base, &test.0.join("generations"), true).unwrap();
         let xml = fs::read_to_string(prepared.xml().join("Catalogs/Records.xml")).unwrap();
         let mut owner = super::super::ObjectSource {
+            form: None,
             document: super::super::NativeDocument {
                 path: SourcePath::parse("Catalogs/Records.xml").unwrap(),
                 descriptor: Descriptor::from_xml(&xml).unwrap(),

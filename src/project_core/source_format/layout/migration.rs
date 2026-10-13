@@ -188,6 +188,9 @@ pub(in crate::project_core::source_format) fn project_layout(
     target: Layout,
     mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
 ) -> Result<Projection, Error> {
+    if package.manifest.schema_version == super::super::MANAGED_FORM_LAYOUT_VERSION {
+        return Err(Error::root("source_schema_unsupported"));
+    }
     let mut read = |path: &SourcePath| {
         let text = read(path)?;
         if matches!(target, Layout::Readable) {

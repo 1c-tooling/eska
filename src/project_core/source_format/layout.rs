@@ -1,5 +1,6 @@
 //! Physical descriptor boundaries retain native context independently of authoring filenames.
 
+pub(super) mod forms;
 pub(super) mod migration;
 pub(super) mod resources;
 
@@ -27,6 +28,8 @@ use super::{
 pub const DESCRIPTOR_LAYOUT_VERSION: u32 = 2;
 /// Explicit payload source paths extend the separated reverse map without changing old schemas.
 pub const RESOURCE_LAYOUT_VERSION: u32 = 3;
+/// A standalone form YAML produces both its metadata descriptor and its managed dialog.
+pub const MANAGED_FORM_LAYOUT_VERSION: u32 = 4;
 pub(super) const PENDING_RECEIPT: &str = ".eska-layout.pending.json";
 pub(super) const PENDING_WRITE: &str = ".eska-layout.write";
 
@@ -58,6 +61,7 @@ pub(super) fn separate(
                     ObjectSource {
                         document,
                         nested: Vec::new(),
+                        form: None,
                     },
                 )
                 .is_some()
@@ -104,6 +108,7 @@ pub(super) fn descriptor_path(
 /// Validate complete reverse contexts; neither a directory nor an unmapped file activates metadata.
 pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
     resources::validate(manifest)?;
+    forms::validate_map(manifest)?;
     if manifest.schema_version < DESCRIPTOR_LAYOUT_VERSION {
         return if manifest.descriptor_contexts.is_empty() {
             Ok(())
@@ -116,7 +121,7 @@ pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
         .iter()
         .filter_map(|file| match &file.role {
             FileRole::Descriptor { source, uuid } => Some((&file.path, (source, uuid))),
-            FileRole::Preserved | FileRole::Relocated { .. } => None,
+            FileRole::Preserved | FileRole::Relocated { .. } | FileRole::ManagedForm { .. } => None,
         })
         .collect::<BTreeMap<_, _>>();
     let contexts = manifest
@@ -182,6 +187,10 @@ pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
 fn validate_physical_paths(manifest: &SourceManifest) -> Result<(), Error> {
     let mut paths = BTreeSet::from(["source.json"]);
     for file in &manifest.files {
+        // The verified dialog role is the only permitted second mapping to a descriptor YAML.
+        if matches!(file.role, FileRole::ManagedForm { .. }) {
+            continue;
+        }
         let path = file.source_path().as_str();
         if !paths.insert(path) {
             return Err(Error::root("source_path_collision").in_field(path));

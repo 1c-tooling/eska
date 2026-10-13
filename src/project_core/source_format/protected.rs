@@ -118,6 +118,9 @@ pub fn prepare_protected(
     strict: bool,
 ) -> Result<PreparedSource, ProtectedFailure> {
     base.verify()?;
+    if base.package.manifest.schema_version == super::MANAGED_FORM_LAYOUT_VERSION {
+        return Err(Error::root("source_schema_unsupported").into());
+    }
     let source = fs::canonicalize(source).map_err(|error| files::io(&error))?;
     let working = Inventory::read(&source)?;
     let mut diagnostics = Vec::new();
@@ -137,6 +140,7 @@ pub fn prepare_protected(
         manifest: base.package.manifest.clone(),
         snapshot,
         documents,
+        forms: BTreeMap::new(),
         owners: base.package.owners.clone(),
         payloads: base.package.payloads.clone(),
         payload_sources: base.package.payload_sources.clone(),

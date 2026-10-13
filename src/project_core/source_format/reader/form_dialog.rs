@@ -89,7 +89,7 @@ pub(super) fn declared_form_dialogs(
         .collect::<Result<BTreeMap<_, _>, Error>>()?;
     let mut dialogs = BTreeMap::new();
     for file in &manifest.files {
-        if !file.is_payload() {
+        if !file.is_payload() && !matches!(file.role, super::FileRole::ManagedForm { .. }) {
             continue;
         }
         let Some(descriptor) = locations.get(&file.path.as_str().to_ascii_lowercase()) else {

@@ -52,12 +52,13 @@ pub use edit::{
 };
 pub use export::export_designer;
 pub use import::{
-    import_designer, import_designer_readable, import_designer_resources, import_designer_separated,
+    import_designer, import_designer_forms, import_designer_readable, import_designer_resources,
+    import_designer_separated,
 };
 pub use layout::{
     DESCRIPTOR_LAYOUT_VERSION, DescriptorContext, LayoutChange, LayoutPublication,
-    RESOURCE_LAYOUT_VERSION, SourceLayoutPlan, prepare_descriptor_layout, prepare_readable_layout,
-    prepare_resource_layout,
+    MANAGED_FORM_LAYOUT_VERSION, RESOURCE_LAYOUT_VERSION, SourceLayoutPlan,
+    prepare_descriptor_layout, prepare_readable_layout, prepare_resource_layout,
 };
 pub use managed_form::{
     FormDefinition, FormElement, FormElementKind, FormFixedSlot, FormId, FormLayout,

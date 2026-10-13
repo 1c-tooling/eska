@@ -202,6 +202,7 @@ fn simultaneous_name_swap_keeps_order_and_native_identities() {
         )
         .unwrap();
         let mut owner = ObjectSource {
+            form: None,
             document: super::super::NativeDocument {
                 path: SourcePath::parse("Catalogs/Records.xml").unwrap(),
                 descriptor: actual,

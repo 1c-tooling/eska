@@ -574,6 +574,16 @@ Title/ToolTip/bools и единый form.yaml, затем protected writer/sourc
 Неизвестные shapes сохраняются opaque, состав slots/languages/flag presence pinned.
 Project import/file map/protected writer ещё не подключены; следующий шаг —
 единый form.yaml (body v2 + metadata descriptor), затем source map/миграция/CF.
+[Пятая часть: единый form.yaml](../research/eska-format/managed-form-project.md)
+подключает opt-in project import, map 4 и общий reader/export. Descriptor и body
+имеют один authoring file, модули/ресурсы остаются отдельными; обратная связь
+проверяет полного владельца, native path и schema. Все 823 формы C1 прошли
+saved/overlay и strict schema; no-op project export совпал с readable контролем.
+14 010 правок values и 665 layout reorder изменили только 799 native dialog XML;
+input bytes и 7 970 остальных native файлов сохранены. Повторный export прошёл.
+Protected/migration пока явно отказывают map 4. Следующее — protected selection
+по metadata UUID, точечные edits/source map, source/base/workspace migration,
+затем независимый XML контроль и реальный CF цикл. EF-12 остаётся `IN_PROGRESS`.
 
 Обязательная часть структуры MVP после EF-24. Зафиксировать матрицу реальных
 управляемых форм выбранного платформенного профиля. Разделить устойчивые

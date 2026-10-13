@@ -32,6 +32,7 @@ pub(super) fn documents(
             .next()
             .ok_or_else(|| Error::root("source_baseline_corrupt"))??;
         let mut family = ObjectSource {
+            form: None,
             document,
             nested: parts.collect::<Result<_, _>>()?,
         };

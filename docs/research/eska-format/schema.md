@@ -14,6 +14,13 @@ descriptor и conversion rules остаются версии 1 в этой ча�
 добавляет descriptor schema 2 поверх той же карты версии 3; rules не меняются.
 Версии 1/2 имеют строгие отдельные wire schemas и одну lossless модель.
 
+[Карта версии 4](source-manifest-v4.schema.json) связывает metadata descriptor
+и native dialog с [единым form.yaml](managed-form-project.md): readable
+descriptor schema 2 и optional body schema 2 в `ObjectSource.form`, роль
+`managed_form` с native descriptor identity. [Combined schema](managed-form-source.schema.json)
+не заменяет прежние схемы. Новый импорт доступен как opt-in core API;
+protected export, миграция и публичный CLI для map 4 ещё не приняты.
+
 [JSON Schema](descriptor.schema.json) описывает один descriptor. Семантические
 ограничения дополнительно проверяет `Descriptor::validate`: уникальность UUID,
 секций, свойств и language keys, корректность QName-контекста и opaque XML.

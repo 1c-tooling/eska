@@ -21,16 +21,20 @@ EF-12 начала [матрицу native форм](../research/eska-format/mana
 823 managed dialogs, отдельные UI/Attribute/Command/column ID scopes и fixed
 slots. [Typed identity/layout и адресный reader](../research/eska-format/managed-form-layout.md)
 проверены на всех 823 dialogs: scopes, fixed edges, cycles/nesting и известные
-references. Native inputs сохранены. Единый form.yaml, protected writer/source map
-и CF приёмка изменённой формы ещё в работе.
+references. Native inputs сохранены.
 [Обратимый body codec](../research/eska-format/managed-form-body.md) сохраняет
 байты 823 форм через YAML и проверяет 665 перестановок после reparse.
-Следующий шаг — readable properties и объединение body с metadata descriptor
-в form.yaml, затем protected selection/migration/source map.
 [Readable properties](../research/eska-format/managed-form-properties.md)
 подтверждены на 12 317 properties C1; body v2 сохраняет чтение v1 и единственные
-values. 751 форма прошла codec edits/reparse. Следующее — единый form.yaml;
-новый protected/CF цикл пока не выполнен.
+values. 751 форма прошла codec edits/reparse.
+[Единый form.yaml](../research/eska-format/managed-form-project.md) объединяет
+metadata descriptor и body v2 через обратную карту версии 4. Все 823 формы
+прошли project reader/export; no-op совпал с прежним readable контролем,
+правки properties/layout изменили только 799 native dialog XML.
+Следующий шаг — protected selection/source map, точечные edits и миграция
+source/base/workspace, затем независимый XML и реальный CF цикл изменённых форм.
+CLI defaults сохранены; map 4 явно отклоняется незавершёнными protected/migration
+consumers. EF-12 и MVP остаются незавершёнными.
 
 Первая часть расширяет [typed writer](../research/eska-format/typed-scalars.md)
 на 28 bool/integer/enum свойств с прежней защитой и точечными правками.

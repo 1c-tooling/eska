@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ESKA readable standalone managed form with reverse-map layout 4",
+  "type": "object",
+  "properties": {
+    "document": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "$ref": "object-source.schema.json#/$defs/path"
+        },
+        "descriptor": {
+          "allOf": [
+            {
+              "$ref": "descriptor-readable.schema.json"
+            },
+            {
+              "properties": {
+                "object": {
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "Form",
+                        "CommonForm"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "descriptor"
+      ],
+      "additionalProperties": false
+    },
+    "nested": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "form": {
+      "$ref": "managed-form-body-v2.schema.json"
+    }
+  },
+  "required": [
+    "document",
+    "nested",
+    "form"
+  ],
+  "additionalProperties": false
+}

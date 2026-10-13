@@ -5,6 +5,7 @@ use std::fmt::Write;
 /// The public fixture includes inline identities, exact scalars, namespaces and unknown XML.
 fn owner() -> ObjectSource {
     ObjectSource {
+        form: None,
         document: NativeDocument {
             path: SourcePath::parse("Catalogs/Sample.xml").unwrap(),
             descriptor: Descriptor::from_xml(include_str!(concat!(
