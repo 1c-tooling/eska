@@ -108,7 +108,9 @@ pub use project_migration::{
     prepare_readable_workspace,
 };
 pub use project_update::{
-    PROJECT_BASE_UPDATE_RECEIPT, ProjectBaseUpdatePlan, prepare_project_base_update,
+    PROJECT_BASE_UPDATE_RECEIPT, ProjectBaseUpdatePlan, WORKSPACE_BASE_UPDATE_RECEIPT,
+    WorkspaceBaseUpdateMember, WorkspaceBaseUpdatePlan, prepare_project_base_update,
+    prepare_workspace_base_update,
 };
 pub use property::ExactUnsigned;
 pub use tabular_identities::{GeneratedIdentity, TabularSectionIdentities};

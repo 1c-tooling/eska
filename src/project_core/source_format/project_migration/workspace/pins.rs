@@ -57,7 +57,10 @@ impl WorkspaceAcceptedRefs {
     }
 
     /// Missing and extra pins both refuse the entire workspace before any destination is created.
-    pub(super) fn check_members(&self, workspace: &Workspace) -> Result<(), Error> {
+    pub(in crate::project_core::source_format) fn check_members(
+        &self,
+        workspace: &Workspace,
+    ) -> Result<(), Error> {
         if workspace.members().len() != self.members.len()
             || workspace
                 .members()

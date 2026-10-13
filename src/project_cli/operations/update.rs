@@ -1,12 +1,16 @@
 //! Explicit pin selection and localized preview; source comparison and writes stay in core.
 
+mod workspace;
+
 use std::{fmt::Write, path::Path};
 
 use serde_json::{Value, json};
 
 use super::super::args::UpdateBase;
 use crate::{
-    project_core::source_format::{BaseUpdateConflictKind, prepare_project_base_update},
+    project_core::source_format::{
+        BaseUpdateConflict, BaseUpdateConflictKind, prepare_project_base_update,
+    },
     tool_cli::{
         self, Failure,
         localization::{LocalizationValue, Localizer},
@@ -20,10 +24,17 @@ pub(super) fn update(
     args: &UpdateBase,
     localizer: &Localizer,
 ) -> Result<(Value, String), Failure> {
+    if args.workspace {
+        return workspace::update(start, args, localizer);
+    }
     path_text(&args.incoming)?;
     path_text(&args.destination)?;
     let previous = tool_cli::accepted_ref(args.accepted_base_sha256.as_deref())?;
-    let incoming_pin = tool_cli::accepted_ref(Some(&args.incoming_base_sha256))?;
+    let required = args
+        .incoming_base_sha256
+        .as_deref()
+        .ok_or_else(|| Failure::new("accepted_base_pin_required"))?;
+    let incoming_pin = tool_cli::accepted_ref(Some(required))?;
     let current = selected(start, args.selector.project.as_deref())?;
     let incoming = selected(&args.incoming, args.incoming_project.as_deref())?;
     let plan = prepare_project_base_update(
@@ -87,7 +98,13 @@ pub(super) fn update(
             ),
         ],
     );
-    for conflict in source.conflicts() {
+    append_conflicts(&mut human, source.conflicts(), localizer);
+    Ok((data, human))
+}
+
+/// Identical core conflicts receive the same human description in project and workspace previews.
+fn append_conflicts(human: &mut String, conflicts: &[BaseUpdateConflict], localizer: &Localizer) {
+    for conflict in conflicts {
         let location = conflict
             .working
             .as_ref()
@@ -103,7 +120,6 @@ pub(super) fn update(
             localizer.text(conflict_key(conflict.kind))
         );
     }
-    Ok((data, human))
 }
 
 /// Stable core kinds receive human descriptions only at this presentation boundary.

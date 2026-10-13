@@ -36,6 +36,9 @@ eska-project --project-dir current-project update-base incoming-project updated-
 eska-project --project-dir current-project update-base incoming-project updated-project \
   --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" \
   --incoming-base-sha256 "$APPROVED_NEW_BASE_SHA256" --write --format json
+eska-project --project-dir current-workspace update-base incoming-workspace updated-workspace \
+  --workspace --accepted-bases approved-old.json --incoming-bases approved-new.json \
+  --write --format json
 eska-project --project-dir new-project inspect --format json
 eska-project --project-dir new-project prepare \
   --accepted-base-sha256 "$APPROVED_BASE_SHA256" --format json
@@ -84,8 +87,11 @@ incoming accepted store и локальные изменения. Default previe
 только без конфликтов. Прежнее дерево/база остаются доступны; рабочие edits
 incoming-проекта не входят в план. Settings копируются точно, новый pin явно
 передаётся последующим prepare/build. Незавершённая публикация блокирует readers
-и допускает только точное возобновление. Операция над исходным workspace member
-пока отказана; `--incoming-project` выбирает входную принятую поставку в workspace.
+и допускает только точное возобновление. Весь workspace обновляется через
+`--workspace --accepted-bases --incoming-bases`: полный набор pin и одинаковые
+имена members, общий отказ при любом конфликте, точные settings и outer guard.
+Отдельный member не превращается в standalone; `--incoming-project` выбирает
+входную принятую поставку для standalone-операции.
 
 `import` возвращает кандидат на принятую базу и её SHA-256. CI получает
 одобренную сумму отдельно; editable TOML не хранит approval digest.
@@ -203,7 +209,7 @@ Tool envelope и прежние поля, включая `source_schema_version 
 Capabilities также содержит `migrate`, `migration_layouts = ["readable"]` и
 `migration_scopes = ["standalone"]`. Schema 1 для новой команды описана в
 [контракте миграции](project-migration.md#machine-interface).
-Для `update-base` добавлены `base_update_scopes = ["standalone"]` и
+Для `update-base` добавлены `base_update_scopes = ["standalone", "workspace"]` и
 `base_update_comparison = "whole_file_three_way"`. Preview с конфликтами —
 exit 0 / `can_write = false`; `--write` — exit 1 с полным планом в
 `error.diagnostics`. [Контракт обновления базы](base-update.md#machine-interface)

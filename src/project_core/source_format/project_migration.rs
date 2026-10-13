@@ -1,7 +1,7 @@
 //! Project migration plans keep working values and independently pinned authority separate.
 
 mod publication;
-mod workspace;
+pub(super) mod workspace;
 
 pub use workspace::{
     WORKSPACE_LAYOUT_RECEIPT, WorkspaceAcceptedRefs, WorkspaceLayoutMember, WorkspaceLayoutPlan,
@@ -294,6 +294,13 @@ pub fn require_project_ready(root: &Path) -> Result<(), Error> {
     }
     for ancestor in root.ancestors() {
         require_marker_absent(ancestor, WORKSPACE_LAYOUT_RECEIPT)?;
+        match fs::symlink_metadata(
+            ancestor.join(super::project_update::WORKSPACE_BASE_UPDATE_RECEIPT),
+        ) {
+            Ok(_) => return Err(Error::root("source_update_incomplete")),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(files::io(&error)),
+        }
     }
     Ok(())
 }
@@ -336,6 +343,7 @@ pub(super) fn validate_paths(source: &SourcePath, base: &SourcePath) -> Result<(
             PROJECT_LAYOUT_RECEIPT,
             WORKSPACE_LAYOUT_RECEIPT,
             super::project_update::PROJECT_BASE_UPDATE_RECEIPT,
+            super::project_update::WORKSPACE_BASE_UPDATE_RECEIPT,
         ]
         .iter()
         .any(|name| {
@@ -351,7 +359,7 @@ pub(super) fn validate_paths(source: &SourcePath, base: &SourcePath) -> Result<(
 }
 
 /// Two owned trees must neither overlap nor spell a shared ancestor differently by case.
-fn validate_distinct_paths(source: &SourcePath, base: &SourcePath) -> Result<(), Error> {
+pub(super) fn validate_distinct_paths(source: &SourcePath, base: &SourcePath) -> Result<(), Error> {
     for (left, right) in source.as_str().split('/').zip(base.as_str().split('/')) {
         if left.to_lowercase() != right.to_lowercase() {
             break;

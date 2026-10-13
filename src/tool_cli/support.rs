@@ -244,6 +244,7 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         "source_update_scope_unsupported" => Some("tool-error-update-scope"),
         "source_update_conflicts" => Some("tool-error-update-conflicts"),
         "source_update_profile_mismatch" => Some("tool-error-update-profile"),
+        "source_update_members_mismatch" => Some("tool-error-update-members"),
         "source_update_declarations_changed" => Some("tool-error-update-declarations"),
         "source_update_output_mismatch" | "source_update_receipt_invalid" => {
             Some("tool-error-update-recovery")

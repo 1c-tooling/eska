@@ -60,11 +60,39 @@ YAML/BSL не используются: операция читает тольк
 декларации manifest и их неизменность. CI approval не переписывается.
 
 `prepare_project_base_update` публикует отдельный standalone-проект. Выбор
-исходного workspace member пока отклоняется; входную поставку можно выбрать
+исходного workspace member без whole-workspace режима отклоняется; входную поставку можно выбрать
 через `--incoming-project NAME`. В результат копируются только исходники, новая
 база и точные `eska.toml`, `.gitattributes`, `.gitignore` исходного проекта.
 Git, дополнительные файлы и настройки входной поставки не копируются.
 Копирование transport-файлов не проверяет effective Git policy.
+
+Обновление всего workspace включается отдельно:
+
+```sh
+eska-project --project-dir current-workspace update-base incoming-workspace updated-workspace \
+  --workspace --accepted-bases approved-old.json --incoming-bases approved-new.json \
+  --format json
+eska-project --project-dir current-workspace update-base incoming-workspace updated-workspace \
+  --workspace --accepted-bases approved-old.json --incoming-bases approved-new.json \
+  --write --format json
+```
+
+Оба файла используют прежнюю schema 1:
+`{"schema_version":1,"members":{"project-name":"64 hex characters"}}`.
+Каждый список должен точно покрывать свой workspace; один environment pin
+не одобряет все проекты. Наборы имён старого и входного workspace должны
+совпадать. Входные пути и порядок могут отличаться: сопоставление идёт по имени,
+затем отдельно проверяются native identity/profile и pin каждого проекта.
+Перенос одного member в standalone по-прежнему не выполняется.
+
+`prepare_workspace_base_update` сохраняет исходные root/member manifests,
+transport, пути и порядок проектов. Наследование и явные overrides не заменяются
+настройками входной поставки. Конфликт любого member запрещает публикацию всех
+проектов. Каждый выход проверяется до первой публикации member;
+`.eska-workspace-base-update.json` блокирует общих читателей всех вложенных
+проектов до окончания операции, включая уже законченные members. Прерывание
+допускает точное возобновление; изменённый member или лишние данные отказывают
+до продолжения. Root manifest публикуется последним.
 
 Preview не пишет результат и возвращает exit 0, включая план с конфликтами.
 `--write` требует отсутствия конфликтов. Все входы и оба выхода проверяются
@@ -106,6 +134,16 @@ UUID и прежнее/новое эффективные права. Conflict ki
 `source_update_receipt_invalid` и существующие ошибки независимо проверенной базы.
 JSON одинаков для RU/EN; human строки и stderr локализуются.
 
+Workspace envelope также имеет schema 1 / `command = "update-base"`.
+`data.scope = "workspace"`; общие пути, comparison, can_write, written,
+publication и три flags сохранены. `data.members` в порядке исходного workspace
+содержит name/path/destination и отдельные revisions, два pin, changes,
+support_changes, conflicts, can_write и copied_project_files каждого member.
+Root settings перечислены в `copied_workspace_files`. При отказе записи полный
+план всех members находится в `error.diagnostics`. Несовпадение имён даёт
+`source_update_members_mismatch`; неверный/неполный JSON использует прежние
+`source_workspace_pins_invalid` / `source_workspace_pins_mismatch`.
+
 ## Проверки и оставшаяся часть
 
 Библиотечные сценарии проверяют независимые правки, BOM/CRLF, перенос модуля по
@@ -116,8 +154,9 @@ CF sentinel проверяет перенос authority, а не валидно�
 Проектные тесты дополнительно проверяют оба pin, неизменность manifest,
 исключение непринятых incoming edits, new-pin prepare, точный повтор и
 восстановление частичной публикации с блокировкой читателей. CLI preview/write
-проверены на обоих языках. Workspace orchestration и итоговая приёмка MVP
-не подтверждаются этим standalone-контрактом.
+проверены на обоих языках. Workspace tests добавляют CF/CFE, разные layouts,
+пути/порядок поставок, наследование/overrides, оба pin каждого member,
+неверные имена, stale settings, общий отказ и возобновление с outer guard.
 
 Контролируемая пара настоящих CF собрана на Linux / Distrobox, 1С 8.3.27.2325.
 В поставке 1.0.0 → 1.1.0 общий модуль переименован при прежнем UUID; локальные
@@ -135,6 +174,15 @@ ConfigDumpInfo.xml; names/IDs/структура совпали после уд�
 проверен установленным bsl-analyzer-app 0.3.2: complete analysis, без diagnostics.
 Workspace MCP здесь недоступен; platform help fallback не подтверждает API,
 которых в этом контрольном модуле нет.
+
+Отдельный workspace из двух проектов на той же настоящей CF-паре прошёл RU/EN
+preview, публикацию, точный повтор, strict prepare и native build обоих members.
+Один member наследует платформу, другой задаёт её явно; root/member settings
+совпали побайтно. Входная поставка имеет другой порядок и пути members.
+Локальные модули перенесены при supplier rename, а новый native запрет второго
+member отказал всей операции до создания первого проекта результата.
+Итоговая приёмка MVP, большие поставки и production обновление ИБ остаются
+отдельными проверками.
 
 Это управляемые поставки с изменёнными правилами и настоящими native CF,
 а не опубликованная производственная пара релизов поставщика. При первичной

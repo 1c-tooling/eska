@@ -41,6 +41,8 @@ mod table_fixture;
 mod table_rename;
 #[path = "project_tool/tabular_identities.rs"]
 mod tabular_identities;
+#[path = "project_tool/workspace_base_update.rs"]
+mod workspace_base_update;
 #[path = "project_tool/workspace_migration.rs"]
 mod workspace_migration;
 

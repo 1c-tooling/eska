@@ -1,6 +1,12 @@
 //! Project publication binds source choices and independently approved incoming authority.
 
 mod publication;
+mod workspace;
+
+pub use workspace::{
+    WORKSPACE_BASE_UPDATE_RECEIPT, WorkspaceBaseUpdateMember, WorkspaceBaseUpdatePlan,
+    prepare_workspace_base_update,
+};
 
 #[cfg(test)]
 mod tests;
@@ -20,7 +26,10 @@ use super::{
     },
 };
 use crate::project_core::{
-    Project, SourceFormat, config::ProjectConfig, metadata_model::ProjectScope,
+    Project, SourceFormat,
+    config::{ProjectConfig, WorkspaceConfig},
+    discovery::resolve_member_configuration,
+    metadata_model::ProjectScope,
 };
 
 /// Source and base are unavailable to project consumers while either publication is incomplete.
@@ -70,6 +79,25 @@ pub fn prepare_project_base_update(
     if *scope != ProjectScope::Standalone {
         return Err(Error::root("source_update_scope_unsupported"));
     }
+    prepare(
+        project,
+        previous,
+        incoming,
+        incoming_expected,
+        destination,
+        None,
+    )
+}
+
+/// Only whole-workspace orchestration may retain an inherited member manifest in a new copy.
+fn prepare(
+    project: &Project,
+    previous: &AcceptedRef,
+    incoming: &Project,
+    incoming_expected: &AcceptedRef,
+    destination: &Path,
+    workspace: Option<&WorkspaceConfig>,
+) -> Result<ProjectBaseUpdatePlan, Error> {
     require_project_ready(project.root())?;
     require_project_ready(incoming.root())?;
     let SourceFormat::Eska { accepted_base } = project.configuration().source_format() else {
@@ -86,12 +114,9 @@ pub fn prepare_project_base_update(
         .get(&SourcePath::parse("eska.toml")?)
         .and_then(Option::as_deref)
         .ok_or_else(|| Error::root("source_file_missing"))?;
-    let loaded = ProjectConfig::from_toml(manifest)
-        .and_then(|config| config.into_project(project.root().to_owned()))
-        .map_err(|_| Error::root("source_schema_invalid"))?;
-    if loaded != *project {
-        return Err(Error::root("source_input_changed"));
-    }
+    let config =
+        ProjectConfig::from_toml(manifest).map_err(|_| Error::root("source_schema_invalid"))?;
+    verify_selected_project(project, config, workspace)?;
     let incoming_settings =
         super::project_migration::read_optional(&incoming.root().join("eska.toml"))?
             .ok_or_else(|| Error::root("source_file_missing"))?;
@@ -129,8 +154,13 @@ pub fn prepare_project_base_update(
         }
     }
     let source = prepare_base_update(project.source(), &old, &new)?;
-    let destination = destination_path(project.root(), destination)?;
-    destination_path(incoming.root(), &destination)?;
+    let destination = if workspace.is_some() {
+        destination.to_owned()
+    } else {
+        let resolved = destination_path(project.root(), destination)?;
+        destination_path(incoming.root(), &resolved)?;
+        resolved
+    };
     let receipt = Receipt {
         schema_version: 1,
         working_revision: source.working_revision().into(),
@@ -159,6 +189,32 @@ pub fn prepare_project_base_update(
     plan.recheck()?;
     plan.check_output()?;
     Ok(plan)
+}
+
+/// Re-resolve saved settings before either scope consumes paths or inherited policy.
+fn verify_selected_project(
+    project: &Project,
+    config: ProjectConfig,
+    workspace: Option<&WorkspaceConfig>,
+) -> Result<(), Error> {
+    let loaded = if let Some(workspace) = workspace {
+        let configuration = resolve_member_configuration(workspace, &config)
+            .map_err(|_| Error::root("source_schema_invalid"))?;
+        Project::new(
+            project.root().to_owned(),
+            project.root().join(config.source()),
+            configuration,
+        )
+        .map_err(|_| Error::root("source_path_invalid"))?
+    } else {
+        config
+            .into_project(project.root().to_owned())
+            .map_err(|_| Error::root("source_schema_invalid"))?
+    };
+    if loaded != *project {
+        return Err(Error::root("source_input_changed"));
+    }
+    Ok(())
 }
 
 impl ProjectBaseUpdatePlan {

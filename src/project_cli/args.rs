@@ -131,12 +131,22 @@ pub(super) struct UpdateBase {
     pub destination: PathBuf,
     #[command(flatten)]
     pub selector: Selector,
-    #[arg(long)]
+    #[arg(long, conflicts_with = "workspace")]
     pub incoming_project: Option<String>,
-    #[arg(long)]
+    #[arg(long, conflicts_with = "workspace")]
     pub accepted_base_sha256: Option<String>,
-    #[arg(long)]
-    pub incoming_base_sha256: String,
+    #[arg(
+        long,
+        required_unless_present = "workspace",
+        conflicts_with = "workspace"
+    )]
+    pub incoming_base_sha256: Option<String>,
+    #[arg(long, conflicts_with = "project", requires_all = ["accepted_bases", "incoming_bases"])]
+    pub workspace: bool,
+    #[arg(long, requires = "workspace")]
+    pub accepted_bases: Option<PathBuf>,
+    #[arg(long, requires = "workspace")]
+    pub incoming_bases: Option<PathBuf>,
     #[arg(long)]
     pub write: bool,
 }

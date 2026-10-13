@@ -276,7 +276,9 @@ impl WorkspaceLayoutPlan {
 }
 
 /// Reuse ordinary discovery so inheritance, member validation and names have one implementation.
-fn verify_workspace(expected: &Workspace) -> Result<(), Error> {
+pub(in crate::project_core::source_format) fn verify_workspace(
+    expected: &Workspace,
+) -> Result<(), Error> {
     match discover_context(expected.root()) {
         Ok(DiscoveryContext::Workspace { workspace, .. }) if workspace == *expected => Ok(()),
         _ => Err(Error::root("source_input_changed")),
@@ -284,7 +286,10 @@ fn verify_workspace(expected: &Workspace) -> Result<(), Error> {
 }
 
 /// Aliased or case-colliding directories cannot become a different workspace on another system.
-fn member_paths(workspace: &Workspace, config: &WorkspaceConfig) -> Result<Vec<SourcePath>, Error> {
+pub(in crate::project_core::source_format) fn member_paths(
+    workspace: &Workspace,
+    config: &WorkspaceConfig,
+) -> Result<Vec<SourcePath>, Error> {
     let mut paths = Vec::new();
     for (member, configured) in workspace.members().iter().zip(config.members()) {
         let path = portable(configured)?;
@@ -298,6 +303,8 @@ fn member_paths(workspace: &Workspace, config: &WorkspaceConfig) -> Result<Vec<S
             ".git",
             super::PROJECT_LAYOUT_RECEIPT,
             WORKSPACE_LAYOUT_RECEIPT,
+            crate::project_core::source_format::PROJECT_BASE_UPDATE_RECEIPT,
+            crate::project_core::source_format::WORKSPACE_BASE_UPDATE_RECEIPT,
         ] {
             super::validate_distinct_paths(&path, &SourcePath::parse(reserved)?)?;
         }
