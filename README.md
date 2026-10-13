@@ -879,6 +879,12 @@ preset = "trunk"
 показывается план. [Миграция всего workspace](docs/research/eska-format/workspace-migration.md)
 сохраняет наследование и точные manifests, требует отдельные approved pins всех
 members и блокирует незавершённую публикацию.
+[Явное обновление принятой базы](docs/research/eska-format/base-update.md) через
+`eska-project update-base` сравнивает старую базу, независимо принятую поставку
+и локальные правки. Preview показывает изменения прав и конфликты; `--write`
+публикует отдельный standalone-проект только без конфликтов. Оба входа и старый
+pin остаются доступны, новый pin передаётся prepare/build отдельно. Рабочие
+правки incoming-проекта не одобряются; workspace orchestration пока отказана.
 [Порядок существующих детей](docs/research/eska-format/child-order.md)
 редактируется при прежнем составе, с проверкой поддержки/freeze владельца и
 перемещённых элементов. [Новые значения перечисления](docs/research/eska-format/enum-value-creation.md)

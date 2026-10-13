@@ -8,6 +8,8 @@ mod attribute_deletion;
 mod attribute_fixture;
 #[path = "project_tool/attribute_rename.rs"]
 mod attribute_rename;
+#[path = "project_tool/base_update.rs"]
+mod base_update;
 #[path = "project_tool/column_creation.rs"]
 mod column_creation;
 #[path = "project_tool/creation.rs"]
@@ -122,6 +124,7 @@ fn help_and_capabilities_work_without_a_project() {
         for command in [
             "import",
             "migrate",
+            "update-base",
             "inspect",
             "prepare",
             "transport",

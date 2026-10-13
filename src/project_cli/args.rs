@@ -33,6 +33,8 @@ pub(super) enum Command {
     #[command(disable_help_flag = true)]
     Migrate(Migrate),
     #[command(disable_help_flag = true)]
+    UpdateBase(UpdateBase),
+    #[command(disable_help_flag = true)]
     Inspect(Selector),
     #[command(disable_help_flag = true)]
     Prepare(Prepare),
@@ -48,6 +50,7 @@ impl Command {
         match self {
             Self::Import(_) => "import",
             Self::Migrate(_) => "migrate",
+            Self::UpdateBase(_) => "update-base",
             Self::Inspect(_) => "inspect",
             Self::Prepare(_) => "prepare",
             Self::Transport(_) => "transport",
@@ -119,6 +122,23 @@ pub(super) struct Prepare {
     pub generations: Option<PathBuf>,
     #[arg(long)]
     pub allow_exclusions: bool,
+}
+
+/// Both pins are independent caller approvals; an incoming source tree is never reaccepted.
+#[derive(Debug, Args)]
+pub(super) struct UpdateBase {
+    pub incoming: PathBuf,
+    pub destination: PathBuf,
+    #[command(flatten)]
+    pub selector: Selector,
+    #[arg(long)]
+    pub incoming_project: Option<String>,
+    #[arg(long)]
+    pub accepted_base_sha256: Option<String>,
+    #[arg(long)]
+    pub incoming_base_sha256: String,
+    #[arg(long)]
+    pub write: bool,
 }
 
 #[derive(Debug, Args)]

@@ -39,8 +39,72 @@ store содержит только независимо принятые бай
 
 Все три полных входа перепроверяются перед записью и после публикации исходников.
 Чужой или изменённый выход, пересечение с входами и filesystem aliases отклоняются.
-Копирование новых source/accepted деревьев пока не является общей транзакцией
-проектного manifest.
+Библиотечные публикации source/accepted сами по себе не являются общей транзакцией
+проектного manifest. Проектная операция ниже связывает их отдельным receipt.
+
+## Проект и CLI
+
+```sh
+eska-project --project-dir current-project update-base incoming-project updated-project \
+  --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" \
+  --incoming-base-sha256 "$APPROVED_NEW_BASE_SHA256" --format json
+eska-project --project-dir current-project update-base incoming-project updated-project \
+  --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" \
+  --incoming-base-sha256 "$APPROVED_NEW_BASE_SHA256" --write --format json
+```
+
+Новая поставка задаётся ESKA-проектом с отдельно принятой базой. Её рабочие
+YAML/BSL не используются: операция читает только проверенный accepted store.
+Старый pin допускает прежний fallback `ESKA_ACCEPTED_BASE_SHA256`; новый pin
+обязателен в аргументе. Проверяются native тип, UUID корня, source profile,
+декларации manifest и их неизменность. CI approval не переписывается.
+
+`prepare_project_base_update` публикует отдельный standalone-проект. Выбор
+исходного workspace member пока отклоняется; входную поставку можно выбрать
+через `--incoming-project NAME`. В результат копируются только исходники, новая
+база и точные `eska.toml`, `.gitattributes`, `.gitignore` исходного проекта.
+Git, дополнительные файлы и настройки входной поставки не копируются.
+Копирование transport-файлов не проверяет effective Git policy.
+
+Preview не пишет результат и возвращает exit 0, включая план с конфликтами.
+`--write` требует отсутствия конфликтов. Все входы и оба выхода проверяются
+до первой записи; изменённый или чужой выход не перезаписывается.
+`.eska-project-base-update.json` связывает revisions, два pin и отпечатки точных
+settings. Пока marker существует, общие потребители проекта возвращают
+`source_update_incomplete`, даже если `eska.toml` уже появился. Точное повторение
+возобновляет собственную частичную публикацию; после проверки source/base/settings
+marker удаляется. Незавершённый source-файл сначала записывается в private staging,
+затем публикуется исключительно. Это восстановление после прерывания операции,
+а не обещание общей power-loss транзакции.
+
+После записи для `prepare`/`build` нужен новый independently approved pin.
+Прежний проект остаётся доступен со старым pin. Сборка не переключается на новый
+проект автоматически; выбор результата остаётся явным.
+
+## Machine interface
+
+Сохраняется tool envelope schema 1: `tool = "eska-project"`,
+`command = "update-base"`. Поля `data`:
+
+- `previous_baseline`, `baseline`, `working_revision`, `output_revision`;
+- `root`, `incoming_root`, `destination`, `comparison = "whole_file_three_way"`;
+- `changes`, `support_changes`, `conflicts`, `can_write`;
+- `written`, `publication = null | "created" | "resumed" | "unchanged"`;
+- `copied_project_files`, `ci_pin_updated = false`,
+  `incoming_working_source_used = false`, `effective_git_policy_verified = false`.
+
+Изменение содержит `previous`, `incoming`, `working`, `selected` с path/bytes/sha256
+либо `null`, а также UUID при известном владельце. Support change содержит
+UUID и прежнее/новое эффективные права. Conflict kinds: `both_modified`,
+`deleted_modified`, `modified_deleted`, `authority_edited`, `permission_denied`,
+`freeze_removed`, `unmapped_file`, `unmapped_directory`.
+
+Запись с конфликтами возвращает exit 1 / `source_update_conflicts`,
+`error.diagnostics` содержит полный план. Другие отказы включают
+`source_update_scope_unsupported`, `source_update_profile_mismatch`,
+`source_input_changed`, `source_update_output_mismatch`,
+`source_update_receipt_invalid` и существующие ошибки независимо проверенной базы.
+JSON одинаков для RU/EN; human строки и stderr локализуются.
 
 ## Проверки и оставшаяся часть
 
@@ -49,6 +113,34 @@ UUID, удаления, повторное использование пути, 
 рабочую правку authority, stale preview и сохранность обоих входов. Синтетический
 CF sentinel проверяет перенос authority, а не валидность CF для платформы.
 
-EF-15 остаётся `IN_PROGRESS`: нужны проектная orchestration и CLI preview/write,
-проверки обоих языков и реальные пары поставок со сборкой и контрольной выгрузкой
-через установленную 1С. Полный MVP этим библиотечным планом не подтверждён.
+Проектные тесты дополнительно проверяют оба pin, неизменность manifest,
+исключение непринятых incoming edits, new-pin prepare, точный повтор и
+восстановление частичной публикации с блокировкой читателей. CLI preview/write
+проверены на обоих языках. Workspace orchestration и итоговая приёмка MVP
+не подтверждаются этим standalone-контрактом.
+
+Контролируемая пара настоящих CF собрана на Linux / Distrobox, 1С 8.3.27.2325.
+В поставке 1.0.0 → 1.1.0 общий модуль переименован при прежнем UUID; локальные
+байты BOM/CRLF перенесены в новое имя. Вариант с новым native запретом, локальное
+удаление обязательного модуля и пересекающаяся правка версии корня отказаны до
+создания результата. Preview одинаков для RU/EN, повтор записи — `unchanged`.
+
+Обновлённый ESKA-проект и независимо изменённый Designer XML прошли build/dump.
+14 из 15 файлов совпали побайтно, включая module, ParentConfigurations.bin и
+вложенный настоящий CF. Единственное отличие — `configVersion` в
+ConfigDumpInfo.xml; names/IDs/структура совпали после удаления только этого
+атрибута. Повторная независимая нативная сборка того же input также изменила
+только этот служебный атрибут. Source/base inputs сохранены, старый pin
+отказан в результате, новый pin проходит strict prepare. Изменённый BSL-модуль
+проверен установленным bsl-analyzer-app 0.3.2: complete analysis, без diagnostics.
+Workspace MCP здесь недоступен; platform help fallback не подтверждает API,
+которых в этом контрольном модуле нет.
+
+Это управляемые поставки с изменёнными правилами и настоящими native CF,
+а не опубликованная производственная пара релизов поставщика. При первичной
+распаковке нескольких CF 1С вернула `Invalid data storage format` и обрезанный
+дескриптор; операция отказала без принятия/публикации partial XML. Повторная
+распаковка тех же байтов прошла. Native сообщение теперь сохраняется при
+ошибке проверки descriptor; причина поведения платформы пока не установлена.
+Работа в клиенте, обновление production ИБ, большие поставки и другие ОС этой
+проверкой не подтверждаются.

@@ -27,6 +27,7 @@ mod model;
 mod native_writer;
 mod package;
 mod project_migration;
+mod project_update;
 mod property;
 mod protected;
 mod queries;
@@ -99,11 +100,15 @@ pub use model::{
     PropertyName, PropertyValue, Section, XmlAttribute, XmlFragment, XmlProfile,
 };
 pub(crate) use project_migration::require_project_ready;
+
 pub use project_migration::{
     PROJECT_LAYOUT_RECEIPT, ProjectLayoutPlan, WORKSPACE_LAYOUT_RECEIPT, WorkspaceAcceptedRefs,
     WorkspaceLayoutMember, WorkspaceLayoutPlan, prepare_form_project, prepare_form_workspace,
     prepare_query_project, prepare_query_workspace, prepare_readable_project,
     prepare_readable_workspace,
+};
+pub use project_update::{
+    PROJECT_BASE_UPDATE_RECEIPT, ProjectBaseUpdatePlan, prepare_project_base_update,
 };
 pub use property::ExactUnsigned;
 pub use tabular_identities::{GeneratedIdentity, TabularSectionIdentities};

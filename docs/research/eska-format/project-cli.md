@@ -30,6 +30,12 @@ eska-project --project-dir old-project migrate new-project \
   --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" --write --format json
 eska-project --project-dir old-workspace migrate new-workspace --workspace \
   --accepted-bases approved-bases.json --write --format json
+eska-project --project-dir current-project update-base incoming-project updated-project \
+  --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" \
+  --incoming-base-sha256 "$APPROVED_NEW_BASE_SHA256" --format json
+eska-project --project-dir current-project update-base incoming-project updated-project \
+  --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" \
+  --incoming-base-sha256 "$APPROVED_NEW_BASE_SHA256" --write --format json
 eska-project --project-dir new-project inspect --format json
 eska-project --project-dir new-project prepare \
   --accepted-base-sha256 "$APPROVED_BASE_SHA256" --format json
@@ -71,6 +77,15 @@ Git/прочие файлы проекта не копируются. [Workspace
 проверяются до публикации первого member. Root manifest записывается последним;
 общий receipt блокирует частично опубликованные проекты. Выборочный перенос
 member в standalone по-прежнему отказывает.
+
+[`update-base`](base-update.md) сравнивает старую базу, independently pinned
+incoming accepted store и локальные изменения. Default preview показывает
+точные изменения прав и конфликты; `--write` публикует отдельный standalone-проект
+только без конфликтов. Прежнее дерево/база остаются доступны; рабочие edits
+incoming-проекта не входят в план. Settings копируются точно, новый pin явно
+передаётся последующим prepare/build. Незавершённая публикация блокирует readers
+и допускает только точное возобновление. Операция над исходным workspace member
+пока отказана; `--incoming-project` выбирает входную принятую поставку в workspace.
 
 `import` возвращает кандидат на принятую базу и её SHA-256. CI получает
 одобренную сумму отдельно; editable TOML не хранит approval digest.
@@ -188,6 +203,11 @@ Tool envelope и прежние поля, включая `source_schema_version 
 Capabilities также содержит `migrate`, `migration_layouts = ["readable"]` и
 `migration_scopes = ["standalone"]`. Schema 1 для новой команды описана в
 [контракте миграции](project-migration.md#machine-interface).
+Для `update-base` добавлены `base_update_scopes = ["standalone"]` и
+`base_update_comparison = "whole_file_three_way"`. Preview с конфликтами —
+exit 0 / `can_write = false`; `--write` — exit 1 с полным планом в
+`error.diagnostics`. [Контракт обновления базы](base-update.md#machine-interface)
+описывает остальные поля schema 1.
 
 ## Проверки
 

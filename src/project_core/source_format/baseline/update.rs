@@ -387,7 +387,7 @@ impl BaseUpdatePlan {
     }
 
     /// Neither a completed old authority nor an imported new authority may change after preview.
-    fn recheck(&self) -> Result<(), Error> {
+    pub(in crate::project_core::source_format) fn recheck(&self) -> Result<(), Error> {
         if Inventory::read(&self.source)? != self.working
             || Inventory::read(&self.previous_root)? != self.previous_storage
             || Inventory::read(&self.incoming_root)? != self.incoming_storage

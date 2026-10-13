@@ -2240,8 +2240,12 @@ EF-23 принята по [хранению и исполнению запрос
 EF-24 принята по [матрице/DoD](research/eska-format/structure-acceptance.md),
 EF-12 — по [матрице форм и CF циклу](research/eska-format/managed-form-acceptance.md).**
 
-В EF-15 добавлен [библиотечный план обновления базы](research/eska-format/base-update.md)
-с независимыми pin и явными конфликтами; проектный CLI и приёмка поставок ещё нужны.
+В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
+с независимыми pin и явными конфликтами.
+Standalone orchestration и `eska-project update-base` теперь проходят RU/EN,
+strict prepare и CF/build/dump контролируемой пары на 1С 8.3.27.2325.
+Workspace orchestration ещё в работе. Опубликованная производственная пара
+не проверена; платформенная матрица использует контролируемые настоящие CF.
 
 Native query codec и [source references версии 1](research/eska-format/query-references.md)
 проверены на всех 150 запросах C1: отдельные plain values прошли disk no-op/edit/

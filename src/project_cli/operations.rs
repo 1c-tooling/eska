@@ -1,6 +1,7 @@
 //! Process-boundary selection and reports, with one source implementation in `project_core`.
 
 mod migration;
+mod update;
 
 use super::args::{Cli, Command, Import, ImportLayout, Prepare, Selector, Transport};
 use crate::{
@@ -29,6 +30,7 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
     match &cli.command {
         Command::Import(args) => import(args, localizer),
         Command::Migrate(args) => migration::migrate(&cli.project_dir, args, localizer),
+        Command::UpdateBase(args) => update::update(&cli.project_dir, args, localizer),
         Command::Inspect(args) => inspect(&cli.project_dir, args, localizer),
         Command::Prepare(args) => prepare(&cli.project_dir, args, localizer),
         Command::Transport(args) => transport(&cli.project_dir, args, localizer),
@@ -36,13 +38,14 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
             json!({"version":env!("CARGO_PKG_VERSION"),
             "protocol_version":1, "source_schema_version":SCHEMA_VERSION,
             "rules_version":RULES_VERSION, "profile":PROFILE,
-            "commands":["import","migrate","inspect","prepare","transport","capabilities"],
+            "commands":["import","migrate","update-base","inspect","prepare","transport","capabilities"],
             "platform_required":false,"git_required":false,"ide_required":false,
             "creation_project_types":["configuration","extension"], "metadata_formats":["eska"],
             "import_layouts":["family","readable"],
             "source_layout_versions":[SCHEMA_VERSION,DESCRIPTOR_LAYOUT_VERSION,RESOURCE_LAYOUT_VERSION],
             "descriptor_schema_versions":[SCHEMA_VERSION,READABLE_SCHEMA_VERSION],
             "migration_layouts":["readable"], "migration_scopes":["standalone","workspace"], "workspace_pin_schema_version":1,
+            "base_update_scopes":["standalone"], "base_update_comparison":"whole_file_three_way",
             "structural_edits":false}),
             localizer.text("tool-project-capabilities"),
         )),

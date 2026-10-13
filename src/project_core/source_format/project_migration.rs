@@ -287,6 +287,11 @@ impl ProjectLayoutPlan {
 /// Even a published manifest cannot expose a project whose outer operation is incomplete.
 pub fn require_project_ready(root: &Path) -> Result<(), Error> {
     require_marker_absent(root, PROJECT_LAYOUT_RECEIPT)?;
+    match fs::symlink_metadata(root.join(super::project_update::PROJECT_BASE_UPDATE_RECEIPT)) {
+        Ok(_) => return Err(Error::root("source_update_incomplete")),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(files::io(&error)),
+    }
     for ancestor in root.ancestors() {
         require_marker_absent(ancestor, WORKSPACE_LAYOUT_RECEIPT)?;
     }
@@ -303,7 +308,7 @@ fn require_marker_absent(root: &Path, name: &str) -> Result<(), Error> {
 }
 
 /// Ancillary text is copied byte-for-byte; absence is also an expected input state.
-fn ancillary(root: &Path) -> Result<BTreeMap<SourcePath, Option<String>>, Error> {
+pub(super) fn ancillary(root: &Path) -> Result<BTreeMap<SourcePath, Option<String>>, Error> {
     ["eska.toml", ".gitattributes", ".gitignore"]
         .into_iter()
         .map(|name| Ok((SourcePath::parse(name)?, read_optional(&root.join(name))?)))
@@ -311,7 +316,7 @@ fn ancillary(root: &Path) -> Result<BTreeMap<SourcePath, Option<String>>, Error>
 }
 
 /// Refuse symlinks and non-text entries rather than following aliases during a project copy.
-fn read_optional(path: &Path) -> Result<Option<String>, Error> {
+pub(super) fn read_optional(path: &Path) -> Result<Option<String>, Error> {
     match fs::symlink_metadata(path) {
         Ok(metadata) if metadata.file_type().is_file() => files::read_text(path).map(Some),
         Ok(_) => Err(Error::root("source_entry_unsupported")),
@@ -321,7 +326,7 @@ fn read_optional(path: &Path) -> Result<Option<String>, Error> {
 }
 
 /// Root settings and the operation receipt cannot become source/base directory names.
-fn validate_paths(source: &SourcePath, base: &SourcePath) -> Result<(), Error> {
+pub(super) fn validate_paths(source: &SourcePath, base: &SourcePath) -> Result<(), Error> {
     validate_distinct_paths(source, base)?;
     for path in [source, base] {
         if [
@@ -330,6 +335,7 @@ fn validate_paths(source: &SourcePath, base: &SourcePath) -> Result<(), Error> {
             ".gitignore",
             PROJECT_LAYOUT_RECEIPT,
             WORKSPACE_LAYOUT_RECEIPT,
+            super::project_update::PROJECT_BASE_UPDATE_RECEIPT,
         ]
         .iter()
         .any(|name| {
@@ -366,7 +372,7 @@ fn validate_distinct_paths(source: &SourcePath, base: &SourcePath) -> Result<(),
 }
 
 /// Project settings use OS paths; source maps use portable normal UTF-8 components.
-fn portable(path: &Path) -> Result<SourcePath, Error> {
+pub(super) fn portable(path: &Path) -> Result<SourcePath, Error> {
     let parts = path
         .components()
         .map(|part| match part {
@@ -389,7 +395,7 @@ fn configuration_uuid(manifest: &super::SourceManifest) -> Option<&super::Native
 }
 
 /// Resolve an existing parent and reject any write into or around the original project.
-fn destination_path(root: &Path, destination: &Path) -> Result<PathBuf, Error> {
+pub(super) fn destination_path(root: &Path, destination: &Path) -> Result<PathBuf, Error> {
     let name = destination
         .file_name()
         .and_then(|name| name.to_str())
@@ -415,7 +421,7 @@ fn destination_path(root: &Path, destination: &Path) -> Result<PathBuf, Error> {
 }
 
 /// Reuse the exact-byte core publisher without localized or CLI-specific failures.
-fn publish_new(root: &Path, path: &str, text: &str) -> Result<(), Error> {
+pub(super) fn publish_new(root: &Path, path: &str, text: &str) -> Result<(), Error> {
     publish::publish_new(root, Path::new(path), text).map_err(|error| {
         Error::root(match error {
             publish::PublishError::Io(_) => "source_io_error",
