@@ -230,7 +230,7 @@ fn select_files(
             continue;
         }
         let native = base.package.payloads.get(path).unwrap_or(path);
-        let query_owner = queries::owner(base, path);
+        let query_owner = base.query_owner(path);
         let uuid = query_owner
             .cloned()
             .or_else(|| native_file_owner(base, native));

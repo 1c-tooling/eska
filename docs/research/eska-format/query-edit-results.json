@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "stage": "EF-23-part-5",
+  "date": "2026-10-13",
+  "corpus": "C1",
+  "input_platform_dump": "8.3.27.2325",
+  "project_map_version": 5,
+  "source_map_version": 4,
+  "rules_version": 1,
+  "probe": {
+    "accepted_storage_unchanged": true,
+    "all_native_bytes_equal_independent_control": true,
+    "all_preview_decisions_match_supplier_policy": true,
+    "allowed_previews": 46,
+    "changed_native_resources": 2,
+    "denied_previews": 104,
+    "each_save_changes_only_its_plain_file": true,
+    "native_directories": 8064,
+    "native_files": 8769,
+    "native_query_profiles": 2,
+    "plain_files": 150,
+    "query_language_or_runtime_checked": false,
+    "saved_edits": 2,
+    "source_unchanged_by_export": true
+  },
+  "editor_tests_added": 6,
+  "application_unit_tests_passed": 700,
+  "application_integration_tests_passed": 570,
+  "sdk_tests_passed": 359,
+  "existing_ignored": 24,
+  "gates": [
+    {
+      "stage": "fmt",
+      "exit_code": 0,
+      "seconds": 1.09
+    },
+    {
+      "stage": "check",
+      "exit_code": 0,
+      "seconds": 2.61
+    },
+    {
+      "stage": "clippy",
+      "exit_code": 0,
+      "seconds": 6.97
+    },
+    {
+      "stage": "test",
+      "exit_code": 0,
+      "seconds": 51.75
+    },
+    {
+      "stage": "doc",
+      "exit_code": 0,
+      "seconds": 6.78
+    },
+    {
+      "stage": "sdk-check",
+      "exit_code": 0,
+      "seconds": 2.36
+    },
+    {
+      "stage": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 2.78
+    },
+    {
+      "stage": "sdk-test",
+      "exit_code": 0,
+      "seconds": 25.92
+    },
+    {
+      "stage": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.02
+    }
+  ],
+  "query_migration_integrated": false,
+  "query_language_or_runtime_checked": false,
+  "cli_defaults_changed": false
+}

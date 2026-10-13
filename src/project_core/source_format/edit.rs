@@ -2,8 +2,10 @@
 
 mod cst;
 mod form;
+mod query;
 
 pub use form::{FormEdit, FormEditPreview, prepare_form_edit, prepare_form_edit_text};
+pub use query::{QueryEditPreview, prepare_query_edit, prepare_query_edit_text};
 
 use std::{
     fs,
@@ -426,7 +428,7 @@ fn permission(base: &AcceptedBase, uuid: &NativeUuid, operation: Operation) -> R
     .in_field(uuid.as_str()))
 }
 
-/// Reject aliases before reading a YAML owner, matching the existing atomic writer's boundary.
+/// Reject aliases before reading an authoring file, matching the atomic writer's boundary.
 fn safe_root(root: &Path, path: &SourcePath) -> Result<PathBuf, Error> {
     if !fs::symlink_metadata(root)
         .map_err(|error| files::io(&error))?

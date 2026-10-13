@@ -2238,8 +2238,9 @@ reparse; XML результата не содержит source namespace.
 [Проектная карта 5](research/eska-format/query-project.md) добавляет opt-in
 import/export и адресный reader. [Protected writer/source map 4](research/eska-format/query-protected.md)
 выбирают запросы по принятым Resource правам и возвращают точные plain координаты.
-Точечный editor, миграция и отдельный платформенный цикл EF-23 ещё нужны;
-CLI defaults сохранены.
+[Точечный editor](research/eska-format/query-edit.md) работает с saved/unsaved
+plain text через общий conflict-checked writer. Миграция и отдельный платформенный
+цикл EF-23 ещё нужны; CLI defaults сохранены.
 
 | Этап | Задачи |
 |---|---|

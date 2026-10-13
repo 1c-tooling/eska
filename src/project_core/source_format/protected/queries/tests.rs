@@ -9,9 +9,9 @@ use super::*;
 use crate::{
     project_core::source_format::{
         FileOrigin, FormPropertyName, FormPropertyValue, InputAuthority, NativeQueryDocument,
-        ObjectSource, OriginTexts, PermissionReason, PreparedSource, QUERY_SOURCE_MAP_VERSION,
-        QuerySlot, SourceMap, accept_source, files::Inventory, import_designer_queries,
-        prepare_protected, queries::test_support::*,
+        NativeUuid, ObjectSource, OriginTexts, PermissionReason, PreparedSource,
+        QUERY_SOURCE_MAP_VERSION, QuerySlot, SourceMap, accept_source, files::Inventory,
+        import_designer_queries, prepare_protected, queries::test_support::*,
     },
     test_support::TestDir,
 };

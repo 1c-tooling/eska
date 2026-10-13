@@ -7,29 +7,10 @@ mod tests;
 
 use super::{Origin, merge::SelectedSources, read_working};
 use crate::project_core::source_format::{
-    AcceptedBase, Error, NativeUuid, Operation, SourcePath,
+    AcceptedBase, Error, Operation, SourcePath,
     export::queries::{self, QueryInputs},
     files::Inventory,
 };
-
-/// Resolve only declared query files through the pinned native metadata descriptor.
-pub(super) fn owner<'a>(base: &'a AcceptedBase, path: &SourcePath) -> Option<&'a NativeUuid> {
-    let resource = base
-        .package
-        .manifest
-        .query_resources
-        .iter()
-        .find(|resource| resource.sources.contains(path))?;
-    Some(
-        &base
-            .package
-            .documents
-            .get(&resource.descriptor)?
-            .descriptor
-            .object
-            .uuid,
-    )
-}
 
 /// A permitted value is required even when missing-file restoration would apply to other payloads.
 pub(super) fn require_values(working: &Inventory, base: &AcceptedBase) -> Result<(), Error> {

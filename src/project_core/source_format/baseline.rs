@@ -352,6 +352,25 @@ impl AcceptedBase {
         super::protected::module_permission(self, path)
     }
 
+    /// Only the pinned declaration connects a plain query path to native metadata authority.
+    pub(super) fn query_owner(&self, path: &SourcePath) -> Option<&NativeUuid> {
+        let resource = self
+            .package
+            .manifest
+            .query_resources
+            .iter()
+            .find(|resource| resource.sources.contains(path))?;
+        Some(
+            &self
+                .package
+                .documents
+                .get(&resource.descriptor)?
+                .descriptor
+                .object
+                .uuid,
+        )
+    }
+
     /// Compute permission for an accepted native identity and a concrete operation.
     #[must_use]
     pub fn permission(&self, uuid: &NativeUuid, operation: Operation) -> Permission {

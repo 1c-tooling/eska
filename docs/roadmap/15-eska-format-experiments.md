@@ -1980,6 +1980,20 @@ authority и SHA-256 каждого input; native positions переводятс
 Editor, явная миграция и CF/execution ещё нужны; EF-23 остаётся `IN_PROGRESS`,
 CLI defaults и очередь сохранены.
 
+[Пятая часть: точечный query editor](../research/eska-format/query-edit.md)
+добавляет saved `SourceEditPlan` и unsaved `QueryEditPreview` для declared plain
+файла. Accepted lookup общий с protected selector; рабочие UUID/manifest/references
+не предоставляют права. Проверяются Resource support/freeze, XML characters,
+64 MiB limit, pin/bytes/storage conflicts и unsafe/read-only/non-UTF-8/missing
+отказы. Шесть tests покрывают оба query profiles, condition edit/native equality,
+byte no-op/mtime, unsaved/empty text и отсутствие neighbor reads. Прошли все
+Cargo/Rustdoc и SDK gates: 700 unit, 570 integration и 359 SDK tests. C1: все
+150 preview decisions совпали с supplier policy; два saved edits изменили только
+свои plain files и два native ресурса, весь output равен independent control
+по 8 769 файлам/8 064 каталогам. Accepted storage прежний. CLI defaults/protocol
+schemas прежние; миграция
+и CF/execution ещё нужны, EF-23 остаётся `IN_PROGRESS`.
+
 Выделить сохранённый текст каждого набора СКД и произвольного запроса списка
 в `.sdbl` рядом с владельцем. Пакет сохранять целиком. Принять версию,
 namespace/slots ссылок, связь с набором/реквизитом, rename и миграцию.
