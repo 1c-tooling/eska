@@ -17,7 +17,8 @@ readable descriptor schema 2 и body schema 2. Definitions находятся в
 Импорт forms и [миграция](managed-form-migration.md) доступны как explicit core APIs.
 Opening не мигрирует проект, CLI defaults прежние. Working source и independently
 pinned accepted base имеют разные планы; миграция не принимает текущие правки.
-Прежние layouts сохраняют чтение; любой migration target сохраняет map 4 без downgrade.
+Прежние layouts сохраняют чтение; прежние migration targets сохраняют map 4 без downgrade.
+[Query target EF-23](query-migration.md) явно переводит map 4 в map 5, сохраняя body.
 
 ## Принятое и сохранённое покрытие
 

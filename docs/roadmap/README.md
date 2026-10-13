@@ -24,7 +24,9 @@ import/export и адресный reader: 153 query resources и 150 `.sdbl` C1.
 точные координаты `.sdbl`; missing permitted values отказывают до публикации.
 [Точечный editor](../research/eska-format/query-edit.md) сохраняет один plain
 файл через общий conflict-checked writer и принимает несохранённый текст.
-Далее — явная миграция и отдельная платформенная приёмка; CLI defaults сохранены.
+[Явная миграция](../research/eska-format/query-migration.md) переносит working
+source и independently pinned base, standalone проект/workspace в map 5.
+Далее — отдельная платформенная приёмка; CLI defaults сохранены.
 [EF-12 принята](../research/eska-format/managed-form-acceptance.md) для C1/logform 2.20:
 единый form.yaml, reader/codec/editor, protected writer/source map, явная миграция
 и независимый CF/build/dump изменённой формы на 1С 8.3.27.2325.

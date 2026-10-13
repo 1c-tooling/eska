@@ -8,8 +8,9 @@
 [Проектная карта 5](query-project.md) подключает opt-in import/export и адресный
 reader. [Protected writer и source map 4](query-protected.md) сохраняют supplier
 права и дают точные plain координаты. [Точечный editor](query-edit.md) меняет
-один `.sdbl` с проверкой Resource прав/pin/conflicts. Миграция и новый
-платформенный цикл ещё нужны; CLI defaults сохранены.
+один `.sdbl` с проверкой Resource прав/pin/conflicts. [Явная миграция](query-migration.md)
+раздельно переносит source/base и сохраняет settings проекта/workspace.
+Новый платформенный цикл ещё нужен; CLI defaults сохранены.
 [EF-12 принята](managed-form-acceptance.md)
 для configuration/C1/logform 2.20 на 1С 8.3.27.2325.
 [Native ID/ссылки](managed-form-inventory.md) и

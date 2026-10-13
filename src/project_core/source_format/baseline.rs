@@ -4,7 +4,8 @@ mod layout;
 
 pub use layout::{
     AcceptedLayoutPlan, prepare_accepted_descriptor_layout, prepare_accepted_form_layout,
-    prepare_accepted_readable_layout, prepare_accepted_resource_layout,
+    prepare_accepted_query_layout, prepare_accepted_readable_layout,
+    prepare_accepted_resource_layout,
 };
 
 use std::{

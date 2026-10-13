@@ -1,16 +1,13 @@
 //! Only declared native forms and composition templates may bind separately authored query values.
 
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    path::Path,
-};
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
 use crate::project_core::MetadataKind;
 use crate::project_core::source_format::{
-    Error, FileRole, ManagedFormSource, NativeDocument, NativeQueryDocument, ObjectSource,
-    QueryProfile, QueryReferenceDocument, SourceManifest, SourcePath, files, xml,
+    Error, FileEntry, FileRole, NativeDocument, NativeQueryDocument, ObjectSource, QueryProfile,
+    QueryReferenceDocument, SourceManifest, SourcePath, xml,
 };
 
 mod naming;
@@ -145,9 +142,9 @@ pub(in crate::project_core::source_format) fn composition_template(
 
 /// Promotion runs before publication; source XML keeps only references and plain values move once.
 pub(in crate::project_core::source_format) fn extract(
-    input: &Path,
     manifest: &mut SourceManifest,
     sources: &mut BTreeMap<SourcePath, ObjectSource>,
+    mut read: impl FnMut(&FileEntry) -> Result<String, Error>,
 ) -> Result<BTreeMap<SourcePath, String>, Error> {
     let locations = manifest
         .descriptor_contexts
@@ -193,7 +190,7 @@ pub(in crate::project_core::source_format) fn extract(
         let original = if let Some(form) = &source.form {
             form.to_xml()?
         } else {
-            files::read_text(&input.join(file.path.as_path()))?
+            read(file)?
         };
         let native = NativeQueryDocument::from_xml(&original)
             .map_err(|error| error.in_field(file.path.as_str()))?;
@@ -212,7 +209,13 @@ pub(in crate::project_core::source_format) fn extract(
             }
         }
         if form {
-            source.form = Some(ManagedFormSource::from_xml(&xml)?);
+            source.form = Some(
+                source
+                    .form
+                    .as_ref()
+                    .ok_or_else(invalid)?
+                    .with_query_references(&xml)?,
+            );
         } else if extra.insert(file.source_path().clone(), xml).is_some() {
             return Err(invalid());
         }

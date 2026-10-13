@@ -100,6 +100,35 @@ struct ChildFrame {
 }
 
 impl ManagedFormSource {
+    /// Replace opaque root query nodes while retaining authored definitions, layout and other stencils.
+    pub(in crate::project_core::source_format) fn with_query_references(
+        &self,
+        input: &str,
+    ) -> Result<Self, Error> {
+        let parsed = Self::from_xml(input)?;
+        if parsed.schema_version != self.schema_version
+            || parsed.elements != self.elements
+            || parsed.layout != self.layout
+            || parsed.properties != self.properties
+            || parsed.native.root.len() != self.native.root.len()
+        {
+            return Err(Error::root("source_form_binding_invalid"));
+        }
+        let mut output = self.clone();
+        for (part, replacement) in output.native.root.iter_mut().zip(parsed.native.root) {
+            if let Part::Xml { value } = part {
+                let Part::Xml { value: next } = replacement else {
+                    return Err(Error::root("source_form_binding_invalid"));
+                };
+                *value = next;
+            }
+        }
+        if output.to_xml()? != input {
+            return Err(Error::root("source_form_binding_invalid"));
+        }
+        Ok(output)
+    }
+
     /// Extract real UI definitions and graph slots without embedding a full alternate Form.xml.
     ///
     /// # Errors

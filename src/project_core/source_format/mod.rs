@@ -46,7 +46,8 @@ mod yaml;
 pub use baseline::{
     AcceptedBase, AcceptedLayoutPlan, AcceptedRef, Operation, Permission, PermissionReason,
     accept_source, prepare_accepted_descriptor_layout, prepare_accepted_form_layout,
-    prepare_accepted_readable_layout, prepare_accepted_resource_layout,
+    prepare_accepted_query_layout, prepare_accepted_readable_layout,
+    prepare_accepted_resource_layout,
 };
 pub use coordinates::{CoordinateError, TextCoordinates, TextPosition, TextRange};
 pub use edit::{
@@ -62,8 +63,8 @@ pub use import::{
 pub use layout::{
     DESCRIPTOR_LAYOUT_VERSION, DescriptorContext, LayoutChange, LayoutPublication,
     MANAGED_FORM_LAYOUT_VERSION, QUERY_LAYOUT_VERSION, QueryResource, RESOURCE_LAYOUT_VERSION,
-    SourceLayoutPlan, prepare_descriptor_layout, prepare_form_layout, prepare_readable_layout,
-    prepare_resource_layout,
+    SourceLayoutPlan, prepare_descriptor_layout, prepare_form_layout, prepare_query_layout,
+    prepare_readable_layout, prepare_resource_layout,
 };
 pub use managed_form::{
     FormDefinition, FormElement, FormElementKind, FormFixedSlot, FormId, FormLayout,
@@ -96,7 +97,8 @@ pub(crate) use project_migration::require_project_ready;
 pub use project_migration::{
     PROJECT_LAYOUT_RECEIPT, ProjectLayoutPlan, WORKSPACE_LAYOUT_RECEIPT, WorkspaceAcceptedRefs,
     WorkspaceLayoutMember, WorkspaceLayoutPlan, prepare_form_project, prepare_form_workspace,
-    prepare_readable_project, prepare_readable_workspace,
+    prepare_query_project, prepare_query_workspace, prepare_readable_project,
+    prepare_readable_workspace,
 };
 pub use property::ExactUnsigned;
 pub use tabular_identities::{GeneratedIdentity, TabularSectionIdentities};

@@ -29,8 +29,8 @@ slot остаётся в resource XML-ссылке; карта объявляе�
 набор файлов. Map 5 сохраняет descriptor/body schemas и rules, доступна через
 opt-in core import/export/reader. [Query protection/source map 4](query-protected.md)
 подключены; [query editor](query-edit.md) использует accepted ownership и общий
-conflict-checked writer. Явная миграция ещё нужна. Прежние layout targets не
-понижают map 5.
+conflict-checked writer. [Явная query migration](query-migration.md) переносит
+source/base/project/workspace; прежние layout targets не понижают map 5.
 
 [JSON Schema](descriptor.schema.json) описывает один descriptor. Семантические
 ограничения дополнительно проверяет `Descriptor::validate`: уникальность UUID,

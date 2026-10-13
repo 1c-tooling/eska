@@ -10,7 +10,9 @@
 | `prepare_form_workspace` | Все declared members → новые независимые pins, прежнее наследование settings |
 
 Прежние targets остаются доступны. Уже существующий map 4 является byte no-op
-для всех layout targets; он не понижается до прежней схемы и не теряет body.
+для прежних layout targets; он не понижается до прежней схемы и не теряет body.
+Новый [query target EF-23](query-migration.md) явно переводит map 4 в map 5,
+сохраняя definitions, layout и properties.
 Открытие проекта не запускает миграцию. CLI выбора нового target этой частью
 не добавлен; публичный импорт forms относится к EF-20.
 

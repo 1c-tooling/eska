@@ -1991,8 +1991,24 @@ Cargo/Rustdoc и SDK gates: 700 unit, 570 integration и 359 SDK tests. C1: вс
 150 preview decisions совпали с supplier policy; два saved edits изменили только
 свои plain files и два native ресурса, весь output равен independent control
 по 8 769 файлам/8 064 каталогам. Accepted storage прежний. CLI defaults/protocol
-schemas прежние; миграция
-и CF/execution ещё нужны, EF-23 остаётся `IN_PROGRESS`.
+schemas прежние; миграция и CF/execution ещё нужны, EF-23 остаётся `IN_PROGRESS`.
+
+[Шестая часть: явная query migration](../research/eska-format/query-migration.md)
+добавляет source/base/project/workspace plans в map 5. Working inline values
+и independently pinned blobs преобразуются отдельно тем же extractor, что
+использует импорт. Existing form definitions/properties/layout и annotations
+сохраняются; только query XML scalars заменяются через CST. Старые targets
+сохраняют map 4/5, query target явно повышает map 4. Exact settings/inheritance,
+новые explicit pins и exclusive resumable receipts используют прежнюю
+orchestration. Восемь tests покрывают все прежние layouts, native equality,
+independent freeze/pins/values, conflicts, empty СКД/query, path collisions
+и standalone/workspace trust. Все Cargo/Rustdoc и SDK gates прошли: 708 unit,
+570 integration и 359 SDK tests. C1 сохранил 150 query values и independent base;
+оба native вывода сверены по 8 769 files/8 064 directories. Прежние права
+46 allowed/104 denied дают 41 changed protected resource, равный независимому
+контролю; original input/settings/pins и repeated publication сохранены.
+EF-23 остаётся `IN_PROGRESS`: новый CF/build/dump
+и выполнение отчёта/списка ещё нужны; CLI defaults и очередь сохранены.
 
 Выделить сохранённый текст каждого набора СКД и произвольного запроса списка
 в `.sdbl` рядом с владельцем. Пакет сохранять целиком. Принять версию,

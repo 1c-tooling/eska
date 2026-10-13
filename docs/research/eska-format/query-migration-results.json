@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "stage": "EF-23-part-6",
+  "date": "2026-10-13",
+  "corpus": "C1",
+  "input_platform_dump": "8.3.27.2325",
+  "project_map_version": 5,
+  "source_map_version": 4,
+  "rules_version": 1,
+  "probe": {
+    "all_accepted_native_bytes_equal_original_control": true,
+    "all_original_project_bytes_unchanged": true,
+    "all_protected_native_bytes_equal_independent_control": true,
+    "all_working_native_bytes_equal_independent_control": true,
+    "allowed_protected_values": 46,
+    "denied_protected_values": 104,
+    "exact_project_settings_and_configuration_preserved": true,
+    "native_directories": 8064,
+    "native_files": 8769,
+    "old_accepted_storage_and_native_control_unchanged": true,
+    "plain_files": 150,
+    "platform_cycle_or_runtime_checked": false,
+    "project_map_version": 5,
+    "protected_native_resources_changed": 41,
+    "query_resources": 153,
+    "repeat_project_publication_unchanged": true,
+    "source_and_base_independent": true,
+    "source_and_base_noop_targets": true,
+    "working_inline_values": 150,
+    "working_native_resources": 126
+  },
+  "migration_tests_added": 8,
+  "application_unit_tests_passed": 708,
+  "application_integration_tests_passed": 570,
+  "sdk_tests_passed": 359,
+  "existing_ignored": 24,
+  "gates": [
+    {
+      "stage": "fmt",
+      "exit_code": 0,
+      "seconds": 1.09
+    },
+    {
+      "stage": "check",
+      "exit_code": 0,
+      "seconds": 4.35
+    },
+    {
+      "stage": "clippy",
+      "exit_code": 0,
+      "seconds": 5.44
+    },
+    {
+      "stage": "test",
+      "exit_code": 0,
+      "seconds": 59.96
+    },
+    {
+      "stage": "doc",
+      "exit_code": 0,
+      "seconds": 6.87
+    },
+    {
+      "stage": "sdk-check",
+      "exit_code": 0,
+      "seconds": 2.33
+    },
+    {
+      "stage": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 2.54
+    },
+    {
+      "stage": "sdk-test",
+      "exit_code": 0,
+      "seconds": 28.38
+    },
+    {
+      "stage": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 4.22
+    }
+  ],
+  "query_migration_integrated": true,
+  "query_language_or_runtime_checked": false,
+  "cli_defaults_changed": false
+}

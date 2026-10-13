@@ -145,7 +145,9 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
         super::layout::forms::attach(&input, &mut manifest, &mut sources)?;
     }
     let extra = if matches!(layout, Layout::Queries) {
-        super::layout::queries::extract(&input, &mut manifest, &mut sources)?
+        super::layout::queries::extract(&mut manifest, &mut sources, |file| {
+            files::read_text(&input.join(file.path.as_path()))
+        })?
     } else {
         BTreeMap::new()
     };

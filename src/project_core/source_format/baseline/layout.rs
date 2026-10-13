@@ -73,6 +73,16 @@ pub fn prepare_accepted_form_layout(base: &AcceptedBase) -> Result<AcceptedLayou
     prepare(base, Layout::Forms)
 }
 
+/// Extract independently pinned query values into map 5 while retaining supplier evidence and freeze.
+///
+/// Working files are never read; the returned new pin must be selected explicitly after publication.
+///
+/// # Errors
+/// Returns changed/corrupt storage, unsupported query profiles, invalid trivia or path collisions.
+pub fn prepare_accepted_query_layout(base: &AcceptedBase) -> Result<AcceptedLayoutPlan, Error> {
+    prepare(base, Layout::Queries)
+}
+
 /// Source and accepted migrations use the same pure projection for each explicit target.
 fn prepare(base: &AcceptedBase, target: Layout) -> Result<AcceptedLayoutPlan, Error> {
     base.verify()?;

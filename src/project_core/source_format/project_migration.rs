@@ -5,7 +5,7 @@ mod workspace;
 
 pub use workspace::{
     WORKSPACE_LAYOUT_RECEIPT, WorkspaceAcceptedRefs, WorkspaceLayoutMember, WorkspaceLayoutPlan,
-    prepare_form_workspace, prepare_readable_workspace,
+    prepare_form_workspace, prepare_query_workspace, prepare_readable_workspace,
 };
 
 #[cfg(test)]
@@ -22,8 +22,9 @@ use sha2::{Digest, Sha256};
 
 use super::{
     AcceptedBase, AcceptedLayoutPlan, AcceptedRef, Error, FileRole, LayoutChange, SourceLayoutPlan,
-    SourcePath, files, prepare_accepted_form_layout, prepare_accepted_readable_layout,
-    prepare_form_layout, prepare_readable_layout,
+    SourcePath, files, prepare_accepted_form_layout, prepare_accepted_query_layout,
+    prepare_accepted_readable_layout, prepare_form_layout, prepare_query_layout,
+    prepare_readable_layout,
 };
 use crate::project_core::{
     Project, SourceFormat,
@@ -41,6 +42,7 @@ pub const PROJECT_LAYOUT_RECEIPT: &str = ".eska-project-layout.json";
 enum Target {
     Readable,
     Forms,
+    Queries,
 }
 
 /// The receipt binds both storage plans and exact settings, without absolute paths or editable data.
@@ -108,6 +110,24 @@ pub fn prepare_form_project(
     prepare_project(project, expected, destination, None, Target::Forms)
 }
 
+/// Prepare an opt-in standalone map 5 copy with separate working queries and independently pinned values.
+///
+/// Settings and source/base trust boundaries use the same resumable publication as earlier targets.
+///
+/// # Errors
+/// Returns unsupported scope/format, unverified queries, changed inputs or conflicting publication.
+pub fn prepare_query_project(
+    project: &Project,
+    scope: &ProjectScope,
+    expected: &AcceptedRef,
+    destination: &Path,
+) -> Result<ProjectLayoutPlan, Error> {
+    if *scope != ProjectScope::Standalone {
+        return Err(Error::root("source_migration_scope_unsupported"));
+    }
+    prepare_project(project, expected, destination, None, Target::Queries)
+}
+
 /// A workspace supplies verified defaults and a destination below its already resolved new root.
 fn prepare_project(
     project: &Project,
@@ -157,6 +177,10 @@ fn prepare_project(
     }
     let accepted = AcceptedBase::open(&root.join(base_path.as_path()), expected)?;
     let (source, base) = match target {
+        Target::Queries => (
+            prepare_query_layout(project.source())?,
+            prepare_accepted_query_layout(&accepted)?,
+        ),
         Target::Forms => (
             prepare_form_layout(project.source())?,
             prepare_accepted_form_layout(&accepted)?,

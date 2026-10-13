@@ -65,6 +65,77 @@ pub(super) fn attach_form(input: &str, form: &ManagedFormSource) -> Result<Strin
     Ok(output)
 }
 
+/// Query extraction replaces only changed opaque root XML scalars, preserving all other authored bytes.
+pub(super) fn replace_form_queries(
+    input: &str,
+    previous: &ManagedFormSource,
+    next: &ManagedFormSource,
+) -> Result<String, Error> {
+    let (_, tree) = yaml::decode_with_tree(input)?;
+    let mut expected = ObjectSource::from_yaml(input)?;
+    if expected.form.as_ref() != Some(previous) {
+        return Err(unsupported());
+    }
+    expected.form = Some(next.clone());
+    let previous = serde_json::to_value(previous).map_err(|_| unsupported())?;
+    let next = serde_json::to_value(next).map_err(|_| unsupported())?;
+    let (old, new) = (root_parts(&previous)?, root_parts(&next)?);
+    if old.len() != new.len() {
+        return Err(unsupported());
+    }
+    let mut patches = Vec::new();
+    for (index, (previous, next)) in old.iter().zip(new).enumerate() {
+        if previous == next {
+            continue;
+        }
+        if previous.get("kind").and_then(serde_json::Value::as_str) != Some("xml")
+            || next.get("kind").and_then(serde_json::Value::as_str) != Some("xml")
+        {
+            return Err(unsupported());
+        }
+        let value = next
+            .get("value")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(unsupported)?;
+        let steps = [
+            Step::Key("form"),
+            Step::Key("native"),
+            Step::Key("root"),
+            Step::Index(index),
+            Step::Key("value"),
+        ];
+        yaml::at(&tree, &steps)
+            .and_then(|node| node.as_scalar().cloned())
+            .ok_or_else(unsupported)?;
+        patches.push((
+            yaml::range_at(&tree, &steps)?,
+            serde_json::to_string(value).map_err(|_| unsupported())?,
+        ));
+    }
+    patches.sort_by_key(|(range, _)| std::cmp::Reverse(range.start));
+    let mut output = input.to_owned();
+    for (range, text) in patches {
+        if output.get(range.clone()).is_none() {
+            return Err(unsupported());
+        }
+        output.replace_range(range, &text);
+    }
+    if comments(input) != comments(&output) || ObjectSource::from_yaml(&output)? != expected {
+        return Err(unsupported());
+    }
+    Ok(output)
+}
+
+/// Only the opaque root stencil is replaced when plain queries leave a managed form body.
+fn root_parts(value: &serde_json::Value) -> Result<&[serde_json::Value], Error> {
+    value
+        .get("native")
+        .and_then(|value| value.get("root"))
+        .and_then(serde_json::Value::as_array)
+        .map(Vec::as_slice)
+        .ok_or_else(unsupported)
+}
+
 /// Keep main-file trivia and each descriptor subtree without serializing authored property values.
 pub(super) fn split(input: &str) -> Result<BTreeMap<SourcePath, String>, Error> {
     let (value, tree) = yaml::decode_with_tree(input)?;

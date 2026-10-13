@@ -3,6 +3,7 @@
 mod cst;
 mod forms;
 pub(in crate::project_core::source_format) mod publication;
+mod queries;
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -100,6 +101,17 @@ pub fn prepare_readable_layout(source: &Path) -> Result<SourceLayoutPlan, Error>
 /// Returns unverified dialog profiles, unsupported trivia, invalid inputs or publication conflicts.
 pub fn prepare_form_layout(source: &Path) -> Result<SourceLayoutPlan, Error> {
     prepare(source, Layout::Forms)
+}
+
+/// Extract sole plain query values into map 5 without accepting current values into any baseline.
+///
+/// Already selected map 5 is a byte no-op. Older layouts first receive readable managed forms;
+/// original native evidence, authoring annotations and unrelated payloads remain unchanged.
+///
+/// # Errors
+/// Returns unsupported query/form profiles, unsafe trivia, collisions, invalid or changed inputs.
+pub fn prepare_query_layout(source: &Path) -> Result<SourceLayoutPlan, Error> {
+    prepare(source, Layout::Queries)
 }
 
 /// Both explicit targets share validation, exact preview and resumable publication.
@@ -202,13 +214,17 @@ pub(in crate::project_core::source_format) fn project_layout(
 ) -> Result<Projection, Error> {
     let mut read = |path: &SourcePath| {
         let text = read(path)?;
-        if matches!(target, Layout::Readable | Layout::Forms) && package.owners.contains_key(path) {
+        if matches!(target, Layout::Readable | Layout::Forms | Layout::Queries)
+            && package.owners.contains_key(path)
+        {
             crate::project_core::source_format::readable::check_transport(&text)?;
         }
         Ok(text)
     };
     let mut projection = project_descriptors(package, &mut read)?;
-    if projection.manifest.schema_version >= super::super::MANAGED_FORM_LAYOUT_VERSION {
+    if projection.manifest.schema_version >= super::super::MANAGED_FORM_LAYOUT_VERSION
+        && target.version() <= projection.manifest.schema_version
+    {
         return Ok(projection);
     }
     if target.version() <= projection.manifest.schema_version {
@@ -217,12 +233,21 @@ pub(in crate::project_core::source_format) fn project_layout(
         }
         return Ok(projection);
     }
-    project_resources(&mut projection)?;
-    if matches!(target, Layout::Readable | Layout::Forms) {
+    if projection.manifest.schema_version < super::super::RESOURCE_LAYOUT_VERSION {
+        project_resources(&mut projection)?;
+    }
+    if matches!(target, Layout::Readable | Layout::Forms | Layout::Queries)
+        && projection.manifest.schema_version < super::super::MANAGED_FORM_LAYOUT_VERSION
+    {
         project_readable(&mut projection, &mut read)?;
     }
-    if matches!(target, Layout::Forms) {
+    if matches!(target, Layout::Forms | Layout::Queries)
+        && projection.manifest.schema_version < super::super::MANAGED_FORM_LAYOUT_VERSION
+    {
         forms::project(package, &mut projection, &mut read)?;
+    }
+    if matches!(target, Layout::Queries) {
+        queries::project(package, &mut projection, &mut read)?;
     }
     Ok(projection)
 }

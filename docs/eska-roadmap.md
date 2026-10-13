@@ -2239,8 +2239,9 @@ reparse; XML результата не содержит source namespace.
 import/export и адресный reader. [Protected writer/source map 4](research/eska-format/query-protected.md)
 выбирают запросы по принятым Resource правам и возвращают точные plain координаты.
 [Точечный editor](research/eska-format/query-edit.md) работает с saved/unsaved
-plain text через общий conflict-checked writer. Миграция и отдельный платформенный
-цикл EF-23 ещё нужны; CLI defaults сохранены.
+plain text через общий conflict-checked writer. [Явная миграция](research/eska-format/query-migration.md)
+переносит source/base/project/workspace в map 5 с отдельными pins и exact settings.
+Отдельный платформенный цикл EF-23 ещё нужен; CLI defaults сохранены.
 
 | Этап | Задачи |
 |---|---|

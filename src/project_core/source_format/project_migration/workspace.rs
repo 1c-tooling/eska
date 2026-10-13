@@ -143,7 +143,21 @@ pub fn prepare_form_workspace(
     prepare(workspace, expected, destination, Target::Forms)
 }
 
-/// Both explicit project layouts retain the same independent member authority and outer receipt.
+/// Prepare a map 5 workspace copy with every member's query values and independent accepted pin.
+///
+/// Exact root/member settings and inheritance are retained; no current value enters accepted storage.
+///
+/// # Errors
+/// Returns missing pins, unsupported queries/members, changed inputs or conflicting publication.
+pub fn prepare_query_workspace(
+    workspace: &Workspace,
+    expected: &WorkspaceAcceptedRefs,
+    destination: &Path,
+) -> Result<WorkspaceLayoutPlan, Error> {
+    prepare(workspace, expected, destination, Target::Queries)
+}
+
+/// Explicit project layouts retain the same independent member authority and outer receipt.
 fn prepare(
     workspace: &Workspace,
     expected: &WorkspaceAcceptedRefs,
