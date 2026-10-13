@@ -162,7 +162,9 @@ Name/Synonym/Comment/Type с проверкой имён, типов и поря
 весь native subtree, права каждой колонки и зависимости таблицы/типов/полей.
 [Переименование таблиц](research/eska-format/table-rename.md) сохраняет все UUID,
 выводит declarations из единственного Name и проверяет старые name/type зависимости.
-Прочие structural/compound profiles ещё нужны; EF-24 остаётся `IN_PROGRESS`.
+[Итоговая матрица EF-24](research/eska-format/structure-acceptance.md) принята
+для configuration/Designer 2.20; unknown/preserved и непринятые structural
+операции сохраняют явные ограничения. Следующая задача — EF-12, модель форм.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные
 части сохраняются. [Структура, сравнение с XML/EDT и критерии MVP](research/eska-format/project-layout.md)
@@ -2226,7 +2228,7 @@ cargo test
 # 14. Ближайший порядок задач после текущего состояния
 
 Реестр статусов и зависимости — в [трекере](roadmap/README.md#ближайший-порядок-выполнения)
-и [очереди EF](roadmap/15-eska-format-experiments.md). **Текущая задача — EF-24.**
+и [очереди EF](roadmap/15-eska-format-experiments.md). **Текущая задача — EF-12; EF-24 принята по [матрице/DoD](research/eska-format/structure-acceptance.md).**
 
 | Этап | Задачи |
 |---|---|
