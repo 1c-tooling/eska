@@ -14,8 +14,10 @@
 **Текущая задача: EF-23 (`IN_PROGRESS`) — запросы СКД/динамических списков в `.sdbl`.**
 [Native bindings и codec](../research/eska-format/native-query-codec.md) проверены
 на 823 формах/51 схеме СКД C1: 27 запросов СКД и 123 списка прошли no-op и
-text edits/reparse. Далее — source references, `.sdbl`, reader/writer/protection/
-source map/миграция и отдельная платформенная приёмка.
+text edits/reparse. [Версионированные ссылки](../research/eska-format/query-references.md)
+перенесли все 150 values в plain файлы с disk no-op/edit/reparse; missing/extra
+values отказаны, source namespace удалён из output. Далее — project bindings,
+reader/writer/protection/source map/миграция и отдельная платформенная приёмка.
 [EF-12 принята](../research/eska-format/managed-form-acceptance.md) для C1/logform 2.20:
 единый form.yaml, reader/codec/editor, protected writer/source map, явная миграция
 и независимый CF/build/dump изменённой формы на 1С 8.3.27.2325.

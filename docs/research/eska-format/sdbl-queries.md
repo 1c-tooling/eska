@@ -8,8 +8,11 @@
 Текущий профиль [сохраняет СКД и формы как исходные ресурсы](coverage.md).
 [Первая часть: native bindings/codec](native-query-codec.md) прочитала все 823
 формы и 51 схему СКД C1, сохранила native no-op и 150 text edits/reparse.
-Project `.sdbl` bindings, protected selection/source map и проверка зависимостей
-ещё не реализованы. Этот документ не вводит готовые config keys или CLI-команды.
+[Вторая часть: ссылки версии `urn:eska:query:1`](query-references.md) отделяет
+plain values от XML, требует весь набор `.sdbl` и удаляет source markup при
+материализации. Все 150 файлов C1 прошли disk no-op/edit/reparse. Project bindings,
+protected selection/source map и проверка зависимостей ещё не реализованы.
+Этот документ не вводит готовые config keys или CLI-команды.
 
 Цель: условие запроса можно изменить в одном `.sdbl` без правки окружающего
 описания отчёта или формы. При изменении состава результата разработчик видит,

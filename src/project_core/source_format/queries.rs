@@ -5,9 +5,16 @@ use std::{collections::BTreeMap, ops::Range};
 use super::{Error, FormId};
 
 mod native;
+#[cfg(test)]
+mod reference_tests;
+mod references;
 mod stencil;
 #[cfg(test)]
 mod tests;
+
+pub use references::{
+    ExtractedQuerySource, QUERY_REFERENCE_NAMESPACE, QueryReference, QueryReferenceDocument,
+};
 
 /// Dataset names are scoped by their containing union; form attribute IDs have a separate native scope.
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]

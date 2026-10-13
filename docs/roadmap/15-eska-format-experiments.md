@@ -1939,7 +1939,14 @@ C1: 823 forms/51 schemas, 150 queries в 126 ресурсах; все no-op и t
 reparse совпали, inputs прежние. Прошли восемь новых tests, общие Cargo/Rustdoc
 и SDK all features gates. Project schemas/CLI defaults не менялись, `.sdbl`,
 references, protection/source map/миграция и real CF/execution ещё нужны.
-EF-23 остаётся `IN_PROGRESS`; EF-27 сохраняет отдельный language scope.
+[Вторая часть: source references версии 1](../research/eska-format/query-references.md)
+даёт explicit `QuerySlot → SourcePath` и единственные plain values. Namespace
+`urn:eska:query:1` локален marker и полностью удаляется при materialization;
+missing/extra/case-aliased sources, inline fallback и неверные recipes отказаны.
+Те же 150 запросов C1 прошли disk extraction/no-op/edit/reparse, native inputs
+прежние; добавлены восемь tests, Cargo/SDK gates прошли. Project schemas/CLI
+defaults сохранены; project import/export, protection/map/миграция и CF/execution
+ещё нужны. EF-23 остаётся `IN_PROGRESS`; EF-27 сохраняет отдельный language scope.
 
 Выделить сохранённый текст каждого набора СКД и произвольного запроса списка
 в `.sdbl` рядом с владельцем. Пакет сохранять целиком. Принять версию,

@@ -66,7 +66,8 @@ characters и unverified profiles/trivia. Обязательные fmt/check/str
 test и Rustdoc прошли: 669 unit/570 integration, 24 прежних opt-in ignored.
 SDK all features check/Clippy/test/Rustdoc также прошли, 359 тестов.
 
-Далее — версия source references, пути `.sdbl`, общий reader/import/export,
+[Версия source references](query-references.md) принята следующей частью.
+Далее — project пути `.sdbl`, общий reader/import/export,
 protected source/base selection, source map и миграция, затем независимый
 CF/build/dump и выполнение выбранного отчёта/списка. EF-23 остаётся `IN_PROGRESS`;
 анализ языка и зависимостей — EF-27.

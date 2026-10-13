@@ -5,7 +5,8 @@ use std::collections::BTreeSet;
 use roxmltree::{Document, Node};
 
 use super::{
-    Error, FormId, NativeQuery, NativeQueryDocument, QuerySlot, binding, stencil, unverified,
+    Error, FormId, NativeQuery, NativeQueryDocument, QUERY_REFERENCE_NAMESPACE, QuerySlot, binding,
+    references, stencil, unverified,
 };
 use crate::project_core::source_format::{validation, xml};
 
@@ -13,39 +14,34 @@ const DCS: &str = "http://v8.1c.ru/8.1/data-composition-system/schema";
 const FORM: &str = "http://v8.1c.ru/8.3/xcf/logform";
 const XSI: &str = "http://www.w3.org/2001/XMLSchema-instance";
 
+/// Both native values and source references use the same actual parent/type scopes.
+pub(super) struct SlotNode<'a, 'input> {
+    pub(super) slot: QuerySlot,
+    pub(super) node: Node<'a, 'input>,
+}
+
 /// Byte ranges remove every proven query node while leaving all unrelated native XML exactly once.
 pub(super) fn decode(input: &str) -> Result<NativeQueryDocument, Error> {
-    if input.contains("<!DOCTYPE") || input.contains("<!ENTITY") {
-        return Err(Error::root("source_xml_dtd_forbidden"));
+    let document = parse(input)?;
+    if document.descendants().filter(Node::is_element).any(|node| {
+        node.namespaces()
+            .any(|namespace| namespace.uri() == QUERY_REFERENCE_NAMESPACE)
+    }) {
+        return Err(references::invalid());
     }
-    let document = Document::parse_with_options(
-        input,
-        roxmltree::ParsingOptions {
-            nodes_limit: 1_000_000,
-            ..Default::default()
-        },
-    )
-    .map_err(|_| Error::root("source_query_xml_invalid"))?;
-    let root = document.root_element();
-    let mut queries =
-        if root.has_tag_name((DCS, "DataCompositionSchema")) && root.attributes().len() == 0 {
-            composition(root, input)?
-        } else if root.has_tag_name((FORM, "Form"))
-            && root.attribute("version") == Some("2.20")
-            && root.attributes().len() == 1
-        {
-            dynamic_lists(root, input)?
-        } else {
-            return Err(unverified());
-        };
-    queries.sort_by_key(|query| query.frame.range.start);
-    let mut slots = BTreeSet::new();
+    let queries = slots(document.root_element())?
+        .into_iter()
+        .map(|slot| {
+            Ok(NativeQuery {
+                slot: slot.slot,
+                text: xml::text(slot.node),
+                frame: stencil::Frame::from_node(slot.node, input)?,
+            })
+        })
+        .collect::<Result<Vec<_>, Error>>()?;
     let mut parts = Vec::new();
     let mut cursor = 0;
     for query in &queries {
-        if !slots.insert(&query.slot) || query.frame.range.start < cursor {
-            return Err(binding());
-        }
         parts.push(
             input
                 .get(cursor..query.frame.range.start)
@@ -58,8 +54,50 @@ pub(super) fn decode(input: &str) -> Result<NativeQueryDocument, Error> {
     Ok(NativeQueryDocument { parts, queries })
 }
 
+/// Shared bounded XML parsing does not grant file, language or supplier authority.
+pub(super) fn parse(input: &str) -> Result<Document<'_>, Error> {
+    if input.contains("<!DOCTYPE") || input.contains("<!ENTITY") {
+        return Err(Error::root("source_xml_dtd_forbidden"));
+    }
+    Document::parse_with_options(
+        input,
+        roxmltree::ParsingOptions {
+            nodes_limit: 1_000_000,
+            ..Default::default()
+        },
+    )
+    .map_err(|_| Error::root("source_query_xml_invalid"))
+}
+
+/// Native order and unique scopes are checked before either lexical representation is decoded.
+pub(super) fn slots<'a, 'input>(
+    root: Node<'a, 'input>,
+) -> Result<Vec<SlotNode<'a, 'input>>, Error> {
+    let mut queries =
+        if root.has_tag_name((DCS, "DataCompositionSchema")) && root.attributes().len() == 0 {
+            composition(root)?
+        } else if root.has_tag_name((FORM, "Form"))
+            && root.attribute("version") == Some("2.20")
+            && root.attributes().len() == 1
+        {
+            dynamic_lists(root)?
+        } else {
+            return Err(unverified());
+        };
+    queries.sort_by_key(|query| query.node.range().start);
+    let mut slots = BTreeSet::new();
+    let mut cursor = 0;
+    for query in &queries {
+        if !slots.insert(&query.slot) || query.node.range().start < cursor {
+            return Err(binding());
+        }
+        cursor = query.node.range().end;
+    }
+    Ok(queries)
+}
+
 /// Full native dataset names are scoped by unions; sibling order is never their identity.
-fn composition(root: Node<'_, '_>, input: &str) -> Result<Vec<NativeQuery>, Error> {
+fn composition<'a, 'input>(root: Node<'a, 'input>) -> Result<Vec<SlotNode<'a, 'input>>, Error> {
     let mut pending = datasets(root, "dataSet")?
         .into_iter()
         .map(|node| (node, Vec::new()))
@@ -70,11 +108,10 @@ fn composition(root: Node<'_, '_>, input: &str) -> Result<Vec<NativeQuery>, Erro
         match qualified_type(node, DCS)? {
             "DataSetQuery" => {
                 let query = direct(node, DCS, "query")?.ok_or_else(unverified)?;
-                queries.push(entry(
-                    query,
-                    QuerySlot::Composition { datasets: path },
-                    input,
-                )?);
+                queries.push(SlotNode {
+                    node: query,
+                    slot: QuerySlot::Composition { datasets: path },
+                });
             }
             "DataSetUnion" => {
                 pending.extend(
@@ -98,7 +135,7 @@ fn composition(root: Node<'_, '_>, input: &str) -> Result<Vec<NativeQuery>, Erro
 }
 
 /// Automatic lists without saved text do not create queries; inconsistent manual/text shapes refuse promotion.
-fn dynamic_lists(root: Node<'_, '_>, input: &str) -> Result<Vec<NativeQuery>, Error> {
+fn dynamic_lists<'a, 'input>(root: Node<'a, 'input>) -> Result<Vec<SlotNode<'a, 'input>>, Error> {
     let Some(attributes) = direct(root, FORM, "Attributes")? else {
         return Ok(Vec::new());
     };
@@ -138,11 +175,10 @@ fn dynamic_lists(root: Node<'_, '_>, input: &str) -> Result<Vec<NativeQuery>, Er
         match (xml::text(manual).as_str(), text) {
             ("false", None) => {}
             ("true", Some(query)) => {
-                queries.push(entry(
-                    query,
-                    QuerySlot::DynamicList { attribute: id },
-                    input,
-                )?);
+                queries.push(SlotNode {
+                    node: query,
+                    slot: QuerySlot::DynamicList { attribute: id },
+                });
             }
             _ => return Err(unverified()),
         }
@@ -206,13 +242,4 @@ fn direct<'a, 'input>(
         return Err(binding());
     }
     Ok(first)
-}
-
-/// The sole decoded value and a proven inverse frame are recorded together.
-fn entry(node: Node<'_, '_>, slot: QuerySlot, input: &str) -> Result<NativeQuery, Error> {
-    Ok(NativeQuery {
-        slot,
-        text: xml::text(node),
-        frame: stencil::Frame::from_node(node, input)?,
-    })
 }

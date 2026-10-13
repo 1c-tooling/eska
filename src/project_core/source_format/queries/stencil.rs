@@ -7,6 +7,8 @@ use roxmltree::Node;
 use super::{Error, binding};
 use crate::project_core::source_format::{lexical, native_writer, xml};
 
+mod reference;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Ending {
     Lf,

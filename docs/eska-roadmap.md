@@ -2232,6 +2232,11 @@ cargo test
 EF-24 принята по [матрице/DoD](research/eska-format/structure-acceptance.md),
 EF-12 — по [матрице форм и CF циклу](research/eska-format/managed-form-acceptance.md).**
 
+Native query codec и [source references версии 1](research/eska-format/query-references.md)
+проверены на всех 150 запросах C1: отдельные plain values прошли disk no-op/edit/
+reparse; XML результата не содержит source namespace. Project bindings,
+protection/source map и миграция EF-23 ещё нужны; CLI defaults сохранены.
+
 | Этап | Задачи |
 |---|---|
 | Структура и файловый цикл | EF-24 → EF-12 → EF-23 → T83/T84 → EF-14 → EF-15 → EF-25 → EF-20 |

@@ -3,7 +3,9 @@
 [Структура и MVP](project-layout.md) фиксируют приоритет от 2026-10-11:
 структура и файловый цикл CF/CFE/EPF/ERF → анализатор → Explorer → fmt → VCS.
 Текущая задача — EF-23 (`IN_PROGRESS`): [native slots/query codec](native-query-codec.md)
-проверены на 150 запросах C1; source bindings и `.sdbl` ещё нужны.
+проверены на 150 запросах C1; [ссылки версии 1](query-references.md) перенесли
+те же values в plain `.sdbl` с disk no-op/edit/reparse. Project bindings,
+protection/source map и миграция ещё нужны.
 [EF-12 принята](managed-form-acceptance.md)
 для configuration/C1/logform 2.20 на 1С 8.3.27.2325.
 [Native ID/ссылки](managed-form-inventory.md) и

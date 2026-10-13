@@ -76,7 +76,10 @@ pub use protected::{
     ProtectedFailure, RELOCATED_SOURCE_MAP_VERSION, SOURCE_MAP_VERSION, SourceLocation, SourceMap,
     export_protected, prepare_protected,
 };
-pub use queries::{NativeQuery, NativeQueryDocument, QuerySlot};
+pub use queries::{
+    ExtractedQuerySource, NativeQuery, NativeQueryDocument, QUERY_REFERENCE_NAMESPACE,
+    QueryReference, QueryReferenceDocument, QuerySlot,
+};
 pub use reader::{
     DeclaredForm, DeclaredModule, DeclaredOwner, MetadataDeclaration, MetadataSnapshot,
     NativeMetadata, OwnerSnapshot, SourceReader,
