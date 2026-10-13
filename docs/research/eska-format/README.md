@@ -4,7 +4,8 @@
 структура и файловый цикл CF/CFE/EPF/ERF → анализатор → Explorer → fmt → VCS.
 EF-23 — [DONE в принятом профиле](query-acceptance.md).
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
-следующий T84 — `NEXT`, источник версии EPF/ERF в модуле объекта.
+T84 — `IN_PROGRESS`, [синтаксический адаптер экспортной `Версия()`](external-version-syntax.md)
+подготовлен; CLI, миграция и платформенная приёмка ещё нужны.
 [Native slots/query codec](native-query-codec.md)
 проверены на 150 запросах C1; [ссылки версии 1](query-references.md) перенесли
 те же values в plain `.sdbl` с disk no-op/edit/reparse.

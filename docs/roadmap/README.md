@@ -11,7 +11,9 @@
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка
 и анализ кода. После этого — fmt, затем VCS.
 
-**Следующая задача: T84 (`NEXT`) — версия внешнего объекта в модуле объекта.**
+**Текущая задача: T84 (`IN_PROGRESS`) — версия внешнего объекта в модуле объекта.**
+[Синтаксический адаптер](../research/eska-format/external-version-syntax.md) читает
+экспортную `Версия()` и даёт точный диапазон литерала без семантического индекса.
 [T83 принята](../research/eska-format/project-version.md): три и четыре компонента,
 наследование схемы, совместимый JSON и CF/CFE build/dump на 1С 8.3.27.2325.
 [Native bindings и codec](../research/eska-format/native-query-codec.md) проверены
@@ -654,7 +656,7 @@ VS Code extension для навигации по Designer XML.
 - `DONE`: `T35` — автоматическое сохранение и восстановление незакоммиченного
   состояния при переключении задач;
 - `DONE`: `T83` — три и четыре компонента версии проекта;
-- `NEXT`: `T84` — версия внешнего объекта через модуль;
+- `IN_PROGRESS`: `T84` — версия внешнего объекта через модуль;
 - `PLANNED`: `T56` — автоматический план версии релиза 1С, подготовка PR/MR — T32;
   задача сохранена в backlog после переключения приоритета на IDE;
 - `IN-PROGRESS`: `T57` — обновление установленного бинарника командой `eska update`
@@ -928,7 +930,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T81 | IN-PROGRESS | Производительность интерфейса, приёмка и VSIX | [14-vscode-extension.md](14-vscode-extension.md) |
 | T82 | DONE | Создание и обновление из файлов 1С | [02-project-creation.md](02-project-creation.md) |
 | T83 | DONE | Версии проекта `x.y.z` и `x.y.z.build` | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T84 | NEXT | Обязательная `Версия()` внешнего отчёта/обработки | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T84 | IN_PROGRESS | Обязательная `Версия()` внешнего отчёта/обработки | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в

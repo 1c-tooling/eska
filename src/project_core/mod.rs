@@ -5,6 +5,7 @@ pub mod metadata_model;
 pub mod metadata_parser;
 pub mod native;
 pub mod native_version;
+pub mod object_module_version;
 mod project_type;
 pub mod publish;
 pub mod source_format;

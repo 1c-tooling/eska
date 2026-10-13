@@ -2232,7 +2232,7 @@ cargo test
 # 14. Ближайший порядок задач после текущего состояния
 
 Реестр статусов и зависимости — в [трекере](roadmap/README.md#ближайший-порядок-выполнения)
-и [очереди EF](roadmap/15-eska-format-experiments.md). **Следующий T84 — `NEXT`;
+и [очереди EF](roadmap/15-eska-format-experiments.md). **Текущий T84 — `IN_PROGRESS`;
 T83 принята по [CF/CFE циклу двух схем версии](research/eska-format/project-version.md);
 EF-23 принята по [хранению и исполнению запросов](research/eska-format/query-acceptance.md);
 EF-24 принята по [матрице/DoD](research/eska-format/structure-acceptance.md),
