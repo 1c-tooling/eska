@@ -127,5 +127,7 @@ UUID отсутствуют; порядок, identities, свойства и т�
 не изменились. [Обезличенные результаты](attribute-deletion-results.json).
 
 EF-24 остаётся `IN_PROGRESS`: другие structural/compound profiles ещё нужны.
+[Переименование реквизитов/колонок](attribute-rename.md) принято следующей частью
+по тому же native profile; это не смешанный create/delete selector.
 C2/C3, новые CFE/EPF/ERF, клиентское выполнение и обновление данных рабочей ИБ
 эта часть не принимает.

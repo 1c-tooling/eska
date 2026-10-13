@@ -4,6 +4,10 @@
 mod attribute_creation;
 #[path = "project_tool/attribute_deletion.rs"]
 mod attribute_deletion;
+#[path = "project_tool/attribute_fixture.rs"]
+mod attribute_fixture;
+#[path = "project_tool/attribute_rename.rs"]
+mod attribute_rename;
 #[path = "project_tool/column_creation.rs"]
 mod column_creation;
 #[path = "project_tool/creation.rs"]

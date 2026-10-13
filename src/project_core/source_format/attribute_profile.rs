@@ -1,6 +1,6 @@
-//! Removing a complete known Attribute requires no inverse rule for native scalar defaults.
+//! Verified inline attributes share structural gates without interpreting their native scalar defaults.
 
-use super::super::{
+use super::{
     Error, MD_NAMESPACE, MetadataNode, Namespace, Property, PropertyName, PropertyValue, Section,
     fragment,
 };

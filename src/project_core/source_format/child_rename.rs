@@ -1,19 +1,21 @@
-//! Renaming a closed inline value preserves identity and accepted namespace ownership.
+//! Renaming verified inline members preserves identity and accepted namespace ownership.
 
 use serde_json::Value;
 
 use super::{
     AcceptedBase, Child, Error, MetadataNode, NativeUuid, Operation, Property, PropertyName,
-    PropertyValue, Section, SourcePath, child_creation,
+    PropertyValue, Section, SourcePath, attribute_profile, child_creation,
 };
 use crate::project_core::MetadataKind;
 
 #[cfg(test)]
+mod attribute_tests;
+#[cfg(test)]
 mod tests;
 
-/// Only inline enum values can change names without generated types, paths or separate files.
+/// Inline enum values and verified attributes own no generated types, paths or separate files.
 pub(super) const fn supported_object(kind: MetadataKind) -> bool {
-    matches!(kind, MetadataKind::EnumValue)
+    matches!(kind, MetadataKind::EnumValue | MetadataKind::Attribute)
 }
 
 /// Apply names by accepted UUID before membership selection; final sibling names are checked afterwards.
@@ -25,24 +27,41 @@ pub(super) fn select(
     working: Option<&Vec<Value>>,
     schema: u32,
 ) -> Result<bool, Error> {
-    let Some(accepted) = accepted_owner(base, native) else {
+    let Some(document) = base.package.documents.get(native) else {
         return Ok(false);
     };
-    if accepted.uuid.key() != owner.key() || !base.permission(owner, Operation::Reorder).allowed {
+    let Some(accepted) = child_creation::accepted_owner(&document.descriptor, owner) else {
+        return Ok(false);
+    };
+    if !base.permission(owner, Operation::Reorder).allowed {
         return Ok(false);
     }
+    let context = child_creation::accepted_context(&document.descriptor, accepted)?;
     let mut changed = false;
     for child in children {
         let Child::Inline { object } = child else {
             continue;
         };
-        let Some(before) = values(accepted).find(|node| node.uuid.key() == object.uuid.key())
+        let Some(before) =
+            inline_children(accepted).find(|node| node.uuid.key() == object.uuid.key())
         else {
             continue;
         };
-        if child_creation::validate_new_node(before).is_err()
-            || !base.permission(&object.uuid, Operation::Rename).allowed
-        {
+        if !base.permission(&object.uuid, Operation::Rename).allowed {
+            continue;
+        }
+        let supported = match accepted.kind {
+            MetadataKind::Enum => {
+                before.kind == MetadataKind::EnumValue
+                    && child_creation::validate_new_node(before).is_ok()
+            }
+            MetadataKind::Catalog | MetadataKind::Document | MetadataKind::TabularSection => {
+                before.kind == MetadataKind::Attribute
+                    && attribute_profile::attribute(before, &context)?
+            }
+            _ => false,
+        };
+        if !supported {
             continue;
         }
         let current = working
@@ -55,7 +74,7 @@ pub(super) fn select(
                     .is_some_and(|id| id.eq_ignore_ascii_case(object.uuid.as_str()))
             });
         let Some(current) = current.filter(|node| {
-            node.get("kind").and_then(Value::as_str) == Some(MetadataKind::EnumValue.designer_tag())
+            node.get("kind").and_then(Value::as_str) == Some(before.kind.designer_tag())
         }) else {
             continue;
         };
@@ -86,14 +105,13 @@ pub(super) fn select(
     Ok(changed)
 }
 
-/// Necessary identity/class authority comes from the pinned native owner, never working node fields.
-fn accepted_owner<'a>(base: &'a AcceptedBase, native: &SourcePath) -> Option<&'a MetadataNode> {
-    let owner = &base.package.documents.get(native)?.descriptor.object;
-    (owner.kind == MetadataKind::Enum).then_some(owner)
-}
-
 /// A value namespace contains only the owner's direct inline enum values.
 pub(super) fn values(owner: &MetadataNode) -> impl Iterator<Item = &MetadataNode> {
+    inline_children(owner).filter(|node| node.kind == MetadataKind::EnumValue)
+}
+
+/// Parentage belongs to declared inline members; opaque slots and external references are not rename candidates.
+fn inline_children(owner: &MetadataNode) -> impl Iterator<Item = &MetadataNode> {
     owner
         .sections
         .iter()
@@ -103,7 +121,7 @@ pub(super) fn values(owner: &MetadataNode) -> impl Iterator<Item = &MetadataNode
         })
         .flatten()
         .filter_map(|child| match child {
-            Child::Inline { object } if supported_object(object.kind) => Some(object.as_ref()),
+            Child::Inline { object } => Some(object.as_ref()),
             _ => None,
         })
 }
@@ -156,15 +174,22 @@ fn candidate_name(current: &Value, schema: u32) -> Result<Option<String>, Error>
     }
 }
 
-/// Residual Name changes report the parent when its namespace is locked, otherwise the accepted value.
+/// Residual Name changes report the actual parent when its namespace is locked, otherwise the accepted member.
 pub(super) fn diagnostic_uuid(
     base: &AcceptedBase,
     native: Option<&str>,
     uuid: &NativeUuid,
 ) -> Option<NativeUuid> {
     let path = SourcePath::parse(native?).ok()?;
-    let owner = accepted_owner(base, &path)?;
-    values(owner).find(|node| node.uuid.key() == uuid.key())?;
+    let descriptor = &base.package.documents.get(&path)?.descriptor;
+    let root = &descriptor.object;
+    let owner = std::iter::once(root)
+        .chain(inline_children(root))
+        .find(|parent| {
+            child_creation::accepted_owner(descriptor, &parent.uuid).is_some()
+                && inline_children(parent)
+                    .any(|node| supported_object(node.kind) && node.uuid.key() == uuid.key())
+        })?;
     Some(
         if base.permission(&owner.uuid, Operation::Reorder).allowed {
             uuid.clone()

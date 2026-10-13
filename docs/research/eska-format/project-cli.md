@@ -94,6 +94,10 @@ member в standalone по-прежнему отказывает.
 Неизвестный native профиль восстанавливает состав. XML/BSL упоминание удалённого
 поля отказывает до generation, включая режим `--allow-exclusions`.
 
+[Переименование реквизитов/колонок](attribute-rename.md) принимает адресную правку
+Name по прежнему UUID. Проверяются actual parent/profile, Rename permission,
+окончательный namespace и выбранные XML/BSL зависимости; новые параметры не нужны.
+
 `inspect` читает настройки и для ESKA только manifest/configuration snapshot:
 Name, UUID, owner count и SHA-256 текста. Полный набор owners, база и payloads
 не читаются. `validation = "manifest_and_configuration_only"` не объявляет
@@ -158,6 +162,10 @@ UUID и namespace context относятся к принятой табличн�
 у Catalog/Document или их прямой табличной части; дополнительно проверяются
 XML/BSL имена полей. Supplier rules каждого UUID и наследуемый ESKA freeze
 сохраняют прежний порядок проверки.
+Запрещённое [переименование Attribute](attribute-rename.md) восстанавливает Name
+с `{"kind":"rename"}` и actual parent/member UUID; допустимые независимые
+свойства сохраняются. Некорректное имя, коллизия или упоминание прежнего имени
+в выбранных XML/BSL отказывает в обоих режимах до публикации.
 При успехе prepare возвращаются `xml`, `baseline`, `generation`, input/native
 revision, `source_map_sha256` и exclusions. Inspection, prepare и refusals
 для одинаковых входов дают тот же JSON при ru/en. Это отдельный tool protocol;

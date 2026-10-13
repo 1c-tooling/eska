@@ -2392,6 +2392,35 @@ Inputs/settings/base/manifest/pin и версия не изменились.
 EF-24 остаётся `IN_PROGRESS`: прочие structural/compound profiles ещё нужны;
 C2/C3, новые CFE/EPF/ERF, клиент/данные рабочей ИБ не приняты.
 
+Двадцать пятая часть — [переименование реквизитов и колонок](../research/eska-format/attribute-rename.md)
+Catalog/Document и их прямых таблиц. Общий известный Attribute профиль служит
+delete/rename; actual parent, UUID, context и права берутся из pinned базы.
+Проверяются Reorder родителя и Rename поля, общий root namespace с таблицами,
+отдельные колонки, конечные имена при swap/reuse и независимые structural edits.
+Прежние UUID, service slots, позиции и типы сохраняются. Общий guard инвалидирует
+старое имя как identifier token; UUID-only и case-only references остаются валидными.
+Unknown profile/parent/member policy восстанавливает Name; XML/BSL зависимости
+отказывают до generation. Автоматического переписывания обращений нет.
+
+Одиннадцать core/один supplier integration/два CLI tests прошли оба envelopes,
+policy/recovery, namespace collisions, selected XML/BSL, saved/overlay и Working
+coordinates после независимых reorder/delete. Прошли 16 root/14 SDK/5 adapter
+gates и две release-сборки: 573 unit + 568 integration, 24 opt-in пропущены;
+minimal project — 380 unit + 40 CLI, SDK — 359, adapter — 70 + 12.
+В собственной копии C1 два root поля/две колонки переименованы в двух YAML.
+Independent control совпал по 8 769 файлам/8 064 каталогам после предусмотренных
+export contract final-EOL/empty-ChildObjects нормализаций (3 595/106);
+freeze отказал, recovery сохранил три независимых rename. Реальные старые XML/BSL
+зависимости отказали в обоих языках/режимах. Все 3 595 YAML и пример прошли schemas;
+3 595 descriptors/8 346 объектов равны saved/overlay All/Summary, проверены четыре
+Working Name/четыре Accepted Type spans. Независимые CF/build/dump routes на 1С
+8.3.27.2325 совпали кроме 7 011 configVersion; logical/service UUID, порядок,
+properties/types и все 116 таблиц/464 service UUID сохранены; checksums верны.
+Inputs/settings/base/manifest/pin и версия не изменились.
+[Результаты](../research/eska-format/attribute-rename-results.json).
+EF-24 — `IN_PROGRESS`: остальные structural/compound profiles ещё нужны;
+C2/C3, новые CFE/EPF/ERF, клиент/рабочая ИБ этой частью не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

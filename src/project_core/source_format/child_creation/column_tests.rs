@@ -134,12 +134,11 @@ fn columns_extend_existing_and_empty_tables_without_granting_new_identity_author
             PermissionReason::UnknownObject
         );
         assert!(base.permission(&uuid(21), Operation::Delete).allowed);
-        for operation in [Operation::Create, Operation::Rename] {
-            assert_eq!(
-                base.permission(&uuid(21), operation).reason,
-                PermissionReason::UnsupportedOperation
-            );
-        }
+        assert!(base.permission(&uuid(21), Operation::Rename).allowed);
+        assert_eq!(
+            base.permission(&uuid(21), Operation::Create).reason,
+            PermissionReason::UnsupportedOperation
+        );
         assert_eq!(
             prepared.generation(),
             prepare_protected(&source, &base, &output, true)
@@ -297,13 +296,12 @@ fn column_names_and_shapes_refuse_collisions_and_unsupported_native_state() {
     assert!(prepare_protected(&source, &base, &test.0.join("generations"), true).is_ok());
 }
 
-/// Creation cannot transfer accepted identities, create a parent or combine column removal/rename/reorder.
+/// Creation cannot transfer accepted identities, create an unverified parent or combine column removal/reorder.
 #[test]
 fn column_creation_does_not_authorize_other_structural_changes() {
     for fault in [
         "foreign_uuid",
         "delete",
-        "rename",
         "order",
         "new_table",
         "unknown_slot",
@@ -334,18 +332,6 @@ fn column_creation_does_not_authorize_other_structural_changes() {
                     columns.remove(0);
                 }
                 "order" => columns.reverse(),
-                "rename" => {
-                    let Child::Inline { object } = &mut columns[0] else {
-                        unreachable!()
-                    };
-                    let Section::Properties(properties) = &mut object.sections[0] else {
-                        unreachable!()
-                    };
-                    let Property::Typed { value, .. } = &mut properties[0] else {
-                        unreachable!()
-                    };
-                    *value = PropertyValue::Text("Renamed".into());
-                }
                 _ => {}
             }
             columns.push(attribute(

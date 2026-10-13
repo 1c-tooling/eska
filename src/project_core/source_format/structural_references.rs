@@ -67,7 +67,7 @@ fn invalidated_keys(base: &AcceptedBase, package: &Package) -> Result<Invalidate
             .descriptor
             .object;
         if matches!(owner.kind, MetadataKind::Catalog | MetadataKind::Document) {
-            removed_fields(owner, selected, &mut result)?;
+            invalidated_fields(owner, selected, &mut result)?;
         }
         if owner.kind != MetadataKind::Enum {
             continue;
@@ -102,16 +102,23 @@ fn invalidated_keys(base: &AcceptedBase, package: &Package) -> Result<Invalidate
     Ok(result)
 }
 
-/// Only actual attributes of the accepted root or direct table can disappear under the closed deletion selector.
-fn removed_fields(
+/// Removed fields invalidate UUID and name; renamed fields retain UUID and case-insensitive name identity.
+fn invalidated_fields(
     accepted: &MetadataNode,
     selected: &MetadataNode,
     result: &mut Invalidated,
 ) -> Result<(), Error> {
-    let selected: std::collections::BTreeSet<_> =
-        attributes(selected).map(|node| node.uuid.key()).collect();
+    let selected: BTreeMap<_, _> = attributes(selected)
+        .map(|node| (node.uuid.key(), node))
+        .collect();
     for node in attributes(accepted) {
-        if selected.contains(&node.uuid.key()) {
+        let next = selected.get(&node.uuid.key());
+        if next.is_some_and(|next| {
+            let before = node.property(PropertyName::Name);
+            let after = next.property(PropertyName::Name);
+            before == after
+                || matches!((before, after), (Some(PropertyValue::Text(left)), Some(PropertyValue::Text(right))) if left.to_lowercase() == right.to_lowercase())
+        }) {
             continue;
         }
         let Some(PropertyValue::Text(name)) = node.property(PropertyName::Name) else {
@@ -120,7 +127,9 @@ fn removed_fields(
         if name.is_empty() {
             return Err(Error::root("source_name_missing"));
         }
-        result.exact.insert(node.uuid.key(), node.uuid.clone());
+        if next.is_none() {
+            result.exact.insert(node.uuid.key(), node.uuid.clone());
+        }
         result.fields.insert(name.to_lowercase(), node.uuid.clone());
     }
     Ok(())

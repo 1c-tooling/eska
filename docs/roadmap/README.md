@@ -115,6 +115,9 @@ generated names выводятся из единственных metadata Name. 
 [Двадцать четвёртая часть](../research/eska-format/attribute-deletion.md) удаляет
 реквизиты/колонки Catalog/Document по известному native профилю, с сохранением
 порядка остальных членов, проверкой supplier/freeze и XML/BSL упоминаний.
+[Двадцать пятая часть](../research/eska-format/attribute-rename.md) переименовывает
+эти Attribute с прежними UUID и known native profile; окончательные имена,
+права actual parent/member и XML/BSL зависимости проверяются до generation.
 Остальные structural/compound profiles остаются в EF-24.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи

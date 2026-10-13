@@ -1,10 +1,10 @@
 //! Field removal preserves native composition, selected dependency bytes and independent policy decisions.
 
-use std::{fs, path::Path};
+use std::fs;
 
 use super::super::{
-    Descriptor, InputAuthority, MetadataNode, ObjectSource, OriginTexts, PermissionReason,
-    Property, PropertyName, PropertyValue, Section, SourceReader,
+    Descriptor, InputAuthority, ObjectSource, OriginTexts, PermissionReason, SourceReader,
+    attribute_test_support::{columns, comment, fixture, table},
     child_creation::attribute_tests::{attribute_xml, edit},
     enum_test_support::{children, uuid},
     files::Inventory,
@@ -16,96 +16,6 @@ use crate::{project_core::metadata_parser::PropertiesMode, test_support::TestDir
 const CATALOG: &str = "Catalogs/Records/object.yaml";
 const DOCUMENT: &str = "Documents/Entry/object.yaml";
 const BOOLEAN: &str = "<v8:Type>xs:boolean</v8:Type>";
-
-/// Both roots have accepted attributes and direct tables with independent identities and inert service bytes.
-fn fixture(
-    test: &TestDir,
-    readable: bool,
-    frozen: &[NativeUuid],
-    adjust: impl FnOnce(&Path),
-) -> (std::path::PathBuf, AcceptedBase) {
-    super::super::child_creation::attribute_tests::fixture(test, readable, frozen, |input| {
-        for (path, table, first, second, first_name, second_name) in [
-            (
-                "Catalogs/Records.xml",
-                13,
-                21,
-                22,
-                "FirstColumn",
-                "LastColumn",
-            ),
-            (
-                "Documents/Entry.xml",
-                14,
-                41,
-                42,
-                "FirstDocumentColumn",
-                "LastDocumentColumn",
-            ),
-        ] {
-            let file = input.join(path);
-            let native = fs::read_to_string(&file).unwrap();
-            let table = format!(
-                "<TabularSection uuid=\"{}\"><InternalInfo><FutureData>Retained table service bytes</FutureData></InternalInfo><Properties><Name>Rows</Name><Synonym/><Comment/></Properties><ChildObjects>{}{}</ChildObjects></TabularSection>",
-                uuid(table).as_str(),
-                attribute_xml(first, first_name, BOOLEAN),
-                attribute_xml(second, second_name, BOOLEAN)
-            );
-            let fields = if first == 41 {
-                attribute_xml(31, "FirstDocumentField", BOOLEAN)
-                    + &attribute_xml(32, "LastDocumentField", BOOLEAN)
-            } else {
-                String::new()
-            };
-            fs::write(
-                file,
-                native.replace("</ChildObjects>", &(fields + &table + "</ChildObjects>")),
-            )
-            .unwrap();
-        }
-        adjust(input);
-    })
-}
-
-/// Native parent identity selects one actual inline table and never a coincidental object kind.
-fn table(owner: &mut ObjectSource, index: u32) -> &mut MetadataNode {
-    children(owner)
-        .iter_mut()
-        .find_map(|child| match child {
-            Child::Inline { object } if object.uuid == uuid(index) => Some(object.as_mut()),
-            _ => None,
-        })
-        .unwrap()
-}
-
-/// An accepted inline collection remains explicit even after its last column is removed.
-fn columns(table: &mut MetadataNode) -> &mut Vec<Child> {
-    table
-        .sections
-        .iter_mut()
-        .find_map(|section| match section {
-            Section::Children(children) => Some(children),
-            _ => None,
-        })
-        .unwrap()
-}
-
-/// Independent comments remain selectable when a neighboring structural operation is refused.
-fn comment(object: &mut MetadataNode, text: &str) {
-    for section in &mut object.sections {
-        if let Section::Properties(properties) = section {
-            for property in properties {
-                if let Property::Typed {
-                    name: PropertyName::Comment,
-                    value,
-                } = property
-                {
-                    *value = PropertyValue::Text(text.into());
-                }
-            }
-        }
-    }
-}
 
 /// Root fields and columns disappear by accepted UUID without changing native/source/base bytes or repeatability.
 #[test]

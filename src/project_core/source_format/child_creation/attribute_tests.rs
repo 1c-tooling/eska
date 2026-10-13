@@ -178,10 +178,7 @@ fn fresh_attributes_keep_native_types_and_inputs_without_becoming_accepted_objec
             PermissionReason::UnsupportedOperation
         );
         assert!(base.permission(&uuid(11), Operation::Delete).allowed);
-        assert_eq!(
-            base.permission(&uuid(11), Operation::Rename).reason,
-            PermissionReason::UnsupportedOperation
-        );
+        assert!(base.permission(&uuid(11), Operation::Rename).allowed);
         let repeated =
             prepare_protected(&source, &base, &test.0.join("generations"), true).unwrap();
         assert_eq!(prepared.generation(), repeated.generation());
@@ -478,10 +475,10 @@ fn attributes_require_their_class_group_and_known_native_composition() {
     }
 }
 
-/// The existing structural selector must not enable deletion or renaming of attributes as a side effect.
+/// Creation refuses identity transfer, mixed removal/reordering and a forged native owner class.
 #[test]
-fn attribute_creation_does_not_enable_transfer_deletion_rename_or_reordering() {
-    for fault in ["foreign_uuid", "delete", "rename", "order", "owner_class"] {
+fn attribute_creation_refuses_transfer_mixed_removal_reordering_or_owner_substitution() {
+    for fault in ["foreign_uuid", "delete", "order", "owner_class"] {
         let test = TestDir::new();
         let (source, base) = fixture(&test, true, &[], |_| {});
         edit(&source, CATALOG, |owner| {
@@ -489,18 +486,6 @@ fn attribute_creation_does_not_enable_transfer_deletion_rename_or_reordering() {
             match fault {
                 "delete" => {
                     fields.remove(0);
-                }
-                "rename" => {
-                    let Child::Inline { object } = &mut fields[0] else {
-                        unreachable!()
-                    };
-                    let Section::Properties(properties) = &mut object.sections[0] else {
-                        unreachable!()
-                    };
-                    let Property::Typed { value, .. } = &mut properties[0] else {
-                        unreachable!()
-                    };
-                    *value = PropertyValue::Text("Renamed".into());
                 }
                 "order" => fields.reverse(),
                 "foreign_uuid" | "owner_class" => {}

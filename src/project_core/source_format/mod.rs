@@ -1,5 +1,8 @@
 //! Experimental, reversible source documents, independent of IDE and platform runners.
 
+mod attribute_profile;
+#[cfg(test)]
+mod attribute_test_support;
 mod baseline;
 mod child_creation;
 mod child_deletion;

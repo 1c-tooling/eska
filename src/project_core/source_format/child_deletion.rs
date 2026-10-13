@@ -5,12 +5,12 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde_json::Value;
 
 use super::{
-    AcceptedBase, Child, Error, NativeUuid, Operation, SourcePath, child_creation,
+    AcceptedBase, Child, Error, NativeUuid, Operation, SourcePath, attribute_profile,
+    child_creation,
     child_order::{self, Identity},
 };
 use crate::project_core::MetadataKind;
 
-mod profiles;
 #[cfg(test)]
 mod tests;
 
@@ -75,7 +75,8 @@ pub(super) fn select(
                     && child_creation::validate_new_node(object).is_ok()
             }
             MetadataKind::Catalog | MetadataKind::Document | MetadataKind::TabularSection => {
-                object.kind == MetadataKind::Attribute && profiles::attribute(object, &context)?
+                object.kind == MetadataKind::Attribute
+                    && attribute_profile::attribute(object, &context)?
             }
             _ => false,
         };
