@@ -25,6 +25,18 @@ pub(super) fn sources(
     base: &AcceptedBase,
     diagnostics: &mut Vec<Exclusion>,
 ) -> Result<SelectedSources, Error> {
+    sources_with_reader(working, base, diagnostics, |path| {
+        read_working(root, working, path)
+    })
+}
+
+/// A base-update preview validates selected bytes before any destination tree exists.
+pub(super) fn sources_with_reader(
+    working: &Inventory,
+    base: &AcceptedBase,
+    diagnostics: &mut Vec<Exclusion>,
+    mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
+) -> Result<SelectedSources, Error> {
     let mut result = SelectedSources {
         documents: BTreeMap::new(),
         forms: BTreeMap::new(),
@@ -45,10 +57,7 @@ pub(super) fn sources(
     for (path, parts) in &base.package.owners {
         let mut family = accepted_owner(base, parts, dialogs.get(path).copied())?;
         let current = if working.files.contains_key(path) {
-            Some(
-                yaml::decode(&read_working(root, working, path)?)
-                    .map_err(|error| error.in_field(path.as_str()))?,
-            )
+            Some(yaml::decode(&read(path)?).map_err(|error| error.in_field(path.as_str()))?)
         } else {
             None
         };

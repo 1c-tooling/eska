@@ -45,10 +45,11 @@ mod xml;
 mod yaml;
 
 pub use baseline::{
-    AcceptedBase, AcceptedLayoutPlan, AcceptedRef, Operation, Permission, PermissionReason,
+    AcceptedBase, AcceptedLayoutPlan, AcceptedRef, BaseUpdateChange, BaseUpdateConflict,
+    BaseUpdateConflictKind, BaseUpdatePlan, Operation, Permission, PermissionReason, SupportChange,
     accept_source, prepare_accepted_descriptor_layout, prepare_accepted_form_layout,
     prepare_accepted_query_layout, prepare_accepted_readable_layout,
-    prepare_accepted_resource_layout,
+    prepare_accepted_resource_layout, prepare_base_update,
 };
 pub use coordinates::{CoordinateError, TextCoordinates, TextPosition, TextRange};
 pub use edit::{

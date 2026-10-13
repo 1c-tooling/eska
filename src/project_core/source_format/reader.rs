@@ -214,33 +214,7 @@ impl SourceReader {
     /// # Errors
     /// Returns an unsupported root kind or invalid preserved namespace context.
     pub fn project_type(&self) -> Result<crate::project_core::ProjectType, Error> {
-        use super::{MD_NAMESPACE, Property, Section, validation};
-        use crate::project_core::ProjectType;
-        let descriptor = &self.configuration.source.document.descriptor;
-        let root = &descriptor.object;
-        if let Some(kind) = super::root::external_kind(descriptor) {
-            return Ok(kind.project_type());
-        }
-        if root.kind != MetadataKind::Configuration {
-            return Err(Error::root("source_profile_unsupported"));
-        }
-        let context = validation::scope(&descriptor.xml.namespaces, &root.namespaces)?;
-        for section in &root.sections {
-            if let Section::Properties(properties) = section {
-                for property in properties {
-                    if let Property::Preserved { fragment } = property
-                        && validation::fragment(fragment, &context)?.is_some_and(
-                            |(namespace, name)| {
-                                namespace == MD_NAMESPACE && name == "ConfigurationExtensionPurpose"
-                            },
-                        )
-                    {
-                        return Ok(ProjectType::Extension);
-                    }
-                }
-            }
-        }
-        Ok(ProjectType::Configuration)
+        super::root::project_type(&self.configuration.source.document.descriptor)
     }
 
     /// Return the canonical directory bound to this manifest and composition snapshot.

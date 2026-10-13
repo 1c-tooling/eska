@@ -192,6 +192,23 @@ pub fn prepare_protected(
     })
 }
 
+/// Validate a proposed update with the same permissions as protected export, without publication.
+pub(super) fn update_exclusions(
+    working: &Inventory,
+    base: &AcceptedBase,
+    read: impl FnMut(&SourcePath) -> Result<String, Error>,
+) -> Result<Vec<Exclusion>, Error> {
+    queries::require_values(working, base)?;
+    let mut diagnostics = Vec::new();
+    let selected = merge::sources_with_reader(working, base, &mut diagnostics, read)?;
+    validate_composition(&selected.documents)?;
+    select_files(working, base, &mut diagnostics);
+    diagnostics.sort_by(|left, right| {
+        (&left.path, &left.coordinate, &left.id).cmp(&(&right.path, &right.coordinate, &right.id))
+    });
+    Ok(diagnostics)
+}
+
 /// Byte origins remain explicit while the full output composition is taken from accepted files.
 #[derive(Clone, Copy)]
 enum Origin {
@@ -393,7 +410,7 @@ pub(super) fn module_permission(
 }
 
 /// Resolve the longest declared native owner before considering a configuration root payload.
-fn native_file_owner(base: &AcceptedBase, path: &SourcePath) -> Option<NativeUuid> {
+pub(super) fn native_file_owner(base: &AcceptedBase, path: &SourcePath) -> Option<NativeUuid> {
     for (end, _) in path.as_str().match_indices('/').rev() {
         let descriptor = SourcePath::parse(&format!("{}.xml", &path.as_str()[..end])).ok()?;
         if let Some(document) = base.package.documents.get(&descriptor) {

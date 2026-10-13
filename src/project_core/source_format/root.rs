@@ -279,3 +279,31 @@ pub(super) fn descriptor_path(
     }
     super::layout::descriptor_path(kind, native)
 }
+
+/// Share native CF/CFE/EPF/ERF classification between readers and independently verified bases.
+pub(super) fn project_type(descriptor: &Descriptor) -> Result<ProjectType, Error> {
+    use super::{MD_NAMESPACE, Property, Section, validation};
+    use crate::project_core::ProjectType;
+    let root = &descriptor.object;
+    if let Some(kind) = external_kind(descriptor) {
+        return Ok(kind.project_type());
+    }
+    if root.kind != MetadataKind::Configuration {
+        return Err(Error::root("source_profile_unsupported"));
+    }
+    let context = validation::scope(&descriptor.xml.namespaces, &root.namespaces)?;
+    for section in &root.sections {
+        if let Section::Properties(properties) = section {
+            for property in properties {
+                if let Property::Preserved { fragment } = property
+                    && validation::fragment(fragment, &context)?.is_some_and(|(namespace, name)| {
+                        namespace == MD_NAMESPACE && name == "ConfigurationExtensionPurpose"
+                    })
+                {
+                    return Ok(ProjectType::Extension);
+                }
+            }
+        }
+    }
+    Ok(ProjectType::Configuration)
+}

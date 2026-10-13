@@ -1,6 +1,12 @@
 //! Pinned complete source bytes and policy; working metadata never grants itself permission.
 
 mod layout;
+mod update;
+
+pub use update::{
+    BaseUpdateChange, BaseUpdateConflict, BaseUpdateConflictKind, BaseUpdatePlan, SupportChange,
+    prepare_base_update,
+};
 
 pub use layout::{
     AcceptedLayoutPlan, prepare_accepted_descriptor_layout, prepare_accepted_form_layout,
@@ -309,13 +315,24 @@ impl AcceptedBase {
 
     /// A previously opened base cannot silently supply changed bytes or a replacement policy.
     pub(super) fn verify(&self) -> Result<(), Error> {
-        verify_manifest(&self.root, &self.reference)?;
+        self.verified_inventory().map(|_| ())
+    }
+
+    /// Bind a plan to the inventory that was actually verified, without a second racy scan.
+    fn verified_inventory(&self) -> Result<Inventory, Error> {
         let inventory = Inventory::read(&self.root)?;
+        if inventory
+            .files
+            .get(&SourcePath::parse(BASE_MANIFEST)?)
+            .is_none_or(|entry| entry.sha256 != self.reference.sha256)
+        {
+            return Err(Error::root("source_baseline_untrusted"));
+        }
         reject_pending_layout(&inventory)?;
         if verified_snapshot(&self.manifest, &inventory)? != self.package.snapshot {
             return Err(Error::root("source_baseline_corrupt"));
         }
-        Ok(())
+        Ok(inventory)
     }
 
     /// Output generations must not be created inside accepted bytes or around their root.
