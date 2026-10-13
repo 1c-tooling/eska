@@ -59,7 +59,10 @@ input подтверждается SHA-256 decoded native text; дополнит
 файла с учётом entities, numeric CR, XML CR/CRLF normalization, CDATA delimiters
 и split `]]>`. Unicode character и entity атомарны; mid-UTF-8 spans отказывают.
 Decoder проходит до запрошенного места без хранения массива для каждого символа.
-Native header может дать только file-level plain location; пустой query — `0..0`.
+Native header может дать только file-level plain location; пустой query — `0..0`,
+если весь запрошенный span находится внутри его native node. Диапазон, выходящий
+из пустого узла в соседний XML, получает только file-level location без точного
+plain range.
 
 Вне queries адреса СКД указывают на выбранный source XML. При supplied exact
 `OriginTexts` проверяется inverse и учитывается сдвиг от замены reference nodes;

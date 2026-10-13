@@ -23,7 +23,8 @@ pub(super) fn decoded_range(
         return Err(invalid());
     }
     let Some(body) = query.frame.content_range() else {
-        return Ok(Some(0..0));
+        let slot = query.native_range();
+        return Ok((range.start >= slot.start && range.end <= slot.end).then_some(0..0));
     };
     if range.start < body.start || range.end > body.end {
         return Ok(None);

@@ -75,6 +75,24 @@ fn native_entities_and_split_cdata_address_decoded_utf8_without_per_character_st
     );
 }
 
+/// A self-closing query must not claim coordinates in adjacent XML or another query.
+#[test]
+fn empty_query_coordinates_do_not_escape_their_native_slot() {
+    let native = schema("").replace("<query></query>", "<query />");
+    let parsed = NativeQueryDocument::from_xml(&native).unwrap();
+    let query = &parsed.queries()[0];
+    let slot = query.native_range();
+    for range in [
+        0..slot.start,
+        slot.start - 1..slot.end,
+        slot.start..slot.end + 1,
+        parsed.queries()[1].native_range(),
+    ] {
+        assert_eq!(query.decoded_range(&native, &range).unwrap(), None);
+    }
+    assert_eq!(query.decoded_range(&native, &slot).unwrap(), Some(0..0));
+}
+
 /// Gap locations handle exact query-node endpoints and points after multiple earlier replacements.
 #[test]
 fn restoring_reference_nodes_preserves_gap_offsets_and_exact_end_boundaries() {

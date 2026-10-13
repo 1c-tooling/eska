@@ -140,6 +140,35 @@ fn allowed_query_edits_have_composite_origins_and_exact_entity_unicode_and_cr_co
     assert_eq!(Inventory::read(&root).unwrap(), before);
 }
 
+/// A span crossing an empty saved query keeps file-level origin without a false exact plain range.
+#[test]
+fn empty_query_source_map_does_not_claim_following_form_xml() {
+    let directory = TestDir::new();
+    let (root, base) = accepted(&directory, &[], false);
+    let prepared = prepare_protected(&root, &base, &directory.0.join("generations"), true).unwrap();
+    let bytes = fs::read(prepared.xml().join(DIALOG)).unwrap();
+    let native = std::str::from_utf8(&bytes).unwrap();
+    let document = NativeQueryDocument::from_xml(native).unwrap();
+    let query = document
+        .queries()
+        .iter()
+        .find(|query| query.text.is_empty())
+        .unwrap();
+    let slot = query.native_range();
+    let mapped = prepared.source_map().file(&path(DIALOG)).unwrap();
+    let location = mapped.locate(&bytes, slot.clone(), None).unwrap();
+    assert_eq!(
+        location.input.path,
+        path("Catalogs/Sample/Forms/Main/Queries/Attribute_6.sdbl")
+    );
+    assert_eq!(location.range, Some(0..0));
+    let crossed = mapped
+        .locate(&bytes, slot.start..slot.end + 1, None)
+        .unwrap();
+    assert_eq!(crossed.input, location.input);
+    assert_eq!(crossed.range, None);
+}
+
 /// Restored form bindings do not erase independently permitted body properties or plain query values.
 #[test]
 fn form_query_values_preserve_property_coordinates_after_queries_and_restore_spoofed_bindings() {
