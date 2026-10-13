@@ -5,17 +5,21 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde_json::Value;
 
 use super::{
-    AcceptedBase, Child, Error, NativeUuid, Operation, SourcePath,
+    AcceptedBase, Child, Error, NativeUuid, Operation, SourcePath, child_creation,
     child_order::{self, Identity},
 };
 use crate::project_core::MetadataKind;
 
+mod profiles;
 #[cfg(test)]
 mod tests;
 
-/// Only inline enum values have an accepted removal profile without generated types or files.
+#[cfg(test)]
+mod attribute_tests;
+
+/// Inline enum values and verified attributes have no generated identities or separate owned files.
 pub(super) const fn supported_object(kind: MetadataKind) -> bool {
-    matches!(kind, MetadataKind::EnumValue)
+    matches!(kind, MetadataKind::EnumValue | MetadataKind::Attribute)
 }
 
 /// A reduction retains a unique ordered subset; creation, transfer and reordering are separate operations.
@@ -39,12 +43,12 @@ pub(super) fn select(
     children: &mut Vec<Child>,
     working: Option<&Vec<Value>>,
 ) -> Result<(), Error> {
-    if !base.package.documents.get(native).is_some_and(|document| {
-        document.descriptor.object.kind == MetadataKind::Enum
-            && document.descriptor.object.uuid.key() == owner.key()
-    }) {
+    let Some(document) = base.package.documents.get(native) else {
         return Ok(());
-    }
+    };
+    let Some(parent) = child_creation::accepted_owner(&document.descriptor, owner) else {
+        return Ok(());
+    };
     let (Some(before), Some(after)) = (
         child_order::from_children(children),
         working.and_then(|values| child_order::from_values(values)),
@@ -56,6 +60,7 @@ pub(super) fn select(
     {
         return Ok(());
     }
+    let context = child_creation::accepted_context(&document.descriptor, parent)?;
     let retained: BTreeSet<_> = after.iter().collect();
     for (identity, child) in before.iter().zip(children.iter()) {
         if retained.contains(identity) {
@@ -64,7 +69,17 @@ pub(super) fn select(
         let Child::Inline { object } = child else {
             return Ok(());
         };
-        if super::child_creation::validate_new_node(object).is_err() {
+        let supported = match parent.kind {
+            MetadataKind::Enum => {
+                object.kind == MetadataKind::EnumValue
+                    && child_creation::validate_new_node(object).is_ok()
+            }
+            MetadataKind::Catalog | MetadataKind::Document | MetadataKind::TabularSection => {
+                object.kind == MetadataKind::Attribute && profiles::attribute(object, &context)?
+            }
+            _ => false,
+        };
+        if !supported {
             return Ok(());
         }
     }

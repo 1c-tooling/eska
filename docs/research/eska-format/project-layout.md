@@ -43,6 +43,9 @@ generated table/row names выводятся из единственных Name 
 [Новые табличные части](table-creation.md) у Catalog/Document имеют единственные
 Name и явные service UUID; новый closed subtree допускает пустой состав или
 колонки Attribute, с прежними проверками policy/freeze, имён и типов.
+[Удаление реквизитов/колонок](attribute-deletion.md) сокращает авторитетный состав
+с сохранением порядка и identities оставшихся узлов; известный native профиль,
+права и оставшиеся XML/BSL упоминания проверяются до публикации.
 Остальные structural/compound profiles ещё не приняты.
 
 Внешние источники проверены 2026-10-11:

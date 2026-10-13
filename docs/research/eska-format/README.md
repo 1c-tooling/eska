@@ -34,6 +34,9 @@ Catalog/Document с её UUID, parentage и native namespace context.
 [Создание табличных частей](table-creation.md) принимает новый закрытый subtree
 Catalog/Document с явными service UUID и новыми колонками; авторитет даёт принятый
 родитель, все UUID/имена/типы проверяются до публикации.
+[Удаление реквизитов и колонок](attribute-deletion.md) сохраняет относительный
+порядок выживших членов и service UUID таблицы; права и консервативный guard
+XML/BSL проверяются до generation. Неизвестный профиль восстанавливает состав.
 Другие structural profiles и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.

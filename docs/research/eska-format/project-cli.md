@@ -89,6 +89,11 @@ member в standalone по-прежнему отказывает.
 по принятому родителю, UUID всего состава, именам и типам колонок. Ошибка профиля,
 коллизия или отсутствующая цель типа не обходится `--allow-exclusions`.
 
+[Удаление реквизитов и колонок](attribute-deletion.md) также использует прежний
+`prepare`: автор удаляет целый member из `children`, сохраняя порядок остальных.
+Неизвестный native профиль восстанавливает состав. XML/BSL упоминание удалённого
+поля отказывает до generation, включая режим `--allow-exclusions`.
+
 `inspect` читает настройки и для ESKA только manifest/configuration snapshot:
 Name, UUID, owner count и SHA-256 текста. Полный набор owners, база и payloads
 не читаются. `validation = "manifest_and_configuration_only"` не объявляет
@@ -149,6 +154,10 @@ UUID и namespace context относятся к принятой табличн�
 Запрещённое [удаление EnumValue](enum-value-deletion.md) восстанавливается с
 `{"kind":"delete"}`. Оставшиеся typed/preserved XML зависимости отказывают
 до публикации, включая режим `--allow-exclusions`.
+Та же operation используется для запрещённого [удаления Attribute](attribute-deletion.md)
+у Catalog/Document или их прямой табличной части; дополнительно проверяются
+XML/BSL имена полей. Supplier rules каждого UUID и наследуемый ESKA freeze
+сохраняют прежний порядок проверки.
 При успехе prepare возвращаются `xml`, `baseline`, `generation`, input/native
 revision, `source_map_sha256` и exclusions. Inspection, prepare и refusals
 для одинаковых входов дают тот же JSON при ru/en. Это отдельный tool protocol;

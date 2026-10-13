@@ -133,7 +133,8 @@ fn columns_extend_existing_and_empty_tables_without_granting_new_identity_author
             base.permission(&uuid(100), Operation::Create).reason,
             PermissionReason::UnknownObject
         );
-        for operation in [Operation::Create, Operation::Delete, Operation::Rename] {
+        assert!(base.permission(&uuid(21), Operation::Delete).allowed);
+        for operation in [Operation::Create, Operation::Rename] {
             assert_eq!(
                 base.permission(&uuid(21), operation).reason,
                 PermissionReason::UnsupportedOperation

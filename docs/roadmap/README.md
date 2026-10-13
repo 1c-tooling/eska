@@ -112,6 +112,9 @@ generated names выводятся из единственных metadata Name. 
 [Двадцать третья часть](../research/eska-format/table-creation.md) создаёт
 пустые или заполненные табличные части Catalog/Document с явными service UUID,
 свежими identity колонок, проверкой принятого родителя, имён/типов и сдвигов.
+[Двадцать четвёртая часть](../research/eska-format/attribute-deletion.md) удаляет
+реквизиты/колонки Catalog/Document по известному native профилю, с сохранением
+порядка остальных членов, проверкой supplier/freeze и XML/BSL упоминаний.
 Остальные structural/compound profiles остаются в EF-24.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи

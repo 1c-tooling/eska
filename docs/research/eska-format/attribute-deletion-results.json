@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "experiment": "EF-24 accepted inline Catalog/Document Attribute deletion",
+  "date": "2026-10-13",
+  "task_status": "IN_PROGRESS",
+  "envelopes": [
+    "family",
+    "readable"
+  ],
+  "source_layouts": [
+    1,
+    2,
+    3
+  ],
+  "deleted_node_kind": "Attribute",
+  "accepted_owner_kinds": [
+    "Catalog",
+    "Document",
+    "TabularSection"
+  ],
+  "tabular_section_requires_direct_catalog_or_document_parent": true,
+  "ordered_subset_required": true,
+  "owner_deleted_and_displaced_member_permissions_checked": true,
+  "schema_rules_and_tool_protocol_versions_unchanged": true,
+  "native_profile_inventory": {
+    "original_c1_attributes_and_columns": 1634,
+    "observed_property_counts": [
+      26,
+      28,
+      29
+    ],
+    "first_properties": [
+      "Name",
+      "Synonym",
+      "Comment",
+      "Type"
+    ],
+    "unknown_profile_restores_collection": true,
+    "no_owned_files_or_generated_ids_or_node_namespaces": true
+  },
+  "validation": {
+    "root_gates": 16,
+    "sdk_gates": 14,
+    "adapter_gates": 5,
+    "release_builds": 2,
+    "all_passed": true,
+    "root_unit_tests": 562,
+    "root_integration_tests": 567,
+    "root_opt_in_tests_ignored": 24,
+    "minimal_core_unit_tests": 361,
+    "minimal_project_unit_tests": 369,
+    "minimal_project_cli_tests": 38,
+    "sdk_tests": 359,
+    "adapter_unit_tests": 70,
+    "adapter_integration_tests": 12,
+    "new_core_tests": 10,
+    "new_supplier_integration_tests": 1,
+    "new_cli_tests": 2,
+    "both_envelopes_and_empty_columns": true,
+    "native_supplier_and_inherited_freeze_and_stationary_member_policy": true,
+    "unknown_profiles_and_mixed_composition_restore": true,
+    "decoded_xml_uuid_text_attributes_tags_entities_and_cdata": true,
+    "bsl_body_strings_comments_and_identifier_boundaries": true,
+    "selected_accepted_and_working_payload_bytes": true,
+    "malformed_xml_refused": true,
+    "saved_overlay_all_summary_projection": true,
+    "both_locales_and_locale_independent_json": true
+  },
+  "real_c1": {
+    "native_descriptors": 3595,
+    "native_files": 8769,
+    "native_directories": 8064,
+    "starting_objects": 8346,
+    "removed_root_attributes": 2,
+    "removed_columns": 2,
+    "changed_source_files": 2,
+    "native_control_bytes_equal": true,
+    "control_metadata_final_eol_normalization": 3595,
+    "control_empty_child_collections_normalization": 106,
+    "protected_exclusions": 0,
+    "both_locales_checked": true,
+    "generation_reused": true,
+    "working_and_accepted_and_native_and_settings_unchanged": true,
+    "source_manifest_unchanged": true,
+    "frozen_field_refused": true,
+    "negative_recovery_retains_three_independent_removals": true,
+    "independent_release_cli": true,
+    "platform_git_and_facade_absent_from_path": true
+  },
+  "semantic": {
+    "descriptors": 3595,
+    "objects": 8342,
+    "all_and_summary_equal": true,
+    "saved_and_unsaved_equal": true
+  },
+  "schemas": {
+    "readable_source_files": 3595,
+    "invalid_source_files": 0,
+    "closed_node_example_valid": true
+  },
+  "source_map": {
+    "working_spans": 2,
+    "accepted_spans": 2,
+    "survivor_coordinates_follow_uuid_after_deletion": true,
+    "deleted_nodes_have_no_native_coordinates": true
+  },
+  "real_existing_dependencies": [
+    {
+      "resource_kind": "bsl",
+      "native_field_profile": 29,
+      "existing_native_mentions": 1,
+      "both_locales_and_modes_refused": true,
+      "new_generation_not_published": true,
+      "source_and_accepted_and_settings_unchanged": true,
+      "code": "source_structural_reference_preserved"
+    },
+    {
+      "resource_kind": "xml",
+      "native_field_profile": 28,
+      "existing_native_mentions": 4,
+      "both_locales_and_modes_refused": true,
+      "new_generation_not_published": true,
+      "source_and_accepted_and_settings_unchanged": true,
+      "code": "source_structural_reference_preserved"
+    }
+  ],
+  "platform": {
+    "version": "8.3.27.2325",
+    "artifact": "CF",
+    "control_and_eska_build_dump_passed": true,
+    "native_files": 8769,
+    "native_directories": 8064,
+    "ignored_dump_versions": 7011,
+    "all_other_bytes_equal": true,
+    "manifest_checksums_valid": true,
+    "source_and_base_unchanged": true,
+    "original_native_unchanged": true,
+    "project_version_unchanged": true,
+    "protected_exclusions": 0
+  },
+  "retained_native_metadata": [
+    {
+      "route": "control",
+      "owner": "Catalog",
+      "root_attribute_removed": true,
+      "column_removed": true,
+      "surviving_columns": 5,
+      "remaining_child_identities_order_properties_and_types_equal": true,
+      "table_and_service_ids_retained": true
+    },
+    {
+      "route": "control",
+      "owner": "Document",
+      "root_attribute_removed": true,
+      "column_removed": true,
+      "surviving_columns": 5,
+      "remaining_child_identities_order_properties_and_types_equal": true,
+      "table_and_service_ids_retained": true
+    },
+    {
+      "route": "eska",
+      "owner": "Catalog",
+      "root_attribute_removed": true,
+      "column_removed": true,
+      "surviving_columns": 5,
+      "remaining_child_identities_order_properties_and_types_equal": true,
+      "table_and_service_ids_retained": true
+    },
+    {
+      "route": "eska",
+      "owner": "Document",
+      "root_attribute_removed": true,
+      "column_removed": true,
+      "surviving_columns": 5,
+      "remaining_child_identities_order_properties_and_types_equal": true,
+      "table_and_service_ids_retained": true
+    },
+    {
+      "retained_tables": 116,
+      "retained_service_uuids": 464,
+      "all_service_declarations_unchanged_on_both_routes": true
+    }
+  ],
+  "limits": [
+    "Removal is limited to verified inline Attribute of Catalog/Document or their direct TabularSection",
+    "Creation mixed with removal, transfer, reordered survivors and unknown profiles are not accepted",
+    "Field names are conservative case-insensitive identifier tokens; unrelated matching names can refuse",
+    "Selected XML and BSL mentions are not semantic dependency analysis or inferred inverse rules",
+    "Binary, non-XML/non-BSL resources and computed references are not validated",
+    "Control explicitly normalizes final metadata EOL and empty ChildObjects spelling under the documented exporter contract",
+    "Source and accepted bytes remain exact; original platform metadata XML byte-for-byte no-op is not claimed",
+    "Other structural/compound profiles remain in EF-24; field rename is not accepted",
+    "C2/C3 and new CFE/EPF/ERF not accepted",
+    "No client execution, full BSL analysis or working infobase data update validation"
+  ]
+}

@@ -9,6 +9,13 @@ use super::{
     Section, SourcePath, XmlFragment, export::Package, fragment, validation::scope,
 };
 
+/// Exact native keys retain enum behavior; field tokens also cover local form paths and BSL mentions.
+#[derive(Default)]
+struct Invalidated {
+    exact: BTreeMap<String, NativeUuid>,
+    fields: BTreeMap<String, NativeUuid>,
+}
+
 /// Validate selected references only when removal or renaming invalidates an accepted dependency key.
 pub(super) fn validate_references(
     base: &AcceptedBase,
@@ -16,7 +23,7 @@ pub(super) fn validate_references(
     mut read_payload: impl FnMut(&SourcePath) -> Result<String, Error>,
 ) -> Result<(), Error> {
     let removed = invalidated_keys(base, package)?;
-    if removed.is_empty() {
+    if removed.exact.is_empty() && removed.fields.is_empty() {
         return Ok(());
     }
     for (path, document) in &package.documents {
@@ -31,32 +38,40 @@ pub(super) fn validate_references(
         )?;
     }
     for (native, source) in &package.payload_sources {
-        if native.as_str() == "ConfigDumpInfo.xml" || !is_xml(native.as_path()) {
+        if native.as_str() == "ConfigDumpInfo.xml" {
             continue;
         }
-        let text = read_payload(source)?;
-        validate_xml(&text, native, &removed)?;
+        if is_xml(native.as_path()) {
+            validate_xml(&read_payload(source)?, native, &removed)?;
+        } else if !removed.fields.is_empty()
+            && native
+                .as_path()
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("bsl"))
+        {
+            validate_text(&read_payload(source)?, native, &removed)?;
+        }
     }
     Ok(())
 }
 
 /// Removed values invalidate UUID and name; renamed values keep UUID and case-insensitive identity.
-fn invalidated_keys(
-    base: &AcceptedBase,
-    package: &Package,
-) -> Result<BTreeMap<String, NativeUuid>, Error> {
-    let mut result = BTreeMap::new();
+fn invalidated_keys(base: &AcceptedBase, package: &Package) -> Result<Invalidated, Error> {
+    let mut result = Invalidated::default();
     for (path, accepted) in &base.package.documents {
         let owner = &accepted.descriptor.object;
-        if owner.kind != MetadataKind::Enum {
-            continue;
-        }
         let selected = &package
             .documents
             .get(path)
             .ok_or_else(|| Error::root("source_descriptor_missing"))?
             .descriptor
             .object;
+        if matches!(owner.kind, MetadataKind::Catalog | MetadataKind::Document) {
+            removed_fields(owner, selected, &mut result)?;
+        }
+        if owner.kind != MetadataKind::Enum {
+            continue;
+        }
         let values: BTreeMap<_, _> = super::child_rename::values(selected)
             .map(|node| (node.uuid.key(), node))
             .collect();
@@ -76,9 +91,9 @@ fn invalidated_keys(
                     continue;
                 }
             } else {
-                result.insert(node.uuid.key(), node.uuid.clone());
+                result.exact.insert(node.uuid.key(), node.uuid.clone());
             }
-            result.insert(
+            result.exact.insert(
                 format!("Enum.{parent}.EnumValue.{name}").to_lowercase(),
                 node.uuid.clone(),
             );
@@ -87,12 +102,63 @@ fn invalidated_keys(
     Ok(result)
 }
 
+/// Only actual attributes of the accepted root or direct table can disappear under the closed deletion selector.
+fn removed_fields(
+    accepted: &MetadataNode,
+    selected: &MetadataNode,
+    result: &mut Invalidated,
+) -> Result<(), Error> {
+    let selected: std::collections::BTreeSet<_> =
+        attributes(selected).map(|node| node.uuid.key()).collect();
+    for node in attributes(accepted) {
+        if selected.contains(&node.uuid.key()) {
+            continue;
+        }
+        let Some(PropertyValue::Text(name)) = node.property(PropertyName::Name) else {
+            return Err(Error::root("source_name_missing"));
+        };
+        if name.is_empty() {
+            return Err(Error::root("source_name_missing"));
+        }
+        result.exact.insert(node.uuid.key(), node.uuid.clone());
+        result.fields.insert(name.to_lowercase(), node.uuid.clone());
+    }
+    Ok(())
+}
+
+/// Declared parentage avoids interpreting arbitrary nested metadata or resources as a local field.
+fn attributes(root: &MetadataNode) -> impl Iterator<Item = &MetadataNode> {
+    children(root)
+        .filter(|node| node.kind == MetadataKind::Attribute)
+        .chain(
+            children(root)
+                .filter(|node| node.kind == MetadataKind::TabularSection)
+                .flat_map(children)
+                .filter(|node| node.kind == MetadataKind::Attribute),
+        )
+}
+
+/// The same child list carries actual native identity in both descriptor transports.
+fn children(node: &MetadataNode) -> impl Iterator<Item = &MetadataNode> {
+    node.sections
+        .iter()
+        .filter_map(|section| match section {
+            Section::Children(children) => Some(children),
+            _ => None,
+        })
+        .flatten()
+        .filter_map(|child| match child {
+            Child::Inline { object } => Some(object.as_ref()),
+            _ => None,
+        })
+}
+
 /// Metadata bindings distinguish preserved XML from typed fields already checked by the target index.
 fn validate_node(
     node: &MetadataNode,
     inherited: &[Namespace],
     path: &SourcePath,
-    removed: &BTreeMap<String, NativeUuid>,
+    removed: &Invalidated,
 ) -> Result<(), Error> {
     let context = scope(inherited, &node.namespaces)?;
     for attribute in &node.attributes {
@@ -130,20 +196,19 @@ fn validate_fragment(
     value: &XmlFragment,
     inherited: &[Namespace],
     path: &SourcePath,
-    removed: &BTreeMap<String, NativeUuid>,
+    removed: &Invalidated,
 ) -> Result<(), Error> {
     validate_xml(&fragment::wrap(value, inherited)?, path, removed)
 }
 
 /// Decoded mentions refuse an invalidated reference; comments and processing instructions have no authority.
-fn validate_xml(
-    text: &str,
-    path: &SourcePath,
-    removed: &BTreeMap<String, NativeUuid>,
-) -> Result<(), Error> {
+fn validate_xml(text: &str, path: &SourcePath, removed: &Invalidated) -> Result<(), Error> {
     let document = roxmltree::Document::parse(text)
         .map_err(|_| Error::root("source_structural_xml_unverified").in_field(path.as_str()))?;
     for node in document.descendants() {
+        if node.is_element() && !removed.fields.is_empty() {
+            validate_text(node.tag_name().name(), path, removed)?;
+        }
         let values = node
             .text()
             .filter(|_| node.is_text())
@@ -157,18 +222,36 @@ fn validate_xml(
 }
 
 /// An opaque mention may be a dependency; its inverse semantics cannot be guessed from textual shape.
-fn validate_text(
-    value: &str,
-    path: &SourcePath,
-    removed: &BTreeMap<String, NativeUuid>,
-) -> Result<(), Error> {
+fn validate_text(value: &str, path: &SourcePath, removed: &Invalidated) -> Result<(), Error> {
     let value = value.to_lowercase();
-    if let Some((_, uuid)) = removed.iter().find(|(key, _)| value.contains(key.as_str())) {
+    let dependency = removed
+        .exact
+        .iter()
+        .find(|(key, _)| value.contains(key.as_str()))
+        .or_else(|| {
+            removed
+                .fields
+                .iter()
+                .find(|(key, _)| contains_identifier(&value, key))
+        });
+    if let Some((_, uuid)) = dependency {
         return Err(Error::root("source_structural_reference_preserved")
             .in_field(uuid.as_str())
             .in_field(path.as_str()));
     }
     Ok(())
+}
+
+/// Field mentions require identifier boundaries; substrings in unrelated names are not references.
+fn contains_identifier(text: &str, name: &str) -> bool {
+    text.match_indices(name).any(|(start, _)| {
+        let boundary = |ch: char| !(ch == '_' || ch.is_alphanumeric());
+        text[..start].chars().next_back().is_none_or(boundary)
+            && text[start + name.len()..]
+                .chars()
+                .next()
+                .is_none_or(boundary)
+    })
 }
 
 /// Only native XML payloads have verified decoded coordinates; other resource formats remain outside this guard.

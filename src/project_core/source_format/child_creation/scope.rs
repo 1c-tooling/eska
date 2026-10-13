@@ -8,7 +8,10 @@ use crate::project_core::{
 };
 
 /// A supported descriptor owns either its root children or the columns of a direct tabular section.
-pub(super) fn owner<'a>(descriptor: &'a Descriptor, uuid: &NativeUuid) -> Option<&'a MetadataNode> {
+pub(in crate::project_core::source_format) fn owner<'a>(
+    descriptor: &'a Descriptor,
+    uuid: &NativeUuid,
+) -> Option<&'a MetadataNode> {
     let root = &descriptor.object;
     if root.uuid.key() == uuid.key() {
         return matches!(
@@ -25,7 +28,7 @@ pub(super) fn owner<'a>(descriptor: &'a Descriptor, uuid: &NativeUuid) -> Option
 }
 
 /// Namespace shadowing belongs to the real native parent; working service fields cannot replace it.
-pub(super) fn context(
+pub(in crate::project_core::source_format) fn context(
     descriptor: &Descriptor,
     owner: &MetadataNode,
 ) -> Result<Vec<Namespace>, Error> {

@@ -17,10 +17,12 @@ mod identities;
 mod profiles;
 mod scope;
 pub(super) use profiles::{validate_new_node, validate_new_types};
+pub(super) use scope::context as accepted_context;
 pub(super) use scope::created_context;
+pub(super) use scope::owner as accepted_owner;
 
 #[cfg(test)]
-mod attribute_tests;
+pub(super) mod attribute_tests;
 #[cfg(test)]
 mod column_tests;
 #[cfg(test)]

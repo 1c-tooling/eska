@@ -2361,6 +2361,37 @@ Checksums верны, inputs/settings/base/source manifest и версия не 
 EF-24 — `IN_PROGRESS`: другие structural/compound profiles ещё нужны;
 клиент/рабочая ИБ и новые CFE/EPF/ERF не приняты.
 
+Двадцать четвёртая часть — [удаление реквизитов и колонок](../research/eska-format/attribute-deletion.md)
+Catalog/Document и их прямых таблиц: уникальный ordered subset по известному
+native Attribute профилю, без owned files/generated slots. Проверяются Reorder
+владельца, Delete удалённых и Reorder сдвигаемых членов; supplier rules каждого
+UUID и inherited ESKA freeze сохраняются. Неизвестная секция/свойство/parent или
+смешанный состав восстанавливается. Service UUID таблицы и пустые колонки остаются.
+Общий guard проверяет выбранные XML/BSL байты, exact UUID и identifier tokens
+прежнего имени; неизвестная обратная семантика не угадывается. API Delete для
+Attribute расширен как необходимое условие; actual parent/profile остаётся gate.
+
+Десять core/один supplier integration/два CLI tests прошли оба envelopes,
+policy/recovery, decoded XML/BSL, unknown profiles, identifier boundaries,
+selected payloads, saved/overlay и координаты оставшихся членов. Прошли 16 root,
+14 SDK, пять adapter gates и две release-сборки: 562 unit + 567 integration,
+24 opt-in пропущены; minimal project — 369 unit + 38 CLI, SDK — 359, adapter — 70 + 12.
+C1 из отдельной копии предыдущего native dump: два полных реквизита/две колонки
+удалены в двух YAML. Independent XML control совпал по 8 769 файлам/8 064 каталогам
+после предусмотренных export contract final-EOL/empty-ChildObjects нормализаций
+(3 595 descriptors/106 коллекций); другие исключения не применялись.
+Freeze поля отказал до generation, recovery сохранил три независимых удаления.
+Прежние XML формы/BSL зависимости отказали в обоих языках/режимах. Все 3 595 YAML
+и пример прошли schemas; 3 595 descriptors/8 342 объектов равны saved/overlay
+All/Summary; проверены два Working/два Accepted spans выживших колонок.
+Независимые CF/build/dump routes на 1С 8.3.27.2325 совпали по всем файлам/каталогам,
+кроме 7 011 configVersion. Удалённые UUID отсутствуют, выжившие identities/порядок/
+properties/types и все 116 таблиц/464 service UUID сохранены; checksums верны.
+Inputs/settings/base/manifest/pin и версия не изменились.
+[Результаты](../research/eska-format/attribute-deletion-results.json).
+EF-24 остаётся `IN_PROGRESS`: прочие structural/compound profiles ещё нужны;
+C2/C3, новые CFE/EPF/ERF, клиент/данные рабочей ИБ не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

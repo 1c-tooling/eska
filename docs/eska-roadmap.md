@@ -152,6 +152,9 @@ Name/Synonym/Comment/Type с проверкой имён, типов и поря
 [Создание табличных частей](research/eska-format/table-creation.md) принимает
 пустой или заполненный новый subtree Catalog/Document с явными service UUID,
 свежими UUID колонок и прежней проверкой принятого родителя/типов/имён.
+[Удаление реквизитов/колонок](research/eska-format/attribute-deletion.md) проверяет
+известный native профиль, права владельца/удаляемых и сдвигаемых членов,
+оставшиеся XML/BSL упоминания; service UUID таблицы сохраняются.
 Прочие structural/compound profiles ещё нужны; EF-24 остаётся `IN_PROGRESS`.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные

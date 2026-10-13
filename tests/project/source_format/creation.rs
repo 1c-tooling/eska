@@ -489,3 +489,88 @@ fn column_creation_obeys_accepted_table_supplier_rule_without_inheriting_root_lo
         }
     }
 }
+
+/// An editable accepted column can be removed beneath a locked catalog while its root attribute is retained.
+#[test]
+fn native_supplier_rules_refuse_root_field_deletion_without_inheriting_lock_to_table() {
+    for readable in [false, true] {
+        let test = TestDir::new();
+        let input = super::baseline::fixture(&test.0);
+        let file = input.join("Catalogs/Sample.xml");
+        let mut native = fs::read_to_string(&file).unwrap().replace(
+            "xmlns:xsi=",
+            "xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=",
+        );
+        for (name, comment) in [
+            ("Description", "Editable part"),
+            ("Count", "Nested attribute"),
+        ] {
+            native = native.replace(
+                &format!("<Name>{name}</Name><Comment>{comment}</Comment>"),
+                &format!("<Name>{name}</Name><Synonym/><Comment>{comment}</Comment><Type><v8:Type>xs:boolean</v8:Type></Type>"),
+            );
+        }
+        fs::write(&file, native).unwrap();
+        // This case isolates supplier authority; dependent form names are covered by refusal tests.
+        let form = input.join("Catalogs/Sample/Forms/Main/Ext/Form.xml");
+        fs::write(
+            &form,
+            fs::read_to_string(&form)
+                .unwrap()
+                .replace("name=\"Count\"", "name=\"IndependentFormField\""),
+        )
+        .unwrap();
+        let source = test.0.join("source");
+        if readable {
+            import_designer_readable(&input, &source).unwrap();
+        } else {
+            import_designer(&input, &source).unwrap();
+        }
+        let root = test.0.join("accepted");
+        let pin = accept_source(&source, &root, &[]).unwrap();
+        let base = AcceptedBase::open(&root, &pin).unwrap();
+        assert_eq!(
+            base.permission(&uuid('2'), Operation::Reorder).reason,
+            PermissionReason::NativeRestriction
+        );
+        assert!(base.permission(&uuid('4'), Operation::Reorder).allowed);
+        assert!(base.permission(&uuid('5'), Operation::Delete).allowed);
+        let path = source.join("Catalogs/Sample/object.yaml");
+        let mut owner = ObjectSource::from_yaml(&fs::read_to_string(&path).unwrap()).unwrap();
+        for section in &mut owner.document.descriptor.object.sections {
+            if let Section::Children(children) = section {
+                let Child::Inline { object } = &mut children[1] else {
+                    unreachable!()
+                };
+                for section in &mut object.sections {
+                    if let Section::Children(columns) = section {
+                        columns.clear();
+                    }
+                }
+                children.remove(0);
+            }
+        }
+        fs::write(path, owner.to_yaml().unwrap()).unwrap();
+        let authored = tree(&source);
+        let accepted = tree(&root);
+        let input_bytes = tree(&input);
+        let output = test.0.join("generations");
+        let failure = prepare_protected(&source, &base, &output, true).unwrap_err();
+        assert_eq!(failure.diagnostics.len(), 1);
+        assert_eq!(failure.diagnostics[0].operation, Operation::Delete);
+        assert_eq!(failure.diagnostics[0].uuid, Some(uuid('2')));
+        assert_eq!(
+            failure.diagnostics[0].reason,
+            PermissionReason::NativeRestriction
+        );
+        assert!(!output.exists());
+        let prepared = prepare_protected(&source, &base, &output, false).unwrap();
+        let native = fs::read_to_string(prepared.xml().join("Catalogs/Sample.xml")).unwrap();
+        assert!(native.contains(uuid('3').as_str()));
+        assert!(native.contains(uuid('4').as_str()));
+        assert!(!native.contains(uuid('5').as_str()));
+        assert_eq!(tree(&source), authored);
+        assert_eq!(tree(&root), accepted);
+        assert_eq!(tree(&input), input_bytes);
+    }
+}
