@@ -544,6 +544,17 @@ VS Code с переходом к результату; отдельный GUI-м
 на копии C1, затем общий typed elements/layout без смены UUID/ID и дублирования
 редактируемого содержимого. Готовность модели/платформенного цикла ещё не заявлена.
 
+[Первая часть: native ID/ссылки](../research/eska-format/managed-form-inventory.md).
+823 managed forms C1 после платформенного dump имеют профиль logform/2.20:
+52 502 UI ID, отдельные 4 971 Attribute/2 303 Command и 2 028 columns в
+322 контейнерах. Fixed menu/tooltips/additions/AutoCommandBar учитываются;
+корневой AutoCommandBar имеет -1, между namespace числовые IDs пересекаются.
+Все 1 822 AdditionSource и 2 804 local commands разрешились; DataPath имеет
+пять различных shapes, metadata/runtime semantics не заявлены. Input bytes
+сохранены, обезличенный script/JSON и synthetic scope/reference fixtures
+проверены. Новый typed YAML/writer и платформенная приёмка формы ещё нужны.
+Следующая часть — shared typed identity/layout validator и адресный SourceReader.
+
 Обязательная часть структуры MVP после EF-24. Зафиксировать матрицу реальных
 управляемых форм выбранного платформенного профиля. Разделить устойчивые
 определения `elements` и упорядоченный `layout` в одном `form.yaml`, вместе

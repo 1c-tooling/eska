@@ -17,6 +17,11 @@ Designer 2.20: итоговая матрица и DoD подтверждены �
 CF/build/dump C1. Unknown/preserved и непринятые structural profiles сохраняют
 явные ограничения. MVP четырёх артефактов ещё не принят. Записи частей EF-24 ниже
 содержат исторические статусы и ожидания; текущую границу задаёт итоговая матрица.
+EF-12 начала [матрицу native форм](../research/eska-format/managed-form-inventory.md):
+823 managed dialogs, отдельные UI/Attribute/Command/column ID scopes и fixed
+slots. Native inputs сохранены; typed identity/layout, единый form.yaml,
+protected writer/source map и CF приёмка формы ещё в работе.
+
 Первая часть расширяет [typed writer](../research/eska-format/typed-scalars.md)
 на 28 bool/integer/enum свойств с прежней защитой и точечными правками.
 Вторая часть добавляет [самостоятельные descriptors и миграцию исходников](../research/eska-format/descriptor-layout.md)
