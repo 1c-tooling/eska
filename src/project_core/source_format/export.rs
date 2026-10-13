@@ -209,6 +209,11 @@ impl Package {
         let mut files = BTreeMap::new();
         let mut directories: BTreeSet<_> = self.manifest.directories.iter().cloned().collect();
         for file in &self.manifest.files {
+            if matches!(file.role, FileRole::OptionalModule { .. })
+                && !self.snapshot.files.contains_key(file.source_path())
+            {
+                continue;
+            }
             let entry = if let Some(text) = xml.get(&file.path) {
                 FileEntry {
                     path: file.path.clone(),
@@ -303,6 +308,11 @@ fn validate_sources(
         match &file.role {
             FileRole::Preserved | FileRole::Relocated { .. } => {
                 paths.insert(file.source_path().clone());
+            }
+            FileRole::OptionalModule { .. } => {
+                if snapshot.files.contains_key(file.source_path()) {
+                    paths.insert(file.source_path().clone());
+                }
             }
             FileRole::Descriptor { .. } if !documents.contains_key(&file.path) => {
                 return Err(Error::root("source_descriptor_missing").in_field(file.path.as_str()));

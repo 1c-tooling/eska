@@ -1,6 +1,9 @@
 //! Native root bindings distinguish external objects from configuration composition.
 
-use super::{Descriptor, Error, FileRole, NativeDocument, SourceManifest, SourcePath};
+use super::{
+    Descriptor, Error, FileEntry, FileRole, NativeDocument, SourceManifest, SourcePath,
+    files::Inventory,
+};
 use crate::project_core::{MetadataKind, ProjectType};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -79,7 +82,112 @@ impl ExternalRoot {
     }
 }
 
+/// Imported absence is provenance, never an empty module generated during conversion.
+const ABSENT_SHA256: &str = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
+/// Declare the sole external object-module slot only when neither readable nor binary body exists.
+pub(super) fn declare_optional_module(
+    manifest: &mut SourceManifest,
+    inventory: &Inventory,
+) -> Result<(), Error> {
+    let Some(root) = &manifest.external_root else {
+        return Ok(());
+    };
+    let candidates = module_candidates(root)?;
+    for candidate in &candidates {
+        let binary = SourcePath::parse(
+            &candidate
+                .as_str()
+                .replace("ObjectModule.bsl", "ObjectModule.bin"),
+        )?;
+        if inventory.files.contains_key(candidate) || inventory.files.contains_key(&binary) {
+            return Ok(());
+        }
+    }
+    let existing = candidates
+        .iter()
+        .filter(|path| {
+            path.as_path().parent().is_some_and(|parent| {
+                inventory
+                    .directories
+                    .iter()
+                    .any(|directory| directory.as_path() == parent)
+            })
+        })
+        .collect::<Vec<_>>();
+    let native = match existing.as_slice() {
+        [path] => (*path).clone(),
+        [] => candidates[1].clone(),
+        _ => return Err(Error::root("source_module_ambiguous")),
+    };
+    manifest.files.push(FileEntry {
+        path: native,
+        bytes: 0,
+        sha256: ABSENT_SHA256.to_owned(),
+        role: FileRole::OptionalModule {
+            source: SourcePath::parse("ObjectModule.bsl")?,
+        },
+    });
+    manifest
+        .files
+        .sort_by(|left, right| left.path.cmp(&right.path));
+    Ok(())
+}
+
+/// Optional declarations cannot activate arbitrary resources, internal modules or alternate owners.
+pub(super) fn validate_optional_modules(manifest: &SourceManifest) -> Result<(), Error> {
+    for file in &manifest.files {
+        let FileRole::OptionalModule { source } = &file.role else {
+            continue;
+        };
+        let root = manifest
+            .external_root
+            .as_ref()
+            .ok_or_else(|| Error::root("source_optional_module_invalid"))?;
+        if manifest.schema_version != EXTERNAL_LAYOUT_VERSION
+            || source.as_str() != "ObjectModule.bsl"
+            || !module_candidates(root)?.contains(&file.path)
+            || file.bytes != 0
+            || file.sha256 != ABSENT_SHA256
+        {
+            return Err(Error::root("source_optional_module_invalid").in_field(file.path.as_str()));
+        }
+        for candidate in module_candidates(root)? {
+            let binary = candidate
+                .as_str()
+                .replace("ObjectModule.bsl", "ObjectModule.bin");
+            if manifest.files.iter().any(|entry| {
+                entry.path.as_str() == binary
+                    || (entry.path == candidate && entry.path != file.path)
+            }) {
+                return Err(Error::root("source_optional_module_invalid"));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// The native root binding determines exactly two supported export locations.
+fn module_candidates(root: &ExternalRoot) -> Result<[SourcePath; 2], Error> {
+    let stem = root
+        .path
+        .as_str()
+        .strip_suffix(".xml")
+        .ok_or_else(|| Error::root("source_profile_unsupported"))?;
+    Ok([
+        SourcePath::parse("Ext/ObjectModule.bsl")?,
+        SourcePath::parse(&format!("{stem}/Ext/ObjectModule.bsl"))?,
+    ])
+}
+
 impl SourceManifest {
+    /// Only a pinned external declaration may grant creation of the absent module body.
+    pub(super) fn optional_module(&self, path: &SourcePath) -> Option<&FileEntry> {
+        self.files.iter().find(
+            |file| matches!(&file.role, FileRole::OptionalModule { source } if source == path),
+        )
+    }
+
     /// Resolve the explicit native root without reading modules or materializing XML.
     ///
     /// # Errors

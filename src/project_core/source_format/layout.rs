@@ -131,7 +131,10 @@ pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
         .iter()
         .filter_map(|file| match &file.role {
             FileRole::Descriptor { source, uuid } => Some((&file.path, (source, uuid))),
-            FileRole::Preserved | FileRole::Relocated { .. } | FileRole::ManagedForm { .. } => None,
+            FileRole::Preserved
+            | FileRole::Relocated { .. }
+            | FileRole::OptionalModule { .. }
+            | FileRole::ManagedForm { .. } => None,
         })
         .collect::<BTreeMap<_, _>>();
     let contexts = manifest

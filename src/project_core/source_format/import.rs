@@ -129,6 +129,7 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
     };
     if manifest.external_root.is_some() {
         manifest.schema_version = super::EXTERNAL_LAYOUT_VERSION;
+        super::root::declare_optional_module(&mut manifest, &inventory)?;
     }
     manifest.validate()?;
     let yaml: BTreeMap<_, _> = sources
@@ -460,7 +461,10 @@ fn materialize(
         files::write(&destination.join(path.as_path()), source.as_bytes())?;
     }
     for file in &manifest.files {
-        if file.is_payload() && !extra.contains_key(file.source_path()) {
+        if file.is_payload()
+            && !matches!(file.role, FileRole::OptionalModule { .. })
+            && !extra.contains_key(file.source_path())
+        {
             files::copy_to(input, &destination.join(file.source_path().as_path()), file)?;
         }
     }

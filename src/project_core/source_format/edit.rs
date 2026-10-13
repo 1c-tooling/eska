@@ -28,7 +28,7 @@ pub struct SourceEditPlan {
     uuid: NativeUuid,
     operation: Operation,
     baseline: AcceptedRef,
-    original: String,
+    original: Option<String>,
     updated: String,
 }
 
@@ -83,7 +83,7 @@ impl SourceEditPlan {
     /// An unchanged value retains the original spelling and produces no write.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.original == self.updated
+        self.original.as_deref() == Some(self.updated.as_str())
     }
 
     /// Recheck the independent base and exact source bytes before atomic replacement.
@@ -99,18 +99,19 @@ impl SourceEditPlan {
         }
         permission(base, &self.uuid, self.operation)?;
         base.verify()?;
-        publish::publish_snapshot(
-            &self.root,
-            self.path.as_path(),
-            &self.original,
-            &self.updated,
-        )
-        .map_err(edit_error)
-        .map_err(|error| error.in_field(self.path.as_str()))
+        let publication = self.original.as_ref().map_or_else(
+            || publish::publish_new(&self.root, self.path.as_path(), &self.updated),
+            |original| {
+                publish::publish_snapshot(&self.root, self.path.as_path(), original, &self.updated)
+            },
+        );
+        publication
+            .map_err(edit_error)
+            .map_err(|error| error.in_field(self.path.as_str()))
     }
 }
 
-/// Prepare an exact text-module replacement under independently pinned native permissions.
+/// Prepare an exact text-module edit or declared optional creation under pinned native permissions.
 ///
 /// # Errors
 /// Returns an undeclared module, denied permission, unsafe path or stale source snapshot.
@@ -118,22 +119,30 @@ pub fn prepare_module_edit(
     root: &Path,
     base: &AcceptedBase,
     path: &SourcePath,
-    original: &str,
+    original: Option<&str>,
     updated: &str,
 ) -> Result<SourceEditPlan, Error> {
     let decision = base.module_permission(path)?;
     permission(base, &decision.uuid, Operation::Module)?;
-    let root = safe_root(root, path)?;
-    publish::publish_snapshot(&root, path.as_path(), original, original)
-        .map_err(edit_error)
-        .map_err(|error| error.in_field(path.as_str()))?;
+    let root = if let Some(original) = original {
+        let root = safe_root(root, path)?;
+        publish::publish_snapshot(&root, path.as_path(), original, original)
+            .map_err(edit_error)
+            .map_err(|error| error.in_field(path.as_str()))?;
+        root
+    } else {
+        if base.package.manifest.optional_module(path).is_none() {
+            return Err(Error::root("source_edit_module_unsupported"));
+        }
+        absent_root(root, path)?
+    };
     Ok(SourceEditPlan {
         root,
         path: path.clone(),
         uuid: decision.uuid,
         operation: Operation::Module,
         baseline: base.reference().clone(),
-        original: original.to_owned(),
+        original: original.map(str::to_owned),
         updated: updated.to_owned(),
     })
 }
@@ -166,7 +175,7 @@ pub fn prepare_property_edit(
         uuid: uuid.clone(),
         operation: Operation::Property(property),
         baseline: base.reference().clone(),
-        original,
+        original: Some(original),
         updated,
     })
 }
@@ -484,6 +493,23 @@ fn safe_root(root: &Path, path: &SourcePath) -> Result<PathBuf, Error> {
         return Err(Error::root("source_edit_unsafe_path"));
     }
     Ok(root)
+}
+
+/// Optional external creation has one immediate path and cannot claim directories or aliases.
+fn absent_root(root: &Path, path: &SourcePath) -> Result<PathBuf, Error> {
+    let metadata = fs::symlink_metadata(root).map_err(|error| files::io(&error))?;
+    if !metadata.file_type().is_dir() || path.as_str() != "ObjectModule.bsl" {
+        return Err(Error::root("source_edit_unsafe_path"));
+    }
+    if metadata.permissions().readonly() {
+        return Err(Error::root("source_edit_read_only"));
+    }
+    let root = root.canonicalize().map_err(|error| files::io(&error))?;
+    match fs::symlink_metadata(root.join(path.as_path())) {
+        Ok(_) => Err(Error::root("source_edit_conflict")),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(root),
+        Err(error) => Err(files::io(&error)),
+    }
 }
 
 /// Convert the shared writer's domain errors without depending on CLI presentation strings.

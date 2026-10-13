@@ -74,7 +74,7 @@ pub fn prepare_query_edit(
         uuid: uuid.clone(),
         operation: Operation::Resource,
         baseline: preview.baseline,
-        original,
+        original: Some(original),
         updated: preview.updated,
     })
 }

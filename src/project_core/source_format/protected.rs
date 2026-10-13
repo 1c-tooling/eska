@@ -275,7 +275,8 @@ fn select_files(
             ));
         }
     }
-    record_extras(working, base, diagnostics);
+    select_optional_modules(working, base, &mut files, &mut origins, diagnostics);
+    record_extras(working, base, &origins, diagnostics);
     let directories = base.package.snapshot.directories.clone();
     let revision = files::revision(&files, &directories);
     (
@@ -288,13 +289,56 @@ fn select_files(
     )
 }
 
+/// A known optional root module is a module edit, never arbitrary physical-file creation.
+fn select_optional_modules(
+    working: &Inventory,
+    base: &AcceptedBase,
+    files: &mut BTreeMap<SourcePath, super::FileEntry>,
+    origins: &mut BTreeMap<SourcePath, Origin>,
+    diagnostics: &mut Vec<Exclusion>,
+) {
+    for file in &base.package.manifest.files {
+        let FileRole::OptionalModule { source } = &file.role else {
+            continue;
+        };
+        if base.package.snapshot.files.contains_key(source) {
+            continue;
+        }
+        let Some(current) = working.files.get(source) else {
+            continue;
+        };
+        let decision = base.module_permission(source).ok();
+        if decision
+            .as_ref()
+            .is_some_and(|permission| permission.allowed)
+        {
+            files.insert(source.clone(), current.clone());
+            origins.insert(source.clone(), Origin::Working);
+        } else {
+            origins.insert(source.clone(), Origin::Accepted);
+            diagnostics.push(differences::exclusion(
+                base,
+                source,
+                Vec::new(),
+                decision.map(|permission| permission.uuid),
+                Operation::Module,
+                ExclusionAction::Excluded,
+                "source_file_excluded",
+            ));
+        }
+    }
+}
+
 /// Reject new physical entries explicitly, with logarithmic directory lookups on large sources.
-fn record_extras(working: &Inventory, base: &AcceptedBase, diagnostics: &mut Vec<Exclusion>) {
-    for path in working
-        .files
-        .keys()
-        .filter(|path| !base.package.snapshot.files.contains_key(*path))
-    {
+fn record_extras(
+    working: &Inventory,
+    base: &AcceptedBase,
+    origins: &BTreeMap<SourcePath, Origin>,
+    diagnostics: &mut Vec<Exclusion>,
+) {
+    for path in working.files.keys().filter(|path| {
+        !base.package.snapshot.files.contains_key(*path) && !origins.contains_key(*path)
+    }) {
         diagnostics.push(differences::exclusion(
             base,
             path,
@@ -338,7 +382,8 @@ pub(super) fn module_permission(
             .as_path()
             .extension()
             .is_some_and(|extension| extension.eq_ignore_ascii_case("bsl"))
-        || !base.package.snapshot.files.contains_key(path)
+        || (!base.package.snapshot.files.contains_key(path)
+            && base.package.manifest.optional_module(path).is_none())
     {
         return Err(Error::root("source_edit_module_unsupported"));
     }

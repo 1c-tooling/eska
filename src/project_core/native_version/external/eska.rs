@@ -12,7 +12,7 @@ use crate::project_core::{
     object_module_version,
     publish::PublishError,
     source_format::{
-        AcceptedBase, AcceptedRef, Error, SourceEditPlan, SourcePath, SourceReader,
+        AcceptedBase, AcceptedRef, Error, FileRole, SourceEditPlan, SourcePath, SourceReader,
         prepare_module_edit,
     },
 };
@@ -75,7 +75,7 @@ pub(in crate::project_core::native_version) fn bump(
     updated.replace_range(descriptor.value_range, &current.to_string());
     object_module_version::inspect_contract(&updated)
         .map_err(|error| contract(&descriptor.path, error))?;
-    prepare(project, &reader, original, &updated, expected)?.publish()?;
+    prepare(project, &reader, Some(original), &updated, expected)?.publish()?;
     Ok(BumpOutcome {
         path: descriptor.path,
         previous: descriptor.version,
@@ -92,21 +92,20 @@ pub(super) fn plan_migration(
 ) -> Result<VersionMigration, VersionError> {
     let reader = reader(project)?;
     let path = module_path(&reader)?;
-    let original = reader
-        .read_module_text(&path, object_module_version::MAX_MODULE_BYTES as u64)
-        .map_err(|error| source(project, error))?;
-    let plan = object_module_version::plan_migration(&original, initial)
-        .map_err(|error| contract(&reader.root().join(path.as_path()), error))?;
+    let original = read_module(project, &reader, &path)?;
+    let plan =
+        object_module_version::plan_migration(original.as_deref().unwrap_or_default(), initial)
+            .map_err(|error| contract(&reader.root().join(path.as_path()), error))?;
     let updated = plan
-        .apply(&original)
+        .apply(original.as_deref().unwrap_or_default())
         .map_err(|error| contract(&reader.root().join(path.as_path()), error))?;
     if let Some(scheme) = project.configuration().version_scheme() {
         plan.version().validate_scheme(scheme)?;
     }
-    let binding = prepare(project, &reader, &original, &updated, expected)?;
+    let binding = prepare(project, &reader, original.as_deref(), &updated, expected)?;
     Ok(VersionMigration {
         path: reader.root().join(path.as_path()),
-        original: Some(original),
+        original,
         plan,
         binding: MigrationBinding::Eska(Box::new(binding)),
     })
@@ -158,9 +157,8 @@ fn module_path(reader: &SourceReader) -> Result<SourcePath, VersionError> {
 fn load_module(project: &Project, reader: &SourceReader) -> Result<LoadedDescriptor, VersionError> {
     let relative = module_path(reader)?;
     let path = reader.root().join(relative.as_path());
-    let input = reader
-        .read_module_text(&relative, object_module_version::MAX_MODULE_BYTES as u64)
-        .map_err(|error| source(project, error))?;
+    let input = read_module(project, reader, &relative)?
+        .ok_or_else(|| VersionError::ModuleMissing { path: path.clone() })?;
     let info =
         object_module_version::inspect_contract(&input).map_err(|error| contract(&path, error))?;
     if let Some(scheme) = project.configuration().version_scheme() {
@@ -172,6 +170,29 @@ fn load_module(project: &Project, reader: &SourceReader) -> Result<LoadedDescrip
         version: info.version,
         value_range: info.value_range,
     })
+}
+
+/// Only a declared optional slot distinguishes imported absence from deletion of a required body.
+fn read_module(
+    project: &Project,
+    reader: &SourceReader,
+    path: &SourcePath,
+) -> Result<Option<String>, VersionError> {
+    match reader.read_module_text(path, object_module_version::MAX_MODULE_BYTES as u64) {
+        Ok(text) => Ok(Some(text)),
+        Err(error) if error.code == "source_file_missing" => {
+            if reader.manifest().files.iter().any(
+                |file| matches!(&file.role, FileRole::OptionalModule { source } if source == path),
+            ) {
+                Ok(None)
+            } else {
+                Err(VersionError::ModuleMissing {
+                    path: reader.root().join(path.as_path()),
+                })
+            }
+        }
+        Err(error) => Err(source(project, error)),
+    }
 }
 
 /// The configured path locates accepted bytes; only the caller's digest grants trust.
@@ -191,7 +212,7 @@ fn accepted(
 fn prepare(
     project: &Project,
     reader: &SourceReader,
-    original: &str,
+    original: Option<&str>,
     updated: &str,
     expected: Option<&AcceptedRef>,
 ) -> Result<Binding, VersionError> {

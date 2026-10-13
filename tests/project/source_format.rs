@@ -80,6 +80,9 @@ fn import_follows_declarations_and_preserves_every_other_file() {
     );
     for file in &manifest.files {
         match &file.role {
+            FileRole::OptionalModule { .. } => {
+                panic!("configuration input cannot declare an external module slot")
+            }
             FileRole::Preserved | FileRole::Relocated { .. } => {
                 let original = fs::read(input.join(file.path.as_path())).unwrap();
                 assert_eq!(original, fs::read(first.join(file.path.as_path())).unwrap());
@@ -473,6 +476,9 @@ fn native_export_restores_every_file_and_empty_directory_without_rewrites() {
         .map(|file| {
             let output = native.join(file.path.as_path());
             match &file.role {
+                FileRole::OptionalModule { .. } => {
+                    panic!("configuration input cannot declare an external module slot")
+                }
                 FileRole::Descriptor { .. } => {
                     assert_eq!(
                         Descriptor::from_xml(

@@ -4,16 +4,169 @@ use super::*;
 use eska::project_core::{
     native_version::{ProjectVersion, bump_with_base, plan_migration_with_base},
     source_format::{
-        AcceptedRef, NativeUuid, SourceReader, accept_source, import_designer_queries,
+        AcceptedBase, AcceptedRef, FileOrigin, InputAuthority, NativeUuid, SourcePath,
+        SourceReader, accept_source, import_designer_queries, prepare_protected,
     },
 };
 
 const UUID: &str = "10000000-0000-4000-8000-000000000001";
 
+/// Imported absence stays absent until explicit migration, including in protected native output.
+#[test]
+fn missing_eska_module_is_created_with_its_pinned_slot_and_original_map() {
+    for kind in [ProjectType::Processing, ProjectType::Report] {
+        for value in ["1.2.3", "01.02.003.0004"] {
+            let (_fixture, project, pin) = external(kind, None, false);
+            let path = project.source().join("ObjectModule.bsl");
+            let before = fs::read(project.source().join("source.json")).unwrap();
+            assert!(!path.exists());
+            assert_eq!(
+                version::inspect(&project).unwrap_err().code(),
+                "version_module_missing"
+            );
+            let reader = SourceReader::open(project.source()).unwrap();
+            let relative = SourcePath::parse("ObjectModule.bsl").unwrap();
+            assert!(reader.declared_module(&relative).is_some());
+            let base = AcceptedBase::open(&project.root().join(".eska/accepted"), &pin).unwrap();
+            let untouched = prepare_protected(
+                project.source(),
+                &base,
+                &project.root().join("untouched"),
+                true,
+            )
+            .unwrap();
+            untouched.validate().unwrap();
+            assert!(
+                !untouched
+                    .xml()
+                    .join("Алиас.v1/Ext/ObjectModule.bsl")
+                    .exists()
+            );
+            assert_eq!(
+                plan_migration_with_base(&project, None, Some(&pin))
+                    .unwrap_err()
+                    .code(),
+                "version_initial_value_required"
+            );
+            let initial = ProjectVersion::parse(value).unwrap();
+            let plan = plan_migration_with_base(&project, Some(&initial), Some(&pin)).unwrap();
+            assert!(plan.creates_module());
+            assert!(!path.exists());
+            plan.publish().unwrap();
+            assert_eq!(version::inspect(&project).unwrap().version, initial);
+            assert_eq!(
+                fs::read(project.source().join("source.json")).unwrap(),
+                before
+            );
+            assert!(
+                plan.publish().is_err(),
+                "stale creation must not replace an existing file"
+            );
+            assert!(
+                plan_migration_with_base(&project, None, Some(&pin))
+                    .unwrap()
+                    .edits()
+                    .is_empty()
+            );
+            let prepared = prepare_protected(
+                project.source(),
+                &base,
+                &project.root().join("created"),
+                true,
+            )
+            .unwrap();
+            prepared.validate().unwrap();
+            assert_eq!(
+                fs::read(prepared.xml().join("Алиас.v1/Ext/ObjectModule.bsl")).unwrap(),
+                fs::read(&path).unwrap()
+            );
+            let mapped = prepared
+                .source_map()
+                .files
+                .iter()
+                .find(|file| file.path.as_str().ends_with("/ObjectModule.bsl"))
+                .unwrap();
+            assert!(
+                matches!(&mapped.origin, FileOrigin::Payload { authority: InputAuthority::Working, owner: Some(uuid), module: true, .. } if uuid.as_str() == UUID)
+            );
+            bump_with_base(&project, BumpKind::Patch, Some(&pin)).unwrap();
+        }
+    }
+}
+
+/// Optional creation still inherits freeze; deleted required bodies cannot become empty migrations.
+#[test]
+fn optional_slot_cannot_bypass_freeze_or_overwrite_concurrent_body_creation() {
+    let initial = ProjectVersion::parse("1.2.3").unwrap();
+    let (_fixture, project, pin) = external(ProjectType::Report, None, true);
+    assert_eq!(
+        plan_migration_with_base(&project, Some(&initial), Some(&pin))
+            .unwrap_err()
+            .code(),
+        "source_edit_frozen"
+    );
+    assert!(!project.source().join("ObjectModule.bsl").exists());
+    fs::write(
+        project.source().join("ObjectModule.bsl"),
+        "// Concurrent body\r\n",
+    )
+    .unwrap();
+    let base = AcceptedBase::open(&project.root().join(".eska/accepted"), &pin).unwrap();
+    assert_eq!(
+        prepare_protected(
+            project.source(),
+            &base,
+            &project.root().join("strict"),
+            true
+        )
+        .unwrap_err()
+        .error
+        .code,
+        "source_changes_excluded"
+    );
+    let excluded = prepare_protected(
+        project.source(),
+        &base,
+        &project.root().join("excluded"),
+        false,
+    )
+    .unwrap();
+    assert!(
+        !excluded
+            .xml()
+            .join("Алиас.v1/Ext/ObjectModule.bsl")
+            .exists()
+    );
+    assert_eq!(
+        fs::read_to_string(project.source().join("ObjectModule.bsl")).unwrap(),
+        "// Concurrent body\r\n"
+    );
+    let (_fixture, project, pin) = external(ProjectType::Processing, None, false);
+    let plan = plan_migration_with_base(&project, Some(&initial), Some(&pin)).unwrap();
+    fs::write(plan.path(), "// Concurrent body\r\n").unwrap();
+    assert!(plan.publish().is_err());
+    assert_eq!(
+        fs::read_to_string(plan.path()).unwrap(),
+        "// Concurrent body\r\n"
+    );
+    let (_fixture, project, pin) = external(
+        ProjectType::Report,
+        Some("// Required original body\r\n"),
+        false,
+    );
+    fs::remove_file(project.source().join("ObjectModule.bsl")).unwrap();
+    assert_eq!(
+        plan_migration_with_base(&project, Some(&initial), Some(&pin))
+            .unwrap_err()
+            .code(),
+        "version_module_missing"
+    );
+}
+
 /// Build an explicitly selected external profile; the imported BSL remains untouched.
 fn external(
     kind: ProjectType,
-    text: &str,
+    text: Option<&str>,
     frozen: bool,
 ) -> (TestDir, eska::project::Project, AcceptedRef) {
     let fixture = TestDir::new();
@@ -22,11 +175,16 @@ fn external(
     } else {
         "ExternalReport"
     };
-    fs::create_dir_all(fixture.0.join("native/Алиас.v1/Ext")).unwrap();
+    fs::create_dir(fixture.0.join("native")).unwrap();
+    if text.is_some() {
+        fs::create_dir_all(fixture.0.join("native/Алиас.v1/Ext")).unwrap();
+    }
     fs::write(fixture.0.join("native/Алиас.v1.xml"), format!(
         "<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" version=\"2.20\"><{tag} uuid=\"{UUID}\"><Properties><Name>Пример</Name><Comment>Сохранить</Comment></Properties></{tag}></MetaDataObject>\r\n"
     )).unwrap();
-    fs::write(fixture.0.join("native/Алиас.v1/Ext/ObjectModule.bsl"), text).unwrap();
+    if let Some(text) = text {
+        fs::write(fixture.0.join("native/Алиас.v1/Ext/ObjectModule.bsl"), text).unwrap();
+    }
     import_designer_queries(&fixture.0.join("native"), &fixture.0.join("src")).unwrap();
     fs::create_dir(fixture.0.join(".eska")).unwrap();
     let freeze = if frozen {
@@ -60,7 +218,7 @@ fn versions_read_without_trust_and_bump_only_under_the_pinned_base() {
             let text = format!(
                 "\u{feff}// {value}\r\nФункция Версия() Экспорт\r\n\tВозврат \"{value}\";\r\nКонецФункции\r\n"
             );
-            let (_fixture, project, pin) = external(kind, &text, false);
+            let (_fixture, project, pin) = external(kind, Some(&text), false);
             let root = SourceReader::open(project.source())
                 .unwrap()
                 .configuration()
@@ -118,7 +276,7 @@ fn versions_read_without_trust_and_bump_only_under_the_pinned_base() {
 fn explicit_eska_migration_exports_and_binds_registration_without_duplicate_versions() {
     for kind in [ProjectType::Processing, ProjectType::Report] {
         let text = "\u{feff}Функция СведенияОВнешнейОбработке() Экспорт\r\nРегистрация = Новый Структура;\r\nРегистрация.Вставить(\"Версия\", \"1.2.3\");\r\nВозврат Регистрация;\r\nКонецФункции\r\n";
-        let (_fixture, project, pin) = external(kind, text, false);
+        let (_fixture, project, pin) = external(kind, Some(text), false);
         assert_eq!(
             version::inspect(&project).unwrap_err().code(),
             "version_function_missing"
@@ -146,7 +304,7 @@ fn frozen_external_root_cannot_grant_itself_version_permission() {
         "// Нет функции\r\n",
         "Функция Версия() Экспорт Возврат \"1.2.3\"; КонецФункции\r\n",
     ] {
-        let (_fixture, project, pin) = external(ProjectType::Report, text, true);
+        let (_fixture, project, pin) = external(ProjectType::Report, Some(text), true);
         let initial = ProjectVersion::parse("1.2.3").unwrap();
         assert_eq!(
             plan_migration_with_base(&project, Some(&initial), Some(&pin))
@@ -178,7 +336,8 @@ fn stale_eska_migration_preserves_concurrent_source_and_policy_changes() {
         "ObjectModule.bsl",
         ".eska/accepted/accepted.json",
     ] {
-        let (_fixture, project, pin) = external(ProjectType::Report, "// До миграции\r\n", false);
+        let (_fixture, project, pin) =
+            external(ProjectType::Report, Some("// До миграции\r\n"), false);
         let initial = ProjectVersion::parse("1.2.3").unwrap();
         let plan = plan_migration_with_base(&project, Some(&initial), Some(&pin)).unwrap();
         let path = if target.starts_with(".eska") {

@@ -182,6 +182,10 @@ pub enum FileRole {
     Relocated {
         source: SourcePath,
     },
+    /// An external root may explicitly create this absent object module under its pinned policy.
+    OptionalModule {
+        source: SourcePath,
+    },
     /// This generated dialog shares exactly one declared standalone metadata authoring file.
     ManagedForm {
         source: SourcePath,
@@ -196,6 +200,7 @@ impl FileEntry {
         match &self.role {
             FileRole::Descriptor { source, .. }
             | FileRole::Relocated { source }
+            | FileRole::OptionalModule { source }
             | FileRole::ManagedForm { source, .. } => source,
             FileRole::Preserved => &self.path,
         }
@@ -204,7 +209,10 @@ impl FileEntry {
     /// Opaque payloads retain their bytes regardless of their physical authoring location.
     #[must_use]
     pub const fn is_payload(&self) -> bool {
-        matches!(self.role, FileRole::Preserved | FileRole::Relocated { .. })
+        matches!(
+            self.role,
+            FileRole::Preserved | FileRole::Relocated { .. } | FileRole::OptionalModule { .. }
+        )
     }
 }
 
@@ -227,6 +235,7 @@ impl SourceManifest {
             return Err(Error::root("source_rules_unsupported"));
         }
         self.validate_root()?;
+        super::root::validate_optional_modules(self)?;
         if !hash(&self.input_revision) {
             return Err(Error::root("source_hash_invalid"));
         }

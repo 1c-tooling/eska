@@ -81,6 +81,9 @@ fn owner(source: &Path, native: &Path) -> PathBuf {
         .find(|entry| entry.path.as_path() == native)
         .unwrap();
     match &entry.role {
+        eska::project::source_format::FileRole::OptionalModule { .. } => {
+            panic!("configuration input cannot declare an external module slot")
+        }
         eska::project::source_format::FileRole::Descriptor { source, .. } => {
             source.as_path().into()
         }

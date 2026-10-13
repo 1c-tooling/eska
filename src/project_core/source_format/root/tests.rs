@@ -16,6 +16,112 @@ use std::{fs, path::PathBuf};
 
 const STEM: &str = "Передача.v1";
 
+/// A declared absent module has one root owner/location; conversion never invents its body.
+#[test]
+fn optional_external_module_slots_preserve_absence_and_refuse_alternate_bindings() {
+    for kind in [ExternalKind::Processing, ExternalKind::Report] {
+        for direct in [false, true] {
+            let directory = TestDir::new();
+            let input = native(&directory, kind, direct);
+            let module = if direct {
+                input.join("Ext/ObjectModule.bsl")
+            } else {
+                input.join(STEM).join("Ext/ObjectModule.bsl")
+            };
+            fs::remove_file(module).unwrap();
+            if direct {
+                fs::rename(
+                    input.join(STEM).join("Ext/opaque.bin"),
+                    input.join("Ext/opaque.bin"),
+                )
+                .unwrap();
+                fs::remove_dir(input.join(STEM).join("Ext")).unwrap();
+            }
+            let source = directory.0.join("source");
+            let manifest = import_designer_queries(&input, &source).unwrap();
+            let optional = manifest
+                .files
+                .iter()
+                .find(|file| matches!(file.role, FileRole::OptionalModule { .. }))
+                .unwrap();
+            assert_eq!(optional.source_path().as_str(), "ObjectModule.bsl");
+            assert_eq!(
+                optional.path.as_str(),
+                if direct {
+                    "Ext/ObjectModule.bsl".to_owned()
+                } else {
+                    format!("{STEM}/Ext/ObjectModule.bsl")
+                }
+            );
+            assert!(!source.join("ObjectModule.bsl").exists());
+            let output = directory.0.join("output");
+            export_designer(&source, &output).unwrap();
+            assert!(!output.join(optional.path.as_path()).exists());
+            for invalid in ["source", "native", "bytes", "binary"] {
+                let mut changed = manifest.clone();
+                let optional = changed
+                    .files
+                    .iter_mut()
+                    .find(|file| matches!(file.role, FileRole::OptionalModule { .. }))
+                    .unwrap();
+                match invalid {
+                    "source" => {
+                        optional.role = FileRole::OptionalModule {
+                            source: test_support::path("OtherModule.bsl"),
+                        }
+                    }
+                    "native" => optional.path = test_support::path("Other/Ext/ObjectModule.bsl"),
+                    "bytes" => optional.bytes = 1,
+                    "binary" => {
+                        let mut binary = optional.clone();
+                        binary.path =
+                            test_support::path(&binary.path.as_str().replace(".bsl", ".bin"));
+                        binary.role = FileRole::Relocated {
+                            source: test_support::path("ObjectModule.bin"),
+                        };
+                        changed.files.push(binary);
+                    }
+                    _ => unreachable!(),
+                }
+                assert_eq!(
+                    changed.validate().unwrap_err().code,
+                    "source_optional_module_invalid",
+                    "{invalid}"
+                );
+            }
+        }
+    }
+}
+
+/// Binary bodies forbid optional creation; two empty native Ext parents remain ambiguous.
+#[test]
+fn optional_module_import_does_not_reclassify_binary_or_ambiguous_native_sources() {
+    for binary in [false, true] {
+        let directory = TestDir::new();
+        let input = native(&directory, ExternalKind::Report, false);
+        let module = input.join(STEM).join("Ext/ObjectModule.bsl");
+        fs::remove_file(&module).unwrap();
+        let source = directory.0.join("source");
+        if binary {
+            fs::write(module.with_extension("bin"), b"binary").unwrap();
+            let manifest = import_designer_queries(&input, &source).unwrap();
+            assert!(
+                !manifest
+                    .files
+                    .iter()
+                    .any(|file| matches!(file.role, FileRole::OptionalModule { .. }))
+            );
+        } else {
+            fs::create_dir(input.join("Ext")).unwrap();
+            assert_eq!(
+                import_designer_queries(&input, &source).unwrap_err().code,
+                "source_module_ambiguous"
+            );
+            assert!(!source.exists());
+        }
+    }
+}
+
 /// Reuse the verified codec corpus, keeping only the external object's owned subtree.
 fn native(directory: &TestDir, kind: ExternalKind, direct_module: bool) -> PathBuf {
     let input = test_support::fixture(directory);

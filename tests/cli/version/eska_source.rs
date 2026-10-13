@@ -3,8 +3,79 @@
 use super::*;
 use ::eska::project_core::source_format::{NativeUuid, accept_source, import_designer_queries};
 
+/// An absent body is visible in preview and created only by an independently authorized write.
+#[test]
+fn eska_cli_explicitly_creates_a_declared_missing_module() {
+    for kind in ["processing", "report"] {
+        let (fixture, pin) = project(kind, None, false);
+        let path = fixture.0.join("src/ObjectModule.bsl");
+        let map = fs::read(fixture.0.join("src/source.json")).unwrap();
+        for locale in ["ru", "en"] {
+            let preview = eska(
+                &fixture.0,
+                locale,
+                &[
+                    "version",
+                    "migrate",
+                    "--initial-version",
+                    "1.2.3",
+                    "--accepted-base-sha256",
+                    &pin,
+                    "--format",
+                    "json",
+                ],
+            );
+            assert!(preview.status.success(), "{preview:?}");
+            let document: Value = serde_json::from_slice(&preview.stdout).unwrap();
+            assert_eq!(document["creates_module"], true);
+            assert_eq!(document["applied"], false);
+            assert_eq!(document["source"], "src/ObjectModule.bsl");
+            assert_eq!(document["edits"][0]["byte_start"], 0);
+            assert!(!path.exists());
+        }
+        let output = eska(
+            &fixture.0,
+            "en",
+            &[
+                "version",
+                "migrate",
+                "--initial-version",
+                "1.2.3",
+                "--accepted-base-sha256",
+                &pin,
+                "--write",
+                "--format",
+                "json",
+            ],
+        );
+        assert!(output.status.success(), "{output:?}");
+        let document: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(document["creates_module"], true);
+        assert_eq!(document["applied"], true);
+        assert!(path.is_file());
+        assert_eq!(fs::read(fixture.0.join("src/source.json")).unwrap(), map);
+        let repeated = eska(
+            &fixture.0,
+            "ru",
+            &[
+                "version",
+                "migrate",
+                "--accepted-base-sha256",
+                &pin,
+                "--write",
+                "--format",
+                "json",
+            ],
+        );
+        assert!(repeated.status.success(), "{repeated:?}");
+        let document: Value = serde_json::from_slice(&repeated.stdout).unwrap();
+        assert_eq!(document["creates_module"], false);
+        assert_eq!(document["applied"], false);
+    }
+}
+
 /// Import an owned external project with an existing text module and optional root freeze.
-fn project(kind: &str, module: &str, frozen: bool) -> (TestDir, String) {
+fn project(kind: &str, module: Option<&str>, frozen: bool) -> (TestDir, String) {
     let fixture = TestDir::new();
     let tag = if kind == "processing" {
         "ExternalDataProcessor"
@@ -13,11 +84,13 @@ fn project(kind: &str, module: &str, frozen: bool) -> (TestDir, String) {
     };
     fs::create_dir_all(fixture.0.join("native/Исходный.v1/Ext")).unwrap();
     fs::write(fixture.0.join("native/Исходный.v1.xml"), format!("<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" version=\"2.20\"><{tag} uuid=\"10000000-0000-4000-8000-000000000001\"><Properties><Name>Пример</Name></Properties></{tag}></MetaDataObject>")).unwrap();
-    fs::write(
-        fixture.0.join("native/Исходный.v1/Ext/ObjectModule.bsl"),
-        module,
-    )
-    .unwrap();
+    if let Some(module) = module {
+        fs::write(
+            fixture.0.join("native/Исходный.v1/Ext/ObjectModule.bsl"),
+            module,
+        )
+        .unwrap();
+    }
     import_designer_queries(&fixture.0.join("native"), &fixture.0.join("src")).unwrap();
     fs::create_dir(fixture.0.join(".eska")).unwrap();
     let freeze = if frozen {
@@ -42,7 +115,7 @@ fn eska_version_commands_read_migrate_and_bump_in_both_locales() {
         for value in ["1.2.3", "01.02.003.0004"] {
             let module =
                 format!("\u{feff}Функция Версия()\r\nВозврат \"{value}\";\r\nКонецФункции\r\n");
-            let (fixture, pin) = project(kind, &module, false);
+            let (fixture, pin) = project(kind, Some(&module), false);
             let path = fixture.0.join("src/ObjectModule.bsl");
             let mut previews = Vec::new();
             for locale in ["ru", "en"] {
@@ -121,7 +194,7 @@ fn eska_version_commands_read_migrate_and_bump_in_both_locales() {
 fn eska_version_trust_and_freeze_failures_preserve_working_bytes() {
     for frozen in [false, true] {
         let module = "Функция Версия() Экспорт Возврат \"1.2.3\"; КонецФункции\r\n";
-        let (fixture, pin) = project("report", module, frozen);
+        let (fixture, pin) = project("report", Some(module), frozen);
         for (expected, explicit) in [
             ("accepted_base_pin_required", None),
             ("accepted_base_pin_invalid", Some("wrong".to_owned())),

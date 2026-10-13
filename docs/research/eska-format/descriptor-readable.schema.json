@@ -10,7 +10,11 @@
       "const": 1
     },
     "profile": {
-      "const": "designer-2.20-configuration"
+      "enum": [
+        "designer-2.20-configuration",
+        "designer-2.20-external-data-processor",
+        "designer-2.20-external-report"
+      ]
     },
     "object": {
       "$ref": "#/$defs/node"
@@ -708,5 +712,47 @@
       ],
       "additionalProperties": false
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "designer-2.20-external-data-processor"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "object": {
+            "properties": {
+              "kind": {
+                "const": "DataProcessor"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "designer-2.20-external-report"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "object": {
+            "properties": {
+              "kind": {
+                "const": "Report"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
