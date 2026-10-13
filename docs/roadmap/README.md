@@ -27,6 +27,10 @@ references. Native inputs сохранены. Единый form.yaml, protected 
 байты 823 форм через YAML и проверяет 665 перестановок после reparse.
 Следующий шаг — readable properties и объединение body с metadata descriptor
 в form.yaml, затем protected selection/migration/source map.
+[Readable properties](../research/eska-format/managed-form-properties.md)
+подтверждены на 12 317 properties C1; body v2 сохраняет чтение v1 и единственные
+values. 751 форма прошла codec edits/reparse. Следующее — единый form.yaml;
+новый protected/CF цикл пока не выполнен.
 
 Первая часть расширяет [typed writer](../research/eska-format/typed-scalars.md)
 на 28 bool/integer/enum свойств с прежней защитой и точечными правками.

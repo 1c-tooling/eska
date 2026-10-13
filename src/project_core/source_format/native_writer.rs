@@ -461,7 +461,7 @@ fn materialize_fragment(fragment: &XmlFragment) -> Result<String, Error> {
 }
 
 /// XML character references retain carriage returns that parsers would otherwise normalize.
-fn escape(value: &str) -> String {
+pub(super) fn escape(value: &str) -> String {
     value
         .replace('&', "&amp;")
         .replace('<', "&lt;")

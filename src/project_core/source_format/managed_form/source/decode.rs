@@ -4,7 +4,10 @@ use std::{collections::BTreeMap, ops::Range};
 
 use roxmltree::{Document, Node};
 
-use super::{ChildFrame, Error, ManagedFormSource, NativeForm, Part, Stencil, binding};
+use super::{
+    ChildFrame, Error, FormDefinition, ManagedFormSource, NativeForm, Part, Stencil, binding,
+    property,
+};
 use crate::project_core::source_format::{FormElementKind, FormId, ManagedFormLayout, Namespace};
 
 struct Hole {
@@ -19,26 +22,39 @@ pub(super) fn decode(input: &str) -> Result<ManagedFormSource, Error> {
     let root = document.root_element();
     let root_scope = namespaces(root);
     let mut elements = BTreeMap::new();
+    let mut definitions = BTreeMap::new();
     for node in root.descendants().filter(Node::is_element) {
         let Some(id) = ui_id(node)? else {
             continue;
         };
         let scope = namespaces(node);
+        let (parts, properties) = parts(node, input, node.range(), true)?;
+        let identity = model.elements.get(&id).ok_or_else(binding)?;
+        definitions.insert(
+            id.clone(),
+            FormDefinition {
+                kind: identity.kind,
+                name: identity.name.clone(),
+                properties,
+            },
+        );
         elements.insert(
             id,
             Stencil {
                 namespaces: (scope != root_scope).then_some(scope),
-                parts: parts(node, input, node.range(), true)?,
+                parts,
             },
         );
     }
+    let (root_parts, properties) = parts(root, input, 0..input.len(), false)?;
     let source = ManagedFormSource {
-        schema_version: 1,
-        elements: model.elements,
+        schema_version: 2,
+        elements: definitions,
         layout: model.layout,
+        properties,
         native: NativeForm {
             namespaces: root_scope,
-            root: parts(root, input, 0..input.len(), false)?,
+            root: root_parts,
             elements,
         },
     };
@@ -72,7 +88,7 @@ pub(super) fn check_scopes(source: &ManagedFormSource, xml: &str) -> Result<(), 
 }
 
 /// Data/command IDs never acquire UI ownership merely because their numeric spelling coincides.
-fn ui_id(node: Node<'_, '_>) -> Result<Option<FormId>, Error> {
+pub(super) fn ui_id(node: Node<'_, '_>) -> Result<Option<FormId>, Error> {
     if node.tag_name().namespace() == Some(super::super::NAMESPACE)
         && FormElementKind::native(node.tag_name().name()).is_some()
         && let Some(id) = node.attribute("id")
@@ -102,8 +118,15 @@ fn parts(
     input: &str,
     range: Range<usize>,
     definition: bool,
-) -> Result<Vec<Part>, Error> {
+) -> Result<
+    (
+        Vec<Part>,
+        BTreeMap<super::FormPropertyName, super::FormPropertyValue>,
+    ),
+    Error,
+> {
     let mut holes = Vec::new();
+    let mut properties = BTreeMap::new();
     if definition {
         for (attribute, part) in [("name", Part::Name), ("id", Part::Id)] {
             let attribute = node
@@ -122,8 +145,13 @@ fn parts(
             Some(Part::Children {
                 frame: child_frame(child, input)?,
             })
+        } else if let Some(id) = ui_id(child)? {
+            Some(Part::Element { id })
+        } else if let Some((name, value, stencil)) = property::decode(child, input) {
+            properties.insert(name, value);
+            Some(Part::Property { name, stencil })
         } else {
-            ui_id(child)?.map(|id| Part::Element { id })
+            None
         };
         if let Some(part) = part {
             holes.push(Hole {
@@ -152,7 +180,7 @@ fn parts(
             value: slice(input, cursor..range.end)?.into(),
         });
     }
-    Ok(result)
+    Ok((result, properties))
 }
 
 /// Both native tag occurrences consume the same typed class, retaining the original namespace prefix.
@@ -218,7 +246,7 @@ fn child_frame(node: Node<'_, '_>, input: &str) -> Result<ChildFrame, Error> {
 }
 
 /// Native `QName` ranges end before attributes or closing punctuation, never by a guessed class suffix.
-fn opening_name(input: &str, start: usize) -> Result<(&str, Range<usize>), Error> {
+pub(super) fn opening_name(input: &str, start: usize) -> Result<(&str, Range<usize>), Error> {
     let tail = input.get(start + 1..).ok_or_else(binding)?;
     let length = tail
         .find(|character: char| character.is_ascii_whitespace() || matches!(character, '/' | '>'))
@@ -232,7 +260,7 @@ fn slice(input: &str, range: Range<usize>) -> Result<&str, Error> {
 }
 
 /// Quoted greater-than signs belong to attributes, not to the start tag's closing punctuation.
-fn opening_end(input: &str, range: Range<usize>) -> Result<usize, Error> {
+pub(super) fn opening_end(input: &str, range: Range<usize>) -> Result<usize, Error> {
     let mut quote = None;
     for (offset, character) in slice(input, range.clone())?.char_indices() {
         match (quote, character) {

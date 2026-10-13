@@ -1,6 +1,6 @@
 //! Validated flat stencils render with an explicit work stack, retaining each opaque chunk once.
 
-use super::{ChildFrame, Error, FormId, ManagedFormSource, Part, binding};
+use super::{ChildFrame, Error, FormId, ManagedFormSource, Part, binding, property};
 
 enum Task<'a> {
     Part(&'a Part, Option<&'a FormId>),
@@ -41,6 +41,13 @@ pub(super) fn render(source: &ManagedFormSource) -> Result<String, Error> {
                 output.push_str(&attribute(&definition.name));
             }
             Task::Part(Part::Id, owner) => output.push_str(owner.ok_or_else(binding)?.as_str()),
+            Task::Part(Part::Property { name, stencil }, owner) => {
+                let value = source
+                    .property_values(owner)?
+                    .get(name)
+                    .ok_or_else(binding)?;
+                output.push_str(&property::render(stencil, value)?);
+            }
             Task::Part(Part::Class { prefix }, owner) => {
                 let definition = source
                     .elements

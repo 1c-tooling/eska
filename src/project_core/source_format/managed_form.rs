@@ -14,7 +14,9 @@ mod tests;
 mod validation;
 
 pub use kind::FormElementKind;
-pub use source::ManagedFormSource;
+pub use source::{
+    FormDefinition, FormLocalizedText, FormPropertyName, FormPropertyValue, ManagedFormSource,
+};
 
 pub(super) const NAMESPACE: &str = "http://v8.1c.ru/8.3/xcf/logform";
 

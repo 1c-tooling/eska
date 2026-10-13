@@ -60,8 +60,9 @@ pub use layout::{
     prepare_resource_layout,
 };
 pub use managed_form::{
-    FormElement, FormElementKind, FormFixedSlot, FormId, FormLayout, FormNamedValue,
-    ManagedFormLayout, ManagedFormSource,
+    FormDefinition, FormElement, FormElementKind, FormFixedSlot, FormId, FormLayout,
+    FormLocalizedText, FormNamedValue, FormPropertyName, FormPropertyValue, ManagedFormLayout,
+    ManagedFormSource,
 };
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 pub use protected::{

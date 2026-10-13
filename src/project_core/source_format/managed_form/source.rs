@@ -4,21 +4,48 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use super::{Error, FormElement, FormFixedSlot, FormId, FormLayout, ManagedFormLayout};
+use super::{
+    Error, FormElement, FormElementKind, FormFixedSlot, FormId, FormLayout, ManagedFormLayout,
+};
 use crate::project_core::source_format::{Namespace, yaml};
 
 mod decode;
+mod property;
 mod render;
 #[cfg(test)]
 mod tests;
+
+pub use property::{FormLocalizedText, FormPropertyName, FormPropertyValue};
+
+/// UI definitions hold the sole editable property values; identity/layout remain separately validated.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FormDefinition {
+    pub kind: FormElementKind,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub properties: BTreeMap<FormPropertyName, FormPropertyValue>,
+}
+
+impl FormDefinition {
+    /// Read-only identity does not inherit authoring values or a second layout parent.
+    fn identity(&self) -> FormElement {
+        FormElement {
+            kind: self.kind,
+            name: self.name.clone(),
+        }
+    }
+}
 
 /// A versioned dialog codec; project file-map integration and supplier-policy authority remain separate.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ManagedFormSource {
     pub schema_version: u32,
-    pub elements: BTreeMap<FormId, FormElement>,
+    pub elements: BTreeMap<FormId, FormDefinition>,
     pub layout: FormLayout,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub properties: BTreeMap<FormPropertyName, FormPropertyValue>,
     native: NativeForm,
 }
 
@@ -42,12 +69,24 @@ struct Stencil {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 enum Part {
-    Xml { value: String },
+    Xml {
+        value: String,
+    },
     Name,
     Id,
-    Class { prefix: String },
-    Element { id: FormId },
-    Children { frame: ChildFrame },
+    Class {
+        prefix: String,
+    },
+    Element {
+        id: FormId,
+    },
+    Children {
+        frame: ChildFrame,
+    },
+    Property {
+        name: FormPropertyName,
+        stencil: property::PropertyStencil,
+    },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -74,8 +113,25 @@ impl ManagedFormSource {
     /// # Errors
     /// Returns strict YAML/schema errors, invalid bindings, scopes or native layout.
     pub fn from_yaml(input: &str) -> Result<Self, Error> {
-        let value = serde_json::from_value(yaml::decode(input)?)
-            .map_err(|_| Error::root("source_form_schema_invalid"))?;
+        let value = yaml::decode(input)?;
+        if value
+            .get("schema_version")
+            .and_then(serde_json::Value::as_u64)
+            == Some(1)
+            && (value.get("properties").is_some()
+                || value
+                    .get("elements")
+                    .and_then(serde_json::Value::as_object)
+                    .is_some_and(|elements| {
+                        elements
+                            .values()
+                            .any(|element| element.get("properties").is_some())
+                    }))
+        {
+            return Err(Error::root("source_form_schema_invalid"));
+        }
+        let value =
+            serde_json::from_value(value).map_err(|_| Error::root("source_form_schema_invalid"))?;
         Self::validate(&value)?;
         Ok(value)
     }
@@ -123,6 +179,17 @@ impl ManagedFormSource {
     /// # Errors
     /// Returns substituted stencils/definitions, invalid layout or a changed data/namespace context.
     pub fn validate_layout_change(&self, accepted: &Self) -> Result<(), Error> {
+        if self.properties != accepted.properties || self.elements != accepted.elements {
+            return Err(Error::root("source_form_identity_changed"));
+        }
+        self.validate_change(accepted)
+    }
+
+    /// Accepted property/layout edits retain stencils, identity, references and data/namespace contexts.
+    ///
+    /// # Errors
+    /// Returns substituted bindings/identities, unverified property shape or an invalid layout/context.
+    pub fn validate_change(&self, accepted: &Self) -> Result<(), Error> {
         if self.native != accepted.native {
             return Err(binding());
         }
@@ -132,8 +199,21 @@ impl ManagedFormSource {
 
     /// Bound all render traversal to a validated single-parent graph and real declared collection slots.
     fn preflight(&self) -> Result<(), Error> {
-        if self.schema_version != 1 {
+        if !matches!(self.schema_version, 1 | 2) {
             return Err(Error::root("source_form_schema_unsupported"));
+        }
+        if self.schema_version == 1
+            && (!self.properties.is_empty()
+                || self
+                    .elements
+                    .values()
+                    .any(|element| !element.properties.is_empty())
+                || std::iter::once(&self.native.root)
+                    .chain(self.native.elements.values().map(|stencil| &stencil.parts))
+                    .flatten()
+                    .any(|part| matches!(part, Part::Property { .. })))
+        {
+            return Err(Error::root("source_form_schema_invalid"));
         }
         if self.elements.keys().ne(self.native.elements.keys()) {
             return Err(binding());
@@ -163,7 +243,7 @@ impl ManagedFormSource {
                     Part::Name => names += 1,
                     Part::Id => ids += 1,
                     Part::Class { .. } => classes += 1,
-                    Part::Xml { .. } => {}
+                    Part::Xml { .. } | Part::Property { .. } => {}
                 }
             }
             if owner.is_some() {
@@ -173,6 +253,7 @@ impl ManagedFormSource {
             } else if names != 0 || ids != 0 || classes != 0 {
                 return Err(binding());
             }
+            property::validate_bindings(parts, self.property_values(owner)?)?;
         }
         if !self.layout.roots.is_empty() && !collections.contains(&None) {
             return Err(binding());
@@ -183,7 +264,7 @@ impl ManagedFormSource {
             return Err(Error::root("source_form_layout_slot_invalid"));
         }
         ManagedFormLayout {
-            elements: self.elements.clone(),
+            elements: self.identities(),
             attributes: BTreeMap::new(),
             commands: BTreeMap::new(),
             layout: self.layout.clone(),
@@ -197,11 +278,33 @@ impl ManagedFormSource {
     /// Rendered definitions/layout must agree with the typed values, never hidden XML alternatives.
     fn check_output(&self, xml: &str) -> Result<ManagedFormLayout, Error> {
         let actual = ManagedFormLayout::from_xml(xml)?;
-        if actual.elements != self.elements || actual.layout != self.layout {
+        if actual.elements != self.identities() || actual.layout != self.layout {
             return Err(binding());
         }
         decode::check_scopes(self, xml)?;
+        property::check_output(self, xml)?;
         Ok(actual)
+    }
+
+    /// Only semantic identity feeds the graph validator; properties have their own inverse contract.
+    fn identities(&self) -> BTreeMap<FormId, FormElement> {
+        self.elements
+            .iter()
+            .map(|(id, definition)| (id.clone(), definition.identity()))
+            .collect()
+    }
+
+    /// Root and element property scopes have one source each and never share lookup by name.
+    fn property_values(
+        &self,
+        owner: Option<&FormId>,
+    ) -> Result<&BTreeMap<FormPropertyName, FormPropertyValue>, Error> {
+        owner.map_or(Ok(&self.properties), |id| {
+            self.elements
+                .get(id)
+                .map(|definition| &definition.properties)
+                .ok_or_else(binding)
+        })
     }
 }
 

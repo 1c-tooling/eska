@@ -567,6 +567,13 @@ stencils сохраняют неизвестное содержимое и scope
 развернуться; absent slots/data-context/namespace moves без inverse rule отказаны.
 Metadata descriptor/project file map ещё не объединены с body; далее — readable
 Title/ToolTip/bools и единый form.yaml, затем protected writer/source map/миграция.
+[Четвёртая часть: readable properties](../research/eska-format/managed-form-properties.md)
+добавляет body v2 с единственными Title/ToolTip/bool values; чтение v1 сохранено.
+12 317 direct properties всех 823 форм promoted без потери no-op bytes;
+14 010 texts/flags изменены и reparsed в 751 форме с прежним layout/identity.
+Неизвестные shapes сохраняются opaque, состав slots/languages/flag presence pinned.
+Project import/file map/protected writer ещё не подключены; следующий шаг —
+единый form.yaml (body v2 + metadata descriptor), затем source map/миграция/CF.
 
 Обязательная часть структуры MVP после EF-24. Зафиксировать матрицу реальных
 управляемых форм выбранного платформенного профиля. Разделить устойчивые

@@ -1,0 +1,180 @@
+"elements":
+  "-1":
+    "kind": "AutoCommandBar"
+    "name": "FormBar"
+  "1":
+    "kind": "InputField"
+    "name": "Value"
+    "properties":
+      "Enabled": false
+      "ReadOnly": true
+      "Title":
+        "formatted": false
+        "text":
+          "ru": "Название поля"
+      "ToolTip":
+        "text":
+          "ru": ""
+      "Visible": false
+"layout":
+  "children": {}
+  "roots":
+    - "1"
+"native":
+  "elements":
+    "-1":
+      "parts":
+        -
+          "kind": "xml"
+          "value": "<"
+        -
+          "kind": "class"
+          "prefix": ""
+        -
+          "kind": "xml"
+          "value": " name=\""
+        -
+          "kind": "name"
+        -
+          "kind": "xml"
+          "value": "\" id=\""
+        -
+          "kind": "id"
+        -
+          "kind": "xml"
+          "value": "\"/>"
+    "1":
+      "parts":
+        -
+          "kind": "xml"
+          "value": "<"
+        -
+          "kind": "class"
+          "prefix": ""
+        -
+          "kind": "xml"
+          "value": " name=\""
+        -
+          "kind": "name"
+        -
+          "kind": "xml"
+          "value": "\" id=\""
+        -
+          "kind": "id"
+        -
+          "kind": "xml"
+          "value": "\">"
+        -
+          "kind": "property"
+          "name": "Title"
+          "stencil":
+            "parts":
+              -
+                "kind": "xml"
+                "value": "<Title formatted=\""
+              -
+                "kind": "formatted"
+              -
+                "kind": "xml"
+                "value": "\"><v8:item><v8:lang>ru</v8:lang>"
+              -
+                "frame":
+                  "close": "</v8:content>"
+                  "open": "<v8:content>"
+                "kind": "text"
+                "language": "ru"
+              -
+                "kind": "xml"
+                "value": "</v8:item></Title>"
+        -
+          "kind": "property"
+          "name": "ToolTip"
+          "stencil":
+            "parts":
+              -
+                "kind": "xml"
+                "value": "<ToolTip><v8:item><v8:lang>ru</v8:lang>"
+              -
+                "frame":
+                  "close": "</v8:content>"
+                  "empty": "<v8:content/>"
+                  "open": "<v8:content>"
+                "kind": "text"
+                "language": "ru"
+              -
+                "kind": "xml"
+                "value": "</v8:item></ToolTip>"
+        -
+          "kind": "property"
+          "name": "Visible"
+          "stencil":
+            "parts":
+              -
+                "kind": "xml"
+                "value": "<Visible>"
+              -
+                "kind": "boolean"
+              -
+                "kind": "xml"
+                "value": "</Visible>"
+        -
+          "kind": "property"
+          "name": "ReadOnly"
+          "stencil":
+            "parts":
+              -
+                "kind": "xml"
+                "value": "<ReadOnly>"
+              -
+                "kind": "boolean"
+              -
+                "kind": "xml"
+                "value": "</ReadOnly>"
+        -
+          "kind": "property"
+          "name": "Enabled"
+          "stencil":
+            "parts":
+              -
+                "kind": "xml"
+                "value": "<Enabled>"
+              -
+                "kind": "boolean"
+              -
+                "kind": "xml"
+                "value": "</Enabled>"
+        -
+          "kind": "xml"
+          "value": "</"
+        -
+          "kind": "class"
+          "prefix": ""
+        -
+          "kind": "xml"
+          "value": ">"
+  "namespaces":
+    -
+      "prefix": null
+      "uri": "http://v8.1c.ru/8.3/xcf/logform"
+    -
+      "prefix": "v8"
+      "uri": "http://v8.1c.ru/8.1/data/core"
+  "root":
+    -
+      "kind": "xml"
+      "value": "<Form xmlns=\"http://v8.1c.ru/8.3/xcf/logform\" xmlns:v8=\"http://v8.1c.ru/8.1/data/core\" version=\"2.20\">"
+    -
+      "id": "-1"
+      "kind": "element"
+    -
+      "frame":
+        "close": "</ChildItems>"
+        "gaps":
+          - ""
+          - ""
+        "open": "<ChildItems>"
+      "kind": "children"
+    -
+      "kind": "xml"
+      "value": "</Form>"
+"schema_version": 2
