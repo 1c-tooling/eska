@@ -29,6 +29,8 @@ pub const RELOCATED_SOURCE_MAP_VERSION: u32 = 2;
 pub const MANAGED_FORM_SOURCE_MAP_VERSION: u32 = 3;
 /// Composite query resources include the independently selected plain inputs and scoped native ranges.
 pub const QUERY_SOURCE_MAP_VERSION: u32 = 4;
+/// External roots require an explicit reverse binding in addition to form/query origins.
+pub const EXTERNAL_SOURCE_MAP_VERSION: u32 = 5;
 
 /// Exact authoring bytes addressed relative to a working tree or its pinned accepted snapshot.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -122,6 +124,8 @@ pub struct SourceMap {
     pub source_schema_version: u32,
     pub rules_version: u32,
     pub profile: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub external_root: Option<crate::project_core::source_format::ExternalRoot>,
     pub generation: String,
     pub input_revision: String,
     pub baseline: String,
@@ -145,27 +149,7 @@ impl SourceMap {
     /// # Errors
     /// Returns unsupported versions, malformed fingerprints, inconsistent origins or inventory.
     pub fn validate(&self) -> Result<(), Error> {
-        if !matches!(
-            self.schema_version,
-            SOURCE_MAP_VERSION
-                | RELOCATED_SOURCE_MAP_VERSION
-                | MANAGED_FORM_SOURCE_MAP_VERSION
-                | QUERY_SOURCE_MAP_VERSION
-        ) || !matches!(
-            self.source_schema_version,
-            super::super::SCHEMA_VERSION | super::super::READABLE_SCHEMA_VERSION
-        ) || (self.schema_version == SOURCE_MAP_VERSION
-            && self.source_schema_version != super::super::SCHEMA_VERSION)
-            || self.rules_version != super::super::RULES_VERSION
-            || self.profile != super::super::PROFILE
-        {
-            return Err(Error::root("source_map_schema_unsupported"));
-        }
-        if self.schema_version >= MANAGED_FORM_SOURCE_MAP_VERSION
-            && self.source_schema_version != super::super::READABLE_SCHEMA_VERSION
-        {
-            return Err(Error::root("source_map_schema_unsupported"));
-        }
+        self.validate_schema()?;
         for digest in [
             &self.generation,
             &self.input_revision,
@@ -230,10 +214,57 @@ impl SourceMap {
         if files::revision(&entries, &self.directories) != self.native_revision {
             return Err(Error::root("source_map_inventory_invalid"));
         }
-        let root = self.file(&SourcePath::parse("Configuration.xml")?);
-        if !matches!(root.map(|entry| &entry.origin), Some(FileOrigin::Metadata { accepted, .. }) if accepted.path.as_str() == "configuration.yaml")
+        let (path, source) = self.external_root.as_ref().map_or(
+            (
+                SourcePath::parse("Configuration.xml")?,
+                "configuration.yaml",
+            ),
+            |root| (root.path.clone(), root.kind.source()),
+        );
+        let root = self.file(&path);
+        if !matches!(root.map(|entry| &entry.origin), Some(FileOrigin::Metadata { accepted, .. }) if accepted.path.as_str() == source)
         {
             return Err(Error::root("source_map_origin_invalid"));
+        }
+        Ok(())
+    }
+
+    /// Schema and root profile jointly select the origin envelope; neither may spoof the other.
+    fn validate_schema(&self) -> Result<(), Error> {
+        if !matches!(
+            self.schema_version,
+            SOURCE_MAP_VERSION
+                | RELOCATED_SOURCE_MAP_VERSION
+                | MANAGED_FORM_SOURCE_MAP_VERSION
+                | QUERY_SOURCE_MAP_VERSION
+                | EXTERNAL_SOURCE_MAP_VERSION
+        ) || !matches!(
+            self.source_schema_version,
+            super::super::SCHEMA_VERSION | super::super::READABLE_SCHEMA_VERSION
+        ) || (self.schema_version == SOURCE_MAP_VERSION
+            && self.source_schema_version != super::super::SCHEMA_VERSION)
+            || self.rules_version != super::super::RULES_VERSION
+        {
+            return Err(Error::root("source_map_schema_unsupported"));
+        }
+        let profile_valid = self.external_root.as_ref().map_or_else(
+            || {
+                self.schema_version != EXTERNAL_SOURCE_MAP_VERSION
+                    && self.profile == super::super::PROFILE
+            },
+            |root| {
+                self.schema_version == EXTERNAL_SOURCE_MAP_VERSION
+                    && self.profile == root.kind.profile()
+                    && root.validate().is_ok()
+            },
+        );
+        if !profile_valid {
+            return Err(Error::root("source_map_schema_unsupported"));
+        }
+        if self.schema_version >= MANAGED_FORM_SOURCE_MAP_VERSION
+            && self.source_schema_version != super::super::READABLE_SCHEMA_VERSION
+        {
+            return Err(Error::root("source_map_schema_unsupported"));
         }
         Ok(())
     }
@@ -251,7 +282,9 @@ impl SourceMap {
             } = &entry.origin
                 && (!matches!(
                     self.schema_version,
-                    MANAGED_FORM_SOURCE_MAP_VERSION | QUERY_SOURCE_MAP_VERSION
+                    MANAGED_FORM_SOURCE_MAP_VERSION
+                        | QUERY_SOURCE_MAP_VERSION
+                        | EXTERNAL_SOURCE_MAP_VERSION
                 ) || !descriptors.insert(descriptor)
                     || !matches!(self.file(descriptor).map(|file| &file.origin),
                         Some(FileOrigin::Metadata { uuid: owner, accepted: input, working: overlay, .. })
@@ -374,7 +407,8 @@ pub(super) fn create(
         schema_version: map_version(base.package.manifest.schema_version, source_schema_version),
         source_schema_version,
         rules_version: super::super::RULES_VERSION,
-        profile: super::super::PROFILE.into(),
+        profile: base.package.manifest.profile.clone(),
+        external_root: base.package.manifest.external_root.clone(),
         generation,
         input_revision: working.revision.clone(),
         baseline: base.reference().sha256.clone(),
@@ -388,7 +422,9 @@ pub(super) fn create(
 
 /// Origin schema follows actual physical mappings while descriptor envelope versions stay independent.
 const fn map_version(layout: u32, descriptor: u32) -> u32 {
-    if layout == super::super::QUERY_LAYOUT_VERSION {
+    if layout == super::super::EXTERNAL_LAYOUT_VERSION {
+        EXTERNAL_SOURCE_MAP_VERSION
+    } else if layout == super::super::QUERY_LAYOUT_VERSION {
         QUERY_SOURCE_MAP_VERSION
     } else if layout == super::super::MANAGED_FORM_LAYOUT_VERSION {
         MANAGED_FORM_SOURCE_MAP_VERSION

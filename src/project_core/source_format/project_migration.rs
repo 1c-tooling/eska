@@ -381,10 +381,9 @@ fn portable(path: &Path) -> Result<SourcePath, Error> {
 
 /// Configuration identity is declared in the native map, never inferred from an output directory.
 fn configuration_uuid(manifest: &super::SourceManifest) -> Option<&super::NativeUuid> {
+    let root = manifest.root_path().ok()?;
     manifest.files.iter().find_map(|entry| match &entry.role {
-        FileRole::Descriptor { uuid, .. } if entry.path.as_str() == "Configuration.xml" => {
-            Some(uuid)
-        }
+        FileRole::Descriptor { uuid, .. } if entry.path == root => Some(uuid),
         _ => None,
     })
 }

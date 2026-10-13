@@ -97,33 +97,9 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
         inventory: &inventory,
         loaded: BTreeMap::new(),
         uuids: BTreeSet::new(),
+        external_root: None,
     };
-    let root_path = SourcePath::parse("Configuration.xml")?;
-    let root = importer.load(&root_path, MetadataKind::Configuration, None)?;
-    let mut sources = BTreeMap::new();
-    let configuration = ObjectSource {
-        document: root,
-        nested: Vec::new(),
-        form: None,
-    };
-    let references = references(&configuration.document.descriptor.object)?;
-    for (kind, name) in references {
-        let path = reference_path("", kind, &name)?;
-        let document = importer.load(&path, kind, Some(&name))?;
-        let mut family = ObjectSource {
-            document,
-            nested: Vec::new(),
-            form: None,
-        };
-        importer.nested(&mut family)?;
-        sources.insert(source_path(&path)?, family);
-    }
-    sources.insert(SourcePath::parse("configuration.yaml")?, configuration);
-    let mut sources = if layout.version() >= super::DESCRIPTOR_LAYOUT_VERSION {
-        super::layout::separate(sources)?
-    } else {
-        sources
-    };
+    let mut sources = importer.sources(layout)?;
     let mut manifest = importer.manifest(&sources)?;
     if layout.version() >= super::DESCRIPTOR_LAYOUT_VERSION {
         manifest.schema_version = layout.version();
@@ -151,6 +127,9 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
     } else {
         BTreeMap::new()
     };
+    if manifest.external_root.is_some() {
+        manifest.schema_version = super::EXTERNAL_LAYOUT_VERSION;
+    }
     manifest.validate()?;
     let yaml: BTreeMap<_, _> = sources
         .iter()
@@ -184,9 +163,57 @@ struct Importer<'a> {
     inventory: &'a Inventory,
     loaded: BTreeMap<SourcePath, String>,
     uuids: BTreeSet<String>,
+    external_root: Option<super::ExternalRoot>,
 }
 
 impl Importer<'_> {
+    /// Load only the composition declared by the selected native root.
+    fn sources(&mut self, layout: Layout) -> Result<BTreeMap<SourcePath, ObjectSource>, Error> {
+        let (root_path, root_kind, external_root) = discover_root(self.root, self.inventory)?;
+        if external_root.is_some() && !matches!(layout, Layout::Queries) {
+            return Err(Error::root("source_profile_unsupported"));
+        }
+        self.external_root = external_root;
+        let root = self.load(&root_path, root_kind, None)?;
+        let mut sources = BTreeMap::new();
+        let configuration = ObjectSource {
+            document: root,
+            nested: Vec::new(),
+            form: None,
+        };
+        let references = references(&configuration.document.descriptor.object)?;
+        for (kind, name) in references {
+            let base = if self.external_root.is_some() {
+                root_path
+                    .as_str()
+                    .strip_suffix(".xml")
+                    .ok_or_else(|| Error::root("source_path_invalid"))?
+            } else {
+                ""
+            };
+            let path = reference_path(base, kind, &name)?;
+            let document = self.load(&path, kind, Some(&name))?;
+            let mut family = ObjectSource {
+                document,
+                nested: Vec::new(),
+                form: None,
+            };
+            self.nested(&mut family)?;
+            sources.insert(source_path(&path)?, family);
+        }
+        let root_source = self
+            .external_root
+            .as_ref()
+            .map_or("configuration.yaml", |root| root.kind.source());
+        sources.insert(SourcePath::parse(root_source)?, configuration);
+        let sources = if layout.version() >= super::DESCRIPTOR_LAYOUT_VERSION {
+            super::layout::separate(sources, self.external_root.as_ref())?
+        } else {
+            sources
+        };
+        Ok(sources)
+    }
+
     /// Resolve a declared descriptor and require its actual kind/name to match that declaration.
     fn load(
         &mut self,
@@ -261,7 +288,12 @@ impl Importer<'_> {
         Ok(SourceManifest {
             schema_version: SCHEMA_VERSION,
             rules_version: RULES_VERSION,
-            profile: PROFILE.into(),
+            profile: self
+                .external_root
+                .as_ref()
+                .map_or(PROFILE, |root| root.kind.profile())
+                .into(),
+            external_root: self.external_root.clone(),
             input_revision: self.inventory.revision.clone(),
             directories: self.inventory.directories.clone(),
             files: files.into_values().collect(),
@@ -269,6 +301,73 @@ impl Importer<'_> {
             query_resources: Vec::new(),
         })
     }
+}
+
+/// Immediate, bounded native descriptors choose the profile; unrelated XML remains payload.
+fn discover_root(
+    input: &Path,
+    inventory: &Inventory,
+) -> Result<(SourcePath, MetadataKind, Option<super::ExternalRoot>), Error> {
+    use crate::project_core::{ProjectType, native};
+    let mut roots = Vec::new();
+    for path in inventory.files.keys().filter(|path| {
+        !path.as_str().contains('/')
+            && path
+                .as_path()
+                .extension()
+                .is_some_and(|extension| extension == "xml")
+    }) {
+        let text = match files::read_text(&input.join(path.as_path())) {
+            Ok(text) => text,
+            Err(error)
+                if path.as_str() != "Configuration.xml"
+                    && matches!(
+                        error.code,
+                        "source_encoding_unsupported" | "source_document_too_large"
+                    ) =>
+            {
+                continue;
+            }
+            Err(error) => return Err(error.in_field(path.as_str())),
+        };
+        let project_type = native::project_type(&text).ok().flatten();
+        match project_type {
+            Some(ProjectType::Configuration | ProjectType::Extension)
+                if path.as_str() == "Configuration.xml" =>
+            {
+                roots.push((path.clone(), MetadataKind::Configuration, None));
+            }
+            Some(ProjectType::Processing | ProjectType::Report) => {
+                let kind = if project_type == Some(ProjectType::Processing) {
+                    super::ExternalKind::Processing
+                } else {
+                    super::ExternalKind::Report
+                };
+                roots.push((
+                    path.clone(),
+                    kind.metadata_kind(),
+                    Some(super::ExternalRoot {
+                        path: path.clone(),
+                        kind,
+                    }),
+                ));
+            }
+            Some(ProjectType::Configuration | ProjectType::Extension) => {
+                return Err(Error::root("source_profile_unsupported").in_field(path.as_str()));
+            }
+            None if path.as_str() == "Configuration.xml" => {
+                Descriptor::from_xml(&text).map_err(|error| error.in_field(path.as_str()))?;
+                return Err(Error::root("source_profile_unsupported"));
+            }
+            None => {}
+        }
+    }
+    if roots.len() > 1 {
+        return Err(Error::root("source_descriptor_duplicate"));
+    }
+    roots
+        .pop()
+        .ok_or_else(|| Error::root("source_descriptor_missing"))
 }
 
 /// Filesystem destinations must be new and outside the selected source tree.

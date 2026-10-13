@@ -26,7 +26,10 @@ impl Descriptor {
         if self.rules_version != RULES_VERSION {
             return Err(Error::root("source_rules_unsupported"));
         }
-        if self.profile != PROFILE || self.xml.version != "2.20" {
+        let supported_profile = self.profile == PROFILE
+            || super::root::external_kind(self)
+                .is_some_and(|kind| self.object.kind == kind.metadata_kind());
+        if !supported_profile || self.xml.version != "2.20" {
             return Err(Error::root("source_profile_unsupported"));
         }
         namespaces(&self.xml.namespaces)?;

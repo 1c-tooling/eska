@@ -3,8 +3,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use super::{
-    FileOrigin, InputAuthority, MappedFile, OriginTexts, QUERY_SOURCE_MAP_VERSION, QueryOrigin,
-    SourceLocation, SourceMap, location::verify_bytes, payload_origin, require_digest,
+    EXTERNAL_SOURCE_MAP_VERSION, FileOrigin, InputAuthority, MappedFile, OriginTexts,
+    QUERY_SOURCE_MAP_VERSION, QueryOrigin, SourceLocation, SourceMap, location::verify_bytes,
+    payload_origin, require_digest,
 };
 use crate::project_core::{
     MetadataKind,
@@ -229,41 +230,73 @@ pub(super) fn resource_location(
 pub(super) fn validate_map(map: &SourceMap) -> Result<(), Error> {
     let mut paths = BTreeSet::new();
     for file in &map.files {
-        let (uuid, descriptor, queries) = match &file.origin {
+        let (uuid, descriptor, queries, kind) = match &file.origin {
             FileOrigin::ManagedForm {
                 uuid,
                 descriptor,
                 queries,
                 ..
-            } => (uuid, descriptor, queries),
+            } => (uuid, descriptor, queries, MetadataKind::Form),
             FileOrigin::QueryResource {
                 uuid,
                 descriptor,
                 queries,
                 ..
             } => {
-                if map.schema_version != QUERY_SOURCE_MAP_VERSION
-                    || !native_path(descriptor, MetadataKind::Template)?
-                        .as_str()
-                        .eq_ignore_ascii_case(file.path.as_str())
+                if !matches!(
+                    map.schema_version,
+                    QUERY_SOURCE_MAP_VERSION | EXTERNAL_SOURCE_MAP_VERSION
+                ) || !native_path(descriptor, MetadataKind::Template)?
+                    .as_str()
+                    .eq_ignore_ascii_case(file.path.as_str())
                     || !matches!(map.file(descriptor).map(|file| &file.origin),
                         Some(FileOrigin::Metadata { uuid: owner, .. }) if uuid == owner)
                 {
                     return Err(invalid());
                 }
-                (uuid, descriptor, queries)
+                (uuid, descriptor, queries, MetadataKind::Template)
             }
             _ => continue,
         };
-        if !queries.is_empty() && map.schema_version != QUERY_SOURCE_MAP_VERSION {
+        if !queries.is_empty()
+            && !matches!(
+                map.schema_version,
+                QUERY_SOURCE_MAP_VERSION | EXTERNAL_SOURCE_MAP_VERSION
+            )
+        {
             return Err(invalid());
+        }
+        let native = descriptor.as_str();
+        let source = map
+            .external_root
+            .as_ref()
+            .map_or(native, |root| root.relative(native));
+        let authoring = crate::project_core::source_format::root::descriptor_path(
+            map.external_root.as_ref(),
+            kind,
+            descriptor,
+        )?;
+        if !matches!(map.file(descriptor).map(|file| &file.origin), Some(FileOrigin::Metadata { accepted, .. }) if accepted.path == authoring)
+        {
+            return Err(invalid());
+        }
+        if let FileOrigin::QueryResource { input, .. } = &file.origin {
+            let (_, tail) = file
+                .path
+                .as_str()
+                .rsplit_once("/Ext/")
+                .ok_or_else(invalid)?;
+            let expected = format!(
+                "{}/{tail}",
+                source.strip_suffix(".xml").ok_or_else(invalid)?
+            );
+            if input.path.as_str() != expected {
+                return Err(invalid());
+            }
         }
         let prefix = format!(
             "{}/Queries/",
-            descriptor
-                .as_str()
-                .strip_suffix(".xml")
-                .ok_or_else(invalid)?
+            source.strip_suffix(".xml").ok_or_else(invalid)?
         );
         for query in queries {
             if !query.input.path.as_str().starts_with(&prefix)
@@ -280,43 +313,41 @@ pub(super) fn validate_map(map: &SourceMap) -> Result<(), Error> {
 
 /// File-level validation also runs for addressed reads that do not have a complete map DTO.
 pub(super) fn validate_origin(file: &MappedFile) -> Result<(), Error> {
-    let (queries, descriptor, form) = match &file.origin {
+    let (queries, prefix, form) = match &file.origin {
         FileOrigin::ManagedForm {
+            queries, accepted, ..
+        } => (
             queries,
-            descriptor,
-            ..
-        } => (queries, descriptor, true),
+            accepted
+                .path
+                .as_str()
+                .strip_suffix("/form.yaml")
+                .ok_or_else(invalid)?,
+            true,
+        ),
         FileOrigin::QueryResource {
             queries,
             descriptor,
             input,
             ..
         } => {
-            let prefix = format!(
-                "{}/",
-                descriptor
-                    .as_str()
-                    .strip_suffix(".xml")
-                    .ok_or_else(invalid)?
-            );
-            if !input.path.as_str().starts_with(&prefix)
-                || !native_path(descriptor, MetadataKind::Template)?
-                    .as_str()
-                    .eq_ignore_ascii_case(file.path.as_str())
+            let prefix = input
+                .path
+                .as_str()
+                .rsplit_once('/')
+                .map(|(parent, _)| parent)
+                .ok_or_else(invalid)?;
+            if !native_path(descriptor, MetadataKind::Template)?
+                .as_str()
+                .eq_ignore_ascii_case(file.path.as_str())
             {
                 return Err(invalid());
             }
-            (queries, descriptor, false)
+            (queries, prefix, false)
         }
         _ => return Ok(()),
     };
-    let prefix = format!(
-        "{}/Queries/",
-        descriptor
-            .as_str()
-            .strip_suffix(".xml")
-            .ok_or_else(invalid)?
-    );
+    let prefix = format!("{prefix}/Queries/");
     let mut end = 0;
     let mut slots = BTreeSet::new();
     let mut paths = BTreeSet::new();

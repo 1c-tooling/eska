@@ -33,11 +33,20 @@ pub(super) fn owners(
     }
     root_spec.external = Some(external(children.get(&root_spec.main)));
     validate_owner(&configuration.source, &root_spec)?;
+    let root_parent = if root_spec.kind == MetadataKind::Configuration {
+        None
+    } else {
+        Some(ObjectId::from_parts(
+            None,
+            root_spec.kind.as_str(),
+            node_name(&configuration.source.document.descriptor.object)?.trim(),
+        ))
+    };
     let mut pending = children
         .get(&root_spec.main)
         .into_iter()
         .flatten()
-        .map(|context| (*context, None))
+        .map(|context| (*context, root_parent.clone()))
         .collect::<Vec<_>>();
     let mut result = BTreeMap::new();
     while let Some((context, logical_parent)) = pending.pop() {

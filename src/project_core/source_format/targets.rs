@@ -51,18 +51,25 @@ struct Entry<'a> {
 impl<'a> Index<'a> {
     /// Resolve children through the accepted declaration graph and mandatory native coordinates.
     fn build(documents: &'a BTreeMap<SourcePath, NativeDocument>) -> Result<Self, Error> {
-        let root = SourcePath::parse("Configuration.xml")?;
-        let document = documents
-            .get(&root)
-            .ok_or_else(|| Error::root("source_descriptor_missing"))?;
+        let document = super::root::document_root(documents)?;
+        let root = &document.path;
+        let name = if let Some(kind) = super::root::external_kind(&document.descriptor) {
+            let tag = match kind {
+                super::ExternalKind::Processing => "ExternalDataProcessor",
+                super::ExternalKind::Report => "ExternalReport",
+            };
+            format!("{tag}.{}", node_name(&document.descriptor.object)?)
+        } else {
+            String::new()
+        };
         let mut index = Self {
             names: BTreeMap::new(),
             paths: BTreeMap::new(),
             type_names: BTreeMap::new(),
         };
         index.add(
-            "",
-            &root,
+            &name,
+            root,
             &document.descriptor.object,
             &document.descriptor.xml.namespaces,
             documents,

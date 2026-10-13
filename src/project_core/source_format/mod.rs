@@ -32,6 +32,7 @@ mod protected;
 mod queries;
 mod readable;
 mod reader;
+mod root;
 mod structural_references;
 mod tabular_identities;
 mod tabular_profile;
@@ -73,7 +74,7 @@ pub use managed_form::{
 };
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 pub use protected::{
-    Exclusion, ExclusionAction, FileOrigin, InputAuthority, InputFile,
+    EXTERNAL_SOURCE_MAP_VERSION, Exclusion, ExclusionAction, FileOrigin, InputAuthority, InputFile,
     MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile, OriginTexts, PreparedSource, ProtectedExport,
     ProtectedFailure, QUERY_SOURCE_MAP_VERSION, QueryOrigin, RELOCATED_SOURCE_MAP_VERSION,
     SOURCE_MAP_VERSION, SourceLocation, SourceMap, export_protected, prepare_protected,
@@ -85,6 +86,9 @@ pub use queries::{
 pub use reader::{
     DeclaredForm, DeclaredModule, DeclaredOwner, DeclaredQuery, MetadataDeclaration,
     MetadataSnapshot, NativeMetadata, OwnerSnapshot, SourceReader,
+};
+pub use root::{
+    EXTERNAL_LAYOUT_VERSION, ExternalKind, ExternalRoot, PROCESSING_PROFILE, REPORT_PROFILE,
 };
 
 pub use fill_value::{EnumFillValue, EnumFillValueLayout};

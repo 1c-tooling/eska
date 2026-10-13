@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "task": "EF-14",
+  "part": "external-root-model",
+  "status": "accepted-core-part",
+  "source_map_version": 6,
+  "native_origins_version": 5,
+  "profiles": [
+    "processing",
+    "report"
+  ],
+  "portable_checks": [
+    "forms and composition queries",
+    "direct and wrapped object module",
+    "native filename different from Name",
+    "unchanged source module",
+    "repeat native export",
+    "inherited root freeze",
+    "tampered and ambiguous root refusal"
+  ],
+  "real_processing": {
+    "native_files": 8,
+    "imported": true,
+    "protected_preparation": true,
+    "object_module_unchanged": true,
+    "native_platform_cycle": false
+  },
+  "rust_validation": {
+    "checks": [
+      {
+        "check": "fmt",
+        "exit_code": 0
+      },
+      {
+        "check": "check",
+        "exit_code": 0
+      },
+      {
+        "check": "clippy",
+        "exit_code": 0
+      },
+      {
+        "check": "test",
+        "exit_code": 0
+      },
+      {
+        "check": "test-all",
+        "exit_code": 0
+      },
+      {
+        "check": "doc",
+        "exit_code": 0
+      },
+      {
+        "check": "check-minimal",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-fmt",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-check",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-clippy",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-test",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-doc",
+        "exit_code": 0
+      },
+      {
+        "check": "bins",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-fmt",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-check",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-clippy",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-test",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-doc",
+        "exit_code": 0
+      }
+    ],
+    "root_unit_passed": 733,
+    "root_integration_passed": 590,
+    "project_tool_passed": 45,
+    "build_tool_passed": 13,
+    "analysis_passed": 362,
+    "adapter_passed": 82,
+    "ignored": 24
+  },
+  "remaining": [
+    "external project settings and build adapter",
+    "T84 version adapter",
+    "independent EPF/ERF platform and nonempty report acceptance"
+  ]
+}

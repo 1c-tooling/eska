@@ -88,13 +88,14 @@ pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
         {
             return Err(invalid().in_field(resource.path.as_str()));
         }
+        let native = resource.descriptor.as_str();
+        let source = manifest
+            .external_root
+            .as_ref()
+            .map_or(native, |root| root.relative(native));
         let prefix = format!(
             "{}/Queries/",
-            resource
-                .descriptor
-                .as_str()
-                .strip_suffix(".xml")
-                .ok_or_else(invalid)?
+            source.strip_suffix(".xml").ok_or_else(invalid)?
         );
         for path in &resource.sources {
             if !path.as_str().starts_with(&prefix)
@@ -197,7 +198,11 @@ pub(in crate::project_core::source_format) fn extract(
         if form && native.queries().is_empty() {
             continue;
         }
-        let paths = naming::paths(&context.path, &native)?;
+        let descriptor = manifest.external_root.as_ref().map_or_else(
+            || Ok(context.path.clone()),
+            |root| SourcePath::parse(root.relative(context.path.as_str())),
+        )?;
+        let paths = naming::paths(&descriptor, &native)?;
         let declared = paths.values().cloned().collect();
         let (xml, values) = native.extract(&paths)?.into_parts();
         if QueryReferenceDocument::from_xml(&xml)?.materialize(&values)? != original {

@@ -43,17 +43,16 @@ pub(super) fn decode(input: &str) -> Result<Descriptor, Error> {
     {
         return Err(Error::root("source_xml_envelope_unsupported"));
     }
-    if matches!(
-        native::project_type_from_root(root),
-        Some(ProjectType::Processing | ProjectType::Report)
-    ) {
-        return Err(Error::root("source_profile_unsupported"));
-    }
+    let profile = match native::project_type_from_root(root) {
+        Some(ProjectType::Processing) => super::PROCESSING_PROFILE,
+        Some(ProjectType::Report) => super::REPORT_PROFILE,
+        _ => PROFILE,
+    };
     let context = namespaces(root);
     let value = Descriptor {
         schema_version: SCHEMA_VERSION,
         rules_version: RULES_VERSION,
-        profile: PROFILE.into(),
+        profile: profile.into(),
         xml: XmlProfile {
             version: "2.20".into(),
             namespaces: context.clone(),
@@ -65,15 +64,20 @@ pub(super) fn decode(input: &str) -> Result<Descriptor, Error> {
                 LineEnding::Lf
             },
         },
-        object: object(objects[0], input, &context)?,
+        object: object(objects[0], input, &context, true)?,
     };
     value.validate()?;
     Ok(value)
 }
 
 /// Decode a native object without interpreting descendants outside its declared sections.
-fn object(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> Result<MetadataNode, Error> {
-    let kind = kind(node)?;
+fn object(
+    node: Node<'_, '_>,
+    input: &str,
+    inherited: &[Namespace],
+    root: bool,
+) -> Result<MetadataNode, Error> {
+    let kind = kind(node, root)?;
     let context = namespaces(node);
     let mut sections = Vec::new();
     for child in meaningful(node)? {
@@ -113,10 +117,10 @@ fn object(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> Result<Me
 /// Inline UUIDs distinguish owned parts from references to separately stored descriptors.
 fn child_object(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> Result<Child, Error> {
     if node.is_element() && node.tag_name().namespace() == Some(MD_NAMESPACE) {
-        let kind = kind(node)?;
+        let kind = kind(node, false)?;
         if node.attribute("uuid").is_some() {
             Ok(Child::Inline {
-                object: Box::new(object(node, input, inherited)?),
+                object: Box::new(object(node, input, inherited, false)?),
             })
         } else if node.attributes().len() == 0 && node.children().all(|child| child.is_text()) {
             Ok(Child::Reference {
@@ -241,12 +245,13 @@ fn localized(node: Node<'_, '_>) -> Option<LocalizedText> {
 }
 
 /// Refuse unknown native kinds rather than silently hiding them inside a preservation block.
-fn kind(node: Node<'_, '_>) -> Result<MetadataKind, Error> {
+fn kind(node: Node<'_, '_>, root: bool) -> Result<MetadataKind, Error> {
     if node.tag_name().namespace() != Some(MD_NAMESPACE)
-        || matches!(
-            node.tag_name().name(),
-            "ExternalDataProcessor" | "ExternalReport"
-        )
+        || (!root
+            && matches!(
+                node.tag_name().name(),
+                "ExternalDataProcessor" | "ExternalReport"
+            ))
     {
         return Err(Error::root("source_profile_unsupported"));
     }

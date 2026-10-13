@@ -46,11 +46,57 @@ struct Manifest {
     profile: String,
     source_revision: String,
     input_revision: String,
-    configuration_uuid: NativeUuid,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    configuration_uuid: Option<NativeUuid>,
+    /// External bases use a distinct envelope; old CF/CFE manifests retain their exact fields.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    external_root: Option<RootIdentity>,
     directories: Vec<SourcePath>,
     files: Vec<FileEntry>,
     frozen: Vec<NativeUuid>,
     suppliers: Vec<SupplierPayload>,
+}
+
+impl Manifest {
+    /// A root identity belongs to exactly one accepted envelope and native profile.
+    fn validate_profile(&self) -> Result<(), Error> {
+        let profile_valid = match (&self.configuration_uuid, &self.external_root) {
+            (Some(_), None) => {
+                self.schema_version == super::SCHEMA_VERSION && self.profile == super::PROFILE
+            }
+            (None, Some(root)) => {
+                self.schema_version == 2
+                    && self.profile == root.root.kind.profile()
+                    && root.root.validate().is_ok()
+            }
+            _ => false,
+        };
+        if !profile_valid || self.rules_version != super::RULES_VERSION {
+            return Err(Error::root("source_baseline_unsupported"));
+        }
+        Ok(())
+    }
+    /// Recovered pinned source bytes must agree with the accepted root evidence.
+    fn validate_package(&self, package: &Package) -> Result<(), Error> {
+        let root_document = package
+            .documents
+            .get(&package.manifest.root_path()?)
+            .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
+        if package.manifest.input_revision != self.input_revision
+            || root_document.descriptor.object.uuid
+                != *self
+                    .configuration_uuid
+                    .as_ref()
+                    .or_else(|| self.external_root.as_ref().map(|root| &root.uuid))
+                    .ok_or_else(|| Error::root("source_baseline_corrupt"))?
+            || package.manifest.profile != self.profile
+            || package.manifest.external_root.as_ref()
+                != self.external_root.as_ref().map(|root| &root.root)
+        {
+            return Err(Error::root("source_baseline_corrupt"));
+        }
+        Ok(())
+    }
 }
 
 /// The observed profile binds a supplier's native name to its complete preserved CF payload.
@@ -62,6 +108,14 @@ struct SupplierPayload {
     path: SourcePath,
     bytes: u64,
     sha256: String,
+}
+
+/// Accepted root evidence binds native identity and location independently of editable source.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RootIdentity {
+    root: super::ExternalRoot,
+    uuid: NativeUuid,
 }
 
 /// The requested operation is narrower than a generic editable flag.
@@ -144,19 +198,35 @@ pub fn accept_source(
     let suppliers = supplier_payloads(&package, policy.as_ref())?;
     let configuration_uuid = package
         .documents
-        .get(&SourcePath::parse("Configuration.xml")?)
+        .get(&package.manifest.root_path()?)
         .ok_or_else(|| Error::root("source_descriptor_missing"))?
         .descriptor
         .object
         .uuid
         .clone();
     let manifest = Manifest {
-        schema_version: super::SCHEMA_VERSION,
+        schema_version: if package.manifest.external_root.is_some() {
+            2
+        } else {
+            super::SCHEMA_VERSION
+        },
         rules_version: super::RULES_VERSION,
-        profile: super::PROFILE.into(),
+        profile: package.manifest.profile.clone(),
         source_revision: package.snapshot.revision.clone(),
         input_revision: package.manifest.input_revision.clone(),
-        configuration_uuid,
+        configuration_uuid: package
+            .manifest
+            .external_root
+            .is_none()
+            .then(|| configuration_uuid.clone()),
+        external_root: package
+            .manifest
+            .external_root
+            .clone()
+            .map(|root| RootIdentity {
+                root,
+                uuid: configuration_uuid,
+            }),
         directories: package.snapshot.directories.clone(),
         files: package.snapshot.files.values().cloned().collect(),
         frozen: freeze.into_values().collect(),
@@ -276,12 +346,7 @@ impl AcceptedBase {
         let manifest: Manifest =
             serde_json::from_str(&text).map_err(|_| Error::root("source_baseline_corrupt"))?;
         files::check_cancelled(cancelled)?;
-        if manifest.schema_version != super::SCHEMA_VERSION
-            || manifest.rules_version != super::RULES_VERSION
-            || manifest.profile != super::PROFILE
-        {
-            return Err(Error::root("source_baseline_unsupported"));
-        }
+        manifest.validate_profile()?;
         let snapshot = verified_snapshot(&manifest, &inventory)?;
         let entries: BTreeMap<_, _> = manifest
             .files
@@ -298,15 +363,7 @@ impl AcceptedBase {
             )
         })?;
         files::check_cancelled(cancelled)?;
-        let root_document = package
-            .documents
-            .get(&SourcePath::parse("Configuration.xml")?)
-            .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
-        if package.manifest.input_revision != manifest.input_revision
-            || root_document.descriptor.object.uuid != manifest.configuration_uuid
-        {
-            return Err(Error::root("source_baseline_corrupt"));
-        }
+        manifest.validate_package(&package)?;
         let objects = document_ownership(&package.documents)?;
         let policy = read_policy(&package, |path| {
             read_blob_entry_cancellable(
@@ -691,9 +748,11 @@ fn read_blob_entry_cancellable(
 /// Reconstruct the accepted physical inventory only after every required payload is verified.
 fn verified_snapshot(manifest: &Manifest, inventory: &Inventory) -> Result<Inventory, Error> {
     SourceManifest {
-        schema_version: manifest.schema_version,
+        // This validates the physical blob inventory, not its embedded source layout.
+        schema_version: super::SCHEMA_VERSION,
         rules_version: manifest.rules_version,
-        profile: manifest.profile.clone(),
+        profile: super::PROFILE.into(),
+        external_root: None,
         input_revision: manifest.input_revision.clone(),
         directories: manifest.directories.clone(),
         files: manifest.files.clone(),

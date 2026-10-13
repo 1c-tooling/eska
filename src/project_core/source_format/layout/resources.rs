@@ -12,12 +12,14 @@ use crate::project_core::source_format::{Error, FileRole, SourceManifest, Source
 /// Known descriptor roots disambiguate the native `Ext` separator from an object's own name.
 struct Locations<'a> {
     descriptors: BTreeMap<&'a str, MetadataKind>,
+    root: Option<&'a super::super::ExternalRoot>,
 }
 
 impl<'a> Locations<'a> {
     /// Only the verified reverse contexts supply resource roots; directories activate nothing.
     fn new(manifest: &'a SourceManifest) -> Self {
         Self {
+            root: manifest.external_root.as_ref(),
             descriptors: manifest
                 .descriptor_contexts
                 .iter()
@@ -59,9 +61,14 @@ impl<'a> Locations<'a> {
             } else {
                 tail
             };
-            return format!("{prefix}/{tail}");
+            return self.authoring(&format!("{prefix}/{tail}"));
         }
-        native.into()
+        self.authoring(native)
+    }
+
+    /// The external root's observed stem is a reverse location, not an authoring directory.
+    fn authoring(&self, path: &str) -> String {
+        self.root.map_or(path, |root| root.relative(path)).into()
     }
 }
 

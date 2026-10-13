@@ -220,7 +220,7 @@ fn query_reverse_map_rejects_foreign_resources_and_physical_aliases() {
         assert!(manifest.validate().is_err());
     }
     let mut unsupported = accepted;
-    unsupported.schema_version = 6;
+    unsupported.schema_version = crate::project_core::source_format::EXTERNAL_LAYOUT_VERSION + 1;
     assert_eq!(
         unsupported.validate().unwrap_err().code,
         "source_schema_unsupported"

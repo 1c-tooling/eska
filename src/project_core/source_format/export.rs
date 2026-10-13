@@ -335,8 +335,8 @@ fn validate_sources(
 pub(super) fn validate_composition(
     documents: &BTreeMap<SourcePath, NativeDocument>,
 ) -> Result<(), Error> {
-    let root = SourcePath::parse("Configuration.xml")?;
-    let mut pending = vec![(root, MetadataKind::Configuration, None)];
+    let root = super::root::document_root(documents)?;
+    let mut pending = vec![(root.path.clone(), root.descriptor.object.kind, None)];
     let mut visited = BTreeSet::new();
     let mut uuids = BTreeSet::new();
     while let Some((path, kind, name)) = pending.pop() {

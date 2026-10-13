@@ -54,11 +54,16 @@ pub struct DescriptorContext {
 /// Each independently saved native file keeps one authoring document; inline children stay inline.
 pub(super) fn separate(
     families: BTreeMap<SourcePath, ObjectSource>,
+    root: Option<&super::ExternalRoot>,
 ) -> Result<BTreeMap<SourcePath, ObjectSource>, Error> {
     let mut result = BTreeMap::new();
     for source in families.into_values() {
         for document in std::iter::once(source.document).chain(source.nested) {
-            let path = descriptor_path(document.descriptor.object.kind, &document.path)?;
+            let path = super::root::descriptor_path(
+                root,
+                document.descriptor.object.kind,
+                &document.path,
+            )?;
             if result
                 .insert(
                     path,
@@ -137,11 +142,11 @@ pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
     if contexts.len() != manifest.descriptor_contexts.len() || entries.keys().ne(contexts.keys()) {
         return Err(Error::root("source_layout_context_invalid"));
     }
-    let root = SourcePath::parse("Configuration.xml")?;
+    let root = manifest.root_path()?;
     let root_context = contexts
         .get(&root)
         .ok_or_else(|| Error::root("source_descriptor_missing"))?;
-    if root_context.metadata_kind != MetadataKind::Configuration
+    if root_context.metadata_kind != manifest.root_kind()
         || root_context.parent.is_some()
         || root_context.name.is_empty()
     {
@@ -154,7 +159,12 @@ pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
             .get(path)
             .ok_or_else(|| Error::root("source_descriptor_missing"))?;
         if !sources.insert(source.as_str().to_lowercase())
-            || *source != &descriptor_path(context.metadata_kind, path)?
+            || *source
+                != &super::root::descriptor_path(
+                    manifest.external_root.as_ref(),
+                    context.metadata_kind,
+                    path,
+                )?
         {
             return Err(Error::root("source_path_collision").in_field(source.as_str()));
         }
@@ -258,6 +268,13 @@ pub(super) fn validate_documents(
     manifest: &SourceManifest,
     documents: &BTreeMap<SourcePath, NativeDocument>,
 ) -> Result<(), Error> {
+    let root = super::root::document_root(documents)?;
+    if root.path != manifest.root_path()?
+        || root.descriptor.object.kind != manifest.root_kind()
+        || root.descriptor.profile != manifest.profile
+    {
+        return Err(Error::root("source_profile_unsupported"));
+    }
     if manifest.schema_version < DESCRIPTOR_LAYOUT_VERSION {
         return Ok(());
     }
@@ -277,7 +294,17 @@ pub(super) fn validate_documents(
 pub(super) fn contexts(
     documents: &BTreeMap<SourcePath, &NativeDocument>,
 ) -> Result<Vec<DescriptorContext>, Error> {
-    let mut pending = vec![(SourcePath::parse("Configuration.xml")?, None)];
+    let root_candidates = documents
+        .iter()
+        .filter(|(_, document)| {
+            document.descriptor.object.kind == MetadataKind::Configuration
+                || super::root::external_kind(&document.descriptor).is_some()
+        })
+        .collect::<Vec<_>>();
+    if root_candidates.len() != 1 {
+        return Err(Error::root("source_descriptor_missing"));
+    }
+    let mut pending = vec![(root_candidates[0].0.clone(), None)];
     let mut result = BTreeMap::new();
     while let Some((path, parent)) = pending.pop() {
         let document = documents

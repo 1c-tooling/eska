@@ -33,7 +33,12 @@ pub(super) fn encode(source: &Descriptor) -> Result<String, Error> {
     writer.attributes(&source.xml.attributes);
     writer.output.push('>');
     writer.output.push_str(writer.eol);
-    writer.object(&source.object, 1, &source.xml.namespaces, None)?;
+    let tag = match super::root::external_kind(source) {
+        Some(super::ExternalKind::Processing) => "ExternalDataProcessor",
+        Some(super::ExternalKind::Report) => "ExternalReport",
+        None => source.object.kind.designer_tag(),
+    };
+    writer.object(&source.object, 1, &source.xml.namespaces, None, tag)?;
     writer.output.push_str("</MetaDataObject>");
     writer.output.push_str(writer.eol);
     crate::project_core::native::check_envelope(&writer.output)
@@ -62,11 +67,12 @@ impl Writer {
         indent: usize,
         inherited: &[Namespace],
         parent: Option<&MetadataNode>,
+        tag: &str,
     ) -> Result<(), Error> {
         let context = scope(inherited, &node.namespaces)?;
         self.indent(indent);
         self.output.push('<');
-        self.output.push_str(node.kind.designer_tag());
+        self.output.push_str(tag);
         self.namespaces(&node.namespaces);
         self.attribute("uuid", node.uuid.as_str());
         self.attributes(&node.attributes);
@@ -75,7 +81,7 @@ impl Writer {
         for section in &node.sections {
             self.section(section, indent + 1, &context, node, parent)?;
         }
-        self.close(node.kind.designer_tag(), indent);
+        self.close(tag, indent);
         Ok(())
     }
 
@@ -101,7 +107,13 @@ impl Writer {
                 for value in values {
                     match value {
                         Child::Inline { object } => {
-                            self.object(object, indent + 1, context, Some(node))?;
+                            self.object(
+                                object,
+                                indent + 1,
+                                context,
+                                Some(node),
+                                object.kind.designer_tag(),
+                            )?;
                         }
                         Child::Reference {
                             metadata_kind,

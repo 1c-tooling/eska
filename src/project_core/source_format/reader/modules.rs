@@ -36,11 +36,12 @@ pub(super) fn declared_modules(
         })
         .collect::<BTreeMap<_, _>>();
     let mut result = BTreeMap::new();
+    let root = manifest.root_path()?;
     for file in &manifest.files {
         if !file.is_payload() || !native::is_module_path(file.path.as_path()) {
             continue;
         }
-        let Some(descriptor) = descriptor_for(&file.path, &descriptors)? else {
+        let Some(descriptor) = descriptor_for(&file.path, &descriptors, &root)? else {
             continue;
         };
         let Some(owner) = descriptors.get(&descriptor) else {
@@ -67,11 +68,12 @@ pub(super) fn declared_modules(
 fn descriptor_for(
     path: &SourcePath,
     descriptors: &BTreeMap<SourcePath, SourcePath>,
+    root: &SourcePath,
 ) -> Result<Option<SourcePath>, Error> {
     let text = path.as_str();
     let Some((prefix, module)) = text.rsplit_once("/Ext/") else {
         if text.starts_with("Ext/") && text.split('/').count() == 2 {
-            return Ok(Some(SourcePath::parse("Configuration.xml")?));
+            return Ok(Some(root.clone()));
         }
         return Ok(None);
     };

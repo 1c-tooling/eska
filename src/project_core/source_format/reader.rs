@@ -135,16 +135,31 @@ impl SourceReader {
         manifest.validate()?;
         let manifest_sha256 = files::hex(&Sha256::digest(text.as_bytes()));
         let mut groups = descriptor_groups(&manifest)?;
-        let root_path = SourcePath::parse("configuration.yaml")?;
+        let root_path = manifest.root_source()?;
+        let root_native = manifest.root_path()?;
+        let root_children =
+            (manifest.schema_version >= super::DESCRIPTOR_LAYOUT_VERSION).then(|| {
+                manifest
+                    .descriptor_contexts
+                    .iter()
+                    .filter(|context| context.parent.as_ref() == Some(&root_native))
+                    .map(|context| {
+                        (
+                            context.path.clone(),
+                            (context.metadata_kind, context.name.clone()),
+                        )
+                    })
+                    .collect()
+            });
         let root_spec = OwnerSpec {
-            main: SourcePath::parse("Configuration.xml")?,
-            kind: MetadataKind::Configuration,
+            main: root_native,
+            kind: manifest.root_kind(),
             name: None,
             parent: None,
             rights: None,
             predefined: None,
             logical_parent: None,
-            external: None,
+            external: root_children,
             descriptors: groups
                 .remove(&root_path)
                 .ok_or_else(|| Error::root("source_descriptor_missing"))?,
@@ -155,6 +170,9 @@ impl SourceReader {
             &manifest_sha256,
             &root_spec,
         )?;
+        if configuration.source.document.descriptor.profile != manifest.profile {
+            return Err(Error::root("source_profile_unsupported"));
+        }
         let owners = if manifest.schema_version >= super::DESCRIPTOR_LAYOUT_VERSION {
             standalone::owners(&manifest, &configuration, groups, root_spec)?
         } else {
@@ -200,6 +218,9 @@ impl SourceReader {
         use crate::project_core::ProjectType;
         let descriptor = &self.configuration.source.document.descriptor;
         let root = &descriptor.object;
+        if let Some(kind) = super::root::external_kind(descriptor) {
+            return Ok(kind.project_type());
+        }
         if root.kind != MetadataKind::Configuration {
             return Err(Error::root("source_profile_unsupported"));
         }
@@ -542,9 +563,14 @@ impl SourceReader {
     /// Returns strict YAML or identity/composition failures; never falls back to earlier bytes.
     pub fn parse_owner(&self, path: &SourcePath, text: &str) -> Result<OwnerSnapshot, Error> {
         let result = snapshot(path, text, &self.manifest_sha256, self.spec(path)?)?;
+        if path == &self.configuration.path
+            && result.source.document.descriptor.profile != self.manifest.profile
+        {
+            return Err(Error::root("source_profile_unsupported").in_field(path.as_str()));
+        }
         super::layout::forms::validate_source(&result.source, self.embedded_form(path))
             .map_err(|error| error.in_field(path.as_str()))?;
-        if result.source.document.descriptor.object.kind == MetadataKind::Configuration
+        if path == &self.configuration.path
             && !super::composition::same_reference_members(
                 &result.source.document.descriptor.object,
                 &self.configuration.source.document.descriptor.object,
@@ -581,9 +607,14 @@ impl SourceReader {
         let result = (|| {
             let (value, tree) = yaml::decode_with_tree(text)?;
             let source = ObjectSource::from_value(value)?;
+            if path == &self.configuration.path
+                && source.document.descriptor.profile != self.manifest.profile
+            {
+                return Err(Error::root("source_profile_unsupported"));
+            }
             super::layout::forms::validate_source(&source, self.embedded_form(path))?;
             let parents = validate_owner(&source, self.spec(path)?)?;
-            if source.document.descriptor.object.kind == MetadataKind::Configuration
+            if path == &self.configuration.path
                 && !super::composition::same_reference_members(
                     &source.document.descriptor.object,
                     &self.configuration.source.document.descriptor.object,

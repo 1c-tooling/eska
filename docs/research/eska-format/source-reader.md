@@ -1,7 +1,9 @@
 # Чтение ESKA без XML-материализации
 
 Внутренний `project_core::source_format::SourceReader` открывает только
-`source.json` и `configuration.yaml`. Manifest проверяется целиком; объявленные
+`source.json` и корневой YAML (`configuration.yaml`; для map 6 —
+`processing.yaml` / `report.yaml`). [Внешний root](external-roots.md) задаёт
+native путь и профиль явно. Manifest проверяется целиком; объявленные
 в корне владельцы связываются с его native paths и UUID. BSL, ресурсы, принятая
 база и YAML остальных владельцев при открытии не читаются.
 

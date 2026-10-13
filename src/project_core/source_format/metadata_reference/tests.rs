@@ -16,6 +16,8 @@ fn named_paths_keep_exact_native_spelling() {
         "Catalog.Товары",
         "Subsystem.First.Subsystem.Second",
         "Catalog.Goods.Form.Select",
+        "ExternalReport.Sample",
+        "ExternalDataProcessor.Обработка.Form.Основная",
     ] {
         assert_eq!(MetadataReference::parse(value).unwrap().as_str(), value);
     }
@@ -25,7 +27,7 @@ fn named_paths_keep_exact_native_spelling() {
         " Catalog.Goods",
         "Catalog.Bad Name",
         "Future.Value",
-        "ExternalReport.Sample",
+        "Report.Sample.ExternalReport.Nested",
         "10000000-0000-4000-8000-000000000001",
     ] {
         assert!(MetadataReference::parse(value).is_err(), "{value}");

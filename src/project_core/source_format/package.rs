@@ -4,7 +4,7 @@ use std::{collections::BTreeSet, path::Path};
 
 use serde::{Deserialize, Deserializer, Serialize};
 
-use super::{Descriptor, Error, NativeUuid, PROFILE, RULES_VERSION, SCHEMA_VERSION, yaml};
+use super::{Descriptor, Error, NativeUuid, RULES_VERSION, SCHEMA_VERSION, yaml};
 
 /// A portable, nonempty relative path; deserialization cannot introduce traversal or aliases.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -145,6 +145,9 @@ pub struct SourceManifest {
     pub schema_version: u32,
     pub rules_version: u32,
     pub profile: String,
+    /// Map v6 binds an external native root; maps v1-v5 retain their implicit configuration root.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub external_root: Option<super::ExternalRoot>,
     pub input_revision: String,
     pub directories: Vec<SourcePath>,
     pub files: Vec<FileEntry>,
@@ -216,15 +219,14 @@ impl SourceManifest {
             && self.schema_version != super::RESOURCE_LAYOUT_VERSION
             && self.schema_version != super::MANAGED_FORM_LAYOUT_VERSION
             && self.schema_version != super::QUERY_LAYOUT_VERSION
+            && self.schema_version != super::EXTERNAL_LAYOUT_VERSION
         {
             return Err(Error::root("source_schema_unsupported"));
         }
         if self.rules_version != RULES_VERSION {
             return Err(Error::root("source_rules_unsupported"));
         }
-        if self.profile != PROFILE {
-            return Err(Error::root("source_profile_unsupported"));
-        }
+        self.validate_root()?;
         if !hash(&self.input_revision) {
             return Err(Error::root("source_hash_invalid"));
         }

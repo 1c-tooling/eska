@@ -31,9 +31,9 @@ use crate::project_core::{
 
 pub use prepared::PreparedSource;
 pub use source_map::{
-    FileOrigin, InputAuthority, InputFile, MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile,
-    OriginTexts, QUERY_SOURCE_MAP_VERSION, QueryOrigin, RELOCATED_SOURCE_MAP_VERSION,
-    SOURCE_MAP_VERSION, SourceLocation, SourceMap,
+    EXTERNAL_SOURCE_MAP_VERSION, FileOrigin, InputAuthority, InputFile,
+    MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile, OriginTexts, QUERY_SOURCE_MAP_VERSION,
+    QueryOrigin, RELOCATED_SOURCE_MAP_VERSION, SOURCE_MAP_VERSION, SourceLocation, SourceMap,
 };
 
 /// Every excluded working change states the performed action rather than silently disappearing.
@@ -359,7 +359,7 @@ fn native_file_owner(base: &AcceptedBase, path: &SourcePath) -> Option<NativeUui
         return base
             .package
             .documents
-            .get(&SourcePath::parse("Configuration.xml").ok()?)
+            .get(&base.package.manifest.root_path().ok()?)
             .map(|document| document.descriptor.object.uuid.clone());
     }
     None

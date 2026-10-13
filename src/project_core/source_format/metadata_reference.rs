@@ -194,9 +194,12 @@ fn parts(value: &str) -> Result<Vec<(MetadataKind, &str)>, Error> {
         .as_chunks::<2>()
         .0
         .iter()
-        .map(|pair| {
+        .enumerate()
+        .map(|(index, pair)| {
             let kind = MetadataKind::from_xml_tag(pair[0]).map_err(|_| invalid())?;
-            if kind.designer_tag() != pair[0] || !ncname(pair[1]) {
+            let external_root =
+                index == 0 && matches!(pair[0], "ExternalDataProcessor" | "ExternalReport");
+            if (!external_root && kind.designer_tag() != pair[0]) || !ncname(pair[1]) {
                 return Err(invalid());
             }
             Ok((kind, pair[1]))

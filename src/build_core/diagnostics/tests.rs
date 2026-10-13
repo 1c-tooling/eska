@@ -37,6 +37,7 @@ fn map(paths: &[&str]) -> SourceMap {
         source_schema_version: SCHEMA_VERSION,
         rules_version: RULES_VERSION,
         profile: PROFILE.to_owned(),
+        external_root: None,
         generation: "0".repeat(64),
         input_revision: "0".repeat(64),
         baseline: "0".repeat(64),
