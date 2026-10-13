@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "task": "EF-14",
+  "part": "external-projects",
+  "status": "accepted",
+  "platform": "8.3.27.2325",
+  "execution": "Linux, Distrobox",
+  "source_map_version": 6,
+  "native_source_map_version": 5,
+  "accepted_base_version": 2,
+  "comparisons": [
+    {
+      "case": "report",
+      "kind": "report",
+      "version": "1.3.1",
+      "native_files": 4,
+      "equal_native_files": 4,
+      "diff": [],
+      "input_map_unchanged": true
+    },
+    {
+      "case": "report-missing",
+      "kind": "report",
+      "version": "01.02.004.0001",
+      "native_files": 4,
+      "equal_native_files": 4,
+      "diff": [],
+      "input_map_unchanged": true
+    },
+    {
+      "case": "processing",
+      "kind": "processing",
+      "version": "1.0.1",
+      "native_files": 8,
+      "equal_native_files": 8,
+      "diff": [],
+      "input_map_unchanged": true
+    }
+  ],
+  "artifact_manifests": {
+    "version_literal_matches": true,
+    "artifact_sha256_matches": true,
+    "input_source_map_unchanged": true
+  },
+  "report": {
+    "native_template": "DataCompositionSchema",
+    "query_edit": {
+      "original_cutoff": "02",
+      "updated_cutoff": "03"
+    },
+    "runtime": [
+      {
+        "case": "report-control",
+        "version": "1.3.1",
+        "codes": [
+          "03"
+        ],
+        "registration_version": "1.3.1"
+      },
+      {
+        "case": "report-eska",
+        "version": "1.3.1",
+        "codes": [
+          "03"
+        ],
+        "registration_version": "1.3.1"
+      },
+      {
+        "case": "report-missing-control",
+        "version": "01.02.004.0001",
+        "codes": [
+          "03"
+        ]
+      },
+      {
+        "case": "report-missing-eska",
+        "version": "01.02.004.0001",
+        "codes": [
+          "03"
+        ]
+      }
+    ]
+  },
+  "module_initialization": {
+    "case": "placement",
+    "version": "1.2.3",
+    "registration_version": "1.2.3",
+    "initialized": "initialized"
+  },
+  "freeze": [
+    {
+      "kind": "processing",
+      "locales": [
+        "ru",
+        "en"
+      ],
+      "bump_refusal": "source_edit_frozen",
+      "strict_build_refusal": "source_changes_excluded",
+      "refused_before_runner": true,
+      "restored_version": "1.0.1",
+      "working_module_preserved": true,
+      "native_accepted_module_restored": true
+    },
+    {
+      "kind": "report",
+      "locales": [
+        "ru",
+        "en"
+      ],
+      "bump_refusal": "source_edit_frozen",
+      "strict_build_refusal": "source_changes_excluded",
+      "refused_before_runner": true,
+      "restored_version": "1.3.1",
+      "working_module_preserved": true,
+      "native_accepted_module_restored": true
+    }
+  ],
+  "manual_version_cli": {
+    "locales": [
+      "ru",
+      "en"
+    ],
+    "projects": 3,
+    "operations": [
+      "read",
+      "migration_preview"
+    ],
+    "equal_json": true
+  },
+  "analysis": {
+    "workspace_mcp_available": false,
+    "fallback": "bsl-analyzer-app",
+    "version": "0.3.2",
+    "all_changed_files_completed": true,
+    "failed_files": 0,
+    "processing_baseline_severity_counts": {
+      "Hint": 16,
+      "Information": 12,
+      "Major": 15,
+      "Warning": 10,
+      "Critical": 2
+    },
+    "processing_updated_severity_counts": {
+      "Hint": 17,
+      "Information": 12,
+      "Major": 15,
+      "Warning": 10,
+      "Critical": 2
+    },
+    "new_processing_diagnostics": [
+      {
+        "code": "CodeOutOfRegion",
+        "severity": "Hint"
+      }
+    ],
+    "new_blocker_diagnostics": 0,
+    "semantic_base_context_validated": false
+  },
+  "rust_validation": {
+    "checks": [
+      {
+        "check": "fmt",
+        "exit_code": 0
+      },
+      {
+        "check": "check",
+        "exit_code": 0
+      },
+      {
+        "check": "clippy",
+        "exit_code": 0
+      },
+      {
+        "check": "test",
+        "exit_code": 0
+      },
+      {
+        "check": "test-all",
+        "exit_code": 0
+      },
+      {
+        "check": "doc",
+        "exit_code": 0
+      },
+      {
+        "check": "check-minimal",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-fmt",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-check",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-clippy",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-test",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-doc",
+        "exit_code": 0
+      },
+      {
+        "check": "bins",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-fmt",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-check",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-clippy",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-test",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-doc",
+        "exit_code": 0
+      }
+    ]
+  },
+  "limits": [
+    "Report uses an actual dumped composition schema and independent external root; complete BSP integration was not executed",
+    "Processing and CFE application behavior was not executed",
+    "Semantic analysis of additional profiles remains EF-18",
+    "General new/init/repeated import remain EF-20/EF-25",
+    "Windows/macOS were not validated"
+  ]
+}

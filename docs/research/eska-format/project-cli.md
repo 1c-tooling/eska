@@ -49,7 +49,8 @@ Manifest публикуется последним. Ошибка удаляет 
 неизвестный UUID отклоняет создание. Профили configuration и extension / Designer
 2.20 определяются по native входу; импорт сохраняет расширение в настройках,
 reader и защищённой материализации. `creation_project_types` сообщает оба типа.
-Processing/report подключаются оставшейся частью EF-14. Анализ CFE с контекстом
+Project core и protected build processing/report приняты в
+[EF-14](external-projects.md); общий CLI их импорта остаётся EF-20/EF-25. Анализ CFE с контекстом
 основной конфигурации остаётся EF-18 и пока явно отказан.
 
 `--layout family` либо отсутствие параметра сохраняет layout 1/descriptor 1.

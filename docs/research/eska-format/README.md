@@ -2,10 +2,14 @@
 
 [Структура и MVP](project-layout.md) фиксируют приоритет от 2026-10-11:
 структура и файловый цикл CF/CFE/EPF/ERF → анализатор → Explorer → fmt → VCS.
+
+[Дополнительные профили EF-14 приняты](external-projects.md): независимые
+CFE/EPF/ERF циклы и выполнение непустых ERF на 1С 8.3.27.2325. Следующий этап —
+обновление принятой базы EF-15; общий CLI и анализ остаются отдельными задачами.
 EF-23 — [DONE в принятом профиле](query-acceptance.md).
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
-T84 — `IN_PROGRESS`, [синтаксический адаптер экспортной `Версия()`](external-version-syntax.md)
-подготовлен; CLI, миграция и платформенная приёмка ещё нужны.
+T84 — [DONE по версиям EPF/ERF](external-version.md): экспортная `Версия()`,
+CLI/миграция и платформенная приёмка двух схем; [синтаксический контракт](external-version-syntax.md).
 [Native slots/query codec](native-query-codec.md)
 проверены на 150 запросах C1; [ссылки версии 1](query-references.md) перенесли
 те же values в plain `.sdbl` с disk no-op/edit/reparse.

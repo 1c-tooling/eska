@@ -851,7 +851,9 @@ preset = "trunk"
 Анализатор пока отклоняет extension/processing/report: их семантический контекст
 подключается отдельно в EF-18. Для сборки можно явно передать базовый CF через
 `--base-configuration`. Внешняя версия проверяется в объявленном модуле объекта.
-Полный CLI импорта EPF/ERF и их платформенная приёмка ещё не завершены.
+[Платформенная приёмка EPF/ERF](docs/research/eska-format/external-projects.md)
+завершена: независимые build/dump совпали, непустые ERF и экспортные версии
+выполнены в клиенте 1С. Общий CLI new/init/import остаётся EF-20/EF-25.
 [Контракт и границы](docs/research/eska-format/project-selection.md) описывают
 закрепление базы, workspace selection и проверенную материализацию.
 Прежние XML-only команды пока возвращают явный отказ для ESKA.
