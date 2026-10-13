@@ -128,6 +128,15 @@ table/column/service dependencies. Остальные structural/compound profil
 и [обоснование структуры](../research/eska-format/project-layout.md) согласованы.
 Старые указания сохранять очередь и ограничиться CF-пилотом заменены этим решением.
 
+[Двадцать седьмая часть](../research/eska-format/table-rename.md) добавляет Name
+принятой Catalog/Document таблицы: generated names выводятся из одного значения,
+все UUID сохраняются. Проверяются actual parent/table policy и старые XML/BSL/
+typed dependencies, включая reuse имени с новым UUID. Source map связывает
+три Name spans с единственным Working scalar; service UUID остаются Accepted.
+Полные Rust gates и независимый CF/build/dump контроль C1 прошли на
+1С 8.3.27.2325. EF-24 остаётся `IN_PROGRESS`; формы и прочее непринятое покрытие
+этой частью не объявлены готовыми.
+
 ## Подтверждённые результаты и история решений
 
 Записи ниже описывают проверки на момент выполнения, а не текущий порядок работ.

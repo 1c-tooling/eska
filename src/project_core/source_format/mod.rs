@@ -32,6 +32,8 @@ mod reader;
 mod structural_references;
 mod tabular_identities;
 mod tabular_profile;
+#[cfg(test)]
+mod tabular_test_support;
 mod targets;
 mod type_description;
 mod validation;

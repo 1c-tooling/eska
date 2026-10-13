@@ -29,6 +29,7 @@ mod references;
 mod rename;
 mod scalars;
 mod table_deletion;
+mod table_rename;
 mod type_targets;
 mod types;
 

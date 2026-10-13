@@ -101,3 +101,40 @@ pub(super) fn comment(object: &mut MetadataNode, text: &str) {
         }
     }
 }
+
+/// Fixture identity is unique across direct fields and table columns; displayed order is not its authority.
+pub(super) fn member(node: &mut MetadataNode, id: u32) -> Option<&mut MetadataNode> {
+    if node.uuid == uuid(id) {
+        return Some(node);
+    }
+    for section in &mut node.sections {
+        if let Section::Children(children) = section {
+            for child in children {
+                if let Child::Inline { object } = child
+                    && let Some(found) = member(object, id)
+                {
+                    return Some(found);
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Rename changes one typed Name, retaining every other accepted field or service slot.
+pub(super) fn rename(owner: &mut ObjectSource, id: u32, next: &str) {
+    let object = member(&mut owner.document.descriptor.object, id).unwrap();
+    for section in &mut object.sections {
+        if let Section::Properties(properties) = section {
+            for property in properties {
+                if let Property::Typed {
+                    name: PropertyName::Name,
+                    value,
+                } = property
+                {
+                    *value = PropertyValue::Text(next.into());
+                }
+            }
+        }
+    }
+}

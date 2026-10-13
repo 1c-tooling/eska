@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "experiment": "EF-24 accepted inline Catalog/Document TabularSection rename",
+  "date": "2026-10-13",
+  "task_status": "IN_PROGRESS",
+  "envelopes": [
+    "family",
+    "readable"
+  ],
+  "source_layouts": [
+    1,
+    2,
+    3
+  ],
+  "renamed_node_kind": "TabularSection",
+  "accepted_owner_kinds": [
+    "Catalog",
+    "Document"
+  ],
+  "single_name_derives_both_declarations": true,
+  "accepted_metadata_column_and_service_uuids_retained": true,
+  "schema_rules_and_tool_protocol_versions_unchanged": true,
+  "policy": {
+    "parent_reorder_and_table_rename_required": true,
+    "unchanged_columns_and_stationary_siblings_do_not_gate_rename": true,
+    "native_supplier_and_inherited_freeze_checked": true,
+    "service_uuids_have_no_metadata_owner_authority": true,
+    "unknown_profiles_restore_rename": true,
+    "independent_edits_survive_recovery": true
+  },
+  "dependencies": {
+    "decoded_selected_xml_and_bsl_checked": true,
+    "typed_generated_type_names_checked": true,
+    "old_type_name_reuse_cannot_retarget_silently": true,
+    "unchanged_uuid_references_allowed": true,
+    "case_only_rename_preserves_case_insensitive_identity": true,
+    "conservative_guard_can_reject_unrelated_names": true,
+    "no_automatic_inverse_or_bsl_semantic_analysis": true
+  },
+  "validation": {
+    "root_gates": 16,
+    "sdk_gates": 14,
+    "adapter_gates": 5,
+    "release_builds": 2,
+    "all_gates_exit_zero": true,
+    "core_rename_tests": 9,
+    "supplier_integration_tests": 1,
+    "cli_rename_tests": 2,
+    "default_unit_tests": 592,
+    "default_integration_tests": 570,
+    "default_ignored_opt_in_tests": 24,
+    "all_features_project_cli_tests": 44,
+    "all_features_build_cli_tests": 9,
+    "minimal_unit_tests": 391,
+    "minimal_project_unit_tests": 399,
+    "minimal_project_cli_tests": 44,
+    "sdk_all_features_tests": 359,
+    "adapter_unit_tests": 70,
+    "adapter_integration_tests": 12
+  },
+  "real_c1": {
+    "native_descriptors": 3595,
+    "native_files": 8769,
+    "native_directories": 8064,
+    "objects": 8346,
+    "renamed_tables": 2,
+    "retained_selected_columns": 12,
+    "retained_selected_service_uuids": 8,
+    "changed_source_files": 2,
+    "native_control_bytes_equal": true,
+    "control_metadata_final_eol_normalization": 3595,
+    "control_empty_child_collections_normalization": 106,
+    "protected_exclusions": 0,
+    "both_locales_checked": true,
+    "generation_reused": true,
+    "working_and_accepted_and_native_and_settings_unchanged": true,
+    "source_manifest_unchanged": true,
+    "frozen_table_refused": true,
+    "negative_recovery_retains_independent_table_rename": true,
+    "independent_release_cli": true,
+    "platform_git_and_facade_absent_from_path": true
+  },
+  "schemas": {
+    "readable_source_files": 3595,
+    "invalid_source_files": 0,
+    "closed_node_example_valid": true
+  },
+  "semantics": {
+    "descriptors": 3595,
+    "objects": 8346,
+    "all_and_summary_equal": true,
+    "saved_and_unsaved_equal": true
+  },
+  "source_map": {
+    "working_spans": 6,
+    "accepted_spans": 8,
+    "derived_names_share_exact_working_name_range": true,
+    "service_uuids_retain_accepted_origin": true
+  },
+  "platform": {
+    "version": "8.3.27.2325",
+    "artifact": "cf",
+    "independent_control_and_eska_routes": true,
+    "native_files": 8769,
+    "native_directories": 8064,
+    "other_bytes_equal": true,
+    "dump_versions": {
+      "versioned_entries": 7011,
+      "changed_versions": 7011,
+      "all_other_bytes_equal": true
+    },
+    "manifest_checksums_valid": true,
+    "project_version_unchanged": true,
+    "source_and_base_unchanged": true,
+    "original_native_unchanged": true,
+    "retained_tables": 116,
+    "retained_service_uuids": 464,
+    "all_selected_and_unselected_service_ids_retained_on_both_routes": true,
+    "only_selected_derived_names_changed": true
+  },
+  "limits": [
+    "Existing preserved service declarations are not promoted by opening or migration",
+    "Other owner/structural/compound profiles are not accepted by this part",
+    "Atomic name swaps with surviving invalidated typed names are refused conservatively",
+    "C2/C3 and CFE/EPF/ERF were not rebuilt",
+    "Client execution and live infobases were not validated"
+  ]
+}

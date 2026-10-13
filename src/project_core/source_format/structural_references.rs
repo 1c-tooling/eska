@@ -6,7 +6,8 @@ use crate::project_core::{MetadataKind, source_format::PropertyValue};
 
 use super::{
     AcceptedBase, Child, Error, MetadataNode, Namespace, NativeUuid, Property, PropertyName,
-    Section, SourcePath, XmlFragment, export::Package, fragment, validation::scope,
+    Section, SourcePath, XmlFragment, export::Package, fragment, tabular_identities,
+    type_description, validation::scope,
 };
 
 /// Exact native keys retain enum behavior; field tokens also cover local form paths and BSL mentions.
@@ -137,6 +138,11 @@ fn invalidated_fields(
                 }
             }
         }
+        if node.kind == MetadataKind::TabularSection {
+            for name in tabular_identities::names(node, Some(accepted))? {
+                result.exact.insert(name.to_lowercase(), node.uuid.clone());
+            }
+        }
         result.fields.insert(name.to_lowercase(), node.uuid.clone());
     }
     Ok(())
@@ -174,7 +180,7 @@ fn children(node: &MetadataNode) -> impl Iterator<Item = &MetadataNode> {
         })
 }
 
-/// Metadata bindings distinguish preserved XML from typed fields already checked by the target index.
+/// Typed targets must not silently bind a different table that reuses an invalidated generated name.
 fn validate_node(
     node: &MetadataNode,
     inherited: &[Namespace],
@@ -189,8 +195,24 @@ fn validate_node(
         match section {
             Section::Properties(properties) => {
                 for property in properties {
-                    if let Property::Preserved { fragment } = property {
-                        validate_fragment(fragment, &context, path, removed)?;
+                    match property {
+                        Property::Preserved { fragment } => {
+                            validate_fragment(fragment, &context, path, removed)?;
+                        }
+                        Property::Typed {
+                            value: PropertyValue::TypeDescription(description),
+                            ..
+                        } => {
+                            for alternative in &description.data.alternatives {
+                                if let Some(name) =
+                                    type_description::named_target(alternative, &context)?
+                                    && let Some(uuid) = removed.exact.get(&name.to_lowercase())
+                                {
+                                    return Err(reference_error(uuid, path));
+                                }
+                            }
+                        }
+                        Property::Typed { .. } => {}
                     }
                 }
             }
@@ -256,11 +278,16 @@ fn validate_text(value: &str, path: &SourcePath, removed: &Invalidated) -> Resul
                 .find(|(key, _)| contains_identifier(&value, key))
         });
     if let Some((_, uuid)) = dependency {
-        return Err(Error::root("source_structural_reference_preserved")
-            .in_field(uuid.as_str())
-            .in_field(path.as_str()));
+        return Err(reference_error(uuid, path));
     }
     Ok(())
+}
+
+/// Both typed and opaque mentions report the dependency's accepted UUID and actual selected native path.
+fn reference_error(uuid: &NativeUuid, path: &SourcePath) -> Error {
+    Error::root("source_structural_reference_preserved")
+        .in_field(uuid.as_str())
+        .in_field(path.as_str())
 }
 
 /// Field mentions require identifier boundaries; substrings in unrelated names are not references.

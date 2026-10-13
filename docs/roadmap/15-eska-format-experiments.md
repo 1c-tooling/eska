@@ -2454,6 +2454,35 @@ checksums верны, source/base/input/settings/manifest/pin и версия с
 EF-24 остаётся `IN_PROGRESS`: остальные structural/compound profiles ещё нужны;
 C2/C3, новые CFE/EPF/ERF, клиент/рабочая ИБ этой частью не приняты.
 
+Двадцать седьмая часть — [переименование табличных частей](../research/eska-format/table-rename.md).
+Один Name выводит обе native declarations; UUID таблицы/колонок/четыре service
+slots сохраняются. Shared profile требует actual Catalog/Document parent,
+known native properties/LineNumber и inline columns. Проверяются Reorder родителя
+и Rename таблицы; неизменённые колонки сохраняют собственную policy. Старые имена
+и generated types проверяются в выбранных XML/BSL/typed Type, включая reuse старого
+имени с другим UUID. Unknown profiles восстанавливаются; независимые правки
+сохраняются. Source map связывает native Name/два GeneratedType.name с одним
+Working scalar; service UUID spans сохраняют Accepted origin. Rust API Rename
+для TabularSection расширен как необходимое условие без обхода parent/profile.
+
+Девять core/один supplier integration/два CLI tests прошли оба envelopes,
+policy/recovery, swaps/collisions/reuse, selected dependencies и exact origins.
+Прошли 16 root/14 SDK/5 adapter gates и две release-сборки: 592 unit +
+570 integration, 24 opt-in пропущены; minimal project — 399 unit + 44 CLI,
+SDK — 359, adapter — 70 + 12. Два Name C1 изменены в двух YAML; independent
+control изменяет только native Name/четыре declaration name attributes.
+Все 8 769 файлов/8 064 каталога совпали после двух предусмотренных нормализаций
+final EOL/empty ChildObjects (3 595/106). Freeze таблицы отказал с её UUID;
+recovery сохранил её имя и независимый rename второй. Schemas приняли все
+3 595 YAML/пример, 3 595 descriptors/8 346 объектов равны saved/overlay All/Summary;
+шесть Working/восемь Accepted spans подтвердили exact origins. Independent CF/
+build/dump routes на 1С 8.3.27.2325 совпали кроме 7 011 configVersion; inputs,
+base/settings/manifest/pin, checksums и версия сохранены. Все 116 таблиц/464
+service UUID, колонки/порядок/остальные свойства/типы сохранены.
+[Результаты](../research/eska-format/table-rename-results.json).
+EF-24 остаётся `IN_PROGRESS`; формы/другие непринятые профили, C2/C3,
+CFE/EPF/ERF и клиент/рабочая ИБ этой частью не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

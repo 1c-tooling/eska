@@ -6,8 +6,8 @@ use eska::project_core::source_format::{
     prepare_protected,
 };
 
-/// Upgrade only the private native table/column profile and install complete supplier rules for the deletion scenario.
-fn fixture(root: &Path, locked: char) -> PathBuf {
+/// Upgrade only the private native table/column profile and install complete supplier rules for structural consumers.
+pub(super) fn fixture(root: &Path, locked: char) -> PathBuf {
     let input = super::baseline::fixture(root);
     let file = input.join("Catalogs/Sample.xml");
     let mut native = fs::read_to_string(&file).unwrap();

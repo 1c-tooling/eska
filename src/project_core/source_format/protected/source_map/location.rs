@@ -14,7 +14,7 @@ use super::{FileOrigin, InputAuthority, InputFile, MappedFile, validate_origin};
 use crate::project_core::MetadataKind;
 use crate::project_core::source_format::{
     Error, MD_NAMESPACE, Namespace, NativeUuid, ObjectSource, Property, PropertyName,
-    PropertyValue, Section, document_paths, files, xml,
+    PropertyValue, Section, document_paths, files, tabular_identities, xml,
     yaml::{self, Step},
 };
 
@@ -276,25 +276,16 @@ fn native_hit(node: Node<'_, '_>, text: &str, offset: usize) -> Result<Hit, Erro
                 .enumerate()
             {
                 if property.range().contains(&offset) {
-                    let context: Vec<_> = section
-                        .namespaces()
-                        .map(|binding| Namespace {
-                            prefix: binding.name().map(str::to_owned),
-                            uri: binding.uri().to_owned(),
-                        })
-                        .collect();
                     return Ok(Hit::Property {
                         uuid,
                         index,
-                        property: xml::property(
-                            property,
-                            text,
-                            &context,
-                            MetadataKind::from_xml_tag(node.tag_name().name())
-                                .map_err(|_| Error::root("source_map_origin_mismatch"))?,
-                        ),
+                        property: native_property(property, node, text)?,
                     });
                 }
+            }
+        } else if section.has_tag_name((MD_NAMESPACE, "InternalInfo")) {
+            if let Some(hit) = generated_table_name(node, section, text, offset, &uuid)? {
+                return Ok(hit);
             }
         } else if section.has_tag_name((MD_NAMESPACE, "ChildObjects")) {
             for child in section.children().filter(Node::is_element) {
@@ -308,6 +299,74 @@ fn native_hit(node: Node<'_, '_>, text: &str, offset: usize) -> Result<Hit, Erro
         }
     }
     Ok(Hit::Object(uuid))
+}
+
+/// A changed generated declaration name follows its sole editable table Name; service UUIDs keep their accepted origin.
+fn generated_table_name(
+    node: Node<'_, '_>,
+    section: Node<'_, '_>,
+    text: &str,
+    offset: usize,
+    uuid: &NativeUuid,
+) -> Result<Option<Hit>, Error> {
+    let context: Vec<_> = section
+        .namespaces()
+        .map(|binding| Namespace {
+            prefix: binding.name().map(str::to_owned),
+            uri: binding.uri().to_owned(),
+        })
+        .collect();
+    if tabular_identities::decode(section, text, &context).is_none()
+        || !section
+            .children()
+            .filter(Node::is_element)
+            .any(|declaration| {
+                declaration.attributes().any(|attribute| {
+                    attribute.name() == "name" && attribute.range_value().contains(&offset)
+                })
+            })
+    {
+        return Ok(None);
+    }
+    let Some(properties) = node
+        .children()
+        .find(|child| child.has_tag_name((MD_NAMESPACE, "Properties")))
+    else {
+        return Ok(None);
+    };
+    let Some((index, property)) = properties
+        .children()
+        .filter(|node| !node.is_text())
+        .enumerate()
+        .find(|(_, property)| property.has_tag_name((MD_NAMESPACE, "Name")))
+    else {
+        return Ok(None);
+    };
+    Ok(Some(Hit::Property {
+        uuid: uuid.clone(),
+        index,
+        property: native_property(property, node, text)?,
+    }))
+}
+
+/// Native properties retain their actual parent scope and class for either direct or derived source locations.
+fn native_property(
+    property: Node<'_, '_>,
+    owner: Node<'_, '_>,
+    text: &str,
+) -> Result<Property, Error> {
+    let context: Vec<_> = property
+        .parent_element()
+        .unwrap_or(property)
+        .namespaces()
+        .map(|binding| Namespace {
+            prefix: binding.name().map(str::to_owned),
+            uri: binding.uri().to_owned(),
+        })
+        .collect();
+    let kind = MetadataKind::from_xml_tag(owner.tag_name().name())
+        .map_err(|_| Error::root("source_map_origin_mismatch"))?;
+    Ok(xml::property(property, text, &context, kind))
 }
 
 /// Reordered working sections/properties are addressed by their actual fields, not old indices.

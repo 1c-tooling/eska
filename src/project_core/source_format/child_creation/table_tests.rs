@@ -1,15 +1,17 @@
 //! New tables are one closed subtree under an accepted owner, with fresh metadata and service UUIDs.
 
-use super::super::enum_test_support::{children, uuid};
+use super::super::{
+    enum_test_support::{children, uuid},
+    tabular_test_support::fresh_table as table,
+};
 use super::attribute_tests::{attribute, edit, fixture};
 use super::*;
 use crate::{
     project_core::{
         metadata_parser::PropertiesMode,
         source_format::{
-            GeneratedIdentity, InputAuthority, ObjectSource, OriginTexts, PermissionReason,
-            SourceReader, TabularSectionIdentities, XmlFragment, files::Inventory,
-            prepare_protected,
+            InputAuthority, ObjectSource, OriginTexts, PermissionReason, SourceReader, XmlFragment,
+            files::Inventory, prepare_protected,
         },
     },
     test_support::TestDir,
@@ -19,46 +21,6 @@ use std::fs;
 const CATALOG: &str = "Catalogs/Records/object.yaml";
 const DOCUMENT: &str = "Documents/Entry/object.yaml";
 const BOOLEAN: &str = "<v8:Type>xs:boolean</v8:Type>";
-
-/// Every authored name has one typed value; native declaration names follow the real parent.
-fn table(index: u32, name: &str, columns: Vec<Child>) -> Child {
-    Child::Inline {
-        object: Box::new(MetadataNode {
-            kind: MetadataKind::TabularSection,
-            uuid: uuid(index),
-            namespaces: Vec::new(),
-            attributes: Vec::new(),
-            sections: vec![
-                Section::TabularSectionIdentities(TabularSectionIdentities {
-                    prefix: "xr".into(),
-                    table: GeneratedIdentity {
-                        type_id: uuid(index + 1000),
-                        value_id: uuid(index + 1001),
-                    },
-                    row: GeneratedIdentity {
-                        type_id: uuid(index + 1002),
-                        value_id: uuid(index + 1003),
-                    },
-                }),
-                Section::Properties(vec![
-                    Property::Typed {
-                        name: PropertyName::Name,
-                        value: PropertyValue::Text(name.into()),
-                    },
-                    Property::Typed {
-                        name: PropertyName::Synonym,
-                        value: PropertyValue::Empty,
-                    },
-                    Property::Typed {
-                        name: PropertyName::Comment,
-                        value: PropertyValue::Empty,
-                    },
-                ]),
-                Section::Children(columns),
-            ],
-        }),
-    }
-}
 
 /// Mutations in negative tests touch the new subtree, never an unrelated accepted object.
 fn node(child: &mut Child) -> &mut MetadataNode {

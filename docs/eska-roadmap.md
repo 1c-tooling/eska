@@ -160,6 +160,8 @@ Name/Synonym/Comment/Type с проверкой имён, типов и поря
 имена, поддержку родителя и выбранные XML/BSL упоминания прежнего имени.
 [Удаление табличных частей](research/eska-format/table-deletion.md) проверяет
 весь native subtree, права каждой колонки и зависимости таблицы/типов/полей.
+[Переименование таблиц](research/eska-format/table-rename.md) сохраняет все UUID,
+выводит declarations из единственного Name и проверяет старые name/type зависимости.
 Прочие structural/compound profiles ещё нужны; EF-24 остаётся `IN_PROGRESS`.
 Продолжение EF-18 отложено до окончания блока
 структуры; уже выполненные

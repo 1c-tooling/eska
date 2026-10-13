@@ -6,7 +6,7 @@ use super::{
 };
 use crate::project_core::MetadataKind;
 
-/// Removing a table cannot discard unknown service sections, owned resources or unverified column profiles.
+/// Structural edits cannot reinterpret unknown service sections, owned resources or unverified column profiles.
 pub(super) fn table(
     node: &MetadataNode,
     parent: &MetadataNode,

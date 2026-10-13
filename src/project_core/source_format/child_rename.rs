@@ -4,18 +4,23 @@ use serde_json::Value;
 
 use super::{
     AcceptedBase, Child, Error, MetadataNode, NativeUuid, Operation, Property, PropertyName,
-    PropertyValue, Section, SourcePath, attribute_profile, child_creation,
+    PropertyValue, Section, SourcePath, attribute_profile, child_creation, tabular_profile,
 };
 use crate::project_core::MetadataKind;
 
 #[cfg(test)]
 mod attribute_tests;
 #[cfg(test)]
+mod table_tests;
+#[cfg(test)]
 mod tests;
 
-/// Inline enum values and verified attributes own no generated types, paths or separate files.
+/// Inline members own no separate files; known table declaration names follow their sole metadata Name.
 pub(super) const fn supported_object(kind: MetadataKind) -> bool {
-    matches!(kind, MetadataKind::EnumValue | MetadataKind::Attribute)
+    matches!(
+        kind,
+        MetadataKind::EnumValue | MetadataKind::Attribute | MetadataKind::TabularSection
+    )
 }
 
 /// Apply names by accepted UUID before membership selection; final sibling names are checked afterwards.
@@ -55,7 +60,12 @@ pub(super) fn select(
                 before.kind == MetadataKind::EnumValue
                     && child_creation::validate_new_node(before).is_ok()
             }
-            MetadataKind::Catalog | MetadataKind::Document | MetadataKind::TabularSection => {
+            MetadataKind::Catalog | MetadataKind::Document => match before.kind {
+                MetadataKind::Attribute => attribute_profile::attribute(before, &context)?,
+                MetadataKind::TabularSection => tabular_profile::table(before, accepted, &context)?,
+                _ => false,
+            },
+            MetadataKind::TabularSection => {
                 before.kind == MetadataKind::Attribute
                     && attribute_profile::attribute(before, &context)?
             }

@@ -31,6 +31,10 @@ mod support;
 mod table_creation;
 #[path = "project_tool/table_deletion.rs"]
 mod table_deletion;
+#[path = "project_tool/table_fixture.rs"]
+mod table_fixture;
+#[path = "project_tool/table_rename.rs"]
+mod table_rename;
 #[path = "project_tool/tabular_identities.rs"]
 mod tabular_identities;
 #[path = "project_tool/workspace_migration.rs"]

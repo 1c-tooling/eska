@@ -8,7 +8,7 @@ use crate::{
         metadata_parser::PropertiesMode,
         source_format::{
             Descriptor, InputAuthority, ObjectSource, OriginTexts, PermissionReason, SourceReader,
-            attribute_test_support::{columns, comment, fixture, table},
+            attribute_test_support::{columns, comment, fixture, member, rename, table},
             child_creation::attribute_tests::{attribute_xml, edit},
             enum_test_support::{children, uuid},
             files::Inventory,
@@ -21,43 +21,6 @@ use crate::{
 const CATALOG: &str = "Catalogs/Records/object.yaml";
 const DOCUMENT: &str = "Documents/Entry/object.yaml";
 const BOOLEAN: &str = "<v8:Type>xs:boolean</v8:Type>";
-
-/// Fixture identity is unique across direct fields and table columns; displayed order is not its authority.
-fn member(node: &mut MetadataNode, id: u32) -> Option<&mut MetadataNode> {
-    if node.uuid == uuid(id) {
-        return Some(node);
-    }
-    for section in &mut node.sections {
-        if let Section::Children(children) = section {
-            for child in children {
-                if let Child::Inline { object } = child
-                    && let Some(found) = member(object, id)
-                {
-                    return Some(found);
-                }
-            }
-        }
-    }
-    None
-}
-
-/// Rename changes one typed Name, retaining every other accepted field or service slot.
-fn rename(owner: &mut ObjectSource, id: u32, next: &str) {
-    let object = member(&mut owner.document.descriptor.object, id).unwrap();
-    for section in &mut object.sections {
-        if let Section::Properties(properties) = section {
-            for property in properties {
-                if let Property::Typed {
-                    name: PropertyName::Name,
-                    value,
-                } = property
-                {
-                    *value = PropertyValue::Text(next.into());
-                }
-            }
-        }
-    }
-}
 
 /// Four actual field namespaces support English/Cyrillic names without changing identity, type, inputs or repeatability.
 #[test]
@@ -116,10 +79,8 @@ fn root_field_and_column_rename_keeps_uuid_native_values_and_inputs_in_both_enve
                 .permission(&uuid(11), Operation::Property(PropertyName::Name))
                 .allowed
         );
-        assert_eq!(
-            base.permission(&uuid(13), Operation::Rename).reason,
-            PermissionReason::UnsupportedOperation
-        );
+        // Class permission is necessary; the unknown table service profile remains outside the rename selector.
+        assert!(base.permission(&uuid(13), Operation::Rename).allowed);
         assert_eq!(
             prepared.generation(),
             prepare_protected(&source, &base, &output, true)
