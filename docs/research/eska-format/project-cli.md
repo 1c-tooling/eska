@@ -98,6 +98,10 @@ member в standalone по-прежнему отказывает.
 Name по прежнему UUID. Проверяются actual parent/profile, Rename permission,
 окончательный namespace и выбранные XML/BSL зависимости; новые параметры не нужны.
 
+[Удаление табличных частей](table-deletion.md) убирает весь inline subtree по
+прежним prepare/build. Проверяются actual profile, права всех колонок и выбранные
+XML/BSL/Type зависимости; manifest/hashes руками не меняются.
+
 `inspect` читает настройки и для ESKA только manifest/configuration snapshot:
 Name, UUID, owner count и SHA-256 текста. Полный набор owners, база и payloads
 не читаются. `validation = "manifest_and_configuration_only"` не объявляет

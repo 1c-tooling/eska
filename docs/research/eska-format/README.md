@@ -41,6 +41,9 @@ XML/BSL проверяются до generation. Неизвестный проф�
 профиль; коллизии проверяются по окончательным именам, прежние XML/BSL упоминания
 не переписываются и блокируют publication. Общий Attribute profile используется
 обоими structural selectors.
+[Удаление табличных частей](table-deletion.md) проверяет полный native subtree,
+права каждой принятой колонки и table/column/service dependencies; оставшиеся
+identities и координаты сохраняются.
 Другие structural profiles и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.

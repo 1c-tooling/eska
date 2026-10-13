@@ -40,28 +40,8 @@ pub(super) fn attribute(node: &MetadataNode, context: &[Namespace]) -> Result<bo
         return Ok(false);
     }
     for property in remaining {
-        let name = match property {
-            Property::Typed { name, .. } => name.as_str().to_owned(),
-            Property::Preserved { fragment } => {
-                if !fragment.namespaces.is_empty() {
-                    return Ok(false);
-                }
-                let wrapped = fragment::wrap(fragment, context)?;
-                let document = roxmltree::Document::parse(&wrapped)
-                    .map_err(|_| Error::root("source_fragment_xml_invalid"))?;
-                let mut elements = document
-                    .root_element()
-                    .children()
-                    .filter(roxmltree::Node::is_element);
-                let Some(element) = elements.next() else {
-                    return Ok(false);
-                };
-                if elements.next().is_some() || element.tag_name().namespace() != Some(MD_NAMESPACE)
-                {
-                    return Ok(false);
-                }
-                element.tag_name().name().to_owned()
-            }
+        let Some(name) = property_tag(property, context)? else {
+            return Ok(false);
         };
         if !matches!(
             name.as_str(),
@@ -95,4 +75,32 @@ pub(super) fn attribute(node: &MetadataNode, context: &[Namespace]) -> Result<bo
         }
     }
     Ok(true)
+}
+
+/// A known metadata property retains its native namespace; opaque wrappers do not become structural authority.
+pub(super) fn property_tag(
+    property: &Property,
+    context: &[Namespace],
+) -> Result<Option<String>, Error> {
+    let fragment = match property {
+        Property::Typed { name, .. } => return Ok(Some(name.as_str().to_owned())),
+        Property::Preserved { fragment } => fragment,
+    };
+    if !fragment.namespaces.is_empty() {
+        return Ok(None);
+    }
+    let wrapped = fragment::wrap(fragment, context)?;
+    let document = roxmltree::Document::parse(&wrapped)
+        .map_err(|_| Error::root("source_fragment_xml_invalid"))?;
+    let mut elements = document
+        .root_element()
+        .children()
+        .filter(roxmltree::Node::is_element);
+    let Some(element) = elements.next() else {
+        return Ok(None);
+    };
+    Ok(
+        (elements.next().is_none() && element.tag_name().namespace() == Some(MD_NAMESPACE))
+            .then(|| element.tag_name().name().to_owned()),
+    )
 }

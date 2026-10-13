@@ -31,6 +31,7 @@ mod readable;
 mod reader;
 mod structural_references;
 mod tabular_identities;
+mod tabular_profile;
 mod targets;
 mod type_description;
 mod validation;

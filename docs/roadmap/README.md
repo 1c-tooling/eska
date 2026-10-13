@@ -118,7 +118,9 @@ generated names выводятся из единственных metadata Name. 
 [Двадцать пятая часть](../research/eska-format/attribute-rename.md) переименовывает
 эти Attribute с прежними UUID и known native profile; окончательные имена,
 права actual parent/member и XML/BSL зависимости проверяются до generation.
-Остальные structural/compound profiles остаются в EF-24.
+[Двадцать шестая часть](../research/eska-format/table-deletion.md) удаляет известный
+полный table subtree Catalog/Document, проверяя каждую колонку и оставшиеся
+table/column/service dependencies. Остальные structural/compound profiles остаются в EF-24.
 Продолжение EF-18 отложено до завершения блока структуры; незавершённый статус
 `IN_PROGRESS` и накопленные результаты сохранены. Ранее завершённые задачи
 не открываются заново, но не подтверждают новое расширенное покрытие MVP.

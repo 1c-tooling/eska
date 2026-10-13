@@ -792,7 +792,9 @@ members и блокирует незавершённую публикацию.
 [Переименование реквизитов и колонок](docs/research/eska-format/attribute-rename.md)
 сохраняет UUID и проверяет окончательный namespace имён, права принятого родителя
 и упоминания старого имени в выбранных XML/BSL ресурсах.
-Остальные structural/compound profiles и завершение структуры EF-24 ещё в работе.
+[Удаление табличных частей](docs/research/eska-format/table-deletion.md) проверяет
+полный native subtree, права каждой колонки и оставшиеся table/column/service
+зависимости. Остальные structural/compound profiles EF-24 ещё в работе.
 Инструменты собираются отдельно с features `project-cli`/`build-cli`;
 комплектная поставка и делегирование оболочки ещё не подключены.
 Общая [библиотека анализа](docs/research/eska-format/shared-session.md) уже

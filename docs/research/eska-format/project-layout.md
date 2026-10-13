@@ -49,7 +49,9 @@ Name и явные service UUID; новый closed subtree допускает п
 [Переименование этих полей](attribute-rename.md) меняет единственный Name по
 прежнему UUID и проверяет окончательные имена/зависимости. Путь descriptor и
 service UUID таблицы сохраняются; глобальное переписывание BSL/форм не выполняется.
-Остальные structural/compound profiles ещё не приняты.
+[Удаление табличных частей](table-deletion.md) проверяет их полный native профиль,
+права всех колонок и выбранные table/column/service dependencies; remaining UUID
+и их координаты сохраняются. Остальные structural/compound profiles ещё не приняты.
 
 Внешние источники проверены 2026-10-11:
 

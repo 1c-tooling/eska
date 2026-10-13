@@ -5,9 +5,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde_json::Value;
 
 use super::{
-    AcceptedBase, Child, Error, NativeUuid, Operation, SourcePath, attribute_profile,
+    AcceptedBase, Child, Error, NativeUuid, Operation, Section, SourcePath, attribute_profile,
     child_creation,
     child_order::{self, Identity},
+    tabular_profile,
 };
 use crate::project_core::MetadataKind;
 
@@ -17,9 +18,15 @@ mod tests;
 #[cfg(test)]
 mod attribute_tests;
 
-/// Inline enum values and verified attributes have no generated identities or separate owned files.
+#[cfg(test)]
+mod table_tests;
+
+/// Verified inline profiles own no separate files; tables also remove their explicit service declarations.
 pub(super) const fn supported_object(kind: MetadataKind) -> bool {
-    matches!(kind, MetadataKind::EnumValue | MetadataKind::Attribute)
+    matches!(
+        kind,
+        MetadataKind::EnumValue | MetadataKind::Attribute | MetadataKind::TabularSection
+    )
 }
 
 /// A reduction retains a unique ordered subset; creation, transfer and reordering are separate operations.
@@ -74,7 +81,12 @@ pub(super) fn select(
                 object.kind == MetadataKind::EnumValue
                     && child_creation::validate_new_node(object).is_ok()
             }
-            MetadataKind::Catalog | MetadataKind::Document | MetadataKind::TabularSection => {
+            MetadataKind::Catalog | MetadataKind::Document => match object.kind {
+                MetadataKind::Attribute => attribute_profile::attribute(object, &context)?,
+                MetadataKind::TabularSection => tabular_profile::table(object, parent, &context)?,
+                _ => false,
+            },
+            MetadataKind::TabularSection => {
                 object.kind == MetadataKind::Attribute
                     && attribute_profile::attribute(object, &context)?
             }
@@ -121,6 +133,38 @@ pub(super) fn denied_permission(
         if !base.permission(&uuid, operation).allowed {
             return Ok(Some(uuid));
         }
+        if operation == Operation::Delete
+            && let Some(denied) = denied_columns(base, native, &uuid)
+        {
+            return Ok(Some(denied));
+        }
     }
     Ok(None)
+}
+
+/// A permitted table deletion cannot discard a native-locked or independently frozen accepted column.
+fn denied_columns(
+    base: &AcceptedBase,
+    native: &SourcePath,
+    uuid: &NativeUuid,
+) -> Option<NativeUuid> {
+    let descriptor = &base.package.documents.get(native)?.descriptor;
+    let table = child_creation::accepted_owner(descriptor, uuid)?;
+    if table.kind != MetadataKind::TabularSection {
+        return None;
+    }
+    table
+        .sections
+        .iter()
+        .filter_map(|section| match section {
+            Section::Children(children) => Some(children),
+            _ => None,
+        })
+        .flatten()
+        .find_map(|child| {
+            let Child::Inline { object } = child else {
+                return None;
+            };
+            (!base.permission(&object.uuid, Operation::Delete).allowed).then(|| object.uuid.clone())
+        })
 }

@@ -66,10 +66,8 @@ fn fields_and_columns_reduce_both_envelopes_without_changing_accepted_inputs() {
             assert!(native.contains("Retained table service bytes"));
         }
         assert!(base.permission(&uuid(11), Operation::Delete).allowed);
-        assert_eq!(
-            base.permission(&uuid(13), Operation::Delete).reason,
-            PermissionReason::UnsupportedOperation
-        );
+        // Class permission is necessary; this table's unknown InternalInfo still prevents its removal.
+        assert!(base.permission(&uuid(13), Operation::Delete).allowed);
         assert_eq!(
             prepared.generation(),
             prepare_protected(&source, &base, &output, true)

@@ -108,10 +108,10 @@ fn invalidated_fields(
     selected: &MetadataNode,
     result: &mut Invalidated,
 ) -> Result<(), Error> {
-    let selected: BTreeMap<_, _> = attributes(selected)
+    let selected: BTreeMap<_, _> = fields(selected)
         .map(|node| (node.uuid.key(), node))
         .collect();
-    for node in attributes(accepted) {
+    for node in fields(accepted) {
         let next = selected.get(&node.uuid.key());
         if next.is_some_and(|next| {
             let before = node.property(PropertyName::Name);
@@ -129,6 +129,13 @@ fn invalidated_fields(
         }
         if next.is_none() {
             result.exact.insert(node.uuid.key(), node.uuid.clone());
+            for section in &node.sections {
+                if let Section::TabularSectionIdentities(ids) = section {
+                    for uuid in ids.uuids() {
+                        result.exact.insert(uuid.key(), node.uuid.clone());
+                    }
+                }
+            }
         }
         result.fields.insert(name.to_lowercase(), node.uuid.clone());
     }
@@ -136,9 +143,14 @@ fn invalidated_fields(
 }
 
 /// Declared parentage avoids interpreting arbitrary nested metadata or resources as a local field.
-fn attributes(root: &MetadataNode) -> impl Iterator<Item = &MetadataNode> {
+fn fields(root: &MetadataNode) -> impl Iterator<Item = &MetadataNode> {
     children(root)
-        .filter(|node| node.kind == MetadataKind::Attribute)
+        .filter(|node| {
+            matches!(
+                node.kind,
+                MetadataKind::Attribute | MetadataKind::TabularSection
+            )
+        })
         .chain(
             children(root)
                 .filter(|node| node.kind == MetadataKind::TabularSection)

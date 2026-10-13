@@ -2421,6 +2421,39 @@ Inputs/settings/base/manifest/pin и версия не изменились.
 EF-24 — `IN_PROGRESS`: остальные structural/compound profiles ещё нужны;
 C2/C3, новые CFE/EPF/ERF, клиент/рабочая ИБ этой частью не приняты.
 
+Двадцать шестая часть — [удаление табличных частей](../research/eska-format/table-deletion.md)
+Catalog/Document вместе с полным известным subtree и четырьмя service UUID.
+Typed InternalInfo, известные native properties/LineNumber и inline Attribute
+колонки проверяются без guessing defaults. Проверяются Reorder родителя,
+Delete таблицы/каждой колонки и Reorder сдвигаемых членов; native supplier
+и inherited freeze сохраняют собственные gates. Общий guard инвалидирует
+имена/UUID таблицы/колонок и service slots, Type index — table/row targets.
+Unknown profiles и смешанный состав восстанавливаются с независимыми правками.
+Rust API Delete для TabularSection расширен как необходимое условие, не как
+разрешение произвольного parent/profile или автоматического переноса.
+
+Десять core/один supplier integration/два CLI tests прошли оба envelopes,
+empty/populated subtree, policy/recovery, все service slots и selected XML/BSL,
+typed row target, native StandardAttribute и unknown shapes, saved/overlay/source map.
+Прошли 16 root/14 SDK/5 adapter gates и две release-сборки: 583 unit +
+569 integration, 24 opt-in пропущены; minimal project — 390 unit + 42 CLI,
+SDK — 359, adapter — 70 + 12. В отдельной C1 копии две таблицы/12 колонок/
+восемь service UUID удалены в двух YAML. Independent control совпал по 8 769
+файлам/8 064 каталогам после предусмотренных final-EOL/empty-ChildObjects
+нормализаций (3 595/106). Frozen column отказала с её UUID; recovery сохранил
+всю её таблицу и независимое удаление второй. Прежняя native таблица с LineNumber
+и 14 колонками отказала в обоих языках/режимах при существующих BSL/form mentions;
+первый отказ в другом metadata XML, полного payload scan этим случаем не заявлено.
+Все 3 595 YAML/пример прошли schemas, 3 595 descriptors/8 332 объектов равны
+saved/overlay All/Summary, проверены два Working/два Accepted survivor spans.
+Независимые CF/build/dump routes на 1С 8.3.27.2325 совпали кроме 7 011 configVersion;
+checksums верны, source/base/input/settings/manifest/pin и версия сохранены.
+Остальные 114 таблиц/456 service UUID, identities/порядок/properties/types
+сохранены; удалённые UUID отсутствуют на обоих маршрутах.
+[Результаты](../research/eska-format/table-deletion-results.json).
+EF-24 остаётся `IN_PROGRESS`: остальные structural/compound profiles ещё нужны;
+C2/C3, новые CFE/EPF/ERF, клиент/рабочая ИБ этой частью не приняты.
+
 **Готово, когда:** версия схемы, naming/коллизии путей и матрица editable/preserved
 описаны; изменение свойства/вложенного элемента не переписывает соседние файлы.
 Состав не зависит от неявного сканирования, hashes не редактируются вручную.

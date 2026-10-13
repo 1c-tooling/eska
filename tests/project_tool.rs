@@ -29,6 +29,8 @@ mod rename;
 mod support;
 #[path = "project_tool/table_creation.rs"]
 mod table_creation;
+#[path = "project_tool/table_deletion.rs"]
+mod table_deletion;
 #[path = "project_tool/tabular_identities.rs"]
 mod tabular_identities;
 #[path = "project_tool/workspace_migration.rs"]
