@@ -1948,6 +1948,22 @@ missing/extra/case-aliased sources, inline fallback и неверные recipes 
 defaults сохранены; project import/export, protection/map/миграция и CF/execution
 ещё нужны. EF-23 остаётся `IN_PROGRESS`; EF-27 сохраняет отдельный language scope.
 
+[Третья часть: project map 5 и адресный reader](../research/eska-format/query-project.md)
+добавляет opt-in `import_designer_queries`, полный `export_designer`,
+`query_paths`/`declared_query`/bounded query reads. Единственный text живёт
+в `.sdbl`; map объявляет native descriptor/resource и полный набор файлов,
+scope остаётся в source XML reference. Все объявленные СКД, включая пустые,
+обязаны участвовать в обработке; inline fallback и удаление resource row
+отказывают до публикации. Native forms остаются единым `form.yaml`.
+CLI defaults и conversion rules сохранены; старые layout targets сохраняют
+map 5. Protected export пока явно отказывает: selection/source map, query
+migration и CF/execution ещё нужны.
+C1: no-op равен independent form-layout control по 8 769 файлам/8 064 каталогам;
+823 адресных form reads совпали. Одна plain edit изменила один native ресурс,
+все 150 edits — только 126 ресурсов; scoped values/reparse и source footprint
+проверены, input прежний. Восемь owned fixture tests и девять Cargo/SDK gates
+прошли. EF-23 остаётся `IN_PROGRESS`.
+
 Выделить сохранённый текст каждого набора СКД и произвольного запроса списка
 в `.sdbl` рядом с владельцем. Пакет сохранять целиком. Принять версию,
 namespace/slots ссылок, связь с набором/реквизитом, rename и миграцию.

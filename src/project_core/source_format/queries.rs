@@ -23,6 +23,13 @@ pub enum QuerySlot {
     DynamicList { attribute: FormId },
 }
 
+/// The validated root supplies resource context even when there are no saved query slots.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum QueryProfile {
+    Composition,
+    ManagedForm,
+}
+
 /// A decoded query has one text value and an immutable native inverse slot.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeQuery {
@@ -42,11 +49,18 @@ impl NativeQuery {
 /// XML gaps contain no extracted query values; inverse frames retain transport rather than another text copy.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeQueryDocument {
+    profile: QueryProfile,
     parts: Vec<String>,
     queries: Vec<NativeQuery>,
 }
 
 impl NativeQueryDocument {
+    /// Resource class comes from its checked native root, independently of filenames and values.
+    #[must_use]
+    pub const fn profile(&self) -> QueryProfile {
+        self.profile
+    }
+
     /// Read known DCS datasets or saved manual dynamic-list queries without interpreting their language.
     ///
     /// # Errors

@@ -137,6 +137,15 @@ pub(in crate::project_core::source_format) fn source_directories(
             directories.insert(SourcePath::parse(&file.source_path().as_str()[..end])?);
         }
     }
+    for path in manifest
+        .query_resources
+        .iter()
+        .flat_map(|resource| &resource.sources)
+    {
+        for (end, _) in path.as_str().match_indices('/') {
+            directories.insert(SourcePath::parse(&path.as_str()[..end])?);
+        }
+    }
     // All source directories, including newly introduced YAML parents, have explicit ancestors.
     let ancestors = directories
         .iter()
@@ -159,6 +168,7 @@ pub(in crate::project_core::source_format) enum Layout {
     Resources,
     Readable,
     Forms,
+    Queries,
 }
 
 impl Layout {
@@ -169,6 +179,7 @@ impl Layout {
             Self::Descriptors => DESCRIPTOR_LAYOUT_VERSION,
             Self::Resources | Self::Readable => RESOURCE_LAYOUT_VERSION,
             Self::Forms => super::MANAGED_FORM_LAYOUT_VERSION,
+            Self::Queries => super::QUERY_LAYOUT_VERSION,
         }
     }
 }

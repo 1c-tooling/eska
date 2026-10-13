@@ -208,7 +208,7 @@ pub(in crate::project_core::source_format) fn project_layout(
         Ok(text)
     };
     let mut projection = project_descriptors(package, &mut read)?;
-    if projection.manifest.schema_version == super::super::MANAGED_FORM_LAYOUT_VERSION {
+    if projection.manifest.schema_version >= super::super::MANAGED_FORM_LAYOUT_VERSION {
         return Ok(projection);
     }
     if target.version() <= projection.manifest.schema_version {

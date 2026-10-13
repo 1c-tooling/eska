@@ -2234,8 +2234,10 @@ EF-12 — по [матрице форм и CF циклу](research/eska-format/m
 
 Native query codec и [source references версии 1](research/eska-format/query-references.md)
 проверены на всех 150 запросах C1: отдельные plain values прошли disk no-op/edit/
-reparse; XML результата не содержит source namespace. Project bindings,
-protection/source map и миграция EF-23 ещё нужны; CLI defaults сохранены.
+reparse; XML результата не содержит source namespace.
+[Проектная карта 5](research/eska-format/query-project.md) добавляет opt-in
+import/export и адресный reader. Protection/source map и миграция EF-23 ещё
+нужны; CLI defaults сохранены, protected map 5 пока явно отказывает.
 
 | Этап | Задачи |
 |---|---|

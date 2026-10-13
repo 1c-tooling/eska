@@ -5,8 +5,8 @@ use std::collections::BTreeSet;
 use roxmltree::{Document, Node};
 
 use super::{
-    Error, FormId, NativeQuery, NativeQueryDocument, QUERY_REFERENCE_NAMESPACE, QuerySlot, binding,
-    references, stencil, unverified,
+    Error, FormId, NativeQuery, NativeQueryDocument, QUERY_REFERENCE_NAMESPACE, QueryProfile,
+    QuerySlot, binding, references, stencil, unverified,
 };
 use crate::project_core::source_format::{validation, xml};
 
@@ -51,7 +51,11 @@ pub(super) fn decode(input: &str) -> Result<NativeQueryDocument, Error> {
         cursor = query.frame.range.end;
     }
     parts.push(input.get(cursor..).ok_or_else(binding)?.into());
-    Ok(NativeQueryDocument { parts, queries })
+    Ok(NativeQueryDocument {
+        profile: profile(document.root_element())?,
+        parts,
+        queries,
+    })
 }
 
 /// Shared bounded XML parsing does not grant file, language or supplier authority.
@@ -73,17 +77,10 @@ pub(super) fn parse(input: &str) -> Result<Document<'_>, Error> {
 pub(super) fn slots<'a, 'input>(
     root: Node<'a, 'input>,
 ) -> Result<Vec<SlotNode<'a, 'input>>, Error> {
-    let mut queries =
-        if root.has_tag_name((DCS, "DataCompositionSchema")) && root.attributes().len() == 0 {
-            composition(root)?
-        } else if root.has_tag_name((FORM, "Form"))
-            && root.attribute("version") == Some("2.20")
-            && root.attributes().len() == 1
-        {
-            dynamic_lists(root)?
-        } else {
-            return Err(unverified());
-        };
+    let mut queries = match profile(root)? {
+        QueryProfile::Composition => composition(root)?,
+        QueryProfile::ManagedForm => dynamic_lists(root)?,
+    };
     queries.sort_by_key(|query| query.node.range().start);
     let mut slots = BTreeSet::new();
     let mut cursor = 0;
@@ -94,6 +91,20 @@ pub(super) fn slots<'a, 'input>(
         cursor = query.node.range().end;
     }
     Ok(queries)
+}
+
+/// Classification stays separate from query count, so empty resources retain their actual class.
+pub(super) fn profile(root: Node<'_, '_>) -> Result<QueryProfile, Error> {
+    if root.has_tag_name((DCS, "DataCompositionSchema")) && root.attributes().len() == 0 {
+        Ok(QueryProfile::Composition)
+    } else if root.has_tag_name((FORM, "Form"))
+        && root.attribute("version") == Some("2.20")
+        && root.attributes().len() == 1
+    {
+        Ok(QueryProfile::ManagedForm)
+    } else {
+        Err(unverified())
+    }
 }
 
 /// Full native dataset names are scoped by unions; sibling order is never their identity.

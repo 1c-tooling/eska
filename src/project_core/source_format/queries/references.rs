@@ -7,7 +7,7 @@ use std::{
 
 use roxmltree::Node;
 
-use super::{Error, NativeQueryDocument, QuerySlot, native, stencil};
+use super::{Error, NativeQueryDocument, QueryProfile, QuerySlot, native, stencil};
 use crate::project_core::source_format::{SourcePath, validation};
 
 /// The source-only protocol version belongs to its namespace, independently of project schema versions.
@@ -59,6 +59,7 @@ impl QueryReference {
 /// Values are absent from this source representation; all declared links must resolve before native output.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct QueryReferenceDocument {
+    profile: QueryProfile,
     parts: Vec<String>,
     references: Vec<QueryReference>,
 }
@@ -94,7 +95,8 @@ impl NativeQueryDocument {
         }
         xml.push_str(&parts.next().ok_or_else(invalid)?);
         let checked = QueryReferenceDocument::from_xml(&xml)?;
-        if checked.references.len() != paths.len()
+        if checked.profile != self.profile
+            || checked.references.len() != paths.len()
             || checked
                 .references
                 .iter()
@@ -148,13 +150,23 @@ impl QueryReferenceDocument {
             }
         }
         validate_paths(references.iter().map(|reference| &reference.source))?;
-        Ok(Self { parts, references })
+        Ok(Self {
+            profile: native::profile(document.root_element())?,
+            parts,
+            references,
+        })
     }
 
     /// Context comes from the actual dataset/attribute scopes around each link.
     #[must_use]
     pub fn references(&self) -> &[QueryReference] {
         &self.references
+    }
+
+    /// The actual root disambiguates empty templates from empty form dialogs.
+    #[must_use]
+    pub const fn profile(&self) -> QueryProfile {
+        self.profile
     }
 
     /// Materialize all links from explicit values; the source markup never reaches platform XML.
@@ -170,23 +182,31 @@ impl QueryReferenceDocument {
         {
             return Err(invalid());
         }
+        self.render(|reference| values.get(&reference.source).map(String::as_str))
+    }
+
+    /// Project consumers borrow the already validated complete source set without cloning query values.
+    pub(in crate::project_core::source_format) fn render<'a>(
+        &'a self,
+        value: impl Fn(&'a QueryReference) -> Option<&'a str>,
+    ) -> Result<String, Error> {
         let mut output = String::new();
         for (part, reference) in self.parts.iter().zip(&self.references) {
             output.push_str(part);
-            let value = values.get(&reference.source).ok_or_else(invalid)?;
-            validation::xml_text(value)?;
-            output.push_str(&reference.frame.render(value));
+            let text = value(reference).ok_or_else(invalid)?;
+            validation::xml_text(text)?;
+            output.push_str(&reference.frame.render(text));
         }
         output.push_str(self.parts.last().ok_or_else(invalid)?);
         let checked = NativeQueryDocument::from_xml(&output)?;
-        if checked.queries().len() != self.references.len()
+        if checked.profile() != self.profile
+            || checked.queries().len() != self.references.len()
             || checked
                 .queries()
                 .iter()
                 .zip(&self.references)
                 .any(|(actual, reference)| {
-                    actual.slot != reference.slot
-                        || values.get(&reference.source) != Some(&actual.text)
+                    actual.slot != reference.slot || value(reference) != Some(actual.text.as_str())
                 })
         {
             return Err(invalid());

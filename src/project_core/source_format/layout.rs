@@ -2,6 +2,7 @@
 
 pub(super) mod forms;
 pub(super) mod migration;
+pub(super) mod queries;
 pub(super) mod resources;
 
 #[cfg(test)]
@@ -30,6 +31,9 @@ pub const DESCRIPTOR_LAYOUT_VERSION: u32 = 2;
 pub const RESOURCE_LAYOUT_VERSION: u32 = 3;
 /// A standalone form YAML produces both its metadata descriptor and its managed dialog.
 pub const MANAGED_FORM_LAYOUT_VERSION: u32 = 4;
+/// Explicit query resources bind sole plain values to native descriptors and source-only XML slots.
+pub const QUERY_LAYOUT_VERSION: u32 = 5;
+pub use queries::QueryResource;
 pub(super) const PENDING_RECEIPT: &str = ".eska-layout.pending.json";
 pub(super) const PENDING_WRITE: &str = ".eska-layout.write";
 
@@ -109,6 +113,7 @@ pub(super) fn descriptor_path(
 pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
     resources::validate(manifest)?;
     forms::validate_map(manifest)?;
+    queries::validate_map(manifest)?;
     if manifest.schema_version < DESCRIPTOR_LAYOUT_VERSION {
         return if manifest.descriptor_contexts.is_empty() {
             Ok(())
@@ -194,6 +199,15 @@ fn validate_physical_paths(manifest: &SourceManifest) -> Result<(), Error> {
         let path = file.source_path().as_str();
         if !paths.insert(path) {
             return Err(Error::root("source_path_collision").in_field(path));
+        }
+    }
+    for path in manifest
+        .query_resources
+        .iter()
+        .flat_map(|resource| &resource.sources)
+    {
+        if !paths.insert(path.as_str()) {
+            return Err(Error::root("source_path_collision").in_field(path.as_str()));
         }
     }
     let mut spellings = BTreeMap::new();

@@ -111,7 +111,7 @@ pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
     for file in &manifest.files {
         match &file.role {
             FileRole::ManagedForm { source, descriptor } => {
-                if manifest.schema_version != MANAGED_FORM_LAYOUT_VERSION
+                if manifest.schema_version < MANAGED_FORM_LAYOUT_VERSION
                     || locations
                         .get(&file.path.as_str().to_ascii_lowercase())
                         .copied()
@@ -123,7 +123,7 @@ pub(super) fn validate_map(manifest: &SourceManifest) -> Result<(), Error> {
                     );
                 }
             }
-            _ if manifest.schema_version == MANAGED_FORM_LAYOUT_VERSION
+            _ if manifest.schema_version >= MANAGED_FORM_LAYOUT_VERSION
                 && locations.contains_key(&file.path.as_str().to_ascii_lowercase()) =>
             {
                 return Err(

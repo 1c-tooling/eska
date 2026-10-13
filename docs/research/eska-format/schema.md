@@ -23,6 +23,13 @@ descriptor schema 2 и optional body schema 2 в `ObjectSource.form`, роль
 identity. [Явная миграция](managed-form-migration.md) переносит source, pinned base,
 standalone проект или workspace в map 4. Публичный CLI import остаётся задачей EF-20.
 
+[Карта версии 5](source-manifest-v5.schema.json) добавляет
+[query resources и единственные plain `.sdbl`](query-project.md). Связь с native
+slot остаётся в resource XML-ссылке; карта объявляет resource/descriptor и полный
+набор файлов. Map 5 сохраняет descriptor/body schemas и rules, доступна через
+opt-in core import/export/reader. Query protection/source map и миграция ещё
+нужны; protected export явно отказывает. Прежние layout targets не понижают map 5.
+
 [JSON Schema](descriptor.schema.json) описывает один descriptor. Семантические
 ограничения дополнительно проверяет `Descriptor::validate`: уникальность UUID,
 секций, свойств и language keys, корректность QName-контекста и opaque XML.

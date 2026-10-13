@@ -77,6 +77,16 @@ pub fn import_designer_forms(input: &Path, destination: &Path) -> Result<SourceM
     import(input, destination, Layout::Forms)
 }
 
+/// Import sole plain query values with explicit resource links and unified form YAML in map v5.
+///
+/// This opt-in acceptance format does not alter existing projects or select supplier permissions.
+///
+/// # Errors
+/// Returns native/query profile, unsafe paths, collisions, publication or changed-input failures.
+pub fn import_designer_queries(input: &Path, destination: &Path) -> Result<SourceManifest, Error> {
+    import(input, destination, Layout::Queries)
+}
+
 /// Stage all parsed descriptors before publishing the explicitly selected physical layout.
 fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceManifest, Error> {
     let inventory = Inventory::read(input)?;
@@ -120,17 +130,25 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
         manifest.descriptor_contexts =
             super::layout::contexts(&super::layout::documents(&sources))?;
     }
-    if matches!(layout, Layout::Resources | Layout::Readable | Layout::Forms) {
+    if matches!(
+        layout,
+        Layout::Resources | Layout::Readable | Layout::Forms | Layout::Queries
+    ) {
         resources::relocate(&mut manifest)?;
     }
-    if matches!(layout, Layout::Readable | Layout::Forms) {
+    if matches!(layout, Layout::Readable | Layout::Forms | Layout::Queries) {
         for source in sources.values_mut() {
             super::readable::upgrade(source);
         }
     }
-    if matches!(layout, Layout::Forms) {
+    if matches!(layout, Layout::Forms | Layout::Queries) {
         super::layout::forms::attach(&input, &mut manifest, &mut sources)?;
     }
+    let extra = if matches!(layout, Layout::Queries) {
+        super::layout::queries::extract(&input, &mut manifest, &mut sources)?
+    } else {
+        BTreeMap::new()
+    };
     manifest.validate()?;
     let yaml: BTreeMap<_, _> = sources
         .iter()
@@ -145,6 +163,7 @@ fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceMani
         &inventory,
         &manifest,
         &yaml,
+        &extra,
         &manifest_text,
     );
     if let Err(error) = result {
@@ -245,6 +264,7 @@ impl Importer<'_> {
             directories: self.inventory.directories.clone(),
             files: files.into_values().collect(),
             descriptor_contexts: Vec::new(),
+            query_resources: Vec::new(),
         })
     }
 }
@@ -329,13 +349,17 @@ fn materialize(
     inventory: &Inventory,
     manifest: &SourceManifest,
     yaml: &BTreeMap<&SourcePath, String>,
+    extra: &BTreeMap<SourcePath, String>,
     manifest_text: &str,
 ) -> Result<(), Error> {
     for (path, source) in yaml {
         files::write(&destination.join(path.as_path()), source.as_bytes())?;
     }
+    for (path, source) in extra {
+        files::write(&destination.join(path.as_path()), source.as_bytes())?;
+    }
     for file in &manifest.files {
-        if file.is_payload() {
+        if file.is_payload() && !extra.contains_key(file.source_path()) {
             files::copy_to(input, &destination.join(file.source_path().as_path()), file)?;
         }
     }

@@ -55,13 +55,13 @@ pub use edit::{
 };
 pub use export::export_designer;
 pub use import::{
-    import_designer, import_designer_forms, import_designer_readable, import_designer_resources,
-    import_designer_separated,
+    import_designer, import_designer_forms, import_designer_queries, import_designer_readable,
+    import_designer_resources, import_designer_separated,
 };
 pub use layout::{
     DESCRIPTOR_LAYOUT_VERSION, DescriptorContext, LayoutChange, LayoutPublication,
-    MANAGED_FORM_LAYOUT_VERSION, RESOURCE_LAYOUT_VERSION, SourceLayoutPlan,
-    prepare_descriptor_layout, prepare_form_layout, prepare_readable_layout,
+    MANAGED_FORM_LAYOUT_VERSION, QUERY_LAYOUT_VERSION, QueryResource, RESOURCE_LAYOUT_VERSION,
+    SourceLayoutPlan, prepare_descriptor_layout, prepare_form_layout, prepare_readable_layout,
     prepare_resource_layout,
 };
 pub use managed_form::{
@@ -78,11 +78,11 @@ pub use protected::{
 };
 pub use queries::{
     ExtractedQuerySource, NativeQuery, NativeQueryDocument, QUERY_REFERENCE_NAMESPACE,
-    QueryReference, QueryReferenceDocument, QuerySlot,
+    QueryProfile, QueryReference, QueryReferenceDocument, QuerySlot,
 };
 pub use reader::{
-    DeclaredForm, DeclaredModule, DeclaredOwner, MetadataDeclaration, MetadataSnapshot,
-    NativeMetadata, OwnerSnapshot, SourceReader,
+    DeclaredForm, DeclaredModule, DeclaredOwner, DeclaredQuery, MetadataDeclaration,
+    MetadataSnapshot, NativeMetadata, OwnerSnapshot, SourceReader,
 };
 
 pub use fill_value::{EnumFillValue, EnumFillValueLayout};

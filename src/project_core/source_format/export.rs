@@ -17,6 +17,8 @@ use super::{
     files::{self, Inventory},
 };
 
+pub(super) mod queries;
+
 /// Materialize a complete native snapshot for format acceptance, without platform subprocesses.
 ///
 /// This experimental writer has no supplier-policy authority. A public build must first select
@@ -65,6 +67,7 @@ pub(super) struct Package {
     pub payloads: BTreeMap<SourcePath, SourcePath>,
     /// Native output paths resolve to the selected physical payload without repeated full scans.
     pub payload_sources: BTreeMap<SourcePath, SourcePath>,
+    pub query_inputs: queries::QueryInputs,
 }
 
 impl Package {
@@ -147,6 +150,7 @@ impl Package {
         validate_sources(&manifest, &snapshot, &owners, &documents)?;
         validate_composition(&documents)?;
         super::layout::validate_documents(&manifest, &documents)?;
+        let query_inputs = queries::load(&manifest, &forms, &documents, &mut read)?;
         let payloads = manifest
             .files
             .iter()
@@ -167,12 +171,14 @@ impl Package {
             owners: owner_documents,
             payloads,
             payload_sources,
+            query_inputs,
         })
     }
 
     /// Generate all native descriptors before claiming an export directory.
     pub(super) fn native_xml(&self) -> Result<BTreeMap<SourcePath, String>, Error> {
-        self.documents
+        let mut output = self
+            .documents
             .iter()
             .map(|(path, document)| {
                 Ok((
@@ -190,7 +196,9 @@ impl Package {
                         .map_err(|error| error.in_field(path.as_str()))?,
                 ))
             }))
-            .collect()
+            .collect::<Result<BTreeMap<_, _>, Error>>()?;
+        self.query_inputs.materialize(&self.manifest, &mut output)?;
+        Ok(output)
     }
 
     /// Predict exact native bytes and directory composition, including preserved empty directories.
@@ -284,6 +292,13 @@ fn validate_sources(
 ) -> Result<(), Error> {
     let mut paths = BTreeSet::from([SourcePath::parse(files::MANIFEST)?]);
     paths.extend(owners.iter().map(|path| (*path).clone()));
+    paths.extend(
+        manifest
+            .query_resources
+            .iter()
+            .flat_map(|resource| &resource.sources)
+            .cloned(),
+    );
     for file in &manifest.files {
         match &file.role {
             FileRole::Preserved | FileRole::Relocated { .. } => {

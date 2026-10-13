@@ -4,6 +4,7 @@ mod form_dialog;
 mod modules;
 mod predefined;
 mod projection;
+mod queries;
 mod role_rights;
 mod semantic;
 mod standalone;
@@ -34,6 +35,7 @@ use super::{
 
 pub use form_dialog::DeclaredForm;
 pub use modules::DeclaredModule;
+pub use queries::DeclaredQuery;
 pub use semantic::{MetadataSnapshot, NativeMetadata};
 
 /// One declaration projected directly from typed YAML, with coordinates in its owner snapshot.
@@ -383,7 +385,19 @@ impl SourceReader {
     ) -> Result<String, Error> {
         let text = self.read_form_authoring_text(path, max_bytes)?;
         if self.embedded_form(path) {
-            let xml = self.parse_form_source(path, &text)?.to_xml()?;
+            let mut xml = self.parse_form_source(path, &text)?.to_xml()?;
+            if self.manifest.schema_version >= super::QUERY_LAYOUT_VERSION {
+                let native = self
+                    .manifest
+                    .files
+                    .iter()
+                    .find(|file| {
+                        matches!(file.role, FileRole::ManagedForm { .. })
+                            && file.source_path() == path
+                    })
+                    .ok_or_else(super::layout::queries::invalid)?;
+                xml = self.materialize_query_xml(&native.path, &xml, max_bytes)?;
+            }
             if xml.len() as u64 > max_bytes {
                 return Err(Error::root("source_document_too_large").in_field(path.as_str()));
             }
@@ -461,7 +475,7 @@ impl SourceReader {
 
     /// Manifest ownership selects YAML explicitly; content sniffing cannot change a document's kind.
     fn embedded_form(&self, path: &SourcePath) -> bool {
-        self.manifest.schema_version == super::MANAGED_FORM_LAYOUT_VERSION
+        self.manifest.schema_version >= super::MANAGED_FORM_LAYOUT_VERSION
             && self.form_dialogs.contains_key(path)
     }
 

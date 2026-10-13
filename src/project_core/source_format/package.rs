@@ -151,6 +151,9 @@ pub struct SourceManifest {
     /// Reverse context is required for separated descriptors, never inferred by scanning files.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub descriptor_contexts: Vec<super::DescriptorContext>,
+    /// Query values are additional physical sources, never alternate native payloads.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub query_resources: Vec<super::QueryResource>,
 }
 
 /// Original byte fingerprints record the input, rather than claiming edited YAML is unchanged.
@@ -212,6 +215,7 @@ impl SourceManifest {
             && self.schema_version != super::DESCRIPTOR_LAYOUT_VERSION
             && self.schema_version != super::RESOURCE_LAYOUT_VERSION
             && self.schema_version != super::MANAGED_FORM_LAYOUT_VERSION
+            && self.schema_version != super::QUERY_LAYOUT_VERSION
         {
             return Err(Error::root("source_schema_unsupported"));
         }

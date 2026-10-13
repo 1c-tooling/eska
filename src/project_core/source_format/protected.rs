@@ -119,6 +119,9 @@ pub fn prepare_protected(
     strict: bool,
 ) -> Result<PreparedSource, ProtectedFailure> {
     base.verify()?;
+    if base.package.manifest.schema_version >= super::QUERY_LAYOUT_VERSION {
+        return Err(Error::root("source_query_protection_unavailable").into());
+    }
     let source = fs::canonicalize(source).map_err(|error| files::io(&error))?;
     let working = Inventory::read(&source)?;
     let mut diagnostics = Vec::new();
@@ -139,6 +142,7 @@ pub fn prepare_protected(
         snapshot,
         documents: selected.documents,
         forms: selected.forms,
+        query_inputs: super::export::queries::QueryInputs::default(),
         owners: base.package.owners.clone(),
         payloads: base.package.payloads.clone(),
         payload_sources: base.package.payload_sources.clone(),
