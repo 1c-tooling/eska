@@ -76,6 +76,16 @@ pub(super) fn range_at(file: &YamlFile, steps: &[Step]) -> Result<Range<usize>, 
     Ok(usize::from(range.start())..usize::from(range.end()))
 }
 
+/// A CST subtree may own the newline separating its value from the next mapping or sequence entry.
+pub(super) fn preserve_transport(original: &str, replacement: &mut String) {
+    if original.ends_with('\n') && !replacement.ends_with('\n') {
+        replacement.push('\n');
+    }
+    if original.contains("\r\n") {
+        *replacement = replacement.replace("\r\n", "\n").replace('\n', "\r\n");
+    }
+}
+
 /// Traverse strict values without letting a mapping silently overwrite an earlier key.
 fn convert(node: &YamlNode, depth: usize) -> Result<Value, Error> {
     if depth > MAX_DEPTH {

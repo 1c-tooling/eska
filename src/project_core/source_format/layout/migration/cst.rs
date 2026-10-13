@@ -114,10 +114,9 @@ pub(super) fn replace_form_queries(
     }
     patches.sort_by_key(|(range, _)| std::cmp::Reverse(range.start));
     let mut output = input.to_owned();
-    for (range, text) in patches {
-        if output.get(range.clone()).is_none() {
-            return Err(unsupported());
-        }
+    for (range, mut text) in patches {
+        let original = input.get(range.clone()).ok_or_else(unsupported)?;
+        yaml::preserve_transport(original, &mut text);
         output.replace_range(range, &text);
     }
     if comments(input) != comments(&output) || ObjectSource::from_yaml(&output)? != expected {

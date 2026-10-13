@@ -14,6 +14,10 @@ CST splicing сохраняет окружающий YAML, flow/block syntax и 
 отказывают до создания destination. Оpaque unrelated resources не декодируются;
 все объявленные СКД, включая schema без query, участвуют в новом layout.
 
+При замене literal XML scalar сохраняется разделительный перевод строки перед
+следующим YAML-полем. Правило LF/CRLF общее с точечным редактором значений;
+логические переводы строк внутри XML остаются частью самого значения.
+
 Новые query paths не могут заменить existing unrelated payload. Missing/invalid
 inputs, collisions, foreign outputs и changed-byte publication отказывают.
 Существующая exclusive publication использует прежние exact receipts: owned

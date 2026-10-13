@@ -207,23 +207,13 @@ fn splice(
     original_text: &str,
     mut replacement: String,
 ) -> Result<String, Error> {
-    transport(original_text, &mut replacement);
+    yaml::preserve_transport(original_text, &mut replacement);
     if comments(original_text) != comments(&replacement) {
         return Err(unsupported());
     }
     let mut output = input.to_owned();
     output.replace_range(original, &replacement);
     Ok(output)
-}
-
-/// Manufactured tokens adopt only the selected subtree's existing newline boundary and EOL.
-fn transport(original: &str, replacement: &mut String) {
-    if original.ends_with('\n') && !replacement.ends_with('\n') {
-        replacement.push('\n');
-    }
-    if original.contains("\r\n") {
-        *replacement = replacement.replace("\r\n", "\n").replace('\n', "\r\n");
-    }
 }
 
 /// Keep a present string's style; a state wrapper has no string style to preserve.

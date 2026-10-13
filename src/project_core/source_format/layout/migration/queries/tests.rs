@@ -229,6 +229,97 @@ fn query_migration_splices_only_native_root_values_and_keeps_form_annotations_an
     }
 }
 
+/// Literal XML scalars own their final newline even when it separates the next pinned stencil.
+#[test]
+fn query_migration_preserves_literal_scalar_boundaries_and_native_bytes() {
+    for (eol, trailing_newline) in [("\n", true), ("\n", false), ("\r\n", true), ("\r\n", false)] {
+        let test = TestDir::new();
+        let native = fixture(&test);
+        let dialog = form()
+            .replace("\r\n", "\n")
+            .replace("</Form>", "<ReadOnly>false</ReadOnly></Form>");
+        let dialog = if trailing_newline {
+            dialog
+        } else {
+            dialog.replace("</Attributes>\n", "</Attributes>")
+        };
+        fs::write(native.join(DIALOG), &dialog).unwrap();
+        let source = test.0.join("source");
+        import_designer_forms(&native, &source).unwrap();
+        let file = source.join(FORM);
+        let input = fs::read_to_string(&file).unwrap();
+        let (value, tree) = yaml::decode_with_tree(&input).unwrap();
+        let parts = value["form"]["native"]["root"].as_array().unwrap();
+        let (index, part) = parts
+            .iter()
+            .enumerate()
+            .find(|(_, part)| {
+                part["value"]
+                    .as_str()
+                    .is_some_and(|value| value.contains("<QueryText>"))
+            })
+            .unwrap();
+        let span = yaml::range_at(
+            &tree,
+            &[
+                yaml::Step::Key("form"),
+                yaml::Step::Key("native"),
+                yaml::Step::Key("root"),
+                yaml::Step::Index(index),
+                yaml::Step::Key("value"),
+            ],
+        )
+        .unwrap();
+        let xml = part["value"].as_str().unwrap();
+        let line = input[..span.start].rsplit('\n').next().unwrap();
+        let indent = line.len() - line.trim_start().len() + 2;
+        let mut literal = if xml.ends_with('\n') { "|+\n" } else { "|-\n" }.to_owned();
+        for line in xml.split_inclusive('\n') {
+            literal.push_str(&" ".repeat(indent));
+            literal.push_str(line);
+        }
+        if !literal.ends_with('\n') {
+            literal.push('\n');
+        }
+        let mut authored = input.clone();
+        authored.replace_range(span, literal.trim_end_matches('\n'));
+        let authored = format!("# literal XML stencil\n{authored}").replace('\n', eol);
+        assert_eq!(
+            ObjectSource::from_yaml(&authored).unwrap(),
+            ObjectSource::from_yaml(&input).unwrap()
+        );
+        fs::write(&file, &authored).unwrap();
+        let before = files::Inventory::read(&source).unwrap();
+        let control = test.0.join("control");
+        export_designer(&source, &control).unwrap();
+        let plan = prepare_query_layout(&source).unwrap();
+        let updated = plan.updated_text(&path(FORM)).unwrap();
+        assert!(updated.starts_with(&format!("# literal XML stencil{eol}")));
+        assert_eq!(
+            ObjectSource::from_yaml(updated)
+                .unwrap()
+                .form
+                .unwrap()
+                .properties,
+            ObjectSource::from_yaml(&authored)
+                .unwrap()
+                .form
+                .unwrap()
+                .properties
+        );
+        let target = test.0.join("migrated");
+        plan.publish(&target).unwrap();
+        let exported = test.0.join("exported");
+        export_designer(&target, &exported).unwrap();
+        assert_eq!(
+            files::Inventory::read(&control).unwrap(),
+            files::Inventory::read(&exported).unwrap()
+        );
+        assert_eq!(fs::read_to_string(exported.join(DIALOG)).unwrap(), dialog);
+        assert_eq!(files::Inventory::read(&source).unwrap(), before);
+    }
+}
+
 /// Source/base receipts are exclusive and resumable for the new plain files and changed blobs too.
 #[test]
 fn query_layout_publication_resumes_and_refuses_conflicting_output_or_stale_inputs() {
