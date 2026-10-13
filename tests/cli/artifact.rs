@@ -11,6 +11,8 @@ use serde_json::Value;
 
 const UUID: &str = "12345678-1234-1234-1234-123456789012";
 
+mod profiles;
+
 /// Carry a controlled root descriptor through the fake binary unpacking boundary.
 fn artifact(root: &Path, extension: &str, tag: &str, name: &str, uuid: &str) -> std::path::PathBuf {
     let path = root.join(format!("incoming.{extension}"));

@@ -47,7 +47,7 @@ fn run(arguments: &[OsString]) -> Result<(), String> {
     Ok(())
 }
 
-/// Model CF loading independently from direct export, including failed loads.
+/// Model content-based CF/CFE loading independently from direct file export.
 fn load_configuration(arguments: &[OsString]) -> Result<(), String> {
     if env_flag("FAKE_IBCMD_ARTIFACT_DIAGNOSTICS") {
         println!("[INFO] Loading fixture CF...");
@@ -57,6 +57,29 @@ fn load_configuration(arguments: &[OsString]) -> Result<(), String> {
     }
     let data = option_path(arguments, "--data=").ok_or("missing --data")?;
     let source = arguments.last().ok_or("missing file")?;
+    let contents = fs::read_to_string(source).map_err(|error| error.to_string())?;
+    let extension = arguments
+        .iter()
+        .any(|argument| argument.to_string_lossy().starts_with("--extension="));
+    if contents.contains("ConfigurationExtensionPurpose") && !extension {
+        // Real 1C can ignore a CFE loaded as CF and report a newly generated empty root.
+        fs::write(
+            data.join("loaded.cf"),
+            empty_configuration("f0000000-0000-4000-8000-000000000002"),
+        )
+        .map_err(|error| error.to_string())?;
+        return Ok(());
+    }
+    if contents.contains("ConfigurationExtensionPurpose") != extension {
+        return Err("fixture root does not match the selected load profile".to_owned());
+    }
+    let suffix = if extension { "cfe" } else { "cf" };
+    if Path::new(source)
+        .extension()
+        .is_none_or(|actual| actual != suffix)
+    {
+        return Err("fixture loader requires the detected native suffix".to_owned());
+    }
     fs::copy(source, data.join("loaded.cf")).map_err(|error| error.to_string())?;
     Ok(())
 }
@@ -67,35 +90,67 @@ fn export_configuration(arguments: &[OsString]) -> Result<(), String> {
         println!("[INFO] Exporting fixture XML...");
         eprintln!("[WARN] fixture export warning");
     }
-    if env_flag("FAKE_IBCMD_FAIL_EXPORT") {
-        return Err("[ERROR] fake export failure".to_owned());
-    }
-    let source = if let Some(source) = option_path(arguments, "--file=") {
-        if source
-            .extension()
-            .is_some_and(|extension| extension == "cf")
-        {
-            return Err("direct CF export is unsupported by this fixture".to_owned());
-        }
-        source
-    } else {
-        option_path(arguments, "--data=")
+    let direct = option_path(arguments, "--file=");
+    let source = match &direct {
+        Some(source) => source.clone(),
+        None => option_path(arguments, "--data=")
             .ok_or("missing --data")?
-            .join("loaded.cf")
+            .join("loaded.cf"),
     };
     let destination = arguments
         .last()
         .map(PathBuf::from)
         .ok_or("missing destination")?;
-    let contents = fs::read(&source).map_err(|error| error.to_string())?;
+    let mut contents = fs::read(&source).map_err(|error| error.to_string())?;
+    let external = String::from_utf8_lossy(&contents).contains("<External");
+    if direct.is_some() && !external {
+        fs::create_dir_all(&destination).map_err(|error| error.to_string())?;
+        let expected =
+            if String::from_utf8_lossy(&contents).contains("ConfigurationExtensionPurpose") {
+                "cfe"
+            } else {
+                "cf"
+            };
+        if source.extension().is_some_and(|suffix| {
+            matches!(suffix.to_str(), Some("cf" | "cfe")) && suffix != expected
+        }) {
+            contents = empty_configuration("f0000000-0000-4000-8000-000000000001").into_bytes();
+        }
+        if !env_flag("FAKE_IBCMD_NO_PROBE_DESCRIPTOR") {
+            fs::write(destination.join("Configuration.xml"), contents)
+                .map_err(|error| error.to_string())?;
+        }
+        fs::write(destination.join("probe-only.txt"), b"partial export")
+            .map_err(|error| error.to_string())?;
+        return Err("[ERROR] incomplete fixture file export".to_owned());
+    }
+    if env_flag("FAKE_IBCMD_FAIL_EXPORT") {
+        return Err("[ERROR] fake export failure".to_owned());
+    }
     wait_for_test_release();
-    if String::from_utf8_lossy(&contents).contains("<External") {
+    if external {
         fs::write(destination.with_extension("xml"), contents).map_err(|error| error.to_string())
     } else {
         fs::create_dir_all(&destination).map_err(|error| error.to_string())?;
+        if env_flag("FAKE_IBCMD_WRONG_EXPORTED_IDENTITY") {
+            contents = String::from_utf8_lossy(&contents)
+                .replace("<Name>", "<Name>Changed")
+                .into_bytes();
+        }
+        if !env_flag("FAKE_IBCMD_MISSING_DUMP_INFO") {
+            fs::write(destination.join("ConfigDumpInfo.xml"), b"<ConfigDumpInfo/>")
+                .map_err(|error| error.to_string())?;
+        }
         fs::write(destination.join("Configuration.xml"), contents)
             .map_err(|error| error.to_string())
     }
+}
+
+/// A misleading platform probe and load generate different empty roots rather than the input.
+fn empty_configuration(uuid: &str) -> String {
+    format!(
+        "<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><Configuration uuid=\"{uuid}\"><Properties><Name>Configuration</Name></Properties></Configuration></MetaDataObject>"
+    )
 }
 
 /// Append arguments in the stable form asserted by the parent integration tests.

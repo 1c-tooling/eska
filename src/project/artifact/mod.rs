@@ -1,5 +1,6 @@
 //! Native 1C artifacts unpacked into isolated, validated Designer XML sources.
 
+mod export;
 mod identity;
 mod replace;
 mod snapshot;

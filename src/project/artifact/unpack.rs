@@ -1,7 +1,8 @@
 //! Execute the verified 8.3 pipeline through the existing platform runner.
 
-use std::{ffi::OsString, fs, path::Path};
+use std::{fs, path::Path};
 
+use super::export::{export_sources, option, run};
 use super::{ArtifactError, Identity, identity::inspect_identity, io_error, staging::Staging};
 use crate::project::build::{Ibcmd, ProcessStream};
 
@@ -82,81 +83,4 @@ impl PreparedArtifact {
     pub fn sources(&self) -> std::path::PathBuf {
         self.staging.path.join("sources")
     }
-}
-
-/// Load CF into the isolated database because direct file export rejects some valid CFs.
-/// Extensions and external objects retain the platform's direct file export path.
-fn export_sources<F>(
-    tool: &Ibcmd,
-    pid: &Path,
-    data: &Path,
-    snapshot: &Path,
-    destination: &Path,
-    output: &mut F,
-) -> Result<(), ArtifactError>
-where
-    F: FnMut(ProcessStream, &[u8]),
-{
-    let mut arguments = vec![
-        "infobase".into(),
-        "config".into(),
-        "export".into(),
-        option("--data=", data),
-    ];
-    if snapshot
-        .extension()
-        .is_some_and(|extension| extension == "cf")
-    {
-        run(
-            tool,
-            pid,
-            "load-configuration",
-            vec![
-                "infobase".into(),
-                "config".into(),
-                "load".into(),
-                option("--data=", data),
-                snapshot.as_os_str().to_owned(),
-            ],
-            output,
-        )?;
-    } else {
-        arguments.push(option("--file=", snapshot));
-    }
-    arguments.push(destination.as_os_str().to_owned());
-    run(tool, pid, "export", arguments, output)
-}
-
-/// Construct one native argument without lossy path conversion or shell interpolation.
-fn option(prefix: &str, path: &Path) -> OsString {
-    let mut value = OsString::from(prefix);
-    value.push(path);
-    value
-}
-
-/// Preserve native diagnostics and stage information for the presentation layer.
-fn run<F>(
-    tool: &Ibcmd,
-    pid: &Path,
-    stage: &'static str,
-    arguments: Vec<OsString>,
-    output: &mut F,
-) -> Result<(), ArtifactError>
-where
-    F: FnMut(ProcessStream, &[u8]),
-{
-    let result = tool
-        .run_interruptible(arguments, pid, output)
-        .map_err(ArtifactError::Run)?;
-    if !result.status.success() {
-        return Err(ArtifactError::Platform {
-            stage,
-            output: format!(
-                "{}{}",
-                String::from_utf8_lossy(&result.stdout),
-                String::from_utf8_lossy(&result.stderr)
-            ),
-        });
-    }
-    Ok(())
 }
