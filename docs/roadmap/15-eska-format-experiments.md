@@ -40,7 +40,8 @@ IDE-host зависит от EF-18, оформление YAML — от EF-02/EF-
 анализатор → Explorer и приёмка MVP → fmt → VCS**. EF-24 — **DONE** по
 [итоговой матрице](../research/eska-format/structure-acceptance.md).
 EF-12 — **DONE** по [матрице managed forms и CF приёмке](../research/eska-format/managed-form-acceptance.md);
-текущая задача — **EF-23 (`IN_PROGRESS`)**, хранение запросов в `.sdbl`.
+EF-23 — **DONE** по [хранению и исполнению запросов](../research/eska-format/query-acceptance.md);
+следующий T83 — **NEXT**, версии проекта с тремя и четырьмя компонентами.
 EF-18 сохраняет `IN_PROGRESS` как незавершённую реализацию; её продолжение
 отложено до завершения блока структуры, результаты не отменяются. Решение
 заменяет прежний ограниченный CF-пилот и указание от 2026-10-10 не менять очередь.
@@ -107,7 +108,7 @@ EF-18 сохраняет `IN_PROGRESS` как незавершённую реа�
 | EF-20 | PLANNED | EF-12, EF-14, EF-23, EF-25; T82 | new/init, импорт и сборка CF/CFE/EPF/ERF через общий CLI |
 | EF-21 | PLANNED | EF-11, EF-20 | Устанавливаемый комплект MVP и выборочная установка |
 | EF-22 | PLANNED | EF-20; fmt — T26; релизы — T83, T84, T56, T32 | Подключение fmt после MVP; автоматические релизы отдельно |
-| EF-23 | IN_PROGRESS | EF-24 | Хранение запросов СКД/динамических списков в .sdbl и обратная сборка |
+| EF-23 | DONE | EF-24 | Хранение запросов СКД/динамических списков в .sdbl и обратная сборка |
 | EF-24 | DONE | EF-10, EF-07 | Завершённая структура исходников и миграция экспериментального профиля |
 | EF-25 | PLANNED | EF-12, EF-14, EF-15, EF-23 | Повторный импорт CF/CFE/EPF/ERF в существующий проект |
 | EF-26 | DEFERRED | EF-19, EF-23, EF-27 | RLS и обоснованные дополнительные тексты ресурсов |
@@ -1924,7 +1925,8 @@ commit и готовые артефакты. Непринятые внешние
 
 ## EF-23 Запросы СКД и динамических списков в `.sdbl`
 
-**Статус:** `IN_PROGRESS`; обязательная часть структуры MVP после EF-24/EF-12.
+**Статус:** `DONE` для configuration/Designer 2.20/logform 2.20 на 1С 8.3.27.2325;
+обязательная часть структуры MVP после EF-24/EF-12.
 По решению 2026-10-11 хранение/материализация отделены от анализа EF-27.
 [Контракт запросов](../research/eska-format/sdbl-queries.md) сохранён целиком,
 его критерии распределены между двумя последовательными задачами.
@@ -2009,6 +2011,18 @@ independent freeze/pins/values, conflicts, empty СКД/query, path collisions
 контролю; original input/settings/pins и repeated publication сохранены.
 EF-23 остаётся `IN_PROGRESS`: новый CF/build/dump
 и выполнение отчёта/списка ещё нужны; CLI defaults и очередь сохранены.
+
+[Седьмая часть: приёмка](../research/eska-format/query-acceptance.md) закрывает
+пункты 1–3 и платформенную часть пункта 6. В owned Q1 два `.sdbl` получили
+condition edit; independent native control и protected ESKA прошли CF/build/dump.
+Все 11 files/12 directories свежих dumps равны, кроме девяти configVersion;
+decoded queries сохранили новое условие, references отсутствуют. Настоящий
+клиент 1С исполнил compiled report и saved dynamic list: исходные `02`, `03`
+сменились на единственный `03` в обоих маршрутах. Missing query отказал до
+платформы и сохранил прежние CF/manifest; source/base/settings восстановлены
+точно. BSL CLI проверил два модуля без errors/warnings, три stylistic hints.
+EF-23 — `DONE` в принятом профиле; analysis — EF-27, CLI defaults прежние.
+Следующий T83 — `NEXT`, очередь остальных задач сохранена.
 
 Выделить сохранённый текст каждого набора СКД и произвольного запроса списка
 в `.sdbl` рядом с владельцем. Пакет сохранять целиком. Принять версию,

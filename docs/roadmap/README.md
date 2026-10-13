@@ -11,7 +11,7 @@
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка
 и анализ кода. После этого — fmt, затем VCS.
 
-**Текущая задача: EF-23 (`IN_PROGRESS`) — запросы СКД/динамических списков в `.sdbl`.**
+**Следующая задача: T83 (`NEXT`) — три и четыре компонента версии проекта.**
 [Native bindings и codec](../research/eska-format/native-query-codec.md) проверены
 на 823 формах/51 схеме СКД C1: 27 запросов СКД и 123 списка прошли no-op и
 text edits/reparse. [Версионированные ссылки](../research/eska-format/query-references.md)
@@ -26,7 +26,9 @@ import/export и адресный reader: 153 query resources и 150 `.sdbl` C1.
 файл через общий conflict-checked writer и принимает несохранённый текст.
 [Явная миграция](../research/eska-format/query-migration.md) переносит working
 source и independently pinned base, standalone проект/workspace в map 5.
-Далее — отдельная платформенная приёмка; CLI defaults сохранены.
+[EF-23 принята](../research/eska-format/query-acceptance.md): изменённые условия
+СКД/списка прошли независимый CF/build/dump и реальное исполнение на 1С
+8.3.27.2325. CLI defaults сохранены; анализ потребителей остаётся EF-27.
 [EF-12 принята](../research/eska-format/managed-form-acceptance.md) для C1/logform 2.20:
 единый form.yaml, reader/codec/editor, protected writer/source map, явная миграция
 и независимый CF/build/dump изменённой формы на 1С 8.3.27.2325.
@@ -649,7 +651,8 @@ VS Code extension для навигации по Designer XML.
   устранением дублей и порядком метаданных Конфигуратора;
 - `DONE`: `T35` — автоматическое сохранение и восстановление незакоммиченного
   состояния при переключении задач;
-- `PLANNED`: `T83`, `T84` — две схемы версии и версия внешнего объекта через модуль;
+- `NEXT`: `T83` — три и четыре компонента версии проекта;
+- `PLANNED`: `T84` — версия внешнего объекта через модуль;
 - `PLANNED`: `T56` — автоматический план версии релиза 1С, подготовка PR/MR — T32;
   задача сохранена в backlog после переключения приоритета на IDE;
 - `IN-PROGRESS`: `T57` — обновление установленного бинарника командой `eska update`
@@ -746,7 +749,7 @@ TUI разделён на обработку клавиш, отрисовку и
 
 | Порядок | Задачи | Результат |
 |---|---|---|
-| 1 | EF-24 (`DONE`) → EF-12 (`DONE`) → EF-23 (`IN_PROGRESS`) → T83/T84 → EF-14 → EF-15 → EF-25 → EF-20 | Завершённая структура, миграция, new/init, повторный импорт и сборка CF/CFE/EPF/ERF |
+| 1 | EF-24 (`DONE`) → EF-12 (`DONE`) → EF-23 (`DONE`) → T83/T84 → EF-14 → EF-15 → EF-25 → EF-20 | Завершённая структура, миграция, new/init, повторный импорт и сборка CF/CFE/EPF/ERF |
 | 2 | Продолжить EF-18 → EF-27 | Общий IDE/batch анализатор и контекстная проверка .sdbl |
 | 3 | EF-11 → EF-21 → EF-16 | Установленный Explorer: дерево, поддержка, подсветка, анализ; приёмка MVP |
 | 4 | T26 → форматирование в EF-22 | fmt для CLI и IDE |
@@ -922,7 +925,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T80 | DONE | Иконки метаданных | [14-vscode-extension.md](14-vscode-extension.md) |
 | T81 | IN-PROGRESS | Производительность интерфейса, приёмка и VSIX | [14-vscode-extension.md](14-vscode-extension.md) |
 | T82 | DONE | Создание и обновление из файлов 1С | [02-project-creation.md](02-project-creation.md) |
-| T83 | PLANNED | Версии проекта `x.y.z` и `x.y.z.build` | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
+| T83 | NEXT | Версии проекта `x.y.z` и `x.y.z.build` | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T84 | PLANNED | Обязательная `Версия()` внешнего отчёта/обработки | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в

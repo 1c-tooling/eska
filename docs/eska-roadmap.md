@@ -2228,7 +2228,8 @@ cargo test
 # 14. Ближайший порядок задач после текущего состояния
 
 Реестр статусов и зависимости — в [трекере](roadmap/README.md#ближайший-порядок-выполнения)
-и [очереди EF](roadmap/15-eska-format-experiments.md). **Текущая задача — EF-23 (`IN_PROGRESS`);
+и [очереди EF](roadmap/15-eska-format-experiments.md). **Следующий T83 — `NEXT`;
+EF-23 принята по [хранению и исполнению запросов](research/eska-format/query-acceptance.md);
 EF-24 принята по [матрице/DoD](research/eska-format/structure-acceptance.md),
 EF-12 — по [матрице форм и CF циклу](research/eska-format/managed-form-acceptance.md).**
 
@@ -2241,7 +2242,8 @@ import/export и адресный reader. [Protected writer/source map 4](resear
 [Точечный editor](research/eska-format/query-edit.md) работает с saved/unsaved
 plain text через общий conflict-checked writer. [Явная миграция](research/eska-format/query-migration.md)
 переносит source/base/project/workspace в map 5 с отдельными pins и exact settings.
-Отдельный платформенный цикл EF-23 ещё нужен; CLI defaults сохранены.
+CF/build/dump и исполнение изменённых условий СКД/списка подтверждены;
+контекстный анализ остаётся EF-27, CLI defaults сохранены.
 
 | Этап | Задачи |
 |---|---|

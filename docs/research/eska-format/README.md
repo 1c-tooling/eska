@@ -2,7 +2,8 @@
 
 [Структура и MVP](project-layout.md) фиксируют приоритет от 2026-10-11:
 структура и файловый цикл CF/CFE/EPF/ERF → анализатор → Explorer → fmt → VCS.
-Текущая задача — EF-23 (`IN_PROGRESS`): [native slots/query codec](native-query-codec.md)
+EF-23 — [DONE в принятом профиле](query-acceptance.md); следующий T83 — `NEXT`.
+[Native slots/query codec](native-query-codec.md)
 проверены на 150 запросах C1; [ссылки версии 1](query-references.md) перенесли
 те же values в plain `.sdbl` с disk no-op/edit/reparse.
 [Проектная карта 5](query-project.md) подключает opt-in import/export и адресный
@@ -10,7 +11,8 @@ reader. [Protected writer и source map 4](query-protected.md) сохраняю�
 права и дают точные plain координаты. [Точечный editor](query-edit.md) меняет
 один `.sdbl` с проверкой Resource прав/pin/conflicts. [Явная миграция](query-migration.md)
 раздельно переносит source/base и сохраняет settings проекта/workspace.
-Новый платформенный цикл ещё нужен; CLI defaults сохранены.
+Изменённые условия СКД/списка прошли CF/build/dump и реальное исполнение;
+контекстный analysis scope остаётся EF-27, CLI defaults сохранены.
 [EF-12 принята](managed-form-acceptance.md)
 для configuration/C1/logform 2.20 на 1С 8.3.27.2325.
 [Native ID/ссылки](managed-form-inventory.md) и
@@ -73,7 +75,8 @@ identities и координаты сохраняются.
 Другие structural profiles и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.
-EF-23 — `IN_PROGRESS`, EF-27 — `PLANNED`; текущие реализации и результаты перечислены ниже.
+EF-23 — `DONE` в [принятом профиле](query-acceptance.md), EF-27 — `PLANNED`;
+реализации и результаты перечислены ниже.
 
 [Именованные свойства EF-24](readable-layout.md) используют descriptor schema 2
 с отдельными native details, общими CST/semantic coordinates и обеими явными

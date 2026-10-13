@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "stage": "EF-23-part-7",
+  "date": "2026-10-13",
+  "accepted": true,
+  "profile": {
+    "project_type": "configuration",
+    "designer_version": "2.20",
+    "logform_version": "2.20",
+    "platform": "8.3.27.2325"
+  },
+  "project_map_version": 5,
+  "source_map_version": 4,
+  "rules_version": 1,
+  "corpora": {
+    "C1": {
+      "query_resources": 153,
+      "plain_files": 150,
+      "migration_native_files": 8769,
+      "migration_native_directories": 8064,
+      "allowed_queries": 46,
+      "denied_queries": 104
+    },
+    "Q1": {
+      "accepted_base_and_original_unchanged": true,
+      "all_native_bytes_equal_independent_control": true,
+      "changed_native_resources": 2,
+      "changed_plain_files": 2,
+      "native_directories": 12,
+      "native_files": 11,
+      "only_plain_files_changed": true
+    }
+  },
+  "fresh_dumps": {
+    "left_files": 11,
+    "right_files": 11,
+    "left_directories": 12,
+    "right_directories": 12,
+    "missing": [],
+    "extra": [],
+    "changed": [],
+    "dump_versions": {
+      "versioned_entries": 9,
+      "changed_versions": 9,
+      "all_other_bytes_equal": true
+    },
+    "accepted": true
+  },
+  "runtime": {
+    "original": {
+      "report_codes": [
+        "02",
+        "03"
+      ],
+      "list_codes": [
+        "02",
+        "03"
+      ]
+    },
+    "control": {
+      "report_codes": [
+        "03"
+      ],
+      "list_codes": [
+        "03"
+      ]
+    },
+    "eska": {
+      "report_codes": [
+        "03"
+      ],
+      "list_codes": [
+        "03"
+      ]
+    }
+  },
+  "missing_query": {
+    "exit_code": 1,
+    "error_code": "source_query_value_missing",
+    "previous_artifact_and_manifest_preserved": true,
+    "source_and_base_restored_exactly": true,
+    "exact_project_settings_preserved": true
+  },
+  "version_preserved": "1.0.0.1",
+  "source_markup_absent_from_fresh_native_resources": true,
+  "changed_query_conditions_preserved_after_platform": true,
+  "bsl_diagnostics": {
+    "tool": "bsl-analyzer-app",
+    "version": "0.3.2",
+    "files": 2,
+    "failed_files": 0,
+    "severity_counts": {
+      "Hint": 3
+    },
+    "workspace_mcp_available": false,
+    "platform_help": "built_in_interface_facts"
+  },
+  "stages": [
+    {
+      "stage": "final-seed-build",
+      "exit_code": 0,
+      "seconds": 3.84
+    },
+    {
+      "stage": "final-seed-load",
+      "exit_code": 0,
+      "seconds": 1.82
+    },
+    {
+      "stage": "final-seed-apply",
+      "exit_code": 0,
+      "seconds": 1.82
+    },
+    {
+      "stage": "final-seed-runtime",
+      "exit_code": 0,
+      "seconds": 1.61
+    },
+    {
+      "stage": "dump-final-seed",
+      "exit_code": 0,
+      "seconds": 5.81
+    },
+    {
+      "stage": "build-control-final",
+      "exit_code": 0,
+      "seconds": 3.91
+    },
+    {
+      "stage": "dump-control-final",
+      "exit_code": 0,
+      "seconds": 5.74
+    },
+    {
+      "stage": "build-eska-final",
+      "exit_code": 0,
+      "seconds": 3.92
+    },
+    {
+      "stage": "dump-eska-final",
+      "exit_code": 0,
+      "seconds": 6.13
+    },
+    {
+      "stage": "load-control",
+      "exit_code": 0,
+      "seconds": 1.93
+    },
+    {
+      "stage": "apply-control",
+      "exit_code": 0,
+      "seconds": 1.87
+    },
+    {
+      "stage": "runtime-control",
+      "exit_code": 0,
+      "seconds": 1.66
+    },
+    {
+      "stage": "load-eska",
+      "exit_code": 0,
+      "seconds": 1.88
+    },
+    {
+      "stage": "apply-eska",
+      "exit_code": 0,
+      "seconds": 1.86
+    },
+    {
+      "stage": "runtime-eska",
+      "exit_code": 0,
+      "seconds": 1.63
+    }
+  ],
+  "last_application_unit_tests_passed": 708,
+  "last_application_integration_tests_passed": 570,
+  "last_sdk_tests_passed": 359,
+  "existing_ignored": 24,
+  "query_semantic_analysis_accepted": false,
+  "cli_defaults_changed": false,
+  "cfe_epf_erf_or_other_corpora_accepted": false,
+  "visual_report_layout_reviewed": false
+}
