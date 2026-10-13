@@ -2,7 +2,9 @@
 
 [Структура и MVP](project-layout.md) фиксируют приоритет от 2026-10-11:
 структура и файловый цикл CF/CFE/EPF/ERF → анализатор → Explorer → fmt → VCS.
-EF-23 — [DONE в принятом профиле](query-acceptance.md); следующий T83 — `NEXT`.
+EF-23 — [DONE в принятом профиле](query-acceptance.md).
+T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
+следующий T84 — `NEXT`, источник версии EPF/ERF в модуле объекта.
 [Native slots/query codec](native-query-codec.md)
 проверены на 150 запросах C1; [ссылки версии 1](query-references.md) перенесли
 те же values в plain `.sdbl` с disk no-op/edit/reparse.

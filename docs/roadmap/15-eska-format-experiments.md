@@ -41,7 +41,8 @@ IDE-host зависит от EF-18, оформление YAML — от EF-02/EF-
 [итоговой матрице](../research/eska-format/structure-acceptance.md).
 EF-12 — **DONE** по [матрице managed forms и CF приёмке](../research/eska-format/managed-form-acceptance.md);
 EF-23 — **DONE** по [хранению и исполнению запросов](../research/eska-format/query-acceptance.md);
-текущий T83 — **IN_PROGRESS**, версии проекта с тремя и четырьмя компонентами.
+T83 — **DONE** по [CF/CFE циклу двух схем версии](../research/eska-format/project-version.md);
+следующий T84 — **NEXT**, источник версии EPF/ERF в модуле объекта.
 EF-18 сохраняет `IN_PROGRESS` как незавершённую реализацию; её продолжение
 отложено до завершения блока структуры, результаты не отменяются. Решение
 заменяет прежний ограниченный CF-пилот и указание от 2026-10-10 не менять очередь.

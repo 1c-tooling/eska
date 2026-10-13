@@ -1821,7 +1821,8 @@ T83 добавляет схему `x.y.z` наряду с существующе
 workspace и переопределяется member; mismatch отказывается без записи.
 Прежние четырёхкомпонентные ответы JSON сохраняют schema 1, новые и смешанные
 ответы используют schema 2 с `version_scheme`; фиктивный build не добавляется.
-Платформенная приёмка T83 ещё выполняется.
+Платформенная приёмка T83 завершена для CF/CFE на 1С 8.3.27.2325:
+[обе схемы сохранили точные строки после build/dump](research/eska-format/project-version.md).
 
 T84 меняет источник версии внешнего отчёта/обработки: обязательная неэкспортная
 функция `Версия()` без параметров в модуле объекта возвращает строковый литерал.
@@ -2231,7 +2232,8 @@ cargo test
 # 14. Ближайший порядок задач после текущего состояния
 
 Реестр статусов и зависимости — в [трекере](roadmap/README.md#ближайший-порядок-выполнения)
-и [очереди EF](roadmap/15-eska-format-experiments.md). **Текущий T83 — `IN_PROGRESS`;
+и [очереди EF](roadmap/15-eska-format-experiments.md). **Следующий T84 — `NEXT`;
+T83 принята по [CF/CFE циклу двух схем версии](research/eska-format/project-version.md);
 EF-23 принята по [хранению и исполнению запросов](research/eska-format/query-acceptance.md);
 EF-24 принята по [матрице/DoD](research/eska-format/structure-acceptance.md),
 EF-12 — по [матрице форм и CF циклу](research/eska-format/managed-form-acceptance.md).**

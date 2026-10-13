@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "stage": "T83",
+  "date": "2026-10-13",
+  "accepted": true,
+  "implementation_commit": "bd22072",
+  "platform": "8.3.27.2325",
+  "source_format": "designer-xml",
+  "cases": [
+    {
+      "project_type": "configuration",
+      "scheme": "x.y.z",
+      "initial": "1.2.3",
+      "bump": "minor",
+      "expected": "1.3.0",
+      "dumped": "1.3.0",
+      "descriptor_version": "2.20",
+      "files": 11,
+      "directories": 12,
+      "manifest_version_exact": true,
+      "artifact_checksum_matches": true,
+      "version_edit_preserves_other_bytes": true,
+      "human_locales": [
+        "ru-RU",
+        "en-US"
+      ]
+    },
+    {
+      "project_type": "configuration",
+      "scheme": "x.y.z.build",
+      "initial": "01.02.003.0004",
+      "bump": "minor",
+      "expected": "01.03.001.0001",
+      "dumped": "01.03.001.0001",
+      "descriptor_version": "2.20",
+      "files": 11,
+      "directories": 12,
+      "manifest_version_exact": true,
+      "artifact_checksum_matches": true,
+      "version_edit_preserves_other_bytes": true,
+      "human_locales": [
+        "ru-RU",
+        "en-US"
+      ]
+    },
+    {
+      "project_type": "extension",
+      "scheme": "x.y.z",
+      "initial": "1.2.3",
+      "bump": "minor",
+      "expected": "1.3.0",
+      "dumped": "1.3.0",
+      "descriptor_version": "2.20",
+      "files": 4,
+      "directories": 4,
+      "manifest_version_exact": true,
+      "artifact_checksum_matches": true,
+      "version_edit_preserves_other_bytes": true,
+      "human_locales": [
+        "ru-RU",
+        "en-US"
+      ]
+    },
+    {
+      "project_type": "extension",
+      "scheme": "x.y.z.build",
+      "initial": "01.02.003.0004",
+      "bump": "minor",
+      "expected": "01.03.001.0001",
+      "dumped": "01.03.001.0001",
+      "descriptor_version": "2.20",
+      "files": 4,
+      "directories": 4,
+      "manifest_version_exact": true,
+      "artifact_checksum_matches": true,
+      "version_edit_preserves_other_bytes": true,
+      "human_locales": [
+        "ru-RU",
+        "en-US"
+      ]
+    }
+  ],
+  "positive_platform_stages": 26,
+  "negative": [
+    {
+      "locale": "ru",
+      "read_exit": 1,
+      "bump_exit": 1,
+      "build_exit": 1,
+      "platform_events": 0,
+      "previous_pair_unchanged": true,
+      "source_unchanged": true
+    },
+    {
+      "locale": "en",
+      "read_exit": 1,
+      "bump_exit": 1,
+      "build_exit": 1,
+      "platform_events": 0,
+      "previous_pair_unchanged": true,
+      "source_unchanged": true
+    }
+  ],
+  "gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.15
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 0.29
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 0.4
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 33.81
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 41.26
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 14.46
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 3.63
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.36
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 5.28
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 4.57
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 27.34
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 4.87
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.28
+    }
+  ],
+  "tests": {
+    "unit_passed": 716,
+    "integration_passed": 575,
+    "project_tool_passed": 44,
+    "build_tool_passed": 10,
+    "sdk_passed": 359,
+    "existing_ignored": 24
+  },
+  "limits": [
+    "Only the tested platform and Designer profile are accepted here",
+    "External object module versions remain T84",
+    "ESKA version source adapter remains EF-14",
+    "Automatic release preparation remains T56/T32"
+  ]
+}
