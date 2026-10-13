@@ -7,6 +7,8 @@ use eska::project::{
 
 use crate::support::TestDir;
 
+mod external;
+
 const PREFIX: &str = "\u{feff}<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" version=\"2.20\">\r\n\t<Configuration uuid=\"12345678-1234-1234-1234-123456789012\">\r\n\t\t<Properties>\r\n\t\t\t<Name>Пример</Name>\r\n\t\t\t<Version>";
 const SUFFIX: &str = "</Version>\r\n\t\t\t<Comment>Не менять</Comment>\r\n\t\t</Properties>\r\n\t\t<ChildObjects><Catalog><Properties><Version>9.9.9.9</Version></Properties></Catalog></ChildObjects>\r\n\t</Configuration>\r\n</MetaDataObject>\r\n";
 
@@ -126,6 +128,13 @@ fn supports_named_external_descriptors() {
             format!("<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><{tag}><Properties><Name>Пример</Name><Version>1.0.1.1</Version></Properties></{tag}></MetaDataObject>"),
         )
         .expect("descriptor");
+        let ext = source.join("ИменованныйОбъект/Ext");
+        fs::create_dir_all(&ext).unwrap();
+        fs::write(
+            ext.join("ObjectModule.bsl"),
+            "Функция Версия() Экспорт Возврат \"1.0.1.1\"; КонецФункции",
+        )
+        .unwrap();
         let project = discovery::discover(&fixture.0).expect("project");
         assert_eq!(
             version::inspect(&project).unwrap().version.to_string(),

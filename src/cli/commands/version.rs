@@ -5,6 +5,8 @@ use std::{path::Path, process::ExitCode};
 use clap::{Args, Subcommand, ValueEnum};
 use serde::Serialize;
 
+mod migration;
+
 use crate::{
     cli::{
         diagnostics,
@@ -41,6 +43,8 @@ pub(in crate::cli) struct VersionArgs {
 enum VersionCommand {
     #[command(disable_help_flag = true)]
     Bump(VersionBumpArgs),
+    #[command(disable_help_flag = true)]
+    Migrate(migration::MigrationArgs),
 }
 
 #[derive(Debug, Args)]
@@ -142,6 +146,9 @@ impl VersionArgs {
                 self.format,
                 localizer,
             ),
+            Some(VersionCommand::Migrate(arguments)) => {
+                migration::run(&selection, arguments, self.format, localizer)
+            }
         }
     }
 }
@@ -320,6 +327,7 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
                 })
                 .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
         })
+        .mut_subcommand("migrate", |command| migration::localize(command, localizer))
 }
 
 /// Return a stable project-relative descriptor path for presentation.
@@ -448,7 +456,40 @@ pub(in crate::cli) fn version_error_message(error: &VersionError, localizer: &Lo
                 ("actual", LocalizationValue::Text(actual.as_str())),
             ],
         ),
+        VersionError::ModuleContract { .. }
+        | VersionError::ModuleMissing { .. }
+        | VersionError::ModuleProtected { .. }
+        | VersionError::ModuleAmbiguous { .. }
+        | VersionError::Publication { .. }
+        | VersionError::MigrationUnsupported => contract_error_message(error, localizer),
     }
+}
+
+/// Show a source coordinate and an actionable repair for new external-version failures.
+fn contract_error_message(error: &VersionError, localizer: &Localizer) -> String {
+    let reason = localizer.text(&format!(
+        "version-reason-{}",
+        error.code().replace('_', "-")
+    ));
+    let hint = localizer.text(&format!(
+        "version-fix-{}",
+        error.remediation().replace('_', "-")
+    ));
+    let path = error
+        .path()
+        .map_or_else(String::new, |path| path.to_string_lossy().into_owned());
+    let range = error.range().map_or_else(String::new, |range| {
+        format!("{}..{}", range.start, range.end)
+    });
+    localizer.format(
+        "version-contract-error",
+        &[
+            ("path", LocalizationValue::Text(&path)),
+            ("range", LocalizationValue::Text(&range)),
+            ("reason", LocalizationValue::Text(&reason)),
+            ("hint", LocalizationValue::Text(&hint)),
+        ],
+    )
 }
 
 /// Format a diagnostic containing one filesystem path.

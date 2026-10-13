@@ -110,7 +110,14 @@ pub(super) fn capture_source(
     .map_err(ManifestError::SnapshotProject)?;
     let version = match version::inspect(&snapshot_project) {
         Ok(info) => VersionDocument::available(info.version.to_string()),
-        Err(source) if project.configuration().version_scheme().is_some() => {
+        Err(source)
+            if project.configuration().version_scheme().is_some()
+                || matches!(
+                    project.configuration().project_type(),
+                    crate::project_core::ProjectType::Processing
+                        | crate::project_core::ProjectType::Report
+                ) =>
+        {
             return Err(ManifestError::VersionPolicy(source));
         }
         Err(_) => VersionDocument::unavailable(),

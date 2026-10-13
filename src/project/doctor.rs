@@ -44,6 +44,23 @@ pub struct Check {
     pub source: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remediation: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<CheckLocation>,
+}
+
+/// Original native source coordinates; absent ranges denote filesystem diagnostics.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct CheckLocation {
+    pub path: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub range: Option<ByteRange>,
+}
+
+/// Byte offsets include the input's leading BOM and retain UTF-8 boundaries.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct ByteRange {
+    pub byte_start: usize,
+    pub byte_end: usize,
 }
 
 impl Check {
@@ -65,6 +82,7 @@ impl Check {
             actual: None,
             source: None,
             remediation: None,
+            location: None,
         }
     }
 
@@ -94,6 +112,19 @@ impl Check {
     #[must_use]
     pub const fn with_remediation(mut self, remediation: &'static str) -> Self {
         self.remediation = Some(remediation);
+        self
+    }
+
+    /// Attach a native file without mixing its coordinates into an error's wording.
+    #[must_use]
+    pub fn with_location(mut self, path: &Path, range: Option<std::ops::Range<usize>>) -> Self {
+        self.location = Some(CheckLocation {
+            path: path.to_string_lossy().into_owned(),
+            range: range.map(|range| ByteRange {
+                byte_start: range.start,
+                byte_end: range.end,
+            }),
+        });
         self
     }
 }
@@ -175,8 +206,42 @@ pub fn inspect_project(
         context(inspect_descriptor(project)),
     ];
 
+    if matches!(
+        project.configuration().project_type(),
+        ProjectType::Processing | ProjectType::Report
+    ) {
+        checks.push(context(inspect_external_version(project)));
+    }
     checks.extend(inspect_build(project, project_name, tools));
     checks
+}
+
+/// The same module contract is checked before relying on any installed platform tools.
+fn inspect_external_version(project: &Project) -> Check {
+    match super::version::inspect(project) {
+        Ok(info) => Check::new(
+            "project.version",
+            CheckStatus::Pass,
+            "version-contract-valid",
+            &["version", "build"],
+        )
+        .with_values(None, Some(info.version.to_string()))
+        .with_location(&info.path, None),
+        Err(error) => {
+            let mut check = Check::new(
+                "project.version",
+                CheckStatus::Fail,
+                "version-contract-invalid",
+                &["version", "build"],
+            )
+            .with_values(None, Some(error.code().to_owned()))
+            .with_remediation(error.remediation());
+            if let Some(path) = error.path() {
+                check = check.with_location(path, error.range());
+            }
+            check
+        }
+    }
 }
 
 /// Inspect platform requirements shared by build and patch commands.

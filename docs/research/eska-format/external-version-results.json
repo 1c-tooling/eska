@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "stage": "T84",
+  "date": "2026-10-13",
+  "accepted": true,
+  "platform": "8.3.27.2325",
+  "source_format": "designer-xml",
+  "descriptor_version": "2.20",
+  "cases": [
+    {
+      "project_type": "processing",
+      "artifact_type": "epf",
+      "scheme": "x.y.z",
+      "initial": "1.2.3",
+      "bump": "minor",
+      "expected": "1.3.0",
+      "dumped": "1.3.0",
+      "runtime_version": "1.3.0",
+      "runtime_registration_version": "1.3.0",
+      "export_preserved": true,
+      "manifest_version_exact": true,
+      "artifact_checksum_matches": true,
+      "bump_preserves_other_bytes": true,
+      "migration_idempotent": true,
+      "preview_locale_independent": true,
+      "human_locales": [
+        "ru-RU",
+        "en-US"
+      ]
+    },
+    {
+      "project_type": "processing",
+      "artifact_type": "epf",
+      "scheme": "x.y.z.build",
+      "initial": "01.02.003.0004",
+      "bump": "minor",
+      "expected": "01.03.001.0001",
+      "dumped": "01.03.001.0001",
+      "runtime_version": "01.03.001.0001",
+      "runtime_registration_version": "01.03.001.0001",
+      "export_preserved": true,
+      "manifest_version_exact": true,
+      "artifact_checksum_matches": true,
+      "bump_preserves_other_bytes": true,
+      "migration_idempotent": true,
+      "preview_locale_independent": true,
+      "human_locales": [
+        "ru-RU",
+        "en-US"
+      ]
+    },
+    {
+      "project_type": "report",
+      "artifact_type": "erf",
+      "scheme": "x.y.z",
+      "initial": "1.2.3",
+      "bump": "minor",
+      "expected": "1.3.0",
+      "dumped": "1.3.0",
+      "runtime_version": "1.3.0",
+      "runtime_registration_version": "1.3.0",
+      "export_preserved": true,
+      "manifest_version_exact": true,
+      "artifact_checksum_matches": true,
+      "bump_preserves_other_bytes": true,
+      "migration_idempotent": true,
+      "preview_locale_independent": true,
+      "human_locales": [
+        "ru-RU",
+        "en-US"
+      ]
+    },
+    {
+      "project_type": "report",
+      "artifact_type": "erf",
+      "scheme": "x.y.z.build",
+      "initial": "01.02.003.0004",
+      "bump": "minor",
+      "expected": "01.03.001.0001",
+      "dumped": "01.03.001.0001",
+      "runtime_version": "01.03.001.0001",
+      "runtime_registration_version": "01.03.001.0001",
+      "export_preserved": true,
+      "manifest_version_exact": true,
+      "artifact_checksum_matches": true,
+      "bump_preserves_other_bytes": true,
+      "migration_idempotent": true,
+      "preview_locale_independent": true,
+      "human_locales": [
+        "ru-RU",
+        "en-US"
+      ]
+    }
+  ],
+  "positive_cycle_stages": 40,
+  "runtime": {
+    "client": "thick_client",
+    "owned_infobase": true,
+    "compiled_artifacts": 4,
+    "status": "success",
+    "bsp_registration_subsystem_integrated": false
+  },
+  "native_negative": {
+    "locales": [
+      "ru-RU",
+      "en-US"
+    ],
+    "code": "project_version_policy_invalid",
+    "contract_code": "version_function_not_exported",
+    "source_and_previous_pair_unchanged": true,
+    "before_platform": true
+  },
+  "rust": {
+    "gates": 18,
+    "all_passed": true,
+    "unit": 729,
+    "integration": 584,
+    "project_tool": 44,
+    "build_tool": 12,
+    "sdk": 359,
+    "adapter": 82,
+    "ignored": 24
+  },
+  "bsl_analyzer": {
+    "version": "0.3.2",
+    "workspace_mcp_available": false,
+    "reference_mcp_used": true,
+    "external_modules": 4,
+    "runtime_probe_modules": 2,
+    "failed_files": 0,
+    "error_severity_diagnostics": 0,
+    "other_diagnostics_present": true
+  },
+  "limits": [
+    "syntax_confirmed_registration_profile",
+    "eska_source_adapter_in_EF14",
+    "automatic_release_in_T56_T32",
+    "no_production_bsp_registration_acceptance",
+    "platform_8.3.27.2325_only"
+  ]
+}

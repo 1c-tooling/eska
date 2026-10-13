@@ -250,6 +250,7 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         "analysis_scope_unsupported" => Some("tool-error-analysis-scope"),
         "source_changes_excluded" => Some("tool-error-exclusions"),
         "platform_version_missing" => Some("tool-error-platform-version-missing"),
+        "project_version_policy_invalid" => Some("tool-error-project-version-policy"),
         "platform_not_found"
         | "platform_version_mismatch"
         | "platform_executable_invalid"

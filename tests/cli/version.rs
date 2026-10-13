@@ -4,6 +4,8 @@ use serde_json::Value;
 
 use crate::support::TestDir;
 
+mod migration;
+
 /// Create a minimal versioned Designer XML configuration project.
 fn project(version: &str) -> TestDir {
     let fixture = TestDir::new();
@@ -45,14 +47,28 @@ fn workspace(report_version: &str, processing_version: &str) -> TestDir {
     .expect("processing config");
     fs::write(
         report.join("SalesReport.xml"),
-        format!("<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><ExternalReport><Properties><Name>SalesReport</Name><Version>{report_version}</Version></Properties></ExternalReport></MetaDataObject>"),
+        "<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><ExternalReport><Properties><Name>SalesReport</Name></Properties></ExternalReport></MetaDataObject>",
     )
     .expect("report descriptor");
     fs::write(
         processing.join("ImportOrders.xml"),
-        format!("<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><ExternalDataProcessor><Properties><Name>ImportOrders</Name><Version>{processing_version}</Version></Properties></ExternalDataProcessor></MetaDataObject>"),
+        "<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><ExternalDataProcessor><Properties><Name>ImportOrders</Name></Properties></ExternalDataProcessor></MetaDataObject>",
     )
     .expect("processing descriptor");
+    for (root, name, value) in [
+        (&report, "SalesReport", report_version),
+        (&processing, "ImportOrders", processing_version),
+    ] {
+        let ext = root.join(name).join("Ext");
+        fs::create_dir_all(&ext).unwrap();
+        fs::write(
+            ext.join("ObjectModule.bsl"),
+            format!(
+                "\u{feff}Функция Версия() Экспорт\r\n\tВозврат \"{value}\";\r\nКонецФункции\r\n"
+            ),
+        )
+        .unwrap();
+    }
     fixture
 }
 
@@ -160,7 +176,9 @@ fn mixed_workspace_inherits_scheme_and_respects_member_override() {
         "[project]\nname = 'import-orders'\ntype = 'processing'\nsource = '.'\n",
     )
     .unwrap();
-    let path = fixture.0.join("src/import-orders/ImportOrders.xml");
+    let path = fixture
+        .0
+        .join("src/import-orders/ImportOrders/Ext/ObjectModule.bsl");
     let before = fs::read(&path).unwrap();
     for locale in ["ru", "en"] {
         let output = eska(
@@ -178,8 +196,12 @@ fn mixed_workspace_inherits_scheme_and_respects_member_override() {
 #[test]
 fn workspace_version_json_lists_all_members_in_manifest_order() {
     let fixture = workspace("1.2.3.4", "2.3.4.5");
-    let report_path = fixture.0.join("src/sales-report/SalesReport.xml");
-    let processing_path = fixture.0.join("src/import-orders/ImportOrders.xml");
+    let report_path = fixture
+        .0
+        .join("src/sales-report/SalesReport/Ext/ObjectModule.bsl");
+    let processing_path = fixture
+        .0
+        .join("src/import-orders/ImportOrders/Ext/ObjectModule.bsl");
     let before = [
         fs::read(&report_path).expect("report before"),
         fs::read(&processing_path).expect("processing before"),
@@ -197,7 +219,10 @@ fn workspace_version_json_lists_all_members_in_manifest_order() {
     assert_eq!(document["projects"][0]["name"], "sales-report");
     assert_eq!(document["projects"][0]["type"], "report");
     assert_eq!(document["projects"][0]["version"], "1.2.3.4");
-    assert_eq!(document["projects"][0]["descriptor"], "SalesReport.xml");
+    assert_eq!(
+        document["projects"][0]["descriptor"],
+        "SalesReport/Ext/ObjectModule.bsl"
+    );
     assert_eq!(document["projects"][1]["name"], "import-orders");
     assert_eq!(document["projects"][1]["type"], "processing");
     assert_eq!(document["projects"][1]["version"], "2.3.4.5");
@@ -224,7 +249,7 @@ fn workspace_version_selects_current_named_or_all_members() {
         let document: Value = serde_json::from_slice(&selected.stdout).expect("JSON");
         assert_eq!(document["schema_version"], 1);
         assert_eq!(document["version"], "2.3.4.5");
-        assert_eq!(document["descriptor"], "ImportOrders.xml");
+        assert_eq!(document["descriptor"], "ImportOrders/Ext/ObjectModule.bsl");
         assert!(document.get("projects").is_none());
     }
 
@@ -256,8 +281,12 @@ fn workspace_version_selects_current_named_or_all_members() {
 #[test]
 fn workspace_bump_requires_and_changes_exactly_one_member() {
     let fixture = workspace("1.2.3.4", "2.3.4.5");
-    let report_path = fixture.0.join("src/sales-report/SalesReport.xml");
-    let processing_path = fixture.0.join("src/import-orders/ImportOrders.xml");
+    let report_path = fixture
+        .0
+        .join("src/sales-report/SalesReport/Ext/ObjectModule.bsl");
+    let processing_path = fixture
+        .0
+        .join("src/import-orders/ImportOrders/Ext/ObjectModule.bsl");
     let report_before = fs::read(&report_path).unwrap();
     let processing_before = fs::read(&processing_path).unwrap();
 
@@ -288,12 +317,12 @@ fn workspace_bump_requires_and_changes_exactly_one_member() {
     assert!(selected.status.success(), "{selected:?}");
     let document: Value = serde_json::from_slice(&selected.stdout).expect("JSON");
     assert_eq!(document["schema_version"], 1);
-    assert_eq!(document["descriptor"], "SalesReport.xml");
+    assert_eq!(document["descriptor"], "SalesReport/Ext/ObjectModule.bsl");
     assert!(document.get("projects").is_none());
     assert!(
         fs::read_to_string(&report_path)
             .unwrap()
-            .contains("<Version>1.2.4.1</Version>")
+            .contains("Возврат \"1.2.4.1\"")
     );
     assert_eq!(fs::read(&processing_path).unwrap(), processing_before);
 
@@ -306,15 +335,19 @@ fn workspace_bump_requires_and_changes_exactly_one_member() {
     assert!(
         fs::read_to_string(&processing_path)
             .unwrap()
-            .contains("<Version>2.4.1.1</Version>")
+            .contains("Возврат \"2.4.1.1\"")
     );
 }
 
 #[test]
 fn workspace_version_rejects_invalid_unknown_and_multiple_bump_selectors() {
     let fixture = workspace("1.2.3.4", "2.3.4.5");
-    let report_path = fixture.0.join("src/sales-report/SalesReport.xml");
-    let processing_path = fixture.0.join("src/import-orders/ImportOrders.xml");
+    let report_path = fixture
+        .0
+        .join("src/sales-report/SalesReport/Ext/ObjectModule.bsl");
+    let processing_path = fixture
+        .0
+        .join("src/import-orders/ImportOrders/Ext/ObjectModule.bsl");
     let report_before = fs::read(&report_path).unwrap();
     let processing_before = fs::read(&processing_path).unwrap();
     for (arguments, expected) in [

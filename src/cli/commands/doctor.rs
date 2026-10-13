@@ -338,6 +338,18 @@ fn render_human(
             .as_deref()
             .map_or_else(String::new, |project| format!(" [{project}]"));
         lines.push(format!("{marker} {label}{owner}: {message}"));
+        if let Some(location) = &check.location {
+            let range = location.range.as_ref().map_or_else(String::new, |range| {
+                format!("{}..{}", range.byte_start, range.byte_end)
+            });
+            lines.push(localizer.format(
+                "doctor-source-location",
+                &[
+                    ("path", LocalizationValue::Text(&location.path)),
+                    ("range", LocalizationValue::Text(&range)),
+                ],
+            ));
+        }
         if let Some(remediation) = check.remediation {
             lines.push(format!(
                 "  {}: {}",

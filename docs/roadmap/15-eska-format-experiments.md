@@ -42,8 +42,8 @@ IDE-host зависит от EF-18, оформление YAML — от EF-02/EF-
 EF-12 — **DONE** по [матрице managed forms и CF приёмке](../research/eska-format/managed-form-acceptance.md);
 EF-23 — **DONE** по [хранению и исполнению запросов](../research/eska-format/query-acceptance.md);
 T83 — **DONE** по [CF/CFE циклу двух схем версии](../research/eska-format/project-version.md);
-текущий T84 — **IN_PROGRESS**, источник версии EPF/ERF в модуле объекта;
-[синтаксический адаптер](../research/eska-format/external-version-syntax.md) подготовлен.
+T84 — **DONE** по [версии EPF/ERF и вызовам функций в 1С](../research/eska-format/external-version.md);
+следующий EF-14 — **NEXT**, профили CFE/EPF/ERF нового источника.
 EF-18 сохраняет `IN_PROGRESS` как незавершённую реализацию; её продолжение
 отложено до завершения блока структуры, результаты не отменяются. Решение
 заменяет прежний ограниченный CF-пилот и указание от 2026-10-10 не менять очередь.
@@ -101,7 +101,7 @@ EF-18 сохраняет `IN_PROGRESS` как незавершённую реа�
 | EF-11 | PLANNED | EF-18, EF-27, EF-20 | Explorer: дерево, поддержка, подсветка и анализ нового формата |
 | EF-12 | DONE | EF-24 | Типизированная редактируемая модель управляемой формы |
 | EF-13 | DEFERRED | EF-12, EF-19 | Слияние форм и решение о merge-драйвере после MVP |
-| EF-14 | PLANNED | EF-24; для EPF/ERF — T83, T84 | Принятые профили CFE/EPF/ERF наряду с CF |
+| EF-14 | NEXT | EF-24; для EPF/ERF — T83, T84 | Принятые профили CFE/EPF/ERF наряду с CF |
 | EF-15 | PLANNED | EF-06, EF-24, EF-14 | Принятие новой базы/поставщика с сохранением правок |
 | EF-16 | PLANNED | EF-11, EF-20, EF-21, EF-25 | Приёмка MVP на четырёх типах проектов |
 | EF-17 | DONE | EF-02 | Выбор основы анализа BSL и адаптера метаданных |

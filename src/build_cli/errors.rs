@@ -152,18 +152,23 @@ fn manifest(error: ManifestError) -> Failure {
         }
         ManifestError::SnapshotProject(_) => Failure::new("build_snapshot_project_invalid"),
         ManifestError::VersionPolicy(error) => {
-            let diagnostics = match error {
+            let diagnostics = match &error {
                 crate::project_core::native_version::VersionError::SchemeMismatch {
                     expected,
                     actual,
                 } => {
                     json!({"expected_scheme":expected.as_str(),"actual_scheme":actual.as_str()})
                 }
-                _ => serde_json::Value::Null,
+                _ => {
+                    json!({"code":error.code(),"range":error.range().map(|range| json!({"byte_start":range.start,"byte_end":range.end})),"remediation":error.remediation()})
+                }
             };
             Failure {
                 diagnostics,
-                ..Failure::new("project_version_policy_invalid").at("version.scheme")
+                ..Failure::new("project_version_policy_invalid").at(error.path().map_or_else(
+                    || "version.scheme".to_owned(),
+                    |path| path.to_string_lossy().into_owned(),
+                ))
             }
         }
         ManifestError::ArtifactRead { path, .. } => at("build_artifact_read_failed", &path),

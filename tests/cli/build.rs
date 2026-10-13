@@ -70,6 +70,13 @@ pub(super) fn project(fixture: &TestDir, project_type: &str, name: &str) -> Path
             ),
         )
         .expect("write root descriptor");
+        let ext = root.join("src").join(name).join("Ext");
+        fs::create_dir_all(&ext).unwrap();
+        fs::write(
+            ext.join("ObjectModule.bsl"),
+            "Функция Версия() Экспорт Возврат \"1.2.3.4\"; КонецФункции",
+        )
+        .unwrap();
     }
     root
 }
@@ -112,6 +119,15 @@ pub(super) fn workspace() -> TestDir {
         r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><ExternalDataProcessor/></MetaDataObject>"#,
     )
     .expect("processing descriptor");
+    for (member, name) in [(&report, "SalesReport"), (&processing, "ImportOrders")] {
+        let ext = member.join(name).join("Ext");
+        fs::create_dir_all(&ext).unwrap();
+        fs::write(
+            ext.join("ObjectModule.bsl"),
+            "Функция Версия() Экспорт Возврат \"1.2.3.4\"; КонецФункции",
+        )
+        .unwrap();
+    }
     fixture
 }
 
@@ -1319,6 +1335,8 @@ fn manifested_build_uses_the_captured_source_snapshot() {
     let ibcmd = fake_ibcmd(&fixture);
     let payload = root.join("src/payload.txt");
     fs::write(&payload, b"captured bytes").expect("initial payload");
+    let version_module = root.join("src/snapshot-demo/Ext/ObjectModule.bsl");
+    let captured_module = fs::read_to_string(&version_module).expect("version module");
     let ready = fixture.0.join("import.ready");
     let proceed = fixture.0.join("import.continue");
     let mut child = Command::new(env!("CARGO_BIN_EXE_eska"))
@@ -1338,6 +1356,11 @@ fn manifested_build_uses_the_captured_source_snapshot() {
     }
     assert!(ready.exists(), "fake ibcmd did not reach import");
     fs::write(&payload, b"changed during build").expect("change original source");
+    fs::write(
+        &version_module,
+        captured_module.replace("1.2.3.4", "9.9.9.9"),
+    )
+    .expect("change original version");
     fs::write(&proceed, b"").expect("continue import");
     assert!(child.wait().expect("wait for build").success());
     assert_eq!(
@@ -1348,7 +1371,8 @@ fn manifested_build_uses_the_captured_source_snapshot() {
         &fs::read(root.join("build/snapshot-demo.epf.manifest.json")).expect("manifest"),
     )
     .expect("manifest JSON");
-    assert_eq!(first["project"]["version"]["status"], "unavailable");
+    assert_eq!(first["project"]["version"]["status"], "available");
+    assert_eq!(first["project"]["version"]["value"], "1.2.3.4");
 
     let second = Command::new(env!("CARGO_BIN_EXE_eska"))
         .current_dir(&root)
@@ -1366,6 +1390,7 @@ fn manifested_build_uses_the_captured_source_snapshot() {
         &fs::read(root.join("build/snapshot-demo.epf.manifest.json")).expect("updated manifest"),
     )
     .expect("updated manifest JSON");
+    assert_eq!(second["project"]["version"]["value"], "9.9.9.9");
     assert_ne!(
         first["source"]["snapshot_id"],
         second["source"]["snapshot_id"]

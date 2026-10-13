@@ -2,6 +2,9 @@
 
 mod support;
 
+#[path = "build_tool/external_version.rs"]
+mod external_version;
+
 #[path = "support/ibcmd.rs"]
 mod ibcmd_fixture;
 

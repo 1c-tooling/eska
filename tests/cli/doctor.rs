@@ -280,6 +280,46 @@ fn invalid_root_descriptor_is_reported_without_stopping_other_checks() {
     assert!(checks.iter().any(|check| check["id"] == "vcs.workflow"));
 }
 
+/// External version diagnosis is independent of runner readiness and retains original byte coordinates.
+#[test]
+fn external_version_check_has_source_range_and_localized_repair() {
+    let (_fixture, root) = scaffold();
+    let config = fs::read_to_string(root.join("eska.toml"))
+        .unwrap()
+        .replace("type = 'configuration'", "type = 'report'");
+    fs::write(root.join("eska.toml"), config).unwrap();
+    fs::write(root.join("src/Report.xml"), "<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><ExternalReport><Properties><Name>Report</Name></Properties></ExternalReport></MetaDataObject>").unwrap();
+    fs::create_dir_all(root.join("src/Report/Ext")).unwrap();
+    let path = root.join("src/Report/Ext/ObjectModule.bsl");
+    let module = "\u{feff}Функция Версия() Возврат \"1.2.3\"; КонецФункции\r\n";
+    fs::write(&path, module).unwrap();
+    let mut documents = Vec::new();
+    for locale in ["ru", "en"] {
+        let output = doctor(&root, locale, &["--format", "json"], Path::new(""));
+        assert_eq!(output.status.code(), Some(1), "{output:?}");
+        let document: Value = serde_json::from_slice(&output.stdout).unwrap();
+        let check = document["checks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|check| check["id"] == "project.version")
+            .unwrap();
+        assert_eq!(check["status"], "fail");
+        assert_eq!(check["actual"], "version_function_not_exported");
+        assert_eq!(check["location"]["path"], path.to_string_lossy().as_ref());
+        assert_eq!(check["location"]["range"]["byte_start"], 3);
+        assert_eq!(check["remediation"], "version_migration");
+        documents.push(document);
+        let output = doctor(&root, locale, &[], Path::new(""));
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(stdout.contains("ObjectModule.bsl"), "{stdout}");
+        assert!(stdout.contains("eska version migrate"), "{stdout}");
+        assert!(!stdout.contains("doctor-"), "{stdout}");
+    }
+    assert_eq!(documents[0], documents[1]);
+    assert_eq!(fs::read_to_string(path).unwrap(), module);
+}
+
 #[cfg(unix)]
 #[test]
 /// Report the discovered incompatible platform version and keep its expected version.

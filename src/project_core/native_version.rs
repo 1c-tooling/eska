@@ -1,4 +1,4 @@
-//! Narrow project-version access for Designer XML root descriptors.
+//! Authoritative native versions: XML properties for CF/CFE and object modules for EPF/ERF.
 
 use std::{
     fmt, fs,
@@ -10,6 +10,9 @@ use std::{
 
 use super::{Project, ProjectType, SourceFormat};
 use serde::{Deserialize, Serialize};
+
+mod external;
+pub use external::{VersionMigration, plan_migration};
 
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024 * 1024;
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
@@ -194,7 +197,7 @@ impl BumpKind {
     }
 }
 
-/// Version value and the root descriptor that owns it.
+/// Version value and the native source file that owns it.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VersionInfo {
     pub path: PathBuf,
@@ -210,7 +213,7 @@ pub struct BumpOutcome {
     pub kind: BumpKind,
 }
 
-/// Read the version from the root Designer XML descriptor without changing it.
+/// Read the version from its authoritative native source without changing it.
 ///
 /// # Errors
 ///
@@ -223,7 +226,7 @@ pub fn inspect(project: &Project) -> Result<VersionInfo, VersionError> {
     })
 }
 
-/// Replace only the text bytes inside the root object's `Properties/Version` tag.
+/// Replace only the authoritative version bytes in the XML property or BSL literal.
 ///
 /// No XML serializer is used: BOM, line endings, whitespace, attribute ordering
 /// and every byte outside the version text range remain unchanged.
@@ -241,7 +244,19 @@ pub fn bump(project: &Project, kind: BumpKind) -> Result<BumpOutcome, VersionErr
     output.extend_from_slice(&descriptor.input[..descriptor.value_range.start]);
     output.extend_from_slice(replacement.as_bytes());
     output.extend_from_slice(&descriptor.input[descriptor.value_range.end..]);
-    replace(&descriptor.path, &output)?;
+    if matches!(
+        project.configuration().project_type(),
+        ProjectType::Processing | ProjectType::Report
+    ) {
+        external::publish_existing(
+            project.source(),
+            &descriptor.path,
+            &descriptor.input,
+            &output,
+        )?;
+    } else {
+        replace(&descriptor.path, &output)?;
+    }
     Ok(BumpOutcome {
         path: descriptor.path,
         previous: descriptor.version,
@@ -267,14 +282,13 @@ fn load_project_descriptor(project: &Project) -> Result<LoadedDescriptor, Versio
 
 /// Validate policy on an already materialized native input before launching the platform.
 #[cfg(feature = "build")]
-pub(crate) fn validate_native_scheme(
+pub(crate) fn validate_native_policy(
     source: &Path,
     project_type: ProjectType,
-    scheme: VersionScheme,
+    scheme: Option<VersionScheme>,
 ) -> Result<(), VersionError> {
-    load_descriptor(source, project_type)?
-        .version
-        .validate_scheme(scheme)
+    let version = load_descriptor(source, project_type)?.version;
+    scheme.map_or(Ok(()), |scheme| version.validate_scheme(scheme))
 }
 
 #[derive(Debug)]
@@ -313,6 +327,143 @@ pub enum VersionError {
         expected: VersionScheme,
         actual: VersionScheme,
     },
+    ModuleContract {
+        path: PathBuf,
+        error: super::object_module_version::ContractError,
+    },
+    ModuleMissing {
+        path: PathBuf,
+    },
+    ModuleProtected {
+        path: PathBuf,
+    },
+    ModuleAmbiguous {
+        path: PathBuf,
+    },
+    Publication {
+        path: PathBuf,
+        error: super::publish::PublishError,
+    },
+    MigrationUnsupported,
+}
+
+impl VersionError {
+    /// Stable machine diagnostics never include an OS or parser's localized wording.
+    #[must_use]
+    pub const fn code(&self) -> &'static str {
+        use super::publish::PublishError;
+        match self {
+            Self::SourceFormatUnsupported => "version_source_format_unsupported",
+            Self::Io { .. }
+            | Self::Publication {
+                error: PublishError::Io(_),
+                ..
+            } => "version_source_io",
+            Self::DescriptorTooLarge { .. } => "version_descriptor_too_large",
+            Self::InvalidXml { .. } => "version_descriptor_invalid_xml",
+            Self::DescriptorMissing { .. } => "version_descriptor_missing",
+            Self::DescriptorAmbiguous { .. } => "version_descriptor_ambiguous",
+            Self::VersionMissing { .. } => "version_value_missing",
+            Self::VersionAmbiguous { .. } => "version_value_ambiguous",
+            Self::InvalidVersion { .. } => "version_value_invalid",
+            Self::Overflow { .. } => "version_overflow",
+            Self::SchemeMismatch { .. } => "version_scheme_mismatch",
+            Self::ModuleContract { error, .. } => error.kind.code(),
+            Self::ModuleMissing { .. } => "version_module_missing",
+            Self::ModuleProtected { .. } => "version_module_protected",
+            Self::ModuleAmbiguous { .. } => "version_module_ambiguous",
+            Self::Publication {
+                error: PublishError::Conflict,
+                ..
+            } => "version_source_changed",
+            Self::Publication {
+                error: PublishError::UnsafePath,
+                ..
+            } => "version_source_unsafe",
+            Self::Publication {
+                error: PublishError::ReadOnly,
+                ..
+            } => "version_source_read_only",
+            Self::MigrationUnsupported => "version_migration_unsupported",
+        }
+    }
+
+    /// Return the native source coordinate when the failure belongs to a particular file.
+    #[must_use]
+    pub fn path(&self) -> Option<&Path> {
+        match self {
+            Self::Io { path, .. }
+            | Self::DescriptorTooLarge { path }
+            | Self::InvalidXml { path, .. }
+            | Self::DescriptorMissing { path }
+            | Self::DescriptorAmbiguous { path }
+            | Self::VersionMissing { path }
+            | Self::VersionAmbiguous { path }
+            | Self::ModuleContract { path, .. }
+            | Self::ModuleMissing { path }
+            | Self::ModuleProtected { path }
+            | Self::ModuleAmbiguous { path }
+            | Self::Publication { path, .. } => Some(path),
+            _ => None,
+        }
+    }
+
+    /// Syntax diagnostics use original UTF-8 bytes, including any BOM.
+    #[must_use]
+    pub fn range(&self) -> Option<Range<usize>> {
+        match self {
+            Self::ModuleContract { error, .. } => Some(error.range.clone()),
+            _ => None,
+        }
+    }
+
+    /// Consumers localize the actionable repair instead of inventing their own contract.
+    #[must_use]
+    pub const fn remediation(&self) -> &'static str {
+        use super::{object_module_version::ContractErrorKind as Kind, publish::PublishError};
+        match self {
+            Self::ModuleMissing { .. }
+            | Self::ModuleContract {
+                error:
+                    super::object_module_version::ContractError {
+                        kind:
+                            Kind::MissingFunction
+                            | Kind::NotExported
+                            | Kind::RegistrationUnbound
+                            | Kind::InitialVersionRequired
+                            | Kind::InitialVersionConflict,
+                        ..
+                    },
+                ..
+            } => "version_migration",
+            Self::ModuleContract {
+                error:
+                    super::object_module_version::ContractError {
+                        kind: Kind::SourceChanged,
+                        ..
+                    },
+                ..
+            }
+            | Self::Publication {
+                error: PublishError::Conflict,
+                ..
+            } => "repeat_version_preview",
+            Self::ModuleProtected { .. } => "provide_readable_module",
+            Self::ModuleAmbiguous { .. }
+            | Self::Publication {
+                error: PublishError::UnsafePath,
+                ..
+            } => "use_regular_source_path",
+            Self::Publication {
+                error: PublishError::ReadOnly,
+                ..
+            } => "check_source_permissions",
+            Self::ModuleContract { .. } => "repair_version_contract",
+            Self::SchemeMismatch { .. } => "align_version_scheme",
+            Self::MigrationUnsupported => "select_external_project",
+            _ => "repair_native_version",
+        }
+    }
 }
 
 struct LoadedDescriptor {
@@ -343,35 +494,7 @@ fn load_descriptor(
         return Ok(descriptor);
     }
 
-    let mut found = None;
-    for entry in fs::read_dir(source).map_err(|error| VersionError::Io {
-        path: source.to_path_buf(),
-        source: error,
-    })? {
-        let entry = entry.map_err(|error| VersionError::Io {
-            path: source.to_path_buf(),
-            source: error,
-        })?;
-        let path = entry.path();
-        if entry.file_name() == "ConfigDumpInfo.xml"
-            || !path
-                .extension()
-                .is_some_and(|extension| extension.eq_ignore_ascii_case("xml"))
-        {
-            continue;
-        }
-        if let Some(descriptor) = read_descriptor(&path, project_type)? {
-            if found.is_some() {
-                return Err(VersionError::DescriptorAmbiguous {
-                    path: source.to_path_buf(),
-                });
-            }
-            found = Some(descriptor);
-        }
-    }
-    found.ok_or_else(|| VersionError::DescriptorMissing {
-        path: source.to_path_buf(),
-    })
+    external::load(source, project_type)
 }
 
 /// Read and inspect one bounded UTF-8 XML candidate.

@@ -42,14 +42,19 @@ pub fn preflight(plan: &BuildPlan) -> Result<(), BuildError> {
         }
     }
     import_source(plan)?;
-    if let Some(scheme) = plan.version_scheme() {
+    if plan.version_scheme().is_some()
+        || matches!(
+            plan.artifact_type(),
+            ArtifactType::Processing | ArtifactType::Report
+        )
+    {
         let project_type = match plan.artifact_type() {
             ArtifactType::Configuration => ProjectType::Configuration,
             ArtifactType::Extension => ProjectType::Extension,
             ArtifactType::Processing => ProjectType::Processing,
             ArtifactType::Report => ProjectType::Report,
         };
-        native_version::validate_native_scheme(plan.source(), project_type, scheme)
+        native_version::validate_native_policy(plan.source(), project_type, plan.version_scheme())
             .map_err(|error| BuildError::Manifest(manifest::ManifestError::VersionPolicy(error)))?;
     }
     Ok(())
