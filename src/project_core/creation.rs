@@ -6,12 +6,12 @@ use std::{
 };
 
 use super::{
-    Project, ProjectName, ProjectType, SourceFormat,
+    Project, ProjectName, SourceFormat,
     config::{self, ProjectConfig},
     platform_settings::{BuildSettings, PlatformVersion},
     publish::{self, PublishError},
     source_format::{
-        AcceptedRef, Error, NativeUuid, SourcePath, accept_source, import_designer,
+        AcceptedRef, Error, NativeUuid, SourcePath, SourceReader, accept_source, import_designer,
         import_designer_readable, import_designer_separated,
     },
     transport::TransportPlan,
@@ -104,7 +104,34 @@ fn create_project(
     frozen: &[NativeUuid],
     layout: Layout,
 ) -> Result<ImportedProject, Error> {
-    let mut config = ProjectConfig::new(ProjectType::Configuration)
+    let root = destination_path(input, destination)?;
+    fs::create_dir(&root).map_err(|error| io_error(&error))?;
+    let result = populate(input, &root, name, platform, frozen, layout);
+    if let Err(error) = result {
+        fs::remove_dir_all(&root)
+            .map_err(|_| Error::root("source_cleanup_failed").in_field(error.code))?;
+        return Err(error);
+    }
+    result
+}
+
+/// Build tracked authorities and transport before the manifest can make a project discoverable.
+fn populate(
+    input: &Path,
+    root: &Path,
+    name: ProjectName,
+    platform: Option<&PlatformVersion>,
+    frozen: &[NativeUuid],
+    layout: Layout,
+) -> Result<ImportedProject, Error> {
+    let source = root.join("src");
+    match layout {
+        Layout::Family => import_designer(input, &source)?,
+        Layout::Separated => import_designer_separated(input, &source)?,
+        Layout::Readable => import_designer_readable(input, &source)?,
+    };
+    let project_type = SourceReader::open(&source)?.project_type()?;
+    let mut config = ProjectConfig::new(project_type)
         .with_name(name)
         .with_source_format(SourceFormat::Eska {
             accepted_base: SourcePath::parse(ACCEPTED_DIRECTORY)?,
@@ -119,32 +146,6 @@ fn create_project(
     let manifest = config
         .to_workspace_member_toml()
         .map_err(|_| Error::root("source_schema_invalid"))?;
-    let root = destination_path(input, destination)?;
-    fs::create_dir(&root).map_err(|error| io_error(&error))?;
-    let result = populate(input, &root, config, &manifest, frozen, layout);
-    if let Err(error) = result {
-        fs::remove_dir_all(&root)
-            .map_err(|_| Error::root("source_cleanup_failed").in_field(error.code))?;
-        return Err(error);
-    }
-    result
-}
-
-/// Build tracked authorities and transport before the manifest can make a project discoverable.
-fn populate(
-    input: &Path,
-    root: &Path,
-    config: ProjectConfig,
-    manifest: &str,
-    frozen: &[NativeUuid],
-    layout: Layout,
-) -> Result<ImportedProject, Error> {
-    let source = root.join(config.source());
-    match layout {
-        Layout::Family => import_designer(input, &source)?,
-        Layout::Separated => import_designer_separated(input, &source)?,
-        Layout::Readable => import_designer_readable(input, &source)?,
-    };
     fs::create_dir(root.join(".eska")).map_err(|error| io_error(&error))?;
     let accepted = accept_source(&source, &root.join(ACCEPTED_DIRECTORY), frozen)?;
     let project = config
@@ -157,7 +158,7 @@ fn populate(
         "/build/\n/.eska/generations/\n",
     )
     .map_err(publication_error)?;
-    publish::publish_new(root, Path::new(config::FILE_NAME), manifest)
+    publish::publish_new(root, Path::new(config::FILE_NAME), &manifest)
         .map_err(publication_error)?;
     Ok(ImportedProject { project, accepted })
 }

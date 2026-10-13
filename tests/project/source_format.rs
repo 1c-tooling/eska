@@ -17,6 +17,7 @@ mod baseline;
 mod creation;
 mod deletion;
 mod edit;
+mod extensions;
 mod fill_value;
 mod layout;
 mod measure;
@@ -156,7 +157,6 @@ fn unsupported_profile_and_missing_declared_files_do_not_create_output() {
     for (change, code) in [
         ("profile", "source_profile_unsupported"),
         ("missing", "source_descriptor_missing"),
-        ("extension", "source_profile_unsupported"),
     ] {
         let test = TestDir::new();
         let input = fixture(&test.0);

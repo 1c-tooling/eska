@@ -56,6 +56,7 @@ use crate::{
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SessionError {
     Source(Error),
+    UnsupportedProjectType(eska::project_core::ProjectType),
     NonUtf8Root,
     TooManyFiles,
     MissingListing,
@@ -170,6 +171,7 @@ impl AnalysisSession {
         options: SessionOptions,
     ) -> Result<Self, SessionError> {
         let reader = inputs.source_reader();
+        require_supported_project(reader)?;
         let root_key = reader
             .root()
             .to_str()
@@ -589,6 +591,15 @@ impl AnalysisSession {
         self.revision = next;
         Ok(())
     }
+}
+
+/// Extension/base composition is admitted separately; a standalone CFE cannot claim complete analysis.
+fn require_supported_project(reader: &SourceReader) -> Result<(), SessionError> {
+    let project_type = reader.project_type().map_err(SessionError::Source)?;
+    if project_type != eska::project_core::ProjectType::Configuration {
+        return Err(SessionError::UnsupportedProjectType(project_type));
+    }
+    Ok(())
 }
 
 /// Current unavailable values clear the slot; its clock tracks the dependencies actually published.

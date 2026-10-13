@@ -329,11 +329,16 @@ pub enum ProjectConfigError {
 }
 
 /// Refuse a format/profile combination before discovery or any platform operation.
-fn validate_profile(
+const fn validate_profile(
     project_type: ProjectType,
     format: &SourceFormat,
 ) -> Result<(), ProjectConfigError> {
-    if matches!(format, SourceFormat::Eska { .. }) && project_type != ProjectType::Configuration {
+    if matches!(format, SourceFormat::Eska { .. })
+        && !matches!(
+            project_type,
+            ProjectType::Configuration | ProjectType::Extension
+        )
+    {
         return Err(ProjectConfigError::UnsupportedEskaProjectType { project_type });
     }
     Ok(())

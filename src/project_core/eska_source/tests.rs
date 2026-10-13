@@ -214,7 +214,6 @@ fn config_refuses_missing_unexpected_unsafe_and_unsupported_eska_settings() {
         "[project]\ntype='configuration'\nsource_format='eska'\n",
         "[project]\ntype='configuration'\n[eska]\naccepted_base='base'\n",
         "[project]\ntype='processing'\nsource_format='eska'\n[eska]\naccepted_base='base'\n",
-        "[project]\ntype='extension'\nsource_format='eska'\n[eska]\naccepted_base='base'\n",
         "[project]\ntype='report'\nsource_format='eska'\n[eska]\naccepted_base='base'\n",
         "[project]\ntype='configuration'\nsource_format='eska'\n[eska]\naccepted_base='base'\nsha256='anything'\n",
     ] {

@@ -18,6 +18,28 @@ use serde_json::Value;
 const GOOD: &str =
     "\u{feff}// Проверяет синтаксис.\r\nПроцедура Проверка() Экспорт\r\nКонецПроцедуры\r\n";
 
+/// An extension cannot report a complete configuration analysis without its admitted context.
+#[test]
+fn extension_analysis_refuses_an_unadmitted_base_context_in_both_locales() {
+    let (_directory, root) = support::extension_project(GOOD);
+    let mut errors = Vec::new();
+    for lang in ["ru-RU", "en-US"] {
+        let output = run(&root, lang, &["--profile", "syntax", "--format", "json"]);
+        assert_eq!(output.status.code(), Some(3));
+        assert!(!output.stderr.is_empty());
+        let value: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(value["error"]["code"], "analysis_scope_unsupported");
+        assert_eq!(
+            value["error"]["location"],
+            serde_json::json!(["project.type"])
+        );
+        assert_eq!(value["error"]["diagnostics"]["project_type"], "extension");
+        errors.push(value);
+    }
+    assert_eq!(errors[0], errors[1]);
+    assert!(!root.join(".eska").exists());
+}
+
 /// Empty PATH proves that checking and project discovery do not invoke another installed tool.
 fn run(root: &Path, lang: &str, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_eska-check"))

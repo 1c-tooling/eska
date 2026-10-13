@@ -11,6 +11,38 @@ use ide_db::metadata::config_index;
 
 use super::*;
 
+#[test]
+/// Both direct and selected-reader entry points refuse an uncomposed extension before kernel setup.
+fn extension_analysis_requires_an_admitted_base_context() {
+    let (directory, source) = fixture();
+    let native = directory.0.join("native");
+    let path = native.join("Configuration.xml");
+    let text = fs::read_to_string(&path).unwrap().replace(
+        "<Properties>",
+        "<Properties><ConfigurationExtensionPurpose>Customization</ConfigurationExtensionPurpose>",
+    );
+    fs::write(path, text).unwrap();
+    let extension = directory.0.join("extension");
+    import_designer(&native, &extension).unwrap();
+    assert!(SourceReader::open(&source).is_ok());
+    for selected in [false, true] {
+        let opened = if selected {
+            AnalysisSession::from_reader(
+                SourceReader::open(&extension).unwrap(),
+                SessionOptions::default(),
+            )
+        } else {
+            AnalysisSession::open(&extension)
+        };
+        assert!(matches!(
+            opened,
+            Err(SessionError::UnsupportedProjectType(
+                eska::project_core::ProjectType::Extension
+            ))
+        ));
+    }
+}
+
 #[path = "../../../bsl-adapter/tests/support/mod.rs"]
 pub mod support;
 

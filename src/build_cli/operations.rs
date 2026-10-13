@@ -45,7 +45,7 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
             "commands":["build","capabilities"],
             "source_formats":["designer-xml","eska"],
             "designer_artifact_types":["configuration","extension","processing","report"],
-            "eska_artifact_types":["configuration"], "manifest":true,
+            "eska_artifact_types":["configuration","extension"], "manifest":true,
             "platform_required_for_build":true,"git_required":false,"analyzer_required":false,
             "unpack":false,"designer_check":false}),
             localizer.text("tool-build-capabilities"),

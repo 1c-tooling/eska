@@ -473,47 +473,48 @@ fn dry_run_matches_the_subsequent_build_plan() {
 }
 
 #[test]
-/// Load a base CF into the temporary infobase and pass the complete external source directory.
-fn external_build_uses_base_configuration_context_and_source_directory() {
-    let fixture = TestDir::new();
-    let ibcmd = fake_ibcmd(&fixture);
-    let root = project(&fixture, "processing", "Contextual");
-    let base = fixture.0.join("base.cf");
-    fs::write(&base, b"base configuration").expect("base configuration");
-    let log = fixture.0.join("ibcmd.log");
-    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
-        .current_dir(&root)
-        .env("FAKE_IBCMD_LOG", &log)
-        .args(["--lang", "en", "build", "--base-configuration"])
-        .arg(&base)
-        .args(["--ibcmd"])
-        .arg(&ibcmd)
-        .output()
-        .expect("build external processor with base configuration");
-    assert!(output.status.success(), "{output:?}");
+/// Dependent artifact kinds load the explicit base CF and pass the complete native source directory.
+fn dependent_build_uses_base_configuration_context_and_source_directory() {
+    for project_type in ["extension", "processing", "report"] {
+        let fixture = TestDir::new();
+        let ibcmd = fake_ibcmd(&fixture);
+        let root = project(&fixture, project_type, "Contextual");
+        let base = fixture.0.join("base.cf");
+        fs::write(&base, b"base configuration").expect("base configuration");
+        let log = fixture.0.join("ibcmd.log");
+        let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&root)
+            .env("FAKE_IBCMD_LOG", &log)
+            .args(["--lang", "en", "build", "--base-configuration"])
+            .arg(&base)
+            .args(["--ibcmd"])
+            .arg(&ibcmd)
+            .output()
+            .expect("build external processor with base configuration");
+        assert!(output.status.success(), "{output:?}");
 
-    let invocations = fs::read_to_string(log).expect("ibcmd invocations");
-    let create = invocations
-        .lines()
-        .find(|line| line.starts_with("infobase create"))
-        .expect("create invocation");
-    assert!(
-        create.contains(&format!("--load={}", base.display())),
-        "{create}"
-    );
-    let import = invocations
-        .lines()
-        .find(|line| line.starts_with("infobase config import"))
-        .expect("import invocation");
-    assert!(
-        import.ends_with(root.join("src").to_string_lossy().as_ref()),
-        "{import}"
-    );
+        let invocations = fs::read_to_string(log).expect("ibcmd invocations");
+        let create = invocations
+            .lines()
+            .find(|line| line.starts_with("infobase create"))
+            .expect("create invocation");
+        assert!(
+            create.contains(&format!("--load={}", base.display())),
+            "{create}"
+        );
+        let import = invocations
+            .lines()
+            .find(|line| line.starts_with("infobase config import"))
+            .expect("import invocation");
+        assert!(
+            import.ends_with(root.join("src").to_string_lossy().as_ref()),
+            "{import}"
+        );
+    }
 }
-
 #[test]
-/// Reject a base configuration for artifact types that do not use external context.
-fn base_configuration_is_limited_to_external_artifacts() {
+/// A complete configuration cannot be compiled against another configuration as context.
+fn base_configuration_is_refused_for_a_complete_configuration() {
     let fixture = TestDir::new();
     let ibcmd = fake_ibcmd(&fixture);
     let root = project(&fixture, "configuration", "Application");

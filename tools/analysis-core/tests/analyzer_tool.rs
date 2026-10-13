@@ -57,6 +57,32 @@ use eska::tool_cli::rpc_framing;
 use serde_json::{Value, json};
 use support::predefined_project;
 
+/// Source-profile admission cannot advertise a complete language session for a standalone CFE.
+#[test]
+fn extension_initialize_refuses_an_unadmitted_base_context_in_both_locales() {
+    let (_directory, root) = support::extension_project("// Complete module.\n");
+    let mut errors = Vec::new();
+    for lang in ["ru-RU", "en-US"] {
+        let (output, responses) = session(&root, lang, &[], &[initialize()]);
+        assert!(!output.status.success());
+        assert_eq!(responses.len(), 1);
+        let response = &responses[0];
+        assert_eq!(response["error"]["code"], -32000);
+        assert_eq!(
+            response["error"]["data"]["kind"],
+            "analysis_scope_unsupported"
+        );
+        assert_eq!(
+            response["error"]["data"]["details"]["project_type"],
+            "extension"
+        );
+        assert!(response.get("result").is_none());
+        errors.push(response.clone());
+    }
+    assert_eq!(errors[0], errors[1]);
+    assert!(!root.join(".eska").exists());
+}
+
 /// Valid MIME header variants establish a real session instead of terminating its input reader.
 #[test]
 fn content_type_variants_keep_stdio_sessions_open_in_both_locales() {

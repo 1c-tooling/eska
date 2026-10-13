@@ -243,7 +243,7 @@ impl BuildPlan {
         self.recreate_infobase
     }
 
-    /// Add the base configuration context required by an external processor or report.
+    /// Add an explicit base configuration context for an extension or external object.
     ///
     /// # Errors
     /// Returns a structured error when this input is used for an unsupported artifact type.
@@ -254,7 +254,7 @@ impl BuildPlan {
         if base_configuration.is_some()
             && !matches!(
                 self.artifact_type,
-                ArtifactType::Processing | ArtifactType::Report
+                ArtifactType::Extension | ArtifactType::Processing | ArtifactType::Report
             )
         {
             return Err(PlanError::BaseConfigurationUnsupported);

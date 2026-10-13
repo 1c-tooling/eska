@@ -14,6 +14,8 @@ mod column_creation;
 mod creation;
 #[path = "project_tool/deletion.rs"]
 mod deletion;
+#[path = "project_tool/extensions.rs"]
+mod extensions;
 #[path = "project_tool/fill_value.rs"]
 mod fill_value;
 #[path = "project_tool/migration.rs"]

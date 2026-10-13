@@ -38,7 +38,7 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
             "rules_version":RULES_VERSION, "profile":PROFILE,
             "commands":["import","migrate","inspect","prepare","transport","capabilities"],
             "platform_required":false,"git_required":false,"ide_required":false,
-            "creation_project_types":["configuration"], "metadata_formats":["eska"],
+            "creation_project_types":["configuration","extension"], "metadata_formats":["eska"],
             "import_layouts":["family","readable"],
             "source_layout_versions":[SCHEMA_VERSION,DESCRIPTOR_LAYOUT_VERSION,RESOURCE_LAYOUT_VERSION],
             "descriptor_schema_versions":[SCHEMA_VERSION,READABLE_SCHEMA_VERSION],

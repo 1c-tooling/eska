@@ -39,10 +39,8 @@ impl Server<'_> {
             params,
         )?;
         let options = profile.session_options(self.cli.max_retained_source_bytes);
-        let session =
-            AnalysisSession::from_reader(source.into_reader(), options).map_err(|_| {
-                protocol::error_value(-32000, "analysis_session_open_failed", Value::Null)
-            })?;
+        let session = AnalysisSession::from_reader(source.into_reader(), options)
+            .map_err(|error| session_open_error(&error))?;
         let session_id = bsl_metadata::Uuid::new_v4().to_string();
         let hierarchical_symbols = document_symbols::hierarchical(params);
         let hover_format = hover::format(params);
@@ -144,5 +142,17 @@ impl Server<'_> {
             ));
         }
         Ok(())
+    }
+}
+
+/// A newly admitted source profile keeps its explicit refusal; other setup errors retain the protocol.
+fn session_open_error(error: &crate::SessionError) -> Value {
+    match error {
+        crate::SessionError::UnsupportedProjectType(project_type) => protocol::error_value(
+            -32000,
+            "analysis_scope_unsupported",
+            json!({"location":"project.type","project_type":project_type.as_str(),"supported_types":["configuration"]}),
+        ),
+        _ => protocol::error_value(-32000, "analysis_session_open_failed", Value::Null),
     }
 }

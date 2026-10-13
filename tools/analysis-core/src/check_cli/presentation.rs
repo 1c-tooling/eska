@@ -225,6 +225,10 @@ fn metadata_human(report: &BatchReport, localizer: &Localizer, text: &mut String
 pub fn batch_failure(error: BatchError) -> Failure {
     match error {
         BatchError::Open(SessionError::Source(error)) => error.into(),
+        BatchError::Open(SessionError::UnsupportedProjectType(project_type)) => Failure {
+            diagnostics: serde_json::json!({"project_type":project_type.as_str(),"supported_types":["configuration"]}),
+            ..Failure::new("analysis_scope_unsupported").at("project.type")
+        },
         BatchError::Open(SessionError::NonUtf8Root) => Failure::new("path_encoding_unsupported"),
         BatchError::Open(SessionError::TooManyFiles) => Failure::new("analysis_file_id_exhausted"),
         BatchError::Open(SessionError::MissingListing) => {

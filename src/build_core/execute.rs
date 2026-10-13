@@ -12,7 +12,7 @@ use super::{
     ManifestError, ProcessStream, RunError, locate_output_file, manifest,
 };
 use crate::project_core::source_format::{Error as SourceError, MappedFile, PreparedSource};
-use crate::project_core::{Project, SourceFormat};
+use crate::project_core::{Project, ProjectType, SourceFormat};
 
 mod preflight;
 mod publication;
@@ -187,12 +187,33 @@ pub fn execute_prepared_with_locations<F>(
 where
     F: FnMut(BuildStage, ProcessStream, &[u8], Option<&MappedFile>),
 {
-    if plan.artifact_type() != ArtifactType::Configuration {
+    if !matches!(
+        plan.artifact_type(),
+        ArtifactType::Configuration | ArtifactType::Extension
+    ) {
         return Err(BuildError::SourceValidation(SourceError::root(
             "source_profile_unsupported",
         )));
     }
     prepared.validate().map_err(BuildError::SourceValidation)?;
+    let root = std::fs::read_to_string(prepared.xml().join("Configuration.xml")).map_err(|_| {
+        BuildError::SourceValidation(SourceError::root("source_generation_corrupt"))
+    })?;
+    let expected = if plan.artifact_type() == ArtifactType::Extension {
+        ProjectType::Extension
+    } else {
+        ProjectType::Configuration
+    };
+    if project.configuration().project_type() != expected
+        || crate::project_core::native::project_type(&root)
+            .ok()
+            .flatten()
+            != Some(expected)
+    {
+        return Err(BuildError::SourceValidation(SourceError::root(
+            "source_profile_unsupported",
+        )));
+    }
     let native_plan = plan.with_snapshot_source(prepared.xml().to_owned());
     execute_streaming_inner(
         &native_plan,

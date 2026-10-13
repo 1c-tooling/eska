@@ -43,8 +43,10 @@ pub(super) fn decode(input: &str) -> Result<Descriptor, Error> {
     {
         return Err(Error::root("source_xml_envelope_unsupported"));
     }
-    if matches!(native::project_type_from_root(root), Some(kind) if kind != ProjectType::Configuration)
-    {
+    if matches!(
+        native::project_type_from_root(root),
+        Some(ProjectType::Processing | ProjectType::Report)
+    ) {
         return Err(Error::root("source_profile_unsupported"));
     }
     let context = namespaces(root);

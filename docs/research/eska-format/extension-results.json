@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "task": "EF-14",
+  "part": "extension",
+  "status": "accepted",
+  "platform": "8.3.27.2325",
+  "execution": "Linux, Distrobox",
+  "native_files": 107,
+  "modules": 25,
+  "managed_forms": 10,
+  "query_sources": 2,
+  "comparisons": {
+    "full-baseline-comparison": {
+      "same_paths": true,
+      "files": 107,
+      "different": [
+        "ConfigDumpInfo.xml"
+      ],
+      "same_metadata_modules_resources": true
+    },
+    "full-edited-comparison": {
+      "same_paths": true,
+      "files": 107,
+      "different": [
+        "ConfigDumpInfo.xml"
+      ],
+      "same_metadata_modules_resources": true
+    },
+    "readable": {
+      "same_paths": true,
+      "files": 107,
+      "different": [
+        "ConfigDumpInfo.xml"
+      ]
+    }
+  },
+  "base_configuration_build": {
+    "explicit_cf": true,
+    "built": true,
+    "unpacked": true,
+    "semantic_context_admitted": false
+  },
+  "freeze": [
+    {
+      "stage": "refuse-ru",
+      "exit_code": 1,
+      "code": "source_changes_excluded"
+    },
+    {
+      "stage": "refuse-en",
+      "exit_code": 1,
+      "code": "source_changes_excluded"
+    },
+    {
+      "stage": "recover",
+      "exit_code": 0,
+      "exclusions": 1
+    },
+    {
+      "stage": "dump",
+      "exit_code": 0,
+      "working_module_unchanged": true,
+      "accepted_module_restored": true
+    }
+  ],
+  "analysis": {
+    "workspace_mcp_available": false,
+    "fallback": "bsl-analyzer-app",
+    "files": 1,
+    "complete": true,
+    "failed_files": 0,
+    "error_diagnostics": 0,
+    "other_diagnostics": 28,
+    "missing_base_context_warning": true
+  },
+  "rust_validation": {
+    "checks": [
+      {
+        "check": "fmt",
+        "exit_code": 0
+      },
+      {
+        "check": "check",
+        "exit_code": 0
+      },
+      {
+        "check": "clippy",
+        "exit_code": 0
+      },
+      {
+        "check": "test",
+        "exit_code": 0
+      },
+      {
+        "check": "test-all",
+        "exit_code": 0
+      },
+      {
+        "check": "doc",
+        "exit_code": 0
+      },
+      {
+        "check": "check-minimal",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-fmt",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-check",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-clippy",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-test",
+        "exit_code": 0
+      },
+      {
+        "check": "sdk-doc",
+        "exit_code": 0
+      },
+      {
+        "check": "bins",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-fmt",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-check",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-clippy",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-test",
+        "exit_code": 0
+      },
+      {
+        "check": "adapter-doc",
+        "exit_code": 0
+      }
+    ],
+    "root_unit_passed": 729,
+    "root_integration_passed": 590,
+    "project_tool_passed": 45,
+    "build_tool_passed": 13,
+    "analysis_passed": 362,
+    "adapter_passed": 82,
+    "ignored": 24
+  },
+  "limits": [
+    "EPF/ERF ESKA profiles and T84 adapter remain EF-14",
+    "CFE semantic composition remains EF-18",
+    "Common new/init/import and installation remain separate milestones",
+    "CFE runtime applicability and Windows/macOS not validated in this slice"
+  ],
+  "native_suffix_recovery": [
+    {
+      "type": "extension",
+      "suffix": "cf",
+      "exit_code": 0,
+      "input_unchanged": true,
+      "files": 107,
+      "same_metadata_modules_resources": true
+    },
+    {
+      "type": "configuration",
+      "suffix": "cfe",
+      "exit_code": 0,
+      "input_unchanged": true,
+      "files": 11,
+      "same_metadata_modules_resources": true
+    }
+  ]
+}

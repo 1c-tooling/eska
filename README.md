@@ -514,7 +514,7 @@ eska build --base-configuration ../application/build/application.cf
 `eska` загружает этот `.cf` в управляемую служебную информационную базу и
 передаёт `ibcmd infobase config import` полный каталог XML-выгрузки
 Конфигуратора. Основная информационная база не изменяется. Параметр доступен только для проектов
-`processing` и `report`; относительный путь считается от корня проекта или
+`extension`, `processing` и `report`; относительный путь считается от корня проекта или
 workspace.
 
 `build` читает текущие исходники с диска, включая несохранённые в Git изменения.
@@ -826,6 +826,11 @@ preset = "trunk"
 допустим `.`.
 В экспериментальной ветке общий project core также принимает
 `source_format = "eska"` и обязательный `[eska].accepted_base`.
+Поддержаны configuration и extension с Designer 2.20; тип настройки должен
+совпадать с корнем исходников. `eska-project import` определяет его по native
+входу. Анализатор пока отклоняет extension: контекст основной конфигурации
+подключается отдельно в EF-18. Для сборки можно явно передать базовый CF через
+`--base-configuration`. Processing/report в новом формате остаются EF-14.
 [Контракт и границы](docs/research/eska-format/project-selection.md) описывают
 закрепление базы, workspace selection и проверенную материализацию.
 Прежние XML-only команды пока возвращают явный отказ для ESKA.

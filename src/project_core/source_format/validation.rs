@@ -292,7 +292,7 @@ fn xml_name(value: &str) -> bool {
 }
 
 /// Check opaque XML independently; namespaces in `QName` values remain in the explicit context.
-fn fragment(
+pub(super) fn fragment(
     value: &XmlFragment,
     inherited: &[Namespace],
 ) -> Result<Option<(String, String)>, Error> {

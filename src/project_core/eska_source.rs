@@ -25,7 +25,10 @@ impl EskaSource {
             return Err(Error::root("source_format_mismatch"));
         };
         super::source_format::require_project_ready(project.root())?;
-        if project.configuration().project_type() != ProjectType::Configuration {
+        if !matches!(
+            project.configuration().project_type(),
+            ProjectType::Configuration | ProjectType::Extension
+        ) {
             return Err(Error::root("source_profile_unsupported"));
         }
         let base = project.root().join(accepted_base.as_path());
@@ -33,6 +36,9 @@ impl EskaSource {
             return Err(Error::root("source_baseline_overlap"));
         }
         let reader = SourceReader::open(project.source())?;
+        if reader.project_type()? != project.configuration().project_type() {
+            return Err(Error::root("source_profile_unsupported"));
+        }
         Ok(Self {
             project,
             scope,
