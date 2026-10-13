@@ -9,30 +9,63 @@ use std::{
 };
 
 use super::{Project, ProjectType, SourceFormat};
+use serde::{Deserialize, Serialize};
 
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024 * 1024;
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
 
-/// A validated four-component 1C project version.
+/// The numeric version contract, shared by manifests, editors and release planning.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub enum VersionScheme {
+    #[serde(rename = "x.y.z")]
+    ThreePart,
+    #[serde(rename = "x.y.z.build")]
+    FourPart,
+}
+
+impl VersionScheme {
+    /// Return the portable manifest and protocol spelling.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::ThreePart => "x.y.z",
+            Self::FourPart => "x.y.z.build",
+        }
+    }
+}
+
+/// Keep a three-part value free of an implicit fourth component.
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum Components {
+    Three([u64; 3]),
+    Four {
+        values: [u64; 4],
+        widths: [usize; 4],
+    },
+}
+
+/// A validated numeric project version with its original scheme.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProjectVersion {
-    components: [u64; 4],
-    widths: [usize; 4],
+    components: Components,
 }
 
 impl ProjectVersion {
-    /// Parse the Designer version format `revision.subrevision.version.build`.
+    /// Parse the numeric `x.y.z` or Designer `x.y.z.build` profile.
     ///
     /// # Errors
     ///
     /// Returns [`VersionError::InvalidVersion`] unless the input contains exactly
-    /// four dot-separated decimal components representable as `u64` values.
+    /// three or four decimal components representable as `u64` values. Leading
+    /// zeroes are allowed only in the four-part profile; suffixes are rejected.
     pub fn parse(value: &str) -> Result<Self, VersionError> {
         let parts: Vec<_> = value.split('.').collect();
-        if parts.len() != 4
-            || parts
-                .iter()
-                .any(|part| part.is_empty() || !part.bytes().all(|byte| byte.is_ascii_digit()))
+        if !matches!(parts.len(), 3 | 4)
+            || parts.iter().any(|part| {
+                part.is_empty()
+                    || !part.bytes().all(|byte| byte.is_ascii_digit())
+                    || (parts.len() == 3 && part.len() > 1 && part.starts_with('0'))
+            })
         {
             return Err(VersionError::InvalidVersion {
                 value: value.to_owned(),
@@ -40,19 +73,51 @@ impl ProjectVersion {
         }
         let mut components = [0; 4];
         let mut widths = [0; 4];
-        for (index, part) in parts.into_iter().enumerate() {
+        for (index, part) in parts.iter().enumerate() {
             components[index] = part.parse().map_err(|_| VersionError::InvalidVersion {
                 value: value.to_owned(),
             })?;
             widths[index] = part.len();
         }
-        Ok(Self { components, widths })
+        Ok(Self {
+            components: if parts.len() == 3 {
+                Components::Three([components[0], components[1], components[2]])
+            } else {
+                Components::Four {
+                    values: components,
+                    widths,
+                }
+            },
+        })
+    }
+
+    /// Expose the scheme without reparsing or inventing a build component.
+    #[must_use]
+    pub const fn scheme(&self) -> VersionScheme {
+        match self.components {
+            Components::Three(_) => VersionScheme::ThreePart,
+            Components::Four { .. } => VersionScheme::FourPart,
+        }
+    }
+
+    /// Validate an explicit policy without converting the stored version.
+    ///
+    /// # Errors
+    /// Returns a mismatch when the configured scheme differs from the value.
+    pub fn validate_scheme(&self, expected: VersionScheme) -> Result<(), VersionError> {
+        let actual = self.scheme();
+        if actual == expected {
+            Ok(())
+        } else {
+            Err(VersionError::SchemeMismatch { expected, actual })
+        }
     }
 
     /// Return the next version for the requested compatibility bump.
     ///
     /// Major, minor and patch map to the first three 1C components. Components
-    /// below the bumped one restart at their documented initial values; build is 1.
+    /// below the bumped one restart at zero for three parts and at their legacy
+    /// initial values for four parts. The scheme never changes during a bump.
     ///
     /// # Errors
     ///
@@ -64,13 +129,23 @@ impl ProjectVersion {
             BumpKind::Minor => 1,
             BumpKind::Patch => 2,
         };
-        next.components[index] = next.components[index]
-            .checked_add(1)
-            .ok_or(VersionError::Overflow { kind })?;
-        match kind {
-            BumpKind::Major => next.components[1..].copy_from_slice(&[0, 1, 1]),
-            BumpKind::Minor => next.components[2..].copy_from_slice(&[1, 1]),
-            BumpKind::Patch => next.components[3] = 1,
+        match &mut next.components {
+            Components::Three(values) => {
+                values[index] = values[index]
+                    .checked_add(1)
+                    .ok_or(VersionError::Overflow { kind })?;
+                values[index + 1..].fill(0);
+            }
+            Components::Four { values, .. } => {
+                values[index] = values[index]
+                    .checked_add(1)
+                    .ok_or(VersionError::Overflow { kind })?;
+                match kind {
+                    BumpKind::Major => values[1..].copy_from_slice(&[0, 1, 1]),
+                    BumpKind::Minor => values[2..].copy_from_slice(&[1, 1]),
+                    BumpKind::Patch => values[3] = 1,
+                }
+            }
         }
         Ok(next)
     }
@@ -79,18 +154,23 @@ impl ProjectVersion {
 impl fmt::Display for ProjectVersion {
     /// Preserve the width convention of every original numeric component.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            formatter,
-            "{:0w0$}.{:0w1$}.{:0w2$}.{:0w3$}",
-            self.components[0],
-            self.components[1],
-            self.components[2],
-            self.components[3],
-            w0 = self.widths[0],
-            w1 = self.widths[1],
-            w2 = self.widths[2],
-            w3 = self.widths[3],
-        )
+        match &self.components {
+            Components::Three(values) => {
+                write!(formatter, "{}.{}.{}", values[0], values[1], values[2])
+            }
+            Components::Four { values, widths } => write!(
+                formatter,
+                "{:0w0$}.{:0w1$}.{:0w2$}.{:0w3$}",
+                values[0],
+                values[1],
+                values[2],
+                values[3],
+                w0 = widths[0],
+                w1 = widths[1],
+                w2 = widths[2],
+                w3 = widths[3],
+            ),
+        }
     }
 }
 
@@ -136,7 +216,7 @@ pub struct BumpOutcome {
 ///
 /// Returns a structured descriptor, XML, version or filesystem failure.
 pub fn inspect(project: &Project) -> Result<VersionInfo, VersionError> {
-    let descriptor = load_descriptor(project)?;
+    let descriptor = load_project_descriptor(project)?;
     Ok(VersionInfo {
         path: descriptor.path,
         version: descriptor.version,
@@ -152,7 +232,7 @@ pub fn inspect(project: &Project) -> Result<VersionInfo, VersionError> {
 ///
 /// Returns a structured failure without publishing a partially written descriptor.
 pub fn bump(project: &Project, kind: BumpKind) -> Result<BumpOutcome, VersionError> {
-    let descriptor = load_descriptor(project)?;
+    let descriptor = load_project_descriptor(project)?;
     let current = descriptor.version.bumped(kind)?;
     let replacement = current.to_string();
     let mut output = Vec::with_capacity(
@@ -168,6 +248,33 @@ pub fn bump(project: &Project, kind: BumpKind) -> Result<BumpOutcome, VersionErr
         current,
         kind,
     })
+}
+
+/// Apply the resolved policy to both read and write paths before any publication.
+fn load_project_descriptor(project: &Project) -> Result<LoadedDescriptor, VersionError> {
+    if !matches!(
+        project.configuration().source_format(),
+        SourceFormat::DesignerXml
+    ) {
+        return Err(VersionError::SourceFormatUnsupported);
+    }
+    let descriptor = load_descriptor(project.source(), project.configuration().project_type())?;
+    if let Some(scheme) = project.configuration().version_scheme() {
+        descriptor.version.validate_scheme(scheme)?;
+    }
+    Ok(descriptor)
+}
+
+/// Validate policy on an already materialized native input before launching the platform.
+#[cfg(feature = "build")]
+pub(crate) fn validate_native_scheme(
+    source: &Path,
+    project_type: ProjectType,
+    scheme: VersionScheme,
+) -> Result<(), VersionError> {
+    load_descriptor(source, project_type)?
+        .version
+        .validate_scheme(scheme)
 }
 
 #[derive(Debug)]
@@ -202,6 +309,10 @@ pub enum VersionError {
     Overflow {
         kind: BumpKind,
     },
+    SchemeMismatch {
+        expected: VersionScheme,
+        actual: VersionScheme,
+    },
 }
 
 struct LoadedDescriptor {
@@ -218,31 +329,28 @@ struct ParsedDescriptor<'a> {
 }
 
 /// Locate the single root descriptor matching the configured project type.
-fn load_descriptor(project: &Project) -> Result<LoadedDescriptor, VersionError> {
-    if !matches!(
-        project.configuration().source_format(),
-        SourceFormat::DesignerXml
-    ) {
-        return Err(VersionError::SourceFormatUnsupported);
-    }
+fn load_descriptor(
+    source: &Path,
+    project_type: ProjectType,
+) -> Result<LoadedDescriptor, VersionError> {
     if matches!(
-        project.configuration().project_type(),
+        project_type,
         ProjectType::Configuration | ProjectType::Extension
     ) {
-        let path = project.source().join("Configuration.xml");
-        let descriptor = read_descriptor(&path, project.configuration().project_type())?
+        let path = source.join("Configuration.xml");
+        let descriptor = read_descriptor(&path, project_type)?
             .ok_or_else(|| VersionError::DescriptorMissing { path: path.clone() })?;
         return Ok(descriptor);
     }
 
     let mut found = None;
-    for entry in fs::read_dir(project.source()).map_err(|source| VersionError::Io {
-        path: project.source().to_path_buf(),
-        source,
+    for entry in fs::read_dir(source).map_err(|error| VersionError::Io {
+        path: source.to_path_buf(),
+        source: error,
     })? {
-        let entry = entry.map_err(|source| VersionError::Io {
-            path: project.source().to_path_buf(),
-            source,
+        let entry = entry.map_err(|error| VersionError::Io {
+            path: source.to_path_buf(),
+            source: error,
         })?;
         let path = entry.path();
         if entry.file_name() == "ConfigDumpInfo.xml"
@@ -252,17 +360,17 @@ fn load_descriptor(project: &Project) -> Result<LoadedDescriptor, VersionError> 
         {
             continue;
         }
-        if let Some(descriptor) = read_descriptor(&path, project.configuration().project_type())? {
+        if let Some(descriptor) = read_descriptor(&path, project_type)? {
             if found.is_some() {
                 return Err(VersionError::DescriptorAmbiguous {
-                    path: project.source().to_path_buf(),
+                    path: source.to_path_buf(),
                 });
             }
             found = Some(descriptor);
         }
     }
     found.ok_or_else(|| VersionError::DescriptorMissing {
-        path: project.source().to_path_buf(),
+        path: source.to_path_buf(),
     })
 }
 
@@ -493,11 +601,70 @@ mod tests {
 
     #[test]
     fn rejects_values_outside_the_designer_version_contract() {
-        for value in ["1.2.3", "1.2.3.4.5", "1..3.4", "1.2.x.4", " 1.2.3.4"] {
+        for value in [
+            "1.2",
+            "1.2.3.4.5",
+            "1..3.4",
+            "1.2.x.4",
+            " 1.2.3.4",
+            "01.2.3",
+            "1.02.3",
+            "1.2.03",
+            "1.2.3-rc.1",
+            "1.2.3+build",
+            "1.2.+3",
+            "1.2.٣",
+        ] {
             assert!(matches!(
                 ProjectVersion::parse(value),
                 Err(VersionError::InvalidVersion { .. })
             ));
+        }
+    }
+
+    /// Every bump keeps exactly three components and resets lower values to zero.
+    #[test]
+    fn three_component_versions_follow_numeric_semver_rules() {
+        for (input, patch, minor, major) in [
+            ("1.2.3", "1.2.4", "1.3.0", "2.0.0"),
+            ("0.0.0", "0.0.1", "0.1.0", "1.0.0"),
+        ] {
+            let version = ProjectVersion::parse(input).unwrap();
+            assert_eq!(version.scheme(), VersionScheme::ThreePart);
+            assert_eq!(version.to_string(), input);
+            for (kind, expected) in [
+                (BumpKind::Patch, patch),
+                (BumpKind::Minor, minor),
+                (BumpKind::Major, major),
+            ] {
+                let next = version.bumped(kind).unwrap();
+                assert_eq!(next.to_string(), expected);
+                assert_eq!(next.scheme(), VersionScheme::ThreePart);
+            }
+            assert!(matches!(
+                version.validate_scheme(VersionScheme::FourPart),
+                Err(VersionError::SchemeMismatch { .. })
+            ));
+        }
+    }
+
+    /// Parsing and arithmetic reject overflow without mutating the original value.
+    #[test]
+    fn rejects_numeric_overflow_in_both_schemes() {
+        for suffix in ["", ".01"] {
+            for (input, kind) in [
+                (format!("{}.0.0{suffix}", u64::MAX), BumpKind::Major),
+                (format!("0.{}.0{suffix}", u64::MAX), BumpKind::Minor),
+                (format!("0.0.{}{suffix}", u64::MAX), BumpKind::Patch),
+            ] {
+                let version = ProjectVersion::parse(&input).unwrap();
+                assert!(matches!(
+                    version.bumped(kind),
+                    Err(VersionError::Overflow { .. })
+                ));
+                assert_eq!(version.to_string(), input);
+            }
+            assert!(ProjectVersion::parse(&format!("18446744073709551616.0.0{suffix}")).is_err());
         }
     }
 }

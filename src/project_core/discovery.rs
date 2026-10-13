@@ -290,6 +290,13 @@ pub(crate) fn resolve_member_configuration(
         member.configuration().source_format().clone(),
     )
     .with_build_settings(build);
+    if let Some(scheme) = member
+        .configuration()
+        .version_scheme()
+        .or_else(|| workspace.version_scheme())
+    {
+        configuration = configuration.with_version_scheme(scheme);
+    }
     if let Some(workflow) = workspace.workflow_settings() {
         configuration = configuration.with_workflow_settings(workflow.clone());
     }

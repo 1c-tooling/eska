@@ -151,6 +151,21 @@ fn manifest(error: ManifestError) -> Failure {
             at("build_snapshot_entry_unsupported", &path)
         }
         ManifestError::SnapshotProject(_) => Failure::new("build_snapshot_project_invalid"),
+        ManifestError::VersionPolicy(error) => {
+            let diagnostics = match error {
+                crate::project_core::native_version::VersionError::SchemeMismatch {
+                    expected,
+                    actual,
+                } => {
+                    json!({"expected_scheme":expected.as_str(),"actual_scheme":actual.as_str()})
+                }
+                _ => serde_json::Value::Null,
+            };
+            Failure {
+                diagnostics,
+                ..Failure::new("project_version_policy_invalid").at("version.scheme")
+            }
+        }
         ManifestError::ArtifactRead { path, .. } => at("build_artifact_read_failed", &path),
         ManifestError::Write { path, .. } => at("build_manifest_write_failed", &path),
         ManifestError::Serialize(_) => Failure::new("build_manifest_invalid"),

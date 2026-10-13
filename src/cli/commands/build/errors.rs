@@ -186,6 +186,9 @@ fn present_manifest_error(error: &ManifestError, localizer: &Localizer) -> Strin
             &[("path", LocalizationValue::Text(&path.to_string_lossy()))],
         ),
         ManifestError::SnapshotProject(_) => localizer.text("build-manifest-snapshot-invalid"),
+        ManifestError::VersionPolicy(error) => {
+            super::super::version::version_error_message(error, localizer)
+        }
         ManifestError::ArtifactRead { path, source } | ManifestError::Write { path, source } => {
             localizer.format(
                 "build-manifest-filesystem-error",
@@ -305,6 +308,7 @@ pub(super) const fn execution_error_code(error: &BuildExecutionError) -> &'stati
             "snapshot-entry-unsupported"
         }
         BuildError::Manifest(ManifestError::SnapshotProject(_)) => "snapshot-invalid",
+        BuildError::Manifest(ManifestError::VersionPolicy(_)) => "project-version-policy-invalid",
         BuildError::Manifest(ManifestError::ArtifactRead { .. }) => "artifact-checksum",
         BuildError::Manifest(ManifestError::Write { .. }) => "manifest-write",
         BuildError::Manifest(ManifestError::Serialize(_)) => "manifest-serialize",

@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use super::ProjectConfigError;
+use crate::project_core::native_version::VersionScheme;
 use crate::project_core::{ProjectType, SourceFormat};
 
 pub(super) const DEFAULT_SOURCE: &str = "src";
@@ -17,6 +18,14 @@ pub(super) struct RawDocument {
     pub(super) eska: Option<RawEska>,
     pub(super) build: Option<RawBuild>,
     pub(super) vcs: Option<RawVcs>,
+    pub(super) version: Option<VersionSettings>,
+}
+
+/// An explicit scheme is policy; the version value remains owned by its source.
+#[derive(Clone, Copy, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct VersionSettings {
+    pub(super) scheme: VersionScheme,
 }
 
 /// Only the location is configurable; the expected baseline digest belongs to the caller.
@@ -83,6 +92,8 @@ pub(super) struct SerializedDocument<'a> {
     pub(super) build: Option<SerializedBuild<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) vcs: Option<SerializedVcs<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) version: Option<VersionSettings>,
 }
 
 #[derive(Serialize)]

@@ -4,6 +4,7 @@ use std::{
 };
 
 use super::PlatformVersion;
+use crate::project_core::native_version::VersionScheme;
 use crate::project_core::{Project, ProjectType, SourceFormat};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -56,6 +57,7 @@ pub struct BuildPlan {
     platform_version: PlatformVersion,
     source: PathBuf,
     source_format: SourceFormat,
+    version_scheme: Option<VersionScheme>,
     base_configuration: Option<PathBuf>,
     artifacts_directory: PathBuf,
     infobase_root: PathBuf,
@@ -69,6 +71,11 @@ impl BuildPlan {
     #[must_use]
     pub const fn source_format(&self) -> &SourceFormat {
         &self.source_format
+    }
+
+    /// Retain resolved project policy when native preparation replaces the source path.
+    pub(crate) const fn version_scheme(&self) -> Option<VersionScheme> {
+        self.version_scheme
     }
 
     /// Resolve a deterministic artifact path without creating files or invoking tools.
@@ -119,6 +126,7 @@ impl BuildPlan {
                 .ok_or(PlanError::PlatformVersionMissing)?,
             source: project.source().to_owned(),
             source_format: project.configuration().source_format().clone(),
+            version_scheme: project.configuration().version_scheme(),
             base_configuration: None,
             infobase_root: infobase_root(&artifacts_directory, &artifact_name),
             artifacts_directory,
@@ -170,6 +178,7 @@ impl BuildPlan {
                 .ok_or(PlanError::PlatformVersionMissing)?,
             source: project.source().to_owned(),
             source_format: project.configuration().source_format().clone(),
+            version_scheme: project.configuration().version_scheme(),
             base_configuration: None,
             infobase_root: infobase_root(&artifacts_directory, &artifact_name),
             artifacts_directory,

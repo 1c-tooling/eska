@@ -3,6 +3,7 @@
 use std::path::{Component, Path, PathBuf};
 
 use crate::{
+    project_core::native_version::VersionScheme,
     project_core::platform_settings::BuildSettings,
     project_core::workflow::{WorkflowPreset, WorkflowSettings},
 };
@@ -67,6 +68,7 @@ pub struct ProjectConfiguration {
     source_format: SourceFormat,
     build: BuildSettings,
     workflow: Option<WorkflowSettings>,
+    version_scheme: Option<VersionScheme>,
 }
 
 impl ProjectConfiguration {
@@ -77,6 +79,7 @@ impl ProjectConfiguration {
             source_format,
             build: BuildSettings::default(),
             workflow: None,
+            version_scheme: None,
         }
     }
 
@@ -131,6 +134,19 @@ impl ProjectConfiguration {
     #[must_use]
     pub const fn workflow_settings(&self) -> Option<&WorkflowSettings> {
         self.workflow.as_ref()
+    }
+
+    /// Return the explicit scheme, or infer from a valid source value when absent.
+    #[must_use]
+    pub const fn version_scheme(&self) -> Option<VersionScheme> {
+        self.version_scheme
+    }
+
+    /// Set version policy without changing any source bytes or choosing a first number.
+    #[must_use]
+    pub const fn with_version_scheme(mut self, scheme: VersionScheme) -> Self {
+        self.version_scheme = Some(scheme);
+        self
     }
 }
 

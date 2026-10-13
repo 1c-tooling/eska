@@ -13,15 +13,14 @@ use super::{ArtifactType, BuildPlan, BuildProvenance, GitProvenance};
 use crate::project_core::source_format::{
     Error as SourceError, PROFILE, PreparedSource, RULES_VERSION, SCHEMA_VERSION, SourceMap,
 };
-use crate::project_core::{
-    Project, ProjectConfiguration, ProjectPathError, SourceFormat, native_version as version,
-};
+use crate::project_core::{Project, ProjectPathError, SourceFormat, native_version as version};
 
 #[derive(Debug)]
 pub enum ManifestError {
     SnapshotIo { path: PathBuf, source: io::Error },
     SnapshotEntryUnsupported(PathBuf),
     SnapshotProject(ProjectPathError),
+    VersionPolicy(version::VersionError),
     ArtifactRead { path: PathBuf, source: io::Error },
     Write { path: PathBuf, source: io::Error },
     Serialize(serde_json::Error),
@@ -103,16 +102,19 @@ pub(super) fn capture_source(
     let snapshot_project = Project::new(
         snapshot_root,
         snapshot_source.clone(),
-        ProjectConfiguration::new(
-            project.configuration().project_type(),
-            SourceFormat::DesignerXml,
-        ),
+        project
+            .configuration()
+            .clone()
+            .with_source_format(SourceFormat::DesignerXml),
     )
     .map_err(ManifestError::SnapshotProject)?;
-    let version = version::inspect(&snapshot_project).map_or_else(
-        |_| VersionDocument::unavailable(),
-        |info| VersionDocument::available(info.version.to_string()),
-    );
+    let version = match version::inspect(&snapshot_project) {
+        Ok(info) => VersionDocument::available(info.version.to_string()),
+        Err(source) if project.configuration().version_scheme().is_some() => {
+            return Err(ManifestError::VersionPolicy(source));
+        }
+        Err(_) => VersionDocument::unavailable(),
+    };
     Ok(SourceSnapshot {
         source: snapshot_source,
         id: format!("sha256:{}", hex(&hash.finalize())),

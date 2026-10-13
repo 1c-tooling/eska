@@ -58,6 +58,44 @@ fn bump_changes_only_the_root_version_value_bytes() {
     );
 }
 
+/// Three-part updates retain all surrounding bytes and never append a build value.
+#[test]
+fn three_part_bump_preserves_descriptor_bytes() {
+    let (fixture, project) = project("1.2.3");
+    let path = fixture.0.join("src/Configuration.xml");
+    let outcome = version::bump(&project, BumpKind::Minor).unwrap();
+    assert_eq!(outcome.current.to_string(), "1.3.0");
+    assert_eq!(
+        fs::read(&path).unwrap(),
+        format!("{PREFIX}1.3.0{SUFFIX}").as_bytes()
+    );
+}
+
+/// An explicit policy mismatch blocks both inspection and mutation before any write.
+#[test]
+fn explicit_scheme_is_checked_without_converting_source() {
+    for (value, scheme) in [("1.2.3", "x.y.z.build"), ("1.2.3.4", "x.y.z")] {
+        let (fixture, _) = project(value);
+        fs::write(
+            fixture.0.join("eska.toml"),
+            format!("[project]\ntype = 'configuration'\n[version]\nscheme = '{scheme}'\n"),
+        )
+        .unwrap();
+        let project = discovery::discover(&fixture.0).unwrap();
+        let path = project.source().join("Configuration.xml");
+        let before = fs::read(&path).unwrap();
+        assert!(matches!(
+            version::inspect(&project),
+            Err(VersionError::SchemeMismatch { .. })
+        ));
+        assert!(matches!(
+            version::bump(&project, BumpKind::Patch),
+            Err(VersionError::SchemeMismatch { .. })
+        ));
+        assert_eq!(fs::read(path).unwrap(), before);
+    }
+}
+
 #[test]
 fn inspect_is_read_only_and_reports_the_descriptor() {
     let (fixture, project) = project("01.0.2.01");

@@ -14,7 +14,7 @@ use crate::{
 
 use super::{
     ProjectConfigError,
-    schema::{RawBuild, RawVcs, SerializedBuild, SerializedVcs},
+    schema::{RawBuild, RawVcs, SerializedBuild, SerializedVcs, VersionSettings},
 };
 
 #[derive(Deserialize)]
@@ -23,6 +23,7 @@ struct RawWorkspaceDocument {
     workspace: RawWorkspace,
     build: Option<RawBuild>,
     vcs: Option<RawVcs>,
+    version: Option<VersionSettings>,
 }
 
 #[derive(Deserialize)]
@@ -37,6 +38,8 @@ struct SerializedWorkspaceDocument<'a> {
     build: SerializedBuild<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
     vcs: Option<SerializedVcs<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    version: Option<VersionSettings>,
 }
 
 #[derive(Serialize)]
@@ -50,6 +53,7 @@ pub struct WorkspaceConfig {
     members: Vec<PathBuf>,
     build: BuildSettings,
     workflow: Option<WorkflowSettings>,
+    version_scheme: Option<crate::project_core::native_version::VersionScheme>,
 }
 
 impl WorkspaceConfig {
@@ -95,6 +99,7 @@ impl WorkspaceConfig {
             members: document.workspace.members,
             build,
             workflow,
+            version_scheme: document.version.map(|version| version.scheme),
         })
     }
 
@@ -120,6 +125,7 @@ impl WorkspaceConfig {
             vcs: self.workflow.as_ref().map(|settings| SerializedVcs {
                 workflow: super::workflow::serialize(settings),
             }),
+            version: self.version_scheme.map(|scheme| VersionSettings { scheme }),
         };
         toml::to_string_pretty(&document)
     }
@@ -137,6 +143,14 @@ impl WorkspaceConfig {
     #[must_use]
     pub const fn workflow_settings(&self) -> Option<&WorkflowSettings> {
         self.workflow.as_ref()
+    }
+
+    /// Return the default scheme inherited by members without an override.
+    #[must_use]
+    pub const fn version_scheme(
+        &self,
+    ) -> Option<crate::project_core::native_version::VersionScheme> {
+        self.version_scheme
     }
 }
 
@@ -190,6 +204,35 @@ mod tests {
     use std::path::Path;
 
     use super::{WorkspaceConfig, WorkspaceConfigError};
+
+    /// Defaults remain optional and never imply a first version number.
+    #[test]
+    fn workspace_version_policy_round_trips_and_rejects_unknown_settings() {
+        use crate::project_core::native_version::VersionScheme;
+        for (value, scheme) in [
+            ("x.y.z", VersionScheme::ThreePart),
+            ("x.y.z.build", VersionScheme::FourPart),
+        ] {
+            let config = WorkspaceConfig::from_toml(&format!(
+                "[workspace]\nmembers = []\n[version]\nscheme = '{value}'\n"
+            ))
+            .unwrap();
+            assert_eq!(config.version_scheme(), Some(scheme));
+            assert_eq!(
+                WorkspaceConfig::from_toml(&config.to_toml().unwrap()).unwrap(),
+                config
+            );
+        }
+        assert!(
+            WorkspaceConfig::from_toml(
+                "[workspace]\nmembers = []\n[version]\nscheme = 'x.y.z'\nvalue = '1.0.0'\n"
+            )
+            .is_err()
+        );
+        let inferred = WorkspaceConfig::from_toml("[workspace]\nmembers = []\n").unwrap();
+        assert_eq!(inferred.version_scheme(), None);
+        assert!(!inferred.to_toml().unwrap().contains("[version]"));
+    }
 
     #[test]
     fn workspace_settings_and_members_round_trip() {

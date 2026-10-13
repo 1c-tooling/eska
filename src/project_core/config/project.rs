@@ -15,8 +15,8 @@ use crate::project_core::workflow::WorkflowPreset;
 
 use super::schema::{
     DEFAULT_SOURCE, RawDocument, SerializedBuild, SerializedDocument, SerializedEska,
-    SerializedProject, SerializedVcs, default_source, parse_project_type, parse_source_format,
-    project_type_name, source_format_name,
+    SerializedProject, SerializedVcs, VersionSettings, default_source, parse_project_type,
+    parse_source_format, project_type_name, source_format_name,
 };
 
 /// The validated contents of an `eska.toml` file.
@@ -60,6 +60,16 @@ impl ProjectConfig {
     #[must_use]
     pub fn with_workflow(mut self, workflow: WorkflowPreset) -> Self {
         self.configuration = self.configuration.with_workflow(workflow);
+        self
+    }
+
+    /// Set an explicit numeric profile while leaving the version value in its source.
+    #[must_use]
+    pub fn with_version_scheme(
+        mut self,
+        scheme: crate::project_core::native_version::VersionScheme,
+    ) -> Self {
+        self.configuration = self.configuration.with_version_scheme(scheme);
         self
     }
 
@@ -160,6 +170,9 @@ impl ProjectConfig {
             configuration =
                 configuration.with_workflow_settings(super::workflow::parse(vcs.workflow)?);
         }
+        if let Some(version) = document.version {
+            configuration = configuration.with_version_scheme(version.scheme);
+        }
         Ok(Self {
             name,
             source: document.project.source,
@@ -226,6 +239,10 @@ impl ProjectConfig {
                 .map(|settings| SerializedVcs {
                     workflow: super::workflow::serialize(settings),
                 }),
+            version: self
+                .configuration
+                .version_scheme()
+                .map(|scheme| VersionSettings { scheme }),
         };
 
         toml::to_string_pretty(&document)
@@ -373,6 +390,37 @@ mod tests {
     };
 
     use super::{InvalidSourceReason, ProjectConfig, ProjectConfigError};
+
+    /// Standalone and member serialization preserve policy without storing a second version.
+    #[test]
+    fn version_scheme_round_trips_without_becoming_a_version_value() {
+        use crate::project_core::native_version::VersionScheme;
+        for (name, scheme) in [
+            ("x.y.z", VersionScheme::ThreePart),
+            ("x.y.z.build", VersionScheme::FourPart),
+        ] {
+            let config = ProjectConfig::from_toml(&format!(
+                "[project]\ntype = 'configuration'\n[version]\nscheme = '{name}'\n"
+            ))
+            .unwrap();
+            assert_eq!(config.configuration().version_scheme(), Some(scheme));
+            for serialized in [
+                config.to_toml().unwrap(),
+                config.to_workspace_member_toml().unwrap(),
+            ] {
+                let copied = ProjectConfig::from_toml(&serialized).unwrap();
+                assert_eq!(copied.configuration().version_scheme(), Some(scheme));
+            }
+        }
+        for body in ["scheme = 'semver'", "scheme = 'x.y.z'\nvalue = '1.2.3'", ""] {
+            assert!(
+                ProjectConfig::from_toml(&format!(
+                    "[project]\ntype = 'configuration'\n[version]\n{body}\n"
+                ))
+                .is_err()
+            );
+        }
+    }
     use crate::{
         project_core::workflow::WorkflowPreset,
         project_core::{ProjectType, SourceFormat},

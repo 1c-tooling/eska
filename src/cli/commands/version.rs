@@ -15,7 +15,7 @@ use crate::{
         selection::{
             ProjectSelection, SelectedProject, SelectionError, SelectionIntent, select_projects,
         },
-        version::{self, BumpKind, VersionError},
+        version::{self, BumpKind, ProjectVersion, VersionError, VersionScheme},
     },
 };
 
@@ -81,6 +81,8 @@ enum OutputFormat {
 struct VersionDocument<'a> {
     schema_version: u8,
     version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    version_scheme: Option<&'static str>,
     descriptor: &'a str,
 }
 
@@ -91,6 +93,8 @@ struct BumpDocument<'a> {
     bump: &'static str,
     previous_version: String,
     current_version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    version_scheme: Option<&'static str>,
     descriptor: &'a str,
 }
 
@@ -106,6 +110,8 @@ struct WorkspaceVersionEntry {
     #[serde(rename = "type")]
     project_type: &'static str,
     version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    version_scheme: Option<&'static str>,
     descriptor: String,
 }
 
@@ -167,6 +173,7 @@ fn inspect_selection(
             name: name.as_str().to_owned(),
             project_type: selected.project().configuration().project_type().as_str(),
             version: info.version.to_string(),
+            version_scheme: Some(info.version.scheme().as_str()),
             descriptor: relative_path(selected.project().root(), &info.path),
         });
     }
@@ -178,8 +185,16 @@ fn inspect_selection(
             ExitCode::SUCCESS
         }
         OutputFormat::Json => {
+            let extended = projects
+                .iter()
+                .any(|project| project.version_scheme == Some(VersionScheme::ThreePart.as_str()));
+            if !extended {
+                for project in &mut projects {
+                    project.version_scheme = None;
+                }
+            }
             let document = WorkspaceVersionDocument {
-                schema_version: 1,
+                schema_version: if extended { 2 } else { 1 },
                 projects,
             };
             write_json_result(&document, localizer)
@@ -203,9 +218,11 @@ fn inspect_one(
             ExitCode::SUCCESS
         }
         OutputFormat::Json => {
+            let (schema_version, version_scheme) = json_scheme(&info.version);
             let document = VersionDocument {
-                schema_version: 1,
+                schema_version,
                 version: info.version.to_string(),
+                version_scheme,
                 descriptor: &descriptor,
             };
             write_json_result(&document, localizer)
@@ -247,12 +264,14 @@ fn bump_selection(
             )
         ),
         OutputFormat::Json => {
+            let (schema_version, version_scheme) = json_scheme(&outcome.current);
             let document = BumpDocument {
-                schema_version: 1,
+                schema_version,
                 operation: "bump",
                 bump: outcome.kind.as_str(),
                 previous_version: outcome.previous.to_string(),
                 current_version: outcome.current.to_string(),
+                version_scheme,
                 descriptor: &descriptor,
             };
             if !write_json(&document, localizer) {
@@ -261,6 +280,14 @@ fn bump_selection(
         }
     }
     ExitCode::SUCCESS
+}
+
+/// Retain the exact legacy response and identify the new numeric profile explicitly.
+const fn json_scheme(version: &ProjectVersion) -> (u8, Option<&'static str>) {
+    match version.scheme() {
+        VersionScheme::FourPart => (1, None),
+        VersionScheme::ThreePart => (2, Some(VersionScheme::ThreePart.as_str())),
+    }
 }
 
 /// Render localized help for the command and its mutating subcommand.
@@ -369,7 +396,8 @@ fn fail(error: &VersionError, localizer: &Localizer) -> ExitCode {
     ExitCode::FAILURE
 }
 
-fn version_error_message(error: &VersionError, localizer: &Localizer) -> String {
+/// Reuse version diagnostics when the same explicit policy blocks a native build.
+pub(in crate::cli) fn version_error_message(error: &VersionError, localizer: &Localizer) -> String {
     match error {
         VersionError::SourceFormatUnsupported => localizer.text("source-designer-required"),
         VersionError::Io { path, source } => localizer.format(
@@ -412,6 +440,13 @@ fn version_error_message(error: &VersionError, localizer: &Localizer) -> String 
         VersionError::Overflow { kind } => localizer.format(
             "version-overflow",
             &[("kind", LocalizationValue::Text(kind.as_str()))],
+        ),
+        VersionError::SchemeMismatch { expected, actual } => localizer.format(
+            "version-scheme-mismatch",
+            &[
+                ("expected", LocalizationValue::Text(expected.as_str())),
+                ("actual", LocalizationValue::Text(actual.as_str())),
+            ],
         ),
     }
 }

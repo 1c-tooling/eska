@@ -523,6 +523,53 @@ fn workspace_member_case_collisions_refuse_before_publication() {
     assert!(!test.0.join("new").exists());
 }
 
+/// Source migration preserves explicit defaults, member overrides and their exact manifests.
+#[test]
+fn workspace_migration_preserves_version_scheme_inheritance() {
+    use crate::project_core::native_version::VersionScheme;
+    use std::fmt::Write as _;
+    let test = TestDir::new();
+    let (original, pins) = fixture(&test);
+    for (path, scheme) in [
+        (original.root().join("eska.toml"), "x.y.z.build"),
+        (original.members()[1].root().join("eska.toml"), "x.y.z"),
+    ] {
+        let mut input = fs::read_to_string(&path).unwrap();
+        write!(input, "\r\n[version]\r\nscheme = '{scheme}'\r\n").unwrap();
+        fs::write(path, input).unwrap();
+    }
+    let old = workspace(original.root());
+    let before = Inventory::read(old.root()).unwrap();
+    let plan = prepare_readable_workspace(&old, &pins, &test.0.join("new")).unwrap();
+    plan.publish().unwrap();
+    let copied = workspace(plan.destination());
+    assert_eq!(
+        copied.members()[0]
+            .project()
+            .configuration()
+            .version_scheme(),
+        Some(VersionScheme::FourPart)
+    );
+    assert_eq!(
+        copied.members()[1]
+            .project()
+            .configuration()
+            .version_scheme(),
+        Some(VersionScheme::ThreePart)
+    );
+    assert_eq!(
+        fs::read(copied.root().join("eska.toml")).unwrap(),
+        fs::read(old.root().join("eska.toml")).unwrap()
+    );
+    for (original, copied) in old.members().iter().zip(copied.members()) {
+        assert_eq!(
+            fs::read(original.root().join("eska.toml")).unwrap(),
+            fs::read(copied.root().join("eska.toml")).unwrap()
+        );
+    }
+    assert_eq!(Inventory::read(old.root()).unwrap(), before);
+}
+
 #[cfg(unix)]
 /// Input and output directory aliases refuse without following a write into their targets.
 #[test]

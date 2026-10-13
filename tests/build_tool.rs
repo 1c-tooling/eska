@@ -427,6 +427,49 @@ fn designer_xml_and_human_output_remain_available() {
     );
 }
 
+/// Independent CI builds apply the same scheme policy and preserve previous publications.
+#[test]
+fn native_version_policy_is_checked_before_platform_import() {
+    let mut failures = Vec::new();
+    for locale in ["ru", "en"] {
+        let test = TestDir::new();
+        native(&test.0);
+        fs::write(test.0.join("eska.toml"), "[project]\ntype='configuration'\nsource='native'\n[build]\nplatform_version='8.3.27.2325'\n[version]\nscheme='x.y.z'\n").unwrap();
+        let artifact = test.0.join("result.cf");
+        let manifest = test.0.join("result.cf.manifest.json");
+        fs::write(&artifact, b"previous artifact").unwrap();
+        fs::write(&manifest, b"previous manifest").unwrap();
+        let mut cmd = command(
+            &test.0,
+            locale,
+            &["build", "--format", "json", "--output", "result.cf"],
+        );
+        cmd.arg("--ibcmd").arg(ibcmd_fixture::executable());
+        let value = report(&cmd.output().unwrap(), "error");
+        assert_eq!(value["error"]["code"], "project_version_policy_invalid");
+        assert_eq!(value["error"]["diagnostics"]["expected_scheme"], "x.y.z");
+        assert_eq!(
+            value["error"]["diagnostics"]["actual_scheme"],
+            "x.y.z.build"
+        );
+        failures.push(value);
+        assert_eq!(fs::read(&artifact).unwrap(), b"previous artifact");
+        assert_eq!(fs::read(&manifest).unwrap(), b"previous manifest");
+        assert!(!test.0.join("platform.log").exists());
+        let descriptor = test.0.join("native/Configuration.xml");
+        let input = fs::read_to_string(&descriptor)
+            .unwrap()
+            .replace("<Version>1.2.3.4</Version>", "<Version>1.2.3</Version>");
+        fs::write(&descriptor, &input).unwrap();
+        let output = cmd.output().unwrap();
+        report(&output, "success");
+        let value: Value = serde_json::from_slice(&fs::read(&manifest).unwrap()).unwrap();
+        assert_eq!(value["project"]["version"]["value"], "1.2.3");
+        assert_eq!(fs::read_to_string(&descriptor).unwrap(), input);
+    }
+    assert_eq!(failures[0], failures[1]);
+}
+
 #[test]
 /// Invalid machine config, missing project platform and exact-version mismatch retain stable codes.
 fn runner_preflight_and_machine_config_failures_are_locale_free() {

@@ -83,7 +83,96 @@ fn version_json_is_stable_locale_independent_and_read_only() {
     assert_eq!(documents[0]["schema_version"], 1);
     assert_eq!(documents[0]["version"], "1.0.2.01");
     assert_eq!(documents[0]["descriptor"], "src/Configuration.xml");
+    assert_eq!(documents[0].as_object().unwrap().len(), 3);
     assert_eq!(fs::read(path).unwrap(), before);
+}
+
+/// The new profile has a locale-independent v2 document with an explicit scheme.
+#[test]
+fn three_part_json_identifies_its_scheme_and_retains_exact_values() {
+    let fixture = project("1.2.3");
+    for locale in ["ru", "en"] {
+        let read = eska(&fixture.0, locale, &["version", "--format", "json"]);
+        assert!(read.status.success(), "{read:?}");
+        assert!(read.stderr.is_empty());
+        assert_eq!(
+            serde_json::from_slice::<Value>(&read.stdout).unwrap(),
+            serde_json::json!({
+                "schema_version": 2, "version": "1.2.3", "version_scheme": "x.y.z", "descriptor": "src/Configuration.xml"
+            })
+        );
+    }
+    for (kind, expected) in [("patch", "1.2.4"), ("minor", "1.3.0"), ("major", "2.0.0")] {
+        for locale in ["ru", "en"] {
+            let fixture = project("1.2.3");
+            let output = eska(
+                &fixture.0,
+                locale,
+                &["version", "bump", kind, "--format", "json"],
+            );
+            assert!(output.status.success(), "{output:?}");
+            assert!(output.stderr.is_empty());
+            assert_eq!(
+                serde_json::from_slice::<Value>(&output.stdout).unwrap(),
+                serde_json::json!({
+                    "schema_version": 2, "operation": "bump", "bump": kind,
+                    "previous_version": "1.2.3", "current_version": expected,
+                    "version_scheme": "x.y.z", "descriptor": "src/Configuration.xml"
+                })
+            );
+        }
+    }
+}
+
+/// A mixed workspace upgrades the envelope and identifies every member's scheme.
+#[test]
+fn mixed_workspace_inherits_scheme_and_respects_member_override() {
+    let fixture = workspace("1.2.3", "02.3.4.05");
+    let root_config = fixture.0.join("eska.toml");
+    let mut input = fs::read_to_string(&root_config).unwrap();
+    input.push_str("\n[version]\nscheme = 'x.y.z'\n");
+    fs::write(&root_config, input).unwrap();
+    let member = fixture.0.join("src/import-orders/eska.toml");
+    let mut input = fs::read_to_string(&member).unwrap();
+    input.push_str("\n[version]\nscheme = 'x.y.z.build'\n");
+    fs::write(&member, input).unwrap();
+    let mut documents = Vec::new();
+    for locale in ["ru", "en"] {
+        let output = eska(&fixture.0, locale, &["version", "--format", "json"]);
+        assert!(output.status.success(), "{output:?}");
+        assert!(output.stderr.is_empty());
+        documents.push(serde_json::from_slice::<Value>(&output.stdout).unwrap());
+    }
+    assert_eq!(documents[0], documents[1]);
+    assert_eq!(documents[0]["schema_version"], 2);
+    assert_eq!(documents[0]["projects"][0]["version_scheme"], "x.y.z");
+    assert_eq!(documents[0]["projects"][1]["version_scheme"], "x.y.z.build");
+    assert_eq!(documents[0]["projects"][1]["version"], "02.3.4.05");
+    let output = eska(
+        &fixture.0.join("src/sales-report"),
+        "en",
+        &["version", "bump", "minor"],
+    );
+    assert!(output.status.success(), "{output:?}");
+    assert!(String::from_utf8_lossy(&output.stdout).contains("1.3.0"));
+    fs::write(
+        &member,
+        "[project]\nname = 'import-orders'\ntype = 'processing'\nsource = '.'\n",
+    )
+    .unwrap();
+    let path = fixture.0.join("src/import-orders/ImportOrders.xml");
+    let before = fs::read(&path).unwrap();
+    for locale in ["ru", "en"] {
+        let output = eska(
+            &fixture.0,
+            locale,
+            &["version", "-p", "import-orders", "bump", "patch"],
+        );
+        assert_eq!(output.status.code(), Some(1), "{output:?}");
+        assert!(output.stdout.is_empty());
+        assert!(String::from_utf8_lossy(&output.stderr).contains("x.y.z.build"));
+        assert_eq!(fs::read(&path).unwrap(), before);
+    }
 }
 
 #[test]

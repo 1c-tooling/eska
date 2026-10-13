@@ -1228,6 +1228,50 @@ fn manifested_build_records_artifact_snapshot_platform_version_and_absent_git() 
     assert_eq!(fs::read(manifest_path).expect("Russian manifest"), bytes);
 }
 
+/// Explicit version policy refuses every build mode before importing or replacing artifacts.
+#[test]
+fn configured_version_scheme_blocks_build_without_touching_published_results() {
+    let fixture = TestDir::new();
+    let root = project(&fixture, "configuration", "scheme-demo");
+    let descriptor = root.join("src/Configuration.xml");
+    fs::write(&descriptor, r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><Configuration><Properties><Version>1.2.3.4</Version></Properties></Configuration></MetaDataObject>"#).unwrap();
+    let config = root.join("eska.toml");
+    let mut input = fs::read_to_string(&config).unwrap();
+    input.push_str("\n[version]\nscheme = 'x.y.z'\n");
+    fs::write(&config, input).unwrap();
+    let ibcmd = fake_ibcmd(&fixture);
+    fs::create_dir(root.join("build")).unwrap();
+    let artifact = root.join("build/scheme-demo.cf");
+    let manifest = root.join("build/scheme-demo.cf.manifest.json");
+    fs::write(&artifact, b"previous CF").unwrap();
+    fs::write(&manifest, b"previous manifest").unwrap();
+    for locale in ["ru", "en"] {
+        for args in [
+            vec!["build", "--format", "json"],
+            vec!["build", "--manifest", "--format", "json"],
+        ] {
+            let output = eska(&root, locale, &ibcmd, &args, false);
+            assert_eq!(output.status.code(), Some(1), "{output:?}");
+            let json: Value = serde_json::from_slice(&output.stdout).unwrap();
+            assert_eq!(json["error"]["code"], "project-version-policy-invalid");
+            assert_eq!(fs::read(&artifact).unwrap(), b"previous CF");
+            assert_eq!(fs::read(&manifest).unwrap(), b"previous manifest");
+            assert!(!root.join("build/.eska-infobases").exists());
+        }
+    }
+    fs::write(&descriptor, r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><Configuration><Properties><Version>1.2.3</Version></Properties></Configuration></MetaDataObject>"#).unwrap();
+    let output = eska(
+        &root,
+        "en",
+        &ibcmd,
+        &["build", "--manifest", "--format", "json"],
+        false,
+    );
+    assert!(output.status.success(), "{output:?}");
+    let document: Value = serde_json::from_slice(&fs::read(&manifest).unwrap()).unwrap();
+    assert_eq!(document["project"]["version"]["value"], "1.2.3");
+}
+
 #[test]
 /// Record the exact base CF bytes used for a manifested external build.
 fn manifested_external_build_records_base_configuration_checksum() {

@@ -7,7 +7,7 @@ use std::{
 };
 
 use super::{ArtifactType, BuildError, BuildPlan, manifest};
-use crate::project_core::{ProjectType, native};
+use crate::project_core::{ProjectType, native, native_version};
 
 /// Validate every filesystem input and output invariant without creating files or invoking ibcmd.
 ///
@@ -41,7 +41,18 @@ pub fn preflight(plan: &BuildPlan) -> Result<(), BuildError> {
             return Err(BuildError::BaseConfigurationInvalid(path.to_owned()));
         }
     }
-    import_source(plan).map(|_| ())
+    import_source(plan)?;
+    if let Some(scheme) = plan.version_scheme() {
+        let project_type = match plan.artifact_type() {
+            ArtifactType::Configuration => ProjectType::Configuration,
+            ArtifactType::Extension => ProjectType::Extension,
+            ArtifactType::Processing => ProjectType::Processing,
+            ArtifactType::Report => ProjectType::Report,
+        };
+        native_version::validate_native_scheme(plan.source(), project_type, scheme)
+            .map_err(|error| BuildError::Manifest(manifest::ManifestError::VersionPolicy(error)))?;
+    }
+    Ok(())
 }
 
 /// Validate both destinations required by a manifested build without creating files.
