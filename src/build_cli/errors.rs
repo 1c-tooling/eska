@@ -189,3 +189,23 @@ pub(super) const fn stage_name(stage: BuildStage) -> &'static str {
         BuildStage::ImportSources => "import_sources",
     }
 }
+
+/// Native unpacking errors do not imply a project replacement or permission change.
+pub(super) fn unpack(error: crate::build_core::artifact::UnpackError) -> Failure {
+    use crate::build_core::artifact::UnpackError;
+    match error {
+        UnpackError::Io { path, .. } => at("unpack_io", &path),
+        UnpackError::UnsupportedFile(path) => at("unpack_file_unsupported", &path),
+        UnpackError::InvalidDescriptor(path) => at("unpack_descriptor_invalid", &path),
+        UnpackError::MissingDescriptor(path) => at("unpack_descriptor_missing", &path),
+        UnpackError::AmbiguousDescriptor(path) => at("unpack_descriptors_ambiguous", &path),
+        UnpackError::UnsafePath(path) => at("unpack_path_unsafe", &path),
+        UnpackError::DestinationExists(path) => at("unpack_destination_exists", &path),
+        UnpackError::SourceChanged(path) => at("unpack_source_changed", &path),
+        UnpackError::Run(error) => run(&error),
+        UnpackError::Platform { stage, .. } => Failure {
+            diagnostics: json!({"stage":stage}),
+            ..Failure::new("platform_command_failed")
+        },
+    }
+}

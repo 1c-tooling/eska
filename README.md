@@ -861,6 +861,8 @@ preset = "trunk"
 импортирует проект, читает настройки и готовит проверенный XML без платформы
 и Git. Самостоятельный [eska-build](docs/research/eska-format/build-cli.md)
 собирает проверенный snapshot и сохраняет карту исходников в manifest.
+[Распаковка CF/CFE/EPF/ERF](docs/research/eska-format/native-unpack.md) через
+`eska-build unpack` создаёт новый Designer XML каталог без проекта и Git.
 Общий [typed writer](docs/research/eska-format/typed-scalars.md) поддерживает
 32 свойства, включая bool, точные целые и enum с проверкой владельца;
 старая preserved-запись не мигрирует при открытии.

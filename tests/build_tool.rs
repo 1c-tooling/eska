@@ -5,6 +5,9 @@ mod support;
 #[path = "build_tool/external_version.rs"]
 mod external_version;
 
+#[path = "build_tool/unpack.rs"]
+mod unpack;
+
 #[path = "build_tool/extensions.rs"]
 mod extensions;
 
@@ -110,6 +113,7 @@ fn localized_help_and_capabilities_have_no_platform_dependency() {
         for args in [
             &["--help"][..],
             &["build", "--help"][..],
+            &["unpack", "--help"][..],
             &["capabilities", "--help"][..],
         ] {
             let output = command(&test.0, locale, args).output().expect("help");
@@ -128,7 +132,7 @@ fn localized_help_and_capabilities_have_no_platform_dependency() {
     }
     assert_eq!(capabilities[0], capabilities[1]);
     assert_eq!(capabilities[0]["data"]["git_required"], false);
-    assert_eq!(capabilities[0]["data"]["unpack"], false);
+    assert_eq!(capabilities[0]["data"]["unpack"], true);
     assert!(!test.0.join("platform.log").exists());
 }
 

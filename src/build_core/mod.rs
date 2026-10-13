@@ -3,6 +3,7 @@
 //! The `build` feature enables this module. Source conversion and export permissions
 //! belong to [`crate::project_core`]; resolving a build plan does not authorize export.
 
+pub mod artifact;
 mod diagnostics;
 mod execute;
 mod infobase;

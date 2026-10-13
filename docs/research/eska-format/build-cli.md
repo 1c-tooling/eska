@@ -91,8 +91,9 @@ schema 2 с protected context и source map. Git не инспектируетс
 `source.git.status = "unavailable"`; отсутствие repository не выдумывается.
 Проверка BSL и применение к рабочей БД не являются скрытыми этапами build.
 
-Распаковка нативных артефактов и Designer CheckConfig пока не добавлены в этот
-бинарник; capabilities явно сообщает это. Модель версии нативного manifest
+Добавлена [самостоятельная распаковка CF/CFE/EPF/ERF](native-unpack.md) через
+`eska-build unpack`. Она не требует проекта и создаёт новый Designer XML каталог.
+Designer CheckConfig пока отсутствует; capabilities явно сообщает эту границу. Модель версии нативного manifest
 сохраняет текущий contract; расширение x.y.z относится к T83/EF-22.
 
 ## Проверки

@@ -1,19 +1,14 @@
 //! Native 1C artifacts unpacked into isolated, validated Designer XML sources.
 
-mod export;
-mod identity;
 mod replace;
-mod snapshot;
-mod staging;
-mod unpack;
 
 use std::{io, path::PathBuf};
 
 use super::{ProjectType, build::RunError};
 
-pub use identity::{Identity, inspect_identity};
+pub use crate::build_core::artifact::PreparedArtifact;
+pub use crate::project_core::native::{Identity, inspect_identity};
 pub use replace::{ImportPlan, ImportResult};
-pub use unpack::PreparedArtifact;
 
 /// Import failures retain their operation and affected path without presentation text.
 #[derive(Debug)]
@@ -54,5 +49,32 @@ fn io_error(path: &std::path::Path, source: io::Error) -> ArtifactError {
     ArtifactError::Io {
         path: path.to_owned(),
         source,
+    }
+}
+
+impl From<crate::build_core::artifact::UnpackError> for ArtifactError {
+    /// Keep the installed CLI's error contract while native execution lives in build core.
+    fn from(error: crate::build_core::artifact::UnpackError) -> Self {
+        use crate::build_core::artifact::UnpackError;
+        match error {
+            UnpackError::Io { path, source } => Self::Io { path, source },
+            UnpackError::UnsupportedFile(path) => Self::UnsupportedFile(path),
+            UnpackError::InvalidDescriptor(path) => Self::InvalidDescriptor(path),
+            UnpackError::MissingDescriptor(path) => Self::MissingDescriptor(path),
+            UnpackError::AmbiguousDescriptor(path) => Self::AmbiguousDescriptor(path),
+            UnpackError::UnsafePath(path) | UnpackError::DestinationExists(path) => {
+                Self::UnsafePath(path)
+            }
+            UnpackError::SourceChanged(path) => Self::SourceChanged(path),
+            UnpackError::Run(source) => Self::Run(source),
+            UnpackError::Platform { stage, output } => Self::Platform { stage, output },
+        }
+    }
+}
+
+impl From<crate::project_core::native::IdentityError> for ArtifactError {
+    /// Identity checks remain available independently of the platform runner.
+    fn from(error: crate::project_core::native::IdentityError) -> Self {
+        crate::build_core::artifact::UnpackError::from(error).into()
     }
 }

@@ -6,10 +6,10 @@ use std::{
     path::Path,
 };
 
-use super::{ArtifactError, Identity, identity::inspect_identity, io_error};
-use crate::project::{
-    ProjectType,
-    build::{Ibcmd, ProcessStream},
+use super::{Identity, UnpackError, io_error};
+use crate::{
+    build_core::{Ibcmd, ProcessStream},
+    project_core::{ProjectType, native::inspect_identity},
 };
 
 /// Retry a native suffix only when a complete export proves that the probe identity was false.
@@ -22,14 +22,14 @@ pub(super) fn export_sources<F>(
     snapshot: &Path,
     destination: &Path,
     output: &mut F,
-) -> Result<(), ArtifactError>
+) -> Result<(), UnpackError>
 where
     F: FnMut(ProcessStream, &[u8]),
 {
     let original = snapshot
         .extension()
         .and_then(OsStr::to_str)
-        .ok_or_else(|| ArtifactError::UnsupportedFile(snapshot.to_owned()))?;
+        .ok_or_else(|| UnpackError::UnsupportedFile(snapshot.to_owned()))?;
     let suffixes = std::iter::once(original).chain(
         ["cf", "cfe", "epf", "erf"]
             .into_iter()
@@ -62,7 +62,7 @@ where
         fs::remove_dir_all(&recovered).map_err(|error| io_error(&recovered, error))?;
         current = candidate;
     }
-    Err(ArtifactError::InvalidDescriptor(destination.to_owned()))
+    Err(UnpackError::InvalidDescriptor(destination.to_owned()))
 }
 
 /// A failed file export is evidence for dispatch, never a publishable source tree.
@@ -73,7 +73,7 @@ fn attempt_sources<F>(
     snapshot: &Path,
     destination: &Path,
     output: &mut F,
-) -> Result<bool, ArtifactError>
+) -> Result<bool, UnpackError>
 where
     F: FnMut(ProcessStream, &[u8]),
 {
@@ -93,7 +93,7 @@ where
         &mut |stream, bytes| buffered.push((stream, bytes.to_vec())),
     );
     // Cancellation and launch failures must not trigger another platform operation.
-    if probe.is_err() && !matches!(&probe, Err(ArtifactError::Platform { .. })) {
+    if probe.is_err() && !matches!(&probe, Err(UnpackError::Platform { .. })) {
         for (stream, bytes) in buffered {
             output(stream, &bytes);
         }
@@ -107,7 +107,7 @@ where
                 for (stream, bytes) in buffered {
                     output(stream, &bytes);
                 }
-                return Err(error);
+                return Err(error.into());
             }
         }
     } else {
@@ -136,7 +136,7 @@ fn export_registered<F>(
     destination: &Path,
     identity: &Identity,
     output: &mut F,
-) -> Result<bool, ArtifactError>
+) -> Result<bool, UnpackError>
 where
     F: FnMut(ProcessStream, &[u8]),
 {
@@ -171,14 +171,14 @@ where
     export.push(recovered.as_os_str().to_owned());
     run(tool, pid, "export", export, output)?;
     let actual = inspect_identity(&recovered)?
-        .ok_or_else(|| ArtifactError::MissingDescriptor(recovered.clone()))?;
+        .ok_or_else(|| UnpackError::MissingDescriptor(recovered.clone()))?;
     if &actual != identity {
         fs::rename(&registered, snapshot).map_err(|error| io_error(&registered, error))?;
         return Ok(false);
     }
     let dump_info = recovered.join("ConfigDumpInfo.xml");
     if !fs::symlink_metadata(&dump_info).is_ok_and(|metadata| metadata.is_file()) {
-        return Err(ArtifactError::MissingDescriptor(dump_info));
+        return Err(UnpackError::MissingDescriptor(dump_info));
     }
     // Neither the partially exported descriptors nor their resources are published.
     fs::remove_dir_all(destination).map_err(|error| io_error(destination, error))?;
@@ -200,15 +200,15 @@ pub(super) fn run<F>(
     stage: &'static str,
     arguments: Vec<OsString>,
     output: &mut F,
-) -> Result<(), ArtifactError>
+) -> Result<(), UnpackError>
 where
     F: FnMut(ProcessStream, &[u8]),
 {
     let result = tool
         .run_interruptible(arguments, pid, output)
-        .map_err(ArtifactError::Run)?;
+        .map_err(UnpackError::Run)?;
     if !result.status.success() {
-        return Err(ArtifactError::Platform {
+        return Err(UnpackError::Platform {
             stage,
             output: format!(
                 "{}{}",

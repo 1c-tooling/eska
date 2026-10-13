@@ -4,12 +4,12 @@ use std::{fs, path::PathBuf};
 
 use gix::bstr::ByteSlice;
 
-use super::{
-    ArtifactError, Identity, PreparedArtifact, inspect_identity, io_error,
-    snapshot::{self, Snapshot},
-    staging::Staging,
-};
+use super::{ArtifactError, Identity, PreparedArtifact, inspect_identity, io_error};
 use crate::{
+    build_core::artifact::{
+        snapshot::{self, Snapshot},
+        staging::Staging,
+    },
     config::ProjectConfig,
     project::{Project, SourceFormat},
     vcs::repository::{Error as RepositoryError, Repository},
@@ -44,7 +44,7 @@ impl ImportPlan {
         validate_location(project)?;
         let config_path = project.root().join(crate::config::FILE_NAME);
         let config = fs::read(&config_path).map_err(|error| io_error(&config_path, error))?;
-        let snapshot = snapshot::capture(project.source())?;
+        let snapshot = snapshot::capture(project.source(), &|| false)?;
         let current = inspect_identity(project.source())?;
         if current.is_none() && !snapshot.empty_scaffold {
             return Err(ArtifactError::MissingDescriptor(
@@ -111,17 +111,14 @@ impl ImportPlan {
         validate_location(&self.project)?;
         let config_path = self.project.root().join(crate::config::FILE_NAME);
         if fs::read(&config_path).map_err(|error| io_error(&config_path, error))? != self.config
-            || snapshot::capture(self.project.source())? != self.snapshot
+            || snapshot::capture(self.project.source(), &|| false)? != self.snapshot
             || local_changes(&self.project, &self.snapshot)? != self.local_changes
         {
             return Err(ArtifactError::SourceChanged(
                 self.project.source().to_owned(),
             ));
         }
-        snapshot::capture(&artifact.sources())?;
-        if inspect_identity(&artifact.sources())?.as_ref() != Some(artifact.identity()) {
-            return Err(ArtifactError::SourceChanged(artifact.sources()));
-        }
+        artifact.verify()?;
         replace_directory(&artifact.sources(), self.project.source())
     }
 }

@@ -7,25 +7,25 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use super::{ArtifactError, io_error};
+use super::{UnpackError, io_error};
 
-pub(super) struct Staging {
+pub struct Staging {
     pub path: PathBuf,
     pub preserve: bool,
 }
 
 impl Staging {
     /// Claim ignored storage near the destination, including before workspace parents exist.
-    pub fn create(destination: &Path) -> Result<Self, ArtifactError> {
+    pub fn create(destination: &Path) -> Result<Self, UnpackError> {
         let parent = destination
             .ancestors()
             .skip(1)
             .find(|path| path.is_dir())
-            .ok_or_else(|| ArtifactError::UnsafePath(destination.to_owned()))?;
+            .ok_or_else(|| UnpackError::UnsafePath(destination.to_owned()))?;
         let service = parent.join(".eska");
         let storage = service.join("import");
         if storage.starts_with(destination) {
-            return Err(ArtifactError::UnsafePath(destination.to_owned()));
+            return Err(UnpackError::UnsafePath(destination.to_owned()));
         }
         ensure_directory(&service)?;
         ensure_directory(&storage)?;
@@ -58,7 +58,7 @@ impl Staging {
 }
 
 /// Refuse links and files instead of redirecting temporary data or retained backups.
-fn ensure_directory(path: &Path) -> Result<(), ArtifactError> {
+fn ensure_directory(path: &Path) -> Result<(), UnpackError> {
     match fs::create_dir(path) {
         Ok(()) => Ok(()),
         Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
@@ -68,7 +68,7 @@ fn ensure_directory(path: &Path) -> Result<(), ArtifactError> {
             {
                 Ok(())
             } else {
-                Err(ArtifactError::UnsafePath(path.to_owned()))
+                Err(UnpackError::UnsafePath(path.to_owned()))
             }
         }
         Err(error) => Err(io_error(path, error)),
@@ -76,7 +76,7 @@ fn ensure_directory(path: &Path) -> Result<(), ArtifactError> {
 }
 
 /// Ignore the entire service directory, including this rule, without editing project files.
-fn ensure_ignored(storage: &Path) -> Result<(), ArtifactError> {
+fn ensure_ignored(storage: &Path) -> Result<(), UnpackError> {
     let path = storage.join(".gitignore");
     match fs::OpenOptions::new()
         .write(true)
@@ -89,10 +89,10 @@ fn ensure_ignored(storage: &Path) -> Result<(), ArtifactError> {
         Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
             let metadata = fs::symlink_metadata(&path).map_err(|error| io_error(&path, error))?;
             if !metadata.is_file() || metadata.len() != 2 {
-                return Err(ArtifactError::UnsafePath(path));
+                return Err(UnpackError::UnsafePath(path));
             }
             if fs::read(&path).map_err(|error| io_error(&path, error))? != b"*\n" {
-                return Err(ArtifactError::UnsafePath(path));
+                return Err(UnpackError::UnsafePath(path));
             }
             Ok(())
         }
@@ -145,7 +145,7 @@ mod tests {
         let destination = fixture.0.join(".eska");
         assert!(matches!(
             Staging::create(&destination),
-            Err(ArtifactError::UnsafePath(_))
+            Err(UnpackError::UnsafePath(_))
         ));
         assert!(!destination.exists());
     }
@@ -159,7 +159,7 @@ mod tests {
         fs::write(storage.join(".gitignore"), "!keep\n").unwrap();
         assert!(matches!(
             Staging::create(&fixture.0.join("src")),
-            Err(ArtifactError::UnsafePath(_))
+            Err(UnpackError::UnsafePath(_))
         ));
         assert_eq!(fs::read(storage.join(".gitignore")).unwrap(), b"!keep\n");
     }
@@ -177,7 +177,7 @@ mod tests {
             std::os::unix::fs::symlink(&outside, &link).unwrap();
             assert!(matches!(
                 Staging::create(&fixture.0.join("src")),
-                Err(ArtifactError::UnsafePath(_))
+                Err(UnpackError::UnsafePath(_))
             ));
             assert!(outside.read_dir().unwrap().next().is_none());
         }

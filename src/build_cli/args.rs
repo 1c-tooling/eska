@@ -32,6 +32,8 @@ pub(super) enum Command {
     Build(Box<Build>),
     #[command(disable_help_flag = true)]
     Capabilities,
+    #[command(disable_help_flag = true)]
+    Unpack(Unpack),
 }
 
 impl Command {
@@ -40,6 +42,7 @@ impl Command {
         match self {
             Self::Build(_) => "build",
             Self::Capabilities => "capabilities",
+            Self::Unpack(_) => "unpack",
         }
     }
 }
@@ -68,4 +71,18 @@ pub(super) struct Build {
     pub generations: Option<PathBuf>,
     #[arg(long)]
     pub allow_exclusions: bool,
+}
+
+#[derive(Debug, Args)]
+pub(super) struct Unpack {
+    pub file: PathBuf,
+    pub destination: PathBuf,
+    #[arg(long)]
+    pub platform_version: String,
+    #[arg(long)]
+    pub ibcmd: Option<PathBuf>,
+    #[arg(long)]
+    pub platform_arch: Option<String>,
+    #[arg(long)]
+    pub distrobox: Option<String>,
 }

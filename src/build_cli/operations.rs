@@ -1,5 +1,7 @@
 //! Only the build core starts platform processes; the CLI supplies selected inputs and reports.
 
+mod unpack;
+
 use std::io::{self, Write};
 
 use serde::Serialize;
@@ -36,18 +38,19 @@ struct PlatformEvent {
     origin: Option<MappedFile>,
 }
 
-/// Dispatch the implemented build commands without implying unpack or Designer checking support.
+/// Dispatch native operations without loading project or analysis state for unpack.
 pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String), Failure> {
     match &cli.command {
         Command::Build(args) => build(cli, args, localizer),
+        Command::Unpack(args) => unpack::execute(cli, args, localizer),
         Command::Capabilities => Ok((
             json!({"version":env!("CARGO_PKG_VERSION"),"protocol_version":1,
-            "commands":["build","capabilities"],
+            "commands":["build","unpack","capabilities"],
             "source_formats":["designer-xml","eska"],
             "designer_artifact_types":["configuration","extension","processing","report"],
-            "eska_artifact_types":["configuration","extension"], "manifest":true,
+            "eska_artifact_types":["configuration","extension","processing","report"], "manifest":true,
             "platform_required_for_build":true,"git_required":false,"analyzer_required":false,
-            "unpack":false,"designer_check":false}),
+            "unpack":true,"designer_check":false}),
             localizer.text("tool-build-capabilities"),
         )),
     }

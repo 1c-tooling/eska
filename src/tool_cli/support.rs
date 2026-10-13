@@ -237,7 +237,15 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         "accepted_base_pin_invalid" => Some("tool-error-pin-invalid"),
         "source_baseline_untrusted" => Some("tool-error-base-untrusted"),
         "source_baseline_corrupt" => Some("tool-error-base-corrupt"),
-        "source_destination_exists" => Some("tool-error-destination-exists"),
+        "source_destination_exists" | "unpack_destination_exists" => {
+            Some("tool-error-destination-exists")
+        }
+        "unpack_file_unsupported" => Some("tool-error-unpack-file"),
+        "unpack_descriptor_invalid"
+        | "unpack_descriptor_missing"
+        | "unpack_descriptors_ambiguous" => Some("tool-error-unpack-descriptor"),
+        "unpack_path_unsafe" => Some("tool-error-unpack-path"),
+        "unpack_source_changed" => Some("tool-error-unpack-changed"),
         "source_format_mismatch" => Some("tool-error-format"),
         "source_migration_scope_unsupported" => Some("tool-error-migration-scope"),
         "source_migration_incomplete" => Some("tool-error-migration-incomplete"),

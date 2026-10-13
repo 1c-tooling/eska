@@ -2,11 +2,32 @@
 
 use std::{fs, io::Read, path::Path};
 
-use super::{ArtifactError, io_error};
-use crate::project::{ProjectType, designer_xml};
+use crate::project_core::ProjectType;
+
+use super::project_type_from_root;
 
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
 const MAX_BYTES: u64 = 64 * 1024 * 1024;
+
+/// Root identity failures retain filesystem context without a platform or Git dependency.
+#[derive(Debug)]
+pub enum IdentityError {
+    Io {
+        path: std::path::PathBuf,
+        source: std::io::Error,
+    },
+    InvalidDescriptor(std::path::PathBuf),
+    AmbiguousDescriptor(std::path::PathBuf),
+    UnsafePath(std::path::PathBuf),
+}
+
+/// Keep the unreadable descriptor path instead of erasing it into an operating-system message.
+fn io_error(path: &Path, source: std::io::Error) -> IdentityError {
+    IdentityError::Io {
+        path: path.to_owned(),
+        source,
+    }
+}
 
 /// Native metadata identity; workspace aliases and directory names are unrelated.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -20,7 +41,7 @@ pub struct Identity {
 ///
 /// # Errors
 /// Rejects ambiguous, malformed, oversized and linked root descriptors.
-pub fn inspect_identity(directory: &Path) -> Result<Option<Identity>, ArtifactError> {
+pub fn inspect_identity(directory: &Path) -> Result<Option<Identity>, IdentityError> {
     let mut identity = None;
     for entry in fs::read_dir(directory).map_err(|error| io_error(directory, error))? {
         let entry = entry.map_err(|error| io_error(directory, error))?;
@@ -39,11 +60,11 @@ pub fn inspect_identity(directory: &Path) -> Result<Option<Identity>, ArtifactEr
             continue;
         }
         if !kind.is_file() {
-            return Err(ArtifactError::UnsafePath(path));
+            return Err(IdentityError::UnsafePath(path));
         }
         if let Some(found) = read_identity(&path)? {
             if identity.is_some() {
-                return Err(ArtifactError::AmbiguousDescriptor(directory.to_owned()));
+                return Err(IdentityError::AmbiguousDescriptor(directory.to_owned()));
             }
             identity = Some(found);
         }
@@ -52,7 +73,7 @@ pub fn inspect_identity(directory: &Path) -> Result<Option<Identity>, ArtifactEr
 }
 
 /// Parse a single bounded XML document and retain only its root identity.
-fn read_identity(path: &Path) -> Result<Option<Identity>, ArtifactError> {
+fn read_identity(path: &Path) -> Result<Option<Identity>, IdentityError> {
     let mut input = String::new();
     fs::File::open(path)
         .map_err(|error| io_error(path, error))?
@@ -60,9 +81,10 @@ fn read_identity(path: &Path) -> Result<Option<Identity>, ArtifactError> {
         .read_to_string(&mut input)
         .map_err(|error| io_error(path, error))?;
     if input.len() as u64 > MAX_BYTES {
-        return Err(ArtifactError::InvalidDescriptor(path.to_owned()));
+        return Err(IdentityError::InvalidDescriptor(path.to_owned()));
     }
-    let invalid = || ArtifactError::InvalidDescriptor(path.to_owned());
+    let invalid = || IdentityError::InvalidDescriptor(path.to_owned());
+    super::check_envelope(&input).map_err(|_| invalid())?;
     let document = roxmltree::Document::parse_with_options(
         &input,
         roxmltree::ParsingOptions {
@@ -72,7 +94,7 @@ fn read_identity(path: &Path) -> Result<Option<Identity>, ArtifactError> {
     )
     .map_err(|_| invalid())?;
     let root = document.root_element();
-    let Some(project_type) = designer_xml::project_type_from_root(root) else {
+    let Some(project_type) = project_type_from_root(root) else {
         return Ok(None);
     };
     let object = root
@@ -137,18 +159,27 @@ mod tests {
         fs::write(fixture.0.join("Second.xml"), xml).unwrap();
         assert!(matches!(
             inspect_identity(&fixture.0),
-            Err(ArtifactError::AmbiguousDescriptor(_))
+            Err(IdentityError::AmbiguousDescriptor(_))
         ));
         fs::remove_file(fixture.0.join("Second.xml")).unwrap();
         for invalid in [
             xml.replace("ABCDEF12-1234-1234-1234-123456789012", ""),
             "<!DOCTYPE x><x/>".to_owned(),
             "<broken>".to_owned(),
+            xml.replace(
+                "</m:Properties>",
+                &format!(
+                    "{}{}{}",
+                    "<m:X>".repeat(65),
+                    "</m:X>".repeat(65),
+                    "</m:Properties>"
+                ),
+            ),
         ] {
             fs::write(&path, invalid).unwrap();
             assert!(matches!(
                 inspect_identity(&fixture.0),
-                Err(ArtifactError::InvalidDescriptor(_))
+                Err(IdentityError::InvalidDescriptor(_))
             ));
         }
     }

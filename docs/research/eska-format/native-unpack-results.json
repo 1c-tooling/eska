@@ -1,0 +1,54 @@
+{
+  "platform_version": "8.3.27.2325",
+  "native_scenarios": 8,
+  "initial_configuration_file_export_failures": 1,
+  "explicit_fresh_destination_rerun_succeeded": true,
+  "matrix": [
+    {
+      "kind": "configuration",
+      "locales": [
+        "ru",
+        "en"
+      ],
+      "files": 13,
+      "input_unchanged": true,
+      "differences": [],
+      "dump_ids_and_structure_equal": true
+    },
+    {
+      "kind": "extension",
+      "locales": [
+        "ru",
+        "en"
+      ],
+      "files": 107,
+      "input_unchanged": true,
+      "differences": [],
+      "dump_ids_and_structure_equal": true
+    },
+    {
+      "kind": "processing",
+      "locales": [
+        "ru",
+        "en"
+      ],
+      "files": 8,
+      "input_unchanged": true,
+      "differences": [],
+      "dump_ids_and_structure_equal": true
+    },
+    {
+      "kind": "report",
+      "locales": [
+        "ru",
+        "en"
+      ],
+      "files": 4,
+      "input_unchanged": true,
+      "differences": [],
+      "dump_ids_and_structure_equal": true
+    }
+  ],
+  "native_invocations": 9,
+  "successful_exports": 8
+}

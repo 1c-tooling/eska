@@ -1,5 +1,9 @@
 //! Root descriptor detection, not a semantic validator for an entire export.
 
+mod identity;
+
+pub use identity::{Identity, IdentityError, inspect_identity};
+
 use super::ProjectType;
 
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
