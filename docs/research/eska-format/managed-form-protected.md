@@ -49,7 +49,8 @@ body edits; они не скрывают независимую разрешён
 ## Граница части
 
 [Точечный editor API](managed-form-edit.md) добавлен в части 7.
-Source/base/workspace migration ещё нужна.
+Позднейшая [часть 8](managed-form-migration.md) добавляет source/base/project/workspace
+migration; прежние targets сохраняют map 4 как byte no-op.
 CLI import defaults не менялись. Этот этап не подтверждает платформенную
 приёмку изменённых форм или готовность Explorer/analyzer overlay.
 

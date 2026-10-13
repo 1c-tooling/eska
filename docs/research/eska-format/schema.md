@@ -20,7 +20,8 @@ descriptor schema 2 и optional body schema 2 в `ObjectSource.form`, роль
 `managed_form` с native descriptor identity. [Combined schema](managed-form-source.schema.json)
 не заменяет прежние схемы. Новый импорт доступен как opt-in core API;
 [protected export/source map 3](managed-form-protected.md) подключены к принятой
-identity. Миграция и публичный CLI import для map 4 ещё не приняты.
+identity. [Явная миграция](managed-form-migration.md) переносит source, pinned base,
+standalone проект или workspace в map 4. Публичный CLI import остаётся задачей EF-20.
 
 [JSON Schema](descriptor.schema.json) описывает один descriptor. Семантические
 ограничения дополнительно проверяет `Descriptor::validate`: уникальность UUID,

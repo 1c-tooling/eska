@@ -9,7 +9,7 @@ mod tests;
 pub use pins::WorkspaceAcceptedRefs;
 
 use super::{
-    AcceptedRef, BTreeMap, Error, Path, PathBuf, ProjectLayoutPlan, Receipt, SourcePath,
+    AcceptedRef, BTreeMap, Error, Path, PathBuf, ProjectLayoutPlan, Receipt, SourcePath, Target,
     WorkspaceConfig, ancillary, destination_path, files, portable, prepare_project,
     require_project_ready,
 };
@@ -126,6 +126,30 @@ pub fn prepare_readable_workspace(
     expected: &WorkspaceAcceptedRefs,
     destination: &Path,
 ) -> Result<WorkspaceLayoutPlan, Error> {
+    prepare(workspace, expected, destination, Target::Readable)
+}
+
+/// Convert every declared member to map 4 with independent pins and exact inherited/explicit settings.
+///
+/// All plans validate before publication; the workspace ready marker remains the last published input.
+///
+/// # Errors
+/// Returns untrusted/invalid members, unverified dialogs, unsafe paths or conflicting output.
+pub fn prepare_form_workspace(
+    workspace: &Workspace,
+    expected: &WorkspaceAcceptedRefs,
+    destination: &Path,
+) -> Result<WorkspaceLayoutPlan, Error> {
+    prepare(workspace, expected, destination, Target::Forms)
+}
+
+/// Both explicit project layouts retain the same independent member authority and outer receipt.
+fn prepare(
+    workspace: &Workspace,
+    expected: &WorkspaceAcceptedRefs,
+    destination: &Path,
+    target: Target,
+) -> Result<WorkspaceLayoutPlan, Error> {
     require_project_ready(workspace.root())?;
     verify_workspace(workspace)?;
     let ancillary = ancillary(workspace.root())?;
@@ -151,6 +175,7 @@ pub fn prepare_readable_workspace(
                 pin,
                 &destination.join(path.as_path()),
                 Some(&config),
+                target,
             )
             .map_err(|error| error.in_field(member.name().as_str()))?;
             Ok(WorkspaceLayoutMember {

@@ -5,7 +5,7 @@ mod workspace;
 
 pub use workspace::{
     WORKSPACE_LAYOUT_RECEIPT, WorkspaceAcceptedRefs, WorkspaceLayoutMember, WorkspaceLayoutPlan,
-    prepare_readable_workspace,
+    prepare_form_workspace, prepare_readable_workspace,
 };
 
 #[cfg(test)]
@@ -22,7 +22,8 @@ use sha2::{Digest, Sha256};
 
 use super::{
     AcceptedBase, AcceptedLayoutPlan, AcceptedRef, Error, FileRole, LayoutChange, SourceLayoutPlan,
-    SourcePath, files, prepare_accepted_readable_layout, prepare_readable_layout,
+    SourcePath, files, prepare_accepted_form_layout, prepare_accepted_readable_layout,
+    prepare_form_layout, prepare_readable_layout,
 };
 use crate::project_core::{
     Project, SourceFormat,
@@ -34,6 +35,13 @@ use crate::project_core::{
 
 /// A project is not ready while its independently resumable source and base are being published.
 pub const PROJECT_LAYOUT_RECEIPT: &str = ".eska-project-layout.json";
+
+/// Each public entry point selects one concrete layout while sharing publication and trust boundaries.
+#[derive(Clone, Copy)]
+enum Target {
+    Readable,
+    Forms,
+}
 
 /// The receipt binds both storage plans and exact settings, without absolute paths or editable data.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -79,7 +87,25 @@ pub fn prepare_readable_project(
     if *scope != ProjectScope::Standalone {
         return Err(Error::root("source_migration_scope_unsupported"));
     }
-    prepare_project(project, expected, destination, None)
+    prepare_project(project, expected, destination, None, Target::Readable)
+}
+
+/// Prepare a standalone map 4 project with current dialogs and independently converted accepted storage.
+///
+/// Exact settings are retained; source/base publication is resumable and the new pin remains explicit.
+///
+/// # Errors
+/// Returns unsupported scope/format, unverified dialogs, invalid input or conflicting publication.
+pub fn prepare_form_project(
+    project: &Project,
+    scope: &ProjectScope,
+    expected: &AcceptedRef,
+    destination: &Path,
+) -> Result<ProjectLayoutPlan, Error> {
+    if *scope != ProjectScope::Standalone {
+        return Err(Error::root("source_migration_scope_unsupported"));
+    }
+    prepare_project(project, expected, destination, None, Target::Forms)
 }
 
 /// A workspace supplies verified defaults and a destination below its already resolved new root.
@@ -88,6 +114,7 @@ fn prepare_project(
     expected: &AcceptedRef,
     destination: &Path,
     workspace: Option<&WorkspaceConfig>,
+    target: Target,
 ) -> Result<ProjectLayoutPlan, Error> {
     let SourceFormat::Eska { accepted_base } = project.configuration().source_format() else {
         return Err(Error::root("source_format_mismatch"));
@@ -129,8 +156,16 @@ fn prepare_project(
         return Err(Error::root("source_input_changed"));
     }
     let accepted = AcceptedBase::open(&root.join(base_path.as_path()), expected)?;
-    let source = prepare_readable_layout(project.source())?;
-    let base = prepare_accepted_readable_layout(&accepted)?;
+    let (source, base) = match target {
+        Target::Forms => (
+            prepare_form_layout(project.source())?,
+            prepare_accepted_form_layout(&accepted)?,
+        ),
+        Target::Readable => (
+            prepare_readable_layout(project.source())?,
+            prepare_accepted_readable_layout(&accepted)?,
+        ),
+    };
     if source.manifest().input_revision != base.source_manifest().input_revision
         || configuration_uuid(source.manifest()) != configuration_uuid(base.source_manifest())
     {

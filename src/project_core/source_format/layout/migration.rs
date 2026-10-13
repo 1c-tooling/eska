@@ -1,6 +1,7 @@
 //! Expected-byte migration publishes a new source tree; it never rewrites the selected input.
 
 mod cst;
+mod forms;
 pub(in crate::project_core::source_format) mod publication;
 
 use std::{
@@ -88,6 +89,17 @@ pub fn prepare_resource_layout(source: &Path) -> Result<SourceLayoutPlan, Error>
 /// Returns unsupported authored trivia, invalid inputs, collisions or changed-source failures.
 pub fn prepare_readable_layout(source: &Path) -> Result<SourceLayoutPlan, Error> {
     prepare(source, Layout::Readable)
+}
+
+/// Combine declared managed dialogs with their readable descriptors in explicitly selected map 4.
+///
+/// Current payload values are converted independently of accepted storage; modules remain separate.
+/// Existing map 4 retains every byte. Original native fingerprints and identities never change.
+///
+/// # Errors
+/// Returns unverified dialog profiles, unsupported trivia, invalid inputs or publication conflicts.
+pub fn prepare_form_layout(source: &Path) -> Result<SourceLayoutPlan, Error> {
+    prepare(source, Layout::Forms)
 }
 
 /// Both explicit targets share validation, exact preview and resumable publication.
@@ -188,23 +200,35 @@ pub(in crate::project_core::source_format) fn project_layout(
     target: Layout,
     mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
 ) -> Result<Projection, Error> {
-    if package.manifest.schema_version == super::super::MANAGED_FORM_LAYOUT_VERSION {
-        return Err(Error::root("source_schema_unsupported"));
-    }
     let mut read = |path: &SourcePath| {
         let text = read(path)?;
-        if matches!(target, Layout::Readable) {
+        if matches!(target, Layout::Readable | Layout::Forms) && package.owners.contains_key(path) {
             crate::project_core::source_format::readable::check_transport(&text)?;
         }
         Ok(text)
     };
     let mut projection = project_descriptors(package, &mut read)?;
+    if projection.manifest.schema_version == super::super::MANAGED_FORM_LAYOUT_VERSION {
+        return Ok(projection);
+    }
     if target.version() <= projection.manifest.schema_version {
         if matches!(target, Layout::Readable) {
             project_readable(&mut projection, &mut read)?;
         }
         return Ok(projection);
     }
+    project_resources(&mut projection)?;
+    if matches!(target, Layout::Readable | Layout::Forms) {
+        project_readable(&mut projection, &mut read)?;
+    }
+    if matches!(target, Layout::Forms) {
+        forms::project(package, &mut projection, &mut read)?;
+    }
+    Ok(projection)
+}
+
+/// Payload relocation is independent of subsequent readable envelopes and managed dialog attachment.
+fn project_resources(projection: &mut Projection) -> Result<(), Error> {
     let before = projection.manifest.clone();
     resources::relocate(&mut projection.manifest)?;
     projection.manifest.validate()?;
@@ -244,10 +268,7 @@ pub(in crate::project_core::source_format) fn project_layout(
     projection.snapshot.directories = resources::source_directories(&projection.manifest)?;
     projection.snapshot.revision =
         files::revision(&projection.snapshot.files, &projection.snapshot.directories);
-    if matches!(target, Layout::Readable) {
-        project_readable(&mut projection, &mut read)?;
-    }
-    Ok(projection)
+    Ok(())
 }
 
 /// Envelope version and physical-map version are independent; only explicitly selected YAML moves.
@@ -381,7 +402,7 @@ fn project_descriptors(
 }
 
 /// Compute a source fingerprint without retaining binary payloads in the preview.
-fn fingerprint(path: &SourcePath, text: &str) -> FileEntry {
+pub(super) fn fingerprint(path: &SourcePath, text: &str) -> FileEntry {
     FileEntry {
         path: path.clone(),
         bytes: text.len() as u64,

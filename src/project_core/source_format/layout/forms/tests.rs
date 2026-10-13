@@ -447,12 +447,11 @@ fn same_named_common_and_nested_forms_and_absent_dialog_keep_independent_binding
     );
 }
 
-/// Pending migration cannot silently discard the new authoritative body.
+/// Older explicit targets retain the new authoritative body instead of downgrading the source.
 #[test]
-fn unsupported_migration_consumer_refuses_map_v4() {
+fn earlier_migration_target_retains_map_v4_and_its_authoritative_body() {
     let (_directory, _native, root) = source();
-    assert_eq!(
-        prepare_readable_layout(&root).unwrap_err().code,
-        "source_schema_unsupported"
-    );
+    let plan = prepare_readable_layout(&root).unwrap();
+    assert!(plan.changes().is_empty());
+    assert_eq!(plan.manifest().schema_version, MANAGED_FORM_LAYOUT_VERSION);
 }

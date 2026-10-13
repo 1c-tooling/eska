@@ -11,8 +11,10 @@ metadata descriptor и dialog body через карту версии 4; project
 проверены на всех 823 формах C1. [Protected writer и source map](managed-form-protected.md)
 выбирают body по принятому metadata UUID: 183 формы получили разрешённые правки,
 637 запрещённых форм восстановлены из базы. [Точечный editor](managed-form-edit.md)
-сохраняет property/layout edits через CST и общий atomic writer. Миграция и
-платформенная приёмка изменённой формы ещё нужны.
+сохраняет property/layout edits через CST и общий atomic writer.
+[Явная миграция](managed-form-migration.md) переносит source, pinned base,
+standalone проект и workspace в map 4. Платформенная приёмка изменённой формы
+ещё нужна.
 [EF-24 принята](structure-acceptance.md)
 для configuration/Designer 2.20. [28 новых typed-скаляров](typed-scalars.md)
 подготовлены в общем core. [Самостоятельные descriptors](descriptor-layout.md) добавляют

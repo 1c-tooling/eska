@@ -37,10 +37,12 @@ metadata descriptor и body v2 через обратную карту верси
 values и 169 перестановок выбраны для 183 форм; 637 запрещённых форм восстановлены.
 [Точечные edits](../research/eska-format/managed-form-edit.md) проверяют принятую
 identity и Resource permission, меняют existing scalars/collections через CST
-и используют общий conflict-checked writer. Следующий шаг — миграция
-source/base/workspace, затем независимый
-XML и реальный CF цикл изменённых форм. CLI defaults сохранены; migration пока
-явно отклоняет map 4. EF-12 и MVP остаются незавершёнными.
+и используют общий conflict-checked writer.
+[Миграция](../research/eska-format/managed-form-migration.md) переносит рабочий
+source и независимо pinned base в map 4, сохраняя settings проекта/workspace.
+Следующий шаг — независимый XML и реальный CF цикл изменённых форм.
+CLI defaults сохранены; прежние migration targets сохраняют map 4 как byte no-op.
+EF-12 и MVP остаются незавершёнными.
 
 Первая часть расширяет [typed writer](../research/eska-format/typed-scalars.md)
 на 28 bool/integer/enum свойств с прежней защитой и точечными правками.

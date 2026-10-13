@@ -43,16 +43,29 @@ fn locations(manifest: &SourceManifest) -> Result<BTreeMap<String, &SourcePath>,
         .collect()
 }
 
+/// Declared native paths identify dialogs independently of their current physical payload layout.
+pub(in crate::project_core::source_format) fn bindings(
+    manifest: &SourceManifest,
+) -> Result<BTreeMap<SourcePath, SourcePath>, Error> {
+    let locations = locations(manifest)?;
+    Ok(manifest
+        .files
+        .iter()
+        .filter_map(|file| {
+            locations
+                .get(&file.path.as_str().to_ascii_lowercase())
+                .map(|descriptor| (file.path.clone(), (*descriptor).clone()))
+        })
+        .collect())
+}
+
 /// Convert all declared dialogs before publication, preserving independent BSL/resource bytes.
 pub(in crate::project_core::source_format) fn attach(
     input: &Path,
     manifest: &mut SourceManifest,
     sources: &mut BTreeMap<SourcePath, ObjectSource>,
 ) -> Result<(), Error> {
-    let locations = locations(manifest)?
-        .into_iter()
-        .map(|(native, descriptor)| (native, descriptor.clone()))
-        .collect::<BTreeMap<_, _>>();
+    let locations = bindings(manifest)?;
     let owners = manifest
         .files
         .iter()
@@ -62,7 +75,7 @@ pub(in crate::project_core::source_format) fn attach(
         })
         .collect::<BTreeMap<_, _>>();
     for file in &mut manifest.files {
-        let Some(descriptor) = locations.get(&file.path.as_str().to_ascii_lowercase()) else {
+        let Some(descriptor) = locations.get(&file.path) else {
             continue;
         };
         let owner = owners

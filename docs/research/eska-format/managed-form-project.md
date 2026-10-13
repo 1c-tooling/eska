@@ -46,7 +46,8 @@ writer сохраняет прежний договор нормализации
 ## Граница части 5
 
 Ограничения ниже описывают часть 5. [Часть 6](managed-form-protected.md)
-подключает protected writer и source map; migration остаётся незавершённой.
+подключает protected writer и source map; [часть 8](managed-form-migration.md)
+добавляет явную миграцию. Прежние migration targets сохраняют map 4 как byte no-op.
 
 Protected writer для map 4 пока явно возвращает `source_schema_unsupported`.
 Прежние migration APIs также отказывают map 4, чтобы не потерять тело формы.

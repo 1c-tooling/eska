@@ -617,6 +617,20 @@ previews и четыре saved publications; strict export изменил тол
 Следующее — source/base/workspace migration и независимый XML/CF цикл;
 EF-12 остаётся `IN_PROGRESS`, CLI/IDE protocol defaults прежние.
 
+[Восьмая часть: source/base/project/workspace migration](../research/eska-format/managed-form-migration.md)
+добавляет четыре explicit core APIs поверх общих expected-byte plans и receipts.
+Layouts 1/2/3 получают readable owners с единственным dialog body; принятая база
+переносится из проверенных blobs с независимым новым pin. Settings и workspace
+inheritance сохраняются; input/output conflicts и непроверенные profiles отказывают.
+Все targets сохраняют уже существующий map 4 как byte no-op без downgrade.
+C1: все 823 формы, прежние права 186/637, independent accepted restore/repeat;
+native no-op равен readable контролю по 8 769 файлам/8 064 каталогам.
+Две saved правки одной разрешённой формы изменили только её dialog XML,
+strict protected export без exclusions. Прошли восемь новых tests и общие
+fmt/check/strict Clippy/test/Rustdoc, SDK all features и CLI project/build.
+Следующее — независимый XML контроль и реальный CF/build/dump изменённой формы.
+EF-12 остаётся `IN_PROGRESS`; CLI defaults/protocols и очередь сохранены.
+
 Обязательная часть структуры MVP после EF-24. Зафиксировать матрицу реальных
 управляемых форм выбранного платформенного профиля. Разделить устойчивые
 определения `elements` и упорядоченный `layout` в одном `form.yaml`, вместе

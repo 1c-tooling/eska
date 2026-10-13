@@ -63,6 +63,16 @@ pub fn prepare_accepted_readable_layout(base: &AcceptedBase) -> Result<AcceptedL
     prepare(base, Layout::Readable)
 }
 
+/// Convert independently pinned dialog bytes into map 4 without accepting any current working edits.
+///
+/// Supplier/freeze policy and native evidence are retained; the returned new pin is selected explicitly.
+///
+/// # Errors
+/// Returns invalid/corrupt storage, unverified dialog profiles, unsupported trivia or changed inputs.
+pub fn prepare_accepted_form_layout(base: &AcceptedBase) -> Result<AcceptedLayoutPlan, Error> {
+    prepare(base, Layout::Forms)
+}
+
 /// Source and accepted migrations use the same pure projection for each explicit target.
 fn prepare(base: &AcceptedBase, target: Layout) -> Result<AcceptedLayoutPlan, Error> {
     base.verify()?;
