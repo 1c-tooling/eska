@@ -80,7 +80,10 @@ pub(super) fn membership(
 }
 
 /// Only one-line block scalars have an unambiguous removable or appendable member line.
-fn member_line(input: &str, item: &yaml_edit::YamlNode) -> Result<std::ops::Range<usize>, Error> {
+pub(super) fn member_line(
+    input: &str,
+    item: &yaml_edit::YamlNode,
+) -> Result<std::ops::Range<usize>, Error> {
     let scalar = item.as_scalar().ok_or_else(unsupported)?;
     let span = range(scalar)?;
     if input

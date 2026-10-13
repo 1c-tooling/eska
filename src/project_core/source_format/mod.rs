@@ -48,7 +48,8 @@ pub use baseline::{
 };
 pub use coordinates::{CoordinateError, TextCoordinates, TextPosition, TextRange};
 pub use edit::{
-    SourceEditPlan, SourcePropertyEdit, prepare_property_edit, prepare_property_edit_text,
+    FormEdit, FormEditPreview, SourceEditPlan, SourcePropertyEdit, prepare_form_edit,
+    prepare_form_edit_text, prepare_property_edit, prepare_property_edit_text,
 };
 pub use export::export_designer;
 pub use import::{

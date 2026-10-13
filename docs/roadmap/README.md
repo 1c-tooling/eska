@@ -35,7 +35,10 @@ metadata descriptor и body v2 через обратную карту верси
 подключены к map 4: права определяет принятый metadata UUID формы, native bindings
 закреплены, разрешённые properties/layout имеют Working координаты. В C1 2 720
 values и 169 перестановок выбраны для 183 форм; 637 запрещённых форм восстановлены.
-Следующий шаг — точечные edits и миграция source/base/workspace, затем независимый
+[Точечные edits](../research/eska-format/managed-form-edit.md) проверяют принятую
+identity и Resource permission, меняют existing scalars/collections через CST
+и используют общий conflict-checked writer. Следующий шаг — миграция
+source/base/workspace, затем независимый
 XML и реальный CF цикл изменённых форм. CLI defaults сохранены; migration пока
 явно отклоняет map 4. EF-12 и MVP остаются незавершёнными.
 

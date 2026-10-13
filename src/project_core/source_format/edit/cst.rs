@@ -8,10 +8,13 @@ use super::super::{Error, PropertyValue, yaml};
 
 pub(super) use super::super::yaml::Step;
 
+mod form;
 #[cfg(test)]
 mod reference_tests;
 mod reference_value;
 mod type_value;
+
+pub(super) use form::{form_layout, form_property};
 
 /// Mutate the selected value only and preserve its surrounding YAML verbatim.
 pub(super) fn replace(
@@ -230,7 +233,12 @@ fn set_direct_string(
     value: &str,
     scalar: Option<&yaml_edit::Scalar>,
 ) {
-    let replacement = scalar.map_or_else(
+    mapping.set(key, styled_string(value, scalar));
+}
+
+/// Scalar splices and mapping edits share the same quoting and multiline boundary.
+fn styled_string(value: &str, scalar: Option<&yaml_edit::Scalar>) -> ScalarValue {
+    scalar.map_or_else(
         || ScalarValue::string(value),
         |scalar| {
             let style = ScalarValue::from_scalar(scalar).style();
@@ -245,8 +253,7 @@ fn set_direct_string(
             };
             ScalarValue::with_style(value, style)
         },
-    );
-    mapping.set(key, replacement);
+    )
 }
 
 /// Change one scalar domain or localized text sequence without regenerating its enclosing owner.

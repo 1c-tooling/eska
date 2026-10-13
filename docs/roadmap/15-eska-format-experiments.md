@@ -605,6 +605,18 @@ Working/Accepted координаты. C1: из 823 форм 186 разреше�
 совпала. Следующее — точечный editor и source/base/workspace migration, затем
 независимый XML контроль и CF цикл. EF-12 остаётся `IN_PROGRESS`.
 
+[Седьмая часть: точечный editor](../research/eska-format/managed-form-edit.md)
+добавляет saved/text APIs для existing property values и layout collections.
+Metadata UUID и pinned dialog/owner выбирают Resource permission, текущая
+identity/schema/native bindings проверяются до операции. CST сохраняет
+нетронутые bytes/comments, LF/CRLF и допустимые scalar styles; no-op сохраняет
+spelling/mtime. Shared atomic writer повторно проверяет pin и current bytes;
+потеря комментария, запрещённая правка и невалидный layout отказывают до записи.
+C1: 186 exact no-op previews, 637 policy refusals, 166 property/169 layout
+previews и четыре saved publications; strict export изменил только 183 dialog XML.
+Следующее — source/base/workspace migration и независимый XML/CF цикл;
+EF-12 остаётся `IN_PROGRESS`, CLI/IDE protocol defaults прежние.
+
 Обязательная часть структуры MVP после EF-24. Зафиксировать матрицу реальных
 управляемых форм выбранного платформенного профиля. Разделить устойчивые
 определения `elements` и упорядоченный `layout` в одном `form.yaml`, вместе

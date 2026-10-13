@@ -1,6 +1,9 @@
 //! Accepted identities select local YAML edits; working UUIDs cannot grant permission.
 
 mod cst;
+mod form;
+
+pub use form::{FormEdit, FormEditPreview, prepare_form_edit, prepare_form_edit_text};
 
 use std::{
     fs,
@@ -21,7 +24,7 @@ pub struct SourceEditPlan {
     root: PathBuf,
     path: SourcePath,
     uuid: NativeUuid,
-    property: PropertyName,
+    operation: Operation,
     baseline: AcceptedRef,
     original: String,
     updated: String,
@@ -92,7 +95,7 @@ impl SourceEditPlan {
         if base.reference() != &self.baseline {
             return Err(Error::root("source_edit_baseline_changed"));
         }
-        permission(base, &self.uuid, self.property)?;
+        permission(base, &self.uuid, self.operation)?;
         base.verify()?;
         publish::publish_snapshot(
             &self.root,
@@ -119,7 +122,7 @@ pub fn prepare_property_edit(
     property: PropertyName,
     value: PropertyValue,
 ) -> Result<SourceEditPlan, Error> {
-    permission(base, uuid, property)?;
+    permission(base, uuid, Operation::Property(property))?;
     let target = target(base, uuid)?;
     let root = safe_root(root, &target.owner)?;
     let original = files::read_text(&root.join(target.owner.as_path()))?;
@@ -131,7 +134,7 @@ pub fn prepare_property_edit(
         root,
         path: target.owner,
         uuid: uuid.clone(),
-        property,
+        operation: Operation::Property(property),
         baseline: base.reference().clone(),
         original,
         updated,
@@ -153,7 +156,7 @@ pub fn prepare_property_edit_text(
     value: PropertyValue,
     original: &str,
 ) -> Result<SourcePropertyEdit, Error> {
-    permission(base, uuid, property)?;
+    permission(base, uuid, Operation::Property(property))?;
     let target = target(base, uuid)?;
     let updated = property_text(base, &target, property, value, original)?;
     Ok(SourcePropertyEdit {
@@ -407,8 +410,8 @@ fn change_property(
 }
 
 /// Preserve the reason for refusing an edit independently of locale.
-fn permission(base: &AcceptedBase, uuid: &NativeUuid, property: PropertyName) -> Result<(), Error> {
-    let permission = base.permission(uuid, Operation::Property(property));
+fn permission(base: &AcceptedBase, uuid: &NativeUuid, operation: Operation) -> Result<(), Error> {
+    let permission = base.permission(uuid, operation);
     if permission.allowed {
         return Ok(());
     }

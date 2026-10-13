@@ -48,7 +48,8 @@ body edits; они не скрывают независимую разрешён
 
 ## Граница части
 
-Точечный editor API формы и source/base/workspace migration ещё нужны.
+[Точечный editor API](managed-form-edit.md) добавлен в части 7.
+Source/base/workspace migration ещё нужна.
 CLI import defaults не менялись. Этот этап не подтверждает платформенную
 приёмку изменённых форм или готовность Explorer/analyzer overlay.
 

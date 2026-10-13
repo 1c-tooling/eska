@@ -9,6 +9,11 @@
 caller-owned text с проверкой текущей версии/hash в общей сессии. Preview
 не предоставляет publish; saved writer и его повторный preflight сохраняются.
 
+[Editor управляемых форм EF-12](managed-form-edit.md) использует тот же saved
+writer с операцией `Resource` по принятому metadata UUID. Его отдельные
+`FormEdit`/`FormEditPreview` адресуют existing properties/layout в едином form.yaml.
+Прежние metadata-property API и IDE protocol сохраняют свой контракт.
+
 Владелец, путь native descriptor и UUID берутся из независимо закреплённой
 принятой базы. Рабочий документ должен сохранить состав частей и ancestry
 выбранного объекта: UUID, вид и `Name`. Рабочий YAML не меняет права.
