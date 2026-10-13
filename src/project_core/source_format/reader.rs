@@ -388,6 +388,34 @@ impl SourceReader {
         read_text_limited(&self.root, path, max_bytes)
     }
 
+    /// Read one declared dialog's typed identity/layout while keeping opaque resources unchanged.
+    ///
+    /// # Errors
+    /// Returns the bounded text-reader errors or an unverified/invalid managed-form layout.
+    pub fn read_form_layout(
+        &self,
+        path: &SourcePath,
+        max_bytes: u64,
+    ) -> Result<super::ManagedFormLayout, Error> {
+        let text = self.read_form_dialog_text(path, max_bytes)?;
+        self.parse_form_layout(path, &text)
+    }
+
+    /// Parse an addressed editor overlay without discovering new resources or reading neighboring forms.
+    ///
+    /// # Errors
+    /// Returns an undeclared dialog or an unverified/invalid managed-form layout.
+    pub fn parse_form_layout(
+        &self,
+        path: &SourcePath,
+        text: &str,
+    ) -> Result<super::ManagedFormLayout, Error> {
+        if self.form_dialog_owner(path).is_none() {
+            return Err(Error::root("source_form_dialog_undeclared").in_field(path.as_str()));
+        }
+        super::ManagedFormLayout::from_xml(text).map_err(|error| error.in_field(path.as_str()))
+    }
+
     /// Read exact declared-owner bytes for a bounded analysis request or editor snapshot.
     ///
     /// # Errors

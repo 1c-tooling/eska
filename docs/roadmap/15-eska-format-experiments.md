@@ -553,7 +553,13 @@ VS Code с переходом к результату; отдельный GUI-м
 пять различных shapes, metadata/runtime semantics не заявлены. Input bytes
 сохранены, обезличенный script/JSON и synthetic scope/reference fixtures
 проверены. Новый typed YAML/writer и платформенная приёмка формы ещё нужны.
-Следующая часть — shared typed identity/layout validator и адресный SourceReader.
+[Вторая часть: общий layout/reader](../research/eska-format/managed-form-layout.md)
+читает все 823 declared dialogs C1: 52 502 UI ID, независимые Attributes/Commands,
+fixed edges, known references и nearest-Table contexts. Валидатор проверяет
+parentage/nesting/reachability/cycles, scopes и layout-only changes без замены
+definitions/fixed bindings. Saved/overlay модели совпадают, input bytes прежние.
+Новый form.yaml/writer и платформенная приёмка изменения формы ещё нужны;
+следующая часть — lossless единый authoring file вместе с metadata descriptor.
 
 Обязательная часть структуры MVP после EF-24. Зафиксировать матрицу реальных
 управляемых форм выбранного платформенного профиля. Разделить устойчивые

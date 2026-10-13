@@ -20,6 +20,7 @@ mod fill_value;
 mod fragment;
 mod import;
 mod layout;
+mod managed_form;
 mod metadata_reference;
 mod model;
 mod native_writer;
@@ -57,6 +58,10 @@ pub use layout::{
     DESCRIPTOR_LAYOUT_VERSION, DescriptorContext, LayoutChange, LayoutPublication,
     RESOURCE_LAYOUT_VERSION, SourceLayoutPlan, prepare_descriptor_layout, prepare_readable_layout,
     prepare_resource_layout,
+};
+pub use managed_form::{
+    FormElement, FormElementKind, FormFixedSlot, FormId, FormLayout, FormNamedValue,
+    ManagedFormLayout,
 };
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 pub use protected::{

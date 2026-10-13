@@ -19,8 +19,10 @@ CF/build/dump C1. Unknown/preserved и непринятые structural profiles 
 содержат исторические статусы и ожидания; текущую границу задаёт итоговая матрица.
 EF-12 начала [матрицу native форм](../research/eska-format/managed-form-inventory.md):
 823 managed dialogs, отдельные UI/Attribute/Command/column ID scopes и fixed
-slots. Native inputs сохранены; typed identity/layout, единый form.yaml,
-protected writer/source map и CF приёмка формы ещё в работе.
+slots. [Typed identity/layout и адресный reader](../research/eska-format/managed-form-layout.md)
+проверены на всех 823 dialogs: scopes, fixed edges, cycles/nesting и известные
+references. Native inputs сохранены. Единый form.yaml, protected writer/source map
+и CF приёмка изменённой формы ещё в работе; следующий шаг — lossless authoring file.
 
 Первая часть расширяет [typed writer](../research/eska-format/typed-scalars.md)
 на 28 bool/integer/enum свойств с прежней защитой и точечными правками.

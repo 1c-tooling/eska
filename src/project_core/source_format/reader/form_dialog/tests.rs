@@ -131,6 +131,43 @@ fn dialogs_text_reads_are_current_verbatim_and_bounded() {
     );
 }
 
+/// Addressed layout reads share the declared identity and accept unsaved text without reading sibling payloads.
+#[test]
+fn dialog_layout_reads_are_lazy_addressed_and_overlay_aware() {
+    let (_directory, root) = source();
+    let owner = path("CommonForms/Reader/object.yaml");
+    let resource = path("CommonForms/Reader/Ext/Form.xml");
+    let xml = "\u{feff}<Form xmlns=\"http://v8.1c.ru/8.3/xcf/logform\" version=\"2.20\"><AutoCommandBar name=\"\" id=\"-1\"/><ChildItems><InputField name=\"Current\" id=\"1\"/></ChildItems></Form>\r\n";
+    fs::write(root.join(resource.as_path()), xml).unwrap();
+    fs::write(root.join(owner.as_path()), "document: [").unwrap();
+    let reader = SourceReader::open(&root).unwrap();
+    let saved = reader.read_form_layout(&resource, 1024).unwrap();
+    assert_eq!(reader.parse_form_layout(&resource, xml).unwrap(), saved);
+    assert_eq!(reader.read_form_dialog_text(&resource, 1024).unwrap(), xml);
+    assert_eq!(
+        reader.read_form_layout(&resource, 1).unwrap_err().code,
+        "source_document_too_large"
+    );
+    fs::remove_file(root.join(resource.as_path())).unwrap();
+    let overlay = xml.replace("Current", "Unsaved");
+    let current = reader.parse_form_layout(&resource, &overlay).unwrap();
+    assert_eq!(
+        current.elements[&crate::project_core::source_format::FormId::parse("1").unwrap()].name,
+        "Unsaved"
+    );
+    assert_eq!(
+        reader.read_form_layout(&resource, 1024).unwrap_err().code,
+        "source_file_missing"
+    );
+    assert_eq!(
+        reader
+            .parse_form_layout(&path("CommonForms/Absent/Ext/Form.xml"), &overlay)
+            .unwrap_err()
+            .code,
+        "source_form_dialog_undeclared"
+    );
+}
+
 /// Native ASCII spelling variations retain the exact declared path while physical aliases stay unsafe.
 #[test]
 fn dialogs_spelling_variations_keep_the_declared_path_and_owner() {
