@@ -61,6 +61,7 @@ version-reason-version-registration-unsupported = Не удалось подтв
 version-reason-version-registration-unbound = Поле версии регистрации должно получать прямой вызов Версия().
 version-reason-version-initial-value-required = Для добавления Версия() нужен явный начальный номер.
 version-reason-version-initial-value-conflict = Начальный номер конфликтует с уже существующей Версия().
+version-reason-version-migration-initialization-conflict = Переменные и инициализация в одном условном блоке не позволяют безопасно вставить Версия().
 version-reason-version-module-changed = Модуль изменился после подготовки плана.
 version-reason-version-module-missing = Модуль объекта отсутствует.
 version-reason-version-module-protected = Найден бинарный защищённый модуль объекта.

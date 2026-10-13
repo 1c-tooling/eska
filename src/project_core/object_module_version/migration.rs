@@ -2,9 +2,11 @@
 
 use std::ops::Range;
 
+use tree_sitter::Node;
+
 use super::{
     ContractError, ContractErrorKind, ParsedModule, ProjectVersion, descendants, error_at,
-    inspect_contract, inspect_function, registration, version_function,
+    inspect_contract, inspect_function, named_children, registration, version_function,
 };
 
 /// Describe an intentional source change without locale-dependent messages.
@@ -124,10 +126,12 @@ pub fn plan_migration(
             kind: ContractErrorKind::InitialVersionRequired,
             range: input.len()..input.len(),
         })?;
+        let position = insertion_position(&parsed)?;
+        let prefix = &input[..position];
         let newline = if input.contains("\r\n") { "\r\n" } else { "\n" };
-        let separator = if parsed.text.is_empty() {
+        let separator = if prefix.strip_prefix('\u{feff}').unwrap_or(prefix).is_empty() {
             String::new()
-        } else if input.ends_with('\n') {
+        } else if prefix.ends_with('\n') {
             newline.to_owned()
         } else {
             newline.repeat(2)
@@ -145,7 +149,7 @@ pub fn plan_migration(
         .join(newline);
         edits.push(TextEdit {
             kind: EditKind::AddFunction,
-            range: input.len()..input.len(),
+            range: position..position,
             replacement: separator + &function,
         });
         version.clone()
@@ -181,6 +185,79 @@ pub fn plan_migration(
     };
     plan.apply(input)?;
     Ok(plan)
+}
+
+/// Place an unconditional declaration before initialization in every preprocessor branch.
+///
+/// Moving variables out of their conditional scope would change the module, so a mixed
+/// declaration/initialization block has no automatic insertion point. Existing bytes stay put.
+fn insertion_position(parsed: &ParsedModule<'_>) -> Result<usize, ContractError> {
+    let children = named_children(parsed.tree.root_node());
+    let Some(mut initialization) = children
+        .into_iter()
+        .find(|node| contains_initialization(*node))
+    else {
+        return Ok(parsed.input.len());
+    };
+    while initialization.kind() == "preprocessor" {
+        let parts = named_children(initialization);
+        if !parts
+            .iter()
+            .any(|node| node.kind() == "PREPROC_REGION_KEYWORD")
+        {
+            break;
+        }
+        let Some(child) = parts
+            .into_iter()
+            .find(|node| contains_initialization(*node))
+        else {
+            break;
+        };
+        initialization = child;
+    }
+    let position = initialization.start_byte();
+    if let Some(variable) = descendants(parsed.tree.root_node())
+        .into_iter()
+        .find(|node| {
+            node.start_byte() >= position
+                && matches!(node.kind(), "var_definition" | "var_statement")
+                && !inside_subroutine(*node)
+        })
+    {
+        return Err(error_at(
+            ContractErrorKind::InitializationConflict,
+            variable,
+            parsed.offset,
+        ));
+    }
+    Ok(position + parsed.offset)
+}
+
+/// Skip subroutine bodies: their executable statements do not initialize the module.
+fn contains_initialization(root: Node<'_>) -> bool {
+    let mut pending = vec![root];
+    while let Some(node) = pending.pop() {
+        if matches!(node.kind(), "function_definition" | "procedure_definition") {
+            continue;
+        }
+        if node.kind().ends_with("_statement") && node.kind() != "var_statement" {
+            return true;
+        }
+        pending.extend(named_children(node));
+    }
+    false
+}
+
+/// Local variable declarations remain part of their method and do not constrain insertion.
+fn inside_subroutine(node: Node<'_>) -> bool {
+    let mut parent = node.parent();
+    while let Some(node) = parent {
+        if matches!(node.kind(), "function_definition" | "procedure_definition") {
+            return true;
+        }
+        parent = node.parent();
+    }
+    false
 }
 
 #[cfg(test)]

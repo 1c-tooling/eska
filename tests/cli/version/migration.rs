@@ -1,5 +1,46 @@
 use super::*;
 
+/// A placement conflict remains a localized, read-only refusal in both locales.
+#[test]
+fn migration_refuses_to_move_conditional_variables_after_a_new_function() {
+    let fixture = workspace("1.2.3", "2.3.4.5");
+    let root = fixture.0.join("src/sales-report");
+    let path = root.join("SalesReport/Ext/ObjectModule.bsl");
+    let input =
+        "\u{feff}#Если Сервер Тогда\r\nПерем Состояние;\r\nСостояние = 1;\r\n#КонецЕсли\r\n";
+    fs::write(&path, input).unwrap();
+    let mut documents = Vec::new();
+    for (locale, reason) in [
+        ("ru", "не позволяют безопасно вставить"),
+        ("en", "prevent safe insertion"),
+    ] {
+        let output = eska(
+            &root,
+            locale,
+            &[
+                "version",
+                "migrate",
+                "--initial-version",
+                "1.2.3",
+                "--write",
+                "--format",
+                "json",
+            ],
+        );
+        assert_eq!(output.status.code(), Some(1), "{output:?}");
+        let document: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(
+            document["error"]["code"],
+            "version_migration_initialization_conflict"
+        );
+        assert_eq!(document["error"]["path"], path.to_string_lossy().as_ref());
+        assert!(String::from_utf8_lossy(&output.stderr).contains(reason));
+        documents.push(document);
+        assert_eq!(fs::read_to_string(&path).unwrap(), input);
+    }
+    assert_eq!(documents[0], documents[1]);
+}
+
 /// Migration writes only one explicitly selected member and keeps registration's unrelated literals.
 #[test]
 fn migration_preview_and_write_are_locale_independent_and_idempotent() {

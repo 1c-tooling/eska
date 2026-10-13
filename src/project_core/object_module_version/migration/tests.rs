@@ -28,6 +28,53 @@ fn creates_a_missing_function_with_bom_and_existing_line_endings() {
     }
 }
 
+/// Module initialization may live in a region or an alternate preprocessor branch.
+#[test]
+fn inserts_the_function_before_initialization_without_moving_original_bytes() {
+    let initial = ProjectVersion::parse("1.2.3").unwrap();
+    for (prefix, initialization) in [
+        (
+            "\u{feff}Перем Состояние;\r\nПроцедура Другая()\r\nПерем Локальная;\r\nСообщить(1);\r\nКонецПроцедуры\r\n#Область Инициализация\r\n",
+            "Состояние = 1;\r\n#КонецОбласти\r\n",
+        ),
+        (
+            "\u{feff}// Сохранить\r\n",
+            "#Если Сервер Тогда\r\nПроцедура Другая() КонецПроцедуры\r\n#Иначе\r\nВызватьИсключение \"Только сервер\";\r\n#КонецЕсли\r\n",
+        ),
+        ("Перем Состояние;\n", "Состояние = 1;\n"),
+        (
+            "#Область Инициализация\n#Область Переменные\nПерем Состояние;\n#КонецОбласти\n",
+            "Состояние = 1;\n#КонецОбласти\n",
+        ),
+    ] {
+        let input = format!("{prefix}{initialization}");
+        let plan = plan_migration(&input, Some(&initial)).unwrap();
+        let [edit] = plan.edits() else {
+            panic!("one function insertion expected");
+        };
+        assert_eq!(edit.kind, EditKind::AddFunction);
+        assert_eq!(edit.range, prefix.len()..prefix.len());
+        let output = plan.apply(&input).unwrap();
+        assert!(output.starts_with(prefix));
+        assert!(output.ends_with(initialization));
+        assert_eq!(inspect_contract(&output).unwrap().version, initial);
+        assert!(plan_migration(&output, None).unwrap().edits().is_empty());
+        if input.contains("\r\n") {
+            assert!(!output.replace("\r\n", "").contains('\n'));
+        }
+    }
+}
+
+/// A conditional variable must not move behind the new unconditional function.
+#[test]
+fn refuses_mixed_conditional_variables_and_initialization() {
+    let input = "\u{feff}#Если Сервер Тогда\nПерем Состояние;\nСостояние = 1;\n#КонецЕсли\n";
+    let initial = ProjectVersion::parse("1.2.3").unwrap();
+    let error = plan_migration(input, Some(&initial)).unwrap_err();
+    assert_eq!(error.kind, ContractErrorKind::InitializationConflict);
+    assert_eq!(&input[error.range], "Перем Состояние;");
+}
+
 /// Export insertion preserves comments and the authoritative literal exactly.
 #[test]
 fn exports_only_a_suitable_private_function() {

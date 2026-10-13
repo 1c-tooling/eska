@@ -61,6 +61,7 @@ version-reason-version-registration-unsupported = A single version in the return
 version-reason-version-registration-unbound = The registration version field must receive a direct Версия() call.
 version-reason-version-initial-value-required = Adding Версия() requires an explicit initial number.
 version-reason-version-initial-value-conflict = The initial number conflicts with the existing Версия().
+version-reason-version-migration-initialization-conflict = Variables and initialization in the same conditional block prevent safe insertion of Версия().
 version-reason-version-module-changed = The module changed after the plan was prepared.
 version-reason-version-module-missing = The object module is missing.
 version-reason-version-module-protected = A protected binary object module was found.

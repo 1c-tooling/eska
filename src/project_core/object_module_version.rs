@@ -44,6 +44,7 @@ pub enum ContractErrorKind {
     RegistrationUnbound,
     InitialVersionRequired,
     InitialVersionConflict,
+    InitializationConflict,
     SourceChanged,
 }
 
@@ -70,6 +71,7 @@ impl ContractErrorKind {
             Self::RegistrationUnbound => "version_registration_unbound",
             Self::InitialVersionRequired => "version_initial_value_required",
             Self::InitialVersionConflict => "version_initial_value_conflict",
+            Self::InitializationConflict => "version_migration_initialization_conflict",
             Self::SourceChanged => "version_module_changed",
         }
     }
