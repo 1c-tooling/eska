@@ -4,6 +4,14 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use super::{Error, FormElementKind, FormId, ManagedFormLayout};
 
+/// Native traversal order can change with layout while the actual fixed owner bindings remain identical.
+pub(super) fn fixed_bindings(form: &ManagedFormLayout) -> BTreeMap<&FormId, Option<&FormId>> {
+    form.fixed
+        .iter()
+        .map(|slot| (&slot.element, slot.owner.as_ref()))
+        .collect()
+}
+
 /// All nodes have exactly one incoming edge from the form, ordered layout or their fixed owner.
 pub(super) fn validate(form: &ManagedFormLayout) -> Result<(), Error> {
     let parents = parents(form)?;

@@ -1,9 +1,9 @@
 //! Child domains distinguish pages, data columns and command containers without inferring type by suffix.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// All observed UI declaration classes have one identity, including owned menu/tooltip/addition slots.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum FormElementKind {
     AutoCommandBar,
     Button,
@@ -39,6 +39,41 @@ pub enum FormElementKind {
 }
 
 impl FormElementKind {
+    /// Native tag spelling is independent of the Rust identifier and remains exact for XML output.
+    pub(super) const fn native_name(self) -> &'static str {
+        match self {
+            Self::AutoCommandBar => "AutoCommandBar",
+            Self::Button => "Button",
+            Self::ButtonGroup => "ButtonGroup",
+            Self::CalendarField => "CalendarField",
+            Self::ChartField => "ChartField",
+            Self::CheckBoxField => "CheckBoxField",
+            Self::ColumnGroup => "ColumnGroup",
+            Self::CommandBar => "CommandBar",
+            Self::ContextMenu => "ContextMenu",
+            Self::ExtendedTooltip => "ExtendedTooltip",
+            Self::FormattedDocumentField => "FormattedDocumentField",
+            Self::HtmlDocumentField => "HTMLDocumentField",
+            Self::InputField => "InputField",
+            Self::LabelDecoration => "LabelDecoration",
+            Self::LabelField => "LabelField",
+            Self::Page => "Page",
+            Self::Pages => "Pages",
+            Self::PictureDecoration => "PictureDecoration",
+            Self::PictureField => "PictureField",
+            Self::Popup => "Popup",
+            Self::ProgressBarField => "ProgressBarField",
+            Self::RadioButtonField => "RadioButtonField",
+            Self::SearchControlAddition => "SearchControlAddition",
+            Self::SearchStringAddition => "SearchStringAddition",
+            Self::SpreadsheetDocumentField => "SpreadSheetDocumentField",
+            Self::Table => "Table",
+            Self::TextDocumentField => "TextDocumentField",
+            Self::UsualGroup => "UsualGroup",
+            Self::ViewStatusAddition => "ViewStatusAddition",
+        }
+    }
+
     /// Exact native names are a closed profile; an unknown XML tag never inherits another class's layout rights.
     pub(super) fn native(tag: &str) -> Option<Self> {
         Some(match tag {

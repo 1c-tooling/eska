@@ -22,7 +22,11 @@ EF-12 начала [матрицу native форм](../research/eska-format/mana
 slots. [Typed identity/layout и адресный reader](../research/eska-format/managed-form-layout.md)
 проверены на всех 823 dialogs: scopes, fixed edges, cycles/nesting и известные
 references. Native inputs сохранены. Единый form.yaml, protected writer/source map
-и CF приёмка изменённой формы ещё в работе; следующий шаг — lossless authoring file.
+и CF приёмка изменённой формы ещё в работе.
+[Обратимый body codec](../research/eska-format/managed-form-body.md) сохраняет
+байты 823 форм через YAML и проверяет 665 перестановок после reparse.
+Следующий шаг — readable properties и объединение body с metadata descriptor
+в form.yaml, затем protected selection/migration/source map.
 
 Первая часть расширяет [typed writer](../research/eska-format/typed-scalars.md)
 на 28 bool/integer/enum свойств с прежней защитой и точечными правками.

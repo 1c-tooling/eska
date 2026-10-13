@@ -142,6 +142,9 @@ fn dialog_layout_reads_are_lazy_addressed_and_overlay_aware() {
     fs::write(root.join(owner.as_path()), "document: [").unwrap();
     let reader = SourceReader::open(&root).unwrap();
     let saved = reader.read_form_layout(&resource, 1024).unwrap();
+    let lossless = reader.read_form_source(&resource, 1024).unwrap();
+    assert_eq!(lossless.layout_snapshot().unwrap(), saved);
+    assert_eq!(lossless.to_xml().unwrap(), xml);
     assert_eq!(reader.parse_form_layout(&resource, xml).unwrap(), saved);
     assert_eq!(reader.read_form_dialog_text(&resource, 1024).unwrap(), xml);
     assert_eq!(
@@ -151,6 +154,14 @@ fn dialog_layout_reads_are_lazy_addressed_and_overlay_aware() {
     fs::remove_file(root.join(resource.as_path())).unwrap();
     let overlay = xml.replace("Current", "Unsaved");
     let current = reader.parse_form_layout(&resource, &overlay).unwrap();
+    assert_eq!(
+        reader
+            .parse_form_source(&resource, &overlay)
+            .unwrap()
+            .to_xml()
+            .unwrap(),
+        overlay
+    );
     assert_eq!(
         current.elements[&crate::project_core::source_format::FormId::parse("1").unwrap()].name,
         "Unsaved"

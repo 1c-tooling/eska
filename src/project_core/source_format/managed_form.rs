@@ -2,17 +2,19 @@
 
 use std::collections::BTreeMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Deserializer, Serialize};
 
 use super::Error;
 
 mod kind;
 mod native;
+mod source;
 #[cfg(test)]
 mod tests;
 mod validation;
 
 pub use kind::FormElementKind;
+pub use source::ManagedFormSource;
 
 pub(super) const NAMESPACE: &str = "http://v8.1c.ru/8.3/xcf/logform";
 
@@ -45,8 +47,17 @@ impl FormId {
     }
 }
 
+impl<'de> Deserialize<'de> for FormId {
+    /// Persisted IDs obey the same lexical boundary as native XML and direct callers.
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = String::deserialize(deserializer)?;
+        Self::parse(&value).map_err(serde::de::Error::custom)
+    }
+}
+
 /// A definition does not carry layout parentage or a second copy of its native ID.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FormElement {
     pub kind: FormElementKind,
     pub name: String,
@@ -66,7 +77,8 @@ pub struct FormFixedSlot {
 }
 
 /// Only ordinary ordered edges belong to editable layout; definitions and fixed slots remain independent.
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FormLayout {
     pub roots: Vec<FormId>,
     pub children: BTreeMap<FormId, Vec<FormId>>,
@@ -111,7 +123,7 @@ impl ManagedFormLayout {
         if self.elements != accepted.elements
             || self.attributes != accepted.attributes
             || self.commands != accepted.commands
-            || self.fixed != accepted.fixed
+            || validation::fixed_bindings(self) != validation::fixed_bindings(accepted)
             || self.addition_sources != accepted.addition_sources
             || self.local_commands != accepted.local_commands
         {

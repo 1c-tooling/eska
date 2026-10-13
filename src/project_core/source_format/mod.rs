@@ -61,7 +61,7 @@ pub use layout::{
 };
 pub use managed_form::{
     FormElement, FormElementKind, FormFixedSlot, FormId, FormLayout, FormNamedValue,
-    ManagedFormLayout,
+    ManagedFormLayout, ManagedFormSource,
 };
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 pub use protected::{

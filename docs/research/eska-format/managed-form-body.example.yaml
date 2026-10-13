@@ -1,0 +1,121 @@
+"elements":
+  "-1":
+    "kind": "AutoCommandBar"
+    "name": "FormBar"
+  "1":
+    "kind": "UsualGroup"
+    "name": "Main"
+  "2":
+    "kind": "InputField"
+    "name": "Value"
+"layout":
+  "children":
+    "1":
+      - "2"
+  "roots":
+    - "1"
+"native":
+  "elements":
+    "-1":
+      "parts":
+        -
+          "kind": "xml"
+          "value": "<"
+        -
+          "kind": "class"
+          "prefix": ""
+        -
+          "kind": "xml"
+          "value": " name=\""
+        -
+          "kind": "name"
+        -
+          "kind": "xml"
+          "value": "\" id=\""
+        -
+          "kind": "id"
+        -
+          "kind": "xml"
+          "value": "\"/>"
+    "1":
+      "parts":
+        -
+          "kind": "xml"
+          "value": "<"
+        -
+          "kind": "class"
+          "prefix": ""
+        -
+          "kind": "xml"
+          "value": " name=\""
+        -
+          "kind": "name"
+        -
+          "kind": "xml"
+          "value": "\" id=\""
+        -
+          "kind": "id"
+        -
+          "kind": "xml"
+          "value": "\">"
+        -
+          "frame":
+            "close": "</ChildItems>"
+            "gaps":
+              - ""
+              - ""
+            "open": "<ChildItems>"
+          "kind": "children"
+        -
+          "kind": "xml"
+          "value": "</"
+        -
+          "kind": "class"
+          "prefix": ""
+        -
+          "kind": "xml"
+          "value": ">"
+    "2":
+      "parts":
+        -
+          "kind": "xml"
+          "value": "<"
+        -
+          "kind": "class"
+          "prefix": ""
+        -
+          "kind": "xml"
+          "value": " name=\""
+        -
+          "kind": "name"
+        -
+          "kind": "xml"
+          "value": "\" id=\""
+        -
+          "kind": "id"
+        -
+          "kind": "xml"
+          "value": "\"/>"
+  "namespaces":
+    -
+      "prefix": null
+      "uri": "http://v8.1c.ru/8.3/xcf/logform"
+  "root":
+    -
+      "kind": "xml"
+      "value": "<Form xmlns=\"http://v8.1c.ru/8.3/xcf/logform\" version=\"2.20\">"
+    -
+      "id": "-1"
+      "kind": "element"
+    -
+      "frame":
+        "close": "</ChildItems>"
+        "gaps":
+          - ""
+          - ""
+        "open": "<ChildItems>"
+      "kind": "children"
+    -
+      "kind": "xml"
+      "value": "</Form>"
+"schema_version": 1

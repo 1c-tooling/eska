@@ -560,6 +560,13 @@ parentage/nesting/reachability/cycles, scopes и layout-only changes без за
 definitions/fixed bindings. Saved/overlay модели совпадают, input bytes прежние.
 Новый form.yaml/writer и платформенная приёмка изменения формы ещё нужны;
 следующая часть — lossless единый authoring file вместе с metadata descriptor.
+[Третья часть: обратимый dialog codec](../research/eska-format/managed-form-body.md)
+сохраняет byte-equal XML → YAML → XML всех 823 форм и проверяет 665 root reorder
+proposals после reparse. Definitions/layout имеют единственные values, native
+stencils сохраняют неизвестное содержимое и scopes. Existing empty slots могут
+развернуться; absent slots/data-context/namespace moves без inverse rule отказаны.
+Metadata descriptor/project file map ещё не объединены с body; далее — readable
+Title/ToolTip/bools и единый form.yaml, затем protected writer/source map/миграция.
 
 Обязательная часть структуры MVP после EF-24. Зафиксировать матрицу реальных
 управляемых форм выбранного платформенного профиля. Разделить устойчивые

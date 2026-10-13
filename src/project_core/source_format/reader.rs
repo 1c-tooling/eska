@@ -401,6 +401,34 @@ impl SourceReader {
         self.parse_form_layout(path, &text)
     }
 
+    /// Read the lossless dialog codec at one existing declared resource, without changing project file-map ownership.
+    ///
+    /// # Errors
+    /// Returns bounded text-read failures, unverified lexical bindings or an invalid managed form.
+    pub fn read_form_source(
+        &self,
+        path: &SourcePath,
+        max_bytes: u64,
+    ) -> Result<super::ManagedFormSource, Error> {
+        let text = self.read_form_dialog_text(path, max_bytes)?;
+        self.parse_form_source(path, &text)
+    }
+
+    /// Decode an unsaved native dialog while preserving the same declared form identity and inverse rules.
+    ///
+    /// # Errors
+    /// Returns an undeclared dialog or invalid/unverified native source bindings.
+    pub fn parse_form_source(
+        &self,
+        path: &SourcePath,
+        text: &str,
+    ) -> Result<super::ManagedFormSource, Error> {
+        if self.form_dialog_owner(path).is_none() {
+            return Err(Error::root("source_form_dialog_undeclared").in_field(path.as_str()));
+        }
+        super::ManagedFormSource::from_xml(text).map_err(|error| error.in_field(path.as_str()))
+    }
+
     /// Parse an addressed editor overlay without discovering new resources or reading neighboring forms.
     ///
     /// # Errors

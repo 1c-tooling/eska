@@ -3,8 +3,9 @@
 [Структура и MVP](project-layout.md) фиксируют приоритет от 2026-10-11:
 структура и файловый цикл CF/CFE/EPF/ERF → анализатор → Explorer → fmt → VCS.
 Текущая задача — EF-12: [native ID/ссылки](managed-form-inventory.md) и
-[общая модель layout](managed-form-layout.md) проверены на 823 формах C1;
-единый form.yaml и writer ещё нужны. [EF-24 принята](structure-acceptance.md)
+[общая модель layout](managed-form-layout.md) и
+[обратимый body codec](managed-form-body.md) проверены на 823 формах C1;
+единый form.yaml/protected writer ещё нужны. [EF-24 принята](structure-acceptance.md)
 для configuration/Designer 2.20. [28 новых typed-скаляров](typed-scalars.md)
 подготовлены в общем core. [Самостоятельные descriptors](descriptor-layout.md) добавляют
 обратную карту версии 2, адресное чтение/редактирование и явный план миграции

@@ -2,7 +2,7 @@
 
 use super::{FormElement, FormElementKind, FormFixedSlot, FormId, ManagedFormLayout};
 
-const XML: &str = r#"<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" version="2.20">
+pub(super) const XML: &str = r#"<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" version="2.20">
   <AutoCommandBar name="" id="-1"><ChildItems><Button name="Run" id="10"><CommandName>Form.Command.Action</CommandName></Button></ChildItems></AutoCommandBar>
   <ChildItems>
     <UsualGroup name="First" id="1"><ChildItems><InputField name="Value" id="2"><ContextMenu name="Shared" id="6"/><ExtendedTooltip name="Shared" id="7"/></InputField></ChildItems></UsualGroup>
