@@ -53,8 +53,9 @@ annotated block entry и потеря комментария отклоняют�
 ## Граница части
 
 [Часть 8](managed-form-migration.md) добавляет source/base/project/workspace
-migration. Для завершения EF-12 нужен независимый платформенный цикл изменённой
-формы. CLI defaults и analyzer/Explorer API пока прежние.
+migration. [Итоговая приёмка EF-12](managed-form-acceptance.md) подтверждает
+независимый платформенный цикл изменённой формы. CLI defaults и analyzer/Explorer
+API пока прежние.
 Generic UI create/delete/rename и визуальный редактор не добавлены.
 
 ## Проверки

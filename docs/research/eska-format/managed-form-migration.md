@@ -54,8 +54,9 @@ platform/workflow inheritance и overrides. Дополнительные пол�
 ## Граница части
 
 Новый editor/protected/map 4 теперь имеют source/base/project/workspace migration.
-EF-12 требует отдельной приёмки изменённых forms через независимый XML контроль,
-CF build и свежий platform dump. CFE/EPF/ERF и готовность всего MVP не заявлены.
+Позднейшая [итоговая приёмка EF-12](managed-form-acceptance.md) подтверждает
+изменённую форму через независимый XML контроль, CF build и свежий platform dump.
+CFE/EPF/ERF и готовность всего MVP не заявлены.
 
 ## Проверки
 
@@ -77,4 +78,4 @@ readable контролем по 8 769 файлам и 8 064 каталогам.
 Приложение: обязательные fmt/check/strict Clippy/test и Rustdoc прошли, 661 unit,
 570 integration, 24 прежних opt-in ignored. SDK all features:
 check/Clippy/test/Rustdoc, 359 тестов; CLI project/build: 44/9 тестов.
-Изменённая форма ещё требует независимого реального CF/build/dump цикла.
+Результаты независимого реального CF/build/dump цикла — в итоговой приёмке выше.

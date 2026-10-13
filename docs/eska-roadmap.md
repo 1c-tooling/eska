@@ -2228,7 +2228,9 @@ cargo test
 # 14. Ближайший порядок задач после текущего состояния
 
 Реестр статусов и зависимости — в [трекере](roadmap/README.md#ближайший-порядок-выполнения)
-и [очереди EF](roadmap/15-eska-format-experiments.md). **Текущая задача — EF-12; EF-24 принята по [матрице/DoD](research/eska-format/structure-acceptance.md).**
+и [очереди EF](roadmap/15-eska-format-experiments.md). **Следующая задача — EF-23 (`NEXT`);
+EF-24 принята по [матрице/DoD](research/eska-format/structure-acceptance.md),
+EF-12 — по [матрице форм и CF циклу](research/eska-format/managed-form-acceptance.md).**
 
 | Этап | Задачи |
 |---|---|

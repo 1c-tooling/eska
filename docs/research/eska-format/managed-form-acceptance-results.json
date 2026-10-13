@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "stage": "EF-12-acceptance",
+  "date": "2026-10-13",
+  "corpus": "C1",
+  "profile": "logform-2.20",
+  "platform": "8.3.27.2325",
+  "forms": 823,
+  "managed_form_layout_version": 4,
+  "descriptor_schema_version": 2,
+  "body_schema_version": 2,
+  "source_map_schema_version": 3,
+  "independent_native_control_equal": true,
+  "native_files": 8769,
+  "native_directories": 8064,
+  "dump_versions": {
+    "versioned_entries": 7011,
+    "changed_versions": 7011,
+    "all_other_bytes_equal": true
+  },
+  "other_dump_bytes_equal": true,
+  "changed_title_and_layout_preserved": true,
+  "source_base_settings_and_pin_unchanged": true,
+  "project_version_unchanged": true,
+  "protected_exclusions": 0,
+  "cf_routes": {
+    "control": {
+      "artifact_bytes": 200457125,
+      "manifest_checksum_valid": true
+    },
+    "eska": {
+      "artifact_bytes": 200431875,
+      "manifest_checksum_valid": true
+    }
+  },
+  "platform_stages_passed": 6,
+  "application_gates_passed": 5,
+  "sdk_gates_passed": 4,
+  "application_unit_tests_passed": 661,
+  "application_integration_tests_passed": 570,
+  "sdk_tests_passed": 359,
+  "project_cli_tests_passed": 44,
+  "build_cli_tests_passed": 9,
+  "default_opt_in_tests_ignored": 24,
+  "client_visual_or_execution_checked": false,
+  "other_corpora_or_artifacts_accepted": false,
+  "cli_defaults_changed": false,
+  "mvp_accepted": false
+}

@@ -11,7 +11,10 @@
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка
 и анализ кода. После этого — fmt, затем VCS.
 
-**Текущая задача: EF-12 (`IN_PROGRESS`) — типизированная модель управляемых форм.**
+**Следующая задача: EF-23 (`NEXT`) — запросы СКД/динамических списков в `.sdbl`.**
+[EF-12 принята](../research/eska-format/managed-form-acceptance.md) для C1/logform 2.20:
+единый form.yaml, reader/codec/editor, protected writer/source map, явная миграция
+и независимый CF/build/dump изменённой формы на 1С 8.3.27.2325.
 [EF-24 принята](../research/eska-format/structure-acceptance.md) для configuration/
 Designer 2.20: итоговая матрица и DoD подтверждены общими Rust gates и независимым
 CF/build/dump C1. Unknown/preserved и непринятые structural profiles сохраняют
@@ -40,9 +43,10 @@ identity и Resource permission, меняют existing scalars/collections че�
 и используют общий conflict-checked writer.
 [Миграция](../research/eska-format/managed-form-migration.md) переносит рабочий
 source и независимо pinned base в map 4, сохраняя settings проекта/workspace.
-Следующий шаг — независимый XML и реальный CF цикл изменённых форм.
+Независимый XML и реальный CF цикл подтвердили изменённые Title/layout:
+fresh dumps совпали по 8 769 файлам/8 064 каталогам, кроме служебных configVersion.
 CLI defaults сохранены; прежние migration targets сохраняют map 4 как byte no-op.
-EF-12 и MVP остаются незавершёнными.
+EF-12 — `DONE` в указанном профиле; MVP четырёх артефактов остаётся незавершённым.
 
 Первая часть расширяет [typed writer](../research/eska-format/typed-scalars.md)
 на 28 bool/integer/enum свойств с прежней защитой и точечными правками.
@@ -727,7 +731,7 @@ TUI разделён на обработку клавиш, отрисовку и
 
 | Порядок | Задачи | Результат |
 |---|---|---|
-| 1 | EF-24 (`DONE`) → EF-12 (`IN_PROGRESS`) → EF-23 → T83/T84 → EF-14 → EF-15 → EF-25 → EF-20 | Завершённая структура, миграция, new/init, повторный импорт и сборка CF/CFE/EPF/ERF |
+| 1 | EF-24 (`DONE`) → EF-12 (`DONE`) → EF-23 (`NEXT`) → T83/T84 → EF-14 → EF-15 → EF-25 → EF-20 | Завершённая структура, миграция, new/init, повторный импорт и сборка CF/CFE/EPF/ERF |
 | 2 | Продолжить EF-18 → EF-27 | Общий IDE/batch анализатор и контекстная проверка .sdbl |
 | 3 | EF-11 → EF-21 → EF-16 | Установленный Explorer: дерево, поддержка, подсветка, анализ; приёмка MVP |
 | 4 | T26 → форматирование в EF-22 | fmt для CLI и IDE |

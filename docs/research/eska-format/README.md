@@ -2,7 +2,9 @@
 
 [Структура и MVP](project-layout.md) фиксируют приоритет от 2026-10-11:
 структура и файловый цикл CF/CFE/EPF/ERF → анализатор → Explorer → fmt → VCS.
-Текущая задача — EF-12: [native ID/ссылки](managed-form-inventory.md) и
+Следующая задача — EF-23 (`NEXT`). [EF-12 принята](managed-form-acceptance.md)
+для configuration/C1/logform 2.20 на 1С 8.3.27.2325.
+[Native ID/ссылки](managed-form-inventory.md) и
 [общая модель layout](managed-form-layout.md) и
 [обратимый body codec](managed-form-body.md) проверены на 823 формах C1;
 [readable properties body v2](managed-form-properties.md) — на 12 317 values,
@@ -13,8 +15,9 @@ metadata descriptor и dialog body через карту версии 4; project
 637 запрещённых форм восстановлены из базы. [Точечный editor](managed-form-edit.md)
 сохраняет property/layout edits через CST и общий atomic writer.
 [Явная миграция](managed-form-migration.md) переносит source, pinned base,
-standalone проект и workspace в map 4. Платформенная приёмка изменённой формы
-ещё нужна.
+standalone проект и workspace в map 4. Независимый native control и ESKA
+прошли CF/build/dump: изменённые Title/layout сохранены, остальные native bytes
+равны с единственным исключением проверенных configVersion.
 [EF-24 принята](structure-acceptance.md)
 для configuration/Designer 2.20. [28 новых typed-скаляров](typed-scalars.md)
 подготовлены в общем core. [Самостоятельные descriptors](descriptor-layout.md) добавляют
@@ -61,7 +64,7 @@ identities и координаты сохраняются.
 Другие structural profiles и остальные составные домены ещё в работе.
 [Запросы в `.sdbl`](sdbl-queries.md) входят в MVP:
 EF-23 отвечает за файлы/обратную сборку, EF-27 — за анализ и зависимости.
-Обе части `PLANNED`; текущие реализации и результаты перечислены ниже.
+EF-23 — `NEXT`, EF-27 — `PLANNED`; текущие реализации и результаты перечислены ниже.
 
 [Именованные свойства EF-24](readable-layout.md) используют descriptor schema 2
 с отдельными native details, общими CST/semantic coordinates и обеими явными
