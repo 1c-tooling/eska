@@ -1964,6 +1964,22 @@ C1: no-op равен independent form-layout control по 8 769 файлам/8 0
 проверены, input прежний. Восемь owned fixture tests и девять Cargo/SDK gates
 прошли. EF-23 остаётся `IN_PROGRESS`.
 
+[Четвёртая часть: protected writer и source map 4](../research/eska-format/query-protected.md)
+подключает map 5 к прежним Resource правам принятого metadata UUID формы/шаблона.
+Plain values выбираются независимо от pinned bindings и properties/layout;
+missing permitted value отказывает до публикации, denied edits восстанавливаются
+из accepted snapshot. Composite origins сохраняют actual scopes, выбранную
+authority и SHA-256 каждого input; native positions переводятся в точные UTF-8
+координаты `.sdbl`, включая entities/CR/CDATA. Два pure и семь owned project tests
+покрывают коллизии, подмены, поддержку/freeze, отказ и сохранность generations.
+Прежний metadata rename/delete guard проверяет также вынесенные тексты, без
+заявления контекстного анализа EF-27. C1: 46 разрешённых values выбраны из Working,
+104 восстановлены из Accepted; изменены ровно 41 native resource, все 8 769 файлов/
+8 064 каталога равны независимому контролю. Проверены все 150 origins, strict
+отказ, repeat generation и сохранность inputs. Cargo/Rustdoc и SDK gates прошли.
+Editor, явная миграция и CF/execution ещё нужны; EF-23 остаётся `IN_PROGRESS`,
+CLI defaults и очередь сохранены.
+
 Выделить сохранённый текст каждого набора СКД и произвольного запроса списка
 в `.sdbl` рядом с владельцем. Пакет сохранять целиком. Принять версию,
 namespace/slots ссылок, связь с набором/реквизитом, rename и миграцию.

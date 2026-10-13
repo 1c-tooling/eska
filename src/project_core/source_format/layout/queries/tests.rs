@@ -1,11 +1,8 @@
 //! Owned project fixtures compare against an independent old-layout export and preserve refused outputs.
 
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::fs;
 
-use super::*;
+use crate::project_core::source_format::queries::test_support::*;
 use crate::{
     project_core::source_format::{
         AcceptedBase, NativeQueryDocument, QUERY_LAYOUT_VERSION, QuerySlot, SourceReader,
@@ -14,94 +11,6 @@ use crate::{
     },
     test_support::TestDir,
 };
-
-const FORM: &str = "Catalogs/Sample/Forms/Main/form.yaml";
-const DIALOG: &str = "Catalogs/Sample/Forms/Main/Ext/Form.xml";
-const TEMPLATE: &str = "Catalogs/Sample/Templates/QuerySchema/Ext/Template.xml";
-const RESOURCE: &str = "Catalogs/Sample/Templates/QuerySchema/Template.xml";
-const QUERY: &str = "Catalogs/Sample/Templates/QuerySchema/Queries/Query_Same.sdbl";
-const LIST: &str = "Catalogs/Sample/Forms/Main/Queries/Attribute_5.sdbl";
-const MD: &str = "http://v8.1c.ru/8.3/MDClasses";
-const DCS: &str = "http://v8.1c.ru/8.1/data-composition-system/schema";
-const LOGFORM: &str = "http://v8.1c.ru/8.3/xcf/logform";
-const XSI: &str = "http://www.w3.org/2001/XMLSchema-instance";
-
-/// Checked paths retain their complete descriptor/resource spelling throughout the tests.
-fn path(value: &str) -> SourcePath {
-    SourcePath::parse(value).unwrap()
-}
-
-/// Native form attribute IDs overlap UI IDs and include a saved empty and an automatic list.
-fn form() -> String {
-    format!(
-        "\u{feff}<Form xmlns=\"{LOGFORM}\" xmlns:xsi=\"{XSI}\" version=\"2.20\">\r\n<AutoCommandBar name=\"\" id=\"-1\"/><ChildItems><Table name=\"Grid\" id=\"5\"/></ChildItems><Attributes><Attribute name=\"Rows\" id=\"5\"><Settings xsi:type=\"DynamicList\"><ManualQuery>true</ManualQuery><QueryText>// list\r\nSELECT &quot;x&quot;</QueryText></Settings></Attribute><Attribute name=\"Empty\" id=\"6\"><Settings xsi:type=\"DynamicList\"><ManualQuery>true</ManualQuery><QueryText /></Settings></Attribute><Attribute name=\"Auto\" id=\"7\"><Settings xsi:type=\"DynamicList\"><ManualQuery>false</ManualQuery></Settings></Attribute></Attributes>\r\n</Form>\r\n"
-    )
-}
-
-/// The same dataset name appears in two distinct scopes, without language interpretation.
-fn schema() -> String {
-    format!(
-        "\u{feff}<DataCompositionSchema xmlns=\"{DCS}\" xmlns:xsi=\"{XSI}\"><!--keep--><dataSet xsi:type=\"DataSetUnion\"><name>Union</name><item xsi:type=\"DataSetQuery\"><name>Same</name><query>// union\r\nSELECT 1</query></item></dataSet><dataSet xsi:type=\"DataSetQuery\"><name>Same</name><query>SELECT 2;&#xD;\n// end</query></dataSet><settingsVariant/></DataCompositionSchema>\r\n"
-    )
-}
-
-/// Tests modify only a unique playground tree, including a declared opaque binary XML-named payload.
-fn fixture(directory: &TestDir) -> PathBuf {
-    let native = directory.0.join("native");
-    let original =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/eska-format/designer");
-    fs::create_dir(&native).unwrap();
-    let inventory = Inventory::read(&original).unwrap();
-    for path in inventory.directories {
-        fs::create_dir_all(native.join(path.as_path())).unwrap();
-    }
-    for path in inventory.files.keys() {
-        fs::copy(original.join(path.as_path()), native.join(path.as_path())).unwrap();
-    }
-    fs::remove_file(native.join("Ext/ParentConfigurations.bin")).unwrap();
-    fs::write(native.join(DIALOG), form()).unwrap();
-    let catalog = native.join("Catalogs/Sample.xml");
-    fs::write(
-        &catalog,
-        fs::read_to_string(&catalog).unwrap().replace(
-            "<Form>Main</Form>",
-            "<Form>Main</Form><Template>QuerySchema</Template><Template>Opaque</Template>",
-        ),
-    )
-    .unwrap();
-    for (name, kind, uuid) in [
-        (
-            "QuerySchema",
-            "DataCompositionSchema",
-            "80000000-0000-4000-8000-000000000001",
-        ),
-        (
-            "Opaque",
-            "BinaryData",
-            "80000000-0000-4000-8000-000000000002",
-        ),
-    ] {
-        let base = native.join(format!("Catalogs/Sample/Templates/{name}"));
-        fs::create_dir_all(base.join("Ext")).unwrap();
-        fs::write(base.with_extension("xml"), format!("\u{feff}<MetaDataObject xmlns=\"{MD}\" version=\"2.20\"><Template uuid=\"{uuid}\"><Properties><Name>{name}</Name><TemplateType>{kind}</TemplateType></Properties></Template></MetaDataObject>\r\n")).unwrap();
-        let bytes = if name == "Opaque" {
-            vec![0, 255, 10, 13]
-        } else {
-            schema().into_bytes()
-        };
-        fs::write(base.join("Ext/Template.xml"), bytes).unwrap();
-    }
-    native
-}
-
-/// A complete opt-in import retains its original input for byte-level controls.
-fn source() -> (TestDir, PathBuf, PathBuf) {
-    let directory = TestDir::new();
-    let native = fixture(&directory);
-    let root = directory.0.join("source");
-    import_designer_queries(&native, &root).unwrap();
-    (directory, native, root)
-}
 
 /// Query extraction changes authoring structure, while every generated native byte matches the old layout.
 #[test]
@@ -425,9 +334,9 @@ fn queryless_composition_resources_have_an_explicit_empty_source_set() {
     assert!(export_designer(&root, &directory.0.join("refused")).is_err());
 }
 
-/// Old migration targets preserve a newer project; protection explicitly refuses until query selection is integrated.
+/// Old migration targets preserve a newer project; the same accepted source exports without a fallback.
 #[test]
-fn earlier_layout_targets_preserve_queries_and_unimplemented_protection_refuses() {
+fn earlier_layout_targets_preserve_queries_and_protected_no_op_matches_control() {
     let (directory, _, root) = source();
     let before = Inventory::read(&root).unwrap();
     for plan in [
@@ -441,10 +350,13 @@ fn earlier_layout_targets_preserve_queries_and_unimplemented_protection_refuses(
     let reference = accept_source(&root, &accepted, &[]).unwrap();
     let base = AcceptedBase::open(&accepted, &reference).unwrap();
     let output = directory.0.join("protected");
-    let Err(failure) = prepare_protected(&root, &base, &output, false) else {
-        panic!("unsupported protection accepted");
-    };
-    assert_eq!(failure.error.code, "source_query_protection_unavailable");
-    assert!(!output.exists());
+    let prepared = prepare_protected(&root, &base, &output, true).unwrap();
+    let control = directory.0.join("control");
+    export_designer(&root, &control).unwrap();
+    assert_eq!(
+        Inventory::read(prepared.xml()).unwrap(),
+        Inventory::read(&control).unwrap()
+    );
+    prepared.validate().unwrap();
     assert_eq!(Inventory::read(&root).unwrap(), before);
 }

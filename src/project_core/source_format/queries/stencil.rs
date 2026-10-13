@@ -45,6 +45,14 @@ pub(super) struct Frame {
 }
 
 impl Frame {
+    /// Empty elements have no lexical value body; nonempty bounds exclude both native headers.
+    pub(super) const fn content_range(&self) -> Option<Range<usize>> {
+        if self.empty.is_some() {
+            return None;
+        }
+        Some(self.range.start + self.open.len()..self.range.end - self.close.len())
+    }
+
     /// Promotion requires a byte-equal inverse; unsupported lexical forms never become hidden fallbacks.
     pub(super) fn from_node(node: Node<'_, '_>, input: &str) -> Result<Self, Error> {
         if node.attributes().len() != 0 || node.children().any(|child| !child.is_text()) {

@@ -10,6 +10,75 @@ use roxmltree::Node;
 use super::{Error, NativeQueryDocument, QueryProfile, QuerySlot, native, stencil};
 use crate::project_core::source_format::{SourcePath, validation};
 
+/// Restore exact source nodes around selected native gaps; form properties may change independently.
+pub(in crate::project_core::source_format) fn restore_native_queries(
+    source: &str,
+    native: &str,
+    range: &Range<usize>,
+) -> Result<(String, Range<usize>), Error> {
+    let reference = QueryReferenceDocument::from_xml(source)?;
+    let document = NativeQueryDocument::from_xml(native)?;
+    if reference.profile != document.profile()
+        || reference.references.len() != document.queries().len()
+    {
+        return Err(invalid());
+    }
+    let mut output = String::new();
+    let mut cursor = 0;
+    let (mut start, mut end) = (None, None);
+    for (reference, query) in reference.references.iter().zip(document.queries()) {
+        let node = query.native_range();
+        if reference.slot != query.slot
+            || native.get(node.clone()) != Some(reference.frame.render(&query.text).as_str())
+        {
+            return Err(invalid());
+        }
+        let base = output.len();
+        output.push_str(native.get(cursor..node.start).ok_or_else(invalid)?);
+        if start.is_none() && range.start < node.end {
+            start = Some(
+                base + range
+                    .start
+                    .min(node.start)
+                    .checked_sub(cursor)
+                    .ok_or_else(invalid)?,
+            );
+        }
+        if end.is_none() && range.end <= node.start {
+            end = Some(base + range.end.checked_sub(cursor).ok_or_else(invalid)?);
+        }
+        output.push_str(source.get(reference.source_range()).ok_or_else(invalid)?);
+        if end.is_none() && range.end <= node.end {
+            end = Some(output.len());
+        }
+        cursor = node.end;
+    }
+    let base = output.len();
+    output.push_str(native.get(cursor..).ok_or_else(invalid)?);
+    let tail_offset = |point: usize| {
+        point
+            .checked_sub(cursor)
+            .and_then(|offset| base.checked_add(offset))
+            .ok_or_else(invalid)
+    };
+    let start = match start {
+        Some(start) => start,
+        None => tail_offset(range.start)?,
+    };
+    let end = match end {
+        Some(end) => end,
+        None => tail_offset(range.end)?,
+    };
+    if start > end
+        || end > output.len()
+        || !output.is_char_boundary(start)
+        || !output.is_char_boundary(end)
+    {
+        return Err(invalid());
+    }
+    Ok((output, start..end))
+}
+
 /// The source-only protocol version belongs to its namespace, independently of project schema versions.
 pub const QUERY_REFERENCE_NAMESPACE: &str = "urn:eska:query:1";
 

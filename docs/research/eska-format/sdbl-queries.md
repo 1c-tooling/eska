@@ -12,8 +12,11 @@
 plain values от XML, требует весь набор `.sdbl` и удаляет source markup при
 материализации. Все 150 файлов C1 прошли disk no-op/edit/reparse.
 [Третья часть: project map 5](query-project.md) подключает opt-in import/export
-и адресный reader; protected selection/source map и проверка зависимостей ещё
-не реализованы.
+и адресный reader. [Четвёртая часть: protected writer/source map 4](query-protected.md)
+сохраняет Resource права и даёт точные координаты plain values; прежний
+консервативный guard metadata rename/delete учитывает вынесенные тексты.
+Точечный editor, миграция и новый платформенный цикл ещё нужны; контекстный
+анализ зависимостей остаётся EF-27.
 Этот документ не вводит готовые config keys или CLI-команды.
 
 Цель: условие запроса можно изменить в одном `.sdbl` без правки окружающего

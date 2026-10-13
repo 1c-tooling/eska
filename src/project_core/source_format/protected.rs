@@ -5,6 +5,7 @@ mod forms;
 mod generation;
 mod merge;
 mod prepared;
+mod queries;
 mod source_map;
 
 use std::{
@@ -31,7 +32,8 @@ use crate::project_core::{
 pub use prepared::PreparedSource;
 pub use source_map::{
     FileOrigin, InputAuthority, InputFile, MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile,
-    OriginTexts, RELOCATED_SOURCE_MAP_VERSION, SOURCE_MAP_VERSION, SourceLocation, SourceMap,
+    OriginTexts, QUERY_SOURCE_MAP_VERSION, QueryOrigin, RELOCATED_SOURCE_MAP_VERSION,
+    SOURCE_MAP_VERSION, SourceLocation, SourceMap,
 };
 
 /// Every excluded working change states the performed action rather than silently disappearing.
@@ -119,11 +121,9 @@ pub fn prepare_protected(
     strict: bool,
 ) -> Result<PreparedSource, ProtectedFailure> {
     base.verify()?;
-    if base.package.manifest.schema_version >= super::QUERY_LAYOUT_VERSION {
-        return Err(Error::root("source_query_protection_unavailable").into());
-    }
     let source = fs::canonicalize(source).map_err(|error| files::io(&error))?;
     let working = Inventory::read(&source)?;
+    queries::require_values(&working, base)?;
     let mut diagnostics = Vec::new();
     let selected = merge::sources(&source, &working, base, &mut diagnostics)?;
     validate_composition(&selected.documents)?;
@@ -137,12 +137,13 @@ pub fn prepare_protected(
             diagnostics,
         });
     }
+    let query_inputs = queries::load(&source, &working, base, &selected, &origins)?;
     let package = Package {
         manifest: base.package.manifest.clone(),
         snapshot,
         documents: selected.documents,
         forms: selected.forms,
-        query_inputs: super::export::queries::QueryInputs::default(),
+        query_inputs,
         owners: base.package.owners.clone(),
         payloads: base.package.payloads.clone(),
         payload_sources: base.package.payload_sources.clone(),
@@ -163,6 +164,7 @@ pub fn prepare_protected(
         base,
         &package,
         &native,
+        &xml,
         &origins,
         generation.clone(),
     )?;
@@ -228,7 +230,10 @@ fn select_files(
             continue;
         }
         let native = base.package.payloads.get(path).unwrap_or(path);
-        let uuid = native_file_owner(base, native);
+        let query_owner = queries::owner(base, path);
+        let uuid = query_owner
+            .cloned()
+            .or_else(|| native_file_owner(base, native));
         let operation = if native::is_module_path(native.as_path()) {
             Operation::Module
         } else {
@@ -260,7 +265,7 @@ fn select_files(
                 path,
                 Vec::new(),
                 uuid,
-                if current.is_none() {
+                if current.is_none() && query_owner.is_none() {
                     Operation::Delete
                 } else {
                     operation

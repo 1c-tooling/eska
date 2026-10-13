@@ -54,6 +54,9 @@ impl MappedFile {
         if range.start > range.end || range.end > native.len() {
             return Err(Error::root("source_map_span_invalid"));
         }
+        if let Some(location) = super::query::plain_location(self, native, &range)? {
+            return Ok(location);
+        }
         match &self.origin {
             FileOrigin::Payload {
                 authority,
@@ -86,6 +89,9 @@ impl MappedFile {
                 &range,
                 texts.ok_or_else(|| Error::root("source_map_origin_text_missing"))?,
             ),
+            FileOrigin::QueryResource { .. } => {
+                super::query::resource_location(self, native, &range, texts)
+            }
         }
     }
 }

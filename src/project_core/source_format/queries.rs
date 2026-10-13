@@ -2,22 +2,29 @@
 
 use std::{collections::BTreeMap, ops::Range};
 
+use serde::{Deserialize, Serialize};
+
 use super::{Error, FormId};
 
+mod coordinates;
 mod native;
 #[cfg(test)]
 mod reference_tests;
 mod references;
 mod stencil;
 #[cfg(test)]
+pub(in crate::project_core::source_format) mod test_support;
+#[cfg(test)]
 mod tests;
 
+pub(in crate::project_core::source_format) use references::restore_native_queries;
 pub use references::{
     ExtractedQuerySource, QUERY_REFERENCE_NAMESPACE, QueryReference, QueryReferenceDocument,
 };
 
 /// Dataset names are scoped by their containing union; form attribute IDs have a separate native scope.
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum QuerySlot {
     Composition { datasets: Vec<String> },
     DynamicList { attribute: FormId },
@@ -43,6 +50,15 @@ impl NativeQuery {
     #[must_use]
     pub fn native_range(&self) -> Range<usize> {
         self.frame.range.clone()
+    }
+
+    /// Decode offsets only in these exact native bytes; entity and newline boundaries remain atomic.
+    pub(in crate::project_core::source_format) fn decoded_range(
+        &self,
+        input: &str,
+        range: &Range<usize>,
+    ) -> Result<Option<Range<usize>>, Error> {
+        coordinates::decoded_range(self, input, range)
     }
 }
 

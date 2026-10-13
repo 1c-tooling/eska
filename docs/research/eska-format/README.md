@@ -6,7 +6,9 @@
 проверены на 150 запросах C1; [ссылки версии 1](query-references.md) перенесли
 те же values в plain `.sdbl` с disk no-op/edit/reparse.
 [Проектная карта 5](query-project.md) подключает opt-in import/export и адресный
-reader. Protection/source map и миграция ещё нужны; CLI defaults сохранены.
+reader. [Protected writer и source map 4](query-protected.md) сохраняют supplier
+права и дают точные plain координаты. Editor, миграция и новый платформенный
+цикл ещё нужны; CLI defaults сохранены.
 [EF-12 принята](managed-form-acceptance.md)
 для configuration/C1/logform 2.20 на 1С 8.3.27.2325.
 [Native ID/ссылки](managed-form-inventory.md) и

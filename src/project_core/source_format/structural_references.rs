@@ -38,6 +38,9 @@ pub(super) fn validate_references(
             &removed,
         )?;
     }
+    for (path, value) in &package.query_inputs.values {
+        validate_text(value, path, &removed)?;
+    }
     for (native, source) in &package.payload_sources {
         if native.as_str() == "ConfigDumpInfo.xml" {
             continue;

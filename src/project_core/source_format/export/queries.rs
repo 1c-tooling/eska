@@ -18,7 +18,7 @@ pub(in crate::project_core::source_format) struct QueryInputs {
 }
 
 /// Baseline blobs and working trees use the same complete declaration and character checks.
-pub(super) fn load(
+pub(in crate::project_core::source_format) fn load(
     manifest: &SourceManifest,
     forms: &BTreeMap<SourcePath, ManagedFormSource>,
     documents: &BTreeMap<SourcePath, NativeDocument>,

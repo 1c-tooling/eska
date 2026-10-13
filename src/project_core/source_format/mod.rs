@@ -73,8 +73,8 @@ pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManif
 pub use protected::{
     Exclusion, ExclusionAction, FileOrigin, InputAuthority, InputFile,
     MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile, OriginTexts, PreparedSource, ProtectedExport,
-    ProtectedFailure, RELOCATED_SOURCE_MAP_VERSION, SOURCE_MAP_VERSION, SourceLocation, SourceMap,
-    export_protected, prepare_protected,
+    ProtectedFailure, QUERY_SOURCE_MAP_VERSION, QueryOrigin, RELOCATED_SOURCE_MAP_VERSION,
+    SOURCE_MAP_VERSION, SourceLocation, SourceMap, export_protected, prepare_protected,
 };
 pub use queries::{
     ExtractedQuerySource, NativeQuery, NativeQueryDocument, QUERY_REFERENCE_NAMESPACE,

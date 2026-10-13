@@ -65,10 +65,11 @@ query, чужой profile и неполная карта не подменяют
 
 Старые layout targets не понижают map 5: подготовка forms/readable layout
 возвращает byte no-op. Новая явная query migration ещё нужна.
-`accept_source` сохраняет полный map 5 snapshot, но это ещё не подключение
-supplier selection. До следующей части `prepare_protected` явно отказывает
-с `source_query_protection_unavailable`. Query source map и точечный editor
-ещё не реализованы; объявленная identity не означает accepted permission.
+В части 3 `accept_source` сохранял полный map 5 snapshot, а `prepare_protected`
+временно отказывал с `source_query_protection_unavailable`.
+[Часть 4](query-protected.md) подключает supplier selection и source map 4;
+объявленная identity по-прежнему не означает accepted permission. Точечный
+query editor и явная migration ещё нужны.
 
 [C1 результаты](query-project-results.json) фиксируют independent old-layout
 control: no-op совпал по 8 769 файлам и 8 064 каталогам; все 823 адресных form
@@ -82,7 +83,8 @@ resources. Scoped values повторно разобраны, source измен�
 addressed reads при пропавшем соседнем файле, missing/extra/inline/profile
 отказы с сохранением прежнего output, declaration/path collisions, naming и
 rename, пустые СКД с обязательной записью, no-downgrade старых targets и явный
-отказ непринятой protection. Прошли девять Cargo/SDK gates: 685 unit, 570
+временный отказ непринятой protection (позднее заменён protected no-op/control).
+Прошли девять Cargo/SDK gates: 685 unit, 570
 integration и 359 SDK tests; 24 прежних opt-in tests ignored. JSON Schema и
 локальные ссылки проверены. CF/build/execution изменённых запросов и семантика
 языка этой частью не принимаются. EF-23 остаётся

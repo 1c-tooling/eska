@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-13",
+  "task": "EF-23 part 4",
+  "status": "IN_PROGRESS",
+  "corpus": "C1",
+  "native_profile": {
+    "artifact_kind": "configuration",
+    "designer_format": "2.20",
+    "managed_form_format": "2.20",
+    "input_platform_dump": "8.3.27.2325"
+  },
+  "conversion_rules_version": 1,
+  "project_map_version": 5,
+  "source_map_version": 4,
+  "descriptor_schema_version": 2,
+  "probe": {
+    "all_150_origins_checked": true,
+    "all_native_bytes_equal_independent_control": true,
+    "all_noop_native_bytes_equal_control": true,
+    "all_working_marker_spans_exact": true,
+    "allowed_query_values": 46,
+    "changed_native_resources": 41,
+    "denied_query_values": 104,
+    "denied_values_restored_with_resource_diagnostics": true,
+    "input_unchanged": true,
+    "native_directories": 8064,
+    "native_files": 8769,
+    "plain_files": 150,
+    "project_map_version": 5,
+    "query_resources": 153,
+    "repeat_generation_stable": true,
+    "source_changes_only_plain_files": true,
+    "source_map_version": 4,
+    "strict_refuses_before_publication": true
+  },
+  "validation": {
+    "new_project_tests": 7,
+    "new_coordinate_tests": 2,
+    "root_unit_passed": 694,
+    "root_integration_passed": 570,
+    "sdk_tests_passed": 359,
+    "existing_ignored": 24,
+    "gates": [
+      {
+        "stage": "fmt",
+        "exit_code": 0,
+        "seconds": 1.11
+      },
+      {
+        "stage": "check",
+        "exit_code": 0,
+        "seconds": 2.1
+      },
+      {
+        "stage": "clippy",
+        "exit_code": 0,
+        "seconds": 10.43
+      },
+      {
+        "stage": "test",
+        "exit_code": 0,
+        "seconds": 61.62
+      },
+      {
+        "stage": "doc",
+        "exit_code": 0,
+        "seconds": 6.23
+      },
+      {
+        "stage": "sdk-check",
+        "exit_code": 0,
+        "seconds": 4.59
+      },
+      {
+        "stage": "sdk-clippy",
+        "exit_code": 0,
+        "seconds": 4.13
+      },
+      {
+        "stage": "sdk-test",
+        "exit_code": 0,
+        "seconds": 36.67
+      },
+      {
+        "stage": "sdk-doc",
+        "exit_code": 0,
+        "seconds": 5.64
+      }
+    ]
+  },
+  "scope": {
+    "supplier_selection": true,
+    "exact_plain_coordinates": true,
+    "conservative_structural_reference_guard": true,
+    "query_editor": false,
+    "query_migration": false,
+    "query_language_analysis": false,
+    "new_cf_cycle": false,
+    "query_runtime": false
+  },
+  "input_unchanged": true,
+  "cli_defaults_unchanged": true
+}

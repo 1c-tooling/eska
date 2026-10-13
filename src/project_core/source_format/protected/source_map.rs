@@ -2,6 +2,7 @@
 
 mod form;
 mod location;
+mod query;
 
 pub use location::{OriginTexts, SourceLocation};
 
@@ -14,7 +15,7 @@ use super::{Origin, native_file_owner};
 use crate::project_core::{
     native,
     source_format::{
-        AcceptedBase, Error, FileEntry, FileRole, NativeUuid, SourcePath,
+        AcceptedBase, Error, FileEntry, FileRole, NativeUuid, QuerySlot, SourcePath,
         export::Package,
         files::{self, Inventory},
     },
@@ -26,6 +27,8 @@ pub const SOURCE_MAP_VERSION: u32 = 1;
 pub const RELOCATED_SOURCE_MAP_VERSION: u32 = 2;
 /// A generated dialog shares authoring bytes and metadata UUID with its declared form descriptor.
 pub const MANAGED_FORM_SOURCE_MAP_VERSION: u32 = 3;
+/// Composite query resources include the independently selected plain inputs and scoped native ranges.
+pub const QUERY_SOURCE_MAP_VERSION: u32 = 4;
 
 /// Exact authoring bytes addressed relative to a working tree or its pinned accepted snapshot.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -55,6 +58,16 @@ pub enum InputAuthority {
     Accepted,
 }
 
+/// This exact selected plain input supplies one native query property; the record is not permission.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct QueryOrigin {
+    pub slot: QuerySlot,
+    pub native: std::ops::Range<usize>,
+    pub authority: InputAuthority,
+    pub input: InputFile,
+}
+
 /// A generated descriptor can combine accepted bindings, selected values and supported new inline nodes.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
@@ -79,6 +92,15 @@ pub enum FileOrigin {
         #[serde(skip_serializing_if = "Option::is_none")]
         working: Option<InputFile>,
         uses_working_values: bool,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        queries: Vec<QueryOrigin>,
+    },
+    QueryResource {
+        uuid: NativeUuid,
+        descriptor: SourcePath,
+        authority: InputAuthority,
+        input: InputFile,
+        queries: Vec<QueryOrigin>,
     },
 }
 
@@ -125,7 +147,10 @@ impl SourceMap {
     pub fn validate(&self) -> Result<(), Error> {
         if !matches!(
             self.schema_version,
-            SOURCE_MAP_VERSION | RELOCATED_SOURCE_MAP_VERSION | MANAGED_FORM_SOURCE_MAP_VERSION
+            SOURCE_MAP_VERSION
+                | RELOCATED_SOURCE_MAP_VERSION
+                | MANAGED_FORM_SOURCE_MAP_VERSION
+                | QUERY_SOURCE_MAP_VERSION
         ) || !matches!(
             self.source_schema_version,
             super::super::SCHEMA_VERSION | super::super::READABLE_SCHEMA_VERSION
@@ -136,7 +161,7 @@ impl SourceMap {
         {
             return Err(Error::root("source_map_schema_unsupported"));
         }
-        if self.schema_version == MANAGED_FORM_SOURCE_MAP_VERSION
+        if self.schema_version >= MANAGED_FORM_SOURCE_MAP_VERSION
             && self.source_schema_version != super::super::READABLE_SCHEMA_VERSION
         {
             return Err(Error::root("source_map_schema_unsupported"));
@@ -201,6 +226,7 @@ impl SourceMap {
             );
         }
         self.validate_forms()?;
+        query::validate_map(self)?;
         if files::revision(&entries, &self.directories) != self.native_revision {
             return Err(Error::root("source_map_inventory_invalid"));
         }
@@ -223,8 +249,10 @@ impl SourceMap {
                 working,
                 ..
             } = &entry.origin
-                && (self.schema_version != MANAGED_FORM_SOURCE_MAP_VERSION
-                    || !descriptors.insert(descriptor)
+                && (!matches!(
+                    self.schema_version,
+                    MANAGED_FORM_SOURCE_MAP_VERSION | QUERY_SOURCE_MAP_VERSION
+                ) || !descriptors.insert(descriptor)
                     || !matches!(self.file(descriptor).map(|file| &file.origin),
                         Some(FileOrigin::Metadata { uuid: owner, accepted: input, working: overlay, .. })
                         if owner == uuid && input == accepted && overlay == working))
@@ -253,6 +281,7 @@ pub(super) fn create(
     base: &AcceptedBase,
     package: &Package,
     native: &Inventory,
+    xml: &BTreeMap<SourcePath, String>,
     origins: &BTreeMap<SourcePath, Origin>,
     generation: String,
 ) -> Result<SourceMap, Error> {
@@ -318,7 +347,10 @@ pub(super) fn create(
                     working: working.files.get(*source).map(InputFile::from),
                     uses_working_values: package.forms.get(&entry.path)
                         != base.package.forms.get(&entry.path),
+                    queries: query::origins(working, base, package, entry, xml, origins)?,
                 }
+            } else if package.query_inputs.resources.contains_key(&entry.path) {
+                query::resource_origin(working, base, package, entry, xml, origins)?
             } else {
                 payload_origin(base, working, origins, entry)?
             };
@@ -356,7 +388,9 @@ pub(super) fn create(
 
 /// Origin schema follows actual physical mappings while descriptor envelope versions stay independent.
 const fn map_version(layout: u32, descriptor: u32) -> u32 {
-    if layout == super::super::MANAGED_FORM_LAYOUT_VERSION {
+    if layout == super::super::QUERY_LAYOUT_VERSION {
+        QUERY_SOURCE_MAP_VERSION
+    } else if layout == super::super::MANAGED_FORM_LAYOUT_VERSION {
         MANAGED_FORM_SOURCE_MAP_VERSION
     } else if layout == super::super::RESOURCE_LAYOUT_VERSION
         || descriptor == super::super::READABLE_SCHEMA_VERSION
@@ -368,7 +402,7 @@ const fn map_version(layout: u32, descriptor: u32) -> u32 {
 }
 
 /// Byte-preserved payloads retain the selector's exact input authority and physical source path.
-fn payload_origin(
+pub(super) fn payload_origin(
     base: &AcceptedBase,
     working: &Inventory,
     origins: &BTreeMap<SourcePath, Origin>,
@@ -448,7 +482,20 @@ fn validate_origin(entry: &MappedFile) -> Result<(), Error> {
                 return Err(Error::root("source_map_origin_invalid"));
             }
         }
+        FileOrigin::QueryResource { input, .. } => {
+            require_digest(&input.sha256)?;
+            if input.bytes == 0
+                || !input
+                    .path
+                    .as_path()
+                    .extension()
+                    .is_some_and(|extension| extension.eq_ignore_ascii_case("xml"))
+            {
+                return Err(Error::root("source_map_origin_invalid"));
+            }
+        }
     }
+    query::validate_origin(entry)?;
     Ok(())
 }
 

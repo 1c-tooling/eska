@@ -19,8 +19,11 @@ text edits/reparse. [Версионированные ссылки](../research/
 values отказаны, source namespace удалён из output.
 [Проектная карта 5](../research/eska-format/query-project.md) добавляет opt-in
 import/export и адресный reader: 153 query resources и 150 `.sdbl` C1.
-Далее — protection/source map/миграция и отдельная платформенная приёмка;
-CLI defaults сохранены, protected map 5 пока явно отказывает.
+[Protected writer и source map 4](../research/eska-format/query-protected.md)
+выбирают plain values по принятым Resource правам владельца и возвращают
+точные координаты `.sdbl`; missing permitted values отказывают до публикации.
+Далее — точечный editor, явная миграция и отдельная платформенная приёмка;
+CLI defaults сохранены.
 [EF-12 принята](../research/eska-format/managed-form-acceptance.md) для C1/logform 2.20:
 единый form.yaml, reader/codec/editor, protected writer/source map, явная миграция
 и независимый CF/build/dump изменённой формы на 1С 8.3.27.2325.

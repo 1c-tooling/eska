@@ -2236,8 +2236,10 @@ Native query codec и [source references версии 1](research/eska-format/qu
 проверены на всех 150 запросах C1: отдельные plain values прошли disk no-op/edit/
 reparse; XML результата не содержит source namespace.
 [Проектная карта 5](research/eska-format/query-project.md) добавляет opt-in
-import/export и адресный reader. Protection/source map и миграция EF-23 ещё
-нужны; CLI defaults сохранены, protected map 5 пока явно отказывает.
+import/export и адресный reader. [Protected writer/source map 4](research/eska-format/query-protected.md)
+выбирают запросы по принятым Resource правам и возвращают точные plain координаты.
+Точечный editor, миграция и отдельный платформенный цикл EF-23 ещё нужны;
+CLI defaults сохранены.
 
 | Этап | Задачи |
 |---|---|

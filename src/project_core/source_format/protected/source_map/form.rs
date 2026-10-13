@@ -38,6 +38,7 @@ pub(super) fn locate(
         accepted,
         working,
         uses_working_values,
+        queries,
     } = &file.origin
     else {
         return Err(mismatch());
@@ -55,11 +56,23 @@ pub(super) fn locate(
         return Err(mismatch());
     }
     let original = owner.form.ok_or_else(mismatch)?;
-    let text =
+    let native =
         std::str::from_utf8(native).map_err(|_| Error::root("source_map_native_text_invalid"))?;
-    if !text.is_char_boundary(range.start) || !text.is_char_boundary(range.end) {
+    if !native.is_char_boundary(range.start) || !native.is_char_boundary(range.end) {
         return Err(Error::root("source_map_span_invalid"));
     }
+    let restored;
+    let adjusted;
+    let (text, range) = if queries.is_empty() {
+        (native, range)
+    } else {
+        (restored, adjusted) = crate::project_core::source_format::queries::restore_native_queries(
+            &original.to_xml()?,
+            native,
+            range,
+        )?;
+        (restored.as_str(), &adjusted)
+    };
     let selected = ManagedFormSource::from_xml(text)?;
     let mut expected = original.clone();
     expected.layout = selected.layout.clone();

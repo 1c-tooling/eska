@@ -13,6 +13,13 @@ fingerprints и выбора accepted/working сохраняются.
 captured inputs, scalar/formatted/language coordinates и текущие layout entries.
 Прежние source maps 1/2 и prepared artifact envelope 2 сохранены.
 
+[Отдельные queries EF-23](query-protected.md) добавляют source map schema 4
+для reverse map 5: optional query inputs формы и composite `query_resource`
+origin СКД. Каждый plain input имеет собственные captured authority/fingerprint,
+native scoped slot и range. Адресный mapper учитывает XML escaping/CDATA/EOL
+при переводе в UTF-8 `.sdbl`; source XML/YAML gaps сохраняют свои координаты.
+`source_schema_version` остаётся 2, maps 1–3 читаются в прежнем виде.
+
 `PreparedSource::source_map` возвращает карту полного native inventory:
 descriptor XML, BSL, ресурсы, политика поддержки, supplier CF, файлы вне
 объявленного состава и пустые каталоги. Пути относительные; абсолютных путей
