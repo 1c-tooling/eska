@@ -28,6 +28,10 @@ UI, root Attributes и Commands имеют отдельные ID/name scopes. Co
 
 `AdditionSource.Item` разрешается к regular Table, `Form.Command.*` — к root
 Commands. Numeric/builtin/прочие CommandName и DataPath не переинтерпретируются.
+Текст ссылки включает все её прямые XML text/CDATA nodes; comments/PI не входят
+в значение и не разрывают его. Например, `Form.<!--note-->Command.Action`
+обозначает ту же local command, что `Form.Command.Action`. Полное имя проверяется
+и при saved/overlay чтении единого form.yaml; его XML bytes сохраняются.
 Типы, события, настройки СКД и произвольные свойства не становятся редактируемыми
 из-за успешного чтения этого graph.
 

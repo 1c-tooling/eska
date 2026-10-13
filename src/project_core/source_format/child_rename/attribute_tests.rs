@@ -381,7 +381,13 @@ fn unsupported_attribute_profiles_and_parent_classes_do_not_expand_rename_author
 #[test]
 fn preserved_xml_and_bsl_guard_old_names_without_invalidating_the_live_uuid() {
     for readable in [false, true] {
-        for (kind, denied) in [("xml", true), ("bsl", true), ("uuid", false)] {
+        for (kind, denied) in [
+            ("xml", true),
+            ("comment", true),
+            ("processing-instruction", true),
+            ("bsl", true),
+            ("uuid", false),
+        ] {
             let test = TestDir::new();
             let (source, base) = fixture(&test, readable, &[], |input| {
                 if kind == "bsl" {
@@ -397,6 +403,10 @@ fn preserved_xml_and_bsl_guard_old_names_without_invalidating_the_live_uuid() {
                     let xml = fs::read_to_string(&path).unwrap();
                     let reference = if kind == "uuid" {
                         format!("<Future uuidRef=\"{}\"/>", uuid(11).as_str())
+                    } else if kind == "comment" {
+                        "<Future>Ex<!-- split -->isting</Future>".into()
+                    } else if kind == "processing-instruction" {
+                        "<Future>Ex<?note keep?>isting</Future>".into()
                     } else {
                         "<Future value=\"Ex&#x69;sting\"/>".into()
                     };

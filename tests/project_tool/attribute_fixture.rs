@@ -26,6 +26,11 @@ pub fn fixture(root: &Path, dependency: Option<&str>) {
                 "Extra.xml",
                 "<Form><DataPath><![CDATA[Объект.УдаляемоеПоле]]></DataPath></Form>",
             )
+        } else if kind == "xml-split" {
+            (
+                "Extra.xml",
+                "<Form><DataPath>Объект.Удаля<!-- keep -->емое<?note keep?>Поле</DataPath></Form>",
+            )
         } else {
             (
                 "ObjectModule.bsl",

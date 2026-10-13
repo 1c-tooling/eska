@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use roxmltree::{Document, Node};
 
+use super::super::xml;
 use super::{
     Error, FormElement, FormElementKind, FormFixedSlot, FormId, FormLayout, FormNamedValue,
     ManagedFormLayout, NAMESPACE,
@@ -204,7 +205,7 @@ fn references(
                     .find(|node| node.has_tag_name((NAMESPACE, "Item")))
                     .ok_or_else(unverified)?;
                 let target = elements
-                    .get(&item.text().unwrap_or_default().to_lowercase())
+                    .get(&xml::text(item).to_lowercase())
                     .ok_or_else(|| missing(id))?;
                 if form
                     .addition_sources
@@ -215,9 +216,7 @@ fn references(
                 }
             }
             if property.has_tag_name((NAMESPACE, "CommandName"))
-                && let Some(target) = property
-                    .text()
-                    .and_then(|text| text.strip_prefix("Form.Command."))
+                && let Some(target) = xml::text(property).strip_prefix("Form.Command.")
             {
                 let target = commands
                     .get(&target.to_lowercase())

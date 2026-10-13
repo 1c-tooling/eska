@@ -181,6 +181,53 @@ fn references_do_not_acquire_authority_from_coincident_ids() {
     }
 }
 
+/// XML comments and processing instructions separate text nodes without changing a reference value.
+#[test]
+fn reference_text_includes_all_xml_text_nodes() {
+    let accepted = form();
+    for separator in ["<!-- opaque -->", "<?note keep?>"] {
+        let input = XML
+            .replace(
+                "Form.Command.Action",
+                &format!("Form.{separator}Command.Action"),
+            )
+            .replace(
+                "<Item>Rows</Item>",
+                &format!("<Item>R{separator}ows</Item>"),
+            );
+        assert_eq!(ManagedFormLayout::from_xml(&input).unwrap(), accepted);
+        let source = super::ManagedFormSource::from_xml(&input).unwrap();
+        let yaml = source.to_yaml().unwrap();
+        assert_eq!(
+            super::ManagedFormSource::from_yaml(&yaml)
+                .unwrap()
+                .to_xml()
+                .unwrap(),
+            input
+        );
+    }
+}
+
+/// A valid prefix cannot conceal an unresolved suffix or disable local-command validation.
+#[test]
+fn fragmented_missing_references_are_rejected() {
+    for (before, after) in [
+        ("Form.Command.Action", "Form.<!-- split -->Command.Missing"),
+        ("Form.Command.Action", "Form.Command.Action<?note?>Missing"),
+        (
+            "<Item>Rows</Item>",
+            "<Item>Rows<!-- split -->Missing</Item>",
+        ),
+    ] {
+        assert_eq!(
+            ManagedFormLayout::from_xml(&XML.replace(before, after))
+                .unwrap_err()
+                .code,
+            "source_form_reference_missing"
+        );
+    }
+}
+
 /// Numeric IDs remain canonical, distinct from UUIDs/names, without global value-scope uniqueness.
 #[test]
 fn invalid_and_duplicate_ids_are_rejected_in_their_own_scopes() {

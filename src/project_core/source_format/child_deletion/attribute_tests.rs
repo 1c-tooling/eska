@@ -209,6 +209,8 @@ fn decoded_xml_field_mentions_refuse_before_publication_in_both_envelopes() {
             "<Future ref=\"Catalog.Records.Attribute.Existing\"/>",
             "<Future><![CDATA[Existing]]></Future>",
             "<Future>Ex&#x69;sting</Future>",
+            "<Future>Ex<!-- split -->isting</Future>",
+            "<Future>Ex<?note keep?>isting</Future>",
             "<Existing/>",
         ]
         .map(String::from)
@@ -244,6 +246,41 @@ fn decoded_xml_field_mentions_refuse_before_publication_in_both_envelopes() {
                 );
                 assert!(!output.exists());
             }
+            assert_eq!(Inventory::read(&source).unwrap(), before);
+        }
+    }
+}
+
+/// Trivia has no dependency value, and independent XML fields must not be joined into an identifier.
+#[test]
+fn xml_trivia_and_element_boundaries_do_not_invent_field_dependencies() {
+    for readable in [false, true] {
+        for reference in [
+            "<Future><!-- Existing --><?note Existing?></Future>",
+            "<Future>Prefix<!-- split -->Existing</Future>",
+            "<Future>Existing<?note keep?>Suffix</Future>",
+            "<Future>Ex<Other/>isting</Future>",
+            "<Future><Left>Ex</Left><Right>isting</Right></Future>",
+        ] {
+            let test = TestDir::new();
+            let (source, base) = fixture(&test, readable, &[], |input| {
+                let path = input.join("Documents/Entry.xml");
+                let native = fs::read_to_string(&path).unwrap();
+                fs::write(
+                    path,
+                    native.replace("</Properties>", &format!("{reference}</Properties>")),
+                )
+                .unwrap();
+            });
+            edit(&source, CATALOG, |owner| {
+                children(owner).remove(0);
+            });
+            let before = Inventory::read(&source).unwrap();
+            let output = test.0.join("generations");
+            let prepared = prepare_protected(&source, &base, &output, true).unwrap();
+            assert!(prepared.diagnostics().is_empty());
+            let native = fs::read_to_string(prepared.xml().join("Catalogs/Records.xml")).unwrap();
+            assert!(!native.contains(uuid(11).as_str()));
             assert_eq!(Inventory::read(&source).unwrap(), before);
         }
     }

@@ -326,8 +326,8 @@ fn fragment(node: Node<'_, '_>, input: &str, inherited: &[Namespace]) -> XmlFrag
     }
 }
 
-/// Concatenate native text nodes, including CDATA, according to XML value semantics.
-fn text(node: Node<'_, '_>) -> String {
+/// Concatenate direct XML text and CDATA, excluding comments, PIs and descendant element values.
+pub(super) fn text(node: Node<'_, '_>) -> String {
     node.children()
         .filter(Node::is_text)
         .filter_map(|child| child.text())

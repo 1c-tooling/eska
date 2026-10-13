@@ -9,7 +9,7 @@ use roxmltree::{Document, Node};
 use serde::{Deserialize, Serialize};
 
 use super::{Error, ManagedFormSource, Part, decode};
-use crate::project_core::source_format::native_writer;
+use crate::project_core::source_format::{native_writer, xml::text};
 
 #[cfg(test)]
 mod tests;
@@ -195,14 +195,6 @@ fn meaningful<'a, 'input>(node: Node<'a, 'input>) -> impl Iterator<Item = Node<'
     node.children().filter(|child| {
         !child.is_text() || child.text().is_some_and(|text| !text.trim().is_empty())
     })
-}
-
-/// XML text concatenation respects parsed entities and line endings; lexical promotion is checked separately.
-fn text(node: Node<'_, '_>) -> String {
-    node.children()
-        .filter(Node::is_text)
-        .filter_map(|node| node.text())
-        .collect()
 }
 
 /// Only the observed boolean spellings belong to the accepted inverse profile.

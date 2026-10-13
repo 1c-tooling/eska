@@ -129,7 +129,7 @@ fn prepare_removes_or_restores_fields_and_columns_by_accepted_policy_in_both_loc
 #[test]
 fn field_dependencies_in_selected_xml_and_bsl_refuse_before_generation_in_both_locales() {
     for layout in ["family", "readable"] {
-        for kind in ["xml", "bsl"] {
+        for kind in ["xml", "xml-split", "bsl"] {
             let test = TestDir::new();
             fixture(&test.0, Some(kind));
             let imported = success(

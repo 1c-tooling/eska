@@ -228,6 +228,8 @@ fn preserved_metadata_references_refuse_before_publication_in_both_schemas() {
         for dependency in [
             "<Unverified>Enum.Status.EnumValue.Second</Unverified>".into(),
             "<Unverified><![CDATA[enum.status.enumvalue.second]]></Unverified>".into(),
+            "<Unverified>Enum.Status.EnumValue.<!-- split -->Second</Unverified>".into(),
+            "<Unverified>Enum.Status.EnumValue.Se<?note keep?>cond</Unverified>".into(),
             "<Unverified target=\"Enum.Status.EnumValue.&#83;econd\"/>".into(),
             format!(
                 "<Unverified>{}</Unverified>",
@@ -288,6 +290,8 @@ fn resource_dependency_and_unverified_xml_block_removal_but_selected_fix_allows_
     for readable in [false, true] {
         for payload in [
             "<Resource><Ref>Enum.Status.EnumValue.Second</Ref></Resource>",
+            "<Resource><Ref>Enum.Status.EnumValue.Se<!-- split -->cond</Ref></Resource>",
+            "<Resource><Ref>Enum.Status.EnumValue.Se<?note keep?>cond</Ref></Resource>",
             "<Resource>",
         ] {
             let test = TestDir::new();

@@ -48,8 +48,11 @@ preserved XML-секции/свойства/children, transport attributes и na
 Совпадение в тексте или attribute даёт `source_structural_reference_preserved`
 с native path и UUID. Guard консервативен: текстовое упоминание может не быть
 ссылкой, но неизвестная inverse семантика не угадывается и не переписывается.
-Comments/PI не имеют авторитета; namespace scopes сохраняются при разборе
-фрагмента. Неразбираемый XML payload даёт `source_structural_xml_unverified`.
+Comments/PI не имеют авторитета и не разделяют текст ссылки: guard соединяет
+text/CDATA nodes между границами дочерних XML-элементов. Поэтому комментарий
+внутри полного имени или UUID не скрывает зависимость. Namespace scopes
+сохраняются при разборе фрагмента. Неразбираемый XML payload даёт
+`source_structural_xml_unverified`.
 Оба отказа происходят до публикации и не обходятся `--allow-exclusions`.
 
 Проверяются выбранные байты: запрещённый ресурс восстановлен из независимо

@@ -248,20 +248,34 @@ fn validate_fragment(
 fn validate_xml(text: &str, path: &SourcePath, removed: &Invalidated) -> Result<(), Error> {
     let document = roxmltree::Document::parse(text)
         .map_err(|_| Error::root("source_structural_xml_unverified").in_field(path.as_str()))?;
-    for node in document.descendants() {
-        if node.is_element() && !removed.fields.is_empty() {
+    for node in document.descendants().filter(roxmltree::Node::is_element) {
+        if !removed.fields.is_empty() {
             validate_text(node.tag_name().name(), path, removed)?;
         }
-        let values = node
-            .text()
-            .filter(|_| node.is_text())
-            .into_iter()
-            .chain(node.attributes().map(|attribute| attribute.value()));
-        for value in values {
-            validate_text(value, path, removed)?;
+        for attribute in node.attributes() {
+            validate_text(attribute.value(), path, removed)?;
         }
+        validate_element_text(node, path, removed)?;
     }
     Ok(())
+}
+
+/// Comments and PIs do not split a value; child elements separate independent text runs.
+fn validate_element_text(
+    node: roxmltree::Node<'_, '_>,
+    path: &SourcePath,
+    removed: &Invalidated,
+) -> Result<(), Error> {
+    let mut value = String::new();
+    for child in node.children() {
+        if child.is_element() {
+            validate_text(&value, path, removed)?;
+            value.clear();
+        } else if child.is_text() {
+            value.push_str(child.text().unwrap_or_default());
+        }
+    }
+    validate_text(&value, path, removed)
 }
 
 /// An opaque mention may be a dependency; its inverse semantics cannot be guessed from textual shape.

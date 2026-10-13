@@ -56,6 +56,49 @@ fn source() -> (TestDir, PathBuf, PathBuf) {
     (directory, native, source)
 }
 
+/// Fragmented command text retains its native bytes through map-v4 import, saved/overlay reading and export.
+#[test]
+fn unified_form_references_preserve_xml_trivia_and_reject_dangling_overlays() {
+    let directory = TestDir::new();
+    let native = fixture(&directory);
+    let input = XML
+        .replace(
+            "<UsualGroup name=\"Second\" id=\"2\"><ChildItems/></UsualGroup>",
+            "<Button name=\"Run\" id=\"2\"><CommandName>Form.<!-- keep -->Command.<?note keep?>Action</CommandName></Button>",
+        )
+        .replace(
+            "</Form>",
+            "<Commands><Command name=\"Action\" id=\"1\"/></Commands></Form>",
+        );
+    fs::write(native.join(DIALOG), &input).unwrap();
+    let original = Inventory::read(&native).unwrap();
+    let root = directory.0.join("source");
+    import_designer_forms(&native, &root).unwrap();
+    let before = Inventory::read(&root).unwrap();
+    let reader = SourceReader::open(&root).unwrap();
+    let model = reader.read_form_layout(&path(FORM), 1_000_000).unwrap();
+    let commands: Vec<_> = model
+        .local_commands
+        .iter()
+        .map(|(source, target)| (source.as_str(), target.as_str()))
+        .collect();
+    assert_eq!(commands, [("2", "1")]);
+    let yaml = fs::read_to_string(root.join(FORM)).unwrap();
+    assert_eq!(reader.parse_form_layout(&path(FORM), &yaml).unwrap(), model);
+    assert_eq!(
+        reader
+            .parse_form_layout(&path(FORM), &yaml.replace("?>Action", "?>Missing"))
+            .unwrap_err()
+            .code,
+        "source_form_reference_missing"
+    );
+    let output = directory.0.join("output");
+    export_designer(&root, &output).unwrap();
+    assert_eq!(fs::read(output.join(DIALOG)).unwrap(), input.as_bytes());
+    assert_eq!(Inventory::read(&native).unwrap(), original);
+    assert_eq!(Inventory::read(&root).unwrap(), before);
+}
+
 /// A single form YAML generates two native files while module/resource bytes stay independent.
 #[test]
 fn unified_form_import_reader_export_and_repeat_preserve_exact_dialog_bytes() {
