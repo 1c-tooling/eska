@@ -2,9 +2,14 @@
 
 use std::ops::Range;
 
-use tree_sitter::{Node, Parser};
+use tree_sitter::{Node, Parser, Tree};
 
 use super::native_version::ProjectVersion;
+
+mod migration;
+mod registration;
+
+pub use migration::{EditKind, MigrationPlan, TextEdit, plan_migration};
 
 /// Bound parser allocations independently of the surrounding metadata project.
 pub const MAX_MODULE_BYTES: usize = 16 * 1024 * 1024;
@@ -34,6 +39,12 @@ pub enum ContractErrorKind {
     ConditionalFunction,
     InvalidBody,
     InvalidVersion,
+    RegistrationAmbiguous,
+    RegistrationUnsupported,
+    RegistrationUnbound,
+    InitialVersionRequired,
+    InitialVersionConflict,
+    SourceChanged,
 }
 
 impl ContractErrorKind {
@@ -54,6 +65,12 @@ impl ContractErrorKind {
             Self::ConditionalFunction => "version_function_conditional",
             Self::InvalidBody => "version_function_invalid_body",
             Self::InvalidVersion => "version_function_invalid_version",
+            Self::RegistrationAmbiguous => "version_registration_ambiguous",
+            Self::RegistrationUnsupported => "version_registration_unsupported",
+            Self::RegistrationUnbound => "version_registration_unbound",
+            Self::InitialVersionRequired => "version_initial_value_required",
+            Self::InitialVersionConflict => "version_initial_value_conflict",
+            Self::SourceChanged => "version_module_changed",
         }
     }
 }
@@ -75,42 +92,105 @@ pub struct ContractError {
 /// Returns an original byte range for invalid syntax, an ambiguous declaration, an
 /// unsupported signature/body or an invalid three/four-part version number.
 pub fn inspect(input: &str) -> Result<ModuleVersion, ContractError> {
-    if input.len() > MAX_MODULE_BYTES {
-        return Err(ContractError {
-            kind: ContractErrorKind::ModuleTooLarge,
-            range: 0..input.len(),
-        });
+    let parsed = ParsedModule::parse(input)?;
+    inspect_function(&parsed, true)
+}
+
+/// Validate the version function and, when present, its BSP registration binding.
+///
+/// # Errors
+/// Refuses an opaque registration, an independent version value or an invalid function.
+pub fn inspect_contract(input: &str) -> Result<ModuleVersion, ContractError> {
+    let parsed = ParsedModule::parse(input)?;
+    let version = inspect_function(&parsed, true)?;
+    let nodes = descendants(parsed.tree.root_node());
+    if let Some(expression) = registration::version_expression(&nodes, parsed.text, parsed.offset)?
+        && !registration::is_version_call(expression, parsed.text)
+    {
+        return Err(error_at(
+            ContractErrorKind::RegistrationUnbound,
+            expression,
+            parsed.offset,
+        ));
     }
-    let text = input.strip_prefix('\u{feff}').unwrap_or(input);
-    let offset = input.len() - text.len();
-    let mut parser = Parser::new();
-    parser
-        .set_language(&tree_sitter_bsl::LANGUAGE.into())
-        .map_err(|_| ContractError {
+    Ok(version)
+}
+
+/// Keep the parser tree and BOM offset together without a self-referential node collection.
+struct ParsedModule<'a> {
+    input: &'a str,
+    text: &'a str,
+    offset: usize,
+    tree: Tree,
+}
+
+impl<'a> ParsedModule<'a> {
+    /// Refuse broken syntax before either inspection or a migration proposal.
+    fn parse(input: &'a str) -> Result<Self, ContractError> {
+        if input.len() > MAX_MODULE_BYTES {
+            return Err(ContractError {
+                kind: ContractErrorKind::ModuleTooLarge,
+                range: 0..input.len(),
+            });
+        }
+        let text = input.strip_prefix('\u{feff}').unwrap_or(input);
+        let offset = input.len() - text.len();
+        let mut parser = Parser::new();
+        parser
+            .set_language(&tree_sitter_bsl::LANGUAGE.into())
+            .map_err(|_| ContractError {
+                kind: ContractErrorKind::ParserUnavailable,
+                range: 0..input.len(),
+            })?;
+        let tree = parser.parse(text, None).ok_or(ContractError {
             kind: ContractErrorKind::ParserUnavailable,
             range: 0..input.len(),
         })?;
-    let tree = parser.parse(text, None).ok_or(ContractError {
-        kind: ContractErrorKind::ParserUnavailable,
-        range: 0..input.len(),
-    })?;
-    let nodes = descendants(tree.root_node());
-    if let Some(error) = nodes
-        .iter()
-        .find(|node| node.is_error() || node.is_missing())
-    {
-        return Err(error_at(ContractErrorKind::InvalidSyntax, *error, offset));
+        let nodes = descendants(tree.root_node());
+        if let Some(error) = nodes
+            .iter()
+            .find(|node| node.is_error() || node.is_missing())
+        {
+            return Err(error_at(ContractErrorKind::InvalidSyntax, *error, offset));
+        }
+        Ok(Self {
+            input,
+            text,
+            offset,
+            tree,
+        })
     }
+}
+
+/// Locate the real declaration independently of whether migration may add `Export`.
+fn inspect_function(
+    parsed: &ParsedModule<'_>,
+    require_export: bool,
+) -> Result<ModuleVersion, ContractError> {
+    let nodes = descendants(parsed.tree.root_node());
+    let function = version_function(&nodes, parsed.text, parsed.offset)?.ok_or(ContractError {
+        kind: ContractErrorKind::MissingFunction,
+        range: parsed.input.len()..parsed.input.len(),
+    })?;
+    validate_signature(function, &nodes, parsed.text, parsed.offset, require_export)?;
+    read_literal(function, parsed.input, parsed.offset)
+}
+
+/// Resolve one declaration, retaining absence as an explicit migration input.
+fn version_function<'a>(
+    nodes: &[Node<'a>],
+    text: &str,
+    offset: usize,
+) -> Result<Option<Node<'a>>, ContractError> {
     let mut declarations = nodes.iter().copied().filter(|node| {
         matches!(node.kind(), "function_definition" | "procedure_definition")
             && node
                 .child_by_field_name("name")
                 .is_some_and(|name| text[name.byte_range()].to_lowercase() == "версия")
     });
-    let function = declarations.next().ok_or(ContractError {
-        kind: ContractErrorKind::MissingFunction,
-        range: input.len()..input.len(),
-    })?;
+    let Some(function) = declarations.next() else {
+        return Ok(None);
+    };
     if let Some(other) = declarations.next() {
         return Err(error_at(
             ContractErrorKind::AmbiguousFunction,
@@ -125,8 +205,7 @@ pub fn inspect(input: &str) -> Result<ModuleVersion, ContractError> {
             offset,
         ));
     }
-    validate_signature(function, &nodes, text, offset)?;
-    read_literal(function, input, offset)
+    Ok(Some(function))
 }
 
 /// Walk without recursive Rust calls, keeping parser child order and original node ranges.
@@ -206,6 +285,7 @@ fn validate_signature(
     nodes: &[Node<'_>],
     text: &str,
     offset: usize,
+    require_export: bool,
 ) -> Result<(), ContractError> {
     let violation = if conditional_scope(function, nodes, text) {
         Some(ContractErrorKind::ConditionalFunction)
@@ -225,7 +305,7 @@ fn validate_signature(
         })
     {
         Some(ContractErrorKind::Parameters)
-    } else if function.child_by_field_name("export").is_none() {
+    } else if require_export && function.child_by_field_name("export").is_none() {
         Some(ContractErrorKind::NotExported)
     } else {
         None
@@ -233,14 +313,24 @@ fn validate_signature(
     violation.map_or(Ok(()), |kind| Err(error_at(kind, function, offset)))
 }
 
-/// The only allowed body statement is a return of one unparenthesized string literal.
-fn read_literal(
-    function: Node<'_>,
-    input: &str,
-    offset: usize,
-) -> Result<ModuleVersion, ContractError> {
-    let invalid = || error_at(ContractErrorKind::InvalidBody, function, offset);
-    let statements: Vec<_> = named_children(function)
+/// Strip only transparent expression wrappers; parentheses remain a meaningful boundary.
+fn unwrapped(mut node: Node<'_>) -> Node<'_> {
+    while matches!(node.kind(), "expression" | "const_expression") {
+        let children = named_children(node);
+        let [child] = children.as_slice() else {
+            break;
+        };
+        if child.byte_range() != node.byte_range() {
+            break;
+        }
+        node = *child;
+    }
+    node
+}
+
+/// Resolve statement children without signature tokens and parser trivia.
+fn function_statements(function: Node<'_>) -> Vec<Node<'_>> {
+    named_children(function)
         .into_iter()
         .filter(|node| {
             !matches!(
@@ -252,27 +342,28 @@ fn read_literal(
                     | "identifier"
             )
         })
-        .collect();
+        .collect()
+}
+
+/// The only allowed body statement is a return of one unparenthesized string literal.
+fn read_literal(
+    function: Node<'_>,
+    input: &str,
+    offset: usize,
+) -> Result<ModuleVersion, ContractError> {
+    let invalid = || error_at(ContractErrorKind::InvalidBody, function, offset);
+    let statements = function_statements(function);
     let [statement] = statements.as_slice() else {
         return Err(invalid());
     };
     if statement.kind() != "return_statement" {
         return Err(invalid());
     }
-    let mut literal = statement
-        .child_by_field_name("result")
-        .ok_or_else(invalid)?;
-    while matches!(literal.kind(), "expression" | "const_expression") {
-        let children = named_children(literal);
-        let [child] = children.as_slice() else {
-            return Err(invalid());
-        };
-        // An expression wrapper around parentheses is not the managed literal form.
-        if literal.start_byte() != child.start_byte() || literal.end_byte() != child.end_byte() {
-            return Err(invalid());
-        }
-        literal = *child;
-    }
+    let literal = unwrapped(
+        statement
+            .child_by_field_name("result")
+            .ok_or_else(invalid)?,
+    );
     if literal.kind() != "string" {
         return Err(invalid());
     }
