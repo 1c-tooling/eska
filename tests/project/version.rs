@@ -7,6 +7,7 @@ use eska::project::{
 
 use crate::support::TestDir;
 
+mod eska_source;
 mod external;
 
 const PREFIX: &str = "\u{feff}<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" version=\"2.20\">\r\n\t<Configuration uuid=\"12345678-1234-1234-1234-123456789012\">\r\n\t\t<Properties>\r\n\t\t\t<Name>Пример</Name>\r\n\t\t\t<Version>";

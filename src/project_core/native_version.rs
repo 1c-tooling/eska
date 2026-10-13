@@ -12,7 +12,7 @@ use super::{Project, ProjectType, SourceFormat};
 use serde::{Deserialize, Serialize};
 
 mod external;
-pub use external::{VersionMigration, plan_migration};
+pub use external::{VersionMigration, plan_migration, plan_migration_with_base};
 
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024 * 1024;
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
@@ -235,6 +235,27 @@ pub fn inspect(project: &Project) -> Result<VersionInfo, VersionError> {
 ///
 /// Returns a structured failure without publishing a partially written descriptor.
 pub fn bump(project: &Project, kind: BumpKind) -> Result<BumpOutcome, VersionError> {
+    bump_with_base(project, kind, None)
+}
+
+/// Bump an ESKA external module only under an independently supplied accepted-base digest.
+///
+/// # Errors
+/// Returns missing/unexpected trust, denied permissions, invalid version or publication failures.
+pub fn bump_with_base(
+    project: &Project,
+    kind: BumpKind,
+    expected: Option<&super::source_format::AcceptedRef>,
+) -> Result<BumpOutcome, VersionError> {
+    if matches!(
+        project.configuration().source_format(),
+        SourceFormat::Eska { .. }
+    ) {
+        return external::bump_eska(project, kind, expected);
+    }
+    if expected.is_some() {
+        return Err(VersionError::AcceptedBaseUnexpected);
+    }
     let descriptor = load_project_descriptor(project)?;
     let current = descriptor.version.bumped(kind)?;
     let replacement = current.to_string();
@@ -267,13 +288,12 @@ pub fn bump(project: &Project, kind: BumpKind) -> Result<BumpOutcome, VersionErr
 
 /// Apply the resolved policy to both read and write paths before any publication.
 fn load_project_descriptor(project: &Project) -> Result<LoadedDescriptor, VersionError> {
-    if !matches!(
-        project.configuration().source_format(),
-        SourceFormat::DesignerXml
-    ) {
-        return Err(VersionError::SourceFormatUnsupported);
-    }
-    let descriptor = load_descriptor(project.source(), project.configuration().project_type())?;
+    let descriptor = match project.configuration().source_format() {
+        SourceFormat::DesignerXml => {
+            load_descriptor(project.source(), project.configuration().project_type())?
+        }
+        SourceFormat::Eska { .. } => external::load_eska(project)?,
+    };
     if let Some(scheme) = project.configuration().version_scheme() {
         descriptor.version.validate_scheme(scheme)?;
     }
@@ -294,6 +314,12 @@ pub(crate) fn validate_native_policy(
 #[derive(Debug)]
 pub enum VersionError {
     SourceFormatUnsupported,
+    AcceptedBaseRequired,
+    AcceptedBaseUnexpected,
+    Source {
+        path: PathBuf,
+        error: super::source_format::Error,
+    },
     Io {
         path: PathBuf,
         source: io::Error,
@@ -354,6 +380,9 @@ impl VersionError {
         use super::publish::PublishError;
         match self {
             Self::SourceFormatUnsupported => "version_source_format_unsupported",
+            Self::AcceptedBaseRequired => "accepted_base_pin_required",
+            Self::AcceptedBaseUnexpected => "version_accepted_base_unexpected",
+            Self::Source { error, .. } => error.code,
             Self::Io { .. }
             | Self::Publication {
                 error: PublishError::Io(_),
@@ -392,7 +421,8 @@ impl VersionError {
     #[must_use]
     pub fn path(&self) -> Option<&Path> {
         match self {
-            Self::Io { path, .. }
+            Self::Source { path, .. }
+            | Self::Io { path, .. }
             | Self::DescriptorTooLarge { path }
             | Self::InvalidXml { path, .. }
             | Self::DescriptorMissing { path }
@@ -419,9 +449,20 @@ impl VersionError {
 
     /// Consumers localize the actionable repair instead of inventing their own contract.
     #[must_use]
-    pub const fn remediation(&self) -> &'static str {
+    pub fn remediation(&self) -> &'static str {
         use super::{object_module_version::ContractErrorKind as Kind, publish::PublishError};
         match self {
+            Self::AcceptedBaseRequired => "supply_accepted_base",
+            Self::AcceptedBaseUnexpected => "remove_accepted_base",
+            Self::Source { error, .. } => match error.code {
+                "accepted_base_pin_required"
+                | "accepted_base_pin_invalid"
+                | "source_baseline_untrusted" => "supply_accepted_base",
+                "source_edit_native_restricted" | "source_edit_frozen" => {
+                    "check_source_permissions"
+                }
+                _ => "repeat_version_preview",
+            },
             Self::ModuleMissing { .. }
             | Self::ModuleContract {
                 error:

@@ -248,6 +248,31 @@ pub fn accept_source(
 }
 
 impl AcceptedBase {
+    /// Verify root identity and declarations without using editable UUIDs to grant permissions.
+    ///
+    /// # Errors
+    /// Returns changed source declarations, profile, root identity or native Name.
+    pub fn validate_source_root(&self, reader: &super::SourceReader) -> Result<(), Error> {
+        if reader.manifest() != &self.package.manifest {
+            return Err(Error::root("source_edit_structure_changed"));
+        }
+        let accepted = self
+            .package
+            .documents
+            .get(&self.package.manifest.root_path()?)
+            .ok_or_else(|| Error::root("source_descriptor_missing"))?;
+        let current = &reader.configuration().source.document.descriptor;
+        if current.profile != accepted.descriptor.profile
+            || current.object.uuid != accepted.descriptor.object.uuid
+            || current.object.kind != accepted.descriptor.object.kind
+            || current.object.property(PropertyName::Name)
+                != accepted.descriptor.object.property(PropertyName::Name)
+        {
+            return Err(Error::root("source_identity_mismatch"));
+        }
+        Ok(())
+    }
+
     /// Bind protected output to the caller's independently selected policy.
     pub(super) const fn reference(&self) -> &AcceptedRef {
         &self.reference

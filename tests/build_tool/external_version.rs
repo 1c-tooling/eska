@@ -1,4 +1,145 @@
 use super::*;
+use eska::project_core::source_format::{NativeUuid, accept_source, import_designer_queries};
+
+/// Convert only an owned native fixture, preserving imported module bytes and external identity.
+fn eska_source(root: &Path, frozen: bool) -> String {
+    let config = fs::read_to_string(root.join("eska.toml")).unwrap();
+    let descriptor = root.join("src/External.xml");
+    let xml = fs::read_to_string(&descriptor).unwrap().replace(
+        "<MetaDataObject xmlns=",
+        "<MetaDataObject version=\"2.20\" xmlns=",
+    );
+    let tag = if xml.contains("<ExternalReport>") {
+        "ExternalReport"
+    } else {
+        "ExternalDataProcessor"
+    };
+    fs::write(
+        &descriptor,
+        xml.replace(
+            &format!("<{tag}>"),
+            &format!("<{tag} uuid=\"10000000-0000-4000-8000-000000000001\">"),
+        ),
+    )
+    .unwrap();
+    fs::rename(root.join("src"), root.join("native")).unwrap();
+    import_designer_queries(&root.join("native"), &root.join("src")).unwrap();
+    fs::create_dir(root.join(".eska")).unwrap();
+    let freeze = if frozen {
+        vec![NativeUuid::parse("10000000-0000-4000-8000-000000000001").unwrap()]
+    } else {
+        vec![]
+    };
+    let pin = accept_source(&root.join("src"), &root.join(".eska/accepted"), &freeze).unwrap();
+    fs::write(
+        root.join("eska.toml"),
+        config.replace(
+            "[build]",
+            "source_format='eska'\n[eska]\naccepted_base='.eska/accepted'\n[build]",
+        ),
+    )
+    .unwrap();
+    pin.sha256
+}
+
+/// Protected EPF/ERF snapshots select their explicit root and record the exact BSL version.
+#[test]
+fn eska_external_build_uses_pinned_module_bytes_in_both_profiles_and_locales() {
+    for (kind, tag, extension) in [
+        ("processing", "ExternalDataProcessor", "epf"),
+        ("report", "ExternalReport", "erf"),
+    ] {
+        for (value, locale) in [("1.2.3", "ru"), ("01.02.003.0004", "en")] {
+            let fixture = TestDir::new();
+            let module = format!(
+                "\u{feff}Функция Версия() Экспорт\r\nВозврат \"{value}\";\r\nКонецФункции\r\n"
+            );
+            external(&fixture.0, kind, tag, &module);
+            let pin = eska_source(&fixture.0, false);
+            let output = command(
+                &fixture.0,
+                locale,
+                &["build", "--format", "json", "--accepted-base-sha256", &pin],
+            )
+            .arg("--ibcmd")
+            .arg(ibcmd_fixture::executable())
+            .env(
+                "FAKE_IBCMD_ARTIFACT_SOURCE_FILE",
+                "External/Ext/ObjectModule.bsl",
+            )
+            .output()
+            .unwrap();
+            let document = report(&output, "success");
+            let artifact = document["data"]["artifact"].as_str().unwrap();
+            assert!(artifact.ends_with(extension));
+            assert_eq!(fs::read(artifact).unwrap(), module.as_bytes());
+            let manifest: Value = serde_json::from_slice(
+                &fs::read(document["data"]["manifest"].as_str().unwrap()).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(manifest["project"]["version"]["value"], value);
+            assert_eq!(manifest["source"]["protected"]["baseline"], pin);
+            assert_eq!(
+                fs::read_to_string(fixture.0.join("src/ObjectModule.bsl")).unwrap(),
+                module
+            );
+        }
+    }
+}
+
+/// A frozen edit refuses before launch; explicit exclusions build the accepted version.
+#[test]
+fn eska_external_build_cannot_hide_restricted_version_changes() {
+    let fixture = TestDir::new();
+    let accepted = "Функция Версия() Экспорт Возврат \"1.2.3\"; КонецФункции\r\n";
+    external(&fixture.0, "report", "ExternalReport", accepted);
+    let pin = eska_source(&fixture.0, true);
+    let edited = accepted.replace("1.2.3", "1.2.4");
+    fs::write(fixture.0.join("src/ObjectModule.bsl"), &edited).unwrap();
+    for locale in ["ru", "en"] {
+        let output = command(
+            &fixture.0,
+            locale,
+            &["build", "--format", "json", "--accepted-base-sha256", &pin],
+        )
+        .arg("--ibcmd")
+        .arg(ibcmd_fixture::executable())
+        .output()
+        .unwrap();
+        let document = report(&output, "error");
+        assert_eq!(document["error"]["code"], "source_changes_excluded");
+        assert!(!fixture.0.join("platform.log").exists());
+    }
+    let output = command(
+        &fixture.0,
+        "en",
+        &[
+            "build",
+            "--format",
+            "json",
+            "--accepted-base-sha256",
+            &pin,
+            "--allow-exclusions",
+        ],
+    )
+    .arg("--ibcmd")
+    .arg(ibcmd_fixture::executable())
+    .env(
+        "FAKE_IBCMD_ARTIFACT_SOURCE_FILE",
+        "External/Ext/ObjectModule.bsl",
+    )
+    .output()
+    .unwrap();
+    let document = report(&output, "success");
+    assert_eq!(
+        fs::read(document["data"]["artifact"].as_str().unwrap()).unwrap(),
+        accepted.as_bytes()
+    );
+    assert_eq!(
+        fs::read_to_string(fixture.0.join("src/ObjectModule.bsl")).unwrap(),
+        edited
+    );
+}
 
 /// Create an actual native external profile; its source version is exclusively in BSL.
 fn external(root: &Path, kind: &str, tag: &str, module: &str) {

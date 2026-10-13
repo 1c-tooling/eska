@@ -1,6 +1,9 @@
 //! Filesystem binding of the syntax-only external-object version contract.
 
+mod eska;
 mod paths;
+
+pub(super) use eska::{bump as bump_eska, load as load_eska};
 
 use std::{
     fs,
@@ -18,12 +21,21 @@ use crate::project_core::{
 /// A reviewable module change owns the inspected native descriptor and module snapshots.
 #[derive(Debug)]
 pub struct VersionMigration {
-    source: PathBuf,
-    descriptor: PathBuf,
-    descriptor_text: String,
     path: PathBuf,
     original: Option<String>,
     plan: MigrationPlan,
+    binding: MigrationBinding,
+}
+
+/// Only the selected source adapter owns authority to publish its inspected bytes.
+#[derive(Debug)]
+enum MigrationBinding {
+    Native {
+        source: PathBuf,
+        descriptor: PathBuf,
+        descriptor_text: String,
+    },
+    Eska(Box<eska::Binding>),
 }
 
 impl VersionMigration {
@@ -62,11 +74,19 @@ impl VersionMigration {
     /// # Errors
     /// Returns a stale snapshot, protected/unsafe source or filesystem publication failure.
     pub fn publish(&self) -> Result<(), VersionError> {
-        paths::existing(&self.source, &self.descriptor)?;
-        if read_xml(&self.descriptor)? != self.descriptor_text {
-            return Err(publication(&self.descriptor, PublishError::Conflict));
+        let (source, descriptor, descriptor_text) = match &self.binding {
+            MigrationBinding::Native {
+                source,
+                descriptor,
+                descriptor_text,
+            } => (source, descriptor, descriptor_text),
+            MigrationBinding::Eska(binding) => return binding.publish(),
+        };
+        paths::existing(source, descriptor)?;
+        if read_xml(descriptor)? != *descriptor_text {
+            return Err(publication(descriptor, PublishError::Conflict));
         }
-        let current = module_path(&self.source, &self.descriptor)?;
+        let current = module_path(source, descriptor)?;
         if current != self.path {
             return Err(publication(&self.path, PublishError::Conflict));
         }
@@ -84,14 +104,14 @@ impl VersionMigration {
         }
         let relative = self
             .path
-            .strip_prefix(&self.source)
+            .strip_prefix(source)
             .map_err(|_| publication(&self.path, PublishError::UnsafePath))?;
         if self.original.is_some() {
-            publish::publish_snapshot(&self.source, relative, original, &updated)
+            publish::publish_snapshot(source, relative, original, &updated)
                 .map_err(|error| publication(&self.path, error))
         } else {
-            let _directories = paths::create_parents(&self.source, &self.path)?;
-            publish::publish_new(&self.source, relative, &updated)
+            let _directories = paths::create_parents(source, &self.path)?;
+            publish::publish_new(source, relative, &updated)
                 .map_err(|error| publication(&self.path, error))
         }
     }
@@ -105,6 +125,27 @@ pub fn plan_migration(
     project: &Project,
     initial: Option<&ProjectVersion>,
 ) -> Result<VersionMigration, VersionError> {
+    plan_migration_with_base(project, initial, None)
+}
+
+/// Bind an ESKA preview and publication to caller-selected accepted bytes and native permissions.
+///
+/// # Errors
+/// Returns missing trust, unsupported scope, invalid migration or restricted source failures.
+pub fn plan_migration_with_base(
+    project: &Project,
+    initial: Option<&ProjectVersion>,
+    expected: Option<&crate::project_core::source_format::AcceptedRef>,
+) -> Result<VersionMigration, VersionError> {
+    if matches!(
+        project.configuration().source_format(),
+        SourceFormat::Eska { .. }
+    ) {
+        return eska::plan_migration(project, initial, expected);
+    }
+    if expected.is_some() {
+        return Err(VersionError::AcceptedBaseUnexpected);
+    }
     if !matches!(
         project.configuration().source_format(),
         SourceFormat::DesignerXml
@@ -125,12 +166,14 @@ pub fn plan_migration(
         plan.version().validate_scheme(scheme)?;
     }
     Ok(VersionMigration {
-        source: project.source().to_owned(),
-        descriptor,
-        descriptor_text,
         path,
         original,
         plan,
+        binding: MigrationBinding::Native {
+            source: project.source().to_owned(),
+            descriptor,
+            descriptor_text,
+        },
     })
 }
 

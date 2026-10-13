@@ -791,6 +791,22 @@ eska version migrate --write --format json  # повтор: правок нет
 Импорт и чтение не выполняют миграцию. Пустой каркас `new` по-прежнему требует
 настоящих нативных метаданных перед подготовкой модуля.
 
+Внешние объекты ESKA читают номер из объявленного `ObjectModule.bsl` без
+доступа к принятой базе. Изменения существующего модуля требуют независимого
+pin и разрешения из принятой базы:
+
+```bash
+eska version --format json
+eska version migrate --initial-version 1.2.3 --accepted-base-sha256 "$PIN" --format json
+eska version migrate --initial-version 1.2.3 --accepted-base-sha256 "$PIN" --write
+eska version bump patch --accepted-base-sha256 "$PIN"
+```
+
+В CI можно передать pin через `ESKA_ACCEPTED_BASE_SHA256`. Preview и запись
+проверяют root identity, карту файлов и наследуемый freeze. Публикация повторно
+проверяет принятую базу и исходные bytes; номер не дублируется в YAML/TOML.
+Создание отсутствующего модуля ESKA остаётся следующей частью EF-14.
+
 Миграция возвращает JSON схемы 1 с `operation: "version-migration"`, `applied`,
 `source`, `creates_module`, `version`, `version_scheme` и `edits[]`. Каждая
 правка содержит `kind`, исходные `byte_start`/`byte_end`, `original` и
@@ -826,11 +842,13 @@ preset = "trunk"
 допустим `.`.
 В экспериментальной ветке общий project core также принимает
 `source_format = "eska"` и обязательный `[eska].accepted_base`.
-Поддержаны configuration и extension с Designer 2.20; тип настройки должен
-совпадать с корнем исходников. `eska-project import` определяет его по native
-входу. Анализатор пока отклоняет extension: контекст основной конфигурации
+Поддержаны configuration, extension, processing и report с Designer 2.20;
+тип настройки должен совпадать с корнем исходников. `eska-project import`
+принимает CF/CFE; API `import_designer_queries` также принимает EPF/ERF с map 6.
+Анализатор пока отклоняет extension/processing/report: их семантический контекст
 подключается отдельно в EF-18. Для сборки можно явно передать базовый CF через
-`--base-configuration`. Processing/report в новом формате остаются EF-14.
+`--base-configuration`. Внешняя версия проверяется в объявленном модуле объекта.
+Полный CLI импорта EPF/ERF и их платформенная приёмка ещё не завершены.
 [Контракт и границы](docs/research/eska-format/project-selection.md) описывают
 закрепление базы, workspace selection и проверенную материализацию.
 Прежние XML-only команды пока возвращают явный отказ для ESKA.

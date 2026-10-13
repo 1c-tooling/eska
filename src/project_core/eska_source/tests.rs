@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
     project_core::{
+        ProjectType,
         config::ProjectConfig,
         discovery::{discover, discover_context},
         selection::{SelectionIntent, select_projects},
@@ -213,8 +214,6 @@ fn config_refuses_missing_unexpected_unsafe_and_unsupported_eska_settings() {
     for input in [
         "[project]\ntype='configuration'\nsource_format='eska'\n",
         "[project]\ntype='configuration'\n[eska]\naccepted_base='base'\n",
-        "[project]\ntype='processing'\nsource_format='eska'\n[eska]\naccepted_base='base'\n",
-        "[project]\ntype='report'\nsource_format='eska'\n[eska]\naccepted_base='base'\n",
         "[project]\ntype='configuration'\nsource_format='eska'\n[eska]\naccepted_base='base'\nsha256='anything'\n",
     ] {
         assert!(ProjectConfig::from_toml(input).is_err(), "{input}");
@@ -240,7 +239,7 @@ fn config_refuses_missing_unexpected_unsafe_and_unsupported_eska_settings() {
             .with_source_format(SourceFormat::Eska {
                 accepted_base: SourcePath::parse("base").expect("path"),
             })
-            .is_err()
+            .is_ok()
     );
 }
 

@@ -572,13 +572,6 @@ fn config_message(
         ProjectConfigError::EskaBaseOverlapsSource => {
             path_message(localizer, "project-eska-base-overlap", path, hyperlinks)
         }
-        ProjectConfigError::UnsupportedEskaProjectType { project_type } => value_message(
-            localizer,
-            "project-eska-type-unsupported",
-            path,
-            project_type.as_str(),
-            hyperlinks,
-        ),
         ProjectConfigError::InvalidSource { path, reason } => {
             let key = match reason {
                 InvalidSourceReason::Empty => "project-path-empty",

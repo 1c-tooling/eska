@@ -105,13 +105,11 @@ impl ProjectConfig {
         Ok(self)
     }
 
-    /// Select an explicit source format; the current ESKA profile supports configurations only.
+    /// Select an explicit source format with independently located accepted inputs.
     ///
     /// # Errors
-    /// Returns an unsupported profile or overlapping inputs before publishing a manifest.
+    /// Returns overlapping inputs before publishing a manifest.
     pub fn with_source_format(mut self, format: SourceFormat) -> Result<Self, ProjectConfigError> {
-        let project_type = self.configuration.project_type();
-        validate_profile(project_type, &format)?;
         validate_source_layout(&self.source, &format)?;
         self.configuration = self.configuration.with_source_format(format);
         Ok(self)
@@ -147,7 +145,6 @@ impl ProjectConfig {
             .map_err(ProjectConfigError::InvalidName)?;
         let project_type = parse_project_type(document.project.project_type)?;
         let source_format = parse_source_format(document.project.source_format, document.eska)?;
-        validate_profile(project_type, &source_format)?;
 
         validate_source_path(&document.project.source)?;
         validate_source_layout(&document.project.source, &source_format)?;
@@ -318,30 +315,11 @@ pub enum ProjectConfigError {
     EskaSettingsRequired,
     UnexpectedEskaSettings,
     EskaBaseOverlapsSource,
-    UnsupportedEskaProjectType {
-        project_type: ProjectType,
-    },
     InvalidSource {
         path: PathBuf,
         reason: InvalidSourceReason,
     },
     ProjectPath(ProjectPathError),
-}
-
-/// Refuse a format/profile combination before discovery or any platform operation.
-const fn validate_profile(
-    project_type: ProjectType,
-    format: &SourceFormat,
-) -> Result<(), ProjectConfigError> {
-    if matches!(format, SourceFormat::Eska { .. })
-        && !matches!(
-            project_type,
-            ProjectType::Configuration | ProjectType::Extension
-        )
-    {
-        return Err(ProjectConfigError::UnsupportedEskaProjectType { project_type });
-    }
-    Ok(())
 }
 
 /// The accepted tree is an input authority, never part of the editable source inventory.

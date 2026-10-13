@@ -18,12 +18,15 @@ platform_version = "8.3.27.2325"
 
 Без `source_format` сохраняется Designer XML и прежняя сериализация TOML.
 `[eska].accepted_base` обязателен для ESKA; для Designer XML раздел `[eska]`
-отклоняется. Профили configuration и extension используют Designer 2.20;
+отклоняется. Профили configuration, extension, processing и report используют Designer 2.20;
 настройка типа сверяется с фактическим root snapshot. Extension сохраняет
 native UUID, заимствованное содержимое и поддержку. Его семантический контекст
 основной конфигурации подключается отдельно в EF-18; анализатор пока возвращает
-`analysis_scope_unsupported`. Processing/report ещё требуют оставшейся части
-EF-14 и не включаются по одному изменению настройки.
+`analysis_scope_unsupported`. Processing/report выбирают проверенный
+[external root](external-roots.md) с map 6; одно изменение TOML не создаёт
+нужных исходников или принятой базы. Protected build принимает эти профили,
+проверяя контракт версии в модуле объекта. Их семантический анализ также
+возвращает явный отказ до EF-18.
 Неизвестные поля, включая `sha256` в `[eska]`, отклоняются.
 
 Путь базы — непустой portable relative path относительно корня конкретного

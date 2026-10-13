@@ -52,6 +52,9 @@ struct VersionBumpArgs {
     #[arg(value_enum)]
     kind: Bump,
 
+    #[arg(long)]
+    accepted_base_sha256: Option<String>,
+
     #[arg(short, long, action = clap::ArgAction::Help)]
     help: Option<bool>,
 }
@@ -143,6 +146,7 @@ impl VersionArgs {
             Some(VersionCommand::Bump(arguments)) => bump_selection(
                 &selection,
                 BumpKind::from(arguments.kind),
+                arguments.accepted_base_sha256.as_deref(),
                 self.format,
                 localizer,
             ),
@@ -240,6 +244,7 @@ fn inspect_one(
 fn bump_selection(
     selection: &ProjectSelection<'_>,
     kind: BumpKind,
+    explicit_base: Option<&str>,
     format: OutputFormat,
     localizer: &Localizer,
 ) -> ExitCode {
@@ -247,7 +252,11 @@ fn bump_selection(
         eprintln!("{}", localizer.text("version-selection-empty"));
         return ExitCode::FAILURE;
     };
-    let outcome = match version::bump(selected.project(), kind) {
+    let expected = match accepted_binding(selected.project(), explicit_base) {
+        Ok(expected) => expected,
+        Err(error) => return fail(&error, localizer),
+    };
+    let outcome = match version::bump_with_base(selected.project(), kind, expected.as_ref()) {
         Ok(outcome) => outcome,
         Err(error) => return fail(&error, localizer),
     };
@@ -324,6 +333,9 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
                     argument
                         .help(localizer.text("version-bump-kind-help"))
                         .value_name(localizer.text("version-bump-kind-value"))
+                })
+                .mut_arg("accepted_base_sha256", |argument| {
+                    argument.help(localizer.text("version-accepted-base-help"))
                 })
                 .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
         })
@@ -407,6 +419,25 @@ fn fail(error: &VersionError, localizer: &Localizer) -> ExitCode {
 /// Reuse version diagnostics when the same explicit policy blocks a native build.
 pub(in crate::cli) fn version_error_message(error: &VersionError, localizer: &Localizer) -> String {
     match error {
+        VersionError::AcceptedBaseRequired => localizer.text("tool-error-pin-required"),
+        VersionError::AcceptedBaseUnexpected => localizer.text("version-accepted-base-unexpected"),
+        VersionError::Source {
+            path,
+            error: source_error,
+        } => localizer.format(
+            "version-eska-error",
+            &[
+                ("path", LocalizationValue::Text(&path.to_string_lossy())),
+                ("code", LocalizationValue::Text(source_error.code)),
+                (
+                    "hint",
+                    LocalizationValue::Text(&localizer.text(&format!(
+                        "version-fix-{}",
+                        error.remediation().replace('_', "-")
+                    ))),
+                ),
+            ],
+        ),
         VersionError::SourceFormatUnsupported => localizer.text("source-designer-required"),
         VersionError::Io { path, source } => localizer.format(
             "version-io-error",
@@ -463,6 +494,35 @@ pub(in crate::cli) fn version_error_message(error: &VersionError, localizer: &Lo
         | VersionError::Publication { .. }
         | VersionError::MigrationUnsupported => contract_error_message(error, localizer),
     }
+}
+
+/// Locate accepted bytes independently of editable project files, preserving the native route.
+fn accepted_binding(
+    project: &crate::project_core::Project,
+    explicit: Option<&str>,
+) -> Result<Option<crate::project_core::source_format::AcceptedRef>, VersionError> {
+    if matches!(
+        project.configuration().source_format(),
+        crate::project_core::SourceFormat::DesignerXml
+    ) {
+        return if explicit.is_some() {
+            Err(VersionError::AcceptedBaseUnexpected)
+        } else {
+            Ok(None)
+        };
+    }
+    if !matches!(
+        project.configuration().project_type(),
+        crate::project_core::ProjectType::Processing | crate::project_core::ProjectType::Report
+    ) {
+        return Err(VersionError::SourceFormatUnsupported);
+    }
+    crate::tool_cli::accepted_ref(explicit)
+        .map(Some)
+        .map_err(|failure| VersionError::Source {
+            path: project.source().to_owned(),
+            error: crate::project_core::source_format::Error::root(failure.code),
+        })
 }
 
 /// Show a source coordinate and an actionable repair for new external-version failures.

@@ -110,6 +110,34 @@ impl SourceEditPlan {
     }
 }
 
+/// Prepare an exact text-module replacement under independently pinned native permissions.
+///
+/// # Errors
+/// Returns an undeclared module, denied permission, unsafe path or stale source snapshot.
+pub fn prepare_module_edit(
+    root: &Path,
+    base: &AcceptedBase,
+    path: &SourcePath,
+    original: &str,
+    updated: &str,
+) -> Result<SourceEditPlan, Error> {
+    let decision = base.module_permission(path)?;
+    permission(base, &decision.uuid, Operation::Module)?;
+    let root = safe_root(root, path)?;
+    publish::publish_snapshot(&root, path.as_path(), original, original)
+        .map_err(edit_error)
+        .map_err(|error| error.in_field(path.as_str()))?;
+    Ok(SourceEditPlan {
+        root,
+        path: path.clone(),
+        uuid: decision.uuid,
+        operation: Operation::Module,
+        baseline: base.reference().clone(),
+        original: original.to_owned(),
+        updated: updated.to_owned(),
+    })
+}
+
 /// Prepare one existing typed property without reserializing the owner's YAML document.
 ///
 /// Identity, native kind and Name must still match the accepted ancestry. Structural editing

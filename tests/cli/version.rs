@@ -4,6 +4,7 @@ use serde_json::Value;
 
 use crate::support::TestDir;
 
+mod eska_source;
 mod migration;
 
 /// Create a minimal versioned Designer XML configuration project.

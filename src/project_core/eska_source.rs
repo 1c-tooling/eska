@@ -6,7 +6,7 @@ use super::source_format::{
     AcceptedBase, AcceptedRef, Error, PreparedSource, ProtectedFailure, SourceReader,
     prepare_protected,
 };
-use super::{Project, ProjectType, SourceFormat, metadata_model::ProjectScope};
+use super::{Project, SourceFormat, metadata_model::ProjectScope};
 
 /// A selected project's exact source format; derivative XML never participates in reading.
 pub struct EskaSource {
@@ -25,12 +25,6 @@ impl EskaSource {
             return Err(Error::root("source_format_mismatch"));
         };
         super::source_format::require_project_ready(project.root())?;
-        if !matches!(
-            project.configuration().project_type(),
-            ProjectType::Configuration | ProjectType::Extension
-        ) {
-            return Err(Error::root("source_profile_unsupported"));
-        }
         let base = project.root().join(accepted_base.as_path());
         if base.starts_with(project.source()) || project.source().starts_with(&base) {
             return Err(Error::root("source_baseline_overlap"));

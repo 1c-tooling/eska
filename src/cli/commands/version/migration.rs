@@ -8,13 +8,15 @@ use serde_json::json;
 
 use super::{
     LocalizationValue, Localizer, OutputFormat, ProjectSelection, ProjectVersion, VersionError,
-    fail, relative_path, version, write_json_result,
+    accepted_binding, fail, relative_path, version, write_json_result,
 };
 
 #[derive(Debug, Args)]
 pub(super) struct MigrationArgs {
     #[arg(long)]
     initial_version: Option<String>,
+    #[arg(long)]
+    accepted_base_sha256: Option<String>,
     #[arg(long)]
     write: bool,
     #[arg(short, long, action = clap::ArgAction::Help)]
@@ -62,7 +64,18 @@ pub(super) fn run(
         Ok(initial) => initial,
         Err(error) => return failure(&error, format, localizer),
     };
-    let plan = match version::plan_migration(selected.project(), initial.as_ref()) {
+    let expected = match accepted_binding(
+        selected.project(),
+        arguments.accepted_base_sha256.as_deref(),
+    ) {
+        Ok(expected) => expected,
+        Err(error) => return failure(&error, format, localizer),
+    };
+    let plan = match version::plan_migration_with_base(
+        selected.project(),
+        initial.as_ref(),
+        expected.as_ref(),
+    ) {
         Ok(plan) => plan,
         Err(error) => return failure(&error, format, localizer),
     };
@@ -161,6 +174,9 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
             argument
                 .help(localizer.text("version-migrate-initial-help"))
                 .value_name(localizer.text("version-migrate-initial-value"))
+        })
+        .mut_arg("accepted_base_sha256", |argument| {
+            argument.help(localizer.text("version-accepted-base-help"))
         })
         .mut_arg("write", |argument| {
             argument.help(localizer.text("version-migrate-write-help"))
