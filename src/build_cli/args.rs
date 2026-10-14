@@ -34,6 +34,8 @@ pub(super) enum Command {
     Capabilities,
     #[command(disable_help_flag = true)]
     Unpack(Unpack),
+    #[command(disable_help_flag = true)]
+    Import(Box<Import>),
 }
 
 impl Command {
@@ -43,6 +45,7 @@ impl Command {
             Self::Build(_) => "build",
             Self::Capabilities => "capabilities",
             Self::Unpack(_) => "unpack",
+            Self::Import(_) => "import",
         }
     }
 }
@@ -85,4 +88,32 @@ pub(super) struct Unpack {
     pub platform_arch: Option<String>,
     #[arg(long)]
     pub distrobox: Option<String>,
+}
+
+/// Source ancestry, support approval and recovery authority are independently selected by the caller.
+#[derive(Debug, Args)]
+pub(super) struct Import {
+    pub file: PathBuf,
+    #[arg(long)]
+    pub project: Option<String>,
+    #[arg(long)]
+    pub accepted_base_sha256: Option<String>,
+    #[arg(long)]
+    pub ancestor_sha256: String,
+    #[arg(long)]
+    pub ancestor: Option<PathBuf>,
+    #[arg(long)]
+    pub expected_plan_sha256: Option<String>,
+    #[arg(long)]
+    pub platform_version: Option<String>,
+    #[arg(long)]
+    pub ibcmd: Option<PathBuf>,
+    #[arg(long)]
+    pub platform_arch: Option<String>,
+    #[arg(long)]
+    pub distrobox: Option<String>,
+    #[arg(long, requires = "receipt")]
+    pub write: bool,
+    #[arg(long, requires = "write")]
+    pub receipt: Option<PathBuf>,
 }

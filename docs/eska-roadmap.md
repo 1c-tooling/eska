@@ -2266,7 +2266,12 @@ local values и блокирует dirty/frozen/reference conflicts, включ�
 проверяет права исходного родителя/fresh identities и сохраняет прежний pin;
 source map 7 хранит working-only origins новых descriptors/forms, включая общий
 family YAML. Четыре native import/build/dump и 22 Rust gates прошли.
-Native CLI и IDE coordination ещё не завершены; EF-25 — `IN_PROGRESS`.
+[Native CLI](research/eska-format/native-reimport-cli.md) подключает
+`eska-build import` и offline capture/recover через прежний guarded core.
+Preview/write, exact plan pin и confirmed no-op repeat прошли четыре настоящих
+input/build/dump на 1С 8.3.27.2325. Recovery digest хранится до source moves.
+Общий workflow, permission view после смены состава и IDE coordination ещё нужны;
+EF-25 — `IN_PROGRESS`.
 
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.

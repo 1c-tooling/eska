@@ -11,6 +11,9 @@ mod unpack;
 #[path = "build_tool/extensions.rs"]
 mod extensions;
 
+#[path = "build_tool/source_import.rs"]
+mod source_import;
+
 #[path = "support/ibcmd.rs"]
 mod ibcmd_fixture;
 
@@ -114,6 +117,7 @@ fn localized_help_and_capabilities_have_no_platform_dependency() {
             &["--help"][..],
             &["build", "--help"][..],
             &["unpack", "--help"][..],
+            &["import", "--help"][..],
             &["capabilities", "--help"][..],
         ] {
             let output = command(&test.0, locale, args).output().expect("help");

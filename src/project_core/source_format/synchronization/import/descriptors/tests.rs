@@ -66,6 +66,25 @@ fn capture(source: &Path, store: &Path) -> ImportAncestor {
     ImportAncestor::open(store, &reference).unwrap()
 }
 
+/// An annotation-only local edit retains its exact trivia while the incoming scalar is merged.
+#[test]
+fn local_only_annotations_do_not_force_a_whole_descriptor_replacement() {
+    let fixture = Fixture::new(false);
+    edit(&fixture.incoming, |owner| {
+        comment(&mut owner.document.descriptor.object, "incoming");
+    });
+    let path = fixture.source.join(OWNER);
+    let original = fs::read_to_string(&path).unwrap();
+    fs::write(path, format!("{original}# local annotation\n")).unwrap();
+    let plan = fixture.plan();
+    assert!(plan.conflicts().is_empty(), "{:?}", plan.conflicts());
+    let output = fixture.test.0.join("output");
+    plan.publish_source(&output).unwrap();
+    let text = fs::read_to_string(output.join(OWNER)).unwrap();
+    assert!(text.contains("incoming"));
+    assert!(text.ends_with("# local annotation\n"));
+}
+
 /// Properties are changed by their native typed identity, not a guessed serialized array position.
 fn comment(node: &mut MetadataNode, text: &str) {
     for section in &mut node.sections {

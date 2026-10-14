@@ -541,6 +541,10 @@ LSP runtime, Git transport или debugger; `eska-build` не включает �
 Прежний CLI для XML возвращает явный отказ при выборе ESKA.
 Самостоятельный `eska-project` использует общий core без платформы и Git;
 `eska-build` собирает сохранённые входы через общую библиотеку без Git и анализатора.
+[Нативный повторный импорт](research/eska-format/native-reimport-cli.md)
+оркестрирует `eska-build import`: build core распаковывает, project core проверяет
+состав/права и публикует guarded source. `eska-project capture-ancestor` и
+`recover-import` не требуют платформы; merger и policy остаются общими.
 Первый [самостоятельный `eska-check`](research/eska-format/check-cli.md) собирается
 отдельно с `check-cli`, использует общую сессию анализа для явного профиля `syntax`
 или [`semantic`](research/eska-format/semantic-check.md) и возвращает неполноту

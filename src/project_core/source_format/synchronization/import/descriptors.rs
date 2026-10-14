@@ -140,10 +140,6 @@ fn select(
     if new == old || new == local {
         return Ok(local.clone());
     }
-    if local == old {
-        patches.push(coordinate.clone());
-        return Ok(new.clone());
-    }
     if let (Value::Object(old), Value::Object(new), Value::Object(local)) = (old, new, local)
         && old.keys().eq(new.keys())
         && old.keys().eq(local.keys())
@@ -156,6 +152,10 @@ fn select(
             selected.insert(key.clone(), value);
         }
         return Ok(Value::Object(selected));
+    }
+    if local == old {
+        patches.push(coordinate.clone());
+        return Ok(new.clone());
     }
     Err(coordinate.clone())
 }

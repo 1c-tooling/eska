@@ -2864,6 +2864,17 @@ nested descriptor в общем family YAML. Четыре новых unit cases 
 8.3.27.2325, 17/111/14/8 файлов; отдельные form/query/binary origins приняты.
 Native CLI/IDE coordination ещё нужны; EF-25 остаётся `IN_PROGRESS`.
 
+[Native CLI](../research/eska-format/native-reimport-cli.md) связывает
+`eska-build import` с прежним three-way/core journal; offline `capture-ancestor`
+и `recover-import` работают через `eska-project`. Preview/read-only, write с
+независимой receipt до source moves, exact plan pin, confirmed no-op repeat,
+member selection, conflicts/freeze, wrong type/UUID, native failure, SIGINT
+и обе recovery actions проверены process tests. Annotation-only local YAML
+теперь сохраняется при incoming scalar change. Четыре настоящих input прошли
+capture/preview/write/repeat/build/dump на 1С 8.3.27.2325 под прежними pin/settings.
+Permission view после смены состава, общий workflow и IDE coordination ещё нужны;
+EF-25 остаётся `IN_PROGRESS`.
+
 ## EF-26 RLS и дополнительные тексты ресурсов
 
 **Статус:** `DEFERRED`; после MVP, fmt и VCS.

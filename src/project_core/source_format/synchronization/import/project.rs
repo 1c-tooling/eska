@@ -245,6 +245,12 @@ impl ProjectSourceImportPlan {
         self.unchanged_ancestor().unwrap_or(&self.receipt.incoming)
     }
 
+    /// A confirmed repeat needs neither a new journal nor a new independently retained recovery file.
+    #[must_use]
+    pub fn is_unchanged(&self) -> bool {
+        self.unchanged_ancestor().is_some()
+    }
+
     /// A first import must persist its ancestor even when its selected source bytes are unchanged.
     fn unchanged_ancestor(&self) -> Option<&ImportAncestorRef> {
         if self.receipt.working_revision != self.receipt.output_revision {

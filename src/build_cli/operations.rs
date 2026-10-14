@@ -1,5 +1,6 @@
 //! Only the build core starts platform processes; the CLI supplies selected inputs and reports.
 
+mod source_import;
 mod unpack;
 
 use std::io::{self, Write};
@@ -43,14 +44,18 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
     match &cli.command {
         Command::Build(args) => build(cli, args, localizer),
         Command::Unpack(args) => unpack::execute(cli, args, localizer),
+        Command::Import(args) => source_import::execute(cli, args, localizer),
         Command::Capabilities => Ok((
             json!({"version":env!("CARGO_PKG_VERSION"),"protocol_version":1,
-            "commands":["build","unpack","capabilities"],
+            "commands":["build","unpack","import","capabilities"],
             "source_formats":["designer-xml","eska"],
             "designer_artifact_types":["configuration","extension","processing","report"],
             "eska_artifact_types":["configuration","extension","processing","report"], "manifest":true,
             "platform_required_for_build":true,"git_required":false,"analyzer_required":false,
-            "unpack":true,"designer_check":false}),
+            "unpack":true,"designer_check":false,
+            "source_import_formats":["eska"],"source_import_mode":"preview_then_explicit_write",
+            "source_import_ancestor":"independently_confirmed_sha256",
+            "source_import_recovery":"eska-project recover-import"}),
             localizer.text("tool-build-capabilities"),
         )),
     }

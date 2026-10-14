@@ -1,0 +1,358 @@
+{
+  "schema_version": 1,
+  "stage": "EF-25 native reimport CLI",
+  "status": "partial",
+  "platform": "8.3.27.2325",
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.43
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 2.88
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 8.71
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 66.98
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 96.92
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 17.45
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 1.6
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.45
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 3.07
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 2.67
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 21.04
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.18
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.37
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.14
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 1.6
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.65
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 5.48
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.63
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 1.69
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 4.39
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 41.45
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 9.46
+    }
+  ],
+  "native_operations": [
+    {
+      "case": "bins",
+      "exit_code": 0,
+      "seconds": 0.23
+    },
+    {
+      "case": "configuration-setup",
+      "exit_code": 0,
+      "seconds": 3.4
+    },
+    {
+      "case": "configuration-capture",
+      "exit_code": 0,
+      "seconds": 0.18
+    },
+    {
+      "case": "configuration-preview",
+      "exit_code": 0,
+      "seconds": 9.08
+    },
+    {
+      "case": "configuration-write",
+      "exit_code": 0,
+      "seconds": 10.52
+    },
+    {
+      "case": "configuration-repeat",
+      "exit_code": 0,
+      "seconds": 9.52
+    },
+    {
+      "case": "configuration-build",
+      "exit_code": 0,
+      "seconds": 4.34
+    },
+    {
+      "case": "configuration-redump",
+      "exit_code": 0,
+      "seconds": 7.82
+    },
+    {
+      "case": "extension-setup",
+      "exit_code": 0,
+      "seconds": 4.86
+    },
+    {
+      "case": "extension-capture",
+      "exit_code": 0,
+      "seconds": 2.96
+    },
+    {
+      "case": "extension-preview",
+      "exit_code": 0,
+      "seconds": 28.79
+    },
+    {
+      "case": "extension-write",
+      "exit_code": 0,
+      "seconds": 67.15
+    },
+    {
+      "case": "extension-repeat",
+      "exit_code": 0,
+      "seconds": 38.65
+    },
+    {
+      "case": "extension-build",
+      "exit_code": 0,
+      "seconds": 9.86
+    },
+    {
+      "case": "extension-redump",
+      "exit_code": 0,
+      "seconds": 7.81
+    },
+    {
+      "case": "processing-setup",
+      "exit_code": 0,
+      "seconds": 0.62
+    },
+    {
+      "case": "processing-capture",
+      "exit_code": 0,
+      "seconds": 0.38
+    },
+    {
+      "case": "processing-preview",
+      "exit_code": 0,
+      "seconds": 7.04
+    },
+    {
+      "case": "processing-write",
+      "exit_code": 0,
+      "seconds": 13.37
+    },
+    {
+      "case": "processing-repeat",
+      "exit_code": 0,
+      "seconds": 12.18
+    },
+    {
+      "case": "processing-build",
+      "exit_code": 0,
+      "seconds": 48.26
+    },
+    {
+      "case": "processing-redump",
+      "exit_code": 0,
+      "seconds": 5.95
+    },
+    {
+      "case": "report-setup",
+      "exit_code": 0,
+      "seconds": 29.62
+    },
+    {
+      "case": "report-capture",
+      "exit_code": 0,
+      "seconds": 0.13
+    },
+    {
+      "case": "report-preview",
+      "exit_code": 0,
+      "seconds": 12.61
+    },
+    {
+      "case": "report-write",
+      "exit_code": 0,
+      "seconds": 15.39
+    },
+    {
+      "case": "report-repeat",
+      "exit_code": 0,
+      "seconds": 5.7
+    },
+    {
+      "case": "report-build",
+      "exit_code": 0,
+      "seconds": 10.17
+    },
+    {
+      "case": "report-redump",
+      "exit_code": 0,
+      "seconds": 12.38
+    }
+  ],
+  "native_comparison": [
+    {
+      "kind": "configuration",
+      "native_files": 17,
+      "xml_semantics_equal": 12,
+      "opaque_bytes_equal": 0,
+      "bsl_files_equal_except_local_comment": 5,
+      "settings_preserved": true,
+      "old_pin_verified": true,
+      "repeat_unchanged": true
+    },
+    {
+      "kind": "extension",
+      "native_files": 111,
+      "xml_semantics_equal": 78,
+      "opaque_bytes_equal": 6,
+      "bsl_files_equal_except_local_comment": 27,
+      "settings_preserved": true,
+      "old_pin_verified": true,
+      "repeat_unchanged": true
+    },
+    {
+      "kind": "processing",
+      "native_files": 14,
+      "xml_semantics_equal": 9,
+      "opaque_bytes_equal": 0,
+      "bsl_files_equal_except_local_comment": 5,
+      "settings_preserved": true,
+      "old_pin_verified": true,
+      "repeat_unchanged": true
+    },
+    {
+      "kind": "report",
+      "native_files": 8,
+      "xml_semantics_equal": 7,
+      "opaque_bytes_equal": 0,
+      "bsl_files_equal_except_local_comment": 1,
+      "settings_preserved": true,
+      "old_pin_verified": true,
+      "repeat_unchanged": true
+    }
+  ],
+  "bsl_cli_fallback": [
+    {
+      "kind": "configuration",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 2,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 0,
+      "syntax_errors": 0
+    },
+    {
+      "kind": "extension",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 2,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 5,
+      "syntax_errors": 0
+    },
+    {
+      "kind": "processing",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 2,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 51,
+      "syntax_errors": 0
+    },
+    {
+      "kind": "report",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 1,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 2,
+      "syntax_errors": 0
+    }
+  ],
+  "process_contracts": [
+    "Four native profiles in RU/EN; locale-independent JSON",
+    "Read-only preview, exact-plan application, preserved annotation and confirmed unchanged repeat",
+    "Workspace selected member; original root/member settings preserved",
+    "Conflicts, freeze, wrong type/UUID, native failure, SIGINT and unsafe/occupied recovery destination",
+    "Explicit ancestry capture; complete and roll-back after real guarded cancellation and removed incoming staging"
+  ],
+  "limitations": [
+    "General eska facade new/init/import workflow remains unfinished",
+    "Post-import permission view and IDE source/overlay coordination remain unfinished",
+    "Client execution and production configurations not checked in this slice",
+    "24 opt-in root tests ignored; tested on Linux only"
+  ]
+}

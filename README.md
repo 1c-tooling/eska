@@ -863,14 +863,20 @@ preset = "trunk"
 собирает проверенный snapshot и сохраняет карту исходников в manifest.
 [Распаковка CF/CFE/EPF/ERF](docs/research/eska-format/native-unpack.md) через
 `eska-build unpack` создаёт новый Designer XML каталог без проекта и Git.
+[CLI повторного импорта](docs/research/eska-format/native-reimport-cli.md)
+через `eska-build import` показывает plan либо применяет его с `--write` и
+независимо сохранённой recovery receipt. `eska-project capture-ancestor` сохраняет
+явный source snapshot, `recover-import` завершает/откатывает guarded journal.
+CF/CFE/EPF/ERF прошли реальные preview/write/repeat/build/dump; прежний support pin,
+local BSL и settings сохранены. Общий `eska import` и IDE coordination ещё нужны.
 [Применение библиотечного плана импорта](docs/research/eska-format/source-import-recovery.md)
 меняет выбранный ESKA проект/member с сохранением старых исходников и отдельного
 предка. Guard/recovery проверяют journal, bytes и settings под прежним CI pin;
-новая карта и native CLI reimport ещё в работе.
+общий workflow и IDE coordination ещё в работе.
 [Native staging → project plan](docs/research/eska-format/native-project-import.md)
 подключены в API build/project core: четыре incoming artifacts прошли
-unpack/apply/build/dump с сохранением local BSL и прежнего pin. User CLI пока
-не расширен; имена EPF/ERF файлов не меняют принятую привязку объектов.
+unpack/apply/build/dump с сохранением local BSL и прежнего pin; имена EPF/ERF
+файлов не меняют принятую привязку объектов.
 [Слияние descriptor values](docs/research/eska-format/import-descriptors.md)
 сохраняет независимые правки одного owner и поддержанные inline changes под
 прежними правами. Коллекции и BSL/SDBL/binary остаются атомарными; новая карта

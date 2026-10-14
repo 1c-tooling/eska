@@ -36,7 +36,13 @@ UUID, local bytes и прежний pin при переносе unrestricted own
 [Добавление owner](../research/eska-format/import-addition.md) проверяет прежнего
 родителя/fresh identities под тем же pin. Source map 7 хранит working-only
 origins новых metadata/forms, включая общий family YAML; формы/queries/ресурсы
-прошли четыре native import/build/dump и 22 Rust gates. Native CLI/IDE ещё в работе.
+прошли четыре native import/build/dump и 22 Rust gates.
+[Native CLI](../research/eska-format/native-reimport-cli.md) добавляет
+`eska-build import` с preview/write и независимо сохранённой recovery receipt;
+`eska-project capture-ancestor`/`recover-import` используют тот же core без
+платформы. Четыре настоящих native input прошли capture/preview/write/confirmed
+repeat/build/dump; исходный pin/settings/local BSL сохранены. Общий workflow,
+permission view после смены состава и IDE coordination ещё нужны; EF-25 не закрыта.
 EF-15 — `DONE` в [принятой матрице](../research/eska-format/base-update.md).
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.

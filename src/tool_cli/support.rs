@@ -259,6 +259,15 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         }
         "source_update_incomplete" => Some("tool-error-update-incomplete"),
         "source_import_incomplete" => Some("tool-error-import-incomplete"),
+        "source_import_conflicts" => Some("tool-error-source-import-conflicts"),
+        "source_ancestor_missing" => Some("tool-error-source-ancestor-missing"),
+        "source_ancestor_untrusted" | "source_ancestor_pin_invalid" => {
+            Some("tool-error-source-ancestor-pin")
+        }
+        "source_import_receipt_invalid" => Some("tool-error-source-import-receipt"),
+        "source_import_receipt_path_invalid"
+        | "source_import_receipt_write_failed"
+        | "source_import_receipt_required" => Some("tool-error-source-import-receipt-path"),
         "source_workspace_pins_required" => Some("tool-error-workspace-pins-required"),
         "source_workspace_pins_invalid" => Some("tool-error-workspace-pins-invalid"),
         "source_workspace_pins_mismatch" => Some("tool-error-workspace-pins-mismatch"),

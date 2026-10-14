@@ -42,6 +42,10 @@ pub(super) enum Command {
     Transport(Transport),
     #[command(disable_help_flag = true)]
     Capabilities,
+    #[command(disable_help_flag = true)]
+    CaptureAncestor(CaptureAncestor),
+    #[command(disable_help_flag = true)]
+    RecoverImport(RecoverImport),
 }
 
 impl Command {
@@ -55,6 +59,8 @@ impl Command {
             Self::Prepare(_) => "prepare",
             Self::Transport(_) => "transport",
             Self::Capabilities => "capabilities",
+            Self::CaptureAncestor(_) => "capture-ancestor",
+            Self::RecoverImport(_) => "recover-import",
         }
     }
 }
@@ -157,4 +163,27 @@ pub(super) struct Transport {
     pub selector: Selector,
     #[arg(long)]
     pub write: bool,
+}
+
+/// Explicit source bytes establish a candidate ancestor; capture never infers common ancestry.
+#[derive(Debug, Args)]
+pub(super) struct CaptureAncestor {
+    pub input: PathBuf,
+    pub destination: PathBuf,
+}
+
+/// Recovery intentionally needs no project discovery, which may be blocked by the import guard.
+#[derive(Debug, Args)]
+pub(super) struct RecoverImport {
+    #[arg(long)]
+    pub receipt_sha256: String,
+    #[arg(long, value_enum)]
+    pub action: RecoveryAction,
+}
+
+/// Stable CLI action names retain their distinct source-preserving recovery contracts.
+#[derive(Clone, Copy, Debug, ValueEnum)]
+pub(super) enum RecoveryAction {
+    Complete,
+    RollBack,
 }
