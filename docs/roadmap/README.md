@@ -27,6 +27,9 @@ native цикла и новый default реквизит CF прошли про�
 bytes/mtime и history; controlled CDF variation сохраняет confirmed ancestry.
 Новая карта top-level объектов, native CLI lifecycle и координация IDE ещё в работе.
 EF-25 не закрыта.
+[Удаление owner](../research/eska-format/import-deletion.md) под прежним pin сохраняет независимые
+local values и блокирует dirty/frozen/reference conflicts, включая frozen потомка.
+Четыре native пары прошли import/build/dump; add и CLI/IDE остаются в EF-25.
 [Новая карта rename](../research/eska-format/import-composition.md) сохраняет
 UUID, local bytes и прежний pin при переносе unrestricted owner. Protected build
 и source map 6 проверяют изменённые привязки. Add/delete и native CLI/IDE ещё в работе.

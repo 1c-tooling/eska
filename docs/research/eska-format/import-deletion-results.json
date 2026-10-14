@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "stage": "EF-25 whole-owner deletion",
+  "status": "partial",
+  "platform": "8.3.27.2325",
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.31
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 7.75
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 0.27
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 49.78
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 61.05
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 14.17
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 0.15
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.44
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 0.23
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 0.23
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 13.39
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 0.17
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.23
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.14
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 0.11
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.18
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 0.61
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.1
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 0.11
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 3.88
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 33.3
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 8.41
+    }
+  ],
+  "root_tests": {
+    "unit_passed": 803,
+    "integration_passed": 600,
+    "ignored_opt_in": 24
+  },
+  "native": [
+    {
+      "type": "configuration",
+      "files": 13,
+      "bsl": 3,
+      "xml_semantic_equal": 10,
+      "opaque_equal": 0,
+      "deleted_owner_files_absent": true,
+      "local_module_preserved": true,
+      "support_pin_retained": true,
+      "repeat_unchanged": true
+    },
+    {
+      "type": "extension",
+      "files": 107,
+      "bsl": 25,
+      "xml_semantic_equal": 76,
+      "opaque_equal": 6,
+      "deleted_owner_files_absent": true,
+      "local_module_preserved": true,
+      "support_pin_retained": true,
+      "repeat_unchanged": true
+    },
+    {
+      "type": "processing",
+      "files": 8,
+      "bsl": 3,
+      "xml_semantic_equal": 5,
+      "opaque_equal": 0,
+      "deleted_owner_files_absent": true,
+      "local_module_preserved": true,
+      "support_pin_retained": true,
+      "repeat_unchanged": true
+    },
+    {
+      "type": "report",
+      "files": 4,
+      "bsl": 1,
+      "xml_semantic_equal": 3,
+      "opaque_equal": 0,
+      "deleted_owner_files_absent": true,
+      "local_module_preserved": true,
+      "support_pin_retained": true,
+      "repeat_unchanged": true
+    }
+  ],
+  "limitations": [
+    "unchanged UUIDs and parentage for surviving objects",
+    "new objects and divergent map merge remain unsupported",
+    "conservative dependency scanning",
+    "native CLI and IDE refresh pending",
+    "no client runtime or production acceptance"
+  ],
+  "bsl_cli": [
+    {
+      "type": "configuration",
+      "files": 1,
+      "diagnostics": 0,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "complete": true
+    },
+    {
+      "type": "extension",
+      "files": 1,
+      "diagnostics": 4,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "complete": true
+    },
+    {
+      "type": "processing",
+      "files": 1,
+      "diagnostics": 50,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "complete": true
+    },
+    {
+      "type": "report",
+      "files": 1,
+      "diagnostics": 2,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "complete": true
+    }
+  ]
+}

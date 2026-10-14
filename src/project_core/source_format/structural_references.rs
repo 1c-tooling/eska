@@ -1,6 +1,9 @@
 //! Preserved XML is searched conservatively, without inventing inverse rules or rewriting references.
 
-use std::{collections::BTreeMap, path::Path};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::Path,
+};
 
 use crate::project_core::{MetadataKind, source_format::PropertyValue};
 
@@ -74,9 +77,25 @@ fn invalidated_keys(base: &AcceptedBase, package: &Package) -> Result<Invalidate
         .collect::<BTreeMap<_, _>>();
     for accepted in base.package.documents.values() {
         let owner = &accepted.descriptor.object;
-        let selected = selected
-            .get(&owner.uuid.key())
-            .ok_or_else(|| Error::root("source_descriptor_missing"))?;
+        let Some(selected) = selected.get(&owner.uuid.key()) else {
+            let mut identities = BTreeSet::new();
+            super::composition::identities(owner, &mut identities)?;
+            for uuid in identities {
+                result.exact.insert(uuid, owner.uuid.clone());
+            }
+            if let Some(PropertyValue::Text(name)) = owner.property(PropertyName::Name) {
+                result.exact.insert(
+                    format!("{}.{name}", owner.kind.designer_tag()).to_lowercase(),
+                    owner.uuid.clone(),
+                );
+                if owner.kind == MetadataKind::CommonModule {
+                    result
+                        .fields
+                        .insert(name.to_lowercase(), owner.uuid.clone());
+                }
+            }
+            continue;
+        };
         if owner.property(PropertyName::Name) != selected.property(PropertyName::Name)
             && let Some(PropertyValue::Text(name)) = owner.property(PropertyName::Name)
         {

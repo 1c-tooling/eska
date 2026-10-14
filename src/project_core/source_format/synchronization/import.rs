@@ -108,7 +108,7 @@ pub struct SourceImportPlan {
 /// Prepare a source-only import from an explicitly confirmed ancestor under current pinned rights.
 ///
 /// UUID-preserving declared-object renames may change the reverse map under the original policy.
-/// New ownership, deletion and divergent maps remain explicit conflicts in this profile.
+/// Whole-owner deletion preserves existing rights; new ownership and divergent maps remain conflicts.
 ///
 /// # Errors
 /// Returns a wrong root/type/layout, invalid working declarations, stale input or invalid source.

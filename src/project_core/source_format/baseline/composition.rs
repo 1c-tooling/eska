@@ -1,15 +1,14 @@
 //! A verified path transition changes bindings while retaining original policy and protected values.
 
+mod deletion;
 mod queries;
 mod references;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use sha2::{Digest, Sha256};
 
-use super::{
-    AcceptedBase, Error, FileEntry, Inventory, PropertyName, SourcePath, document_ownership, files,
-};
+use super::{AcceptedBase, Error, FileEntry, Inventory, PropertyName, SourcePath, files};
 use crate::project_core::source_format::{
     Child, NativeDocument, ObjectSource, Operation, Property, Section, export::Package,
     file_identity, package::manifest_text,
@@ -32,7 +31,7 @@ impl AcceptedBase {
         validate_reference_order(self, candidate)?;
         let before = file_identity::files(&self.package)?;
         let after = file_identity::files(candidate)?;
-        if !before.keys().eq(after.keys()) {
+        if after.keys().any(|identity| !before.contains_key(identity)) {
             return Err(Error::root("source_import_mapping_unsupported"));
         }
         let old_documents = self
@@ -42,19 +41,25 @@ impl AcceptedBase {
             .map(|document| (document.descriptor.object.uuid.key(), document))
             .collect::<BTreeMap<_, _>>();
         let mut documents = BTreeMap::new();
+        let surviving = candidate
+            .documents
+            .values()
+            .map(|document| document.descriptor.object.uuid.key())
+            .collect::<BTreeSet<_>>();
         let renames = references::renames(&self.package, candidate)?;
         for document in candidate.documents.values() {
             let old = old_documents
                 .get(&document.descriptor.object.uuid.key())
                 .ok_or_else(|| Error::root("source_identity_mismatch"))?;
             let mut selected = (*old).clone();
+            deletion::retain_references(self, &surviving, &mut selected)?;
             bind_document(self, &mut selected, document)?;
             references::rebind(self, &mut selected, document, &renames)?;
             documents.insert(selected.path.clone(), selected);
         }
         let source_paths = before
             .iter()
-            .map(|(identity, old)| (old, &after[identity]))
+            .filter_map(|(identity, old)| after.get(identity).map(|next| (old, next)))
             .collect::<BTreeMap<_, _>>();
         let original_paths = source_paths
             .iter()
@@ -142,10 +147,13 @@ fn validate_reference_order(base: &AcceptedBase, candidate: &Package) -> Result<
         .map(|document| (document.descriptor.object.uuid.key(), document))
         .collect::<BTreeMap<_, _>>();
     for old in base.package.documents.values() {
-        let new = current
-            .get(&old.descriptor.object.uuid.key())
-            .ok_or_else(|| Error::root("source_identity_mismatch"))?;
-        let left = referenced_uuids(&base.package, old)?;
+        let Some(new) = current.get(&old.descriptor.object.uuid.key()) else {
+            continue;
+        };
+        let left = referenced_uuids(&base.package, old)?
+            .into_iter()
+            .filter(|uuid| current.contains_key(uuid))
+            .collect::<Vec<_>>();
         let right = referenced_uuids(candidate, new)?;
         if left != right {
             return Err(Error::root("source_import_mapping_unsupported"));
@@ -182,15 +190,15 @@ fn referenced_uuids(package: &Package, owner: &NativeDocument) -> Result<Vec<Str
         .collect()
 }
 
-/// Composition may change names and paths, but never root profile, UUID set, class or parentage.
+/// Surviving declarations retain their identity and ancestry; removals require pinned rights.
 fn validate_identity(base: &AcceptedBase, candidate: &Package) -> Result<(), Error> {
     if base.package.manifest.schema_version != candidate.manifest.schema_version
         || base.package.manifest.profile != candidate.manifest.profile
         || base.package.manifest.external_root != candidate.manifest.external_root
-        || document_ownership(&candidate.documents)? != base.support.objects
     {
         return Err(Error::root("source_import_mapping_unsupported"));
     }
+    deletion::validate(base, candidate)?;
     let root = base.package.manifest.root_path()?;
     let old = &base.package.documents[&root].descriptor;
     let new = candidate

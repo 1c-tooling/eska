@@ -2256,6 +2256,9 @@ lifecycle и согласованное обновление IDE остаютс�
 source bytes/mtime и history; отдельный resulting pin описывает no-op при
 service-only CDF variation без потери общего ancestor.
 
+[Удаление owner](research/eska-format/import-deletion.md) под прежним pin сохраняет независимые
+local values и блокирует dirty/frozen/reference conflicts, включая frozen потомка.
+Четыре native пары прошли import/build/dump; add и CLI/IDE остаются в EF-25.
 [Новая карта rename](research/eska-format/import-composition.md) сопоставляет
 отдельные unrestricted объекты по UUID и сохраняет локальные файлы при переносе.
 Исходная поддержка остаётся независимо pinned; build и source map 6 проверяют

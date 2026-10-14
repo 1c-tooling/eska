@@ -2841,6 +2841,9 @@ capabilities, CI pin и storage schemas прежние. Это подготов�
 Четыре native repeats повторно подтвердили bytes/mtime, старый support pin и
 history; controlled CF/CFE CDF variation сохранила common ancestry.
 
+[Удаление owner](../research/eska-format/import-deletion.md) под прежним pin сохраняет независимые
+local values и блокирует dirty/frozen/reference conflicts, включая frozen потомка.
+Четыре native пары прошли import/build/dump; add и CLI/IDE остаются в EF-25.
 [Проверяемая карта rename](../research/eska-format/import-composition.md)
 переносит отдельные unrestricted owners, модули/ресурсы по UUID и slot под прежним
 pin. Прежние stencils/права отделены от новых bindings; protected build проверяет

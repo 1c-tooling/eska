@@ -115,6 +115,151 @@ fn rename_incoming(fixture: &Fixture, name: &str) {
         .unwrap();
 }
 
+/// The incoming native graph removes one owner and all of its payloads without editing working data.
+fn delete_incoming(fixture: &Fixture) {
+    let native = fixture.test.0.join("deleted-native");
+    crate::project_core::source_format::export_designer(&fixture.incoming_source, &native).unwrap();
+    let root = native.join("Configuration.xml");
+    let original = fs::read_to_string(&root).unwrap();
+    fs::write(
+        root,
+        original.replace("<CommonModule>Tools</CommonModule>", ""),
+    )
+    .unwrap();
+    fs::remove_file(native.join("CommonModules/Tools.xml")).unwrap();
+    fs::remove_dir_all(native.join("CommonModules/Tools")).unwrap();
+    fs::remove_dir_all(&fixture.incoming_source).unwrap();
+    crate::project_core::source_format::import_designer_readable(&native, &fixture.incoming_source)
+        .unwrap();
+}
+
+/// Whole-owner deletion keeps independent local values and rejects modified, frozen or referenced owners.
+#[test]
+fn deleted_object_removes_its_files_only_under_original_permissions_and_clean_ancestry() {
+    for mode in ["allowed", "local_module", "frozen", "referenced"] {
+        let fixture = if mode == "referenced" {
+            Fixture::with_link(false, Some(false))
+        } else {
+            Fixture::new(mode == "frozen")
+        };
+        delete_incoming(&fixture);
+        let root = fixture.source.join("configuration.yaml");
+        let original = fs::read_to_string(&root).unwrap();
+        fs::write(root, original.replace("1.0.0", "1.0.1")).unwrap();
+        if mode == "local_module" {
+            fs::write(fixture.source.join(MODULE), "// local change\r\n").unwrap();
+        }
+        let incoming = fixture.incoming();
+        let before = Inventory::read(fixture.approved.storage_root()).unwrap();
+        let result = prepare_source_import(
+            &fixture.source,
+            &fixture.ancestor,
+            &incoming,
+            &fixture.approved,
+        );
+        if mode == "referenced" {
+            assert_eq!(
+                result.err().expect("surviving handler").code,
+                "source_structural_reference_preserved"
+            );
+            continue;
+        }
+        let plan = result.unwrap();
+        let output = fixture.test.0.join("output");
+        if mode != "allowed" {
+            let expected = if mode == "local_module" {
+                SourceImportConflictKind::DeletedModified
+            } else {
+                SourceImportConflictKind::PermissionDenied
+            };
+            assert!(
+                plan.conflicts()
+                    .iter()
+                    .any(|conflict| conflict.kind == expected),
+                "{:?}",
+                plan.conflicts()
+            );
+            assert!(plan.publish_source(&output).is_err());
+            assert!(!output.exists());
+            continue;
+        }
+        assert!(plan.conflicts().is_empty(), "{:?}", plan.conflicts());
+        plan.publish_source(&output).unwrap();
+        assert!(!output.join("CommonModules/Tools").exists());
+        assert!(
+            fs::read_to_string(output.join("configuration.yaml"))
+                .unwrap()
+                .contains("1.0.1")
+        );
+        let prepared = prepare_protected(
+            &output,
+            &fixture.approved,
+            &fixture.test.0.join("generations"),
+            true,
+        )
+        .unwrap();
+        assert!(!prepared.xml().join("CommonModules/Tools.xml").exists());
+        assert!(
+            !prepared
+                .xml()
+                .join("CommonModules/Tools/Ext/Module.bsl")
+                .exists()
+        );
+        let repeat =
+            prepare_source_import(&output, &incoming, &incoming, &fixture.approved).unwrap();
+        assert!(repeat.conflicts().is_empty());
+        assert_eq!(repeat.output_revision(), repeat.working_revision());
+        assert_eq!(
+            Inventory::read(fixture.approved.storage_root()).unwrap(),
+            before
+        );
+    }
+}
+
+/// An otherwise unrestricted owner cannot erase an independently frozen inline descendant.
+#[test]
+fn deleted_owner_keeps_the_freeze_of_its_inline_descendant() {
+    let directory = TestDir::new();
+    let native = directory.0.join("native");
+    fs::create_dir_all(native.join("Catalogs")).unwrap();
+    fs::write(native.join("Configuration.xml"), concat!(
+        "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses' version='2.20'>",
+        "<Configuration uuid='10000000-0000-4000-8000-000000000001'><Properties><Name>Sample</Name></Properties>",
+        "<ChildObjects><Catalog>Sample</Catalog></ChildObjects></Configuration></MetaDataObject>"
+    )).unwrap();
+    fs::write(native.join("Catalogs/Sample.xml"), concat!(
+        "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses' version='2.20'>",
+        "<Catalog uuid='20000000-0000-4000-8000-000000000001'><Properties><Name>Sample</Name></Properties>",
+        "<ChildObjects><Attribute uuid='30000000-0000-4000-8000-000000000001'>",
+        "<Properties><Name>FrozenField</Name></Properties></Attribute></ChildObjects></Catalog></MetaDataObject>"
+    )).unwrap();
+    let source = directory.0.join("source");
+    crate::project_core::source_format::import_designer_readable(&native, &source).unwrap();
+    let frozen = NativeUuid::parse("30000000-0000-4000-8000-000000000001").unwrap();
+    let base_path = directory.0.join("accepted");
+    let pin = accept_source(&source, &base_path, std::slice::from_ref(&frozen)).unwrap();
+    let base = AcceptedBase::open(&base_path, &pin).unwrap();
+    let old_path = directory.0.join("ancestor");
+    let old_pin = capture_import_ancestor(&source, &old_path).unwrap();
+    let old = ImportAncestor::open(&old_path, &old_pin).unwrap();
+    let root = native.join("Configuration.xml");
+    let original = fs::read_to_string(&root).unwrap();
+    fs::write(root, original.replace("<Catalog>Sample</Catalog>", "")).unwrap();
+    fs::remove_file(native.join("Catalogs/Sample.xml")).unwrap();
+    let incoming_source = directory.0.join("incoming-source");
+    crate::project_core::source_format::import_designer_readable(&native, &incoming_source)
+        .unwrap();
+    let incoming_path = directory.0.join("incoming");
+    let incoming_pin = capture_import_ancestor(&incoming_source, &incoming_path).unwrap();
+    let incoming = ImportAncestor::open(&incoming_path, &incoming_pin).unwrap();
+    let plan = prepare_source_import(&source, &old, &incoming, &base).unwrap();
+    assert!(plan.conflicts().iter().any(|conflict| conflict.kind
+        == SourceImportConflictKind::PermissionDenied
+        && conflict.uuid.as_ref() == Some(&frozen)));
+    assert!(plan.publish_source(&directory.0.join("output")).is_err());
+    assert!(source.join("Catalogs/Sample/object.yaml").is_file());
+}
+
 /// A renamed UUID retains independent local descriptor/module edits, its pin and exact old origins.
 #[test]
 fn renamed_object_moves_local_files_and_retains_original_policy_and_origins() {
