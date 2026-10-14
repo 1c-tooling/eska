@@ -35,7 +35,7 @@ use super::{
 
 pub use form_dialog::DeclaredForm;
 pub use modules::DeclaredModule;
-pub use queries::DeclaredQuery;
+pub use queries::{DeclaredQuery, QueryAuthoringRange, QueryContextView};
 pub use semantic::{MetadataSnapshot, NativeMetadata};
 
 /// One declaration projected directly from typed YAML, with coordinates in its owner snapshot.

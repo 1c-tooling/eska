@@ -92,7 +92,8 @@ pub use queries::{
 };
 pub use reader::{
     DeclaredForm, DeclaredModule, DeclaredOwner, DeclaredQuery, MetadataDeclaration,
-    MetadataSnapshot, NativeMetadata, OwnerSnapshot, SourceReader,
+    MetadataSnapshot, NativeMetadata, OwnerSnapshot, QueryAuthoringRange, QueryContextView,
+    SourceReader,
 };
 pub use root::{
     EXTERNAL_LAYOUT_VERSION, ExternalKind, ExternalRoot, PROCESSING_PROFILE, REPORT_PROFILE,

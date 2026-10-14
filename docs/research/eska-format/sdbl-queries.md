@@ -21,6 +21,11 @@ plain values от XML, требует весь набор `.sdbl` и удаля�
 CF/build/dump и исполнение отчёта/списка; контекстный анализ остаётся EF-27.
 Этот документ не вводит готовые config keys или CLI-команды.
 
+[Текущий resource read-view](query-context-read-view.md) проверяет supplied
+descriptor/resource inputs layouts 5/6 без файлового I/O и чтения `.sdbl`.
+XML ranges точны; YAML возвращает EnclosingNode или Unmapped. Это storage
+foundation для EF-27, языковой анализ и consumer checks ещё не подключены.
+
 Цель: условие запроса можно изменить в одном `.sdbl` без правки окружающего
 описания отчёта или формы. При изменении состава результата разработчик видит,
 какие сохранённые настройки используют изменённые поля или параметры.

@@ -8,6 +8,9 @@ use crate::project_core::source_format::{
     layout::queries::{check_bindings, composition_template, invalid},
 };
 
+mod context;
+pub use context::{QueryAuthoringRange, QueryContextView};
+
 /// Plain text keeps explicit native ownership; actual dataset/attribute scope is read from its resource.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct DeclaredQuery<'a> {

@@ -9,6 +9,7 @@ use super::{
 };
 use crate::project_core::source_format::{Namespace, yaml};
 
+mod context;
 mod decode;
 mod property;
 mod render;

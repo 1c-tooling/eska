@@ -61,6 +61,9 @@ reader. [Protected writer и source map 4](query-protected.md) сохраняю�
 раздельно переносит source/base и сохраняет settings проекта/workspace.
 Изменённые условия СКД/списка прошли CF/build/dump и реальное исполнение;
 контекстный analysis scope остаётся EF-27, CLI defaults сохранены.
+[Current query resource view](query-context-read-view.md) проверяет supplied
+owner/resource inputs layouts 5/6 без файлового I/O и `.sdbl` reads; precision
+XML/YAML сообщается явно. Языковой resolver и consumer checks ещё нужны.
 [EF-12 принята](managed-form-acceptance.md)
 для configuration/C1/logform 2.20 на 1С 8.3.27.2325.
 [Native ID/ссылки](managed-form-inventory.md) и
