@@ -23,7 +23,7 @@ impl BatchProfile {
             if self == Self::Syntax && kind != ProjectType::Configuration {
                 AnalysisScope::LocalSyntax
             } else {
-                AnalysisScope::CanonicalConfiguration
+                AnalysisScope::canonical_for(kind)
             },
         )
     }

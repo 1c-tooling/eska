@@ -97,12 +97,19 @@ pub fn pull(
             "profile":"references","position_byte":offset,"include_declaration":params.context.include_declaration,
             "coverage":{"metadata_models_complete":result.metadata_models_complete,"module_inputs_complete":result.module_inputs_complete,"semantic_complete":false},
             "resources":session.resources()});
-        let incomplete = !result.metadata_models_complete || !result.module_inputs_complete;
+        super::external_context::coverage(&mut context, session.scope());
+        let incomplete = !result.metadata_models_complete
+            || !result.module_inputs_complete
+            || !result.metadata_context_complete;
         let Some(search) = result.value else {
             return if incomplete {
                 Err(protocol::error_value(
                     -32000,
-                    "references_incomplete",
+                    if result.metadata_context_complete {
+                        "references_incomplete"
+                    } else {
+                        "analysis_configuration_context_required"
+                    },
                     context,
                 ))
             } else {
@@ -116,7 +123,11 @@ pub fn pull(
         {
             return Err(protocol::error_value(
                 -32000,
-                "references_incomplete",
+                if result.metadata_context_complete {
+                    "references_incomplete"
+                } else {
+                    "analysis_configuration_context_required"
+                },
                 context,
             ));
         }

@@ -92,6 +92,12 @@ External native stem, отличающийся от metadata Name, теперь 
 объявленным main FileId; namesake/ambiguity не подбираются по каталогу.
 32 canonical и 18 native tests прошли, actual EPF/ERF completion подтверждён.
 
+[Own EPF/ERF context](../research/eska-format/external-own-context.md) подключён к SDK:
+real owner/form completion, hover/definition и scoped YAML diagnostics; full
+BSL semantics без базы явно отказывает. Четыре native-origin RU/EN runtime
+cases сохранили current drafts при reopen и source/base/history/settings.
+CFE/base composition и полный EF-18 ещё в работе.
+
 [Структурная проверка](../research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

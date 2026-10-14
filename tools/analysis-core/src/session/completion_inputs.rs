@@ -48,6 +48,7 @@ impl AnalysisSession {
                 let Some((kind, name)) = analysis.completion_metadata_target(file, offset) else {
                     return Ok(None);
                 };
+                self.require_own_external_target(kind, &name)?;
                 let main = if kind == bsl_metadata::MdoType::CommonModule {
                     common_module_index(analysis.database(), self.listing).lookup(&name)
                 } else {
@@ -134,6 +135,9 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
     ) -> Result<(), QueryError> {
         self.validate_preparation(path, expected, offset, request, cancellation)?;
+        if self.external_kind.is_some() {
+            self.prepare_module_metadata(path, request)?;
+        }
         self.prepare_member_call_metadata(
             path,
             offset,

@@ -4,6 +4,9 @@ mod analysis_inputs;
 mod completion_inputs;
 #[cfg(test)]
 mod event_subscription_tests;
+mod external;
+#[cfg(test)]
+mod external_tests;
 mod forms;
 #[cfg(test)]
 mod http_service_tests;
@@ -85,6 +88,8 @@ pub struct SessionSummary {
     pub main_models_complete: bool,
     /// Coverage of parsed descriptors only; resources and BSL are outside this count.
     pub descriptor_models_complete: bool,
+    /// Own models do not supply unknown globals, common modules or foreign metadata of an owning base.
+    pub metadata_context_complete: bool,
 }
 
 /// A binding and its current model always share the same tracked slot.
@@ -107,6 +112,7 @@ struct ProjectionRevision {
 /// The composition is immutable until reopening; updates publish only changed canonical dependencies.
 pub struct AnalysisSession {
     scope: AnalysisScope,
+    external_kind: Option<bsl_metadata::ExternalObjectKind>,
     pub(super) inputs: MetadataInputs,
     pub(super) database: RootDatabaseImpl,
     pub(super) revision: SessionRevision,
@@ -149,11 +155,13 @@ impl AnalysisSession {
         reader: SourceReader,
         options: SessionOptions,
     ) -> Result<Self, SessionError> {
+        let scope =
+            AnalysisScope::canonical_for(reader.project_type().map_err(SessionError::Source)?);
         Self::with_inputs(
             MetadataInputs::from_reader(reader),
             RootDatabaseImpl::new(),
             options,
-            AnalysisScope::CanonicalConfiguration,
+            scope,
         )
     }
 
@@ -193,12 +201,13 @@ impl AnalysisSession {
         options: SessionOptions,
     ) -> Result<Self, SessionError> {
         let inputs = MetadataInputs::open(root).map_err(SessionError::Source)?;
-        Self::with_inputs(
-            inputs,
-            database,
-            options,
-            AnalysisScope::CanonicalConfiguration,
-        )
+        let scope = AnalysisScope::canonical_for(
+            inputs
+                .source_reader()
+                .project_type()
+                .map_err(SessionError::Source)?,
+        );
+        Self::with_inputs(inputs, database, options, scope)
     }
 
     /// Keep one authoritative listing for all consumers, whether opened directly or via a project.
@@ -209,17 +218,13 @@ impl AnalysisSession {
         scope: AnalysisScope,
     ) -> Result<Self, SessionError> {
         let reader = inputs.source_reader();
-        if scope == AnalysisScope::CanonicalConfiguration {
-            require_supported_project(reader)?;
-        } else {
-            reader.project_type().map_err(SessionError::Source)?;
-        }
+        let external_kind = external::admit(reader, scope)?;
         let root_key = reader
             .root()
             .to_str()
             .ok_or(SessionError::NonUtf8Root)?
             .to_owned();
-        set_configuration_context(reader, &mut database, scope);
+        set_configuration_context(reader, &mut database, scope)?;
 
         let mut file_set = FileSet::new();
         let mut owners = BTreeMap::new();
@@ -228,7 +233,7 @@ impl AnalysisSession {
         for (index, path) in inputs.owner_paths().enumerate() {
             let identity = reader.declared_owner(path).map_err(SessionError::Source)?;
             let main = FileId(u32::try_from(index).map_err(|_| SessionError::TooManyFiles)?);
-            let binding = OwnerBinding {
+            let mut binding = OwnerBinding {
                 kind: identity.kind,
                 name: identity.name.map(str::to_owned),
                 main,
@@ -241,7 +246,11 @@ impl AnalysisSession {
             );
             database.set_file_source_root(main, SourceRootId(0));
             database.set_file_unreadable(main);
-            binding.add_to_listing(&mut structure);
+            if scope != AnalysisScope::CanonicalExternal
+                || !external::bind_root(reader, path, &mut binding, &mut structure)?
+            {
+                binding.add_to_listing(&mut structure);
+            }
             let slot = CanonicalMetadataInput::new(&database, None, "pending".into());
             slots.insert(main, slot);
             let model = OwnerModel {
@@ -288,6 +297,7 @@ impl AnalysisSession {
         let metadata_resources = metadata_resources::register(reader);
         Ok(Self {
             scope,
+            external_kind,
             incomplete_metadata: owners.len(),
             incomplete_modules: modules.len(),
             inputs,
@@ -515,6 +525,7 @@ impl AnalysisSession {
             modeled_descriptors: 0,
             main_models_complete: false,
             descriptor_models_complete: false,
+            metadata_context_complete: self.scope.has_configuration_context(),
         };
         for entry in self.owners.values() {
             summary.descriptors += entry.model.descriptors;
@@ -532,13 +543,13 @@ impl AnalysisSession {
             }
         }
         summary.main_models_complete = summary.inputs.metadata_input_complete
-            && self.scope == AnalysisScope::CanonicalConfiguration
+            && self.scope.has_semantic_context()
             && summary.pending == 0
             && summary.unsupported == 0
             && summary.invalid == 0
             && summary.unavailable == 0;
         summary.descriptor_models_complete =
-            self.scope == AnalysisScope::CanonicalConfiguration && self.incomplete_metadata == 0;
+            self.scope.has_semantic_context() && self.incomplete_metadata == 0;
         summary
     }
 
@@ -564,6 +575,18 @@ impl AnalysisSession {
         self.validate_revision(expected)?;
         if self.scope == AnalysisScope::LocalSyntax {
             return Err(SessionRequestError::ContextRequired);
+        }
+        Ok(())
+    }
+
+    /// Full diagnostics cannot mistake an external owner's missing global context for missing symbols.
+    pub(super) fn require_configuration_context(
+        &self,
+        expected: SessionRevision,
+    ) -> Result<(), SessionRequestError> {
+        self.require_semantic_context(expected)?;
+        if !self.scope.has_configuration_context() {
+            return Err(SessionRequestError::ConfigurationContextRequired);
         }
         Ok(())
     }
@@ -596,6 +619,11 @@ impl AnalysisSession {
         } else {
             let model = if self.scope == AnalysisScope::LocalSyntax {
                 projection::source_only(input, next)
+            } else if let Some(kind) = self
+                .external_kind
+                .filter(|_| path == &self.inputs.source_reader().configuration().path)
+            {
+                external::project(kind, input, next)
             } else {
                 projection::project(entry.binding.kind, input, next, resource)
             };
@@ -645,12 +673,15 @@ impl AnalysisSession {
     }
 }
 
-/// Syntax keeps an empty configuration cache and root list; only canonical admission owns a context.
+/// External owners never install a Configuration; syntax retains its existing empty context.
 fn set_configuration_context(
     reader: &SourceReader,
     database: &mut RootDatabaseImpl,
     scope: AnalysisScope,
-) {
+) -> Result<(), SessionError> {
+    if scope == AnalysisScope::CanonicalExternal {
+        return external::install(reader, database);
+    }
     let cache = Arc::new(GraphConfigCache::new());
     if scope == AnalysisScope::CanonicalConfiguration {
         let name = reader
@@ -667,6 +698,7 @@ fn set_configuration_context(
         database.set_all_config_paths(Vec::new());
     }
     database.set_graph_config_cache(cache);
+    Ok(())
 }
 
 /// Extension/base composition is admitted separately; a standalone CFE cannot claim complete analysis.

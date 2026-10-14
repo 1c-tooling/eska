@@ -97,6 +97,20 @@ fn single_symbol(
 /// Hierarchy comes from the kernel's metadata facet; row names qualify their real tabular section.
 fn owner(ty: &Type<'_, ide_db::RootDatabaseImpl>) -> Option<MetadataSymbol> {
     let (kind, name, config_id) = match ty.kind() {
+        TypeKind::FormData {
+            underlying: Some(owner),
+            ..
+        } if matches!(
+            owner.mdo_type,
+            MdoType::ExternalDataProcessor | MdoType::ExternalReport
+        ) =>
+        {
+            return Some(MetadataSymbol {
+                kind: owner.mdo_type,
+                name: owner.name.clone(),
+                children: Vec::new(),
+            });
+        }
         TypeKind::MetadataRef(facet) => (facet.kind, &facet.name, &facet.config_id),
         TypeKind::MetadataObject(facet) => (facet.kind, &facet.name, &facet.config_id),
         _ => return None,

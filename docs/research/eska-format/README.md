@@ -44,6 +44,8 @@ workflow/Git/workspace и expected-byte receipt; [init](project-initialization.m
 общую сессию, сохраняя явную неполноту semantic context.
 [Kernel owners](canonical-module-owners.md) берут object/register/common/service
 metadata из текущих slots без XML fallback; SDK composition ещё в работе.
+[Own EPF/ERF context](external-own-context.md) использует реальные external модели,
+сохраняя явную неполноту owning configuration; YAML diagnostics доступны отдельно.
 [Language/Template coverage](structural-metadata-coverage.md) проверяет текущие
 descriptor fields без фиктивной canonical модели или проверки СКД.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery

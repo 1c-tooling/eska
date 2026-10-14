@@ -7,10 +7,10 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    args::Cli, completion, diagnostics, document_symbols, documents, dto, edit_authority, hover,
-    kernel_memory, language, metadata_locations, project_changes, property_edits, protocol,
-    references, rename, request_control, signature_help, stream, watched_files,
-    watcher_registration,
+    args::Cli, completion, diagnostics, document_symbols, documents, dto, edit_authority,
+    external_context, hover, kernel_memory, language, metadata_locations, project_changes,
+    property_edits, protocol, references, rename, request_control, signature_help, stream,
+    watched_files, watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisScope, AnalysisSession, analysis_settings, batch::BatchProfile};
@@ -100,6 +100,7 @@ impl Server<'_> {
             result["capabilities"]["experimental"]["eska"]["definition"] = json!({"scope":"ready-bsl-and-canonical-metadata","metadataTargets":"typed-objects-and-members","incompleteResults":"error"});
         }
         advertise_scope(&mut result, scope);
+        external_context::advertise(&mut result, scope);
         self.completion = completion::Capabilities::negotiate(params);
         self.hierarchical_symbols = hierarchical_symbols;
         self.hover_format = hover_format;

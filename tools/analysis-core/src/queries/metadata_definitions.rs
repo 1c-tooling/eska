@@ -51,6 +51,7 @@ impl AnalysisSession {
             let Some(symbol) = metadata_symbol(analysis, file, offset) else {
                 return Ok(None);
             };
+            self.require_own_external_target(symbol.kind, &symbol.name)?;
             let root = self
                 .root()
                 .to_str()

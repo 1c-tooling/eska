@@ -141,6 +141,7 @@ impl AnalysisSession {
                 source: result.source,
                 source_sha256: result.source_sha256,
                 metadata_models_complete: result.metadata_models_complete,
+                metadata_context_complete: result.metadata_context_complete,
                 module_inputs_complete: result.module_inputs_complete,
                 value: result.value?,
             })

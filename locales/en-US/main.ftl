@@ -1104,6 +1104,7 @@ tool-check-source-budget = Current inputs could not fit the source-byte quota; r
 tool-check-metadata-incomplete = Metadata check is incomplete: { $source } ({ $code }).
 tool-error-analysis-config = Correct the analyzer settings or provide a valid --config file.
 tool-error-analysis-scope = This analysis profile does not yet support exclusions, extensions, external sources, Git filters or diagnostic baselines.
+tool-error-analysis-configuration-context = Full semantic diagnostics and foreign metadata requests require an explicit owning configuration context. The processing or report's own metadata remains available separately.
 tool-metadata-properties-not-loaded = Metadata properties have not been loaded.
 tool-metadata-wrong-kind = Metadata kind { $kind } cannot be used by this model.
 tool-metadata-invalid-uuid = Metadata contains an invalid UUID.

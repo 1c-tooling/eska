@@ -11,6 +11,14 @@ Configuration. Scope явно сообщается, model state — SourceOnly, 
 отказывают до lazy reads. CF сохраняет прежний canonical route; complete syntax
 не подменяет complete semantic model и LocalSyntax batch остаётся exit 2.
 
+[Own context EPF/ERF](../../docs/research/eska-format/external-own-context.md)
+передаёт real external metadata и form underlying owner без Configuration.
+Default SDK `open`/`from_reader` выбирают `CanonicalExternal` по проверенному
+profile; CLI `--profile semantic` даёт own completion/hover/definition и metadata
+YAML diagnostics. Full BSL diagnostics/checker без базы отказывают с
+`analysis_configuration_context_required`, checker exit 3. Context completeness
+остаётся false; CFE/base/dependency composition ещё не подключена.
+
 [Language и Template](../../docs/research/eska-format/structural-metadata-coverage.md)
 валидируются как StructureOnly: проверены текущие descriptor fields, canonical
 объекта и DCS/query проверки нет. Покрытие selected BSL rules сохраняет отдельный

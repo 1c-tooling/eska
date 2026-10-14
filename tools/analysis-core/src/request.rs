@@ -28,6 +28,7 @@ impl SessionRevision {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SessionRequestError {
     ContextRequired,
+    ConfigurationContextRequired,
     StaleRevision {
         expected: SessionRevision,
         actual: SessionRevision,

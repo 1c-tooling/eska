@@ -18,6 +18,7 @@ mod diagnostic_queries;
 mod document_symbol_queries;
 mod document_sync;
 mod event_subscription_queries;
+mod external_context;
 mod form_queries;
 mod hover_queries;
 mod http_service_queries;

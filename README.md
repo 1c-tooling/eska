@@ -867,8 +867,9 @@ preset = "trunk"
 историю; [`migrate --layout queries`](docs/research/eska-format/query-project-migration.md)
 создаёт отдельную копию, при layout no-op сохраняя raw history точно.
 [`syntax` профиль анализатора](docs/research/eska-format/analyzer-local-syntax.md)
-принимает все четыре типа; семантический контекст extension/processing/report
-ещё подключается в EF-18. Для сборки можно явно передать базовый CF через
+принимает все четыре типа. [Own semantic context EPF/ERF](docs/research/eska-format/external-own-context.md)
+доступен через `--profile semantic`; полные BSL diagnostics без owning configuration
+отказывают явно. CFE/base composition ещё подключается в EF-18. Для сборки можно явно передать базовый CF через
 `--base-configuration`. Внешняя версия проверяется в объявленном модуле объекта.
 [Платформенная приёмка EPF/ERF](docs/research/eska-format/external-projects.md)
 завершена: независимые build/dump совпали, непустые ERF и экспортные версии

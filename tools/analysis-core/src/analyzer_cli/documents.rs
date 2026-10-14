@@ -301,6 +301,11 @@ pub fn request_error(error: &SessionRequestError) -> Value {
             "analysis_context_required",
             json!({"scope":"local_syntax","required_scope":"canonical_configuration"}),
         ),
+        SessionRequestError::ConfigurationContextRequired => (
+            -32000,
+            "analysis_configuration_context_required",
+            json!({"analysis_scope":"canonical_external","metadata_context_complete":false,"required_context":"owning-configuration"}),
+        ),
         SessionRequestError::StaleDocumentVersion { current, received }
         | SessionRequestError::Metadata(UpdateError::StaleDocumentVersion { current, received }) => {
             (

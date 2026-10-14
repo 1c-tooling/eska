@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "platform_version": "8.3.27.2325",
+  "host_os": "linux",
+  "native_steps": [
+    {
+      "case": "processing-native-build",
+      "exit_code": 0,
+      "seconds": 14.59
+    },
+    {
+      "case": "processing-native-dump",
+      "exit_code": 0,
+      "seconds": 3.99
+    },
+    {
+      "case": "processing-queries-import",
+      "exit_code": 0,
+      "seconds": 0.84
+    },
+    {
+      "case": "report-native-build",
+      "exit_code": 0,
+      "seconds": 4.0
+    },
+    {
+      "case": "report-native-dump",
+      "exit_code": 0,
+      "seconds": 3.94
+    },
+    {
+      "case": "report-queries-import",
+      "exit_code": 0,
+      "seconds": 0.13
+    }
+  ],
+  "framed_runtime": [
+    {
+      "project_type": "processing",
+      "locale": "ru-RU",
+      "native_origin": true,
+      "analysis_scope": "canonical_external",
+      "own_completion_count": 6,
+      "real_external_form_context": true,
+      "metadata_context_complete": false,
+      "full_semantic_checker_exit": 3,
+      "dirty_symbols_preserved": true,
+      "dirty_own_field_and_form_follow_current_yaml": true,
+      "root_watch_requires_restart": true,
+      "caller_replay_preserves_current_yaml_and_bsl": true,
+      "invalid_owner_refuses_stale_model": true,
+      "close_restores_saved_owner": true,
+      "metadata_yaml_diagnostics_available_without_configuration": true,
+      "active_import_requires_restart": true,
+      "source_support_settings_preserved": true
+    },
+    {
+      "project_type": "processing",
+      "locale": "en-US",
+      "native_origin": true,
+      "analysis_scope": "canonical_external",
+      "own_completion_count": 6,
+      "real_external_form_context": true,
+      "metadata_context_complete": false,
+      "full_semantic_checker_exit": 3,
+      "dirty_symbols_preserved": true,
+      "dirty_own_field_and_form_follow_current_yaml": true,
+      "root_watch_requires_restart": true,
+      "caller_replay_preserves_current_yaml_and_bsl": true,
+      "invalid_owner_refuses_stale_model": true,
+      "close_restores_saved_owner": true,
+      "metadata_yaml_diagnostics_available_without_configuration": true,
+      "active_import_requires_restart": true,
+      "source_support_settings_preserved": true
+    },
+    {
+      "project_type": "report",
+      "locale": "ru-RU",
+      "native_origin": true,
+      "analysis_scope": "canonical_external",
+      "own_completion_count": 10,
+      "real_external_form_context": false,
+      "metadata_context_complete": false,
+      "full_semantic_checker_exit": 3,
+      "dirty_symbols_preserved": true,
+      "dirty_own_field_and_form_follow_current_yaml": true,
+      "root_watch_requires_restart": true,
+      "caller_replay_preserves_current_yaml_and_bsl": true,
+      "invalid_owner_refuses_stale_model": true,
+      "close_restores_saved_owner": true,
+      "metadata_yaml_diagnostics_available_without_configuration": true,
+      "active_import_requires_restart": true,
+      "source_support_settings_preserved": true
+    },
+    {
+      "project_type": "report",
+      "locale": "en-US",
+      "native_origin": true,
+      "analysis_scope": "canonical_external",
+      "own_completion_count": 10,
+      "real_external_form_context": false,
+      "metadata_context_complete": false,
+      "full_semantic_checker_exit": 3,
+      "dirty_symbols_preserved": true,
+      "dirty_own_field_and_form_follow_current_yaml": true,
+      "root_watch_requires_restart": true,
+      "caller_replay_preserves_current_yaml_and_bsl": true,
+      "invalid_owner_refuses_stale_model": true,
+      "close_restores_saved_owner": true,
+      "metadata_yaml_diagnostics_available_without_configuration": true,
+      "active_import_requires_restart": true,
+      "source_support_settings_preserved": true
+    }
+  ],
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.45
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 0.23
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 0.39
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 76.5
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 92.91
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 15.37
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 2.73
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.39
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 0.91
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 0.37
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 21.6
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.77
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.3
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.14
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 2.93
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.81
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 8.81
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.65
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 2.93
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 7.16
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 47.74
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 9.62
+    }
+  ]
+}

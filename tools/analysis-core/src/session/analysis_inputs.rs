@@ -22,7 +22,7 @@ impl AnalysisSession {
         expected: SessionRevision,
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
-        self.require_semantic_context(expected)?;
+        self.require_configuration_context(expected)?;
         self.load_pending_metadata_inputs(request)?;
         let paths = self
             .modules

@@ -281,6 +281,9 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         "project_discovery_failed" => Some("tool-error-discovery"),
         "analysis_config_invalid" => Some("tool-error-analysis-config"),
         "analysis_scope_unsupported" => Some("tool-error-analysis-scope"),
+        "analysis_configuration_context_required" => {
+            Some("tool-error-analysis-configuration-context")
+        }
         "source_changes_excluded" => Some("tool-error-exclusions"),
         "platform_version_missing" => Some("tool-error-platform-version-missing"),
         "project_version_policy_invalid" => Some("tool-error-project-version-policy"),

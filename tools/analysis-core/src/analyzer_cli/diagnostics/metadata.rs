@@ -54,14 +54,14 @@ pub(super) fn pull(
         })
         .collect::<Result<Vec<_>, Value>>()?;
     let summary = session.summary();
-    Ok(
-        json!({"kind":"full","resultId":format!("{id}:{}:metadata:{}",report.revision,report.source_sha256),
+    let mut response = json!({"kind":"full","resultId":format!("{id}:{}:metadata:{}",report.revision,report.source_sha256),
         "items":items,"eska":{"snapshot":dto::snapshot(session,id),"profile":"metadata","analysis_scope":session.scope(),
         "source":report.source,"source_sha256":report.source_sha256,"origin":dto::origin(report.origin),"config_sha256":null,
         "coverage":{"metadata_document_complete":report.input_complete,"metadata_model_complete":report.main_model_complete,
             "metadata_descriptors_complete":report.descriptor_models_complete,"metadata_inputs_complete":summary.inputs.metadata_input_complete,
-            "metadata_models_complete":summary.descriptor_models_complete,"semantic_complete":false},"resources":session.resources()}}),
-    )
+            "metadata_models_complete":summary.descriptor_models_complete,"semantic_complete":false},"resources":session.resources()}});
+    super::super::external_context::coverage(&mut response["eska"], session.scope());
+    Ok(response)
 }
 
 /// Missing/refused YAML stays an error carrying the current state; unavailable text cannot get a fabricated range.

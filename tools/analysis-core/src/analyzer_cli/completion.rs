@@ -152,14 +152,14 @@ fn analyze(
         .filter_map(|item| item_value(item, options.capabilities))
         .collect::<Vec<_>>();
     let summary = session.summary();
-    Ok(
-        json!({"isIncomplete":!result.metadata_models_complete || !result.module_inputs_complete,
+    let mut response = json!({"isIncomplete":!result.metadata_models_complete || !result.module_inputs_complete || !result.metadata_context_complete,
         "items":items,"eska":{"snapshot":dto::snapshot(session,options.session_id),
         "source":result.source,"source_sha256":result.source_sha256,"config_sha256":settings.sha256,
         "position_byte":offset,"coverage":{"metadata_inputs_complete":summary.inputs.metadata_input_complete,
             "metadata_models_complete":result.metadata_models_complete,"module_inputs_complete":result.module_inputs_complete,
-            "semantic_complete":false},"resources":session.resources()}}),
-    )
+            "semantic_complete":false},"resources":session.resources()}});
+    super::external_context::coverage(&mut response["eska"], session.scope());
+    Ok(response)
 }
 
 /// Only typed kernel snippets/calls use snippet syntax; unsupported clients receive plain names.

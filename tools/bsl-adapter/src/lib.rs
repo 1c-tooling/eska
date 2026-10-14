@@ -3,6 +3,7 @@
 mod common_module;
 mod defined_type;
 mod event_subscription;
+mod external_object;
 mod form;
 mod http_service;
 mod identity;
@@ -21,6 +22,7 @@ mod web_service;
 pub use common_module::common_module;
 pub use defined_type::defined_type;
 pub use event_subscription::event_subscription;
+pub use external_object::external_object;
 pub use form::form;
 pub use http_service::http_service;
 pub use integration_service::integration_service;

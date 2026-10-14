@@ -1,5 +1,6 @@
 //! Resolve a typed resident symbol card; transport owns localized headings and markup.
 
+mod external;
 #[cfg(test)]
 mod tests;
 
@@ -86,6 +87,11 @@ impl AnalysisSession {
                 || !text.is_char_boundary(end_byte as usize)
             {
                 return Err(inconsistent());
+            }
+            if let Some(card) =
+                external::current(self, analysis, file, hir::classify_token(&token), locale)?
+            {
+                return Ok(Some(card));
             }
             // The positional kernel API uses its own line index, whose newline rules may
             // differ from the transport's. Feed that same index's UTF-16 inverse, not LSP rows.

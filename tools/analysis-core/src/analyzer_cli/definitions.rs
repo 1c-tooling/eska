@@ -58,6 +58,17 @@ pub fn pull(
                 error["data"]["details"] = dto::snapshot(session, id);
                 error
             })?;
+        if session.scope() == crate::AnalysisScope::CanonicalExternal {
+            session
+                .prepare_completion_metadata(
+                    &path,
+                    session.revision(),
+                    offset,
+                    input,
+                    &cancellation.query,
+                )
+                .map_err(|error| language::query_error(session, id, &error))?;
+        }
         let metadata = session
             .module_metadata_definition(&path, session.revision(), offset, &cancellation.query)
             .map_err(|error| language::query_error(session, id, &error))?;
@@ -67,13 +78,23 @@ pub fn pull(
         let result = session
             .module_definition(&path, session.revision(), offset, &cancellation.query)
             .map_err(|error| language::query_error(session, id, &error))?;
-        let coverage = json!({"metadata_models_complete":result.metadata_models_complete,
+        let mut coverage = json!({"metadata_models_complete":result.metadata_models_complete,
             "module_inputs_complete":result.module_inputs_complete,"semantic_complete":false});
+        if !result.metadata_context_complete {
+            coverage["metadata_context_complete"] = json!(false);
+        }
         let Some(target) = result.value else {
-            if !result.metadata_models_complete || !result.module_inputs_complete {
+            if !result.metadata_models_complete
+                || !result.module_inputs_complete
+                || !result.metadata_context_complete
+            {
                 return Err(protocol::error_value(
                     -32000,
-                    "navigation_incomplete",
+                    if result.metadata_context_complete {
+                        "navigation_incomplete"
+                    } else {
+                        "analysis_configuration_context_required"
+                    },
                     json!({
                     "snapshot":dto::snapshot(session,id),"source":result.source,
                     "source_sha256":result.source_sha256,"coverage":coverage,"resources":session.resources()}),
@@ -96,10 +117,12 @@ pub fn pull(
         let uri = url::Url::from_file_path(session.root().join(target.source.as_path())).map_err(
             |()| protocol::error_value(-32603, "path_encoding_unsupported", Value::Null),
         )?;
-        Ok(json!({"uri":uri.as_str(),"range":range,"eska":{
+        let mut response = json!({"uri":uri.as_str(),"range":range,"eska":{
             "snapshot":dto::snapshot(session,id),"source":result.source,"source_sha256":result.source_sha256,
             "target":{"source":target.source,"source_sha256":target.source_sha256,
-                "start_byte":target.start_byte,"end_byte":target.end_byte},"coverage":coverage,"resources":session.resources()}}))
+                "start_byte":target.start_byte,"end_byte":target.end_byte},"coverage":coverage,"resources":session.resources()}});
+        super::external_context::coverage(&mut response["eska"], session.scope());
+        Ok(response)
     })();
     request_control::finish(session, id, method, &deadline, result)
 }
@@ -115,12 +138,14 @@ fn metadata_response(
         .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
     let uri = url::Url::from_file_path(session.root().join(target.source.as_path()))
         .map_err(|()| protocol::error_value(-32603, "path_encoding_unsupported", Value::Null))?;
-    Ok(json!({"uri":uri.as_str(),"range":target.range,"eska":{
+    let mut response = json!({"uri":uri.as_str(),"range":target.range,"eska":{
         "snapshot":dto::snapshot(session,id),"source":result.source,"source_sha256":result.source_sha256,
         "target":{"kind":"metadata","source":target.source,"source_sha256":target.source_sha256,
             "start_byte":target.byte_range.start,"end_byte":target.byte_range.end,
             "uuid":target.uuid,"native_path":target.native_path,"origin":dto::origin(target.origin)},
         "coverage":{"metadata_models_complete":result.metadata_models_complete,
             "module_inputs_complete":result.module_inputs_complete,"semantic_complete":false},
-        "resources":session.resources()}}))
+        "resources":session.resources()}});
+    super::external_context::coverage(&mut response["eska"], session.scope());
+    Ok(response)
 }

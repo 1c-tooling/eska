@@ -18,8 +18,8 @@ use eska::project_core::source_format::SourcePath;
 use salsa::Database;
 
 use crate::{
-    AnalysisScope, AnalysisSession, CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig,
-    Locale, ModuleState, QueryCancellation, SessionRequestError, SessionRevision,
+    AnalysisSession, CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, Locale,
+    ModuleState, QueryCancellation, SessionRequestError, SessionRevision,
 };
 
 /// A result belongs to one verbatim source snapshot and one complete session generation.
@@ -29,6 +29,7 @@ pub struct ModuleResult<T> {
     pub source: SourcePath,
     pub source_sha256: String,
     pub metadata_models_complete: bool,
+    pub metadata_context_complete: bool,
     pub module_inputs_complete: bool,
     pub value: T,
 }
@@ -113,7 +114,7 @@ impl AnalysisSession {
         config: &DiagnosticsConfig,
         cancellation: &QueryCancellation,
     ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
-        self.require_semantic_context(expected)
+        self.require_configuration_context(expected)
             .map_err(QueryError::Request)?;
         self.diagnostics_current(path, expected, config, cancellation)
     }
@@ -212,6 +213,9 @@ impl AnalysisSession {
             {
                 return Err(QueryError::InvalidOffset { offset });
             }
+            if let Some((kind, name)) = analysis.completion_metadata_target(file, offset) {
+                self.require_own_external_target(kind, &name)?;
+            }
             Ok(analysis.completions(file, offset, Some(self.root().to_owned()), locale))
         })
     }
@@ -281,8 +285,9 @@ impl AnalysisSession {
             revision: expected,
             source: path.clone(),
             source_sha256,
-            metadata_models_complete: self.scope() == AnalysisScope::CanonicalConfiguration
+            metadata_models_complete: self.scope().has_semantic_context()
                 && self.incomplete_metadata == 0,
+            metadata_context_complete: self.scope().has_configuration_context(),
             module_inputs_complete: self.incomplete_modules == 0,
             value,
         })

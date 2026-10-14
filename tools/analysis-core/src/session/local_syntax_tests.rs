@@ -106,14 +106,14 @@ fn canonical_guards_and_cf_defaults_are_preserved_without_syntax_downgrades() {
         let (_directory, root, module) = fixture::project(kind, fixture::GOOD, false);
         let source = root.join("src");
         let original = AnalysisSession::open(&source);
-        if kind == ProjectType::Configuration {
-            assert_eq!(
-                original.unwrap().scope(),
-                AnalysisScope::CanonicalConfiguration
-            );
-        } else {
+        if kind == ProjectType::Extension {
             assert!(
                 matches!(original, Err(SessionError::UnsupportedProjectType(actual)) if actual == kind)
+            );
+        } else {
+            assert_eq!(
+                original.unwrap().scope(),
+                AnalysisScope::canonical_for(kind)
             );
         }
         let mut session = AnalysisSession::from_reader_with_scope(

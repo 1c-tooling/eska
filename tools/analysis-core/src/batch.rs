@@ -117,6 +117,11 @@ fn check(
         scope,
     )
     .map_err(BatchError::Open)?;
+    if profile == BatchProfile::Semantic {
+        session
+            .require_configuration_context(session.revision())
+            .map_err(BatchError::Request)?;
+    }
     let request = InputRequest {
         max_document_bytes: options.max_document_bytes,
         cancellation: options.cancellation.input.clone(),

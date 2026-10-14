@@ -228,6 +228,13 @@ fn metadata_human(report: &BatchReport, localizer: &Localizer, text: &mut String
 /// Setup failures retain stable coordinates without serializing a Debug representation.
 pub fn batch_failure(error: BatchError) -> Failure {
     match error {
+        BatchError::Request(crate::SessionRequestError::ConfigurationContextRequired)
+        | BatchError::Query(crate::QueryError::Request(
+            crate::SessionRequestError::ConfigurationContextRequired,
+        )) => Failure {
+            diagnostics: serde_json::json!({"analysis_scope":"canonical_external","metadata_context_complete":false,"required_context":"owning-configuration"}),
+            ..Failure::new("analysis_configuration_context_required")
+        },
         BatchError::Open(SessionError::Source(error)) => error.into(),
         BatchError::Open(SessionError::UnsupportedProjectType(project_type)) => Failure {
             diagnostics: serde_json::json!({"project_type":project_type.as_str(),"supported_types":["configuration"]}),

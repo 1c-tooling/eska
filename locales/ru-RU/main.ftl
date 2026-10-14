@@ -1104,6 +1104,7 @@ tool-check-source-budget = Текущим входам не хватило кв�
 tool-check-metadata-incomplete = Проверка метаданных неполна: { $source } ({ $code }).
 tool-error-analysis-config = Исправьте настройки анализатора или задайте корректный файл через --config.
 tool-error-analysis-scope = Этот профиль анализа пока не поддерживает исключения, расширения, внешние источники, Git-фильтры и базовые отчёты диагностики.
+tool-error-analysis-configuration-context = Для полной семантической диагностики и обращений к внешним метаданным нужен явный контекст основной конфигурации. Собственные метаданные обработки или отчёта доступны отдельно.
 tool-metadata-properties-not-loaded = Свойства метаданных не загружены.
 tool-metadata-wrong-kind = Вид метаданных { $kind } не подходит для этой модели.
 tool-metadata-invalid-uuid = Метаданные содержат некорректный UUID.

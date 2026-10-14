@@ -103,9 +103,18 @@ pub fn pull(
             "position_byte":offset,"coverage":{"metadata_models_complete":result.metadata_models_complete,
                 "module_inputs_complete":result.module_inputs_complete,"semantic_complete":false},
             "resources":session.resources()});
+        super::external_context::coverage(&mut context, session.scope());
         let Some(card) = result.value else {
-            if !result.metadata_models_complete || !result.module_inputs_complete {
-                return Err(protocol::error_value(-32000, "hover_incomplete", context));
+            if !result.metadata_models_complete
+                || !result.module_inputs_complete
+                || !result.metadata_context_complete
+            {
+                let kind = if result.metadata_context_complete {
+                    "hover_incomplete"
+                } else {
+                    "analysis_configuration_context_required"
+                };
+                return Err(protocol::error_value(-32000, kind, context));
             }
             return Ok(Value::Null);
         };

@@ -8,6 +8,7 @@ mod document_symbols;
 mod documents;
 mod dto;
 mod edit_authority;
+mod external_context;
 mod hover;
 mod kernel_memory;
 mod language;

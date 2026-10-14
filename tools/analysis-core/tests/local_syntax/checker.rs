@@ -66,7 +66,14 @@ fn local_syntax_profiles_check_all_four_types_without_claiming_semantic_complete
                 let semantic = run(&root, lang, &["--profile", "semantic", "--format", "json"]);
                 assert_eq!(semantic.status.code(), Some(3));
                 let refusal: Value = serde_json::from_slice(&semantic.stdout).unwrap();
-                assert_eq!(refusal["error"]["code"], "analysis_scope_unsupported");
+                assert_eq!(
+                    refusal["error"]["code"],
+                    if kind == ProjectType::Extension {
+                        "analysis_scope_unsupported"
+                    } else {
+                        "analysis_configuration_context_required"
+                    }
+                );
             }
             values.push(value);
         }
