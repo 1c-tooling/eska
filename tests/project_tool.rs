@@ -149,7 +149,15 @@ fn help_and_capabilities_work_without_a_project() {
     assert_eq!(reports[0]["data"]["git_required"], false);
     assert_eq!(
         reports[0]["data"]["import_layouts"],
-        serde_json::json!(["family", "readable"])
+        serde_json::json!(["family", "readable", "queries"])
+    );
+    assert_eq!(
+        reports[0]["data"]["import_layout_project_types"]["queries"],
+        serde_json::json!(["configuration", "extension", "processing", "report"])
+    );
+    assert_eq!(
+        reports[0]["data"]["import_layout_project_types"]["family"],
+        serde_json::json!(["configuration", "extension"])
     );
     assert!(!test.0.join("eska.toml").exists());
 }

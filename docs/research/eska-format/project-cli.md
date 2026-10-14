@@ -24,6 +24,7 @@ eska-project import designer-xml new-project --name demo
 eska-project import designer-xml another-project --name demo \
   --platform-version 8.3.27.2325
 eska-project import designer-xml readable-project --name demo --layout readable
+eska-project import designer-xml queries-project --name demo --layout queries
 eska-project --project-dir old-project migrate new-project \
   --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" --format json
 eska-project --project-dir old-project migrate new-project \
@@ -55,17 +56,21 @@ Manifest публикуется последним. Ошибка удаляет 
 проверяется по общим правилам и записывается; поиска/запуска платформы нет.
 Если версия не передана, пустой override не записывается: будущий member
 наследует настройки workspace. `--freeze UUID` можно повторять;
-неизвестный UUID отклоняет создание. Профили configuration и extension / Designer
-2.20 определяются по native входу; импорт сохраняет расширение в настройках,
-reader и защищённой материализации. `creation_project_types` сообщает оба типа.
-Project core и protected build processing/report приняты в
-[EF-14](external-projects.md); общий CLI их импорта остаётся EF-20/EF-25. Анализ CFE с контекстом
+неизвестный UUID отклоняет создание. Designer 2.20 и фактический тип определяются
+по native входу; импорт сохраняет root identity в настройках, reader и
+защищённой материализации. `creation_project_types` сообщает четыре типа;
+`import_layout_project_types` — ограничения каждого layout. Project core и
+protected build processing/report приняты в [EF-14](external-projects.md).
+Общий new/init остаётся EF-20. Анализ CFE с контекстом
 основной конфигурации остаётся EF-18 и пока явно отказан.
 
 `--layout family` либо отсутствие параметра сохраняет layout 1/descriptor 1.
 [Явный `--layout readable`](readable-project-import.md) создаёт именованные
 свойства, самостоятельные descriptors и физические resources: layout 3/descriptor 2.
-Оба варианта используют общее ядро, поддержку/freeze и самостоятельный pin.
+[`--layout queries`](query-project-creation.md) создаёт полные CF/CFE/EPF/ERF
+проекты с managed forms и отдельными plain `.sdbl`: layout 5/6, descriptor 2.
+Family/Readable принимают configuration/extension; Queries — все четыре типа.
+Варианты используют общее ядро, поддержку/freeze и самостоятельный pin.
 Это не миграция существующего проекта; промежуточные layout API не становятся
 дополнительными CLI choices.
 
@@ -201,9 +206,10 @@ revision, `source_map_sha256` и exclusions. Inspection, prepare и refusals
 для одинаковых входов дают тот же JSON при ru/en. Это отдельный tool protocol;
 прежние JSON-схемы приложения и IDE protocol не изменены.
 
-Import дополнительно возвращает `data.source_layout = "family" | "readable"`.
-Capabilities добавляет `import_layouts = ["family", "readable"]`,
-`source_layout_versions = [1, 2, 3]` и `descriptor_schema_versions = [1, 2]`.
+Import возвращает `data.source_layout = "family" | "readable" | "queries"`.
+Capabilities содержит `import_layouts = ["family", "readable", "queries"]`,
+`source_layout_versions = [1, 2, 3, 4, 5, 6]`, `descriptor_schema_versions = [1, 2]`
+и [map типов по layout](query-project-creation.md#machine-interface).
 Tool envelope и прежние поля, включая `source_schema_version = 1`, сохранены;
 для выбора поддерживаемых версий используются новые списки.
 Capabilities также содержит `migrate`, `migration_layouts = ["readable"]` и

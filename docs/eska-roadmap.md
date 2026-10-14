@@ -2286,6 +2286,12 @@ live import до dispatch и перед wire publication. Старый host ос
 YAML/BSL прошли. Автоматический restart/replay в клиенте ещё нужен;
 EF-25 остаётся `IN_PROGRESS`.
 
+Первая EF-20 [Queries creation](research/eska-format/query-project-creation.md)
+подключает полный import XML-каталогов четырёх типов к новому проекту с
+managed forms/plain queries и независимой базой. Legacy layouts/defaults
+сохранены; четыре независимых native build/dump и 22 Rust gates прошли.
+Общий new/init, initial ancestor и делегирование оболочки ещё нужны.
+
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.
 Standalone orchestration и `eska-project update-base` теперь проходят RU/EN,

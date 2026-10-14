@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "stage": "EF-20 complete query-layout project creation",
+  "status": "partial",
+  "platform": "8.3.27.2325",
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.96
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 8.96
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 6.41
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 48.68
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 77.49
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 14.91
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 1.34
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.39
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 0.25
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 0.24
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 15.17
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 0.16
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.23
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.14
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 1.51
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.65
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 5.44
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.78
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 1.73
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 4.82
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 48.07
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 9.08
+    }
+  ],
+  "test_counts": {
+    "root_unit": 817,
+    "root_process": 600,
+    "root_ignored": 24,
+    "build_cli_process": 27,
+    "project_cli_process": 56,
+    "sdk_unit": 187,
+    "sdk_analyzer_process": 161,
+    "sdk_checker_process": 19,
+    "adapter_unit": 70,
+    "adapter_process": 12
+  },
+  "native": [
+    {
+      "kind": "configuration",
+      "native_files": 15,
+      "xml_semantics_equal": 11,
+      "bsl_text_equal": 4,
+      "opaque_bytes_equal": 0,
+      "query_sources": 2,
+      "managed_forms": 1,
+      "settings_preserved": true,
+      "source_bytes_preserved": true,
+      "native_input_preserved": true,
+      "explicit_support_pin": true
+    },
+    {
+      "kind": "extension",
+      "native_files": 109,
+      "xml_semantics_equal": 77,
+      "bsl_text_equal": 26,
+      "opaque_bytes_equal": 6,
+      "query_sources": 2,
+      "managed_forms": 10,
+      "settings_preserved": true,
+      "source_bytes_preserved": true,
+      "native_input_preserved": true,
+      "explicit_support_pin": true
+    },
+    {
+      "kind": "processing",
+      "native_files": 11,
+      "xml_semantics_equal": 7,
+      "bsl_text_equal": 4,
+      "opaque_bytes_equal": 0,
+      "query_sources": 0,
+      "managed_forms": 3,
+      "settings_preserved": true,
+      "source_bytes_preserved": true,
+      "native_input_preserved": true,
+      "explicit_support_pin": true
+    },
+    {
+      "kind": "report",
+      "native_files": 6,
+      "xml_semantics_equal": 5,
+      "bsl_text_equal": 1,
+      "opaque_bytes_equal": 0,
+      "query_sources": 2,
+      "managed_forms": 0,
+      "settings_preserved": true,
+      "source_bytes_preserved": true,
+      "native_input_preserved": true,
+      "explicit_support_pin": true
+    }
+  ],
+  "comparison": {
+    "reference": "Independent Designer XML build/dump for each native type",
+    "cdf_exception": "configVersion attributes only",
+    "external_path_normalization": "Root filename alias only",
+    "xml": "Namespace-aware tree, values, UUIDs, child order",
+    "bsl": "Text with native BOM/EOL and final-newline normalization",
+    "opaque": "Exact bytes",
+    "saved_source": "Exact bytes before/after build"
+  },
+  "limits": [
+    "New projects are created from full Designer XML directories, not directly from native artifacts",
+    "Initial source ancestor and shell new/init/delegation remain pending",
+    "No native saved-edit or client runtime acceptance in this slice",
+    "Linux platform probe only"
+  ]
+}

@@ -55,6 +55,11 @@ source journal/recovery/replay проверены на RU/EN. Настоящий
 dirty YAML/BSL сохранил тексты клиента, pin/settings и прежний CF. Автоматический
 restart/replay установленного клиента ещё нужны; EF-25 остаётся `IN_PROGRESS`.
 EF-15 — `DONE` в [принятой матрице](../research/eska-format/base-update.md).
+В параллельной EF-20 [Queries creation](../research/eska-format/query-project-creation.md)
+подключает полные проекты четырёх типов к offline `eska-project import` через
+явный layout, сохраняя прежний default и независимый pin. Четыре независимых
+native build/dump на 1С 8.3.27.2325 и 22 Rust gates прошли. Общий new/init,
+initial ancestor и делегирование оболочки ещё в работе.
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.
 Добавлен standalone `eska-project update-base` с preview/write, независимыми

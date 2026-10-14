@@ -84,6 +84,7 @@ pub(super) struct Import {
 pub(super) enum ImportLayout {
     Family,
     Readable,
+    Queries,
 }
 
 impl ImportLayout {
@@ -92,6 +93,7 @@ impl ImportLayout {
         match self {
             Self::Family => "family",
             Self::Readable => "readable",
+            Self::Queries => "queries",
         }
     }
 }

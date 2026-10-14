@@ -1,4 +1,6 @@
 use super::*;
+
+mod queries;
 use crate::{
     project_core::{
         discovery::discover,

@@ -164,6 +164,7 @@ fn layout_help_and_invalid_selection_work_in_both_locales() {
         let help_text = String::from_utf8_lossy(&help.stdout);
         assert!(help_text.contains("--layout"));
         assert!(help_text.contains(phrase));
+        assert!(help_text.contains("queries"));
         let output = tool(
             &test.0,
             locale,

@@ -1,19 +1,21 @@
 //! Process-boundary selection and reports, with one source implementation in `project_core`.
 
+mod creation;
 mod migration;
 mod source_import;
 mod update;
 
-use super::args::{Cli, Command, Import, ImportLayout, Prepare, Selector, Transport};
+use super::args::{Cli, Command, Prepare, Selector, Transport};
 use crate::{
     project_core::{
-        ProjectName, SourceFormat,
-        creation::{self, DEFAULT_GENERATIONS_DIRECTORY},
+        SourceFormat,
+        creation::DEFAULT_GENERATIONS_DIRECTORY,
         eska_source::EskaSource,
         platform_settings::PlatformVersion,
         source_format::{
-            DESCRIPTOR_LAYOUT_VERSION, NativeUuid, PROFILE, READABLE_SCHEMA_VERSION,
-            RESOURCE_LAYOUT_VERSION, RULES_VERSION, SCHEMA_VERSION,
+            DESCRIPTOR_LAYOUT_VERSION, EXTERNAL_LAYOUT_VERSION, MANAGED_FORM_LAYOUT_VERSION,
+            PROFILE, QUERY_LAYOUT_VERSION, READABLE_SCHEMA_VERSION, RESOURCE_LAYOUT_VERSION,
+            RULES_VERSION, SCHEMA_VERSION,
         },
         transport::TransportPlan,
     },
@@ -29,7 +31,7 @@ use std::path::Path;
 /// Dispatch only source operations; native CF unpacking belongs to the build tool.
 pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String), Failure> {
     match &cli.command {
-        Command::Import(args) => import(args, localizer),
+        Command::Import(args) => creation::import(args, localizer),
         Command::Migrate(args) => migration::migrate(&cli.project_dir, args, localizer),
         Command::UpdateBase(args) => update::update(&cli.project_dir, args, localizer),
         Command::Inspect(args) => inspect(&cli.project_dir, args, localizer),
@@ -43,9 +45,13 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
             "rules_version":RULES_VERSION, "profile":PROFILE,
             "commands":["import","migrate","update-base","inspect","prepare","transport","capture-ancestor","recover-import","capabilities"],
             "platform_required":false,"git_required":false,"ide_required":false,
-            "creation_project_types":["configuration","extension"], "metadata_formats":["eska"],
-            "import_layouts":["family","readable"],
-            "source_layout_versions":[SCHEMA_VERSION,DESCRIPTOR_LAYOUT_VERSION,RESOURCE_LAYOUT_VERSION],
+            "creation_project_types":["configuration","extension","processing","report"], "metadata_formats":["eska"],
+            "import_layouts":["family","readable","queries"],
+            "import_layout_project_types":{"family":["configuration","extension"],
+            "readable":["configuration","extension"],
+            "queries":["configuration","extension","processing","report"]},
+            "source_layout_versions":[SCHEMA_VERSION,DESCRIPTOR_LAYOUT_VERSION,RESOURCE_LAYOUT_VERSION,
+            MANAGED_FORM_LAYOUT_VERSION,QUERY_LAYOUT_VERSION,EXTERNAL_LAYOUT_VERSION],
             "descriptor_schema_versions":[SCHEMA_VERSION,READABLE_SCHEMA_VERSION],
             "migration_layouts":["readable"], "migration_scopes":["standalone","workspace"], "workspace_pin_schema_version":1,
             "base_update_scopes":["standalone","workspace"], "base_update_comparison":"whole_file_three_way",
@@ -53,60 +59,6 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
             localizer.text("tool-project-capabilities"),
         )),
     }
-}
-
-/// Import into an exclusively new directory, returning a pin for independent approval/storage.
-fn import(args: &Import, localizer: &Localizer) -> Result<(Value, String), Failure> {
-    path_text(&args.input)?;
-    path_text(&args.destination)?;
-    let parent = args
-        .destination
-        .parent()
-        .filter(|path| !path.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."));
-    let parent = parent
-        .canonicalize()
-        .map_err(|_| Failure::new("source_file_missing"))?;
-    path_text(&parent)?;
-    let name = ProjectName::parse(args.name.clone())
-        .map_err(|_| Failure::new("project_name_invalid").at("name"))?;
-    let platform = args
-        .platform_version
-        .as_deref()
-        .map(PlatformVersion::parse)
-        .transpose()
-        .map_err(|_| Failure::new("platform_version_invalid").at("platform_version"))?;
-    let frozen = args
-        .freeze
-        .iter()
-        .map(|uuid| NativeUuid::parse(uuid))
-        .collect::<Result<Vec<_>, _>>()?;
-    let import = match args.layout {
-        ImportLayout::Family => creation::import_project,
-        ImportLayout::Readable => creation::import_readable_project,
-    };
-    let imported = import(
-        &args.input,
-        &args.destination,
-        name,
-        platform.as_ref(),
-        &frozen,
-    )?;
-    let root = path_text(imported.project.root())?;
-    let human = localizer.format(
-        "tool-project-imported",
-        &[
-            ("path", LocalizationValue::Text(root)),
-            ("pin", LocalizationValue::Text(&imported.accepted.sha256)),
-        ],
-    );
-    Ok((
-        json!({"root":root,"name":args.name,"source_format":"eska",
-        "source_layout":args.layout.as_str(),
-        "source":path_text(imported.project.source())?,"accepted_base":".eska/accepted",
-        "accepted_base_sha256":imported.accepted.sha256}),
-        human,
-    ))
 }
 
 /// Inspect manifest/configuration facts without loading an accepted base or all owner payloads.

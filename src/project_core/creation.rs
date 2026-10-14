@@ -12,7 +12,7 @@ use super::{
     publish::{self, PublishError},
     source_format::{
         AcceptedRef, Error, NativeUuid, SourcePath, SourceReader, accept_source, import_designer,
-        import_designer_readable, import_designer_separated,
+        import_designer_queries, import_designer_readable, import_designer_separated,
     },
     transport::TransportPlan,
 };
@@ -27,6 +27,7 @@ enum Layout {
     Family,
     Separated,
     Readable,
+    Queries,
 }
 
 /// Creation reports a candidate pin; CI approval must still be supplied independently.
@@ -95,6 +96,25 @@ pub fn import_readable_project(
     create_project(input, destination, name, platform, frozen, Layout::Readable)
 }
 
+/// Create a complete project with unified managed forms and separately authored plain queries.
+///
+/// Configuration, extension, processing and report inputs use the same checked native import.
+/// Existing creation layouts retain their defaults; native names, UUIDs, support and payload bytes
+/// are preserved. The published accepted reference is a candidate for independent approval.
+///
+/// # Errors
+/// Returns unsupported native or query/form profiles, incomplete composition, unsafe paths,
+/// unknown freeze targets, changed input or exclusive-publication failures.
+pub fn import_query_project(
+    input: &Path,
+    destination: &Path,
+    name: ProjectName,
+    platform: Option<&PlatformVersion>,
+    frozen: &[NativeUuid],
+) -> Result<ImportedProject, Error> {
+    create_project(input, destination, name, platform, frozen, Layout::Queries)
+}
+
 /// Project settings and authority publication are shared by the explicit authoring layouts.
 fn create_project(
     input: &Path,
@@ -129,6 +149,7 @@ fn populate(
         Layout::Family => import_designer(input, &source)?,
         Layout::Separated => import_designer_separated(input, &source)?,
         Layout::Readable => import_designer_readable(input, &source)?,
+        Layout::Queries => import_designer_queries(input, &source)?,
     };
     let project_type = SourceReader::open(&source)?.project_type()?;
     let mut config = ProjectConfig::new(project_type)

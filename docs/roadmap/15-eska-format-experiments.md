@@ -110,7 +110,7 @@ EF-18 сохраняет `IN_PROGRESS` как незавершённую реа�
 | EF-17 | DONE | EF-02 | Выбор основы анализа BSL и адаптера метаданных |
 | EF-18 | IN_PROGRESS | EF-10, EF-17; продолжение после EF-20 | IDE-сервер и checker на завершённой структуре; продолжение отложено |
 | EF-19 | DEFERRED | EF-16, T26 | Самостоятельный VCS после MVP и fmt |
-| EF-20 | PLANNED | EF-12, EF-14, EF-23, EF-25; T82 | new/init, импорт и сборка CF/CFE/EPF/ERF через общий CLI |
+| EF-20 | IN_PROGRESS | EF-12, EF-14, EF-23, EF-25; T82 | new/init, импорт и сборка CF/CFE/EPF/ERF через общий CLI |
 | EF-21 | PLANNED | EF-11, EF-20 | Устанавливаемый комплект MVP и выборочная установка |
 | EF-22 | PLANNED | EF-20; fmt — T26; релизы — T83, T84, T56, T32 | Подключение fmt после MVP; автоматические релизы отдельно |
 | EF-23 | DONE | EF-24 | Хранение запросов СКД/динамических списков в .sdbl и обратная сборка |
@@ -1907,6 +1907,19 @@ IDE и ядра полного BSL-анализа. Сохранность нез
 без скрытого изменения правил учёта файлов и rename.
 
 ## EF-20 Сквозной CLI: new/init, импорт и сборка
+
+**Статус:** `IN_PROGRESS`.
+
+Первая [Queries creation часть](../research/eska-format/query-project-creation.md)
+добавляет `creation::import_query_project` и явный `--layout queries` в
+`eska-project import`: полные configuration/extension/processing/report проекты,
+единые managed forms и plain `.sdbl`, candidate accepted base и manifest-last
+publication. Family/Separated/Readable/defaults сохранены; capability map
+показывает ограничения layouts. Core/process matrix проверяет all4, RU/EN,
+human/JSON/no-TTY, saved edits/freeze/exclusions и failure cleanup. Все 22 Rust
+gates прошли; четыре проекта прошли независимые native build/dump на 1С
+8.3.27.2325, сохранив XML/BSL/opaque bytes и прежние settings/pin. Общий new/init,
+initial ancestor и делегирование оболочки ещё нужны; EF-20 не закрыта.
 
 Завершить файловый цикл новой структуры до продолжения анализатора. Оболочка
 `eska` делегирует проектные операции `eska-project`, распаковку/сборку —

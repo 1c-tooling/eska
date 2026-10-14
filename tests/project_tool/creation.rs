@@ -1,6 +1,9 @@
 //! The offline CLI validates fresh native identity without treating working data as accepted policy.
 
 use super::*;
+
+#[path = "creation/queries.rs"]
+mod queries;
 use eska::project_core::source_format::{
     Child, NativeUuid, ObjectSource, Property, PropertyName, PropertyValue, Section,
 };

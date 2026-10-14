@@ -847,7 +847,9 @@ preset = "trunk"
 `source_format = "eska"` и обязательный `[eska].accepted_base`.
 Поддержаны configuration, extension, processing и report с Designer 2.20;
 тип настройки должен совпадать с корнем исходников. `eska-project import`
-принимает CF/CFE; API `import_designer_queries` также принимает EPF/ERF с map 6.
+принимает XML-каталог configuration/extension; явный
+[`--layout queries`](docs/research/eska-format/query-project-creation.md) создаёт
+полные проекты всех четырёх типов с form.yaml и отдельными `.sdbl` (map 5/6).
 Анализатор пока отклоняет extension/processing/report: их семантический контекст
 подключается отдельно в EF-18. Для сборки можно явно передать базовый CF через
 `--base-configuration`. Внешняя версия проверяется в объявленном модуле объекта.
