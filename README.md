@@ -880,11 +880,16 @@ native артефактах: одинаковые данные не перепи
 resulting ancestor pin учитывает no-op со служебным CDF изменением.
 [Удаление owner](docs/research/eska-format/import-deletion.md) под прежним pin сохраняет независимые
 local values и блокирует dirty/frozen/reference conflicts, включая frozen потомка.
-Четыре native пары прошли import/build/dump; add и CLI/IDE остаются в EF-25.
+Четыре native пары прошли import/build/dump; CLI/IDE остаются в EF-25.
 [Карта состава при rename](docs/research/eska-format/import-composition.md)
 переносит отдельные unrestricted объекты по UUID, сохраняя local bytes и прежний
 pin. Protected build проверяет новую карту; source map 6 хранит исходный accepted
-и новый working path. Add/delete и divergent maps остаются явными отказами.
+и новый working path. Различающиеся карты обеих сторон остаются конфликтом.
+[Добавление owner](docs/research/eska-format/import-addition.md) проверяет права
+прежнего родителя и fresh identities, сохраняя старый support pin. Новые формы,
+plain queries и ресурсы имеют working origins в source map 7; общий family YAML
+не становится принятым input нового descriptor. Четыре native цикла и 22 Rust
+gates прошли. Native reimport CLI и обновление IDE ещё не завершены.
 Общий [typed writer](docs/research/eska-format/typed-scalars.md) поддерживает
 32 свойства, включая bool, точные целые и enum с проверкой владельца;
 старая preserved-запись не мигрирует при открытии.

@@ -2853,6 +2853,17 @@ pin. Прежние stencils/права отделены от новых binding
 rename pairs прошли import/build/dump на 1С 8.3.27.2325; старые pin и settings
 сохранены, повтор не меняет source. EF-25 остаётся `IN_PROGRESS`.
 
+[Добавление owner](../research/eska-format/import-addition.md) принимает полное
+новое объявленное поддерево после проверки прежнего родителя/fresh identities.
+Freeze и порядок прежних siblings сохраняют gates; UUID/path replacement,
+reparenting и новые authority paths отказываются. Support pin/settings прежние.
+Source map 7 добавляет working-only metadata/managed-form origins, включая новый
+nested descriptor в общем family YAML. Четыре новых unit cases и 22 Rust gates
+прошли: root 807/600, all-features также 21 build/50 project; SDK/adapter/minimal
+проверены отдельно. Четыре native пары прошли import/build/dump на 1С
+8.3.27.2325, 17/111/14/8 файлов; отдельные form/query/binary origins приняты.
+Native CLI/IDE coordination ещё нужны; EF-25 остаётся `IN_PROGRESS`.
+
 ## EF-26 RLS и дополнительные тексты ресурсов
 
 **Статус:** `DEFERRED`; после MVP, fmt и VCS.

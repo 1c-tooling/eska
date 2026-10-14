@@ -12,10 +12,14 @@ use crate::project_core::{
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Only removed declared subtrees may lose UUIDs; inline changes in surviving owners stay separate.
-pub(super) fn validate(base: &AcceptedBase, current: &Package) -> Result<(), Error> {
+pub(super) fn validate(
+    base: &AcceptedBase,
+    current: &Package,
+    added: &BTreeSet<String>,
+) -> Result<(), Error> {
     let objects = document_ownership(&current.documents)?;
     for (uuid, object) in &objects {
-        if base.support.objects.get(uuid) != Some(object) {
+        if !added.contains(uuid) && base.support.objects.get(uuid) != Some(object) {
             return Err(Error::root("source_import_mapping_unsupported"));
         }
     }

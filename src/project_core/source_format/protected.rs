@@ -31,9 +31,10 @@ use crate::project_core::{
 
 pub use prepared::PreparedSource;
 pub use source_map::{
-    COMPOSITION_SOURCE_MAP_VERSION, EXTERNAL_SOURCE_MAP_VERSION, FileOrigin, InputAuthority,
-    InputFile, MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile, OriginTexts, QUERY_SOURCE_MAP_VERSION,
-    QueryOrigin, RELOCATED_SOURCE_MAP_VERSION, SOURCE_MAP_VERSION, SourceLocation, SourceMap,
+    COMPOSITION_SOURCE_MAP_VERSION, CREATED_SOURCE_MAP_VERSION, EXTERNAL_SOURCE_MAP_VERSION,
+    FileOrigin, InputAuthority, InputFile, MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile,
+    OriginTexts, QUERY_SOURCE_MAP_VERSION, QueryOrigin, RELOCATED_SOURCE_MAP_VERSION,
+    SOURCE_MAP_VERSION, SourceLocation, SourceMap,
 };
 
 /// Every excluded working change states the performed action rather than silently disappearing.
@@ -139,7 +140,7 @@ pub fn prepare_protected(
         let candidate = Package::from_snapshot(working.clone(), |path| {
             read_working(&source, &working, path)
         })?;
-        bound = base.with_composition(&candidate)?;
+        bound = base.with_composition(&candidate, |path| read_working(&source, &working, path))?;
         &bound
     } else {
         base

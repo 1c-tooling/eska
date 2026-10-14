@@ -1,5 +1,6 @@
 //! A verified path transition changes bindings while retaining original policy and protected values.
 
+mod addition;
 mod deletion;
 mod queries;
 mod references;
@@ -19,6 +20,7 @@ pub(super) struct Bindings {
     pub original: Inventory,
     pub texts: BTreeMap<SourcePath, String>,
     pub origins: BTreeMap<SourcePath, FileEntry>,
+    pub created: BTreeSet<String>,
 }
 
 impl AcceptedBase {
@@ -26,14 +28,13 @@ impl AcceptedBase {
     pub(in crate::project_core::source_format) fn with_composition(
         &self,
         candidate: &Package,
+        mut read: impl FnMut(&SourcePath) -> Result<String, Error>,
     ) -> Result<Self, Error> {
-        validate_identity(self, candidate)?;
+        let added = addition::validate(self, candidate)?;
+        validate_identity(self, candidate, &added)?;
         validate_reference_order(self, candidate)?;
         let before = file_identity::files(&self.package)?;
         let after = file_identity::files(candidate)?;
-        if after.keys().any(|identity| !before.contains_key(identity)) {
-            return Err(Error::root("source_import_mapping_unsupported"));
-        }
         let old_documents = self
             .package
             .documents
@@ -48,11 +49,13 @@ impl AcceptedBase {
             .collect::<BTreeSet<_>>();
         let renames = references::renames(&self.package, candidate)?;
         for document in candidate.documents.values() {
-            let old = old_documents
-                .get(&document.descriptor.object.uuid.key())
-                .ok_or_else(|| Error::root("source_identity_mismatch"))?;
+            let Some(old) = old_documents.get(&document.descriptor.object.uuid.key()) else {
+                documents.insert(document.path.clone(), document.clone());
+                continue;
+            };
             let mut selected = (*old).clone();
             deletion::retain_references(self, &surviving, &mut selected)?;
+            insert_references(self, candidate, &added, &mut selected, document)?;
             bind_document(self, &mut selected, document)?;
             references::rebind(self, &mut selected, document, &renames)?;
             documents.insert(selected.path.clone(), selected);
@@ -69,8 +72,10 @@ impl AcceptedBase {
         let mut snapshot = candidate.snapshot.clone();
         let origins = select_original_files(self, &before, &after, &mut snapshot)?;
         for (source, paths) in &candidate.owners {
-            let mut owner = owner_source(self, &documents, &before, paths)?;
-            if let Some(form) = &owner.form {
+            let mut owner = owner_source(self, candidate, &documents, &before, paths)?;
+            if let Some(form) = &owner.form
+                && !added.contains(&owner.document.descriptor.object.uuid.key())
+            {
                 owner.form = Some(form.with_query_references(&queries::rebind(
                     self,
                     &form.to_xml()?,
@@ -96,27 +101,32 @@ impl AcceptedBase {
         );
         snapshot.revision = files::revision(&snapshot.files, &snapshot.directories);
         let package = Package::from_snapshot(snapshot, |path| {
-            texts.get(path).cloned().map_or_else(
-                || {
-                    self.read_file(
-                        original_paths
-                            .get(path)
-                            .copied()
-                            .ok_or_else(|| Error::root("source_file_unmapped"))?,
-                    )
-                },
-                Ok,
-            )
+            if let Some(text) = texts.get(path) {
+                return Ok(text.clone());
+            }
+            if let Some(old) = original_paths.get(path) {
+                return self.read_file(old);
+            }
+            let text = read(path)?;
+            texts.insert(path.clone(), text.clone());
+            Ok(text)
         })?;
+        let mut support = self.support.clone();
+        for (uuid, object) in super::document_ownership(&package.documents)? {
+            if added.contains(&uuid) {
+                support.objects.insert(uuid, object);
+            }
+        }
         Ok(Self {
             root: self.root.clone(),
             reference: self.reference.clone(),
             manifest: self.manifest.clone(),
-            support: self.support.clone(),
+            support,
             composition: Some(Bindings {
                 original: self.package.snapshot.clone(),
                 texts,
                 origins,
+                created: added,
             }),
             package,
         })
@@ -137,6 +147,23 @@ impl AcceptedBase {
     pub(in crate::project_core::source_format) const fn composition_changed(&self) -> bool {
         self.composition.is_some()
     }
+
+    /// A new owner has working evidence only; it cannot claim an original accepted input.
+    pub(in crate::project_core::source_format) fn has_created_owners(&self) -> bool {
+        self.composition
+            .as_ref()
+            .is_some_and(|bindings| !bindings.created.is_empty())
+    }
+
+    /// A family YAML may contain both original owners and new nested descriptor identities.
+    pub(in crate::project_core::source_format) fn created_owner(
+        &self,
+        uuid: &super::NativeUuid,
+    ) -> bool {
+        self.composition
+            .as_ref()
+            .is_some_and(|bindings| bindings.created.contains(&uuid.key()))
+    }
 }
 
 /// A renamed reference must retain the same UUID and position; frozen order cannot be laundered.
@@ -154,7 +181,10 @@ fn validate_reference_order(base: &AcceptedBase, candidate: &Package) -> Result<
             .into_iter()
             .filter(|uuid| current.contains_key(uuid))
             .collect::<Vec<_>>();
-        let right = referenced_uuids(candidate, new)?;
+        let right = referenced_uuids(candidate, new)?
+            .into_iter()
+            .filter(|uuid| base.support.objects.contains_key(uuid))
+            .collect::<Vec<_>>();
         if left != right {
             return Err(Error::root("source_import_mapping_unsupported"));
         }
@@ -191,14 +221,18 @@ fn referenced_uuids(package: &Package, owner: &NativeDocument) -> Result<Vec<Str
 }
 
 /// Surviving declarations retain their identity and ancestry; removals require pinned rights.
-fn validate_identity(base: &AcceptedBase, candidate: &Package) -> Result<(), Error> {
+fn validate_identity(
+    base: &AcceptedBase,
+    candidate: &Package,
+    added: &BTreeSet<String>,
+) -> Result<(), Error> {
     if base.package.manifest.schema_version != candidate.manifest.schema_version
         || base.package.manifest.profile != candidate.manifest.profile
         || base.package.manifest.external_root != candidate.manifest.external_root
     {
         return Err(Error::root("source_import_mapping_unsupported"));
     }
-    deletion::validate(base, candidate)?;
+    deletion::validate(base, candidate, added)?;
     let root = base.package.manifest.root_path()?;
     let old = &base.package.documents[&root].descriptor;
     let new = candidate
@@ -210,6 +244,111 @@ fn validate_identity(base: &AcceptedBase, candidate: &Package) -> Result<(), Err
             != new.descriptor.object.property(PropertyName::Name)
     {
         return Err(Error::root("source_identity_mismatch"));
+    }
+    Ok(())
+}
+
+/// Insert supplied new references without reordering or rewriting any surviving inline member.
+fn insert_references(
+    base: &AcceptedBase,
+    candidate: &Package,
+    added: &BTreeSet<String>,
+    selected: &mut NativeDocument,
+    current: &NativeDocument,
+) -> Result<(), Error> {
+    if added.is_empty() {
+        return Ok(());
+    }
+    let folder =
+        if current.descriptor.object.kind == crate::project_core::MetadataKind::Configuration {
+            ""
+        } else {
+            current
+                .path
+                .as_str()
+                .strip_suffix(".xml")
+                .ok_or_else(|| Error::root("source_path_invalid"))?
+        };
+    for (index, section) in current.descriptor.object.sections.iter().enumerate() {
+        let Section::Children(children) = section else {
+            continue;
+        };
+        let before = match selected.descriptor.object.sections.get(index) {
+            Some(Section::Children(children)) => children.as_slice(),
+            None if index == selected.descriptor.object.sections.len() => &[],
+            _ => return Err(Error::root("source_import_mapping_unsupported")),
+        };
+        let mut existing = before.iter();
+        let mut result = Vec::new();
+        let mut shifted = false;
+        for child in children {
+            let uuid = if let Child::Reference {
+                metadata_kind,
+                name,
+            } = child
+            {
+                let path = super::super::composition::reference_path(folder, *metadata_kind, name)?;
+                Some(
+                    &candidate
+                        .documents
+                        .get(&path)
+                        .ok_or_else(|| Error::root("source_descriptor_missing"))?
+                        .descriptor
+                        .object
+                        .uuid,
+                )
+            } else {
+                None
+            };
+            if uuid.is_some_and(|uuid| added.contains(&uuid.key())) {
+                result.push(child.clone());
+                shifted = true;
+                continue;
+            }
+            let previous = existing
+                .next()
+                .ok_or_else(|| Error::root("source_import_mapping_unsupported"))?;
+            let uuid = match (previous, child) {
+                (
+                    Child::Reference {
+                        metadata_kind: old, ..
+                    },
+                    Child::Reference {
+                        metadata_kind: new, ..
+                    },
+                ) if old == new => uuid,
+                (Child::Inline { object: old }, Child::Inline { object: new })
+                    if old.uuid == new.uuid && old.kind == new.kind =>
+                {
+                    Some(&old.uuid)
+                }
+                (Child::Preserved { fragment: old }, Child::Preserved { fragment: new })
+                    if old == new && !shifted =>
+                {
+                    None
+                }
+                _ => return Err(Error::root("source_import_mapping_unsupported")),
+            };
+            if shifted
+                && let Some(uuid) = uuid
+                && !base.permission(uuid, Operation::Reorder).allowed
+            {
+                return Err(Error::root("source_import_structure_denied").in_field(uuid.as_str()));
+            }
+            result.push(previous.clone());
+        }
+        if existing.next().is_some() {
+            return Err(Error::root("source_import_mapping_unsupported"));
+        }
+        if index == selected.descriptor.object.sections.len() {
+            selected
+                .descriptor
+                .object
+                .sections
+                .push(Section::Children(result));
+        } else {
+            selected.descriptor.object.sections[index] = Section::Children(result);
+        }
     }
     Ok(())
 }
@@ -311,6 +450,7 @@ fn insert_text(
 /// Reassemble renamed owner families from original descriptors and independently pinned form bodies.
 fn owner_source(
     base: &AcceptedBase,
+    candidate: &Package,
     documents: &BTreeMap<SourcePath, NativeDocument>,
     original_files: &BTreeMap<String, SourcePath>,
     paths: &[SourcePath],
@@ -325,20 +465,22 @@ fn owner_source(
         .next()
         .ok_or_else(|| Error::root("source_descriptor_missing"))??;
     let identity = format!("owner:{}:source", document.descriptor.object.uuid.key());
-    let original = original_files
-        .get(&identity)
-        .ok_or_else(|| Error::root("source_file_unmapped"))?;
     let form = if matches!(
         document.descriptor.object.kind,
         crate::project_core::MetadataKind::Form | crate::project_core::MetadataKind::CommonForm
     ) {
-        let native = base
-            .package
-            .owners
-            .get(original)
+        let native = &document.path;
+        let package = if original_files.contains_key(&identity) {
+            &base.package
+        } else {
+            candidate
+        };
+        let native = original_files
+            .get(&identity)
+            .and_then(|source| base.package.owners.get(source))
             .and_then(|paths| paths.first())
-            .ok_or_else(|| Error::root("source_descriptor_missing"))?;
-        base.package
+            .unwrap_or(native);
+        package
             .forms
             .get(&super::super::layout::forms::native_path(native)?)
             .cloned()
@@ -369,9 +511,9 @@ fn rebind_resources(
             .find(|file| file.path == resource.path && file.is_payload())
         {
             let source = file.source_path();
-            let original = original_paths
-                .get(source)
-                .ok_or_else(|| Error::root("source_file_unmapped"))?;
+            let Some(original) = original_paths.get(source) else {
+                continue;
+            };
             let text = queries::rebind(base, &base.read_file(original)?, mappings)?;
             insert_text(snapshot, texts, source.clone(), text);
         }
@@ -388,7 +530,9 @@ fn select_original_files(
 ) -> Result<BTreeMap<SourcePath, FileEntry>, Error> {
     let mut origins = BTreeMap::new();
     for (identity, source) in after {
-        let old = &before[identity];
+        let Some(old) = before.get(identity) else {
+            continue;
+        };
         let entry = base.package.snapshot.files.get(old);
         if let Some(entry) = entry {
             let mut selected = entry.clone();

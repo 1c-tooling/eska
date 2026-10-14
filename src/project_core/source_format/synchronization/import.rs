@@ -136,7 +136,9 @@ pub fn prepare_source_import(
         working_package = Package::from_snapshot(working.clone(), |path| {
             files::read_text(&source.join(path.as_path()))
         })?;
-        approved.with_composition(&working_package)?;
+        approved.with_composition(&working_package, |path| {
+            files::read_text(&source.join(path.as_path()))
+        })?;
         &working_package
     };
     if approved.overlaps(&source)
@@ -198,7 +200,7 @@ impl SourceImportPlan {
             let authority = if package.manifest == approved.package.manifest {
                 approved
             } else {
-                bound = match approved.with_composition(&package) {
+                bound = match approved.with_composition(&package, |path| self.read(path)) {
                     Ok(bound) => bound,
                     Err(error)
                         if matches!(

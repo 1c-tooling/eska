@@ -27,6 +27,12 @@ native descriptor по UUID и изменённое имя по новому wor
 1–5 требуют совпадения accepted/working metadata paths. Native inventory, policies
 и prepared proof проверяются независимо; schema 6 не предоставляет права.
 
+[Добавление объявленного объекта EF-25](import-addition.md) добавляет schema 7:
+`created_metadata` и `created_managed_form` хранят единственный working input.
+У нового владельца нет accepted bytes в прежнем pinned store; все его definitions,
+values и plain queries имеют рабочие origins. Корень проекта сохраняет настоящий
+accepted input. Maps 1–6 и прежние origin envelopes читаются без изменения.
+
 `PreparedSource::source_map` возвращает карту полного native inventory:
 descriptor XML, BSL, ресурсы, политика поддержки, supplier CF, файлы вне
 объявленного состава и пустые каталоги. Пути относительные; абсолютных путей

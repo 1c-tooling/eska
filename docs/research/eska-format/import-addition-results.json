@@ -1,0 +1,311 @@
+{
+  "schema_version": 1,
+  "stage": "EF-25 declared owner addition",
+  "status": "partial",
+  "platform": "8.3.27.2325",
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.59
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 2.83
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 10.02
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 76.52
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 90.3
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 15.42
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 1.61
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.38
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 2.56
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 2.66
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 29.11
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 6.09
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.34
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.16
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 1.73
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.75
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 7.21
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.62
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 1.72
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 5.54
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 48.95
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 8.9
+    }
+  ],
+  "native_operations": [
+    {
+      "case": "native-bins",
+      "exit_code": 0,
+      "seconds": 16.33
+    },
+    {
+      "case": "configuration-setup",
+      "exit_code": 0,
+      "seconds": 14.58
+    },
+    {
+      "case": "configuration-incoming-build",
+      "exit_code": 0,
+      "seconds": 7.3
+    },
+    {
+      "case": "configuration-native-apply",
+      "exit_code": 0,
+      "seconds": 13.9
+    },
+    {
+      "case": "configuration-merged-build",
+      "exit_code": 0,
+      "seconds": 4.3
+    },
+    {
+      "case": "configuration-redump",
+      "exit_code": 0,
+      "seconds": 7.91
+    },
+    {
+      "case": "extension-setup",
+      "exit_code": 0,
+      "seconds": 5.13
+    },
+    {
+      "case": "extension-incoming-build",
+      "exit_code": 0,
+      "seconds": 4.26
+    },
+    {
+      "case": "extension-native-apply",
+      "exit_code": 0,
+      "seconds": 136.97
+    },
+    {
+      "case": "extension-merged-build",
+      "exit_code": 0,
+      "seconds": 20.73
+    },
+    {
+      "case": "extension-redump",
+      "exit_code": 0,
+      "seconds": 24.31
+    },
+    {
+      "case": "processing-setup",
+      "exit_code": 0,
+      "seconds": 4.49
+    },
+    {
+      "case": "processing-incoming-build",
+      "exit_code": 0,
+      "seconds": 35.19
+    },
+    {
+      "case": "processing-native-apply",
+      "exit_code": 0,
+      "seconds": 26.1
+    },
+    {
+      "case": "processing-merged-build",
+      "exit_code": 0,
+      "seconds": 27.55
+    },
+    {
+      "case": "processing-redump",
+      "exit_code": 0,
+      "seconds": 5.25
+    },
+    {
+      "case": "report-setup",
+      "exit_code": 0,
+      "seconds": 4.46
+    },
+    {
+      "case": "report-incoming-build",
+      "exit_code": 0,
+      "seconds": 4.58
+    },
+    {
+      "case": "report-native-apply",
+      "exit_code": 0,
+      "seconds": 25.5
+    },
+    {
+      "case": "report-merged-build",
+      "exit_code": 0,
+      "seconds": 13.01
+    },
+    {
+      "case": "report-redump",
+      "exit_code": 0,
+      "seconds": 4.79
+    }
+  ],
+  "native_comparison": [
+    {
+      "kind": "configuration",
+      "native_files": 17,
+      "xml_semantics_equal": 12,
+      "opaque_bytes_equal": 0,
+      "bsl_files_equal_except_local_comment": 5,
+      "settings_preserved": true,
+      "old_pin_verified": true,
+      "repeat_unchanged": true
+    },
+    {
+      "kind": "extension",
+      "native_files": 111,
+      "xml_semantics_equal": 78,
+      "opaque_bytes_equal": 6,
+      "bsl_files_equal_except_local_comment": 27,
+      "settings_preserved": true,
+      "old_pin_verified": true,
+      "repeat_unchanged": true
+    },
+    {
+      "kind": "processing",
+      "native_files": 14,
+      "xml_semantics_equal": 9,
+      "opaque_bytes_equal": 0,
+      "bsl_files_equal_except_local_comment": 5,
+      "settings_preserved": true,
+      "old_pin_verified": true,
+      "repeat_unchanged": true
+    },
+    {
+      "kind": "report",
+      "native_files": 8,
+      "xml_semantics_equal": 7,
+      "opaque_bytes_equal": 0,
+      "bsl_files_equal_except_local_comment": 1,
+      "settings_preserved": true,
+      "old_pin_verified": true,
+      "repeat_unchanged": true
+    }
+  ],
+  "bsl_cli_fallback": [
+    {
+      "kind": "configuration",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 2,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 0,
+      "syntax_errors": 0
+    },
+    {
+      "kind": "extension",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 2,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 5,
+      "syntax_errors": 0
+    },
+    {
+      "kind": "processing",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 2,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 51,
+      "syntax_errors": 0
+    },
+    {
+      "kind": "report",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 1,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 2,
+      "syntax_errors": 0
+    }
+  ],
+  "limitations": [
+    "Client execution and production configurations not checked in this slice",
+    "Native reimport CLI and IDE coordination remain unfinished",
+    "UUID replacement, reparenting and unsupported combined inline composition changes are refused",
+    "Source map 7 adds working-only metadata and managed form origin variants; maps 1-6 are unchanged"
+  ]
+}

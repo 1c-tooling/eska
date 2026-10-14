@@ -57,6 +57,9 @@ impl MappedFile {
         if let Some(location) = super::query::plain_location(self, native, &range)? {
             return Ok(location);
         }
+        if super::created::is_created(&self.origin) {
+            return super::created::locate(self, native, range, texts);
+        }
         match &self.origin {
             FileOrigin::Payload {
                 authority,
@@ -91,6 +94,9 @@ impl MappedFile {
             ),
             FileOrigin::QueryResource { .. } => {
                 super::query::resource_location(self, native, &range, texts)
+            }
+            FileOrigin::CreatedMetadata { .. } | FileOrigin::CreatedManagedForm { .. } => {
+                Err(Error::root("source_map_origin_invalid"))
             }
         }
     }

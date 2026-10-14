@@ -2258,11 +2258,15 @@ service-only CDF variation без потери общего ancestor.
 
 [Удаление owner](research/eska-format/import-deletion.md) под прежним pin сохраняет независимые
 local values и блокирует dirty/frozen/reference conflicts, включая frozen потомка.
-Четыре native пары прошли import/build/dump; add и CLI/IDE остаются в EF-25.
+Четыре native пары прошли import/build/dump; CLI/IDE остаются в EF-25.
 [Новая карта rename](research/eska-format/import-composition.md) сопоставляет
 отдельные unrestricted объекты по UUID и сохраняет локальные файлы при переносе.
 Исходная поддержка остаётся независимо pinned; build и source map 6 проверяют
-изменённые пути. Add/delete, native CLI и IDE coordination ещё не завершены.
+изменённые пути. [Добавление owner](research/eska-format/import-addition.md)
+проверяет права исходного родителя/fresh identities и сохраняет прежний pin;
+source map 7 хранит working-only origins новых descriptors/forms, включая общий
+family YAML. Четыре native import/build/dump и 22 Rust gates прошли.
+Native CLI и IDE coordination ещё не завершены; EF-25 — `IN_PROGRESS`.
 
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.

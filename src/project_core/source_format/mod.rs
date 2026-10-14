@@ -78,11 +78,11 @@ pub use managed_form::{
 };
 pub use package::{FileEntry, FileRole, NativeDocument, ObjectSource, SourceManifest, SourcePath};
 pub use protected::{
-    COMPOSITION_SOURCE_MAP_VERSION, EXTERNAL_SOURCE_MAP_VERSION, Exclusion, ExclusionAction,
-    FileOrigin, InputAuthority, InputFile, MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile,
-    OriginTexts, PreparedSource, ProtectedExport, ProtectedFailure, QUERY_SOURCE_MAP_VERSION,
-    QueryOrigin, RELOCATED_SOURCE_MAP_VERSION, SOURCE_MAP_VERSION, SourceLocation, SourceMap,
-    export_protected, prepare_protected,
+    COMPOSITION_SOURCE_MAP_VERSION, CREATED_SOURCE_MAP_VERSION, EXTERNAL_SOURCE_MAP_VERSION,
+    Exclusion, ExclusionAction, FileOrigin, InputAuthority, InputFile,
+    MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile, OriginTexts, PreparedSource, ProtectedExport,
+    ProtectedFailure, QUERY_SOURCE_MAP_VERSION, QueryOrigin, RELOCATED_SOURCE_MAP_VERSION,
+    SOURCE_MAP_VERSION, SourceLocation, SourceMap, export_protected, prepare_protected,
 };
 pub use queries::{
     ExtractedQuerySource, NativeQuery, NativeQueryDocument, QUERY_REFERENCE_NAMESPACE,

@@ -1,5 +1,7 @@
 //! Source comparison preserves local edits while the existing approved baseline stays immutable.
 
+mod additions;
+
 use super::super::{capture_import_ancestor, tests::source};
 use super::*;
 use crate::{
@@ -131,6 +133,166 @@ fn delete_incoming(fixture: &Fixture) {
     fs::remove_dir_all(&fixture.incoming_source).unwrap();
     crate::project_core::source_format::import_designer_readable(&native, &fixture.incoming_source)
         .unwrap();
+}
+
+/// Native addition supplies complete bytes and fresh UUIDs rather than inventing metadata defaults.
+fn add_incoming(fixture: &Fixture, prepend: bool) {
+    let native = fixture.test.0.join("added-native");
+    crate::project_core::source_format::export_designer(&fixture.incoming_source, &native).unwrap();
+    let root = native.join("Configuration.xml");
+    let text = fs::read_to_string(&root).unwrap();
+    let old = "<CommonModule>Tools</CommonModule>";
+    let added = "<CommonModule>Helpers</CommonModule>";
+    let refs = if prepend {
+        format!("{added}{old}")
+    } else {
+        format!("{old}{added}")
+    };
+    fs::write(root, text.replace(old, &refs)).unwrap();
+    let text = fs::read_to_string(native.join("CommonModules/Tools.xml")).unwrap();
+    fs::write(
+        native.join("CommonModules/Helpers.xml"),
+        text.replace(
+            "20000000-0000-4000-8000-000000000001",
+            "30000000-0000-4000-8000-000000000001",
+        )
+        .replace(">Tools<", ">Helpers<"),
+    )
+    .unwrap();
+    fs::create_dir_all(native.join("CommonModules/Helpers/Ext")).unwrap();
+    fs::write(
+        native.join("CommonModules/Helpers/Ext/Module.bsl"),
+        b"\xef\xbb\xbf// incoming\r\n",
+    )
+    .unwrap();
+    fs::remove_dir_all(&fixture.incoming_source).unwrap();
+    crate::project_core::source_format::import_designer_readable(&native, &fixture.incoming_source)
+        .unwrap();
+}
+
+/// A new owner has exact working origins; independent local bytes and the original pin survive repeat.
+#[test]
+fn added_owner_keeps_original_approval_and_uses_working_evidence() {
+    use crate::project_core::source_format::{FileOrigin, InputAuthority, OriginTexts};
+    let fixture = Fixture::new(false);
+    add_incoming(&fixture, false);
+    let root = fixture.source.join("configuration.yaml");
+    let text = fs::read_to_string(&root).unwrap();
+    fs::write(root, text.replace("1.0.0", "1.0.1")).unwrap();
+    fs::write(fixture.source.join(MODULE), b"\xef\xbb\xbf// local\r\n").unwrap();
+    let authority = Inventory::read(fixture.approved.storage_root()).unwrap();
+    let incoming = fixture.incoming();
+    let plan = prepare_source_import(
+        &fixture.source,
+        &fixture.ancestor,
+        &incoming,
+        &fixture.approved,
+    )
+    .unwrap();
+    assert!(plan.conflicts().is_empty(), "{:?}", plan.conflicts());
+    let output = fixture.test.0.join("output");
+    plan.publish_source(&output).unwrap();
+    assert_eq!(
+        fs::read(output.join(MODULE)).unwrap(),
+        b"\xef\xbb\xbf// local\r\n"
+    );
+    assert_eq!(
+        fs::read(output.join("CommonModules/Helpers/Module.bsl")).unwrap(),
+        b"\xef\xbb\xbf// incoming\r\n"
+    );
+    assert!(
+        fs::read_to_string(output.join("configuration.yaml"))
+            .unwrap()
+            .contains("1.0.1")
+    );
+    let prepared = prepare_protected(
+        &output,
+        &fixture.approved,
+        &fixture.test.0.join("generations"),
+        true,
+    )
+    .unwrap();
+    let map = prepared.source_map();
+    assert_eq!(map.schema_version, 7);
+    let mapped = map
+        .file(&SourcePath::parse("CommonModules/Helpers.xml").unwrap())
+        .unwrap();
+    let FileOrigin::CreatedMetadata { input, .. } = &mapped.origin else {
+        panic!("working-only metadata origin");
+    };
+    let text = fs::read_to_string(output.join(input.path.as_path())).unwrap();
+    let native = fs::read(prepared.xml().join(mapped.path.as_path())).unwrap();
+    let start = String::from_utf8_lossy(&native).find("Helpers").unwrap();
+    let location = mapped
+        .locate(
+            &native,
+            start..start + 7,
+            Some(OriginTexts {
+                accepted: "",
+                working: Some(&text),
+            }),
+        )
+        .unwrap();
+    assert_eq!(location.authority, InputAuthority::Working);
+    assert_eq!(location.input, *input);
+    assert_eq!(&text[location.range.unwrap()], "\"Helpers\"");
+    let mut old_schema = map.clone();
+    old_schema.schema_version = 6;
+    assert_eq!(
+        old_schema.validate().unwrap_err().code,
+        "source_map_origin_invalid"
+    );
+    let repeat = prepare_source_import(&output, &incoming, &incoming, &fixture.approved).unwrap();
+    assert!(repeat.conflicts().is_empty(), "{:?}", repeat.conflicts());
+    assert_eq!(repeat.working_revision(), repeat.output_revision());
+    assert_eq!(
+        Inventory::read(fixture.approved.storage_root()).unwrap(),
+        authority
+    );
+}
+
+/// A frozen parent denies addition, and insertion cannot shift a frozen existing sibling.
+#[test]
+fn additions_obey_parent_and_surviving_sibling_freeze() {
+    for mode in ["parent", "prepend", "append"] {
+        let mut fixture = Fixture::new(mode != "parent");
+        if mode == "parent" {
+            let root = fixture.test.0.join("root-frozen");
+            let pin = accept_source(
+                &fixture.source,
+                &root,
+                &[NativeUuid::parse("10000000-0000-4000-8000-000000000001").unwrap()],
+            )
+            .unwrap();
+            fixture.approved = AcceptedBase::open(&root, &pin).unwrap();
+        }
+        add_incoming(&fixture, mode == "prepend");
+        let incoming = fixture.incoming();
+        let plan = prepare_source_import(
+            &fixture.source,
+            &fixture.ancestor,
+            &incoming,
+            &fixture.approved,
+        )
+        .unwrap();
+        if mode == "append" {
+            assert!(plan.conflicts().is_empty(), "{:?}", plan.conflicts());
+        } else {
+            assert!(
+                plan.conflicts()
+                    .iter()
+                    .any(|conflict| conflict.kind == SourceImportConflictKind::PermissionDenied),
+                "{:?}",
+                plan.conflicts()
+            );
+            assert_eq!(
+                plan.publish_source(&fixture.test.0.join("output"))
+                    .unwrap_err()
+                    .code,
+                "source_import_conflicts"
+            );
+        }
+    }
 }
 
 /// Whole-owner deletion keeps independent local values and rejects modified, frozen or referenced owners.

@@ -29,10 +29,14 @@ bytes/mtime и history; controlled CDF variation сохраняет confirmed an
 EF-25 не закрыта.
 [Удаление owner](../research/eska-format/import-deletion.md) под прежним pin сохраняет независимые
 local values и блокирует dirty/frozen/reference conflicts, включая frozen потомка.
-Четыре native пары прошли import/build/dump; add и CLI/IDE остаются в EF-25.
+Четыре native пары прошли import/build/dump; CLI/IDE остаются в EF-25.
 [Новая карта rename](../research/eska-format/import-composition.md) сохраняет
 UUID, local bytes и прежний pin при переносе unrestricted owner. Protected build
-и source map 6 проверяют изменённые привязки. Add/delete и native CLI/IDE ещё в работе.
+и source map 6 проверяют изменённые привязки.
+[Добавление owner](../research/eska-format/import-addition.md) проверяет прежнего
+родителя/fresh identities под тем же pin. Source map 7 хранит working-only
+origins новых metadata/forms, включая общий family YAML; формы/queries/ресурсы
+прошли четыре native import/build/dump и 22 Rust gates. Native CLI/IDE ещё в работе.
 EF-15 — `DONE` в [принятой матрице](../research/eska-format/base-update.md).
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.

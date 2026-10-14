@@ -3,9 +3,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use super::{
-    COMPOSITION_SOURCE_MAP_VERSION, EXTERNAL_SOURCE_MAP_VERSION, FileOrigin, InputAuthority,
-    MappedFile, OriginTexts, QUERY_SOURCE_MAP_VERSION, QueryOrigin, SourceLocation, SourceMap,
-    location::verify_bytes, payload_origin, require_digest,
+    COMPOSITION_SOURCE_MAP_VERSION, CREATED_SOURCE_MAP_VERSION, EXTERNAL_SOURCE_MAP_VERSION,
+    FileOrigin, InputAuthority, MappedFile, OriginTexts, QUERY_SOURCE_MAP_VERSION, QueryOrigin,
+    SourceLocation, SourceMap, location::verify_bytes, payload_origin, require_digest,
 };
 use crate::project_core::{
     MetadataKind,
@@ -134,6 +134,7 @@ pub(super) fn plain_location(
     range: &std::ops::Range<usize>,
 ) -> Result<Option<SourceLocation>, Error> {
     let (FileOrigin::ManagedForm { uuid, queries, .. }
+    | FileOrigin::CreatedManagedForm { uuid, queries, .. }
     | FileOrigin::QueryResource { uuid, queries, .. }) = &file.origin
     else {
         return Ok(None);
@@ -248,6 +249,7 @@ pub(super) fn validate_map(map: &SourceMap) -> Result<(), Error> {
                     QUERY_SOURCE_MAP_VERSION
                         | EXTERNAL_SOURCE_MAP_VERSION
                         | COMPOSITION_SOURCE_MAP_VERSION
+                        | CREATED_SOURCE_MAP_VERSION
                 ) || !native_path(descriptor, MetadataKind::Template)?
                     .as_str()
                     .eq_ignore_ascii_case(file.path.as_str())
@@ -266,6 +268,7 @@ pub(super) fn validate_map(map: &SourceMap) -> Result<(), Error> {
                 QUERY_SOURCE_MAP_VERSION
                     | EXTERNAL_SOURCE_MAP_VERSION
                     | COMPOSITION_SOURCE_MAP_VERSION
+                    | CREATED_SOURCE_MAP_VERSION
             )
         {
             return Err(invalid());
@@ -281,7 +284,7 @@ pub(super) fn validate_map(map: &SourceMap) -> Result<(), Error> {
             descriptor,
         )?;
         if !matches!(map.file(descriptor).map(|file| &file.origin), Some(FileOrigin::Metadata { accepted, working, .. })
-            if (map.schema_version == COMPOSITION_SOURCE_MAP_VERSION && working.as_ref().is_some_and(|input| input.path == authoring))
+            if (map.schema_version >= COMPOSITION_SOURCE_MAP_VERSION && working.as_ref().is_some_and(|input| input.path == authoring))
                 || accepted.path == authoring)
         {
             return Err(invalid());

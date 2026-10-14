@@ -1,5 +1,6 @@
 //! Native-file origins describe accepted bindings with selected values and supported inline creation.
 
+mod created;
 mod form;
 mod location;
 mod query;
@@ -33,6 +34,8 @@ pub const QUERY_SOURCE_MAP_VERSION: u32 = 4;
 pub const EXTERNAL_SOURCE_MAP_VERSION: u32 = 5;
 /// UUID-preserving renames retain old pinned origins and distinct current authoring paths.
 pub const COMPOSITION_SOURCE_MAP_VERSION: u32 = 6;
+/// Newly declared owners have working evidence without inventing a pinned accepted origin.
+pub const CREATED_SOURCE_MAP_VERSION: u32 = 7;
 
 /// Exact authoring bytes addressed relative to a working tree or its pinned accepted snapshot.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -89,6 +92,10 @@ pub enum FileOrigin {
         working: Option<InputFile>,
         uses_working_values: bool,
     },
+    CreatedMetadata {
+        uuid: NativeUuid,
+        input: InputFile,
+    },
     ManagedForm {
         uuid: NativeUuid,
         descriptor: SourcePath,
@@ -96,6 +103,13 @@ pub enum FileOrigin {
         #[serde(skip_serializing_if = "Option::is_none")]
         working: Option<InputFile>,
         uses_working_values: bool,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        queries: Vec<QueryOrigin>,
+    },
+    CreatedManagedForm {
+        uuid: NativeUuid,
+        descriptor: SourcePath,
+        input: InputFile,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         queries: Vec<QueryOrigin>,
     },
@@ -152,6 +166,9 @@ impl SourceMap {
     /// Returns unsupported versions, malformed fingerprints, inconsistent origins or inventory.
     pub fn validate(&self) -> Result<(), Error> {
         self.validate_schema()?;
+        if let Some(normalized) = created::normalized(self)? {
+            return normalized.validate();
+        }
         for digest in [
             &self.generation,
             &self.input_revision,
@@ -247,6 +264,7 @@ impl SourceMap {
                 | QUERY_SOURCE_MAP_VERSION
                 | EXTERNAL_SOURCE_MAP_VERSION
                 | COMPOSITION_SOURCE_MAP_VERSION
+                | CREATED_SOURCE_MAP_VERSION
         ) || !matches!(
             self.source_schema_version,
             super::super::SCHEMA_VERSION | super::super::READABLE_SCHEMA_VERSION
@@ -264,7 +282,9 @@ impl SourceMap {
             |root| {
                 matches!(
                     self.schema_version,
-                    EXTERNAL_SOURCE_MAP_VERSION | COMPOSITION_SOURCE_MAP_VERSION
+                    EXTERNAL_SOURCE_MAP_VERSION
+                        | COMPOSITION_SOURCE_MAP_VERSION
+                        | CREATED_SOURCE_MAP_VERSION
                 ) && self.profile == root.kind.profile()
                     && root.validate().is_ok()
             },
@@ -298,6 +318,7 @@ impl SourceMap {
                         | QUERY_SOURCE_MAP_VERSION
                         | EXTERNAL_SOURCE_MAP_VERSION
                         | COMPOSITION_SOURCE_MAP_VERSION
+                        | CREATED_SOURCE_MAP_VERSION
                 ) || !descriptors.insert(descriptor)
                     || !matches!(self.file(descriptor).map(|file| &file.origin),
                         Some(FileOrigin::Metadata { uuid: owner, accepted: input, working: overlay, .. })
@@ -362,35 +383,36 @@ pub(super) fn create(
         .values()
         .map(|entry| {
             let origin = if let Some((source, uuid)) = descriptors.get(&entry.path) {
-                let accepted = base
-                    .origin_entry(source)
-                    .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
+                let accepted = (!base.created_owner(uuid))
+                    .then(|| base.origin_entry(source))
+                    .flatten();
                 let uses_working_values = package.documents.get(&entry.path)
                     != base.package.documents.get(&entry.path)
                     || base.composition_changed();
-                FileOrigin::Metadata {
-                    uuid: (*uuid).clone(),
-                    accepted: accepted.into(),
-                    working: working.files.get(*source).map(InputFile::from),
+                authoring_origin(
+                    uuid,
+                    accepted,
+                    working.files.get(*source),
                     uses_working_values,
-                }
+                    None,
+                    Vec::new(),
+                )?
             } else if let Some((source, descriptor)) = forms.get(&entry.path) {
                 let (_, uuid) = descriptors
                     .get(*descriptor)
                     .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
-                let accepted = base
-                    .origin_entry(source)
-                    .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
-                FileOrigin::ManagedForm {
-                    uuid: (*uuid).clone(),
-                    descriptor: (*descriptor).clone(),
-                    accepted: accepted.into(),
-                    working: working.files.get(*source).map(InputFile::from),
-                    uses_working_values: package.forms.get(&entry.path)
-                        != base.package.forms.get(&entry.path)
+                let queries = query::origins(working, base, package, entry, xml, origins)?;
+                authoring_origin(
+                    uuid,
+                    (!base.created_owner(uuid))
+                        .then(|| base.origin_entry(source))
+                        .flatten(),
+                    working.files.get(*source),
+                    package.forms.get(&entry.path) != base.package.forms.get(&entry.path)
                         || base.composition_changed(),
-                    queries: query::origins(working, base, package, entry, xml, origins)?,
-                }
+                    Some(descriptor),
+                    queries,
+                )?
             } else if package.query_inputs.resources.contains_key(&entry.path) {
                 query::resource_origin(working, base, package, entry, xml, origins)?
             } else {
@@ -404,16 +426,11 @@ pub(super) fn create(
             })
         })
         .collect::<Result<_, Error>>()?;
-    let source_schema_version = base
-        .package
-        .documents
-        .values()
-        .chain(package.documents.values())
-        .map(|document| document.descriptor.schema_version)
-        .max()
-        .ok_or_else(|| Error::root("source_map_origin_invalid"))?;
+    let source_schema_version = descriptor_schema(base, package)?;
     let map = SourceMap {
-        schema_version: if base.composition_changed() {
+        schema_version: if base.has_created_owners() {
+            CREATED_SOURCE_MAP_VERSION
+        } else if base.composition_changed() {
             COMPOSITION_SOURCE_MAP_VERSION
         } else {
             map_version(base.package.manifest.schema_version, source_schema_version)
@@ -431,6 +448,62 @@ pub(super) fn create(
     };
     map.validate()?;
     Ok(map)
+}
+
+/// A composite origin envelope must support the highest descriptor schema actually selected.
+fn descriptor_schema(base: &AcceptedBase, package: &Package) -> Result<u32, Error> {
+    base.package
+        .documents
+        .values()
+        .chain(package.documents.values())
+        .map(|document| document.descriptor.schema_version)
+        .max()
+        .ok_or_else(|| Error::root("source_map_origin_invalid"))
+}
+
+/// Original owners retain actual accepted evidence; complete new owners expose only working bytes.
+fn authoring_origin(
+    uuid: &NativeUuid,
+    accepted: Option<&FileEntry>,
+    working: Option<&FileEntry>,
+    uses_working_values: bool,
+    descriptor: Option<&SourcePath>,
+    queries: Vec<QueryOrigin>,
+) -> Result<FileOrigin, Error> {
+    let working = working.map(InputFile::from);
+    let uuid = uuid.clone();
+    if let Some(accepted) = accepted {
+        let accepted = accepted.into();
+        Ok(if let Some(descriptor) = descriptor {
+            FileOrigin::ManagedForm {
+                uuid,
+                descriptor: descriptor.clone(),
+                accepted,
+                working,
+                uses_working_values,
+                queries,
+            }
+        } else {
+            FileOrigin::Metadata {
+                uuid,
+                accepted,
+                working,
+                uses_working_values,
+            }
+        })
+    } else {
+        let input = working.ok_or_else(|| Error::root("source_map_origin_missing"))?;
+        Ok(if let Some(descriptor) = descriptor {
+            FileOrigin::CreatedManagedForm {
+                uuid,
+                descriptor: descriptor.clone(),
+                input,
+                queries,
+            }
+        } else {
+            FileOrigin::CreatedMetadata { uuid, input }
+        })
+    }
 }
 
 /// Origin schema follows actual physical mappings while descriptor envelope versions stay independent.
@@ -478,6 +551,12 @@ pub(super) fn payload_origin(
 
 /// A payload's origin must identify the same exact native bytes; metadata records remain composite.
 fn validate_origin(entry: &MappedFile) -> Result<(), Error> {
+    if let Some(origin) = created::existing(&entry.origin) {
+        return validate_origin(&MappedFile {
+            origin,
+            ..entry.clone()
+        });
+    }
     match &entry.origin {
         FileOrigin::Payload { input, module, .. } => {
             require_digest(&input.sha256)?;
@@ -536,6 +615,9 @@ fn validate_origin(entry: &MappedFile) -> Result<(), Error> {
             {
                 return Err(Error::root("source_map_origin_invalid"));
             }
+        }
+        FileOrigin::CreatedMetadata { .. } | FileOrigin::CreatedManagedForm { .. } => {
+            return Err(Error::root("source_map_origin_invalid"));
         }
     }
     query::validate_origin(entry)?;
