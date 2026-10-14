@@ -2,8 +2,8 @@
 
 use super::{
     Error, ImportAncestor, Inventory, LayoutPublication, PROJECT_SOURCE_IMPORT_RECEIPT, Path,
-    ProjectSourceImportPlan, RECEIPT, SERVICE, SourceImportRecovery, State, checked_directory,
-    files, fs, recovery::Journal, require_project_ready, transaction,
+    ProjectSourceImportPlan, RECEIPT, SERVICE, SourceImportRecovery, checked_directory, files, fs,
+    recovery::Journal, require_project_ready, transaction,
 };
 use crate::project_core::source_format::project_migration::publish_new;
 
@@ -44,12 +44,7 @@ impl ProjectSourceImportPlan {
         }
         require_project_ready(&self.root)?;
         self.verify(cancelled)?;
-        if self.receipt.working_revision == self.receipt.output_revision
-            && self.receipt.previous_state.as_ref().is_some_and(|text| {
-                serde_json::from_str::<State>(text)
-                    .is_ok_and(|state| state.ancestor == self.receipt.incoming)
-            })
-        {
+        if self.unchanged_ancestor().is_some() {
             return Ok(LayoutPublication::Unchanged);
         }
         let created = !present(&transaction(&self.root, &self.reference))?;

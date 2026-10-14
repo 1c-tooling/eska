@@ -12,6 +12,7 @@ pub(super) struct Selection {
     pub selected: BTreeMap<SourcePath, SelectedFile>,
     pub changes: Vec<SourceImportChange>,
     pub conflicts: Vec<SourceImportConflict>,
+    pub incoming_data_unchanged: bool,
 }
 
 /// Compare by source identity while keeping the approved reverse map as the output authority.
@@ -27,6 +28,7 @@ pub(super) fn select(
     let mut selected = BTreeMap::new();
     let mut changes = Vec::new();
     let mut conflicts = Vec::new();
+    let mut incoming_data_unchanged = shape(&ancestor.manifest) == shape(&incoming.manifest);
     let marker = SourcePath::parse(files::MANIFEST)?;
     if shape(&ancestor.manifest) != shape(&approved.manifest)
         || shape(&incoming.manifest) != shape(&approved.manifest)
@@ -56,6 +58,11 @@ pub(super) fn select(
             .or_else(|| old.get(key))
             .ok_or_else(|| Error::root("source_file_unmapped"))?;
         let uuid = file_identity::uuid(key);
+        let bookkeeping =
+            key == "path:ConfigDumpInfo.xml" && approved.manifest.external_root.is_none();
+        if !bookkeeping && !same(old_entry, new_entry) {
+            incoming_data_unchanged = false;
+        }
         if key.starts_with("authority:") {
             let approved_entry = current
                 .get(key)
@@ -70,12 +77,11 @@ pub(super) fn select(
         }
         // Dump bookkeeping remains pinned export evidence, not editable metadata or supplier rights.
         // Keep raw incoming versions in ancestry while the protected source retains its original file.
-        let choice =
-            if key == "path:ConfigDumpInfo.xml" && approved.manifest.external_root.is_none() {
-                local.cloned().map(SelectedFile::Working)
-            } else {
-                choose(old_entry, new_entry, local, path, uuid, &mut conflicts)
-            };
+        let choice = if bookkeeping {
+            local.cloned().map(SelectedFile::Working)
+        } else {
+            choose(old_entry, new_entry, local, path, uuid, &mut conflicts)
+        };
         let output_entry = choice.as_ref().map(|choice| selected_entry(path, choice));
         if old_entry != new_entry || !same(old_entry, local) {
             changes.push(SourceImportChange {
@@ -113,6 +119,7 @@ pub(super) fn select(
         selected,
         changes,
         conflicts,
+        incoming_data_unchanged,
     })
 }
 

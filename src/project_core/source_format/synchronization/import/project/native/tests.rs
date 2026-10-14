@@ -308,4 +308,51 @@ fn incoming_dump_bookkeeping_does_not_request_resource_permission_or_change_work
         fs::read_to_string(restored.join("ConfigDumpInfo.xml")).unwrap(),
         incoming
     );
+    drop(prepared);
+    fs::write(
+        native.join("ConfigDumpInfo.xml"),
+        incoming.replace("changed", "next-dump"),
+    )
+    .unwrap();
+    let before = Inventory::read(fixture.project.root()).unwrap();
+    let repeated = prepare_project_native_source_import(
+        &fixture.project,
+        &ProjectScope::Standalone,
+        &expected,
+        &saved,
+        &native,
+        &fixture.test.0.join("repeat-cdf-projection"),
+        &|| false,
+    )
+    .unwrap();
+    assert!(repeated.plan().source_plan().conflicts().is_empty());
+    assert_ne!(
+        repeated.plan().source_plan().incoming_reference(),
+        saved.reference()
+    );
+    assert_eq!(
+        repeated.plan().resulting_ancestor_reference(),
+        saved.reference()
+    );
+    assert_eq!(
+        repeated.plan().publish().unwrap(),
+        LayoutPublication::Unchanged
+    );
+    assert_eq!(
+        repeated.plan().publish().unwrap(),
+        LayoutPublication::Unchanged
+    );
+    assert_eq!(Inventory::read(fixture.project.root()).unwrap(), before);
+    crate::project_core::source_format::project_import_ancestor(
+        &fixture.project,
+        &ProjectScope::Standalone,
+        repeated.plan().resulting_ancestor_reference(),
+    )
+    .unwrap();
+    fs::write(native.join("ConfigDumpInfo.xml"), "changed after preview").unwrap();
+    assert_eq!(
+        repeated.plan().publish().unwrap_err().code,
+        "source_input_changed"
+    );
+    assert_eq!(Inventory::read(fixture.project.root()).unwrap(), before);
 }

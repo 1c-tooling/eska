@@ -2252,6 +2252,9 @@ lifecycle и согласованное обновление IDE остаютс�
 независимые правки того же owner и поддержанные inline operations под прежним pin;
 четыре native цикла и новый default реквизит CF проверены. Коллекции остаются
 атомарными, новая top-level карта и native CLI ещё в работе.
+[Native repeat](research/eska-format/import-repeat.md) четырёх типов сохраняет
+source bytes/mtime и history; отдельный resulting pin описывает no-op при
+service-only CDF variation без потери общего ancestor.
 
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.

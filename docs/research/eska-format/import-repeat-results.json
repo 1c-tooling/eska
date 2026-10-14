@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "stage": "EF-25 native repeat",
+  "status": "partial",
+  "platform": "8.3.27.2325",
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 3.16
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 3.93
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 0.31
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 77.75
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 89.34
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 14.89
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 1.4
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.45
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 2.19
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 2.51
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 24.85
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.66
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.27
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.14
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 1.54
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.74
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 6.38
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.59
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 1.44
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 4.4
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 40.93
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 8.23
+    }
+  ],
+  "root_tests": {
+    "unit_passed": 796,
+    "integration_passed": 600,
+    "ignored_opt_in": 24
+  },
+  "native_repeat": [
+    {
+      "confirmed_ancestor_retained": true,
+      "controlled_service_variation_unchanged": true,
+      "history_unchanged": true,
+      "kind": "configuration",
+      "publication": "unchanged",
+      "raw_incoming_reference_changed": false,
+      "second_publication_unchanged": true,
+      "settings_unchanged": true,
+      "source_bytes_and_mtime_unchanged": true,
+      "support_unchanged": true
+    },
+    {
+      "confirmed_ancestor_retained": true,
+      "controlled_service_variation_unchanged": true,
+      "history_unchanged": true,
+      "kind": "extension",
+      "publication": "unchanged",
+      "raw_incoming_reference_changed": false,
+      "second_publication_unchanged": true,
+      "settings_unchanged": true,
+      "source_bytes_and_mtime_unchanged": true,
+      "support_unchanged": true
+    },
+    {
+      "confirmed_ancestor_retained": true,
+      "controlled_service_variation_unchanged": false,
+      "history_unchanged": true,
+      "kind": "processing",
+      "publication": "unchanged",
+      "raw_incoming_reference_changed": false,
+      "second_publication_unchanged": true,
+      "settings_unchanged": true,
+      "source_bytes_and_mtime_unchanged": true,
+      "support_unchanged": true
+    },
+    {
+      "confirmed_ancestor_retained": true,
+      "controlled_service_variation_unchanged": false,
+      "history_unchanged": true,
+      "kind": "report",
+      "publication": "unchanged",
+      "raw_incoming_reference_changed": false,
+      "second_publication_unchanged": true,
+      "settings_unchanged": true,
+      "source_bytes_and_mtime_unchanged": true,
+      "support_unchanged": true
+    }
+  ],
+  "validation_note": "same artifacts retained raw references; controlled complete CF/CFE XML changed only a valid service fingerprint",
+  "limitations": [
+    "exact data equality under unchanged reverse map",
+    "not native CLI or IDE refresh",
+    "no production/performance/client runtime acceptance"
+  ]
+}

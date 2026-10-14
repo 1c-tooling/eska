@@ -2825,6 +2825,11 @@ native CLI lifecycle и координация IDE ещё в работе; EF-25
 default реквизит CF прошёл native import/build/dump. Коллекции атомарны,
 CI pin прежний, parent freeze действует. Новая top-level карта и остальные
 условия EF-25 ещё в работе; девять новых unit cases и 22 Rust gates прошли.
+[Повтор native импорта](../research/eska-format/import-repeat.md) четырёх типов
+возвращает Unchanged без переписывания source/history. Отдельный resulting pin
+сохраняет подтверждённый common ancestor при service-only CDF variation;
+реально новые data, уже совпавшие с working, всё равно обновляют ancestry.
+Root 796/600 и все 22 Rust gates прошли; top-level карта/CLI/IDE ещё в работе.
 
 ## EF-26 RLS и дополнительные тексты ресурсов
 

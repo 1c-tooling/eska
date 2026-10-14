@@ -145,6 +145,53 @@ fn recovers_merged_descriptor_and_repeats_from_raw_incoming_ancestry() {
         .unwrap();
 }
 
+/// Incoming metadata already authored locally still advances the common ancestor for future merges.
+#[test]
+fn unchanged_source_bytes_do_not_hide_new_common_metadata() {
+    let fixture = Fixture::new(false);
+    fixture.plan().publish().unwrap();
+    let saved = project_import_ancestor(
+        &fixture.project,
+        &ProjectScope::Standalone,
+        fixture.incoming.reference(),
+    )
+    .unwrap();
+    let incoming_source = fixture.test.0.join("next-metadata");
+    saved.restore(&incoming_source).unwrap();
+    for source in [&incoming_source, fixture.project.source()] {
+        let path = source.join("configuration.yaml");
+        let text = fs::read_to_string(&path).unwrap().replace("1.0.1", "1.0.2");
+        fs::write(path, text).unwrap();
+    }
+    let store = fixture.test.0.join("next-metadata-store");
+    let reference = capture_import_ancestor(&incoming_source, &store).unwrap();
+    let incoming = ImportAncestor::open(&store, &reference).unwrap();
+    let before = Inventory::read(fixture.project.source()).unwrap();
+    let plan = prepare_project_source_import(
+        &fixture.project,
+        &ProjectScope::Standalone,
+        &fixture.approved,
+        &saved,
+        &incoming,
+    )
+    .unwrap();
+    assert!(plan.source_plan().conflicts().is_empty());
+    assert_eq!(
+        plan.source_plan().working_revision(),
+        plan.source_plan().output_revision()
+    );
+    assert!(!plan.source.incoming_data_unchanged);
+    assert_eq!(plan.resulting_ancestor_reference(), incoming.reference());
+    assert_eq!(plan.publish().unwrap(), LayoutPublication::Created);
+    project_import_ancestor(
+        &fixture.project,
+        &ProjectScope::Standalone,
+        incoming.reference(),
+    )
+    .unwrap();
+    assert_eq!(Inventory::read(fixture.project.source()).unwrap(), before);
+}
+
 /// Ordinary application advances raw ancestry, retains local edits, settings, support and last build.
 #[test]
 fn publishes_existing_project_and_repeated_import_is_a_noop() {

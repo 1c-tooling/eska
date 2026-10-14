@@ -102,6 +102,7 @@ pub struct SourceImportPlan {
     selected: BTreeMap<SourcePath, SelectedFile>,
     changes: Vec<SourceImportChange>,
     conflicts: Vec<SourceImportConflict>,
+    incoming_data_unchanged: bool,
 }
 
 /// Prepare a source-only import from an explicitly confirmed ancestor under current pinned rights.
@@ -170,6 +171,7 @@ pub fn prepare_source_import(
         selected: chosen.selected,
         changes: chosen.changes,
         conflicts: chosen.conflicts,
+        incoming_data_unchanged: chosen.incoming_data_unchanged,
     };
     descriptors::resolve(&mut plan)?;
     if plan.conflicts.is_empty() {
@@ -211,7 +213,7 @@ impl SourceImportPlan {
         &self.ancestor_ref
     }
 
-    /// Incoming data becomes the next ancestor only after project orchestration successfully applies.
+    /// Return the exact captured incoming data; project publication may retain equivalent ancestry.
     #[must_use]
     pub const fn incoming_reference(&self) -> &ImportAncestorRef {
         &self.incoming_ref

@@ -875,6 +875,9 @@ unpack/apply/build/dump с сохранением local BSL и прежнего 
 сохраняет независимые правки одного owner и поддержанные inline changes под
 прежними правами. Коллекции и BSL/SDBL/binary остаются атомарными; новая карта
 top-level объектов и native reimport CLI ещё в работе.
+[Повтор импорта](docs/research/eska-format/import-repeat.md) проверен на четырёх
+native артефактах: одинаковые данные не переписывают source/history, отдельный
+resulting ancestor pin учитывает no-op со служебным CDF изменением.
 Общий [typed writer](docs/research/eska-format/typed-scalars.md) поддерживает
 32 свойства, включая bool, точные целые и enum с проверкой владельца;
 старая preserved-запись не мигрирует при открытии.

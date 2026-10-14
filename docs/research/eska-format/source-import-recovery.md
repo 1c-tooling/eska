@@ -25,6 +25,9 @@ EF-25 остаётся `IN_PROGRESS`.
 `ProjectSourceImportRef` независимо до применения; recovery не выбирает сумму
 из прочитанного marker. Это третий тип ссылки, отдельно от `AcceptedRef`
 и `ImportAncestorRef`. Все refs и ошибки имеют machine-facing значения.
+[Повтор без записи](import-repeat.md) добавляет `resulting_ancestor_reference()`:
+при равных data и source прежний confirmed pin может сохраниться, даже если
+новый raw incoming snapshot отличается service CDF bytes.
 
 ## Публикация
 

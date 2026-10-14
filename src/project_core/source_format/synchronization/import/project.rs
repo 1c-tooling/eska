@@ -236,6 +236,30 @@ pub fn project_import_ancestor(
 }
 
 impl ProjectSourceImportPlan {
+    /// Return the independent ancestry pin retained after successful publication.
+    ///
+    /// Repeated data with only dump bookkeeping changes keeps its already confirmed raw ancestor.
+    /// The captured incoming reference still describes the exact preview input, which may differ.
+    #[must_use]
+    pub fn resulting_ancestor_reference(&self) -> &ImportAncestorRef {
+        self.unchanged_ancestor().unwrap_or(&self.receipt.incoming)
+    }
+
+    /// A first import must persist its ancestor even when its selected source bytes are unchanged.
+    fn unchanged_ancestor(&self) -> Option<&ImportAncestorRef> {
+        if self.receipt.working_revision != self.receipt.output_revision {
+            return None;
+        }
+        let state = serde_json::from_str::<State>(self.receipt.previous_state.as_ref()?).ok()?;
+        if state.ancestor == self.receipt.incoming {
+            Some(&self.receipt.incoming)
+        } else if state.ancestor == self.receipt.ancestor && self.source.incoming_data_unchanged {
+            Some(&self.receipt.ancestor)
+        } else {
+            None
+        }
+    }
+
     /// Source decisions remain independently reviewable, including conflicts and retained local edits.
     #[must_use]
     pub const fn source_plan(&self) -> &SourceImportPlan {

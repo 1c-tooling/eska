@@ -23,6 +23,8 @@
 bookkeeping. [Слияние descriptor values](../research/eska-format/import-descriptors.md)
 сохраняет local properties/annotations при incoming inline changes; четыре
 native цикла и новый default реквизит CF прошли проверку под прежним pin.
+[Native repeat](../research/eska-format/import-repeat.md) четырёх типов сохраняет
+bytes/mtime и history; controlled CDF variation сохраняет confirmed ancestry.
 Новая карта top-level объектов, native CLI lifecycle и координация IDE ещё в работе.
 EF-25 не закрыта.
 EF-15 — `DONE` в [принятой матрице](../research/eska-format/base-update.md).
