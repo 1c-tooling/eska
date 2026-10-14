@@ -28,6 +28,8 @@ mod migration;
 mod new;
 #[path = "project_tool/order.rs"]
 mod order;
+#[path = "project_tool/query_migration.rs"]
+mod query_migration;
 #[path = "project_tool/readable.rs"]
 mod readable;
 #[path = "project_tool/reference_clear.rs"]
@@ -51,6 +53,9 @@ mod tabular_identities;
 mod workspace_base_update;
 #[path = "project_tool/workspace_migration.rs"]
 mod workspace_migration;
+
+#[path = "fixtures/eska-format/query_creation.rs"]
+mod query_creation_fixture;
 
 use serde_json::Value;
 use std::{

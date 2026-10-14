@@ -1,5 +1,6 @@
 //! Project migration plans keep working values and independently pinned authority separate.
 
+mod history;
 mod publication;
 pub(super) mod workspace;
 
@@ -17,6 +18,7 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
+use history::RawHistory;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -57,6 +59,8 @@ struct Receipt {
     previous_pin: String,
     accepted_pin: String,
     ancillary: BTreeMap<SourcePath, String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    import_history: Option<String>,
 }
 
 /// A full project copy publishes its settings last; working edits never enter the accepted plan.
@@ -69,6 +73,7 @@ pub struct ProjectLayoutPlan {
     source: SourceLayoutPlan,
     base: AcceptedLayoutPlan,
     ancillary: BTreeMap<SourcePath, Option<String>>,
+    history: Option<RawHistory>,
     receipt: Receipt,
 }
 
@@ -195,7 +200,42 @@ fn prepare_project(
     {
         return Err(Error::root("source_baseline_mismatch"));
     }
-    let receipt = Receipt {
+    let history = RawHistory::prepare(
+        &root,
+        &source_path,
+        &base_path,
+        &accepted,
+        !source.is_empty() || !base.is_empty(),
+    )?;
+    let receipt = receipt(&source, &base, &ancillary, history.as_ref());
+    let plan = ProjectLayoutPlan {
+        destination: if workspace.is_some() {
+            destination.to_owned()
+        } else {
+            destination_path(&root, destination)?
+        },
+        root,
+        source_path,
+        base_path,
+        source,
+        base,
+        ancillary,
+        history,
+        receipt,
+    };
+    plan.recheck()?;
+    plan.check_output()?;
+    Ok(plan)
+}
+
+/// Recovery binds exact raw history and settings without creating a source-import receipt or pin.
+fn receipt(
+    source: &SourceLayoutPlan,
+    base: &AcceptedLayoutPlan,
+    ancillary: &BTreeMap<SourcePath, Option<String>>,
+    history: Option<&RawHistory>,
+) -> Receipt {
+    Receipt {
         schema_version: 1,
         source_input: source.input_revision().into(),
         source_output: source.output_revision().into(),
@@ -210,24 +250,8 @@ fn prepare_project(
                     .map(|text| (path.clone(), files::hex(&Sha256::digest(text.as_bytes()))))
             })
             .collect(),
-    };
-    let plan = ProjectLayoutPlan {
-        destination: if workspace.is_some() {
-            destination.to_owned()
-        } else {
-            destination_path(&root, destination)?
-        },
-        root,
-        source_path,
-        base_path,
-        source,
-        base,
-        ancillary,
-        receipt,
-    };
-    plan.recheck()?;
-    plan.check_output()?;
-    Ok(plan)
+        import_history: history.map(|history| history.revision().into()),
+    }
 }
 
 impl ProjectLayoutPlan {
@@ -267,6 +291,18 @@ impl ProjectLayoutPlan {
         !self.source.is_empty() || !self.base.is_empty()
     }
 
+    /// Report the actual authoring representation, including map 6 external objects.
+    #[must_use]
+    pub const fn source_layout_version(&self) -> u32 {
+        self.source.manifest().schema_version
+    }
+
+    /// Existing raw ancestry is copied exactly; this flag neither confirms it nor approves support.
+    #[must_use]
+    pub const fn ancestry_preserved(&self) -> bool {
+        self.history.is_some()
+    }
+
     /// List only the project files actually copied, separately from source and base storage.
     pub fn ancillary_files(&self) -> impl Iterator<Item = &SourcePath> {
         self.ancillary
@@ -280,7 +316,17 @@ impl ProjectLayoutPlan {
             return Err(Error::root("source_input_changed"));
         }
         self.source.publication_view().recheck()?;
-        self.base.publication_view().recheck()
+        self.base.publication_view().recheck()?;
+        if let Some(history) = &self.history {
+            history.view().recheck()?;
+        } else {
+            match fs::symlink_metadata(self.root.join(super::PROJECT_SOURCE_IMPORT_DIRECTORY)) {
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(files::io(&error)),
+                Ok(_) => return Err(Error::root("source_input_changed")),
+            }
+        }
+        Ok(())
     }
 }
 

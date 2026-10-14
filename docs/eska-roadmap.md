@@ -2303,6 +2303,11 @@ streams/exit. 12 process cases, 22 Rust gates и all4 native build/dump/first-im
 создаёт четыре типа и обе схемы версии через `eska-project new`, общий Queries
 pipeline и initial ancestor. Основная оболочка new/init ещё в работе.
 
+[Queries migration](research/eska-format/query-project-migration.md) копирует map 5/6 и raw
+history при layout no-op. Layout change с существующей историей явно отказан
+до output. All4 history-preserving copies и legacy CF/CFE без истории проходят
+native build/dump; перенос истории между layouts ещё требует отдельного контракта.
+
 [Direct init](research/eska-format/project-initialization.md) подключает existing Queries
 sources четырёх типов без конвертации. Expected-byte plan сохраняет исходники
 и separately pinned base/history; новые candidates готовятся в private stage,

@@ -1,8 +1,7 @@
 //! Complete offline project creation proves current form/query ownership for every native root.
 
 mod ancestry;
-#[path = "../../../../tests/fixtures/eska-format/query_creation.rs"]
-mod fixture;
+use crate::query_creation_fixture as fixture;
 
 use super::*;
 use crate::project_core::source_format::{

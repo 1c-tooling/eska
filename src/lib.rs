@@ -28,3 +28,7 @@ pub mod vcs;
 #[cfg(test)]
 #[path = "../tests/support/mod.rs"]
 mod test_support;
+
+#[cfg(test)]
+#[path = "../tests/fixtures/eska-format/query_creation.rs"]
+mod query_creation_fixture;

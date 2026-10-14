@@ -6,6 +6,7 @@ mod publication;
 mod selection;
 
 pub(in crate::project_core::source_format) use project::stage_project_import_ancestor;
+pub(in crate::project_core::source_format) use project::verified_project_import_history;
 pub use project::verify_project_import_history;
 pub use project::{
     NativeProjectSourceImport, PROJECT_SOURCE_IMPORT_RECEIPT, ProjectSourceImportPlan,

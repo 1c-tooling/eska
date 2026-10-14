@@ -97,6 +97,18 @@ impl WorkspaceLayoutMember {
         self.plan.layout_changed()
     }
 
+    /// Each member retains its real authoring version rather than the requested target's minimum.
+    #[must_use]
+    pub const fn source_layout_version(&self) -> u32 {
+        self.plan.source_layout_version()
+    }
+
+    /// Copied raw bytes retain existing digests without selecting an independent ancestry approval.
+    #[must_use]
+    pub const fn ancestry_preserved(&self) -> bool {
+        self.plan.ancestry_preserved()
+    }
+
     /// Member settings remain separately visible from root workspace settings and storage.
     pub fn ancillary_files(&self) -> impl Iterator<Item = &SourcePath> {
         self.plan.ancillary_files()

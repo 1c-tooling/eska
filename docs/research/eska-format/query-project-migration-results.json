@@ -1,0 +1,198 @@
+{
+  "history_preserving": [
+    {
+      "kind": "configuration",
+      "locale": "ru",
+      "shell_init": true,
+      "actual_source_folder": true,
+      "existing_git_and_user_bytes_preserved": true,
+      "accepted_and_published_history_exact": true,
+      "local_bsl_preserved": true,
+      "init_native_build_dump_matches_control": true,
+      "queries_migration": true,
+      "source_layout_version": 5,
+      "migration_source_base_history_settings_exact": true,
+      "migration_native_build_dump_matches_init": true,
+      "private_init_stage_removed": true,
+      "explicit_working_version_edit": false
+    },
+    {
+      "kind": "extension",
+      "locale": "en",
+      "shell_init": true,
+      "actual_source_folder": true,
+      "existing_git_and_user_bytes_preserved": true,
+      "accepted_and_published_history_exact": true,
+      "local_bsl_preserved": true,
+      "init_native_build_dump_matches_control": true,
+      "queries_migration": true,
+      "source_layout_version": 5,
+      "migration_source_base_history_settings_exact": true,
+      "migration_native_build_dump_matches_init": true,
+      "private_init_stage_removed": true,
+      "explicit_working_version_edit": true
+    },
+    {
+      "kind": "processing",
+      "locale": "ru",
+      "shell_init": true,
+      "actual_source_folder": true,
+      "existing_git_and_user_bytes_preserved": true,
+      "accepted_and_published_history_exact": true,
+      "local_bsl_preserved": true,
+      "init_native_build_dump_matches_control": true,
+      "queries_migration": true,
+      "source_layout_version": 6,
+      "migration_source_base_history_settings_exact": true,
+      "migration_native_build_dump_matches_init": true,
+      "private_init_stage_removed": true,
+      "explicit_working_version_edit": false
+    },
+    {
+      "kind": "report",
+      "locale": "en",
+      "shell_init": true,
+      "actual_source_folder": true,
+      "existing_git_and_user_bytes_preserved": true,
+      "accepted_and_published_history_exact": true,
+      "local_bsl_preserved": true,
+      "init_native_build_dump_matches_control": true,
+      "queries_migration": true,
+      "source_layout_version": 6,
+      "migration_source_base_history_settings_exact": true,
+      "migration_native_build_dump_matches_init": true,
+      "private_init_stage_removed": true,
+      "explicit_working_version_edit": false
+    }
+  ],
+  "legacy_conversion": [
+    {
+      "kind": "configuration",
+      "old_source_layout_version": 3,
+      "new_source_layout_version": 5,
+      "history_not_invented": true,
+      "original_source_base_settings_preserved": true,
+      "native_build_dump_matches_control": true
+    },
+    {
+      "kind": "extension",
+      "old_source_layout_version": 3,
+      "new_source_layout_version": 5,
+      "history_not_invented": true,
+      "original_source_base_settings_preserved": true,
+      "native_build_dump_matches_control": true
+    }
+  ],
+  "rust_checks": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.92
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 0.27
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 2.09
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 47.59
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 98.5
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 17.64
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 3.86
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.4
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 5.56
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 4.75
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 33.4
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.39
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.38
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.15
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 4.05
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.76
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 12.22
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.62
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 4.08
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 11.8
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 51.0
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 9.14
+    }
+  ]
+}

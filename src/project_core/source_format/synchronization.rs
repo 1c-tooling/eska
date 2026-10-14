@@ -4,6 +4,7 @@ mod import;
 mod storage;
 
 pub(in crate::project_core::source_format) use import::stage_project_import_ancestor;
+pub(in crate::project_core::source_format) use import::verified_project_import_history;
 pub use import::verify_project_import_history;
 pub use import::{
     NativeProjectSourceImport, PROJECT_SOURCE_IMPORT_RECEIPT, ProjectSourceImportPlan,

@@ -6,6 +6,11 @@
 комментарии и относительные source/base paths сохраняются. Исходный workspace
 и его CI approval не переключаются.
 
+Явный [`--layout queries`](query-project-migration.md) переносит все четыре
+типа, включая mixed maps 5/6. Existing raw history сохраняется при no-op;
+один несовместимый member блокирует весь output до первой публикации.
+Ниже сохранён контракт Readable default.
+
 ```sh
 eska-project --project-dir old-workspace migrate new-workspace --workspace \
   --accepted-bases approved-bases.json --format json

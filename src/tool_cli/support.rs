@@ -254,6 +254,7 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         "source_format_mismatch" => Some("tool-error-format"),
         "source_migration_scope_unsupported" => Some("tool-error-migration-scope"),
         "source_migration_incomplete" => Some("tool-error-migration-incomplete"),
+        "source_migration_ancestry_unsupported" => Some("tool-error-migration-ancestry"),
         "source_update_scope_unsupported" => Some("tool-error-update-scope"),
         "source_update_conflicts" => Some("tool-error-update-conflicts"),
         "source_update_profile_mismatch" => Some("tool-error-update-profile"),

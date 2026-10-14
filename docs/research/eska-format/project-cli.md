@@ -95,6 +95,11 @@ reimport не заменяет support approval; первый no-op проход
 Это не миграция существующего проекта; промежуточные layout API не становятся
 дополнительными CLI choices.
 
+[`migrate --layout queries`](query-project-migration.md) переносит все четыре
+типа и показывает фактические карты 5/6. No-op копирует raw history точно;
+смена representation при существующей history явно отказывает до output.
+В workspace любой такой member блокирует весь план до первой публикации.
+
 [`migrate`](project-migration.md) переносит standalone-проект в новую readable
 копию: рабочие исходники и pinned base используют отдельные expected-byte планы.
 Preview не пишет файлы; `--write` публикует или возобновляет matching output,
@@ -239,9 +244,10 @@ Queries import добавляет `data.ancestor_sha256`; capabilities соде�
 `initial_ancestor_layouts = ["queries"]`. Старые layouts/data keys сохранены.
 Tool envelope и прежние поля, включая `source_schema_version = 1`, сохранены;
 для выбора поддерживаемых версий используются новые списки.
-Capabilities также содержит `migrate`, `migration_layouts = ["readable"]` и
-`migration_scopes = ["standalone"]`. Schema 1 для новой команды описана в
+Capabilities также содержит `migrate`, `migration_layouts = ["readable", "queries"]` и
+`migration_scopes = ["standalone", "workspace"]`. Readable schema 1 описана в
 [контракте миграции](project-migration.md#machine-interface).
+Queries additions — в [переносе истории](query-project-migration.md).
 Init имеет отдельный [16-key data contract](project-initialization.md#machine-interface)
 и `initialization_project_types`, `initialization_source_layout`, `initialization_converts_source` capabilities.
 Для `update-base` добавлены `base_update_scopes = ["standalone", "workspace"]` и

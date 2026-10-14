@@ -34,7 +34,7 @@ impl ProjectLayoutPlan {
                 .map_err(|_| Error::root("source_schema_invalid"))?;
             publish_new(&self.destination, PROJECT_LAYOUT_RECEIPT, &text)?;
         }
-        for path in [&self.source_path, &self.base_path] {
+        for path in self.storage_paths() {
             if let Some(parent) = path.as_path().parent() {
                 fs::create_dir_all(self.destination.join(parent))
                     .map_err(|error| files::io(&error))?;
@@ -42,8 +42,20 @@ impl ProjectLayoutPlan {
         }
         storage::preflight(self.source.publication_view(), &self.source_destination())?;
         storage::preflight(self.base.publication_view(), &self.base_destination())?;
+        if let Some(history) = &self.history {
+            storage::preflight(
+                history.view(),
+                &self.destination.join(history.path.as_path()),
+            )?;
+        }
         self.source.publish(&self.source_destination())?;
         self.base.publish(&self.base_destination())?;
+        if let Some(history) = &self.history {
+            storage::publish(
+                history.view(),
+                &self.destination.join(history.path.as_path()),
+            )?;
+        }
         self.recheck()?;
         for (path, text) in &self.ancillary {
             if path.as_str() != "eska.toml"
@@ -92,10 +104,17 @@ impl ProjectLayoutPlan {
             LayoutPublication::Unchanged
         };
         self.check_entries(Path::new(""))?;
-        for (view, destination) in [
+        let outputs = [
             (self.source.publication_view(), self.source_destination()),
             (self.base.publication_view(), self.base_destination()),
-        ] {
+        ];
+        let history = self.history.as_ref().map(|history| {
+            (
+                history.view(),
+                self.destination.join(history.path.as_path()),
+            )
+        });
+        for (view, destination) in outputs.into_iter().chain(history) {
             if destination.parent().is_some_and(Path::is_dir) {
                 let (_, nested) = storage::preflight(view, &destination)?;
                 if status == LayoutPublication::Unchanged && nested != LayoutPublication::Unchanged
@@ -121,16 +140,12 @@ impl ProjectLayoutPlan {
             let entry = entry.map_err(|error| files::io(&error))?;
             let path = relative.join(entry.file_name());
             let kind = entry.file_type().map_err(|error| files::io(&error))?;
-            if kind.is_dir()
-                && [&self.source_path, &self.base_path]
-                    .iter()
-                    .any(|target| target.as_path() == path)
-            {
+            if kind.is_dir() && self.storage_paths().any(|target| target.as_path() == path) {
                 continue;
             }
             if kind.is_dir()
-                && [&self.source_path, &self.base_path]
-                    .iter()
+                && self
+                    .storage_paths()
                     .any(|target| target.as_path().starts_with(&path))
             {
                 self.check_entries(&path)?;
@@ -170,5 +185,12 @@ impl ProjectLayoutPlan {
     /// Authority always uses the configured independent base directory.
     pub(super) fn base_destination(&self) -> PathBuf {
         self.destination.join(self.base_path.as_path())
+    }
+
+    /// Only declared storage roots and their parents belong to the resumable project copy.
+    fn storage_paths(&self) -> impl Iterator<Item = &SourcePath> {
+        [&self.source_path, &self.base_path]
+            .into_iter()
+            .chain(self.history.as_ref().map(|history| &history.path))
     }
 }

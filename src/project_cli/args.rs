@@ -119,6 +119,8 @@ pub(super) struct Selector {
 #[derive(Debug, Args)]
 pub(super) struct Migrate {
     pub destination: PathBuf,
+    #[arg(long, id = "migration_layout", value_enum, default_value_t = MigrationLayout::Readable)]
+    pub layout: MigrationLayout,
     #[command(flatten)]
     pub selector: Selector,
     #[arg(long)]
@@ -129,6 +131,13 @@ pub(super) struct Migrate {
     pub accepted_bases: Option<PathBuf>,
     #[arg(long)]
     pub write: bool,
+}
+
+/// Migration never changes an existing default layout implicitly.
+#[derive(Clone, Copy, Debug, ValueEnum)]
+pub(super) enum MigrationLayout {
+    Readable,
+    Queries,
 }
 
 #[derive(Debug, Args)]

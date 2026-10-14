@@ -62,7 +62,7 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
             "source_layout_versions":[SCHEMA_VERSION,DESCRIPTOR_LAYOUT_VERSION,RESOURCE_LAYOUT_VERSION,
             MANAGED_FORM_LAYOUT_VERSION,QUERY_LAYOUT_VERSION,EXTERNAL_LAYOUT_VERSION],
             "descriptor_schema_versions":[SCHEMA_VERSION,READABLE_SCHEMA_VERSION],
-            "migration_layouts":["readable"], "migration_scopes":["standalone","workspace"], "workspace_pin_schema_version":1,
+            "migration_layouts":["readable","queries"], "migration_scopes":["standalone","workspace"], "workspace_pin_schema_version":1,
             "base_update_scopes":["standalone","workspace"], "base_update_comparison":"whole_file_three_way",
             "structural_edits":false,"import_ancestor_capture":true,"source_import_recovery":["complete","roll-back"]}),
             localizer.text("tool-project-capabilities"),

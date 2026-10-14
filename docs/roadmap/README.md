@@ -72,6 +72,11 @@ All4 native build/dump/first-import сохранили local BSL, pin/settings �
 подключает четыре типа и обе схемы версии к `eska-project new` через общий
 Queries pipeline. Основная оболочка new/init остаётся в EF-20.
 
+[Queries migration](../research/eska-format/query-project-migration.md) копирует map 5/6 и raw
+history при layout no-op. Layout change с существующей историей явно отказан
+до output. All4 history-preserving copies и legacy CF/CFE без истории проходят
+native build/dump; перенос истории между layouts ещё требует отдельного контракта.
+
 [Direct init](../research/eska-format/project-initialization.md) подключает existing Queries
 sources четырёх типов без конвертации. Expected-byte plan сохраняет исходники
 и separately pinned base/history; новые candidates готовятся в private stage,

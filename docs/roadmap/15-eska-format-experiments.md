@@ -1954,6 +1954,11 @@ Windows, общий new/init/import и устанавливаемый компл
 модуля имеют ноль diagnostics в BSL Analyzer CLI fallback. Shell new/init ещё нужны;
 EF-20 остаётся `IN_PROGRESS`.
 
+[Queries migration](../research/eska-format/query-project-migration.md) копирует map 5/6 и raw
+history при layout no-op. Layout change с существующей историей явно отказан
+до output. All4 history-preserving copies и legacy CF/CFE без истории проходят
+native build/dump; перенос истории между layouts ещё требует отдельного контракта.
+
 [Direct init](../research/eska-format/project-initialization.md) подключает existing Queries
 sources четырёх типов без конвертации. Expected-byte plan сохраняет исходники
 и separately pinned base/history; новые candidates готовятся в private stage,

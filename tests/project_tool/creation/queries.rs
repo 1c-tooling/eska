@@ -1,7 +1,8 @@
 //! Query-layout creation is a real offline process for all four native types, in both UI languages.
 
-#[path = "../../fixtures/eska-format/query_creation.rs"]
-mod fixture;
+use crate::query_creation_fixture as fixture;
+use sha2::{Digest, Sha256};
+use std::fmt::Write;
 
 use super::*;
 use eska::project_core::source_format::{
@@ -25,6 +26,7 @@ fn assert_import_data(data: &Value, project: &Path) {
             "accepted_base",
             "accepted_base_sha256",
             "ancestor_sha256",
+            "manifest_sha256",
             "name",
             "root",
             "source",
@@ -34,6 +36,13 @@ fn assert_import_data(data: &Value, project: &Path) {
     );
     assert_eq!(data["root"], project.to_str().unwrap());
     assert_eq!(data["source"], project.join("src").to_str().unwrap());
+    let actual = Sha256::digest(fs::read(project.join("eska.toml")).unwrap())
+        .iter()
+        .fold(String::with_capacity(64), |mut text, byte| {
+            write!(text, "{byte:02x}").unwrap();
+            text
+        });
+    assert_eq!(data["manifest_sha256"], actual);
 }
 
 /// Candidate digests and the stable import envelope do not depend on the selected UI language.

@@ -4,6 +4,11 @@
 По умолчанию команда только показывает план. `--write` публикует новый каталог;
 исходный проект, его база и внешний pin CI не меняются.
 
+Явный [`--layout queries`](query-project-migration.md) добавляет полный form/query
+layout четырёх типов. Raw history сохраняется при no-op и входит в receipt/
+recheck/resume; несовместимая смена representation отказывает до output.
+Ниже описан прежний Readable default и его неизменённый JSON.
+
 ```sh
 eska-project --project-dir old-project migrate new-project \
   --accepted-base-sha256 "$APPROVED_OLD_BASE_SHA256" --format json

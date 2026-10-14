@@ -33,6 +33,7 @@ use crate::project_core::{
     },
 };
 
+pub(in crate::project_core::source_format) use history::verified_project_import_history;
 pub use history::verify_project_import_history;
 pub(in crate::project_core::source_format) use initial::stage_project_import_ancestor;
 pub use initial::{initialize_project_import_ancestor, open_initial_project_import_ancestor};
