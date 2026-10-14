@@ -2831,6 +2831,16 @@ CI pin прежний, parent freeze действует. Новая top-level к
 реально новые data, уже совпавшие с working, всё равно обновляют ancestry.
 Root 796/600 и все 22 Rust gates прошли; top-level карта/CLI/IDE ещё в работе.
 
+Граница authority дополнительно выделена внутри `AcceptedBase`: отдельная
+private policy хранит принятые UUID/parentage, native rules и inherited freeze;
+file/descriptor package остаётся самостоятельным полем. Permission API,
+capabilities, CI pin и storage schemas прежние. Это подготовка к независимой
+проверке новой composition, а не разрешение редактировать исходящую карту или
+доказательство готового top-level import.
+Все 22 Rust gates прошли, прежние policy/freeze/update/layout сценарии сохранены.
+Четыре native repeats повторно подтвердили bytes/mtime, старый support pin и
+history; controlled CF/CFE CDF variation сохранила common ancestry.
+
 ## EF-26 RLS и дополнительные тексты ресурсов
 
 **Статус:** `DEFERRED`; после MVP, fmt и VCS.

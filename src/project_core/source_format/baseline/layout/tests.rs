@@ -82,7 +82,7 @@ fn accepted_layout_preserves_policy_freeze_and_exact_native_output() {
     );
     assert_eq!(relocated.manifest.frozen, base.manifest.frozen);
     assert_eq!(relocated.manifest.suppliers, base.manifest.suppliers);
-    for key in base.objects.keys() {
+    for key in base.support.objects.keys() {
         let uuid = NativeUuid::parse(key).unwrap();
         for operation in [
             Operation::Property(PropertyName::Comment),

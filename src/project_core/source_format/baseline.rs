@@ -1,6 +1,7 @@
 //! Pinned complete source bytes and policy; working metadata never grants itself permission.
 
 mod layout;
+mod policy;
 mod update;
 
 pub use update::{
@@ -165,9 +166,7 @@ pub struct AcceptedBase {
     root: PathBuf,
     reference: AcceptedRef,
     manifest: Manifest,
-    policy: Option<Support>,
-    objects: BTreeMap<String, AcceptedObject>,
-    frozen: BTreeSet<String>,
+    support: policy::AcceptedPolicy,
     pub(super) package: Package,
 }
 
@@ -291,7 +290,7 @@ impl AcceptedBase {
 
     /// A new inline identity cannot reuse any object already owned by the accepted configuration.
     pub(super) fn contains_object(&self, uuid: &NativeUuid) -> bool {
-        self.objects.contains_key(&uuid.key())
+        self.support.objects.contains_key(&uuid.key())
     }
 
     /// Structural dependency checks read the selected accepted text with its pinned fingerprint.
@@ -450,9 +449,11 @@ impl AcceptedBase {
             root: fs::canonicalize(root).map_err(|error| files::io(&error))?,
             reference: expected.clone(),
             manifest,
-            policy,
-            objects,
-            frozen,
+            support: policy::AcceptedPolicy {
+                native: policy,
+                objects,
+                frozen,
+            },
             package,
         })
     }
@@ -484,51 +485,10 @@ impl AcceptedBase {
         )
     }
 
-    /// Compute permission for an accepted native identity and a concrete operation.
+    /// Compute permission from independently pinned UUID policy, never editable composition.
     #[must_use]
     pub fn permission(&self, uuid: &NativeUuid, operation: Operation) -> Permission {
-        let (state, native_reason) = if self.objects.contains_key(&uuid.key()) {
-            self.policy
-                .as_ref()
-                .map_or((State::Unrestricted, Reason::OwnObject), |policy| {
-                    policy.object(uuid.as_str())
-                })
-        } else {
-            (State::Unknown, Reason::Unavailable)
-        };
-        let reason = if state == State::Unknown {
-            PermissionReason::UnknownObject
-        } else if self.frozen(uuid) {
-            PermissionReason::EskaFrozen
-        } else if state == State::Locked {
-            PermissionReason::NativeRestriction
-        } else if matches!(
-            operation,
-            Operation::Move | Operation::Property(PropertyName::Name)
-        ) || (operation == Operation::Create && !self.creation_supported(uuid))
-            || (operation == Operation::Delete
-                && self
-                    .objects
-                    .get(&uuid.key())
-                    .is_none_or(|object| !super::child_deletion::supported_object(object.kind)))
-            || (operation == Operation::Rename
-                && self
-                    .objects
-                    .get(&uuid.key())
-                    .is_none_or(|object| !super::child_rename::supported_object(object.kind)))
-        {
-            PermissionReason::UnsupportedOperation
-        } else {
-            PermissionReason::Allowed
-        };
-        Permission {
-            allowed: reason == PermissionReason::Allowed,
-            uuid: uuid.clone(),
-            state,
-            native_reason,
-            reason,
-            baseline: self.reference.sha256.clone(),
-        }
+        self.support.permission(uuid, operation, &self.reference)
     }
 
     /// Restore complete accepted source bytes to a new checkout without any cache or original tree.
@@ -545,39 +505,6 @@ impl AcceptedBase {
             return Err(error);
         }
         Ok(())
-    }
-
-    /// Tabular-section capability follows accepted direct parentage, not an editable root class.
-    fn creation_supported(&self, uuid: &NativeUuid) -> bool {
-        let Some(object) = self.objects.get(&uuid.key()) else {
-            return false;
-        };
-        if object.kind == MetadataKind::TabularSection {
-            object
-                .parent
-                .as_ref()
-                .and_then(|parent| self.objects.get(parent))
-                .is_some_and(|parent| {
-                    matches!(parent.kind, MetadataKind::Catalog | MetadataKind::Document)
-                })
-        } else {
-            super::child_creation::supported_owner(object.kind)
-        }
-    }
-
-    /// Additional freeze inherits to owned inline descendants; native supplier rules stay per UUID.
-    fn frozen(&self, uuid: &NativeUuid) -> bool {
-        let mut current = Some(uuid.key());
-        while let Some(key) = current {
-            if self.frozen.contains(&key) {
-                return true;
-            }
-            current = self
-                .objects
-                .get(&key)
-                .and_then(|object| object.parent.clone());
-        }
-        false
     }
 
     /// Exclusive writes restore only the caller's newly claimed source directory.

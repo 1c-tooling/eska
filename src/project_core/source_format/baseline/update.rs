@@ -259,7 +259,7 @@ fn select_sources(
         &mut result.conflicts,
     )?;
     for uuid in &previous.manifest.frozen {
-        if !incoming.frozen.contains(&uuid.key()) {
+        if !incoming.support.frozen.contains(&uuid.key()) {
             result.conflicts.push(BaseUpdateConflict {
                 kind: BaseUpdateConflictKind::FreezeRemoved,
                 previous: None,
@@ -525,11 +525,12 @@ fn support_changes(
     incoming: &AcceptedBase,
 ) -> Result<Vec<SupportChange>, Error> {
     let mut changes = Vec::new();
-    for key in previous.objects.keys().chain(
+    for key in previous.support.objects.keys().chain(
         incoming
+            .support
             .objects
             .keys()
-            .filter(|key| !previous.objects.contains_key(*key)),
+            .filter(|key| !previous.support.objects.contains_key(*key)),
     ) {
         let uuid = NativeUuid::parse(key)?;
         let before = previous.permission(&uuid, Operation::Module);
