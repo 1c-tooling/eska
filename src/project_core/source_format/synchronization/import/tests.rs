@@ -24,13 +24,48 @@ struct Fixture {
 impl Fixture {
     /// Freeze is attached only to the approved store; neither ancestor gets permission state.
     fn new(frozen: bool) -> Self {
+        Self::with_link(frozen, None)
+    }
+
+    /// A preserved handler is a qualified reference, with independently approved owner freeze.
+    fn with_link(frozen: bool, link: Option<bool>) -> Self {
         let test = TestDir::new();
         let source = source(&test);
+        if link.is_some() {
+            let native = test.0.join("native");
+            fs::create_dir(native.join("EventSubscriptions")).unwrap();
+            fs::write(
+                native.join("EventSubscriptions/OnWrite.xml"),
+                concat!(
+                    "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses' version='2.20'>",
+                    "<EventSubscription uuid='30000000-0000-4000-8000-000000000001'><Properties>",
+                    "<Name>OnWrite</Name><Handler>CommonModule.Tools.Perform</Handler>",
+                    "</Properties></EventSubscription></MetaDataObject>"
+                ),
+            )
+            .unwrap();
+            let root = native.join("Configuration.xml");
+            let original = fs::read_to_string(&root).unwrap();
+            fs::write(
+                root,
+                original.replace(
+                    "</ChildObjects>",
+                    "<EventSubscription>OnWrite</EventSubscription></ChildObjects>",
+                ),
+            )
+            .unwrap();
+            fs::remove_dir_all(&source).unwrap();
+            crate::project_core::source_format::import_designer_readable(&native, &source).unwrap();
+        }
         let freeze = if frozen {
             vec![NativeUuid::parse("20000000-0000-4000-8000-000000000001").unwrap()]
         } else {
             Vec::new()
         };
+        let mut freeze = freeze;
+        if link == Some(true) {
+            freeze.push(NativeUuid::parse("30000000-0000-4000-8000-000000000001").unwrap());
+        }
         let root = test.0.join("approved");
         let pin = accept_source(&source, &root, &freeze).unwrap();
         let approved = AcceptedBase::open(&root, &pin).unwrap();
@@ -54,6 +89,185 @@ impl Fixture {
         let reference = capture_import_ancestor(&self.incoming_source, &root).unwrap();
         ImportAncestor::open(&root, &reference).unwrap()
     }
+}
+
+/// Reimport a real reversible native path transition rather than hand-editing reverse-map hashes.
+fn rename_incoming(fixture: &Fixture, name: &str) {
+    let native = fixture.test.0.join("renamed-native");
+    crate::project_core::source_format::export_designer(&fixture.incoming_source, &native).unwrap();
+    for path in ["Configuration.xml", "CommonModules/Tools.xml"] {
+        let path = native.join(path);
+        let text = fs::read_to_string(&path).unwrap();
+        fs::write(path, text.replace(">Tools<", &format!(">{name}<"))).unwrap();
+    }
+    fs::rename(
+        native.join("CommonModules/Tools.xml"),
+        native.join(format!("CommonModules/{name}.xml")),
+    )
+    .unwrap();
+    fs::rename(
+        native.join("CommonModules/Tools"),
+        native.join(format!("CommonModules/{name}")),
+    )
+    .unwrap();
+    fs::remove_dir_all(&fixture.incoming_source).unwrap();
+    crate::project_core::source_format::import_designer_readable(&native, &fixture.incoming_source)
+        .unwrap();
+}
+
+/// A renamed UUID retains independent local descriptor/module edits, its pin and exact old origins.
+#[test]
+fn renamed_object_moves_local_files_and_retains_original_policy_and_origins() {
+    let fixture = Fixture::new(false);
+    rename_incoming(&fixture, "Helpers");
+    let path = fixture.source.join("CommonModules/Tools/object.yaml");
+    let text = fs::read_to_string(&path).unwrap();
+    fs::write(
+        path,
+        format!(
+            "# local annotation\n{}",
+            text.replace("\"Server\": true", "\"Server\": false")
+        ),
+    )
+    .unwrap();
+    fs::write(
+        fixture.source.join(MODULE),
+        b"\xef\xbb\xbf// independent local\r\n",
+    )
+    .unwrap();
+    let incoming = fixture.incoming();
+    let original_base = Inventory::read(fixture.approved.storage_root()).unwrap();
+    let plan = prepare_source_import(
+        &fixture.source,
+        &fixture.ancestor,
+        &incoming,
+        &fixture.approved,
+    )
+    .unwrap();
+    assert!(plan.conflicts().is_empty(), "{:?}", plan.conflicts());
+    let output = fixture.test.0.join("output");
+    plan.publish_source(&output).unwrap();
+    assert!(!output.join("CommonModules/Tools").exists());
+    assert_eq!(
+        fs::read(output.join("CommonModules/Helpers/Module.bsl")).unwrap(),
+        b"\xef\xbb\xbf// independent local\r\n"
+    );
+    let text = fs::read_to_string(output.join("CommonModules/Helpers/object.yaml")).unwrap();
+    assert!(
+        text.contains("\"Name\": \"Helpers\"")
+            && text.contains("\"Server\": false")
+            && text.contains("# local annotation"),
+        "{text}"
+    );
+    let prepared = prepare_protected(
+        &output,
+        &fixture.approved,
+        &fixture.test.0.join("generations"),
+        true,
+    )
+    .unwrap();
+    let map = prepared.source_map();
+    assert_eq!(map.schema_version, 6);
+    let mapped = map
+        .file(&SourcePath::parse("CommonModules/Helpers.xml").unwrap())
+        .unwrap();
+    let crate::project_core::source_format::FileOrigin::Metadata {
+        accepted,
+        working,
+        uses_working_values,
+        ..
+    } = &mapped.origin
+    else {
+        panic!("metadata origin");
+    };
+    assert_eq!(accepted.path.as_str(), "CommonModules/Tools/object.yaml");
+    assert_eq!(
+        working.as_ref().unwrap().path.as_str(),
+        "CommonModules/Helpers/object.yaml"
+    );
+    assert!(*uses_working_values);
+    let native = fs::read(prepared.xml().join("CommonModules/Helpers.xml")).unwrap();
+    let offset = String::from_utf8_lossy(&native).find("Helpers").unwrap();
+    let old = fixture.approved.read_file(&accepted.path).unwrap();
+    let location = mapped
+        .locate(
+            &native,
+            offset..offset + 7,
+            Some(crate::project_core::source_format::OriginTexts {
+                accepted: &old,
+                working: Some(&text),
+            }),
+        )
+        .unwrap();
+    assert_eq!(
+        location.authority,
+        crate::project_core::source_format::InputAuthority::Working
+    );
+    assert_eq!(
+        location.input.path.as_str(),
+        "CommonModules/Helpers/object.yaml"
+    );
+    let repeat = prepare_source_import(&output, &incoming, &incoming, &fixture.approved).unwrap();
+    assert!(repeat.conflicts().is_empty(), "{:?}", repeat.conflicts());
+    assert_eq!(repeat.working_revision(), repeat.output_revision());
+    assert_eq!(
+        Inventory::read(fixture.approved.storage_root()).unwrap(),
+        original_base
+    );
+}
+
+/// Freeze blocks rename through both incoming and manually edited maps under the same UUID.
+#[test]
+fn renamed_frozen_object_cannot_gain_permission_through_its_new_path() {
+    let fixture = Fixture::new(true);
+    rename_incoming(&fixture, "Helpers");
+    let incoming = fixture.incoming();
+    let plan = prepare_source_import(
+        &fixture.source,
+        &fixture.ancestor,
+        &incoming,
+        &fixture.approved,
+    )
+    .unwrap();
+    assert!(
+        plan.conflicts()
+            .iter()
+            .any(|conflict| conflict.kind == SourceImportConflictKind::PermissionDenied)
+    );
+    let output = fixture.test.0.join("output");
+    assert!(plan.publish_source(&output).is_err());
+    assert!(!output.exists());
+    assert_eq!(
+        prepare_protected(
+            &fixture.incoming_source,
+            &fixture.approved,
+            &fixture.test.0.join("generations"),
+            true
+        )
+        .unwrap_err()
+        .error
+        .code,
+        "source_import_structure_denied"
+    );
+}
+
+/// Incoming rename cannot silently leave a surviving native metadata reference at its old name.
+#[test]
+fn renamed_object_refuses_an_independent_stale_metadata_reference() {
+    let fixture = Fixture::new(false);
+    rename_incoming(&fixture, "Helpers");
+    fs::write(fixture.source.join(MODULE), "// CommonModule.Tools\r\n").unwrap();
+    let incoming = fixture.incoming();
+    let error = prepare_source_import(
+        &fixture.source,
+        &fixture.ancestor,
+        &incoming,
+        &fixture.approved,
+    )
+    .err()
+    .expect("stale reference");
+    assert_eq!(error.code, "source_structural_reference_preserved");
+    assert!(!fixture.test.0.join("generations").exists());
 }
 
 /// A local module and unrelated incoming version edit are retained under the old approved pin.
@@ -346,4 +560,155 @@ fn changed_support_bytes_require_the_separate_base_update() {
     assert!(plan.publish_source(&test.0.join("output")).is_err());
     assert!(!test.0.join("output").exists());
     approved.verify().unwrap();
+}
+
+/// Only an exact supplied target-label transition may change an opaque handler, under its owner rights.
+#[test]
+fn renamed_object_preserves_handler_identity_and_refuses_extra_or_frozen_link_edits() {
+    for mode in ["allowed", "extra_method", "frozen_owner"] {
+        let fixture = Fixture::with_link(false, Some(mode == "frozen_owner"));
+        rename_incoming(&fixture, "Helpers");
+        let path = "EventSubscriptions/OnWrite/object.yaml";
+        let text = fs::read_to_string(fixture.incoming_source.join(path)).unwrap();
+        let next = if mode == "extra_method" {
+            "CommonModule.Helpers.Other"
+        } else {
+            "CommonModule.Helpers.Perform"
+        };
+        fs::write(
+            fixture.incoming_source.join(path),
+            text.replace("CommonModule.Tools.Perform", next),
+        )
+        .unwrap();
+        let incoming = fixture.incoming();
+        let plan = prepare_source_import(
+            &fixture.source,
+            &fixture.ancestor,
+            &incoming,
+            &fixture.approved,
+        )
+        .unwrap();
+        let output = fixture.test.0.join("output");
+        if mode != "allowed" {
+            assert!(
+                plan.conflicts()
+                    .iter()
+                    .any(|conflict| conflict.kind == SourceImportConflictKind::PermissionDenied),
+                "{:?}",
+                plan.conflicts()
+            );
+            assert!(plan.publish_source(&output).is_err());
+            assert!(!output.exists());
+            continue;
+        }
+        assert!(plan.conflicts().is_empty(), "{:?}", plan.conflicts());
+        plan.publish_source(&output).unwrap();
+        let prepared = prepare_protected(
+            &output,
+            &fixture.approved,
+            &fixture.test.0.join("generations"),
+            true,
+        )
+        .unwrap();
+        let mapped = prepared
+            .source_map()
+            .file(&SourcePath::parse("EventSubscriptions/OnWrite.xml").unwrap())
+            .unwrap();
+        let current = fs::read_to_string(output.join(path)).unwrap();
+        let accepted = fixture
+            .approved
+            .read_file(&SourcePath::parse(path).unwrap())
+            .unwrap();
+        let native = fs::read(prepared.xml().join("EventSubscriptions/OnWrite.xml")).unwrap();
+        let start = String::from_utf8_lossy(&native).find(next).unwrap();
+        let origin = mapped
+            .locate(
+                &native,
+                start..start + next.len(),
+                Some(crate::project_core::source_format::OriginTexts {
+                    accepted: &accepted,
+                    working: Some(&current),
+                }),
+            )
+            .unwrap();
+        assert_eq!(
+            origin.authority,
+            crate::project_core::source_format::InputAuthority::Working
+        );
+        assert!(current[origin.range.unwrap()].contains(next));
+    }
+}
+
+/// Form/query bindings and a typed default-form reference follow the same UUID and local plain value.
+#[test]
+fn renamed_form_rebinds_query_slots_and_default_reference_without_copying_local_values() {
+    use crate::project_core::source_format::queries::test_support::{LIST, fixture};
+    let directory = TestDir::new();
+    let native = fixture(&directory);
+    let catalog = native.join("Catalogs/Sample.xml");
+    let text = fs::read_to_string(&catalog).unwrap();
+    fs::write(catalog, text.replace("<Template>Opaque</Template>", "")).unwrap();
+    fs::remove_file(native.join("Catalogs/Sample/Templates/Opaque.xml")).unwrap();
+    fs::remove_dir_all(native.join("Catalogs/Sample/Templates/Opaque")).unwrap();
+    let working = directory.0.join("source");
+    crate::project_core::source_format::import_designer_queries(&native, &working).unwrap();
+    let base_path = directory.0.join("accepted");
+    let pin = accept_source(&working, &base_path, &[]).unwrap();
+    let base = AcceptedBase::open(&base_path, &pin).unwrap();
+    let old_path = directory.0.join("ancestor");
+    let old_pin = capture_import_ancestor(&working, &old_path).unwrap();
+    let old = ImportAncestor::open(&old_path, &old_pin).unwrap();
+    for path in ["Catalogs/Sample.xml", "Catalogs/Sample/Forms/Main.xml"] {
+        let path = native.join(path);
+        let text = fs::read_to_string(&path).unwrap();
+        fs::write(
+            path,
+            text.replace(">Main<", ">RenamedMain<")
+                .replace(".Form.Main<", ".Form.RenamedMain<"),
+        )
+        .unwrap();
+    }
+    fs::rename(
+        native.join("Catalogs/Sample/Forms/Main.xml"),
+        native.join("Catalogs/Sample/Forms/RenamedMain.xml"),
+    )
+    .unwrap();
+    fs::rename(
+        native.join("Catalogs/Sample/Forms/Main"),
+        native.join("Catalogs/Sample/Forms/RenamedMain"),
+    )
+    .unwrap();
+    let incoming_source = directory.0.join("incoming-source");
+    crate::project_core::source_format::import_designer_queries(&native, &incoming_source).unwrap();
+    let incoming_path = directory.0.join("incoming");
+    let incoming_pin = capture_import_ancestor(&incoming_source, &incoming_path).unwrap();
+    let incoming = ImportAncestor::open(&incoming_path, &incoming_pin).unwrap();
+    let local = "SELECT 'local';\r\n";
+    fs::write(working.join(LIST), local).unwrap();
+    let plan = prepare_source_import(&working, &old, &incoming, &base).unwrap();
+    assert!(plan.conflicts().is_empty(), "{:?}", plan.conflicts());
+    let output = directory.0.join("output");
+    plan.publish_source(&output).unwrap();
+    let next = LIST.replace("/Main/", "/RenamedMain/");
+    assert_eq!(fs::read_to_string(output.join(&next)).unwrap(), local);
+    assert!(!output.join(LIST).exists());
+    let prepared =
+        prepare_protected(&output, &base, &directory.0.join("generations"), true).unwrap();
+    let path = SourcePath::parse("Catalogs/Sample/Forms/RenamedMain/Ext/Form.xml").unwrap();
+    let bytes = fs::read(prepared.xml().join(path.as_path())).unwrap();
+    let start = String::from_utf8_lossy(&bytes)
+        .find("SELECT 'local'")
+        .unwrap();
+    let location = prepared
+        .source_map()
+        .file(&path)
+        .unwrap()
+        .locate(&bytes, start..start + 6, None)
+        .unwrap();
+    assert_eq!(location.input.path.as_str(), next);
+    assert_eq!(
+        location.authority,
+        crate::project_core::source_format::InputAuthority::Working
+    );
+    assert_eq!(&local[location.range.unwrap()], "SELECT");
 }

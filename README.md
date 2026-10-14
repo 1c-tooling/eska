@@ -878,6 +878,10 @@ top-level объектов и native reimport CLI ещё в работе.
 [Повтор импорта](docs/research/eska-format/import-repeat.md) проверен на четырёх
 native артефактах: одинаковые данные не переписывают source/history, отдельный
 resulting ancestor pin учитывает no-op со служебным CDF изменением.
+[Карта состава при rename](docs/research/eska-format/import-composition.md)
+переносит отдельные unrestricted объекты по UUID, сохраняя local bytes и прежний
+pin. Protected build проверяет новую карту; source map 6 хранит исходный accepted
+и новый working path. Add/delete и divergent maps остаются явными отказами.
 Общий [typed writer](docs/research/eska-format/typed-scalars.md) поддерживает
 32 свойства, включая bool, точные целые и enum с проверкой владельца;
 старая preserved-запись не мигрирует при открытии.

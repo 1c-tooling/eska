@@ -107,11 +107,11 @@ pub struct SourceImportPlan {
 
 /// Prepare a source-only import from an explicitly confirmed ancestor under current pinned rights.
 ///
-/// The first profile keeps the approved reverse map unchanged. Additions, deletions or renames
-/// that require another map are explicit conflicts until a verified mapping publication exists.
+/// UUID-preserving declared-object renames may change the reverse map under the original policy.
+/// New ownership, deletion and divergent maps remain explicit conflicts in this profile.
 ///
 /// # Errors
-/// Returns a wrong root/type/layout, altered working declarations, stale input or invalid source.
+/// Returns a wrong root/type/layout, invalid working declarations, stale input or invalid source.
 pub fn prepare_source_import(
     source: &Path,
     ancestor: &ImportAncestor,
@@ -129,9 +129,16 @@ pub fn prepare_source_import(
         &source.join(files::MANIFEST),
     )?)
     .map_err(|_| Error::root("source_schema_invalid"))?;
-    if manifest != approved.package.manifest {
-        return Err(Error::root("source_import_declarations_changed"));
-    }
+    let working_package;
+    let current = if manifest == approved.package.manifest {
+        &approved.package
+    } else {
+        working_package = Package::from_snapshot(working.clone(), |path| {
+            files::read_text(&source.join(path.as_path()))
+        })?;
+        approved.with_composition(&working_package)?;
+        &working_package
+    };
     if approved.overlaps(&source)
         || source.starts_with(&ancestor.root)
         || ancestor.root.starts_with(&source)
@@ -145,6 +152,7 @@ pub fn prepare_source_import(
         &ancestor.package,
         &incoming.package,
         &approved.package,
+        current,
     )?;
     let mut plan = SourceImportPlan {
         working: Input {
@@ -174,33 +182,74 @@ pub fn prepare_source_import(
         incoming_data_unchanged: chosen.incoming_data_unchanged,
     };
     descriptors::resolve(&mut plan)?;
-    if plan.conflicts.is_empty() {
-        let package = Package::from_snapshot(storage::clone_inventory(&plan.output), |path| {
-            plan.read(path)
-        })?;
-        for exclusion in
-            protected::update_exclusions(&plan.output, approved, |path| plan.read(path))?
-        {
-            plan.conflicts.push(SourceImportConflict {
-                kind: SourceImportConflictKind::PermissionDenied,
-                path: exclusion.path.clone(),
-                uuid: exclusion.uuid.clone(),
-                exclusion: Some(exclusion),
-                coordinate: Vec::new(),
-            });
-        }
-        if plan.conflicts.is_empty() {
-            super::super::structural_references::validate_references(approved, &package, |path| {
-                plan.read(path)
-            })?;
-            package.native_xml()?;
-        }
-    }
+    plan.validate_selected(approved)?;
     plan.verify()?;
     Ok(plan)
 }
 
 impl SourceImportPlan {
+    /// Validate complete selected declarations and permissions before allowing publication.
+    fn validate_selected(&mut self, approved: &AcceptedBase) -> Result<(), Error> {
+        if self.conflicts.is_empty() {
+            let package = Package::from_snapshot(storage::clone_inventory(&self.output), |path| {
+                self.read(path)
+            })?;
+            let bound;
+            let authority = if package.manifest == approved.package.manifest {
+                approved
+            } else {
+                bound = match approved.with_composition(&package) {
+                    Ok(bound) => bound,
+                    Err(error)
+                        if matches!(
+                            error.code,
+                            "source_import_mapping_unsupported" | "source_import_structure_denied"
+                        ) =>
+                    {
+                        self.conflicts.push(SourceImportConflict {
+                            kind: if error.code == "source_import_structure_denied" {
+                                SourceImportConflictKind::PermissionDenied
+                            } else {
+                                SourceImportConflictKind::MappingUnsupported
+                            },
+                            path: SourcePath::parse(files::MANIFEST)?,
+                            uuid: error
+                                .location
+                                .first()
+                                .and_then(|field| NativeUuid::parse(field).ok()),
+                            exclusion: None,
+                            coordinate: Vec::new(),
+                        });
+                        self.verify()?;
+                        return Ok(());
+                    }
+                    Err(error) => return Err(error),
+                };
+                &bound
+            };
+            for exclusion in
+                protected::update_exclusions(&self.output, authority, |path| self.read(path))?
+            {
+                self.conflicts.push(SourceImportConflict {
+                    kind: SourceImportConflictKind::PermissionDenied,
+                    path: exclusion.path.clone(),
+                    uuid: exclusion.uuid.clone(),
+                    exclusion: Some(exclusion),
+                    coordinate: Vec::new(),
+                });
+            }
+            if self.conflicts.is_empty() {
+                super::super::structural_references::validate_references(
+                    approved,
+                    &package,
+                    |path| self.read(path),
+                )?;
+                package.native_xml()?;
+            }
+        }
+        Ok(())
+    }
+
     /// Return current support approval; import publication never advances this reference.
     #[must_use]
     pub const fn approved_reference(&self) -> &AcceptedRef {

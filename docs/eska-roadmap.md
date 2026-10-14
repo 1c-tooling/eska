@@ -2256,6 +2256,11 @@ lifecycle и согласованное обновление IDE остаютс�
 source bytes/mtime и history; отдельный resulting pin описывает no-op при
 service-only CDF variation без потери общего ancestor.
 
+[Новая карта rename](research/eska-format/import-composition.md) сопоставляет
+отдельные unrestricted объекты по UUID и сохраняет локальные файлы при переносе.
+Исходная поддержка остаётся независимо pinned; build и source map 6 проверяют
+изменённые пути. Add/delete, native CLI и IDE coordination ещё не завершены.
+
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.
 Standalone orchestration и `eska-project update-base` теперь проходят RU/EN,

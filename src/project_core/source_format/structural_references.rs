@@ -47,7 +47,7 @@ pub(super) fn validate_references(
         }
         if is_xml(native.as_path()) {
             validate_xml(&read_payload(source)?, native, &removed)?;
-        } else if !removed.fields.is_empty()
+        } else if (!removed.fields.is_empty() || !removed.exact.is_empty())
             && native
                 .as_path()
                 .extension()
@@ -62,14 +62,34 @@ pub(super) fn validate_references(
 /// Removed values invalidate UUID and name; renamed values keep UUID and case-insensitive identity.
 fn invalidated_keys(base: &AcceptedBase, package: &Package) -> Result<Invalidated, Error> {
     let mut result = Invalidated::default();
-    for (path, accepted) in &base.package.documents {
+    let selected = package
+        .documents
+        .values()
+        .map(|document| {
+            (
+                document.descriptor.object.uuid.key(),
+                &document.descriptor.object,
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    for accepted in base.package.documents.values() {
         let owner = &accepted.descriptor.object;
-        let selected = &package
-            .documents
-            .get(path)
-            .ok_or_else(|| Error::root("source_descriptor_missing"))?
-            .descriptor
-            .object;
+        let selected = selected
+            .get(&owner.uuid.key())
+            .ok_or_else(|| Error::root("source_descriptor_missing"))?;
+        if owner.property(PropertyName::Name) != selected.property(PropertyName::Name)
+            && let Some(PropertyValue::Text(name)) = owner.property(PropertyName::Name)
+        {
+            result.exact.insert(
+                format!("{}.{name}", owner.kind.designer_tag()).to_lowercase(),
+                owner.uuid.clone(),
+            );
+            if owner.kind == MetadataKind::CommonModule {
+                result
+                    .fields
+                    .insert(name.to_lowercase(), owner.uuid.clone());
+            }
+        }
         if matches!(owner.kind, MetadataKind::Catalog | MetadataKind::Document) {
             invalidated_fields(owner, selected, &mut result)?;
         }

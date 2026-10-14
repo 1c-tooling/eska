@@ -34,7 +34,7 @@ pub(super) fn locate(
 ) -> Result<SourceLocation, Error> {
     let FileOrigin::ManagedForm {
         uuid,
-        descriptor,
+        descriptor: _,
         accepted,
         working,
         uses_working_values,
@@ -46,8 +46,7 @@ pub(super) fn locate(
     verify_bytes(texts.accepted.as_bytes(), accepted.bytes, &accepted.sha256)?;
     let (value, tree) = yaml::decode_with_tree(texts.accepted)?;
     let owner = ObjectSource::from_value(value.clone())?;
-    if owner.document.path != *descriptor
-        || owner.document.descriptor.object.uuid != *uuid
+    if owner.document.descriptor.object.uuid != *uuid
         || !matches!(
             owner.document.descriptor.object.kind,
             MetadataKind::Form | MetadataKind::CommonForm

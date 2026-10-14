@@ -35,7 +35,7 @@ pub(super) fn resolve(plan: &mut SourceImportPlan) -> Result<(), Error> {
         let change = plan.changes.iter().find(|change| {
             change.identity.starts_with("owner:")
                 && change
-                    .working
+                    .selected
                     .as_ref()
                     .is_some_and(|entry| entry.path == conflict.path)
         });

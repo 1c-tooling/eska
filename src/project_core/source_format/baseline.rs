@@ -1,5 +1,6 @@
 //! Pinned complete source bytes and policy; working metadata never grants itself permission.
 
+mod composition;
 mod layout;
 mod policy;
 mod update;
@@ -168,9 +169,11 @@ pub struct AcceptedBase {
     manifest: Manifest,
     support: policy::AcceptedPolicy,
     pub(super) package: Package,
+    composition: Option<composition::Bindings>,
 }
 
 /// Accepted class and ancestry determine operation capabilities and inherited freeze together.
+#[derive(Clone, Eq, PartialEq)]
 struct AcceptedObject {
     parent: Option<String>,
     kind: MetadataKind,
@@ -295,6 +298,13 @@ impl AcceptedBase {
 
     /// Structural dependency checks read the selected accepted text with its pinned fingerprint.
     pub(super) fn read_file(&self, path: &SourcePath) -> Result<String, Error> {
+        if let Some(text) = self
+            .composition
+            .as_ref()
+            .and_then(|bindings| bindings.texts.get(path))
+        {
+            return Ok(text.clone());
+        }
         let file = self
             .package
             .snapshot
@@ -341,7 +351,11 @@ impl AcceptedBase {
             return Err(Error::root("source_baseline_untrusted"));
         }
         reject_pending_layout(&inventory)?;
-        if verified_snapshot(&self.manifest, &inventory)? != self.package.snapshot {
+        let expected = self
+            .composition
+            .as_ref()
+            .map_or(&self.package.snapshot, |bindings| &bindings.original);
+        if verified_snapshot(&self.manifest, &inventory)? != *expected {
             return Err(Error::root("source_baseline_corrupt"));
         }
         Ok(inventory)
@@ -455,6 +469,7 @@ impl AcceptedBase {
                 frozen,
             },
             package,
+            composition: None,
         })
     }
 

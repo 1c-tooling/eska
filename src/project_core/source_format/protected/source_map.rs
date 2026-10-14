@@ -31,6 +31,8 @@ pub const MANAGED_FORM_SOURCE_MAP_VERSION: u32 = 3;
 pub const QUERY_SOURCE_MAP_VERSION: u32 = 4;
 /// External roots require an explicit reverse binding in addition to form/query origins.
 pub const EXTERNAL_SOURCE_MAP_VERSION: u32 = 5;
+/// UUID-preserving renames retain old pinned origins and distinct current authoring paths.
+pub const COMPOSITION_SOURCE_MAP_VERSION: u32 = 6;
 
 /// Exact authoring bytes addressed relative to a working tree or its pinned accepted snapshot.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -189,6 +191,12 @@ impl SourceMap {
         for entry in &self.files {
             require_digest(&entry.sha256)?;
             validate_origin(entry)?;
+            if self.schema_version < COMPOSITION_SOURCE_MAP_VERSION
+                && matches!(&entry.origin, FileOrigin::Metadata { accepted, working: Some(working), .. }
+                    | FileOrigin::ManagedForm { accepted, working: Some(working), .. } if accepted.path != working.path)
+            {
+                return Err(Error::root("source_map_origin_invalid"));
+            }
             if self.schema_version == SOURCE_MAP_VERSION
                 && matches!(&entry.origin, FileOrigin::Payload { input, .. } if input.path != entry.path)
             {
@@ -238,6 +246,7 @@ impl SourceMap {
                 | MANAGED_FORM_SOURCE_MAP_VERSION
                 | QUERY_SOURCE_MAP_VERSION
                 | EXTERNAL_SOURCE_MAP_VERSION
+                | COMPOSITION_SOURCE_MAP_VERSION
         ) || !matches!(
             self.source_schema_version,
             super::super::SCHEMA_VERSION | super::super::READABLE_SCHEMA_VERSION
@@ -253,8 +262,10 @@ impl SourceMap {
                     && self.profile == super::super::PROFILE
             },
             |root| {
-                self.schema_version == EXTERNAL_SOURCE_MAP_VERSION
-                    && self.profile == root.kind.profile()
+                matches!(
+                    self.schema_version,
+                    EXTERNAL_SOURCE_MAP_VERSION | COMPOSITION_SOURCE_MAP_VERSION
+                ) && self.profile == root.kind.profile()
                     && root.validate().is_ok()
             },
         );
@@ -262,6 +273,7 @@ impl SourceMap {
             return Err(Error::root("source_map_schema_unsupported"));
         }
         if self.schema_version >= MANAGED_FORM_SOURCE_MAP_VERSION
+            && self.schema_version < COMPOSITION_SOURCE_MAP_VERSION
             && self.source_schema_version != super::super::READABLE_SCHEMA_VERSION
         {
             return Err(Error::root("source_map_schema_unsupported"));
@@ -285,6 +297,7 @@ impl SourceMap {
                     MANAGED_FORM_SOURCE_MAP_VERSION
                         | QUERY_SOURCE_MAP_VERSION
                         | EXTERNAL_SOURCE_MAP_VERSION
+                        | COMPOSITION_SOURCE_MAP_VERSION
                 ) || !descriptors.insert(descriptor)
                     || !matches!(self.file(descriptor).map(|file| &file.origin),
                         Some(FileOrigin::Metadata { uuid: owner, accepted: input, working: overlay, .. })
@@ -350,13 +363,11 @@ pub(super) fn create(
         .map(|entry| {
             let origin = if let Some((source, uuid)) = descriptors.get(&entry.path) {
                 let accepted = base
-                    .package
-                    .snapshot
-                    .files
-                    .get(*source)
+                    .origin_entry(source)
                     .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
-                let uses_working_values =
-                    package.documents.get(&entry.path) != base.package.documents.get(&entry.path);
+                let uses_working_values = package.documents.get(&entry.path)
+                    != base.package.documents.get(&entry.path)
+                    || base.composition_changed();
                 FileOrigin::Metadata {
                     uuid: (*uuid).clone(),
                     accepted: accepted.into(),
@@ -368,10 +379,7 @@ pub(super) fn create(
                     .get(*descriptor)
                     .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
                 let accepted = base
-                    .package
-                    .snapshot
-                    .files
-                    .get(*source)
+                    .origin_entry(source)
                     .ok_or_else(|| Error::root("source_baseline_corrupt"))?;
                 FileOrigin::ManagedForm {
                     uuid: (*uuid).clone(),
@@ -379,7 +387,8 @@ pub(super) fn create(
                     accepted: accepted.into(),
                     working: working.files.get(*source).map(InputFile::from),
                     uses_working_values: package.forms.get(&entry.path)
-                        != base.package.forms.get(&entry.path),
+                        != base.package.forms.get(&entry.path)
+                        || base.composition_changed(),
                     queries: query::origins(working, base, package, entry, xml, origins)?,
                 }
             } else if package.query_inputs.resources.contains_key(&entry.path) {
@@ -404,7 +413,11 @@ pub(super) fn create(
         .max()
         .ok_or_else(|| Error::root("source_map_origin_invalid"))?;
     let map = SourceMap {
-        schema_version: map_version(base.package.manifest.schema_version, source_schema_version),
+        schema_version: if base.composition_changed() {
+            COMPOSITION_SOURCE_MAP_VERSION
+        } else {
+            map_version(base.package.manifest.schema_version, source_schema_version)
+        },
         source_schema_version,
         rules_version: super::super::RULES_VERSION,
         profile: base.package.manifest.profile.clone(),
@@ -449,15 +462,12 @@ pub(super) fn payload_origin(
         .payload_sources
         .get(&entry.path)
         .ok_or_else(|| Error::root("source_map_origin_missing"))?;
-    let (authority, snapshot) = match origins.get(source) {
-        Some(Origin::Working) => (InputAuthority::Working, working),
-        Some(Origin::Accepted) => (InputAuthority::Accepted, &base.package.snapshot),
+    let (authority, input) = match origins.get(source) {
+        Some(Origin::Working) => (InputAuthority::Working, working.files.get(source)),
+        Some(Origin::Accepted) => (InputAuthority::Accepted, base.origin_entry(source)),
         None => return Err(Error::root("source_map_origin_missing").in_field(entry.path.as_str())),
     };
-    let input = snapshot
-        .files
-        .get(source)
-        .ok_or_else(|| Error::root("source_map_origin_missing"))?;
+    let input = input.ok_or_else(|| Error::root("source_map_origin_missing"))?;
     Ok(FileOrigin::Payload {
         authority,
         input: input.into(),
@@ -506,9 +516,6 @@ fn validate_origin(entry: &MappedFile) -> Result<(), Error> {
             }
             if let Some(working) = working {
                 require_digest(&working.sha256)?;
-                if working.path != accepted.path {
-                    return Err(Error::root("source_map_origin_invalid"));
-                }
             }
             if let FileOrigin::ManagedForm { descriptor, .. } = &entry.origin
                 && !super::super::layout::forms::native_path(descriptor)?

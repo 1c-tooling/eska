@@ -15,7 +15,7 @@ pub(super) const MANIFEST: &str = "source.json";
 pub(super) const MAX_TEXT_BYTES: u64 = 64 * 1024 * 1024;
 
 /// A sorted, complete snapshot includes empty directories and every input payload.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct Inventory {
     pub files: BTreeMap<SourcePath, FileEntry>,
     pub directories: Vec<SourcePath>,

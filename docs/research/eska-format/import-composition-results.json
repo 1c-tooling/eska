@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "stage": "EF-25 UUID rename composition",
+  "status": "partial",
+  "platform": "8.3.27.2325",
+  "native": [
+    {
+      "type": "configuration",
+      "files": 13,
+      "bsl": 3,
+      "xml_semantic_equal": 10,
+      "opaque_equal": 0,
+      "only_expected_local_module_difference": true,
+      "cdf_versions_ignored": true,
+      "pin_retained": true,
+      "repeat_unchanged": true
+    },
+    {
+      "type": "extension",
+      "files": 107,
+      "bsl": 25,
+      "xml_semantic_equal": 76,
+      "opaque_equal": 6,
+      "only_expected_local_module_difference": true,
+      "cdf_versions_ignored": true,
+      "pin_retained": true,
+      "repeat_unchanged": true
+    },
+    {
+      "type": "processing",
+      "files": 8,
+      "bsl": 3,
+      "xml_semantic_equal": 5,
+      "opaque_equal": 0,
+      "only_expected_local_module_difference": true,
+      "cdf_versions_ignored": false,
+      "pin_retained": true,
+      "repeat_unchanged": true
+    },
+    {
+      "type": "report",
+      "files": 6,
+      "bsl": 1,
+      "xml_semantic_equal": 5,
+      "opaque_equal": 0,
+      "only_expected_local_module_difference": true,
+      "cdf_versions_ignored": false,
+      "pin_retained": true,
+      "repeat_unchanged": true
+    }
+  ],
+  "bsl_cli": [
+    {
+      "type": "configuration",
+      "files": 1,
+      "diagnostics": 0,
+      "syntax_errors": 0,
+      "failed_files": 0,
+      "complete": true
+    },
+    {
+      "type": "extension",
+      "files": 1,
+      "diagnostics": 4,
+      "syntax_errors": 0,
+      "failed_files": 0,
+      "complete": true
+    },
+    {
+      "type": "processing",
+      "files": 1,
+      "diagnostics": 50,
+      "syntax_errors": 0,
+      "failed_files": 0,
+      "complete": true
+    },
+    {
+      "type": "report",
+      "files": 1,
+      "diagnostics": 2,
+      "syntax_errors": 0,
+      "failed_files": 0,
+      "complete": true
+    }
+  ],
+  "limitations": [
+    "same ownership and UUID set",
+    "no add/delete or divergent map merge",
+    "opaque XML dependency scanning is conservative",
+    "not native CLI or IDE coordination",
+    "not client runtime or production acceptance"
+  ],
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.26
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 0.26
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 0.26
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 60.3
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 71.49
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 14.57
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 1.24
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.43
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 2.17
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 2.24
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 22.48
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.21
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.28
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.15
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 1.4
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.85
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 5.98
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.59
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 1.33
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 3.98
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 41.75
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 8.65
+    }
+  ],
+  "root_tests": {
+    "unit_passed": 801,
+    "integration_passed": 600,
+    "ignored_opt_in": 24
+  },
+  "auxiliary_tests": {
+    "sdk": [
+      {
+        "passed": 185,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 158,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 19,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    ],
+    "adapter": [
+      {
+        "passed": 70,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    ],
+    "build_cli": [
+      {
+        "passed": 636,
+        "failed": 0,
+        "ignored": 3
+      },
+      {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 21,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    ]
+  }
+}

@@ -121,9 +121,10 @@ fn metadata_location(
     let owner = ObjectSource::from_value(accepted_value)?;
     let accepted_object = std::iter::once(&owner.document)
         .chain(&owner.nested)
-        .find(|part| part.path == file.path)
-        .map(|part| &part.descriptor.object)
+        .find(|part| part.descriptor.object.uuid.key() == root_uuid.key())
         .ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
+    let accepted_path = &accepted_object.path;
+    let accepted_object = &accepted_object.descriptor.object;
     let text =
         std::str::from_utf8(native).map_err(|_| Error::root("source_map_native_text_invalid"))?;
     if !text.is_char_boundary(range.start) || !text.is_char_boundary(range.end) {
@@ -144,14 +145,7 @@ fn metadata_location(
         .children()
         .find(Node::is_element)
         .ok_or_else(|| Error::root("source_map_native_text_invalid"))?;
-    if !envelope.has_tag_name((MD_NAMESPACE, "MetaDataObject"))
-        || envelope.attribute("version") != Some("2.20")
-        || !root.has_tag_name((MD_NAMESPACE, accepted_object.kind.designer_tag()))
-        || accepted_object.uuid.key() != root_uuid.key()
-        || !root
-            .attribute("uuid")
-            .is_some_and(|uuid| uuid.eq_ignore_ascii_case(root_uuid.as_str()))
-    {
+    if !metadata_root_valid(envelope, root, accepted_object.kind, root_uuid) {
         return Err(Error::root("source_map_origin_mismatch"));
     }
     let mut result = SourceLocation {
@@ -172,7 +166,7 @@ fn metadata_location(
             property,
         } => (uuid, Some((index, property))),
     };
-    let Some(location) = document_paths::locate(&owner, &file.path, &uuid) else {
+    let Some(location) = document_paths::locate(&owner, accepted_path, &uuid) else {
         return created_location(file, text, &uuid, property, working, texts.working);
     };
     result.uuid = Some(uuid.clone());
@@ -194,6 +188,24 @@ fn metadata_location(
                 return working_location(file, &uuid, *name, value, working, texts.working);
             }
         }
+        if matches!((&property, original), (Property::Preserved { fragment: selected }, Property::Preserved { fragment: before }) if selected.xml != before.xml)
+            && matches!(
+                file.origin,
+                FileOrigin::Metadata {
+                    uses_working_values: true,
+                    ..
+                }
+            )
+        {
+            return working_preserved_location(
+                file,
+                &uuid,
+                index,
+                &property,
+                working,
+                texts.working,
+            );
+        }
         result.range = Some(property_range(
             &accepted_tree,
             &steps,
@@ -202,6 +214,49 @@ fn metadata_location(
         )?);
     }
     Ok(result)
+}
+
+/// The actual native envelope and UUID must match the independently resolved accepted class.
+fn metadata_root_valid(
+    envelope: Node<'_, '_>,
+    root: Node<'_, '_>,
+    kind: MetadataKind,
+    uuid: &NativeUuid,
+) -> bool {
+    envelope.has_tag_name((MD_NAMESPACE, "MetaDataObject"))
+        && envelope.attribute("version") == Some("2.20")
+        && root.has_tag_name((MD_NAMESPACE, kind.designer_tag()))
+        && root
+            .attribute("uuid")
+            .is_some_and(|value| value.eq_ignore_ascii_case(uuid.as_str()))
+}
+
+/// A renamed reference retains its opaque slot but originates in exact current YAML bytes.
+fn working_preserved_location(
+    file: &MappedFile,
+    uuid: &NativeUuid,
+    index: usize,
+    selected: &Property,
+    input: Option<&InputFile>,
+    text: Option<&str>,
+) -> Result<SourceLocation, Error> {
+    let input = input.ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
+    let text = text.ok_or_else(|| Error::root("source_map_origin_text_missing"))?;
+    verify_bytes(text.as_bytes(), input.bytes, &input.sha256)?;
+    let (value, tree) = yaml::decode_with_tree(text)?;
+    let owner = metadata_owner(value)?;
+    let location = document_paths::locate(&owner, &file.path, uuid)
+        .ok_or_else(|| Error::root("source_map_origin_mismatch"))?;
+    let (property, steps) = accepted_property(&location, index)?;
+    if property != selected {
+        return Err(Error::root("source_map_origin_mismatch"));
+    }
+    Ok(SourceLocation {
+        authority: InputAuthority::Working,
+        input: input.clone(),
+        uuid: Some(uuid.clone()),
+        range: Some(property_range(&tree, &steps, property, location.schema)?),
+    })
 }
 
 /// A fresh inline node belongs entirely to verified working bytes and must match the selected native node.

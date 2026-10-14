@@ -15,30 +15,25 @@ pub(super) struct Selection {
     pub incoming_data_unchanged: bool,
 }
 
-/// Compare by source identity while keeping the approved reverse map as the output authority.
+/// Compare stable identities and select a reverse map independently of its native fingerprints.
 pub(super) fn select(
     working: &Inventory,
     ancestor: &Package,
     incoming: &Package,
     approved: &Package,
+    current_package: &Package,
 ) -> Result<Selection, Error> {
     let old = file_identity::files(ancestor)?;
     let new = file_identity::files(incoming)?;
-    let current = file_identity::files(approved)?;
+    let current = file_identity::files(current_package)?;
+    let approved_paths = file_identity::files(approved)?;
     let mut selected = BTreeMap::new();
     let mut changes = Vec::new();
     let mut conflicts = Vec::new();
     let mut incoming_data_unchanged = shape(&ancestor.manifest) == shape(&incoming.manifest);
     let marker = SourcePath::parse(files::MANIFEST)?;
-    if shape(&ancestor.manifest) != shape(&approved.manifest)
-        || shape(&incoming.manifest) != shape(&approved.manifest)
-    {
-        conflicts.push(conflict(
-            SourceImportConflictKind::MappingUnsupported,
-            &marker,
-            None,
-        ));
-    }
+    let map = selected_map(ancestor, incoming, current_package, &mut conflicts)?;
+    let output_paths = file_identity::files(map)?;
     let keys = old
         .keys()
         .chain(new.keys())
@@ -52,8 +47,9 @@ pub(super) fn select(
             .get(key)
             .and_then(|path| incoming.snapshot.files.get(path));
         let local = current.get(key).and_then(|path| working.files.get(path));
-        let path = current
+        let path = output_paths
             .get(key)
+            .or_else(|| current.get(key))
             .or_else(|| new.get(key))
             .or_else(|| old.get(key))
             .ok_or_else(|| Error::root("source_file_unmapped"))?;
@@ -64,7 +60,7 @@ pub(super) fn select(
             incoming_data_unchanged = false;
         }
         if key.starts_with("authority:") {
-            let approved_entry = current
+            let approved_entry = approved_paths
                 .get(key)
                 .and_then(|path| approved.snapshot.files.get(path));
             if !same(new_entry, approved_entry) || !same(local, approved_entry) {
@@ -98,17 +94,14 @@ pub(super) fn select(
             return Err(Error::root("source_path_collision"));
         }
     }
-    let entry = working
-        .files
-        .get(&marker)
-        .ok_or_else(|| Error::root("source_descriptor_missing"))?;
-    selected.insert(marker, SelectedFile::Working(entry.clone()));
-    record_extras(working, &current, &approved.snapshot, &mut conflicts);
+    let chosen_manifest = manifest_choice(map, incoming, working, &marker)?;
+    selected.insert(marker, chosen_manifest);
+    record_extras(working, &current, &current_package.snapshot, &mut conflicts);
     let files = selected
         .iter()
         .map(|(path, choice)| (path.clone(), selected_entry(path, choice)))
         .collect::<BTreeMap<_, _>>();
-    let directories = approved.snapshot.directories.clone();
+    let directories = map.snapshot.directories.clone();
     let output = Inventory {
         revision: files::revision(&files, &directories),
         files,
@@ -220,4 +213,55 @@ fn conflict(
         exclusion: None,
         coordinate: Vec::new(),
     }
+}
+
+/// Divergent declaration maps are surfaced before any file can be published at an ambiguous path.
+fn selected_map<'a>(
+    ancestor: &Package,
+    incoming: &'a Package,
+    current: &'a Package,
+    conflicts: &mut Vec<SourceImportConflict>,
+) -> Result<&'a Package, Error> {
+    let marker = SourcePath::parse(files::MANIFEST)?;
+    let map = if shape(&current.manifest) == shape(&incoming.manifest) {
+        current
+    } else if shape(&current.manifest) == shape(&ancestor.manifest) {
+        incoming
+    } else if shape(&incoming.manifest) == shape(&ancestor.manifest)
+        || shape(&current.manifest) == shape(&incoming.manifest)
+    {
+        current
+    } else {
+        conflicts.push(conflict(
+            SourceImportConflictKind::MappingUnsupported,
+            &marker,
+            None,
+        ));
+        current
+    };
+    Ok(map)
+}
+
+/// A retained map uses the captured working bytes even when JSON whitespace differs from its base.
+fn manifest_choice(
+    map: &Package,
+    incoming: &Package,
+    working: &Inventory,
+    marker: &SourcePath,
+) -> Result<SelectedFile, Error> {
+    let selected = if std::ptr::eq(map, incoming) {
+        &map.snapshot
+    } else {
+        working
+    };
+    let entry = selected
+        .files
+        .get(marker)
+        .ok_or_else(|| Error::root("source_descriptor_missing"))?
+        .clone();
+    Ok(if std::ptr::eq(map, incoming) {
+        SelectedFile::Incoming(entry)
+    } else {
+        SelectedFile::Working(entry)
+    })
 }

@@ -53,7 +53,7 @@ impl SourceImportPlan {
         Ok(LayoutPublication::Created)
     }
 
-    /// Publish the unchanged reverse map last, after copying each selected blob without replacement.
+    /// Publish the selected reverse map last, after copying each selected blob without replacement.
     fn write_source(&self, destination: &Path, cancelled: &dyn Fn() -> bool) -> Result<(), Error> {
         for directory in &self.output.directories {
             files::check_cancelled(cancelled)?;

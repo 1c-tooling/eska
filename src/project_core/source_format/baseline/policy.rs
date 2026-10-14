@@ -7,6 +7,7 @@ use super::{
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Only verified baseline decoding constructs these native rules, identities and inherited freezes.
+#[derive(Clone)]
 pub(super) struct AcceptedPolicy {
     pub(super) native: Option<Support>,
     pub(super) objects: BTreeMap<String, AcceptedObject>,

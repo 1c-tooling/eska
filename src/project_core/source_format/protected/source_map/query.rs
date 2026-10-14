@@ -3,9 +3,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use super::{
-    EXTERNAL_SOURCE_MAP_VERSION, FileOrigin, InputAuthority, MappedFile, OriginTexts,
-    QUERY_SOURCE_MAP_VERSION, QueryOrigin, SourceLocation, SourceMap, location::verify_bytes,
-    payload_origin, require_digest,
+    COMPOSITION_SOURCE_MAP_VERSION, EXTERNAL_SOURCE_MAP_VERSION, FileOrigin, InputAuthority,
+    MappedFile, OriginTexts, QUERY_SOURCE_MAP_VERSION, QueryOrigin, SourceLocation, SourceMap,
+    location::verify_bytes, payload_origin, require_digest,
 };
 use crate::project_core::{
     MetadataKind,
@@ -245,7 +245,9 @@ pub(super) fn validate_map(map: &SourceMap) -> Result<(), Error> {
             } => {
                 if !matches!(
                     map.schema_version,
-                    QUERY_SOURCE_MAP_VERSION | EXTERNAL_SOURCE_MAP_VERSION
+                    QUERY_SOURCE_MAP_VERSION
+                        | EXTERNAL_SOURCE_MAP_VERSION
+                        | COMPOSITION_SOURCE_MAP_VERSION
                 ) || !native_path(descriptor, MetadataKind::Template)?
                     .as_str()
                     .eq_ignore_ascii_case(file.path.as_str())
@@ -261,7 +263,9 @@ pub(super) fn validate_map(map: &SourceMap) -> Result<(), Error> {
         if !queries.is_empty()
             && !matches!(
                 map.schema_version,
-                QUERY_SOURCE_MAP_VERSION | EXTERNAL_SOURCE_MAP_VERSION
+                QUERY_SOURCE_MAP_VERSION
+                    | EXTERNAL_SOURCE_MAP_VERSION
+                    | COMPOSITION_SOURCE_MAP_VERSION
             )
         {
             return Err(invalid());
@@ -276,7 +280,9 @@ pub(super) fn validate_map(map: &SourceMap) -> Result<(), Error> {
             kind,
             descriptor,
         )?;
-        if !matches!(map.file(descriptor).map(|file| &file.origin), Some(FileOrigin::Metadata { accepted, .. }) if accepted.path == authoring)
+        if !matches!(map.file(descriptor).map(|file| &file.origin), Some(FileOrigin::Metadata { accepted, working, .. })
+            if (map.schema_version == COMPOSITION_SOURCE_MAP_VERSION && working.as_ref().is_some_and(|input| input.path == authoring))
+                || accepted.path == authoring)
         {
             return Err(invalid());
         }
@@ -315,10 +321,15 @@ pub(super) fn validate_map(map: &SourceMap) -> Result<(), Error> {
 pub(super) fn validate_origin(file: &MappedFile) -> Result<(), Error> {
     let (queries, prefix, form) = match &file.origin {
         FileOrigin::ManagedForm {
-            queries, accepted, ..
+            queries,
+            accepted,
+            working,
+            ..
         } => (
             queries,
-            accepted
+            working
+                .as_ref()
+                .unwrap_or(accepted)
                 .path
                 .as_str()
                 .strip_suffix("/form.yaml")

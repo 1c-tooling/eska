@@ -31,8 +31,8 @@ use crate::project_core::{
 
 pub use prepared::PreparedSource;
 pub use source_map::{
-    EXTERNAL_SOURCE_MAP_VERSION, FileOrigin, InputAuthority, InputFile,
-    MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile, OriginTexts, QUERY_SOURCE_MAP_VERSION,
+    COMPOSITION_SOURCE_MAP_VERSION, EXTERNAL_SOURCE_MAP_VERSION, FileOrigin, InputAuthority,
+    InputFile, MANAGED_FORM_SOURCE_MAP_VERSION, MappedFile, OriginTexts, QUERY_SOURCE_MAP_VERSION,
     QueryOrigin, RELOCATED_SOURCE_MAP_VERSION, SOURCE_MAP_VERSION, SourceLocation, SourceMap,
 };
 
@@ -123,6 +123,27 @@ pub fn prepare_protected(
     base.verify()?;
     let source = fs::canonicalize(source).map_err(|error| files::io(&error))?;
     let working = Inventory::read(&source)?;
+    let original_base = base;
+    let bound;
+    let marker = SourcePath::parse(files::MANIFEST)?;
+    let manifest = if working.files.contains_key(&marker) {
+        serde_json::from_str::<super::SourceManifest>(&read_working(&source, &working, &marker)?)
+            .ok()
+    } else {
+        None
+    };
+    let base = if manifest
+        .as_ref()
+        .is_some_and(|manifest| manifest != &base.package.manifest)
+    {
+        let candidate = Package::from_snapshot(working.clone(), |path| {
+            read_working(&source, &working, path)
+        })?;
+        bound = base.with_composition(&candidate)?;
+        &bound
+    } else {
+        base
+    };
     queries::require_values(&working, base)?;
     let mut diagnostics = Vec::new();
     let selected = merge::sources(&source, &working, base, &mut diagnostics)?;
@@ -148,13 +169,15 @@ pub fn prepare_protected(
         payloads: base.package.payloads.clone(),
         payload_sources: base.package.payload_sources.clone(),
     };
-    super::structural_references::validate_references(base, &package, |path| {
-        match origins.get(path) {
+    super::structural_references::validate_references(
+        original_base,
+        &package,
+        |path| match origins.get(path) {
             Some(Origin::Working) => read_working(&source, &working, path),
             Some(Origin::Accepted) => base.read_file(path),
             None => Err(Error::root("source_file_undeclared")),
-        }
-    })?;
+        },
+    )?;
     let xml = package.native_xml()?;
     let native = package.output_inventory(&xml)?;
     let binding = generation::Binding::new(&working.revision, base.reference(), &native.revision);

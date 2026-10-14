@@ -20,6 +20,13 @@ native scoped slot и range. Адресный mapper учитывает XML esca
 при переводе в UTF-8 `.sdbl`; source XML/YAML gaps сохраняют свои координаты.
 `source_schema_version` остаётся 2, maps 1–3 читаются в прежнем виде.
 
+[Переименование объявленного объекта EF-25](import-composition.md) использует
+source map schema 6. Actual accepted path/fingerprint сохраняется из pinned store,
+working path может отличаться; UUID связывает оба inputs. `locate` находит исходный
+native descriptor по UUID и изменённое имя по новому working path. Прежние maps
+1–5 требуют совпадения accepted/working metadata paths. Native inventory, policies
+и prepared proof проверяются независимо; schema 6 не предоставляет права.
+
 `PreparedSource::source_map` возвращает карту полного native inventory:
 descriptor XML, BSL, ресурсы, политика поддержки, supplier CF, файлы вне
 объявленного состава и пустые каталоги. Пути относительные; абсолютных путей

@@ -2841,6 +2841,15 @@ capabilities, CI pin и storage schemas прежние. Это подготов�
 Четыре native repeats повторно подтвердили bytes/mtime, старый support pin и
 history; controlled CF/CFE CDF variation сохранила common ancestry.
 
+[Проверяемая карта rename](../research/eska-format/import-composition.md)
+переносит отдельные unrestricted owners, модули/ресурсы по UUID и slot под прежним
+pin. Прежние stencils/права отделены от новых bindings; protected build проверяет
+карту, source map 6 хранит реальные old accepted/new working origins. Add/delete,
+новые/заимствованные UUID и native CLI/IDE lifecycle ещё не реализованы.
+Пять новых unit tests, root 801/600 и все 22 Rust gates прошли. Четыре native
+rename pairs прошли import/build/dump на 1С 8.3.27.2325; старые pin и settings
+сохранены, повтор не меняет source. EF-25 остаётся `IN_PROGRESS`.
+
 ## EF-26 RLS и дополнительные тексты ресурсов
 
 **Статус:** `DEFERRED`; после MVP, fmt и VCS.

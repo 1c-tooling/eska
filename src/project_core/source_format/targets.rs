@@ -26,6 +26,13 @@ pub(in crate::project_core::source_format) fn validate_documents(
     Ok(())
 }
 
+/// Structural transitions resolve qualified reference labels through this same UUID graph.
+pub(super) fn qualified_names(
+    documents: &BTreeMap<SourcePath, NativeDocument>,
+) -> Result<BTreeMap<String, String>, Error> {
+    Ok(Index::build(documents)?.paths)
+}
+
 /// Editing uses the independently verified base as target authority without reading other sources.
 pub(in crate::project_core::source_format) fn validate_edit(
     documents: &BTreeMap<SourcePath, NativeDocument>,
