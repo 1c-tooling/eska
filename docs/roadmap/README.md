@@ -48,6 +48,12 @@ repeat/build/dump; исходный pin/settings/local BSL сохранены. �
 Rename/add, новая форма/query, unsaved SDK property preview на RU/EN, support JSON,
 22 Rust gates и четыре native edit/build/dump проверены. Refresh работающего IDE
 и защита unsaved вкладок при импорте ещё нужны; EF-25 остаётся `IN_PROGRESS`.
+[Guard анализатора](../research/eska-format/analyzer-import-guard.md) добавлен
+в control inventory и проверяется перед dispatch и wire publication. Last
+published snapshot блокирует stale semantic results/document acknowledgement;
+source journal/recovery/replay проверены на RU/EN. Настоящий CF import с открытыми
+dirty YAML/BSL сохранил тексты клиента, pin/settings и прежний CF. Автоматический
+restart/replay установленного клиента ещё нужны; EF-25 остаётся `IN_PROGRESS`.
 EF-15 — `DONE` в [принятой матрице](../research/eska-format/base-update.md).
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.

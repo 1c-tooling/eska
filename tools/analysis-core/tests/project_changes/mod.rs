@@ -1,5 +1,7 @@
 //! A selected control-file event retires the host; no old tree, text or edit plan can survive it.
 
+mod source_import;
+
 use super::*;
 use url::Url;
 
@@ -92,6 +94,11 @@ fn each_control_file_event_retires_all_queries_and_editor_inputs_in_both_locales
             "root_configuration",
         ),
         ("project", root.join("eska.toml"), "project_settings"),
+        (
+            "source-import",
+            root.join(".eska-project-source-import.json"),
+            "source_import",
+        ),
         ("toml", root.join("bsl-analyzer.toml"), "analysis_settings"),
         ("json", root.join(".bsl-analyzer.json"), "analysis_settings"),
         (
@@ -107,7 +114,7 @@ fn each_control_file_event_retires_all_queries_and_editor_inputs_in_both_locales
             let mut previous = None;
             for lang in ["en-US", "ru-RU"] {
                 let (mut client, capability) = start(&root, lang);
-                assert_eq!(capability["inputs"].as_array().unwrap().len(), 6);
+                assert_eq!(capability["inputs"].as_array().unwrap().len(), 7);
                 assert!(
                     capability["inputs"]
                         .as_array()
@@ -217,7 +224,7 @@ fn selected_workspace_manifest_is_an_explicit_restart_input_in_both_locales() {
     let mut previous = None;
     for lang in ["en-US", "ru-RU"] {
         let (mut client, capability) = start(&member, lang);
-        assert_eq!(capability["inputs"].as_array().unwrap().len(), 7);
+        assert_eq!(capability["inputs"].as_array().unwrap().len(), 8);
         assert!(
             capability["inputs"]
                 .as_array()

@@ -33,6 +33,7 @@ impl EskaSource {
         if reader.project_type()? != project.configuration().project_type() {
             return Err(Error::root("source_profile_unsupported"));
         }
+        super::source_format::require_project_ready(project.root())?;
         Ok(Self {
             project,
             scope,

@@ -5,7 +5,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use eska::project_core::{config::FILE_NAME, eska_source::EskaSource};
+use eska::project_core::{
+    config::FILE_NAME, eska_source::EskaSource, source_format::PROJECT_SOURCE_IMPORT_RECEIPT,
+};
 use serde::Serialize;
 use serde_json::{Value, json};
 
@@ -21,6 +23,7 @@ pub enum Kind {
     ProjectSettings,
     WorkspaceSettings,
     AnalysisSettings,
+    SourceImport,
 }
 
 #[derive(Serialize)]
@@ -40,12 +43,19 @@ impl Inputs {
                 Kind::SourceManifest,
             ),
             (
-                source.reader().root().join("configuration.yaml"),
+                source
+                    .reader()
+                    .root()
+                    .join(source.reader().configuration().path.as_path()),
                 Kind::RootConfiguration,
             ),
             (
                 source.project().root().join(FILE_NAME),
                 Kind::ProjectSettings,
+            ),
+            (
+                source.project().root().join(PROJECT_SOURCE_IMPORT_RECEIPT),
+                Kind::SourceImport,
             ),
         ]);
         for name in project_model::CONFIG_FILE_NAMES {
@@ -60,6 +70,47 @@ impl Inputs {
     /// File event classification is lexical and never reads a changed manifest or settings file.
     pub fn kind(&self, path: &Path) -> Option<Kind> {
         self.0.get(path).copied()
+    }
+
+    /// A live import retires old inputs even when its watcher notification has not arrived yet.
+    pub fn active_import(&self) -> Result<Option<Change>, Value> {
+        let Some((path, kind)) = self
+            .0
+            .iter()
+            .find(|(_, kind)| matches!(kind, Kind::SourceImport))
+        else {
+            return Ok(None);
+        };
+        match std::fs::symlink_metadata(path) {
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(_) => {
+                return Err(protocol::error_value(
+                    -32000,
+                    "project_input_unavailable",
+                    Value::Null,
+                ));
+            }
+            Ok(_) => {}
+        }
+        let uri = url::Url::from_file_path(path).map_err(|()| {
+            protocol::error_value(-32603, "path_encoding_unsupported", Value::Null)
+        })?;
+        Ok(Some(Change {
+            kind: *kind,
+            uri: uri.into(),
+        }))
+    }
+
+    /// Initialization rechecks this boundary after allocating the host and before advertising it.
+    pub fn require_idle(&self) -> Result<(), Value> {
+        if self.active_import()?.is_some() {
+            return Err(protocol::error_value(
+                -32000,
+                "source_import_incomplete",
+                Value::Null,
+            ));
+        }
+        Ok(())
     }
 
     /// Relative literal filenames keep glob syntax out of arbitrary project and workspace paths.

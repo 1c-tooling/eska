@@ -162,7 +162,7 @@ fn exact_control_inventory_is_registered_once_and_acknowledged_in_both_locales()
                     .as_array()
                     .unwrap()
                     .len(),
-                if workspace { 7 } else { 6 }
+                if workspace { 8 } else { 7 }
             );
             client.send(&reply(Value::Null));
             assert_eq!(

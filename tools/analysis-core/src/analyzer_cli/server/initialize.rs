@@ -41,6 +41,7 @@ impl Server<'_> {
         let options = profile.session_options(self.cli.max_retained_source_bytes);
         let session = AnalysisSession::from_reader(source.into_reader(), options)
             .map_err(|error| session_open_error(&error))?;
+        project_inputs.require_idle()?;
         let session_id = bsl_metadata::Uuid::new_v4().to_string();
         let hierarchical_symbols = document_symbols::hierarchical(params);
         let hover_format = hover::format(params);

@@ -2886,6 +2886,17 @@ reopened SDK/unsaved property preview на RU/EN, CLI support JSON и 22 Rust ga
 защита unsaved вкладок при импорте и общий workflow остаются в EF-25/EF-20;
 EF-25 остаётся `IN_PROGRESS`.
 
+[Guard анализатора](../research/eska-format/analyzer-import-guard.md) добавляет
+project source-import marker в 7/8 control inputs. Host проверяет live guard
+до dispatch и после вычисления/сериализации, сохраняя last published snapshot.
+RPC/document/file-batch отказы освобождают старую сессию; удаление marker её
+не возобновляет. RU/EN process matrix, source-only journal с обеими recovery
+actions и deterministic late-result/late-ack tests проверяют caller dirty bytes
+и явный replay. Настоящий CF preview/write на 1С 8.3.27.2325 прошёл при открытых
+dirty YAML/BSL: новый host видит удалённый owner, orphan input отказан без записи.
+Original pin/settings и прежний CF сохранены. Native CFE/EPF/ERF и автоматический
+клиентский restart/replay этой частью не приняты; EF-25 остаётся `IN_PROGRESS`.
+
 ## EF-26 RLS и дополнительные тексты ресурсов
 
 **Статус:** `DEFERRED`; после MVP, fmt и VCS.

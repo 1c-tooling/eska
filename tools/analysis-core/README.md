@@ -196,7 +196,7 @@ close перечитывает файл. [Client file events](../../docs/researc
 проектные операции отклоняются. Список control URI включает родительский
 workspace manifest и отсутствующие кандидаты settings.
 [Динамическая регистрация](../../docs/research/eska-format/analyzer-watcher-registration.md)
-запрашивает одну подписку на эти 6–7 control files после initialized, если клиент
+запрашивает одну подписку на эти 7–8 control files после initialized, если клиент
 поддерживает оба watcher flags. [Saved-input регистрация](../../docs/research/eska-format/analyzer-saved-watcher.md)
 включена вторым элементом того же запроса: source-relative шаблоны покрывают
 объявленные YAML/BSL и binary modules. Ответ подтверждается eska/watchRegistration.
@@ -204,6 +204,10 @@ workspace manifest и отсутствующие кандидаты settings.
 binary остаются нечитаемыми. Manual policy сохраняет предел 200 и строгий отказ.
 Отказ регистрации не блокирует host. Интеграция клиента и автоматическое открытие
 нового состава ещё не приняты.
+[Guard повторного импорта](../../docs/research/eska-format/analyzer-import-guard.md)
+проверяется до dispatch и перед отправкой frame без ожидания watcher event.
+Старый host завершается с последним отправленным snapshot; несохранённые
+документы остаются у клиента для явного replay в новом процессе.
 `textDocument/diagnostic` использует выбранный `--profile syntax|semantic`
 и `bsl-analyzer.toml`; syntax остаётся default, settings фиксируются при initialize.
 Semantic загружает pending saved inputs до query и сохраняет editor authority;

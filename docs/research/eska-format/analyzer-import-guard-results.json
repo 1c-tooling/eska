@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "stage": "EF-25 analyzer import guard",
+  "status": "partial",
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.54
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 2.47
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 8.13
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 60.8
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 71.47
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 15.13
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 1.29
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.45
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 0.17
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 2.56
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 26.24
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.68
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.38
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.17
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 1.62
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.77
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 5.99
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.67
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 1.39
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 4.08
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 38.15
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 8.96
+    }
+  ],
+  "native_probe": {
+    "kind": "configuration",
+    "platform": "8.3.27.2325",
+    "actual_native_preview": true,
+    "actual_native_import": true,
+    "live_guard_observed": true,
+    "late_watcher_query_retired": true,
+    "last_snapshot_preserved": true,
+    "completed_import_does_not_reactivate_old_host": true,
+    "new_host_sees_deleted_owner": true,
+    "dirty_orphan_rejected_without_rewriting_client_text": true,
+    "settings_preserved": true,
+    "original_pin_preserved": true,
+    "copied_previous_cf_preserved": true
+  },
+  "regressions": {
+    "process_locales": [
+      "ru-RU",
+      "en-US"
+    ],
+    "guard_marker_types": [
+      "file",
+      "directory",
+      "dangling_symlink"
+    ],
+    "triggers": [
+      "project_request",
+      "document_input",
+      "saved_file_batch"
+    ],
+    "source_only_recovery": [
+      "complete",
+      "roll_back"
+    ],
+    "late_semantic_result_rejected": true,
+    "late_document_acknowledgement_rejected": true,
+    "last_published_snapshot_preserved": true,
+    "exact_dirty_replay": true,
+    "saved_source_unchanged_by_server": true
+  },
+  "limits": [
+    "No automatic client restart or dirty-document replay implemented by this server slice",
+    "No native CFE/EPF/ERF probe in this slice",
+    "No OS/client watcher acceptance",
+    "Guard polling does not replace composition file events or cross-process locking"
+  ]
+}

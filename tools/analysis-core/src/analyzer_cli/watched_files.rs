@@ -112,6 +112,9 @@ fn update(
             changed_controls.into_values().collect(),
         ));
     }
+    if let Some(change) = controls.active_import()? {
+        return Ok(Notification::Restart(vec![change]));
+    }
     let mut paths = Vec::new();
     let mut ignored = 0_usize;
     for file in &files {

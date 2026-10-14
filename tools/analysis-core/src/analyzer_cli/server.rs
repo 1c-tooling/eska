@@ -16,6 +16,7 @@ use super::{
 };
 
 mod initialize;
+mod project_guard;
 mod requests;
 mod response;
 
@@ -43,6 +44,8 @@ struct Server<'a> {
     project_inputs: Option<project_changes::Inputs>,
     restart: Option<Value>,
     watcher: Option<watcher_registration::Registration>,
+    published_snapshot: Option<Value>,
+    pending_operation: Option<&'static str>,
 }
 
 enum Step {
@@ -76,6 +79,8 @@ pub fn run(
         project_inputs: None,
         restart: None,
         watcher: None,
+        published_snapshot: None,
+        pending_operation: None,
     };
     loop {
         let Ok(envelope) = incoming.receive() else {
@@ -99,6 +104,9 @@ pub fn run(
                 {
                     return 1;
                 }
+                if server.fence_response(&mut response).is_err() {
+                    return 1;
+                }
                 let current = server
                     .session
                     .as_ref()
@@ -108,21 +116,22 @@ pub fn run(
                 else {
                     return 1;
                 };
-                match server.cancel_response(&mut response, tracked.as_ref()) {
-                    Err(()) => return 1,
-                    Ok(true) => {
-                        if response::serialize(&response, &mut body, rpc_framing::MAX_RESPONSE)
-                            .is_err()
-                        {
-                            return 1;
-                        }
-                    }
-                    Ok(false) => (),
+                let Ok(cancelled) = server.cancel_response(&mut response, tracked.as_ref()) else {
+                    return 1;
+                };
+                let Ok(fenced) = server.fence_response(&mut response) else {
+                    return 1;
+                };
+                if (cancelled || fenced)
+                    && response::serialize(&response, &mut body, rpc_framing::MAX_RESPONSE).is_err()
+                {
+                    return 1;
                 }
                 drop(tracked);
                 if rpc_framing::write_frame(output, &body).is_err() {
                     return 1;
                 }
+                server.acknowledge_response();
             }
         }
     }
@@ -162,6 +171,14 @@ impl Server<'_> {
         message: &protocol::Message,
         cancellation: Option<&RequestCancellation>,
     ) -> Step {
+        self.pending_operation = match message.method.as_str() {
+            "textDocument/didOpen" => Some("textDocument/didOpen"),
+            "textDocument/didChange" => Some("textDocument/didChange"),
+            "textDocument/didClose" => Some("textDocument/didClose"),
+            "textDocument/didSave" => Some("textDocument/didSave"),
+            watched_files::METHOD => Some(watched_files::METHOD),
+            _ => None,
+        };
         if message.id.is_none() {
             return match message.method.as_str() {
                 "exit" => Step::Exit(u8::from(self.phase != Phase::Shutdown)),
@@ -210,9 +227,10 @@ impl Server<'_> {
             self.project_inputs = None;
             self.restart = None;
             self.watcher = None;
+            self.published_snapshot = None;
             Ok(Value::Null)
-        } else if let Some(state) = &self.restart {
-            Err(project_changes::error(state))
+        } else if let Err(error) = self.ensure_current() {
+            Err(error)
         } else {
             self.request(&message.method, &message.params, cancellation)
         };
@@ -221,11 +239,8 @@ impl Server<'_> {
 
     /// Full-sync notifications update the host before emitting an acknowledgement event.
     fn document_notification(&mut self, message: &protocol::Message) -> Step {
-        if let Some(state) = &self.restart {
-            return Step::Continue(Some(
-                json!({"jsonrpc":"2.0","method":"eska/inputRejected","params":{
-                "snapshot":state["snapshot"],"operation":message.method,"error":project_changes::error(state)}}),
-            ));
+        if let Err(error) = self.ensure_current() {
+            return self.input_rejected(&message.method, &error);
         }
         let Some(session) = self.session.as_mut() else {
             return Step::Exit(1);
@@ -245,6 +260,7 @@ impl Server<'_> {
 
     /// Client replies share the bounded input queue but never receive JSON-RPC responses of their own.
     fn client_response(&mut self, response: protocol::ClientResponse) -> Step {
+        self.pending_operation = None;
         if self.phase != Phase::Ready {
             return Step::Continue(None);
         }
@@ -275,14 +291,9 @@ impl Server<'_> {
         ) {
             watched_files::Notification::Inputs(event) => Step::Continue(Some(event)),
             watched_files::Notification::Restart(changes) => {
-                let state =
-                    json!({"snapshot":dto::snapshot(session,&self.session_id),"changes":changes});
-                self.session = None;
-                self.settings = None;
-                self.edit_plans = None;
-                self.documents = documents::Documents::default();
-                self.watcher = None;
-                self.restart = Some(state.clone());
+                let Ok(state) = self.retire(&changes) else {
+                    return Step::Exit(1);
+                };
                 Step::Continue(Some(
                     json!({"jsonrpc":"2.0","method":project_changes::EVENT,"params":state}),
                 ))

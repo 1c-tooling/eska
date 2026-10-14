@@ -2279,6 +2279,12 @@ descriptors/map и project guard. JSON preview показывает support из
 Rename/add, новая форма/query, reopened SDK/unsaved property preview на RU/EN,
 22 Rust gates и четыре native edit/build/dump проверены. Работающий IDE ещё
 требует согласованного refresh и защиты unsaved вкладок; EF-25 не закрыта.
+[Guard анализатора](research/eska-format/analyzer-import-guard.md) проверяет
+live import до dispatch и перед wire publication. Старый host освобождается
+с последним отправленным snapshot; неподтверждённые dirty версии не теряются
+у клиента. RU/EN journal/recovery/replay и настоящий CF import с открытыми
+YAML/BSL прошли. Автоматический restart/replay в клиенте ещё нужен;
+EF-25 остаётся `IN_PROGRESS`.
 
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.

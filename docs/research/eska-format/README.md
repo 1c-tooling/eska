@@ -19,6 +19,10 @@ CFE/EPF/ERF циклы и выполнение непустых ERF на 1С 8.3
 пути/UUID под прежним pin и блокируют stale saved edits. JSON preview показывает
 support изменённых UUID; четыре native edit/build/dump прошли. Refresh работающего
 IDE и unsaved вкладки при импорте ещё требуют координации.
+[Guard анализатора](analyzer-import-guard.md) проверяется перед dispatch и wire
+publication, освобождает старый host с последним отправленным snapshot и
+сохраняет caller-owned dirty buffers для явного replay. Настоящий CF import
+прошёл с открытыми документами; автоматический клиентский restart ещё нужен.
 EF-23 — [DONE в принятом профиле](query-acceptance.md).
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
 T84 — [DONE по версиям EPF/ERF](external-version.md): экспортная `Версия()`,

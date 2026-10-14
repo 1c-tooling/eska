@@ -121,7 +121,7 @@ fn post_import_property_plans_use_current_bindings_under_the_original_pin() {
             fs::write(&guard, "{}").unwrap();
             assert_eq!(
                 client.ask(&operation)["error"]["data"]["kind"],
-                "source_import_incomplete"
+                "project_restart_required"
             );
             fs::remove_file(guard).unwrap();
             client.finish();
