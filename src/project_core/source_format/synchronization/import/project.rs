@@ -1,5 +1,6 @@
 //! A selected project's import journal owns recovery, never support approval or user artifacts.
 
+mod native;
 mod publication;
 mod recovery;
 
@@ -30,6 +31,7 @@ use crate::project_core::{
     },
 };
 
+pub use native::{NativeProjectSourceImport, prepare_project_native_source_import};
 pub use recovery::recover_project_source_import;
 
 /// Project readers and builders refuse a selected source until the guarded import is resolved.
@@ -96,6 +98,8 @@ struct Receipt {
     output_revision: String,
     ancestor: ImportAncestorRef,
     incoming: ImportAncestorRef,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    native_revision: Option<String>,
     settings: BTreeMap<SourcePath, Option<String>>,
     workspace: Option<WorkspaceSettings>,
     previous_state: Option<String>,
@@ -185,14 +189,12 @@ pub fn prepare_project_source_import(
         output_revision: source.output_revision().into(),
         ancestor: ancestor.reference().clone(),
         incoming: incoming.reference().clone(),
+        native_revision: None,
         settings: settings(project.root())?,
         workspace,
         previous_state,
     };
-    let text =
-        serde_json::to_string_pretty(&receipt).map_err(|_| Error::root("source_schema_invalid"))?;
-    let reference =
-        ProjectSourceImportRef::from_sha256(&files::hex(&Sha256::digest(text.as_bytes())))?;
+    let (text, reference) = fingerprint(&receipt)?;
     let plan = ProjectSourceImportPlan {
         root: project.root().into(),
         source,
@@ -362,6 +364,15 @@ fn read_state(root: &Path, source: &SourcePath, text: &str) -> Result<State, Err
 /// Content addressing avoids absolute paths in either synchronization state or recovery references.
 fn transaction(root: &Path, reference: &ProjectSourceImportRef) -> PathBuf {
     root.join(SERVICE).join(&reference.sha256)
+}
+
+/// Both source-only and native preparations use the same independently retained recovery digest.
+fn fingerprint(receipt: &Receipt) -> Result<(String, ProjectSourceImportRef), Error> {
+    let text =
+        serde_json::to_string_pretty(receipt).map_err(|_| Error::root("source_schema_invalid"))?;
+    let reference =
+        ProjectSourceImportRef::from_sha256(&files::hex(&Sha256::digest(text.as_bytes())))?;
+    Ok((text, reference))
 }
 
 /// Aliases at any component cannot redirect a journal, backup, source or accepted store.

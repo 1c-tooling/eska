@@ -5,9 +5,9 @@ mod publication;
 mod selection;
 
 pub use project::{
-    PROJECT_SOURCE_IMPORT_RECEIPT, ProjectSourceImportPlan, ProjectSourceImportRef,
-    SourceImportRecovery, prepare_project_source_import, project_import_ancestor,
-    recover_project_source_import,
+    NativeProjectSourceImport, PROJECT_SOURCE_IMPORT_RECEIPT, ProjectSourceImportPlan,
+    ProjectSourceImportRef, SourceImportRecovery, prepare_project_native_source_import,
+    prepare_project_source_import, project_import_ancestor, recover_project_source_import,
 };
 
 #[cfg(test)]
@@ -89,6 +89,7 @@ pub struct SourceImportPlan {
     ancestor: Input,
     incoming: Input,
     approved: Input,
+    native: Option<Input>,
     ancestor_ref: ImportAncestorRef,
     incoming_ref: ImportAncestorRef,
     approved_ref: AcceptedRef,
@@ -156,6 +157,7 @@ pub fn prepare_source_import(
             root: approved.storage_root().to_owned(),
             inventory: approved_storage,
         },
+        native: None,
         ancestor_ref: ancestor.reference.clone(),
         incoming_ref: incoming.reference.clone(),
         approved_ref: approved.reference().clone(),
@@ -252,6 +254,9 @@ impl SourceImportPlan {
             &self.approved,
         ] {
             input.verify_cancellable(cancelled)?;
+        }
+        if let Some(native) = &self.native {
+            native.verify_cancellable(cancelled)?;
         }
         Ok(())
     }

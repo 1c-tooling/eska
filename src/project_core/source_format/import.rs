@@ -88,7 +88,11 @@ pub fn import_designer_queries(input: &Path, destination: &Path) -> Result<Sourc
 }
 
 /// Stage all parsed descriptors before publishing the explicitly selected physical layout.
-fn import(input: &Path, destination: &Path, layout: Layout) -> Result<SourceManifest, Error> {
+pub(in crate::project_core::source_format) fn import(
+    input: &Path,
+    destination: &Path,
+    layout: Layout,
+) -> Result<SourceManifest, Error> {
     let inventory = Inventory::read(input)?;
     let input = fs::canonicalize(input).map_err(|error| files::io(&error))?;
     let destination = destination_path(&input, destination)?;
@@ -305,7 +309,7 @@ impl Importer<'_> {
 }
 
 /// Immediate, bounded native descriptors choose the profile; unrelated XML remains payload.
-fn discover_root(
+pub(in crate::project_core::source_format) fn discover_root(
     input: &Path,
     inventory: &Inventory,
 ) -> Result<(SourcePath, MetadataKind, Option<super::ExternalRoot>), Error> {

@@ -3,6 +3,7 @@
 mod export;
 mod publication;
 pub(crate) mod snapshot;
+mod source_import;
 pub(crate) mod staging;
 mod unpack;
 
@@ -15,6 +16,7 @@ use super::RunError;
 use crate::project_core::native::{Identity, IdentityError};
 
 pub use publication::unpack_destination;
+pub use source_import::{ArtifactSourceImportError, PreparedArtifactSourceImport};
 pub use unpack::PreparedArtifact;
 
 /// Unpacking never needs project settings, Git state or an overwrite decision.

@@ -867,6 +867,10 @@ preset = "trunk"
 меняет выбранный ESKA проект/member с сохранением старых исходников и отдельного
 предка. Guard/recovery проверяют journal, bytes и settings под прежним CI pin;
 новая карта и native CLI reimport ещё в работе.
+[Native staging → project plan](docs/research/eska-format/native-project-import.md)
+подключены в API build/project core: четыре incoming artifacts прошли
+unpack/apply/build/dump с сохранением local BSL и прежнего pin. User CLI пока
+не расширен; имена EPF/ERF файлов не меняют принятую привязку объектов.
 Общий [typed writer](docs/research/eska-format/typed-scalars.md) поддерживает
 32 свойства, включая bool, точные целые и enum с проверкой владельца;
 старая preserved-запись не мигрирует при открытии.

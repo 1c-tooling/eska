@@ -2245,6 +2245,9 @@ EF-25 добавила [project journal/recovery](research/eska-format/source-im
 для библиотечного импорта в выбранный существующий проект/member с неизменным
 CI pin, сохранением old source и raw incoming ancestor. Новая карта, native CLI
 lifecycle и согласованное обновление IDE остаются обязательными до закрытия задачи.
+[Native staging и project plan](research/eska-format/native-project-import.md)
+уже проходят четыре настоящих artifact/import/build/dump цикла под старым CI pin;
+имя EPF/ERF файла приводится к принятой native привязке без изменения содержимого.
 
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.

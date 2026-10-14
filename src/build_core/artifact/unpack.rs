@@ -105,10 +105,21 @@ impl PreparedArtifact {
     /// # Errors
     /// Returns an input change, unsafe entry or filesystem failure.
     pub fn verify(&self) -> Result<(), UnpackError> {
+        self.verify_cancellable(&|| false)
+    }
+
+    /// Cancellation cannot turn a partial native fingerprint into a valid artifact proof.
+    ///
+    /// # Errors
+    /// Returns changed staging, unsafe input, I/O or explicit interruption failures.
+    pub fn verify_cancellable(&self, cancelled: &dyn Fn() -> bool) -> Result<(), UnpackError> {
         let sources = self.sources();
-        self.verify_snapshot(&sources, &|| false)?;
+        self.verify_snapshot(&sources, cancelled)?;
         if inspect_identity(&sources)?.as_ref() != Some(&self.identity) {
             return Err(UnpackError::SourceChanged(sources));
+        }
+        if cancelled() {
+            return Err(UnpackError::Run(crate::build_core::RunError::Interrupted));
         }
         Ok(())
     }
@@ -149,7 +160,7 @@ mod tests {
         let sources = staging.path.join("sources");
         fs::create_dir(&sources).unwrap();
         fs::write(sources.join("Processing.xml"), concat!(
-            "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'>",
+            "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses' version='2.20'>",
             "<ExternalDataProcessor uuid='12345678-1234-1234-1234-123456789012'>",
             "<Properties><Name>Processing</Name></Properties></ExternalDataProcessor></MetaDataObject>"
         )).unwrap();
@@ -232,5 +243,66 @@ mod tests {
         ));
         assert!(!destination.exists());
         artifact.verify().unwrap();
+    }
+
+    /// Native projection borrows the proof and removes only its own preview on drop or refusal.
+    #[test]
+    fn verified_artifact_delegates_to_the_project_import_plan() {
+        use crate::project_core::{
+            ProjectType, SourceFormat,
+            config::ProjectConfig,
+            discovery::discover,
+            metadata_model::ProjectScope,
+            source_format::{
+                ImportAncestor, SourcePath, accept_source, capture_import_ancestor,
+                import_designer_queries,
+            },
+        };
+        let fixture = TestDir::new();
+        let artifact = prepared(&fixture.0);
+        let root = fixture.0.join("project");
+        fs::create_dir(&root).unwrap();
+        fs::create_dir(root.join(".eska")).unwrap();
+        import_designer_queries(&artifact.sources(), &root.join("src")).unwrap();
+        let pin = accept_source(&root.join("src"), &root.join(".eska/accepted"), &[]).unwrap();
+        let config = ProjectConfig::new(ProjectType::Processing)
+            .with_source_format(SourceFormat::Eska {
+                accepted_base: SourcePath::parse(".eska/accepted").unwrap(),
+            })
+            .unwrap();
+        fs::write(root.join("eska.toml"), config.to_toml().unwrap()).unwrap();
+        let project = discover(&root).unwrap();
+        let store = fixture.0.join("ancestor");
+        let reference = capture_import_ancestor(&root.join("src"), &store).unwrap();
+        let ancestor = ImportAncestor::open(&store, &reference).unwrap();
+        let import = artifact
+            .prepare_source_import(
+                &project,
+                &ProjectScope::Standalone,
+                &pin,
+                &ancestor,
+                &|| false,
+            )
+            .unwrap();
+        assert!(import.plan().source_plan().conflicts().is_empty());
+        assert_eq!(import.plan().source_plan().approved_reference(), &pin);
+        drop(import);
+        assert!(!artifact.staging.path.join("source-import").exists());
+        artifact.verify().unwrap();
+        fs::write(artifact.sources().join("Module.bsl"), "changed").unwrap();
+        assert!(matches!(
+            artifact.prepare_source_import(
+                &project,
+                &ProjectScope::Standalone,
+                &pin,
+                &ancestor,
+                &|| false
+            ),
+            Err(super::super::ArtifactSourceImportError::Artifact(
+                UnpackError::SourceChanged(_)
+            ))
+        ));
+        assert!(!artifact.staging.path.join("source-import").exists());
+        assert!(!root.join(".eska/source-import").exists());
     }
 }

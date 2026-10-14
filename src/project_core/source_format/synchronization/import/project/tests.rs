@@ -18,17 +18,17 @@ const MODULE: &str = "CommonModules/Tools/Module.bsl";
 const LOCAL: &[u8] = b"\xef\xbb\xbf// local survives\r\n";
 
 /// All sources, native inputs, ancestors, support and artifacts belong to this unique test root.
-struct Fixture {
-    test: TestDir,
-    project: Project,
-    approved: AcceptedRef,
-    ancestor: ImportAncestor,
-    incoming: ImportAncestor,
+pub(super) struct Fixture {
+    pub(super) test: TestDir,
+    pub(super) project: Project,
+    pub(super) approved: AcceptedRef,
+    pub(super) ancestor: ImportAncestor,
+    pub(super) incoming: ImportAncestor,
 }
 
 impl Fixture {
     /// Incoming version and local module edits are independent and must both survive publication.
-    fn new(frozen: bool) -> Self {
+    pub(super) fn new(frozen: bool) -> Self {
         let test = TestDir::new();
         let source = source(&test);
         let root = test.0.join("project");

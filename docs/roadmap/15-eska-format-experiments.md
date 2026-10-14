@@ -2814,6 +2814,11 @@ rename, новый/заимствованный объект, смена UUID, b
 применяют план под прежним pin, сохраняют old source и raw incoming ancestor,
 проверяют точные settings/inputs и блокируют незавершённые источники. Новая карта,
 native CLI lifecycle и координация IDE ещё в работе; EF-25 не закрыта.
+[Native staging → project plan](../research/eska-format/native-project-import.md)
+подключены без второй модели merge/support: исходный native input повторно
+проверяется, EPF/ERF filenames привязаны к прежней карте, service CDF остаётся
+в ancestry. Четыре настоящих incoming artifacts прошли unpack/apply/build/dump
+под старым CI pin и сохранили independent local BSL; 22 Rust gates прошли.
 
 ## EF-26 RLS и дополнительные тексты ресурсов
 

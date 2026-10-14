@@ -17,8 +17,11 @@
 [Подтверждённый ancestor и библиотечный план](../research/eska-format/import-ancestry.md)
 сохраняют независимые правки под старым CI pin.
 [Применение и recovery выбранного проекта/member](../research/eska-format/source-import-recovery.md)
-сохраняют old source, raw ancestry и точные settings в журнале. Новая карта,
-native CLI lifecycle и координация IDE ещё в работе. EF-25 не закрыта.
+сохраняют old source, raw ancestry и точные settings в журнале.
+[Связка native staging с project plan](../research/eska-format/native-project-import.md)
+прошла artifact/import/build/dump четырёх типов, сохранила local BSL и pinned
+bookkeeping. Новая карта, native CLI lifecycle и координация IDE ещё в работе.
+EF-25 не закрыта.
 EF-15 — `DONE` в [принятой матрице](../research/eska-format/base-update.md).
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.

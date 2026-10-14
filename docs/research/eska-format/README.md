@@ -10,6 +10,8 @@ CFE/EPF/ERF циклы и выполнение непустых ERF на 1С 8.3
 Текущая EF-25 добавляет [распаковку артефактов](native-unpack.md),
 [историю исходников и трёхсторонний план](import-ancestry.md),
 [применение и recovery выбранного проекта/member](source-import-recovery.md).
+[Native staging → project plan](native-project-import.md) проверены на четырёх
+настоящих artifact/import/build/dump циклах под прежним CI pin.
 Новая карта, native CLI lifecycle и согласованное обновление IDE ещё в работе.
 Общий CLI и анализ остаются отдельными задачами.
 EF-23 — [DONE в принятом профиле](query-acceptance.md).

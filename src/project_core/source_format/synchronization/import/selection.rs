@@ -68,14 +68,15 @@ pub(super) fn select(
                 ));
             }
         }
-        let choice = choose(old_entry, new_entry, local, path, uuid, &mut conflicts);
-        let output_entry = choice.as_ref().map(|choice| {
-            let mut entry = match choice {
-                SelectedFile::Working(entry) | SelectedFile::Incoming(entry) => entry.clone(),
+        // Dump bookkeeping remains pinned export evidence, not editable metadata or supplier rights.
+        // Keep raw incoming versions in ancestry while the protected source retains its original file.
+        let choice =
+            if key == "path:ConfigDumpInfo.xml" && approved.manifest.external_root.is_none() {
+                local.cloned().map(SelectedFile::Working)
+            } else {
+                choose(old_entry, new_entry, local, path, uuid, &mut conflicts)
             };
-            entry.path = path.clone();
-            entry
-        });
+        let output_entry = choice.as_ref().map(|choice| selected_entry(path, choice));
         if old_entry != new_entry || !same(old_entry, local) {
             changes.push(SourceImportChange {
                 identity: key.clone(),
@@ -99,13 +100,7 @@ pub(super) fn select(
     record_extras(working, &current, &approved.snapshot, &mut conflicts);
     let files = selected
         .iter()
-        .map(|(path, choice)| {
-            let mut entry = match choice {
-                SelectedFile::Working(entry) | SelectedFile::Incoming(entry) => entry.clone(),
-            };
-            entry.path = path.clone();
-            (path.clone(), entry)
-        })
+        .map(|(path, choice)| (path.clone(), selected_entry(path, choice)))
         .collect::<BTreeMap<_, _>>();
     let directories = approved.snapshot.directories.clone();
     let output = Inventory {
@@ -119,6 +114,15 @@ pub(super) fn select(
         changes,
         conflicts,
     })
+}
+
+/// Preview and output inventory use the same selected bytes at their authoritative source path.
+fn selected_entry(path: &SourcePath, choice: &SelectedFile) -> FileEntry {
+    let mut entry = match choice {
+        SelectedFile::Working(entry) | SelectedFile::Incoming(entry) => entry.clone(),
+    };
+    entry.path = path.clone();
+    entry
 }
 
 /// Source lineage ignores original native byte fingerprints while retaining every declared binding.
