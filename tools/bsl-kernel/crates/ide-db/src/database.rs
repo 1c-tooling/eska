@@ -1076,18 +1076,21 @@ impl RootDatabaseImpl {
                 .map(Arc::new);
         }
 
-        let resolve_in = |listing: Option<metadata::MetadataListingInput>| {
-            listing.and_then(|l| {
-                metadata::resolve_metadata_object(self, l, mdo_type, name.to_string())
-            })
-        };
         // Forward overlay composition: the base result first, then each chain
         // root's overlay in dependency order, the file's own extension last.
-        let hits = std::iter::once(resolve_in(main_listing))
-            .chain(chain_listings.into_iter().map(resolve_in))
-            .flatten();
+        // An unavailable canonical declaration is a required contribution, not
+        // an absent object that permits returning the previous base value.
         let mut merged: Option<bsl_metadata::MetadataObject> = None;
-        for overlay in hits {
+        for listing in std::iter::once(main_listing).chain(chain_listings).flatten() {
+            let value =
+                metadata::resolve_metadata_object(self, listing, mdo_type, name.to_string());
+            let Some(overlay) = value else {
+                let declared = metadata::config_index(self, listing).lookup(mdo_type, name);
+                if declared.is_some_and(|ids| self.canonical_declaration(listing, ids.main)) {
+                    return None;
+                }
+                continue;
+            };
             match &mut merged {
                 Some(base) if overlay.adopts(base) => base.apply_extension_overlay(&overlay),
                 Some(base) => *base = (*overlay).clone(),
@@ -1120,18 +1123,22 @@ impl RootDatabaseImpl {
                 .map(Arc::new);
         }
 
-        let resolve_in = |listing: Option<metadata::MetadataListingInput>| {
-            listing.and_then(|l| metadata::resolve_register(self, l, mdo_type, name.to_string()))
-        };
-        let mut hits = std::iter::once(resolve_in(main_listing))
-            .chain(chain_listings.into_iter().map(resolve_in))
-            .flatten();
-        let first = hits.next()?;
-        let mut merged: Option<bsl_metadata::Register> = None;
-        for overlay in hits {
-            merged.get_or_insert_with(|| (*first).clone()).apply_extension_overlay(&overlay);
+        let mut merged: Option<Arc<bsl_metadata::Register>> = None;
+        for listing in std::iter::once(main_listing).chain(chain_listings).flatten() {
+            let value = metadata::resolve_register(self, listing, mdo_type, name.to_string());
+            let Some(overlay) = value else {
+                let declared = metadata::config_index(self, listing).lookup(mdo_type, name);
+                if declared.is_some_and(|ids| self.canonical_declaration(listing, ids.main)) {
+                    return None;
+                }
+                continue;
+            };
+            match &mut merged {
+                Some(current) => Arc::make_mut(current).apply_extension_overlay(&overlay),
+                None => merged = Some(overlay),
+            }
         }
-        Some(merged.map(Arc::new).unwrap_or(first))
+        merged
     }
 
     /// Resolve a register visible to `file_id` by NAME alone (its kind unknown to
@@ -1154,19 +1161,24 @@ impl RootDatabaseImpl {
                 .map(Arc::new);
         }
 
-        let resolve_in = |listing: Option<metadata::MetadataListingInput>| {
-            listing.and_then(|l| metadata::resolve_register_by_name(self, l, name.to_string()))
-        };
         // Same name along the chain: the WINNING kind is the last (most
         // dependent) hit's kind — a same-name register of a different kind is
         // not a borrow, so the later root's replaces outright, mirroring
         // `merge_extension_overlay`. All hits OF the winning kind then merge in
         // chain order, so a base register still contributes its fields when an
         // intervening dependency declared an unrelated kind under the name.
-        let hits: Vec<Arc<bsl_metadata::Register>> = std::iter::once(resolve_in(main_listing))
-            .chain(chain_listings.into_iter().map(resolve_in))
-            .flatten()
-            .collect();
+        let mut hits = Vec::new();
+        for listing in std::iter::once(main_listing).chain(chain_listings).flatten() {
+            let value = metadata::resolve_register_by_name(self, listing, name.to_string());
+            if let Some(value) = value {
+                hits.push(value);
+            } else {
+                let declared = metadata::config_index(self, listing).lookup_register_by_name(name);
+                if declared.is_some_and(|(_, ids)| self.canonical_declaration(listing, ids.main)) {
+                    return None;
+                }
+            }
+        }
         let winning_kind = hits.last()?.mdo_type();
         let mut same_kind = hits.iter().filter(|hit| hit.mdo_type() == winning_kind);
         let first = same_kind.next()?.clone();
@@ -1197,17 +1209,25 @@ impl RootDatabaseImpl {
             return self.merged_visible_configuration(file_id)?.resolve_defined_type(name);
         }
 
-        let resolve_in = |listing: Option<metadata::MetadataListingInput>| {
-            listing.and_then(|l| metadata::resolve_defined_type(self, l, name.to_string()))
-        };
         // Replacement semantics: own extension first, then dependencies from the
         // closest to the base, the base last.
-        chain_listings
-            .into_iter()
-            .rev()
-            .find_map(resolve_in)
-            .or_else(|| resolve_in(main_listing))
-            .map(|underlying| (*underlying).clone())
+        for listing in
+            chain_listings.into_iter().rev().chain(std::iter::once(main_listing)).flatten()
+        {
+            if let Some(value) = metadata::resolve_defined_type(self, listing, name.to_string()) {
+                return Some((*value).clone());
+            }
+            let declared = metadata::defined_type_index(self, listing).lookup(name);
+            if declared.is_some_and(|file| self.canonical_declaration(listing, file)) {
+                return None;
+            }
+        }
+        None
+    }
+
+    /// Presence marks host-owned input even while its current value is unavailable.
+    fn canonical_declaration(&self, listing: metadata::MetadataListingInput, file: FileId) -> bool {
+        listing.canonical_metadata(self).contains_key(&file)
     }
 
     /// The common-module counterpart of [`Self::resolve_metadata_object_for_file`]:

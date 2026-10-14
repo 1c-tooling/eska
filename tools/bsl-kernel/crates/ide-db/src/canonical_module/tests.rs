@@ -5,6 +5,7 @@ mod external_configuration;
 mod external_identity;
 mod families;
 mod inheritance;
+mod resolution;
 
 use std::{
     fs,

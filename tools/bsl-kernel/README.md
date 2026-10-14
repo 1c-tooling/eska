@@ -15,6 +15,9 @@ Whole-Configuration consumers исключают canonical external, включ�
 fallback без canonical admission сохранён.
 Native external stem не определяет logical Name: body связан с зарегистрированным
 main descriptor FileId; namesake и неоднозначность отвергаются до resolve.
+Per-file object/register/defined-type lookup отличает отсутствующую декларацию
+от зарегистрированного недоступного canonical вклада: прежняя база не подменяет
+его текущее значение. Name-only register lookup соблюдает то же правило.
 
 Для [адаптера роли](../../docs/research/eska-format/role-adapter.md) открыт
 `Role::with_data`: source UUID и current rights передаются явно; serialized

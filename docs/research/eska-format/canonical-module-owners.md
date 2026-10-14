@@ -58,6 +58,20 @@ check, strict Clippy/Rustdoc, scoped fmt и diff check прошли. Это Rust
 
 ## Lifecycle и граница готовности
 
+Per-file lookup объектов и регистров теперь проверяет каждый зарегистрированный
+canonical вклад видимого closure. Pending, wrong name или wrong family даёт
+`None`, даже если база уже содержит значение. Name-only register lookup проверяет
+тот же состав. DefinedType использует replacement semantics: недоступное
+объявленное расширением значение не заменяется типом базы; готовый собственный
+тип не требует значений перекрытых им предков.
+
+Три новые группы проверили actual enrolled `.sdbl` FileId, base/dependency/own
+visibility, независимое расширение, current/invalid/repair и отсутствие native
+XML queries. Canonical suite — 35 passed; register — 10, defined-type — 4,
+dependency composition — 2, extension-only — 1. Scoped all-target check,
+strict Clippy/Rustdoc, fmt и diff check прошли. Это Rust fixtures; SDK composition
+и новая платформенная проверка этим kernel fix не принимаются.
+
 Slots остаются tracked Salsa inputs. Saved/dirty/current/pending publication
 инвалидирует свой owner; соседний memo не пересчитывается без изменения его
 dependencies. Все canonical listings должны быть зарегистрированы до запросов.

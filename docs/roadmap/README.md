@@ -98,6 +98,10 @@ BSL semantics без базы явно отказывает. Четыре native
 cases сохранили current drafts при reopen и source/base/history/settings.
 CFE/base composition и полный EF-18 ещё в работе.
 
+Per-file kernel lookup объектов/регистров/определяемых типов больше не пропускает
+зарегистрированный unavailable canonical вклад ради прежней базы. Три новые
+группы и native regression filters прошли; SDK composition ещё подключается.
+
 [Структурная проверка](../research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete
