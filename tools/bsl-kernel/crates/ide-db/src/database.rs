@@ -1240,12 +1240,7 @@ impl RootDatabaseImpl {
         }
 
         let find_in = |root: &std::path::Path| -> Option<Arc<bsl_metadata::CommonModule>> {
-            let path_input = metadata::intern_configuration_path(
-                self,
-                &root.to_string_lossy(),
-                self.config_root_revision_for_path(root),
-            );
-            self.load_configuration(path_input).find_common_module(name).cloned().map(Arc::new)
+            self.configuration_for_root(root)?.find_common_module(name).cloned().map(Arc::new)
         };
 
         let Some(roots) = self.visible_roots_for_file(file_id) else {
@@ -2160,13 +2155,17 @@ impl RootDatabaseImpl {
     /// (`name`/`uuid`, extension names/counts) the per-MDO listing does not carry — never
     /// the hot `object` point-lookup. Invalidated by `bump_config_for_paths`, so a
     /// metadata drift re-parses it lazily on the next header read.
-    pub fn configuration_for_root(&self, root: &Path) -> Arc<bsl_metadata::Configuration> {
+    /// Canonical external roots have an object owner and no whole configuration.
+    pub fn configuration_for_root(&self, root: &Path) -> Option<Arc<bsl_metadata::Configuration>> {
+        if crate::canonical_module::is_canonical_external(self, root) {
+            return None;
+        }
         let path_input = metadata::intern_configuration_path(
             self,
             &root.to_string_lossy(),
             self.config_root_revision_for_path(root),
         );
-        self.load_configuration(path_input)
+        Some(self.load_configuration(path_input))
     }
 
     /// Resolve the common module that owns the `Ext/Module.bsl` whose id is
@@ -2208,17 +2207,8 @@ impl RootDatabaseImpl {
         let file_path_lower = file_path.to_string_lossy().fold_lower();
         let paths = RootDatabaseImpl::all_config_paths(self);
 
-        let load_at = |path: &std::path::Path| -> Arc<bsl_metadata::Configuration> {
-            let path_input = metadata::intern_configuration_path(
-                self,
-                &path.to_string_lossy(),
-                self.config_root_revision_for_path(path),
-            );
-            self.load_configuration(path_input)
-        };
-
         let find_in = |root: &std::path::Path| -> Option<Arc<bsl_metadata::CommonModule>> {
-            let config = load_at(root);
+            let config = self.configuration_for_root(root)?;
             // `root.join(uri).fold_lower() == file_path_lower` reduces to a relative
             // lookup: strip the (lowercased) root prefix and match the module's folded
             // root-relative URI, so the O(all-modules) per-call Cyrillic re-fold is gone.
@@ -2432,12 +2422,9 @@ impl RootDatabaseImpl {
         let paths = RootDatabaseImpl::all_config_paths(self);
 
         let body_in = |root: &std::path::Path| -> (bool, Option<FileId>) {
-            let path_input = metadata::intern_configuration_path(
-                self,
-                &root.to_string_lossy(),
-                self.config_root_revision_for_path(root),
-            );
-            let config = self.load_configuration(path_input);
+            let Some(config) = self.configuration_for_root(root) else {
+                return (false, None);
+            };
             let Some(module) = config.find_common_module(name) else {
                 return (false, None);
             };
@@ -2978,6 +2965,9 @@ impl hir::ConfigsDatabase for RootDatabaseImpl {
             let Some(path) = vfs_helpers::get_file_path(self, module.file_id) else {
                 continue;
             };
+            if crate::canonical_module::is_canonical_external(self, &path) {
+                continue;
+            }
             let Some(path_input) = self.configuration_input_for_path(&path) else {
                 continue;
             };
@@ -3225,7 +3215,7 @@ impl hir::ConfigsDatabase for RootDatabaseImpl {
         let Some(roots) = self.visible_roots_for_file(file_id) else {
             let file_path = vfs_helpers::get_file_path(self, file_id)?;
             let config_root = vfs_helpers::find_configuration_root(self, &file_path)?;
-            return Some(self.load_configuration(input_for(&config_root)));
+            return self.configuration_for_root(&config_root);
         };
 
         // Forward composition through the memoised chain query: the base, then
@@ -3235,8 +3225,9 @@ impl hir::ConfigsDatabase for RootDatabaseImpl {
         let chain_inputs: Vec<metadata::ConfigurationPathInput<'_>> = roots
             .main
             .iter()
-            .map(|p| input_for(p))
-            .chain(roots.chain.iter().map(|(_, p)| input_for(p)))
+            .chain(roots.chain.iter().map(|(_, p)| p))
+            .filter(|path| !crate::canonical_module::is_canonical_external(self, path))
+            .map(|path| input_for(path))
             .collect();
         match chain_inputs.as_slice() {
             [] => None,
@@ -3379,6 +3370,9 @@ impl hir::HirDatabase for RootDatabaseImpl {
 impl RootDatabase for RootDatabaseImpl {
     fn get_configuration(&self, file_id: FileId) -> Option<Arc<bsl_metadata::Configuration>> {
         let file_path = vfs_helpers::get_file_path(self, file_id)?;
+        if crate::canonical_module::is_canonical_external(self, &file_path) {
+            return None;
+        }
         let path_input = self.configuration_input_for_path(&file_path)?;
         Some(self.load_configuration(path_input))
     }
@@ -3387,15 +3381,6 @@ impl RootDatabase for RootDatabaseImpl {
         &self,
         file_id: FileId,
     ) -> Vec<(Option<String>, Arc<bsl_metadata::Configuration>)> {
-        let load = |path: &std::path::Path| {
-            let path_input = metadata::intern_configuration_path(
-                self,
-                &path.to_string_lossy(),
-                self.config_root_revision_for_path(path),
-            );
-            self.load_configuration(path_input)
-        };
-
         let Some(roots) = self.visible_roots_for_file(file_id) else {
             return self.get_configuration(file_id).into_iter().map(|c| (None, c)).collect();
         };
@@ -3403,8 +3388,10 @@ impl RootDatabase for RootDatabaseImpl {
         roots
             .main
             .iter()
-            .map(|p| (None, load(p)))
-            .chain(roots.chain.iter().map(|(name, p)| (Some(name.clone()), load(p))))
+            .filter_map(|path| self.configuration_for_root(path).map(|config| (None, config)))
+            .chain(roots.chain.iter().filter_map(|(name, path)| {
+                self.configuration_for_root(path).map(|config| (Some(name.clone()), config))
+            }))
             .collect()
     }
 
@@ -3415,14 +3402,8 @@ impl RootDatabase for RootDatabaseImpl {
         snapshot
             .inventory_order()
             .map(|idx| snapshot.paths[idx].clone())
-            .map(|(name, path)| {
-                let path_input = metadata::intern_configuration_path(
-                    self,
-                    &path.to_string_lossy(),
-                    self.config_root_revision_for_path(&path),
-                );
-                let config = self.load_configuration(path_input);
-                (name, config)
+            .filter_map(|(name, path)| {
+                self.configuration_for_root(&path).map(|config| (name, config))
             })
             .collect()
     }

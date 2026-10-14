@@ -7416,7 +7416,7 @@ fn configuration_for_root_reads_objects_and_rereads_after_bump() {
     let mut db = RootDatabaseImpl::new();
     db.set_all_config_paths(vec![(None, root.to_path_buf())]);
 
-    let cfg = db.configuration_for_root(root);
+    let cfg = db.configuration_for_root(root).expect("native configuration");
     assert!(
         cfg.find_metadata_object(MdoType::Catalog, "Товары").is_some(),
         "configuration reads objects through load_configuration",
@@ -7426,7 +7426,7 @@ fn configuration_for_root_reads_objects_and_rereads_after_bump() {
     // Add an object and bump the root's config revision; the cached query must re-run.
     std::fs::write(root.join("Catalogs/Услуги.xml"), catalog_xml("Услуги")).unwrap();
     db.bump_config_for_paths(std::iter::once(root));
-    let cfg2 = db.configuration_for_root(root);
+    let cfg2 = db.configuration_for_root(root).expect("native configuration");
     assert!(
         cfg2.find_metadata_object(MdoType::Catalog, "Услуги").is_some(),
         "configuration re-reads after bump_config_for_paths invalidates the config revision",

@@ -1,9 +1,12 @@
 //! Canonical module owners come from current tracked values, never a directory loader.
 
+mod external;
 mod families;
 mod object;
 #[cfg(test)]
 mod tests;
+
+pub(crate) use external::is_canonical_external;
 
 use std::{path::Path, sync::Arc};
 

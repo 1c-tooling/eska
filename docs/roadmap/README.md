@@ -83,6 +83,11 @@ object/register/common/service slots до native loader, включая external
 и полная EF-18 ещё в работе. Exact CF/CFE identity constructor не создаёт
 фиктивную Configuration для внешнего объекта.
 
+Whole-Configuration consumers также исключают canonical external: current и
+pending не запускают directory loader. Experimental getter возвращает `Option`;
+30 canonical и 18 native integration tests прошли. SDK admission ещё нужен,
+EF-18 остаётся `IN_PROGRESS`.
+
 [Структурная проверка](../research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

@@ -22,8 +22,10 @@ pub trait RootDatabase:
         file_id: FileId,
     ) -> Vec<(Option<String>, Arc<bsl_metadata::Configuration>)>;
 
-    /// EVERY registered root — the base, all extensions, then the external
-    /// objects — regardless of any file's visibility: the inventory view for
+    /// Registered whole configurations — the base, extensions and native XML
+    /// external containers — regardless of any file's visibility. Canonical
+    /// external roots contribute typed owners instead of a Configuration.
+    /// This is the inventory view for
     /// index/graph builders that need the whole workspace, keyed by kind and
     /// name. Semantic per-file resolution must use
     /// [`Self::get_all_configurations`] instead: this union deliberately ignores

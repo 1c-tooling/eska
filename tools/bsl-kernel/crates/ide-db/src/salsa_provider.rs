@@ -94,21 +94,30 @@ impl<'db> SalsaProvider<'db> {
 impl AnalysisProvider for SalsaProvider<'_> {
     fn configuration(&self) -> Option<Arc<Configuration>> {
         let path_input = self.configuration_path_input?;
+        if crate::canonical_module::is_canonical_external(
+            self.db,
+            std::path::Path::new(&path_input.path(self.db)),
+        ) {
+            return None;
+        }
         Some(self.db.load_configuration(path_input))
     }
 
     fn visible_configurations(&self, file_id: FileId) -> Vec<VisibleConfigWithRoot> {
         let load = |name: Option<String>, path: std::path::PathBuf| {
+            if crate::canonical_module::is_canonical_external(self.db, &path) {
+                return None;
+            }
             let path_input = intern_configuration_path(
                 self.db,
                 &path.to_string_lossy(),
                 self.db.config_root_revision_for_path(&path),
             );
             let configuration = self.db.load_configuration(path_input);
-            VisibleConfigWithRoot {
+            Some(VisibleConfigWithRoot {
                 config: bsl_config::VisibleConfig { name, configuration },
                 root: path,
-            }
+            })
         };
 
         // Only the roots the FILE may see: base + its dependency chain. An
@@ -118,19 +127,13 @@ impl AnalysisProvider for SalsaProvider<'_> {
             Some(roots) => roots
                 .main
                 .into_iter()
-                .map(|path| load(None, path))
-                .chain(roots.chain.into_iter().map(|(name, path)| load(Some(name), path)))
+                .filter_map(|path| load(None, path))
+                .chain(roots.chain.into_iter().filter_map(|(name, path)| load(Some(name), path)))
                 .collect(),
             None => match self.configuration_path_input {
                 Some(path_input) => {
                     let root = std::path::PathBuf::from(path_input.path(self.db));
-                    vec![VisibleConfigWithRoot {
-                        config: bsl_config::VisibleConfig {
-                            name: None,
-                            configuration: self.db.load_configuration(path_input),
-                        },
-                        root,
-                    }]
+                    load(None, root).into_iter().collect()
                 }
                 None => Vec::new(),
             },

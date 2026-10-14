@@ -26,6 +26,26 @@ UUID. Прежний `Configuration::new(name)` сохраняет генера�
 serialized shape. External не использует ни один configuration constructor.
 SDK ещё должен подключить exact CF/CFE identity и actual external composition.
 
+## Отсутствующий контекст конфигурации у внешнего объекта
+
+Canonical external root исключён также из целых Configuration: getters
+RootDatabase, inventory, HIR warm/merged и SalsaProvider не вызывают directory
+loader. Это действует и при pending current slot. Own object/form context
+сохраняется; отсутствие базы не подменяется пустой Configuration. Native XML
+roots без canonical admission используют прежний loader.
+
+Экспериментальный Rust API `configuration_for_root` теперь возвращает
+`Option<Arc<Configuration>>`: `None` для canonical external, `Some` для прежнего
+native пути. Низкоуровневый `MetadataDb::load_configuration` не изменён;
+canonical consumers обходят его до вызова. SDK admission внешних проектов
+проверяется следующей отдельной частью.
+
+Две новые группы проверили оба external kind, current/pending, все перечисленные
+consumers и отсутствие вызовов loader. Canonical suite — 30 passed, native
+accessor — 1 passed, native CFE/external integration — 18 passed. All-target
+check, strict Clippy/Rustdoc, scoped fmt и diff check прошли. Это Rust fixtures,
+без нового запуска платформы или установленного analyzer.
+
 ## Lifecycle и граница готовности
 
 Slots остаются tracked Salsa inputs. Saved/dirty/current/pending publication

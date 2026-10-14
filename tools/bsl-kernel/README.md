@@ -10,6 +10,9 @@ bsl-analyzer закреплены на той же Git-ревизии. Это и
 разрешаются через текущие slots до native loader; EPF/ERF остаются объектами.
 Все listings регистрируются до запросов; новый состав/topology требует reopen.
 `Configuration::with_identity` сохраняет фактический UUID CF/CFE.
+Whole-Configuration consumers исключают canonical external, включая pending;
+экспериментальный `configuration_for_root` возвращает `Option`. Native XML
+fallback без canonical admission сохранён.
 
 Для [адаптера роли](../../docs/research/eska-format/role-adapter.md) открыт
 `Role::with_data`: source UUID и current rights передаются явно; serialized
