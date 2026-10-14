@@ -891,7 +891,9 @@ preset = "trunk"
 независимо сохранённой recovery receipt. `eska-project capture-ancestor` сохраняет
 явный source snapshot, `recover-import` завершает/откатывает guarded journal.
 CF/CFE/EPF/ERF прошли реальные preview/write/repeat/build/dump; прежний support pin,
-local BSL и settings сохранены. Общий `eska import` и IDE coordination ещё нужны.
+local BSL и settings сохранены. [Основной `eska import`](docs/research/eska-format/shell-source-import.md)
+теперь делегирует выбранный ESKA проект/member тому же инструменту, сохраняя
+preview/write/recovery и потоки. IDE coordination ещё в работе.
 [Editor bindings после импорта](docs/research/eska-format/post-import-edit-bindings.md)
 открывают новые UUID/пути под прежним pin; saved plans проверяют карту,
 descriptors и project import guard перед записью. JSON preview содержит support

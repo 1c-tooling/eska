@@ -1,5 +1,6 @@
 //! Installed source/project and native/build companions share one concrete discovery/protocol boundary.
 
+pub(super) mod inherited;
 mod probe;
 #[cfg(test)]
 mod tests;
@@ -32,6 +33,7 @@ pub(super) enum Capability {
     ImportQueries,
     Init,
     Unpack,
+    SourceImport(ProjectType),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -123,6 +125,14 @@ fn validate(value: &Value, kind: Kind, capability: Capability) -> Result<(), Err
                 && ["configuration", "extension", "processing", "report"]
                     .iter()
                     .all(|kind| contains(data, "designer_artifact_types", kind))
+        }
+        (Kind::Build, Capability::SourceImport(kind)) => {
+            contains(data, "commands", "import")
+                && contains(data, "eska_artifact_types", kind.as_str())
+                && contains(data, "source_import_formats", "eska")
+                && data["source_import_mode"] == "preview_then_explicit_write"
+                && data["source_import_ancestor"] == "independently_confirmed_sha256"
+                && data["source_import_recovery"] == "eska-project recover-import"
         }
         _ => false,
     };

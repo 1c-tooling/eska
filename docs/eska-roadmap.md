@@ -218,7 +218,6 @@ Protocol 0.1 добавляет `predefinedDataSync`/`predefined_data`; source s
 items вторым аргументом. Платформа не запускалась. Остальные условия EF-18
 ещё в работе; EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
 
-
 [Адресный completion](research/eska-format/analyzer-targeted-completion.md)
 подготавливает только YAML текущего модуля, прямой native manager target и нужные
 primary resources/текущий dialog. Первый request работает без metadata read;
@@ -2314,7 +2313,6 @@ object/register/common/service slots до native loader, включая external
 и полная EF-18 ещё в работе. Exact CF/CFE identity constructor не создаёт
 фиктивную Configuration для внешнего объекта.
 
-
 [Direct init](research/eska-format/project-initialization.md) подключает existing Queries
 sources четырёх типов без конвертации. Expected-byte plan сохраняет исходники
 и separately pinned base/history; новые candidates готовятся в private stage,
@@ -2335,8 +2333,10 @@ onboarding после core receipt verification. Все четыре actual nati
 проекта сохранили пользовательские bytes, локальный BSL, published history и
 существующий Git; последующая сборка/выгрузка совпала с контролем.
 
-EF-20 остаётся `IN_PROGRESS`: общий import, client coordination и комплект ещё нужны.
-
+[Main source import](research/eska-format/shell-source-import.md) сохраняет child
+preview/write/recovery, streams/exit и независимые pins. Четыре actual native
+import/repeat/build/dump прошли с local BSL и прежней базой; IDE/client coordination
+и комплект ещё нужны. EF-20/EF-25 остаются `IN_PROGRESS`.
 
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.

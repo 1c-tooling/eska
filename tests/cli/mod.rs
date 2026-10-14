@@ -8,6 +8,7 @@ mod doctor;
 mod eska_format;
 mod finish;
 mod history;
+mod import_eska;
 mod init;
 #[cfg(feature = "project-cli")]
 mod init_eska;

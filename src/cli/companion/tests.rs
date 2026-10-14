@@ -62,3 +62,44 @@ fn admits_complete_source_creation_and_refuses_independent_contract_mismatches()
         Err(Error::Incompatible)
     );
 }
+
+#[test]
+/// Import admission verifies the selected native type and independent preview/write/recovery contract.
+fn source_import_requires_each_specific_capability() {
+    let original = json!({"schema_version":1,"tool":"eska-build","command":"capabilities","status":"success",
+        "data":{"version":env!("CARGO_PKG_VERSION"),"protocol_version":1,"commands":["import"],
+        "eska_artifact_types":["configuration","extension","processing","report"],"source_import_formats":["eska"],
+        "source_import_mode":"preview_then_explicit_write","source_import_ancestor":"independently_confirmed_sha256",
+        "source_import_recovery":"eska-project recover-import"}});
+    for kind in [
+        ProjectType::Configuration,
+        ProjectType::Extension,
+        ProjectType::Processing,
+        ProjectType::Report,
+    ] {
+        assert_eq!(
+            validate(&original, Kind::Build, Capability::SourceImport(kind)),
+            Ok(())
+        );
+    }
+    for (key, value) in [
+        ("commands", json!(["build"])),
+        ("eska_artifact_types", json!(["configuration"])),
+        ("source_import_formats", json!(["designer-xml"])),
+        ("source_import_mode", json!("implicit_write")),
+        ("source_import_ancestor", json!("local_state")),
+        ("source_import_recovery", json!("none")),
+    ] {
+        let mut report = original.clone();
+        report["data"][key] = value;
+        assert_eq!(
+            validate(
+                &report,
+                Kind::Build,
+                Capability::SourceImport(ProjectType::Report)
+            ),
+            Err(Error::Incompatible),
+            "{key}"
+        );
+    }
+}

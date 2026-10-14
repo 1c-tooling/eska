@@ -17,13 +17,16 @@ use crate::{
         path_output,
     },
     project::{
+        SourceFormat,
         artifact::{Identity, ImportPlan, PreparedArtifact},
         discovery,
-        selection::{self, SelectionIntent},
+        selection::{self, SelectedProject, SelectionIntent},
     },
 };
 
 use super::artifact::{self, Failure, PlatformArgs};
+
+mod eska;
 
 #[derive(Debug, Args)]
 pub(in crate::cli) struct ImportArgs {
@@ -38,8 +41,39 @@ pub(in crate::cli) struct ImportArgs {
     format: Format,
     #[command(flatten)]
     platform: PlatformArgs,
+    #[command(flatten)]
+    source: SourceArgs,
     #[arg(short, long, action = clap::ArgAction::Help)]
     help: Option<bool>,
+}
+
+/// Source import authority is independent from the old XML overwrite confirmation.
+#[derive(Debug, Args)]
+struct SourceArgs {
+    #[arg(long)]
+    accepted_base_sha256: Option<String>,
+    #[arg(long)]
+    ancestor_sha256: Option<String>,
+    #[arg(long, requires = "ancestor_sha256")]
+    ancestor: Option<PathBuf>,
+    #[arg(long)]
+    expected_plan_sha256: Option<String>,
+    #[arg(long, requires = "receipt", conflicts_with_all = ["force", "dry_run"])]
+    write: bool,
+    #[arg(long, requires = "write")]
+    receipt: Option<PathBuf>,
+}
+
+impl SourceArgs {
+    /// XML ignores an unrelated environment approval but refuses every explicit source-only flag.
+    const fn is_set(&self) -> bool {
+        self.accepted_base_sha256.is_some()
+            || self.ancestor_sha256.is_some()
+            || self.ancestor.is_some()
+            || self.expected_plan_sha256.is_some()
+            || self.write
+            || self.receipt.is_some()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
@@ -101,6 +135,29 @@ impl ImportArgs {
                 localizer.text("project-selector-single-required"),
             )
         })?;
+        let project = selected.project();
+        if matches!(
+            project.configuration().source_format(),
+            SourceFormat::Eska { .. }
+        ) {
+            return eska::execute(self, *selected, base, localizer);
+        }
+        if self.source.is_set() {
+            return Err(Failure::new(
+                "import-source-options-incompatible",
+                localizer.text("import-source-options-incompatible"),
+            ));
+        }
+        self.execute_xml(*selected, base, localizer)
+    }
+
+    /// Preserve the existing native XML preview, overwrite policy and JSON fields.
+    fn execute_xml(
+        &self,
+        selected: SelectedProject<'_>,
+        base: &Path,
+        localizer: &Localizer,
+    ) -> Result<Value, Failure> {
         let project = selected.project();
         let plan =
             ImportPlan::inspect(project).map_err(|error| artifact::present(&error, localizer))?;
@@ -307,6 +364,22 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         })
         .mut_arg("format", |arg| {
             arg.help(localizer.text("build-format-help"))
+        })
+        .mut_arg("accepted_base_sha256", |arg| {
+            arg.help(localizer.text("import-accepted-help"))
+        })
+        .mut_arg("ancestor_sha256", |arg| {
+            arg.help(localizer.text("import-ancestor-pin-help"))
+        })
+        .mut_arg("ancestor", |arg| {
+            arg.help(localizer.text("import-ancestor-help"))
+        })
+        .mut_arg("expected_plan_sha256", |arg| {
+            arg.help(localizer.text("import-expected-plan-help"))
+        })
+        .mut_arg("write", |arg| arg.help(localizer.text("import-write-help")))
+        .mut_arg("receipt", |arg| {
+            arg.help(localizer.text("import-receipt-help"))
         })
         .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
 }

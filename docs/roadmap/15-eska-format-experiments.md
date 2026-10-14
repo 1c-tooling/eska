@@ -1037,7 +1037,6 @@ Core batch и server совпали на synthetic input; C1 checker прове�
 сохраняет exit 2. Completion, отмена транспорта, полная семантика/memory budget
 и edit plans остаются в работе; EF-18 остаётся `IN_PROGRESS`.
 
-
 [Отмена syntax-запросов по LSP](../research/eska-format/analyzer-cancellation.md)
 передаёт `$/cancelRequest` текущему request control из отдельного reader.
 Один worker сохраняет владение общим YAML/BSL host и порядок изменений.
@@ -1794,7 +1793,6 @@ reader сам по себе не активирует session inputs или disk
 Общий memory budget и остальные условия EF-18 ещё в работе; платформа
 не запускалась. EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
 
-
 [Текущие предопределённые элементы](../research/eska-format/analyzer-predefined.md)
 подключены к главному `MetadataObject` через общий ресурсный controller.
 YAML/resource revisions сохраняют соседа и nested form memos; invalid XML
@@ -1896,7 +1894,6 @@ object/register/common/service slots до native loader, включая external
 и полная EF-18 ещё в работе. Exact CF/CFE identity constructor не создаёт
 фиктивную Configuration для внешнего объекта.
 
-
 ## EF-19 Самостоятельный инструмент VCS
 
 После MVP EF-16 и форматтера T26. Не является зависимостью EF-20/EF-21;
@@ -1981,7 +1978,10 @@ onboarding после core receipt verification. Все четыре actual nati
 проекта сохранили пользовательские bytes, локальный BSL, published history и
 существующий Git; последующая сборка/выгрузка совпала с контролем.
 
-EF-20 остаётся `IN_PROGRESS`: общий import, client coordination и комплект ещё нужны.
+[Main source import](../research/eska-format/shell-source-import.md) сохраняет child
+preview/write/recovery, streams/exit и независимые pins. Четыре actual native
+import/repeat/build/dump прошли с local BSL и прежней базой; IDE/client coordination
+и комплект ещё нужны. EF-20/EF-25 остаются `IN_PROGRESS`.
 
 Завершить файловый цикл новой структуры до продолжения анализатора. Оболочка
 `eska` делегирует проектные операции `eska-project`, распаковку/сборку —

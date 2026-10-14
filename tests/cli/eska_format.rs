@@ -33,6 +33,7 @@ fn eska(root: &Path, locale: &str, args: &[&str]) -> std::process::Output {
         .current_dir(root)
         .env("ESKA_CONFIG_DIR", root.join("settings"))
         .env_remove("ESKA_LANG")
+        .env_remove("ESKA_ACCEPTED_BASE_SHA256")
         .args(["--lang", locale])
         .args(args)
         .output()
@@ -72,8 +73,8 @@ fn native_build_cli_refuses_eska_preview_before_platform_discovery() {
 }
 
 #[test]
-/// Existing mutators cannot bump or replace leftover XML even when force was supplied.
-fn version_and_artifact_import_refuse_the_format_without_changing_sources() {
+/// Legacy bump stays unsupported; source import refuses force or absent approval before tool reads.
+fn version_and_import_preflight_preserve_eska_sources_and_ignore_leftover_xml() {
     let fixture = project();
     let xml = fixture.0.join("src/Configuration.xml");
     let yaml = fixture.0.join("src/configuration.yaml");
@@ -87,18 +88,25 @@ fn version_and_artifact_import_refuse_the_format_without_changing_sources() {
         assert_eq!(output.status.code(), Some(1), "{output:?}");
         assert!(output.stdout.is_empty());
         assert!(String::from_utf8_lossy(&output.stderr).contains(message));
-        let output = eska(
-            &fixture.0,
-            locale,
-            &["import", "missing.cf", "--force", "--format", "json"],
-        );
-        assert_eq!(output.status.code(), Some(1), "{output:?}");
-        assert!(String::from_utf8_lossy(&output.stderr).contains(message));
-        let document: Value = serde_json::from_slice(&output.stdout).expect("JSON failure");
-        assert_eq!(document["error"]["code"], "source-format-unsupported");
-        imports.push(document);
+        for (args, code) in [
+            (
+                &["import", "missing.cf", "--force", "--format", "json"][..],
+                "import-eska-force-incompatible",
+            ),
+            (
+                &["import", "missing.cf", "--format", "json"][..],
+                "import-accepted-required",
+            ),
+        ] {
+            let output = eska(&fixture.0, locale, args);
+            assert_eq!(output.status.code(), Some(1), "{output:?}");
+            let document: Value = serde_json::from_slice(&output.stdout).expect("JSON failure");
+            assert_eq!(document["error"]["code"], code);
+            imports.push(document);
+        }
     }
-    assert_eq!(imports[0], imports[1]);
+    assert_eq!(imports[0], imports[2]);
+    assert_eq!(imports[1], imports[3]);
     assert_eq!(fs::read(xml).expect("unchanged XML"), before.0);
     assert_eq!(fs::read(yaml).expect("unchanged YAML"), before.1);
     assert!(!fixture.0.join("build").exists());
