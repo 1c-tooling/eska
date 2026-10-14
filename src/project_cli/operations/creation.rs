@@ -53,18 +53,24 @@ pub(super) fn import(args: &Import, localizer: &Localizer) -> Result<(Value, Str
         &frozen,
     )?;
     let root = path_text(imported.project.root())?;
-    let human = localizer.format(
+    let mut human = localizer.format(
         "tool-project-imported",
         &[
             ("path", LocalizationValue::Text(root)),
             ("pin", LocalizationValue::Text(&imported.accepted.sha256)),
         ],
     );
-    Ok((
-        json!({"root":root,"name":args.name,"source_format":"eska",
+    let mut data = json!({"root":root,"name":args.name,"source_format":"eska",
         "source_layout":args.layout.as_str(),
         "source":path_text(imported.project.source())?,"accepted_base":".eska/accepted",
-        "accepted_base_sha256":imported.accepted.sha256}),
-        human,
-    ))
+        "accepted_base_sha256":imported.accepted.sha256});
+    if let Some(ancestor) = &imported.initial_ancestor {
+        data["ancestor_sha256"] = json!(ancestor.sha256());
+        human.push('\n');
+        human.push_str(&localizer.format(
+            "tool-project-import-ancestor",
+            &[("pin", LocalizationValue::Text(ancestor.sha256()))],
+        ));
+    }
+    Ok((data, human))
 }

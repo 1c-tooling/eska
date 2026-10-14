@@ -1919,7 +1919,15 @@ publication. Family/Separated/Readable/defaults сохранены; capability m
 human/JSON/no-TTY, saved edits/freeze/exclusions и failure cleanup. Все 22 Rust
 gates прошли; четыре проекта прошли независимые native build/dump на 1С
 8.3.27.2325, сохранив XML/BSL/opaque bytes и прежние settings/pin. Общий new/init,
-initial ancestor и делегирование оболочки ещё нужны; EF-20 не закрыта.
+и делегирование оболочки ещё нужны; EF-20 не закрыта.
+
+[Initial ancestor](../research/eska-format/initial-import-ancestor.md) Queries
+creation сохраняется до manifest в отдельном raw store/state v2. Подтверждение
+source history и support pin независимы; первый no-op публикует обычный journal
+v1, rollback восстанавливает initial state. Old creation APIs/layouts и journal
+v1 сохранены. All4 core/process cases и настоящий Git clone standalone/member
+проверяют exact source/accepted/raw history bytes под scoped transport rules.
+Общие new/init/migration ещё нужны; EF-20 остаётся `IN_PROGRESS`.
 
 Завершить файловый цикл новой структуры до продолжения анализатора. Оболочка
 `eska` делегирует проектные операции `eska-project`, распаковку/сборку —

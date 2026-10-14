@@ -865,6 +865,10 @@ preset = "trunk"
 собирает проверенный snapshot и сохраняет карту исходников в manifest.
 [Распаковка CF/CFE/EPF/ERF](docs/research/eska-format/native-unpack.md) через
 `eska-build unpack` создаёт новый Designer XML каталог без проекта и Git.
+[Queries creation сохраняет initial ancestor](docs/research/eska-format/initial-import-ancestor.md)
+отдельно от support pin до публикации manifest. `ancestor_sha256` нужно подтвердить
+независимо и передать первому reimport; raw snapshot/history/state сохраняют
+точные bytes при checkout через scoped attributes.
 [CLI повторного импорта](docs/research/eska-format/native-reimport-cli.md)
 через `eska-build import` показывает plan либо применяет его с `--write` и
 независимо сохранённой recovery receipt. `eska-project capture-ancestor` сохраняет

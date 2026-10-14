@@ -1,5 +1,6 @@
 //! A selected project's import journal owns recovery, never support approval or user artifacts.
 
+mod initial;
 mod native;
 mod publication;
 mod recovery;
@@ -31,13 +32,15 @@ use crate::project_core::{
     },
 };
 
+pub use initial::initialize_project_import_ancestor;
 pub use native::{NativeProjectSourceImport, prepare_project_native_source_import};
 pub use recovery::recover_project_source_import;
 
 /// Project readers and builders refuse a selected source until the guarded import is resolved.
 pub const PROJECT_SOURCE_IMPORT_RECEIPT: &str = ".eska-project-source-import.json";
 
-const SERVICE: &str = ".eska/source-import";
+pub const PROJECT_SOURCE_IMPORT_DIRECTORY: &str = ".eska/source-import";
+const SERVICE: &str = PROJECT_SOURCE_IMPORT_DIRECTORY;
 const STATE: &str = ".eska/source-import/state.json";
 const RECEIPT: &str = "receipt.json";
 
@@ -115,6 +118,47 @@ struct State {
     ancestor: ImportAncestorRef,
 }
 
+/// Initial bytes are a candidate source snapshot, without a published journal or recovery authority.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct InitialState {
+    schema_version: u32,
+    origin: InitialOrigin,
+    source: SourcePath,
+    ancestor: ImportAncestorRef,
+}
+
+/// Closed origin spelling prevents an initial record from masquerading as a published transaction.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum InitialOrigin {
+    Initial,
+}
+
+/// Old published history and the new creation snapshot retain distinct persistence contracts.
+enum StoredState {
+    Published(State),
+    Initial(InitialState),
+}
+
+impl StoredState {
+    /// Resolving a store never chooses or approves the independently required reference.
+    const fn ancestor(&self) -> &ImportAncestorRef {
+        match self {
+            Self::Published(state) => &state.ancestor,
+            Self::Initial(state) => &state.ancestor,
+        }
+    }
+
+    /// Both locations are derived from closed state variants rather than arbitrary marker paths.
+    fn store(&self, root: &Path) -> PathBuf {
+        match self {
+            Self::Published(state) => transaction(root, &state.transaction).join("incoming"),
+            Self::Initial(_) => root.join(SERVICE).join("initial"),
+        }
+    }
+}
+
 /// A preview captures exact settings and a conflict-checked source plan before any project write.
 pub struct ProjectSourceImportPlan {
     root: PathBuf,
@@ -174,7 +218,7 @@ pub fn prepare_project_source_import(
     let previous_state = read_optional(&project.root().join(STATE))?;
     if let Some(text) = &previous_state {
         let saved = read_state(project.root(), &source_path, text)?;
-        if saved.ancestor != *ancestor.reference() {
+        if saved.ancestor() != ancestor.reference() {
             return Err(Error::root("source_ancestor_untrusted"));
         }
     }
@@ -206,7 +250,7 @@ pub fn prepare_project_source_import(
     Ok(plan)
 }
 
-/// Open the independently confirmed, last published incoming snapshot of this selected project.
+/// Open the independently selected initial snapshot or last published raw incoming snapshot.
 ///
 /// # Errors
 /// Returns unresolved import, wrong selection, missing state or invalid persisted ancestry.
@@ -226,13 +270,10 @@ pub fn project_import_ancestor(
     let text = read_optional(&project.root().join(STATE))?
         .ok_or_else(|| Error::root("source_ancestor_missing"))?;
     let state = read_state(project.root(), &path, &text)?;
-    if state.ancestor != *expected {
+    if state.ancestor() != expected {
         return Err(Error::root("source_ancestor_untrusted"));
     }
-    ImportAncestor::open(
-        &transaction(project.root(), &state.transaction).join("incoming"),
-        &state.ancestor,
-    )
+    ImportAncestor::open(&state.store(project.root()), expected)
 }
 
 impl ProjectSourceImportPlan {
@@ -376,18 +417,34 @@ fn verify_settings(
 }
 
 /// A state pointer must resolve to the independently verified incoming store it names.
-fn read_state(root: &Path, source: &SourcePath, text: &str) -> Result<State, Error> {
-    let state: State =
-        serde_json::from_str(text).map_err(|_| Error::root("source_import_state_invalid"))?;
-    if state.schema_version != 1 || state.source != *source {
-        return Err(Error::root("source_import_state_invalid"));
-    }
-    ProjectSourceImportRef::from_sha256(&state.transaction.sha256)?;
-    checked_directory(&transaction(root, &state.transaction))?;
-    ImportAncestor::open(
-        &transaction(root, &state.transaction).join("incoming"),
-        &state.ancestor,
-    )?;
+fn read_state(root: &Path, source: &SourcePath, text: &str) -> Result<StoredState, Error> {
+    let invalid = || Error::root("source_import_state_invalid");
+    let value: serde_json::Value = serde_json::from_str(text).map_err(|_| invalid())?;
+    let state = match value
+        .get("schema_version")
+        .and_then(serde_json::Value::as_u64)
+    {
+        Some(1) => {
+            let state: State = serde_json::from_str(text).map_err(|_| invalid())?;
+            if state.source != *source {
+                return Err(invalid());
+            }
+            ProjectSourceImportRef::from_sha256(&state.transaction.sha256)?;
+            checked_directory(&transaction(root, &state.transaction))?;
+            StoredState::Published(state)
+        }
+        Some(2) => {
+            let state: InitialState = serde_json::from_str(text).map_err(|_| invalid())?;
+            if state.source != *source {
+                return Err(invalid());
+            }
+            checked_directory(&root.join(SERVICE))?;
+            StoredState::Initial(state)
+        }
+        _ => return Err(invalid()),
+    };
+    checked_directory(&state.store(root))?;
+    ImportAncestor::open(&state.store(root), state.ancestor())?;
     Ok(state)
 }
 

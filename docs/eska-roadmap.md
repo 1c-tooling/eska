@@ -2290,7 +2290,11 @@ EF-25 остаётся `IN_PROGRESS`.
 подключает полный import XML-каталогов четырёх типов к новому проекту с
 managed forms/plain queries и независимой базой. Legacy layouts/defaults
 сохранены; четыре независимых native build/dump и 22 Rust gates прошли.
-Общий new/init, initial ancestor и делегирование оболочки ещё нужны.
+Общий new/init и делегирование оболочки ещё нужны.
+[Initial ancestor](research/eska-format/initial-import-ancestor.md) Queries
+creation сохранён отдельно от поддержки. Первый no-op проходит обычный journal;
+scoped attributes сохраняют raw initial/history/state bytes при Git checkout.
+Old layouts/journal v1 сохранены; общий new/init/migration ещё в работе.
 
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.

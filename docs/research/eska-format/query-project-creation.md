@@ -34,8 +34,9 @@ workspace member.
 Вернувшийся SHA-256 — candidate support pin. CI/сборщик получает его независимо;
 TOML не сохраняет approval digest. `--freeze` использует прежнюю Resource policy:
 запрет достигает managed form и её plain query. Saved edits и protected prepare
-используют ту же базу. Initial source ancestor этой частью не сохраняется;
-его подключение относится к общему new/init/reimport workflow.
+используют ту же базу. [Initial ancestor](initial-import-ancestor.md) теперь
+сохраняется до manifest отдельно от support pin и возвращается для независимого
+подтверждения перед первым reimport.
 
 Существующие `import_project`, `import_separated_project`,
 `import_readable_project` сохраняют свои layouts и ограничения. CLI default —
@@ -44,7 +45,8 @@ TOML не сохраняет approval digest. `--freeze` использует п
 
 ## Machine interface
 
-Envelope schema 1 и семь существующих import data keys сохранены.
+Envelope schema 1 и семь существующих import data keys сохранены; Queries
+добавляет `ancestor_sha256`, прежние layout choices не получают это поле.
 `source_layout` дополнен значением `queries`. Capabilities сообщает:
 
 ```json
@@ -56,7 +58,8 @@ Envelope schema 1 и семь существующих import data keys сохр
     "readable": ["configuration", "extension"],
     "queries": ["configuration", "extension", "processing", "report"]
   },
-  "source_layout_versions": [1, 2, 3, 4, 5, 6]
+  "source_layout_versions": [1, 2, 3, 4, 5, 6],
+  "initial_ancestor_layouts": ["queries"]
 }
 ```
 
@@ -90,7 +93,7 @@ Linux native matrix использует четыре полных native input.
 побайтно. Native input/settings/pin не меняются.
 [Обезличенные результаты](query-project-creation-results.json).
 
-Создание минимального собираемого проекта, общий `new/init`, migration choice,
-initial ancestor и делегирование оболочки остаются следующими частями EF-20.
+Создание минимального собираемого проекта, общий `new/init`, выбор layout при
+миграции и делегирование оболочки остаются следующими частями EF-20.
 Платформенные saved-edit/runtime/client сценарии этой частью не принимаются.
 EF-20 и MVP ещё не завершены.

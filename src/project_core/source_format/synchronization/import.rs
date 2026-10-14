@@ -10,6 +10,7 @@ pub use project::{
     ProjectSourceImportRef, SourceImportRecovery, prepare_project_native_source_import,
     prepare_project_source_import, project_import_ancestor, recover_project_source_import,
 };
+pub use project::{PROJECT_SOURCE_IMPORT_DIRECTORY, initialize_project_import_ancestor};
 
 #[cfg(test)]
 mod tests;

@@ -226,3 +226,6 @@ pub use synchronization::{
     prepare_project_native_source_import, prepare_project_source_import, prepare_source_import,
     project_import_ancestor, recover_project_source_import,
 };
+pub(crate) use synchronization::{
+    PROJECT_SOURCE_IMPORT_DIRECTORY, initialize_project_import_ancestor,
+};

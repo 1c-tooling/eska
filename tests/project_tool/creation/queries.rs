@@ -5,11 +5,11 @@ mod fixture;
 
 use super::*;
 use eska::project_core::source_format::{
-    AcceptedBase, AcceptedRef, FormPropertyName, FormPropertyValue, NativeQueryDocument,
-    SourceReader,
+    AcceptedBase, AcceptedRef, FormPropertyName, FormPropertyValue, ImportAncestorRef,
+    NativeQueryDocument, SourceReader, project_import_ancestor,
 };
 
-/// Layout selection preserves the import data schema and exact project/source coordinates.
+/// Query creation reports separate support/ancestry digests and exact project/source coordinates.
 fn assert_import_data(data: &Value, project: &Path) {
     assert_eq!(data["source_format"], "eska");
     assert_eq!(data["source_layout"], "queries");
@@ -24,6 +24,7 @@ fn assert_import_data(data: &Value, project: &Path) {
         [
             "accepted_base",
             "accepted_base_sha256",
+            "ancestor_sha256",
             "name",
             "root",
             "source",
@@ -35,7 +36,7 @@ fn assert_import_data(data: &Value, project: &Path) {
     assert_eq!(data["source"], project.join("src").to_str().unwrap());
 }
 
-/// Successful JSON retains its existing import envelope/data keys; layout selection is locale-free.
+/// Candidate digests and the stable import envelope do not depend on the selected UI language.
 #[test]
 fn query_import_inspect_and_prepare_cover_four_profiles_on_ru_and_en() {
     for kind in fixture::TYPES {
@@ -65,6 +66,8 @@ fn query_import_inspect_and_prepare_cover_four_profiles_on_ru_and_en() {
             assert_eq!(imported["command"], "import");
             let data = &imported["data"];
             let pin = data["accepted_base_sha256"].as_str().unwrap();
+            let ancestor =
+                ImportAncestorRef::from_sha256(data["ancestor_sha256"].as_str().unwrap()).unwrap();
             pins.push(pin.to_owned());
             let project = test.0.join(destination);
             assert_import_data(data, &project);
@@ -114,6 +117,19 @@ fn query_import_inspect_and_prepare_cover_four_profiles_on_ru_and_en() {
             )
             .unwrap();
             sources.push(fixture::snapshot(&project.join("src")));
+            let configured = eska::project_core::discovery::discover(&project).unwrap();
+            let initial = project_import_ancestor(
+                &configured,
+                &eska::project_core::metadata_model::ProjectScope::Standalone,
+                &ancestor,
+            )
+            .unwrap();
+            let restored = test.0.join(format!("restored {locale}"));
+            initial.restore(&restored).unwrap();
+            assert_eq!(
+                fixture::snapshot(&restored),
+                sources.last().unwrap().clone()
+            );
             assert!(!project.join(".git").exists());
             assert!(!project.join("build").exists());
         }
@@ -329,6 +345,7 @@ fn human_query_creation_is_localized_without_requiring_platform_or_git() {
             assert_eq!(output.status.code(), Some(0), "{output:?}");
             assert!(output.stderr.is_empty());
             assert!(String::from_utf8_lossy(&output.stdout).contains(phrase));
+            assert!(String::from_utf8_lossy(&output.stdout).contains("--ancestor-sha256"));
             assert!(test.0.join(destination).join("eska.toml").exists());
         }
     }

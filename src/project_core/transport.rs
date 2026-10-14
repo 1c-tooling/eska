@@ -9,7 +9,7 @@ use std::{
 use super::{
     Project, SourceFormat,
     publish::{self, PublishError},
-    source_format::{Error, SourcePath},
+    source_format::{Error, PROJECT_SOURCE_IMPORT_DIRECTORY, SourcePath},
 };
 
 const ATTRIBUTES: &str = ".gitattributes";
@@ -61,9 +61,10 @@ impl TransportPlan {
             "\n"
         };
         let block = format!(
-            "# eska: preserve source and accepted bytes{newline}{} {BYTE_ATTRIBUTES}{newline}{} {BYTE_ATTRIBUTES}{newline}",
+            "# eska: preserve source and accepted bytes{newline}{} {BYTE_ATTRIBUTES}{newline}{} {BYTE_ATTRIBUTES}{newline}{} {BYTE_ATTRIBUTES}{newline}",
             quoted_pattern(&source),
             quoted_pattern(accepted_base),
+            quoted_pattern(&SourcePath::parse(PROJECT_SOURCE_IMPORT_DIRECTORY)?),
         );
         let mut updated = previous.to_owned();
         if !previous.ends_with(&block) {

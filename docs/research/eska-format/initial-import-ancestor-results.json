@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "stage": "EF-20 initial source ancestry",
+  "status": "partial",
+  "platform": "8.3.27.2325",
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.44
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 8.18
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 8.41
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 73.44
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 85.62
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 15.99
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 4.19
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.39
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 6.26
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 4.71
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 32.8
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.41
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.25
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.16
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 4.45
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.92
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 11.54
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.63
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 4.99
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 12.38
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 57.88
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 10.41
+    }
+  ],
+  "test_counts": {
+    "root_unit": 821,
+    "root_default_process": 610,
+    "root_all_features_process": 612,
+    "root_ignored": 24,
+    "build_cli_process": 27,
+    "project_cli_process": 56,
+    "sdk_unit": 187,
+    "sdk_analyzer_process": 161,
+    "sdk_checker_process": 19,
+    "adapter_unit": 70,
+    "adapter_process": 12
+  },
+  "native": [
+    {
+      "kind": "configuration",
+      "facade_native_build": true,
+      "direct_tool_envelope_preserved": true,
+      "native_files": 15,
+      "xml_semantics_equal": 11,
+      "bsl_equal_except_one_local_comment": 4,
+      "local_comments_preserved_in_native": 1,
+      "opaque_bytes_equal": 0,
+      "initial_state_version": 2,
+      "first_import_state_version": 1,
+      "independent_initial_ancestor": true,
+      "first_import_journal_published": true,
+      "local_bsl_preserved_after_import": true,
+      "old_support_pin_preserved": true,
+      "accepted_bytes_preserved": true,
+      "settings_preserved": true,
+      "previous_artifact_preserved_during_import": true
+    },
+    {
+      "kind": "extension",
+      "facade_native_build": true,
+      "direct_tool_envelope_preserved": true,
+      "native_files": 109,
+      "xml_semantics_equal": 77,
+      "bsl_equal_except_one_local_comment": 26,
+      "local_comments_preserved_in_native": 1,
+      "opaque_bytes_equal": 6,
+      "initial_state_version": 2,
+      "first_import_state_version": 1,
+      "independent_initial_ancestor": true,
+      "first_import_journal_published": true,
+      "local_bsl_preserved_after_import": true,
+      "old_support_pin_preserved": true,
+      "accepted_bytes_preserved": true,
+      "settings_preserved": true,
+      "previous_artifact_preserved_during_import": true
+    },
+    {
+      "kind": "processing",
+      "facade_native_build": true,
+      "direct_tool_envelope_preserved": true,
+      "native_files": 11,
+      "xml_semantics_equal": 7,
+      "bsl_equal_except_one_local_comment": 4,
+      "local_comments_preserved_in_native": 1,
+      "opaque_bytes_equal": 0,
+      "initial_state_version": 2,
+      "first_import_state_version": 1,
+      "independent_initial_ancestor": true,
+      "first_import_journal_published": true,
+      "local_bsl_preserved_after_import": true,
+      "old_support_pin_preserved": true,
+      "accepted_bytes_preserved": true,
+      "settings_preserved": true,
+      "previous_artifact_preserved_during_import": true
+    },
+    {
+      "kind": "report",
+      "facade_native_build": true,
+      "direct_tool_envelope_preserved": true,
+      "native_files": 6,
+      "xml_semantics_equal": 5,
+      "bsl_equal_except_one_local_comment": 1,
+      "local_comments_preserved_in_native": 1,
+      "opaque_bytes_equal": 0,
+      "initial_state_version": 2,
+      "first_import_state_version": 1,
+      "independent_initial_ancestor": true,
+      "first_import_journal_published": true,
+      "local_bsl_preserved_after_import": true,
+      "old_support_pin_preserved": true,
+      "accepted_bytes_preserved": true,
+      "settings_preserved": true,
+      "previous_artifact_preserved_during_import": true
+    }
+  ],
+  "limits": [
+    "No automatic ancestry capture from existing working trees",
+    "General new/init/migration pending",
+    "Linux native and controlled clean-checkout acceptance only"
+  ],
+  "bsl": [
+    {
+      "kind": "configuration",
+      "exit_code": 0,
+      "analyzer_version": "0.3.2",
+      "files": 1,
+      "failed_files": 0,
+      "complete": true,
+      "syntax_errors": 0,
+      "other_diagnostics": 2
+    },
+    {
+      "kind": "extension",
+      "exit_code": 0,
+      "analyzer_version": "0.3.2",
+      "files": 1,
+      "failed_files": 0,
+      "complete": true,
+      "syntax_errors": 0,
+      "other_diagnostics": 5
+    },
+    {
+      "kind": "processing",
+      "exit_code": 0,
+      "analyzer_version": "0.3.2",
+      "files": 1,
+      "failed_files": 0,
+      "complete": true,
+      "syntax_errors": 0,
+      "other_diagnostics": 56
+    },
+    {
+      "kind": "report",
+      "exit_code": 0,
+      "analyzer_version": "0.3.2",
+      "files": 1,
+      "failed_files": 0,
+      "complete": true,
+      "syntax_errors": 0,
+      "other_diagnostics": 2
+    }
+  ],
+  "bsl_limits": [
+    "Workspace MCP unavailable; installed bsl-analyzer-app CLI used",
+    "No bsl-analyzer.toml in owned demo; defaults used",
+    "Context/style findings are not production semantic acceptance"
+  ]
+}

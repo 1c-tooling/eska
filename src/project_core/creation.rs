@@ -11,8 +11,9 @@ use super::{
     platform_settings::{BuildSettings, PlatformVersion},
     publish::{self, PublishError},
     source_format::{
-        AcceptedRef, Error, NativeUuid, SourcePath, SourceReader, accept_source, import_designer,
-        import_designer_queries, import_designer_readable, import_designer_separated,
+        AcceptedRef, Error, ImportAncestorRef, NativeUuid, SourcePath, SourceReader, accept_source,
+        import_designer, import_designer_queries, import_designer_readable,
+        import_designer_separated, initialize_project_import_ancestor,
     },
     transport::TransportPlan,
 };
@@ -35,6 +36,8 @@ enum Layout {
 pub struct ImportedProject {
     pub project: Project,
     pub accepted: AcceptedRef,
+    /// Only new query-layout projects retain initial bytes; this digest still needs confirmation.
+    pub initial_ancestor: Option<ImportAncestorRef>,
 }
 
 /// Create one complete project in a new directory, publishing its manifest last.
@@ -101,6 +104,8 @@ pub fn import_readable_project(
 /// Configuration, extension, processing and report inputs use the same checked native import.
 /// Existing creation layouts retain their defaults; native names, UUIDs, support and payload bytes
 /// are preserved. The published accepted reference is a candidate for independent approval.
+/// A separate initial source snapshot is retained; its digest must be confirmed independently
+/// before the first source import, and it cannot approve the accepted support base.
 ///
 /// # Errors
 /// Returns unsupported native or query/form profiles, incomplete composition, unsafe paths,
@@ -172,6 +177,11 @@ fn populate(
     let project = config
         .into_project(root.to_owned())
         .map_err(|_| Error::root("source_path_invalid"))?;
+    let initial_ancestor = if matches!(layout, Layout::Queries) {
+        Some(initialize_project_import_ancestor(&project)?)
+    } else {
+        None
+    };
     TransportPlan::prepare(&project)?.publish()?;
     publish::publish_new(
         root,
@@ -181,7 +191,11 @@ fn populate(
     .map_err(publication_error)?;
     publish::publish_new(root, Path::new(config::FILE_NAME), &manifest)
         .map_err(publication_error)?;
-    Ok(ImportedProject { project, accepted })
+    Ok(ImportedProject {
+        project,
+        accepted,
+        initial_ancestor,
+    })
 }
 
 /// Resolve a new child of an existing parent before adding entries to the native inventory.

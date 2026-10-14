@@ -27,6 +27,9 @@ EF-23 — [DONE в принятом профиле](query-acceptance.md).
 [Создание полного Queries проекта](query-project-creation.md) подключает
 managed forms/plain queries к `eska-project import` для всех четырёх типов.
 Old layouts/defaults сохранены; общий new/init и оболочка остаются EF-20.
+[Initial ancestor](initial-import-ancestor.md) Queries creation хранится отдельно
+от поддержки; независимый digest нужен первому journal, а Git transport сохраняет
+raw initial/history/state bytes для standalone/member.
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
 T84 — [DONE по версиям EPF/ERF](external-version.md): экспортная `Версия()`,
 CLI/миграция и платформенная приёмка двух схем; [синтаксический контракт](external-version-syntax.md).

@@ -63,6 +63,8 @@ fn complete_project_preserves_native_name_version_and_payloads() {
     let platform = PlatformVersion::parse("8.3.27.2325").expect("platform");
     let imported = import_project(&input, &destination, name(), Some(&platform), &[])
         .expect("complete project");
+    assert!(imported.initial_ancestor.is_none());
+    assert!(!destination.join(".eska/source-import").exists());
     assert_eq!(discover(&destination).expect("discovery"), imported.project);
     let config = ProjectConfig::load(&destination.join("eska.toml")).expect("manifest");
     assert_eq!(
@@ -191,6 +193,8 @@ fn readable_project_preserves_native_transport_and_frozen_policy() {
         std::slice::from_ref(&frozen),
     )
     .unwrap();
+    assert!(imported.initial_ancestor.is_none());
+    assert!(!destination.join(".eska/source-import").exists());
     assert_eq!(discover(&destination).unwrap(), imported.project);
     let base =
         AcceptedBase::open(&destination.join(ACCEPTED_DIRECTORY), &imported.accepted).unwrap();

@@ -201,6 +201,7 @@ tool-workspace-migration-preview = План читаемого workspace: { $pat
 tool-workspace-migrated = Читаемый workspace записан: { $path }. Проектов: { $count }. Исходный workspace и суммы CI сохранены.
 tool-workspace-migration-member = Проект { $name }: SHA-256 новой принятой базы { $pin }.
 tool-project-imported = Проект создан: { $path }. SHA-256 принятой базы: { $pin }. Сохраните одобренную сумму отдельно для CI.
+tool-project-import-ancestor = SHA-256 начального снимка исходников: { $pin }. Подтвердите его как общего предка и передайте --ancestor-sha256 при импорте. Он не принимает поддержку.
 tool-project-inspected = Проект: { $path }. Формат исходников: { $format }. Просмотр не заменяет полную защищённую проверку.
 tool-project-prepared = XML подготовлен: { $path }. Исключений: { $count }.
 tool-project-transport-written = Attributes проверены и записаны: { $path }. Эффективная Git policy не проверялась.

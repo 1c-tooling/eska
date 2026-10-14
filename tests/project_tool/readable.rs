@@ -126,6 +126,8 @@ fn default_and_explicit_family_layouts_remain_equivalent() {
         ],
     );
     assert_eq!(explicit["data"]["source_layout"], "family");
+    assert!(explicit["data"].get("ancestor_sha256").is_none());
+    assert!(!test.0.join("family/.eska/source-import").exists());
     assert_eq!(explicit["data"]["accepted_base_sha256"], default_pin);
     for path in [
         "src/source.json",

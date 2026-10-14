@@ -47,6 +47,7 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
             "platform_required":false,"git_required":false,"ide_required":false,
             "creation_project_types":["configuration","extension","processing","report"], "metadata_formats":["eska"],
             "import_layouts":["family","readable","queries"],
+            "initial_ancestor_layouts":["queries"],
             "import_layout_project_types":{"family":["configuration","extension"],
             "readable":["configuration","extension"],
             "queries":["configuration","extension","processing","report"]},

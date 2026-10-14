@@ -71,6 +71,9 @@ protected build processing/report приняты в [EF-14](external-projects.md
 проекты с managed forms и отдельными plain `.sdbl`: layout 5/6, descriptor 2.
 Family/Readable принимают configuration/extension; Queries — все четыре типа.
 Варианты используют общее ядро, поддержку/freeze и самостоятельный pin.
+Queries creation также сохраняет [initial ancestor](initial-import-ancestor.md)
+до manifest и возвращает отдельный `ancestor_sha256`. Его подтверждение перед
+reimport не заменяет support approval; первый no-op проходит обычный journal.
 Это не миграция существующего проекта; промежуточные layout API не становятся
 дополнительными CLI choices.
 
@@ -210,6 +213,8 @@ Import возвращает `data.source_layout = "family" | "readable" | "queri
 Capabilities содержит `import_layouts = ["family", "readable", "queries"]`,
 `source_layout_versions = [1, 2, 3, 4, 5, 6]`, `descriptor_schema_versions = [1, 2]`
 и [map типов по layout](query-project-creation.md#machine-interface).
+Queries import добавляет `data.ancestor_sha256`; capabilities содержит
+`initial_ancestor_layouts = ["queries"]`. Старые layouts/data keys сохранены.
 Tool envelope и прежние поля, включая `source_schema_version = 1`, сохранены;
 для выбора поддерживаемых версий используются новые списки.
 Capabilities также содержит `migrate`, `migration_layouts = ["readable"]` и

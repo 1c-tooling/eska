@@ -201,6 +201,7 @@ tool-workspace-migration-preview = Readable workspace preview: { $path }. Member
 tool-workspace-migrated = Readable workspace published: { $path }. Members: { $count }. The original workspace and CI checksums are preserved.
 tool-workspace-migration-member = Project { $name }: new accepted base SHA-256 { $pin }.
 tool-project-imported = Project created: { $path }. Accepted base SHA-256: { $pin }. Store the approved checksum separately for CI.
+tool-project-import-ancestor = Initial source snapshot SHA-256: { $pin }. Confirm it as the common ancestor and pass --ancestor-sha256 when importing. It does not approve support.
 tool-project-inspected = Project: { $path }. Source format: { $format }. Inspection does not replace full protected validation.
 tool-project-prepared = XML prepared: { $path }. Exclusions: { $count }.
 tool-project-transport-written = Attributes checked and published: { $path }. Effective Git policy has not been verified.

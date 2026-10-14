@@ -1,5 +1,6 @@
 //! Complete offline project creation proves current form/query ownership for every native root.
 
+mod ancestry;
 #[path = "../../../../tests/fixtures/eska-format/query_creation.rs"]
 mod fixture;
 
