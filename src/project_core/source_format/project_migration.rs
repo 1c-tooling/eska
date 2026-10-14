@@ -287,6 +287,11 @@ impl ProjectLayoutPlan {
 /// Even a published manifest cannot expose a project whose outer operation is incomplete.
 pub fn require_project_ready(root: &Path) -> Result<(), Error> {
     require_marker_absent(root, PROJECT_LAYOUT_RECEIPT)?;
+    match fs::symlink_metadata(root.join(super::PROJECT_SOURCE_IMPORT_RECEIPT)) {
+        Ok(_) => return Err(Error::root("source_import_incomplete")),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(files::io(&error)),
+    }
     match fs::symlink_metadata(root.join(super::project_update::PROJECT_BASE_UPDATE_RECEIPT)) {
         Ok(_) => return Err(Error::root("source_update_incomplete")),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
@@ -344,6 +349,7 @@ pub(super) fn validate_paths(source: &SourcePath, base: &SourcePath) -> Result<(
             WORKSPACE_LAYOUT_RECEIPT,
             super::project_update::PROJECT_BASE_UPDATE_RECEIPT,
             super::project_update::WORKSPACE_BASE_UPDATE_RECEIPT,
+            super::PROJECT_SOURCE_IMPORT_RECEIPT,
         ]
         .iter()
         .any(|name| {

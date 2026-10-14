@@ -2241,6 +2241,11 @@ EF-23 принята по [хранению и исполнению запрос
 EF-24 принята по [матрице/DoD](research/eska-format/structure-acceptance.md),
 EF-12 — по [матрице форм и CF циклу](research/eska-format/managed-form-acceptance.md).**
 
+EF-25 добавила [project journal/recovery](research/eska-format/source-import-recovery.md)
+для библиотечного импорта в выбранный существующий проект/member с неизменным
+CI pin, сохранением old source и raw incoming ancestor. Новая карта, native CLI
+lifecycle и согласованное обновление IDE остаются обязательными до закрытия задачи.
+
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.
 Standalone orchestration и `eska-project update-base` теперь проходят RU/EN,

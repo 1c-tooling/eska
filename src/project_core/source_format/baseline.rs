@@ -325,7 +325,15 @@ impl AcceptedBase {
 
     /// Bind a plan to the inventory that was actually verified, without a second racy scan.
     pub(super) fn verified_inventory(&self) -> Result<Inventory, Error> {
-        let inventory = Inventory::read(&self.root)?;
+        self.verified_inventory_cancellable(&|| false)
+    }
+
+    /// Publication can stop while verifying large supplier resources without accepting a partial base.
+    pub(super) fn verified_inventory_cancellable(
+        &self,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<Inventory, Error> {
+        let inventory = Inventory::read_cancellable(&self.root, cancelled)?;
         if inventory
             .files
             .get(&SourcePath::parse(BASE_MANIFEST)?)

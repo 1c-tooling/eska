@@ -219,6 +219,8 @@ impl Descriptor {
 mod tests;
 
 pub use synchronization::{
-    ImportAncestor, ImportAncestorRef, SourceImportChange, SourceImportConflict,
-    SourceImportConflictKind, SourceImportPlan, capture_import_ancestor, prepare_source_import,
+    ImportAncestor, ImportAncestorRef, PROJECT_SOURCE_IMPORT_RECEIPT, ProjectSourceImportPlan,
+    ProjectSourceImportRef, SourceImportChange, SourceImportConflict, SourceImportConflictKind,
+    SourceImportPlan, SourceImportRecovery, capture_import_ancestor, prepare_project_source_import,
+    prepare_source_import, project_import_ancestor, recover_project_source_import,
 };

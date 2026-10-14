@@ -133,6 +133,17 @@ pub(super) fn read_text_cancellable(
 
 /// Copy a verified payload to its physical storage path without intermediate trees.
 pub(super) fn copy_to(root: &Path, path: &Path, entry: &FileEntry) -> Result<(), Error> {
+    copy_to_cancellable(root, path, entry, &|| false)
+}
+
+/// Cancellation leaves cleanup to the owner of the exclusively created destination tree.
+pub(super) fn copy_to_cancellable(
+    root: &Path,
+    path: &Path,
+    entry: &FileEntry,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<(), Error> {
+    check_cancelled(cancelled)?;
     create_parent(path)?;
     let mut output = fs::OpenOptions::new()
         .write(true)
@@ -144,7 +155,11 @@ pub(super) fn copy_to(root: &Path, path: &Path, entry: &FileEntry) -> Result<(),
     let mut bytes = [0_u8; 16 * 1024];
     let mut length = 0_u64;
     loop {
-        let count = input.read(&mut bytes).map_err(|error| io(&error))?;
+        check_cancelled(cancelled)?;
+        let count = match input.read(&mut bytes) {
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            result => result.map_err(|error| io(&error))?,
+        };
         if count == 0 {
             break;
         }
@@ -154,6 +169,7 @@ pub(super) fn copy_to(root: &Path, path: &Path, entry: &FileEntry) -> Result<(),
         digest.update(&bytes[..count]);
         length += count as u64;
     }
+    check_cancelled(cancelled)?;
     if length != entry.bytes || hex(&digest.finalize()) != entry.sha256 {
         return Err(Error::root("source_input_changed").in_field(entry.path.as_str()));
     }

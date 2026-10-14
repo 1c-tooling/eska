@@ -30,6 +30,8 @@ mod readable;
 mod reference_clear;
 #[path = "project_tool/rename.rs"]
 mod rename;
+#[path = "project_tool/source_import.rs"]
+mod source_import;
 mod support;
 #[path = "project_tool/table_creation.rs"]
 mod table_creation;

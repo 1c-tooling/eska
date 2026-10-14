@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "task": "EF-25",
+  "status": "in_progress",
+  "profile": "existing_reverse_map",
+  "platform_version": "8.3.27.2325",
+  "rust_gates": {
+    "passed": 22,
+    "root_unit": 779,
+    "root_integration": 600,
+    "build_process": 21,
+    "project_process": 50,
+    "sdk_unit": 185,
+    "sdk_process": [
+      158,
+      19
+    ]
+  },
+  "native_projects": [
+    {
+      "kind": "configuration",
+      "changes": 2,
+      "conflicts": 0,
+      "baseline_unchanged": true,
+      "settings_unchanged": true,
+      "last_artifact_preserved": true,
+      "guard_recovered_without_original_staging": true,
+      "repeat_unchanged": true,
+      "incoming_comment_edited": true,
+      "local_module_retained": true,
+      "native_files": 13,
+      "bsl_files": 3,
+      "bsl_bytes_equal": true,
+      "resource_bytes_equal": true,
+      "semantic_xml_differences": 0
+    },
+    {
+      "kind": "extension",
+      "changes": 2,
+      "conflicts": 0,
+      "baseline_unchanged": true,
+      "settings_unchanged": true,
+      "last_artifact_preserved": true,
+      "guard_recovered_without_original_staging": true,
+      "repeat_unchanged": true,
+      "incoming_comment_edited": true,
+      "local_module_retained": true,
+      "native_files": 107,
+      "bsl_files": 25,
+      "bsl_bytes_equal": true,
+      "resource_bytes_equal": true,
+      "semantic_xml_differences": 0
+    },
+    {
+      "kind": "processing",
+      "changes": 2,
+      "conflicts": 0,
+      "baseline_unchanged": true,
+      "settings_unchanged": true,
+      "last_artifact_preserved": true,
+      "guard_recovered_without_original_staging": true,
+      "repeat_unchanged": true,
+      "incoming_comment_edited": true,
+      "local_module_retained": true,
+      "native_files": 8,
+      "bsl_files": 3,
+      "bsl_bytes_equal": true,
+      "resource_bytes_equal": true,
+      "semantic_xml_differences": 0
+    },
+    {
+      "kind": "report",
+      "changes": 2,
+      "conflicts": 0,
+      "baseline_unchanged": true,
+      "settings_unchanged": true,
+      "last_artifact_preserved": true,
+      "guard_recovered_without_original_staging": true,
+      "repeat_unchanged": true,
+      "incoming_comment_edited": true,
+      "local_module_retained": true,
+      "native_files": 4,
+      "bsl_files": 1,
+      "bsl_bytes_equal": true,
+      "resource_bytes_equal": true,
+      "semantic_xml_differences": 0
+    }
+  ],
+  "bsl_cli": {
+    "version": "0.3.2",
+    "workspace_mcp_available": false,
+    "settings": "defaults_no_bsl_analyzer_toml",
+    "scope": "changed_native_module",
+    "results": [
+      {
+        "kind": "configuration",
+        "changed_modules": 1,
+        "complete": true,
+        "syntax_errors": 0,
+        "other_diagnostics": 2
+      },
+      {
+        "kind": "extension",
+        "changed_modules": 1,
+        "complete": true,
+        "syntax_errors": 0,
+        "other_diagnostics": 5
+      },
+      {
+        "kind": "processing",
+        "changed_modules": 1,
+        "complete": true,
+        "syntax_errors": 0,
+        "other_diagnostics": 50
+      },
+      {
+        "kind": "report",
+        "changed_modules": 1,
+        "complete": true,
+        "syntax_errors": 0,
+        "other_diagnostics": 2
+      }
+    ]
+  },
+  "remaining": [
+    "new_reverse_map",
+    "native_cli_lifecycle",
+    "ide_coordination",
+    "full_ef25_acceptance"
+  ]
+}

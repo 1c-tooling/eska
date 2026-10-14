@@ -77,6 +77,7 @@ impl EskaSource {
         generations: &Path,
         strict: bool,
     ) -> Result<PreparedSource, ProtectedFailure> {
+        super::source_format::require_project_ready(self.project.root())?;
         let SourceFormat::Eska { accepted_base } = self.project.configuration().source_format()
         else {
             return Err(Error::root("source_format_mismatch").into());

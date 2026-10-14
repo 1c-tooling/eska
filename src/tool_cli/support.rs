@@ -258,6 +258,7 @@ fn failure_hint(code: &str) -> Option<&'static str> {
             Some("tool-error-update-recovery")
         }
         "source_update_incomplete" => Some("tool-error-update-incomplete"),
+        "source_import_incomplete" => Some("tool-error-import-incomplete"),
         "source_workspace_pins_required" => Some("tool-error-workspace-pins-required"),
         "source_workspace_pins_invalid" => Some("tool-error-workspace-pins-invalid"),
         "source_workspace_pins_mismatch" => Some("tool-error-workspace-pins-mismatch"),

@@ -4,8 +4,10 @@ mod import;
 mod storage;
 
 pub use import::{
+    PROJECT_SOURCE_IMPORT_RECEIPT, ProjectSourceImportPlan, ProjectSourceImportRef,
     SourceImportChange, SourceImportConflict, SourceImportConflictKind, SourceImportPlan,
-    prepare_source_import,
+    SourceImportRecovery, prepare_project_source_import, prepare_source_import,
+    project_import_ancestor, recover_project_source_import,
 };
 
 #[cfg(test)]

@@ -863,6 +863,10 @@ preset = "trunk"
 собирает проверенный snapshot и сохраняет карту исходников в manifest.
 [Распаковка CF/CFE/EPF/ERF](docs/research/eska-format/native-unpack.md) через
 `eska-build unpack` создаёт новый Designer XML каталог без проекта и Git.
+[Применение библиотечного плана импорта](docs/research/eska-format/source-import-recovery.md)
+меняет выбранный ESKA проект/member с сохранением старых исходников и отдельного
+предка. Guard/recovery проверяют journal, bytes и settings под прежним CI pin;
+новая карта и native CLI reimport ещё в работе.
 Общий [typed writer](docs/research/eska-format/typed-scalars.md) поддерживает
 32 свойства, включая bool, точные целые и enum с проверкой владельца;
 старая preserved-запись не мигрирует при открытии.

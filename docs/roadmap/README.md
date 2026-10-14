@@ -15,8 +15,10 @@
 Первая часть: [build core и `eska-build unpack`](../research/eska-format/native-unpack.md)
 распаковывают четыре native типа в собственный staging/новый XML-каталог;
 [Подтверждённый ancestor и библиотечный план](../research/eska-format/import-ancestry.md)
-сохраняют независимые правки под старым CI pin; новая карта и project recovery
-ещё в работе. EF-25 не закрыта.
+сохраняют независимые правки под старым CI pin.
+[Применение и recovery выбранного проекта/member](../research/eska-format/source-import-recovery.md)
+сохраняют old source, raw ancestry и точные settings в журнале. Новая карта,
+native CLI lifecycle и координация IDE ещё в работе. EF-25 не закрыта.
 EF-15 — `DONE` в [принятой матрице](../research/eska-format/base-update.md).
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.

@@ -1,7 +1,14 @@
 //! Three-way import compares confirmed ancestry with working and incoming source bytes.
 
+mod project;
 mod publication;
 mod selection;
+
+pub use project::{
+    PROJECT_SOURCE_IMPORT_RECEIPT, ProjectSourceImportPlan, ProjectSourceImportRef,
+    SourceImportRecovery, prepare_project_source_import, project_import_ancestor,
+    recover_project_source_import,
+};
 
 #[cfg(test)]
 mod tests;
@@ -67,9 +74,9 @@ struct Input {
 }
 
 impl Input {
-    /// Recheck names, empty directories and complete byte fingerprints before or after publication.
-    fn verify(&self) -> Result<(), Error> {
-        if Inventory::read(&self.root)? != self.inventory {
+    /// A cancelled inventory cannot be accepted as an unchanged participant.
+    fn verify_cancellable(&self, cancelled: &dyn Fn() -> bool) -> Result<(), Error> {
+        if Inventory::read_cancellable(&self.root, cancelled)? != self.inventory {
             return Err(Error::root("source_input_changed"));
         }
         Ok(())
@@ -230,10 +237,23 @@ impl SourceImportPlan {
     /// # Errors
     /// Refuses source, ancestry, incoming data or approved-baseline changes after preparation.
     pub fn verify(&self) -> Result<(), Error> {
-        self.working.verify()?;
-        self.ancestor.verify()?;
-        self.incoming.verify()?;
-        self.approved.verify()
+        self.verify_cancellable(&|| false)
+    }
+
+    /// Stream all participating fingerprints with an explicit caller cancellation boundary.
+    ///
+    /// # Errors
+    /// Returns stale input, unsupported storage, I/O or cancellation failures.
+    pub fn verify_cancellable(&self, cancelled: &dyn Fn() -> bool) -> Result<(), Error> {
+        for input in [
+            &self.working,
+            &self.ancestor,
+            &self.incoming,
+            &self.approved,
+        ] {
+            input.verify_cancellable(cancelled)?;
+        }
+        Ok(())
     }
 
     /// Read only selected text consumed by validation; opaque resources stay streamed.

@@ -2810,8 +2810,10 @@ rename, новый/заимствованный объект, смена UUID, b
 Публикация создаёт только новый каталог и проверяет снимок/отмену, не принимает
 правила поддержки. Добавлен [отдельный подтверждённый предок и библиотечный план импорта](../research/eska-format/import-ancestry.md).
 Снимок не предоставляет прав; консервативный three-way план использует старый CI pin
-и protected selector. Изменение reverse map пока блокируется. Project journal,
-публикация новой карты и импорт в выбранный существующий ESKA ещё в работе.
+и protected selector. [Project journal и recovery выбранного ESKA/member](../research/eska-format/source-import-recovery.md)
+применяют план под прежним pin, сохраняют old source и raw incoming ancestor,
+проверяют точные settings/inputs и блокируют незавершённые источники. Новая карта,
+native CLI lifecycle и координация IDE ещё в работе; EF-25 не закрыта.
 
 ## EF-26 RLS и дополнительные тексты ресурсов
 
