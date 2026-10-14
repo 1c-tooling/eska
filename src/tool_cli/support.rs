@@ -233,6 +233,9 @@ pub fn emit_failure(
 fn failure_hint(code: &str) -> Option<&'static str> {
     match code {
         "arguments_invalid" => Some("tool-error-arguments"),
+        "source_entropy_unavailable" => Some("tool-error-entropy"),
+        "source_initial_version_invalid" => Some("tool-error-initial-version"),
+        "source_metadata_name_invalid" => Some("tool-error-metadata-name"),
         "accepted_base_pin_required" => Some("tool-error-pin-required"),
         "accepted_base_pin_invalid" => Some("tool-error-pin-invalid"),
         "source_baseline_untrusted" => Some("tool-error-base-untrusted"),

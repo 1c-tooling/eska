@@ -22,6 +22,8 @@ mod extensions;
 mod fill_value;
 #[path = "project_tool/migration.rs"]
 mod migration;
+#[path = "project_tool/new.rs"]
+mod new;
 #[path = "project_tool/order.rs"]
 mod order;
 #[path = "project_tool/readable.rs"]

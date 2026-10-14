@@ -1938,6 +1938,17 @@ Native all4 facade build/dump с local BSL и первый import с initial anc
 сохранили pin/settings/accepted bytes и прежние артефакты. Physical parent Ctrl+C,
 Windows, общий new/init/import и устанавливаемый комплект ещё не приняты.
 
+[Минимальное создание](../research/eska-format/minimal-project-creation.md)
+подключает `creation::new_project` и `eska-project new` для четырёх типов и
+обеих схем версии. Fresh UUID и проверенный Designer 2.20 skeleton поступают
+в общий Queries importer; accepted/initial ancestry независимы, manifest
+публикуется последним. Core не запускает платформу/Git и не меняет workspace.
+Отдельный pre-publication manifest hash позволяет будущей оболочке проверять
+исходные settings bytes до workflow финализации. Все восемь actual CLI/native
+циклов (четыре типа × две схемы версии) и 22 Rust gates прошли, четыре внешних
+модуля имеют ноль diagnostics в BSL Analyzer CLI fallback. Shell new/init ещё нужны;
+EF-20 остаётся `IN_PROGRESS`.
+
 Завершить файловый цикл новой структуры до продолжения анализатора. Оболочка
 `eska` делегирует проектные операции `eska-project`, распаковку/сборку —
 `eska-build`; алгоритмы не дублируются. Сохранить текущие команды/JSON Designer XML

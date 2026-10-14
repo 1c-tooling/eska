@@ -2299,6 +2299,9 @@ Old layouts/journal v1 сохранены; общий new/init/migration ещё 
 к совместимому companion с bounded version/protocol probe и сохранением argv,
 streams/exit. 12 process cases, 22 Rust gates и all4 native build/dump/first-import
 прошли; XML маршрут/JSON прежние. Общий workflow и комплект ещё нужны.
+[Минимальный constructor](research/eska-format/minimal-project-creation.md)
+создаёт четыре типа и обе схемы версии через `eska-project new`, общий Queries
+pipeline и initial ancestor. Основная оболочка new/init ещё в работе.
 
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.

@@ -68,6 +68,9 @@ Raw initial/history/state переносятся побайтно через sco
 делегируется совместимому companion с bounded probe и прямыми streams/exit.
 All4 native build/dump/first-import сохранили local BSL, pin/settings и прежний
 артефакт; 12 новых process cases и 22 Rust gates прошли. Общий workflow ещё нужен.
+[Минимальное создание](../research/eska-format/minimal-project-creation.md)
+подключает четыре типа и обе схемы версии к `eska-project new` через общий
+Queries pipeline. Основная оболочка new/init остаётся в EF-20.
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.
 Добавлен standalone `eska-project update-base` с preview/write, независимыми

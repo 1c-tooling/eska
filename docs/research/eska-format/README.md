@@ -33,6 +33,9 @@ raw initial/history/state bytes для standalone/member.
 [Делегирование `eska build`](shell-build-delegation.md) подключает одиночную
 сборку ESKA к совместимому companion. Native all4 build/dump и первый import
 с initial ancestor прошли, сохранив local BSL/pin/settings и прежний артефакт.
+[Минимальный `eska-project new`](minimal-project-creation.md) создаёт четыре
+типа с fresh native UUID и обеими схемами версии через общий Queries pipeline.
+Общий shell new/init и приёмка MVP остаются в работе.
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
 T84 — [DONE по версиям EPF/ERF](external-version.md): экспортная `Версия()`,
 CLI/миграция и платформенная приёмка двух схем; [синтаксический контракт](external-version-syntax.md).

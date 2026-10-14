@@ -1,6 +1,8 @@
 //! New ESKA projects from Designer XML, without platform, Git or presentation dependencies.
 
+use sha2::{Digest, Sha256};
 use std::{
+    fmt::Write,
     fs,
     path::{Path, PathBuf},
 };
@@ -8,6 +10,7 @@ use std::{
 use super::{
     Project, ProjectName, SourceFormat,
     config::{self, ProjectConfig},
+    native_version::VersionScheme,
     platform_settings::{BuildSettings, PlatformVersion},
     publish::{self, PublishError},
     source_format::{
@@ -17,6 +20,9 @@ use super::{
     },
     transport::TransportPlan,
 };
+
+mod new;
+pub use new::{INITIAL_PROJECT_VERSION, NewProjectOptions, new_project};
 
 /// Disposable generations are separate from both tracked input authorities.
 pub const DEFAULT_GENERATIONS_DIRECTORY: &str = ".eska/generations";
@@ -38,6 +44,8 @@ pub struct ImportedProject {
     pub accepted: AcceptedRef,
     /// Only new query-layout projects retain initial bytes; this digest still needs confirmation.
     pub initial_ancestor: Option<ImportAncestorRef>,
+    /// SHA-256 of the exact settings bytes captured before publication, independent of later disk changes.
+    pub manifest_sha256: String,
 }
 
 /// Create one complete project in a new directory, publishing its manifest last.
@@ -55,7 +63,15 @@ pub fn import_project(
     platform: Option<&PlatformVersion>,
     frozen: &[NativeUuid],
 ) -> Result<ImportedProject, Error> {
-    create_project(input, destination, name, platform, frozen, Layout::Family)
+    create_project(
+        input,
+        destination,
+        name,
+        platform,
+        frozen,
+        Layout::Family,
+        None,
+    )
 }
 
 /// Create a new experimental project with separate descriptor files and an independently pinned base.
@@ -79,6 +95,7 @@ pub fn import_separated_project(
         platform,
         frozen,
         Layout::Separated,
+        None,
     )
 }
 
@@ -96,7 +113,15 @@ pub fn import_readable_project(
     platform: Option<&PlatformVersion>,
     frozen: &[NativeUuid],
 ) -> Result<ImportedProject, Error> {
-    create_project(input, destination, name, platform, frozen, Layout::Readable)
+    create_project(
+        input,
+        destination,
+        name,
+        platform,
+        frozen,
+        Layout::Readable,
+        None,
+    )
 }
 
 /// Create a complete project with unified managed forms and separately authored plain queries.
@@ -117,7 +142,15 @@ pub fn import_query_project(
     platform: Option<&PlatformVersion>,
     frozen: &[NativeUuid],
 ) -> Result<ImportedProject, Error> {
-    create_project(input, destination, name, platform, frozen, Layout::Queries)
+    create_project(
+        input,
+        destination,
+        name,
+        platform,
+        frozen,
+        Layout::Queries,
+        None,
+    )
 }
 
 /// Project settings and authority publication are shared by the explicit authoring layouts.
@@ -128,10 +161,11 @@ fn create_project(
     platform: Option<&PlatformVersion>,
     frozen: &[NativeUuid],
     layout: Layout,
+    version_scheme: Option<VersionScheme>,
 ) -> Result<ImportedProject, Error> {
     let root = destination_path(input, destination)?;
     fs::create_dir(&root).map_err(|error| io_error(&error))?;
-    let result = populate(input, &root, name, platform, frozen, layout);
+    let result = populate(input, &root, name, platform, frozen, layout, version_scheme);
     if let Err(error) = result {
         fs::remove_dir_all(&root)
             .map_err(|_| Error::root("source_cleanup_failed").in_field(error.code))?;
@@ -148,6 +182,7 @@ fn populate(
     platform: Option<&PlatformVersion>,
     frozen: &[NativeUuid],
     layout: Layout,
+    version_scheme: Option<VersionScheme>,
 ) -> Result<ImportedProject, Error> {
     let source = root.join("src");
     match layout {
@@ -163,6 +198,9 @@ fn populate(
             accepted_base: SourcePath::parse(ACCEPTED_DIRECTORY)?,
         })
         .map_err(|_| Error::root("source_project_settings_invalid"))?;
+    if let Some(scheme) = version_scheme {
+        config = config.with_version_scheme(scheme);
+    }
     // An absent platform remains inheritable if this project becomes a workspace member.
     if let Some(platform) = platform {
         let settings = BuildSettings::new(platform.as_str(), PathBuf::from("build"))
@@ -172,6 +210,13 @@ fn populate(
     let manifest = config
         .to_workspace_member_toml()
         .map_err(|_| Error::root("source_schema_invalid"))?;
+    let manifest_sha256 = Sha256::digest(manifest.as_bytes()).iter().fold(
+        String::with_capacity(64),
+        |mut value, byte| {
+            let _ = write!(value, "{byte:02x}");
+            value
+        },
+    );
     fs::create_dir(root.join(".eska")).map_err(|error| io_error(&error))?;
     let accepted = accept_source(&source, &root.join(ACCEPTED_DIRECTORY), frozen)?;
     let project = config
@@ -195,6 +240,7 @@ fn populate(
         project,
         accepted,
         initial_ancestor,
+        manifest_sha256,
     })
 }
 

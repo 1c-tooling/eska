@@ -720,6 +720,7 @@ dependencies = [
  "ctrlc",
  "directories",
  "fluent",
+ "getrandom 0.4.3",
  "gix",
  "gix-validate",
  "quick-xml",

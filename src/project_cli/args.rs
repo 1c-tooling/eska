@@ -4,6 +4,9 @@ use crate::tool_cli::OutputFormat;
 use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
+mod new;
+pub(super) use new::New;
+
 #[derive(Debug, Parser)]
 #[command(
     name = "eska-project",
@@ -29,6 +32,8 @@ pub(super) struct Cli {
 #[derive(Debug, Subcommand)]
 pub(super) enum Command {
     #[command(disable_help_flag = true)]
+    New(New),
+    #[command(disable_help_flag = true)]
     Import(Import),
     #[command(disable_help_flag = true)]
     Migrate(Migrate),
@@ -52,6 +57,7 @@ impl Command {
     /// Stable operation identifiers also name the tool's JSON envelope commands.
     pub const fn name(&self) -> &'static str {
         match self {
+            Self::New(_) => "new",
             Self::Import(_) => "import",
             Self::Migrate(_) => "migrate",
             Self::UpdateBase(_) => "update-base",

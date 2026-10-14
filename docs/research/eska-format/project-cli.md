@@ -15,11 +15,15 @@ cargo build --no-default-features --features project-cli --bin eska-project
 проектный бинарник. Source-only library по-прежнему работает без CLI features.
 Общие Locale/Localizer перенесены из приложения; прежний import API приложения
 сохранён через reexport. Минимальный tool не включает platform dictionaries,
-Git engine, native runner или IDE runtime. Новых dependencies не добавлено.
+Git engine, native runner или IDE runtime. Для свежих native UUID используется
+минимальная прямая dependency `getrandom`, уже присутствовавшая в lockfiles.
 
 ## Команды
 
 ```sh
+eska-project new demo --name demo
+eska-project new report-demo --name report-demo --type report \
+  --metadata-name НовыйОтчет --initial-version 2026.10.0.1 --format json
 eska-project import designer-xml new-project --name demo
 eska-project import designer-xml another-project --name demo \
   --platform-version 8.3.27.2325
@@ -48,6 +52,14 @@ eska-project --project-dir new-project transport --write
 eska-project capabilities --format json
 ```
 
+[`new`](minimal-project-creation.md) создаёт минимальный Queries-проект четырёх
+типов без платформы/Git: fresh native UUID, выбранная версия, отдельная принятая
+база и initial ancestor, manifest-last publication. Default type — configuration,
+version — `0.1.0`; `--metadata-name` задаёт точный Unicode native identifier,
+`--initial-version` принимает обе существующие схемы версии. Относительный
+destination разрешается от `--project-dir`; parent должен существовать.
+Команда не подключает проект к enclosing workspace автоматически.
+
 `import` читает Designer XML и создаёт исключительно новый каталог:
 `src`, `.eska/accepted`, `.gitattributes`, `.gitignore`, `eska.toml`.
 Manifest публикуется последним. Ошибка удаляет только каталог, захваченный
@@ -61,7 +73,7 @@ Manifest публикуется последним. Ошибка удаляет 
 защищённой материализации. `creation_project_types` сообщает четыре типа;
 `import_layout_project_types` — ограничения каждого layout. Project core и
 protected build processing/report приняты в [EF-14](external-projects.md).
-Общий new/init остаётся EF-20. Анализ CFE с контекстом
+Общий shell new/init остаётся EF-20. Анализ CFE с контекстом
 основной конфигурации остаётся EF-18 и пока явно отказан.
 
 `--layout family` либо отсутствие параметра сохраняет layout 1/descriptor 1.
@@ -210,6 +222,10 @@ revision, `source_map_sha256` и exclusions. Inspection, prepare и refusals
 прежние JSON-схемы приложения и IDE protocol не изменены.
 
 Import возвращает `data.source_layout = "family" | "readable" | "queries"`.
+New возвращает отдельный [13-key data contract](minimal-project-creation.md#публикация-и-machine-interface),
+включая независимые candidate pins и hash manifest bytes до публикации.
+Capabilities добавляет `new`, `new_project_types`, `new_source_layout = "queries"`
+и `new_initial_version = "0.1.0"`.
 Capabilities содержит `import_layouts = ["family", "readable", "queries"]`,
 `source_layout_versions = [1, 2, 3, 4, 5, 6]`, `descriptor_schema_versions = [1, 2]`
 и [map типов по layout](query-project-creation.md#machine-interface).

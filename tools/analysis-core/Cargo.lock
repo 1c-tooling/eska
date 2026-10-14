@@ -573,6 +573,7 @@ version = "0.14.2"
 dependencies = [
  "clap",
  "fluent",
+ "getrandom",
  "gix-validate",
  "quick-xml",
  "roxmltree",

@@ -857,6 +857,9 @@ preset = "trunk"
 принимает XML-каталог configuration/extension; явный
 [`--layout queries`](docs/research/eska-format/query-project-creation.md) создаёт
 полные проекты всех четырёх типов с form.yaml и отдельными `.sdbl` (map 5/6).
+[`eska-project new`](docs/research/eska-format/minimal-project-creation.md)
+создаёт минимальные проекты всех четырёх типов без платформы/Git, с fresh UUID,
+версией `0.1.0` либо явно выбранной `x.y.z`/`x.y.z.build` и initial ancestor.
 Анализатор пока отклоняет extension/processing/report: их семантический контекст
 подключается отдельно в EF-18. Для сборки можно явно передать базовый CF через
 `--base-configuration`. Внешняя версия проверяется в объявленном модуле объекта.

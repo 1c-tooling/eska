@@ -1,0 +1,278 @@
+{
+  "schema_version": 1,
+  "stage": "EF-20 minimal project creation",
+  "status": "partial",
+  "platform": "8.3.27.2325",
+  "operating_system": "Linux",
+  "native_constructor_cases": [
+    {
+      "kind": "configuration",
+      "version_scheme": "x.y.z",
+      "new_cli": true,
+      "native_build": true,
+      "native_unpack_type_verified": true,
+      "unicode_name_preserved": true,
+      "root_uuid_preserved": true,
+      "internal_identities_preserved": true,
+      "version_preserved": true,
+      "external_module_bytes_preserved": null,
+      "source_accepted_initial_history_settings_unchanged": true,
+      "owned_stage_removed": true
+    },
+    {
+      "kind": "configuration",
+      "version_scheme": "x.y.z.build",
+      "new_cli": true,
+      "native_build": true,
+      "native_unpack_type_verified": true,
+      "unicode_name_preserved": true,
+      "root_uuid_preserved": true,
+      "internal_identities_preserved": true,
+      "version_preserved": true,
+      "external_module_bytes_preserved": null,
+      "source_accepted_initial_history_settings_unchanged": true,
+      "owned_stage_removed": true
+    },
+    {
+      "kind": "extension",
+      "version_scheme": "x.y.z",
+      "new_cli": true,
+      "native_build": true,
+      "native_unpack_type_verified": true,
+      "unicode_name_preserved": true,
+      "root_uuid_preserved": true,
+      "internal_identities_preserved": true,
+      "version_preserved": true,
+      "external_module_bytes_preserved": null,
+      "source_accepted_initial_history_settings_unchanged": true,
+      "owned_stage_removed": true
+    },
+    {
+      "kind": "extension",
+      "version_scheme": "x.y.z.build",
+      "new_cli": true,
+      "native_build": true,
+      "native_unpack_type_verified": true,
+      "unicode_name_preserved": true,
+      "root_uuid_preserved": true,
+      "internal_identities_preserved": true,
+      "version_preserved": true,
+      "external_module_bytes_preserved": null,
+      "source_accepted_initial_history_settings_unchanged": true,
+      "owned_stage_removed": true
+    },
+    {
+      "kind": "processing",
+      "version_scheme": "x.y.z",
+      "new_cli": true,
+      "native_build": true,
+      "native_unpack_type_verified": true,
+      "unicode_name_preserved": true,
+      "root_uuid_preserved": true,
+      "internal_identities_preserved": true,
+      "version_preserved": true,
+      "external_module_bytes_preserved": true,
+      "source_accepted_initial_history_settings_unchanged": true,
+      "owned_stage_removed": true
+    },
+    {
+      "kind": "processing",
+      "version_scheme": "x.y.z.build",
+      "new_cli": true,
+      "native_build": true,
+      "native_unpack_type_verified": true,
+      "unicode_name_preserved": true,
+      "root_uuid_preserved": true,
+      "internal_identities_preserved": true,
+      "version_preserved": true,
+      "external_module_bytes_preserved": true,
+      "source_accepted_initial_history_settings_unchanged": true,
+      "owned_stage_removed": true
+    },
+    {
+      "kind": "report",
+      "version_scheme": "x.y.z",
+      "new_cli": true,
+      "native_build": true,
+      "native_unpack_type_verified": true,
+      "unicode_name_preserved": true,
+      "root_uuid_preserved": true,
+      "internal_identities_preserved": true,
+      "version_preserved": true,
+      "external_module_bytes_preserved": true,
+      "source_accepted_initial_history_settings_unchanged": true,
+      "owned_stage_removed": true
+    },
+    {
+      "kind": "report",
+      "version_scheme": "x.y.z.build",
+      "new_cli": true,
+      "native_build": true,
+      "native_unpack_type_verified": true,
+      "unicode_name_preserved": true,
+      "root_uuid_preserved": true,
+      "internal_identities_preserved": true,
+      "version_preserved": true,
+      "external_module_bytes_preserved": true,
+      "source_accepted_initial_history_settings_unchanged": true,
+      "owned_stage_removed": true
+    }
+  ],
+  "bsl_analyzer": {
+    "backend": "bsl-analyzer-app",
+    "version": "0.3.2",
+    "workspace_mcp_available": false,
+    "configuration": "defaults in owned demos",
+    "cases": [
+      {
+        "case": "processing-three",
+        "exit_code": 0,
+        "total_files": 1,
+        "failed_files": 0,
+        "complete": true,
+        "total_diagnostics": 0
+      },
+      {
+        "case": "processing-four",
+        "exit_code": 0,
+        "total_files": 1,
+        "failed_files": 0,
+        "complete": true,
+        "total_diagnostics": 0
+      },
+      {
+        "case": "report-three",
+        "exit_code": 0,
+        "total_files": 1,
+        "failed_files": 0,
+        "complete": true,
+        "total_diagnostics": 0
+      },
+      {
+        "case": "report-four",
+        "exit_code": 0,
+        "total_files": 1,
+        "failed_files": 0,
+        "complete": true,
+        "total_diagnostics": 0
+      }
+    ]
+  },
+  "rust_gates": [
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.4
+    },
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.79
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 14.78
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 10.23
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 68.6
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 68.54
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 15.57
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 0.17
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 2.19
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 2.53
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 24.32
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.87
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.32
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.17
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 1.71
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 1.08
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 16.29
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.62
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 5.81
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 12.43
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 61.93
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 10.44
+    }
+  ],
+  "limits": [
+    "Direct creation does not enroll workspace membership or create Git",
+    "Main shell new/from/init and migration remain in progress",
+    "Empty profiles tested only on the listed Linux platform; this is not full MVP acceptance"
+  ]
+}
