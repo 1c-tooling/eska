@@ -9,7 +9,7 @@ use crate::project_core::source_format::{
 };
 
 /// Clone a supplied native subtree with a fresh descriptor identity and unchanged complete payloads.
-fn clone_owner(native: &Path, previous: &str, next: &str, uuid: &str) {
+pub(super) fn clone_owner(native: &Path, previous: &str, next: &str, uuid: &str) {
     let previous = native.join(previous);
     let next = native.join(next);
     let descriptor = fs::read_to_string(previous.with_extension("xml")).unwrap();

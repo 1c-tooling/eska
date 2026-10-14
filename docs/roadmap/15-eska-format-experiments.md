@@ -2872,7 +2872,18 @@ member selection, conflicts/freeze, wrong type/UUID, native failure, SIGINT
 и обе recovery actions проверены process tests. Annotation-only local YAML
 теперь сохраняется при incoming scalar change. Четыре настоящих input прошли
 capture/preview/write/repeat/build/dump на 1С 8.3.27.2325 под прежними pin/settings.
-Permission view после смены состава, общий workflow и IDE coordination ещё нужны;
+Общий workflow и IDE coordination ещё нужны;
+EF-25 остаётся `IN_PROGRESS`.
+
+[Editor bindings](../research/eska-format/post-import-edit-bindings.md) открывают
+текущую проверенную composition без принятия новых source bytes. Original pin,
+supplier policy и freeze сохранены; saved module/property/form/query plans
+проверяют descriptor/map fence и project guard. Новые UUID/rename доступны;
+JSON preview содержит support изменённых owners. Пять core cases, project guard,
+reopened SDK/unsaved property preview на RU/EN, CLI support JSON и 22 Rust gates
+прошли. Четыре native edit/build/dump на 1С 8.3.27.2325 изменили ровно property
+и модуль, сохранив остальной состав и settings. Refresh работающего IDE,
+защита unsaved вкладок при импорте и общий workflow остаются в EF-25/EF-20;
 EF-25 остаётся `IN_PROGRESS`.
 
 ## EF-26 RLS и дополнительные тексты ресурсов

@@ -33,7 +33,7 @@ pub(super) fn preview(
         "resulting_ancestor":plan.resulting_ancestor_reference(),"transaction":plan.reference(),
         "working_revision":source.working_revision(),"output_revision":source.output_revision(),
         "unchanged":plan.is_unchanged(),
-        "changes":source.changes(),"conflicts":source.conflicts(),"platform":events,
+        "changes":source.changes(),"conflicts":source.conflicts(),"support":source.support_permissions(),"platform":events,
     }))
 }
 

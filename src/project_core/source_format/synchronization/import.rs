@@ -22,7 +22,8 @@ use std::{
 
 use super::{ImportAncestor, ImportAncestorRef, storage};
 use crate::project_core::source_format::{
-    AcceptedBase, AcceptedRef, Error, Exclusion, FileEntry, NativeUuid, SourcePath,
+    AcceptedBase, AcceptedRef, Error, Exclusion, FileEntry, NativeUuid, Operation, Permission,
+    SourcePath,
     export::Package,
     file_identity,
     files::{self, Inventory},
@@ -103,6 +104,7 @@ pub struct SourceImportPlan {
     changes: Vec<SourceImportChange>,
     conflicts: Vec<SourceImportConflict>,
     incoming_data_unchanged: bool,
+    support_permissions: Vec<Permission>,
 }
 
 /// Prepare a source-only import from an explicitly confirmed ancestor under current pinned rights.
@@ -182,6 +184,7 @@ pub fn prepare_source_import(
         changes: chosen.changes,
         conflicts: chosen.conflicts,
         incoming_data_unchanged: chosen.incoming_data_unchanged,
+        support_permissions: Vec::new(),
     };
     descriptors::resolve(&mut plan)?;
     plan.validate_selected(approved)?;
@@ -192,6 +195,7 @@ pub fn prepare_source_import(
 impl SourceImportPlan {
     /// Validate complete selected declarations and permissions before allowing publication.
     fn validate_selected(&mut self, approved: &AcceptedBase) -> Result<(), Error> {
+        self.capture_support(approved);
         if self.conflicts.is_empty() {
             let package = Package::from_snapshot(storage::clone_inventory(&self.output), |path| {
                 self.read(path)
@@ -229,6 +233,7 @@ impl SourceImportPlan {
                 };
                 &bound
             };
+            self.capture_support(authority);
             for exclusion in
                 protected::update_exclusions(&self.output, authority, |path| self.read(path))?
             {
@@ -250,6 +255,26 @@ impl SourceImportPlan {
             }
         }
         Ok(())
+    }
+
+    /// Changed owners expose the validated support state; unresolved new ownership remains unknown.
+    fn capture_support(&mut self, authority: &AcceptedBase) {
+        let owners = self
+            .changes
+            .iter()
+            .filter_map(|change| file_identity::uuid(&change.identity))
+            .map(|uuid| (uuid.key(), uuid))
+            .collect::<BTreeMap<_, _>>();
+        self.support_permissions = owners
+            .into_values()
+            .map(|uuid| authority.permission(&uuid, Operation::Resource))
+            .collect();
+    }
+
+    /// These Resource decisions describe owner support, not permission for every individual edit.
+    #[must_use]
+    pub fn support_permissions(&self) -> &[Permission] {
+        &self.support_permissions
     }
 
     /// Return current support approval; import publication never advances this reference.

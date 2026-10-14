@@ -162,6 +162,13 @@ fn previews_and_applies_all_native_profiles_with_independent_authorities() {
             assert_eq!(value["data"]["can_apply"], true, "{kind}: {value}");
             assert_eq!(value["data"]["approved"]["sha256"], fixture.pin);
             assert_eq!(value["data"]["project_type"], kind);
+            let support = value["data"]["support"].as_array().unwrap();
+            assert_eq!(support.len(), 1);
+            assert_eq!(support[0]["baseline"], fixture.pin);
+            assert_eq!(support[0]["state"], "unrestricted");
+            assert_eq!(support[0]["native_reason"], "ownObject");
+            assert_eq!(support[0]["reason"], "allowed");
+            assert_eq!(support[0]["allowed"], true);
             previews.push(value);
         }
         assert_eq!(previews[0], previews[1]);

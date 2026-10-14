@@ -1,11 +1,10 @@
 //! Property and BSL previews share one independently pinned base and versioned-edit capability.
 
-use std::path::PathBuf;
-
 use eska::{
     project_core::{
-        SourceFormat,
+        Project,
         eska_source::EskaSource,
+        metadata_model::ProjectScope,
         source_format::{AcceptedBase, AcceptedRef},
     },
     tool_cli,
@@ -16,7 +15,8 @@ use super::protocol;
 use crate::RequestCancellation;
 
 pub struct Authority {
-    root: PathBuf,
+    project: Project,
+    scope: ProjectScope,
     reference: AcceptedRef,
 }
 
@@ -37,25 +37,21 @@ impl Authority {
         {
             return Ok(None);
         }
-        let SourceFormat::Eska { accepted_base } = source.project().configuration().source_format()
-        else {
-            return Err(protocol::error_value(
-                -32603,
-                "session_invariant",
-                Value::Null,
-            ));
-        };
         Ok(Some(Self {
-            root: source.project().root().join(accepted_base.as_path()),
+            project: source.project().clone(),
+            scope: source.scope().clone(),
             reference,
         }))
     }
 
     /// Every preview verifies the full accepted base, with the same cooperative request cancellation.
     pub fn open(&self, control: &RequestCancellation) -> Result<AcceptedBase, Value> {
-        AcceptedBase::open_cancellable(&self.root, &self.reference, &|| control.is_cancelled())
-            .map_err(|error| {
-                protocol::error_value(-32000, error.code, json!({"location":error.location}))
-            })
+        let result = (|| {
+            EskaSource::open(self.project.clone(), self.scope.clone())?
+                .edit_authority_cancellable(&self.reference, &|| control.is_cancelled())
+        })();
+        result.map_err(|error| {
+            protocol::error_value(-32000, error.code, json!({"location":error.location}))
+        })
     }
 }

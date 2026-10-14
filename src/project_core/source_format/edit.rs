@@ -30,6 +30,7 @@ pub struct SourceEditPlan {
     baseline: AcceptedRef,
     original: Option<String>,
     updated: String,
+    source_binding: Option<super::baseline::source_binding::SourceBinding>,
 }
 
 /// A lossless preview over caller-owned current text; it has no filesystem publication authority.
@@ -99,6 +100,9 @@ impl SourceEditPlan {
         }
         permission(base, &self.uuid, self.operation)?;
         base.verify()?;
+        if let Some(binding) = &self.source_binding {
+            binding.verify(&self.root, &|| false)?;
+        }
         let publication = self.original.as_ref().map_or_else(
             || publish::publish_new(&self.root, self.path.as_path(), &self.updated),
             |original| {
@@ -144,6 +148,7 @@ pub fn prepare_module_edit(
         baseline: base.reference().clone(),
         original: original.map(str::to_owned),
         updated: updated.to_owned(),
+        source_binding: base.source_binding(),
     })
 }
 
@@ -177,6 +182,7 @@ pub fn prepare_property_edit(
         baseline: base.reference().clone(),
         original: Some(original),
         updated,
+        source_binding: base.source_binding(),
     })
 }
 

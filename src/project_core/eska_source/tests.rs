@@ -99,6 +99,48 @@ fn preparation_uses_member_relative_accepted_bytes_and_recreates_the_same_genera
     second.validate().expect("native bytes");
 }
 
+/// A live project guard blocks both new editor authorities and saved plans prepared before import.
+#[test]
+fn source_import_guard_invalidates_an_already_prepared_saved_edit() {
+    use crate::project_core::source_format::{
+        NativeUuid, PropertyName, PropertyValue, prepare_property_edit,
+    };
+    let fixture = TestDir::new();
+    let (project, reference) = project(&fixture.0, "sample");
+    let source = EskaSource::open(project, ProjectScope::Standalone).unwrap();
+    let authority = source.edit_authority(&reference).unwrap();
+    let uuid = NativeUuid::parse("10000000-0000-4000-8000-000000000001").unwrap();
+    let plan = prepare_property_edit(
+        source.project().source(),
+        &authority,
+        &uuid,
+        PropertyName::Comment,
+        PropertyValue::Text("blocked edit".to_owned()),
+    )
+    .unwrap();
+    let before = fs::read(source.project().source().join("configuration.yaml")).unwrap();
+    fs::write(
+        source
+            .project()
+            .root()
+            .join(".eska-project-source-import.json"),
+        "{}",
+    )
+    .unwrap();
+    assert_eq!(
+        source.edit_authority(&reference).err().unwrap().code,
+        "source_import_incomplete"
+    );
+    assert_eq!(
+        plan.publish(&authority).unwrap_err().code,
+        "source_import_incomplete"
+    );
+    assert_eq!(
+        fs::read(source.project().source().join("configuration.yaml")).unwrap(),
+        before
+    );
+}
+
 #[test]
 /// Discovery retains each member's source settings and reads only the explicitly selected YAML.
 fn mixed_workspace_preserves_inheritance_selection_and_member_scope() {

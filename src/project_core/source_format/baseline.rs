@@ -3,6 +3,7 @@
 mod composition;
 mod layout;
 mod policy;
+pub(super) mod source_binding;
 mod update;
 
 pub use update::{
@@ -170,6 +171,7 @@ pub struct AcceptedBase {
     support: policy::AcceptedPolicy,
     pub(super) package: Package,
     composition: Option<composition::Bindings>,
+    source_binding: Option<source_binding::SourceBinding>,
 }
 
 /// Accepted class and ancestry determine operation capabilities and inherited freeze together.
@@ -470,6 +472,7 @@ impl AcceptedBase {
             },
             package,
             composition: None,
+            source_binding: None,
         })
     }
 

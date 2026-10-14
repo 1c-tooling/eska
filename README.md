@@ -869,6 +869,10 @@ preset = "trunk"
 явный source snapshot, `recover-import` завершает/откатывает guarded journal.
 CF/CFE/EPF/ERF прошли реальные preview/write/repeat/build/dump; прежний support pin,
 local BSL и settings сохранены. Общий `eska import` и IDE coordination ещё нужны.
+[Editor bindings после импорта](docs/research/eska-format/post-import-edit-bindings.md)
+открывают новые UUID/пути под прежним pin; saved plans проверяют карту,
+descriptors и project import guard перед записью. JSON preview содержит support
+изменённых owners. Обновление уже работающего IDE остаётся в EF-25.
 [Применение библиотечного плана импорта](docs/research/eska-format/source-import-recovery.md)
 меняет выбранный ESKA проект/member с сохранением старых исходников и отдельного
 предка. Guard/recovery проверяют journal, bytes и settings под прежним CI pin;

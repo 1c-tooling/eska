@@ -76,6 +76,7 @@ pub fn prepare_query_edit(
         baseline: preview.baseline,
         original: Some(original),
         updated: preview.updated,
+        source_binding: base.source_binding(),
     })
 }
 

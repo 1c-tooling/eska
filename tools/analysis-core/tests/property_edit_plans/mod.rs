@@ -26,6 +26,109 @@ fn initialize_edits() -> Value {
     value
 }
 
+/// A reopened server uses current UUID/path bindings while overlay values and the support pin stay exact.
+#[test]
+fn post_import_property_plans_use_current_bindings_under_the_original_pin() {
+    use eska::project_core::source_format::{
+        ImportAncestor, capture_import_ancestor, export_designer, import_designer,
+        prepare_source_import,
+    };
+    for mode in ["rename", "add"] {
+        let (directory, root, reference) = fixture::project(false);
+        let source = root.join("src-plans");
+        let store = directory.0.join("ancestor");
+        let pin = capture_import_ancestor(&source, &store).unwrap();
+        let ancestor = ImportAncestor::open(&store, &pin).unwrap();
+        let native = directory.0.join("incoming-native");
+        export_designer(&source, &native).unwrap();
+        let path = native.join("CommonModules/Tools.xml");
+        let contents = fs::read_to_string(&path).unwrap();
+        let uuid = if mode == "add" {
+            "90000000-0000-4000-8000-000000000001"
+        } else {
+            UUID
+        };
+        fs::write(
+            native.join("CommonModules/Helpers.xml"),
+            contents.replace(">Tools<", ">Helpers<").replace(UUID, uuid),
+        )
+        .unwrap();
+        if mode == "rename" {
+            fs::remove_file(&path).unwrap();
+        }
+        let path = native.join("Configuration.xml");
+        let contents = fs::read_to_string(&path).unwrap();
+        let refs = if mode == "add" {
+            "<CommonModule>Tools</CommonModule><CommonModule>Helpers</CommonModule>"
+        } else {
+            "<CommonModule>Helpers</CommonModule>"
+        };
+        fs::write(
+            path,
+            contents.replace("<CommonModule>Tools</CommonModule>", refs),
+        )
+        .unwrap();
+        fs::rename(
+            native.join("CommonModules/Tools"),
+            native.join("CommonModules/Helpers"),
+        )
+        .unwrap();
+        if mode == "add" {
+            fs::create_dir_all(native.join("CommonModules/Tools/Ext")).unwrap();
+            fs::write(
+                native.join("CommonModules/Tools/Ext/Module.bsl"),
+                "// Saved module.\n",
+            )
+            .unwrap();
+        }
+        let incoming_source = directory.0.join("incoming-source");
+        import_designer(&native, &incoming_source).unwrap();
+        let incoming_store = directory.0.join("incoming-store");
+        let incoming_pin = capture_import_ancestor(&incoming_source, &incoming_store).unwrap();
+        let incoming = ImportAncestor::open(&incoming_store, &incoming_pin).unwrap();
+        let approved = AcceptedBase::open(&root.join(".eska/accepted"), &reference).unwrap();
+        let plan = prepare_source_import(&source, &ancestor, &incoming, &approved).unwrap();
+        assert!(plan.conflicts().is_empty(), "{:?}", plan.conflicts());
+        let output = directory.0.join("output");
+        plan.publish_source(&output).unwrap();
+        fs::rename(&source, directory.0.join("previous-source")).unwrap();
+        fs::rename(output, &source).unwrap();
+        let owner = "CommonModules/Helpers/object.yaml";
+        let path = source.join(owner);
+        let saved = fs::read_to_string(&path).unwrap();
+        let text = format!("# unsaved annotation\n{saved}");
+        for locale in ["ru-RU", "en-US"] {
+            let mut client = Client::with_options(
+                &root,
+                locale,
+                &["--accepted-base-sha256", &reference.sha256],
+            );
+            client.ask(&initialize_edits());
+            client.send(&notification("initialized"));
+            let uri = url::Url::from_file_path(&path).unwrap();
+            client.ask(&json!({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":uri.as_str(),"version":1,"languageId":"yaml","text":text}}}));
+            let mut operation = prepare(&text, "1", 1, "Post-import overlay edit");
+            operation["params"]["source"] = json!(owner);
+            operation["params"]["uuid"] = json!(uuid);
+            let response = client.ask(&operation);
+            assert!(response.get("error").is_none(), "{mode}: {response}");
+            let preview = &response["result"];
+            assert_eq!(preview["accepted_base"]["sha256"], reference.sha256);
+            assert_eq!(preview["source"], owner);
+            assert!(apply(&text, preview).contains("Post-import overlay edit"));
+            assert_eq!(fs::read_to_string(&path).unwrap(), saved);
+            let guard = root.join(".eska-project-source-import.json");
+            fs::write(&guard, "{}").unwrap();
+            assert_eq!(
+                client.ask(&operation)["error"]["data"]["kind"],
+                "source_import_incomplete"
+            );
+            fs::remove_file(guard).unwrap();
+            client.finish();
+        }
+    }
+}
+
 /// The current editor bytes are provided explicitly and must match the host's stored fingerprint.
 fn prepare(text: &str, revision: &str, version: i32, value: &str) -> Value {
     request(

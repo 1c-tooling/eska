@@ -64,6 +64,38 @@ impl EskaSource {
         self.reader
     }
 
+    /// Open current editor bindings under an independently supplied support pin without advancing it.
+    ///
+    /// # Errors
+    /// Returns unresolved import, unsafe or changed composition, invalid pin or baseline failures.
+    pub fn edit_authority(&self, expected: &AcceptedRef) -> Result<AcceptedBase, Error> {
+        self.edit_authority_cancellable(expected, &|| false)
+    }
+
+    /// Check the same project guard, saved composition and pin with caller-owned cooperative cancellation.
+    ///
+    /// # Errors
+    /// Returns the same authority failures or `source_read_cancelled` when stopped.
+    pub fn edit_authority_cancellable(
+        &self,
+        expected: &AcceptedRef,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<AcceptedBase, Error> {
+        super::source_format::require_project_ready(self.project.root())?;
+        let SourceFormat::Eska { accepted_base } = self.project.configuration().source_format()
+        else {
+            return Err(Error::root("source_format_mismatch"));
+        };
+        let authority = AcceptedBase::open_cancellable(
+            &self.project.root().join(accepted_base.as_path()),
+            expected,
+            cancelled,
+        )?
+        .bind_source_cancellable(self.project.source(), cancelled)?;
+        super::source_format::require_project_ready(self.project.root())?;
+        Ok(authority.with_project_guard(self.project.root()))
+    }
+
     /// Materialize saved inputs using a baseline digest supplied independently by the caller.
     ///
     /// The configured path locates bytes; it does not approve their policy. Every invocation

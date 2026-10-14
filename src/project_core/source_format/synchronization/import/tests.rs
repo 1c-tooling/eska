@@ -1,6 +1,7 @@
 //! Source comparison preserves local edits while the existing approved baseline stays immutable.
 
 mod additions;
+mod bindings;
 
 use super::super::{capture_import_ancestor, tests::source};
 use super::*;

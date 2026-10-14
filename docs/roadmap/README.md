@@ -41,8 +41,13 @@ origins новых metadata/forms, включая общий family YAML; фор
 `eska-build import` с preview/write и независимо сохранённой recovery receipt;
 `eska-project capture-ancestor`/`recover-import` используют тот же core без
 платформы. Четыре настоящих native input прошли capture/preview/write/confirmed
-repeat/build/dump; исходный pin/settings/local BSL сохранены. Общий workflow,
-permission view после смены состава и IDE coordination ещё нужны; EF-25 не закрыта.
+repeat/build/dump; исходный pin/settings/local BSL сохранены. Общий workflow
+и IDE coordination ещё нужны; EF-25 не закрыта.
+[Editor bindings](../research/eska-format/post-import-edit-bindings.md) проверяют
+новый состав под прежним pin; saved edits сохраняют descriptor/map fence и guard.
+Rename/add, новая форма/query, unsaved SDK property preview на RU/EN, support JSON,
+22 Rust gates и четыре native edit/build/dump проверены. Refresh работающего IDE
+и защита unsaved вкладок при импорте ещё нужны; EF-25 остаётся `IN_PROGRESS`.
 EF-15 — `DONE` в [принятой матрице](../research/eska-format/base-update.md).
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.

@@ -2270,8 +2270,15 @@ family YAML. Четыре native import/build/dump и 22 Rust gates прошли
 `eska-build import` и offline capture/recover через прежний guarded core.
 Preview/write, exact plan pin и confirmed no-op repeat прошли четыре настоящих
 input/build/dump на 1С 8.3.27.2325. Recovery digest хранится до source moves.
-Общий workflow, permission view после смены состава и IDE coordination ещё нужны;
+Общий workflow и IDE coordination ещё нужны;
 EF-25 — `IN_PROGRESS`.
+
+[Editor bindings после импорта](research/eska-format/post-import-edit-bindings.md)
+связывают новые UUID/пути с original policy/pin; saved edits проверяют текущие
+descriptors/map и project guard. JSON preview показывает support изменённых UUID.
+Rename/add, новая форма/query, reopened SDK/unsaved property preview на RU/EN,
+22 Rust gates и четыре native edit/build/dump проверены. Работающий IDE ещё
+требует согласованного refresh и защиты unsaved вкладок; EF-25 не закрыта.
 
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.

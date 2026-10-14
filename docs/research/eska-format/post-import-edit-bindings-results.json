@@ -1,0 +1,316 @@
+{
+  "schema_version": 1,
+  "stage": "EF-25 current edit bindings",
+  "status": "partial",
+  "platform": "8.3.27.2325",
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.32
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 3.83
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 0.26
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 68.75
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 83.94
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 17.25
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 2.34
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.42
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 1.0
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 0.24
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 16.97
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 6.5
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 12.73
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.17
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 2.91
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.74
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 10.73
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.68
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 2.44
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 7.82
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 59.15
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 10.12
+    }
+  ],
+  "native_operations": [
+    {
+      "case": "bins",
+      "exit_code": 0,
+      "seconds": 0.29
+    },
+    {
+      "case": "configuration-edit",
+      "exit_code": 0,
+      "seconds": 18.99
+    },
+    {
+      "case": "configuration-build",
+      "exit_code": 0,
+      "seconds": 5.42
+    },
+    {
+      "case": "configuration-redump",
+      "exit_code": 0,
+      "seconds": 10.37
+    },
+    {
+      "case": "extension-edit",
+      "exit_code": 0,
+      "seconds": 11.64
+    },
+    {
+      "case": "extension-build",
+      "exit_code": 0,
+      "seconds": 14.34
+    },
+    {
+      "case": "extension-redump",
+      "exit_code": 0,
+      "seconds": 19.71
+    },
+    {
+      "case": "processing-edit",
+      "exit_code": 0,
+      "seconds": 2.37
+    },
+    {
+      "case": "processing-build",
+      "exit_code": 0,
+      "seconds": 27.0
+    },
+    {
+      "case": "processing-redump",
+      "exit_code": 0,
+      "seconds": 4.23
+    },
+    {
+      "case": "report-edit",
+      "exit_code": 0,
+      "seconds": 0.19
+    },
+    {
+      "case": "report-build",
+      "exit_code": 0,
+      "seconds": 4.34
+    },
+    {
+      "case": "report-redump",
+      "exit_code": 0,
+      "seconds": 4.25
+    }
+  ],
+  "native_comparison": [
+    {
+      "kind": "configuration",
+      "native_files": 17,
+      "xml_expected_equal": 12,
+      "opaque_bytes_equal": 0,
+      "bsl_expected_equal": 5,
+      "edited_properties": 1,
+      "edited_modules": 1,
+      "old_pin_verified": true,
+      "settings_preserved": true,
+      "guard_refused": true
+    },
+    {
+      "kind": "extension",
+      "native_files": 111,
+      "xml_expected_equal": 78,
+      "opaque_bytes_equal": 6,
+      "bsl_expected_equal": 27,
+      "edited_properties": 1,
+      "edited_modules": 1,
+      "old_pin_verified": true,
+      "settings_preserved": true,
+      "guard_refused": true
+    },
+    {
+      "kind": "processing",
+      "native_files": 14,
+      "xml_expected_equal": 9,
+      "opaque_bytes_equal": 0,
+      "bsl_expected_equal": 5,
+      "edited_properties": 1,
+      "edited_modules": 1,
+      "old_pin_verified": true,
+      "settings_preserved": true,
+      "guard_refused": true
+    },
+    {
+      "kind": "report",
+      "native_files": 8,
+      "xml_expected_equal": 7,
+      "opaque_bytes_equal": 0,
+      "bsl_expected_equal": 1,
+      "edited_properties": 1,
+      "edited_modules": 1,
+      "old_pin_verified": true,
+      "settings_preserved": true,
+      "guard_refused": true
+    }
+  ],
+  "bsl_cli_fallback": [
+    {
+      "kind": "configuration",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 1,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 0,
+      "syntax_errors": 0
+    },
+    {
+      "kind": "extension",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 1,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 1,
+      "syntax_errors": 0
+    },
+    {
+      "kind": "processing",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 1,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 1,
+      "syntax_errors": 0
+    },
+    {
+      "kind": "report",
+      "analyzer_version": "0.3.2",
+      "checked_modules": 1,
+      "failed_files": 0,
+      "complete": true,
+      "reported_diagnostics": 2,
+      "syntax_errors": 0
+    }
+  ],
+  "contracts": [
+    "Renamed and created saved module/property targets keep the original independently supplied support pin",
+    "Created managed form property and plain query edits pass protected preparation",
+    "Saved plans retain the captured descriptor/map fence even with a replacement authority",
+    "Live project import guard blocks new authorities and existing saved plans",
+    "Reopened SDK returns versioned property WorkspaceEdit for current bindings in RU/EN with unsaved annotations",
+    "Import JSON support reports current Resource decisions with locale-independent keys and values"
+  ],
+  "limitations": [
+    "Active IDE refresh/restart and unsaved-tab coordination during composition replacement remain unfinished",
+    "General new/init/import facade remains unfinished",
+    "Conservative saved-plan fence requires a new preview after any saved authoring descriptor edit",
+    "Native client execution and production configurations not checked in this slice",
+    "24 opt-in root tests ignored; tested on Linux only",
+    "Workspace MCP unavailable; CLI fallback used defaults because owned demos have no bsl-analyzer.toml"
+  ],
+  "final_checks": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.57
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 0.22
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 0.55
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 43.63
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 30.17
+    }
+  ]
+}

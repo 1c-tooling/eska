@@ -12,8 +12,13 @@ CFE/EPF/ERF циклы и выполнение непустых ERF на 1С 8.3
 [применение и recovery выбранного проекта/member](source-import-recovery.md).
 [Native staging → project plan](native-project-import.md) проверены на четырёх
 настоящих artifact/import/build/dump циклах под прежним CI pin.
-Новая карта, native CLI lifecycle и согласованное обновление IDE ещё в работе.
-Общий CLI и анализ остаются отдельными задачами.
+Новая карта и самостоятельный native CLI подключены в EF-25;
+согласованное обновление IDE ещё в работе. Общий CLI и анализ остаются
+отдельными задачами.
+[Editor bindings после импорта](post-import-edit-bindings.md) проверяют текущие
+пути/UUID под прежним pin и блокируют stale saved edits. JSON preview показывает
+support изменённых UUID; четыре native edit/build/dump прошли. Refresh работающего
+IDE и unsaved вкладки при импорте ещё требуют координации.
 EF-23 — [DONE в принятом профиле](query-acceptance.md).
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
 T84 — [DONE по версиям EPF/ERF](external-version.md): экспортная `Версия()`,

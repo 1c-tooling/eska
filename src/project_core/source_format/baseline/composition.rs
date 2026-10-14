@@ -73,15 +73,7 @@ impl AcceptedBase {
         let origins = select_original_files(self, &before, &after, &mut snapshot)?;
         for (source, paths) in &candidate.owners {
             let mut owner = owner_source(self, candidate, &documents, &before, paths)?;
-            if let Some(form) = &owner.form
-                && !added.contains(&owner.document.descriptor.object.uuid.key())
-            {
-                owner.form = Some(form.with_query_references(&queries::rebind(
-                    self,
-                    &form.to_xml()?,
-                    &source_paths,
-                )?)?);
-            }
+            rebind_form(self, &mut owner, &added, &source_paths)?;
             insert_text(&mut snapshot, &mut texts, source.clone(), owner.to_yaml()?);
         }
         rebind_resources(
@@ -112,16 +104,17 @@ impl AcceptedBase {
             Ok(text)
         })?;
         let mut support = self.support.clone();
-        for (uuid, object) in super::document_ownership(&package.documents)? {
-            if added.contains(&uuid) {
-                support.objects.insert(uuid, object);
-            }
-        }
+        support.objects.extend(
+            super::document_ownership(&package.documents)?
+                .into_iter()
+                .filter(|(uuid, _)| added.contains(uuid)),
+        );
         Ok(Self {
             root: self.root.clone(),
             reference: self.reference.clone(),
             manifest: self.manifest.clone(),
             support,
+            source_binding: None,
             composition: Some(Bindings {
                 original: self.package.snapshot.clone(),
                 texts,
@@ -164,6 +157,25 @@ impl AcceptedBase {
             .as_ref()
             .is_some_and(|bindings| bindings.created.contains(&uuid.key()))
     }
+}
+
+/// Existing form stencils retain pinned query bindings while created owners use supplied new slots.
+fn rebind_form(
+    base: &AcceptedBase,
+    owner: &mut ObjectSource,
+    added: &BTreeSet<String>,
+    source_paths: &BTreeMap<&SourcePath, &SourcePath>,
+) -> Result<(), Error> {
+    if let Some(form) = &owner.form
+        && !added.contains(&owner.document.descriptor.object.uuid.key())
+    {
+        owner.form = Some(form.with_query_references(&queries::rebind(
+            base,
+            &form.to_xml()?,
+            source_paths,
+        )?)?);
+    }
+    Ok(())
 }
 
 /// A renamed reference must retain the same UUID and position; frozen order cannot be laundered.
