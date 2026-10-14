@@ -1890,6 +1890,13 @@ passed/ignored. Покрытие строк root — 86,08%, SDK — 93,34%; о�
 восемь framed runtime cases и четыре независимых BSL Analyzer сравнения
 подтвердили ParseError и точные byte ranges. Полная семантика и EF-27 ещё нужны.
 
+[Kernel owners](../research/eska-format/canonical-module-owners.md) разрешают текущие
+object/register/common/service slots до native loader, включая external owners.
+28 canonical, 1 identity и 18 native external/CFE tests прошли; SDK composition
+и полная EF-18 ещё в работе. Exact CF/CFE identity constructor не создаёт
+фиктивную Configuration для внешнего объекта.
+
+
 ## EF-19 Самостоятельный инструмент VCS
 
 После MVP EF-16 и форматтера T26. Не является зависимостью EF-20/EF-21;

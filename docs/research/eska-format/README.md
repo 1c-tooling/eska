@@ -42,6 +42,8 @@ workflow/Git/workspace и expected-byte receipt; [init](project-initialization.m
 сохраняет raw history при no-op и явно отказывает несовместимому layout change.
 [LocalSyntax четырёх типов](analyzer-local-syntax.md) проверяет BSL и symbols через
 общую сессию, сохраняя явную неполноту semantic context.
+[Kernel owners](canonical-module-owners.md) берут object/register/common/service
+metadata из текущих slots без XML fallback; SDK composition ещё в работе.
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
 T84 — [DONE по версиям EPF/ERF](external-version.md): экспортная `Версия()`,
 CLI/миграция и платформенная приёмка двух схем; [синтаксический контракт](external-version-syntax.md).

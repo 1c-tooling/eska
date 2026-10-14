@@ -2308,6 +2308,13 @@ pipeline и initial ancestor. Основная оболочка new/init ещё 
 восемь framed runtime cases и четыре независимых BSL Analyzer сравнения
 подтвердили ParseError и точные byte ranges. Полная семантика и EF-27 ещё нужны.
 
+[Kernel owners](research/eska-format/canonical-module-owners.md) разрешают текущие
+object/register/common/service slots до native loader, включая external owners.
+28 canonical, 1 identity и 18 native external/CFE tests прошли; SDK composition
+и полная EF-18 ещё в работе. Exact CF/CFE identity constructor не создаёт
+фиктивную Configuration для внешнего объекта.
+
+
 [Direct init](research/eska-format/project-initialization.md) подключает existing Queries
 sources четырёх типов без конвертации. Expected-byte plan сохраняет исходники
 и separately pinned base/history; новые candidates готовятся в private stage,

@@ -3,6 +3,7 @@ pub use hir::is_bsl_source;
 pub use syntax::TextRange;
 pub use vfs;
 
+mod canonical_module;
 pub mod database;
 pub mod effective_exports;
 pub mod effects;

@@ -6,6 +6,11 @@ bsl-analyzer закреплены на той же Git-ревизии. Это и
 экспериментального адаптера, а не опубликованный analyzer/check или LSP-сервер.
 Главный workspace ESKA и его минимальный project core от ядра не зависят.
 
+[Canonical владельцы модулей](../../docs/research/eska-format/canonical-module-owners.md)
+разрешаются через текущие slots до native loader; EPF/ERF остаются объектами.
+Все listings регистрируются до запросов; новый состав/topology требует reopen.
+`Configuration::with_identity` сохраняет фактический UUID CF/CFE.
+
 Для [адаптера роли](../../docs/research/eska-format/role-adapter.md) открыт
 `Role::with_data`: source UUID и current rights передаются явно; serialized
 shape и прежний XML reader не изменены.
