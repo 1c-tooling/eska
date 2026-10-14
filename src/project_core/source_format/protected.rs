@@ -411,17 +411,24 @@ pub(super) fn module_permission(
 
 /// Resolve the longest declared native owner before considering a configuration root payload.
 pub(super) fn native_file_owner(base: &AcceptedBase, path: &SourcePath) -> Option<NativeUuid> {
+    native_package_file_owner(&base.package, path)
+}
+
+/// Native ownership lookup is independent of which authority supplies permission decisions.
+pub(super) fn native_package_file_owner(
+    package: &Package,
+    path: &SourcePath,
+) -> Option<NativeUuid> {
     for (end, _) in path.as_str().match_indices('/').rev() {
         let descriptor = SourcePath::parse(&format!("{}.xml", &path.as_str()[..end])).ok()?;
-        if let Some(document) = base.package.documents.get(&descriptor) {
+        if let Some(document) = package.documents.get(&descriptor) {
             return inline_owner(&document.descriptor.object, &path.as_str()[end + 1..]);
         }
     }
     if path.as_str().starts_with("Ext/") {
-        return base
-            .package
+        return package
             .documents
-            .get(&base.package.manifest.root_path().ok()?)
+            .get(&package.manifest.root_path().ok()?)
             .map(|document| document.descriptor.object.uuid.clone());
     }
     None

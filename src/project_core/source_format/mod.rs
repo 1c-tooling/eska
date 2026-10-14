@@ -15,6 +15,7 @@ mod edit;
 #[cfg(test)]
 mod enum_test_support;
 mod export;
+mod file_identity;
 mod files;
 mod fill_value;
 mod fragment;
@@ -35,6 +36,7 @@ mod readable;
 mod reader;
 mod root;
 mod structural_references;
+mod synchronization;
 mod tabular_identities;
 mod tabular_profile;
 #[cfg(test)]
@@ -215,3 +217,8 @@ impl Descriptor {
 
 #[cfg(test)]
 mod tests;
+
+pub use synchronization::{
+    ImportAncestor, ImportAncestorRef, SourceImportChange, SourceImportConflict,
+    SourceImportConflictKind, SourceImportPlan, capture_import_ancestor, prepare_source_import,
+};

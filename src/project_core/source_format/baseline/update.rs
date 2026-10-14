@@ -1,6 +1,5 @@
 //! Three-way source selection keeps new authority independent of local working bytes.
 
-mod identity;
 mod publication;
 
 #[cfg(test)]
@@ -18,7 +17,9 @@ use super::{
     AcceptedBase, AcceptedRef, Error, FileEntry, Inventory, NativeUuid, Operation, Permission,
     SourcePath, files,
 };
-use crate::project_core::source_format::{Exclusion, export::Package, protected};
+use crate::project_core::source_format::{
+    Exclusion, export::Package, file_identity as identity, protected,
+};
 
 /// A conflict always leaves the original working tree and both accepted stores available.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
@@ -185,8 +186,8 @@ fn select_sources(
     previous: &AcceptedBase,
     incoming: &AcceptedBase,
 ) -> Result<Selection, Error> {
-    let old_files = identity::files(previous)?;
-    let new_files = identity::files(incoming)?;
+    let old_files = identity::files(&previous.package)?;
+    let new_files = identity::files(&incoming.package)?;
     let mut result = Selection::default();
     let keys = old_files
         .keys()

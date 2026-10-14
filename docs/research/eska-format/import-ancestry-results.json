@@ -1,0 +1,77 @@
+{
+  "platform_version": "8.3.27.2325",
+  "consumer": "source_only",
+  "incoming_comparison": "unchanged_incoming_with_local_module_edit",
+  "matrix": [
+    {
+      "kind": "configuration",
+      "native_files": 13,
+      "bsl_files": 3,
+      "bsl_bytes_equal": true,
+      "baseline_unchanged": true,
+      "conflicts": 0,
+      "semantic_xml_differences": 0
+    },
+    {
+      "kind": "extension",
+      "native_files": 107,
+      "bsl_files": 25,
+      "bsl_bytes_equal": true,
+      "baseline_unchanged": true,
+      "conflicts": 0,
+      "semantic_xml_differences": 0
+    },
+    {
+      "kind": "processing",
+      "native_files": 8,
+      "bsl_files": 3,
+      "bsl_bytes_equal": true,
+      "baseline_unchanged": true,
+      "conflicts": 0,
+      "semantic_xml_differences": 0
+    },
+    {
+      "kind": "report",
+      "native_files": 4,
+      "bsl_files": 1,
+      "bsl_bytes_equal": true,
+      "baseline_unchanged": true,
+      "conflicts": 0,
+      "semantic_xml_differences": 0
+    }
+  ],
+  "syntax_checks": [
+    {
+      "kind": "configuration",
+      "changed_modules": 1,
+      "complete": true,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics": 2
+    },
+    {
+      "kind": "extension",
+      "changed_modules": 1,
+      "complete": true,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics": 5
+    },
+    {
+      "kind": "processing",
+      "changed_modules": 1,
+      "complete": true,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics": 51
+    },
+    {
+      "kind": "report",
+      "changed_modules": 1,
+      "complete": true,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics": 2
+    }
+  ]
+}

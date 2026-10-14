@@ -254,6 +254,11 @@ pub fn accept_source(
 }
 
 impl AcceptedBase {
+    /// Source import captures this already verified storage boundary without changing its pin.
+    pub(super) fn storage_root(&self) -> &Path {
+        &self.root
+    }
+
     /// Verify root identity and declarations without using editable UUIDs to grant permissions.
     ///
     /// # Errors
@@ -319,7 +324,7 @@ impl AcceptedBase {
     }
 
     /// Bind a plan to the inventory that was actually verified, without a second racy scan.
-    fn verified_inventory(&self) -> Result<Inventory, Error> {
+    pub(super) fn verified_inventory(&self) -> Result<Inventory, Error> {
         let inventory = Inventory::read(&self.root)?;
         if inventory
             .files

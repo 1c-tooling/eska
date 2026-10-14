@@ -1,28 +1,28 @@
 //! Metadata UUIDs and native member slots disambiguate rename from unrelated path reuse.
 
-use super::{AcceptedBase, BTreeMap, BTreeSet, Error, NativeUuid, SourcePath, files, protected};
-use crate::project_core::source_format::FileRole;
+use std::collections::{BTreeMap, BTreeSet};
+
+use super::FileRole;
+use super::{Error, NativeUuid, SourcePath, export::Package, files, protected};
 
 /// Include declared optional modules even when their accepted physical file is absent.
-pub(super) fn files(base: &AcceptedBase) -> Result<BTreeMap<String, SourcePath>, Error> {
+pub(super) fn files(package: &Package) -> Result<BTreeMap<String, SourcePath>, Error> {
     let mut result = BTreeMap::new();
-    let owners = base
-        .package
+    let owners = package
         .documents
         .values()
         .map(|document| (document.descriptor.object.uuid.key(), document))
         .collect::<BTreeMap<_, _>>();
-    let source_paths = base
-        .package
+    let source_paths = package
         .manifest
         .files
         .iter()
         .map(|file| (&file.path, file.source_path()))
         .collect::<BTreeMap<_, _>>();
-    for (source, paths) in &base.package.owners {
+    for (source, paths) in &package.owners {
         let document = paths
             .first()
-            .and_then(|path| base.package.documents.get(path))
+            .and_then(|path| package.documents.get(path))
             .ok_or_else(|| Error::root("source_descriptor_missing"))?;
         insert(
             &mut result,
@@ -30,9 +30,8 @@ pub(super) fn files(base: &AcceptedBase) -> Result<BTreeMap<String, SourcePath>,
             source,
         )?;
     }
-    for resource in &base.package.manifest.query_resources {
-        let uuid = &base
-            .package
+    for resource in &package.manifest.query_resources {
+        let uuid = &package
             .documents
             .get(&resource.descriptor)
             .ok_or_else(|| Error::root("source_descriptor_missing"))?
@@ -55,7 +54,7 @@ pub(super) fn files(base: &AcceptedBase) -> Result<BTreeMap<String, SourcePath>,
             insert(&mut result, format!("query:{}:{slot}", uuid.key()), source)?;
         }
     }
-    for file in &base.package.manifest.files {
+    for file in &package.manifest.files {
         if matches!(
             file.role,
             FileRole::Descriptor { .. } | FileRole::ManagedForm { .. }
@@ -65,7 +64,7 @@ pub(super) fn files(base: &AcceptedBase) -> Result<BTreeMap<String, SourcePath>,
         let source = file.source_path();
         let key = if authority_path(&file.path) {
             format!("authority:{}", file.path.as_str())
-        } else if let Some(uuid) = protected::native_file_owner(base, &file.path) {
+        } else if let Some(uuid) = protected::native_package_file_owner(package, &file.path) {
             let owner = owners.get(&uuid.key());
             let slot = owner
                 .and_then(|document| document.path.as_str().strip_suffix(".xml"))
@@ -79,7 +78,7 @@ pub(super) fn files(base: &AcceptedBase) -> Result<BTreeMap<String, SourcePath>,
         insert(&mut result, key, source)?;
     }
     let declared = result.values().collect::<BTreeSet<_>>();
-    for path in base.package.snapshot.files.keys() {
+    for path in package.snapshot.files.keys() {
         if path.as_str() != files::MANIFEST && !declared.contains(path) {
             return Err(Error::root("source_file_unmapped").in_field(path.as_str()));
         }

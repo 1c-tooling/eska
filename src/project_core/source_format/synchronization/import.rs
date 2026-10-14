@@ -1,0 +1,284 @@
+//! Three-way import compares confirmed ancestry with working and incoming source bytes.
+
+mod publication;
+mod selection;
+
+#[cfg(test)]
+mod tests;
+
+use serde::Serialize;
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
+
+use super::{ImportAncestor, ImportAncestorRef, storage};
+use crate::project_core::source_format::{
+    AcceptedBase, AcceptedRef, Error, Exclusion, FileEntry, NativeUuid, SourcePath,
+    export::Package,
+    file_identity,
+    files::{self, Inventory},
+    protected,
+};
+
+/// Import conflicts are source decisions, never a request to approve incoming supplier rules.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SourceImportConflictKind {
+    BothModified,
+    DeletedModified,
+    ModifiedDeleted,
+    SupportUpdateRequired,
+    MappingUnsupported,
+    PermissionDenied,
+    UnmappedFile,
+    UnmappedDirectory,
+}
+
+/// Exact participating paths and policy coordinates make every refused decision reviewable.
+#[derive(Clone, Debug, Serialize)]
+pub struct SourceImportConflict {
+    pub kind: SourceImportConflictKind,
+    pub path: SourcePath,
+    pub uuid: Option<NativeUuid>,
+    pub exclusion: Option<Exclusion>,
+}
+
+/// Metadata identity binds a compared file independently of its current spelling or directory.
+#[derive(Clone, Debug, Serialize)]
+pub struct SourceImportChange {
+    pub identity: String,
+    pub ancestor: Option<FileEntry>,
+    pub incoming: Option<FileEntry>,
+    pub working: Option<FileEntry>,
+    pub selected: Option<FileEntry>,
+}
+
+/// Selected bytes retain their original path so publication can verify the precise input entry.
+enum SelectedFile {
+    Working(FileEntry),
+    Incoming(FileEntry),
+}
+
+/// A captured input is rechecked without reparsing a large immutable package on every write.
+struct Input {
+    root: PathBuf,
+    inventory: Inventory,
+}
+
+impl Input {
+    /// Recheck names, empty directories and complete byte fingerprints before or after publication.
+    fn verify(&self) -> Result<(), Error> {
+        if Inventory::read(&self.root)? != self.inventory {
+            return Err(Error::root("source_input_changed"));
+        }
+        Ok(())
+    }
+}
+
+/// An import never replaces the separately approved baseline or silently selects conflict bytes.
+pub struct SourceImportPlan {
+    working: Input,
+    ancestor: Input,
+    incoming: Input,
+    approved: Input,
+    ancestor_ref: ImportAncestorRef,
+    incoming_ref: ImportAncestorRef,
+    approved_ref: AcceptedRef,
+    output: Inventory,
+    selected: BTreeMap<SourcePath, SelectedFile>,
+    changes: Vec<SourceImportChange>,
+    conflicts: Vec<SourceImportConflict>,
+}
+
+/// Prepare a source-only import from an explicitly confirmed ancestor under current pinned rights.
+///
+/// The first profile keeps the approved reverse map unchanged. Additions, deletions or renames
+/// that require another map are explicit conflicts until a verified mapping publication exists.
+///
+/// # Errors
+/// Returns a wrong root/type/layout, altered working declarations, stale input or invalid source.
+pub fn prepare_source_import(
+    source: &Path,
+    ancestor: &ImportAncestor,
+    incoming: &ImportAncestor,
+    approved: &AcceptedBase,
+) -> Result<SourceImportPlan, Error> {
+    ancestor.verify()?;
+    incoming.verify()?;
+    let approved_storage = approved.verified_inventory()?;
+    compatible(&approved.package, &ancestor.package)?;
+    compatible(&approved.package, &incoming.package)?;
+    let source = source.canonicalize().map_err(|error| files::io(&error))?;
+    let working = Inventory::read(&source)?;
+    let manifest = serde_json::from_str::<super::super::SourceManifest>(&files::read_text(
+        &source.join(files::MANIFEST),
+    )?)
+    .map_err(|_| Error::root("source_schema_invalid"))?;
+    if manifest != approved.package.manifest {
+        return Err(Error::root("source_import_declarations_changed"));
+    }
+    if approved.overlaps(&source)
+        || source.starts_with(&ancestor.root)
+        || ancestor.root.starts_with(&source)
+        || source.starts_with(&incoming.root)
+        || incoming.root.starts_with(&source)
+    {
+        return Err(Error::root("source_tree_overlap"));
+    }
+    let chosen = selection::select(
+        &working,
+        &ancestor.package,
+        &incoming.package,
+        &approved.package,
+    )?;
+    let mut plan = SourceImportPlan {
+        working: Input {
+            root: source,
+            inventory: working,
+        },
+        ancestor: Input {
+            root: ancestor.root.clone(),
+            inventory: storage::clone_inventory(&ancestor.storage),
+        },
+        incoming: Input {
+            root: incoming.root.clone(),
+            inventory: storage::clone_inventory(&incoming.storage),
+        },
+        approved: Input {
+            root: approved.storage_root().to_owned(),
+            inventory: approved_storage,
+        },
+        ancestor_ref: ancestor.reference.clone(),
+        incoming_ref: incoming.reference.clone(),
+        approved_ref: approved.reference().clone(),
+        output: chosen.output,
+        selected: chosen.selected,
+        changes: chosen.changes,
+        conflicts: chosen.conflicts,
+    };
+    if plan.conflicts.is_empty() {
+        let package = Package::from_snapshot(storage::clone_inventory(&plan.output), |path| {
+            plan.read(path)
+        })?;
+        for exclusion in
+            protected::update_exclusions(&plan.output, approved, |path| plan.read(path))?
+        {
+            plan.conflicts.push(SourceImportConflict {
+                kind: SourceImportConflictKind::PermissionDenied,
+                path: exclusion.path.clone(),
+                uuid: exclusion.uuid.clone(),
+                exclusion: Some(exclusion),
+            });
+        }
+        if plan.conflicts.is_empty() {
+            super::super::structural_references::validate_references(approved, &package, |path| {
+                plan.read(path)
+            })?;
+            package.native_xml()?;
+        }
+    }
+    plan.verify()?;
+    Ok(plan)
+}
+
+impl SourceImportPlan {
+    /// Return current support approval; import publication never advances this reference.
+    #[must_use]
+    pub const fn approved_reference(&self) -> &AcceptedRef {
+        &self.approved_ref
+    }
+
+    /// Return the explicitly confirmed common ancestry used by this comparison.
+    #[must_use]
+    pub const fn ancestor_reference(&self) -> &ImportAncestorRef {
+        &self.ancestor_ref
+    }
+
+    /// Incoming data becomes the next ancestor only after project orchestration successfully applies.
+    #[must_use]
+    pub const fn incoming_reference(&self) -> &ImportAncestorRef {
+        &self.incoming_ref
+    }
+
+    /// Show byte-exact changes, including local data retained against an unchanged incoming input.
+    #[must_use]
+    pub fn changes(&self) -> &[SourceImportChange] {
+        &self.changes
+    }
+
+    /// A nonempty list blocks source publication without writing any project or baseline files.
+    #[must_use]
+    pub fn conflicts(&self) -> &[SourceImportConflict] {
+        &self.conflicts
+    }
+
+    /// Bind application to all current source bytes rather than file timestamps.
+    #[must_use]
+    pub fn working_revision(&self) -> &str {
+        &self.working.inventory.revision
+    }
+
+    /// The output revision includes every selected path, byte fingerprint and empty directory.
+    #[must_use]
+    pub fn output_revision(&self) -> &str {
+        &self.output.revision
+    }
+
+    /// Recheck all four participating authorities, keeping support independent of source ancestry.
+    ///
+    /// # Errors
+    /// Refuses source, ancestry, incoming data or approved-baseline changes after preparation.
+    pub fn verify(&self) -> Result<(), Error> {
+        self.working.verify()?;
+        self.ancestor.verify()?;
+        self.incoming.verify()?;
+        self.approved.verify()
+    }
+
+    /// Read only selected text consumed by validation; opaque resources stay streamed.
+    fn read(&self, path: &SourcePath) -> Result<String, Error> {
+        match self
+            .selected
+            .get(path)
+            .ok_or_else(|| Error::root("source_file_missing"))?
+        {
+            SelectedFile::Working(entry) => {
+                files::read_text(&self.working.root.join(entry.path.as_path()))
+            }
+            SelectedFile::Incoming(entry) => files::read_text(
+                &self
+                    .incoming
+                    .root
+                    .join(storage::blob_path(entry)?.as_path()),
+            ),
+        }
+    }
+}
+
+/// Full parsed native type distinguishes CF from CFE even when UUID and profile spelling agree.
+fn compatible(approved: &Package, other: &Package) -> Result<(), Error> {
+    let root = |package: &Package| {
+        let descriptor = &package
+            .documents
+            .get(&package.manifest.root_path()?)
+            .ok_or_else(|| Error::root("source_descriptor_missing"))?
+            .descriptor;
+        Ok::<_, Error>((
+            descriptor.object.uuid.key(),
+            super::super::root::project_type(descriptor)?,
+        ))
+    };
+    let (approved_uuid, approved_type) = root(approved)?;
+    let (other_uuid, other_type) = root(other)?;
+    if approved_uuid != other_uuid {
+        return Err(Error::root("source_identity_mismatch"));
+    }
+    if approved_type != other_type
+        || approved.manifest.schema_version != other.manifest.schema_version
+        || approved.manifest.profile != other.manifest.profile
+    {
+        return Err(Error::root("source_import_profile_mismatch"));
+    }
+    Ok(())
+}

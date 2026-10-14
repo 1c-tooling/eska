@@ -14,7 +14,9 @@
 **Текущая задача: EF-25 (`IN_PROGRESS`) — повторный импорт в существующий проект.**
 Первая часть: [build core и `eska-build unpack`](../research/eska-format/native-unpack.md)
 распаковывают четыре native типа в собственный staging/новый XML-каталог;
-слияние с существующим ESKA и ancestor ещё в работе.
+[Подтверждённый ancestor и библиотечный план](../research/eska-format/import-ancestry.md)
+сохраняют независимые правки под старым CI pin; новая карта и project recovery
+ещё в работе. EF-25 не закрыта.
 EF-15 — `DONE` в [принятой матрице](../research/eska-format/base-update.md).
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.
