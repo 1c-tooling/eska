@@ -14,7 +14,7 @@ use ide_db::metadata::CanonicalMetadata;
 pub enum ModelState {
     Pending,
     Ready(Arc<CanonicalMetadata>),
-    /// Configuration structure is validated, but is not a canonical value in the kernel API.
+    /// Validated source structure has no canonical value in the kernel API.
     StructureOnly,
     /// Current source is available, while canonical projection is outside the admitted scope.
     SourceOnly,
@@ -137,6 +137,20 @@ pub fn project(
                 ModelState::StructureOnly
             } else if let Some(document) = snapshot.documents.first() {
                 if matches!(
+                    kind,
+                    MetadataKind::Language | MetadataKind::Template | MetadataKind::CommonTemplate
+                ) {
+                    match eska_bsl_adapter::structural_descriptor(&document.descriptor) {
+                        Ok(()) => {
+                            result.modeled_descriptors = 1;
+                            ModelState::StructureOnly
+                        }
+                        Err(error) => ModelState::Invalid {
+                            source: snapshot.path.clone(),
+                            error,
+                        },
+                    }
+                } else if matches!(
                     kind,
                     MetadataKind::Role
                         | MetadataKind::CommonForm

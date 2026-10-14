@@ -7,6 +7,8 @@ mod check_roles;
 mod check_semantic;
 #[path = "local_syntax/checker.rs"]
 mod local_syntax;
+#[path = "structural_metadata/checker.rs"]
+mod structural_metadata;
 mod support;
 
 use std::{

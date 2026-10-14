@@ -39,10 +39,11 @@ exit 2, даже если parse findings отсутствуют. Найденн�
 в files/findings. Неподдержанный semantic profile даёт прежний exit 3;
 он не подменяется syntax молча.
 
-На настоящем CF Queries проекте syntax также complete, но Language и Template
-пока дают прежний metadata_projection_unsupported и общий exit 2. Это не
-регрессия нового LocalSyntax scope. Полноценные CFE/base и external contexts,
-эти CF projection gaps и `.sdbl` context analysis ещё нужны для MVP.
+В первоначальной матрице CF Queries syntax был complete, но Language и Template
+давали metadata_projection_unsupported и общий exit 2. Последующая
+[структурная проверка](structural-metadata-coverage.md) закрывает эти descriptor
+gaps без DCS/query модели. Полноценные CFE/base и external contexts, а также
+`.sdbl` context analysis ещё нужны для MVP.
 
 ## Проверки
 

@@ -22,6 +22,8 @@ mod local_syntax_tests;
 #[cfg(test)]
 mod scheduled_job_tests;
 #[cfg(test)]
+mod structural_descriptor_tests;
+#[cfg(test)]
 mod subsystem_tests;
 #[cfg(test)]
 pub mod tests;

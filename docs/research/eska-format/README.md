@@ -44,6 +44,8 @@ workflow/Git/workspace и expected-byte receipt; [init](project-initialization.m
 общую сессию, сохраняя явную неполноту semantic context.
 [Kernel owners](canonical-module-owners.md) берут object/register/common/service
 metadata из текущих slots без XML fallback; SDK composition ещё в работе.
+[Language/Template coverage](structural-metadata-coverage.md) проверяет текущие
+descriptor fields без фиктивной canonical модели или проверки СКД.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery
 одному совместимому tool с независимыми pins и сохранением streams/exit.
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);

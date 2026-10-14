@@ -1037,6 +1037,7 @@ Core batch и server совпали на synthetic input; C1 checker прове�
 сохраняет exit 2. Completion, отмена транспорта, полная семантика/memory budget
 и edit plans остаются в работе; EF-18 остаётся `IN_PROGRESS`.
 
+
 [Отмена syntax-запросов по LSP](../research/eska-format/analyzer-cancellation.md)
 передаёт `$/cancelRequest` текущему request control из отдельного reader.
 Один worker сохраняет владение общим YAML/BSL host и порядок изменений.
@@ -1793,6 +1794,7 @@ reader сам по себе не активирует session inputs или disk
 Общий memory budget и остальные условия EF-18 ещё в работе; платформа
 не запускалась. EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
 
+
 [Текущие предопределённые элементы](../research/eska-format/analyzer-predefined.md)
 подключены к главному `MetadataObject` через общий ресурсный controller.
 YAML/resource revisions сохраняют соседа и nested form memos; invalid XML
@@ -1893,6 +1895,13 @@ object/register/common/service slots до native loader, включая external
 28 canonical, 1 identity и 18 native external/CFE tests прошли; SDK composition
 и полная EF-18 ещё в работе. Exact CF/CFE identity constructor не создаёт
 фиктивную Configuration для внешнего объекта.
+
+[Структурная проверка](../research/eska-format/structural-metadata-coverage.md) закрывает
+Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
+полный SDK и восемь actual framed cases прошли; CF metadata models complete
+не означает DCS/query completeness. Полная EF-18/EF-27 остаётся в работе.
+
+
 
 ## EF-19 Самостоятельный инструмент VCS
 

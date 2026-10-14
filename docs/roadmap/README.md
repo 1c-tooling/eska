@@ -83,6 +83,13 @@ object/register/common/service slots до native loader, включая external
 и полная EF-18 ещё в работе. Exact CF/CFE identity constructor не создаёт
 фиктивную Configuration для внешнего объекта.
 
+[Структурная проверка](../research/eska-format/structural-metadata-coverage.md) закрывает
+Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
+полный SDK и восемь actual framed cases прошли; CF metadata models complete
+не означает DCS/query completeness. Полная EF-18/EF-27 остаётся в работе.
+
+
+
 [Direct init](../research/eska-format/project-initialization.md) подключает existing Queries
 sources четырёх типов без конвертации. Expected-byte plan сохраняет исходники
 и separately pinned base/history; новые candidates готовятся в private stage,
@@ -640,6 +647,7 @@ Protocol 0.1 добавляет `predefinedDataSync`/`predefined_data`; source s
 версии, зависимости и graph 206/214 прежние. API адаптера теперь принимает
 items вторым аргументом. Платформа не запускалась. Остальные условия EF-18
 ещё в работе; EF-18 — `IN_PROGRESS`, EF-12 и следующие этапы не начаты.
+
 
 [Адресный completion](../research/eska-format/analyzer-targeted-completion.md)
 подготавливает только YAML текущего модуля, прямой native manager target и нужные

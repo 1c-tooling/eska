@@ -11,6 +11,11 @@ Configuration. Scope явно сообщается, model state — SourceOnly, 
 отказывают до lazy reads. CF сохраняет прежний canonical route; complete syntax
 не подменяет complete semantic model и LocalSyntax batch остаётся exit 2.
 
+[Language и Template](../../docs/research/eska-format/structural-metadata-coverage.md)
+валидируются как StructureOnly: проверены текущие descriptor fields, canonical
+объекта и DCS/query проверки нет. Покрытие selected BSL rules сохраняет отдельный
+ограниченный `semantic_profile_complete`; `semantic_complete` остаётся false.
+
 Состав берётся из проверенного manifest и configuration snapshot. При открытии
 все остальные YAML остаются pending, а их идентичности и slot стабильны.
 Сохранённые файлы и черновики используют одни преобразователи. Неверный текущий

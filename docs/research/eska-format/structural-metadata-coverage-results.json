@@ -1,0 +1,228 @@
+{
+  "runtime": [
+    {
+      "kind": "configuration",
+      "locale": "ru-RU",
+      "analysis_scope": "canonical_configuration",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": true,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": false,
+      "settings_preserved": true
+    },
+    {
+      "kind": "configuration",
+      "locale": "en-US",
+      "analysis_scope": "canonical_configuration",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": true,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": false,
+      "settings_preserved": true
+    },
+    {
+      "kind": "extension",
+      "locale": "ru-RU",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    },
+    {
+      "kind": "extension",
+      "locale": "en-US",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    },
+    {
+      "kind": "processing",
+      "locale": "ru-RU",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    },
+    {
+      "kind": "processing",
+      "locale": "en-US",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    },
+    {
+      "kind": "report",
+      "locale": "ru-RU",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    },
+    {
+      "kind": "report",
+      "locale": "en-US",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    }
+  ],
+  "rust_checks": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.45
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 0.21
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 2.08
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "execution": "exclusive default run, no concurrent sandbox exec"
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "execution": "exclusive all-feature run, no concurrent sandbox exec"
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 18.58
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 0.17
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.4
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 2.34
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 2.64
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 16.42
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.25
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.22
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.14
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 0.36
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.18
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 2.68
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.62
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 0.14
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 0.19
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 36.09
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 9.18
+    }
+  ]
+}
