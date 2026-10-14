@@ -1954,6 +1954,11 @@ Windows, общий new/init/import и устанавливаемый компл
 модуля имеют ноль diagnostics в BSL Analyzer CLI fallback. Shell new/init ещё нужны;
 EF-20 остаётся `IN_PROGRESS`.
 
+[Direct init](../research/eska-format/project-initialization.md) подключает existing Queries
+sources четырёх типов без конвертации. Expected-byte plan сохраняет исходники
+и separately pinned base/history; новые candidates готовятся в private stage,
+manifest публикуется последним. 14 core и 4 process группы прошли.
+
 Завершить файловый цикл новой структуры до продолжения анализатора. Оболочка
 `eska` делегирует проектные операции `eska-project`, распаковку/сборку —
 `eska-build`; алгоритмы не дублируются. Сохранить текущие команды/JSON Designer XML

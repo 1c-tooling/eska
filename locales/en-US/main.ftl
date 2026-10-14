@@ -173,7 +173,7 @@ tool-project-command-inspect = Read selected project settings and lazy configura
 tool-project-command-prepare = Prepare protected XML from saved sources and a separately approved base
 tool-project-command-transport = Preview or publish scoped attributes that preserve input bytes
 tool-project-command-capabilities = Show supported commands, source profile and boundaries
-tool-project-capabilities = Commands: new, import, migrate, update-base, inspect, prepare, transport, capture-ancestor, recover-import, capabilities. Profile: configuration, extension, processing, report / Designer 2.20. No 1C, Git or IDE required.
+tool-project-capabilities = Commands: new, init, import, migrate, update-base, inspect, prepare, transport, capture-ancestor, recover-import, capabilities. Profile: configuration, extension, processing, report / Designer 2.20. No 1C, Git or IDE required.
 tool-error-entropy = The system random source is unavailable. Restore it and retry project creation.
 tool-error-initial-version = Supply three or four numeric version components, for example 0.1.0 or 1.0.1.1. Leading zeroes are supported only in four-part versions.
 tool-error-metadata-name = Start the metadata name with a letter or underscore and use only letters, digits and underscores; reserved filenames are unsupported.
@@ -1163,3 +1163,10 @@ tool-error-source-import-receipt = The recovery digest or journal is invalid. Su
 tool-error-source-import-receipt-path = The recovery file must be new and outside source, support, ancestry and journal directories. Source application requires a successfully retained recovery digest.
 
 tool-check-local-syntax-scope = Scope: local BSL syntax and module structure. Canonical metadata context is unavailable; project analysis remains incomplete.
+
+tool-project-command-init = Attach existing ESKA sources without moving or converting them
+tool-option-init-path = Existing project directory; defaults to the current directory
+tool-option-init-source = Relative Queries source directory; defaults to src
+tool-project-initialized = Sources attached: { $path }. Accepted base SHA-256: { $pin }; ancestor SHA-256: { $ancestor }. Confirm the checksums independently.
+tool-error-init-layout = Init accepts existing Queries sources. Explicitly migrate an older layout first; XML attachment uses the existing eska init command.
+tool-error-init-version = Sources require an x.y.z or x.y.z.build version: the CF/CFE Version property or an exported EPF/ERF Версия() function. Correct the authoritative value before init.

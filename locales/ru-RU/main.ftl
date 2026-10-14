@@ -173,7 +173,7 @@ tool-project-command-inspect = Прочитать настройки выбра�
 tool-project-command-prepare = Подготовить защищённый XML из сохранённых исходников и отдельно одобренной базы
 tool-project-command-transport = Подготовить или записать attributes, сохраняющие байты выбранных входов
 tool-project-command-capabilities = Показать доступные команды, профиль исходников и границы инструмента
-tool-project-capabilities = Команды: new, import, migrate, update-base, inspect, prepare, transport, capture-ancestor, recover-import, capabilities. Профиль: configuration, extension, processing, report / Designer 2.20. 1С, Git и IDE не требуются.
+tool-project-capabilities = Команды: new, init, import, migrate, update-base, inspect, prepare, transport, capture-ancestor, recover-import, capabilities. Профиль: configuration, extension, processing, report / Designer 2.20. 1С, Git и IDE не требуются.
 tool-error-entropy = Системный источник случайных данных недоступен. Восстановите его и повторите создание проекта.
 tool-error-initial-version = Задайте три или четыре числовых компонента версии, например 0.1.0 или 1.0.1.1. Начальные нули допустимы только в четырёхкомпонентной версии.
 tool-error-metadata-name = Имя метаданных должно начинаться с буквы или подчёркивания и содержать только буквы, цифры и подчёркивания; служебные имена файлов недопустимы.
@@ -1163,3 +1163,10 @@ tool-error-source-import-receipt = Ключ восстановления или 
 tool-error-source-import-receipt-path = Файл восстановления должен быть новым и находиться вне исходников, поддержки, предка и журнала. Применение требует успешного сохранения ключа восстановления.
 
 tool-check-local-syntax-scope = Область: локальный синтаксис BSL и структура модуля. Канонический контекст метаданных недоступен; анализ проекта остаётся неполным.
+
+tool-project-command-init = Подключить существующие исходники ESKA без их переноса или преобразования
+tool-option-init-path = Существующий каталог проекта; по умолчанию текущий
+tool-option-init-source = Относительный каталог исходников Queries; по умолчанию src
+tool-project-initialized = Исходники подключены: { $path }. SHA-256 принятой базы: { $pin }; предка: { $ancestor }. Ключи подтверждаются независимо.
+tool-error-init-layout = Init принимает существующие исходники Queries. Для старой структуры сначала выполните явную миграцию; XML подключается прежней командой eska init.
+tool-error-init-version = В исходниках требуется версия x.y.z или x.y.z.build: свойство Version у CF/CFE либо экспортная функция Версия() у EPF/ERF. Исправьте исходное значение перед init.

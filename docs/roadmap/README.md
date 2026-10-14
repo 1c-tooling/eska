@@ -72,6 +72,11 @@ All4 native build/dump/first-import сохранили local BSL, pin/settings �
 подключает четыре типа и обе схемы версии к `eska-project new` через общий
 Queries pipeline. Основная оболочка new/init остаётся в EF-20.
 
+[Direct init](../research/eska-format/project-initialization.md) подключает existing Queries
+sources четырёх типов без конвертации. Expected-byte plan сохраняет исходники
+и separately pinned base/history; новые candidates готовятся в private stage,
+manifest публикуется последним. 14 core и 4 process группы прошли.
+
 [Синтаксис всех четырёх типов](../research/eska-format/analyzer-local-syntax.md) работает
 через общий IDE/batch host. LocalSyntax не объявляет canonical semantic context;
 восемь framed runtime cases и четыре независимых BSL Analyzer сравнения

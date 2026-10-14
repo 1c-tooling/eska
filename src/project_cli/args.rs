@@ -6,6 +6,8 @@ use std::path::PathBuf;
 
 mod new;
 pub(super) use new::New;
+mod init;
+pub(super) use init::Init;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -34,6 +36,8 @@ pub(super) enum Command {
     #[command(disable_help_flag = true)]
     New(New),
     #[command(disable_help_flag = true)]
+    Init(Init),
+    #[command(disable_help_flag = true)]
     Import(Import),
     #[command(disable_help_flag = true)]
     Migrate(Migrate),
@@ -58,6 +62,7 @@ impl Command {
     pub const fn name(&self) -> &'static str {
         match self {
             Self::New(_) => "new",
+            Self::Init(_) => "init",
             Self::Import(_) => "import",
             Self::Migrate(_) => "migrate",
             Self::UpdateBase(_) => "update-base",

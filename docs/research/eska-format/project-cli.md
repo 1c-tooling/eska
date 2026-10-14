@@ -25,6 +25,7 @@ eska-project new demo --name demo
 eska-project new report-demo --name report-demo --type report \
   --metadata-name НовыйОтчет --initial-version 2026.10.0.1 --format json
 eska-project import designer-xml new-project --name demo
+eska-project init existing-project --name demo --format json
 eska-project import designer-xml another-project --name demo \
   --platform-version 8.3.27.2325
 eska-project import designer-xml readable-project --name demo --layout readable
@@ -59,6 +60,11 @@ version — `0.1.0`; `--metadata-name` задаёт точный Unicode native 
 `--initial-version` принимает обе существующие схемы версии. Относительный
 destination разрешается от `--project-dir`; parent должен существовать.
 Команда не подключает проект к enclosing workspace автоматически.
+
+[`init`](project-initialization.md) подключает существующие Queries sources
+без переноса/конвертации, сохраняет accepted/history под independently supplied
+pin либо создаёт unapproved candidates для нового проекта. Core не выполняет
+workflow, Git или workspace enrollment.
 
 `import` читает Designer XML и создаёт исключительно новый каталог:
 `src`, `.eska/accepted`, `.gitattributes`, `.gitignore`, `eska.toml`.
@@ -236,6 +242,8 @@ Tool envelope и прежние поля, включая `source_schema_version 
 Capabilities также содержит `migrate`, `migration_layouts = ["readable"]` и
 `migration_scopes = ["standalone"]`. Schema 1 для новой команды описана в
 [контракте миграции](project-migration.md#machine-interface).
+Init имеет отдельный [16-key data contract](project-initialization.md#machine-interface)
+и `initialization_project_types`, `initialization_source_layout`, `initialization_converts_source` capabilities.
 Для `update-base` добавлены `base_update_scopes = ["standalone", "workspace"]` и
 `base_update_comparison = "whole_file_three_way"`. Preview с конфликтами —
 exit 0 / `can_write = false`; `--write` — exit 1 с полным планом в

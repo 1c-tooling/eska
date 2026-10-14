@@ -12,7 +12,9 @@ use super::{Project, ProjectType, SourceFormat};
 use serde::{Deserialize, Serialize};
 
 mod external;
+mod source;
 pub use external::{VersionMigration, plan_migration, plan_migration_with_base};
+pub use source::project_source_version;
 
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024 * 1024;
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";

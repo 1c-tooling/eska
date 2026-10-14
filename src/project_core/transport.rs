@@ -86,6 +86,11 @@ impl TransportPlan {
         &self.updated
     }
 
+    /// Attachment rollback restores only its own expected-byte addition to existing user policy.
+    pub(crate) fn original(&self) -> Option<&str> {
+        self.original.as_deref()
+    }
+
     /// Repeating preparation with the same final rules does not write or duplicate them.
     #[must_use]
     pub fn is_empty(&self) -> bool {

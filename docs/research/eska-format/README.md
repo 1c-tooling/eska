@@ -36,6 +36,8 @@ raw initial/history/state bytes для standalone/member.
 [Минимальный `eska-project new`](minimal-project-creation.md) создаёт четыре
 типа с fresh native UUID и обеими схемами версии через общий Queries pipeline.
 Общий shell new/init и приёмка MVP остаются в работе.
+[Direct init](project-initialization.md) подключает existing Queries source
+и сохраняет independently pinned support/history без конвертации.
 [LocalSyntax четырёх типов](analyzer-local-syntax.md) проверяет BSL и symbols через
 общую сессию, сохраняя явную неполноту semantic context.
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);

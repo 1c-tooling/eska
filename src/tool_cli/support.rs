@@ -235,6 +235,8 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         "arguments_invalid" => Some("tool-error-arguments"),
         "source_entropy_unavailable" => Some("tool-error-entropy"),
         "source_initial_version_invalid" => Some("tool-error-initial-version"),
+        "source_init_layout_unsupported" => Some("tool-error-init-layout"),
+        "source_init_version_invalid" => Some("tool-error-init-version"),
         "source_metadata_name_invalid" => Some("tool-error-metadata-name"),
         "accepted_base_pin_required" => Some("tool-error-pin-required"),
         "accepted_base_pin_invalid" => Some("tool-error-pin-invalid"),

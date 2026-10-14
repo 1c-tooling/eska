@@ -5,12 +5,17 @@ mod project;
 mod publication;
 mod selection;
 
+pub(in crate::project_core::source_format) use project::stage_project_import_ancestor;
+pub use project::verify_project_import_history;
 pub use project::{
     NativeProjectSourceImport, PROJECT_SOURCE_IMPORT_RECEIPT, ProjectSourceImportPlan,
     ProjectSourceImportRef, SourceImportRecovery, prepare_project_native_source_import,
     prepare_project_source_import, project_import_ancestor, recover_project_source_import,
 };
-pub use project::{PROJECT_SOURCE_IMPORT_DIRECTORY, initialize_project_import_ancestor};
+pub use project::{
+    PROJECT_SOURCE_IMPORT_DIRECTORY, initialize_project_import_ancestor,
+    open_initial_project_import_ancestor,
+};
 
 #[cfg(test)]
 mod tests;

@@ -20,6 +20,8 @@ mod deletion;
 mod extensions;
 #[path = "project_tool/fill_value.rs"]
 mod fill_value;
+#[path = "project_tool/init.rs"]
+mod init;
 #[path = "project_tool/migration.rs"]
 mod migration;
 #[path = "project_tool/new.rs"]

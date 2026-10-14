@@ -3,6 +3,8 @@
 mod import;
 mod storage;
 
+pub(in crate::project_core::source_format) use import::stage_project_import_ancestor;
+pub use import::verify_project_import_history;
 pub use import::{
     NativeProjectSourceImport, PROJECT_SOURCE_IMPORT_RECEIPT, ProjectSourceImportPlan,
     ProjectSourceImportRef, SourceImportChange, SourceImportConflict, SourceImportConflictKind,
@@ -10,7 +12,10 @@ pub use import::{
     prepare_project_source_import, prepare_source_import, project_import_ancestor,
     recover_project_source_import,
 };
-pub use import::{PROJECT_SOURCE_IMPORT_DIRECTORY, initialize_project_import_ancestor};
+pub use import::{
+    PROJECT_SOURCE_IMPORT_DIRECTORY, initialize_project_import_ancestor,
+    open_initial_project_import_ancestor,
+};
 
 #[cfg(test)]
 mod tests;

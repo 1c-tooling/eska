@@ -42,7 +42,7 @@ enum Layout {
 pub struct ImportedProject {
     pub project: Project,
     pub accepted: AcceptedRef,
-    /// Only new query-layout projects retain initial bytes; this digest still needs confirmation.
+    /// Queries creation or explicit initialization returns source ancestry for independent confirmation.
     pub initial_ancestor: Option<ImportAncestorRef>,
     /// SHA-256 of the exact settings bytes captured before publication, independent of later disk changes.
     pub manifest_sha256: String,

@@ -20,6 +20,7 @@ mod files;
 mod fill_value;
 mod fragment;
 mod import;
+mod initialization;
 mod layout;
 mod lexical;
 mod managed_form;
@@ -65,6 +66,7 @@ pub use import::{
     import_designer, import_designer_forms, import_designer_queries, import_designer_readable,
     import_designer_resources, import_designer_separated,
 };
+pub use initialization::{ProjectInitializationPlan, prepare_project_initialization};
 pub use layout::{
     DESCRIPTOR_LAYOUT_VERSION, DescriptorContext, LayoutChange, LayoutPublication,
     MANAGED_FORM_LAYOUT_VERSION, QUERY_LAYOUT_VERSION, QueryResource, RESOURCE_LAYOUT_VERSION,
@@ -219,12 +221,14 @@ impl Descriptor {
 #[cfg(test)]
 mod tests;
 
+pub(crate) use synchronization::verify_project_import_history;
 pub use synchronization::{
     ImportAncestor, ImportAncestorRef, NativeProjectSourceImport, PROJECT_SOURCE_IMPORT_RECEIPT,
     ProjectSourceImportPlan, ProjectSourceImportRef, SourceImportChange, SourceImportConflict,
     SourceImportConflictKind, SourceImportPlan, SourceImportRecovery, capture_import_ancestor,
-    prepare_project_native_source_import, prepare_project_source_import, prepare_source_import,
-    project_import_ancestor, recover_project_source_import,
+    open_initial_project_import_ancestor, prepare_project_native_source_import,
+    prepare_project_source_import, prepare_source_import, project_import_ancestor,
+    recover_project_source_import,
 };
 pub(crate) use synchronization::{
     PROJECT_SOURCE_IMPORT_DIRECTORY, initialize_project_import_ancestor,

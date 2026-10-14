@@ -1,6 +1,7 @@
 //! Process-boundary selection and reports, with one source implementation in `project_core`.
 
 mod creation;
+mod init;
 mod migration;
 mod new;
 mod source_import;
@@ -33,6 +34,7 @@ use std::path::Path;
 pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String), Failure> {
     match &cli.command {
         Command::New(args) => new::create(&cli.project_dir, args, localizer),
+        Command::Init(args) => init::initialize(&cli.project_dir, args, localizer),
         Command::Import(args) => creation::import(args, localizer),
         Command::Migrate(args) => migration::migrate(&cli.project_dir, args, localizer),
         Command::UpdateBase(args) => update::update(&cli.project_dir, args, localizer),
@@ -45,11 +47,13 @@ pub(super) fn execute(cli: &Cli, localizer: &Localizer) -> Result<(Value, String
             json!({"version":env!("CARGO_PKG_VERSION"),
             "protocol_version":1, "source_schema_version":SCHEMA_VERSION,
             "rules_version":RULES_VERSION, "profile":PROFILE,
-            "commands":["new","import","migrate","update-base","inspect","prepare","transport","capture-ancestor","recover-import","capabilities"],
+            "commands":["new","init","import","migrate","update-base","inspect","prepare","transport","capture-ancestor","recover-import","capabilities"],
             "platform_required":false,"git_required":false,"ide_required":false,
             "creation_project_types":["configuration","extension","processing","report"], "metadata_formats":["eska"],
             "new_project_types":["configuration","extension","processing","report"],
             "new_source_layout":"queries", "new_initial_version":"0.1.0",
+            "initialization_project_types":["configuration","extension","processing","report"],
+            "initialization_source_layout":"queries", "initialization_converts_source":false,
             "import_layouts":["family","readable","queries"],
             "initial_ancestor_layouts":["queries"],
             "import_layout_project_types":{"family":["configuration","extension"],
