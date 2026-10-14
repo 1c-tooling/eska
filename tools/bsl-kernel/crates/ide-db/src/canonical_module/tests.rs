@@ -2,6 +2,7 @@
 
 mod external;
 mod external_configuration;
+mod external_identity;
 mod families;
 mod inheritance;
 

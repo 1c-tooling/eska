@@ -1,5 +1,7 @@
 //! The body path selects its own declared owner before dependency overlays are composed.
 
+mod external_owner;
+
 use std::path::Path;
 
 use bsl_metadata::ModuleType;
@@ -28,8 +30,13 @@ pub(super) fn publish(
             if module.module_type != ModuleType::ObjectModule {
                 return;
             }
-            let Some(name) = external_name(relative) else { return };
-            (kind.mdo_type(), name.to_owned())
+            let Some(stem) = external_name(relative) else { return };
+            let Some(identity) =
+                external_owner::identity(database, file, listing, roots, own, kind, stem)
+            else {
+                return;
+            };
+            identity
         }
         metadata::RootKind::Base | metadata::RootKind::Extension => {
             let Some(info) = metadata::parse_module_path(&relative.to_string_lossy()) else {
@@ -51,7 +58,7 @@ pub(super) fn publish(
     }
 }
 
-/// Only the bare `<Name>/Ext/ObjectModule.bsl` shape owns an external object module.
+/// Only the bare `<stem>/Ext/ObjectModule.bsl` shape owns an external body; the stem is not metadata Name.
 pub(super) fn external_name(relative: &Path) -> Option<&str> {
     use bsl_conventions::{conventional_of, ConventionalName};
     let mut components = relative.components();

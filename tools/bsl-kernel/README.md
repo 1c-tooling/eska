@@ -13,6 +13,8 @@ bsl-analyzer закреплены на той же Git-ревизии. Это и
 Whole-Configuration consumers исключают canonical external, включая pending;
 экспериментальный `configuration_for_root` возвращает `Option`. Native XML
 fallback без canonical admission сохранён.
+Native external stem не определяет logical Name: body связан с зарегистрированным
+main descriptor FileId; namesake и неоднозначность отвергаются до resolve.
 
 Для [адаптера роли](../../docs/research/eska-format/role-adapter.md) открыт
 `Role::with_data`: source UUID и current rights передаются явно; serialized

@@ -2319,6 +2319,10 @@ pending не запускают directory loader. Experimental getter возвр
 30 canonical и 18 native integration tests прошли. SDK admission ещё нужен,
 EF-18 остаётся `IN_PROGRESS`.
 
+External native stem, отличающийся от metadata Name, теперь связывает body с
+объявленным main FileId; namesake/ambiguity не подбираются по каталогу.
+32 canonical и 18 native tests прошли, actual EPF/ERF completion подтверждён.
+
 [Структурная проверка](research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

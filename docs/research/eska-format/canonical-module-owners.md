@@ -21,6 +21,16 @@ EPF/ERF определяются через `RootKind::External` и bare native 
 в root path не подменяют external kind. Тип `Объект` формы берётся из настоящего
 main attribute текущего canonical form input.
 
+Physical stem external export может отличаться от metadata Name. Bare body
+связывается с зарегистрированным main FileId прямого `<stem>.xml` в собственном
+SourceRoot/FileSet; logical Name берётся из единственного соответствующего
+listing entry. Проверка `config_index.main` исключает namesake и неоднозначные
+bindings. Поиска файлов, YAML/XML чтения и fallback по имени каталога нет.
+Две новые группы проверили оба kind, dotted stem/`.XML`, pending/wrong slots,
+missing/outside/ambiguous main. Canonical suite — 32 passed, native regressions
+— 18 passed; scoped check, strict Clippy/Rustdoc, fmt/diff прошли. Runtime
+native-origin EPF/ERF с отличающимся stem подтвердил own field completion.
+
 `Configuration::with_identity(uuid, name)` создаёт CF/CFE header с переданным
 UUID. Прежний `Configuration::new(name)` сохраняет генерацию нового UUID и
 serialized shape. External не использует ни один configuration constructor.
