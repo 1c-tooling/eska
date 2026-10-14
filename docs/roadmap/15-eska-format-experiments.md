@@ -1954,6 +1954,11 @@ Windows, общий new/init/import и устанавливаемый компл
 модуля имеют ноль diagnostics в BSL Analyzer CLI fallback. Shell new/init ещё нужны;
 EF-20 остаётся `IN_PROGRESS`.
 
+[Main new](../research/eska-format/shell-project-creation.md) делегирует empty/native creation
+отдельным tools и проверяет typed receipt перед workflow/Git/workspace.
+Восемь actual shell new/build/unpack на 1С 8.3.27.2325 сохранили source/base/
+history/settings; native input с пустой версией отказан до destination.
+
 [Queries migration](../research/eska-format/query-project-migration.md) копирует map 5/6 и raw
 history при layout no-op. Layout change с существующей историей явно отказан
 до output. All4 history-preserving copies и legacy CF/CFE без истории проходят

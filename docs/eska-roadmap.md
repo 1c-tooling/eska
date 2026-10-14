@@ -2303,6 +2303,11 @@ streams/exit. 12 process cases, 22 Rust gates и all4 native build/dump/first-im
 создаёт четыре типа и обе схемы версии через `eska-project new`, общий Queries
 pipeline и initial ancestor. Основная оболочка new/init ещё в работе.
 
+[Main new](research/eska-format/shell-project-creation.md) делегирует empty/native creation
+отдельным tools и проверяет typed receipt перед workflow/Git/workspace.
+Восемь actual shell new/build/unpack на 1С 8.3.27.2325 сохранили source/base/
+history/settings; native input с пустой версией отказан до destination.
+
 [Queries migration](research/eska-format/query-project-migration.md) копирует map 5/6 и raw
 history при layout no-op. Layout change с существующей историей явно отказан
 до output. All4 history-preserving copies и legacy CF/CFE без истории проходят

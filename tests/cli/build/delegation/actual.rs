@@ -1,7 +1,6 @@
 //! Real facade/companion builds consume the same saved authority and portable native process fixture.
 
-#[path = "../../../fixtures/eska-format/query_creation.rs"]
-mod native_fixture;
+use crate::query_creation as native_fixture;
 
 use super::{super::ibcmd_fixture, fixture::Fixture};
 use eska::project_core::{

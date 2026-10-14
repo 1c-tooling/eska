@@ -46,7 +46,9 @@ TOML не сохраняет approval digest. `--freeze` использует п
 ## Machine interface
 
 Envelope schema 1 и семь существующих import data keys сохранены; Queries
-добавляет `ancestor_sha256`, прежние layout choices не получают это поле.
+добавляет `ancestor_sha256` и `manifest_sha256`, прежние layout choices не получают
+эти поля. Manifest hash captured до publication нужен [основному new](shell-project-creation.md)
+для expected-byte workflow finalization.
 `source_layout` дополнен значением `queries`. Capabilities сообщает:
 
 ```json

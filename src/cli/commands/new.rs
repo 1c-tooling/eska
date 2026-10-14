@@ -6,6 +6,7 @@ use std::{
     process::ExitCode,
 };
 
+use crate::tool_cli::OutputFormat;
 use crate::{
     cli::{
         diagnostics,
@@ -20,11 +21,20 @@ use crate::{
     },
     vcs::workflow::WorkflowPreset,
 };
-use clap::{ArgAction, Args};
+use clap::{ArgAction, Args, ValueEnum};
 
 use super::artifact;
 
+pub(in crate::cli) mod eska;
 mod from;
+
+/// Designer XML remains the default; ESKA creation explicitly opts into the source-only tool.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, ValueEnum)]
+enum NewSourceFormat {
+    #[default]
+    DesignerXml,
+    Eska,
+}
 
 #[derive(Debug, Args)]
 pub(in crate::cli) struct NewArgs {
@@ -39,12 +49,36 @@ pub(in crate::cli) struct NewArgs {
     workflow: Option<String>,
     #[arg(long)]
     no_vcs: bool,
+    #[arg(long, value_enum, default_value_t = NewSourceFormat::DesignerXml)]
+    source_format: NewSourceFormat,
+    #[arg(long)]
+    metadata_name: Option<String>,
+    #[arg(long)]
+    initial_version: Option<String>,
+    #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
+    format: OutputFormat,
     #[arg(short, long, action = ArgAction::Help)]
     help: Option<bool>,
 }
 
 impl NewArgs {
     pub(super) fn run(&self, base: &Path, localizer: &Localizer) -> ExitCode {
+        if self.source_format == NewSourceFormat::Eska {
+            return eska::run(self, base, localizer);
+        }
+        if self.metadata_name.is_some()
+            || self.initial_version.is_some()
+            || matches!(self.format, OutputFormat::Json)
+        {
+            return eska::report_failure(
+                self,
+                &artifact::Failure::new(
+                    "new-source-options-incompatible",
+                    localizer.text("new-source-options-incompatible"),
+                ),
+                localizer,
+            );
+        }
         if self.from.is_some() {
             return from::run(self, base, localizer);
         }
@@ -374,5 +408,15 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
                 .value_name(localizer.text("new-workflow-value"))
         })
         .mut_arg("no_vcs", |arg| arg.help(localizer.text("new-no-vcs-help")))
+        .mut_arg("source_format", |arg| {
+            arg.help(localizer.text("new-source-format-help"))
+        })
+        .mut_arg("metadata_name", |arg| {
+            arg.help(localizer.text("new-metadata-name-help"))
+        })
+        .mut_arg("initial_version", |arg| {
+            arg.help(localizer.text("new-initial-version-help"))
+        })
+        .mut_arg("format", |arg| arg.help(localizer.text("new-format-help")))
         .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
 }

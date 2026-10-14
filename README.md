@@ -860,12 +860,15 @@ preset = "trunk"
 [`eska-project new`](docs/research/eska-format/minimal-project-creation.md)
 создаёт минимальные проекты всех четырёх типов без платформы/Git, с fresh UUID,
 версией `0.1.0` либо явно выбранной `x.y.z`/`x.y.z.build` и initial ancestor.
-Анализатор пока отклоняет extension/processing/report: их семантический контекст
-подключается отдельно в EF-18. Для сборки можно явно передать базовый CF через
+[`eska new --source-format eska`](docs/research/eska-format/shell-project-creation.md)
+создаёт минимальный проект либо проект из CF/CFE/EPF/ERF через отдельные инструменты.
+[`syntax` профиль анализатора](docs/research/eska-format/analyzer-local-syntax.md)
+принимает все четыре типа; семантический контекст extension/processing/report
+ещё подключается в EF-18. Для сборки можно явно передать базовый CF через
 `--base-configuration`. Внешняя версия проверяется в объявленном модуле объекта.
 [Платформенная приёмка EPF/ERF](docs/research/eska-format/external-projects.md)
 завершена: независимые build/dump совпали, непустые ERF и экспортные версии
-выполнены в клиенте 1С. Общий CLI new/init/import остаётся EF-20/EF-25.
+выполнены в клиенте 1С. Общий init/import и сквозная приёмка CLI остаются EF-20/EF-25.
 [Контракт и границы](docs/research/eska-format/project-selection.md) описывают
 закрепление базы, workspace selection и проверенную материализацию.
 Прежние XML-only команды пока возвращают явный отказ для ESKA.

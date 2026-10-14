@@ -5,6 +5,7 @@ use std::{env, process::ExitCode};
 mod args;
 mod changes;
 mod commands;
+mod companion;
 mod diagnostics;
 mod encoding;
 mod ide;

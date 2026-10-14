@@ -133,6 +133,19 @@ fn export_configuration(arguments: &[OsString]) -> Result<(), String> {
         return Err("[ERROR] fake export failure".to_owned());
     }
     wait_for_test_release();
+    if let Some(native_tree) = env::var_os("FAKE_IBCMD_NATIVE_TREE") {
+        let target = if external {
+            destination.parent().ok_or("missing external parent")?
+        } else {
+            destination.as_path()
+        };
+        copy_native_tree(Path::new(&native_tree), target).map_err(|error| error.to_string())?;
+        if !external && !env_flag("FAKE_IBCMD_MISSING_DUMP_INFO") {
+            fs::write(target.join("ConfigDumpInfo.xml"), b"<ConfigDumpInfo/>")
+                .map_err(|error| error.to_string())?;
+        }
+        return Ok(());
+    }
     if external {
         fs::write(destination.with_extension("xml"), contents).map_err(|error| error.to_string())
     } else {
@@ -149,6 +162,21 @@ fn export_configuration(arguments: &[OsString]) -> Result<(), String> {
         fs::write(destination.join("Configuration.xml"), contents)
             .map_err(|error| error.to_string())
     }
+}
+
+/// A complete native profile keeps physical aliases, module/query bytes and resources together.
+fn copy_native_tree(source: &Path, destination: &Path) -> io::Result<()> {
+    fs::create_dir_all(destination)?;
+    for entry in fs::read_dir(source)? {
+        let entry = entry?;
+        let target = destination.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_native_tree(&entry.path(), &target)?;
+        } else {
+            fs::copy(entry.path(), target)?;
+        }
+    }
+    Ok(())
 }
 
 /// A misleading platform probe and load generate different empty roots rather than the input.

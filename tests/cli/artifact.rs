@@ -618,7 +618,11 @@ fn streams_diagnostics_once_without_color_in_both_locales() {
                     .unwrap();
                 assert_eq!(output.status.success(), !failed, "{output:?}");
                 let stderr = String::from_utf8(output.stderr).unwrap();
-                assert_eq!(stderr.matches("[INFO] Loading fixture CF...").count(), 1);
+                assert_eq!(
+                    stderr.matches("[INFO] Loading fixture CF...").count(),
+                    1,
+                    "{stderr}"
+                );
                 assert_eq!(stderr.matches("[INFO] Exporting fixture XML...").count(), 1);
                 assert_eq!(stderr.matches("[WARN] fixture export warning").count(), 1);
                 assert_eq!(

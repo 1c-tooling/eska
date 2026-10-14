@@ -11,6 +11,8 @@ mod history;
 mod init;
 mod localization;
 mod new;
+#[cfg(feature = "project-cli")]
+mod new_eska;
 mod patch;
 mod platform;
 mod save;

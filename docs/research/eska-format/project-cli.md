@@ -240,7 +240,7 @@ Capabilities добавляет `new`, `new_project_types`, `new_source_layout =
 Capabilities содержит `import_layouts = ["family", "readable", "queries"]`,
 `source_layout_versions = [1, 2, 3, 4, 5, 6]`, `descriptor_schema_versions = [1, 2]`
 и [map типов по layout](query-project-creation.md#machine-interface).
-Queries import добавляет `data.ancestor_sha256`; capabilities содержит
+Queries import добавляет `data.ancestor_sha256` и `data.manifest_sha256`; capabilities содержит
 `initial_ancestor_layouts = ["queries"]`. Старые layouts/data keys сохранены.
 Tool envelope и прежние поля, включая `source_schema_version = 1`, сохранены;
 для выбора поддерживаемых версий используются новые списки.

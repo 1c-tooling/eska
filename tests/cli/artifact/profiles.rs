@@ -127,7 +127,7 @@ fn refuses_incomplete_registered_extensions_without_changing_project_or_input() 
                 .unwrap();
             assert_eq!(output.status.code(), Some(1), "{output:?}");
             let document: Value = serde_json::from_slice(&output.stdout).unwrap();
-            assert_eq!(document["error"]["code"], code);
+            assert_eq!(document["error"]["code"], code, "{output:?}");
             if flag == "FAKE_IBCMD_TRUNCATED_PROBE_DESCRIPTOR" {
                 assert!(
                     String::from_utf8_lossy(&output.stderr)

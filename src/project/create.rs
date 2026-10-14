@@ -1,5 +1,8 @@
 //! Creation of a new project directory; no CLI parsing or localized output.
 
+mod enrollment;
+pub use enrollment::{cleanup_member_parent, enroll_created_member, prepare_member_parent};
+
 use std::{
     fs,
     io::{self, Write},

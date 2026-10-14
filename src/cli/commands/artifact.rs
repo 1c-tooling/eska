@@ -27,11 +27,11 @@ use crate::{
 #[derive(Debug, Default, Args)]
 pub(super) struct PlatformArgs {
     #[arg(long)]
-    ibcmd: Option<PathBuf>,
+    pub(super) ibcmd: Option<PathBuf>,
     #[arg(long)]
-    platform_arch: Option<String>,
+    pub(super) platform_arch: Option<String>,
     #[arg(long)]
-    distrobox: Option<String>,
+    pub(super) distrobox: Option<String>,
     #[arg(long, conflicts_with = "select_platform")]
     pub platform_version: Option<String>,
     #[arg(long)]

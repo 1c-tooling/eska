@@ -65,6 +65,7 @@ pub(super) fn import(args: &Import, localizer: &Localizer) -> Result<(Value, Str
         "source":path_text(imported.project.source())?,"accepted_base":".eska/accepted",
         "accepted_base_sha256":imported.accepted.sha256});
     if let Some(ancestor) = &imported.initial_ancestor {
+        data["manifest_sha256"] = json!(imported.manifest_sha256);
         data["ancestor_sha256"] = json!(ancestor.sha256());
         human.push('\n');
         human.push_str(&localizer.format(

@@ -40,6 +40,8 @@ raw initial/history/state bytes для standalone/member.
 и сохраняет independently pinned support/history без конвертации.
 [Queries migration](query-project-migration.md) сохраняет raw history при no-op
 и явно отказывает неподтверждённому переносу истории между layouts.
+[Оболочка new](shell-project-creation.md) связывает empty/native creation с
+workflow/Git/workspace и typed expected-byte receipt.
 [LocalSyntax четырёх типов](analyzer-local-syntax.md) проверяет BSL и symbols через
 общую сессию, сохраняя явную неполноту semantic context.
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
