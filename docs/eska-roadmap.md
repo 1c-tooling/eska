@@ -2248,6 +2248,10 @@ lifecycle и согласованное обновление IDE остаютс�
 [Native staging и project plan](research/eska-format/native-project-import.md)
 уже проходят четыре настоящих artifact/import/build/dump цикла под старым CI pin;
 имя EPF/ERF файла приводится к принятой native привязке без изменения содержимого.
+[Слияние descriptor values](research/eska-format/import-descriptors.md) сохраняет
+независимые правки того же owner и поддержанные inline operations под прежним pin;
+четыре native цикла и новый default реквизит CF проверены. Коллекции остаются
+атомарными, новая top-level карта и native CLI ещё в работе.
 
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.

@@ -22,6 +22,68 @@ const DOCUMENT: &str = "Documents/Entry/object.yaml";
 const BOOLEAN: &str = "<v8:Type>xs:boolean</v8:Type>";
 const STRING: &str = "<v8:Type>xs:string</v8:Type><v8:StringQualifiers><v8:Length>40</v8:Length><v8:AllowedLength>Variable</v8:AllowedLength></v8:StringQualifiers>";
 
+/// Complete platform defaults are admitted as one exact profile; customized or partial tails refuse.
+#[test]
+fn platform_default_attribute_tail_preserves_the_closed_creation_profile() {
+    for fault in ["none", "partial", "changed", "reordered", "extra", "frozen"] {
+        let sandbox = TestDir::new();
+        let frozen = if fault == "frozen" {
+            vec![uuid(2)]
+        } else {
+            Vec::new()
+        };
+        let (source, base) = fixture(&sandbox, true, &frozen, |root| {
+            let path = root.join("Catalogs/Records.xml");
+            let text = fs::read_to_string(&path).unwrap().replace(
+                "version=\"2.20\"",
+                "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" version=\"2.20\"",
+            );
+            fs::write(path, text).unwrap();
+        });
+        let tail = profiles::defaults::XML;
+        let tail = match fault {
+            "partial" => tail.replace("<Format/>", ""),
+            "changed" => tail.replace(
+                "<PasswordMode>false</PasswordMode>",
+                "<PasswordMode>true</PasswordMode>",
+            ),
+            "reordered" => tail.replace("<Format/><EditFormat/>", "<EditFormat/><Format/>"),
+            "extra" => format!("{tail}<Future/>"),
+            _ => tail.into(),
+        };
+        let xml = attribute_xml(100, "NativeField", BOOLEAN)
+            .replace("</Properties>", &format!("{tail}</Properties>"));
+        let descriptor = Descriptor::from_xml(&format!("<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses' xmlns:v8='http://v8.1c.ru/8.1/data/core' xmlns:xs='http://www.w3.org/2001/XMLSchema' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' version='2.20'>{xml}</MetaDataObject>")).unwrap();
+        edit(&source, CATALOG, |owner| {
+            children(owner).push(Child::Inline {
+                object: Box::new(descriptor.object),
+            });
+        });
+        let output = sandbox.0.join("generations");
+        let result = prepare_protected(&source, &base, &output, true);
+        if fault == "none" {
+            let prepared = result.unwrap();
+            let text = fs::read_to_string(prepared.xml().join("Catalogs/Records.xml")).unwrap();
+            assert!(text.contains("NativeField"));
+            assert!(text.contains("<PasswordMode>false</PasswordMode>"));
+            assert!(text.contains("<ChoiceParameterLinks/>"));
+            assert!(!base.permission(&uuid(100), Operation::Module).allowed);
+        } else {
+            let error = result.unwrap_err();
+            assert_eq!(
+                error.error.code,
+                if fault == "frozen" {
+                    "source_changes_excluded"
+                } else {
+                    "source_child_creation_profile_unsupported"
+                },
+                "{fault}"
+            );
+            assert!(!output.exists());
+        }
+    }
+}
+
 /// Fields have no generated identities or payloads; native qualifier declarations remain explicit.
 pub(in crate::project_core::source_format) fn attribute_xml(
     index: u32,

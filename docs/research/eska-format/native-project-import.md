@@ -23,7 +23,9 @@ Project core отдельно предоставляет `prepare_project_native
 Для EPF/ERF проверенный XML root filename и весь directory prefix приводятся
 к pinned native root. Filename остаётся обратной привязкой, metadata Name/UUID
 и bytes BSL/opaque payloads не меняются. Обрабатываются Unicode и dotted stems;
-слияние по новой карте из-за metadata rename/add/delete всё ещё блокируется.
+слияние по новой карте из-за top-level metadata rename/add/delete всё ещё блокируется.
+[Независимые descriptor values и inline changes](import-descriptors.md) теперь
+объединяются через CST с прежним protected selector и raw ancestry.
 
 Копирование закреплено исходным inventory. Captured incoming восстанавливается
 и экспортируется обратно: состав, empty directories, BSL и непрозрачные ресурсы

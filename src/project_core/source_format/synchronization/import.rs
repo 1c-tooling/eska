@@ -1,5 +1,6 @@
 //! Three-way import compares confirmed ancestry with working and incoming source bytes.
 
+mod descriptors;
 mod project;
 mod publication;
 mod selection;
@@ -49,6 +50,9 @@ pub struct SourceImportConflict {
     pub path: SourcePath,
     pub uuid: Option<NativeUuid>,
     pub exclusion: Option<Exclusion>,
+    /// Descriptor coordinates identify a semantic collision; file-only conflicts omit this field.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub coordinate: Vec<String>,
 }
 
 /// Metadata identity binds a compared file independently of its current spelling or directory.
@@ -65,6 +69,7 @@ pub struct SourceImportChange {
 enum SelectedFile {
     Working(FileEntry),
     Incoming(FileEntry),
+    Merged { entry: FileEntry, text: String },
 }
 
 /// A captured input is rechecked without reparsing a large immutable package on every write.
@@ -166,6 +171,7 @@ pub fn prepare_source_import(
         changes: chosen.changes,
         conflicts: chosen.conflicts,
     };
+    descriptors::resolve(&mut plan)?;
     if plan.conflicts.is_empty() {
         let package = Package::from_snapshot(storage::clone_inventory(&plan.output), |path| {
             plan.read(path)
@@ -178,6 +184,7 @@ pub fn prepare_source_import(
                 path: exclusion.path.clone(),
                 uuid: exclusion.uuid.clone(),
                 exclusion: Some(exclusion),
+                coordinate: Vec::new(),
             });
         }
         if plan.conflicts.is_empty() {
@@ -277,6 +284,7 @@ impl SourceImportPlan {
                     .root
                     .join(storage::blob_path(entry)?.as_path()),
             ),
+            SelectedFile::Merged { text, .. } => Ok(text.clone()),
         }
     }
 }

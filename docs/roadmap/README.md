@@ -20,7 +20,10 @@
 сохраняют old source, raw ancestry и точные settings в журнале.
 [Связка native staging с project plan](../research/eska-format/native-project-import.md)
 прошла artifact/import/build/dump четырёх типов, сохранила local BSL и pinned
-bookkeeping. Новая карта, native CLI lifecycle и координация IDE ещё в работе.
+bookkeeping. [Слияние descriptor values](../research/eska-format/import-descriptors.md)
+сохраняет local properties/annotations при incoming inline changes; четыре
+native цикла и новый default реквизит CF прошли проверку под прежним pin.
+Новая карта top-level объектов, native CLI lifecycle и координация IDE ещё в работе.
 EF-25 не закрыта.
 EF-15 — `DONE` в [принятой матрице](../research/eska-format/base-update.md).
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
@@ -779,7 +782,7 @@ TUI разделён на обработку клавиш, отрисовку и
 
 | Порядок | Задачи | Результат |
 |---|---|---|
-| 1 | EF-24 (`DONE`) → EF-12 (`DONE`) → EF-23 (`DONE`) → T83/T84 (`DONE`) → EF-14 (`DONE`) → EF-15 (`DONE`) → EF-25 (`NEXT`) → EF-20 | Завершённая структура, миграция, new/init, повторный импорт и сборка CF/CFE/EPF/ERF |
+| 1 | EF-24 (`DONE`) → EF-12 (`DONE`) → EF-23 (`DONE`) → T83/T84 (`DONE`) → EF-14 (`DONE`) → EF-15 (`DONE`) → EF-25 (`IN_PROGRESS`) → EF-20 | Завершённая структура, миграция, new/init, повторный импорт и сборка CF/CFE/EPF/ERF |
 | 2 | Продолжить EF-18 → EF-27 | Общий IDE/batch анализатор и контекстная проверка .sdbl |
 | 3 | EF-11 → EF-21 → EF-16 | Установленный Explorer: дерево, поддержка, подсветка, анализ; приёмка MVP |
 | 4 | T26 → форматирование в EF-22 | fmt для CLI и IDE |

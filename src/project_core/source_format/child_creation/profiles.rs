@@ -7,6 +7,8 @@ use super::super::{
 use super::{identifier, validate_names};
 use crate::project_core::MetadataKind;
 
+pub(super) mod defaults;
+
 /// A closed inline profile avoids guessing generated identities, defaults or opaque inverse rules.
 pub(in crate::project_core::source_format) fn validate_new_node(
     node: &MetadataNode,
@@ -42,13 +44,7 @@ pub(in crate::project_core::source_format) fn validate_new_node(
     };
     let supported = match node.kind {
         MetadataKind::EnumValue | MetadataKind::TabularSection => rest.is_empty(),
-        MetadataKind::Attribute => matches!(
-            rest,
-            [Property::Typed {
-                name: PropertyName::Type,
-                value: PropertyValue::TypeDescription(_),
-            }]
-        ),
+        MetadataKind::Attribute => defaults::attribute(rest)?,
         _ => false,
     };
     if !supported

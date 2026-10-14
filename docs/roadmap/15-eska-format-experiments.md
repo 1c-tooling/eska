@@ -46,7 +46,7 @@ T84 — **DONE** по [версии EPF/ERF и вызовам функций в 
 EF-14 — **DONE** по [CFE](../research/eska-format/extensions.md) и
 [EPF/ERF циклам и выполнению непустого отчёта](../research/eska-format/external-projects.md);
 EF-15 — **DONE** по [обновлению базы и поставщика](../research/eska-format/base-update.md);
-следующий EF-25 — **NEXT**, повторный импорт изменений в существующий проект.
+текущий EF-25 — **IN_PROGRESS**, повторный импорт изменений в существующий проект.
 EF-18 сохраняет `IN_PROGRESS` как незавершённую реализацию; её продолжение
 отложено до завершения блока структуры, результаты не отменяются. Решение
 заменяет прежний ограниченный CF-пилот и указание от 2026-10-10 не менять очередь.
@@ -115,7 +115,7 @@ EF-18 сохраняет `IN_PROGRESS` как незавершённую реа�
 | EF-22 | PLANNED | EF-20; fmt — T26; релизы — T83, T84, T56, T32 | Подключение fmt после MVP; автоматические релизы отдельно |
 | EF-23 | DONE | EF-24 | Хранение запросов СКД/динамических списков в .sdbl и обратная сборка |
 | EF-24 | DONE | EF-10, EF-07 | Завершённая структура исходников и миграция экспериментального профиля |
-| EF-25 | NEXT | EF-12, EF-14, EF-15, EF-23 | Повторный импорт CF/CFE/EPF/ERF в существующий проект |
+| EF-25 | IN_PROGRESS | EF-12, EF-14, EF-15, EF-23 | Повторный импорт CF/CFE/EPF/ERF в существующий проект |
 | EF-26 | DEFERRED | EF-19, EF-23, EF-27 | RLS и обоснованные дополнительные тексты ресурсов |
 | EF-27 | PLANNED | EF-18, EF-23 | Анализ .sdbl в контексте СКД/списка и проверка потребителей |
 
@@ -2819,6 +2819,12 @@ native CLI lifecycle и координация IDE ещё в работе; EF-25
 проверяется, EPF/ERF filenames привязаны к прежней карте, service CDF остаётся
 в ancestry. Четыре настоящих incoming artifacts прошли unpack/apply/build/dump
 под старым CI pin и сохранили independent local BSL; 22 Rust gates прошли.
+[Descriptor merge](../research/eska-format/import-descriptors.md) теперь
+объединяет независимые mapping values одного owner с сохранением CST/comments.
+Поддержанные inline add/delete/rename сохраняют local owner value; полный
+default реквизит CF прошёл native import/build/dump. Коллекции атомарны,
+CI pin прежний, parent freeze действует. Новая top-level карта и остальные
+условия EF-25 ещё в работе; девять новых unit cases и 22 Rust gates прошли.
 
 ## EF-26 RLS и дополнительные тексты ресурсов
 

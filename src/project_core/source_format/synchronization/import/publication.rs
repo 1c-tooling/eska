@@ -77,6 +77,10 @@ impl SourceImportPlan {
                     stored.path = storage::blob_path(entry)?;
                     files::copy_to_cancellable(&self.incoming.root, &target, &stored, cancelled)?;
                 }
+                SelectedFile::Merged { text, .. } => {
+                    files::check_cancelled(cancelled)?;
+                    files::write(&target, text.as_bytes())?;
+                }
             }
         }
         self.verify_cancellable(cancelled)?;

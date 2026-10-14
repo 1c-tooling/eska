@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "stage": "EF-25 descriptor values and inline default attribute",
+  "status": "partial",
+  "platform": "8.3.27.2325",
+  "rust_gates": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.48
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 0.26
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 6.63
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 69.55
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 73.98
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 16.15
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 1.41
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.43
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 2.38
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 2.52
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 24.7
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.12
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.31
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.17
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 1.7
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.68
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 7.31
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.6
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 1.39
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 4.01
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 43.8
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 8.3
+    }
+  ],
+  "root_tests": {
+    "unit_passed": 795,
+    "integration_passed": 600,
+    "ignored_opt_in": 24
+  },
+  "native_comparison": [
+    {
+      "kind": "configuration",
+      "native_files": 13,
+      "bsl_files": 3,
+      "missing_files": [],
+      "bsl_differences": [],
+      "resource_differences": [],
+      "semantic_xml_differences": [],
+      "baseline_unchanged": true,
+      "incoming_comment_edited": true,
+      "expected_dump_info_member_additions": 1
+    },
+    {
+      "kind": "extension",
+      "native_files": 107,
+      "bsl_files": 25,
+      "missing_files": [],
+      "bsl_differences": [],
+      "resource_differences": [],
+      "semantic_xml_differences": [],
+      "baseline_unchanged": true,
+      "incoming_comment_edited": true,
+      "expected_dump_info_member_additions": 0
+    },
+    {
+      "kind": "processing",
+      "native_files": 8,
+      "bsl_files": 3,
+      "missing_files": [],
+      "bsl_differences": [],
+      "resource_differences": [],
+      "semantic_xml_differences": [],
+      "baseline_unchanged": true,
+      "incoming_comment_edited": true,
+      "expected_dump_info_member_additions": 0
+    },
+    {
+      "kind": "report",
+      "native_files": 4,
+      "bsl_files": 1,
+      "missing_files": [],
+      "bsl_differences": [],
+      "resource_differences": [],
+      "semantic_xml_differences": [],
+      "baseline_unchanged": true,
+      "incoming_comment_edited": true,
+      "expected_dump_info_member_additions": 0
+    }
+  ],
+  "bsl_cli": {
+    "version": "0.3.2",
+    "workspace_mcp_available": false,
+    "results": [
+      {
+        "kind": "configuration",
+        "exit_code": 0,
+        "complete": true,
+        "failed_files": 0,
+        "syntax_errors": 0,
+        "other_diagnostics": 2
+      },
+      {
+        "kind": "extension",
+        "exit_code": 0,
+        "complete": true,
+        "failed_files": 0,
+        "syntax_errors": 0,
+        "other_diagnostics": 5
+      },
+      {
+        "kind": "processing",
+        "exit_code": 0,
+        "complete": true,
+        "failed_files": 0,
+        "syntax_errors": 0,
+        "other_diagnostics": 50
+      },
+      {
+        "kind": "report",
+        "exit_code": 0,
+        "complete": true,
+        "failed_files": 0,
+        "syntax_errors": 0,
+        "other_diagnostics": 2
+      }
+    ]
+  },
+  "limitations": [
+    "unchanged top-level reverse map",
+    "atomic collections and BSL/SDBL/binary files",
+    "only exact native default attribute tail",
+    "pinned CDF; one new member is explicit dump bookkeeping delta",
+    "native repeat with fresh service dump not tested here",
+    "no native CLI or IDE refresh",
+    "no client runtime or production performance acceptance"
+  ]
+}

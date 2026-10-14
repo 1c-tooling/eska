@@ -84,6 +84,67 @@ impl Fixture {
     }
 }
 
+/// A merged owner is fully journaled and can recover after both original ancestry stores disappear.
+#[test]
+fn recovers_merged_descriptor_and_repeats_from_raw_incoming_ancestry() {
+    let fixture = Fixture::new(false);
+    let root = fixture.project.root();
+    let owner = fixture.project.source().join("configuration.yaml");
+    let text = fs::read_to_string(&owner).unwrap();
+    fs::write(
+        &owner,
+        format!("# Keep local descriptor annotation\n{text}"),
+    )
+    .unwrap();
+    let plan = fixture.plan();
+    assert!(plan.source_plan().conflicts().is_empty());
+    assert!(
+        plan.source
+            .selected
+            .values()
+            .any(|selected| matches!(selected, super::super::SelectedFile::Merged { .. }))
+    );
+    let reference = plan.reference().clone();
+    let incoming = fixture.incoming.reference().clone();
+    assert_eq!(
+        plan.publish_cancellable(&|| root.join(PROJECT_SOURCE_IMPORT_RECEIPT).exists())
+            .unwrap_err()
+            .code,
+        "source_read_cancelled"
+    );
+    drop(plan);
+    fs::remove_dir_all(&fixture.ancestor.root).unwrap();
+    fs::remove_dir_all(&fixture.incoming.root).unwrap();
+    recover_project_source_import(root, &reference, SourceImportRecovery::Complete, &|| false)
+        .unwrap();
+    let merged = fs::read_to_string(&owner).unwrap();
+    assert!(merged.starts_with("# Keep local descriptor annotation\n"));
+    assert!(merged.contains("1.0.1"));
+    let saved =
+        project_import_ancestor(&fixture.project, &ProjectScope::Standalone, &incoming).unwrap();
+    let restored = fixture.test.0.join("raw-incoming");
+    saved.restore(&restored).unwrap();
+    assert!(
+        !fs::read_to_string(restored.join("configuration.yaml"))
+            .unwrap()
+            .contains("Keep local")
+    );
+    let repeated = prepare_project_source_import(
+        &fixture.project,
+        &ProjectScope::Standalone,
+        &fixture.approved,
+        &saved,
+        &saved,
+    )
+    .unwrap();
+    assert!(repeated.source_plan().conflicts().is_empty());
+    assert_eq!(repeated.publish().unwrap(), LayoutPublication::Unchanged);
+    EskaSource::open(fixture.project.clone(), ProjectScope::Standalone)
+        .unwrap()
+        .prepare(&fixture.approved, &root.join(".eska/generations"), true)
+        .unwrap();
+}
+
 /// Ordinary application advances raw ancestry, retains local edits, settings, support and last build.
 #[test]
 fn publishes_existing_project_and_repeated_import_is_a_noop() {

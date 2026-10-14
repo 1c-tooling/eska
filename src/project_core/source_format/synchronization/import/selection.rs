@@ -117,9 +117,11 @@ pub(super) fn select(
 }
 
 /// Preview and output inventory use the same selected bytes at their authoritative source path.
-fn selected_entry(path: &SourcePath, choice: &SelectedFile) -> FileEntry {
+pub(super) fn selected_entry(path: &SourcePath, choice: &SelectedFile) -> FileEntry {
     let mut entry = match choice {
-        SelectedFile::Working(entry) | SelectedFile::Incoming(entry) => entry.clone(),
+        SelectedFile::Working(entry)
+        | SelectedFile::Incoming(entry)
+        | SelectedFile::Merged { entry, .. } => entry.clone(),
     };
     entry.path = path.clone();
     entry
@@ -209,5 +211,6 @@ fn conflict(
         path: path.clone(),
         uuid,
         exclusion: None,
+        coordinate: Vec::new(),
     }
 }
