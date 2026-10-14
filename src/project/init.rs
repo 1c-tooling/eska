@@ -22,6 +22,9 @@ use super::{
 
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024 * 1024;
 
+mod eska_enrollment;
+pub use eska_enrollment::enroll_initialized_member;
+
 /// Parameters detected without changing any project files.
 #[derive(Debug, Eq, PartialEq)]
 pub struct InitPlan {

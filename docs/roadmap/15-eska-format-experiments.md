@@ -1954,20 +1954,27 @@ Windows, общий new/init/import и устанавливаемый компл
 модуля имеют ноль diagnostics в BSL Analyzer CLI fallback. Shell new/init ещё нужны;
 EF-20 остаётся `IN_PROGRESS`.
 
-[Main new](../research/eska-format/shell-project-creation.md) делегирует empty/native creation
-отдельным tools и проверяет typed receipt перед workflow/Git/workspace.
-Восемь actual shell new/build/unpack на 1С 8.3.27.2325 сохранили source/base/
-history/settings; native input с пустой версией отказан до destination.
+[Direct init](../research/eska-format/project-initialization.md) подключает existing Queries
+sources четырёх типов без конвертации. Expected-byte plan сохраняет исходники
+и separately pinned base/history; новые candidates готовятся в private stage,
+manifest публикуется последним. 14 core и 4 process группы прошли.
 
 [Queries migration](../research/eska-format/query-project-migration.md) копирует map 5/6 и raw
 history при layout no-op. Layout change с существующей историей явно отказан
 до output. All4 history-preserving copies и legacy CF/CFE без истории проходят
 native build/dump; перенос истории между layouts ещё требует отдельного контракта.
 
-[Direct init](../research/eska-format/project-initialization.md) подключает existing Queries
-sources четырёх типов без конвертации. Expected-byte plan сохраняет исходники
-и separately pinned base/history; новые candidates готовятся в private stage,
-manifest публикуется последним. 14 core и 4 process группы прошли.
+[Main new](../research/eska-format/shell-project-creation.md) делегирует empty/native creation
+отдельным tools и проверяет typed receipt перед workflow/Git/workspace.
+Восемь actual shell new/build/unpack на 1С 8.3.27.2325 сохранили source/base/
+history/settings; native input с пустой версией отказан до destination.
+
+[Main init](../research/eska-format/project-initialization.md) выполняет existing Git/workspace
+onboarding после core receipt verification. Все четыре actual native-origin
+проекта сохранили пользовательские bytes, локальный BSL, published history и
+существующий Git; последующая сборка/выгрузка совпала с контролем.
+
+EF-20 остаётся `IN_PROGRESS`: общий import, client coordination и комплект ещё нужны.
 
 Завершить файловый цикл новой структуры до продолжения анализатора. Оболочка
 `eska` делегирует проектные операции `eska-project`, распаковку/сборку —
@@ -1991,8 +1998,8 @@ manifest публикуется последним. 14 core и 4 process гру�
 артефакт, рабочая ИБ и прежний результат сохраняются при ошибке. Pin принятой базы,
 версия платформы и контекст расширения задаются явно. `eska check` подключается
 к тому же интерфейсу после EF-18; готовность полного анализа не блокирует
-проектную валидацию и сборку. Точные новые флаги принимаются здесь, старый эскиз
-`eska new <name> --from <file.cf> --source-format eska` ещё не публичный API.
+проектную валидацию и сборку. Точные реализованные флаги new/init описаны в связанных CLI contracts;
+общий import и устанавливаемый комплект ещё проходят EF-20/EF-25.
 
 **Готово, когда:** для каждого типа пройдены пустое создание, создание из артефакта,
 init, сохранённые правки, повторный импорт и сборка с контрольной выгрузкой.

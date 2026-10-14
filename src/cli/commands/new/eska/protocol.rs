@@ -24,6 +24,7 @@ mod tests;
 pub(in crate::cli) enum Operation {
     New,
     Import,
+    Init,
 }
 
 impl Operation {
@@ -32,6 +33,7 @@ impl Operation {
         match self {
             Self::New => "new",
             Self::Import => "import",
+            Self::Init => "init",
         }
     }
 }

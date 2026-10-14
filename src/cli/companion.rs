@@ -30,6 +30,7 @@ impl Kind {
 pub(super) enum Capability {
     New(ProjectType),
     ImportQueries,
+    Init,
     Unpack,
 }
 
@@ -107,6 +108,14 @@ fn validate(value: &Value, kind: Kind, capability: Capability) -> Result<(), Err
                 && ["configuration", "extension", "processing", "report"]
                     .iter()
                     .all(|kind| contains(&data["import_layout_project_types"], "queries", kind))
+        }
+        (Kind::Project, Capability::Init) => {
+            contains(data, "commands", "init")
+                && data["initialization_source_layout"] == "queries"
+                && data["initialization_converts_source"] == false
+                && ["configuration", "extension", "processing", "report"]
+                    .iter()
+                    .all(|kind| contains(data, "initialization_project_types", kind))
         }
         (Kind::Build, Capability::Unpack) => {
             contains(data, "commands", "unpack")

@@ -10,6 +10,8 @@ eska-project init existing-project --name demo --format json
 eska-project init existing-project --name demo --source authoring \
   --accepted-base-sha256 "$APPROVED_BASE_SHA256" --format json
 eska-project --project-dir existing-project init --name demo
+eska init existing-project --source-format eska --name demo --workflow trunk \
+  --accepted-base-sha256 "$APPROVED_BASE_SHA256" --format json
 ```
 
 ## Источники и целостность
@@ -58,7 +60,21 @@ Direct tool envelope остаётся schema 1, `command = "init"`. Data сод�
 
 Capabilities добавляет `init`, `initialization_project_types`,
 `initialization_source_layout = "queries"`, `initialization_converts_source = false`.
-Existing tool command contracts сохраняются. 14 core tests и 4 process группы
-прошли, включая all4/RU/EN, candidate/evidence ownership, source-relative path
-и exact rollback. Все 22 Rust gates прошли; main onboarding документируется
-в связанной следующей части EF-20.
+Existing tool command contracts сохраняются. 14 core tests, 4 direct CLI и
+8 shell process групп прошли; проверены all4/RU/EN, raw/new candidates, existing
+initial/published history, actual source folders, ownership/failure rollback,
+workspace inheritance и обе схемы версии. Все 22 Rust gates прошли.
+
+Основная `eska init --source-format eska` проверяет совместимый companion и
+initial receipt, затем дополняет settings выбранным workflow и выполняет
+существующее Git/workspace onboarding. Actual source-relative path проверяется
+против core plan; XML остаётся default. Existing Git и user root не становятся
+cleanup target. Ошибка после child publication возвращает retained directory,
+проверенные candidate references и `onboarding_complete = false`.
+
+[Native матрица](project-initialization-results.json) проверяет main init всех
+четырёх типов на 1С 8.3.27.2325: existing Git/user bytes/source/accepted/published
+history сохранились точно, build/unpack совпали с независимым контролем.
+CFE с empty Version отказан до publication; явная working Version в собственной
+копии принята без изменения old base/history. Windows, физический Ctrl+C и
+client execution этой частью не принимаются.

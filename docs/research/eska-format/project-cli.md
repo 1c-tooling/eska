@@ -63,8 +63,8 @@ destination разрешается от `--project-dir`; parent должен с�
 
 [`init`](project-initialization.md) подключает существующие Queries sources
 без переноса/конвертации, сохраняет accepted/history под independently supplied
-pin либо создаёт unapproved candidates для нового проекта. Core не выполняет
-workflow, Git или workspace enrollment.
+pin либо создаёт unapproved candidates для нового проекта. Workflow, Git и
+workspace enrollment выполняет основная оболочка.
 
 `import` читает Designer XML и создаёт исключительно новый каталог:
 `src`, `.eska/accepted`, `.gitattributes`, `.gitignore`, `eska.toml`.

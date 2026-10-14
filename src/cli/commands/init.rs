@@ -6,6 +6,7 @@ use std::{
     process::ExitCode,
 };
 
+use crate::tool_cli::OutputFormat;
 use crate::{
     cli::{
         diagnostics,
@@ -20,7 +21,17 @@ use crate::{
     },
     vcs::workflow::WorkflowPreset,
 };
-use clap::{ArgAction, Args};
+use clap::{ArgAction, Args, ValueEnum};
+
+mod eska;
+
+/// Designer XML attachment retains its default path; Queries attachment explicitly selects ESKA.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, ValueEnum)]
+enum InitSourceFormat {
+    #[default]
+    DesignerXml,
+    Eska,
+}
 
 use super::artifact::{self, Failure, PlatformArgs};
 
@@ -36,6 +47,12 @@ pub(in crate::cli) struct InitArgs {
     workflow: Option<String>,
     #[arg(long)]
     no_vcs: bool,
+    #[arg(long, value_enum, default_value_t = InitSourceFormat::DesignerXml)]
+    source_format: InitSourceFormat,
+    #[arg(long)]
+    accepted_base_sha256: Option<String>,
+    #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
+    format: OutputFormat,
     #[command(flatten)]
     platform: PlatformArgs,
     #[arg(short, long, action = ArgAction::Help)]
@@ -44,6 +61,19 @@ pub(in crate::cli) struct InitArgs {
 
 impl InitArgs {
     pub(super) fn run(&self, base: &Path, localizer: &Localizer) -> ExitCode {
+        if self.source_format == InitSourceFormat::Eska {
+            return eska::run(self, base, localizer);
+        }
+        if self.accepted_base_sha256.is_some() || matches!(self.format, OutputFormat::Json) {
+            return eska::report_failure(
+                self,
+                &Failure::new(
+                    "init-eska-source-options-incompatible",
+                    localizer.text("init-eska-source-options-incompatible"),
+                ),
+                localizer,
+            );
+        }
         if self
             .workflow
             .as_deref()
@@ -317,5 +347,18 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
                 .value_name(localizer.text("new-workflow-value"))
         })
         .mut_arg("no_vcs", |arg| arg.help(localizer.text("new-no-vcs-help")))
+        .mut_arg("source_format", |arg| {
+            arg.help(localizer.text("init-source-format-help"))
+                .hide_default_value(true)
+                .hide_possible_values(true)
+        })
+        .mut_arg("accepted_base_sha256", |arg| {
+            arg.help(localizer.text("init-accepted-base-help"))
+        })
+        .mut_arg("format", |arg| {
+            arg.help(localizer.text("init-format-help"))
+                .hide_default_value(true)
+                .hide_possible_values(true)
+        })
         .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
 }
