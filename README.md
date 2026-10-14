@@ -471,6 +471,13 @@ eska finish
 
 ## Сборка
 
+Для одного ESKA проекта/member `eska build` использует совместимый отдельный
+[`eska-build`](docs/research/eska-format/shell-build-delegation.md). Передайте
+независимый `--accepted-base-sha256`; `--generations` и `--allow-exclusions`
+соответствуют прямому инструменту. Aggregate и `--dry-run` этого формата пока
+отклоняются. Companion проверяется по exact version/protocol; потоки и exit code
+передаются напрямую. Designer XML сохраняет прежний маршрут и JSON.
+
 ### Настроить платформу
 
 Укажите установленную версию в `eska.toml`:
@@ -964,7 +971,8 @@ pin остаются доступны, новый pin передаётся prepa
 полный native subtree, права каждой колонки и оставшиеся table/column/service
 зависимости. Остальные structural/compound profiles EF-24 ещё в работе.
 Инструменты собираются отдельно с features `project-cli`/`build-cli`;
-комплектная поставка и делегирование оболочки ещё не подключены.
+комплектная поставка ещё не подключена. Одиночный `eska build` уже делегирует
+ESKA сборку совместимому `eska-build`; остальные workflow ещё в работе.
 Общая [библиотека анализа](docs/research/eska-format/shared-session.md) уже
 связывает сохранённый YAML и черновики с каноническими входами ядра BSL.
 В той же сессии доступны текущие метаданные для дерева/свойств и

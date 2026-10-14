@@ -11,6 +11,8 @@ use serde_json::Value;
 
 use crate::support::TestDir;
 
+mod delegation;
+
 #[path = "../support/ibcmd.rs"]
 mod ibcmd_fixture;
 

@@ -40,19 +40,20 @@ fn eska(root: &Path, locale: &str, args: &[&str]) -> std::process::Output {
 }
 
 #[test]
-/// The old build route fails before platform discovery; JSON remains identical in both locales.
-fn native_build_cli_refuses_eska_before_platform_discovery() {
+/// Unsupported ESKA preview fails before tool discovery; JSON remains identical in both locales.
+fn native_build_cli_refuses_eska_preview_before_platform_discovery() {
     let fixture = project();
     let mut documents = Vec::new();
     for (locale, message) in [
-        ("ru", "Эта XML-операция недоступна для исходников ESKA."),
-        ("en", "This XML operation is unavailable for ESKA sources."),
+        ("ru", "Предпросмотр сборки ESKA недоступен."),
+        ("en", "ESKA build preview is unavailable."),
     ] {
         let output = eska(
             &fixture.0,
             locale,
             &[
                 "build",
+                "--dry-run",
                 "--format",
                 "json",
                 "--ibcmd",
@@ -63,7 +64,7 @@ fn native_build_cli_refuses_eska_before_platform_discovery() {
         assert!(String::from_utf8_lossy(&output.stderr).contains(message));
         let document: Value = serde_json::from_slice(&output.stdout).expect("JSON failure");
         assert_eq!(document["schema_version"], 1);
-        assert_eq!(document["error"]["code"], "source-preparation-required");
+        assert_eq!(document["error"]["code"], "build-eska-dry-run-unsupported");
         documents.push(document);
     }
     assert_eq!(documents[0], documents[1]);

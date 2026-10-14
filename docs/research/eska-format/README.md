@@ -30,6 +30,9 @@ Old layouts/defaults сохранены; общий new/init и оболочка
 [Initial ancestor](initial-import-ancestor.md) Queries creation хранится отдельно
 от поддержки; независимый digest нужен первому journal, а Git transport сохраняет
 raw initial/history/state bytes для standalone/member.
+[Делегирование `eska build`](shell-build-delegation.md) подключает одиночную
+сборку ESKA к совместимому companion. Native all4 build/dump и первый import
+с initial ancestor прошли, сохранив local BSL/pin/settings и прежний артефакт.
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
 T84 — [DONE по версиям EPF/ERF](external-version.md): экспортная `Версия()`,
 CLI/миграция и платформенная приёмка двух схем; [синтаксический контракт](external-version-syntax.md).

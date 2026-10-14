@@ -94,6 +94,7 @@ Linux native matrix использует четыре полных native input.
 [Обезличенные результаты](query-project-creation-results.json).
 
 Создание минимального собираемого проекта, общий `new/init`, выбор layout при
-миграции и делегирование оболочки остаются следующими частями EF-20.
+миграции остаются следующими частями EF-20. Одиночный
+[`eska build`](shell-build-delegation.md) уже подключён к companion.
 Платформенные saved-edit/runtime/client сценарии этой частью не принимаются.
 EF-20 и MVP ещё не завершены.

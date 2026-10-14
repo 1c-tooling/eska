@@ -23,6 +23,7 @@ use crate::{
     },
 };
 
+mod delegation;
 mod errors;
 mod json;
 mod output;
@@ -73,6 +74,9 @@ pub(in crate::cli) struct BuildArgs {
     workspace: bool,
 
     #[command(flatten)]
+    source: BuildSourceArgs,
+
+    #[command(flatten)]
     mode: BuildModeArgs,
 
     #[arg(short, long, action = clap::ArgAction::Help)]
@@ -86,6 +90,18 @@ struct BuildModeArgs {
 
     #[arg(long, conflicts_with = "dry_run")]
     manifest: bool,
+}
+
+#[derive(Debug, Args)]
+struct BuildSourceArgs {
+    #[arg(long)]
+    accepted_base_sha256: Option<String>,
+
+    #[arg(long)]
+    generations: Option<PathBuf>,
+
+    #[arg(long)]
+    allow_exclusions: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, ValueEnum)]
@@ -102,21 +118,18 @@ struct PreparedBuild<'a> {
 }
 
 impl BuildArgs {
+    /// Source authority options are meaningful only for the delegated ESKA build route.
+    const fn has_source_options(&self) -> bool {
+        self.source.accepted_base_sha256.is_some()
+            || self.source.generations.is_some()
+            || self.source.allow_exclusions
+    }
+
     /// Discover, preflight and sequentially build the selected projects.
     pub(super) fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
-        let context = match discovery::discover_context(project_dir) {
+        let context = match self.discover_context(project_dir, localizer) {
             Ok(context) => context,
-            Err(error) => {
-                let detail = diagnostics::present_context_error(&error, localizer);
-                return self.fail(
-                    "project-discovery",
-                    Some("discovery"),
-                    None,
-                    &detail,
-                    localizer,
-                    ExitCode::FAILURE,
-                );
-            }
+            Err(exit) => return exit,
         };
         let selection = match select_projects(
             &context,
@@ -127,6 +140,9 @@ impl BuildArgs {
             Ok(selection) => selection,
             Err(error) => return self.fail_selection(&error, localizer),
         };
+        if let Some(exit) = delegation::dispatch(self, &context, &selection, localizer) {
+            return exit;
+        }
         if self.output.is_some() && selection.projects().len() != 1 {
             return self.fail(
                 "output-requires-single-project",
@@ -204,6 +220,24 @@ impl BuildArgs {
                 ExitCode::FAILURE,
             )
         }
+    }
+
+    /// Present the existing discovery failure before any selected build path is entered.
+    fn discover_context(
+        &self,
+        project_dir: &Path,
+        localizer: &Localizer,
+    ) -> Result<DiscoveryContext, ExitCode> {
+        discovery::discover_context(project_dir).map_err(|error| {
+            self.fail(
+                "project-discovery",
+                Some("discovery"),
+                None,
+                &diagnostics::present_context_error(&error, localizer),
+                localizer,
+                ExitCode::FAILURE,
+            )
+        })
     }
 
     /// Resolve the optional base CF once so every selected plan uses the same host path.
@@ -776,6 +810,17 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         })
         .mut_arg("manifest", |arg| {
             arg.help(localizer.text("build-manifest-help"))
+        })
+        .mut_arg("accepted_base_sha256", |arg| {
+            arg.help(localizer.text("build-accepted-base-help"))
+                .value_name("SHA256")
+        })
+        .mut_arg("generations", |arg| {
+            arg.help(localizer.text("build-generations-help"))
+                .value_name(localizer.text("build-output-value"))
+        })
+        .mut_arg("allow_exclusions", |arg| {
+            arg.help(localizer.text("build-allow-exclusions-help"))
         })
         .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
 }

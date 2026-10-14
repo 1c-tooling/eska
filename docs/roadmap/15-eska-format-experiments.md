@@ -1918,8 +1918,8 @@ publication. Family/Separated/Readable/defaults сохранены; capability m
 показывает ограничения layouts. Core/process matrix проверяет all4, RU/EN,
 human/JSON/no-TTY, saved edits/freeze/exclusions и failure cleanup. Все 22 Rust
 gates прошли; четыре проекта прошли независимые native build/dump на 1С
-8.3.27.2325, сохранив XML/BSL/opaque bytes и прежние settings/pin. Общий new/init,
-и делегирование оболочки ещё нужны; EF-20 не закрыта.
+8.3.27.2325, сохранив XML/BSL/opaque bytes и прежние settings/pin.
+Общий new/init ещё нужен; EF-20 не закрыта.
 
 [Initial ancestor](../research/eska-format/initial-import-ancestor.md) Queries
 creation сохраняется до manifest в отдельном raw store/state v2. Подтверждение
@@ -1928,6 +1928,15 @@ v1, rollback восстанавливает initial state. Old creation APIs/lay
 v1 сохранены. All4 core/process cases и настоящий Git clone standalone/member
 проверяют exact source/accepted/raw history bytes под scoped transport rules.
 Общие new/init/migration ещё нужны; EF-20 остаётся `IN_PROGRESS`.
+
+[Одиночный ESKA build](../research/eska-format/shell-build-delegation.md)
+делегируется совместимому `eska-build`: exact version/protocol probe 5 s/64 KiB,
+shared plan, selected member/inheritance, OS arguments, raw stdio и numeric exit
+сохранены. XML маршрут/JSON прежние; ESKA aggregate и dry-run явно отказаны.
+12 новых process cases, старые build/format cases и 22 Rust gates прошли.
+Native all4 facade build/dump с local BSL и первый import с initial ancestor
+сохранили pin/settings/accepted bytes и прежние артефакты. Physical parent Ctrl+C,
+Windows, общий new/init/import и устанавливаемый комплект ещё не приняты.
 
 Завершить файловый цикл новой структуры до продолжения анализатора. Оболочка
 `eska` делегирует проектные операции `eska-project`, распаковку/сборку —

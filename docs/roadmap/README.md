@@ -58,12 +58,16 @@ EF-15 — `DONE` в [принятой матрице](../research/eska-format/ba
 В параллельной EF-20 [Queries creation](../research/eska-format/query-project-creation.md)
 подключает полные проекты четырёх типов к offline `eska-project import` через
 явный layout, сохраняя прежний default и независимый pin. Четыре независимых
-native build/dump на 1С 8.3.27.2325 и 22 Rust gates прошли. Общий new/init,
-и делегирование оболочки ещё в работе.
+native build/dump на 1С 8.3.27.2325 и 22 Rust gates прошли.
+Общий new/init ещё в работе.
 [Initial ancestor](../research/eska-format/initial-import-ancestor.md) теперь
 сохраняется отдельно от support pin до manifest; first no-op проходит journal.
 Raw initial/history/state переносятся побайтно через scoped attributes, проверены
 на настоящем Git clone standalone/member. Общие new/init/migration ещё нужны.
+[Одиночный ESKA build](../research/eska-format/shell-build-delegation.md) уже
+делегируется совместимому companion с bounded probe и прямыми streams/exit.
+All4 native build/dump/first-import сохранили local BSL, pin/settings и прежний
+артефакт; 12 новых process cases и 22 Rust gates прошли. Общий workflow ещё нужен.
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.
 Добавлен standalone `eska-project update-base` с preview/write, независимыми
