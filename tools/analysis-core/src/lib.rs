@@ -73,4 +73,4 @@ pub use resources::ResourceSummary;
 pub use session::metadata_resources::{
     MetadataResourceInput, MetadataResourceKind, MetadataResourceState,
 };
-pub use session::{AnalysisSession, SessionError, SessionSummary};
+pub use session::{AnalysisScope, AnalysisSession, SessionError, SessionSummary};

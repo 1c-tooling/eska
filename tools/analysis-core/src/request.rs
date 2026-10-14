@@ -27,6 +27,7 @@ impl SessionRevision {
 /// Rejected requests leave current bytes, input origins and kernel state intact.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SessionRequestError {
+    ContextRequired,
     StaleRevision {
         expected: SessionRevision,
         actual: SessionRevision,

@@ -23,6 +23,7 @@ mod hover_queries;
 mod http_service_queries;
 mod integration_service_queries;
 mod kernel_memory_queries;
+mod local_syntax;
 #[path = "support/manager_project.rs"]
 mod manager_project;
 mod metadata_diagnostic_queries;
@@ -63,7 +64,7 @@ fn extension_initialize_refuses_an_unadmitted_base_context_in_both_locales() {
     let (_directory, root) = support::extension_project("// Complete module.\n");
     let mut errors = Vec::new();
     for lang in ["ru-RU", "en-US"] {
-        let (output, responses) = session(&root, lang, &[], &[initialize()]);
+        let (output, responses) = session(&root, lang, &["--profile", "semantic"], &[initialize()]);
         assert!(!output.status.success());
         assert_eq!(responses.len(), 1);
         let response = &responses[0];

@@ -296,6 +296,11 @@ pub fn current(session: &AnalysisSession, path: &SourcePath) -> Value {
 /// Protocol rejection never hides a stale version or reclassifies it as accepted empty input.
 pub fn request_error(error: &SessionRequestError) -> Value {
     let (code, kind, details) = match error {
+        SessionRequestError::ContextRequired => (
+            -32000,
+            "analysis_context_required",
+            json!({"scope":"local_syntax","required_scope":"canonical_configuration"}),
+        ),
         SessionRequestError::StaleDocumentVersion { current, received }
         | SessionRequestError::Metadata(UpdateError::StaleDocumentVersion { current, received }) => {
             (

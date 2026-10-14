@@ -27,6 +27,8 @@ pub const METHODS: [&str; 9] = [
     "textDocument/rename",
 ];
 
+pub const LOCAL_METHODS: [&str; 2] = ["textDocument/diagnostic", "textDocument/documentSymbol"];
+
 #[derive(Clone, Copy)]
 pub enum Method {
     Diagnostic,
@@ -41,6 +43,10 @@ pub enum Method {
 }
 
 impl Method {
+    /// Only parse diagnostics and module structure are independent of canonical metadata admission.
+    pub const fn is_local_syntax(self) -> bool {
+        matches!(self, Self::Diagnostic | Self::DocumentSymbol)
+    }
     /// Parse supported language queries independently of property-plan requests.
     pub fn parse(name: &str) -> Option<Self> {
         match name {

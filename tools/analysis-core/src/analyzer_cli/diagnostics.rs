@@ -192,14 +192,21 @@ fn analyze(
             reason,
         ));
     }
-    let result = session
-        .module_diagnostics(
+    let diagnostics = match options.profile {
+        BatchProfile::Syntax => session.module_syntax_diagnostics(
             path,
             session.revision(),
             config,
             &options.cancellation.query,
-        )
-        .map_err(|error| language::query_error(session, id, &error))?;
+        ),
+        BatchProfile::Semantic => session.module_diagnostics(
+            path,
+            session.revision(),
+            config,
+            &options.cancellation.query,
+        ),
+    };
+    let result = diagnostics.map_err(|error| language::query_error(session, id, &error))?;
     let items = session
         .with_module_text(
             path,
@@ -226,6 +233,7 @@ fn analyze(
         "resultId":format!("{id}:{}:{}:{}",result.revision,settings.sha256,result.source_sha256),
         "items":items,"eska":{"snapshot":dto::snapshot(session,id),"profile":options.profile,
         "source":result.source,"source_sha256":result.source_sha256,"config_sha256":settings.sha256,
+        "analysis_scope":session.scope(),
         "coverage":coverage,"resources":session.resources()}}))
 }
 

@@ -7,13 +7,13 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::super::{
-    completion, diagnostics, document_symbols, documents, dto, edit_authority, hover,
+    args::Cli, completion, diagnostics, document_symbols, documents, dto, edit_authority, hover,
     kernel_memory, language, metadata_locations, project_changes, property_edits, protocol,
     references, rename, request_control, signature_help, stream, watched_files,
     watcher_registration,
 };
 use super::{Phase, Server};
-use crate::{AnalysisSession, analysis_settings, batch::BatchProfile};
+use crate::{AnalysisScope, AnalysisSession, analysis_settings, batch::BatchProfile};
 
 impl Server<'_> {
     /// Reject an incompatible ESKA protocol before project discovery or source reads.
@@ -33,13 +33,9 @@ impl Server<'_> {
         let project_inputs = project_changes::Inputs::selected(&source, workspace.as_deref());
         let watcher =
             watcher_registration::Registration::selected(&project_inputs, source.reader(), params)?;
-        let edit_plans = edit_authority::Authority::selected(
-            &source,
-            self.cli.accepted_base_sha256.as_deref(),
-            params,
-        )?;
+        let (scope, edit_plans) = selected_admission(&source, self.cli, params)?;
         let options = profile.session_options(self.cli.max_retained_source_bytes);
-        let session = AnalysisSession::from_reader(source.into_reader(), options)
+        let session = AnalysisSession::from_reader_with_scope(source.into_reader(), options, scope)
             .map_err(|error| session_open_error(&error))?;
         project_inputs.require_idle()?;
         let session_id = bsl_metadata::Uuid::new_v4().to_string();
@@ -103,6 +99,7 @@ impl Server<'_> {
                 "result":if hierarchical_symbols { "hierarchical" } else { "flat" }});
             result["capabilities"]["experimental"]["eska"]["definition"] = json!({"scope":"ready-bsl-and-canonical-metadata","metadataTargets":"typed-objects-and-members","incompleteResults":"error"});
         }
+        advertise_scope(&mut result, scope);
         self.completion = completion::Capabilities::negotiate(params);
         self.hierarchical_symbols = hierarchical_symbols;
         self.hover_format = hover_format;
@@ -143,6 +140,67 @@ impl Server<'_> {
             ));
         }
         Ok(())
+    }
+}
+
+/// Select one source scope and its edit authority together, preserving canonical pin checks.
+fn selected_admission(
+    source: &EskaSource,
+    cli: &Cli,
+    params: &Value,
+) -> Result<(AnalysisScope, Option<edit_authority::Authority>), Value> {
+    let profile: BatchProfile = cli.profile.into();
+    let scope = profile
+        .session_scope(source.reader())
+        .map_err(|error| session_open_error(&error))?;
+    let authority = if scope == AnalysisScope::CanonicalConfiguration {
+        edit_authority::Authority::selected(source, cli.accepted_base_sha256.as_deref(), params)?
+    } else {
+        None
+    };
+    Ok((scope, authority))
+}
+
+/// Local syntax advertises only operations that cannot infer unavailable metadata or produce edit plans.
+fn advertise_scope(result: &mut Value, scope: AnalysisScope) {
+    result["capabilities"]["experimental"]["eska"]["analysisScope"] = json!(scope);
+    if scope != AnalysisScope::LocalSyntax {
+        return;
+    }
+    if let Some(capabilities) = result["capabilities"].as_object_mut() {
+        for name in [
+            "completionProvider",
+            "definitionProvider",
+            "hoverProvider",
+            "referencesProvider",
+            "signatureHelpProvider",
+            "renameProvider",
+        ] {
+            capabilities.remove(name);
+        }
+    }
+    let eska = &mut result["capabilities"]["experimental"]["eska"];
+    eska["languageMethods"] = json!(language::LOCAL_METHODS);
+    eska["cancellableMethods"] = json!(language::LOCAL_METHODS);
+    for name in [
+        "nestedFormModels",
+        "targetedCompletionMetadata",
+        "managerModuleCompletion",
+        "commonModuleCompletion",
+    ] {
+        eska[name] = json!(false);
+    }
+    if let Some(eska) = eska.as_object_mut() {
+        for name in [
+            "references",
+            "signatureHelp",
+            "hover",
+            "definition",
+            "localRename",
+            "propertyEditPlans",
+        ] {
+            eska.remove(name);
+        }
     }
 }
 

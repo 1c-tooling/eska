@@ -1,0 +1,278 @@
+{
+  "runtime": [
+    {
+      "kind": "configuration",
+      "locale": "ru-RU",
+      "analysis_scope": "canonical_configuration",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": false,
+      "settings_preserved": true
+    },
+    {
+      "kind": "configuration",
+      "locale": "en-US",
+      "analysis_scope": "canonical_configuration",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": false,
+      "settings_preserved": true
+    },
+    {
+      "kind": "extension",
+      "locale": "ru-RU",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    },
+    {
+      "kind": "extension",
+      "locale": "en-US",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    },
+    {
+      "kind": "processing",
+      "locale": "ru-RU",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    },
+    {
+      "kind": "processing",
+      "locale": "en-US",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    },
+    {
+      "kind": "report",
+      "locale": "ru-RU",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    },
+    {
+      "kind": "report",
+      "locale": "en-US",
+      "analysis_scope": "local_syntax",
+      "actual_native_origin_project": true,
+      "syntax_complete": true,
+      "metadata_models_complete": false,
+      "dirty_text_stays_caller_owned": true,
+      "overlay_repair_and_symbols": true,
+      "saved_change_invalidation": true,
+      "checker_lsp_parse_codes_and_bytes_equal": true,
+      "semantic_refusal_without_context": true,
+      "settings_preserved": true
+    }
+  ],
+  "independent_analyzer": [
+    {
+      "kind": "configuration",
+      "native_analyzer_version": "0.3.2",
+      "complete": true,
+      "failed_files": 0,
+      "total_files": 4,
+      "parse_errors": 1,
+      "parse_codes_and_byte_ranges_equal": true,
+      "other_diagnostics": 3,
+      "native_metadata_context": "not loaded from ESKA YAML; syntax comparison only",
+      "platform_help": "built-in interface facts fallback"
+    },
+    {
+      "kind": "extension",
+      "native_analyzer_version": "0.3.2",
+      "complete": true,
+      "failed_files": 0,
+      "total_files": 26,
+      "parse_errors": 1,
+      "parse_codes_and_byte_ranges_equal": true,
+      "other_diagnostics": 1137,
+      "native_metadata_context": "not loaded from ESKA YAML; syntax comparison only",
+      "platform_help": "built-in interface facts fallback"
+    },
+    {
+      "kind": "processing",
+      "native_analyzer_version": "0.3.2",
+      "complete": true,
+      "failed_files": 0,
+      "total_files": 4,
+      "parse_errors": 1,
+      "parse_codes_and_byte_ranges_equal": true,
+      "other_diagnostics": 111,
+      "native_metadata_context": "not loaded from ESKA YAML; syntax comparison only",
+      "platform_help": "built-in interface facts fallback"
+    },
+    {
+      "kind": "report",
+      "native_analyzer_version": "0.3.2",
+      "complete": true,
+      "failed_files": 0,
+      "total_files": 1,
+      "parse_errors": 1,
+      "parse_codes_and_byte_ranges_equal": true,
+      "other_diagnostics": 2,
+      "native_metadata_context": "not loaded from ESKA YAML; syntax comparison only",
+      "platform_help": "built-in interface facts fallback"
+    }
+  ],
+  "rust_checks": [
+    {
+      "check": "fmt",
+      "exit_code": 0,
+      "seconds": 1.92
+    },
+    {
+      "check": "check",
+      "exit_code": 0,
+      "seconds": 0.27
+    },
+    {
+      "check": "clippy",
+      "exit_code": 0,
+      "seconds": 2.09
+    },
+    {
+      "check": "test",
+      "exit_code": 0,
+      "seconds": 47.59
+    },
+    {
+      "check": "test-all",
+      "exit_code": 0,
+      "seconds": 98.5
+    },
+    {
+      "check": "doc",
+      "exit_code": 0,
+      "seconds": 17.64
+    },
+    {
+      "check": "check-minimal",
+      "exit_code": 0,
+      "seconds": 3.86
+    },
+    {
+      "check": "sdk-fmt",
+      "exit_code": 0,
+      "seconds": 0.4
+    },
+    {
+      "check": "sdk-check",
+      "exit_code": 0,
+      "seconds": 5.56
+    },
+    {
+      "check": "sdk-clippy",
+      "exit_code": 0,
+      "seconds": 4.75
+    },
+    {
+      "check": "sdk-test",
+      "exit_code": 0,
+      "seconds": 33.4
+    },
+    {
+      "check": "sdk-doc",
+      "exit_code": 0,
+      "seconds": 5.39
+    },
+    {
+      "check": "bins",
+      "exit_code": 0,
+      "seconds": 0.38
+    },
+    {
+      "check": "adapter-fmt",
+      "exit_code": 0,
+      "seconds": 0.15
+    },
+    {
+      "check": "adapter-check",
+      "exit_code": 0,
+      "seconds": 4.05
+    },
+    {
+      "check": "adapter-clippy",
+      "exit_code": 0,
+      "seconds": 0.76
+    },
+    {
+      "check": "adapter-test",
+      "exit_code": 0,
+      "seconds": 12.22
+    },
+    {
+      "check": "adapter-doc",
+      "exit_code": 0,
+      "seconds": 0.62
+    },
+    {
+      "check": "build-core-check",
+      "exit_code": 0,
+      "seconds": 4.08
+    },
+    {
+      "check": "build-core-clippy",
+      "exit_code": 0,
+      "seconds": 11.8
+    },
+    {
+      "check": "build-cli-test",
+      "exit_code": 0,
+      "seconds": 51.0
+    },
+    {
+      "check": "build-cli-doc",
+      "exit_code": 0,
+      "seconds": 9.14
+    }
+  ]
+}

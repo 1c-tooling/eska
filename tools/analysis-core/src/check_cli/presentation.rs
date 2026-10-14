@@ -118,6 +118,10 @@ fn human(report: &BatchReport, localizer: &Localizer) -> String {
         ],
     );
     text.push('\n');
+    if report.analysis_scope == crate::AnalysisScope::LocalSyntax {
+        text.push_str(&localizer.text("tool-check-local-syntax-scope"));
+        text.push('\n');
+    }
     let quota_exceeded = report.metadata_issues.iter().any(|issue| {
         issue.code == "analysis_source_budget_exceeded"
             || issue

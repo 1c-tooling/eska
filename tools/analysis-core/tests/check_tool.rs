@@ -5,6 +5,8 @@ mod check_metadata;
 mod check_predefined;
 mod check_roles;
 mod check_semantic;
+#[path = "local_syntax/checker.rs"]
+mod local_syntax;
 mod support;
 
 use std::{
@@ -24,7 +26,7 @@ fn extension_analysis_refuses_an_unadmitted_base_context_in_both_locales() {
     let (_directory, root) = support::extension_project(GOOD);
     let mut errors = Vec::new();
     for lang in ["ru-RU", "en-US"] {
-        let output = run(&root, lang, &["--profile", "syntax", "--format", "json"]);
+        let output = run(&root, lang, &["--profile", "semantic", "--format", "json"]);
         assert_eq!(output.status.code(), Some(3));
         assert!(!output.stderr.is_empty());
         let value: Value = serde_json::from_slice(&output.stdout).unwrap();

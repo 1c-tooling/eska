@@ -110,9 +110,11 @@ fn check(
         },
     )?;
     let manifest_sha256 = reader.configuration().manifest_sha256.clone();
-    let mut session = AnalysisSession::from_reader(
+    let scope = profile.session_scope(&reader).map_err(BatchError::Open)?;
+    let mut session = AnalysisSession::from_reader_with_scope(
         reader,
         profile.session_options(options.max_retained_source_bytes),
+        scope,
     )
     .map_err(BatchError::Open)?;
     let request = InputRequest {
@@ -216,13 +218,22 @@ fn check_module(
         .ok_or_else(|| BatchError::Request(SessionRequestError::UnknownModule(path.clone())))?;
     let mut file = BatchFile::unavailable(path, input);
     if matches!(input.state, ModuleState::Ready { .. }) {
-        let result =
-            match session.module_diagnostics(path, session.revision(), config, &cancellation.query)
-            {
-                Ok(result) => result,
-                Err(QueryError::Cancelled) => return Ok(None),
-                Err(error) => return Err(BatchError::Query(error)),
-            };
+        let diagnostics = match profile {
+            BatchProfile::Syntax => session.module_syntax_diagnostics(
+                path,
+                session.revision(),
+                config,
+                &cancellation.query,
+            ),
+            BatchProfile::Semantic => {
+                session.module_diagnostics(path, session.revision(), config, &cancellation.query)
+            }
+        };
+        let result = match diagnostics {
+            Ok(result) => result,
+            Err(QueryError::Cancelled) => return Ok(None),
+            Err(error) => return Err(BatchError::Query(error)),
+        };
         let entry = session
             .modules
             .get(path)

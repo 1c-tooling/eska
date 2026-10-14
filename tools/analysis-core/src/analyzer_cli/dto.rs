@@ -88,6 +88,9 @@ pub fn state(view: &MetadataView) -> Value {
 /// Leaf models expose their own failure while the enclosing main object can remain ready.
 fn model_issue(state: &ModelState, input_ready: bool) -> Option<Value> {
     match state {
+        ModelState::SourceOnly => {
+            Some(json!({"code":"analysis_context_required","scope":"local_syntax"}))
+        }
         ModelState::Invalid { error, .. } => Some(
             json!({"code":"analysis_adapter_invalid", "range":error.range,
                 "issue":crate::tool_metadata::adapter_cause(&error.issue)}),
@@ -108,6 +111,7 @@ const fn model_kind(state: &ModelState) -> &'static str {
         ModelState::Pending => "pending",
         ModelState::Ready(_) => "ready",
         ModelState::StructureOnly => "structure_only",
+        ModelState::SourceOnly => "source_only",
         ModelState::Unsupported(_) => "unsupported",
         ModelState::Unavailable(_) => "unavailable",
         ModelState::Invalid { .. } => "invalid",

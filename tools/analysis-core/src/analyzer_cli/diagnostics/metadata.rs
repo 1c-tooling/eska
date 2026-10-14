@@ -56,7 +56,7 @@ pub(super) fn pull(
     let summary = session.summary();
     Ok(
         json!({"kind":"full","resultId":format!("{id}:{}:metadata:{}",report.revision,report.source_sha256),
-        "items":items,"eska":{"snapshot":dto::snapshot(session,id),"profile":"metadata",
+        "items":items,"eska":{"snapshot":dto::snapshot(session,id),"profile":"metadata","analysis_scope":session.scope(),
         "source":report.source,"source_sha256":report.source_sha256,"origin":dto::origin(report.origin),"config_sha256":null,
         "coverage":{"metadata_document_complete":report.input_complete,"metadata_model_complete":report.main_model_complete,
             "metadata_descriptors_complete":report.descriptor_models_complete,"metadata_inputs_complete":summary.inputs.metadata_input_complete,

@@ -5,6 +5,12 @@
 проектная библиотека не зависит от анализатора. Платформа, Git, IDE-сервер и
 XML-экспорт не участвуют в чтении.
 
+[LocalSyntax CFE/EPF/ERF](../../docs/research/eska-format/analyzer-local-syntax.md)
+добавляет parse diagnostics и document symbols в общую сессию без canonical
+Configuration. Scope явно сообщается, model state — SourceOnly, semantic requests
+отказывают до lazy reads. CF сохраняет прежний canonical route; complete syntax
+не подменяет complete semantic model и LocalSyntax batch остаётся exit 2.
+
 Состав берётся из проверенного manifest и configuration snapshot. При открытии
 все остальные YAML остаются pending, а их идентичности и slot стабильны.
 Сохранённые файлы и черновики используют одни преобразователи. Неверный текущий

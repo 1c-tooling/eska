@@ -86,6 +86,7 @@ pub fn pull(
             protocol::error_value(-32603, "path_encoding_unsupported", Value::Null)
         })?;
         let context = json!({"snapshot":dto::snapshot(session,options.session_id),
+            "analysis_scope":session.scope(),
             "source":result.source,"source_sha256":result.source_sha256,"profile":"structure",
             "coverage":{"metadata_models_complete":result.metadata_models_complete,
                 "module_inputs_complete":result.module_inputs_complete,"semantic_complete":false},

@@ -1885,6 +1885,11 @@ passed/ignored. Покрытие строк root — 86,08%, SDK — 93,34%; о�
 и непокрытые сценарии перечислены в отчёте. EF-18 остаётся `IN_PROGRESS`;
 очередность и следующие этапы не менялись.
 
+[Синтаксис всех четырёх типов](../research/eska-format/analyzer-local-syntax.md) работает
+через общий IDE/batch host. LocalSyntax не объявляет canonical semantic context;
+восемь framed runtime cases и четыре независимых BSL Analyzer сравнения
+подтвердили ParseError и точные byte ranges. Полная семантика и EF-27 ещё нужны.
+
 ## EF-19 Самостоятельный инструмент VCS
 
 После MVP EF-16 и форматтера T26. Не является зависимостью EF-20/EF-21;

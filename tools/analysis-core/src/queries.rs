@@ -18,8 +18,8 @@ use eska::project_core::source_format::SourcePath;
 use salsa::Database;
 
 use crate::{
-    AnalysisSession, CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, Locale,
-    ModuleState, QueryCancellation, SessionRequestError, SessionRevision,
+    AnalysisScope, AnalysisSession, CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig,
+    Locale, ModuleState, QueryCancellation, SessionRequestError, SessionRevision,
 };
 
 /// A result belongs to one verbatim source snapshot and one complete session generation.
@@ -90,7 +90,7 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
         project: impl FnOnce(&str) -> T,
     ) -> Result<ModuleResult<T>, QueryError> {
-        self.query_module(path, expected, cancellation, |analysis, file| {
+        self.query_local_module(path, expected, cancellation, |analysis, file| {
             analysis
                 .database()
                 .try_file_text_input(file)
@@ -113,7 +113,35 @@ impl AnalysisSession {
         config: &DiagnosticsConfig,
         cancellation: &QueryCancellation,
     ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
-        self.query_module(path, expected, cancellation, |analysis, file| {
+        self.require_semantic_context(expected)
+            .map_err(QueryError::Request)?;
+        self.diagnostics_current(path, expected, config, cancellation)
+    }
+
+    /// Check syntax explicitly; all metadata-dependent rules remain outside this method's scope.
+    ///
+    /// # Errors
+    /// Returns stale, unavailable or cancelled input; parser errors remain ordinary diagnostics.
+    pub fn module_syntax_diagnostics(
+        &self,
+        path: &SourcePath,
+        expected: SessionRevision,
+        config: &DiagnosticsConfig,
+        cancellation: &QueryCancellation,
+    ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
+        let config = crate::batch::syntax_profile(config).0;
+        self.diagnostics_current(path, expected, &config, cancellation)
+    }
+
+    /// Keep localization and range validation shared by the explicitly chosen diagnostics profiles.
+    fn diagnostics_current(
+        &self,
+        path: &SourcePath,
+        expected: SessionRevision,
+        config: &DiagnosticsConfig,
+        cancellation: &QueryCancellation,
+    ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
+        self.query_local_module(path, expected, cancellation, |analysis, file| {
             let mut diagnostics = analysis.diagnostics(file, config);
             if config.locale == Locale::En
                 && diagnostics
@@ -196,6 +224,19 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
         query: impl FnOnce(&ide::Analysis, vfs::FileId) -> Result<T, QueryError>,
     ) -> Result<ModuleResult<T>, QueryError> {
+        self.require_semantic_context(expected)
+            .map_err(QueryError::Request)?;
+        self.query_local_module(path, expected, cancellation, query)
+    }
+
+    /// Source-only queries retain the same revision, input, cancellation and publication boundary.
+    pub(crate) fn query_local_module<T>(
+        &self,
+        path: &SourcePath,
+        expected: SessionRevision,
+        cancellation: &QueryCancellation,
+        query: impl FnOnce(&ide::Analysis, vfs::FileId) -> Result<T, QueryError>,
+    ) -> Result<ModuleResult<T>, QueryError> {
         self.validate_revision(expected)
             .map_err(QueryError::Request)?;
         let entry = self
@@ -240,7 +281,8 @@ impl AnalysisSession {
             revision: expected,
             source: path.clone(),
             source_sha256,
-            metadata_models_complete: self.incomplete_metadata == 0,
+            metadata_models_complete: self.scope() == AnalysisScope::CanonicalConfiguration
+                && self.incomplete_metadata == 0,
             module_inputs_complete: self.incomplete_modules == 0,
             value,
         })

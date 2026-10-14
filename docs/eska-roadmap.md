@@ -2303,6 +2303,11 @@ streams/exit. 12 process cases, 22 Rust gates и all4 native build/dump/first-im
 создаёт четыре типа и обе схемы версии через `eska-project new`, общий Queries
 pipeline и initial ancestor. Основная оболочка new/init ещё в работе.
 
+[Синтаксис всех четырёх типов](research/eska-format/analyzer-local-syntax.md) работает
+через общий IDE/batch host. LocalSyntax не объявляет canonical semantic context;
+восемь framed runtime cases и четыре независимых BSL Analyzer сравнения
+подтвердили ParseError и точные byte ranges. Полная семантика и EF-27 ещё нужны.
+
 В EF-15 добавлен [план обновления базы](research/eska-format/base-update.md)
 с независимыми pin и явными конфликтами.
 Standalone orchestration и `eska-project update-base` теперь проходят RU/EN,

@@ -3,9 +3,9 @@
 use eska::{analysis_core::InputFailure, project_core::source_format::SourcePath};
 
 use crate::{
-    AnalysisSession, Diagnostic, DiagnosticCode, DiagnosticsConfig, MetadataDiagnostic,
-    MetadataDiagnosticsError, ModelState, ModuleFailure, ModuleInput, ModuleState,
-    QueryCancellation, ResourceSummary, SessionRevision,
+    AnalysisScope, AnalysisSession, Diagnostic, DiagnosticCode, DiagnosticsConfig,
+    MetadataDiagnostic, MetadataDiagnosticsError, ModelState, ModuleFailure, ModuleInput,
+    ModuleState, QueryCancellation, ResourceSummary, SessionRevision,
 };
 
 use super::{BatchError, BatchProfile};
@@ -114,6 +114,7 @@ pub struct BatchCoverage {
 /// Profile coverage never claims platform or runtime validation.
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct BatchReport {
+    pub analysis_scope: AnalysisScope,
     pub profile: BatchProfile,
     pub profile_enabled: bool,
     pub status: BatchStatus,
@@ -234,6 +235,7 @@ pub fn finish(
         .filter_map(|path| metadata_issue(session, path, cancellation).transpose())
         .collect::<Result<Vec<_>, _>>()?;
     Ok(BatchReport {
+        analysis_scope: session.scope(),
         profile,
         profile_enabled: profile.enabled(config),
         status,
@@ -258,6 +260,7 @@ fn metadata_issue(
     let (code, location, range) = match &model.state {
         ModelState::Pending => ("metadata_pending".into(), vec![], None),
         ModelState::Unsupported(_) => ("metadata_projection_unsupported".into(), vec![], None),
+        ModelState::SourceOnly => ("analysis_context_required".into(), vec![], None),
         ModelState::Unavailable(failure) => {
             let (code, location) = input_failure(failure);
             (code, location, None)
@@ -310,6 +313,7 @@ fn metadata_issue(
                     ModelState::Unsupported(_) => {
                         ("metadata_projection_unsupported".into(), vec![], None)
                     }
+                    ModelState::SourceOnly => ("analysis_context_required".into(), vec![], None),
                     ModelState::Ready(_) | ModelState::StructureOnly => return None,
                 };
                 Some(FormIssue {

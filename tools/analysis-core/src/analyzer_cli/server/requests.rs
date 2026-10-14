@@ -16,7 +16,7 @@ use super::super::{
     property_edits, protocol, references, rename, signature_help,
 };
 use super::Server;
-use crate::{AnalysisSession, RequestCancellation};
+use crate::{AnalysisScope, AnalysisSession, RequestCancellation, SessionRequestError};
 
 impl Server<'_> {
     /// Every custom request validates the connection identity and exact current revision first.
@@ -257,6 +257,11 @@ fn decode<'a>(
     let params = language::Request::parse(method, value)?;
     if let Some(expected) = params.context() {
         validate_snapshot(session, id, &expected.snapshot)?;
+    }
+    if session.scope() == AnalysisScope::LocalSyntax && !method.is_local_syntax() {
+        return Err(documents::request_error(
+            &SessionRequestError::ContextRequired,
+        ));
     }
     Ok((params, cancellation))
 }

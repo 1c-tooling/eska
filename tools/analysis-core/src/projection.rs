@@ -16,6 +16,8 @@ pub enum ModelState {
     Ready(Arc<CanonicalMetadata>),
     /// Configuration structure is validated, but is not a canonical value in the kernel API.
     StructureOnly,
+    /// Current source is available, while canonical projection is outside the admitted scope.
+    SourceOnly,
     Unsupported(MetadataKind),
     Unavailable(InputFailure),
     Invalid {
@@ -66,6 +68,40 @@ impl OwnerModel {
         matches!(self.state, ModelState::Ready(_) | ModelState::StructureOnly)
             && self.parse_issues == 0
             && self.descriptors == self.modeled_descriptors
+    }
+}
+
+/// Preserve parsed source coordinates and readiness without invoking any semantic adapter.
+pub fn source_only(input: &OwnerInput, revision: crate::SessionRevision) -> OwnerModel {
+    let (descriptors, parse_issues) = match &input.state {
+        InputState::Ready(snapshot) => (
+            snapshot.documents.len(),
+            snapshot
+                .documents
+                .iter()
+                .map(|document| document.descriptor.diagnostics.len())
+                .sum(),
+        ),
+        _ => (0, 0),
+    };
+    OwnerModel {
+        revision,
+        origin: input.origin,
+        source_sha256: input.source_sha256.clone(),
+        descriptors,
+        parse_issues,
+        modeled_descriptors: 0,
+        state: source_state(input),
+        forms: Vec::new(),
+    }
+}
+
+/// Missing or rejected current bytes remain unavailable rather than an empty source-only model.
+pub fn source_state(input: &OwnerInput) -> ModelState {
+    match &input.state {
+        InputState::Ready(_) => ModelState::SourceOnly,
+        InputState::Pending => ModelState::Pending,
+        InputState::Unavailable(failure) => ModelState::Unavailable(failure.clone()),
     }
 }
 

@@ -15,6 +15,10 @@ pub mod metadata_resources;
 #[cfg(test)]
 mod module_tests;
 mod saved_changes;
+mod scope;
+pub use scope::AnalysisScope;
+#[cfg(test)]
+mod local_syntax_tests;
 #[cfg(test)]
 mod scheduled_job_tests;
 #[cfg(test)]
@@ -69,6 +73,7 @@ pub struct SessionSummary {
     pub inputs: InputSummary,
     pub ready_models: usize,
     pub structure_only: usize,
+    pub source_only: usize,
     pub pending: usize,
     pub unsupported: usize,
     pub invalid: usize,
@@ -99,6 +104,7 @@ struct ProjectionRevision {
 
 /// The composition is immutable until reopening; updates publish only changed canonical dependencies.
 pub struct AnalysisSession {
+    scope: AnalysisScope,
     pub(super) inputs: MetadataInputs,
     pub(super) database: RootDatabaseImpl,
     pub(super) revision: SessionRevision,
@@ -145,7 +151,31 @@ impl AnalysisSession {
             MetadataInputs::from_reader(reader),
             RootDatabaseImpl::new(),
             options,
+            AnalysisScope::CanonicalConfiguration,
         )
+    }
+
+    /// Admit source syntax explicitly without creating an unverified metadata configuration.
+    ///
+    /// # Errors
+    /// Canonical admission rejects unsupported project types; both modes validate source identities.
+    pub fn from_reader_with_scope(
+        reader: SourceReader,
+        options: SessionOptions,
+        scope: AnalysisScope,
+    ) -> Result<Self, SessionError> {
+        Self::with_inputs(
+            MetadataInputs::from_reader(reader),
+            RootDatabaseImpl::new(),
+            options,
+            scope,
+        )
+    }
+
+    /// State the exact admitted analysis scope without promoting raw source readiness to semantics.
+    #[must_use]
+    pub const fn scope(&self) -> AnalysisScope {
+        self.scope
     }
 
     /// Tests may observe Salsa executions without enabling instrumentation for every consumer.
@@ -161,7 +191,12 @@ impl AnalysisSession {
         options: SessionOptions,
     ) -> Result<Self, SessionError> {
         let inputs = MetadataInputs::open(root).map_err(SessionError::Source)?;
-        Self::with_inputs(inputs, database, options)
+        Self::with_inputs(
+            inputs,
+            database,
+            options,
+            AnalysisScope::CanonicalConfiguration,
+        )
     }
 
     /// Keep one authoritative listing for all consumers, whether opened directly or via a project.
@@ -169,27 +204,20 @@ impl AnalysisSession {
         inputs: MetadataInputs,
         mut database: RootDatabaseImpl,
         options: SessionOptions,
+        scope: AnalysisScope,
     ) -> Result<Self, SessionError> {
         let reader = inputs.source_reader();
-        require_supported_project(reader)?;
+        if scope == AnalysisScope::CanonicalConfiguration {
+            require_supported_project(reader)?;
+        } else {
+            reader.project_type().map_err(SessionError::Source)?;
+        }
         let root_key = reader
             .root()
             .to_str()
             .ok_or(SessionError::NonUtf8Root)?
             .to_owned();
-        // No fallback may load a partial native configuration from the ESKA directory.
-        let cache = Arc::new(GraphConfigCache::new());
-        let name = reader
-            .configuration()
-            .declarations
-            .first()
-            .map_or("", |declaration| declaration.name.as_str());
-        cache.insert(
-            reader.root().to_path_buf(),
-            Arc::new(Configuration::new(name)),
-        );
-        database.set_graph_config_cache(cache);
-        database.set_all_config_paths(vec![(None, reader.root().to_path_buf())]);
+        set_configuration_context(reader, &mut database, scope);
 
         let mut file_set = FileSet::new();
         let mut owners = BTreeMap::new();
@@ -257,6 +285,7 @@ impl AnalysisSession {
             .to(Arc::new(slots));
         let metadata_resources = metadata_resources::register(reader);
         Ok(Self {
+            scope,
             incomplete_metadata: owners.len(),
             incomplete_modules: modules.len(),
             inputs,
@@ -475,6 +504,7 @@ impl AnalysisSession {
             inputs: self.inputs.summary(),
             ready_models: 0,
             structure_only: 0,
+            source_only: 0,
             pending: 0,
             unsupported: 0,
             invalid: 0,
@@ -493,17 +523,20 @@ impl AnalysisSession {
                 ModelState::StructureOnly => {
                     summary.structure_only += 1;
                 }
+                ModelState::SourceOnly => summary.source_only += 1,
                 ModelState::Unsupported(_) => summary.unsupported += 1,
                 ModelState::Invalid { .. } => summary.invalid += 1,
                 ModelState::Unavailable(_) => summary.unavailable += 1,
             }
         }
         summary.main_models_complete = summary.inputs.metadata_input_complete
+            && self.scope == AnalysisScope::CanonicalConfiguration
             && summary.pending == 0
             && summary.unsupported == 0
             && summary.invalid == 0
             && summary.unavailable == 0;
-        summary.descriptor_models_complete = self.incomplete_metadata == 0;
+        summary.descriptor_models_complete =
+            self.scope == AnalysisScope::CanonicalConfiguration && self.incomplete_metadata == 0;
         summary
     }
 
@@ -517,6 +550,18 @@ impl AnalysisSession {
                 expected,
                 actual: self.revision,
             });
+        }
+        Ok(())
+    }
+
+    /// Reject context-dependent operations before they can read or publish source inputs.
+    pub(super) fn require_semantic_context(
+        &self,
+        expected: SessionRevision,
+    ) -> Result<(), SessionRequestError> {
+        self.validate_revision(expected)?;
+        if self.scope == AnalysisScope::LocalSyntax {
+            return Err(SessionRequestError::ContextRequired);
         }
         Ok(())
     }
@@ -547,7 +592,11 @@ impl AnalysisSession {
         let mut model = if entry.primary_revision == Some(dependencies) {
             entry.model.clone()
         } else {
-            let model = projection::project(entry.binding.kind, input, next, resource);
+            let model = if self.scope == AnalysisScope::LocalSyntax {
+                projection::source_only(input, next)
+            } else {
+                projection::project(entry.binding.kind, input, next, resource)
+            };
             set_slot(&mut self.database, entry.slot, &model.state, next);
             entry.primary_revision = Some(dependencies);
             model
@@ -558,6 +607,7 @@ impl AnalysisSession {
             &self.metadata_resources,
             &mut self.database,
             next,
+            self.scope,
         );
         model.forms = entry
             .forms
@@ -591,6 +641,30 @@ impl AnalysisSession {
         self.revision = next;
         Ok(())
     }
+}
+
+/// Syntax keeps an empty configuration cache and root list; only canonical admission owns a context.
+fn set_configuration_context(
+    reader: &SourceReader,
+    database: &mut RootDatabaseImpl,
+    scope: AnalysisScope,
+) {
+    let cache = Arc::new(GraphConfigCache::new());
+    if scope == AnalysisScope::CanonicalConfiguration {
+        let name = reader
+            .configuration()
+            .declarations
+            .first()
+            .map_or("", |declaration| declaration.name.as_str());
+        cache.insert(
+            reader.root().to_path_buf(),
+            Arc::new(Configuration::new(name)),
+        );
+        database.set_all_config_paths(vec![(None, reader.root().to_path_buf())]);
+    } else {
+        database.set_all_config_paths(Vec::new());
+    }
+    database.set_graph_config_cache(cache);
 }
 
 /// Extension/base composition is admitted separately; a standalone CFE cannot claim complete analysis.

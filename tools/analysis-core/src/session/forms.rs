@@ -20,7 +20,7 @@ use ide_db::{
 use vfs::{FileId, VfsPath, file_set::FileSet};
 
 use super::{OwnerEntry, ProjectionRevision, metadata_resources::MetadataResourceEntry, set_slot};
-use crate::{FormModel, ModelState, SessionError, SessionRevision, projection};
+use crate::{AnalysisScope, FormModel, ModelState, SessionError, SessionRevision, projection};
 
 /// Stable slots belong to the enclosing owner; only their current dependency pair can change them.
 pub(super) struct FormEntry {
@@ -87,6 +87,7 @@ pub(super) fn publish(
     resources: &BTreeMap<SourcePath, MetadataResourceEntry>,
     database: &mut RootDatabaseImpl,
     revision: SessionRevision,
+    scope: AnalysisScope,
 ) {
     if forms.is_empty() {
         return;
@@ -112,8 +113,11 @@ pub(super) fn publish(
         if entry.dependencies == Some(dependencies) {
             continue;
         }
-        entry.model.state =
-            projection::form_state(input, documents.get(path).copied(), path, resource);
+        entry.model.state = if scope == AnalysisScope::LocalSyntax {
+            projection::source_state(input)
+        } else {
+            projection::form_state(input, documents.get(path).copied(), path, resource)
+        };
         entry.model.revision = revision;
         entry.dependencies = Some(dependencies);
         set_slot(database, entry.slot, &entry.model.state, revision);

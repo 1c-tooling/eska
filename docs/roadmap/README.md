@@ -71,6 +71,12 @@ All4 native build/dump/first-import сохранили local BSL, pin/settings �
 [Минимальное создание](../research/eska-format/minimal-project-creation.md)
 подключает четыре типа и обе схемы версии к `eska-project new` через общий
 Queries pipeline. Основная оболочка new/init остаётся в EF-20.
+
+[Синтаксис всех четырёх типов](../research/eska-format/analyzer-local-syntax.md) работает
+через общий IDE/batch host. LocalSyntax не объявляет canonical semantic context;
+восемь framed runtime cases и четыре независимых BSL Analyzer сравнения
+подтвердили ParseError и точные byte ranges. Полная семантика и EF-27 ещё нужны.
+
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.
 Добавлен standalone `eska-project update-base` с preview/write, независимыми

@@ -1161,3 +1161,5 @@ tool-error-source-ancestor-missing = No confirmed source ancestor is available. 
 tool-error-source-ancestor-pin = The ancestor checksum is invalid or does not match the selected source history. Support approval is a separate checksum.
 tool-error-source-import-receipt = The recovery digest or journal is invalid. Supply the digest retained before applying the import.
 tool-error-source-import-receipt-path = The recovery file must be new and outside source, support, ancestry and journal directories. Source application requires a successfully retained recovery digest.
+
+tool-check-local-syntax-scope = Scope: local BSL syntax and module structure. Canonical metadata context is unavailable; project analysis remains incomplete.

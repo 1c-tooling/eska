@@ -152,6 +152,8 @@ impl AnalysisSession {
         request: &InputRequest,
         cancellation: &QueryCancellation,
     ) -> Result<(), QueryError> {
+        self.require_semantic_context(expected)
+            .map_err(QueryError::Request)?;
         if !self
             .with_module_text(path, expected, cancellation, |text| {
                 text.is_char_boundary(offset as usize)

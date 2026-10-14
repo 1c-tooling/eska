@@ -22,7 +22,7 @@ impl AnalysisSession {
         expected: SessionRevision,
         cancellation: &QueryCancellation,
     ) -> Result<ModuleResult<Vec<DocumentSymbol>>, QueryError> {
-        self.query_module(path, expected, cancellation, |analysis, file| {
+        self.query_local_module(path, expected, cancellation, |analysis, file| {
             let input = analysis
                 .database()
                 .try_file_text_input(file)
