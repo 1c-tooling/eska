@@ -201,6 +201,15 @@ impl CommonModuleBodies {
 
 #[salsa::db]
 pub trait ConfigsDatabase: DefDatabase {
+    /// Resolve one configured criterion in the caller's visibility chain without XML fallback.
+    fn resolve_filter_criterion(
+        &self,
+        file: FileId,
+        name: &str,
+    ) -> Option<Arc<bsl_metadata::FilterCriterion>>;
+
+    /// Enumerate declarations independently of their current payload readiness.
+    fn filter_criterion_names(&self, file: FileId) -> Vec<String>;
     /// Resolve the current configured session value in the file's explicit visibility chain.
     /// A declared unavailable contribution refuses resolution instead of exposing an older base.
     fn resolve_session_parameter(

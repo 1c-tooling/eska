@@ -59,6 +59,10 @@ fn lookup_method_inner(
 ) -> Option<MethodInfo> {
     let eff_id = crate::this_object::coerce_to_metadata_ref_id(db, receiver).unwrap_or(receiver);
 
+    if let Some(info) = crate::filter_criteria::method(db, eff_id, method_name, refine_ctx) {
+        return Some(info);
+    }
+
     let info = match db.lookup_type(eff_id) {
         TypeKind::Union(arms) => return union::lookup(db, arms, method_name, refine_ctx),
         TypeKind::ObjectManager(facet) => {
@@ -514,7 +518,13 @@ pub fn platform_type_key_id(db: &dyn TypeKernelDb, id: TypeId) -> Option<String>
         TypeKind::ValueTableRow(_) => Some("ValueTableRow".to_string()),
         TypeKind::ValueList(_) => Some("ValueList".to_string()),
         TypeKind::TypeDescriptor => Some("Type".to_string()),
-        TypeKind::PlatformObject(f) => Some(f.name.clone()),
+        TypeKind::PlatformObject(f) => {
+            Some(if crate::filter_criteria::manager_name(&f.name).is_some() {
+                crate::filter_criteria::PROTOTYPE.into()
+            } else {
+                f.name.clone()
+            })
+        }
         TypeKind::FormData { kind, .. } => Some(
             match kind {
                 FormDataFacet::Structure => "ДанныеФормыСтруктура",

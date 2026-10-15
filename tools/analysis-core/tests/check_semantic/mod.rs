@@ -1,6 +1,7 @@
 //! Semantic process results retain explicit coverage and the same machine schema in both locales.
 
 mod common_commands;
+mod filter_criteria;
 
 use super::{fs, report, run, support};
 use eska_analysis::DiagnosticCode;

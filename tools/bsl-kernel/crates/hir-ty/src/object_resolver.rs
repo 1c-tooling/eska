@@ -19,6 +19,11 @@ use vfs::FileId;
 /// resolver mirrors the same merged + file-scoped semantics for unit tests and
 /// the cold call sites that still carry a `&[VisibleConfig]`.
 pub trait ObjectResolver {
+    /// Resolve a current criterion before exposing a named manager or refining Find's signature.
+    fn resolve_filter_criterion(&self, name: &str) -> Option<Arc<bsl_metadata::FilterCriterion>>;
+
+    /// Declared visible names do not imply ready current values.
+    fn filter_criterion_names(&self) -> Vec<String>;
     /// Resolve one configured value; ordinary SDBL parameters are a separate namespace.
     fn resolve_session_parameter(&self, name: &str) -> Option<Arc<bsl_metadata::SessionParameter>>;
 
@@ -90,6 +95,15 @@ impl<D: ConfigsDatabase + ?Sized> std::fmt::Debug for DbObjectResolver<'_, D> {
 }
 
 impl<D: ConfigsDatabase + ?Sized> ObjectResolver for DbObjectResolver<'_, D> {
+    /// Preserve the caller's native file visibility and current canonical ownership.
+    fn resolve_filter_criterion(&self, name: &str) -> Option<Arc<bsl_metadata::FilterCriterion>> {
+        self.db.resolve_filter_criterion(self.file_id, name)
+    }
+
+    /// Read structure without triggering a whole-configuration loader.
+    fn filter_criterion_names(&self) -> Vec<String> {
+        self.db.filter_criterion_names(self.file_id)
+    }
     fn resolve_session_parameter(&self, name: &str) -> Option<Arc<bsl_metadata::SessionParameter>> {
         self.db.resolve_session_parameter(self.file_id, name)
     }
@@ -255,6 +269,15 @@ impl ConfigsObjectResolver<'_> {
 }
 
 impl ObjectResolver for ConfigsObjectResolver<'_> {
+    /// Whole native XML configurations do not yet contain canonical criterion inputs.
+    fn resolve_filter_criterion(&self, _name: &str) -> Option<Arc<bsl_metadata::FilterCriterion>> {
+        None
+    }
+
+    /// Do not fabricate names from another native metadata family.
+    fn filter_criterion_names(&self) -> Vec<String> {
+        Vec::new()
+    }
     fn resolve_session_parameter(&self, name: &str) -> Option<Arc<bsl_metadata::SessionParameter>> {
         let mut current: Option<Arc<bsl_metadata::SessionParameter>> = None;
         for config in self.0 {

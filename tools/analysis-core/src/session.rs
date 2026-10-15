@@ -31,6 +31,9 @@ mod common_attributes;
 #[cfg(test)]
 mod common_command_tests;
 mod common_commands;
+mod filter_criteria;
+#[cfg(test)]
+mod filter_criterion_tests;
 #[cfg(test)]
 mod local_syntax_tests;
 #[cfg(test)]
@@ -439,6 +442,12 @@ impl AnalysisSession {
                 name.clone(),
             )
             .map(CanonicalMetadata::CommonAttribute),
+            CanonicalMetadata::FilterCriterion(_) => ide_db::metadata::resolve_filter_criterion(
+                &self.database,
+                self.selected_root.listing,
+                name.clone(),
+            )
+            .map(CanonicalMetadata::FilterCriterion),
             CanonicalMetadata::CommonCommand(_) => ide_db::metadata::resolve_common_command(
                 &self.database,
                 self.selected_root.listing,

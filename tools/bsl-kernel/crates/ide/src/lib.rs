@@ -8,6 +8,7 @@ pub mod diagnostics_baseline;
 pub mod diagnostics_catalog;
 mod document_highlight;
 mod document_symbols;
+mod filter_criterion_signatures;
 mod folding;
 pub mod formatting;
 mod goto_definition;
@@ -260,6 +261,19 @@ impl Analysis {
     /// Discover a typed SessionParameters receiver without loading configured value payloads.
     pub fn completion_uses_session_parameters(&self, file_id: FileId, offset: u32) -> bool {
         completion::uses_session_parameters(
+            &self.db,
+            completion::CompletionPosition {
+                file_id,
+                offset: TextSize::from(offset),
+                workspace_root: None,
+                locale: Locale::Ru,
+            },
+        )
+    }
+
+    /// Discover the actual criterion-container receiver before its current declared family is prepared.
+    pub fn completion_uses_filter_criteria(&self, file_id: FileId, offset: u32) -> bool {
+        completion::uses_filter_criteria(
             &self.db,
             completion::CompletionPosition {
                 file_id,

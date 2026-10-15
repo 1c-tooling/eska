@@ -6,6 +6,7 @@ pub mod db;
 pub mod doc_see;
 pub mod field_enum;
 pub mod field_lookup;
+pub mod filter_criteria;
 pub mod form_attr;
 pub mod form_items;
 pub mod form_self;

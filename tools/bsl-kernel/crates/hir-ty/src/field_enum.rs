@@ -139,6 +139,9 @@ pub(crate) fn enumerate_fields_inner(
             if crate::session_parameters::is_session_parameters_type_name(name.as_str()) {
                 fields.extend(crate::session_parameters::fields(db, resolver));
             }
+            if crate::filter_criteria::is_container_name(name.as_str()) {
+                fields.extend(crate::filter_criteria::fields(db, resolver));
+            }
             fields
         }
         Shape::Other => Vec::new(),

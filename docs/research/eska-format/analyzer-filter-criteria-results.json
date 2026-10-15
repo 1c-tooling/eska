@@ -1,0 +1,222 @@
+{
+  "root_gates_reused": 6,
+  "root_reuse": {
+    "root_inputs_unchanged": true,
+    "files": 749,
+    "root_gates": 6,
+    "root_scope_sha256": "1c5c5704dc571c3ebe388315a9de2d4be8b15f63155eacb6738d5389340bcdb7"
+  },
+  "tool_gates": 21,
+  "frozen_inputs": 1632,
+  "source_sha256": "a6223b269927d282e7d6d6c5798761d0c86baf3c6b323fb8bda5110f6c2a9b5e",
+  "tests": {
+    "kernel-test": {
+      "passed": 4425,
+      "failed": 0,
+      "ignored": 25
+    },
+    "adapter-test": {
+      "passed": 109,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-default": {
+      "passed": 226,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-all": {
+      "passed": 535,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "binaries": {
+    "eska-analyzer-debug": {
+      "sha256": "1872c32e157a91015acdb79565f72a252d7dc0f23f013dc836e82e59052842d0",
+      "bytes": 134708896
+    },
+    "eska-analyzer": {
+      "sha256": "846559225c5c4f90c4fcb6fea6f763696bc5a42b2dd2fb5c316cbd5194dfb2de",
+      "bytes": 55871768
+    },
+    "eska-check": {
+      "sha256": "844769e5b42f8e8eb4d91c62799c6a8ca9674384fd4d229c7ff602e7f16d12be",
+      "bytes": 50421416
+    }
+  },
+  "node_first_attempt": {
+    "session": 5250,
+    "tests": 349,
+    "passed": 348,
+    "failed": 1,
+    "skipped": 0,
+    "failure": "test/diagnostics.test.mjs orderly shutdown exitCode null vs 0",
+    "concurrent_work": "release compilation was active",
+    "cause": "unproven"
+  },
+  "main_locale_keys": 1250,
+  "native_platform_run": false,
+  "native_save_invoked": false,
+  "physical_typing_verified": false,
+  "mvp_complete": false,
+  "vsix_before_import_recovery": {
+    "sha256": "05bc15ba5ddb99068002aa8c90e29657d1cf3cb078dc52ac49fae014aa42f8fe",
+    "production_modules_matching": 54,
+    "changed_production_modules": [],
+    "helpers_in_vsix": []
+  },
+  "vsix": {
+    "sha256": "c8bcf9df6aa40ef621521e14c0adc85c1e28258473305191ee3cf22b9fc58b55",
+    "production_modules_matching": 55,
+    "version": "0.0.11",
+    "test_helpers_in_package": false
+  },
+  "node_before_import_recovery": {
+    "passed": true,
+    "session": 2961,
+    "tests": 349,
+    "pass": 349,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 7447.596433,
+    "root_executor": true,
+    "direct_pty_stdout": true,
+    "frozen_binary": "bins/eska-analyzer-debug",
+    "previous_failure": "node-first-result.json",
+    "previous_failure_cause": "unproven"
+  },
+  "node": {
+    "passed": 356,
+    "failed": 0,
+    "skipped": 0,
+    "duration_ms": 6764.106218,
+    "executor": "root direct PTY",
+    "session": 99555
+  },
+  "installed": {
+    "passed": true,
+    "executor": "root direct PTY",
+    "session": 18664,
+    "children_reaped": 23,
+    "cases": [
+      {
+        "case": "generated-cf",
+        "origin": "generated-native",
+        "type": "configuration",
+        "nativeCriterionCompletion": true,
+        "nativeCriterionHover": true,
+        "criterionFailureRetracted": true,
+        "criterionRestartReplay": true,
+        "foreignCriterionContent": false,
+        "currentCommandParameters": true,
+        "commandFailureRetracted": true,
+        "commandRestartReplay": true,
+        "nativeCommandHover": true,
+        "foreignCommandParameter": false,
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": false,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 45,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "generated-cfe",
+        "origin": "generated-native",
+        "type": "extension",
+        "nativeCriterionCompletion": true,
+        "nativeCriterionHover": true,
+        "criterionFailureRetracted": true,
+        "criterionRestartReplay": true,
+        "foreignCriterionContent": true,
+        "currentCommandParameters": true,
+        "commandFailureRetracted": true,
+        "commandRestartReplay": true,
+        "nativeCommandHover": true,
+        "foreignCommandParameter": true,
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": true,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "foreignCurrentMetadata": true,
+        "foreignInvalidNoSavedFallback": true,
+        "hiddenSiblingIgnored": true,
+        "foreignRestartImportReplay": true,
+        "foreignSourceBytesPreserved": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 40,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cf",
+        "origin": "1c-native",
+        "type": "configuration",
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 151,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cfe",
+        "origin": "1c-native",
+        "type": "extension",
+        "semanticContextRefused": true,
+        "syntaxAvailable": true,
+        "sourceBytesPreserved": true
+      }
+    ]
+  },
+  "installed_first_attempt": {
+    "passed": false,
+    "reason": "import cleanup admits fresh host",
+    "observed": "request guard retired the session; no native watcher callback observed",
+    "recovery_added": true,
+    "coalescing_cause_proven": false
+  },
+  "native_readonly": {
+    "criteria": 2,
+    "ready": 2,
+    "parse_issues": 0,
+    "modeled_descriptors_per_criterion": 1,
+    "criteria_child_reaped": true,
+    "source_preserved": true,
+    "cold_status": "stopped",
+    "cold_seconds": 15.516208565000852,
+    "peak_rss_bytes": 391446528,
+    "next_unsupported_family": "FunctionalOption",
+    "child_reaped": true,
+    "association_verified": false,
+    "performance_accepted": false
+  }
+}

@@ -89,8 +89,16 @@ CommonCommand. Автоиспользование, разделение данн
 подключены к native inference, completion, hover и checker. CF/CFE current type,
 Single/Multiple, наследование по UUID, invalid/refusal и replay проверены:
 SDK — 221/528 tests, Node — 344, установленный client — 21 reaped children.
-Все 58 native CommonCommand готовы; следующий блокер большой композиции —
-FilterCriterion. EF-18 и MVP остаются в работе.
+Все 58 native CommonCommand готовы; следующий блокер того прогона —
+FilterCriterion.
+
+[Текущие критерии отбора](../research/eska-format/analyzer-filter-criteria.md)
+подключены к native container/Find, completion, hover, signatures и checker.
+Текущие Type/Content и UUID-проверенное добавление состава проверены в CF/CFE:
+SDK — 226/535, Node — 356; установленный клиент — 23 reaped children.
+Исправлено восстановление сеанса после пропущенного import cleanup event.
+Оба native критерия готовы; следующий отказ большой композиции — FunctionalOption.
+EF-18 и MVP остаются в работе.
 
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий

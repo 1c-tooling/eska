@@ -191,3 +191,7 @@ listing: pending или удалённое тело не выдаётся за �
 получают current canonical slot с той же инвалидацией и запретом XML fallback.
 [Регламентные задания](../../docs/research/eska-format/analyzer-scheduled-jobs.md)
 передают current callback/flags через такой же slot и устойчивый name listing.
+[Критерии отбора](../../docs/research/eska-format/analyzer-filter-criteria.md)
+используют отдельный текущий slot/listing и реальные generated manager types.
+Native `Find` уточняет тип аргумента и массива ссылок; позиционные карточки и
+signature help сохраняют native candidates и их документацию.

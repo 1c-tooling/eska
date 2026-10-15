@@ -183,3 +183,8 @@ URI модуля. Прямой parent отделяет одинаковые па
 локальным расширением из `bsl-kernel`; библиотека моделей используется без
 IDE/LSP/MCP runtime. Для проверок нужен Rust; автоматические файловые
 сценарии используют `ESKA_TEST_ROOT` в соседнем playground.
+
+[`filter_criterion`](../../docs/research/eska-format/analyzer-filter-criteria.md)
+сохраняет текущие search TypeDescription, QName-aware пути Content и ownership
+в отдельной native модели. Отсутствующие заимствованные свойства наследуются
+только после проверки исходного UUID; неизвестный состав не становится MDO.

@@ -1316,6 +1316,17 @@ fn resolve_position(
     let token = root.token_at_offset(offset).right_biased()?;
 
     let sema = Semantics::new(db);
+    if matches!(hir::classify_token(&token), hir::NameClass::FieldName { is_call: true, .. }) {
+        if let Some((binding, signatures)) =
+            crate::filter_criterion_signatures::at_token(db, pos.file_id, &token)
+        {
+            let mut card = card_from_platform_sig(token.text(), signatures.first()?, req);
+            if req.sections.type_ {
+                card.return_type = type_label(db, binding.resolution.return_ty, req.locale);
+            }
+            return Some(card);
+        }
+    }
     // A called member belongs to its inferred receiver. The textual qualified-name
     // resolver can otherwise borrow a foreign export when a local shadows its module.
     let def = match hir::classify_token(&token) {

@@ -3,7 +3,9 @@ pub(crate) mod env_filter;
 mod fuzzy;
 mod mdo_completion;
 pub(crate) use mdo_completion::manager_module_target;
-pub(crate) use platform_completion::{common_module_body_target, uses_session_parameters};
+pub(crate) use platform_completion::{
+    common_module_body_target, uses_filter_criteria, uses_session_parameters,
+};
 mod new_expr_completion;
 mod platform_completion;
 mod sdbl;

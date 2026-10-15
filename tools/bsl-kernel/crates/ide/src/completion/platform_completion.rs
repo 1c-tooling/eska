@@ -103,6 +103,64 @@ fn session_parameter_type<DB: RootDatabase>(db: &DB, ty: TypeId) -> bool {
     }
 }
 
+/// Only the inferred native criterion container requests current criteria; a same-spelled local does not.
+pub(crate) fn uses_filter_criteria<DB: RootDatabase>(
+    db: &DB,
+    position: CompletionPosition,
+) -> bool {
+    let root = db.parse(position.file_id).syntax_node();
+    let Some(token) = root.token_at_offset(position.offset).left_biased() else {
+        return false;
+    };
+    let Some((dot, _)) = resolve_dot_anchor(&token, position.offset) else {
+        return false;
+    };
+    let Some(receiver) = find_receiver_expr(&dot) else {
+        return false;
+    };
+    if criterion_receiver(db, &position, &receiver) {
+        return EnvFilter::at(db, position.file_id, position.offset)
+            .admits(hir_ty::filter_criteria::environment());
+    }
+    // A cold Find result has no type yet. Inspect only the enclosing native body for a proven
+    // container use; a later call in another procedure must not trigger unrelated metadata reads.
+    let scope = receiver
+        .ancestors()
+        .find(|node| matches!(node.kind(), SyntaxKind::PROCEDURE_DEF | SyntaxKind::FUNCTION_DEF));
+    scope.is_some_and(|scope| {
+        scope.descendants().filter(|node| node.kind() == SyntaxKind::FIELD_EXPR).any(|node| {
+            let Some(receiver) = node.children().next() else {
+                return false;
+            };
+            let at =
+                CompletionPosition { offset: receiver.text_range().start(), ..position.clone() };
+            criterion_receiver(db, &at, &receiver)
+                && EnvFilter::at(db, at.file_id, at.offset)
+                    .admits(hir_ty::filter_criteria::environment())
+        })
+    })
+}
+
+/// Follow only a receiver's field chain; aliases retain native types and a shadowing local never becomes a global.
+fn criterion_receiver<DB: RootDatabase>(
+    db: &DB,
+    position: &CompletionPosition,
+    receiver: &SyntaxNode,
+) -> bool {
+    if resolved_receiver_type(db, position, receiver).is_some_and(|ty| {
+        matches!(db.lookup_type(ty), TypeKind::PlatformObject(facet)
+            if hir_ty::filter_criteria::is_container_name(&facet.name)
+                || hir_ty::filter_criteria::manager_name(&facet.name).is_some())
+    }) {
+        return true;
+    }
+    receiver.kind() == SyntaxKind::FIELD_EXPR
+        && receiver
+            .children()
+            .next()
+            .is_some_and(|parent| criterion_receiver(db, position, &parent))
+}
+
 /// Completion and cold-family discovery share the existing native shadowing and reaching-write rules.
 fn resolved_receiver_type<DB: RootDatabase>(
     db: &DB,
@@ -315,7 +373,9 @@ fn complete_prefix_methods_for_receiver<DB: RootDatabase>(
         return collect_platform_items_or_none(db, effective, locale, env);
     }
 
+    let criteria_container = matches!(db.lookup_type(effective),TypeKind::PlatformObject(facet) if hir_ty::filter_criteria::is_container_name(&facet.name));
     if !session_parameter_type(db, effective)
+        && !criteria_container
         && !is_metadata_ref
         && !is_metadata_ref_collection
         && !is_union_with_metadata_ref
@@ -325,7 +385,7 @@ fn complete_prefix_methods_for_receiver<DB: RootDatabase>(
     }
 
     let mut mdo_fields = HirType::from_id(db, file_id, effective).fields();
-    if session_parameter_type(db, effective) {
+    if session_parameter_type(db, effective) || criteria_container {
         mdo_fields.retain(|field| field.env.is_none_or(|mask| env.admits(mask)));
     }
     let platform_items = collect_platform_items_for_effective(db, effective, locale, env);
@@ -693,6 +753,13 @@ fn complete_platform_methods(
     locale: ide_db::base_db::Locale,
     env: &EnvFilter,
 ) -> Vec<CompletionItem> {
+    if receiver_type == hir_ty::filter_criteria::PROTOTYPE {
+        return hir_ty::filter_criteria::prototype_methods()
+            .iter()
+            .filter(|method| env.admits_context(method.context.as_ref()))
+            .map(render_platform_method)
+            .collect();
+    }
     let methods_input = TypeNameInput::new(db, receiver_type.to_string());
     let methods = type_methods_query(db, methods_input);
     let props_input = TypeNameInput::new(db, receiver_type.to_string());

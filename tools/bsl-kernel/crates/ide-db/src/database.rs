@@ -1,3 +1,4 @@
+mod filter_criteria;
 mod session_parameters;
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
@@ -848,6 +849,7 @@ impl RootDatabaseImpl {
             session_parameters,
             common_attributes,
             common_commands,
+            filter_criteria,
         } = listing;
         let entries = Arc::new(entries);
         let defined_types = Arc::new(defined_types);
@@ -862,6 +864,7 @@ impl RootDatabaseImpl {
         let session_parameters = Arc::new(session_parameters);
         let common_attributes = Arc::new(common_attributes);
         let common_commands = Arc::new(common_commands);
+        let filter_criteria = Arc::new(filter_criteria);
         match self.metadata_listings.get(&key).map(|e| *e.value()) {
             Some(input) => {
                 input.set_entries(self).to(entries);
@@ -877,6 +880,7 @@ impl RootDatabaseImpl {
                 input.set_session_parameters(self).to(session_parameters);
                 input.set_common_attributes(self).to(common_attributes);
                 input.set_common_commands(self).to(common_commands);
+                input.set_filter_criteria(self).to(filter_criteria);
             }
             None => {
                 let input = metadata::MetadataListingInput::builder(
@@ -893,6 +897,7 @@ impl RootDatabaseImpl {
                     session_parameters,
                     common_attributes,
                     common_commands,
+                    filter_criteria,
                     Arc::new(metadata::CanonicalMetadataInputs::default()),
                 )
                 .durability(salsa::Durability::MEDIUM)
@@ -3017,6 +3022,19 @@ impl DefDatabase for RootDatabaseImpl {
 
 #[salsa::db]
 impl hir::ConfigsDatabase for RootDatabaseImpl {
+    /// Criterion lookup uses the same current per-file composition as its declared namespace.
+    fn resolve_filter_criterion(
+        &self,
+        file: FileId,
+        name: &str,
+    ) -> Option<Arc<bsl_metadata::FilterCriterion>> {
+        self.resolve_filter_criterion_for_file(file, name)
+    }
+
+    /// Declared namespace names do not require any criterion payload to be parsed.
+    fn filter_criterion_names(&self, file: FileId) -> Vec<String> {
+        self.filter_criterion_names_for_file(file)
+    }
     /// Session values use the per-file listing chain, never a whole-configuration fallback.
     fn resolve_session_parameter(
         &self,

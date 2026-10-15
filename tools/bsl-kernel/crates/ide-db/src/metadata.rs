@@ -1,9 +1,11 @@
 mod common_attribute;
 mod common_command;
+mod filter_criterion;
 mod session_parameter;
 use bsl_metadata::Configuration;
 pub use common_attribute::{resolve_common_attribute, CommonAttributeEntry};
 pub use common_command::{resolve_common_command, CommonCommandEntry};
+pub use filter_criterion::{resolve_filter_criterion, FilterCriterionEntry};
 use intern::NormName;
 use rustc_hash::FxHashMap;
 pub use session_parameter::{
@@ -115,7 +117,7 @@ pub(crate) mod heap_estimate {
             + snapshot.source_exclusions.heap_bytes()
     }
 
-    /// Heap of a [`super::MetadataListingInput`]: the thirteen per-family `Arc<Vec<_>>`
+    /// Heap of a [`super::MetadataListingInput`]: the fourteen per-family `Arc<Vec<_>>`
     /// entry lists plus each entry's owned name string (the other entry fields —
     /// `FileId`s, the MDO kind — are `Copy`). New heap-owning listing families
     /// must be added here too.
@@ -135,6 +137,7 @@ pub(crate) mod heap_estimate {
             Arc<Vec<super::SessionParameterEntry>>,
             Arc<Vec<super::CommonAttributeEntry>>,
             Arc<Vec<super::CommonCommandEntry>>,
+            Arc<Vec<super::FilterCriterionEntry>>,
             Arc<super::CanonicalMetadataInputs>,
         ),
     ) -> usize {
@@ -152,6 +155,7 @@ pub(crate) mod heap_estimate {
             session_parameters,
             common_attributes,
             common_commands,
+            filter_criteria,
             canonical_metadata,
         ) = fields;
 
@@ -181,6 +185,8 @@ pub(crate) mod heap_estimate {
             + common_attributes.iter().map(|entry| entry.name.capacity()).sum::<usize>()
             + stdx::heap::vec_bytes::<super::CommonCommandEntry>(common_commands.len())
             + common_commands.iter().map(|entry| entry.name.capacity()).sum::<usize>()
+            + stdx::heap::vec_bytes::<super::FilterCriterionEntry>(filter_criteria.len())
+            + filter_criteria.iter().map(|entry| entry.name.capacity()).sum::<usize>()
             + stdx::heap::map_table_bytes::<vfs::FileId, super::CanonicalMetadataInput>(
                 canonical_metadata.len(),
             )
@@ -928,6 +934,7 @@ pub struct MetadataListingData {
     pub session_parameters: Vec<SessionParameterEntry>,
     pub common_attributes: Vec<CommonAttributeEntry>,
     pub common_commands: Vec<CommonCommandEntry>,
+    pub filter_criteria: Vec<FilterCriterionEntry>,
     pub entries: Vec<MdoEntry>,
     pub defined_types: Vec<DefinedTypeEntry>,
     pub common_modules: Vec<CommonModuleEntry>,
@@ -947,6 +954,7 @@ pub enum CanonicalMetadata {
     SessionParameter(Arc<bsl_metadata::SessionParameter>),
     CommonAttribute(Arc<bsl_metadata::CommonAttribute>),
     CommonCommand(Arc<bsl_metadata::CommonCommand>),
+    FilterCriterion(Arc<bsl_metadata::FilterCriterion>),
     Object(Arc<bsl_metadata::MetadataObject>),
     Register(Arc<bsl_metadata::Register>),
     CommonModule(Arc<bsl_metadata::CommonModule>),
@@ -968,6 +976,7 @@ impl CanonicalMetadata {
             Self::SessionParameter(value) => value.estimated_heap_size(),
             Self::CommonAttribute(value) => value.estimated_heap_size(),
             Self::CommonCommand(value) => value.estimated_heap_size(),
+            Self::FilterCriterion(value) => value.estimated_heap_size(),
             Self::Object(value) => value.estimated_heap_size(),
             Self::Register(value) => value.estimated_heap_size(),
             Self::CommonModule(value) => value.estimated_heap_size(),
@@ -1033,6 +1042,7 @@ pub struct MetadataListingInput {
     pub session_parameters: Arc<Vec<SessionParameterEntry>>,
     pub common_attributes: Arc<Vec<CommonAttributeEntry>>,
     pub common_commands: Arc<Vec<CommonCommandEntry>>,
+    pub filter_criteria: Arc<Vec<FilterCriterionEntry>>,
     pub canonical_metadata: Arc<CanonicalMetadataInputs>,
 }
 

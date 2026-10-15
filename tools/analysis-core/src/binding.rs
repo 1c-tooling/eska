@@ -5,9 +5,10 @@ use std::collections::BTreeMap;
 use bsl_metadata::MdoType;
 use eska::project_core::{MetadataKind, source_format::SourcePath};
 use ide_db::metadata::{
-    CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, HTTPServiceEntry,
-    IntegrationServiceEntry, MdoEntry, MetadataListingData, RoleEntry, ScheduledJobEntry,
-    SessionParameterEntry, SubsystemEntry, WebServiceEntry,
+    CommonAttributeEntry, CommonCommandEntry, CommonModuleEntry, DefinedTypeEntry,
+    EventSubscriptionEntry, FilterCriterionEntry, HTTPServiceEntry, IntegrationServiceEntry,
+    MdoEntry, MetadataListingData, RoleEntry, ScheduledJobEntry, SessionParameterEntry,
+    SubsystemEntry, WebServiceEntry,
 };
 use vfs::FileId;
 
@@ -32,22 +33,22 @@ impl OwnerBinding {
             return;
         };
         match self.kind {
+            MetadataKind::FilterCriterion => listing.filter_criteria.push(FilterCriterionEntry {
+                name: name.clone(),
+                main: self.main,
+            }),
             MetadataKind::CommonCommand => {
-                listing
-                    .common_commands
-                    .push(ide_db::metadata::CommonCommandEntry {
-                        name: name.clone(),
-                        main: self.main,
-                        module_file: None,
-                    });
+                listing.common_commands.push(CommonCommandEntry {
+                    name: name.clone(),
+                    main: self.main,
+                    module_file: None,
+                });
             }
             MetadataKind::CommonAttribute => {
-                listing
-                    .common_attributes
-                    .push(ide_db::metadata::CommonAttributeEntry {
-                        name: name.clone(),
-                        main: self.main,
-                    });
+                listing.common_attributes.push(CommonAttributeEntry {
+                    name: name.clone(),
+                    main: self.main,
+                });
             }
             MetadataKind::Role => {
                 listing.roles.push(RoleEntry {

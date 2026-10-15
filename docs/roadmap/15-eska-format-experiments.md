@@ -138,8 +138,15 @@ AutoUse/разделение данных, остальные families и EF-18 
 передают текущий тип и Single/Multiple в native handler inference, completion,
 hover и checker. SDK — 221/528, Node — 344, installed CF/configured-CFE прошёл
 current/invalid/repair/replay и native hover; 21 children завершились.
-Адресно готовы все 58 native CommonCommand; следующий отказ большой композиции —
-FilterCriterion. Остальные families, EF-18 и MVP ещё нужны.
+Адресно готовы все 58 native CommonCommand; следующий отказ того прогона —
+FilterCriterion.
+
+[FilterCriterion](../research/eska-format/analyzer-filter-criteria.md) передаёт
+текущие Type/Content в native container/Find, completion/hover/signatures/checker.
+SDK — 226/535, Node — 356; installed CF/configured-CFE current/invalid/replay
+прошёл с новым client recovery пропущенного import cleanup event; 23 children
+завершились. Оба native критерия готовы; следующий отказ — FunctionalOption.
+Остальные families, EF-18 и MVP ещё нужны.
 
 ID сохраняют историю, порядок выполнения задаёт следующая таблица.
 

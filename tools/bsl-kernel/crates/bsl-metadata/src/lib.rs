@@ -10,6 +10,7 @@ pub mod enums;
 pub mod error;
 pub mod event_subscription;
 pub mod external_object;
+pub mod filter_criterion;
 pub mod form;
 pub mod http_service;
 pub mod integration_service;
@@ -43,6 +44,7 @@ pub use external_object::{
     discover_external_object_structure, external_object_xml, load_external_object,
     ExternalObjectKind,
 };
+pub use filter_criterion::{FilterCriterion, FilterCriterionTarget};
 pub use form::{
     Form, FormAttribute, FormAttributeColumn, FormElement, FormElementKind, FormEventHandler,
 };

@@ -123,6 +123,13 @@ target. Семантические запросы и diagnostics отказыв�
 заимствования, сохраняя отдельный syntax route. Известные типы параметров и
 локальных значений видны в прежних positional cards с RU/EN заголовком типа.
 
+[FilterCriterion](../../docs/research/eska-format/analyzer-filter-criteria.md)
+даёт native BSL container и `Find`: текущий `Type` проверяет аргумент, а
+`Content` определяет ссылки элементов массива. Cold completion, hover и
+signature help используют те же canonical inputs. UUID-проверенное заимствование
+добавляет состав; несовместимый тип или недоступный вклад дают прежний
+`analysis_composition_incomplete`, сохраняя отдельный syntax route.
+
 [Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
 дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
 common completion, unsaved named flags и переход к физическому BSL input;

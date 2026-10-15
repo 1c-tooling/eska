@@ -242,6 +242,7 @@ fn bench_metadata_revalidation_after_bsl_edit(c: &mut Criterion) {
             session_parameters: Vec::new(),
             common_attributes: Vec::new(),
             common_commands: Vec::new(),
+            filter_criteria: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
