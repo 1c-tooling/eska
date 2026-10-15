@@ -142,6 +142,13 @@ qualified calls и реальные self других module kinds сохран�
 Большая прежняя CF/CFE пара несовместима по 37 из 38 original UUID links;
 semantic success probe этой пары не повторялся. EF-18 и MVP остаются в работе.
 
+[Связанная native CF/CFE пара](../research/eska-format/native-matching-composition.md)
+прошла build, свежий dump с 3/3 original UUID links, реальное применение,
+Designer applicability и compile с контрольной ошибкой/repair. Обе базы удалены.
+Текущий release подтвердил KeyЯ:String completion и полный selected semantic
+profile diagnostic pull; общий semantic_complete=false, field hover вернул null.
+Установленная/редактируемая приёмка этой пары и полный EF-16 ещё нужны.
+
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка

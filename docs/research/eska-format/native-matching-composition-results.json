@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "status": "native_pair_and_typed_completion_verified_field_hover_gap_retained",
+  "platform_version": "8.3.27.2325",
+  "native_build": {
+    "cf": true,
+    "cfe_with_explicit_matching_cf": true
+  },
+  "fresh_native_dump": {
+    "cf": true,
+    "final_repaired_cfe": true,
+    "borrowed_non_root": 3,
+    "exact_uuid_kind_name_parent_links": 3,
+    "mismatches": 0,
+    "keep_mapping_by_ids": true
+  },
+  "actual_owned_infobase": {
+    "base_apply_exit_code": 0,
+    "extension_apply_exit_code": 0,
+    "designer_extension_applicability_exit_code": 0,
+    "runtime_bases_left": 0,
+    "cf_and_cfe_managed_bases_cleaned_via_eska": true
+  },
+  "designer_modules": {
+    "base_exit_code": 0,
+    "extension_baseline_positive_repaired": [
+      0,
+      101,
+      0
+    ],
+    "positive_control": "Undefined variable in own extension module",
+    "positive_control_exact_current_export_bytes_verified": true,
+    "error_contexts": [
+      "server",
+      "external_connection",
+      "thick_client_ordinary_application"
+    ],
+    "repaired_bsl_bytes_mode_mtime_preserved": true
+  },
+  "eska_import": {
+    "cf": true,
+    "cfe": true,
+    "original_uuid_links_preserved": 3,
+    "mismatches": 0,
+    "source_manifest_schema": 5,
+    "explicit_base_and_selected_extension_configured": true,
+    "dependency_extensions": 0
+  },
+  "stencil_correction": {
+    "property": "InterfaceCompatibilityMode",
+    "copied_exact_actual_cf_value": true,
+    "uuid_checks_relaxed": false,
+    "keep_mapping_by_ids_relaxed": false,
+    "initial_designer_applicability_rejection_retained": true
+  },
+  "semantic_analyzer_executed": true,
+  "installed_client_executed": false,
+  "physical_ui_typing_or_save_verified": false,
+  "data_access_or_query_execution_verified": false,
+  "vendor_compatibility_claimed": false,
+  "original_seed_and_donor_inputs_preserved": true,
+  "limitations": [
+    "Module compiler positive control proves the extension module was checked; it does not prove a user function or query was executed.",
+    "Full ESKA native round trip and installed Explorer acceptance remain for the parent current release.",
+    "The initial apply command returned success before Designer detected a checked UI compatibility property; final success includes Designer applicability after matching that property to the actual base.",
+    "The saved CF/CFE metadata field completed as String but positional hover returned null. The original failing probe is retained; a separate diagnostic-only request does not repair this gap."
+  ],
+  "original_seed_and_donor_rechecks": {
+    "files": 89,
+    "bytes_modes_mtimes_inodes_hashes_preserved": true
+  },
+  "owned_live_platform_processes_after_cleanup": 0,
+  "completion_and_hover_probe": {
+    "schema_version": 1,
+    "scope": "one_actual_native_matching_base_selected_extension_saved_module",
+    "status": "stopped",
+    "binary_sha256": "626edfd6e04fbc6ef82bebdbeece4b23a1a10608942f4bd12366dd0ec7b46e68",
+    "request_deadline_seconds": 20,
+    "external_wall_limit_seconds": 60,
+    "external_rss_limit_bytes": 1610612736,
+    "saved_text_only": true,
+    "text_changes_sent": 0,
+    "disk_source_writes": 0,
+    "warm_requests": 0,
+    "general_semantic_complete_claimed": false,
+    "native_platform_run": false,
+    "client_ui_run": false,
+    "composition": {
+      "selected": 1,
+      "root_count": 2
+    },
+    "initial_metadata_context_complete": null,
+    "semantic_profile_negotiated": true,
+    "cold_completion_seconds": 0.04045819800012396,
+    "completion_field_present": true,
+    "completion_field_type_string": true,
+    "completion_is_incomplete": false,
+    "completion_coverage": {
+      "metadata_inputs_complete": true,
+      "metadata_models_complete": true,
+      "module_inputs_complete": true,
+      "semantic_complete": false
+    },
+    "stopped_phase": "hover_saved_field",
+    "exception_type": "AssertionError",
+    "saved_document_closed": true,
+    "child_exit_code": 0,
+    "child_reaped": true,
+    "killed_by": null,
+    "child_wall_seconds": 0.05823151000004145,
+    "peak_observed_rss_bytes": 0,
+    "source_files_preserved": true,
+    "source_files": {
+      "cf": 51,
+      "cfe": 28
+    }
+  },
+  "separate_diagnostic_pull": {
+    "schema_version": 1,
+    "scope": "one_actual_native_matching_base_selected_extension_saved_module_diagnostics",
+    "status": "saved_module_diagnostic_pull_recorded",
+    "binary_sha256": "626edfd6e04fbc6ef82bebdbeece4b23a1a10608942f4bd12366dd0ec7b46e68",
+    "request_deadline_seconds": 20,
+    "external_wall_limit_seconds": 60,
+    "external_rss_limit_bytes": 1610612736,
+    "saved_text_only": true,
+    "text_changes_sent": 0,
+    "disk_source_writes": 0,
+    "completion_requests": 0,
+    "hover_requests": 0,
+    "known_saved_field_hover_null_remains_unresolved": true,
+    "general_semantic_complete_claimed": false,
+    "native_platform_run": false,
+    "client_ui_run": false,
+    "composition": {
+      "selected": 1,
+      "root_count": 2
+    },
+    "initial_metadata_context_complete": null,
+    "semantic_profile_negotiated": true,
+    "diagnostic_seconds": 0.041554020999683416,
+    "diagnostic_coverage": {
+      "metadata_inputs_complete": true,
+      "metadata_models_complete": true,
+      "module_inputs_complete": true,
+      "module_syntax_complete": true,
+      "semantic_complete": false,
+      "semantic_profile_complete": true
+    },
+    "diagnostic_semantic_profile_complete_observed": true,
+    "diagnostic_count": 4,
+    "diagnostic_codes": [
+      "CodeOutOfRegion",
+      "CommonModuleMissingAPI",
+      "MissingReturnedValueDescription",
+      "MissingReturnedValueDescription"
+    ],
+    "diagnostic_severity_counts": {
+      "2": 2,
+      "3": 1,
+      "4": 1
+    },
+    "diagnostic_resources": {
+      "max_source_bytes": 268435456,
+      "metadata_source_bytes": 88022,
+      "module_text_bytes": 5408,
+      "query_text_bytes": 0,
+      "total_source_bytes": 93430
+    },
+    "saved_document_closed": true,
+    "child_exit_code": 0,
+    "child_reaped": true,
+    "killed_by": null,
+    "child_wall_seconds": 0.06059012200057623,
+    "peak_observed_rss_bytes": 0,
+    "source_files_preserved": true,
+    "source_files": {
+      "cf": 51,
+      "cfe": 28
+    }
+  },
+  "rss_sampling_observation_available": false,
+  "rss_note": "Both processes completed before the first 100 ms RSS sample; no zero-memory claim."
+}
