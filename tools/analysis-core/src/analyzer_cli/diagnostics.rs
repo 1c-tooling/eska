@@ -238,12 +238,16 @@ fn analyze(
         ),
     };
     let result = diagnostics.map_err(|error| language::query_error(session, id, &error))?;
+    let messages = match options.profile {
+        BatchProfile::Syntax => DiagnosticMessages::Localized,
+        BatchProfile::Semantic => DiagnosticMessages::RuleIdentity,
+    };
     let items = session
         .with_module_text(
             path,
             session.revision(),
             &options.cancellation.query,
-            |text| items(&result.value, text, options.profile),
+            |text| items(&result.value, text, messages),
         )
         .map_err(|error| language::query_error(session, id, &error))?
         .value?;
@@ -268,11 +272,18 @@ fn analyze(
         "coverage":coverage,"resources":session.resources()}}))
 }
 
+/// Query messages already have a locale contract; unrestricted native BSL semantic prose does not.
+#[derive(Clone, Copy)]
+pub(super) enum DiagnosticMessages {
+    Localized,
+    RuleIdentity,
+}
+
 /// Build UTF-16 ranges once and preserve canonical byte offsets for checker parity and future plans.
 pub(super) fn items(
     diagnostics: &[Diagnostic],
     text: &str,
-    profile: BatchProfile,
+    messages: DiagnosticMessages,
 ) -> Result<Vec<Value>, Value> {
     let offsets = diagnostics
         .iter()
@@ -294,9 +305,9 @@ pub(super) fn items(
             ide::Severity::Hint => 4,
         };
         // The native semantic prose has no uniform locale contract; rule identity stays readable.
-        let message = match profile {
-            BatchProfile::Syntax => diagnostic.message.clone(),
-            BatchProfile::Semantic => format!("{} ({})", diagnostic.code.as_str(), diagnostic.severity.as_str()),
+        let message = match messages {
+            DiagnosticMessages::Localized => diagnostic.message.clone(),
+            DiagnosticMessages::RuleIdentity => format!("{} ({})", diagnostic.code.as_str(), diagnostic.severity.as_str()),
         };
         Ok(json!({"range":positions.range(start,end)?,"severity":severity,"code":diagnostic.code.as_str(),
             "source":"eska-analyzer","message":message,"data":{"start_byte":start,"end_byte":end,

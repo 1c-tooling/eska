@@ -71,6 +71,7 @@ fn query_analysis_cf_opt_in_keeps_existing_syntax_and_locale_independent_native_
     let query_uri = uri(&project, &project.source);
     let text = "// current\r\nSELECT \"Я😀\" AS Caption, Data.Absent AS Value FROM Catalog.Items AS Data\r\n";
     let mut variants = vec![];
+    let mut messages = vec![];
     for lang in ["ru-RU", "en-US"] {
         let (mut client, initialized) = start(&project, lang, true, true, &[]);
         let capability =
@@ -91,13 +92,14 @@ fn query_analysis_cf_opt_in_keeps_existing_syntax_and_locale_independent_native_
         }
         let full = pull(&mut client, &query_uri, Some("eska-query-analysis"));
         assert!(full.get("error").is_none(), "{full}");
-        assert!(
-            full["result"]["items"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .any(|d| d["code"] == "UnknownFieldInQuery")
-        );
+        let unknown = full["result"]["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|d| d["code"] == "UnknownFieldInQuery")
+            .unwrap();
+        assert_ne!(unknown["message"], "UnknownFieldInQuery (Blocker)");
+        messages.push(unknown["message"].clone());
         assert_eq!(
             full["result"]["eska"]["coverage"]["metadata_complete"],
             true
@@ -123,6 +125,7 @@ fn query_analysis_cf_opt_in_keeps_existing_syntax_and_locale_independent_native_
         variants.push(machine(&full));
         client.finish();
     }
+    assert_ne!(messages[0], messages[1]);
     assert_eq!(variants[0], variants[1]);
     assert_eq!(fixture::snapshot(&project), before);
     let (mut old, _) = start(&project, "en-US", true, false, &[]);

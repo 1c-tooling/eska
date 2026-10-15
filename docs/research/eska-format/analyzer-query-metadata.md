@@ -64,6 +64,10 @@ Native dispatcher остаётся источником списка rules. Ру
 code. Parse errors используют прежний structured English translator. Локаль
 не меняет code, range, severity или JSON keys.
 
+Framed queryAnalysis также сохраняет эти локализованные сообщения: presentation
+больше не заменяет их общим `code (severity)` BSL semantic fallback. Regression
+сравнивает разные RU/EN сообщения при одинаковых machine items и диапазонах.
+
 ## Checker
 
 Syntax profile сохраняет прежние query serialization и parse-only правила.

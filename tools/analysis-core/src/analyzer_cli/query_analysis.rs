@@ -13,7 +13,7 @@ use super::{
 };
 use crate::{
     AnalysisScope, AnalysisSession, QueryAnalysisRequestError, QuerySyntaxRequestError,
-    QueryTextState, analysis_settings::Settings, batch::BatchProfile, query_analysis_enabled,
+    QueryTextState, analysis_settings::Settings, query_analysis_enabled,
 };
 
 pub const IDENTIFIER: &str = "eska-query-analysis";
@@ -125,7 +125,11 @@ fn analyze(
             Value::Null,
         ));
     };
-    let items = diagnostics::items(&result.result.diagnostics, text, BatchProfile::Semantic)?;
+    let items = diagnostics::items(
+        &result.result.diagnostics,
+        text,
+        diagnostics::DiagnosticMessages::Localized,
+    )?;
     Ok(
         json!({"kind":"full","resultId":format!("{id}:{}:query-analysis:{}:{}",result.revision,settings.sha256,result.result.source_sha256),
         "items":items,"eska":{"snapshot":dto::snapshot(session,id),"profile":"query_analysis","scope":"current_canonical_metadata",

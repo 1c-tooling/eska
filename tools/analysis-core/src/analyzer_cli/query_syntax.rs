@@ -9,7 +9,7 @@ use serde_json::{Value, json};
 
 use crate::{
     AnalysisSession, DiagnosticCode, QuerySyntaxError, QuerySyntaxRequestError, QueryTextState,
-    analysis_settings::Settings, batch::BatchProfile,
+    analysis_settings::Settings,
 };
 
 use super::{
@@ -120,7 +120,11 @@ fn analyze(
             Value::Null,
         ));
     };
-    let items = diagnostics::items(&result.result.diagnostics, text, BatchProfile::Syntax)?;
+    let items = diagnostics::items(
+        &result.result.diagnostics,
+        text,
+        diagnostics::DiagnosticMessages::Localized,
+    )?;
     Ok(
         json!({"kind":"full","resultId":format!("{id}:{}:query-syntax:{}:{}",result.revision,settings.sha256,result.result.source_sha256),
         "items":items,"eska":{"snapshot":dto::snapshot(session,id),"profile":"query_syntax","scope":result.result.scope,
