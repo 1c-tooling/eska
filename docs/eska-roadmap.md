@@ -2351,8 +2351,9 @@ groups и полный SDK прошли; установленный Explorer п�
 
 [Первая установленная часть Explorer](research/eska-format/explorer-analyzer-foundation.md)
 прошла readonly readers, диагностику, dirty replay/import guard для CF/CFE/EPF/ERF
-с одним analyzer host. Search/reveal, правки и остальные условия EF-11/EF-16
-остаются в работе.
+с одним analyzer host. [Следующая приёмка навигации](research/eska-format/explorer-current-navigation.md)
+прошла installed all4 для search/reveal/current labels/policy retraction.
+Правки и остальные условия EF-11/EF-16 остаются в работе.
 
 [Оболочка `eska check`](research/eska-format/shell-check-delegation.md) подключает
 standalone checker через bounded probe с отдельной linked-core version.

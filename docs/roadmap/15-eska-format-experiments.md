@@ -519,9 +519,12 @@ Rustdoc и minimal source/build/project CLI/build CLI gates прошли:
 
 **Статус:** `IN_PROGRESS`. [Первая установленная приёмка](../research/eska-format/explorer-analyzer-foundation.md):
 один analyzer host, readonly navigation/properties, language readers и dirty
-replay/import guard прошли на CF/CFE/EPF/ERF. Search/reveal/current labels/support,
-editable opening, queries, composition и остальная матрица продолжаются;
-EF-21/EF-16 не закрываются.
+replay/import guard прошли на CF/CFE/EPF/ERF. Следующая
+[приёмка навигации](../research/eska-format/explorer-current-navigation.md)
+подтвердила search/reveal/current labels/lazy support вместе с отзывом policy
+и dirty restart на всех четырёх типах.
+Editable opening, queries, полная schema групп, composition и остальная матрица
+продолжаются; EF-21/EF-16 не закрываются.
 
 В отдельной задаче репозитория Explorer подключить новый источник к EF-18/EF-27.
 Сохранить дерево, порядок групп, иконки, поиск, свойства и открытие исходников.

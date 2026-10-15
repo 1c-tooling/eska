@@ -10,6 +10,10 @@
 прошла readonly readers и dirty replay/import guard для четырёх типов.
 EF-11 — `IN_PROGRESS`; полный комплект EF-21 и приёмка EF-16 продолжаются.
 
+[Текущая навигация Explorer](../research/eska-format/explorer-current-navigation.md)
+прошла installed all4: поиск/reveal, имена по source/UUID, отзыв policy и dirty
+restart. 231 Node tests без skipped; editable opening и остальная матрица ещё нужны.
+
 [Оболочка check](../research/eska-format/shell-check-delegation.md) запускает
 standalone checker с явным профилем и проверенной совместимостью.
 Восемь all4 RU/EN случаев сохранили direct streams/exit и входы;

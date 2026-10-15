@@ -46,7 +46,11 @@ grammars и прошли 12 lexical cases. SDK checkpoint прошёл 417 те�
 [Обезличенный отчёт](explorer-analyzer-foundation-results.json) разделяет
 подтверждённые сценарии и ограничения.
 
-## Оставшаяся граница
+## Граница первой приёмки
+
+Следующая [приёмка текущей навигации](explorer-current-navigation.md) подключила
+search/reveal, current labels и lazy support display. Ограничения ниже относятся
+к checkpoint первой приёмки.
 
 EF-11 остаётся `IN_PROGRESS`. Search/reveal, прежний порядок групп, текущие
 имена физических owners, полный support display и editable opening по
