@@ -528,6 +528,10 @@ replay/import guard прошли на CF/CFE/EPF/ERF. Следующая
 restart/replay и import guard; полный Node gate — 257/257 без skipped.
 Принимается только `QueryParseError`, metadata/consumer/semantic coverage false.
 Generic suggestions редактора не выданы за BSL/query semantic completion.
+[Комментарий в открытом YAML](../research/eska-format/explorer-comment-buffer.md)
+прошёл installed CF/configured-CFE: versioned preview, native buffer edit,
+undo/redo и restart/import replay; Node — 284/284 без skipped. Save не перехватывается,
+публикация и общее editable opening ещё нужны; EF-11 остаётся `IN_PROGRESS`.
 Editable opening, контекстные queries EF-27, полная schema групп, composition и остальная матрица
 продолжаются; EF-21/EF-16 не закрываются.
 

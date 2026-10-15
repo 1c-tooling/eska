@@ -2370,6 +2370,10 @@ groups и полный SDK прошли; установленный Explorer п�
 watcher, restart/replay и import guard. Полный Node gate — 257/257 без skipped;
 только `QueryParseError`, metadata/consumer semantics остаётся EF-27.
 Правки и остальные условия EF-11/EF-16 остаются в работе.
+[Комментарий в текущем YAML-буфере](research/eska-format/explorer-comment-buffer.md)
+прошёл installed CF/configured-CFE и 284 Node tests без skipped: preview,
+native edit/undo/redo и restart/import replay. Save остаётся отдельной границей;
+полное editable opening, EF-11/EF-16 и MVP ещё в работе.
 
 [Оболочка `eska check`](research/eska-format/shell-check-delegation.md) подключает
 standalone checker через bounded probe с отдельной linked-core version.

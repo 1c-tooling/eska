@@ -19,6 +19,11 @@ restart. 231 Node tests без skipped; editable opening и остальная �
 и import guard на том же host. Полный Node gate — 257/257 без skipped.
 Принимается только `QueryParseError`; metadata/consumer semantics остаётся EF-27.
 
+[Правка комментария в открытом YAML](../research/eska-format/explorer-comment-buffer.md)
+прошла установленный CF/configured-CFE и 284 Node tests без skipped.
+Один versioned preview/native buffer/обычный ACK, undo/redo и replay сохранены;
+Save остаётся отдельной границей, EF-11 — `IN_PROGRESS`.
+
 [Оболочка check](../research/eska-format/shell-check-delegation.md) запускает
 standalone checker с явным профилем и проверенной совместимостью.
 Восемь all4 RU/EN случаев сохранили direct streams/exit и входы;

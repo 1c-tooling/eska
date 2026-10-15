@@ -72,6 +72,9 @@ current labels и отзыв policy; editable opening и остальная ма
 [Синтаксис `.sdbl` в установленном Explorer](explorer-query-syntax.md) прошёл
 all4 на том же host: sync/diagnostics, dirty reveal, watch/restart/import guard.
 Полный Node gate — 257/257 без skipped; metadata/consumer semantics остаётся EF-27.
+[Комментарий в текущем буфере](explorer-comment-buffer.md) прошёл installed
+CF/configured-CFE: preview, native edit/undo/redo и restart/import replay.
+284 Node tests без skipped; обычный Save и полное editable opening ещё нужны.
 [Language/Template coverage](structural-metadata-coverage.md) проверяет текущие
 descriptor fields без фиктивной canonical модели или проверки СКД.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery

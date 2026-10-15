@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "scope": "existing-comment-preview-in-one-native-yaml-buffer",
+  "status": "bounded-installed-client-acceptance-passed",
+  "platform": "linux",
+  "vscode_version": "1.109.5",
+  "explorer_version": "0.0.11",
+  "version_changed": false,
+  "protocol_version": "0.1",
+  "node_tests": {"passed": 284, "skipped": 0},
+  "typescript_check_compile": "passed",
+  "ru_en_key_parity": "passed",
+  "vsix_entries": 1313,
+  "immutable_pair_and_packaged_files_preserved": true,
+  "native_wire_version_mismatch": {
+    "direct_consumer": [41, 7],
+    "real_framed_producer": [41, 1],
+    "installed": [3, 3]
+  },
+  "installed_cases": ["configuration", "explicitly-configured-extension"],
+  "fixture_origin": "synthetic-native-declarations-imported-by-project-cli",
+  "installed_checks": [
+    "public-command-and-native-input-confirmation",
+    "current-typed-comment",
+    "unicode-crlf-and-exact-current-buffer",
+    "normal-observer-ack-without-second-input-writer",
+    "native-undo-redo",
+    "restart-and-import-retirement-replay",
+    "no-save-and-exact-authoring-files-preserved"
+  ],
+  "authoring_files_preserved_per_case": 4,
+  "native_save_invoked": false,
+  "guarded_publication": false,
+  "protected_tree_opening_unchanged": true,
+  "ui_evidence": "api-and-cdp-driven-native-commands",
+  "physical_keyboard_mouse_acceptance": false,
+  "analyzer_children_reaped_including_prior_attempts": 11,
+  "owned_profiles_and_fixtures_removed": 6,
+  "remaining": [
+    "editable-opening-and-guarded-save-contract",
+    "other-property-edit-consumers",
+    "contextual-query-client",
+    "full-ef11-ef16-and-mvp-acceptance"
+  ]
+}
