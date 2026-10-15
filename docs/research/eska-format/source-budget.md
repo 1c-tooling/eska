@@ -4,6 +4,9 @@
 на собственных EPF/ERF: source reserve, hashes, отказ нулевой квоты и точный
 replay проверены на RU/EN. Debug RSS измерен отдельно; это не большой проект
 и не общий предел памяти процесса.
+[Большой standalone CF](large-cf-current-input.md) отдельно проверен в release:
+500 изменений одного реквизита на RU/EN, независимый RSS и отказ/replay той же
+квоты. Загружены выбранные зависимости; общий heap/RSS limit не реализован.
 
 Сессия IDE и `eska-check` используют одну квоту исходных байтов YAML/rights/BSL/`.sdbl`.
 `SessionOptions.max_retained_source_bytes` и

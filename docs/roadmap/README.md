@@ -29,7 +29,12 @@ Metadata/consumer semantics остаётся EF-27; EF-18 ещё `IN_PROGRESS`.
 
 [500 циклов current inputs](../research/eska-format/current-input-stress.md)
 прошли на малых native EPF/ERF с отдельным RSS замером, отказом общей квоты
-и точным replay на RU/EN. Большой проект и hard RSS budget ещё не приняты.
+и точным replay на RU/EN.
+[Большой standalone CF](../research/eska-format/large-cf-current-input.md)
+прошёл cold/warm и 500 изменений одного реквизита на RU/EN в release:
+3617 owners, update+completion около 36 ms, RSS после 500 изменений около 93 MiB.
+Это выбранные зависимости; большой CFE/base, установленный UI и hard RSS budget
+ещё не приняты.
 
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий

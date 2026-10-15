@@ -2383,8 +2383,13 @@ standalone checker через bounded probe с отдельной linked-core ve
 
 [500 циклов текущих входов](research/eska-format/current-input-stress.md)
 малых EPF/ERF прошли на RU/EN: 6000 full-sync updates, source reserve,
-current hashes и replay после отказа квоты. Debug RSS измерен отдельно;
-большой проект и hard memory budget ещё не приняты.
+current hashes и replay после отказа квоты. Debug RSS измерен отдельно.
+[Большой standalone CF](research/eska-format/large-cf-current-input.md)
+прошёл release cold/warm и 500 изменений одного реквизита на RU/EN: 3617 owners,
+около 36 ms на update+completion, около 93 MiB RSS после 500 изменений.
+Нулевая квота отказала без потери клиентского draft; replay сохранил точные
+hashes. Полный semantic load, большой CFE/base, установленный UI и hard memory
+budget этим замером не приняты.
 
 [Структурная проверка](research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,

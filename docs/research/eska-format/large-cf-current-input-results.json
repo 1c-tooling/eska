@@ -1,0 +1,1059 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-15",
+  "status": "verified_bounded_large_standalone_cf",
+  "host": "Linux x86_64",
+  "native_profile": "Designer 2.20",
+  "native_files": 8820,
+  "native_bytes": 372254706,
+  "projected_source_files": 8141,
+  "project_files_including_accepted_base": 22117,
+  "declared_owners": 3617,
+  "import": {
+    "exit_code": 0,
+    "seconds": 61.435,
+    "original_bytes_mtime_modes_preserved": true
+  },
+  "build": {
+    "profile": "release",
+    "source": "frozen current CF/CFE composition slice",
+    "sdk_version": "0.0.0",
+    "linked_source_core_version": "0.14.2",
+    "baseline_checkpoint": "2deec7f",
+    "runtime_path": "empty",
+    "source_commit": "79c7f53"
+  },
+  "method": {
+    "cold_timer": "before Popen through initialize",
+    "owners": "all 19 bounded pages; no owner payload reads",
+    "first_read": "one catalog owning YAML",
+    "bsl": "one fixed unsaved draft; UTF8 BOM CRLF Cyrillic nonBMP comment",
+    "updates": "500 complete replacements of one inline attribute Name per locale, each followed by completion",
+    "assertions": [
+      "current name present",
+      "previous and saved field names absent",
+      "exact current YAML and BSL hashes",
+      "close restores saved bytes",
+      "all project bytes and modification times preserved"
+    ],
+    "rss": "independent /proc child RSS and HWM",
+    "source_and_heap_counters_equal_between_locales": true,
+    "os_file_cache_flushed": false,
+    "isolated_timing": false,
+    "concurrency": "independent Explorer acceptance may overlap",
+    "not_a_full_tree_or_project_semantic_load": true
+  },
+  "current_cases": [
+    {
+      "locale": "en-US",
+      "cycles": 500,
+      "profile": "release",
+      "native_files": 8820,
+      "native_bytes": 372254706,
+      "owner_count": 3617,
+      "projected_files": 22117,
+      "cold_spawn_initialize_seconds": 0.15617413899599342,
+      "owners_all_pages_seconds": 0.061559078996651806,
+      "first_owner_read_seconds": 0.0399691879938473,
+      "first_completion_seconds": 0.03172067100240383,
+      "warm_completion_median_seconds": 0.000849781499709934,
+      "single_object_cycle_first_seconds": 0.03309165400423808,
+      "single_object_cycle_median_seconds": 0.0358900459978031,
+      "single_object_cycle_max_seconds": 0.07648645500012208,
+      "single_object_cycle_total_seconds": 18.36870289993385,
+      "samples": [
+        {
+          "label": "initialized",
+          "os": {
+            "VmHWM_kib": 62796,
+            "VmRSS_kib": 62796
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 0,
+            "module_text_bytes": 0,
+            "query_text_bytes": 0,
+            "total_source_bytes": 0
+          },
+          "kernel_heap_estimates": 3277446
+        },
+        {
+          "label": "first-completion",
+          "os": {
+            "VmHWM_kib": 93216,
+            "VmRSS_kib": 93216
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163797,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163927
+          },
+          "kernel_heap_estimates": 4424314
+        },
+        {
+          "label": 1,
+          "os": {
+            "VmHWM_kib": 94332,
+            "VmRSS_kib": 94332
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163805,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163935
+          },
+          "kernel_heap_estimates": 4424322
+        },
+        {
+          "label": 50,
+          "os": {
+            "VmHWM_kib": 95392,
+            "VmRSS_kib": 95392
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163806,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163936
+          },
+          "kernel_heap_estimates": 4424323
+        },
+        {
+          "label": 100,
+          "os": {
+            "VmHWM_kib": 95448,
+            "VmRSS_kib": 95448
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163806,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163936
+          },
+          "kernel_heap_estimates": 4424323
+        },
+        {
+          "label": 150,
+          "os": {
+            "VmHWM_kib": 95480,
+            "VmRSS_kib": 95480
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 200,
+          "os": {
+            "VmHWM_kib": 95484,
+            "VmRSS_kib": 95484
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 250,
+          "os": {
+            "VmHWM_kib": 95488,
+            "VmRSS_kib": 95488
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 300,
+          "os": {
+            "VmHWM_kib": 95504,
+            "VmRSS_kib": 95504
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 350,
+          "os": {
+            "VmHWM_kib": 95512,
+            "VmRSS_kib": 95512
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 400,
+          "os": {
+            "VmHWM_kib": 95512,
+            "VmRSS_kib": 95512
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 450,
+          "os": {
+            "VmHWM_kib": 95512,
+            "VmRSS_kib": 95512
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 500,
+          "os": {
+            "VmHWM_kib": 95512,
+            "VmRSS_kib": 95512
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": "closed",
+          "os": {
+            "VmHWM_kib": 95716,
+            "VmRSS_kib": 95716
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163797,
+            "module_text_bytes": 3922,
+            "query_text_bytes": 0,
+            "total_source_bytes": 167719
+          },
+          "kernel_heap_estimates": 4428106
+        }
+      ],
+      "current_names_verified": true,
+      "close_restores_saved": true,
+      "project_bytes_mtime_preserved": true,
+      "runtime_path": "empty",
+      "os_cache_flushed": false,
+      "hard_rss_product_limit": false,
+      "native_platform_run": false
+    },
+    {
+      "locale": "ru-RU",
+      "cycles": 500,
+      "profile": "release",
+      "native_files": 8820,
+      "native_bytes": 372254706,
+      "owner_count": 3617,
+      "projected_files": 22117,
+      "cold_spawn_initialize_seconds": 0.171664209003211,
+      "owners_all_pages_seconds": 0.05992190699907951,
+      "first_owner_read_seconds": 0.04166686400276376,
+      "first_completion_seconds": 0.03391096599807497,
+      "warm_completion_median_seconds": 0.0007053389999782667,
+      "single_object_cycle_first_seconds": 0.03646490200480912,
+      "single_object_cycle_median_seconds": 0.036277163002523594,
+      "single_object_cycle_max_seconds": 0.0737572719954187,
+      "single_object_cycle_total_seconds": 18.764520788034133,
+      "samples": [
+        {
+          "label": "initialized",
+          "os": {
+            "VmHWM_kib": 62696,
+            "VmRSS_kib": 62696
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 0,
+            "module_text_bytes": 0,
+            "query_text_bytes": 0,
+            "total_source_bytes": 0
+          },
+          "kernel_heap_estimates": 3277446
+        },
+        {
+          "label": "first-completion",
+          "os": {
+            "VmHWM_kib": 92972,
+            "VmRSS_kib": 92972
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163797,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163927
+          },
+          "kernel_heap_estimates": 4424314
+        },
+        {
+          "label": 1,
+          "os": {
+            "VmHWM_kib": 94088,
+            "VmRSS_kib": 94088
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163805,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163935
+          },
+          "kernel_heap_estimates": 4424322
+        },
+        {
+          "label": 50,
+          "os": {
+            "VmHWM_kib": 95156,
+            "VmRSS_kib": 95156
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163806,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163936
+          },
+          "kernel_heap_estimates": 4424323
+        },
+        {
+          "label": 100,
+          "os": {
+            "VmHWM_kib": 95180,
+            "VmRSS_kib": 95180
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163806,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163936
+          },
+          "kernel_heap_estimates": 4424323
+        },
+        {
+          "label": 150,
+          "os": {
+            "VmHWM_kib": 95212,
+            "VmRSS_kib": 95212
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 200,
+          "os": {
+            "VmHWM_kib": 95224,
+            "VmRSS_kib": 95224
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 250,
+          "os": {
+            "VmHWM_kib": 95240,
+            "VmRSS_kib": 95240
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 300,
+          "os": {
+            "VmHWM_kib": 95240,
+            "VmRSS_kib": 95240
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 350,
+          "os": {
+            "VmHWM_kib": 95244,
+            "VmRSS_kib": 95244
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 400,
+          "os": {
+            "VmHWM_kib": 95244,
+            "VmRSS_kib": 95244
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 450,
+          "os": {
+            "VmHWM_kib": 95252,
+            "VmRSS_kib": 95252
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 500,
+          "os": {
+            "VmHWM_kib": 95252,
+            "VmRSS_kib": 95252
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": "closed",
+          "os": {
+            "VmHWM_kib": 95472,
+            "VmRSS_kib": 95472
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163797,
+            "module_text_bytes": 3922,
+            "query_text_bytes": 0,
+            "total_source_bytes": 167719
+          },
+          "kernel_heap_estimates": 4428106
+        }
+      ],
+      "current_names_verified": true,
+      "close_restores_saved": true,
+      "project_bytes_mtime_preserved": true,
+      "runtime_path": "empty",
+      "os_cache_flushed": false,
+      "hard_rss_product_limit": false,
+      "native_platform_run": false
+    }
+  ],
+  "matched_baseline_cases": [
+    {
+      "locale": "en-US",
+      "cycles": 500,
+      "profile": "release",
+      "native_files": 8820,
+      "native_bytes": 372254706,
+      "owner_count": 3617,
+      "projected_files": 22117,
+      "cold_spawn_initialize_seconds": 0.17991393199918093,
+      "owners_all_pages_seconds": 0.07515617500030203,
+      "first_owner_read_seconds": 0.04240384299919242,
+      "first_completion_seconds": 0.03611493299831636,
+      "warm_completion_median_seconds": 0.0009014954994199798,
+      "single_object_cycle_first_seconds": 0.040961940998386126,
+      "single_object_cycle_median_seconds": 0.036577591999957804,
+      "single_object_cycle_max_seconds": 0.07284716200229013,
+      "single_object_cycle_total_seconds": 18.823606157013273,
+      "samples": [
+        {
+          "label": "initialized",
+          "os": {
+            "VmHWM_kib": 63248,
+            "VmRSS_kib": 63248
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 0,
+            "module_text_bytes": 0,
+            "query_text_bytes": 0,
+            "total_source_bytes": 0
+          },
+          "kernel_heap_estimates": 3277446
+        },
+        {
+          "label": "first-completion",
+          "os": {
+            "VmHWM_kib": 93136,
+            "VmRSS_kib": 93136
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163797,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163927
+          },
+          "kernel_heap_estimates": 4424314
+        },
+        {
+          "label": 1,
+          "os": {
+            "VmHWM_kib": 94252,
+            "VmRSS_kib": 94252
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163805,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163935
+          },
+          "kernel_heap_estimates": 4424322
+        },
+        {
+          "label": 50,
+          "os": {
+            "VmHWM_kib": 95448,
+            "VmRSS_kib": 95448
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163806,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163936
+          },
+          "kernel_heap_estimates": 4424323
+        },
+        {
+          "label": 100,
+          "os": {
+            "VmHWM_kib": 95496,
+            "VmRSS_kib": 95496
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163806,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163936
+          },
+          "kernel_heap_estimates": 4424323
+        },
+        {
+          "label": 150,
+          "os": {
+            "VmHWM_kib": 95500,
+            "VmRSS_kib": 95500
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 200,
+          "os": {
+            "VmHWM_kib": 95500,
+            "VmRSS_kib": 95500
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 250,
+          "os": {
+            "VmHWM_kib": 95508,
+            "VmRSS_kib": 95508
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 300,
+          "os": {
+            "VmHWM_kib": 95512,
+            "VmRSS_kib": 95512
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 350,
+          "os": {
+            "VmHWM_kib": 95512,
+            "VmRSS_kib": 95512
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 400,
+          "os": {
+            "VmHWM_kib": 95512,
+            "VmRSS_kib": 95512
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 450,
+          "os": {
+            "VmHWM_kib": 95524,
+            "VmRSS_kib": 95524
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 500,
+          "os": {
+            "VmHWM_kib": 95524,
+            "VmRSS_kib": 95524
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": "closed",
+          "os": {
+            "VmHWM_kib": 95720,
+            "VmRSS_kib": 95720
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163797,
+            "module_text_bytes": 3922,
+            "query_text_bytes": 0,
+            "total_source_bytes": 167719
+          },
+          "kernel_heap_estimates": 4428106
+        }
+      ],
+      "current_names_verified": true,
+      "close_restores_saved": true,
+      "project_bytes_mtime_preserved": true,
+      "runtime_path": "empty",
+      "os_cache_flushed": false,
+      "hard_rss_product_limit": false,
+      "native_platform_run": false
+    },
+    {
+      "locale": "ru-RU",
+      "cycles": 500,
+      "profile": "release",
+      "native_files": 8820,
+      "native_bytes": 372254706,
+      "owner_count": 3617,
+      "projected_files": 22117,
+      "cold_spawn_initialize_seconds": 0.16162087600241648,
+      "owners_all_pages_seconds": 0.05897761599771911,
+      "first_owner_read_seconds": 0.04084587300167186,
+      "first_completion_seconds": 0.03384651499800384,
+      "warm_completion_median_seconds": 0.0009268784961022902,
+      "single_object_cycle_first_seconds": 0.03406538999843178,
+      "single_object_cycle_median_seconds": 0.0356295340025099,
+      "single_object_cycle_max_seconds": 0.0790025530004641,
+      "single_object_cycle_total_seconds": 18.36010517206887,
+      "samples": [
+        {
+          "label": "initialized",
+          "os": {
+            "VmHWM_kib": 62752,
+            "VmRSS_kib": 62752
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 0,
+            "module_text_bytes": 0,
+            "query_text_bytes": 0,
+            "total_source_bytes": 0
+          },
+          "kernel_heap_estimates": 3277446
+        },
+        {
+          "label": "first-completion",
+          "os": {
+            "VmHWM_kib": 93212,
+            "VmRSS_kib": 93212
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163797,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163927
+          },
+          "kernel_heap_estimates": 4424314
+        },
+        {
+          "label": 1,
+          "os": {
+            "VmHWM_kib": 94332,
+            "VmRSS_kib": 94332
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163805,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163935
+          },
+          "kernel_heap_estimates": 4424322
+        },
+        {
+          "label": 50,
+          "os": {
+            "VmHWM_kib": 95368,
+            "VmRSS_kib": 95368
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163806,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163936
+          },
+          "kernel_heap_estimates": 4424323
+        },
+        {
+          "label": 100,
+          "os": {
+            "VmHWM_kib": 95408,
+            "VmRSS_kib": 95408
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163806,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163936
+          },
+          "kernel_heap_estimates": 4424323
+        },
+        {
+          "label": 150,
+          "os": {
+            "VmHWM_kib": 95540,
+            "VmRSS_kib": 95540
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 200,
+          "os": {
+            "VmHWM_kib": 95560,
+            "VmRSS_kib": 95560
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 250,
+          "os": {
+            "VmHWM_kib": 95580,
+            "VmRSS_kib": 95580
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 300,
+          "os": {
+            "VmHWM_kib": 95580,
+            "VmRSS_kib": 95580
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 350,
+          "os": {
+            "VmHWM_kib": 95588,
+            "VmRSS_kib": 95588
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 400,
+          "os": {
+            "VmHWM_kib": 95592,
+            "VmRSS_kib": 95592
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 450,
+          "os": {
+            "VmHWM_kib": 95592,
+            "VmRSS_kib": 95592
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": 500,
+          "os": {
+            "VmHWM_kib": 95592,
+            "VmRSS_kib": 95592
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163807,
+            "module_text_bytes": 130,
+            "query_text_bytes": 0,
+            "total_source_bytes": 163937
+          },
+          "kernel_heap_estimates": 4424324
+        },
+        {
+          "label": "closed",
+          "os": {
+            "VmHWM_kib": 95828,
+            "VmRSS_kib": 95828
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 163797,
+            "module_text_bytes": 3922,
+            "query_text_bytes": 0,
+            "total_source_bytes": 167719
+          },
+          "kernel_heap_estimates": 4428106
+        }
+      ],
+      "current_names_verified": true,
+      "close_restores_saved": true,
+      "project_bytes_mtime_preserved": true,
+      "runtime_path": "empty",
+      "os_cache_flushed": false,
+      "hard_rss_product_limit": false,
+      "native_platform_run": false
+    }
+  ],
+  "quota": [
+    {
+      "locale": "en-US",
+      "quota_bytes": 0,
+      "inputs": [
+        "owner_yaml",
+        "bsl_module"
+      ],
+      "current_unavailable": true,
+      "no_old_hash": true,
+      "zero_reserve": true,
+      "editor_version_retained": true,
+      "stale_update_nonmutating": true,
+      "exact_drafts_replayed": true,
+      "project_bytes_mtime_preserved": true
+    },
+    {
+      "locale": "ru-RU",
+      "quota_bytes": 0,
+      "inputs": [
+        "owner_yaml",
+        "bsl_module"
+      ],
+      "current_unavailable": true,
+      "no_old_hash": true,
+      "zero_reserve": true,
+      "editor_version_retained": true,
+      "stale_update_nonmutating": true,
+      "exact_drafts_replayed": true,
+      "project_bytes_mtime_preserved": true
+    }
+  ],
+  "frozen_production_source_preserved": true,
+  "children": {
+    "measurement": 4,
+    "quota_and_replay": 8,
+    "all_exited": true,
+    "smoke_and_inspection_excluded": true
+  },
+  "other_native_input_refusal": {
+    "native_files": 113013,
+    "native_bytes": 8116327855,
+    "exit_code": 1,
+    "code": "source_form_id_duplicate",
+    "observation": "two elements in one child-items list share the same native ID",
+    "destination_published": false,
+    "original_preserved": true,
+    "platform_validity_not_inferred": true
+  },
+  "not_claimed": [
+    "large configured CFE/base composition performance",
+    "installed Explorer startup",
+    "full semantic BSL or SDBL coverage",
+    "all owner models loaded",
+    "1C platform/client execution in this run",
+    "cold OS cache",
+    "isolated benchmark or performance guarantee",
+    "hard process heap/RSS quota",
+    "full EF18 or MVP acceptance"
+  ],
+  "sanitization": "no production configuration names, native object names, paths, IDs or source hashes"
+}

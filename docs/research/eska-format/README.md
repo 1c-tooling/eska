@@ -45,8 +45,11 @@ workflow/Git/workspace и expected-byte receipt; [init](project-initialization.m
 [Declared `.sdbl` syntax](analyzer-query-syntax.md) подключён к той же сессии,
 watcher, quota и native parser без BSL wrapper. Контекстная EF-27 ещё нужна.
 [500 циклов current inputs](current-input-stress.md) малых EPF/ERF проверили
-hashes, общий reserve и replay после отказа квоты на RU/EN; большой проект
-и общий RSS budget остаются отдельной приёмкой.
+hashes, общий reserve и replay после отказа квоты на RU/EN.
+[Большой standalone CF](large-cf-current-input.md) проверен release-сборкой:
+3617 owners, холодное/тёплое открытие и 500 current field updates на RU/EN,
+отдельный RSS и quota/replay. Большой настроенный CFE/base и общий RSS budget
+остаются отдельной приёмкой.
 [Kernel owners](canonical-module-owners.md) берут object/register/common/service
 metadata из текущих slots без XML fallback.
 [CF/CFE composition](analyzer-cf-cfe-composition.md) связывает явные source roots

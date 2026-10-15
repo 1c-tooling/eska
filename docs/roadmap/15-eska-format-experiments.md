@@ -859,7 +859,13 @@ EF-18 остаётся `IN_PROGRESS`, контекстная EF-27 ещё не �
 
 [500 циклов current inputs](../research/eska-format/current-input-stress.md)
 проверили малые EPF/ERF на RU/EN: общий reserve, current hashes, явный отказ
-нулевой квоты и replay. Debug RSS измерен отдельно; большой CF/CFE ещё нужен.
+нулевой квоты и replay. Debug RSS измерен отдельно.
+[Большой standalone CF](../research/eska-format/large-cf-current-input.md)
+прошёл release cold/warm и 500 current field updates на RU/EN: 3617 owners,
+около 36 ms на update+completion и около 93 MiB RSS после 500 изменений.
+Source/heap counters совпали между локалями; нулевая квота и точный replay
+сохранены. Это выбранные зависимости, не полный semantic load. Большой
+настроенный CFE/base, установленный UI и hard RSS budget ещё не приняты.
 
 **Статус:** `IN_PROGRESS`; параллельно завершаются CLI EF-20 и приёмка EF-11/EF-21.
 Приоритет изменён 2026-10-11; накопленные компоненты и результаты ниже сохраняются.
