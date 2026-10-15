@@ -250,7 +250,13 @@ fn session_parameter_does_not_invent_query_parameter_binding() {
             &module,
             session.revision(),
             &QueryCancellation::default(),
-            |analysis, file| Ok(analysis.query_text_model(file, "SELECT &CurrentUser AS Value")),
+            |analysis, file| {
+                Ok(analysis.query_text_model(
+                    file,
+                    "SELECT &CurrentUser AS Value",
+                    &ide::QueryParameterTypes::default(),
+                ))
+            },
         )
         .unwrap()
         .value;

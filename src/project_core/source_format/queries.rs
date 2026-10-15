@@ -21,8 +21,8 @@ mod tests;
 pub(in crate::project_core::source_format) use consumers::consumer_view;
 pub use consumers::{
     QueryConsumerCoverage, QueryConsumerScope, QueryConsumerView, QueryDataset, QueryDatasetField,
-    QueryDatasetKind, QueryDynamicList, QueryFormDataPath, QueryLocated, QueryUnhandledKind,
-    QueryUnhandledPart, QueryXmlName,
+    QueryDatasetKind, QueryDynamicList, QueryFormDataPath, QueryLocated, QueryParameterDeclaration,
+    QueryUnhandledKind, QueryUnhandledPart, QueryXmlName,
 };
 pub(in crate::project_core::source_format) use references::restore_native_queries;
 pub use references::{

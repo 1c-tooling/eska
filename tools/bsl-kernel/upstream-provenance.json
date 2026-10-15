@@ -9,7 +9,8 @@
     "ide",
     "ide-db",
     "parser",
-    "parser-error"
+    "parser-error",
+    "sdbl-hir"
   ],
   "original_file_sha256": {
     "LICENSE-APACHE": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
@@ -619,6 +620,32 @@
     "crates/parser/tests/sdbl_slice8_sources.rs": "318b5e4054e5d02675c4396dedcd12431a7963c04139d3ba07113d83fab0b56b",
     "crates/parser/tests/sdbl_slice9_joins.rs": "91dda87983a8d6df0a803378885092ed90ef3afc6731c66e810f80a3d064287d",
     "crates/parser/tests/trivia_attachment.rs": "e9eaa8e8f86fd9ba24d0f2ab634b26812c775d3fde2e733c6dbb9d6f4625b785",
+    "crates/sdbl-hir/Cargo.toml": "5428f6155ddcc058709300031373694fef2cc7315247272c17f839bc43ad7a4a",
+    "crates/sdbl-hir/src/context_detector.rs": "be1a9376530ecbc125b84e760d1d61419a5accffc2492b9d92e31fa8e662d066",
+    "crates/sdbl-hir/src/diagnostics.rs": "31e2524c627605b37e1b901cec2c968b575a46df7c4598d7308acf4d2fb86a85",
+    "crates/sdbl-hir/src/hir.rs": "5f260a23fb8fb1ac91f49073e72c19ef25feef801812206f8daf59e06f2993f3",
+    "crates/sdbl-hir/src/lib.rs": "9d6b26fe4e42205db2e799a7f9797ae773b5e3654e7df65e113b6df14db113fc",
+    "crates/sdbl-hir/src/literal.rs": "f470c8cef2c247f99d9fad61b907472e3868366b47345f2e6169dce6d99e095e",
+    "crates/sdbl-hir/src/lower/clauses.rs": "1f72b28f1f052497fedcc76aebf674a7ae3600f23dc069de02c5be74fa48a15a",
+    "crates/sdbl-hir/src/lower/context.rs": "c99b2900ed555f01fe4f91c00beb04c0ec403ff65a5fc970e206646031921051",
+    "crates/sdbl-hir/src/lower/diagnostics.rs": "7cbc35b678262a7caab711a14d8fa20c59461834e451a5c6c989e643fa692368",
+    "crates/sdbl-hir/src/lower/expr/case_expr.rs": "8b38e18c015f894068ce28da8bf92e58d19d8734fc6383c1b32853108d9e8d99",
+    "crates/sdbl-hir/src/lower/expr/mod.rs": "f354f47e66ff8ef59b494774980dfa67494d4f6c71e4050951651e43eed90d14",
+    "crates/sdbl-hir/src/lower/expr/ops.rs": "88539c12eabf5489d918b58d0a4032998efe83a0a2178c50da81427bca50eda8",
+    "crates/sdbl-hir/src/lower/expr/predicates.rs": "91f5e450fdd9a95934178a75ecdc2f2e5bff8e23b5d1a54cbd7523c0ea0c3bed",
+    "crates/sdbl-hir/src/lower/from_clause.rs": "54611607a5f2ab16f4d694db00b8f63830a23a2bdd9d91f613efdd6dd62ce93f",
+    "crates/sdbl-hir/src/lower/join_clause.rs": "d47b61d48fe57ecc94f7b39a41f8fea5844b3c28f16f0ae728054cfe2ef06eff",
+    "crates/sdbl-hir/src/lower/mod.rs": "416969ceb71b9ec91d59b663bd8debc8a96e823ff9da5d50176d251e32e5f74e",
+    "crates/sdbl-hir/src/lower/select_fields.rs": "6e03533f5aaf2c3e1fb1a5dbf6a4fbe39f4d85d71ce1aa88a1c26517befae4c9",
+    "crates/sdbl-hir/src/lower/tests.rs": "20ea6b2f8572b5aa9b574ab29b71bd79682cc94dfa29e9a0b327fd398af635ce",
+    "crates/sdbl-hir/src/lower/union.rs": "ccf5da003e03ff111d8bf5b391ac283144cf7cc7e80a8c389fba8996ef257543",
+    "crates/sdbl-hir/src/position_detector.rs": "bb0e8d6b4eb27af7e2edcf9b71425b13b29e2cddf3c157bc6b17aaa54af6c495",
+    "crates/sdbl-hir/src/scope.rs": "d9af2ff39ad03a83229b187bb4f55a5e65bf62d9ebc2825ea52b64e1f1272356",
+    "crates/sdbl-hir/src/source_map.rs": "93219b84e74ab8590816330c5c78abd4a3c766d9fb0673c6bcb3a5572240bc78",
+    "crates/sdbl-hir/src/standard_fields.rs": "d7820c018656ccc42a936ad5526ce5667f4e521f77fc1601719d893ac25e7bc5",
+    "crates/sdbl-hir/src/types.rs": "6a4f9cd5d405c9ae2bc6b0eed2ef1538c197a06dec00ce5489dc0c44b467f6fb",
+    "crates/sdbl-hir/tests/comment_invariance.rs": "3e91b452344a80ae402559d3ae8fbbb9945f44bd87f258d4b3e4f3bf68763288",
+    "crates/sdbl-hir/tests/inline_extension_position.rs": "4375907cc8cb0fac903fab6718fcf08dc1a10f63b741f46e0917731fab46fe43",
     "rustfmt.toml": "f5a4278cea22034f684c4153757a610aa8487e8f65abcda528efef7c9d3c40e9"
   }
 }

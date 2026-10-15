@@ -104,3 +104,23 @@ fn consumer_native_model_uses_selected_composition_owner_and_current_foreign_inp
         ))
     ));
 }
+
+/// A selected CFE reads explicit schema parameter types from its current resource in the admitted context.
+#[test]
+fn explicit_current_parameter_types_follow_resource_revision_in_selected_cfe() {
+    let directory = TestDirectory::new();
+    let (project, _, _) = fixture::composition(&directory.0);
+    let settings =
+        project_model::ProjectConfig::load_from_file(&project.root.join("bsl-analyzer.toml"))
+            .unwrap();
+    let roots = std::iter::once(SourceReader::open(&project.root.join("src")).unwrap())
+        .chain(
+            ["base", "a", "sibling"]
+                .map(|name| SourceReader::open(&directory.0.join(name).join("src")).unwrap()),
+        )
+        .collect();
+    let composition = admit(&project.root, &settings, roots, &project.root.join("src")).unwrap();
+    let session =
+        AnalysisSession::from_composition(composition, SessionOptions::default()).unwrap();
+    super::parameters::current_parameter_types(session, &project.source);
+}

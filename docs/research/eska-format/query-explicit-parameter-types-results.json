@@ -1,0 +1,139 @@
+{
+  "root_gates": 6,
+  "kernel_adapter_sdk_gates": 21,
+  "tests": {
+    "root-test-default": {
+      "passed": 1511,
+      "failed": 0,
+      "ignored": 24
+    },
+    "root-test-all": {
+      "passed": 1632,
+      "failed": 0,
+      "ignored": 24
+    },
+    "kernel-test": {
+      "passed": 4422,
+      "failed": 0,
+      "ignored": 25
+    },
+    "adapter-test": {
+      "passed": 100,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-default": {
+      "passed": 215,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-all": {
+      "passed": 515,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "source_files": 1587,
+  "source_sha256": "5420a95746ffd51bb46ff5a9722fc2702d08934da57e0b82496b7928956f01de",
+  "source_unchanged": true,
+  "binaries": {
+    "eska-analyzer": {
+      "sha256": "44999a7ddc3c59712b9904f6117bf62da4633719803b2a7b21bcfa62b1b5f9ab",
+      "bytes": 55505840
+    },
+    "eska-check": {
+      "sha256": "e28c562e5bb2b181247b4cf15ba293b418e21c3e37845ce96bed72aa85c504d3",
+      "bytes": 50145688
+    }
+  },
+  "node": {
+    "passed": 334,
+    "failed": 0,
+    "skipped": 0,
+    "executor": "root direct PTY",
+    "duration_ms": 18227.550468,
+    "analyzer_sha256": "24dc2351328b3457e5415409c373283843a5055b0241430081767d37ebe5f48b"
+  },
+  "vsix": {
+    "sha256": "05bc15ba5ddb99068002aa8c90e29657d1cf3cb078dc52ac49fae014aa42f8fe",
+    "compiled_modules_match": 54,
+    "test_helpers_excluded": true
+  },
+  "installed": {
+    "passed": true,
+    "executor": "root direct PTY",
+    "analyzer_children_reaped": 17,
+    "cases": [
+      {
+        "case": "generated-cf",
+        "origin": "generated-native",
+        "type": "configuration",
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 24,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "generated-cfe",
+        "origin": "generated-native",
+        "type": "extension",
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "foreignCurrentMetadata": true,
+        "foreignInvalidNoSavedFallback": true,
+        "hiddenSiblingIgnored": true,
+        "foreignRestartImportReplay": true,
+        "foreignSourceBytesPreserved": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 25,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cf",
+        "origin": "1c-native",
+        "type": "configuration",
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 151,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cfe",
+        "origin": "1c-native",
+        "type": "extension",
+        "semanticContextRefused": true,
+        "syntaxAvailable": true,
+        "sourceBytesPreserved": true
+      }
+    ],
+    "editor": "VSCodium 1.109.51242 Linux x86-64",
+    "native_save_invoked": false,
+    "initial_attempt": "window closed during import checkpoint; incomplete run rejected and logs retained"
+  }
+}

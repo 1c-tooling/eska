@@ -48,7 +48,11 @@ Metadata/consumer semantics остаётся EF-27; EF-18 ещё `IN_PROGRESS`.
 и authoring ranges. SDK/process RU/EN gates прошли;
 [установленный consumer client](../research/eska-format/explorer-query-consumers.md)
 прошёл 323 Node tests и CF/configured-CFE/native-CF XML Problems/repair/replay.
-Остальная EF-27 ещё нужна. Параметры пока occurrences, completeness остаётся false.
+Остальная EF-27 ещё нужна. Явные типы текущих DCS parameters передаются в native
+lowering через общий адаптер; дубликаты, неизвестные TypeId и списки сохраняют
+unknown. SDK — 215/515, Explorer — 334 tests; installed CF/configured-CFE/native-CF
+проверили current types и replay, 17 children завершились. Полная
+parameter/consumer completeness остаётся false.
 [Текущие входы базы и зависимостей](../research/eska-format/analyzer-foreign-current-inputs.md)
 прошли SDK 213/511 и Explorer 334 tests. Установленная configured CFE учитывает
 несохранённые foreign YAML с root-qualified ACK, repair/invalid и restart/import

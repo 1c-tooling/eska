@@ -162,6 +162,110 @@ fn consumer_reports_current_resource_and_locales_share_one_query_pull() {
     }
 }
 
+/// The existing pull reads explicit current DCS types and retracts evidence when they become unknown.
+#[test]
+fn consumer_reports_current_parameter_types_without_changing_query_or_machine_locale() {
+    for composition in [false, true] {
+        let directory = TestDirectory::new();
+        let project = if composition {
+            fixture::composition(&directory.0).0
+        } else {
+            fixture::project(&directory.0, "configuration")
+        };
+        let (resource, saved) = bound_resource(&project);
+        let before = fixture::snapshot(&project);
+        let mut variants = Vec::new();
+        for lang in ["ru-RU", "en-US"] {
+            let mut client = start_consumers(&project, lang, &[]);
+            let query_uri = uri(&project, &project.source);
+            assert_eq!(
+                open(
+                    &mut client,
+                    &query_uri,
+                    1,
+                    "\u{feff}// Я😀\r\nSELECT &P AS Renamed"
+                )["method"],
+                "eska/inputChanged"
+            );
+            let initial = checked(&mut client, &project);
+            assert_eq!(initial["coverage"]["output_types_complete"], false);
+            assert_eq!(initial["findings"], json!([]));
+            let typed = "<parameter xmlns:t=\"http://v8.1c.ru/8.1/data/core\" xmlns:q=\"http://www.w3.org/2001/XMLSchema\"><name>P</name><valueType><t:Type>q:boolean</t:Type></valueType></parameter>";
+            let resource_uri = uri(&project, &resource);
+            let mut reports = Vec::new();
+            for (index, declaration, known) in [
+                (0, typed.to_owned(), true),
+                (
+                    1,
+                    format!(
+                        "{typed}{}",
+                        typed.replace("<name>P</name>", "<name>p</name>")
+                    ),
+                    false,
+                ),
+                (
+                    2,
+                    typed.replace(
+                        "<t:Type>q:boolean</t:Type>",
+                        "<t:TypeId>10000000-0000-4000-8000-000000000001</t:TypeId>",
+                    ),
+                    false,
+                ),
+                (
+                    3,
+                    typed.replace(
+                        "</parameter>",
+                        "<valueListAllowed>true</valueListAllowed></parameter>",
+                    ),
+                    false,
+                ),
+                (4, String::new(), false),
+                (5, typed.to_owned(), true),
+            ] {
+                let text = saved.replace(
+                    "</DataCompositionSchema>",
+                    &format!("{declaration}</DataCompositionSchema>"),
+                );
+                let version = index + 9;
+                let params = if index == 0 {
+                    json!({"textDocument":{"uri":resource_uri,"languageId":"xml","version":version,"text":text}})
+                } else {
+                    json!({"textDocument":{"uri":resource_uri,"version":version},"contentChanges":[{"text":text}]})
+                };
+                let method = if index == 0 {
+                    "textDocument/didOpen"
+                } else {
+                    "textDocument/didChange"
+                };
+                assert_eq!(
+                    client.ask(&json!({"jsonrpc":"2.0","method":method,"params":params}))["method"],
+                    "eska/inputChanged"
+                );
+                let report = checked(&mut client, &project);
+                assert_eq!(report["coverage"]["output_types_complete"], known);
+                assert_eq!(
+                    report["findings"].as_array().unwrap().len(),
+                    usize::from(known)
+                );
+                assert_eq!(report["context"]["query"], initial["context"]["query"]);
+                assert_eq!(
+                    report["context"]["resource"]["origin"],
+                    json!({"kind":"overlay","document_version":version})
+                );
+                reports.push(machine_report(report));
+            }
+            assert_eq!(client.ask(&json!({"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":resource_uri}}}))["method"], "eska/inputChanged");
+            let restored = checked(&mut client, &project);
+            assert_eq!(restored["coverage"]["output_types_complete"], false);
+            assert_eq!(restored["findings"], json!([]));
+            variants.push(reports);
+            client.finish();
+        }
+        assert_eq!(variants[0], variants[1]);
+        assert_eq!(fixture::snapshot(&project), before);
+    }
+}
+
 /// Legacy clients receive no additional payload; invalid negotiation and zero deadline precede reads.
 #[test]
 fn consumer_reports_require_independent_opt_in_and_existing_deadline_preflight() {
@@ -209,9 +313,28 @@ fn consumer_reports_require_independent_opt_in_and_existing_deadline_preflight()
 #[cfg(feature = "check-cli")]
 #[test]
 fn consumer_reports_saved_checker_and_ide_match_without_localizing_machine_output() {
+    for parameter in [false, true] {
+        saved_checker_and_ide_case(parameter);
+    }
+}
+
+/// Saved explicit parameter types reach both native entry points with identical machine evidence.
+#[cfg(feature = "check-cli")]
+fn saved_checker_and_ide_case(parameter: bool) {
     let directory = TestDirectory::new();
     let project = fixture::project(&directory.0, "configuration");
-    bound_resource(&project);
+    let (resource, saved) = bound_resource(&project);
+    if parameter {
+        fs::write(
+            project.root.join("src").join(resource.as_path()),
+            saved.replace("</DataCompositionSchema>", "<parameter xmlns:t=\"http://v8.1c.ru/8.1/data/core\" xmlns:q=\"http://www.w3.org/2001/XMLSchema\"><name>P</name><valueType><t:Type>q:boolean</t:Type></valueType></parameter></DataCompositionSchema>"),
+        ).unwrap();
+        fs::write(
+            project.root.join("src").join(project.source.as_path()),
+            "\u{feff}// Я😀\r\nSELECT &P AS Renamed",
+        )
+        .unwrap();
+    }
     let before = fixture::snapshot(&project);
     let mut variants = Vec::new();
     for lang in ["ru-RU", "en-US"] {
@@ -239,6 +362,8 @@ fn consumer_reports_saved_checker_and_ide_match_without_localizing_machine_outpu
             .find(|file| file["source"] == project.source.as_str())
             .unwrap();
         let batch = &file["consumers"]["report"];
+        assert_eq!(batch["coverage"]["output_types_complete"], true);
+        assert_eq!(batch["findings"].as_array().unwrap().len(), 1);
         assert_eq!(batch["findings"], ide["findings"]);
         assert_eq!(batch["coverage"], ide["coverage"]);
         for source in ["query", "owner", "resource"] {

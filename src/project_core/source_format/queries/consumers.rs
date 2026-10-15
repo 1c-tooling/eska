@@ -10,13 +10,14 @@ use crate::project_core::source_format::{Error, QueryContextView, QueryProfile, 
 mod composition;
 mod form;
 mod model;
+mod parameters;
 #[cfg(test)]
 mod tests;
 
 pub use model::{
     QueryConsumerCoverage, QueryConsumerScope, QueryConsumerView, QueryDataset, QueryDatasetField,
-    QueryDatasetKind, QueryDynamicList, QueryFormDataPath, QueryLocated, QueryUnhandledKind,
-    QueryUnhandledPart, QueryXmlName,
+    QueryDatasetKind, QueryDynamicList, QueryFormDataPath, QueryLocated, QueryParameterDeclaration,
+    QueryUnhandledKind, QueryUnhandledPart, QueryXmlName,
 };
 
 const DCS: &str = "http://v8.1c.ru/8.1/data-composition-system/schema";
@@ -37,6 +38,7 @@ pub(in crate::project_core::source_format) fn consumer_view(
         uuid: context.uuid().clone(),
         profile: context.profile(),
         datasets: vec![],
+        parameters: vec![],
         dynamic_lists: vec![],
         form_data_paths: vec![],
         unhandled: vec![],

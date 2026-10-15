@@ -1,5 +1,7 @@
 //! Storage consumer tests use supplied current inputs after owned files disappear, never a query resolver.
 
+mod parameters;
+
 use std::fs;
 
 use super::*;

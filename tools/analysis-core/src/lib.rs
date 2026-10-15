@@ -70,8 +70,8 @@ pub use cancellation::{QueryCancellation, RequestCancellation};
 pub use ide::{
     CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, DocumentSymbol, Locale,
     QueryNativeIssue, QueryOutputField, QueryOutputNameOrigin, QueryOutputType,
-    QueryParameterOccurrence, QuerySelectBranch, QuerySelectStatement, QueryTextModel,
-    QueryTextStatement,
+    QueryParameterOccurrence, QueryParameterTypes, QuerySelectBranch, QuerySelectStatement,
+    QueryTextModel, QueryTextStatement,
 };
 pub use memory::{KernelMemoryReport, KernelMemoryTable};
 pub use metadata_diagnostics::{

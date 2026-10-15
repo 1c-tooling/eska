@@ -28,6 +28,11 @@ impl MetadataResolver for Configuration {
 /// `Configuration`. The [`Configuration`] impl serves the cold call sites (graph
 /// build, streaming, tests) that still carry a whole config.
 pub trait QueryMetadataResolver: MetadataResolver {
+    /// Only explicit current query-parameter declarations grant types; no session/global lookup is implied.
+    fn resolve_query_parameter_type(&self, _name: &str) -> Option<AttributeType> {
+        None
+    }
+
     fn resolve_metadata_object(&self, mdo_type: MdoType, name: &str)
         -> Option<Arc<MetadataObject>>;
 

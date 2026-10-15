@@ -7,7 +7,7 @@ use roxmltree::Node;
 use super::{
     DCS, Error, QueryConsumerCoverage, QueryConsumerScope, QueryConsumerView, QueryContextView,
     QueryDataset, QueryDatasetField, QueryDatasetKind, SETTINGS, XSI, invalid, inventory, located,
-    native, scalar,
+    native, parameters, scalar,
 };
 use crate::project_core::source_format::QuerySlot;
 
@@ -82,6 +82,9 @@ pub(super) fn read(
         }
     }
     for child in root.children().filter(Node::is_element) {
+        if child.has_tag_name((DCS, "parameter")) {
+            parameters::read(context, child, QueryConsumerScope::Resource, view)?;
+        }
         if !handled.contains(&child.range().start) {
             inventory(
                 context,

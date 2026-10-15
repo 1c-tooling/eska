@@ -83,8 +83,8 @@ pub use name_lookup::{
 };
 pub use query_text_model::{
     QueryNativeIssue, QueryOutputField, QueryOutputNameOrigin, QueryOutputType,
-    QueryParameterOccurrence, QuerySelectBranch, QuerySelectStatement, QueryTextModel,
-    QueryTextStatement,
+    QueryParameterOccurrence, QueryParameterTypes, QuerySelectBranch, QuerySelectStatement,
+    QueryTextModel, QueryTextStatement,
 };
 pub use reference_kind::{classify_reference_token, ReferenceKind};
 pub use references::{

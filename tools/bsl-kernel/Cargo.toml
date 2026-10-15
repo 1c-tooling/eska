@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/base-db", "crates/bsl-metadata", "crates/hir-ty", "crates/hir-def", "crates/ide-db", "crates/parser-error", "crates/parser", "crates/ide"]
+members = ["crates/base-db", "crates/bsl-metadata", "crates/hir-ty", "crates/hir-def", "crates/ide-db", "crates/parser-error", "crates/parser", "crates/sdbl-hir", "crates/ide"]
 
 [workspace.package]
 version = "0.2.85"
@@ -47,7 +47,7 @@ project-model = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = 
 rayon = "1.8"
 rustc-hash = "2.0"
 salsa = { version = "=0.28.2", features = ["rayon", "macros", "salsa_unstable"] }
-sdbl-hir = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
+sdbl-hir = { path = "crates/sdbl-hir" }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
@@ -73,6 +73,7 @@ ide-db = { path = "crates/ide-db" }
 ide = { path = "crates/ide" }
 parser-error = { path = "crates/parser-error" }
 parser = { path = "crates/parser" }
+sdbl-hir = { path = "crates/sdbl-hir" }
 
 [patch.crates-io]
 salsa = { git = "https://github.com/itrous/salsa.git", rev = "5d2686f1f94dc3d618569652d5576ce997491b3b" }

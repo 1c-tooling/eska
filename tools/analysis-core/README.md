@@ -25,7 +25,9 @@ consumer и semantic completeness остаются false. Semantic checker ис�
 Тот же diagnostic pull добавляет `eska.consumers`: текущие DCS fields и прямые
 DynamicList DataPath, source stamps и точность authoring ranges. Semantic checker
 содержит тот же отчёт в `data.report.query_files[].consumers`; syntax payload не меняется.
-Параметры, полная проверка consumers и semantic completeness остаются false.
+Явные типы параметров текущей СКД идут через общий адаптер в native lowering.
+Дубликаты, неизвестные TypeId и разрешённые списки сохраняют unknown. Полная
+проверка parameters/consumers и semantic completeness остаётся false.
 
 [Входы базы и зависимостей](../../docs/research/eska-format/analyzer-foreign-current-inputs.md)
 объявляются bounded `eska/analysis/inputs` pages без чтения payload. Только видимые

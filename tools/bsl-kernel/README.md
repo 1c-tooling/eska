@@ -1,6 +1,6 @@
 # Закреплённое ядро BSL для ESKA
 
-Этот отдельный Cargo workspace содержит восемь изменённых пакетов bsl-analyzer из
+Этот отдельный Cargo workspace содержит девять изменённых пакетов bsl-analyzer из
 ревизии `9021ba07471eee8a2614bed2105a2c8699f60780`. Остальные зависимости на
 bsl-analyzer закреплены на той же Git-ревизии. Это исходники библиотек для
 экспериментального адаптера, а не опубликованный analyzer/check или LSP-сервер.
@@ -44,6 +44,12 @@ authority проверяет SDK перед вызовом native query.
 SDBL. Исходные байты и ranges не сдвигаются; BOM внутри запроса и повторный BOM
 остаются ошибками. Общий converter используется обоими parser entry points,
 поэтому syntax diagnostics и output/consumer model согласованы.
+
+Явные типы параметров текущей СКД передаются через `QueryParameterTypes` в
+`FileQueryResolver` и прежний lowering локального `sdbl-hir`. Экспериментальный
+`Analysis::query_text_model` принимает третьим аргументом этот явный контекст;
+пустой контекст сохраняет unknown. Неоднозначность имён не разрешается выбором
+первого или последнего объявления; тип одноимённого параметра сеанса не участвует.
 
 Для [адаптера роли](../../docs/research/eska-format/role-adapter.md) открыт
 `Role::with_data`: source UUID и current rights передаются явно; serialized

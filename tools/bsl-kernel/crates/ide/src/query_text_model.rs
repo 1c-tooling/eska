@@ -2,6 +2,8 @@
 
 use std::collections::HashMap;
 
+use bsl_metadata::QueryMetadataResolver;
+pub use ide_db::query_resolver::QueryParameterTypes;
 use ide_db::{query_resolver::FileQueryResolver, RootDatabaseImpl};
 use salsa::Database;
 use sdbl_hir::{ExprHir, FieldHir, FunctionKind, InValues, SdblHir, SdblType};
@@ -68,6 +70,7 @@ pub struct QueryParameterOccurrence {
     pub name: String,
     pub range: TextRange,
     pub name_range: TextRange,
+    pub declared_type: Option<bsl_metadata::AttributeType>,
 }
 
 /// Owned native facts do not grant consumer, parameter or temporary-table semantic completeness.
@@ -88,12 +91,17 @@ impl Analysis {
     /// Callers must prepare current metadata and enter the database attachment first. Native parse
     /// and lowering have no inner cancellation hook; cancellation is checked before/after each and
     /// between projected items. No BSL body, saved resource or whole Configuration is loaded here.
-    pub fn query_text_model(&self, owner: FileId, text: &str) -> QueryTextModel {
+    pub fn query_text_model(
+        &self,
+        owner: FileId,
+        text: &str,
+        parameters: &QueryParameterTypes,
+    ) -> QueryTextModel {
         self.database().unwind_if_revision_cancelled();
         let parse = parser::parse_sdbl(text);
         self.database().unwind_if_revision_cancelled();
         let syntax_complete = syntax::sdbl_query::collect_query_parse_errors(&parse).is_empty();
-        let resolver = FileQueryResolver::new(self.database(), owner);
+        let resolver = FileQueryResolver::new(self.database(), owner).with_parameters(parameters);
         let package = sdbl_hir::lower_sdbl_to_hir_with_resolver(&parse, Some(&resolver));
         self.database().unwind_if_revision_cancelled();
         let native_expressions_supported = package.queries().iter().all(|query| {
@@ -148,7 +156,7 @@ impl Analysis {
                 )));
             }
         }
-        let parameters = parameter_occurrences(&root, self.database());
+        let parameters = parameter_occurrences(&root, self.database(), &resolver);
         let diagnostics = package
             .all_diagnostics()
             .map(|issue| {
@@ -321,6 +329,7 @@ fn type_complete(ty: &SdblType) -> bool {
 fn parameter_occurrences(
     root: &SyntaxNode,
     db: &RootDatabaseImpl,
+    resolver: &FileQueryResolver<'_>,
 ) -> Vec<QueryParameterOccurrence> {
     root.descendants()
         .filter(|node| node.kind() == SyntaxKind::SDBL_PARAMETER)
@@ -332,6 +341,7 @@ fn parameter_occurrences(
                 .find(|token| token.text().starts_with('&') && token.text().len() > 1)?;
             let range = token.text_range();
             Some(QueryParameterOccurrence {
+                declared_type: resolver.resolve_query_parameter_type(&token.text()[1..]),
                 name: token.text()[1..].to_owned(),
                 range,
                 name_range: TextRange::new(range.start() + TextSize::from(1), range.end()),

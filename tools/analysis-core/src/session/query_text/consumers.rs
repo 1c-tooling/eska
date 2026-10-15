@@ -10,6 +10,7 @@ use crate::{
 
 mod checks;
 mod model;
+mod parameters;
 mod report;
 #[cfg(test)]
 mod tests;
@@ -91,13 +92,14 @@ impl AnalysisSession {
         if owner.binding.native_path != *context.consumer.native_descriptor() {
             return Err(mismatch());
         }
+        let parameter_types = parameters::types(&context, request, cancellation)?;
         let analysis = ide::Analysis::from_database(self.database.clone());
         let model = salsa::Cancelled::catch(std::panic::AssertUnwindSafe(|| {
             analysis.attached(|analysis| -> Result<_, QueryConsumerRequestError> {
                 let _registration = cancellation
                     .register(analysis.database().cancellation_token())
                     .map_err(QueryConsumerRequestError::Native)?;
-                Ok(analysis.query_text_model(owner.binding.main, text))
+                Ok(analysis.query_text_model(owner.binding.main, text, &parameter_types))
             })
         }))
         .map_err(|_| QueryConsumerRequestError::Native(QueryError::Cancelled))??;

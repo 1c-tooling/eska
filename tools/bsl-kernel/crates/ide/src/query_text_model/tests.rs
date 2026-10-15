@@ -23,7 +23,9 @@ fn analysis() -> Analysis {
 /// Every returned range slices the caller's exact UTF-8 bytes, including CRLF and non-BMP prefixes.
 fn model(text: &str) -> QueryTextModel {
     let analysis = analysis();
-    analysis.attached(|analysis| analysis.query_text_model(FileId(0), text))
+    analysis.attached(|analysis| {
+        analysis.query_text_model(FileId(0), text, &QueryParameterTypes::default())
+    })
 }
 
 /// SELECT helpers assert package identity rather than silently skipping DROP or missing branches.
@@ -184,7 +186,7 @@ fn cancelled_native_generation_cannot_return_a_model() {
     let result = salsa::Cancelled::catch(std::panic::AssertUnwindSafe(|| {
         analysis.attached(|analysis| {
             token.cancel();
-            analysis.query_text_model(FileId(0), "SELECT 1 AS A")
+            analysis.query_text_model(FileId(0), "SELECT 1 AS A", &QueryParameterTypes::default())
         })
     }));
     assert!(matches!(result, Err(salsa::Cancelled::Local)));
@@ -207,4 +209,64 @@ fn unknown_calls_in_nested_and_non_output_expressions_remain_unsupported() {
     assert!(
         model("SELECT UPPER(\"x\") AS Value WHERE 1 = &Parameter").native_expressions_supported
     );
+}
+
+/// Current declared types participate in native expression lowering without changing query byte coordinates.
+#[test]
+fn explicit_query_parameter_types_reach_native_outputs_and_occurrence_facts() {
+    let analysis = analysis();
+    let mut parameters = QueryParameterTypes::default();
+    parameters
+        .declare("Сумма", Some(bsl_metadata::AttributeType::Number { precision: 9, scale: 2 }));
+    let text = "\u{feff}// 😀\r\nВЫБРАТЬ &сумма + 1 КАК Результат";
+    let result =
+        analysis.attached(|analysis| analysis.query_text_model(FileId(0), text, &parameters));
+    assert!(result.syntax_complete);
+    assert!(select(&result, 0).output_types_complete);
+    assert!(matches!(select(&result, 0).branches[0].fields[0].ty, SdblType::Number { .. }));
+    assert_eq!(result.parameters.len(), 1);
+    assert_eq!(result.parameters[0].name, "сумма");
+    assert!(matches!(
+        result.parameters[0].declared_type,
+        Some(bsl_metadata::AttributeType::Number { precision: 9, scale: 2 })
+    ));
+    assert_eq!(&text[result.parameters[0].name_range], "сумма");
+    let absent = analysis.attached(|analysis| {
+        analysis.query_text_model(FileId(0), "SELECT &Missing AS Value", &parameters)
+    });
+    assert!(!select(&absent, 0).output_types_complete);
+    assert_eq!(absent.parameters[0].declared_type, None);
+}
+
+/// Duplicate and untyped declarations remain ambiguous; each supplied resource owns its own types.
+#[test]
+fn parameter_names_use_native_folding_and_never_overwrite_ambiguity_or_leak_types() {
+    let mut parameters = QueryParameterTypes::default();
+    parameters.declare("ΟΣ", Some(bsl_metadata::AttributeType::Boolean));
+    assert_eq!(parameters.resolve("οσ"), Some(bsl_metadata::AttributeType::Boolean));
+    assert_eq!(parameters.resolve("ος"), None);
+    parameters.declare("Value", Some(bsl_metadata::AttributeType::Boolean));
+    parameters.declare("value", Some(bsl_metadata::AttributeType::Boolean));
+    assert_eq!(parameters.resolve("VALUE"), None);
+    parameters.declare("Unknown", None);
+    parameters.declare("UNKNOWN", Some(bsl_metadata::AttributeType::Boolean));
+    assert_eq!(parameters.resolve("unknown"), None);
+    let analysis = analysis();
+    for ty in [
+        bsl_metadata::AttributeType::Boolean,
+        bsl_metadata::AttributeType::String { length: Some(40) },
+    ] {
+        let mut current = QueryParameterTypes::default();
+        current.declare("P", Some(ty.clone()));
+        let result = analysis.attached(|analysis| {
+            analysis.query_text_model(FileId(0), "SELECT &p AS Value", &current)
+        });
+        assert_eq!(result.parameters[0].declared_type, Some(ty));
+        assert!(select(&result, 0).output_types_complete);
+    }
+    let result = analysis.attached(|analysis| {
+        analysis.query_text_model(FileId(0), "SELECT &p AS Value", &QueryParameterTypes::default())
+    });
+    assert_eq!(result.parameters[0].declared_type, None);
+    assert!(!select(&result, 0).output_types_complete);
 }

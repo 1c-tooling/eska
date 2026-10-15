@@ -8,7 +8,7 @@
 //! objects stay outside it — SDBL names no external data processor or report, and the
 //! roots a tool reports as consulted are exactly these.
 
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
 use bsl_metadata::{
     AttributeType, MdoType, MetadataObject, MetadataResolver, QueryMetadataResolver, Register,
@@ -24,6 +24,28 @@ mod tests;
 pub struct FileQueryResolver<'a> {
     db: &'a dyn hir::ConfigsDatabase,
     file_id: vfs::FileId,
+    parameters: Option<&'a QueryParameterTypes>,
+}
+
+/// One supplied schema owns parameter types; duplicate declarations remain ambiguous even if equal.
+#[derive(Debug, Default)]
+pub struct QueryParameterTypes(BTreeMap<String, Option<AttributeType>>);
+
+impl QueryParameterTypes {
+    /// Untyped declarations still participate in ambiguity; later names never overwrite current uncertainty.
+    pub fn declare(&mut self, name: &str, ty: Option<AttributeType>) {
+        self.0.entry(parameter_key(name)).and_modify(|previous| *previous = None).or_insert(ty);
+    }
+
+    /// Use native per-character folding rather than contextual string lowercasing.
+    pub fn resolve(&self, name: &str) -> Option<AttributeType> {
+        self.0.get(&parameter_key(name)).and_then(Clone::clone)
+    }
+}
+
+/// Match `stdx::case::eq_ignore_case`: full-string lowercasing introduces contextual final sigma.
+fn parameter_key(name: &str) -> String {
+    name.chars().flat_map(char::to_lowercase).collect()
 }
 
 impl std::fmt::Debug for FileQueryResolver<'_> {
@@ -35,7 +57,13 @@ impl std::fmt::Debug for FileQueryResolver<'_> {
 impl<'a> FileQueryResolver<'a> {
     /// The caller supplies a registered current descriptor and admits metadata readiness separately.
     pub fn new(db: &'a dyn hir::ConfigsDatabase, file_id: vfs::FileId) -> Self {
-        Self { db, file_id }
+        Self { db, file_id, parameters: None }
+    }
+
+    /// The caller supplies the current owning resource; ordinary BSL and bare queries stay untyped.
+    pub fn with_parameters(mut self, parameters: &'a QueryParameterTypes) -> Self {
+        self.parameters = Some(parameters);
+        self
     }
 }
 
@@ -46,6 +74,11 @@ impl MetadataResolver for FileQueryResolver<'_> {
 }
 
 impl QueryMetadataResolver for FileQueryResolver<'_> {
+    /// Query parameters are local to the supplied schema and never resolve through SessionParameters.
+    fn resolve_query_parameter_type(&self, name: &str) -> Option<AttributeType> {
+        self.parameters.and_then(|parameters| parameters.resolve(name))
+    }
+
     fn resolve_metadata_object(
         &self,
         mdo_type: MdoType,

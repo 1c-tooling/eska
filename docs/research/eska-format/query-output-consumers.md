@@ -21,14 +21,42 @@ identifier сложного выражения остаётся отдельны
 неполными. Все native ranges относятся к исходному UTF-8 тексту.
 
 Параметры сохраняют каждое настоящее AST occurrence, написание и диапазон имени
-без `&`; comments/string literals не становятся параметрами. Это не декларации
-и не доказанные типы параметров. Одноимённый `SessionParameter` их не определяет.
+без `&`; comments/string literals не становятся параметрами. Occurrence само по
+себе не задаёт тип. Явные типы текущей СКД теперь передаются отдельным контекстом
+в тот же native lowering; одноимённый `SessionParameter` их не определяет.
 
 Модель содержит structured native diagnostics. Нулевой список не означает
 валидность: неизвестный вызов может не выдать native issue. Поэтому отдельно
 проверяются известные HIR operations/functions во всех моделируемых clauses,
 включая вложенные выражения и UNION. Отмена проверяется до/после native parse и
 lowering и между projected items; немедленная отмена внутри parser не обещается.
+
+## Явные типы параметров СКД
+
+Storage read-view сохраняет прямые `parameter` корня схемы: имя, `valueType`,
+`expression` и `valueListAllowed` с текущими native/authoring ranges.
+`valueType` читает общий namespace-aware metadata parser; адаптер типов также
+общий. QName, qualifiers и неподдержанные TypeId не теряются при чтении.
+
+Например, `SELECT &P AS Renamed` без известного типа остаётся неполным.
+Если текущий XML объявляет `P` как `xs:boolean`, native модель получает Boolean
+и прежняя проверка отсутствующего поля `Value` может выдать finding. Изменение
+только XML ресурса меняет этот результат без новой query version.
+Повторное имя по native per-character case folding, неизвестный TypeId,
+неподдержанный тип и `valueListAllowed=true` сохраняют unknown; удаление
+объявления отзывает прежний тип. Список не сводится к скалярному элементу.
+
+Отсутствие явного объявления не диагностируется как ошибка: СКД также получает
+параметры из анализа запроса, включая параметры виртуальных таблиц.
+[Описание платформы](https://1c-dn.com/library/tutorials/practical_developer_guide_parameters2/).
+Выражения/default values, зависимости, runtime bindings и параметры DynamicList
+пока не проверяются. Полный параметр остаётся в inventory; глобальные признаки
+`parameters_complete`, `consumer_complete`, `semantic_complete` остаются false.
+Новый wire protocol или capability не добавлены.
+
+Экспериментальный native `Analysis::query_text_model` теперь требует третьим
+аргументом `&QueryParameterTypes`. Локальный `sdbl-hir` той же закреплённой
+ревизии — девятый пакет native workspace; package versions не меняются.
 
 ## Проверяемые bindings
 
@@ -143,3 +171,22 @@ lockfiles не изменились. Полный Explorer — 323/323; преж
 с новым release analyzer повторил CF/configured-CFE/native-CF приёмку с BOM
 в самом query buffer, полными output names и без ложного QueryParseError.
 Native CFE отказала semantic context явно; все 12 children завершились.
+
+
+Явные current DCS parameter types прошли отдельный полный gate:
+[структурированные результаты](query-explicit-parameter-types-results.json).
+Корневые шесть проверок — 1511/1632 tests, по 24 opt-in ignored; native/adapter/SDK
+и debug/release builds — 21 gate. Native — 4422 passed / 25 ignored, adapter —
+100, SDK — 215 default / 515 all-features без ignored. Строгие Clippy/Rustdoc
+прошли. Все 1587 Rust/Cargo files совпали до и после проверок и release build;
+package names/versions четырёх lockfiles сохранены.
+
+Полный Explorer Node gate — 334/334 без skipped. Неизменный VSIX 0.0.11 с
+совпавшими 54 compiled modules и новым release analyzer прошёл installed CF,
+configured CFE и native-origin CF: тип только текущего XML, duplicates/TypeId/list
+как unknown, удаление типа, неизменная query version и dirty replay после restart.
+Прежние repair/invalid/import и foreign input сценарии сохранены. Все 17 analyzer
+children завершились; source bytes сохранены. Native CFE semantic context
+отказал явно, отдельный syntax route доступен. Первый installed прогон прервался
+закрытием окна на import checkpoint и не принят; повтор прошёл полностью.
+Это editor API, без физического ввода/Save и без нового запуска платформы 1С.

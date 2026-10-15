@@ -2,6 +2,7 @@
 
 use std::ops::Range;
 
+use crate::project_core::metadata_model::MetadataProperty;
 use crate::project_core::source_format::{
     FormElementKind, FormId, NativeUuid, QueryAuthoringRange, QueryProfile, QueryReference,
     SourcePath,
@@ -37,6 +38,16 @@ pub struct QueryDataset {
     pub kind: QueryDatasetKind,
     pub query: Option<QueryReference>,
     pub fields: Vec<QueryDatasetField>,
+}
+
+/// Explicit schema parameters retain source types and expressions without claiming runtime completeness.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct QueryParameterDeclaration {
+    pub scope: QueryConsumerScope,
+    pub name: QueryLocated<String>,
+    pub value_type: Option<QueryLocated<MetadataProperty>>,
+    pub expression: Option<QueryLocated<String>>,
+    pub value_list_allowed: Option<QueryLocated<bool>>,
 }
 
 /// Attribute identity belongs to the root Attributes collection rather than the UI element map.
@@ -111,6 +122,7 @@ pub struct QueryConsumerView {
     pub(super) uuid: NativeUuid,
     pub(super) profile: QueryProfile,
     pub(super) datasets: Vec<QueryDataset>,
+    pub(super) parameters: Vec<QueryParameterDeclaration>,
     pub(super) dynamic_lists: Vec<QueryDynamicList>,
     pub(super) form_data_paths: Vec<QueryFormDataPath>,
     pub(super) unhandled: Vec<QueryUnhandledPart>,
@@ -157,6 +169,12 @@ impl QueryConsumerView {
     #[must_use]
     pub fn datasets(&self) -> &[QueryDataset] {
         &self.datasets
+    }
+
+    /// Only explicit native declarations are listed; implicit virtual-table parameters are not invented.
+    #[must_use]
+    pub fn parameter_declarations(&self) -> &[QueryParameterDeclaration] {
+        &self.parameters
     }
 
     /// Automatic lists retain their explicit settings but supply no saved query reference.

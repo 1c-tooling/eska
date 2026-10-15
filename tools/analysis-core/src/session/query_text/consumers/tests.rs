@@ -1,5 +1,7 @@
 //! Real current storage and canonical owner anchors exercise consumer facts without synthetic BSL.
 
+mod parameters;
+
 use std::fs;
 
 use eska::{
