@@ -49,6 +49,10 @@ Metadata/consumer semantics остаётся EF-27; EF-18 ещё `IN_PROGRESS`.
 [установленный consumer client](../research/eska-format/explorer-query-consumers.md)
 прошёл 323 Node tests и CF/configured-CFE/native-CF XML Problems/repair/replay.
 Остальная EF-27 ещё нужна. Параметры пока occurrences, completeness остаётся false.
+[Текущие входы базы и зависимостей](../research/eska-format/analyzer-foreign-current-inputs.md)
+прошли SDK 213/511 и Explorer 334 tests. Установленная configured CFE учитывает
+несохранённые foreign YAML с root-qualified ACK, repair/invalid и restart/import
+replay; source bytes сохранены, 14 children завершились.
 Native-origin CF прошёл saved IDE/checker parity и dirty field/close на RU/EN;
 configured CFE явно отказала на Unsupported CommonPicture. Синтаксис сохранён,
 успешная native CFE semantic приёмка ещё нужна.

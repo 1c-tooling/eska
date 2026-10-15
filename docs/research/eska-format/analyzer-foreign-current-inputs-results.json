@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-15",
+  "sdk_commit": "992137d",
+  "explorer_commit": "280781b",
+  "versions_changed": false,
+  "sdk_gates": 11,
+  "sdk_tests": { "default": 213, "all_features": 511, "failed": 0, "ignored": 0 },
+  "node": { "passed": 334, "failed": 0, "skipped": 0 },
+  "source_fingerprint_unchanged": true,
+  "source_files": 1557,
+  "process": {
+    "locales": ["ru-RU", "en-US"],
+    "payload_free_pages": true,
+    "hidden_roots_refused": true,
+    "snapshot_page_and_deadline_guards": true,
+    "foreign_preconnect_replay": true,
+    "root_qualified_ack": true,
+    "invalid_current_without_saved_fallback": true,
+    "close_restart_import_replay": true,
+    "source_bytes_preserved": true
+  },
+  "installed": {
+    "editor": "VSCodium 1.109.51242",
+    "os": "Linux x86-64",
+    "vsix_version": "0.0.11",
+    "vsix_entries": 1318,
+    "compiled_files_match": 54,
+    "test_helpers_excluded": true,
+    "foreign_metadata_context": "generated configured CFE",
+    "base_and_dependency_current_buffers": true,
+    "unchanged_query_version": true,
+    "invalid_current_without_saved_fallback": true,
+    "hidden_sibling_ignored": true,
+    "restart_import_replay": true,
+    "source_bytes_preserved": true,
+    "analyzer_children_reaped": 14,
+    "physical_keyboard": false,
+    "native_save_invoked": false,
+    "matching_native_cf_cfe_proven": false
+  },
+  "mvp_complete": false
+}

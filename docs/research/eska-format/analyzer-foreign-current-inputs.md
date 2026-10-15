@@ -1,5 +1,8 @@
 # Текущие входы базы и зависимостей выбранной CFE
 
+SDK `992137d`, Explorer `280781b`;
+[структурированный результат](analyzer-foreign-current-inputs-results.json).
+
 При выбранном составном CF/CFE Explorer раньше объявлял input membership только
 собственного source root. Открытый буфер metadata зависимости сохранялся в
 editor journal, но не отправлялся SDK: переименование `AField` оставляло анализ
