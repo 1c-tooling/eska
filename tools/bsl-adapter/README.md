@@ -188,3 +188,9 @@ IDE/LSP/MCP runtime. Для проверок нужен Rust; автоматич
 сохраняет текущие search TypeDescription, QName-aware пути Content и ownership
 в отдельной native модели. Отсутствующие заимствованные свойства наследуются
 только после проверки исходного UUID; неизвестный состав не становится MDO.
+
+[`functional_option`](../../docs/research/eska-format/analyzer-functional-options.md)
+сохраняет `Location`, `PrivilegedGetMode`, `Content` и ownership в отдельной
+модели. Константа, реквизит справочника и ресурс регистра сведений имеют
+разные storage variants; явно пустой `Location` отличается от отсутствующего
+заимствованного свойства. Неизвестный путь не получает булевый тип по умолчанию.

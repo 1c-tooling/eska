@@ -130,6 +130,13 @@ signature help используют те же canonical inputs. UUID-прове�
 добавляет состав; несовместимый тип или недоступный вклад дают прежний
 `analysis_composition_incomplete`, сохраняя отдельный syntax route.
 
+[FunctionalOption](../../docs/research/eska-format/analyzer-functional-options.md)
+уточняет native `GetFunctionalOption` по текущему типу константы, реквизита
+справочника или ресурса регистра сведений. Cold literal discovery готовит
+только нужную опцию и storage owner; user shadowing не разрешает чтение.
+Пустой/invalid storage отзывает прежний тип, а UUID-проверенная композиция,
+foreign dirty inputs и replay используют обычный controller.
+
 [Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
 дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
 common completion, unsaved named flags и переход к физическому BSL input;

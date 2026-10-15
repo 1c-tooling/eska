@@ -1,0 +1,289 @@
+{
+  "source_sha256": "0bebe2befcc5269216a9ac727553a049b0db1bd1fe41d30f88057cfe80d5395a",
+  "frozen_inputs": 1645,
+  "root_gates_reused": 6,
+  "root_reuse": {
+    "root_inputs_unchanged": true,
+    "files": 749,
+    "root_gates": 6,
+    "previous_root_gates": "CommonCommand frozen root phase",
+    "root_scope_sha256": "1c5c5704dc571c3ebe388315a9de2d4be8b15f63155eacb6738d5389340bcdb7"
+  },
+  "tool_gates_executed_after_content_fix": 16,
+  "kernel_gates_reused": 5,
+  "kernel_reuse": {
+    "kernel_inputs_unchanged": true,
+    "files": 490,
+    "sha256": "bc6fe7918fad26ea2f99c6b3ba8143e81f00a34c734ed944477c1bd11e8878b3",
+    "reused_gates": [
+      {
+        "name": "kernel-fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 1.331
+      },
+      {
+        "name": "kernel-check",
+        "command": [
+          "cargo",
+          "check",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-features",
+          "--locked",
+          "--offline"
+        ],
+        "exit_code": 0,
+        "seconds": 4.015
+      },
+      {
+        "name": "kernel-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--offline",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 6.924
+      },
+      {
+        "name": "kernel-test",
+        "command": [
+          "cargo",
+          "test",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-features",
+          "--locked",
+          "--offline"
+        ],
+        "exit_code": 0,
+        "seconds": 119.946
+      },
+      {
+        "name": "kernel-rustdoc",
+        "command": [
+          "cargo",
+          "doc",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-features",
+          "--locked",
+          "--offline",
+          "--no-deps",
+          "--document-private-items"
+        ],
+        "exit_code": 0,
+        "seconds": 4.067
+      }
+    ]
+  },
+  "tests": {
+    "kernel-test": {
+      "passed": 4426,
+      "failed": 0,
+      "ignored": 25
+    },
+    "adapter-test": {
+      "passed": 113,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-default": {
+      "passed": 232,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-all": {
+      "passed": 543,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "binaries": {
+    "eska-analyzer-debug": {
+      "sha256": "33bfdec5553db6891fad182b3b88495308839340923dac2298b0f129f563fcad",
+      "bytes": 135169320
+    },
+    "eska-analyzer": {
+      "sha256": "150cee1ddeba43b19acfe8372d795adfbe1d043f3ab3bb7d4164b905068423cc",
+      "bytes": 56005560
+    },
+    "eska-check": {
+      "sha256": "3e0337b6c78e62d431cf78f76ba5432a9770972ef384d026dc7646cec9a0f18f",
+      "bytes": 50503352
+    }
+  },
+  "node": {
+    "session_id": 50203,
+    "tests": 361,
+    "passed": 361,
+    "failed": 0,
+    "skipped": 0,
+    "duration_ms": 10506.297265,
+    "source": "root direct PTY stdout",
+    "frozen_binary": "bins/eska-analyzer-debug"
+  },
+  "vsix": {
+    "sha256": "c8bcf9df6aa40ef621521e14c0adc85c1e28258473305191ee3cf22b9fc58b55",
+    "production_javascript": 55,
+    "matching_current_compile": true,
+    "helpers_included": false
+  },
+  "native_platform_run": false,
+  "native_save_invoked": false,
+  "physical_typing_verified": false,
+  "mvp_complete": false,
+  "installed": {
+    "passed": true,
+    "executor": "root direct PTY",
+    "session": 11752,
+    "children_reaped": 25,
+    "cases": [
+      {
+        "case": "generated-cf",
+        "origin": "generated-native",
+        "type": "configuration",
+        "nativeOptionResultHover": true,
+        "nativeOptionGlobalHover": true,
+        "optionFailureRetracted": true,
+        "optionRestartReplay": true,
+        "foreignOptionStorage": false,
+        "nativeCriterionCompletion": true,
+        "nativeCriterionHover": true,
+        "criterionFailureRetracted": true,
+        "criterionRestartReplay": true,
+        "foreignCriterionContent": false,
+        "currentCommandParameters": true,
+        "commandFailureRetracted": true,
+        "commandRestartReplay": true,
+        "nativeCommandHover": true,
+        "foreignCommandParameter": false,
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": false,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 57,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "generated-cfe",
+        "origin": "generated-native",
+        "type": "extension",
+        "nativeOptionResultHover": true,
+        "nativeOptionGlobalHover": true,
+        "optionFailureRetracted": true,
+        "optionRestartReplay": true,
+        "foreignOptionStorage": true,
+        "nativeCriterionCompletion": true,
+        "nativeCriterionHover": true,
+        "criterionFailureRetracted": true,
+        "criterionRestartReplay": true,
+        "foreignCriterionContent": true,
+        "currentCommandParameters": true,
+        "commandFailureRetracted": true,
+        "commandRestartReplay": true,
+        "nativeCommandHover": true,
+        "foreignCommandParameter": true,
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": true,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "foreignCurrentMetadata": true,
+        "foreignInvalidNoSavedFallback": true,
+        "hiddenSiblingIgnored": true,
+        "foreignRestartImportReplay": true,
+        "foreignSourceBytesPreserved": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 49,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cf",
+        "origin": "1c-native",
+        "type": "configuration",
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 151,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cfe",
+        "origin": "1c-native",
+        "type": "extension",
+        "semanticContextRefused": true,
+        "syntaxAvailable": true,
+        "sourceBytesPreserved": true
+      }
+    ]
+  },
+  "large": {
+    "options": 43,
+    "ready": 43,
+    "parse_issues": 0,
+    "model_reads_child_reaped": true,
+    "model_reads_sources_preserved": true,
+    "next_refusal": "FunctionalOptionsParameter",
+    "cold_completion_seconds": 15.00283608799873,
+    "peak_observed_rss_bytes": 392417280,
+    "child_reaped": true,
+    "sources_preserved": true,
+    "association_verified": false,
+    "performance_accepted": false
+  },
+  "large_before_content_fix": {
+    "ready": 13,
+    "invalid": 30,
+    "reason": "FunctionalOption Content uses xr:Object entries"
+  }
+}

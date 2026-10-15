@@ -66,7 +66,7 @@ fn content(
     field: &eska::project_core::metadata_parser::LocatedProperty,
 ) -> Result<Vec<FilterCriterionTarget>, AdapterError> {
     let mut result: Vec<FilterCriterionTarget> = Vec::new();
-    for path in fields.references("Content")? {
+    for path in fields.references("Content", "Item")? {
         let parts = path.split('.').collect::<Vec<_>>();
         let (family, name) = match parts.as_slice() {
             [family, name, "Attribute" | "StandardAttribute", member] if !member.is_empty() => {

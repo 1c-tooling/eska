@@ -2,11 +2,11 @@
 
 use hir::{CandidateCallBinding, Semantics, TypeId};
 use ide_db::{base_db::Locale, RootDatabase};
-use symbol_info::{SymbolSignature, TypeRef};
+use symbol_info::{SignatureSource, SymbolSignature, TypeRef};
 use syntax::{SyntaxKind, SyntaxToken};
 use vfs::FileId;
 
-/// Keep native candidate identity, docs and arity; only configured criteria have context-dependent display types.
+/// Keep native candidate identity, docs and arity; configured calls retain their context-dependent display types.
 pub(crate) fn refine<DB: RootDatabase>(
     db: &DB,
     binding: &CandidateCallBinding,
@@ -14,6 +14,21 @@ pub(crate) fn refine<DB: RootDatabase>(
 ) {
     let methods = hir_ty::filter_criteria::prototype_methods();
     for signature in signatures {
+        if signature.source == SignatureSource::GlobalFunction {
+            if let Some(id) = hir_ty::functional_options::platform_id() {
+                if signature.platform_id == Some(id) {
+                    if let Some(candidate) = binding.candidates.as_slice().iter().find(|candidate| {
+                        matches!(candidate.id, hir::CandidateId::Builtin { callable: hir::BuiltinCallableId::PlatformGlobal(value), .. } if value == id)
+                    }) {
+                        signature.returns = vec![type_ref(db, candidate.return_ty)];
+                    }
+                }
+            }
+            continue;
+        }
+        if signature.source != SignatureSource::Platform {
+            continue;
+        }
         let Some(method) = methods.iter().find(|method| Some(method.id) == signature.platform_id)
         else {
             continue;
@@ -48,13 +63,22 @@ pub(crate) fn at_token<DB: RootDatabase>(
     token: &SyntaxToken,
 ) -> Option<(CandidateCallBinding, Vec<SymbolSignature>)> {
     let call = token.parent_ancestors().find(|node| node.kind() == SyntaxKind::CALL_EXPR)?;
+    let callee = call.children().next()?;
+    if !callee.text_range().contains_range(token.text_range()) {
+        return None;
+    }
     let arguments = call.children().find(|node| node.kind() == SyntaxKind::ARG_LIST)?;
     let offset = arguments.text_range().start() + syntax::TextSize::from(1);
     let binding = Semantics::new(db).call_binding_at(file, offset)?;
     let methods = hir_ty::filter_criteria::prototype_methods();
-    if !binding.candidates.as_slice().iter().any(|candidate| {
-        matches!(candidate.id, hir::CandidateId::Platform { method_id, .. }
-            if methods.iter().any(|method| method.id == method_id))
+    if !binding.candidates.as_slice().iter().any(|candidate| match candidate.id {
+        hir::CandidateId::Platform { method_id, .. } => {
+            methods.iter().any(|method| method.id == method_id)
+        }
+        hir::CandidateId::Builtin {
+            callable: hir::BuiltinCallableId::PlatformGlobal(id), ..
+        } => Some(id) == hir_ty::functional_options::platform_id(),
+        _ => false,
     }) {
         return None;
     }

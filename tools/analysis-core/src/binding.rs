@@ -32,24 +32,10 @@ impl OwnerBinding {
         let Some(name) = &self.name else {
             return;
         };
+        if self.add_configured_to_listing(listing, name) {
+            return;
+        }
         match self.kind {
-            MetadataKind::FilterCriterion => listing.filter_criteria.push(FilterCriterionEntry {
-                name: name.clone(),
-                main: self.main,
-            }),
-            MetadataKind::CommonCommand => {
-                listing.common_commands.push(CommonCommandEntry {
-                    name: name.clone(),
-                    main: self.main,
-                    module_file: None,
-                });
-            }
-            MetadataKind::CommonAttribute => {
-                listing.common_attributes.push(CommonAttributeEntry {
-                    name: name.clone(),
-                    main: self.main,
-                });
-            }
             MetadataKind::Role => {
                 listing.roles.push(RoleEntry {
                     name: name.clone(),
@@ -126,6 +112,38 @@ impl OwnerBinding {
                 }
             }
         }
+    }
+    /// Dedicated configured families keep stable native slots without being fabricated MDOs.
+    fn add_configured_to_listing(&self, listing: &mut MetadataListingData, name: &str) -> bool {
+        match self.kind {
+            MetadataKind::FunctionalOption => {
+                listing
+                    .functional_options
+                    .push(ide_db::metadata::FunctionalOptionEntry {
+                        name: name.into(),
+                        main: self.main,
+                    });
+            }
+            MetadataKind::FilterCriterion => listing.filter_criteria.push(FilterCriterionEntry {
+                name: name.into(),
+                main: self.main,
+            }),
+            MetadataKind::CommonCommand => {
+                listing.common_commands.push(CommonCommandEntry {
+                    name: name.into(),
+                    main: self.main,
+                    module_file: None,
+                });
+            }
+            MetadataKind::CommonAttribute => {
+                listing.common_attributes.push(CommonAttributeEntry {
+                    name: name.into(),
+                    main: self.main,
+                });
+            }
+            _ => return false,
+        }
+        true
     }
 }
 

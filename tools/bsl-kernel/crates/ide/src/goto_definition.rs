@@ -1004,6 +1004,7 @@ mod tests {
                 common_attributes: Vec::new(),
                 common_commands: Vec::new(),
                 filter_criteria: Vec::new(),
+                functional_options: Vec::new(),
                 common_modules: Vec::new(),
                 event_subscriptions: Vec::new(),
                 scheduled_jobs: Vec::new(),

@@ -79,8 +79,8 @@ impl<'a> Properties<'a> {
             .transpose()
     }
 
-    /// Ordered metadata-reference lists retain every item and reject foreign or malformed entries.
-    pub fn references(&self, name: &str) -> Result<Vec<&'a str>, AdapterError> {
+    /// Ordered metadata-reference lists retain the declared entry kind and reject foreign or malformed entries.
+    pub fn references(&self, name: &str, item_name: &str) -> Result<Vec<&'a str>, AdapterError> {
         const READABLE: &str = "http://v8.1c.ru/8.3/xcf/readable";
         let Some(field) = self.field(name)? else {
             return Ok(Vec::new());
@@ -93,7 +93,7 @@ impl<'a> Properties<'a> {
         entries
             .iter()
             .map(|entry| {
-                if entry.key.name != "Item"
+                if entry.key.name != item_name
                     || !matches!(
                         entry.key.namespace.as_deref(),
                         Some(MD_NAMESPACE | READABLE)

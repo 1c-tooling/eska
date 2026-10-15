@@ -3325,6 +3325,21 @@ impl<'db> InferenceContext<'db> {
             _ => None,
         };
 
+        // A real module method owns a bare call before the platform registry. Its argument
+        // binding must retain user provenance even when its name matches a configured global.
+        if let Some(name) = &bare_callee_name {
+            if self.bare_module_method_exists(name) {
+                for arg in args {
+                    self.infer_expr(*arg);
+                }
+                let result = self
+                    .infer_local_method_call(name, args, callee)
+                    .unwrap_or_else(|| self.db.unknown());
+                self.expr_types.insert(callee, self.db.unknown());
+                return result;
+            }
+        }
+
         // A global common module's exported method is callable unqualified — it extends
         // the global context, so it shadows a same-named platform global function. A
         // same-module method (checked here) still wins, keeping Local → Module → Global-CM
@@ -3403,6 +3418,21 @@ impl<'db> InferenceContext<'db> {
                 ) else {
                     return self.db.unknown();
                 };
+                if crate::functional_options::is_get_name(name.as_str()) {
+                    if let Some(ty) = crate::functional_options::literal_name(&self.body, args)
+                        .and_then(|name| {
+                            crate::functional_options::result_type(
+                                self.db,
+                                self.context_file_id,
+                                name,
+                            )
+                        })
+                    {
+                        for candidate in candidates.signatures_mut() {
+                            candidate.return_ty = ty;
+                        }
+                    }
+                }
                 // Weaving `&Вместо`: a bare `ПродолжитьВызов(...)` invokes the original base
                 // method, so (a) its result is that method's return type, not the platform
                 // global's generic return, and (b) it must pass a valid argument count for that

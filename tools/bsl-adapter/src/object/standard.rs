@@ -25,7 +25,7 @@ impl Settings {
     fn read(object: &ParsedObject) -> Result<Self, AdapterError> {
         let fields = Properties::new(object)?;
         let owners = fields
-            .references("Owners")?
+            .references("Owners", "Item")?
             .into_iter()
             .map(|value| {
                 let (mdo_type, name) = reference(object, "Owners", value)?;

@@ -60,7 +60,7 @@ pub fn metadata_object(
     }
     if kind == MdoType::Document {
         model.register_records = fields
-            .references("RegisterRecords")?
+            .references("RegisterRecords", "Item")?
             .into_iter()
             .map(|value| {
                 let reference = standard::reference(root, "RegisterRecords", value)?;

@@ -26,7 +26,7 @@ pub fn subsystem(descriptor: &ParsedDescriptor) -> Result<Subsystem, AdapterErro
     let _uuid = identity::uuid(root)?;
     let fields = Properties::new(root)?;
     let content = fields
-        .references("Content")?
+        .references("Content", "Item")?
         .into_iter()
         .filter_map(|raw| {
             let (prefix, name) = raw.trim().split_once('.')?;

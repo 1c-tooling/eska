@@ -1,4 +1,5 @@
 mod filter_criteria;
+mod functional_options;
 mod session_parameters;
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
@@ -850,6 +851,7 @@ impl RootDatabaseImpl {
             common_attributes,
             common_commands,
             filter_criteria,
+            functional_options,
         } = listing;
         let entries = Arc::new(entries);
         let defined_types = Arc::new(defined_types);
@@ -865,6 +867,7 @@ impl RootDatabaseImpl {
         let common_attributes = Arc::new(common_attributes);
         let common_commands = Arc::new(common_commands);
         let filter_criteria = Arc::new(filter_criteria);
+        let functional_options = Arc::new(functional_options);
         match self.metadata_listings.get(&key).map(|e| *e.value()) {
             Some(input) => {
                 input.set_entries(self).to(entries);
@@ -881,6 +884,7 @@ impl RootDatabaseImpl {
                 input.set_common_attributes(self).to(common_attributes);
                 input.set_common_commands(self).to(common_commands);
                 input.set_filter_criteria(self).to(filter_criteria);
+                input.set_functional_options(self).to(functional_options);
             }
             None => {
                 let input = metadata::MetadataListingInput::builder(
@@ -898,6 +902,7 @@ impl RootDatabaseImpl {
                     common_attributes,
                     common_commands,
                     filter_criteria,
+                    functional_options,
                     Arc::new(metadata::CanonicalMetadataInputs::default()),
                 )
                 .durability(salsa::Durability::MEDIUM)
@@ -3022,6 +3027,15 @@ impl DefDatabase for RootDatabaseImpl {
 
 #[salsa::db]
 impl hir::ConfigsDatabase for RootDatabaseImpl {
+    /// Functional option lookup shares the caller's canonical current visibility chain.
+    fn resolve_functional_option(
+        &self,
+        file: FileId,
+        name: &str,
+    ) -> Option<Arc<bsl_metadata::FunctionalOption>> {
+        self.resolve_functional_option_for_file(file, name)
+    }
+
     /// Criterion lookup uses the same current per-file composition as its declared namespace.
     fn resolve_filter_criterion(
         &self,

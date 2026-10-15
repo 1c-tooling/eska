@@ -201,6 +201,13 @@ impl CommonModuleBodies {
 
 #[salsa::db]
 pub trait ConfigsDatabase: DefDatabase {
+    /// A literal functional-option global call resolves its own current storage declaration.
+    fn resolve_functional_option(
+        &self,
+        file: FileId,
+        name: &str,
+    ) -> Option<Arc<bsl_metadata::FunctionalOption>>;
+
     /// Resolve one configured criterion in the caller's visibility chain without XML fallback.
     fn resolve_filter_criterion(
         &self,

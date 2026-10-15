@@ -3,14 +3,15 @@ mod call_hierarchy;
 mod call_hierarchy_index;
 mod completion;
 pub mod config_finder;
+mod configured_call_signatures;
 mod declarations;
 pub mod diagnostics_baseline;
 pub mod diagnostics_catalog;
 mod document_highlight;
 mod document_symbols;
-mod filter_criterion_signatures;
 mod folding;
 pub mod formatting;
+mod functional_option_dependencies;
 mod goto_definition;
 pub mod graph;
 mod hover;
@@ -123,6 +124,10 @@ pub struct Analysis {
 }
 
 impl Analysis {
+    /// Current native call binding selects literal functional-option metadata dependencies in the containing body.
+    pub fn functional_option_dependencies(&self, file_id: FileId, offset: u32) -> Vec<String> {
+        functional_option_dependencies::names(&self.db, file_id, offset.into())
+    }
     pub fn new() -> Self {
         Self { db: RootDatabaseImpl::default() }
     }

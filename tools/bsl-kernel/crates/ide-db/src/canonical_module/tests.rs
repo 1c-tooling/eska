@@ -6,6 +6,7 @@ mod external_configuration;
 mod external_identity;
 mod families;
 mod filter_criteria;
+mod functional_options;
 mod inheritance;
 mod resolution;
 mod session_parameters;

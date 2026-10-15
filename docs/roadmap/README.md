@@ -100,6 +100,14 @@ SDK — 226/535, Node — 356; установленный клиент — 23 re
 Оба native критерия готовы; следующий отказ большой композиции — FunctionalOption.
 EF-18 и MVP остаются в работе.
 
+[Текущие функциональные опции](../research/eska-format/analyzer-functional-options.md)
+передают storage type в native GetFunctionalOption, hover, signatures и checker.
+SDK — 232/543 tests, adapter — 113; Node — 361; installed CF/CFE current type,
+invalid/repair/replay прошёл, все 25 children завершились. Native xr:Object
+Content сохранён; все 43 объявления большой конфигурации готовы. Следующий
+отказ большой композиции — FunctionalOptionsParameter. Неявные local hover,
+параметры опций и остальные условия EF-18/MVP ещё нужны.
+
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка

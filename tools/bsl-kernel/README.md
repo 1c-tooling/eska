@@ -195,3 +195,8 @@ listing: pending или удалённое тело не выдаётся за �
 используют отдельный текущий slot/listing и реальные generated manager types.
 Native `Find` уточняет тип аргумента и массива ссылок; позиционные карточки и
 signature help сохраняют native candidates и их документацию.
+[Функциональные опции](../../docs/research/eska-format/analyzer-functional-options.md)
+имеют отдельный slot/listing и уточняют native `GetFunctionalOption` текущим
+storage type, включая возможный `NULL` для реквизита справочника.
+Cold discovery и позиционные consumers сохраняют native call ownership;
+одноимённая функция модуля получает приоритет перед platform registry.

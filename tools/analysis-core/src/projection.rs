@@ -355,6 +355,8 @@ fn canonical(
             .map(|model| CanonicalMetadata::CommonAttribute(Arc::new(model))),
         MetadataKind::CommonCommand => adapter::common_command(root)
             .map(|model| CanonicalMetadata::CommonCommand(Arc::new(model))),
+        MetadataKind::FunctionalOption => adapter::functional_option(root)
+            .map(|model| CanonicalMetadata::FunctionalOption(Arc::new(model))),
         MetadataKind::FilterCriterion => adapter::filter_criterion(root)
             .map(|model| CanonicalMetadata::FilterCriterion(Arc::new(model))),
         MetadataKind::DefinedType => {

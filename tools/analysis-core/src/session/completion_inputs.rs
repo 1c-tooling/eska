@@ -3,6 +3,7 @@
 #[cfg(test)]
 mod common_module_tests;
 mod filter_criteria;
+mod functional_options;
 #[cfg(test)]
 mod hover_tests;
 #[cfg(test)]
@@ -49,6 +50,7 @@ impl AnalysisSession {
         self.prepare_module_metadata(path, request)?;
         self.prepare_session_parameters(path, offset, request, cancellation)?;
         self.prepare_filter_criteria(path, offset, request, cancellation)?;
+        self.prepare_functional_options(path, offset, request, cancellation)?;
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
         }
@@ -215,6 +217,7 @@ impl AnalysisSession {
         {
             self.prepare_module_metadata(path, request)?;
         }
+        self.prepare_functional_options(path, offset, request, cancellation)?;
         let dependency = self
             .query_module(path, self.revision(), cancellation, |analysis, file| {
                 Ok(discover(analysis, file, offset))

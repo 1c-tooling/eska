@@ -35,6 +35,9 @@ mod filter_criteria;
 #[cfg(test)]
 mod filter_criterion_tests;
 #[cfg(test)]
+mod functional_option_tests;
+mod functional_options;
+#[cfg(test)]
 mod local_syntax_tests;
 #[cfg(test)]
 mod scheduled_job_tests;
@@ -442,6 +445,12 @@ impl AnalysisSession {
                 name.clone(),
             )
             .map(CanonicalMetadata::CommonAttribute),
+            CanonicalMetadata::FunctionalOption(_) => ide_db::metadata::resolve_functional_option(
+                &self.database,
+                self.selected_root.listing,
+                name.clone(),
+            )
+            .map(CanonicalMetadata::FunctionalOption),
             CanonicalMetadata::FilterCriterion(_) => ide_db::metadata::resolve_filter_criterion(
                 &self.database,
                 self.selected_root.listing,

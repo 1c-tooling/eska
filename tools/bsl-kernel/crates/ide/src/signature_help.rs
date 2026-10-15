@@ -55,7 +55,7 @@ pub fn signature_help<DB: RootDatabase>(
     let active_parameter = resolve_callee_at(&db.parse(file_id).syntax_node(), offset)?;
     let binding = Semantics::new(db).call_binding_at(file_id, offset)?;
     let mut sigs = build_signature_from_resolution(db, &binding)?;
-    crate::filter_criterion_signatures::refine(db, &binding, &mut sigs);
+    crate::configured_call_signatures::refine(db, &binding, &mut sigs);
     let active_signature = selected_signature_index(&binding, &sigs);
     Some(from_view(render_signature_help(&sigs, active_parameter.index, active_signature)))
 }

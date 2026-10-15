@@ -148,6 +148,14 @@ SDK — 226/535, Node — 356; installed CF/configured-CFE current/invalid/repla
 завершились. Оба native критерия готовы; следующий отказ — FunctionalOption.
 Остальные families, EF-18 и MVP ещё нужны.
 
+[Текущие функциональные опции](../research/eska-format/analyzer-functional-options.md)
+передают storage type в native GetFunctionalOption, hover, signatures и checker.
+SDK — 232/543 tests, adapter — 113; Node — 361; installed CF/CFE current type,
+invalid/repair/replay прошёл, все 25 children завершились. Native xr:Object
+Content сохранён; все 43 объявления большой конфигурации готовы. Следующий
+отказ большой композиции — FunctionalOptionsParameter. Неявные local hover,
+параметры опций и остальные условия EF-18/MVP ещё нужны.
+
 ID сохраняют историю, порядок выполнения задаёт следующая таблица.
 
 | Порядок | Задачи | Критерий перехода |

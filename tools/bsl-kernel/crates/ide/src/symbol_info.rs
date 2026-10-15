@@ -1316,9 +1316,12 @@ fn resolve_position(
     let token = root.token_at_offset(offset).right_biased()?;
 
     let sema = Semantics::new(db);
-    if matches!(hir::classify_token(&token), hir::NameClass::FieldName { is_call: true, .. }) {
+    if matches!(
+        hir::classify_token(&token),
+        hir::NameClass::FieldName { is_call: true, .. } | hir::NameClass::FreeName { .. }
+    ) {
         if let Some((binding, signatures)) =
-            crate::filter_criterion_signatures::at_token(db, pos.file_id, &token)
+            crate::configured_call_signatures::at_token(db, pos.file_id, &token)
         {
             let mut card = card_from_platform_sig(token.text(), signatures.first()?, req);
             if req.sections.type_ {

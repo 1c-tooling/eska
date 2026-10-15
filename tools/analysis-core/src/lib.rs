@@ -38,6 +38,9 @@ mod test_composition_project;
 #[path = "../tests/support/filter_criterion_project.rs"]
 mod test_filter_criterion_project;
 #[cfg(test)]
+#[path = "../tests/support/functional_option_project.rs"]
+mod test_functional_option_project;
+#[cfg(test)]
 #[path = "../tests/support/query_analysis_project.rs"]
 mod test_query_analysis_project;
 #[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
