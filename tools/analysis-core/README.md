@@ -137,6 +137,11 @@ signature help используют те же canonical inputs. UUID-прове�
 Пустой/invalid storage отзывает прежний тип, а UUID-проверенная композиция,
 foreign dirty inputs и replay используют обычный controller.
 
+[Hover неявных locals](../../docs/research/eska-format/analyzer-implicit-local-hover.md)
+приходит из native semantic symbol, сохраняя текущий тип, исходное объявление
+и прежний controller. Неизвестный тип остаётся отсутствующим; SDK не создаёт
+отдельный resolver для переменных без Var.
+
 [Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
 дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
 common completion, unsaved named flags и переход к физическому BSL input;

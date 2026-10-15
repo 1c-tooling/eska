@@ -105,8 +105,13 @@ EF-18 и MVP остаются в работе.
 SDK — 232/543 tests, adapter — 113; Node — 361; installed CF/CFE current type,
 invalid/repair/replay прошёл, все 25 children завершились. Native xr:Object
 Content сохранён; все 43 объявления большой конфигурации готовы. Следующий
-отказ большой композиции — FunctionalOptionsParameter. Неявные local hover,
-параметры опций и остальные условия EF-18/MVP ещё нужны.
+отказ большой композиции — FunctionalOptionsParameter. Параметры опций
+и остальные условия EF-18/MVP ещё нужны.
+
+[Hover неявных locals](../research/eska-format/analyzer-implicit-local-hover.md)
+использует native semantic symbol, current occurrence type и reaching declaration.
+SDK — 233/544, Node — 361; installed CF/CFE без Var прошёл current/invalid/replay,
+25 children завершились. Отдельные SDK карточки и новые schemas не добавлены.
 
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий

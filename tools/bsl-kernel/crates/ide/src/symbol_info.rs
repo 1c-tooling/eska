@@ -19,7 +19,7 @@ use hir::{
     compute_execution_context, execution_environment_at, kernel_type_label, method_return_type,
     root_metadata_object_type, root_metadata_ref_type, root_object_manager_type, DefDatabase,
     Definition, ExecutionContext, HirFieldOrigin, ManagerType, MethodId, ModuleId, Name, Semantics,
-    Type as HirType,
+    Type as HirType, TypeKernelDb,
 };
 use ide_db::base_db::{Locale, RootQueryDb, SourceDatabase, SourceRootId};
 use ide_db::{
@@ -41,7 +41,7 @@ pub struct SymbolPosition {
     pub file_id: FileId,
     /// 0-based line.
     pub line: u32,
-    /// 0-based UTF-16-agnostic column (character offset within the line).
+    /// 0-based UTF-16 column within the line, matching published source ranges.
     pub column: u32,
 }
 
@@ -1316,6 +1316,11 @@ fn resolve_position(
     let token = root.token_at_offset(offset).right_biased()?;
 
     let sema = Semantics::new(db);
+    if matches!(hir::classify_token(&token), hir::NameClass::FreeName { .. }) {
+        if let Some(card) = implicit_local_card(db, &sema, pos.file_id, &token, req) {
+            return Some(card);
+        }
+    }
     if matches!(
         hir::classify_token(&token),
         hir::NameClass::FieldName { is_call: true, .. } | hir::NameClass::FreeName { .. }
@@ -1412,6 +1417,42 @@ fn resolve_position(
         }
     }
 
+    Some(card)
+}
+
+/// Implicit locals have native symbol identity and reaching declarations without a Definition enum value.
+fn implicit_local_card(
+    db: &RootDatabaseImpl,
+    sema: &Semantics<'_, RootDatabaseImpl>,
+    file: FileId,
+    token: &syntax::SyntaxToken,
+    req: &SymbolInfoRequest,
+) -> Option<SymbolInfoCard> {
+    let symbol = sema.symbol_for_token(file, token)?;
+    if !matches!(symbol.key, hir::SemanticSymbolKey::ImplicitLocal { .. }) {
+        return None;
+    }
+    let mut card = SymbolInfoCard::empty(symbol.name.as_str().to_owned(), "local variable");
+    if req.sections.type_ {
+        card.return_type = symbol
+            .ty
+            .filter(|ty| !matches!(db.lookup_type(*ty), hir::TypeKind::Unknown))
+            .and_then(|ty| type_label(db, ty, req.locale));
+    }
+    if req.sections.definition {
+        if let Some(declaration) = symbol.declaration {
+            card.set_base_definition(
+                def_from_file_line(
+                    db,
+                    declaration.file_id,
+                    declaration.range.start(),
+                    DefinitionRanges { name: Some(declaration.range), enclosing: None },
+                    true,
+                ),
+                root_label(db, declaration.file_id),
+            );
+        }
+    }
     Some(card)
 }
 

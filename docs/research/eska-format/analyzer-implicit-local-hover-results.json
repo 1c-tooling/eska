@@ -1,0 +1,346 @@
+{
+  "frozen_inputs": 1645,
+  "source_sha256": "c766f87e287afd21885cae982055886cc55e5fa6df2bc7f673589f3bc0cddae0",
+  "sdk_gates_executed": 11,
+  "native_adapter_gates_reused": 10,
+  "reuse": {
+    "inputs_unchanged": true,
+    "files": 562,
+    "sha256": "817dbf50f3941c165faedea01c9cbb8c91f878ab474a7aee4261de38253a7606",
+    "gates": [
+      {
+        "name": "kernel-fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 1.348
+      },
+      {
+        "name": "kernel-check",
+        "command": [
+          "cargo",
+          "check",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-features",
+          "--locked",
+          "--offline"
+        ],
+        "exit_code": 0,
+        "seconds": 0.811
+      },
+      {
+        "name": "kernel-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--offline",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 2.771
+      },
+      {
+        "name": "kernel-test",
+        "command": [
+          "cargo",
+          "test",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-features",
+          "--locked",
+          "--offline"
+        ],
+        "exit_code": 0,
+        "seconds": 112.772
+      },
+      {
+        "name": "kernel-rustdoc",
+        "command": [
+          "cargo",
+          "doc",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-features",
+          "--locked",
+          "--offline",
+          "--no-deps",
+          "--document-private-items"
+        ],
+        "exit_code": 0,
+        "seconds": 2.265
+      },
+      {
+        "name": "adapter-fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--manifest-path",
+          "tools/bsl-adapter/Cargo.toml",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 0.147
+      },
+      {
+        "name": "adapter-check",
+        "command": [
+          "cargo",
+          "check",
+          "--manifest-path",
+          "tools/bsl-adapter/Cargo.toml",
+          "--all-features",
+          "--locked",
+          "--offline"
+        ],
+        "exit_code": 0,
+        "seconds": 0.128
+      },
+      {
+        "name": "adapter-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--manifest-path",
+          "tools/bsl-adapter/Cargo.toml",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--offline",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 0.167
+      },
+      {
+        "name": "adapter-test",
+        "command": [
+          "cargo",
+          "test",
+          "--manifest-path",
+          "tools/bsl-adapter/Cargo.toml",
+          "--all-features",
+          "--locked",
+          "--offline"
+        ],
+        "exit_code": 0,
+        "seconds": 0.621
+      },
+      {
+        "name": "adapter-rustdoc",
+        "command": [
+          "cargo",
+          "doc",
+          "--manifest-path",
+          "tools/bsl-adapter/Cargo.toml",
+          "--all-features",
+          "--locked",
+          "--offline",
+          "--no-deps",
+          "--document-private-items"
+        ],
+        "exit_code": 0,
+        "seconds": 0.094
+      }
+    ]
+  },
+  "root_gates_reused": 6,
+  "root_reuse": {
+    "root_inputs_unchanged": true,
+    "files": 749,
+    "root_gates": 6,
+    "previous_root_gates": "CommonCommand frozen root phase",
+    "root_scope_sha256": "1c5c5704dc571c3ebe388315a9de2d4be8b15f63155eacb6738d5389340bcdb7"
+  },
+  "tests": {
+    "kernel-test": {
+      "passed": 4428,
+      "failed": 0,
+      "ignored": 25
+    },
+    "adapter-test": {
+      "passed": 113,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-default": {
+      "passed": 233,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-all": {
+      "passed": 544,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "binaries": {
+    "eska-analyzer-debug": {
+      "sha256": "9dd34d96b3cd6a1f198f745bcb3d0812936d1c000c72b4e834ce63e02e046bd2",
+      "bytes": 135173224
+    },
+    "eska-analyzer": {
+      "sha256": "dd309441fc05570375a73dca0e9d6640b1f7f19a63c38f4cff1cc801446153ec",
+      "bytes": 56007336
+    },
+    "eska-check": {
+      "sha256": "542af689a6688cf11c6b1efdf71b9c04a5a91cc396cf54c206f8fc75a43e5abe",
+      "bytes": 50498216
+    }
+  },
+  "vsix": {
+    "sha256": "c8bcf9df6aa40ef621521e14c0adc85c1e28258473305191ee3cf22b9fc58b55",
+    "production_javascript": 55,
+    "matching_current_compile": true,
+    "helpers_included": false
+  },
+  "native_platform_run": false,
+  "native_save_invoked": false,
+  "physical_typing_verified": false,
+  "mvp_complete": false,
+  "node": {
+    "session_id": 45733,
+    "tests": 361,
+    "passed": 361,
+    "failed": 0,
+    "skipped": 0,
+    "duration_ms": 10585.231369,
+    "source": "root direct PTY stdout",
+    "frozen_binary": "bins/eska-analyzer-debug"
+  },
+  "installed": {
+    "passed": true,
+    "session": 46241,
+    "executor": "root direct PTY",
+    "children_reaped": 25,
+    "option_fixture_local": "implicit assignment without Var",
+    "cases": [
+      {
+        "case": "generated-cf",
+        "origin": "generated-native",
+        "type": "configuration",
+        "nativeOptionResultHover": true,
+        "nativeOptionGlobalHover": true,
+        "optionFailureRetracted": true,
+        "optionRestartReplay": true,
+        "foreignOptionStorage": false,
+        "nativeCriterionCompletion": true,
+        "nativeCriterionHover": true,
+        "criterionFailureRetracted": true,
+        "criterionRestartReplay": true,
+        "foreignCriterionContent": false,
+        "currentCommandParameters": true,
+        "commandFailureRetracted": true,
+        "commandRestartReplay": true,
+        "nativeCommandHover": true,
+        "foreignCommandParameter": false,
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": false,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 57,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "generated-cfe",
+        "origin": "generated-native",
+        "type": "extension",
+        "nativeOptionResultHover": true,
+        "nativeOptionGlobalHover": true,
+        "optionFailureRetracted": true,
+        "optionRestartReplay": true,
+        "foreignOptionStorage": true,
+        "nativeCriterionCompletion": true,
+        "nativeCriterionHover": true,
+        "criterionFailureRetracted": true,
+        "criterionRestartReplay": true,
+        "foreignCriterionContent": true,
+        "currentCommandParameters": true,
+        "commandFailureRetracted": true,
+        "commandRestartReplay": true,
+        "nativeCommandHover": true,
+        "foreignCommandParameter": true,
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": true,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "foreignCurrentMetadata": true,
+        "foreignInvalidNoSavedFallback": true,
+        "hiddenSiblingIgnored": true,
+        "foreignRestartImportReplay": true,
+        "foreignSourceBytesPreserved": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 49,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cf",
+        "origin": "1c-native",
+        "type": "configuration",
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 151,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cfe",
+        "origin": "1c-native",
+        "type": "extension",
+        "semanticContextRefused": true,
+        "syntaxAvailable": true,
+        "sourceBytesPreserved": true
+      }
+    ]
+  }
+}

@@ -200,3 +200,7 @@ signature help сохраняют native candidates и их документац
 storage type, включая возможный `NULL` для реквизита справочника.
 Cold discovery и позиционные consumers сохраняют native call ownership;
 одноимённая функция модуля получает приоритет перед platform registry.
+
+[Неявные positional locals](../../docs/research/eska-format/analyzer-implicit-local-hover.md)
+используют существующие native symbol identity, reaching declaration и тип
+конкретного вхождения, включая UTF-16 ranges после смены типа.

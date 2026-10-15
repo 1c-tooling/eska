@@ -89,7 +89,7 @@ fn current_symbol_hover_follows_method_docs_return_type_and_identifier_boundarie
     assert_eq!(session.resources().metadata_source_bytes, 0);
 }
 
-/// Declared local/parameter cards do not forward the kernel's Russian prose as a code declaration.
+/// Explicit and implicit local/parameter cards do not forward native prose as a code declaration.
 #[test]
 fn parameter_local_and_module_variable_cards_keep_typed_kinds_and_current_cursor_ranges() {
     let (_directory, root) = fixture();
@@ -103,6 +103,7 @@ fn parameter_local_and_module_variable_cards_keep_typed_kinds_and_current_cursor
         ("Локальная", HoverKind::LocalVariable),
         ("Параметр", HoverKind::Parameter),
         ("Состояние", HoverKind::ModuleVariable),
+        ("Результат", HoverKind::LocalVariable),
     ] {
         let at = u32::try_from(body.rfind(name).unwrap()).unwrap();
         let info = session
@@ -124,20 +125,6 @@ fn parameter_local_and_module_variable_cards_keep_typed_kinds_and_current_cursor
             name
         );
     }
-    let implicit = u32::try_from(body.rfind("Результат").unwrap()).unwrap();
-    assert!(
-        session
-            .module_symbol_hover(
-                &path,
-                session.revision(),
-                implicit,
-                Locale::En,
-                &QueryCancellation::default()
-            )
-            .unwrap()
-            .value
-            .is_none()
-    );
 }
 
 /// Unread/unknown/invalid/cancelled/stale input never masquerades as a successful missing symbol.

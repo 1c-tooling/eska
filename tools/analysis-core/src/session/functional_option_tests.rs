@@ -10,7 +10,7 @@ use std::{fs, path::PathBuf};
 const MODULE: &str = "CommonModules/Tools/Module.bsl";
 const OPTION: &str = "FunctionalOptions/FeatureЯ/object.yaml";
 const CONSTANT: &str = "Constants/Storage/object.yaml";
-const BODY: &str = "\u{feff}// Я😀\r\nProcedure Run()\r\n Var Value;\r\n Value=GetFunctionalOption(\"FeatureЯ\");\r\n Result=Value;\r\nEndProcedure\r\n";
+const BODY: &str = "\u{feff}// Я😀\r\nProcedure Run()\r\n Value=GetFunctionalOption(\"FeatureЯ\");\r\n Result=Value;\r\nEndProcedure\r\n";
 
 /// The normal importer and current source reader keep every effect inside the owning test directory.
 fn project(body: &str) -> (TestDirectory, PathBuf, AnalysisSession) {
@@ -47,7 +47,7 @@ fn value(session: &mut AnalysisSession, body: &str, locale: Locale) -> Option<St
         )
         .unwrap()
         .value
-        .expect("declared native local")
+        .expect("native local")
         .return_type
 }
 
@@ -86,6 +86,17 @@ fn functional_option_current_constant_type_reaches_native_hover() {
     );
     assert_eq!(fs::read_to_string(source.join(CONSTANT)).unwrap(), saved);
     assert_eq!(fs::read_to_string(source.join(MODULE)).unwrap(), BODY);
+}
+
+/// Explicit declarations retain the same native hover contract as assignment-created locals.
+#[test]
+fn functional_option_explicit_local_still_has_native_hover() {
+    let body = BODY.replace("Procedure Run()", "Procedure Run()\r\n Var Value;");
+    let (_directory, _source, mut session) = project(&body);
+    assert_eq!(
+        value(&mut session, &body, Locale::En).as_deref(),
+        Some("String")
+    );
 }
 
 /// Dirty failures revoke the previous type, ignore saved watch noise and recover only current bytes.

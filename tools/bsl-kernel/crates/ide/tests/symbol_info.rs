@@ -1212,6 +1212,65 @@ fn positional_local_or_parameter_resolves() {
     assert_eq!(name.end_character, 8 + "Парам".chars().count() as u32);
 }
 
+/// The native positional API consumes UTF-16 coordinates from the current BSL body.
+fn implicit_card(body: &str, offset: usize, locale: ide::Locale) -> Option<ide::SymbolInfoCard> {
+    let (db, file_id) = setup_bsl(&format!("//- /test.bsl\n{body}"));
+    let prefix = &body[..offset];
+    symbol_info(
+        &db,
+        &SymbolInfoRequest {
+            symbol: None,
+            position: Some(SymbolPosition {
+                file_id,
+                line: prefix.bytes().filter(|byte| *byte == b'\n').count() as u32,
+                column: prefix.rsplit('\n').next().unwrap().encode_utf16().count() as u32,
+            }),
+            locale,
+            sections: SymbolInfoSections::all(),
+            workspace_root: None,
+        },
+    )
+}
+
+/// Reaching native assignments supply their own types and declarations, including non-BMP/CRLF offsets.
+#[test]
+fn positional_implicit_local_has_current_type_and_reaching_declaration() {
+    let body = "\u{feff}// Я😀\r\nProcedure Run()\r\n Marker=\"😀\"; Значение=1;\r\n First=Значение;\r\n Значение=\"text\";\r\n Second=Значение;\r\nEndProcedure\r\n";
+    for (locale, number, string) in
+        [(ide::Locale::En, "Number", "String"), (ide::Locale::Ru, "Число", "Строка")]
+    {
+        for (use_, expected, line, column) in [
+            ("First=", number, 2, " Marker=\"😀\"; ".encode_utf16().count() as u32),
+            ("Second=", string, 4, 1),
+        ] {
+            let at = body.find(use_).unwrap() + use_.len();
+            let card = implicit_card(body, at, locale).expect("native implicit local");
+            assert_eq!(card.kind, "local variable");
+            assert_eq!(card.symbol, "Значение");
+            assert_eq!(card.return_type.as_deref(), Some(expected));
+            let range = card.definition.unwrap().name_range.unwrap();
+            assert_eq!((range.start_line, range.start_character), (line, column));
+            assert_eq!(range.end_character - range.start_character, 8);
+        }
+    }
+}
+
+/// Body-local native identity includes module code and cannot borrow another body's assignment or a platform name.
+#[test]
+fn positional_implicit_local_scope_and_platform_shadowing_are_native() {
+    for body in [
+        "GetFunctionalOption=7;\n Result=GetFunctionalOption;\n",
+        "Procedure Run()\n GetFunctionalOption=7;\n Result=GetFunctionalOption;\nEndProcedure\n",
+    ] {
+        let card = implicit_card(body, body.rfind("GetFunctionalOption").unwrap(), ide::Locale::En)
+            .expect("native local shadows platform spelling");
+        assert_eq!(card.kind, "local variable");
+        assert_eq!(card.return_type.as_deref(), Some("Number"));
+    }
+    let body = "Procedure Other()\n Missing=1;\nEndProcedure\nProcedure Run()\n Result=Missing;\nEndProcedure\n";
+    assert!(implicit_card(body, body.rfind("Missing").unwrap(), ide::Locale::En).is_none());
+}
+
 #[test]
 fn positional_out_of_range_column_is_a_miss() {
     let (db, file_id) = setup_bsl(COMMON_MODULE);
