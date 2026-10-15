@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-15",
+  "scope": "installed-analyzer-explorer-readers-and-draft-replay",
+  "extension_version": "0.0.11",
+  "backend": "analyzer",
+  "cases": [
+    {"type": "configuration", "navigation": true, "properties": true, "symbols": true, "unsaved_bsl_diagnostics": true, "dirty_replay": true, "import_guard": true, "source_bytes_preserved": true, "own_semantic_completion": true},
+    {"type": "extension", "navigation": true, "properties": true, "symbols": true, "unsaved_bsl_diagnostics": true, "dirty_replay": true, "import_guard": true, "source_bytes_preserved": true, "own_semantic_completion": null},
+    {"type": "processing", "navigation": true, "properties": true, "symbols": true, "unsaved_bsl_diagnostics": true, "dirty_replay": true, "import_guard": true, "source_bytes_preserved": true, "own_semantic_completion": true, "scoped_yaml_diagnostics": true, "malformed_yaml_refused": true, "metadata_repair": true},
+    {"type": "report", "navigation": true, "properties": true, "symbols": true, "unsaved_bsl_diagnostics": true, "dirty_replay": true, "import_guard": true, "source_bytes_preserved": true, "own_semantic_completion": true, "scoped_yaml_diagnostics": true, "malformed_yaml_refused": true, "metadata_repair": true}
+  ],
+  "invariants": {
+    "analyzer_only_runtime_tool": true,
+    "owned_editor_profile": true,
+    "user_profile_unchanged": true,
+    "frozen_runtime_binaries": true,
+    "protected_write_refused": true,
+    "all_15_children_exited": true
+  },
+  "checks": {"typescript": "passed", "node_passed": 207, "node_skipped": 0, "vsix_entries": 1306, "vsix_validation": "passed", "grammar_lexical_cases": 12},
+  "limitations": {
+    "manual_full_ui_acceptance": false,
+    "cfe_semantic_composition": false,
+    "query_analysis": false,
+    "search_reveal": false,
+    "editable_tree_opening": false,
+    "property_editing": false,
+    "hard_rss_limit": false,
+    "cold_warm_benchmark": false,
+    "full_theme_member_matrix": false,
+    "full_mvp": false
+  }
+}

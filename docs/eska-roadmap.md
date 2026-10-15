@@ -2349,6 +2349,11 @@ SDK navigation/policy подключены: selected project context, owner/modu
 declarations и bounded readonly permissions с independent pin. Framed all4
 groups и полный SDK прошли; установленный Explorer принимается отдельно.
 
+[Первая установленная часть Explorer](research/eska-format/explorer-analyzer-foundation.md)
+прошла readonly readers, диагностику, dirty replay/import guard для CF/CFE/EPF/ERF
+с одним analyzer host. Search/reveal, правки и остальные условия EF-11/EF-16
+остаются в работе.
+
 [Структурная проверка](research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

@@ -6,6 +6,10 @@
 
 ## Приоритет и MVP от 2026-10-11
 
+[Установленная первая часть Explorer](../research/eska-format/explorer-analyzer-foundation.md)
+прошла readonly readers и dirty replay/import guard для четырёх типов.
+EF-11 — `IN_PROGRESS`; полный комплект EF-21 и приёмка EF-16 продолжаются.
+
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка

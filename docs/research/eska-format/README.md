@@ -48,6 +48,9 @@ metadata из текущих slots без XML fallback; SDK composition ещё �
 сохраняя явную неполноту owning configuration; YAML diagnostics доступны отдельно.
 [Navigation/policy](analyzer-navigation.md) передают declared tree и права чтения
 через тот же host; independent pin не зависит от semantic scope.
+[Первая установленная приёмка Explorer](explorer-analyzer-foundation.md) проверяет
+один analyzer host, readonly readers и сохранение черновиков для четырёх типов.
+Поиск, правки и остальная матрица EF-11/EF-16 продолжаются.
 [Language/Template coverage](structural-metadata-coverage.md) проверяет текущие
 descriptor fields без фиктивной canonical модели или проверки СКД.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery
