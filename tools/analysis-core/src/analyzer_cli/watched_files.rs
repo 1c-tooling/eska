@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 
 use crate::{AnalysisSession, ModuleState};
 
-use super::{documents, dto, project_changes, protocol};
+use super::{documents, dto, project_changes, protocol, source_saves::RootPublication};
 
 pub const METHOD: &str = "workspace/didChangeWatchedFiles";
 pub const EVENT: &str = "eska/inputsChanged";
@@ -48,8 +48,9 @@ pub fn notify(
     value: &Value,
     controls: &project_changes::Inputs,
     recursive: bool,
+    root_publication: Option<&RootPublication>,
 ) -> Notification {
-    match update(session, value, controls, recursive) {
+    match update(session, value, controls, recursive, root_publication) {
         Ok(Notification::Inputs(inputs)) => {
             Notification::Inputs(json!({"jsonrpc":"2.0","method":EVENT,"params":{
             "snapshot":dto::snapshot(session,id),"inputs":inputs["inputs"],
@@ -69,6 +70,7 @@ fn update(
     value: &Value,
     controls: &project_changes::Inputs,
     recursive: bool,
+    root_publication: Option<&RootPublication>,
 ) -> Result<Notification, Value> {
     let params: Params = protocol::params(value)?;
     if !recursive && params.changes.len() > MAX_CHANGES {
@@ -80,6 +82,7 @@ fn update(
     }
     let mut files = BTreeSet::new();
     let mut changed_controls = std::collections::BTreeMap::new();
+    let mut root_checks = std::collections::BTreeMap::new();
     for event in params.changes {
         if !(1..=3).contains(&event.kind) {
             return Err(protocol::error_value(
@@ -90,6 +93,14 @@ fn update(
         }
         let file = documents::file_path(&event.uri)?;
         if let Some(kind) = controls.kind(&file) {
+            if matches!(kind, project_changes::Kind::RootConfiguration)
+                && *root_checks.entry(file.clone()).or_insert_with(|| {
+                    root_publication.is_some_and(|publication| publication.matches(session, &file))
+                })
+            {
+                files.insert(file);
+                continue;
+            }
             changed_controls.insert(
                 file,
                 project_changes::Change {

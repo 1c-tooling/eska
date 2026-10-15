@@ -15,7 +15,10 @@ use eska::{
     analysis_core::InputRequest,
     project_core::{
         eska_source::EskaSource,
-        source_format::{NativeUuid, SourcePath, accept_source},
+        source_format::{
+            NativeUuid, PropertyName, PropertyValue, SourcePath, accept_source,
+            prepare_property_edit,
+        },
     },
     tool_cli,
 };
@@ -222,6 +225,94 @@ fn import_guard_changed_root_and_cancellation_refuse_policy_reads() {
             )
             .unwrap_err()
             .code,
+        "source_input_changed"
+    );
+}
+
+/// A committed root fingerprint advances only its own byte fence, never the map or another source.
+fn permission_failure(
+    permissions: &read_permissions::ReadPermissions,
+    session: &AnalysisSession,
+    owner: &SourcePath,
+) -> &'static str {
+    permissions
+        .files(
+            session,
+            std::slice::from_ref(owner),
+            &RequestCancellation::default(),
+        )
+        .unwrap_err()
+        .code
+}
+
+/// The standalone consumer exercises the same trusted root acknowledgement without any RPC dependency.
+#[test]
+fn confirmed_root_publication_updates_only_the_selected_root_fingerprint() {
+    let directory = directory::TestDirectory::new();
+    let root = structural_project::project(&directory.0);
+    std::fs::create_dir(root.join(".eska")).unwrap();
+    let pin = accept_source(&root.join("src"), &root.join(".eska/accepted"), &[]).unwrap();
+    let source = open_source(&root);
+    let owner = source.reader().configuration().path.clone();
+    let uuid = source.reader().configuration().declarations[0].uuid.clone();
+    let module = source.reader().module_paths().next().unwrap().clone();
+    let mut permissions = read_permissions::ReadPermissions::selected(&source, Some(pin.clone()));
+    let base = source.edit_authority(&pin).unwrap();
+    let plan = prepare_property_edit(
+        source.reader().root(),
+        &base,
+        &uuid,
+        PropertyName::Version,
+        PropertyValue::Text("0.2.0".into()),
+    )
+    .unwrap();
+    let candidate = plan.updated().to_owned();
+    let mut session =
+        AnalysisSession::from_reader(source.into_reader(), SessionOptions::default()).unwrap();
+    session
+        .apply_overlay(
+            &owner,
+            session.revision(),
+            1,
+            &candidate,
+            &InputRequest::default(),
+        )
+        .unwrap();
+    let before = session.summary();
+    plan.publish(&base).unwrap();
+    let published = open_source(&root)
+        .reader()
+        .configuration()
+        .source_sha256
+        .clone();
+    permissions.acknowledge_root_publication(&module, &published);
+    assert_eq!(
+        permission_failure(&permissions, &session, &owner),
+        "source_input_changed"
+    );
+    permissions.acknowledge_root_publication(&owner, &published);
+    let files = permissions
+        .files(
+            &session,
+            std::slice::from_ref(&owner),
+            &RequestCancellation::default(),
+        )
+        .unwrap();
+    assert_eq!(files[0]["unknown"], false);
+    assert_eq!(files[0]["read_only"], false);
+    assert_eq!(session.summary(), before);
+    let path = session.root().join(owner.as_path());
+    std::fs::write(&path, format!("{candidate}\n# external root bytes\n")).unwrap();
+    assert_eq!(
+        permission_failure(&permissions, &session, &owner),
+        "source_input_changed"
+    );
+    std::fs::write(&path, &candidate).unwrap();
+    let manifest = session.root().join("source.json");
+    let original = std::fs::read_to_string(&manifest).unwrap();
+    std::fs::write(&manifest, format!("{original}\n ")).unwrap();
+    assert_eq!(
+        permission_failure(&permissions, &session, &owner),
         "source_input_changed"
     );
 }

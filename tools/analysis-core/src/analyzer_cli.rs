@@ -31,6 +31,7 @@ mod rename;
 mod request_control;
 mod server;
 mod signature_help;
+mod source_saves;
 mod stream;
 mod text_edits;
 mod watched_files;

@@ -94,7 +94,11 @@ impl EskaSource {
         )?
         .bind_source_cancellable(self.project.source(), cancelled)?;
         super::source_format::require_project_ready(self.project.root())?;
-        Ok(authority.with_project_guard(self.project.root()))
+        authority.with_project_guard(
+            &self.project,
+            &self.scope,
+            &self.reader.configuration().manifest_sha256,
+        )
     }
 
     /// Materialize saved inputs using a baseline digest supplied independently by the caller.

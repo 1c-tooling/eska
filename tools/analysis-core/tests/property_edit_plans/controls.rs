@@ -34,7 +34,8 @@ fn open(client: &mut Client, root: &Path, text: &str) -> Value {
             "textDocument/rename",
             METHOD,
             "eska/metadata/permissions",
-            "eska/analysis/inputs"
+            "eska/analysis/inputs",
+            "eska/source/save"
         ])
     );
     client.send(&notification("initialized"));

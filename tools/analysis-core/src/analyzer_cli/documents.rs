@@ -87,6 +87,23 @@ struct Save {
 }
 
 impl Documents {
+    /// A write targets only an already open declaration of the selected project.
+    pub(super) fn require_selected_open(
+        &self,
+        session: &AnalysisSession,
+        source: &SourcePath,
+    ) -> Result<(), Value> {
+        let key = session.selected_source(source);
+        if !self.open.contains(&key) {
+            return Err(protocol::error_value(
+                -32000,
+                "source_edit_document_not_open",
+                Value::Null,
+            ));
+        }
+        Ok(())
+    }
+
     /// One initialize handshake fixes query synchronization until this host is retired.
     pub const fn with_query_syntax(query_syntax: bool) -> Self {
         Self {

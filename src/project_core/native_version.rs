@@ -415,6 +415,10 @@ impl VersionError {
                 error: PublishError::ReadOnly,
                 ..
             } => "version_source_read_only",
+            Self::Publication {
+                error: PublishError::Cancelled,
+                ..
+            } => "source_read_cancelled",
             Self::MigrationUnsupported => "version_migration_unsupported",
         }
     }

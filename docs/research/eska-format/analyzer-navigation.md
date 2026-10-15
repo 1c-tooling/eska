@@ -40,6 +40,14 @@ Policy request проверяет текущий сеанс, source declarations
 navigation/policy state. Запрос не меняет source, не включает edit plans и не
 придаёт LocalSyntax semantic authority.
 
+[Guarded Save](guarded-source-save.md) — отдельный канал записи с проверкой каждого
+изменённого typed property. Приведённый выше aggregate `read_only` не заменяет
+эти claims: разрешённое свойство mixed-inline YAML может сохраняться при frozen
+соседе. Только после собственной подтверждённой публикации выбранного root
+`ReadPermissions` принимает его новый raw hash. Источник, declarations, independent
+pin и policy от этого не меняются; наблюдение `already_current` само по себе
+не обновляет fingerprint и не выдаёт authority.
+
 ## Граница готовности
 
 Пять настоящих framed groups прошли: DTO/declarations четырёх типов, current

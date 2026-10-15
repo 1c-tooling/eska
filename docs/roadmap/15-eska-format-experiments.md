@@ -201,8 +201,18 @@ chain. Новый release и установленный Explorer подтвер�
 range и четыре Problems на той же паре; semantic_complete=false сохранён.
 Все 27 Rust gates прошли: SDK — 262/580, kernel — 4439/25 ignored, adapter — 123;
 Node — 376. Две установленные матрицы завершили все 35 children, source bytes
-сохранены. Guarded Save, остальные EF-18/EF-27, комплект EF-21 и полный EF-16
-ещё нужны; порядок этапов и статус MVP не меняются.
+сохранены. Остальные EF-18/EF-27, комплект EF-21 и полный EF-16 ещё нужны;
+порядок этапов и статус MVP не меняются.
+
+[Защищённое сохранение исходников](../research/eska-format/guarded-source-save.md)
+подключено к обычным Save/Save All/autosave для declared BSL/SDBL и существующих
+typed YAML properties. Кандидат проверяется целиком до одной публикации; Save,
+import и recovery разделяют lock, повторные settings guards и exact-disk checks.
+Private fingerprint объясняет watcher только собственного опубликованного root.
+Все 28 Rust gates и 404 Node tests прошли. Установленный release выполнил 28
+публикаций CF/CFE/EPF/ERF; две regression matrices сохранили прежние consumers,
+все 40 children завершились. Structural/trivia edits и полное IDE-покрытие ещё
+нужны; статусы EF-11/EF-16, MVP и очередь этапов не меняются.
 
 ID сохраняют историю, порядок выполнения задаёт следующая таблица.
 
@@ -615,15 +625,16 @@ restart/replay и import guard; полный Node gate — 257/257 без skippe
 Generic suggestions редактора не выданы за BSL/query semantic completion.
 [Комментарий в открытом YAML](../research/eska-format/explorer-comment-buffer.md)
 прошёл installed CF/configured-CFE: versioned preview, native buffer edit,
-undo/redo и restart/import replay; Node — 284/284 без skipped. Save не перехватывается,
-публикация и общее editable opening ещё нужны; EF-11 остаётся `IN_PROGRESS`.
+undo/redo и restart/import replay; Node — 284/284 без skipped. Save в том срезе
+не перехватывался; текущий канал описан в [guarded Save](../research/eska-format/guarded-source-save.md).
+Его typed-only приёмка пройдена; полное editable opening ещё нужно, EF-11 остаётся `IN_PROGRESS`.
 [Current metadata SDBL](../research/eska-format/explorer-query-analysis.md) прошёл
 installed CF/configured-CFE и native CF: отдельный semantic opt-in, точные ranges,
 metadata withdrawal и restart/import replay. Standalone native CFE без доказанной
 базы явно отказала; syntax принят отдельно. Node — 310/310, после CR-boundary fix
 311/311; все 12 installed analyzer children завершены, source bytes сохранены.
-Editable opening, query consumers EF-27, полная schema групп, composition и остальная матрица
-продолжаются; EF-21/EF-16 не закрываются.
+Приёмка editable opening/guarded Save, query consumers EF-27, полная schema групп,
+composition и остальная матрица продолжаются; EF-21/EF-16 не закрываются.
 
 В отдельной задаче репозитория Explorer подключить новый источник к EF-18/EF-27.
 Сохранить дерево, порядок групп, иконки, поиск, свойства и открытие исходников.

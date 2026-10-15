@@ -11,6 +11,7 @@ fn error(error: PublishError) -> EditError {
         PublishError::Conflict => EditError::Conflict,
         PublishError::UnsafePath => EditError::UnsafePath,
         PublishError::ReadOnly => EditError::ReadOnly,
+        PublishError::Cancelled => EditError::Io(std::io::ErrorKind::Interrupted.into()),
         PublishError::Io(source) => EditError::Io(source),
     }
 }

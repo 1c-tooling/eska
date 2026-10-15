@@ -221,6 +221,7 @@ fn publication_error(error: &PublishError) -> Error {
         PublishError::Conflict => "source_edit_conflict",
         PublishError::UnsafePath => "source_entry_unsupported",
         PublishError::ReadOnly => "source_edit_read_only",
+        PublishError::Cancelled => "source_read_cancelled",
         PublishError::Io(_) => "source_io_error",
     })
 }

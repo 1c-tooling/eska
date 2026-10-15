@@ -38,6 +38,7 @@ pub fn recover_project_source_import(
     cancelled: &dyn Fn() -> bool,
 ) -> Result<LayoutPublication, Error> {
     files::check_cancelled(cancelled)?;
+    let _write_lock = crate::project_core::source_format::source_write::acquire(root)?;
     Journal::open(root, expected, cancelled)?.resolve(action, cancelled)
 }
 

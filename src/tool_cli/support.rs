@@ -267,6 +267,7 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         }
         "source_update_incomplete" => Some("tool-error-update-incomplete"),
         "source_import_incomplete" => Some("tool-error-import-incomplete"),
+        "source_write_busy" => Some("tool-error-source-write-busy"),
         "source_import_conflicts" => Some("tool-error-source-import-conflicts"),
         "source_ancestor_missing" => Some("tool-error-source-ancestor-missing"),
         "source_ancestor_untrusted" | "source_ancestor_pin_invalid" => {

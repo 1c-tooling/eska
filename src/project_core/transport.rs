@@ -172,6 +172,7 @@ fn publication_error(error: PublishError) -> Error {
         PublishError::Conflict => Error::root("transport_conflict"),
         PublishError::UnsafePath => Error::root("transport_unsafe_path"),
         PublishError::ReadOnly => Error::root("transport_read_only"),
+        PublishError::Cancelled => Error::root("source_read_cancelled"),
         PublishError::Io(error) => io_error(error),
     }
 }

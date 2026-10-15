@@ -25,6 +25,7 @@ mod query_inputs;
 mod request;
 mod resources;
 mod session;
+mod source_saves;
 #[cfg(test)]
 #[path = "../tests/support/command_project.rs"]
 mod test_command_project;
@@ -126,3 +127,4 @@ pub use session::query_text::{
     QuerySyntaxRequestError, QueryTextSummary,
 };
 pub use session::{AnalysisScope, AnalysisSession, SessionError, SessionSummary};
+pub use source_saves::{SourceSaveError, SourceSaveInput, SourceSaveKind};

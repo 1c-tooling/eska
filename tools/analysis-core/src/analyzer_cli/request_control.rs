@@ -10,9 +10,11 @@ use crate::{
     deadline::{Deadline, DeadlineError},
 };
 
-use super::{dto, input_declarations, language, permissions, property_edits, protocol};
+use super::{
+    dto, input_declarations, language, permissions, property_edits, protocol, source_saves,
+};
 
-pub const METHODS: [&str; 12] = [
+pub const METHODS: [&str; 13] = [
     "textDocument/diagnostic",
     "textDocument/completion",
     "textDocument/definition",
@@ -25,6 +27,7 @@ pub const METHODS: [&str; 12] = [
     property_edits::METHOD,
     permissions::METHOD,
     input_declarations::METHOD,
+    source_saves::METHOD,
 ];
 
 #[derive(Clone, Copy)]
@@ -33,12 +36,15 @@ pub enum Method {
     PropertyEdit,
     ReadPermissions,
     InputDeclarations,
+    SourceSave,
 }
 
 impl Method {
     /// Only supported requests own transport controls; language capability stays a separate list.
     pub fn parse(name: &str) -> Option<Self> {
-        if name == property_edits::METHOD {
+        if name == source_saves::METHOD {
+            Some(Self::SourceSave)
+        } else if name == property_edits::METHOD {
             Some(Self::PropertyEdit)
         } else if name == permissions::METHOD {
             Some(Self::ReadPermissions)

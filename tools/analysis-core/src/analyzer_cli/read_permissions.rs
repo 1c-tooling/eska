@@ -30,6 +30,7 @@ pub struct ReadPermissions {
     source_root: PathBuf,
     manifest_sha256: String,
     root_sha256: String,
+    root_source: SourcePath,
 }
 
 impl ReadPermissions {
@@ -69,6 +70,14 @@ impl ReadPermissions {
             source_root: reader.root().to_owned(),
             manifest_sha256: reader.configuration().manifest_sha256.clone(),
             root_sha256: reader.configuration().source_sha256.clone(),
+            root_source: reader.configuration().path.clone(),
+        }
+    }
+
+    /// The server's committed-root proof advances only its known bytes, retaining declarations and pin.
+    pub fn acknowledge_root_publication(&mut self, source: &SourcePath, sha256: &str) {
+        if source == &self.root_source {
+            sha256.clone_into(&mut self.root_sha256);
         }
     }
 

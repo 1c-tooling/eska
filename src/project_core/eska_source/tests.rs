@@ -5,7 +5,10 @@ use crate::{
         config::ProjectConfig,
         discovery::{discover, discover_context},
         selection::{SelectionIntent, select_projects},
-        source_format::{SourcePath, accept_source, import_designer},
+        source_format::{
+            PropertyName, PropertyValue, SourceEditPlan, SourcePath, accept_source,
+            import_designer, prepare_property_edit,
+        },
     },
     test_support::TestDir,
 };
@@ -25,6 +28,165 @@ fn project(root: &Path, name: &str) -> (Project, AcceptedRef) {
         "[project]\nname = '{name}'\ntype = 'configuration'\nsource_format = 'eska'\n[eska]\naccepted_base = '.eska/accepted'\n"
     )).expect("project manifest");
     (discover(root).expect("discovered project"), reference)
+}
+
+/// A saved root-property plan carries the freshly selected policy, source and settings fences.
+fn saved_edit(source: &EskaSource, reference: &AcceptedRef) -> (AcceptedBase, SourceEditPlan) {
+    let authority = source.edit_authority(reference).unwrap();
+    let uuid = &source
+        .reader()
+        .configuration()
+        .source
+        .document
+        .descriptor
+        .object
+        .uuid;
+    let plan = prepare_property_edit(
+        source.project().source(),
+        &authority,
+        uuid,
+        PropertyName::Comment,
+        PropertyValue::Text("Guarded edit".into()),
+    )
+    .unwrap();
+    (authority, plan)
+}
+
+/// Fresh discovery cannot silently reselect the old source after its saved base locator changed.
+#[test]
+fn saved_edit_authority_refuses_project_settings_drift_before_open() {
+    let fixture = TestDir::new();
+    let (project, reference) = project(&fixture.0, "sample");
+    let source = EskaSource::open(project.clone(), ProjectScope::Standalone).unwrap();
+    let path = project.root().join("eska.toml");
+    let original = fs::read_to_string(&path).unwrap();
+    let changed = original.replace(".eska/accepted", ".eska/other-approved");
+    fs::write(&path, &changed).unwrap();
+    let saved = fs::read(project.source().join("configuration.yaml")).unwrap();
+    assert_eq!(
+        source.edit_authority(&reference).err().unwrap().code,
+        "source_input_changed"
+    );
+    assert_eq!(
+        fs::read(project.source().join("configuration.yaml")).unwrap(),
+        saved
+    );
+    assert_eq!(fs::read_to_string(path).unwrap(), changed);
+}
+
+/// Exact settings bytes are rechecked under the writer lock even if the resolved config is equal.
+#[test]
+fn saved_edit_rechecks_exact_project_settings_after_preparation() {
+    let fixture = TestDir::new();
+    let (project, reference) = project(&fixture.0, "sample");
+    let source = EskaSource::open(project.clone(), ProjectScope::Standalone).unwrap();
+    let settings = project.root().join("eska.toml");
+    let original = fs::read_to_string(&settings).unwrap();
+    let (authority, plan) = saved_edit(&source, &reference);
+    let saved = fs::read(project.source().join("configuration.yaml")).unwrap();
+    let changed = format!("{original}# changed after preparation\n");
+    fs::write(&settings, &changed).unwrap();
+    assert_eq!(
+        plan.publish(&authority).unwrap_err().code,
+        "source_input_changed"
+    );
+    assert_eq!(
+        fs::read(project.source().join("configuration.yaml")).unwrap(),
+        saved
+    );
+    assert_eq!(fs::read_to_string(&settings).unwrap(), changed);
+    fs::write(settings, original).unwrap();
+    plan.publish(&authority).unwrap();
+}
+
+/// Comments with unchanged resolved configuration may be captured by a newly opened authority.
+#[test]
+fn saved_edit_accepts_equivalent_settings_already_present_before_authority_capture() {
+    let fixture = TestDir::new();
+    let (project, reference) = project(&fixture.0, "sample");
+    let source = EskaSource::open(project.clone(), ProjectScope::Standalone).unwrap();
+    let settings = project.root().join("eska.toml");
+    let current = format!(
+        "{}# equivalent before authority\n",
+        fs::read_to_string(&settings).unwrap()
+    );
+    fs::write(&settings, &current).unwrap();
+    let (authority, plan) = saved_edit(&source, &reference);
+    plan.publish(&authority).unwrap();
+    assert_eq!(fs::read_to_string(settings).unwrap(), current);
+}
+
+/// A manifest reread cannot adopt a different raw map after the source reader selected its snapshot.
+#[test]
+fn saved_edit_expected_manifest_hash_fences_late_binding_rereads() {
+    let fixture = TestDir::new();
+    let (project, reference) = project(&fixture.0, "sample");
+    let source = EskaSource::open(project.clone(), ProjectScope::Standalone).unwrap();
+    let manifest = project.source().join("source.json");
+    let original = fs::read_to_string(&manifest).unwrap();
+    fs::write(&manifest, format!("{original}\n")).unwrap();
+    assert_eq!(
+        source.edit_authority(&reference).err().unwrap().code,
+        "source_edit_structure_changed"
+    );
+    let fresh = EskaSource::open(project.clone(), ProjectScope::Standalone).unwrap();
+    fresh.edit_authority(&reference).unwrap();
+    let bound = AcceptedBase::open(&project.root().join(".eska/accepted"), &reference)
+        .unwrap()
+        .bind_source(project.source())
+        .unwrap();
+    assert_eq!(
+        bound
+            .with_project_guard(&project, &ProjectScope::Standalone, &"0".repeat(64))
+            .err()
+            .unwrap()
+            .code,
+        "source_edit_structure_changed"
+    );
+    assert_eq!(
+        fs::read_to_string(manifest).unwrap(),
+        format!("{original}\n")
+    );
+}
+
+/// Inherited workspace settings participate in both fresh selection and the final exact-byte guard.
+#[test]
+fn saved_edit_rechecks_workspace_inheritance_before_open_and_after_preparation() {
+    for semantic in [false, true] {
+        let fixture = TestDir::new();
+        let (project, reference) = project(&fixture.0.join("member"), "member");
+        let settings = fixture.0.join("eska.toml");
+        let original = "[workspace]\nmembers=['member']\n[build]\nplatform_version='8.3.27.2325'\n[vcs.workflow]\npreset='trunk'\n";
+        fs::write(&settings, original).unwrap();
+        let context = discover_context(project.root()).unwrap();
+        let selected = select_projects(&context, &[], false, SelectionIntent::ReadOnly).unwrap();
+        let selected = selected.projects()[0];
+        let scope = ProjectScope::Member(selected.name().unwrap().clone());
+        let source = EskaSource::open(selected.project().clone(), scope).unwrap();
+        let (authority, plan) = saved_edit(&source, &reference);
+        let saved = fs::read(source.project().source().join("configuration.yaml")).unwrap();
+        let changed = if semantic {
+            original.replace("8.3.27.2325", "8.3.27.2404")
+        } else {
+            format!("{original}# exact workspace bytes changed\n")
+        };
+        fs::write(&settings, &changed).unwrap();
+        if semantic {
+            assert_eq!(
+                source.edit_authority(&reference).err().unwrap().code,
+                "source_input_changed"
+            );
+        }
+        assert_eq!(
+            plan.publish(&authority).unwrap_err().code,
+            "source_input_changed"
+        );
+        assert_eq!(
+            fs::read(source.project().source().join("configuration.yaml")).unwrap(),
+            saved
+        );
+        assert_eq!(fs::read_to_string(settings).unwrap(), changed);
+    }
 }
 
 #[test]

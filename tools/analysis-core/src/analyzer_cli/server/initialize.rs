@@ -11,7 +11,7 @@ use super::super::{
     external_context, hover, kernel_memory, language, metadata_locations, navigation::Navigation,
     permissions, project_changes, property_edits, protocol, query_analysis, query_consumers,
     query_syntax, read_permissions::ReadPermissions, references, rename, request_control,
-    signature_help, stream, watched_files, watcher_registration,
+    signature_help, source_saves, stream, watched_files, watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisScope, AnalysisSession, analysis_settings, batch::BatchProfile};
@@ -28,6 +28,10 @@ impl Server<'_> {
             watcher_registration::Registration::sources(&project_inputs, &readers, params)?;
         let (scope, edit_plans) =
             selected_admission(sources.selected(), self.cli, params, sources.configured())?;
+        let save_authority = edit_authority::Authority::for_save(
+            sources.selected(),
+            self.cli.accepted_base_sha256.as_deref(),
+        )?;
         let (navigation, read_permissions) = capture_navigation(sources.selected(), self.cli)?;
         let options = profile.session_options(self.cli.max_retained_source_bytes);
         let session = open_session(sources, &settings, options, scope)?;
@@ -74,17 +78,12 @@ impl Server<'_> {
             result["capabilities"]["experimental"]["eska"]["inputDeclarations"] =
                 super::super::input_declarations::capability();
         }
-        if edit_plans.is_some() {
-            result["capabilities"]["experimental"]["eska"]["propertyEditPlans"] =
-                json!({"method":property_edits::METHOD,"scope":"open-document","versioned":true});
-        }
+        let editing = (edit_plans.is_some(), save_authority.is_some());
+        advertise_editing(&mut result, params, editing, settings.is_ok());
         result["capabilities"]["diagnosticProvider"] = json!({
             "identifier":diagnostics::identifier(profile), "interFileDependencies":profile==BatchProfile::Semantic,
             "workspaceDiagnostics":false, "workDoneProgress":false});
         if settings.is_ok() {
-            if edit_plans.is_some() {
-                rename::advertise(&mut result, params);
-            }
             result["capabilities"]["completionProvider"] =
                 json!({"resolveProvider":false,"triggerCharacters":["."],"workDoneProgress":false});
             result["capabilities"]["definitionProvider"] = json!(true);
@@ -112,6 +111,7 @@ impl Server<'_> {
         self.project_inputs = Some(project_inputs);
         self.watcher = watcher;
         self.edit_plans = edit_plans;
+        self.save_authority = save_authority;
         self.navigation = Some(navigation);
         self.read_permissions = Some(read_permissions);
         self.session = Some(session);
@@ -168,6 +168,25 @@ impl Server<'_> {
         query_analysis::negotiate(params)?;
         query_consumers::negotiate(params)?;
         Ok(())
+    }
+}
+
+/// Preview negotiation and storage save authority remain independent of language readiness.
+fn advertise_editing(
+    result: &mut Value,
+    params: &Value,
+    (previews, saves): (bool, bool),
+    language: bool,
+) {
+    if previews {
+        result["capabilities"]["experimental"]["eska"]["propertyEditPlans"] =
+            json!({"method":property_edits::METHOD,"scope":"open-document","versioned":true});
+        if language {
+            rename::advertise(result, params);
+        }
+    }
+    if saves {
+        result["capabilities"]["experimental"]["eska"]["sourceSave"] = source_saves::capability();
     }
 }
 
@@ -302,6 +321,9 @@ fn advertise_scope(result: &mut Value, scope: AnalysisScope) {
     eska["languageMethods"] = json!(language::LOCAL_METHODS);
     let mut cancellable = language::LOCAL_METHODS.to_vec();
     cancellable.push(permissions::METHOD);
+    if eska.get("sourceSave").is_some() {
+        cancellable.push(source_saves::METHOD);
+    }
     eska["cancellableMethods"] = json!(cancellable);
     for name in [
         "nestedFormModels",

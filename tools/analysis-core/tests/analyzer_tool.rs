@@ -52,6 +52,7 @@ mod scheduled_job_queries;
 mod semantic_diagnostic_queries;
 mod session_parameter_queries;
 mod signature_queries;
+mod source_saves;
 mod structural_metadata;
 mod subsystem_queries;
 mod support;

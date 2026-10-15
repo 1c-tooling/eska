@@ -123,7 +123,14 @@ pub(super) fn replace_direct(
         }
         (_, PropertyValue::Boolean(value)) => mapping.set(*key, ScalarValue::from(*value)),
         (_, PropertyValue::Text(value) | PropertyValue::Enumeration(value)) => {
-            set_direct_string(&mapping, key, value, node.as_scalar());
+            if node.as_scalar().is_some_and(|scalar| {
+                ScalarValue::from_scalar(scalar).style() == yaml_edit::ScalarStyle::DoubleQuoted
+            }) {
+                // Readable import uses JSON quoting; retain literal Unicode while escaping syntax.
+                flow_replacement = Some(serde_json::to_string(value).map_err(|_| unsupported())?);
+            } else {
+                set_direct_string(&mapping, key, value, node.as_scalar());
+            }
         }
         (_, PropertyValue::Integer(value)) => {
             set_direct_string(&mapping, key, value.as_str(), node.as_scalar());
@@ -427,6 +434,39 @@ fn unsupported() -> Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// JSON-compatible double quotes retain literal Unicode and escape only string syntax.
+    #[test]
+    fn direct_double_quotes_keep_unicode_and_escape_quotes_backslashes_and_newlines() {
+        let input = "# Я😀 header\r\nvalue: \"old\" # inline\r\nother: \"keep\" # neighbor\r\n";
+        for (next, literal) in [
+            (
+                PropertyValue::Text("Saved root Я😀".into()),
+                r#""Saved root Я😀""#,
+            ),
+            (
+                PropertyValue::Text("Quotes \"Я😀\" and slash \\ remain\nnext\tline".into()),
+                r#""Quotes \"Я😀\" and slash \\ remain\nnext\tline""#,
+            ),
+            (
+                PropertyValue::Enumeration("Значение😀".into()),
+                r#""Значение😀""#,
+            ),
+        ] {
+            let updated = replace_direct(
+                input,
+                &[Step::Key("value")],
+                &PropertyValue::Text("old".into()),
+                &next,
+            )
+            .unwrap();
+            assert_eq!(updated, input.replace("\"old\"", literal));
+            assert_eq!(
+                yaml::decode(&updated).unwrap()["value"],
+                super::super::super::readable::value_to_wire(&next).unwrap()
+            );
+        }
+    }
 
     /// Direct value edits retain surrounding annotations and original scalar transport styles.
     #[test]

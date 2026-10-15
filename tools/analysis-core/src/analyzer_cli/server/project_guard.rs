@@ -97,6 +97,8 @@ impl Server<'_> {
         self.session = None;
         self.settings = None;
         self.edit_plans = None;
+        self.save_authority = None;
+        self.root_publication = None;
         self.navigation = None;
         self.read_permissions = None;
         self.documents = documents::Documents::default();

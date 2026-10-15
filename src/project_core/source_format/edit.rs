@@ -3,9 +3,11 @@
 mod cst;
 mod form;
 mod query;
+mod yaml;
 
 pub use form::{FormEdit, FormEditPreview, prepare_form_edit, prepare_form_edit_text};
 pub use query::{QueryEditPreview, prepare_query_edit, prepare_query_edit_text};
+pub use yaml::{SourceYamlEditPlan, prepare_yaml_edit};
 
 use std::{
     fs,
@@ -13,6 +15,8 @@ use std::{
 };
 
 use crate::project_core::publish::{self, PublishError};
+
+use super::baseline::source_binding::SourceBinding;
 
 use super::{
     AcceptedBase, AcceptedRef, Child, Error, MetadataNode, NativeUuid, ObjectSource, Operation,
@@ -30,7 +34,7 @@ pub struct SourceEditPlan {
     baseline: AcceptedRef,
     original: Option<String>,
     updated: String,
-    source_binding: Option<super::baseline::source_binding::SourceBinding>,
+    source_binding: Option<SourceBinding>,
 }
 
 /// A lossless preview over caller-owned current text; it has no filesystem publication authority.
@@ -81,6 +85,12 @@ impl SourceEditPlan {
         &self.updated
     }
 
+    /// Return captured saved bytes so a caller can reject a planner's newer disk snapshot.
+    #[must_use]
+    pub fn original(&self) -> Option<&str> {
+        self.original.as_deref()
+    }
+
     /// An unchanged value retains the original spelling and produces no write.
     #[must_use]
     pub fn is_empty(&self) -> bool {
@@ -95,18 +105,64 @@ impl SourceEditPlan {
     /// # Errors
     /// Returns a policy/base change, conflict, unsafe path, read-only file or I/O failure.
     pub fn publish(&self, base: &AcceptedBase) -> Result<(), Error> {
+        self.publish_cancellable(base, &|| false)
+    }
+
+    /// Honor cancellation before the final commit while holding the selected project's write lock.
+    ///
+    /// A successful rename or creation is returned as success even if cancellation arrives later.
+    ///
+    /// # Errors
+    /// Returns publication failures or `source_read_cancelled` before any committed replacement.
+    pub fn publish_cancellable(
+        &self,
+        base: &AcceptedBase,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<(), Error> {
+        files::check_cancelled(cancelled)?;
+        let _write_lock = self.acquire_write_lock()?;
+        self.publish_locked(base, cancelled)
+    }
+
+    /// Compound YAML publication holds this same guard while rechecking all property claims.
+    fn acquire_write_lock(&self) -> Result<Option<super::source_write::Guard>, Error> {
+        self.source_binding
+            .as_ref()
+            .map_or(Ok(None), SourceBinding::acquire_write_lock)
+    }
+
+    /// The caller retains the project lock through verification and the final filesystem commit.
+    fn publish_locked(
+        &self,
+        base: &AcceptedBase,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<(), Error> {
+        files::check_cancelled(cancelled)?;
         if base.reference() != &self.baseline {
             return Err(Error::root("source_edit_baseline_changed"));
         }
         permission(base, &self.uuid, self.operation)?;
         base.verify()?;
         if let Some(binding) = &self.source_binding {
-            binding.verify(&self.root, &|| false)?;
+            binding.verify(&self.root, cancelled)?;
         }
         let publication = self.original.as_ref().map_or_else(
-            || publish::publish_new(&self.root, self.path.as_path(), &self.updated),
+            || {
+                publish::publish_new_cancellable(
+                    &self.root,
+                    self.path.as_path(),
+                    &self.updated,
+                    cancelled,
+                )
+            },
             |original| {
-                publish::publish_snapshot(&self.root, self.path.as_path(), original, &self.updated)
+                publish::publish_snapshot_cancellable(
+                    &self.root,
+                    self.path.as_path(),
+                    original,
+                    &self.updated,
+                    cancelled,
+                )
             },
         );
         publication
@@ -524,6 +580,7 @@ fn edit_error(error: PublishError) -> Error {
         PublishError::Conflict => Error::root("source_edit_conflict"),
         PublishError::UnsafePath => Error::root("source_edit_unsafe_path"),
         PublishError::ReadOnly => Error::root("source_edit_read_only"),
+        PublishError::Cancelled => Error::root("source_read_cancelled"),
         PublishError::Io(error) => files::io(&error),
     }
 }

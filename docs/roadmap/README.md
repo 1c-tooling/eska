@@ -22,7 +22,7 @@ restart. 231 Node tests без skipped; editable opening и остальная �
 [Правка комментария в открытом YAML](../research/eska-format/explorer-comment-buffer.md)
 прошла установленный CF/configured-CFE и 284 Node tests без skipped.
 Один versioned preview/native buffer/обычный ACK, undo/redo и replay сохранены;
-Save остаётся отдельной границей, EF-11 — `IN_PROGRESS`.
+публикация Save в том срезе не выполнялась, EF-11 — `IN_PROGRESS`.
 
 [Оболочка check](../research/eska-format/shell-check-delegation.md) запускает
 standalone checker с явным профилем и проверенной совместимостью.
@@ -153,8 +153,19 @@ chain. Новый release и установленный Explorer подтвер�
 range и четыре Problems на той же паре; semantic_complete=false сохранён.
 Все 27 Rust gates прошли: SDK — 262/580, kernel — 4439/25 ignored, adapter — 123;
 Node — 376. Две установленные матрицы завершили все 35 children, source bytes
-сохранены. Guarded Save, остальные EF-18/EF-27, комплект EF-21 и полный EF-16
-ещё нужны; порядок этапов и статус MVP не меняются.
+сохранены. Остальные EF-18/EF-27, комплект EF-21 и полный EF-16 ещё нужны;
+порядок этапов и статус MVP не меняются.
+
+[Защищённое сохранение исходников](../research/eska-format/guarded-source-save.md)
+подключено к обычным Save/Save All/autosave для declared BSL/SDBL и существующих
+typed YAML properties. Whole-file кандидат проходит прежние planners целиком;
+общий lock с import/recovery, свежие settings guards и точные disk hashes защищают
+публикацию. Подтверждённый selected-root Save объясняет только собственный watcher
+через private fingerprint. Все 28 Rust gates и 404 Node tests прошли; установленный
+release выполнил 28 публикаций CF/CFE/EPF/ERF, две regression matrices сохранили
+прежние read-only/semantic consumers, все 40 children завершились. Structural/trivia
+edits и полное IDE-покрытие ещё нужны; EF-11/EF-16 и MVP остаются в работе,
+очередь прежняя.
 
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий

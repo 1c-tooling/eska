@@ -13,13 +13,15 @@ use crate::{AnalysisSession, RequestCancellation, analysis_settings::Settings};
 use super::{
     args::Cli, completion, documents, dto, edit_authority, hover, navigation::Navigation,
     project_changes, protocol, read_permissions::ReadPermissions, request_control, signature_help,
-    stream, watched_files, watcher_registration,
+    source_saves, stream, watched_files, watcher_registration,
 };
 
 mod initialize;
 mod project_guard;
 mod requests;
 mod response;
+#[cfg(test)]
+mod source_save_tests;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum Phase {
@@ -42,6 +44,8 @@ struct Server<'a> {
     hover_format: hover::Format,
     signature: signature_help::Capabilities,
     edit_plans: Option<edit_authority::Authority>,
+    save_authority: Option<edit_authority::Authority>,
+    root_publication: Option<source_saves::RootPublication>,
     navigation: Option<Navigation>,
     read_permissions: Option<ReadPermissions>,
     project_inputs: Option<project_changes::Inputs>,
@@ -53,6 +57,7 @@ struct Server<'a> {
 
 enum Step {
     Continue(Option<Value>),
+    Committed(Value),
     Exit(u8),
 }
 
@@ -79,6 +84,8 @@ pub fn run(
         hover_format: hover::Format::Plaintext,
         signature: signature_help::Capabilities::negotiate(&Value::Null),
         edit_plans: None,
+        save_authority: None,
+        root_publication: None,
         navigation: None,
         read_permissions: None,
         project_inputs: None,
@@ -99,50 +106,55 @@ pub fn run(
             stream::Envelope::Error(error) => (Step::Continue(Some(error)), None),
             stream::Envelope::Response(response) => (server.client_response(response), None),
         };
-        match step {
-            Step::Exit(code) => return if incoming.join_after_exit() { code } else { 1 },
-            Step::Continue(None) => (),
-            Step::Continue(Some(mut response)) => {
-                if server
-                    .cancel_response(&mut response, tracked.as_ref())
-                    .is_err()
-                {
-                    return 1;
-                }
-                if server.fence_response(&mut response).is_err() {
-                    return 1;
-                }
-                let current = server
-                    .session
-                    .as_ref()
-                    .map(|session| dto::snapshot(session, &server.session_id));
-                let Ok(mut body) =
-                    response::encode(&response, current.as_ref(), rpc_framing::MAX_RESPONSE)
-                else {
-                    return 1;
-                };
-                let Ok(cancelled) = server.cancel_response(&mut response, tracked.as_ref()) else {
-                    return 1;
-                };
-                let Ok(fenced) = server.fence_response(&mut response) else {
-                    return 1;
-                };
-                if (cancelled || fenced)
-                    && response::serialize(&response, &mut body, rpc_framing::MAX_RESPONSE).is_err()
-                {
-                    return 1;
-                }
-                drop(tracked);
-                if rpc_framing::write_frame(output, &body).is_err() {
-                    return 1;
-                }
-                server.acknowledge_response();
+        if let Step::Exit(code) = step {
+            return if incoming.join_after_exit() { code } else { 1 };
+        }
+        let Ok(body) = server.encode_step_response(step, tracked.as_ref()) else {
+            return 1;
+        };
+        if let Some(body) = body {
+            drop(tracked);
+            if rpc_framing::write_frame(output, &body).is_err() {
+                return 1;
             }
+            server.acknowledge_response();
         }
     }
 }
 
 impl Server<'_> {
+    /// A confirmed publication bypasses read-result cancellation and import fences through wire encoding.
+    fn encode_step_response(
+        &mut self,
+        step: Step,
+        tracked: Option<&stream::TrackedRequest>,
+    ) -> Result<Option<Vec<u8>>, ()> {
+        let mut response = match step {
+            Step::Committed(response) => {
+                return response::encode(&response, None, rpc_framing::MAX_RESPONSE)
+                    .map(Some)
+                    .map_err(|_| ());
+            }
+            Step::Continue(Some(response)) => response,
+            Step::Continue(None) => return Ok(None),
+            Step::Exit(_) => return Err(()),
+        };
+        self.cancel_response(&mut response, tracked)?;
+        self.fence_response(&mut response)?;
+        let current = self
+            .session
+            .as_ref()
+            .map(|session| dto::snapshot(session, &self.session_id));
+        let mut body = response::encode(&response, current.as_ref(), rpc_framing::MAX_RESPONSE)
+            .map_err(|_| ())?;
+        let cancelled = self.cancel_response(&mut response, tracked)?;
+        let fenced = self.fence_response(&mut response)?;
+        if cancelled || fenced {
+            response::serialize(&response, &mut body, rpc_framing::MAX_RESPONSE).map_err(|_| ())?;
+        }
+        Ok(Some(body))
+    }
+
     /// Discard a late successful result before its wire write; retain the original request ID.
     fn cancel_response(
         &self,
@@ -229,6 +241,8 @@ impl Server<'_> {
             self.documents = documents::Documents::default();
             self.settings = None;
             self.edit_plans = None;
+            self.save_authority = None;
+            self.root_publication = None;
             self.navigation = None;
             self.read_permissions = None;
             self.project_inputs = None;
@@ -238,6 +252,27 @@ impl Server<'_> {
             Ok(Value::Null)
         } else if let Err(error) = self.ensure_current() {
             Err(error)
+        } else if message.method == source_saves::METHOD {
+            return match self.source_save_request(&message.params, cancellation) {
+                Ok(source_saves::Committed {
+                    value,
+                    root_publication,
+                }) => {
+                    if let (Some(publication), Some(permissions)) =
+                        (&root_publication, &mut self.read_permissions)
+                    {
+                        let (source, sha256) = publication.fingerprint();
+                        permissions.acknowledge_root_publication(source, sha256);
+                    }
+                    if root_publication.is_some() {
+                        self.root_publication = root_publication;
+                    }
+                    Step::Committed(protocol::response(message.id.as_ref(), Ok(value)))
+                }
+                Err(error) => {
+                    Step::Continue(Some(protocol::response(message.id.as_ref(), Err(error))))
+                }
+            };
         } else {
             self.request(&message.method, &message.params, cancellation)
         };
@@ -295,6 +330,7 @@ impl Server<'_> {
             &message.params,
             controls,
             self.watcher.is_some(),
+            self.root_publication.as_ref(),
         ) {
             watched_files::Notification::Inputs(event) => Step::Continue(Some(event)),
             watched_files::Notification::Restart(changes) => {

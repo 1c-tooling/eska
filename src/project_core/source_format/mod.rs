@@ -36,6 +36,7 @@ mod queries;
 mod readable;
 mod reader;
 mod root;
+mod source_write;
 mod structural_references;
 mod synchronization;
 mod tabular_identities;
@@ -58,8 +59,9 @@ pub use baseline::{
 pub use coordinates::{CoordinateError, TextCoordinates, TextPosition, TextRange};
 pub use edit::{
     FormEdit, FormEditPreview, QueryEditPreview, SourceEditPlan, SourcePropertyEdit,
-    prepare_form_edit, prepare_form_edit_text, prepare_module_edit, prepare_property_edit,
-    prepare_property_edit_text, prepare_query_edit, prepare_query_edit_text,
+    SourceYamlEditPlan, prepare_form_edit, prepare_form_edit_text, prepare_module_edit,
+    prepare_property_edit, prepare_property_edit_text, prepare_query_edit, prepare_query_edit_text,
+    prepare_yaml_edit,
 };
 pub use export::export_designer;
 pub use import::{
@@ -225,6 +227,7 @@ impl Descriptor {
 #[cfg(test)]
 mod tests;
 
+use synchronization::ProjectSettingsGuard;
 pub(crate) use synchronization::verify_project_import_history;
 pub use synchronization::{
     ImportAncestor, ImportAncestorRef, NativeProjectSourceImport, PROJECT_SOURCE_IMPORT_RECEIPT,

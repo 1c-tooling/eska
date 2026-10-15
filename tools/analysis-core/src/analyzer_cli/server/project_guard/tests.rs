@@ -89,6 +89,8 @@ fn initialized<'a>(cli: &'a Cli, localizer: &'a Localizer) -> (Server<'a>, Value
         hover_format: hover::Format::Plaintext,
         signature: signature_help::Capabilities::negotiate(&Value::Null),
         edit_plans: None,
+        save_authority: None,
+        root_publication: None,
         navigation: None,
         read_permissions: None,
         project_inputs: None,

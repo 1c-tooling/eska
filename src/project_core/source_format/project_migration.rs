@@ -487,6 +487,7 @@ pub(super) fn publish_new(root: &Path, path: &str, text: &str) -> Result<(), Err
             publish::PublishError::Io(_) => "source_io_error",
             publish::PublishError::Conflict => "source_input_changed",
             publish::PublishError::ReadOnly => "source_read_only",
+            publish::PublishError::Cancelled => "source_read_cancelled",
             publish::PublishError::UnsafePath => "source_path_invalid",
         })
     })

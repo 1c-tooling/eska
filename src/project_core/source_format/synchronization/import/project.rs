@@ -5,6 +5,7 @@ mod initial;
 mod native;
 mod publication;
 mod recovery;
+mod settings_guard;
 
 #[cfg(test)]
 mod tests;
@@ -39,6 +40,7 @@ pub(in crate::project_core::source_format) use initial::stage_project_import_anc
 pub use initial::{initialize_project_import_ancestor, open_initial_project_import_ancestor};
 pub use native::{NativeProjectSourceImport, prepare_project_native_source_import};
 pub use recovery::recover_project_source_import;
+pub(in crate::project_core::source_format) use settings_guard::ProjectSettingsGuard;
 
 /// Project readers and builders refuse a selected source until the guarded import is resolved.
 pub const PROJECT_SOURCE_IMPORT_RECEIPT: &str = ".eska-project-source-import.json";

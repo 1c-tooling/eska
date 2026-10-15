@@ -15,12 +15,43 @@ use super::super::{
     document_symbols, documents, dto, hover, input_declarations, kernel_memory, language,
     metadata_locations,
     navigation::Navigation,
-    permissions, property_edits, protocol, references, rename, signature_help,
+    permissions, property_edits, protocol, references, rename, signature_help, source_saves,
 };
 use super::Server;
 use crate::{AnalysisScope, AnalysisSession, RequestCancellation, SessionRequestError};
 
 impl Server<'_> {
+    /// Guarded publication returns a typed commit outcome before generic read response fencing.
+    pub(super) fn source_save_request(
+        &self,
+        value: &Value,
+        cancellation: Option<&RequestCancellation>,
+    ) -> Result<source_saves::Committed, Value> {
+        let params: source_saves::Params = protocol::params(value)?;
+        let session = self
+            .session
+            .as_ref()
+            .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
+        validate_snapshot(session, &self.session_id, &params.snapshot)?;
+        let cancellation = cancellation
+            .ok_or_else(|| protocol::error_value(-32603, "request_invariant", Value::Null))?;
+        let authority = self
+            .save_authority
+            .as_ref()
+            .ok_or_else(|| protocol::error_value(-32000, "source_save_disabled", Value::Null))?;
+        source_saves::save(
+            authority,
+            session,
+            &self.documents,
+            &params,
+            &source_saves::Options {
+                id: &self.session_id,
+                cancellation,
+                timeout: Duration::from_secs(self.cli.timeout_seconds),
+            },
+        )
+    }
+
     /// Every custom request validates the connection identity and exact current revision first.
     pub(super) fn request(
         &mut self,

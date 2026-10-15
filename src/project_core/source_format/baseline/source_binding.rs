@@ -9,13 +9,19 @@ use std::{
 use sha2::{Digest, Sha256};
 
 use super::{AcceptedBase, Error, FileEntry, SourcePath, files};
-use crate::project_core::source_format::{FileRole, SourceManifest, SourceReader, export::Package};
+use crate::project_core::{
+    Project,
+    metadata_model::ProjectScope,
+    source_format::{
+        FileRole, ProjectSettingsGuard, SourceManifest, SourceReader, export::Package,
+    },
+};
 
 /// Only captured authoring descriptors and the reverse map fence a bound editor's structure.
 #[derive(Clone, Debug)]
 pub(in crate::project_core::source_format) struct SourceBinding {
     root: PathBuf,
-    project: Option<PathBuf>,
+    project: Option<ProjectSettingsGuard>,
     files: BTreeMap<SourcePath, FileEntry>,
 }
 
@@ -97,15 +103,42 @@ impl AcceptedBase {
     }
 
     /// A project consumer carries its publication guard into every subsequently prepared saved edit.
-    pub(in crate::project_core) fn with_project_guard(mut self, project: &Path) -> Self {
-        if let Some(binding) = &mut self.source_binding {
-            binding.project = Some(project.to_owned());
+    pub(in crate::project_core) fn with_project_guard(
+        mut self,
+        project: &Project,
+        scope: &ProjectScope,
+        expected_manifest_sha256: &str,
+    ) -> Result<Self, Error> {
+        let binding = self
+            .source_binding
+            .as_mut()
+            .ok_or_else(|| Error::root("source_edit_structure_changed"))?;
+        let manifest = SourcePath::parse(files::MANIFEST)?;
+        if binding.root != project.source()
+            || binding
+                .files
+                .get(&manifest)
+                .is_none_or(|entry| entry.sha256 != expected_manifest_sha256)
+        {
+            return Err(Error::root("source_edit_structure_changed"));
         }
-        self
+        binding.project = Some(ProjectSettingsGuard::capture(project, scope)?);
+        binding.verify(&binding.root, &|| false)?;
+        Ok(self)
     }
 }
 
 impl SourceBinding {
+    /// Only a selected project coordinates publication with its import and recovery writers.
+    pub(in crate::project_core::source_format) fn acquire_write_lock(
+        &self,
+    ) -> Result<Option<super::super::source_write::Guard>, Error> {
+        self.project
+            .as_ref()
+            .map(|guard| super::super::source_write::acquire(guard.root()))
+            .transpose()
+    }
+
     /// Descriptor/map changes or a different root invalidate saved editor publication before any write.
     pub(in crate::project_core::source_format) fn verify(
         &self,
@@ -113,7 +146,7 @@ impl SourceBinding {
         cancelled: &dyn Fn() -> bool,
     ) -> Result<(), Error> {
         if let Some(project) = &self.project {
-            crate::project_core::source_format::require_project_ready(project)?;
+            project.verify(cancelled)?;
         }
         if checked_root(root)? != self.root {
             return Err(Error::root("source_edit_structure_changed"));
@@ -127,7 +160,7 @@ impl SourceBinding {
             }
         }
         if let Some(project) = &self.project {
-            crate::project_core::source_format::require_project_ready(project)?;
+            project.verify(cancelled)?;
         }
         Ok(())
     }

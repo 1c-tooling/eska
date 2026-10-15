@@ -13,8 +13,12 @@ pub enum PublishError {
     Conflict,
     UnsafePath,
     ReadOnly,
+    Cancelled,
     Io(io::Error),
 }
+
+#[cfg(test)]
+mod tests;
 
 /// A temporary file belongs to this write alone, including on every failure path.
 struct Temporary(PathBuf);
@@ -38,7 +42,23 @@ pub fn publish_snapshot(
     original: &str,
     updated: &str,
 ) -> Result<(), PublishError> {
-    publish_bytes(root, relative, original, updated, None)
+    publish_snapshot_cancellable(root, relative, original, updated, &|| false)
+}
+
+/// Cancellation can refuse a prepared replacement only before its final rename.
+///
+/// No cancellation check follows a successful commit, so a caller receives its actual outcome.
+///
+/// # Errors
+/// Returns publication failures or cancellation without a committed replacement.
+pub fn publish_snapshot_cancellable(
+    root: &Path,
+    relative: &Path,
+    original: &str,
+    updated: &str,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<(), PublishError> {
+    publish_bytes(root, relative, original, updated, None, cancelled)
 }
 
 /// A structural journal owns the temporary file too, making process termination recoverable.
@@ -52,7 +72,7 @@ pub fn publish_snapshot_in(
     updated: &str,
     staging: &Path,
 ) -> Result<(), PublishError> {
-    publish_bytes(root, relative, original, updated, Some(staging))
+    publish_bytes(root, relative, original, updated, Some(staging), &|| false)
 }
 
 /// Publish a complete new file without replacing a concurrent writer's destination.
@@ -63,6 +83,20 @@ pub fn publish_snapshot_in(
 /// # Errors
 /// Returns a conflict, unsafe parent or filesystem failure. Parent directories must exist.
 pub fn publish_new(root: &Path, relative: &Path, updated: &str) -> Result<(), PublishError> {
+    publish_new_cancellable(root, relative, updated, &|| false)
+}
+
+/// A new file honors cancellation through the last check before its atomic no-overwrite link.
+///
+/// # Errors
+/// Returns publication failures or cancellation before the new destination becomes visible.
+pub fn publish_new_cancellable(
+    root: &Path,
+    relative: &Path,
+    updated: &str,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<(), PublishError> {
+    check_cancelled(cancelled)?;
     if relative.as_os_str().is_empty()
         || relative
             .components()
@@ -85,6 +119,7 @@ pub fn publish_new(root: &Path, relative: &Path, updated: &str) -> Result<(), Pu
     if parent.canonicalize().map_err(PublishError::Io)? != parent {
         return Err(PublishError::UnsafePath);
     }
+    check_cancelled(cancelled)?;
     fs::hard_link(&temporary.0, &path).map_err(|error| {
         if error.kind() == io::ErrorKind::AlreadyExists {
             PublishError::Conflict
@@ -110,7 +145,9 @@ fn publish_bytes(
     original: &str,
     updated: &str,
     staging: Option<&Path>,
+    cancelled: &dyn Fn() -> bool,
 ) -> Result<(), PublishError> {
+    check_cancelled(cancelled)?;
     let path = checked_path(root, relative)?;
     let permissions = fs::metadata(&path).map_err(PublishError::Io)?.permissions();
     if permissions.readonly() {
@@ -118,6 +155,7 @@ fn publish_bytes(
     }
     compare(&path, original)?;
     if original == updated {
+        check_cancelled(cancelled)?;
         return Ok(());
     }
     let parent = path.parent().ok_or(PublishError::UnsafePath)?;
@@ -145,7 +183,16 @@ fn publish_bytes(
     if fs::metadata(&path).map_err(PublishError::Io)?.permissions() != permissions {
         return Err(PublishError::Conflict);
     }
+    check_cancelled(cancelled)?;
     fs::rename(&temporary.0, &path).map_err(PublishError::Io)
+}
+
+/// Only pre-commit callers consult cancellation; completed publication never calls this again.
+fn check_cancelled(cancelled: &dyn Fn() -> bool) -> Result<(), PublishError> {
+    if cancelled() {
+        return Err(PublishError::Cancelled);
+    }
+    Ok(())
 }
 
 /// Reject aliases so an edit cannot replace a symlink or traverse outside the configured source.

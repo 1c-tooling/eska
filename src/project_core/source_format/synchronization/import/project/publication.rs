@@ -27,6 +27,8 @@ impl ProjectSourceImportPlan {
         &self,
         cancelled: &dyn Fn() -> bool,
     ) -> Result<LayoutPublication, Error> {
+        files::check_cancelled(cancelled)?;
+        let _write_lock = crate::project_core::source_format::source_write::acquire(&self.root)?;
         if !self.source.conflicts().is_empty() {
             return Err(Error::root("source_import_conflicts"));
         }

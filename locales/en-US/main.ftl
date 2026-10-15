@@ -197,6 +197,7 @@ tool-error-update-declarations = Restore source.json declarations from the previ
 tool-error-update-recovery = The destination or its recovery record does not match this plan. Changed and foreign files are not overwritten.
 tool-error-update-incomplete = The project copy is not fully published yet. Repeat the same update-base from the original project, or use the original project.
 tool-error-import-incomplete = Source import was interrupted. Complete it or restore the previous source using the retained journal before reading or building the project.
+tool-error-source-write-busy = A source save or import is already in progress for this project. Retry after it completes.
 tool-project-migration-preview = Readable project preview: { $path }. Source changes: { $source_count }; accepted source changes: { $base_count }. New base SHA-256: { $pin }. --write publishes the copy; approve the new checksum separately for CI.
 tool-project-migrated = Readable project published: { $path }. Accepted base SHA-256: { $pin }. The original project and CI checksum are preserved.
 tool-error-migration-scope = Migrate a standalone project, or use --workspace with --accepted-bases for a complete workspace. A member cannot be detached implicitly.

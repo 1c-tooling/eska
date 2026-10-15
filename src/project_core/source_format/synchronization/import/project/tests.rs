@@ -14,6 +14,8 @@ use crate::{
     test_support::TestDir,
 };
 
+mod write_lock;
+
 const MODULE: &str = "CommonModules/Tools/Module.bsl";
 const LOCAL: &[u8] = b"\xef\xbb\xbf// local survives\r\n";
 
@@ -35,6 +37,8 @@ impl Fixture {
         fs::create_dir(&root).unwrap();
         fs::rename(source, root.join("src")).unwrap();
         fs::create_dir(root.join(".eska")).unwrap();
+        // The persistent coordination file belongs to the fixture's starting service state.
+        drop(crate::project_core::source_format::source_write::acquire(&root).unwrap());
         let freeze = if frozen {
             vec![NativeUuid::parse("20000000-0000-4000-8000-000000000001").unwrap()]
         } else {

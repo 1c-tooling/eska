@@ -346,7 +346,8 @@ eska-analyzer --project-dir . --accepted-base-sha256 <approved-base-sha256>
 initialized доступны страницы владельцев и чтение/refresh одного YAML.
 Новый UUID сеанса и строковая ревизия обязательны в custom requests.
 Объявлена full-document синхронизация YAML/BSL: open/change/save/close используют
-общую ревизию и текущую source-byte квоту. Save не заменяет текст редактора;
+общую ревизию и текущую source-byte квоту. Notification `didSave` не записывает
+файл и не заменяет текст редактора;
 close перечитывает файл. [Client file events](../../docs/research/eska-format/analyzer-watched-files.md)
 инвалидируют сохранённые YAML/BSL без I/O, с общим preflight и приоритетом editor.
 [Control file events](../../docs/research/eska-format/analyzer-project-changes.md)
@@ -363,9 +364,25 @@ binary остаются нечитаемыми. Manual policy сохраняет
 Отказ регистрации не блокирует host. Интеграция клиента и автоматическое открытие
 нового состава ещё не приняты.
 [Guard повторного импорта](../../docs/research/eska-format/analyzer-import-guard.md)
-проверяется до dispatch и перед отправкой frame без ожидания watcher event.
+проверяется до dispatch и перед отправкой read-result frame без ожидания watcher event.
 Старый host завершается с последним отправленным snapshot; несохранённые
 документы остаются у клиента для явного replay в новом процессе.
+
+[Защищённый Save](../../docs/research/eska-format/guarded-source-save.md) —
+отдельный mutating method `eska/source/save` с capability `sourceSave`.
+Независимый startup pin разрешает его для CF/CFE/EPF/ERF независимо от semantic
+scope и preview documentChanges. Exact snapshot, open version и logical draft
+hash должны совпасть с journal; expected disk hash включает BOM/CRLF.
+BSL/SDBL используют прежние planners; whole-YAML принимает существующие typed
+properties с проверкой всех claims и точного CST candidate. Остальные YAML
+изменения пока явно отказываются. Общий project lock координирует Save/import;
+settings, manifest binding и saved bytes повторно проверяются перед commit.
+`published` и наблюдательный no-op `already_current` сохраняют Overlay/revision.
+Поздняя отмена или import не отменяют подтверждённую запись. Только точный
+собственный root-property Save освобождён от лишнего control restart; внешний
+root change сохраняет прежний guard. Обычный Save/Save All/autosave клиента
+использует отдельный writable provider, без native file write.
+
 `textDocument/diagnostic` использует выбранный `--profile syntax|semantic`
 и `bsl-analyzer.toml`; syntax остаётся default, settings фиксируются при initialize.
 Semantic загружает pending saved inputs до query и сохраняет editor authority;
