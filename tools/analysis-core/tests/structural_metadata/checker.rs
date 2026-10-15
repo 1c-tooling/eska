@@ -12,56 +12,69 @@ const RESOURCE: &str = "Reports/Demo/Templates/Schema/Template.xml";
 /// Valid leaves remove unsupported gaps; malformed explicit fields retain incomplete current coverage.
 #[test]
 fn structural_descriptors_checker_models_and_scoped_bsl_coverage_are_honest() {
-    let directory = support::TestDirectory::new();
-    let root = fixture::project(&directory.0);
-    fixture::settings(&root);
-    let source = root.join("src");
-    let original = fs::read_to_string(source.join(TEMPLATE)).unwrap();
-    let mut clean = Vec::new();
-    let mut invalid = Vec::new();
-    for lang in ["ru-RU", "en-US"] {
-        fs::write(source.join(TEMPLATE), &original).unwrap();
-        let value = report(
-            &run(&root, lang, &["--profile", "semantic", "--format", "json"]),
-            2,
-        );
-        let checked = &value["data"]["report"];
-        assert_eq!(checked["coverage"]["metadata_models_complete"], true);
-        assert_eq!(checked["coverage"]["semantic_profile_complete"], true);
-        assert_eq!(checked["query_coverage"]["syntax_complete"], false);
-        assert!(checked["query_files"].as_array().unwrap().is_empty());
-        assert_eq!(checked["query_coverage"]["metadata_complete"], false);
-        assert_eq!(checked["query_coverage"]["consumer_complete"], false);
-        assert!(checked["metadata_issues"].as_array().unwrap().is_empty());
-        clean.push(value);
-        fs::write(
-            source.join(TEMPLATE),
-            original.replace("DataCompositionSchema", "FutureTemplateType"),
-        )
-        .unwrap();
-        let value = report(
-            &run(&root, lang, &["--profile", "semantic", "--format", "json"]),
-            2,
-        );
-        let checked = &value["data"]["report"];
-        assert_eq!(checked["coverage"]["metadata_models_complete"], false);
-        assert_eq!(checked["coverage"]["semantic_profile_complete"], false);
-        assert_eq!(
-            checked["metadata_issues"][0]["code"],
-            "metadata_projection_invalid"
-        );
-        let human = run(&root, lang, &["--profile", "semantic"]);
-        assert_eq!(human.status.code(), Some(2));
-        assert!(human.stderr.is_empty());
-        assert!(
-            String::from_utf8(human.stdout)
-                .unwrap()
-                .contains("TemplateType")
-        );
-        invalid.push(value);
+    for (path, valid, invalid_value, field) in [
+        (
+            TEMPLATE,
+            "DataCompositionSchema",
+            "FutureTemplateType",
+            "TemplateType",
+        ),
+        (
+            "CommonPictures/Badge/object.yaml",
+            "false",
+            "invalid-boolean",
+            "AvailabilityForChoice",
+        ),
+        (
+            "CommandGroups/Actions/object.yaml",
+            "ActionsPanel",
+            "FutureCategory",
+            "Category",
+        ),
+    ] {
+        let directory = support::TestDirectory::new();
+        let root = fixture::project(&directory.0);
+        fixture::settings(&root);
+        let source = root.join("src");
+        let original = fs::read_to_string(source.join(path)).unwrap();
+        let mut clean = Vec::new();
+        let mut invalid = Vec::new();
+        for lang in ["ru-RU", "en-US"] {
+            fs::write(source.join(path), &original).unwrap();
+            let value = report(
+                &run(&root, lang, &["--profile", "semantic", "--format", "json"]),
+                2,
+            );
+            let checked = &value["data"]["report"];
+            assert_eq!(checked["coverage"]["metadata_models_complete"], true);
+            assert_eq!(checked["coverage"]["semantic_profile_complete"], true);
+            assert_eq!(checked["query_coverage"]["syntax_complete"], false);
+            assert!(checked["query_files"].as_array().unwrap().is_empty());
+            assert_eq!(checked["query_coverage"]["metadata_complete"], false);
+            assert_eq!(checked["query_coverage"]["consumer_complete"], false);
+            assert!(checked["metadata_issues"].as_array().unwrap().is_empty());
+            clean.push(value);
+            fs::write(source.join(path), original.replace(valid, invalid_value)).unwrap();
+            let value = report(
+                &run(&root, lang, &["--profile", "semantic", "--format", "json"]),
+                2,
+            );
+            let checked = &value["data"]["report"];
+            assert_eq!(checked["coverage"]["metadata_models_complete"], false);
+            assert_eq!(checked["coverage"]["semantic_profile_complete"], false);
+            assert_eq!(
+                checked["metadata_issues"][0]["code"],
+                "metadata_projection_invalid"
+            );
+            let human = run(&root, lang, &["--profile", "semantic"]);
+            assert_eq!(human.status.code(), Some(2));
+            assert!(human.stderr.is_empty());
+            assert!(String::from_utf8(human.stdout).unwrap().contains(field));
+            invalid.push(value);
+        }
+        assert_eq!(clean[0], clean[1]);
+        assert_eq!(invalid[0], invalid[1]);
     }
-    assert_eq!(clean[0], clean[1]);
-    assert_eq!(invalid[0], invalid[1]);
 }
 
 /// Broken resource/value/context cannot silently become successful query findings or extra BSL files.

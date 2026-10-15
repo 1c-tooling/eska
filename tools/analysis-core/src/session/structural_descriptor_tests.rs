@@ -17,6 +17,8 @@ use crate::{
 const LANGUAGE: &str = "Languages/Locale/object.yaml";
 const TEMPLATE: &str = "Reports/Demo/Templates/Schema/template.yaml";
 const RESOURCE: &str = "Reports/Demo/Templates/Schema/Template.xml";
+const PICTURE: &str = "CommonPictures/Badge/object.yaml";
+const GROUP: &str = "CommandGroups/Actions/object.yaml";
 #[path = "../../tests/support/structural_project.rs"]
 mod fixture;
 
@@ -42,7 +44,13 @@ fn language_template_current_models_are_structural_only_in_canonical_scope() {
     let (_directory, source) = fixture();
     let mut session = AnalysisSession::open(&source).unwrap();
     let request = InputRequest::default();
-    for path in [LANGUAGE, TEMPLATE, "CommonTemplates/Global/template.yaml"] {
+    for path in [
+        LANGUAGE,
+        TEMPLATE,
+        "CommonTemplates/Global/template.yaml",
+        PICTURE,
+        GROUP,
+    ] {
         let path = owner(path);
         assert!(matches!(
             session.owner(&path).unwrap().state,
@@ -103,7 +111,7 @@ fn language_template_current_models_are_structural_only_in_canonical_scope() {
         AnalysisScope::LocalSyntax,
     )
     .unwrap();
-    for path in [LANGUAGE, TEMPLATE] {
+    for path in [LANGUAGE, TEMPLATE, PICTURE, GROUP] {
         let path = owner(path);
         local.load_saved(&path, local.revision(), &request).unwrap();
         assert_eq!(local.owner(&path).unwrap().state, ModelState::SourceOnly);
@@ -180,6 +188,76 @@ fn structural_descriptor_dirty_invalid_watch_repair_and_close_keep_current_autho
         ModelState::Unavailable(_)
     ));
     assert!(!session.summary().descriptor_models_complete);
+}
+
+/// New presentation leaves use the same current-input lifecycle without a canonical or image model.
+#[test]
+fn presentation_leaves_dirty_invalid_watch_close_and_saved_recovery_are_current() {
+    for (name, valid, invalid) in [
+        (PICTURE, "false", "invalid-boolean"),
+        (GROUP, "ActionsPanel", "FutureCategory"),
+    ] {
+        let (_directory, source) = fixture();
+        let mut session = AnalysisSession::open(&source).unwrap();
+        let request = InputRequest::default();
+        session
+            .load_semantic_inputs(session.revision(), &request)
+            .unwrap();
+        let path = owner(name);
+        let saved = fs::read_to_string(source.join(name)).unwrap();
+        let dirty = format!("# Я😀\r\n{}", saved.replace(valid, invalid));
+        assert!(session.summary().descriptor_models_complete);
+        session
+            .apply_overlay(&path, session.revision(), 4, &dirty, &request)
+            .unwrap();
+        let checked = session
+            .metadata_diagnostics(&path, session.revision(), &QueryCancellation::default())
+            .unwrap();
+        assert!(
+            checked.input_complete
+                && !checked.main_model_complete
+                && !checked.descriptor_models_complete
+        );
+        assert_eq!(checked.findings.len(), 1);
+        assert!(dirty[checked.findings[0].byte_range.clone()].contains(invalid));
+        assert!(!session.summary().descriptor_models_complete);
+        let current = session.revision();
+        assert!(
+            session
+                .invalidate_saved_inputs(std::slice::from_ref(&path), current)
+                .unwrap()
+                .is_empty()
+        );
+        assert_eq!(session.revision(), current);
+        assert!(session.resolve(&path, current).unwrap().is_none());
+        assert!(
+            session
+                .apply_overlay(&path, current, 4, &saved, &request)
+                .is_err()
+        );
+        fs::remove_file(source.join(name)).unwrap();
+        session.close_overlay(&path, current, &request).unwrap();
+        assert!(matches!(
+            session.owner(&path).unwrap().state,
+            ModelState::Unavailable(_)
+        ));
+        fs::write(source.join(name), &saved).unwrap();
+        session
+            .load_saved(&path, session.revision(), &request)
+            .unwrap();
+        assert_eq!(
+            session.owner(&path).unwrap().state,
+            ModelState::StructureOnly
+        );
+        assert_eq!(session.owner(&path).unwrap().origin, InputOrigin::Saved);
+        assert!(session.summary().descriptor_models_complete);
+        assert!(
+            session
+                .resolve(&path, session.revision())
+                .unwrap()
+                .is_none()
+        );
+    }
 }
 
 /// Descriptor/selected BSL coverage must never imply resource, query syntax or consumer-context checks.

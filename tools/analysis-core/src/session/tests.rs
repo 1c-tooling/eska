@@ -130,7 +130,7 @@ pub fn fixture() -> (support::TestDirectory, PathBuf) {
     (directory, source)
 }
 
-/// Keep an actually unmodeled family available after roles gain their own canonical adapter.
+/// Keep a semantic type-bearing family unmodeled when reviewed presentation leaves gain coverage.
 pub fn fixture_with_unmodeled_family() -> (support::TestDirectory, PathBuf) {
     let (directory, _) = fixture();
     let native = directory.0.join("native");
@@ -139,20 +139,24 @@ pub fn fixture_with_unmodeled_family() -> (support::TestDirectory, PathBuf) {
         native.join("Configuration.xml"),
         configuration.replace(
             "<Role>Reader</Role>",
-            "<CommonPicture>Reader</CommonPicture>",
+            "<SessionParameter>Reader</SessionParameter>",
         ),
     )
     .unwrap();
     let role = fs::read_to_string(native.join("Roles/Reader.xml")).unwrap();
-    fs::create_dir(native.join("CommonPictures")).unwrap();
+    fs::create_dir(native.join("SessionParameters")).unwrap();
     fs::write(
-        native.join("CommonPictures/Reader.xml"),
-        role.replace("<Role ", "<CommonPicture ")
-            .replace("</Role>", "</CommonPicture>"),
+        native.join("SessionParameters/Reader.xml"),
+        role.replace("<Role ", "<SessionParameter ")
+            .replace("</Role>", "</SessionParameter>")
+            .replace(
+                "</Properties>",
+                "<Type><v8:Type>xs:string</v8:Type></Type></Properties>",
+            ),
     )
     .unwrap();
     fs::remove_file(native.join("Roles/Reader.xml")).unwrap();
-    let source = directory.0.join("source-with-picture");
+    let source = directory.0.join("source-with-parameter");
     import_designer(&native, &source).unwrap();
     (directory, source)
 }
@@ -529,13 +533,13 @@ fn unrelated_owner_changes_preserve_the_index_and_neighbor_query() {
 fn metadata_views_share_current_snapshots_without_requiring_bsl_projection() {
     let (_directory, root) = fixture_with_unmodeled_family();
     let mut session = AnalysisSession::open(&root).unwrap();
-    let path = owner("CommonPictures/Reader/object.yaml");
+    let path = owner("SessionParameters/Reader/object.yaml");
     session
         .load_saved(&path, session.revision(), &InputRequest::default())
         .unwrap();
     let saved = session.metadata(&path, session.revision()).unwrap();
     let eska::analysis_core::InputState::Ready(snapshot) = &saved.input else {
-        panic!("readable picture metadata");
+        panic!("readable parameter metadata");
     };
     assert_eq!(
         snapshot.documents[0].descriptor.objects[0].metadata.name(),

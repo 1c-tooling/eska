@@ -7,21 +7,33 @@ use eska::project_core::{MetadataKind, metadata_parser::ParsedDescriptor};
 
 use crate::{AdapterError, AdapterIssue, identity, properties::Properties};
 
-/// Validate current language/template metadata independently of template payloads and query context.
+mod presentation;
+
+/// Admit only reviewed non-BSL leaf kinds; callers must still validate their current descriptor.
+#[must_use]
+pub const fn is_structural_descriptor_kind(kind: MetadataKind) -> bool {
+    matches!(
+        kind,
+        MetadataKind::Language
+            | MetadataKind::Template
+            | MetadataKind::CommonTemplate
+            | MetadataKind::CommonPicture
+            | MetadataKind::CommandGroup
+    )
+}
+
+/// Validate current non-BSL leaves independently of image/template payloads and query context.
 ///
 /// This checks the descriptor's actual fields, including explicit absence, without supplying platform
 /// defaults. Success permits structural coverage only; no BSL canonical object or DCS model exists.
 ///
 /// # Errors
 /// Returns wrong kind, incomplete leaf structure, invalid UUID, unloaded/duplicate/invalid properties
-/// or an explicit unsupported template type, with ranges in the caller's exact source snapshot.
+/// or an explicit unsupported enum value, with ranges in the caller's exact source snapshot.
 pub fn structural_descriptor(descriptor: &ParsedDescriptor) -> Result<(), AdapterError> {
     let root = identity::descriptor_root(descriptor)?;
     let kind = root.metadata.kind();
-    if !matches!(
-        kind,
-        MetadataKind::Language | MetadataKind::Template | MetadataKind::CommonTemplate
-    ) {
+    if !is_structural_descriptor_kind(kind) {
         return Err(AdapterError {
             issue: AdapterIssue::WrongKind { actual: kind },
             range: root.range.clone(),
@@ -46,32 +58,45 @@ pub fn structural_descriptor(descriptor: &ParsedDescriptor) -> Result<(), Adapte
     // The shared parser validates localized values; uniqueness still belongs to this projection.
     fields.field("Synonym")?;
     identity::ownership(&fields)?;
-    if kind == MetadataKind::Language {
-        fields.text("LanguageCode")?;
-    } else if let Some(value) = fields.text("TemplateType")?
-        && !matches!(
-            value,
-            "ActiveDocument"
-                | "AddIn"
-                | "BinaryData"
-                | "DataCompositionAppearanceTemplate"
-                | "DataCompositionSchema"
-                | "GeographicalSchema"
-                | "GraphicalSchema"
-                | "HTMLDocument"
-                | "SpreadsheetDocument"
-                | "TextDocument"
-        )
+    match kind {
+        MetadataKind::Language => {
+            fields.text("LanguageCode")?;
+        }
+        MetadataKind::CommonPicture | MetadataKind::CommandGroup => {
+            presentation::validate(root, &fields)?;
+        }
+        _ => enum_value(
+            &fields,
+            "TemplateType",
+            &[
+                "ActiveDocument",
+                "AddIn",
+                "BinaryData",
+                "DataCompositionAppearanceTemplate",
+                "DataCompositionSchema",
+                "GeographicalSchema",
+                "GraphicalSchema",
+                "HTMLDocument",
+                "SpreadsheetDocument",
+                "TextDocument",
+            ],
+        )?,
+    }
+    Ok(())
+}
+
+/// An absent enum is not a default, and an unrecognized explicit token cannot gain coverage.
+fn enum_value(fields: &Properties<'_>, name: &str, allowed: &[&str]) -> Result<(), AdapterError> {
+    if let Some(field) = fields.field(name)?
+        && let Some(value) = fields.text(name)?
+        && !allowed.contains(&value)
     {
-        let range = fields
-            .field("TemplateType")?
-            .map_or_else(|| root.range.clone(), |field| field.range.clone());
         return Err(AdapterError {
             issue: AdapterIssue::UnsupportedPropertyValue {
-                name: "TemplateType".into(),
+                name: name.into(),
                 value: value.into(),
             },
-            range,
+            range: field.range.clone(),
         });
     }
     Ok(())

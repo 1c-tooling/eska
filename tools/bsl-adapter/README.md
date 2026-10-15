@@ -5,6 +5,11 @@
 основная библиотека проектов ESKA сохраняет независимость от ядра анализа.
 Библиотека пока не публикуется и не входит в установленный комплект.
 
+[Листовые descriptors](../../docs/research/eska-format/structural-metadata-coverage.md)
+Language, Template, CommonTemplate, CommonPicture и CommandGroup проверяются
+одним structural predicate. Это проверка текущих полей без canonical BSL model,
+чтения image payload или разрешения непроверенных семантических kinds.
+
 [Проекция роли](../../docs/research/eska-format/role-adapter.md) соединяет текущий
 descriptor с явно переданным `RoleData`: исходный UUID, три флага, объектные
 ссылки и RLS. `Rights.xml` остаётся сохранённым ресурсом; `project_roles` проверяет

@@ -1981,6 +1981,9 @@ groups и полный SDK прошли; установленный Explorer п�
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete
 не означает DCS/query completeness. Полная EF-18/EF-27 остаётся в работе.
+Общий reviewed predicate теперь включает CommonPicture/CommandGroup; 85 adapter
+tests, lifecycle/metadata/framed/checker groups и адресные native-origin owners
+прошли. Image payload, семантические kinds и весь состав CF/CFE не приняты.
 
 [Query resource read-view](../research/eska-format/query-context-read-view.md) проверяет
 current owner/resource strings layouts 5/6 без filesystem и `.sdbl` reads.

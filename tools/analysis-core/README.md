@@ -59,7 +59,7 @@ transport настоящий, новая платформа/installed Explorer �
 Экспериментальные root APIs описаны в связанном контракте; admission требует
 `analyzer-cli` или `check-cli`, базовые identities доступны default library.
 
-[Language и Template](../../docs/research/eska-format/structural-metadata-coverage.md)
+[Language, Template, CommonPicture и CommandGroup](../../docs/research/eska-format/structural-metadata-coverage.md)
 валидируются как StructureOnly: проверены текущие descriptor fields, canonical
 объекта и DCS/query проверки нет. Покрытие selected BSL rules сохраняет отдельный
 ограниченный `semantic_profile_complete`; `semantic_complete` остаётся false.

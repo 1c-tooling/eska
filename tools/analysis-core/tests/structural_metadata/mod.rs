@@ -95,6 +95,78 @@ fn structural_descriptors_lsp_dirty_watch_close_preserve_current_incomplete_stat
     );
 }
 
+/// Both new leaf kinds expose current field errors and retract them after close on the same host.
+#[test]
+fn presentation_leaf_lsp_fields_ranges_and_recovery_are_locale_independent() {
+    for (source, valid, invalid, field) in [
+        (
+            "CommonPictures/Badge/object.yaml",
+            "false",
+            "invalid-boolean",
+            "AvailabilityForChoice",
+        ),
+        (
+            "CommandGroups/Actions/object.yaml",
+            "ActionsPanel",
+            "FutureCategory",
+            "Category",
+        ),
+    ] {
+        let directory = support::TestDirectory::new();
+        let root = fixture::project(&directory.0);
+        let saved = fs::read_to_string(root.join("src").join(source)).unwrap();
+        let dirty = format!("# Я😀\r\n{}", saved.replace(valid, invalid));
+        let mut machine = Vec::new();
+        for lang in ["ru-RU", "en-US"] {
+            let mut client = start(&root, lang);
+            let clean = client.ask(&pull(&root, source));
+            assert_eq!(
+                clean["result"]["eska"]["coverage"]["metadata_model_complete"],
+                true
+            );
+            assert_eq!(
+                clean["result"]["eska"]["coverage"]["semantic_complete"],
+                false
+            );
+            let opened = client.ask(&json!({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":uri(&root,source),"languageId":"eska-source","version":3,"text":dirty}}}));
+            let refused = client.ask(&pull(&root, source));
+            assert_eq!(
+                refused["result"]["eska"]["coverage"]["metadata_model_complete"],
+                false
+            );
+            let item = &refused["result"]["items"][0];
+            assert_eq!(item["code"], "analysis_adapter_invalid");
+            assert_eq!(item["data"]["issue"]["name"], field);
+            let begin = usize::try_from(item["data"]["start_byte"].as_u64().unwrap()).unwrap();
+            let end = usize::try_from(item["data"]["end_byte"].as_u64().unwrap()).unwrap();
+            assert!(dirty[begin..end].contains(invalid));
+            let mut value = item.clone();
+            value.as_object_mut().unwrap().remove("message");
+            machine.push(value);
+            let watched = client.ask(&json!({"jsonrpc":"2.0","method":"workspace/didChangeWatchedFiles","params":{"changes":[{"uri":uri(&root,source),"type":2}]}}));
+            assert_eq!(watched["params"]["snapshot"], opened["params"]["snapshot"]);
+            assert_eq!(client.ask(&pull(&root, source)), refused);
+            client.ask(&json!({"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":uri(&root,source)}}}));
+            let repaired = client.ask(&pull(&root, source));
+            assert_eq!(repaired["result"]["items"], json!([]));
+            assert_eq!(
+                repaired["result"]["eska"]["coverage"]["metadata_model_complete"],
+                true
+            );
+            assert_eq!(
+                repaired["result"]["eska"]["coverage"]["semantic_complete"],
+                false
+            );
+            client.finish();
+        }
+        assert_eq!(machine[0], machine[1]);
+        assert_eq!(
+            fs::read_to_string(root.join("src").join(source)).unwrap(),
+            saved
+        );
+    }
+}
+
 /// BSL profile completeness is explicitly distinct from unadmitted DCS/query URI and consumer checks.
 #[test]
 fn structural_descriptors_lsp_semantic_bsl_coverage_does_not_admit_query_inputs() {

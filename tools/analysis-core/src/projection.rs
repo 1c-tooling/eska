@@ -136,10 +136,7 @@ pub fn project(
                 result.modeled_descriptors = 1;
                 ModelState::StructureOnly
             } else if let Some(document) = snapshot.documents.first() {
-                if matches!(
-                    kind,
-                    MetadataKind::Language | MetadataKind::Template | MetadataKind::CommonTemplate
-                ) {
+                if eska_bsl_adapter::is_structural_descriptor_kind(kind) {
                     match eska_bsl_adapter::structural_descriptor(&document.descriptor) {
                         Ok(()) => {
                             result.modeled_descriptors = 1;

@@ -11,7 +11,7 @@ fn batch_metadata_findings_match_resident_queries() {
     for (path, nested) in [
         ("CommonModules/Tools/object.yaml", false),
         ("Catalogs/Sample/object.yaml", true),
-        ("CommonPictures/Reader/object.yaml", false),
+        ("SessionParameters/Reader/object.yaml", false),
     ] {
         let (_directory, source) = fixture_with_unmodeled_family();
         let path = SourcePath::parse(path).unwrap();
@@ -82,7 +82,7 @@ fn batch_metadata_findings_match_resident_queries() {
 #[test]
 fn cancelled_metadata_report_preserves_incomplete_owner_without_findings() {
     let (_directory, source) = fixture_with_unmodeled_family();
-    let path = SourcePath::parse("CommonPictures/Reader/object.yaml").unwrap();
+    let path = SourcePath::parse("SessionParameters/Reader/object.yaml").unwrap();
     let mut session = AnalysisSession::open(&source).unwrap();
     session
         .load_saved(&path, session.revision(), &InputRequest::default())

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "scope": "current-common-picture-and-command-group-descriptors",
+  "status": "bounded-structural-coverage-passed",
+  "admitted_structural_kinds": ["Language", "Template", "CommonTemplate", "CommonPicture", "CommandGroup"],
+  "arbitrary_unsupported_kind_admitted": false,
+  "canonical_bsl_model_added": false,
+  "image_payload_validated": false,
+  "reference_target_existence_validated": false,
+  "gates": {
+    "adapter_tests_passed": 85,
+    "sdk_lifecycle_groups_passed": 4,
+    "metadata_regression_tests_passed": 67,
+    "framed_lsp_groups_passed": 3,
+    "checker_groups_passed": 2,
+    "strict_clippy_adapter_and_sdk": "passed",
+    "scoped_format": "passed"
+  },
+  "native_origin_owner_checks": [
+    {"project": "configuration", "kind": "CommandGroup", "read_ms": 6.713, "modeled_descriptors": 1, "parse_issues": 0, "peak_rss_bytes": 79622144},
+    {"project": "configured-extension", "kind": "CommonPicture", "read_ms": 5.099, "modeled_descriptors": 1, "parse_issues": 0, "peak_rss_bytes": 60760064}
+  ],
+  "bsl_and_query_text_bytes_read": 0,
+  "sources_bytes_modes_mtimes_preserved": true,
+  "children_reaped": 2,
+  "binary_provenance": {
+    "immutable_debug_binary": true,
+    "owned_source_files_recorded": 13,
+    "complete_build_time_rust_cargo_fingerprint": false,
+    "concurrent_current_form_code_may_be_included": true
+  },
+  "full_composition_accepted": false,
+  "native_platform_executed": false
+}

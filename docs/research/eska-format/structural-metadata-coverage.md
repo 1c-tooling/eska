@@ -1,4 +1,4 @@
-# Структурная проверка Language и Template
+# Структурная проверка листовых метаданных
 
 Общий SDK проверяет текущие descriptors `Language`, `Template`, `CommonTemplate`
 через adapter `structural_descriptor`. У этих leaf kinds нет canonical BSL
@@ -44,3 +44,32 @@ CFE/EPF/ERF syntax сохраняет LocalSyntax/incomplete metadata context.
 Установленный IDE-client, DCS execution и platform semantic comparison этой
 частью не принимаются. [Обезличенные результаты](structural-metadata-coverage-results.json)
 содержат runtime scopes/coverage и все 22 пройденных Rust gates.
+
+## CommonPicture и CommandGroup
+
+Следующая часть допускает ещё два проверенных kind через общий
+`is_structural_descriptor_kind`. SDK использует тот же predicate; произвольный
+`Unsupported` не становится `StructureOnly`. Для `CommonPicture` проверяются
+два флага доступности. Для `CommandGroup` — enum `Representation` и `Category`,
+локализованный `ToolTip`, пустая картинка либо native readable reference с
+`Ref` и `LoadTransparent`. Допустимы домены `StdPicture` и `CommonPicture` с
+проверенным именем. Наличие картинки и её binary payload не проверяются.
+
+Неизвестные MD fields, qualifiers, непроверенные inline picture и
+`SuppressObject` отклоняются. Семантические kinds, в том числе
+`SessionParameter`, не получают структурное разрешение. Старые три kind
+сохраняют свой контракт. Lifecycle, локализация координат и отказ на текущем
+неверном descriptor используют прежние SDK inputs.
+
+Полный adapter suite — 85/85; четыре SDK lifecycle, 67 metadata regression,
+три framed LSP и два checker groups прошли, включая RU/EN. Strict Clippy обоих
+пакетов и scoped fmt прошли. В адресной проверке native-origin CF CommandGroup
+и configured-CFE CommonPicture оба текущих descriptor получили `StructureOnly`,
+одну modeled declaration и ноль parse issues. BSL/query bodies не читались,
+источники сохранены побайтно с mode/mtime, оба процесса завершены.
+
+Это адресная проверка immutable debug binary: зафиксированы 13 файлов части,
+но полный build-time fingerprint Rust/Cargo не снимался; бинарник мог включать
+соседнюю current-form доработку. Изолированная сборка, весь состав CF/CFE,
+платформенная совместимость и полная EF-18/EF-27 этим не приняты.
+[Обезличенные результаты](presentation-leaves-results.json).

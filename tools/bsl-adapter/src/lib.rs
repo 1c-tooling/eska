@@ -31,7 +31,7 @@ pub use register::register;
 pub use role::role;
 pub use scheduled_job::scheduled_job;
 pub use simple_object::{constant_object, enum_object};
-pub use structural_descriptor::structural_descriptor;
+pub use structural_descriptor::{is_structural_descriptor_kind, structural_descriptor};
 pub use subsystem::subsystem;
 pub use type_description::attribute_type;
 pub use web_service::web_service;

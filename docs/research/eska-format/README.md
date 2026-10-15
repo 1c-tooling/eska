@@ -75,7 +75,8 @@ all4 на том же host: sync/diagnostics, dirty reveal, watch/restart/import
 [Комментарий в текущем буфере](explorer-comment-buffer.md) прошёл installed
 CF/configured-CFE: preview, native edit/undo/redo и restart/import replay.
 284 Node tests без skipped; обычный Save и полное editable opening ещё нужны.
-[Language/Template coverage](structural-metadata-coverage.md) проверяет текущие
+[Листовая structural coverage](structural-metadata-coverage.md), включая
+CommonPicture/CommandGroup, проверяет текущие
 descriptor fields без фиктивной canonical модели или проверки СКД.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery
 одному совместимому tool с независимыми pins и сохранением streams/exit.

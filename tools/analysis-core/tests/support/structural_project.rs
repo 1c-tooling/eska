@@ -9,7 +9,7 @@ use std::{
 const DCS: &str = "http://v8.1c.ru/8.1/data-composition-system/schema";
 const MD: &str = "http://v8.1c.ru/8.3/MDClasses";
 
-/// One owned native fixture has a language, DCS template, common template and BSL body.
+/// One owned native fixture has every reviewed structural leaf, a DCS template and a BSL body.
 pub fn project(directory: &Path) -> PathBuf {
     let native = directory.join("native");
     fs::create_dir(&native).unwrap();
@@ -19,7 +19,7 @@ pub fn project(directory: &Path) -> PathBuf {
             "Configuration",
             1,
             "<Name>Demo</Name><Version>0.1.0</Version>",
-            "<Language>Locale</Language><Report>Demo</Report><CommonTemplate>Global</CommonTemplate><CommonModule>Shared</CommonModule>",
+            "<Language>Locale</Language><Report>Demo</Report><CommonTemplate>Global</CommonTemplate><CommonModule>Shared</CommonModule><CommonPicture>Badge</CommonPicture><CommandGroup>Actions</CommandGroup>",
         ),
         (
             "Languages/Locale.xml",
@@ -54,6 +54,20 @@ pub fn project(directory: &Path) -> PathBuf {
             "CommonModule",
             6,
             "<Name>Shared</Name><Server>true</Server>",
+            "",
+        ),
+        (
+            "CommonPictures/Badge.xml",
+            "CommonPicture",
+            7,
+            "<Name>Badge</Name><AvailabilityForChoice>false</AvailabilityForChoice><AvailabilityForAppearance>true</AvailabilityForAppearance>",
+            "",
+        ),
+        (
+            "CommandGroups/Actions.xml",
+            "CommandGroup",
+            8,
+            "<Name>Actions</Name><Representation>PictureAndText</Representation><Category>ActionsPanel</Category><ToolTip xmlns:c='http://v8.1c.ru/8.1/data/core'><c:item><c:lang>ru</c:lang><c:content>Действия 😀</c:content></c:item></ToolTip><Picture xmlns:r='http://v8.1c.ru/8.3/xcf/readable'><r:Ref>CommonPicture.Badge</r:Ref><r:LoadTransparent>false</r:LoadTransparent></Picture>",
             "",
         ),
     ] {
