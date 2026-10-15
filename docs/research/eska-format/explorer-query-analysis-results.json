@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-15",
+  "scope": "EF-11 contextual SDBL client",
+  "explorer_commit": "709ff29",
+  "versions_changed": false,
+  "typescript": "passed",
+  "node": { "passed": 310, "failed": 0, "skipped": 0 },
+  "coordinate_followup": {
+    "commit": "d094496",
+    "node": { "passed": 311, "failed": 0, "skipped": 0 },
+    "native_cr_and_crlf_boundaries": true,
+    "installed_matrix_applies_to_previous_commit": true
+  },
+  "framed": {
+    "locales": ["ru-RU", "en-US"],
+    "contexts": ["CF", "explicit CF/dependency/CFE composition"],
+    "native_visibility_and_current_inputs": true,
+    "quota_cancellation_deadline": true,
+    "watcher_ack_and_repair": true,
+    "restart_and_import_replay": true
+  },
+  "installed": {
+    "os": "Linux x86-64",
+    "editor": "VSCodium 1.109.51242",
+    "vsix_version": "0.0.11",
+    "vsix_entries": 1314,
+    "compiled_files_match": 52,
+    "test_helpers_excluded": true,
+    "positive_contexts": ["generated CF", "generated configured CFE", "1C-origin CF"],
+    "standalone_1c_origin_cfe": "semantic initialize refused; separate syntax available",
+    "bom_crlf_unicode_ranges": true,
+    "invalid_current_without_saved_fallback": true,
+    "restart_and_import_replay": true,
+    "source_bytes_preserved": true,
+    "analyzer_children": 12,
+    "surviving_analyzer_children": 0,
+    "native_editor_api": true,
+    "physical_keyboard": false,
+    "native_save_invoked": false
+  },
+  "coverage": { "parameters_complete": false, "consumer_complete": false, "semantic_complete": false },
+  "mvp_complete": false
+}

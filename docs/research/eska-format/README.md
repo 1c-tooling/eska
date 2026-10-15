@@ -72,6 +72,10 @@ current labels и отзыв policy; editable opening и остальная ма
 [Синтаксис `.sdbl` в установленном Explorer](explorer-query-syntax.md) прошёл
 all4 на том же host: sync/diagnostics, dirty reveal, watch/restart/import guard.
 Полный Node gate — 257/257 без skipped; metadata/consumer semantics остаётся EF-27.
+[Диагностика по текущим metadata в Explorer](explorer-query-analysis.md) прошла
+installed CF/configured-CFE и native CF; standalone native CFE без базы явно
+отказала semantic initialize и сохранила отдельный syntax. Node — 310/310;
+последующая проверка CR-координат — 311/311. Consumer findings ещё не подключены.
 [Комментарий в текущем буфере](explorer-comment-buffer.md) прошёл installed
 CF/configured-CFE: preview, native edit/undo/redo и restart/import replay.
 284 Node tests без skipped; обычный Save и полное editable opening ещё нужны.

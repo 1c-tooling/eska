@@ -532,7 +532,12 @@ Generic suggestions редактора не выданы за BSL/query semantic
 прошёл installed CF/configured-CFE: versioned preview, native buffer edit,
 undo/redo и restart/import replay; Node — 284/284 без skipped. Save не перехватывается,
 публикация и общее editable opening ещё нужны; EF-11 остаётся `IN_PROGRESS`.
-Editable opening, контекстные queries EF-27, полная schema групп, composition и остальная матрица
+[Current metadata SDBL](../research/eska-format/explorer-query-analysis.md) прошёл
+installed CF/configured-CFE и native CF: отдельный semantic opt-in, точные ranges,
+metadata withdrawal и restart/import replay. Standalone native CFE без доказанной
+базы явно отказала; syntax принят отдельно. Node — 310/310, после CR-boundary fix
+311/311; все 12 installed analyzer children завершены, source bytes сохранены.
+Editable opening, query consumers EF-27, полная schema групп, composition и остальная матрица
 продолжаются; EF-21/EF-16 не закрываются.
 
 В отдельной задаче репозитория Explorer подключить новый источник к EF-18/EF-27.
