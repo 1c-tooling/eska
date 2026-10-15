@@ -76,6 +76,15 @@ configured CFE явно отказала на Unsupported CommonPicture. Син�
 AnyRef/AnyIBRef без ослабления неизвестных типов. EF-18 остаётся `IN_PROGRESS`;
 успешная большая композиция этим исправлением не объявляется.
 
+[Общие реквизиты с явным составом](../research/eska-format/analyzer-common-attributes.md)
+подключены к native BSL completion и SDBL CF/CFE. Текущий Type/Content и
+заимствование по UUID проверены через SDK, checker и установленный Explorer.
+Kernel — 4422/25 ignored, adapter — 103, SDK — 218/521, Node — 339 без skipped.
+Четыре native CommonAttribute готовы; следующий отказ большой композиции —
+CommonCommand. Автоиспользование, разделение данных и полная EF-18 ещё нужны.
+Один installed прогон не наблюдал import marker; повтор прошёл, причина
+не установлена и остаётся ограничением приёмки.
+
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка

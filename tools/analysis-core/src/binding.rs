@@ -32,6 +32,14 @@ impl OwnerBinding {
             return;
         };
         match self.kind {
+            MetadataKind::CommonAttribute => {
+                listing
+                    .common_attributes
+                    .push(ide_db::metadata::CommonAttributeEntry {
+                        name: name.clone(),
+                        main: self.main,
+                    });
+            }
             MetadataKind::Role => {
                 listing.roles.push(RoleEntry {
                     name: name.clone(),

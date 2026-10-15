@@ -12,6 +12,13 @@ bsl-analyzer закреплены на той же Git-ревизии. Это и
 root visibility, adoption UUID, shadowing и platform environment masks сохраняются.
 Неизвестное текущее значение не подменяется base/XML fallback.
 
+[Общие реквизиты с явным составом](../../docs/research/eska-format/analyzer-common-attributes.md)
+имеют отдельную canonical модель и listing. Per-file object/register resolver
+добавляет их настоящие типизированные поля после видимых CF/CFE contributions;
+заимствование требует UUID базы. Пока принимаются только явный Content,
+AutoUse=DontUse и DataSeparation=DontUse. Pending/invalid contribution не
+подменяется сохранённым XML; общий реквизит не получает StructureOnly.
+
 [Canonical владельцы модулей](../../docs/research/eska-format/canonical-module-owners.md)
 разрешаются через текущие slots до native loader; EPF/ERF остаются объектами.
 Все listings регистрируются до запросов; новый состав/topology требует reopen.

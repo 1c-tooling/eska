@@ -238,7 +238,7 @@ fn nested_parse_issue_preserves_native_identity_and_does_not_invalidate_ready_ma
 #[test]
 fn unsupported_metadata_kind_preserves_its_real_root_location() {
     let (_directory, root) = crate::session::tests::fixture_with_unmodeled_family();
-    let path = owner("CommonAttributes/Reader/object.yaml");
+    let path = owner("Bots/Reader/object.yaml");
     let mut session = AnalysisSession::open(&root).unwrap();
     session
         .load_saved(&path, session.revision(), &InputRequest::default())
@@ -250,7 +250,7 @@ fn unsupported_metadata_kind_preserves_its_real_root_location() {
     assert_eq!(result.findings.len(), 1);
     assert_eq!(
         result.findings[0].issue,
-        MetadataDiagnosticIssue::UnsupportedKind(MetadataKind::CommonAttribute)
+        MetadataDiagnosticIssue::UnsupportedKind(MetadataKind::Bot)
     );
     let saved = fs::read_to_string(root.join(path.as_path())).unwrap();
     assert!(saved[result.findings[0].byte_range.clone()].contains("Reader"));

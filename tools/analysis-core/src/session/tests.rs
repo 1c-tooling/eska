@@ -130,25 +130,22 @@ pub fn fixture() -> (support::TestDirectory, PathBuf) {
     (directory, source)
 }
 
-/// Keep a semantic type-bearing family unmodeled when reviewed presentation leaves gain coverage.
+/// Keep an unreviewed semantic family unmodeled when reviewed presentation leaves gain coverage.
 pub fn fixture_with_unmodeled_family() -> (support::TestDirectory, PathBuf) {
     let (directory, _) = fixture();
     let native = directory.0.join("native");
     let configuration = fs::read_to_string(native.join("Configuration.xml")).unwrap();
     fs::write(
         native.join("Configuration.xml"),
-        configuration.replace(
-            "<Role>Reader</Role>",
-            "<CommonAttribute>Reader</CommonAttribute>",
-        ),
+        configuration.replace("<Role>Reader</Role>", "<Bot>Reader</Bot>"),
     )
     .unwrap();
     let role = fs::read_to_string(native.join("Roles/Reader.xml")).unwrap();
-    fs::create_dir(native.join("CommonAttributes")).unwrap();
+    fs::create_dir(native.join("Bots")).unwrap();
     fs::write(
-        native.join("CommonAttributes/Reader.xml"),
-        role.replace("<Role ", "<CommonAttribute ")
-            .replace("</Role>", "</CommonAttribute>")
+        native.join("Bots/Reader.xml"),
+        role.replace("<Role ", "<Bot ")
+            .replace("</Role>", "</Bot>")
             .replace(
                 "</Properties>",
                 "<Type><v8:Type>xs:string</v8:Type></Type></Properties>",
@@ -533,7 +530,7 @@ fn unrelated_owner_changes_preserve_the_index_and_neighbor_query() {
 fn metadata_views_share_current_snapshots_without_requiring_bsl_projection() {
     let (_directory, root) = fixture_with_unmodeled_family();
     let mut session = AnalysisSession::open(&root).unwrap();
-    let path = owner("CommonAttributes/Reader/object.yaml");
+    let path = owner("Bots/Reader/object.yaml");
     session
         .load_saved(&path, session.revision(), &InputRequest::default())
         .unwrap();

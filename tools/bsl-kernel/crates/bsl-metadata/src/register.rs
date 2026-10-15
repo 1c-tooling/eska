@@ -219,6 +219,24 @@ impl Register {
         &self.attributes
     }
 
+    /// A common field keeps its declaration UUID and remains unknown when a local field collides.
+    pub fn apply_common_attribute(&mut self, attribute: &crate::CommonAttribute) {
+        if !attribute.applies_to(self.mdo_type, &self.name) {
+            return;
+        }
+        if let Some(previous) = self
+            .attributes
+            .iter_mut()
+            .find(|previous| stdx::case::eq_ignore_case(previous.name(), attribute.name()))
+        {
+            previous.set_attr_type(crate::AttributeType::Unknown);
+        } else {
+            let mut field = RegisterAttribute::new(attribute.uuid(), attribute.name());
+            field.set_attr_type(attribute.attribute_type().clone());
+            self.attributes.push(field);
+        }
+    }
+
     pub fn is_information_register(&self) -> bool {
         self.mdo_type == MdoType::InformationRegister
     }

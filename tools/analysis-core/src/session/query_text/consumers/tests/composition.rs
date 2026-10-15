@@ -124,3 +124,22 @@ fn explicit_current_parameter_types_follow_resource_revision_in_selected_cfe() {
         AnalysisSession::from_composition(composition, SessionOptions::default()).unwrap();
     super::parameters::current_parameter_types(session, &project.source);
 }
+
+/// A selected CFE contributes current common fields to its visible base query and the same consumer report.
+#[test]
+fn current_common_fields_reach_selected_cfe_query_consumers() {
+    let directory = TestDirectory::new();
+    let (project, _, _) = fixture::composition_with_common_attribute(&directory.0);
+    let settings =
+        project_model::ProjectConfig::load_from_file(&project.root.join("bsl-analyzer.toml"))
+            .unwrap();
+    let roots = std::iter::once(SourceReader::open(&project.root.join("src")).unwrap())
+        .chain(
+            ["base", "a", "sibling"]
+                .map(|name| SourceReader::open(&directory.0.join(name).join("src")).unwrap()),
+        )
+        .collect();
+    let topology = admit(&project.root, &settings, roots, &project.root.join("src")).unwrap();
+    let session = AnalysisSession::from_composition(topology, SessionOptions::default()).unwrap();
+    super::common_attributes::check(&project, session);
+}

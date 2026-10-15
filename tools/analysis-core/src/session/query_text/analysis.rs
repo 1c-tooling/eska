@@ -78,6 +78,11 @@ impl AnalysisSession {
         })?;
         self.require_query_metadata()
             .map_err(QueryAnalysisRequestError::Request)?;
+        self.require_common_attribute_membership(owner.binding.main)
+            .map_err(|error| match error {
+                QueryError::Request(error) => QueryAnalysisRequestError::Request(error),
+                error => QueryAnalysisRequestError::Native(error),
+            })?;
         let analysis = ide::Analysis::from_database(self.database.clone());
         let result = salsa::Cancelled::catch(std::panic::AssertUnwindSafe(|| {
             analysis.attached(|analysis| {

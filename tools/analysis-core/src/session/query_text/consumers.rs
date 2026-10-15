@@ -92,6 +92,11 @@ impl AnalysisSession {
         if owner.binding.native_path != *context.consumer.native_descriptor() {
             return Err(mismatch());
         }
+        self.require_common_attribute_membership(owner.binding.main)
+            .map_err(|error| match error {
+                QueryError::Request(error) => QueryConsumerRequestError::Request(error),
+                error => QueryConsumerRequestError::Native(error),
+            })?;
         let parameter_types = parameters::types(&context, request, cancellation)?;
         let analysis = ide::Analysis::from_database(self.database.clone());
         let model = salsa::Cancelled::catch(std::panic::AssertUnwindSafe(|| {

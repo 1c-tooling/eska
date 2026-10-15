@@ -7,6 +7,7 @@ use super::{
 use serde_json::{Value, json};
 use std::fs;
 
+mod common_attributes;
 mod consumers;
 mod foreign_inputs;
 

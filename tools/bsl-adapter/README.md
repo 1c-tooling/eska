@@ -42,6 +42,12 @@ QName свойства проверяется по namespace и local name. Ош
 в исходном XML/YAML. Недоступные свойства, неверные UUID, дубли и неизвестные
 значения значимых флагов вызывают конкретную ошибку.
 
+[`common_attribute`](../../docs/research/eska-format/analyzer-common-attributes.md)
+передаёт текущие Type и явный Content в отдельную native модель. Проверяются
+namespace записей, повторные targets, ownership и управляющие поля.
+AutoUse=Use, разделение данных и неподдержанные targets возвращают typed issue;
+они не превращаются в пустой состав или StructureOnly.
+
 `defined_type` сохраняет UUID и составной тип, `attribute_type` преобразует
 общее свойство `Type` для последующих адаптеров полей. Сохраняются альтернативы
 `Type`/`TypeSet`, ссылки, определяемые и характеристические типы, параметры

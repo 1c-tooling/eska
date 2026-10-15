@@ -1006,6 +1006,26 @@ impl MetadataObject {
         self.attributes.push(attribute);
     }
 
+    /// Explicit common membership adds a typed field; a collision retains presence but no invented type.
+    pub fn apply_common_attribute(&mut self, attribute: &crate::CommonAttribute) {
+        if !attribute.applies_to(self.mdo_type, &self.name) {
+            return;
+        }
+        if let Some(previous) = self
+            .attributes
+            .iter_mut()
+            .find(|previous| stdx::case::eq_ignore_case(&previous.name, attribute.name()))
+        {
+            previous.attr_type = AttributeType::Unknown;
+        } else {
+            self.attributes.push(Attribute {
+                name: attribute.name().into(),
+                name_en: None,
+                attr_type: attribute.attribute_type().clone(),
+            });
+        }
+    }
+
     pub fn add_tabular_section(&mut self, tabular_section: crate::tabular_section::TabularSection) {
         self.tabular_sections.push(tabular_section);
     }

@@ -1,0 +1,211 @@
+{
+  "gates": 21,
+  "source_files": 1595,
+  "source_sha256": "7d43b19437c1dac29b962dd422fff3bce563fca9a5138dc4b98843c12d47697d",
+  "source_unchanged": true,
+  "binaries": {
+    "eska-analyzer-debug": {
+      "sha256": "c17c1a23ebe9fda77a7a813b6dd79831f32ab161275ccb462ecdd137bbad8747",
+      "bytes": 133875744
+    },
+    "eska-analyzer": {
+      "sha256": "10cb2c3cceab2d1ad8af49701fc6302e762b45f4e424ec833927cbff6737deef",
+      "bytes": 55592800
+    },
+    "eska-check": {
+      "sha256": "de88e739b4b254361c310db30303ab27ba9110a98e78afa02040975cbf9cd5a3",
+      "bytes": 50227688
+    }
+  },
+  "tests": {
+    "kernel-test": {
+      "passed": 4422,
+      "failed": 0,
+      "ignored": 25
+    },
+    "adapter-test": {
+      "passed": 103,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-default": {
+      "passed": 218,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-all": {
+      "passed": 521,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "root_reuse": {
+    "root_rust_cargo_unchanged": true,
+    "previous_gates": "ef27-explicit-parameter-gates-eftm39py/root-gates",
+    "files": 736
+  },
+  "node": {
+    "passed": 339,
+    "failed": 0,
+    "skipped": 0,
+    "executor": "root direct PTY",
+    "duration_ms": 5613.417852
+  },
+  "installed": {
+    "passed": true,
+    "executor": "root direct PTY",
+    "children_reaped": 19,
+    "cases": [
+      {
+        "case": "generated-cf",
+        "origin": "generated-native",
+        "type": "configuration",
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": false,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 27,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "generated-cfe",
+        "origin": "generated-native",
+        "type": "extension",
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": true,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "foreignCurrentMetadata": true,
+        "foreignInvalidNoSavedFallback": true,
+        "hiddenSiblingIgnored": true,
+        "foreignRestartImportReplay": true,
+        "foreignSourceBytesPreserved": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 25,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cf",
+        "origin": "1c-native",
+        "type": "configuration",
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 151,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cfe",
+        "origin": "1c-native",
+        "type": "extension",
+        "semanticContextRefused": true,
+        "syntaxAvailable": true,
+        "sourceBytesPreserved": true
+      }
+    ],
+    "compiled_modules_match": 54,
+    "vsix_sha256": "05bc15ba5ddb99068002aa8c90e29657d1cf3cb078dc52ac49fae014aa42f8fe",
+    "initial_attempt": "import-marker retirement was not observed; not accepted; failure logs retained; instrumented repeat passed; cause unproven"
+  },
+  "checker": {
+    "passed": true,
+    "rows": [
+      {
+        "type": "configuration",
+        "enabled": true,
+        "locale": "ru-RU",
+        "exitCode": 2,
+        "unknownFields": 0
+      },
+      {
+        "type": "configuration",
+        "enabled": true,
+        "locale": "en-US",
+        "exitCode": 2,
+        "unknownFields": 0
+      },
+      {
+        "type": "configuration",
+        "enabled": false,
+        "locale": "ru-RU",
+        "exitCode": 2,
+        "unknownFields": 1
+      },
+      {
+        "type": "configuration",
+        "enabled": false,
+        "locale": "en-US",
+        "exitCode": 2,
+        "unknownFields": 1
+      },
+      {
+        "type": "extension",
+        "enabled": true,
+        "locale": "ru-RU",
+        "exitCode": 2,
+        "unknownFields": 0
+      },
+      {
+        "type": "extension",
+        "enabled": true,
+        "locale": "en-US",
+        "exitCode": 2,
+        "unknownFields": 0
+      },
+      {
+        "type": "extension",
+        "enabled": false,
+        "locale": "ru-RU",
+        "exitCode": 2,
+        "unknownFields": 1
+      },
+      {
+        "type": "extension",
+        "enabled": false,
+        "locale": "en-US",
+        "exitCode": 2,
+        "unknownFields": 1
+      }
+    ]
+  },
+  "native_large": {
+    "common_attribute_models_ready": 4,
+    "targeted_sources_preserved": true,
+    "next_unsupported_family": "CommonCommand",
+    "cold_seconds": 15.339226911999503,
+    "peak_rss_bytes": 394076160,
+    "sources_preserved": true,
+    "association_verified": false,
+    "performance_accepted": false,
+    "child_reaped": true
+  }
+}

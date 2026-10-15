@@ -1,5 +1,6 @@
 //! Canonical metadata adapters depend on shared logical properties, never exported XML or an IDE.
 
+mod common_attribute;
 mod common_module;
 mod defined_type;
 mod event_subscription;
@@ -20,6 +21,7 @@ mod subsystem;
 mod type_description;
 mod web_service;
 
+pub use common_attribute::common_attribute;
 pub use common_module::common_module;
 pub use defined_type::defined_type;
 pub use event_subscription::event_subscription;

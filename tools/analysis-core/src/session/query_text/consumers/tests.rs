@@ -1,5 +1,6 @@
 //! Real current storage and canonical owner anchors exercise consumer facts without synthetic BSL.
 
+mod common_attributes;
 mod parameters;
 
 use std::fs;

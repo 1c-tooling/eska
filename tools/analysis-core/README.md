@@ -108,6 +108,14 @@ Cold completion готовит только объявленное семейс�
 execution contexts, current failure и root-qualified adoption остаются у ядра.
 Обычный query parameter не получает тип одноимённого параметра сеанса.
 
+[CommonAttribute с явным Content](../../docs/research/eska-format/analyzer-common-attributes.md)
+добавляет настоящие поля в BSL completion и SDBL через native per-file resolver.
+Cold completion готовит объявленные общие реквизиты; текущая ошибка, неверный
+adoption UUID или недоступная видимая база дают существующий
+`analysis_composition_incomplete`. Изменение типа/членства, invalid overlay,
+repair, close и foreign replay используют тот же current input controller.
+Автоиспользование и разделение данных пока не поддержаны.
+
 [Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
 дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
 common completion, unsaved named flags и переход к физическому BSL input;

@@ -30,6 +30,19 @@ pub fn project(parent: &Path, kind: &str) -> Project {
         "project",
         "NativeName",
         native_fixture::ROOT_UUID,
+        false,
+    )
+}
+
+/// Explicit common membership is an ordinary current metadata dependency of the same query project.
+pub fn project_with_common_attribute(parent: &Path) -> Project {
+    create(
+        parent,
+        "configuration",
+        "project",
+        "NativeName",
+        native_fixture::ROOT_UUID,
+        true,
     )
 }
 
@@ -41,6 +54,18 @@ pub fn snapshot(project: &Project) -> native_fixture::Snapshot {
 /// Source-owned B declares base + A while the sibling remains a registered invisible contributor.
 #[cfg(any(feature = "check-cli", feature = "analyzer-cli"))]
 pub fn composition(parent: &Path) -> (Project, PathBuf, SourcePath) {
+    composition_with_common(parent, false)
+}
+
+/// Selected own common fields may extend a visible base object while sibling roots stay hidden.
+#[cfg(any(feature = "check-cli", feature = "analyzer-cli"))]
+pub fn composition_with_common_attribute(parent: &Path) -> (Project, PathBuf, SourcePath) {
+    composition_with_common(parent, true)
+}
+
+/// Preserve the existing source topology while varying only one declared family's participation.
+#[cfg(any(feature = "check-cli", feature = "analyzer-cli"))]
+fn composition_with_common(parent: &Path, common: bool) -> (Project, PathBuf, SourcePath) {
     let topology = composition_fixture::project(parent);
     let project = create(
         parent,
@@ -48,6 +73,7 @@ pub fn composition(parent: &Path) -> (Project, PathBuf, SourcePath) {
         "selected",
         "B",
         "10000000-0000-4000-8000-00000000000f",
+        common,
     );
     fs::write(
         project.root.join("bsl-analyzer.toml"),
@@ -58,7 +84,14 @@ pub fn composition(parent: &Path) -> (Project, PathBuf, SourcePath) {
 }
 
 /// Every mutation belongs to the caller's new playground fixture and occurs before source import.
-fn create(parent: &Path, kind: &str, directory: &str, name: &str, uuid: &str) -> Project {
+fn create(
+    parent: &Path,
+    kind: &str,
+    directory: &str,
+    name: &str,
+    uuid: &str,
+    common: bool,
+) -> Project {
     let native = native_fixture::native(parent, kind);
     let root_header = native.input.join(&native.root);
     let mut header = fs::read_to_string(&root_header)
@@ -69,6 +102,14 @@ fn create(parent: &Path, kind: &str, directory: &str, name: &str, uuid: &str) ->
         header = header.replace("<ChildObjects>", "<ChildObjects><Catalog>Items</Catalog>");
         fs::create_dir_all(native.input.join("Catalogs")).unwrap();
         fs::write(native.input.join("Catalogs/Items.xml"),"<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\" xmlns:v8=\"http://v8.1c.ru/8.1/data/core\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" version=\"2.20\"><Catalog uuid=\"90000000-0000-4000-8000-000000000001\"><Properties><Name>Items</Name><CodeLength>9</CodeLength><DescriptionLength>100</DescriptionLength></Properties><ChildObjects><Attribute uuid=\"91000000-0000-4000-8000-000000000001\"><Properties><Name>CurrentField</Name><Type><v8:Type>xs:string</v8:Type><v8:StringQualifiers><v8:Length>40</v8:Length><v8:AllowedLength>Variable</v8:AllowedLength></v8:StringQualifiers></Type></Properties></Attribute></ChildObjects></Catalog></MetaDataObject>").unwrap();
+    }
+    if common {
+        header = header.replace(
+            "<ChildObjects>",
+            "<ChildObjects><CommonAttribute>SharedЯ</CommonAttribute>",
+        );
+        fs::create_dir_all(native.input.join("CommonAttributes")).unwrap();
+        fs::write(native.input.join("CommonAttributes/SharedЯ.xml"), r#"<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:r="http://v8.1c.ru/8.3/xcf/readable" xmlns:t="http://v8.1c.ru/8.1/data/core" xmlns:x="http://www.w3.org/2001/XMLSchema" version="2.20"><CommonAttribute uuid="90000000-0000-4000-8000-00000000000f"><Properties><Name>SharedЯ</Name><Type><t:Type>x:string</t:Type></Type><AutoUse>DontUse</AutoUse><DataSeparation>DontUse</DataSeparation><Content><r:Item><r:Metadata>Catalog.Items</r:Metadata><r:Use>Use</r:Use></r:Item></Content></Properties></CommonAttribute></MetaDataObject>"#).unwrap();
     }
     fs::write(root_header, header).unwrap();
     let root = parent.join(directory);

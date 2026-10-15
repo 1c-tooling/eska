@@ -846,6 +846,7 @@ impl RootDatabaseImpl {
             integration_services,
             subsystems,
             session_parameters,
+            common_attributes,
         } = listing;
         let entries = Arc::new(entries);
         let defined_types = Arc::new(defined_types);
@@ -858,6 +859,7 @@ impl RootDatabaseImpl {
         let integration_services = Arc::new(integration_services);
         let subsystems = Arc::new(subsystems);
         let session_parameters = Arc::new(session_parameters);
+        let common_attributes = Arc::new(common_attributes);
         match self.metadata_listings.get(&key).map(|e| *e.value()) {
             Some(input) => {
                 input.set_entries(self).to(entries);
@@ -871,6 +873,7 @@ impl RootDatabaseImpl {
                 input.set_integration_services(self).to(integration_services);
                 input.set_subsystems(self).to(subsystems);
                 input.set_session_parameters(self).to(session_parameters);
+                input.set_common_attributes(self).to(common_attributes);
             }
             None => {
                 let input = metadata::MetadataListingInput::builder(
@@ -885,6 +888,7 @@ impl RootDatabaseImpl {
                     integration_services,
                     subsystems,
                     session_parameters,
+                    common_attributes,
                     Arc::new(metadata::CanonicalMetadataInputs::default()),
                 )
                 .durability(salsa::Durability::MEDIUM)
@@ -1102,7 +1106,11 @@ impl RootDatabaseImpl {
                 None => merged = Some((*overlay).clone()),
             }
         }
-        merged.map(Arc::new)
+        let mut merged = merged?;
+        for attribute in self.common_attributes_for_file(file_id).ok()? {
+            merged.apply_common_attribute(&attribute);
+        }
+        Some(Arc::new(merged))
     }
 
     /// The register counterpart of [`Self::resolve_metadata_object_for_file`]: resolve a
@@ -1143,7 +1151,11 @@ impl RootDatabaseImpl {
                 None => merged = Some(overlay),
             }
         }
-        merged
+        let mut merged = merged?;
+        for attribute in self.common_attributes_for_file(file_id).ok()? {
+            Arc::make_mut(&mut merged).apply_common_attribute(&attribute);
+        }
+        Some(merged)
     }
 
     /// Resolve a register visible to `file_id` by NAME alone (its kind unknown to
@@ -1191,7 +1203,47 @@ impl RootDatabaseImpl {
         for overlay in same_kind {
             merged.get_or_insert_with(|| (*first).clone()).apply_extension_overlay(overlay);
         }
-        Some(merged.map(Arc::new).unwrap_or(first))
+        let mut merged = merged.map(Arc::new).unwrap_or(first);
+        for attribute in self.common_attributes_for_file(file_id).ok()? {
+            Arc::make_mut(&mut merged).apply_common_attribute(&attribute);
+        }
+        Some(merged)
+    }
+
+    /// Compose only topology-visible current common declarations, preserving UUID-proven adoption.
+    ///
+    /// # Errors
+    /// Returns the unavailable or unproven declaration's FileId, without substituting another root.
+    pub fn common_attributes_for_file(
+        &self,
+        file_id: FileId,
+    ) -> Result<Vec<Arc<bsl_metadata::CommonAttribute>>, FileId> {
+        let (main, chain, _) = self.metadata_listings_for_file(file_id).ok_or(file_id)?;
+        let mut result: Vec<Arc<bsl_metadata::CommonAttribute>> = Vec::new();
+        for listing in std::iter::once(main).chain(chain).flatten() {
+            for entry in listing.common_attributes(self).iter() {
+                let value = metadata::resolve_common_attribute(self, listing, entry.name.clone())
+                    .ok_or(entry.main)?;
+                if let Some(previous) = result
+                    .iter_mut()
+                    .find(|previous| stdx::case::eq_ignore_case(previous.name(), value.name()))
+                {
+                    if value.adopts(previous) {
+                        Arc::make_mut(previous).apply_extension_overlay(&value);
+                    } else if value.object_belonging() == bsl_metadata::ObjectBelonging::Adopted {
+                        return Err(entry.main);
+                    } else {
+                        *previous = value;
+                    }
+                } else {
+                    if value.object_belonging() == bsl_metadata::ObjectBelonging::Adopted {
+                        return Err(entry.main);
+                    }
+                    result.push(value);
+                }
+            }
+        }
+        Ok(result)
     }
 
     /// The defined-type counterpart of [`Self::resolve_metadata_object_for_file`]:

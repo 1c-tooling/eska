@@ -230,6 +230,7 @@ impl AnalysisSession {
         path: &SourcePath,
         request: &InputRequest,
     ) -> Result<(), QueryError> {
+        self.prepare_common_attributes(request)?;
         let module = self
             .selected_root
             .inputs
@@ -247,6 +248,44 @@ impl AnalysisSession {
         self.load_completion_owner(&owner, request)?;
         if let Some(dialog) = dialog {
             self.load_completion_resource(&dialog, request)?;
+        }
+        let file = self
+            .selected_root
+            .modules
+            .get(path)
+            .ok_or_else(|| QueryError::Request(SessionRequestError::UnknownModule(path.clone())))?
+            .file;
+        self.require_common_attribute_membership(file)?;
+        Ok(())
+    }
+
+    /// Current common membership can affect any object field, so cold native lookups need this family first.
+    fn prepare_common_attributes(&mut self, request: &InputRequest) -> Result<(), QueryError> {
+        let owners = self
+            .selected_root
+            .owners
+            .iter()
+            .filter(|(_, owner)| {
+                owner.binding.kind == eska::project_core::MetadataKind::CommonAttribute
+                    && !owner.binding.nested
+            })
+            .map(|(source, _)| source.clone())
+            .collect::<Vec<_>>();
+        for owner in owners {
+            if request.cancellation.is_cancelled() {
+                return Err(QueryError::Cancelled);
+            }
+            self.load_completion_owner(&owner, request)?;
+            if !self
+                .selected_root
+                .owners
+                .get(&owner)
+                .is_some_and(|owner| matches!(owner.model.state, crate::ModelState::Ready(_)))
+            {
+                return Err(QueryError::Request(
+                    SessionRequestError::CompositionInputIncomplete(self.selected_source(&owner)),
+                ));
+            }
         }
         Ok(())
     }
