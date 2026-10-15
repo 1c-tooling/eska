@@ -26,6 +26,13 @@ Multiple сохраняет тип элемента массива. UUID-proven 
 и visibility остаются у ядра. Positional symbol cards показывают известные типы
 параметров/локальных значений; cold discovery узнаёт один inferred reference owner.
 
+[Параметры функциональных опций](../../docs/research/eska-format/analyzer-functional-option-parameters.md)
+сохраняют отдельный canonical listing и UUID-проверенный per-file resolver.
+Настоящий interface getter возвращает открытую Structure с возможными ключами
+и подсказками типов из текущего Use. Native soft policy чтения полей сохранена;
+runtime presence и жёсткий scalar field inference не утверждаются.
+Экспериментальные constructors/listing inputs расширены шестнадцатым семейством.
+
 [Canonical владельцы модулей](../../docs/research/eska-format/canonical-module-owners.md)
 разрешаются через текущие slots до native loader; EPF/ERF остаются объектами.
 Все listings регистрируются до запросов; новый состав/topology требует reopen.

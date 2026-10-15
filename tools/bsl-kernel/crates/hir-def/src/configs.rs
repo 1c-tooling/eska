@@ -201,6 +201,12 @@ impl CommonModuleBodies {
 
 #[salsa::db]
 pub trait ConfigsDatabase: DefDatabase {
+    /// Potential interface-parameter keys come from the current visible declarations.
+    fn resolve_functional_option_parameters(
+        &self,
+        file: FileId,
+    ) -> Vec<Arc<bsl_metadata::FunctionalOptionsParameter>>;
+
     /// A literal functional-option global call resolves its own current storage declaration.
     fn resolve_functional_option(
         &self,

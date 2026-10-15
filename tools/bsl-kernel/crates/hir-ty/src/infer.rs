@@ -3433,6 +3433,15 @@ impl<'db> InferenceContext<'db> {
                         }
                     }
                 }
+                if crate::functional_option_parameters::is_get_name(name.as_str()) {
+                    let ty = crate::functional_option_parameters::result_type(
+                        self.db,
+                        self.context_file_id,
+                    );
+                    for candidate in candidates.signatures_mut() {
+                        candidate.return_ty = ty;
+                    }
+                }
                 // Weaving `&Вместо`: a bare `ПродолжитьВызов(...)` invokes the original base
                 // method, so (a) its result is that method's return type, not the platform
                 // global's generic return, and (b) it must pass a valid argument count for that

@@ -153,13 +153,21 @@ SDK — 226/535, Node — 356; installed CF/configured-CFE current/invalid/repla
 SDK — 232/543 tests, adapter — 113; Node — 361; installed CF/CFE current type,
 invalid/repair/replay прошёл, все 25 children завершились. Native xr:Object
 Content сохранён; все 43 объявления большой конфигурации готовы. Следующий
-отказ большой композиции — FunctionalOptionsParameter. Параметры опций
-и остальные условия EF-18/MVP ещё нужны.
+отказ того прогона — FunctionalOptionsParameter; последующее покрытие — ниже.
 
 [Hover неявных locals](../research/eska-format/analyzer-implicit-local-hover.md)
 использует native semantic symbol, current occurrence type и reaching declaration.
 SDK — 233/544, Node — 361; installed CF/CFE без Var прошёл current/invalid/replay,
 25 children завершились. Отдельные SDK карточки и новые schemas не добавлены.
+
+[Параметры функциональных опций](../research/eska-format/analyzer-functional-option-parameters.md)
+передают текущий Use в native interface getter: возможные поля открытой Structure
+и типы completion, без жёсткого scalar inference. Analyzer/Explorer сохраняют
+штатный detail; BSL incomplete даёт checker exit 2. SDK — 237/551, kernel —
+4429/25 ignored, adapter — 116; Node — 366, installed CF/CFE — 27 завершённых
+children. Все 3 native параметра готовы; следующий отказ большой композиции —
+Sequence. Шесть корневых gates выполнены заново: 1511/1632 tests, 24 ignored.
+EF-18/EF-27, editable opening/guarded Save, комплект EF-21 и приёмка EF-16 ещё нужны.
 
 ID сохраняют историю, порядок выполнения задаёт следующая таблица.
 

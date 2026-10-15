@@ -48,3 +48,65 @@ fn functional_option_current_reference_storage_reaches_checker_ruen() {
         body
     );
 }
+
+#[path = "../support/functional_option_parameter_project.rs"]
+mod parameters_fixture;
+
+/// Native mutable-structure leaf hints stay soft, while an invalid current parameter prevents complete batch success.
+#[test]
+fn functional_option_parameter_checker_keeps_soft_values_and_current_failure_ruen() {
+    let body = "&AtClient\nProcedure Run()\n Params=GetInterfaceFunctionalOptionParameters();\n Value=StringLength(Params.SettingЯ);\nEndProcedure\n";
+    let (directory, root) = support::project(body, false);
+    let native = directory.0.join("native");
+    fixture::add_options(&root, &native);
+    parameters_fixture::add_parameters(&root, &native);
+    settings(&root, &[DiagnosticCode::TypeMismatch]);
+    let source = root.join("src-with-option-parameters");
+    let register = source.join("InformationRegisters/Settings/object.yaml");
+    let saved = fs::read_to_string(&register).unwrap();
+    let boolean = saved.replace("x:string", "x:boolean");
+    assert_ne!(saved, boolean);
+    fs::write(register, boolean).unwrap();
+    let mut results = Vec::new();
+    for locale in ["ru-RU", "en-US"] {
+        let value = report(
+            &run(
+                &root,
+                locale,
+                &["--profile", "semantic", "--format", "json"],
+            ),
+            0,
+        );
+        assert_eq!(
+            value["data"]["report"]["coverage"]["semantic_profile_complete"], true,
+            "{value}"
+        );
+        results.push(value);
+    }
+    assert_eq!(results[0], results[1]);
+    let parameter = source.join("FunctionalOptionsParameters/SettingЯ/object.yaml");
+    let saved = fs::read_to_string(&parameter).unwrap();
+    let invalid = saved.replace(
+        "InformationRegister.Settings.Dimension.Key",
+        "Document.Orders",
+    );
+    assert_ne!(saved, invalid);
+    fs::write(parameter, invalid).unwrap();
+    let mut results = Vec::new();
+    for locale in ["ru-RU", "en-US"] {
+        let value = report(
+            &run(
+                &root,
+                locale,
+                &["--profile", "semantic", "--format", "json"],
+            ),
+            2,
+        );
+        assert_eq!(
+            value["data"]["report"]["coverage"]["semantic_profile_complete"], false,
+            "{value}"
+        );
+        results.push(value);
+    }
+    assert_eq!(results[0], results[1]);
+}

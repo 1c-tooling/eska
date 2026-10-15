@@ -13,6 +13,7 @@ pub mod external_object;
 pub mod filter_criterion;
 pub mod form;
 pub mod functional_option;
+mod functional_option_parameter;
 pub mod http_service;
 pub mod integration_service;
 pub mod loader;
@@ -50,6 +51,7 @@ pub use form::{
     Form, FormAttribute, FormAttributeColumn, FormElement, FormElementKind, FormEventHandler,
 };
 pub use functional_option::{FunctionalOption, FunctionalOptionLocation};
+pub use functional_option_parameter::{FunctionalOptionParameterUse, FunctionalOptionsParameter};
 pub use http_service::{
     HTTPService, HTTPServiceBuilder, HTTPServiceMethod, HTTPServiceMethodBuilder,
     HTTPServiceURLTemplate, HTTPServiceURLTemplateBuilder,

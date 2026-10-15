@@ -142,6 +142,13 @@ foreign dirty inputs и replay используют обычный controller.
 и прежний controller. Неизвестный тип остаётся отсутствующим; SDK не создаёт
 отдельный resolver для переменных без Var.
 
+[Параметры функциональных опций](../../docs/research/eska-format/analyzer-functional-option-parameters.md)
+готовят current Use только для настоящего interface getter в текущем теле.
+Открытая native Structure предлагает возможные поля и типы completion;
+обычный `detail` передаётся клиенту без изменения edit authority. Жёсткий тип
+чтения изменяемого поля и runtime presence не утверждаются. Неполная BSL
+композиция даёт `analysis_composition_incomplete` и exit 2 checker на RU/EN.
+
 [Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
 дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
 common completion, unsaved named flags и переход к физическому BSL input;

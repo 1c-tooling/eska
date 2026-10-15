@@ -279,6 +279,13 @@ fn check_module(
         let result = match diagnostics {
             Ok(result) => result,
             Err(QueryError::Cancelled) => return Ok(None),
+            Err(QueryError::Request(SessionRequestError::CompositionInputIncomplete(key))) => {
+                file.state = FileState::Unavailable {
+                    code: "analysis_composition_incomplete".into(),
+                    location: vec![key.root.index().to_string(), key.source.as_str().into()],
+                };
+                return Ok(Some(file));
+            }
             Err(error) => return Err(BatchError::Query(error)),
         };
         let entry =

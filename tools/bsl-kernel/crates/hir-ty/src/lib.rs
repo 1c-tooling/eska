@@ -10,6 +10,7 @@ pub mod filter_criteria;
 pub mod form_attr;
 pub mod form_items;
 pub mod form_self;
+pub mod functional_option_parameters;
 pub mod functional_options;
 pub mod infer;
 pub mod iteration_lookup;

@@ -2,12 +2,16 @@ mod common_attribute;
 mod common_command;
 mod filter_criterion;
 mod functional_option;
+mod functional_option_parameter;
 mod session_parameter;
 use bsl_metadata::Configuration;
 pub use common_attribute::{resolve_common_attribute, CommonAttributeEntry};
 pub use common_command::{resolve_common_command, CommonCommandEntry};
 pub use filter_criterion::{resolve_filter_criterion, FilterCriterionEntry};
 pub use functional_option::{resolve_functional_option, FunctionalOptionEntry};
+pub use functional_option_parameter::{
+    resolve_functional_option_parameter, FunctionalOptionsParameterEntry,
+};
 use intern::NormName;
 use rustc_hash::FxHashMap;
 pub use session_parameter::{
@@ -119,7 +123,7 @@ pub(crate) mod heap_estimate {
             + snapshot.source_exclusions.heap_bytes()
     }
 
-    /// Heap of a [`super::MetadataListingInput`]: the fifteen per-family `Arc<Vec<_>>`
+    /// Heap of a [`super::MetadataListingInput`]: the sixteen per-family `Arc<Vec<_>>`
     /// entry lists plus each entry's owned name string (the other entry fields —
     /// `FileId`s, the MDO kind — are `Copy`). New heap-owning listing families
     /// must be added here too.
@@ -141,6 +145,7 @@ pub(crate) mod heap_estimate {
             Arc<Vec<super::CommonCommandEntry>>,
             Arc<Vec<super::FilterCriterionEntry>>,
             Arc<Vec<super::FunctionalOptionEntry>>,
+            Arc<Vec<super::FunctionalOptionsParameterEntry>>,
             Arc<super::CanonicalMetadataInputs>,
         ),
     ) -> usize {
@@ -160,6 +165,7 @@ pub(crate) mod heap_estimate {
             common_commands,
             filter_criteria,
             functional_options,
+            functional_option_parameters,
             canonical_metadata,
         ) = fields;
 
@@ -193,6 +199,10 @@ pub(crate) mod heap_estimate {
             + filter_criteria.iter().map(|entry| entry.name.capacity()).sum::<usize>()
             + stdx::heap::vec_bytes::<super::FunctionalOptionEntry>(functional_options.len())
             + functional_options.iter().map(|entry| entry.name.capacity()).sum::<usize>()
+            + stdx::heap::vec_bytes::<super::FunctionalOptionsParameterEntry>(
+                functional_option_parameters.len(),
+            )
+            + functional_option_parameters.iter().map(|entry| entry.name.capacity()).sum::<usize>()
             + stdx::heap::map_table_bytes::<vfs::FileId, super::CanonicalMetadataInput>(
                 canonical_metadata.len(),
             )
@@ -942,6 +952,7 @@ pub struct MetadataListingData {
     pub common_commands: Vec<CommonCommandEntry>,
     pub filter_criteria: Vec<FilterCriterionEntry>,
     pub functional_options: Vec<FunctionalOptionEntry>,
+    pub functional_option_parameters: Vec<FunctionalOptionsParameterEntry>,
     pub entries: Vec<MdoEntry>,
     pub defined_types: Vec<DefinedTypeEntry>,
     pub common_modules: Vec<CommonModuleEntry>,
@@ -963,6 +974,7 @@ pub enum CanonicalMetadata {
     CommonCommand(Arc<bsl_metadata::CommonCommand>),
     FilterCriterion(Arc<bsl_metadata::FilterCriterion>),
     FunctionalOption(Arc<bsl_metadata::FunctionalOption>),
+    FunctionalOptionsParameter(Arc<bsl_metadata::FunctionalOptionsParameter>),
     Object(Arc<bsl_metadata::MetadataObject>),
     Register(Arc<bsl_metadata::Register>),
     CommonModule(Arc<bsl_metadata::CommonModule>),
@@ -986,6 +998,7 @@ impl CanonicalMetadata {
             Self::CommonCommand(value) => value.estimated_heap_size(),
             Self::FilterCriterion(value) => value.estimated_heap_size(),
             Self::FunctionalOption(value) => value.estimated_heap_size(),
+            Self::FunctionalOptionsParameter(value) => value.estimated_heap_size(),
             Self::Object(value) => value.estimated_heap_size(),
             Self::Register(value) => value.estimated_heap_size(),
             Self::CommonModule(value) => value.estimated_heap_size(),
@@ -1053,6 +1066,7 @@ pub struct MetadataListingInput {
     pub common_commands: Arc<Vec<CommonCommandEntry>>,
     pub filter_criteria: Arc<Vec<FilterCriterionEntry>>,
     pub functional_options: Arc<Vec<FunctionalOptionEntry>>,
+    pub functional_option_parameters: Arc<Vec<FunctionalOptionsParameterEntry>>,
     pub canonical_metadata: Arc<CanonicalMetadataInputs>,
 }
 

@@ -116,6 +116,14 @@ impl OwnerBinding {
     /// Dedicated configured families keep stable native slots without being fabricated MDOs.
     fn add_configured_to_listing(&self, listing: &mut MetadataListingData, name: &str) -> bool {
         match self.kind {
+            MetadataKind::FunctionalOptionsParameter => {
+                listing.functional_option_parameters.push(
+                    ide_db::metadata::FunctionalOptionsParameterEntry {
+                        name: name.into(),
+                        main: self.main,
+                    },
+                );
+            }
             MetadataKind::FunctionalOption => {
                 listing
                     .functional_options

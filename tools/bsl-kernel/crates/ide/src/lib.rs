@@ -128,6 +128,16 @@ impl Analysis {
     pub fn functional_option_dependencies(&self, file_id: FileId, offset: u32) -> Vec<String> {
         functional_option_dependencies::names(&self.db, file_id, offset.into())
     }
+
+    /// The real interface getter owns its family preparation, independent of same-spelled user calls.
+    pub fn interface_functional_option_parameters_dependency(
+        &self,
+        file: FileId,
+        offset: u32,
+    ) -> bool {
+        functional_option_dependencies::interface_parameters(&self.db, file, offset.into())
+    }
+
     pub fn new() -> Self {
         Self { db: RootDatabaseImpl::default() }
     }

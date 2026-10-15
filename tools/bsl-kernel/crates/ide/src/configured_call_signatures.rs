@@ -15,7 +15,7 @@ pub(crate) fn refine<DB: RootDatabase>(
     let methods = hir_ty::filter_criteria::prototype_methods();
     for signature in signatures {
         if signature.source == SignatureSource::GlobalFunction {
-            if let Some(id) = hir_ty::functional_options::platform_id() {
+            if let Some(id) = signature.platform_id.filter(|id| configured_global(*id)) {
                 if signature.platform_id == Some(id) {
                     if let Some(candidate) = binding.candidates.as_slice().iter().find(|candidate| {
                         matches!(candidate.id, hir::CandidateId::Builtin { callable: hir::BuiltinCallableId::PlatformGlobal(value), .. } if value == id)
@@ -77,7 +77,7 @@ pub(crate) fn at_token<DB: RootDatabase>(
         }
         hir::CandidateId::Builtin {
             callable: hir::BuiltinCallableId::PlatformGlobal(id), ..
-        } => Some(id) == hir_ty::functional_options::platform_id(),
+        } => configured_global(id),
         _ => false,
     }) {
         return None;
@@ -85,4 +85,10 @@ pub(crate) fn at_token<DB: RootDatabase>(
     let mut signatures = symbol_info::build_signature_from_resolution(db, &binding)?;
     refine(db, &binding, &mut signatures);
     Some((binding, signatures))
+}
+
+/// Both configured global consumers retain their actual platform callable IDs.
+fn configured_global(id: u32) -> bool {
+    hir_ty::functional_options::platform_id() == Some(id)
+        || hir_ty::functional_option_parameters::platform_id() == Some(id)
 }

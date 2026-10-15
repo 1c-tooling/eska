@@ -35,6 +35,9 @@ mod filter_criteria;
 #[cfg(test)]
 mod filter_criterion_tests;
 #[cfg(test)]
+mod functional_option_parameter_tests;
+mod functional_option_parameters;
+#[cfg(test)]
 mod functional_option_tests;
 mod functional_options;
 #[cfg(test)]
@@ -380,91 +383,81 @@ impl AnalysisSession {
         let Some(name) = &entry.binding.name else {
             return Ok(None);
         };
+        let database = &self.database;
+        let listing = self.selected_root.listing;
         Ok(match value.as_ref() {
             CanonicalMetadata::Form(_) => {
-                ide_db::metadata::resolve_form(&self.database, entry.slot, name.clone())
+                ide_db::metadata::resolve_form(database, entry.slot, name.clone())
                     .map(CanonicalMetadata::Form)
             }
             CanonicalMetadata::Role(_) => {
-                resolve_role(&self.database, self.selected_root.listing, name.clone())
-                    .map(CanonicalMetadata::Role)
+                resolve_role(database, listing, name.clone()).map(CanonicalMetadata::Role)
             }
-            CanonicalMetadata::IntegrationService(_) => resolve_integration_service(
-                &self.database,
-                self.selected_root.listing,
-                name.clone(),
-            )
-            .map(CanonicalMetadata::IntegrationService),
+            CanonicalMetadata::IntegrationService(_) => {
+                resolve_integration_service(database, listing, name.clone())
+                    .map(CanonicalMetadata::IntegrationService)
+            }
             CanonicalMetadata::WebService(_) => {
-                resolve_web_service(&self.database, self.selected_root.listing, name.clone())
+                resolve_web_service(database, listing, name.clone())
                     .map(CanonicalMetadata::WebService)
             }
             CanonicalMetadata::HTTPService(_) => {
-                resolve_http_service(&self.database, self.selected_root.listing, name.clone())
+                resolve_http_service(database, listing, name.clone())
                     .map(CanonicalMetadata::HTTPService)
             }
             CanonicalMetadata::Subsystem(_) => {
-                resolve_subsystem(&self.database, self.selected_root.listing, name.clone())
-                    .map(CanonicalMetadata::Subsystem)
+                resolve_subsystem(database, listing, name.clone()).map(CanonicalMetadata::Subsystem)
             }
             CanonicalMetadata::ScheduledJob(_) => {
-                resolve_scheduled_job(&self.database, self.selected_root.listing, name.clone())
+                resolve_scheduled_job(database, listing, name.clone())
                     .map(CanonicalMetadata::ScheduledJob)
             }
             CanonicalMetadata::EventSubscription(_) => {
-                resolve_event_subscription(&self.database, self.selected_root.listing, name.clone())
+                resolve_event_subscription(database, listing, name.clone())
                     .map(CanonicalMetadata::EventSubscription)
             }
-            CanonicalMetadata::Object(object) => resolve_metadata_object(
-                &self.database,
-                self.selected_root.listing,
-                object.mdo_type,
-                name.clone(),
-            )
-            .map(CanonicalMetadata::Object),
-            CanonicalMetadata::Register(register) => resolve_register(
-                &self.database,
-                self.selected_root.listing,
-                register.mdo_type(),
-                name.clone(),
-            )
-            .map(CanonicalMetadata::Register),
+            CanonicalMetadata::Object(object) => {
+                resolve_metadata_object(database, listing, object.mdo_type, name.clone())
+                    .map(CanonicalMetadata::Object)
+            }
+            CanonicalMetadata::Register(register) => {
+                resolve_register(database, listing, register.mdo_type(), name.clone())
+                    .map(CanonicalMetadata::Register)
+            }
             CanonicalMetadata::CommonModule(_) => {
-                resolve_common_module(&self.database, self.selected_root.listing, name.clone())
+                resolve_common_module(database, listing, name.clone())
                     .map(CanonicalMetadata::CommonModule)
             }
-            CanonicalMetadata::SessionParameter(_) => ide_db::metadata::resolve_session_parameter(
-                &self.database,
-                self.selected_root.listing,
-                name.clone(),
-            )
-            .map(CanonicalMetadata::SessionParameter),
-            CanonicalMetadata::CommonAttribute(_) => ide_db::metadata::resolve_common_attribute(
-                &self.database,
-                self.selected_root.listing,
-                name.clone(),
-            )
-            .map(CanonicalMetadata::CommonAttribute),
-            CanonicalMetadata::FunctionalOption(_) => ide_db::metadata::resolve_functional_option(
-                &self.database,
-                self.selected_root.listing,
-                name.clone(),
-            )
-            .map(CanonicalMetadata::FunctionalOption),
-            CanonicalMetadata::FilterCriterion(_) => ide_db::metadata::resolve_filter_criterion(
-                &self.database,
-                self.selected_root.listing,
-                name.clone(),
-            )
-            .map(CanonicalMetadata::FilterCriterion),
-            CanonicalMetadata::CommonCommand(_) => ide_db::metadata::resolve_common_command(
-                &self.database,
-                self.selected_root.listing,
-                name.clone(),
-            )
-            .map(CanonicalMetadata::CommonCommand),
+            CanonicalMetadata::SessionParameter(_) => {
+                ide_db::metadata::resolve_session_parameter(database, listing, name.clone())
+                    .map(CanonicalMetadata::SessionParameter)
+            }
+            CanonicalMetadata::CommonAttribute(_) => {
+                ide_db::metadata::resolve_common_attribute(database, listing, name.clone())
+                    .map(CanonicalMetadata::CommonAttribute)
+            }
+            CanonicalMetadata::FunctionalOptionsParameter(_) => {
+                ide_db::metadata::resolve_functional_option_parameter(
+                    database,
+                    listing,
+                    name.clone(),
+                )
+                .map(CanonicalMetadata::FunctionalOptionsParameter)
+            }
+            CanonicalMetadata::FunctionalOption(_) => {
+                ide_db::metadata::resolve_functional_option(database, listing, name.clone())
+                    .map(CanonicalMetadata::FunctionalOption)
+            }
+            CanonicalMetadata::FilterCriterion(_) => {
+                ide_db::metadata::resolve_filter_criterion(database, listing, name.clone())
+                    .map(CanonicalMetadata::FilterCriterion)
+            }
+            CanonicalMetadata::CommonCommand(_) => {
+                ide_db::metadata::resolve_common_command(database, listing, name.clone())
+                    .map(CanonicalMetadata::CommonCommand)
+            }
             CanonicalMetadata::DefinedType(model) => {
-                resolve_defined_type(&self.database, self.selected_root.listing, name.clone())
+                resolve_defined_type(database, listing, name.clone())
                     .map(|_| CanonicalMetadata::DefinedType(Arc::clone(model)))
             }
         })

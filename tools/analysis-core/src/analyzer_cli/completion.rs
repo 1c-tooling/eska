@@ -193,6 +193,9 @@ fn item_value(mut item: CompletionItem, capabilities: Capabilities) -> Option<Va
         Kind::Snippet => 15,
     };
     let mut value = json!({"label":item.label,"kind":kind,"insertText":item.insert_text,"insertTextFormat":format});
+    if let Some(text) = item.detail {
+        value["detail"] = json!(text);
+    }
     if let Some(text) = item.sort_text {
         value["sortText"] = json!(text);
     }
@@ -205,6 +208,27 @@ fn item_value(mut item: CompletionItem, capabilities: Capabilities) -> Option<Va
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The standard optional display field retains native type text without creating any edit authority.
+    #[test]
+    fn completion_detail_preserves_native_text_and_absence() {
+        let mut item = CompletionItem::simple(
+            "Value".into(),
+            ide::CompletionItemKind::Field,
+            "Value".into(),
+        );
+        assert!(
+            item_value(item.clone(), Capabilities::default())
+                .unwrap()
+                .get("detail")
+                .is_none()
+        );
+        item.detail = Some("CatalogRef.Items | Булево".into());
+        let value = item_value(item, Capabilities::default()).unwrap();
+        assert_eq!(value["detail"], "CatalogRef.Items | Булево");
+        assert!(value.get("command").is_none());
+        assert!(value.get("additionalTextEdits").is_none());
+    }
 
     /// A client never receives raw tab stops as plain text, and literal field names stay literal.
     #[test]

@@ -1,4 +1,5 @@
 mod filter_criteria;
+mod functional_option_parameters;
 mod functional_options;
 mod session_parameters;
 use std::collections::HashSet;
@@ -852,6 +853,7 @@ impl RootDatabaseImpl {
             common_commands,
             filter_criteria,
             functional_options,
+            functional_option_parameters,
         } = listing;
         let entries = Arc::new(entries);
         let defined_types = Arc::new(defined_types);
@@ -868,6 +870,7 @@ impl RootDatabaseImpl {
         let common_commands = Arc::new(common_commands);
         let filter_criteria = Arc::new(filter_criteria);
         let functional_options = Arc::new(functional_options);
+        let functional_option_parameters = Arc::new(functional_option_parameters);
         match self.metadata_listings.get(&key).map(|e| *e.value()) {
             Some(input) => {
                 input.set_entries(self).to(entries);
@@ -885,6 +888,7 @@ impl RootDatabaseImpl {
                 input.set_common_commands(self).to(common_commands);
                 input.set_filter_criteria(self).to(filter_criteria);
                 input.set_functional_options(self).to(functional_options);
+                input.set_functional_option_parameters(self).to(functional_option_parameters);
             }
             None => {
                 let input = metadata::MetadataListingInput::builder(
@@ -903,6 +907,7 @@ impl RootDatabaseImpl {
                     common_commands,
                     filter_criteria,
                     functional_options,
+                    functional_option_parameters,
                     Arc::new(metadata::CanonicalMetadataInputs::default()),
                 )
                 .durability(salsa::Durability::MEDIUM)
@@ -3027,6 +3032,14 @@ impl DefDatabase for RootDatabaseImpl {
 
 #[salsa::db]
 impl hir::ConfigsDatabase for RootDatabaseImpl {
+    /// Getter fields share the caller's current proven parameter declarations.
+    fn resolve_functional_option_parameters(
+        &self,
+        file: FileId,
+    ) -> Vec<Arc<bsl_metadata::FunctionalOptionsParameter>> {
+        self.functional_option_parameters_for_file(file).unwrap_or_default()
+    }
+
     /// Functional option lookup shares the caller's canonical current visibility chain.
     fn resolve_functional_option(
         &self,
