@@ -1,0 +1,635 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-15",
+  "scope": "local-development-bundle",
+  "host": {
+    "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+    "machine": "x86_64",
+    "python": "3.14.8",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "system": "Linux"
+  },
+  "build": {
+    "exit_code": 0,
+    "seconds": 937.134,
+    "profile": "release",
+    "source_inputs": 986
+  },
+  "components": [
+    "eska",
+    "eska-project",
+    "eska-build",
+    "eska-check",
+    "eska-analyzer"
+  ],
+  "versions": {
+    "eska": "0.14.2",
+    "eska-analysis": "0.0.0",
+    "source_core": "0.14.2"
+  },
+  "files": [
+    {
+      "component": "eska",
+      "size": 27195600,
+      "protocol": null
+    },
+    {
+      "component": "eska-project",
+      "size": 8256888,
+      "protocol": 1
+    },
+    {
+      "component": "eska-build",
+      "size": 8242800,
+      "protocol": 1
+    },
+    {
+      "component": "eska-check",
+      "size": 49073608,
+      "protocol": 1
+    },
+    {
+      "component": "eska-analyzer",
+      "size": 54476432,
+      "protocol": "0.1"
+    }
+  ],
+  "total_binary_bytes": 147245328,
+  "runtime_cases": [
+    {
+      "label": "verify-empty-path",
+      "exit_code": 0,
+      "path_empty": true,
+      "seconds": 0.3332989600021392,
+      "stdout_bytes": 235,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "capability-eska",
+      "exit_code": 0,
+      "path_empty": true,
+      "seconds": 0.0032167329991352744,
+      "stdout_bytes": 12,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "capability-eska-project",
+      "exit_code": 0,
+      "path_empty": true,
+      "seconds": 0.0024559019948355854,
+      "stdout_bytes": 1490,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "capability-eska-build",
+      "exit_code": 0,
+      "path_empty": true,
+      "seconds": 0.002176122994569596,
+      "stdout_bytes": 713,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "capability-eska-check",
+      "exit_code": 0,
+      "path_empty": true,
+      "seconds": 0.004811639999388717,
+      "stdout_bytes": 270,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "capability-eska-analyzer",
+      "exit_code": 0,
+      "path_empty": true,
+      "seconds": 0.006642929001827724,
+      "stdout_bytes": 251,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "create-processing",
+      "exit_code": 0,
+      "path_empty": true,
+      "seconds": 0.02058352599851787,
+      "stdout_bytes": 782,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "checker-clean",
+      "exit_code": 2,
+      "path_empty": true,
+      "seconds": 0.00907068499509478,
+      "stdout_bytes": 1534,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "shell-clean",
+      "exit_code": 2,
+      "path_empty": true,
+      "seconds": 0.020278154996049125,
+      "stdout_bytes": 1534,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "checker-findings",
+      "exit_code": 2,
+      "path_empty": true,
+      "seconds": 0.005807255998661276,
+      "stdout_bytes": 1801,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "shell-findings",
+      "exit_code": 2,
+      "path_empty": true,
+      "seconds": 0.02039263599726837,
+      "stdout_bytes": 1801,
+      "stderr_bytes": 0
+    },
+    {
+      "label": "analyzer-framed",
+      "exit_code": 0,
+      "path_empty": true,
+      "seconds": 0.006987016000493895,
+      "stdout_bytes": 6280,
+      "stderr_bytes": 0
+    }
+  ],
+  "selective": {
+    "components": [
+      "eska-project"
+    ],
+    "status": "passed",
+    "previous_unchanged": true,
+    "previous_receipt_verified": true,
+    "build_seconds": [
+      148.488,
+      147.175
+    ]
+  },
+  "invariants": {
+    "source_before_after_copy_final_equal": true,
+    "frozen_source_unchanged": true,
+    "bundle_unchanged_by_smoke": true,
+    "root_verify_passed": true,
+    "shell_checker_raw_parity": true,
+    "project_bytes_mtime_preserved_after_read_only_smoke": true
+  },
+  "checks": {
+    "python_groups_passed": 18,
+    "root_fmt": "passed",
+    "root_check": "passed",
+    "root_strict_clippy": "passed",
+    "root_default_tests_passed": 1502,
+    "root_all_features_tests_passed": 1623,
+    "root_ignored": 24
+  },
+  "limitations": {
+    "global_install_update_remove": false,
+    "windows_runtime": false,
+    "macos_runtime": false,
+    "installed_vsix_in_bundle": false,
+    "cfe_composition": false,
+    "platform_build_in_this_smoke": false,
+    "complete_external_semantics": false,
+    "full_mvp": false
+  },
+  "dependencies": {
+    "limits": [
+      "package dependency graph, not binary/OS SBOM or proof of dynamic process execution",
+      "kernel ide is an intended language-kernel crate, not an editor runtime",
+      "gix-validate alone is portable name validation, not a Git implementation",
+      "system Git and 1C platform executables are external processes, not Cargo packages"
+    ],
+    "metadata_note": "Cargo metadata's resolved kind=null traversal included optional/resolution-union packages absent from the selected-feature normal Cargo tree (17 for root default); raw metadata is retained separately and is not reported as actual selected dependencies. Counts are a selected-feature package graph, not a linker/artifact inventory.",
+    "method": "selected-feature normal dependency graph from Cargo tree --edges normal --target x86_64-unknown-linux-gnu --prefix depth; every row maps unambiguously to a full metadata PackageId; unique PackageIds counted, dev/build edges excluded recursively",
+    "profiles": [
+      {
+        "cargo_offline_commands_succeeded": true,
+        "categories": {
+          "async_runtime": [
+            "mio",
+            "tokio",
+            "tokio-rustls"
+          ],
+          "editor_gui_runtime": [],
+          "git_implementation": [
+            "gix"
+          ],
+          "git_named_family_including_validation": [
+            "gix",
+            "gix-actor",
+            "gix-attributes",
+            "gix-bitmap",
+            "gix-chunk",
+            "gix-command",
+            "gix-commitgraph",
+            "gix-config",
+            "gix-config-value",
+            "gix-credentials",
+            "gix-date",
+            "gix-diff",
+            "gix-dir",
+            "gix-discover",
+            "gix-error",
+            "gix-features",
+            "gix-filter",
+            "gix-fs",
+            "gix-glob",
+            "gix-hash",
+            "gix-hashtable",
+            "gix-ignore",
+            "gix-imara-diff",
+            "gix-index",
+            "gix-lock",
+            "gix-macros",
+            "gix-negotiate",
+            "gix-object",
+            "gix-odb",
+            "gix-pack",
+            "gix-packetline",
+            "gix-path",
+            "gix-pathspec",
+            "gix-prompt",
+            "gix-protocol",
+            "gix-quote",
+            "gix-ref",
+            "gix-refspec",
+            "gix-revision",
+            "gix-revwalk",
+            "gix-sec",
+            "gix-shallow",
+            "gix-status",
+            "gix-submodule",
+            "gix-tempfile",
+            "gix-trace",
+            "gix-transport",
+            "gix-traverse",
+            "gix-url",
+            "gix-utils",
+            "gix-validate",
+            "gix-worktree",
+            "gix-worktree-state",
+            "gix-zlib"
+          ],
+          "http_transport": [
+            "curl",
+            "curl-sys",
+            "http",
+            "http-body",
+            "http-body-util",
+            "hyper",
+            "hyper-util",
+            "reqwest",
+            "tower",
+            "tower-http"
+          ],
+          "kernel_ide": [],
+          "lsp_protocol_or_framework": [],
+          "tls": [
+            "rustls",
+            "rustls-ffi",
+            "rustls-native-certs",
+            "rustls-pki-types",
+            "rustls-platform-verifier",
+            "rustls-webpki"
+          ]
+        },
+        "features": [],
+        "metadata_eska_resolved_features": [
+          "build",
+          "default",
+          "legacy",
+          "tool-cli"
+        ],
+        "metadata_normal_union_package_count": 315,
+        "metadata_union_only_packages": [
+          {
+            "name": "bitflags",
+            "version": "1.3.2"
+          },
+          {
+            "name": "chacha20",
+            "version": "0.10.2"
+          },
+          {
+            "name": "defmt-macros",
+            "version": "1.1.1"
+          },
+          {
+            "name": "defmt-parser",
+            "version": "1.0.0"
+          },
+          {
+            "name": "defmt",
+            "version": "1.1.1"
+          },
+          {
+            "name": "getrandom",
+            "version": "0.2.17"
+          },
+          {
+            "name": "gix-note",
+            "version": "0.1.1"
+          },
+          {
+            "name": "gix-worktree-stream",
+            "version": "0.36.1"
+          },
+          {
+            "name": "jiff-static",
+            "version": "0.2.35"
+          },
+          {
+            "name": "lru-slab",
+            "version": "0.1.3"
+          },
+          {
+            "name": "quinn-proto",
+            "version": "0.11.18"
+          },
+          {
+            "name": "quinn-udp",
+            "version": "0.5.15"
+          },
+          {
+            "name": "quinn",
+            "version": "0.11.12"
+          },
+          {
+            "name": "rand",
+            "version": "0.10.2"
+          },
+          {
+            "name": "rand_core",
+            "version": "0.10.1"
+          },
+          {
+            "name": "rand_pcg",
+            "version": "0.10.2"
+          },
+          {
+            "name": "ring",
+            "version": "0.17.14"
+          }
+        ],
+        "normal_edge_count": 899,
+        "package_count_including_root": 298,
+        "profile": "root-default-shell",
+        "source_collision_same_name_version": false,
+        "transitive_package_count_excluding_root": 297,
+        "tree_ids_mapped_unambiguously": true
+      },
+      {
+        "cargo_offline_commands_succeeded": true,
+        "categories": {
+          "async_runtime": [],
+          "editor_gui_runtime": [],
+          "git_implementation": [],
+          "git_named_family_including_validation": [
+            "gix-validate"
+          ],
+          "http_transport": [],
+          "kernel_ide": [],
+          "lsp_protocol_or_framework": [],
+          "tls": []
+        },
+        "features": [
+          "--no-default-features",
+          "--features",
+          "project-cli,build-cli"
+        ],
+        "metadata_eska_resolved_features": [
+          "build",
+          "build-cli",
+          "project-cli",
+          "tool-cli"
+        ],
+        "metadata_normal_union_package_count": 88,
+        "metadata_union_only_packages": [
+          {
+            "name": "equivalent",
+            "version": "1.0.2"
+          },
+          {
+            "name": "hashbrown",
+            "version": "0.17.1"
+          },
+          {
+            "name": "indexmap",
+            "version": "2.14.2"
+          },
+          {
+            "name": "zerofrom",
+            "version": "0.1.8"
+          },
+          {
+            "name": "zerovec",
+            "version": "0.11.8"
+          }
+        ],
+        "normal_edge_count": 122,
+        "package_count_including_root": 83,
+        "profile": "root-minimal-project-build",
+        "source_collision_same_name_version": false,
+        "transitive_package_count_excluding_root": 82,
+        "tree_ids_mapped_unambiguously": true
+      },
+      {
+        "cargo_offline_commands_succeeded": true,
+        "categories": {
+          "async_runtime": [],
+          "editor_gui_runtime": [],
+          "git_implementation": [],
+          "git_named_family_including_validation": [
+            "gix-validate"
+          ],
+          "http_transport": [],
+          "kernel_ide": [
+            "base-db",
+            "bsl-metadata",
+            "bsl-platform",
+            "bsl-types",
+            "hir",
+            "hir-def",
+            "hir-ty",
+            "ide",
+            "ide-assists",
+            "ide-db",
+            "salsa",
+            "vfs"
+          ],
+          "lsp_protocol_or_framework": [],
+          "tls": []
+        },
+        "features": [
+          "--no-default-features",
+          "--features",
+          "check-cli"
+        ],
+        "metadata_eska_resolved_features": [
+          "tool-cli"
+        ],
+        "metadata_normal_union_package_count": 221,
+        "metadata_union_only_packages": [
+          {
+            "name": "borsh",
+            "version": "1.8.1"
+          },
+          {
+            "name": "bytes",
+            "version": "1.12.1"
+          },
+          {
+            "name": "errno",
+            "version": "0.3.14"
+          }
+        ],
+        "normal_edge_count": 589,
+        "package_count_including_root": 218,
+        "profile": "sdk-check-only",
+        "source_collision_same_name_version": false,
+        "transitive_package_count_excluding_root": 217,
+        "tree_ids_mapped_unambiguously": true
+      },
+      {
+        "cargo_offline_commands_succeeded": true,
+        "categories": {
+          "async_runtime": [],
+          "editor_gui_runtime": [],
+          "git_implementation": [],
+          "git_named_family_including_validation": [
+            "gix-validate"
+          ],
+          "http_transport": [],
+          "kernel_ide": [
+            "base-db",
+            "bsl-metadata",
+            "bsl-platform",
+            "bsl-types",
+            "hir",
+            "hir-def",
+            "hir-ty",
+            "ide",
+            "ide-assists",
+            "ide-db",
+            "salsa",
+            "vfs"
+          ],
+          "lsp_protocol_or_framework": [],
+          "tls": []
+        },
+        "features": [
+          "--no-default-features",
+          "--features",
+          "analyzer-cli"
+        ],
+        "metadata_eska_resolved_features": [
+          "tool-cli"
+        ],
+        "metadata_normal_union_package_count": 221,
+        "metadata_union_only_packages": [
+          {
+            "name": "borsh",
+            "version": "1.8.1"
+          },
+          {
+            "name": "bytes",
+            "version": "1.12.1"
+          },
+          {
+            "name": "errno",
+            "version": "0.3.14"
+          }
+        ],
+        "normal_edge_count": 590,
+        "package_count_including_root": 218,
+        "profile": "sdk-analyzer-only",
+        "source_collision_same_name_version": false,
+        "transitive_package_count_excluding_root": 217,
+        "tree_ids_mapped_unambiguously": true
+      },
+      {
+        "cargo_offline_commands_succeeded": true,
+        "categories": {
+          "async_runtime": [],
+          "editor_gui_runtime": [],
+          "git_implementation": [],
+          "git_named_family_including_validation": [
+            "gix-validate"
+          ],
+          "http_transport": [],
+          "kernel_ide": [
+            "base-db",
+            "bsl-metadata",
+            "bsl-platform",
+            "bsl-types",
+            "hir",
+            "hir-def",
+            "hir-ty",
+            "ide",
+            "ide-assists",
+            "ide-db",
+            "salsa",
+            "vfs"
+          ],
+          "lsp_protocol_or_framework": [],
+          "tls": []
+        },
+        "features": [
+          "--no-default-features",
+          "--features",
+          "check-cli,analyzer-cli"
+        ],
+        "metadata_eska_resolved_features": [
+          "tool-cli"
+        ],
+        "metadata_normal_union_package_count": 221,
+        "metadata_union_only_packages": [
+          {
+            "name": "borsh",
+            "version": "1.8.1"
+          },
+          {
+            "name": "bytes",
+            "version": "1.12.1"
+          },
+          {
+            "name": "errno",
+            "version": "0.3.14"
+          }
+        ],
+        "normal_edge_count": 590,
+        "package_count_including_root": 218,
+        "profile": "sdk-combined-actual-all5",
+        "source_collision_same_name_version": false,
+        "transitive_package_count_excluding_root": 217,
+        "tree_ids_mapped_unambiguously": true
+      }
+    ],
+    "runtime_boundaries": {
+      "editor_runtime": "No observed GUI/editor runtime crate families in these normal graphs; kernel ide/ide-db/ide-assists are intentional SDK libraries, not IDE applications.",
+      "git_validation": "gix-validate is used by project-core reference/task validation. It does not enable the gix Git engine; only default legacy graph contains gix. git2/libgit2-sys absent in all five graphs.",
+      "lsp": "No lsp-types/lsp-server/tower-lsp crates. eska-analyzer still implements framed JSON-RPC/LSP methods with experimental ESKA contract0.1 using its own stdio transport; absence of LSP crates does not mean absence of LSP support.",
+      "one_c": "Native ibcmd/Designer orchestration is gated by build in src/lib.rs and implemented in src/build_core/tool.rs. Enabled for root default and the project+build union, absent from SDK dependency features. Actual platform commands still require separately installed 1C; capabilities/source/check smoke do not.",
+      "system_git": "External compatibility commands are compiled behind legacy in src/vcs/command.rs; only root default graph enables legacy/VCS. They are not Cargo package dependencies. Empty-PATH runtime smoke used no system Git."
+    },
+    "schema_version": 1,
+    "source_fingerprint": {
+      "file_count": 986,
+      "schema_version": 1
+    },
+    "status": "passed",
+    "target": "x86_64-unknown-linux-gnu",
+    "utility_final_review": {
+      "blockers": [],
+      "frozen_utility_matches_latest": {
+        "tools/local-bundle.py": true,
+        "tools/tests/test_local_bundle.py": true
+      },
+      "limits": [
+        "Linux actual runtime only; Windows publication untested, other OS build explicitly unsupported",
+        "Compatibility probes are project-free reports, not Ready/semantic/platform approval",
+        "No new builds or production/docs/Git changes during this measurement"
+      ]
+    }
+  }
+}

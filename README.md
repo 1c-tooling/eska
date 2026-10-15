@@ -50,6 +50,14 @@ eska --help
 cargo install eska --locked
 ```
 
+### Локальный экспериментальный комплект
+
+Для нового формата ESKA доступна [сборка локального комплекта пяти CLI](docs/research/eska-format/local-tool-bundle.md)
+через `python3 tools/local-bundle.py build <new-directory>`. Можно выбрать
+отдельные инструменты и сохранить этот состав при следующей сборке.
+Это developer-поставка в новый каталог; обычные install/update пока поставляют
+прежний CLI.
+
 ### Обновление CLI
 
 ```bash
@@ -983,8 +991,9 @@ pin остаются доступны, новый pin передаётся prepa
 [Удаление табличных частей](docs/research/eska-format/table-deletion.md) проверяет
 полный native subtree, права каждой колонки и оставшиеся table/column/service
 зависимости. Остальные structural/compound profiles EF-24 ещё в работе.
-Инструменты собираются отдельно с features `project-cli`/`build-cli`;
-комплектная поставка ещё не подключена. Одиночный `eska build` уже делегирует
+Инструменты собираются отдельно с features `project-cli`/`build-cli` или через
+[локальную сборку комплекта](docs/research/eska-format/local-tool-bundle.md);
+обычная комплектная установка ещё не подключена. Одиночный `eska build` уже делегирует
 ESKA сборку совместимому `eska-build`; остальные workflow ещё в работе.
 Общая [библиотека анализа](docs/research/eska-format/shared-session.md) уже
 связывает сохранённый YAML и черновики с каноническими входами ядра BSL.

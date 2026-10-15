@@ -2090,6 +2090,12 @@ init, сохранённые правки, повторный импорт и с
 
 ## EF-21 Комплект инструментов и выборочная установка
 
+[Локальный development комплект](../research/eska-format/local-tool-bundle.md)
+собирает пять проверенных binaries в новый каталог с no-replace publication.
+18 Python groups, настоящая release-сборка/empty-PATH smoke и selective `--from`
+прошли. Размеры и normal dependency graphs измерены; обычные каналы установки,
+global update/remove, совместный VSIX и другие ОС ещё не приняты.
+
 [Оболочка `eska check`](../research/eska-format/shell-check-delegation.md) подключена
 через bounded capabilities probe с отдельной linked-core version. Восемь all4
 RU/EN случаев сохранили direct streams/exit и все source/base/history inputs.

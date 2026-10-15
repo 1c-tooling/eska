@@ -19,6 +19,10 @@ standalone checker с явным профилем и проверенной со
 Восемь all4 RU/EN случаев сохранили direct streams/exit и входы;
 полный анализ и устанавливаемый комплект ещё в работе.
 
+[Локальный комплект пяти CLI](../research/eska-format/local-tool-bundle.md)
+прошёл release build, empty-PATH smoke и выборочное обновление через `--from`.
+Размеры/normal graphs измерены; обычные install/update/remove и VSIX ещё нужны.
+
 [Синтаксис declared `.sdbl`](../research/eska-format/analyzer-query-syntax.md)
 работает в общей сессии IDE/checker с revision/quota/watch/replay.
 Metadata/consumer semantics остаётся EF-27; EF-18 ещё `IN_PROGRESS`.

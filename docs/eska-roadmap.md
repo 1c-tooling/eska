@@ -2360,6 +2360,11 @@ standalone checker через bounded probe с отдельной linked-core ve
 Восемь all4 RU/EN случаев сохранили direct streams/exit и source/base/history;
 устанавливаемый комплект и полнота анализа продолжаются.
 
+[Локальный комплект пяти CLI](research/eska-format/local-tool-bundle.md)
+прошёл release build, пустой runtime PATH и выборочное обновление без изменения
+прежнего набора. Размеры/normal graphs измерены; обычный install/update/remove,
+совместная поставка VSIX и остальные условия EF-21 ещё в работе.
+
 [Declared `.sdbl` syntax](research/eska-format/analyzer-query-syntax.md) подключён
 к общей сессии IDE/checker и source quota с current overlay/watch/replay.
 Полный SDK прошёл; metadata/consumer semantics EF-27 ещё не принята.

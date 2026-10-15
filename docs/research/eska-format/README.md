@@ -64,6 +64,9 @@ descriptor fields без фиктивной canonical модели или про
 одному совместимому tool с независимыми pins и сохранением streams/exit.
 [Оболочка check](shell-check-delegation.md) передаёт явный профиль совместимому
 checker; восемь all4 RU/EN случаев совпали с direct streams/exit без изменения входов.
+[Локальный комплект пяти CLI](local-tool-bundle.md) прошёл настоящую release
+сборку, empty-PATH smoke и выборочное обновление с сохранением прежнего набора.
+Размеры и normal dependency graphs измерены; обычный install/update/remove ещё нужен.
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
 T84 — [DONE по версиям EPF/ERF](external-version.md): экспортная `Версия()`,
 CLI/миграция и платформенная приёмка двух схем; [синтаксический контракт](external-version-syntax.md).
