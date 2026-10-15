@@ -3108,6 +3108,9 @@ SDBL/BSL-диагностику без подходящего диалекта; 
 Независимый queryAnalysis opt-in сохраняет прежний syntax route; semantic checker
 вызывает тот же query API с current context и явной неполнотой. Параметры,
 output fields, current resource consumers и полная приёмка ещё нужны.
+Native-origin release прогон подтвердил CF saved IDE/checker parity и dirty
+field/close на RU/EN. Configured CFE сохранила явный отказ Unsupported CommonPicture;
+guard не ослаблен, matching native base/CFE и полная CFE семантика не приняты.
 
 Подключить `.sdbl` к общим `eska-analyzer`/`eska-check`: метаданные выбранного
 member, параметры, расширения СКД, настройки динамического списка. Проверять

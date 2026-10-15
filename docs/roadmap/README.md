@@ -38,6 +38,9 @@ Metadata/consumer semantics остаётся EF-27; EF-18 ещё `IN_PROGRESS`.
 передаёт native rules текущие видимые CF/CFE metadata через owner FileId.
 Новый queryAnalysis согласуется отдельно; старый syntax route сохранён.
 Параметры, output fields и consumers ещё нужны; EF-27 — `IN_PROGRESS`.
+Native-origin CF прошёл saved IDE/checker parity и dirty field/close на RU/EN;
+configured CFE явно отказала на Unsupported CommonPicture. Синтаксис сохранён,
+успешная native CFE semantic приёмка ещё нужна.
 
 [500 циклов current inputs](../research/eska-format/current-input-stress.md)
 прошли на малых native EPF/ERF с отдельным RSS замером, отказом общей квоты

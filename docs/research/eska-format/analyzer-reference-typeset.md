@@ -37,3 +37,18 @@ Adapter fmt/check/strict all-target/all-feature Clippy и native strict Clippy
 по себе не подтверждает готовность всей большой CF/CFE, matching native пары,
 платформенного выполнения или полного MVP. Дальнейшие проверки фиксируются
 отдельно от этих unit/native parser результатов.
+
+После исправления immutable release binary повторно прочитал тот же owner:
+его bytes/hash не изменились, parse issues — 0, модель стала Ready, adapter issue
+исчез. Адресное чтение заняло около 22 ms.
+Одна повторная большая composition попытка остановилась на следующем пробеле:
+CommandGroup имеет current parsed input, но ещё Unsupported model. Completion
+занял 17,99 s, наблюдаемый RSS peak — 366,61 MiB. Watchdog 60 s/1,5 GiB не сработал,
+child завершился штатно; warm requests и field cycles не запускались.
+
+Actual post-request counters получены с одним штатным stale-snapshot retry:
+metadata source — 192 828 536 bytes, module text — 69 803 921, query text — 0;
+общая source reservation — 262 632 457 при лимите 268 435 456 bytes.
+Native heap estimate — 101 167 572 bytes, его coverage неполная и это не RSS.
+Source bytes/mode/mtime оригиналов и собственных копий сохранены. Наблюдение
+подтверждает исправление AnyRef, но большая композиция остаётся непринятой.

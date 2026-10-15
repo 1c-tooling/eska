@@ -4,7 +4,7 @@
   "status": "bounded-sdk-and-native-gates-passed",
   "platform": "linux",
   "locales": ["ru-RU", "en-US"],
-  "inputs": "synthetic-queries-projects-with-real-framed-transport",
+  "inputs": "synthetic-queries-projects-and-separate-native-origin-runtime-cases",
   "protocol_version": "0.1",
   "versions_changed": false,
   "architecture": {
@@ -39,6 +39,22 @@
     "new_resolver_test_groups": 2,
     "fmt_check_strict_clippy_rustdoc": "passed"
   },
+  "native_origin_runtime": {
+    "immutable_release_pair_and_source_fingerprint_verified": true,
+    "empty_path": true,
+    "cases": 4,
+    "cf_checked_ru_en": 2,
+    "cf_saved_ide_checker_codes_ranges_and_hash_equal": true,
+    "cf_dirty_unknown_field_and_close_restore": true,
+    "cfe_explicit_incomplete_ru_en": 2,
+    "cfe_current_refusal_kind": "common-picture",
+    "cfe_ide_checker_refusal_code_and_location_equal": true,
+    "cfe_error_code": "analysis_composition_incomplete",
+    "base_extension_native_compatibility": "unverified",
+    "standalone_module_text_bytes": 0,
+    "source_and_authority_bytes_mtime_preserved": true,
+    "all_children_reaped": true
+  },
   "checks": [
     "current-metadata-change-with-fixed-query",
     "foreign-current-authority-and-visible-root-scope",
@@ -53,7 +69,7 @@
     "saved-ide-checker-query-diagnostics-parity"
   ],
   "remaining": [
-    "native-origin-current-metadata-acceptance",
+    "complete-native-origin-cfe-current-metadata-acceptance",
     "installed-explorer-contextual-query-client",
     "output-field-and-parameter-contracts",
     "current-dcs-and-dynamic-list-resource-authority",

@@ -95,6 +95,19 @@ Saved IDE/checker parity проверяется через настоящий fr
 Это синтетические Queries-проекты; native-origin и installed-client результаты
 фиксируются отдельно. [Обезличенные результаты](analyzer-query-metadata-results.json).
 
+Следующий прогон на immutable release binary проверил четыре native-origin
+случая с пустым PATH. CF на RU/EN дал одинаковые saved IDE/checker codes/ranges/hash;
+объявленное поле разрешилось, dirty query с отсутствующим полем дал
+`UnknownFieldInQuery`, close восстановил saved результат. Standalone request
+сохранил `module_text_bytes: 0`.
+
+У явно настроенной CFE оба языка отказали одинаково: current input одного
+CommonPicture разобран, но его модель пока Unsupported. IDE вернул
+`analysis_composition_incomplete`, checker — unavailable с теми же code/location
+и exit 2, без выдуманных findings. Синтаксический маршрут сохранён. Совместимость
+этой native CFE с выбранной базой не установлена; успешной CFE semantic приёмки
+нет. Все дочерние процессы завершены, source/authority bytes и mtime сохранены.
+
 Полный прогон выявил прежнюю гонку нулевого timeout: timer thread мог ещё не
 успеть отменить input до первого semantic preparation. Checker теперь синхронно
 проверяет deadline перед этим чтением. RU/EN regression требует одинаковых
