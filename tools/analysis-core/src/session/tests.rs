@@ -43,8 +43,9 @@ fn extension_analysis_requires_an_admitted_base_context() {
     }
 }
 
-#[path = "../../../bsl-adapter/tests/support/mod.rs"]
-pub mod support;
+pub mod support {
+    pub use crate::test_support::TestDirectory;
+}
 
 /// Keep fixtures exclusively inside the declared playground.
 pub fn fixture() -> (support::TestDirectory, PathBuf) {

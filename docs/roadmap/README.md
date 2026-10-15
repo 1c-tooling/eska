@@ -15,6 +15,10 @@ standalone checker с явным профилем и проверенной со
 Восемь all4 RU/EN случаев сохранили direct streams/exit и входы;
 полный анализ и устанавливаемый комплект ещё в работе.
 
+[Синтаксис declared `.sdbl`](../research/eska-format/analyzer-query-syntax.md)
+работает в общей сессии IDE/checker с revision/quota/watch/replay.
+Metadata/consumer semantics остаётся EF-27; EF-18 ещё `IN_PROGRESS`.
+
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка

@@ -28,6 +28,11 @@ impl AnalysisSession {
                     input.origin,
                     matches!(input.state, crate::MetadataResourceState::Pending),
                 )
+            } else if let Some(input) = self.query_input(path) {
+                (
+                    input.origin,
+                    matches!(input.state, crate::QueryTextState::Pending),
+                )
             } else {
                 let input = self
                     .module(path)
@@ -55,6 +60,8 @@ impl AnalysisSession {
                 self.publish(path, next)?;
             } else if self.metadata_resources.contains_key(path) {
                 self.release_resource_saved(path, self.revision())?;
+            } else if self.query_inputs.contains_key(path) {
+                self.release_query_saved(path, self.revision())?;
             } else {
                 self.release_module_saved(path, self.revision())?;
             }

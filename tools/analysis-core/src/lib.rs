@@ -17,6 +17,10 @@ mod modules;
 mod projection;
 mod property_edits;
 mod queries;
+#[cfg(test)]
+#[path = "../../../tests/fixtures/eska-format/query_creation.rs"]
+mod query_creation_fixture;
+mod query_inputs;
 mod request;
 mod resources;
 mod session;
@@ -41,6 +45,9 @@ mod test_property;
 #[cfg(test)]
 #[path = "../tests/support/role_project.rs"]
 mod test_role_project;
+#[cfg(test)]
+#[path = "../../bsl-adapter/tests/support/mod.rs"]
+pub(crate) mod test_support;
 #[cfg(test)]
 use test_predefined_project as predefined_project;
 #[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
@@ -68,9 +75,14 @@ pub use queries::references::{ReferenceKind, ReferenceOccurrence, ReferenceSearc
 pub use queries::signature_help::{CallParameter, CallSignature, CallSignatures};
 pub use queries::symbol_hover::{HoverKind, SymbolHover};
 pub use queries::{ModuleResult, QueryError};
+pub use query_inputs::{
+    QuerySyntaxError, QuerySyntaxResult, QuerySyntaxScope, QueryTextChange, QueryTextDeclaration,
+    QueryTextError, QueryTextInput, QueryTextSnapshot, QueryTextState,
+};
 pub use request::{SessionRequestError, SessionRevision};
 pub use resources::ResourceSummary;
 pub use session::metadata_resources::{
     MetadataResourceInput, MetadataResourceKind, MetadataResourceState,
 };
+pub use session::query_text::{QuerySyntaxDiagnostics, QuerySyntaxRequestError, QueryTextSummary};
 pub use session::{AnalysisScope, AnalysisSession, SessionError, SessionSummary};

@@ -11,6 +11,7 @@ pub mod metadata;
 pub mod predefined_project;
 mod project;
 pub mod property;
+pub mod query_project;
 pub mod role_project;
 pub use project::inline_command_project;
 

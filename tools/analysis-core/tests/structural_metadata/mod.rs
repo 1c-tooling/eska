@@ -135,9 +135,15 @@ fn structural_descriptors_lsp_semantic_bsl_coverage_does_not_admit_query_inputs(
             body["result"]["eska"]["coverage"]["semantic_complete"],
             false
         );
-        for path in [query.as_str(), "Reports/Demo/Templates/Schema/Template.xml"] {
+        for (path, expected) in [
+            (query.as_str(), "query_syntax_not_negotiated"),
+            (
+                "Reports/Demo/Templates/Schema/Template.xml",
+                "unknown_source",
+            ),
+        ] {
             let refusal = client.ask(&pull(&root, path));
-            assert_eq!(refusal["error"]["data"]["kind"], "unknown_source");
+            assert_eq!(refusal["error"]["data"]["kind"], expected);
         }
         client.finish();
     }

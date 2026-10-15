@@ -1263,3 +1263,6 @@ init-eska-manifest-changed = Манифест проекта изменился 
 init-eska-finalization-failed = Не удалось завершить настройки подключённого проекта ESKA.
 init-eska-git-invalid = Проверьте существующие метаданные Git; неверный или bare repository не заменяется автоматически.
 init-eska-git-failed = Не удалось завершить новую инициализацию Git. Исходники и опубликованные данные ESKA сохранены.
+
+tool-check-query-result = Запросы: проверено { $checked } из { $total }. Только синтаксис; метаданные и потребители не проверены.
+tool-check-query-unavailable = Запрос { $source } недоступен: { $code }.

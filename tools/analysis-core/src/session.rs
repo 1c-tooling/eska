@@ -19,6 +19,7 @@ mod integration_service_tests;
 pub mod metadata_resources;
 #[cfg(test)]
 mod module_tests;
+pub mod query_text;
 mod saved_changes;
 mod scope;
 pub use scope::AnalysisScope;
@@ -124,6 +125,8 @@ pub struct AnalysisSession {
     pub(super) loaded_module_bytes: u64,
     pub(super) loaded_metadata_source_bytes: u64,
     pub(super) loaded_resource_bytes: u64,
+    pub(super) loaded_query_bytes: u64,
+    pub(super) query_inputs: BTreeMap<SourcePath, crate::QueryTextInput>,
     metadata_resources: BTreeMap<SourcePath, metadata_resources::MetadataResourceEntry>,
     pub(super) options: SessionOptions,
     pub(super) incomplete_metadata: usize,
@@ -297,6 +300,7 @@ impl AnalysisSession {
             .set_canonical_metadata(&mut database)
             .to(Arc::new(slots));
         let metadata_resources = metadata_resources::register(reader);
+        let query_inputs = query_text::register(reader)?;
         Ok(Self {
             scope,
             external_kind,
@@ -312,6 +316,8 @@ impl AnalysisSession {
             loaded_module_bytes: 0,
             loaded_metadata_source_bytes: 0,
             loaded_resource_bytes: 0,
+            loaded_query_bytes: 0,
+            query_inputs,
             metadata_resources,
             options,
         })

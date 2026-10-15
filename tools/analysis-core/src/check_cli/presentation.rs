@@ -103,6 +103,13 @@ fn human(report: &BatchReport, localizer: &Localizer) -> String {
         .iter()
         .map(|file| file.findings.len())
         .sum::<usize>()
+        .saturating_add(
+            report
+                .query_files
+                .iter()
+                .map(|file| file.findings.len())
+                .sum::<usize>(),
+        )
         .to_string();
     let mut text = localizer.format(
         match report.profile {
@@ -122,6 +129,7 @@ fn human(report: &BatchReport, localizer: &Localizer) -> String {
         text.push_str(&localizer.text("tool-check-local-syntax-scope"));
         text.push('\n');
     }
+    query_human(report, localizer, &mut text);
     let quota_exceeded = report.metadata_issues.iter().any(|issue| {
         issue.code == "analysis_source_budget_exceeded"
             || issue
@@ -131,6 +139,8 @@ fn human(report: &BatchReport, localizer: &Localizer) -> String {
     }) || report.files.iter().any(|file| {
         matches!(&file.state, crate::batch::FileState::Unavailable { code, .. }
                 if code == "analysis_source_budget_exceeded")
+    }) || report.query_files.iter().any(|file| {
+        matches!(&file.state, crate::batch::FileState::Unavailable { code, .. } if code == "analysis_source_budget_exceeded")
     });
     if quota_exceeded {
         let used = report.resources.total_source_bytes.to_string();
@@ -225,6 +235,48 @@ fn metadata_human(report: &BatchReport, localizer: &Localizer, text: &mut String
     }
 }
 
+/// Query findings use the shared native RU/EN parse prose while coverage stays explicitly syntax-only.
+fn query_human(report: &BatchReport, localizer: &Localizer, text: &mut String) {
+    use std::fmt::Write;
+    if report.query_coverage.queries == 0 {
+        return;
+    }
+    let checked = report.query_coverage.checked.to_string();
+    let total = report.query_coverage.queries.to_string();
+    text.push_str(&localizer.format(
+        "tool-check-query-result",
+        &[
+            ("checked", LocalizationValue::Text(&checked)),
+            ("total", LocalizationValue::Text(&total)),
+        ],
+    ));
+    text.push('\n');
+    for file in &report.query_files {
+        for query in &file.findings {
+            let finding = &query.finding;
+            let _ = writeln!(
+                text,
+                "{}:{}:{}: {} ({})",
+                file.source.as_str(),
+                finding.start_line + 1,
+                finding.start_column + 1,
+                finding.message,
+                finding.code
+            );
+        }
+        if let crate::batch::FileState::Unavailable { code, .. } = &file.state {
+            text.push_str(&localizer.format(
+                "tool-check-query-unavailable",
+                &[
+                    ("source", LocalizationValue::Text(file.source.as_str())),
+                    ("code", LocalizationValue::Text(code)),
+                ],
+            ));
+            text.push('\n');
+        }
+    }
+}
+
 /// Setup failures retain stable coordinates without serializing a Debug representation.
 pub fn batch_failure(error: BatchError) -> Failure {
     match error {
@@ -261,6 +313,8 @@ pub fn batch_failure(error: BatchError) -> Failure {
         BatchError::MetadataQuery { source, .. } => {
             Failure::new("analysis_internal").at(source.as_str())
         }
-        BatchError::Request(_) | BatchError::Query(_) => Failure::new("analysis_internal"),
+        BatchError::Request(_) | BatchError::Query(_) | BatchError::QuerySyntax(_) => {
+            Failure::new("analysis_internal")
+        }
     }
 }

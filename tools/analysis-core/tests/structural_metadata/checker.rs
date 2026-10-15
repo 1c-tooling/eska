@@ -1,4 +1,4 @@
-//! Checker completeness covers descriptors and selected BSL rules while DCS/query inputs stay outside.
+//! Checker completeness separates descriptors, selected BSL rules and standalone query syntax.
 
 use super::{fs, report, run, support};
 use eska::project_core::source_format::SourceReader;
@@ -23,11 +23,15 @@ fn structural_descriptors_checker_models_and_scoped_bsl_coverage_are_honest() {
         fs::write(source.join(TEMPLATE), &original).unwrap();
         let value = report(
             &run(&root, lang, &["--profile", "semantic", "--format", "json"]),
-            0,
+            2,
         );
         let checked = &value["data"]["report"];
         assert_eq!(checked["coverage"]["metadata_models_complete"], true);
         assert_eq!(checked["coverage"]["semantic_profile_complete"], true);
+        assert_eq!(checked["query_coverage"]["syntax_complete"], false);
+        assert!(checked["query_files"].as_array().unwrap().is_empty());
+        assert_eq!(checked["query_coverage"]["metadata_complete"], false);
+        assert_eq!(checked["query_coverage"]["consumer_complete"], false);
         assert!(checked["metadata_issues"].as_array().unwrap().is_empty());
         clean.push(value);
         fs::write(
@@ -73,6 +77,14 @@ fn structural_descriptors_checker_never_claims_dcs_or_query_consumer_validation(
         let directory = support::TestDirectory::new();
         let root = fixture::project(&directory.0);
         fixture::settings(&root);
+        let settings = root.join("bsl-analyzer.toml");
+        fs::write(
+            &settings,
+            fs::read_to_string(&settings)
+                .unwrap()
+                .replace("QueryParseError=false", "QueryParseError=true"),
+        )
+        .unwrap();
         let source = root.join("src");
         let reader = SourceReader::open(&source).unwrap();
         let query = reader.query_paths().next().unwrap().clone();
@@ -94,11 +106,34 @@ fn structural_descriptors_checker_never_claims_dcs_or_query_consumer_validation(
         for lang in ["ru-RU", "en-US"] {
             let value = report(
                 &run(&root, lang, &["--profile", "semantic", "--format", "json"]),
-                0,
+                2,
             );
             let checked = &value["data"]["report"];
             assert_eq!(checked["coverage"]["metadata_models_complete"], true);
             assert_eq!(checked["coverage"]["semantic_profile_complete"], true);
+            assert_eq!(checked["query_coverage"]["metadata_complete"], false);
+            assert_eq!(checked["query_coverage"]["consumer_complete"], false);
+            assert_eq!(
+                checked["query_coverage"]["syntax_complete"],
+                change != "missing-query"
+            );
+            let queries = checked["query_files"].as_array().unwrap();
+            let current = queries
+                .iter()
+                .find(|file| file["source"] == query.as_str())
+                .unwrap();
+            if change == "missing-query" {
+                assert_eq!(current["state"]["kind"], "unavailable");
+                assert!(current["source_sha256"].is_null());
+            } else if change == "invalid-query" {
+                let findings = current["findings"].as_array().unwrap();
+                assert!(!findings.is_empty());
+                assert!(
+                    findings
+                        .iter()
+                        .all(|finding| finding["code"] == "QueryParseError")
+                );
+            }
             let files = checked["files"].as_array().unwrap();
             assert_eq!(files.len(), 1);
             assert_eq!(files[0]["source"].as_str().unwrap(), module.as_str());

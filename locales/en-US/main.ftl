@@ -1263,3 +1263,6 @@ init-eska-manifest-changed = The project manifest changed after child publicatio
 init-eska-finalization-failed = Could not complete initialized ESKA project settings.
 init-eska-git-invalid = Inspect existing Git metadata; an invalid or bare repository is not replaced automatically.
 init-eska-git-failed = Could not complete new Git initialization. Source and published ESKA data are retained.
+
+tool-check-query-result = Queries: checked { $checked } of { $total }. Syntax only; metadata and consumers are not checked.
+tool-check-query-unavailable = Query { $source } is unavailable: { $code }.

@@ -15,13 +15,16 @@ use url::Url;
 
 use crate::{AnalysisSession, SessionRequestError};
 
-use super::{dto, protocol};
+use super::{dto, protocol, query_syntax};
 
 pub const MAX_REQUEST: usize = 4 * 1024 * 1024;
 
 /// Only open/close ownership is duplicated here; text, versions and hashes belong to the host.
 #[derive(Default)]
-pub struct Documents(BTreeSet<SourcePath>);
+pub struct Documents {
+    open: BTreeSet<SourcePath>,
+    query_syntax: bool,
+}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -82,6 +85,19 @@ struct Save {
 }
 
 impl Documents {
+    /// One initialize handshake fixes query synchronization until this host is retired.
+    pub const fn with_query_syntax(query_syntax: bool) -> Self {
+        Self {
+            open: BTreeSet::new(),
+            query_syntax,
+        }
+    }
+
+    /// Diagnostic requests share the same negotiated query document boundary as notifications.
+    pub const fn query_syntax(&self) -> bool {
+        self.query_syntax
+    }
+
     /// One event acknowledges each supported notification; rejected updates preserve current state.
     pub fn notify(
         &mut self,
@@ -133,6 +149,14 @@ impl Documents {
     ) -> Result<SourcePath, Value> {
         let document = params.text_document;
         let path = source_path(session, &document.uri)?;
+        self.check_query(session, &path)?;
+        if session.query_input(&path).is_some() && document.language_id != "sdbl" {
+            return Err(protocol::error_value(
+                -32602,
+                "document_language_invalid",
+                Value::Null,
+            ));
+        }
         if document.language_id.is_empty() {
             return Err(protocol::error_value(
                 -32602,
@@ -140,7 +164,7 @@ impl Documents {
                 Value::Null,
             ));
         }
-        if self.0.contains(&path) {
+        if self.open.contains(&path) {
             return Err(protocol::error_value(
                 -32602,
                 "document_already_open",
@@ -148,7 +172,7 @@ impl Documents {
             ));
         }
         overlay(session, &path, document.version, &document.text, request)?;
-        self.0.insert(path.clone());
+        self.open.insert(path.clone());
         Ok(path)
     }
 
@@ -197,18 +221,21 @@ impl Documents {
             session.close_overlay(&path, revision, request)
         } else if session.metadata_resource(&path).is_some() {
             session.close_resource_overlay(&path, revision, request)
+        } else if session.query_input(&path).is_some() {
+            session.close_query_overlay(&path, revision, request)
         } else {
             session.close_module_overlay(&path, revision, request)
         }
         .map_err(|error| request_error(&error))?;
-        self.0.remove(&path);
+        self.open.remove(&path);
         Ok(path)
     }
 
     /// A change/save/close of an unopened document cannot silently reopen a saved input.
     fn require_open(&self, session: &AnalysisSession, uri: &str) -> Result<SourcePath, Value> {
         let path = source_path(session, uri)?;
-        if !self.0.contains(&path) {
+        self.check_query(session, &path)?;
+        if !self.open.contains(&path) {
             return Err(protocol::error_value(
                 -32602,
                 "document_not_open",
@@ -216,6 +243,14 @@ impl Documents {
             ));
         }
         Ok(path)
+    }
+
+    /// Declared query identity never silently expands a client that did not negotiate syntax sync.
+    fn check_query(&self, session: &AnalysisSession, path: &SourcePath) -> Result<(), Value> {
+        if session.query_input(path).is_some() && !self.query_syntax {
+            return Err(query_syntax::not_negotiated());
+        }
+        Ok(())
     }
 }
 
@@ -254,6 +289,7 @@ pub fn declared_path(session: &AnalysisSession, file: &Path) -> Result<SourcePat
     if session.owner(&path).is_none()
         && session.module(&path).is_none()
         && session.metadata_resource(&path).is_none()
+        && session.query_input(&path).is_none()
     {
         return Err(protocol::error_value(-32602, "unknown_source", Value::Null));
     }
@@ -273,6 +309,8 @@ fn overlay(
         session.apply_overlay(path, revision, i64::from(version), text, request)
     } else if session.metadata_resource(path).is_some() {
         session.apply_resource_overlay(path, revision, i64::from(version), text, request)
+    } else if session.query_input(path).is_some() {
+        session.apply_query_overlay(path, revision, i64::from(version), text, request)
     } else {
         session.apply_module_overlay(path, revision, i64::from(version), text, request)
     }
@@ -289,6 +327,10 @@ pub fn current(session: &AnalysisSession, path: &SourcePath) -> Value {
     }
     if let Some(input) = session.metadata_resource(path) {
         return json!({"kind":input.kind, "owner":session.resource_owner(path), "state":dto::metadata_resource(input)});
+    }
+    if let Some(input) = session.query_input(path) {
+        return json!({"kind":"query","scope":"syntax_only","state":dto::query_text(input),
+            "declaration":session.query_declaration(path)});
     }
     json!({"kind":"unavailable"})
 }
@@ -322,6 +364,7 @@ pub fn request_error(error: &SessionRequestError) -> Value {
         ),
         SessionRequestError::BinaryModule(_) => (-32602, "binary_module", Value::Null),
         SessionRequestError::UnknownModule(_)
+        | SessionRequestError::UnknownQuery(_)
         | SessionRequestError::UnknownMetadataResource(_)
         | SessionRequestError::Metadata(UpdateError::UnknownOwner(_)) => {
             (-32602, "unknown_source", Value::Null)
@@ -334,6 +377,7 @@ pub fn request_error(error: &SessionRequestError) -> Value {
         | SessionRequestError::Metadata(UpdateError::StaleRevision { .. }) => {
             (-32801, "stale_revision", Value::Null)
         }
+        SessionRequestError::QueryReaderMismatch => (-32603, "session_invariant", Value::Null),
     };
     protocol::error_value(code, kind, details)
 }

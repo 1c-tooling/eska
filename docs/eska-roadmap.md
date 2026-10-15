@@ -2359,6 +2359,10 @@ standalone checker через bounded probe с отдельной linked-core ve
 Восемь all4 RU/EN случаев сохранили direct streams/exit и source/base/history;
 устанавливаемый комплект и полнота анализа продолжаются.
 
+[Declared `.sdbl` syntax](research/eska-format/analyzer-query-syntax.md) подключён
+к общей сессии IDE/checker и source quota с current overlay/watch/replay.
+Полный SDK прошёл; metadata/consumer semantics EF-27 ещё не принята.
+
 [Структурная проверка](research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

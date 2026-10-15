@@ -8,7 +8,7 @@ use crate::{
     ModuleState, QueryCancellation, ResourceSummary, SessionRevision,
 };
 
-use super::{BatchError, BatchProfile};
+use super::{BatchError, BatchProfile, BatchQueryCoverage, BatchQueryFile};
 
 /// Findings and incompleteness are separate from a fatal setup error.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
@@ -124,6 +124,8 @@ pub struct BatchReport {
     pub stop: Option<StopReason>,
     pub metadata_issues: Vec<MetadataIssue>,
     pub files: Vec<BatchFile>,
+    pub query_files: Vec<BatchQueryFile>,
+    pub query_coverage: BatchQueryCoverage,
 }
 
 impl BatchFile {
@@ -245,6 +247,8 @@ pub fn finish(
         stop,
         metadata_issues,
         files,
+        query_files: vec![],
+        query_coverage: BatchQueryCoverage::default(),
     })
 }
 
@@ -329,7 +333,7 @@ fn metadata_issue(
 }
 
 /// Domain input errors already have stable codes; protocol fields never contain Debug or messages.
-fn input_failure(failure: &InputFailure) -> (String, Vec<String>) {
+pub(super) fn input_failure(failure: &InputFailure) -> (String, Vec<String>) {
     match failure {
         InputFailure::Source(error) => (error.code.into(), error.location.clone()),
         InputFailure::Cancelled => ("analysis_cancelled".into(), vec![]),

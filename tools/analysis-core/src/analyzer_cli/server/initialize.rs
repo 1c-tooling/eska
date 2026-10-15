@@ -9,9 +9,9 @@ use serde_json::{Value, json};
 use super::super::{
     args::Cli, completion, diagnostics, document_symbols, documents, dto, edit_authority,
     external_context, hover, kernel_memory, language, metadata_locations, navigation::Navigation,
-    permissions, project_changes, property_edits, protocol, read_permissions::ReadPermissions,
-    references, rename, request_control, signature_help, stream, watched_files,
-    watcher_registration,
+    permissions, project_changes, property_edits, protocol, query_syntax,
+    read_permissions::ReadPermissions, references, rename, request_control, signature_help, stream,
+    watched_files, watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisScope, AnalysisSession, analysis_settings, batch::BatchProfile};
@@ -60,6 +60,7 @@ impl Server<'_> {
                 "languageMethods":language::METHODS,
                 "kernelMemory":kernel_memory::capability(),
                 "analysis":diagnostics::availability(&settings, profile),
+                "querySyntax":query_syntax::capability(query_syntax::negotiate(params)?, &settings),
                 "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT, project_changes::EVENT, watcher_registration::EVENT],
                 "watchedFiles":watched_files::capabilities(watcher.is_some()),
                 "projectChanges":project_inputs.capability()?,
@@ -105,10 +106,7 @@ impl Server<'_> {
         }
         advertise_scope(&mut result, scope);
         external_context::advertise(&mut result, scope);
-        self.completion = completion::Capabilities::negotiate(params);
-        self.hierarchical_symbols = hierarchical_symbols;
-        self.hover_format = hover_format;
-        self.signature = signature;
+        self.publish_editor_capabilities(params, hierarchical_symbols, hover_format, signature)?;
         self.project_inputs = Some(project_inputs);
         self.watcher = watcher;
         self.edit_plans = edit_plans;
@@ -119,6 +117,22 @@ impl Server<'_> {
         self.session_id = session_id;
         self.phase = Phase::Initializing;
         Ok(result)
+    }
+
+    /// Freeze the negotiated editor transport state with its query synchronization boundary.
+    fn publish_editor_capabilities(
+        &mut self,
+        params: &Value,
+        hierarchical_symbols: bool,
+        hover_format: hover::Format,
+        signature: signature_help::Capabilities,
+    ) -> Result<(), Value> {
+        self.completion = completion::Capabilities::negotiate(params);
+        self.hierarchical_symbols = hierarchical_symbols;
+        self.hover_format = hover_format;
+        self.signature = signature;
+        self.documents = documents::Documents::with_query_syntax(query_syntax::negotiate(params)?);
+        Ok(())
     }
 
     /// All negotiation preconditions are checked before opening the selected source or changing server state.
@@ -146,6 +160,7 @@ impl Server<'_> {
                 json!({"supported":[protocol::VERSION]}),
             ));
         }
+        query_syntax::negotiate(params)?;
         Ok(())
     }
 }

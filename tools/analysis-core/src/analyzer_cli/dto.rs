@@ -147,6 +147,20 @@ pub fn metadata_resource(input: &MetadataResourceInput) -> Value {
     json!({"origin":origin(input.origin),"source_sha256":input.source_sha256,"input":state})
 }
 
+/// Query readiness preserves current editor authority without metadata or consumer completeness claims.
+pub fn query_text(input: &crate::QueryTextSnapshot) -> Value {
+    let state = match &input.state {
+        crate::QueryTextState::Pending => json!({"kind":"pending"}),
+        crate::QueryTextState::Ready(text) => json!({"kind":"ready","bytes":text.len()}),
+        crate::QueryTextState::Unavailable(failure) => {
+            json!({"kind":"unavailable","failure":failure_value(failure)})
+        }
+    };
+    json!({"origin":origin(input.origin),"source_sha256":input.source_sha256,"input":state,
+        "input_revision":input.revision.to_string(),"scope":"syntax_only",
+        "metadata_complete":false,"consumer_complete":false})
+}
+
 /// Metadata and module summaries use the same editor authority and document-version contract.
 pub(super) fn origin(origin: InputOrigin) -> Value {
     match origin {

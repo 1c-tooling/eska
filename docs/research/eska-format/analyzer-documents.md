@@ -10,7 +10,12 @@
 теперь используют ту же сессию. Проверки ниже относятся к первому компоненту
 document sync. Старый IDE protocol приложения не изменён.
 
-Транспорт владеет только набором открытых путей. Текст, версии, origin, hash,
+[Declared `.sdbl`](analyzer-query-syntax.md) используют тот же lifecycle после
+явного `initializationOptions.eska.querySyntax=true`; didOpen передаёт languageId
+`sdbl`. Без negotiation query input отклоняется до изменения host revision.
+Query syntax не включает metadata/consumer semantics.
+
+Транспорт хранит открытые пути и согласованный querySyntax. Текст, версии, origin, hash,
 текущие модели и source-byte квота находятся в общем `AnalysisSession`;
 отдельной копии редакторских моделей в сервере нет.
 

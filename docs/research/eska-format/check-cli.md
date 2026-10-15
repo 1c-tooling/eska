@@ -26,6 +26,9 @@ eska-check --profile semantic --format json
 анализа. Он подтверждает совместимость бинарника, а не полноту проверки проекта.
 
 `syntax` использует `ParseError` общего ядра;
+объявленные `.sdbl` отдельно проверяются `QueryParseError` с
+[явной query coverage](analyzer-query-syntax.md). Metadata/consumer semantics
+запросов ещё не проверены; их наличие сохраняет semantic batch incomplete.
 [`semantic`](semantic-check.md) выполняет настроенные native rules с текущими
 метаданными и загруженными соседними модулями. Выбирается один проект тем же selector, что проектным
 и сборочным инструментом: из workspace root нужен `--project`, внутри member

@@ -57,6 +57,7 @@ pub struct Options<'a> {
     pub timeout: Duration,
     pub localizer: &'a Localizer,
     pub profile: BatchProfile,
+    pub query_syntax: bool,
 }
 
 impl<'a> Options<'a> {
@@ -74,7 +75,14 @@ impl<'a> Options<'a> {
             timeout,
             localizer,
             profile,
+            query_syntax: false,
         }
+    }
+
+    /// The server's explicit query negotiation is independent of its BSL profile.
+    pub const fn with_query_syntax(mut self, negotiated: bool) -> Self {
+        self.query_syntax = negotiated;
+        self
     }
 }
 
@@ -108,6 +116,17 @@ pub fn pull(
     settings: &Result<Settings, Failure>,
     options: &Options<'_>,
 ) -> Result<Value, Value> {
+    let path = documents::source_path(session, &params.text_document.uri)?;
+    if session.query_input(&path).is_some() {
+        return super::query_syntax::pull(
+            session,
+            id,
+            &path,
+            params.identifier.as_deref(),
+            settings,
+            options,
+        );
+    }
     if params
         .identifier
         .as_deref()
@@ -119,7 +138,6 @@ pub fn pull(
             json!({"supported":identifier(options.profile)}),
         ));
     }
-    let path = documents::source_path(session, &params.text_document.uri)?;
     if session.owner(&path).is_some() {
         let deadline = request_control::start(
             session,
@@ -238,7 +256,7 @@ fn analyze(
 }
 
 /// Build UTF-16 ranges once and preserve canonical byte offsets for checker parity and future plans.
-fn items(
+pub(super) fn items(
     diagnostics: &[Diagnostic],
     text: &str,
     profile: BatchProfile,

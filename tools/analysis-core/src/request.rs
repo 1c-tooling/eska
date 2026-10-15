@@ -35,6 +35,8 @@ pub enum SessionRequestError {
     },
     Metadata(UpdateError),
     UnknownModule(SourcePath),
+    UnknownQuery(SourcePath),
+    QueryReaderMismatch,
     UnknownMetadataResource(SourcePath),
     BinaryModule(SourcePath),
     StaleDocumentVersion {

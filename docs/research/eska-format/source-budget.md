@@ -1,6 +1,6 @@
 # Общая квота текущих входов анализа
 
-Сессия IDE и `eska-check` используют одну квоту исходных байтов YAML/rights/BSL.
+Сессия IDE и `eska-check` используют одну квоту исходных байтов YAML/rights/BSL/`.sdbl`.
 `SessionOptions.max_retained_source_bytes` и
 `BatchOptions.max_retained_source_bytes` по умолчанию равны 256 MiB.
 Checker задаёт её через `--max-retained-source-bytes`; локальный предел документа
@@ -25,7 +25,9 @@ version и обновление диска поверх черновика от�
 Закрытие перечитывает текущий диск и может снова столкнуться с недостаточной квотой.
 
 `resources()` и поле `report.resources` показывают
-`metadata_source_bytes`, `module_text_bytes`, `total_source_bytes`, `max_source_bytes`.
+`metadata_source_bytes`, `module_text_bytes`, `query_text_bytes`, `total_source_bytes`, `max_source_bytes`.
+`query_text_bytes` учитывает текущие declared plain queries через тот же
+replacement reserve; [query syntax](analyzer-query-syntax.md) не добавляет отдельной квоты.
 `metadata_source_bytes` включает YAML и права роли, включая ресурс pending владельца.
 Сумма текущих резервов не превышает установленный предел. Checker освобождает
 независимо проверенное тело после syntax query, поэтому завершённый batch

@@ -42,6 +42,8 @@ workflow/Git/workspace и expected-byte receipt; [init](project-initialization.m
 сохраняет raw history при no-op и явно отказывает несовместимому layout change.
 [LocalSyntax четырёх типов](analyzer-local-syntax.md) проверяет BSL и symbols через
 общую сессию, сохраняя явную неполноту semantic context.
+[Declared `.sdbl` syntax](analyzer-query-syntax.md) подключён к той же сессии,
+watcher, quota и native parser без BSL wrapper. Контекстная EF-27 ещё нужна.
 [Kernel owners](canonical-module-owners.md) берут object/register/common/service
 metadata из текущих slots без XML fallback; SDK composition ещё в работе.
 [Own EPF/ERF context](external-own-context.md) использует реальные external модели,

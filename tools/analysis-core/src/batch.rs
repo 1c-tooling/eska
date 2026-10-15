@@ -1,6 +1,7 @@
 //! Read-only batches share input and diagnostics; only independent syntax can release each body.
 
 mod profile;
+mod query_text;
 mod report;
 
 #[cfg(test)]
@@ -15,6 +16,7 @@ use eska::{
 };
 
 pub use profile::BatchProfile;
+pub use query_text::{BatchQueryCoverage, BatchQueryFile, BatchQueryFinding};
 pub use report::{
     BatchCoverage, BatchFile, BatchFinding, BatchReport, BatchStatus, FileState, MetadataIssue,
     StopReason,
@@ -53,6 +55,7 @@ pub enum BatchError {
     Open(SessionError),
     Request(SessionRequestError),
     Query(QueryError),
+    QuerySyntax(crate::QuerySyntaxRequestError),
     MetadataQuery {
         source: SourcePath,
         error: crate::MetadataDiagnosticsError,
@@ -127,6 +130,7 @@ fn check(
         cancellation: options.cancellation.input.clone(),
         source_budget: None,
     };
+    let query_config = config.clone();
     let config = match profile {
         BatchProfile::Syntax => syntax_profile(config).0,
         BatchProfile::Semantic => config.clone(),
@@ -164,6 +168,8 @@ fn check(
         }
     }
     session.trim_batch_caches();
+    let (query_files, query_coverage) =
+        query_text::check(&mut session, &query_config, &request, &deadline)?;
     let mut report = report::finish(
         &session,
         manifest_sha256,
@@ -173,11 +179,13 @@ fn check(
         &options.cancellation.query,
         profile,
     )?;
+    query_text::publish(&mut report, query_files, query_coverage);
     // Constructing coverage can itself cross the deadline; check again before returning success.
     if let Some(stop) = deadline.stop_reason() {
         report.stop = Some(StopReason::from(stop));
         report.status = BatchStatus::Incomplete;
         report.coverage.syntax_complete = false;
+        report.query_coverage.syntax_complete = false;
         if let Some(complete) = &mut report.coverage.semantic_profile_complete {
             *complete = false;
         }

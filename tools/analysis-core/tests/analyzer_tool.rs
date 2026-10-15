@@ -34,6 +34,7 @@ mod navigation_protocol;
 mod predefined_queries;
 mod project_changes;
 mod property_edit_plans;
+mod query_text;
 mod reference_queries;
 mod rename_queries;
 mod request_cancellation;

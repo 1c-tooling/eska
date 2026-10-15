@@ -10,6 +10,8 @@ mod check_semantic;
 mod external_context;
 #[path = "local_syntax/checker.rs"]
 mod local_syntax;
+#[path = "query_text/checker.rs"]
+mod query_text;
 #[path = "structural_metadata/checker.rs"]
 mod structural_metadata;
 mod support;

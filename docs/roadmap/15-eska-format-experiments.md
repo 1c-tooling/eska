@@ -848,6 +848,11 @@ CF-профиля и библиотечных тестов недостаточ�
 
 ## EF-18 Сервер анализа и пакетная проверка
 
+[Declared `.sdbl` syntax](../research/eska-format/analyzer-query-syntax.md) подключён
+к общей host revision/source quota, LSP и checker. Saved/overlay/watch/replay,
+all4/RUEN и полный SDK прошли; metadata/consumer coverage остаётся false.
+EF-18 остаётся `IN_PROGRESS`, контекстная EF-27 ещё не принята.
+
 **Статус:** `IN_PROGRESS`; продолжение отложено до завершения структуры/CLI EF-20.
 Приоритет изменён 2026-10-11; накопленные компоненты и результаты ниже сохраняются.
 При возобновлении адаптировать host к принятой схеме EF-24/EF-12/EF-14/EF-23,

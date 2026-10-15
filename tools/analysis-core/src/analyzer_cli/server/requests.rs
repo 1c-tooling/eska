@@ -159,7 +159,8 @@ impl Server<'_> {
                 &self.session_id,
                 &params,
                 settings,
-                &DiagnosticOptions::new(&request, cancellation, timeout, self.localizer, profile),
+                &DiagnosticOptions::new(&request, cancellation, timeout, self.localizer, profile)
+                    .with_query_syntax(self.documents.query_syntax()),
             ),
             language::Request::Completion(params) => completion::pull(
                 session,

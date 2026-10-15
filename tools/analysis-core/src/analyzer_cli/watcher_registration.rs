@@ -105,6 +105,7 @@ fn saved_watchers(source: &SourceReader) -> Result<Vec<Value>, Value> {
     let names = source
         .owner_paths()
         .chain(source.module_paths())
+        .chain(source.query_paths())
         .chain(source.role_rights_paths())
         .chain(source.form_dialog_paths())
         .chain(source.predefined_paths())

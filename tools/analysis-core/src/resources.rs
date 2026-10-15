@@ -1,4 +1,4 @@
-//! Bound current source reservations across YAML, metadata resources and BSL without claiming RSS control.
+//! Bound current source reservations across YAML, metadata resources, BSL and queries without claiming RSS control.
 
 #[cfg(test)]
 #[path = "resources/tests.rs"]
@@ -13,20 +13,23 @@ use crate::AnalysisSession;
 pub struct ResourceSummary {
     pub metadata_source_bytes: u64,
     pub module_text_bytes: u64,
+    pub query_text_bytes: u64,
     pub total_source_bytes: u64,
     pub max_source_bytes: u64,
 }
 
 impl AnalysisSession {
-    /// Count current YAML and resource bytes once, including failed or pending projections.
+    /// Count retained authoring text once across all input kinds, independently of projection readiness.
     #[must_use]
     pub const fn resources(&self) -> ResourceSummary {
         ResourceSummary {
             metadata_source_bytes: self.loaded_metadata_source_bytes + self.loaded_resource_bytes,
             module_text_bytes: self.loaded_module_bytes,
+            query_text_bytes: self.loaded_query_bytes,
             total_source_bytes: self.loaded_metadata_source_bytes
                 + self.loaded_resource_bytes
-                + self.loaded_module_bytes,
+                + self.loaded_module_bytes
+                + self.loaded_query_bytes,
             max_source_bytes: self.options.max_retained_source_bytes,
         }
     }
@@ -39,7 +42,8 @@ impl AnalysisSession {
     ) -> InputRequest {
         let occupied = (self.loaded_metadata_source_bytes
             + self.loaded_resource_bytes
-            + self.loaded_module_bytes)
+            + self.loaded_module_bytes
+            + self.loaded_query_bytes)
             - previous;
         request.with_source_budget(
             self.options
