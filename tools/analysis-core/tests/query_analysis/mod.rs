@@ -8,6 +8,7 @@ use serde_json::{Value, json};
 use std::fs;
 
 mod consumers;
+mod foreign_inputs;
 
 /// Full analysis is explicitly independent from the existing parse-only initialization option.
 fn start(

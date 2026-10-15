@@ -71,6 +71,8 @@ impl Server<'_> {
         });
         if let Some(composition) = session.composition_summary() {
             result["capabilities"]["experimental"]["eska"]["composition"] = json!(composition);
+            result["capabilities"]["experimental"]["eska"]["inputDeclarations"] =
+                super::super::input_declarations::capability();
         }
         if edit_plans.is_some() {
             result["capabilities"]["experimental"]["eska"]["propertyEditPlans"] =

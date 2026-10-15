@@ -43,6 +43,12 @@ pub struct RootInputs {
 }
 
 impl RootInputs {
+    /// Enumerate only registered text resources without opening their saved payloads.
+    #[cfg(feature = "analyzer-cli")]
+    pub(crate) fn resource_paths(&self) -> impl Iterator<Item = &SourcePath> {
+        self.metadata_resources.keys()
+    }
+
     /// Register every listing and tracked identity without reading current owner or body payloads.
     pub(super) fn register(
         inputs: MetadataInputs,

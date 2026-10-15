@@ -11,6 +11,7 @@ mod dto;
 mod edit_authority;
 mod external_context;
 mod hover;
+mod input_declarations;
 mod kernel_memory;
 mod language;
 mod markup;

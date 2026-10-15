@@ -12,7 +12,8 @@ use super::super::{
     args::Cli,
     completion, definitions,
     diagnostics::{self, Options as DiagnosticOptions},
-    document_symbols, documents, dto, hover, kernel_memory, language, metadata_locations,
+    document_symbols, documents, dto, hover, input_declarations, kernel_memory, language,
+    metadata_locations,
     navigation::Navigation,
     permissions, property_edits, protocol, references, rename, signature_help,
 };
@@ -32,6 +33,9 @@ impl Server<'_> {
         }
         if method == permissions::METHOD {
             return self.permissions_request(value, cancellation);
+        }
+        if method == input_declarations::METHOD {
+            return self.input_declarations_request(value, cancellation);
         }
         if method == property_edits::METHOD {
             let params: property_edits::Params = protocol::params(value)?;
@@ -114,6 +118,29 @@ impl Server<'_> {
                 Value::Null,
             )),
         }
+    }
+
+    /// Foreign synchronization pages reuse the session's declarations and transport request controls.
+    fn input_declarations_request(
+        &self,
+        value: &Value,
+        cancellation: Option<&RequestCancellation>,
+    ) -> Result<Value, Value> {
+        let params: input_declarations::Params = protocol::params(value)?;
+        let session = self
+            .session
+            .as_ref()
+            .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
+        validate_snapshot(session, &self.session_id, &params.snapshot)?;
+        let cancellation = cancellation
+            .ok_or_else(|| protocol::error_value(-32603, "request_invariant", Value::Null))?;
+        input_declarations::page(
+            session,
+            &self.session_id,
+            &params,
+            cancellation,
+            Duration::from_secs(self.cli.timeout_seconds),
+        )
     }
 
     /// Policy scope is independent of semantic readiness and versioned-edit capability.

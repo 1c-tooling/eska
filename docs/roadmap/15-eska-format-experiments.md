@@ -3150,6 +3150,10 @@ checker. Current XML, typed authoring ranges, invalid/repair/close и RU/EN pari
 File-leading BOM исправлен в native parser без изменения source bytes/ranges;
 4158 native и 213/509 SDK tests, root gates и 323 Node tests прошли.
 Installed CF/configured-CFE/native-CF consumer matrix повторена с BOM в query.
+[Foreign current inputs](../research/eska-format/analyzer-foreign-current-inputs.md)
+объявляют точные входы видимых базы/зависимостей для прежнего editor writer.
+Открытые foreign drafts, root-qualified ACK, invalid/repair/close и restart/import
+проверены на RU/EN; 334 Node tests прошли. Полная EF-18/EF-27 остаётся в работе.
 
 Current form snapshot сохраняет UTF-16 endpoints mapped query-consumer nodes
 при parse единственного YAML. Проверка после удаления source tree подтверждает

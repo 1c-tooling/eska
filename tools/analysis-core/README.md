@@ -27,6 +27,12 @@ DynamicList DataPath, source stamps и точность authoring ranges. Semant
 содержит тот же отчёт в `data.report.query_files[].consumers`; syntax payload не меняется.
 Параметры, полная проверка consumers и semantic completeness остаются false.
 
+[Входы базы и зависимостей](../../docs/research/eska-format/analyzer-foreign-current-inputs.md)
+объявляются bounded `eska/analysis/inputs` pages без чтения payload. Только видимые
+foreign roots получают synchronization membership; root-qualified ACK и прежний
+writer принимают их текущие editor buffers. Navigation и property edit scope
+не расширяются; каталог не означает готовую semantic model.
+
 [Навигация и права чтения](../../docs/research/eska-format/analyzer-navigation.md)
 используют тот же host: project context, declared owners/modules/queries и
 bounded policy requests с независимым accepted pin. Readonly capability не

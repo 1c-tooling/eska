@@ -96,6 +96,9 @@ authoring ranges проверены на RU/EN. Параметры пока occu
 [Установленный consumer client](explorer-query-consumers.md) прошёл 323 Node tests,
 CF/configured-CFE/native-CF XML Problems/repair/replay без saved fallback.
 Полная семантика и Save остаются отдельными границами.
+[Текущие входы базы и зависимостей](analyzer-foreign-current-inputs.md) устраняют
+saved metadata при открытом foreign draft выбранной CFE: explicit declarations,
+root-qualified ACK и прежний replay, 334 Node tests и real-process RU/EN guards.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery
 одному совместимому tool с независимыми pins и сохранением streams/exit.
 [Оболочка check](shell-check-delegation.md) передаёт явный профиль совместимому
