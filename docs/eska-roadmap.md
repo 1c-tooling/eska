@@ -2337,6 +2337,10 @@ SDK header CF теперь сохраняет UUID проверенного root
 current identity блокирует reopen до repair. Две новые и пять external regression
 групп прошли; CFE/base composition остаётся в работе.
 
+Current query resource read-view теперь читает доказанные dataset field bindings,
+списки и UI DataPath с точными node/scalar locations. Неподдержанные потребители
+явно остаются inventory; semantics не заявлена. 32 query/read-view tests прошли.
+
 [Структурная проверка](research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

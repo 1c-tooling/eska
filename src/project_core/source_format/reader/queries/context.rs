@@ -4,8 +4,8 @@ use std::ops::Range;
 
 use super::{SourcePath, SourceReader, check_bindings, composition_template, invalid};
 use crate::project_core::source_format::{
-    EXTERNAL_LAYOUT_VERSION, Error, FileRole, NativeUuid, QUERY_LAYOUT_VERSION, QueryProfile,
-    QueryReference, QueryReferenceDocument,
+    EXTERNAL_LAYOUT_VERSION, Error, FileRole, NativeUuid, QUERY_LAYOUT_VERSION, QueryConsumerView,
+    QueryProfile, QueryReference, QueryReferenceDocument,
 };
 
 #[cfg(test)]
@@ -36,6 +36,15 @@ pub struct QueryContextView {
 }
 
 impl QueryContextView {
+    /// Project proven native storage consumers, retaining unknown parts and incomplete coverage.
+    ///
+    /// # Errors
+    /// Rejects ambiguous or malformed supported fields and invalid current coordinate mappings.
+    /// Query text, metadata semantics and decoded YAML subranges are never inferred.
+    pub fn consumer_view(&self) -> Result<QueryConsumerView, Error> {
+        crate::project_core::source_format::queries::consumer_view(self)
+    }
+
     /// Return the physical descriptor owner checked against the reader's frozen manifest.
     #[must_use]
     pub const fn owner(&self) -> &SourcePath {

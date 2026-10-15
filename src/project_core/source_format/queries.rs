@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{Error, FormId};
 
+mod consumers;
 mod coordinates;
 mod native;
 #[cfg(test)]
@@ -17,6 +18,12 @@ pub(in crate::project_core::source_format) mod test_support;
 #[cfg(test)]
 mod tests;
 
+pub(in crate::project_core::source_format) use consumers::consumer_view;
+pub use consumers::{
+    QueryConsumerCoverage, QueryConsumerScope, QueryConsumerView, QueryDataset, QueryDatasetField,
+    QueryDatasetKind, QueryDynamicList, QueryFormDataPath, QueryLocated, QueryUnhandledKind,
+    QueryUnhandledPart, QueryXmlName,
+};
 pub(in crate::project_core::source_format) use references::restore_native_queries;
 pub use references::{
     ExtractedQuerySource, QUERY_REFERENCE_NAMESPACE, QueryReference, QueryReferenceDocument,

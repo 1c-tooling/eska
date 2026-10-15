@@ -36,3 +36,25 @@ SDK query slots, parser/resolver и проверки потребителей е
 Для EF-27 нужны текущий `.sdbl`, параметры/поля/настройки, selected metadata
 visibility, dependency invalidation и IDE/batch parity. Для generated form
 properties и decoded YAML subranges потребуется отдельное доказанное mapping.
+
+## Потребители в текущем ресурсе
+
+`QueryContextView::consumer_view` читает storage facts из этих же supplied bytes:
+dataset scopes Query/Union/Object, явные `DataSetFieldField` bindings,
+DynamicList attribute/name/manual-query/main-table и UI `DataPath`. Полная
+union ancestry сохраняется; attribute и UI IDs остаются разными пространствами.
+QName определяется по namespace, а не написанию prefix.
+
+Каждый `QueryLocated` хранит decoded value, проверенный native node/attribute
+range и `QueryAuthoringRange`. Whole node либо enclosing YAML scalar не выдаётся
+за decoded substring. Missing/duplicate/empty поддержанные bindings отказывают;
+параметры, связи, ресурсы/итоги, calculated fields, настройки и unknown shapes
+остаются locatable inventory с `Incomplete` или `Unsupported` coverage.
+`consumer_complete` всегда false: это чтение структуры, без query output/type
+inference, resolver или consumer diagnostics.
+
+Прошли 25 query codec/consumer tests и 7 current read-view tests, включая шесть
+новых consumer groups на всех четырёх типах. Проверены nested unions, namespaces,
+current YAML после удаления source tree, отдельные ID scopes, invalid bindings
+и доказанные координаты. Minimal/all-features lib check и strict lib/tests Clippy,
+scoped fmt и diff check прошли. Новый платформенный цикл не запускался.

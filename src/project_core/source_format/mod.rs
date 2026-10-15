@@ -88,7 +88,10 @@ pub use protected::{
 };
 pub use queries::{
     ExtractedQuerySource, NativeQuery, NativeQueryDocument, QUERY_REFERENCE_NAMESPACE,
-    QueryProfile, QueryReference, QueryReferenceDocument, QuerySlot,
+    QueryConsumerCoverage, QueryConsumerScope, QueryConsumerView, QueryDataset, QueryDatasetField,
+    QueryDatasetKind, QueryDynamicList, QueryFormDataPath, QueryLocated, QueryProfile,
+    QueryReference, QueryReferenceDocument, QuerySlot, QueryUnhandledKind, QueryUnhandledPart,
+    QueryXmlName,
 };
 pub use reader::{
     DeclaredForm, DeclaredModule, DeclaredOwner, DeclaredQuery, MetadataDeclaration,

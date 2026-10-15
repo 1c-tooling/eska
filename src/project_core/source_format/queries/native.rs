@@ -198,7 +198,10 @@ fn dynamic_lists<'a, 'input>(root: Node<'a, 'input>) -> Result<Vec<SlotNode<'a, 
 }
 
 /// Native names are unique within their actual parent, including case-insensitive filename collision candidates.
-fn datasets<'a, 'input>(node: Node<'a, 'input>, tag: &str) -> Result<Vec<Node<'a, 'input>>, Error> {
+pub(super) fn datasets<'a, 'input>(
+    node: Node<'a, 'input>,
+    tag: &str,
+) -> Result<Vec<Node<'a, 'input>>, Error> {
     let mut names = BTreeSet::new();
     node.children()
         .filter(|child| child.has_tag_name((DCS, tag)))
@@ -212,7 +215,7 @@ fn datasets<'a, 'input>(node: Node<'a, 'input>, tag: &str) -> Result<Vec<Node<'a
 }
 
 /// Dataset identifiers retain their exact Unicode spelling; empty or composite names cannot bind a query.
-fn dataset_name(node: Node<'_, '_>) -> Result<String, Error> {
+pub(super) fn dataset_name(node: Node<'_, '_>) -> Result<String, Error> {
     let name = direct(node, DCS, "name")?.ok_or_else(unverified)?;
     if name.attributes().len() != 0 || name.children().any(|child| child.is_element()) {
         return Err(unverified());
@@ -225,7 +228,7 @@ fn dataset_name(node: Node<'_, '_>) -> Result<String, Error> {
 }
 
 /// `QName` namespace identity comes from the node's scope, never from a familiar prefix string.
-fn qualified_type<'a>(node: Node<'a, '_>, namespace: &str) -> Result<&'a str, Error> {
+pub(super) fn qualified_type<'a>(node: Node<'a, '_>, namespace: &str) -> Result<&'a str, Error> {
     let value = node.attribute((XSI, "type")).ok_or_else(unverified)?;
     let (prefix, name) = value
         .split_once(':')
@@ -240,7 +243,7 @@ fn qualified_type<'a>(node: Node<'a, '_>, namespace: &str) -> Result<&'a str, Er
 }
 
 /// Duplicate direct slots are ambiguous even if their texts happen to be equal.
-fn direct<'a, 'input>(
+pub(super) fn direct<'a, 'input>(
     node: Node<'a, 'input>,
     namespace: &str,
     tag: &str,
