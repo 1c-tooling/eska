@@ -11,6 +11,10 @@ Configuration. Scope явно сообщается, model state — SourceOnly, 
 отказывают до lazy reads. CF сохраняет прежний canonical route; complete syntax
 не подменяет complete semantic model и LocalSyntax batch остаётся exit 2.
 
+Canonical CF header сохраняет UUID и имя проверенного source descriptor через
+`Configuration::with_identity`. Повторное открытие не создаёт новую идентичность;
+неверный current root не восстанавливается из прежнего или native XML значения.
+
 [Own context EPF/ERF](../../docs/research/eska-format/external-own-context.md)
 передаёт real external metadata и form underlying owner без Configuration.
 Default SDK `open`/`from_reader` выбирают `CanonicalExternal` по проверенному

@@ -2333,6 +2333,10 @@ Per-file kernel lookup объектов/регистров/определяем�
 зарегистрированный unavailable canonical вклад ради прежней базы. Три новые
 группы и native regression filters прошли; SDK composition ещё подключается.
 
+SDK header CF теперь сохраняет UUID проверенного root descriptor; invalid/stale
+current identity блокирует reopen до repair. Две новые и пять external regression
+групп прошли; CFE/base composition остаётся в работе.
+
 [Структурная проверка](research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

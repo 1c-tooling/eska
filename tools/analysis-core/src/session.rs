@@ -3,6 +3,8 @@
 mod analysis_inputs;
 mod completion_inputs;
 #[cfg(test)]
+mod configuration_identity_tests;
+#[cfg(test)]
 mod event_subscription_tests;
 mod external;
 #[cfg(test)]
@@ -684,14 +686,20 @@ fn set_configuration_context(
     }
     let cache = Arc::new(GraphConfigCache::new());
     if scope == AnalysisScope::CanonicalConfiguration {
-        let name = reader
+        let declaration = reader
             .configuration()
             .declarations
             .first()
-            .map_or("", |declaration| declaration.name.as_str());
+            .ok_or(SessionError::MissingListing)?;
+        let uuid = declaration.uuid.as_str().parse().map_err(|_| {
+            SessionError::Source(Error {
+                code: "native_uuid_invalid",
+                location: vec![reader.configuration().path.as_str().into()],
+            })
+        })?;
         cache.insert(
             reader.root().to_path_buf(),
-            Arc::new(Configuration::new(name)),
+            Arc::new(Configuration::with_identity(uuid, &declaration.name)),
         );
         database.set_all_config_paths(vec![(None, reader.root().to_path_buf())]);
     } else {

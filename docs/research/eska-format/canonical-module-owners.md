@@ -34,7 +34,11 @@ native-origin EPF/ERF с отличающимся stem подтвердил own 
 `Configuration::with_identity(uuid, name)` создаёт CF/CFE header с переданным
 UUID. Прежний `Configuration::new(name)` сохраняет генерацию нового UUID и
 serialized shape. External не использует ни один configuration constructor.
-SDK ещё должен подключить exact CF/CFE identity и actual external composition.
+SDK CanonicalConfiguration уже использует exact CF identity. Две группы проверили
+direct/from-reader/reopen, native serde shape, stale UUID/malformed YAML refusal
+и repair без XML fallback. Пять own-external regression groups, minimal check,
+strict Clippy, scoped fmt/diff прошли. CFE/base composition ещё подключается;
+own-only EPF/ERF не создаёт Configuration.
 
 ## Отсутствующий контекст конфигурации у внешнего объекта
 
