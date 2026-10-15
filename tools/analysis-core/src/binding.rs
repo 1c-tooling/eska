@@ -108,24 +108,20 @@ impl OwnerBinding {
 /// Allocate declared bodies after metadata IDs without reading their bytes or owner YAML.
 pub fn register_modules(
     reader: &eska::project_core::source_format::SourceReader,
-    first_file: usize,
+    root: base_db::SourceRootId,
+    allocator: &mut crate::composition::FileIdAllocator,
     database: &mut ide_db::RootDatabaseImpl,
     file_set: &mut vfs::file_set::FileSet,
 ) -> Result<std::collections::BTreeMap<SourcePath, crate::modules::ModuleEntry>, crate::SessionError>
 {
     use crate::{ModuleInput, ModuleState, SessionError, SessionRevision, modules::ModuleEntry};
-    use base_db::{SourceDatabase, SourceRootId};
+    use base_db::SourceDatabase;
     use vfs::VfsPath;
     let mut modules = BTreeMap::new();
-    for (index, path) in reader.module_paths().enumerate() {
-        let file = FileId(
-            u32::try_from(
-                first_file
-                    .checked_add(index)
-                    .ok_or(SessionError::TooManyFiles)?,
-            )
-            .map_err(|_| SessionError::TooManyFiles)?,
-        );
+    for path in reader.module_paths() {
+        let file = allocator
+            .allocate()
+            .map_err(|_| SessionError::TooManyFiles)?;
         let identity = reader
             .declared_module(path)
             .ok_or(SessionError::MissingListing)?;
@@ -134,7 +130,7 @@ pub fn register_modules(
             file,
             VfsPath::new(reader.root().join(identity.native_path.as_path())),
         );
-        database.set_file_source_root(file, SourceRootId(0));
+        database.set_file_source_root(file, root);
         database.set_file_unreadable(file);
         let model = ModuleInput {
             revision: SessionRevision::default(),

@@ -44,9 +44,10 @@ impl crate::AnalysisSession {
         kind: bsl_metadata::MdoType,
         name: &str,
     ) -> Result<(), crate::QueryError> {
-        if let Some(external_kind) = self.external_kind
+        if let Some(external_kind) = self.selected_root.external_kind
             && (kind != external_kind.mdo_type()
                 || self
+                    .selected_root
                     .inputs
                     .source_reader()
                     .configuration()

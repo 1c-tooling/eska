@@ -69,21 +69,24 @@ pub struct Options<'a> {
     pub authority: Option<&'a Authority>,
     pub cancellation: &'a RequestCancellation,
     pub timeout: Duration,
+    pub request: &'a eska::analysis_core::InputRequest,
 }
 
 impl<'a> Options<'a> {
-    /// Rename requests borrow the same selected authority and stop control without lazy source IO.
+    /// Rename requests borrow the selected authority and the host's bounded input/stop control.
     pub const fn new(
         session_id: &'a str,
         authority: Option<&'a Authority>,
         cancellation: &'a RequestCancellation,
         timeout: Duration,
+        request: &'a eska::analysis_core::InputRequest,
     ) -> Self {
         Self {
             session_id,
             authority,
             cancellation,
             timeout,
+            request,
         }
     }
 }
@@ -113,7 +116,7 @@ pub fn capability() -> Value {
 
 /// Closed or unsupported input is refused before accepted-base IO; no edit is applied by the server.
 pub fn pull(
-    session: &AnalysisSession,
+    session: &mut AnalysisSession,
     params: &Request,
     settings: &Result<Settings, Failure>,
     options: &Options<'_>,
@@ -144,6 +147,17 @@ pub fn pull(
             )
             .map_err(|error| language::query_error(session, options.session_id, &error))?
             .value?;
+        if session.composition_sha256().is_some() {
+            session
+                .prepare_completion_metadata(
+                    &path,
+                    session.revision(),
+                    offset,
+                    options.request,
+                    &options.cancellation.query,
+                )
+                .map_err(|error| language::query_error(session, options.session_id, &error))?;
+        }
         let result = session
             .module_local_rename_input(
                 &path,

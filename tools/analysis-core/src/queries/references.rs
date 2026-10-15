@@ -89,7 +89,15 @@ impl AnalysisSession {
                         column: position.start_character,
                     },
                     anchor_files: None,
-                    area: ide::ReferenceArea::default(),
+                    area: ide::ReferenceArea {
+                        files: None,
+                        candidate_roots: self.composition_sha256().map(|_| {
+                            self.visible_root_ids(self.selected_root_id())
+                                .into_iter()
+                                .map(|root| base_db::SourceRootId(root.index()))
+                                .collect()
+                        }),
+                    },
                     kinds: None,
                     include_declaration,
                     max_files: MAX_REFERENCE_FILES,

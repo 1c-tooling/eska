@@ -48,7 +48,12 @@ fn labels(session: &AnalysisSession, offset: u32, locale: Locale) -> BTreeSet<St
 /// Observe controller readiness, not projection readiness: a pending resource can hide ready YAML.
 fn input_ready(session: &AnalysisSession, path: &str) -> bool {
     matches!(
-        session.inputs.owner(&owner(path)).unwrap().state,
+        session
+            .selected_root
+            .inputs
+            .owner(&owner(path))
+            .unwrap()
+            .state,
         InputState::Ready(_)
     )
 }
@@ -86,11 +91,11 @@ fn cold_direct_completion_loads_only_own_and_target_inputs_in_both_locales() {
             session.owner(&owner(TARGET)).unwrap().state,
             ModelState::Ready(_)
         ));
-        for path in session.inputs.owner_paths() {
+        for path in session.selected_root.inputs.owner_paths() {
             if path.as_str() != OWN && path.as_str() != TARGET {
                 assert!(
                     matches!(
-                        session.inputs.owner(path).unwrap().state,
+                        session.selected_root.inputs.owner(path).unwrap().state,
                         InputState::Pending
                     ),
                     "{path:?}"
@@ -254,7 +259,13 @@ fn targeted_preparation_preserves_current_overlay_and_cached_yaml_when_a_resourc
     session
         .prepare_completion_metadata(&module, session.revision(), offset, &request, &cancellation)
         .unwrap();
-    let yaml_hash = session.inputs.owner(&target).unwrap().source_sha256.clone();
+    let yaml_hash = session
+        .selected_root
+        .inputs
+        .owner(&target)
+        .unwrap()
+        .source_sha256
+        .clone();
     for (version, text, has_current) in [
         (1, test_predefined_project::data("Current"), true),
         (2, "<NotPredefinedData/>".to_owned(), false),
@@ -281,7 +292,12 @@ fn targeted_preparation_preserves_current_overlay_and_cached_yaml_when_a_resourc
             InputOrigin::Overlay { .. }
         ));
         assert_eq!(
-            session.inputs.owner(&target).unwrap().source_sha256,
+            session
+                .selected_root
+                .inputs
+                .owner(&target)
+                .unwrap()
+                .source_sha256,
             yaml_hash
         );
     }
@@ -305,7 +321,12 @@ fn targeted_preparation_preserves_current_overlay_and_cached_yaml_when_a_resourc
         .unwrap();
     assert!(input_ready(&session, TARGET));
     assert_eq!(
-        session.inputs.owner(&target).unwrap().source_sha256,
+        session
+            .selected_root
+            .inputs
+            .owner(&target)
+            .unwrap()
+            .source_sha256,
         yaml_hash
     );
     assert!(labels(&session, offset, Locale::En).contains("DiskCurrent"));
@@ -468,7 +489,7 @@ fn targeted_preparation_retries_cancelled_saved_inputs_but_preserves_cancelled_o
         .load_resource_saved(&resource, session.revision(), &stopped)
         .unwrap();
     assert!(matches!(
-        session.inputs.owner(&target).unwrap().state,
+        session.selected_root.inputs.owner(&target).unwrap().state,
         InputState::Unavailable(InputFailure::Cancelled)
     ));
     session

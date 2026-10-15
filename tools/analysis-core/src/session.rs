@@ -2,6 +2,7 @@
 
 mod analysis_inputs;
 mod completion_inputs;
+pub mod composition;
 #[cfg(test)]
 mod configuration_identity_tests;
 #[cfg(test)]
@@ -20,6 +21,7 @@ pub mod metadata_resources;
 #[cfg(test)]
 mod module_tests;
 pub mod query_text;
+mod root;
 mod saved_changes;
 mod scope;
 pub use scope::AnalysisScope;
@@ -38,30 +40,25 @@ mod web_service_tests;
 
 use std::{collections::BTreeMap, path::Path, sync::Arc};
 
-use base_db::{SourceDatabase, SourceRoot, SourceRootId};
 use bsl_metadata::Configuration;
 use eska::{
-    analysis_core::{
-        InputRequest, InputRevision, InputState, InputSummary, MetadataInputs, UpdateError,
-    },
+    analysis_core::{InputRequest, InputRevision, InputSummary, MetadataInputs, UpdateError},
     project_core::source_format::{Error, SourcePath, SourceReader},
 };
 use ide_db::{
     GraphConfigCache, RootDatabaseImpl,
     metadata::{
-        CanonicalMetadata, CanonicalMetadataInput, CanonicalMetadataInputs, MetadataListingData,
-        MetadataListingInput, resolve_common_module, resolve_defined_type,
+        CanonicalMetadata, CanonicalMetadataInput, resolve_common_module, resolve_defined_type,
         resolve_event_subscription, resolve_http_service, resolve_integration_service,
         resolve_metadata_object, resolve_register, resolve_role, resolve_scheduled_job,
         resolve_subsystem, resolve_web_service,
     },
 };
 use salsa::Setter;
-use vfs::{FileId, VfsPath, file_set::FileSet};
 
 use crate::{
     ModelState, OwnerModel, SessionOptions, SessionRequestError, SessionRevision,
-    binding::OwnerBinding, modules::ModuleEntry, projection,
+    binding::OwnerBinding,
 };
 
 /// Opening failures remain structured; a transport or CLI decides their presentation.
@@ -115,24 +112,17 @@ struct ProjectionRevision {
 /// The composition is immutable until reopening; updates publish only changed canonical dependencies.
 pub struct AnalysisSession {
     scope: AnalysisScope,
-    external_kind: Option<bsl_metadata::ExternalObjectKind>,
-    pub(super) inputs: MetadataInputs,
+    pub(super) selected_root: root::RootInputs,
+    pub(super) other_roots: BTreeMap<crate::composition::RootId, root::RootInputs>,
+    pub(super) composition_sha256: Option<String>,
     pub(super) database: RootDatabaseImpl,
     pub(super) revision: SessionRevision,
-    pub(super) modules: BTreeMap<SourcePath, ModuleEntry>,
     /// Navigation converts kernel `FileId` values to physical authoring paths without path guesses.
-    pub(super) module_sources: BTreeMap<FileId, SourcePath>,
     pub(super) loaded_module_bytes: u64,
     pub(super) loaded_metadata_source_bytes: u64,
     pub(super) loaded_resource_bytes: u64,
     pub(super) loaded_query_bytes: u64,
-    pub(super) query_inputs: BTreeMap<SourcePath, crate::QueryTextInput>,
-    metadata_resources: BTreeMap<SourcePath, metadata_resources::MetadataResourceEntry>,
     pub(super) options: SessionOptions,
-    pub(super) incomplete_metadata: usize,
-    pub(super) incomplete_modules: usize,
-    listing: MetadataListingInput,
-    owners: BTreeMap<SourcePath, OwnerEntry>,
 }
 
 impl AnalysisSession {
@@ -224,101 +214,27 @@ impl AnalysisSession {
     ) -> Result<Self, SessionError> {
         let reader = inputs.source_reader();
         let external_kind = external::admit(reader, scope)?;
-        let root_key = reader
-            .root()
-            .to_str()
-            .ok_or(SessionError::NonUtf8Root)?
-            .to_owned();
         set_configuration_context(reader, &mut database, scope)?;
-
-        let mut file_set = FileSet::new();
-        let mut owners = BTreeMap::new();
-        let mut structure = MetadataListingData::default();
-        let mut slots = CanonicalMetadataInputs::default();
-        for (index, path) in inputs.owner_paths().enumerate() {
-            let identity = reader.declared_owner(path).map_err(SessionError::Source)?;
-            let main = FileId(u32::try_from(index).map_err(|_| SessionError::TooManyFiles)?);
-            let mut binding = OwnerBinding {
-                kind: identity.kind,
-                name: identity.name.map(str::to_owned),
-                main,
-                native_path: identity.native_path.clone(),
-                nested: identity.parent.is_some(),
-            };
-            file_set.insert(
-                main,
-                VfsPath::new(reader.root().join(identity.native_path.as_path())),
-            );
-            database.set_file_source_root(main, SourceRootId(0));
-            database.set_file_unreadable(main);
-            if scope != AnalysisScope::CanonicalExternal
-                || !external::bind_root(reader, path, &mut binding, &mut structure)?
-            {
-                binding.add_to_listing(&mut structure);
-            }
-            let slot = CanonicalMetadataInput::new(&database, None, "pending".into());
-            slots.insert(main, slot);
-            let model = OwnerModel {
-                revision: SessionRevision::default(),
-                origin: eska::analysis_core::InputOrigin::Saved,
-                source_sha256: None,
-                descriptors: 0,
-                parse_issues: 0,
-                modeled_descriptors: 0,
-                state: ModelState::Pending,
-                forms: Vec::new(),
-            };
-            owners.insert(
-                path.clone(),
-                OwnerEntry {
-                    binding,
-                    slot,
-                    model,
-                    source_bytes: 0,
-                    primary_revision: None,
-                    forms: BTreeMap::new(),
-                },
-            );
-        }
-        let first_module = forms::register(
-            reader,
-            &mut owners,
+        let mut allocator = crate::composition::FileIdAllocator::default();
+        let selected_root = root::RootInputs::register(
+            inputs,
             &mut database,
-            &mut file_set,
-            &mut slots,
-        )?;
-        let modules =
-            crate::binding::register_modules(reader, first_module, &mut database, &mut file_set)?;
-        crate::binding::connect_common_bodies(&mut structure, &modules)?;
-        crate::binding::connect_service_bodies(&mut structure, &modules)?;
-        database.set_source_root(SourceRootId(0), SourceRoot::new_local(file_set));
-        database.set_metadata_listing(&root_key, structure);
-        let listing = database
-            .metadata_listing(&root_key)
-            .ok_or(SessionError::MissingListing)?;
-        listing
-            .set_canonical_metadata(&mut database)
-            .to(Arc::new(slots));
-        let metadata_resources = metadata_resources::register(reader);
-        let query_inputs = query_text::register(reader)?;
-        Ok(Self {
             scope,
             external_kind,
-            incomplete_metadata: owners.len(),
-            incomplete_modules: modules.len(),
-            inputs,
+            crate::composition::RootId::from_index(0).map_err(|_| SessionError::TooManyFiles)?,
+            &mut allocator,
+        )?;
+        Ok(Self {
+            scope,
+            selected_root,
+            other_roots: BTreeMap::new(),
+            composition_sha256: None,
             database,
-            listing,
-            owners,
-            module_sources: crate::binding::source_paths_by_file(&modules),
-            modules,
             revision: SessionRevision::default(),
             loaded_module_bytes: 0,
             loaded_metadata_source_bytes: 0,
             loaded_resource_bytes: 0,
             loaded_query_bytes: 0,
-            query_inputs,
-            metadata_resources,
             options,
         })
     }
@@ -332,18 +248,21 @@ impl AnalysisSession {
     /// Return the exact source root without reopening or resolving its path a second time.
     #[must_use]
     pub fn root(&self) -> &Path {
-        self.inputs.source_reader().root()
+        self.selected_root.inputs.source_reader().root()
     }
 
     /// Enumerate only declared owner files, independent of their current readability.
     pub fn owner_paths(&self) -> impl Iterator<Item = &SourcePath> {
-        self.owners.keys()
+        self.selected_root.owners.keys()
     }
 
     /// Return current projection facts, including the exact source revision and unsupported state.
     #[must_use]
     pub fn owner(&self, path: &SourcePath) -> Option<&OwnerModel> {
-        self.owners.get(path).map(|entry| &entry.model)
+        self.selected_root
+            .owners
+            .get(path)
+            .map(|entry| &entry.model)
     }
 
     /// Share current metadata for an IDE tree/property request, including unsupported BSL families.
@@ -356,7 +275,7 @@ impl AnalysisSession {
         expected: SessionRevision,
     ) -> Result<crate::MetadataView, SessionRequestError> {
         self.validate_revision(expected)?;
-        let input = self.inputs.owner(path).ok_or_else(|| {
+        let input = self.selected_root.inputs.owner(path).ok_or_else(|| {
             SessionRequestError::Metadata(UpdateError::UnknownOwner(path.clone()))
         })?;
         let model = self.owner(path).ok_or_else(|| {
@@ -375,7 +294,8 @@ impl AnalysisSession {
     /// Read the stable native main descriptor identity without generating that file.
     #[must_use]
     pub fn native_path(&self, path: &SourcePath) -> Option<&SourcePath> {
-        self.owners
+        self.selected_root
+            .owners
             .get(path)
             .map(|entry| &entry.binding.native_path)
     }
@@ -390,13 +310,7 @@ impl AnalysisSession {
         expected: SessionRevision,
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
-        self.validate_revision(expected)?;
-        let next = self.revision.next()?;
-        let previous = self.owners.get(path).map_or(0, |entry| entry.source_bytes);
-        let request = self.source_budget_request(previous, request);
-        self.inputs
-            .load_saved(path, self.inputs.revision(), &request)?;
-        self.publish(path, next)
+        self.load_saved_at(&self.selected_source(path), expected, request)
     }
 
     /// Parse an editor's YAML using the saved reader and publish exactly that current model.
@@ -411,18 +325,13 @@ impl AnalysisSession {
         text: &str,
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
-        self.validate_revision(expected)?;
-        let next = self.revision.next()?;
-        let previous = self.owners.get(path).map_or(0, |entry| entry.source_bytes);
-        let request = self.source_budget_request(previous, request);
-        self.inputs.apply_overlay(
-            path,
-            self.inputs.revision(),
+        self.apply_overlay_at(
+            &self.selected_source(path),
+            expected,
             document_version,
             text,
-            &request,
-        )?;
-        self.publish(path, next)
+            request,
+        )
     }
 
     /// Explicitly restore disk input when the editor closes, never the cached saved projection.
@@ -435,13 +344,7 @@ impl AnalysisSession {
         expected: SessionRevision,
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
-        self.validate_revision(expected)?;
-        let next = self.revision.next()?;
-        let previous = self.owners.get(path).map_or(0, |entry| entry.source_bytes);
-        let request = self.source_budget_request(previous, request);
-        self.inputs
-            .close_overlay(path, self.inputs.revision(), &request)?;
-        self.publish(path, next)
+        self.close_overlay_at(&self.selected_source(path), expected, request)
     }
 
     /// Resolve through the actual kernel; pending/unsupported/invalid values never fall back.
@@ -454,7 +357,7 @@ impl AnalysisSession {
         expected: SessionRevision,
     ) -> Result<Option<CanonicalMetadata>, SessionRequestError> {
         self.validate_revision(expected)?;
-        let entry = self.owners.get(path).ok_or_else(|| {
+        let entry = self.selected_root.owners.get(path).ok_or_else(|| {
             SessionRequestError::Metadata(UpdateError::UnknownOwner(path.clone()))
         })?;
         let ModelState::Ready(value) = &entry.model.state else {
@@ -468,49 +371,56 @@ impl AnalysisSession {
                 ide_db::metadata::resolve_form(&self.database, entry.slot, name.clone())
                     .map(CanonicalMetadata::Form)
             }
-            CanonicalMetadata::Role(_) => resolve_role(&self.database, self.listing, name.clone())
-                .map(CanonicalMetadata::Role),
-            CanonicalMetadata::IntegrationService(_) => {
-                resolve_integration_service(&self.database, self.listing, name.clone())
-                    .map(CanonicalMetadata::IntegrationService)
+            CanonicalMetadata::Role(_) => {
+                resolve_role(&self.database, self.selected_root.listing, name.clone())
+                    .map(CanonicalMetadata::Role)
             }
+            CanonicalMetadata::IntegrationService(_) => resolve_integration_service(
+                &self.database,
+                self.selected_root.listing,
+                name.clone(),
+            )
+            .map(CanonicalMetadata::IntegrationService),
             CanonicalMetadata::WebService(_) => {
-                resolve_web_service(&self.database, self.listing, name.clone())
+                resolve_web_service(&self.database, self.selected_root.listing, name.clone())
                     .map(CanonicalMetadata::WebService)
             }
             CanonicalMetadata::HTTPService(_) => {
-                resolve_http_service(&self.database, self.listing, name.clone())
+                resolve_http_service(&self.database, self.selected_root.listing, name.clone())
                     .map(CanonicalMetadata::HTTPService)
             }
             CanonicalMetadata::Subsystem(_) => {
-                resolve_subsystem(&self.database, self.listing, name.clone())
+                resolve_subsystem(&self.database, self.selected_root.listing, name.clone())
                     .map(CanonicalMetadata::Subsystem)
             }
             CanonicalMetadata::ScheduledJob(_) => {
-                resolve_scheduled_job(&self.database, self.listing, name.clone())
+                resolve_scheduled_job(&self.database, self.selected_root.listing, name.clone())
                     .map(CanonicalMetadata::ScheduledJob)
             }
             CanonicalMetadata::EventSubscription(_) => {
-                resolve_event_subscription(&self.database, self.listing, name.clone())
+                resolve_event_subscription(&self.database, self.selected_root.listing, name.clone())
                     .map(CanonicalMetadata::EventSubscription)
             }
-            CanonicalMetadata::Object(object) => {
-                resolve_metadata_object(&self.database, self.listing, object.mdo_type, name.clone())
-                    .map(CanonicalMetadata::Object)
-            }
+            CanonicalMetadata::Object(object) => resolve_metadata_object(
+                &self.database,
+                self.selected_root.listing,
+                object.mdo_type,
+                name.clone(),
+            )
+            .map(CanonicalMetadata::Object),
             CanonicalMetadata::Register(register) => resolve_register(
                 &self.database,
-                self.listing,
+                self.selected_root.listing,
                 register.mdo_type(),
                 name.clone(),
             )
             .map(CanonicalMetadata::Register),
             CanonicalMetadata::CommonModule(_) => {
-                resolve_common_module(&self.database, self.listing, name.clone())
+                resolve_common_module(&self.database, self.selected_root.listing, name.clone())
                     .map(CanonicalMetadata::CommonModule)
             }
             CanonicalMetadata::DefinedType(model) => {
-                resolve_defined_type(&self.database, self.listing, name.clone())
+                resolve_defined_type(&self.database, self.selected_root.listing, name.clone())
                     .map(|_| CanonicalMetadata::DefinedType(Arc::clone(model)))
             }
         })
@@ -521,7 +431,7 @@ impl AnalysisSession {
     pub fn summary(&self) -> SessionSummary {
         let mut summary = SessionSummary {
             revision: self.revision,
-            inputs: self.inputs.summary(),
+            inputs: self.selected_root.inputs.summary(),
             ready_models: 0,
             structure_only: 0,
             source_only: 0,
@@ -535,7 +445,7 @@ impl AnalysisSession {
             descriptor_models_complete: false,
             metadata_context_complete: self.scope.has_configuration_context(),
         };
-        for entry in self.owners.values() {
+        for entry in self.selected_root.owners.values() {
             summary.descriptors += entry.model.descriptors;
             summary.modeled_descriptors += entry.model.modeled_descriptors;
             match entry.model.state {
@@ -557,7 +467,7 @@ impl AnalysisSession {
             && summary.invalid == 0
             && summary.unavailable == 0;
         summary.descriptor_models_complete =
-            self.scope.has_semantic_context() && self.incomplete_metadata == 0;
+            self.scope.has_semantic_context() && self.composition_models_complete();
         summary
     }
 
@@ -596,87 +506,6 @@ impl AnalysisSession {
         if !self.scope.has_configuration_context() {
             return Err(SessionRequestError::ConfigurationContextRequired);
         }
-        Ok(())
-    }
-
-    /// Publish source revision and typed value together before exposing the new owner status.
-    fn publish(
-        &mut self,
-        path: &SourcePath,
-        next: SessionRevision,
-    ) -> Result<(), SessionRequestError> {
-        let input = self.inputs.owner(path).ok_or_else(|| {
-            SessionRequestError::Metadata(UpdateError::UnknownOwner(path.clone()))
-        })?;
-        let resource = metadata_resources::dependency(self.inputs.source_reader(), path).and_then(
-            |resource| {
-                self.metadata_resources
-                    .get(resource)
-                    .map(|entry| (resource, &entry.input))
-            },
-        );
-        let entry = self.owners.get_mut(path).ok_or_else(|| {
-            SessionRequestError::Metadata(UpdateError::UnknownOwner(path.clone()))
-        })?;
-        let dependencies = ProjectionRevision {
-            owner: input.revision,
-            resource: resource.map(|(_, input)| input.revision),
-        };
-        let mut model = if entry.primary_revision == Some(dependencies) {
-            entry.model.clone()
-        } else {
-            let model = if self.scope == AnalysisScope::LocalSyntax {
-                projection::source_only(input, next)
-            } else if let Some(kind) = self
-                .external_kind
-                .filter(|_| path == &self.inputs.source_reader().configuration().path)
-            {
-                external::project(kind, input, next)
-            } else {
-                projection::project(entry.binding.kind, input, next, resource)
-            };
-            set_slot(&mut self.database, entry.slot, &model.state, next);
-            entry.primary_revision = Some(dependencies);
-            model
-        };
-        forms::publish(
-            &mut entry.forms,
-            input,
-            &self.metadata_resources,
-            &mut self.database,
-            next,
-            self.scope,
-        );
-        model.forms = entry
-            .forms
-            .values()
-            .map(|entry| entry.model.clone())
-            .collect();
-        model.modeled_descriptors = usize::from(matches!(
-            model.state,
-            ModelState::Ready(_) | ModelState::StructureOnly
-        )) + model
-            .forms
-            .iter()
-            .filter(|form| matches!(form.state, ModelState::Ready(_)))
-            .count();
-        model.revision = next;
-        let source_bytes = match &input.state {
-            InputState::Ready(snapshot) => snapshot.source_bytes,
-            InputState::Pending | InputState::Unavailable(_) => 0,
-        };
-        let was_complete = entry.model.descriptors_complete();
-        let is_complete = model.descriptors_complete();
-        self.loaded_metadata_source_bytes -= entry.source_bytes;
-        self.loaded_metadata_source_bytes += source_bytes;
-        entry.source_bytes = source_bytes;
-        entry.model = model;
-        if was_complete && !is_complete {
-            self.incomplete_metadata += 1;
-        } else if !was_complete && is_complete {
-            self.incomplete_metadata -= 1;
-        }
-        self.revision = next;
         Ok(())
     }
 }

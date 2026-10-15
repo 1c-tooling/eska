@@ -2310,14 +2310,14 @@ pipeline и initial ancestor. Основная оболочка new/init ещё 
 
 [Kernel owners](research/eska-format/canonical-module-owners.md) разрешают текущие
 object/register/common/service slots до native loader, включая external owners.
-28 canonical, 1 identity и 18 native external/CFE tests прошли; SDK composition
-и полная EF-18 ещё в работе. Exact CF/CFE identity constructor не создаёт
-фиктивную Configuration для внешнего объекта.
+28 canonical, 1 identity и 18 native external/CFE tests прошли. Текущий CF/CFE
+consumer описан ниже; полная EF-18 остаётся в работе. Exact CF/CFE identity
+constructor не создаёт фиктивную Configuration для внешнего объекта.
 
 Whole-Configuration consumers также исключают canonical external: current и
 pending не запускают directory loader. Experimental getter возвращает `Option`;
-30 canonical и 18 native integration tests прошли. SDK admission ещё нужен,
-EF-18 остаётся `IN_PROGRESS`.
+30 canonical и 18 native integration tests прошли. SDK admission подключён
+в отдельной CF/CFE части ниже; EF-18 остаётся `IN_PROGRESS`.
 
 External native stem, отличающийся от metadata Name, теперь связывает body с
 объявленным main FileId; namesake/ambiguity не подбираются по каталогу.
@@ -2327,15 +2327,27 @@ External native stem, отличающийся от metadata Name, теперь 
 real owner/form completion, hover/definition и scoped YAML diagnostics; full
 BSL semantics без базы явно отказывает. Четыре native-origin RU/EN runtime
 cases сохранили current drafts при reopen и source/base/history/settings.
-CFE/base composition и полный EF-18 ещё в работе.
+CF/CFE composition подключена отдельным срезом ниже; полный EF-18 ещё в работе.
 
 Per-file kernel lookup объектов/регистров/определяемых типов больше не пропускает
 зарегистрированный unavailable canonical вклад ради прежней базы. Три новые
-группы и native regression filters прошли; SDK composition ещё подключается.
+группы и native regression filters прошли; этот guard используется
+подключённой ниже SDK composition.
 
 SDK header CF теперь сохраняет UUID проверенного root descriptor; invalid/stale
 current identity блокирует reopen до repair. Две новые и пять external regression
-групп прошли; CFE/base composition остаётся в работе.
+групп прошли; текущий CF/CFE consumer описан ниже.
+
+[CF/CFE composition](research/eska-format/analyzer-cf-cfe-composition.md)
+подключена к общей сессии по явному `bsl-analyzer.toml`: native roots/FileIds, selected visibility и current
+вклады используют одну базу, revision и source quota. Сохранены UUID adoption,
+foreign paths/workspace controls и import retirement; холодные navigation и
+local rename не требуют прогрева. References получает explicit visible native
+candidate roots, сохраняя semantic target identity и caps. SDK — 184 default и
+464 all-features tests; native reference filters — 90. Это синтетические Queries
+проекты и настоящий framed transport, без новой платформенной/installed-client
+приёмки. Selected-root facade и CLI-feature admission остаются явными;
+`.sdbl` SyntaxOnly, полная EF-18 и MVP не объявлены завершёнными.
 
 Current query resource read-view теперь читает доказанные dataset field bindings,
 списки и UI DataPath с точными node/scalar locations. Неподдержанные потребители

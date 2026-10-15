@@ -152,7 +152,12 @@ fn dialog_overlay_changes_native_handler_use_and_close_reads_current_disk() {
     assert_eq!(saved.command_handlers, ["SavedHandler"]);
     assert_eq!(unused_method(&session), "SavedHandler");
     assert!(Arc::ptr_eq(&untouched, &form(&session, &neighbor)));
-    let file = session.modules.get(&owner(MODULE)).unwrap().file;
+    let file = session
+        .selected_root
+        .modules
+        .get(&owner(MODULE))
+        .unwrap()
+        .file;
     let context = session
         .database
         .module_metadata(hir::ModuleId { file_id: file });
@@ -253,7 +258,12 @@ fn invalid_xml_or_yaml_clears_current_bindings_without_fallback() {
             .unwrap()
             .is_none()
     );
-    let file = session.modules.get(&owner(MODULE)).unwrap().file;
+    let file = session
+        .selected_root
+        .modules
+        .get(&owner(MODULE))
+        .unwrap()
+        .file;
     assert!(
         session
             .database
@@ -564,7 +574,7 @@ fn nested_descriptor_registers_its_own_canonical_input() {
         .unwrap();
     assert_eq!(session.resource_paths().count(), 3);
     assert!(session.metadata_resource(&resource).is_some());
-    let file = session.modules.get(&module).unwrap().file;
+    let file = session.selected_root.modules.get(&module).unwrap().file;
     assert_eq!(
         session
             .database

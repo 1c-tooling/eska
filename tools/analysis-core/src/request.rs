@@ -27,6 +27,8 @@ impl SessionRevision {
 /// Rejected requests leave current bytes, input origins and kernel state intact.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SessionRequestError {
+    UnknownRoot(crate::composition::RootId),
+    CompositionInputIncomplete(crate::composition::SourceKey),
     ContextRequired,
     ConfigurationContextRequired,
     StaleRevision {

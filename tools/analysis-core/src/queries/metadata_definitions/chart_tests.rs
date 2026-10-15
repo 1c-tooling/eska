@@ -260,7 +260,12 @@ fn ambiguous_chart_physical_kinds_and_implicit_row_parents_are_refused() {
     let case = &charts::CASES[1];
     let owner = SourcePath::parse("ChartsOfAccounts/Accounts/object.yaml").unwrap();
     let saved = fs::read_to_string(session.root().join(owner.as_path())).unwrap();
-    let parsed = session.inputs.source_reader().read_owner(&owner).unwrap();
+    let parsed = session
+        .selected_root
+        .inputs
+        .source_reader()
+        .read_owner(&owner)
+        .unwrap();
     let range = parsed
         .declarations
         .iter()
@@ -333,9 +338,9 @@ fn ambiguous_chart_physical_kinds_and_implicit_row_parents_are_refused() {
         };
         // Semantic ambiguity may refuse the receiver before navigation; physical confirmation must independently refuse too.
         assert_eq!(
-            members::selected_uuid(
+            members::selected_uuid_at(
                 &session,
-                &owner,
+                &session.selected_source(&owner),
                 session.revision(),
                 &NativeUuid::parse(&charts::uuid(case, 0)).unwrap(),
                 &path

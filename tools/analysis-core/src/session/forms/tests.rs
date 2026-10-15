@@ -150,7 +150,12 @@ fn form_paths(relocated: bool) -> [&'static str; 4] {
 
 /// Query the real physical module consumer rather than only inspecting the tree projection.
 fn module_metadata(session: &AnalysisSession, module: &str) -> Arc<hir::ModuleMetadata> {
-    let file_id = session.modules.get(&owner(module)).unwrap().file;
+    let file_id = session
+        .selected_root
+        .modules
+        .get(&owner(module))
+        .unwrap()
+        .file;
     session.database.module_metadata(hir::ModuleId { file_id })
 }
 

@@ -13,7 +13,7 @@ XML-экспорт не участвуют в чтении.
 [Declared `.sdbl` syntax](../../docs/research/eska-format/analyzer-query-syntax.md)
 использует те же revision/source quota и native QueryParseError в IDE/checker.
 Несохранённые queries требуют явного negotiation; metadata/consumer completeness
-остаётся false. Контекстная EF-27 и CF/CFE composition ещё в работе.
+остаётся false. Контекстная EF-27 остаётся отдельной задачей.
 
 [Навигация и права чтения](../../docs/research/eska-format/analyzer-navigation.md)
 используют тот же host: project context, declared owners/modules/queries и
@@ -36,7 +36,23 @@ Default SDK `open`/`from_reader` выбирают `CanonicalExternal` по пр�
 profile; CLI `--profile semantic` даёт own completion/hover/definition и metadata
 YAML diagnostics. Full BSL diagnostics/checker без базы отказывают с
 `analysis_configuration_context_required`, checker exit 3. Context completeness
-остаётся false; CFE/base/dependency composition ещё не подключена.
+остаётся false. CF/CFE используют отдельный явно объявленный контекст ниже.
+
+[CF/CFE composition](../../docs/research/eska-format/analyzer-cf-cfe-composition.md)
+подключена к CLI и SDK: существующий `bsl-analyzer.toml` задаёт base и structured
+extensions/dependencies, paths разрешаются относительно выбранного `Project.root`.
+Одна база и общий allocator различают одинаковые paths разных native roots.
+Семантика подготавливает все текущие видимые вклады; invalid/pending input
+отказывает без прежней базы. Общие revision/quota охватывают foreign overlays;
+controls включают фактические foreign workspaces и все import receipts.
+`SourcePath` и language caller URI сохраняют selected-root facade, targets и
+root-qualified input APIs содержат owning root. `composition.current_complete`
+не означает полноту query consumers или всей семантики. Standalone CFE сохраняет
+LocalSyntax; EPF/ERF остаются в собственном контексте. SDK default/all-features —
+184/464 tests, native reference filters — 90; проекты синтетические, framed
+transport настоящий, новая платформа/installed Explorer здесь не проверялись.
+Экспериментальные root APIs описаны в связанном контракте; admission требует
+`analyzer-cli` или `check-cli`, базовые identities доступны default library.
 
 [Language и Template](../../docs/research/eska-format/structural-metadata-coverage.md)
 валидируются как StructureOnly: проверены текущие descriptor fields, canonical
@@ -80,7 +96,9 @@ target, выбранный native ядром. Предварительный met
 не требуется. [Объявленный manager body](../../docs/research/eska-format/analyzer-manager-completion.md)
 также загружается адресно для текущих exports. Остальные bodies и соседние dialogs
 остаются pending; ready/editor inputs не перечитываются.
-Read-only `module_completions` сохраняет отдельный контракт.
+Read-only `module_completions` сохраняет отдельный контракт. Для явно настроенной
+CF/CFE composition подготовка сначала загружает все текущие видимые вклады;
+обещание адресного чтения single-root route на неё не переносится.
 [Прямой common-module namespace](../../docs/research/eska-format/analyzer-common-module-completion.md)
 читает owner через прежний frozen common-module index; current native flags
 разрешают или запрещают body preparation. Shadowing не загружает чужой namespace.

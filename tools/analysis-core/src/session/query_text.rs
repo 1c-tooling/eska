@@ -16,6 +16,8 @@ use crate::{
 #[cfg(test)]
 mod tests;
 
+mod rooted;
+
 /// Current text readiness is separate from parse validity and metadata/consumer coverage.
 #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize)]
 pub struct QueryTextSummary {
@@ -44,19 +46,25 @@ pub enum QuerySyntaxRequestError {
 impl AnalysisSession {
     /// Query locations come only from the same frozen verified source declarations as other inputs.
     pub fn query_paths(&self) -> impl Iterator<Item = &SourcePath> {
-        self.query_inputs.keys()
+        self.selected_root.query_inputs.keys()
     }
 
     /// Read current bytes/origin/hash without loading a saved owner or a neighboring resource.
     #[must_use]
     pub fn query_input(&self, path: &SourcePath) -> Option<&QueryTextSnapshot> {
-        self.query_inputs.get(path).map(QueryTextInput::snapshot)
+        self.selected_root
+            .query_inputs
+            .get(path)
+            .map(QueryTextInput::snapshot)
     }
 
     /// Ownership is captured from the manifest; syntax alone does not approve current metadata context.
     #[must_use]
     pub fn query_declaration(&self, path: &SourcePath) -> Option<&QueryTextDeclaration> {
-        self.query_inputs.get(path).map(QueryTextInput::declaration)
+        self.selected_root
+            .query_inputs
+            .get(path)
+            .map(QueryTextInput::declaration)
     }
 
     /// Read one saved query under the host revision and the shared replacement reserve.
@@ -69,16 +77,7 @@ impl AnalysisSession {
         expected: SessionRevision,
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
-        let (next, request) = self.query_update(path, expected, request)?;
-        let reader = self.inputs.source_reader();
-        let change = self
-            .query_inputs
-            .get_mut(path)
-            .ok_or_else(|| SessionRequestError::UnknownQuery(path.clone()))?
-            .load_saved(reader, next, &request)
-            .map_err(input_error)?;
-        self.publish_query_change(next, change);
-        Ok(())
+        self.load_query_saved_at(&self.selected_source(path), expected, request)
     }
 
     /// A strictly newer editor version remains authoritative even when accepted input fails its quota.
@@ -93,15 +92,13 @@ impl AnalysisSession {
         text: &str,
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
-        let (next, request) = self.query_update(path, expected, request)?;
-        let change = self
-            .query_inputs
-            .get_mut(path)
-            .ok_or_else(|| SessionRequestError::UnknownQuery(path.clone()))?
-            .apply_overlay(next, document_version, text, &request)
-            .map_err(input_error)?;
-        self.publish_query_change(next, change);
-        Ok(())
+        self.apply_query_overlay_at(
+            &self.selected_source(path),
+            expected,
+            document_version,
+            text,
+            request,
+        )
     }
 
     /// Close restores current disk bytes or their current failure, without a saved snapshot fallback.
@@ -114,16 +111,7 @@ impl AnalysisSession {
         expected: SessionRevision,
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
-        let (next, request) = self.query_update(path, expected, request)?;
-        let reader = self.inputs.source_reader();
-        let change = self
-            .query_inputs
-            .get_mut(path)
-            .ok_or_else(|| SessionRequestError::UnknownQuery(path.clone()))?
-            .close_overlay(reader, next, &request)
-            .map_err(input_error)?;
-        self.publish_query_change(next, change);
-        Ok(())
+        self.close_query_overlay_at(&self.selected_source(path), expected, request)
     }
 
     /// A syntax batch or saved watcher can release current saved text without evicting an editor buffer.
@@ -135,16 +123,7 @@ impl AnalysisSession {
         path: &SourcePath,
         expected: SessionRevision,
     ) -> Result<(), SessionRequestError> {
-        self.validate_revision(expected)?;
-        let next = self.revision.next()?;
-        let change = self
-            .query_inputs
-            .get_mut(path)
-            .ok_or_else(|| SessionRequestError::UnknownQuery(path.clone()))?
-            .release_saved(next)
-            .map_err(input_error)?;
-        self.publish_query_change(next, change);
-        Ok(())
+        self.release_query_saved_at(&self.selected_source(path), expected)
     }
 
     /// Native parse diagnostics require no `FileId`, canonical configuration or materialized XML.
@@ -159,29 +138,23 @@ impl AnalysisSession {
         config: &DiagnosticsConfig,
         request: &InputRequest,
     ) -> Result<QuerySyntaxDiagnostics, QuerySyntaxRequestError> {
-        self.validate_revision(expected)
-            .map_err(QuerySyntaxRequestError::Request)?;
-        let input = self.query_inputs.get(path).ok_or_else(|| {
-            QuerySyntaxRequestError::Request(SessionRequestError::UnknownQuery(path.clone()))
-        })?;
-        let result = input
-            .query_syntax(config, request)
-            .map_err(QuerySyntaxRequestError::Syntax)?;
-        Ok(QuerySyntaxDiagnostics {
-            revision: expected,
-            result,
-        })
+        self.query_syntax_diagnostics_at(&self.selected_source(path), expected, config, request)
     }
 
     /// Report retained query bytes/readiness without treating an empty diagnostic set as completeness.
     #[must_use]
     pub fn query_summary(&self) -> QueryTextSummary {
         let mut result = QueryTextSummary {
-            queries: self.query_inputs.len(),
-            loaded_bytes: self.loaded_query_bytes,
+            queries: self.selected_root.query_inputs.len(),
+            loaded_bytes: self
+                .selected_root
+                .query_inputs
+                .values()
+                .map(QueryTextInput::bytes)
+                .sum(),
             ..QueryTextSummary::default()
         };
-        for input in self.query_inputs.values() {
+        for input in self.selected_root.query_inputs.values() {
             match input.snapshot().state {
                 QueryTextState::Pending => result.pending += 1,
                 QueryTextState::Ready(_) => result.ready += 1,
@@ -190,24 +163,6 @@ impl AnalysisSession {
         }
         result.query_input_complete = result.ready == result.queries;
         result
-    }
-
-    /// Validate the host clock and derive a replacement quota before accepting a leaf update.
-    fn query_update(
-        &self,
-        path: &SourcePath,
-        expected: SessionRevision,
-        request: &InputRequest,
-    ) -> Result<(SessionRevision, InputRequest), SessionRequestError> {
-        self.validate_revision(expected)?;
-        let input = self
-            .query_inputs
-            .get(path)
-            .ok_or_else(|| SessionRequestError::UnknownQuery(path.clone()))?;
-        Ok((
-            self.revision.next()?,
-            self.source_budget_request(input.bytes(), request),
-        ))
     }
 
     /// All accepted leaf outcomes publish their source reservation with the same global host clock.

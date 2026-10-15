@@ -52,54 +52,65 @@ impl AnalysisSession {
                 return Ok(None);
             };
             self.require_own_external_target(symbol.kind, &symbol.name)?;
-            let root = self
-                .root()
-                .to_str()
-                .ok_or(QueryError::UnsupportedNavigationTarget)?;
-            let listing = analysis
-                .database()
-                .metadata_listing(root)
-                .ok_or(QueryError::UnsupportedNavigationTarget)?;
-            let main = if symbol.kind == bsl_metadata::MdoType::CommonModule {
-                if resolve_common_module(analysis.database(), listing, symbol.name.clone())
-                    .is_none()
-                {
-                    return Ok(None);
+            for id in self
+                .visible_root_ids(self.selected_root_id())
+                .into_iter()
+                .rev()
+            {
+                let root = self.root_inputs(id).map_err(QueryError::Request)?;
+                let listing = root.listing;
+                let main = if symbol.kind == bsl_metadata::MdoType::CommonModule {
+                    if resolve_common_module(analysis.database(), listing, symbol.name.clone())
+                        .is_none()
+                    {
+                        continue;
+                    }
+                    common_module_index(analysis.database(), listing).lookup(&symbol.name)
+                } else {
+                    config_index(analysis.database(), listing)
+                        .lookup(symbol.kind, &symbol.name)
+                        .map(|ids| ids.main)
+                };
+                let Some(main) = main else {
+                    continue;
+                };
+                let native = source_for_file(self, analysis, main)?;
+                let owner = root
+                    .inputs
+                    .source_reader()
+                    .owner_for_native_main(&native.source)
+                    .ok_or(QueryError::UnsupportedNavigationTarget)?;
+                let key = crate::composition::SourceKey {
+                    root: id,
+                    source: owner.clone(),
+                };
+                if !matches!(
+                    self.owner_at(&key).map(|model| &model.state),
+                    Some(ModelState::Ready(_))
+                ) {
+                    continue;
                 }
-                common_module_index(analysis.database(), listing).lookup(&symbol.name)
-            } else {
-                config_index(analysis.database(), listing)
-                    .lookup(symbol.kind, &symbol.name)
-                    .map(|ids| ids.main)
-            };
-            let Some(main) = main else {
-                return Ok(None);
-            };
-            let native = source_for_file(self, analysis, main)?;
-            let owner = self
-                .inputs
-                .source_reader()
-                .owner_for_native_main(&native)
-                .ok_or(QueryError::UnsupportedNavigationTarget)?;
-            if !matches!(
-                self.owner(owner).map(|model| &model.state),
-                Some(ModelState::Ready(_))
-            ) {
-                return Ok(None);
+                let declared = root
+                    .inputs
+                    .source_reader()
+                    .declared_owner(owner)
+                    .map_err(|_| QueryError::UnsupportedNavigationTarget)?;
+                let Some(uuid) = members::selected_uuid_at(
+                    self,
+                    &key,
+                    expected,
+                    declared.uuid,
+                    &symbol.children,
+                )?
+                else {
+                    continue;
+                };
+                return self
+                    .metadata_location_at(&key, expected, &uuid, None)
+                    .map(Some)
+                    .map_err(|_| QueryError::UnsupportedNavigationTarget);
             }
-            let declared = self
-                .inputs
-                .source_reader()
-                .declared_owner(owner)
-                .map_err(|_| QueryError::UnsupportedNavigationTarget)?;
-            let Some(uuid) =
-                members::selected_uuid(self, owner, expected, declared.uuid, &symbol.children)?
-            else {
-                return Ok(None);
-            };
-            self.metadata_location(owner, expected, &uuid, None)
-                .map(Some)
-                .map_err(|_| QueryError::UnsupportedNavigationTarget)
+            Ok(None)
         })
     }
 }

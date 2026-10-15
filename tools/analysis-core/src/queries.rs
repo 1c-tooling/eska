@@ -27,6 +27,7 @@ use crate::{
 pub struct ModuleResult<T> {
     pub revision: SessionRevision,
     pub source: SourcePath,
+    pub root: crate::composition::RootId,
     pub source_sha256: String,
     pub metadata_models_complete: bool,
     pub metadata_context_complete: bool,
@@ -91,13 +92,27 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
         project: impl FnOnce(&str) -> T,
     ) -> Result<ModuleResult<T>, QueryError> {
-        self.query_local_module(path, expected, cancellation, |analysis, file| {
+        self.with_module_text_at(&self.selected_source(path), expected, cancellation, project)
+    }
+
+    /// Read current module text from an explicit native root without copying or rereading the buffer.
+    ///
+    /// # Errors
+    /// Rejects stale, unknown, unread or cancelled current input.
+    pub fn with_module_text_at<T>(
+        &self,
+        key: &crate::composition::SourceKey,
+        expected: SessionRevision,
+        cancellation: &QueryCancellation,
+        project: impl FnOnce(&str) -> T,
+    ) -> Result<ModuleResult<T>, QueryError> {
+        self.query_local_module_at(key, expected, cancellation, |analysis, file| {
             analysis
                 .database()
                 .try_file_text_input(file)
                 .map(|input| project(input.text(analysis.database())))
                 .ok_or_else(|| QueryError::ModuleUnavailable {
-                    path: path.clone(),
+                    path: key.source.clone(),
                     state: ModuleState::Pending,
                 })
         })
@@ -115,6 +130,8 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
     ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
         self.require_configuration_context(expected)
+            .map_err(QueryError::Request)?;
+        self.require_current_composition()
             .map_err(QueryError::Request)?;
         self.diagnostics_current(path, expected, config, cancellation)
     }
@@ -230,6 +247,8 @@ impl AnalysisSession {
     ) -> Result<ModuleResult<T>, QueryError> {
         self.require_semantic_context(expected)
             .map_err(QueryError::Request)?;
+        self.require_current_composition()
+            .map_err(QueryError::Request)?;
         self.query_local_module(path, expected, cancellation, query)
     }
 
@@ -241,9 +260,22 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
         query: impl FnOnce(&ide::Analysis, vfs::FileId) -> Result<T, QueryError>,
     ) -> Result<ModuleResult<T>, QueryError> {
+        self.query_local_module_at(&self.selected_source(path), expected, cancellation, query)
+    }
+
+    /// One current module remains anchored to its owning root in the shared database snapshot.
+    fn query_local_module_at<T>(
+        &self,
+        key: &crate::composition::SourceKey,
+        expected: SessionRevision,
+        cancellation: &QueryCancellation,
+        query: impl FnOnce(&ide::Analysis, vfs::FileId) -> Result<T, QueryError>,
+    ) -> Result<ModuleResult<T>, QueryError> {
         self.validate_revision(expected)
             .map_err(QueryError::Request)?;
-        let entry = self
+        let path = &key.source;
+        let root = self.root_inputs(key.root).map_err(QueryError::Request)?;
+        let entry = root
             .modules
             .get(path)
             .ok_or_else(|| QueryError::Request(SessionRequestError::UnknownModule(path.clone())))?;
@@ -284,11 +316,12 @@ impl AnalysisSession {
         Ok(ModuleResult {
             revision: expected,
             source: path.clone(),
+            root: key.root,
             source_sha256,
             metadata_models_complete: self.scope().has_semantic_context()
-                && self.incomplete_metadata == 0,
+                && self.composition_models_complete(),
             metadata_context_complete: self.scope().has_configuration_context(),
-            module_inputs_complete: self.incomplete_modules == 0,
+            module_inputs_complete: self.composition_modules_complete(),
             value,
         })
     }

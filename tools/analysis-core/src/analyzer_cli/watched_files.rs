@@ -97,7 +97,11 @@ fn update(
                     uri: event.uri,
                 },
             );
-        } else if file.starts_with(session.root()) {
+        } else if session.root_ids().any(|root| {
+            session
+                .source_root(root)
+                .is_some_and(|directory| file.starts_with(directory))
+        }) {
             files.insert(file);
         } else {
             return Err(protocol::error_value(
@@ -118,7 +122,7 @@ fn update(
     let mut paths = Vec::new();
     let mut ignored = 0_usize;
     for file in &files {
-        match documents::declared_path(session, file) {
+        match documents::declared_key(session, file) {
             Ok(path) => paths.push(path),
             Err(error) if recursive && error["data"]["kind"] == "unknown_source" => ignored += 1,
             Err(error) => return Err(error),
@@ -130,19 +134,19 @@ fn update(
         .filter(|path| {
             !recursive
                 || !session
-                    .module(path)
+                    .module_at(path)
                     .is_some_and(|input| input.state == ModuleState::Binary)
         })
         .cloned()
         .collect::<Vec<_>>();
     let changed = session
-        .invalidate_saved_inputs(&invalidations, session.revision())
+        .invalidate_saved_inputs_at(&invalidations, session.revision())
         .map_err(|error| documents::request_error(&error))?;
     let inputs = paths
         .iter()
         .map(|path| {
-            json!({"source":path,"invalidated":changed.binary_search(path).is_ok(),
-                "input":documents::current(session,path)})
+            json!({"source":path.source,"root":path.root,"invalidated":changed.binary_search(path).is_ok(),
+                "input":documents::current_at(session,path)})
         })
         .collect::<Vec<_>>();
     Ok(Notification::Inputs(

@@ -84,6 +84,17 @@ pub fn pull(
                 error["data"]["details"] = dto::snapshot(session, options.session_id);
                 error
             })?;
+        if session.composition_sha256().is_some() {
+            session
+                .prepare_completion_metadata(
+                    &path,
+                    session.revision(),
+                    offset,
+                    options.request,
+                    &options.cancellation.query,
+                )
+                .map_err(|error| language::query_error(session, options.session_id, &error))?;
+        }
         let result = session
             .module_references(
                 &path,

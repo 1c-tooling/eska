@@ -106,20 +106,39 @@ fn check(
     options: &BatchOptions,
     profile: BatchProfile,
 ) -> Result<BatchReport, BatchError> {
+    let scope = profile.session_scope(&reader).map_err(BatchError::Open)?;
+    let session = AnalysisSession::from_reader_with_scope(
+        reader,
+        profile.session_options(options.max_retained_source_bytes),
+        scope,
+    )
+    .map_err(BatchError::Open)?;
+    check_session(session, config, options, profile)
+}
+
+/// IDE and checker use the same resident current contributions for a configured composition.
+///
+/// # Errors
+/// Returns the existing batch input, cancellation, deadline and native-query invariant failures.
+pub fn check_session(
+    mut session: AnalysisSession,
+    config: &DiagnosticsConfig,
+    options: &BatchOptions,
+    profile: BatchProfile,
+) -> Result<BatchReport, BatchError> {
     let deadline = Deadline::start(options.timeout, options.cancellation.clone()).map_err(
         |error| match error {
             DeadlineError::TimerUnavailable => BatchError::TimerUnavailable,
             DeadlineError::TimeoutOutOfRange => BatchError::TimeoutOutOfRange,
         },
     )?;
-    let manifest_sha256 = reader.configuration().manifest_sha256.clone();
-    let scope = profile.session_scope(&reader).map_err(BatchError::Open)?;
-    let mut session = AnalysisSession::from_reader_with_scope(
-        reader,
-        profile.session_options(options.max_retained_source_bytes),
-        scope,
-    )
-    .map_err(BatchError::Open)?;
+    let manifest_sha256 = session
+        .selected_root
+        .inputs
+        .source_reader()
+        .configuration()
+        .manifest_sha256
+        .clone();
     if profile == BatchProfile::Semantic {
         session
             .require_configuration_context(session.revision())
@@ -148,7 +167,10 @@ fn check(
     let paths = session.module_paths().cloned().collect::<Vec<_>>();
     let mut files = Vec::with_capacity(paths.len());
     for path in paths {
-        if !profile_enabled || deadline.stop_reason().is_some() {
+        if !profile_enabled
+            || deadline.stop_reason().is_some()
+            || (profile == BatchProfile::Semantic && session.require_current_composition().is_err())
+        {
             break;
         }
         let Some(file) = check_module(
@@ -247,10 +269,10 @@ fn check_module(
             Err(QueryError::Cancelled) => return Ok(None),
             Err(error) => return Err(BatchError::Query(error)),
         };
-        let entry = session
-            .modules
-            .get(path)
-            .ok_or_else(|| BatchError::Request(SessionRequestError::UnknownModule(path.clone())))?;
+        let entry =
+            session.selected_root.modules.get(path).ok_or_else(|| {
+                BatchError::Request(SessionRequestError::UnknownModule(path.clone()))
+            })?;
         let text = session
             .database
             .try_file_text_input(entry.file)

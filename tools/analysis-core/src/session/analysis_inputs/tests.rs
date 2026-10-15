@@ -129,6 +129,7 @@ fn cancelled_preparation_keeps_pending_inputs_and_revision() {
     assert_eq!(session.resources().total_source_bytes, 0);
     assert!(
         session
+            .selected_root
             .modules
             .values()
             .all(|entry| entry.model.state == ModuleState::Pending)

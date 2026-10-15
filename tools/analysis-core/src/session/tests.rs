@@ -476,7 +476,10 @@ fn unrelated_owner_changes_preserve_the_index_and_neighbor_query() {
         .load_saved(&other, session.revision(), &InputRequest::default())
         .unwrap();
     let neighbor = object(&session, &other);
-    let index = Arc::clone(config_index(&session.database, session.listing));
+    let index = Arc::clone(config_index(
+        &session.database,
+        session.selected_root.listing,
+    ));
     let count = session
         .database
         .salsa_family_churn("resolve_metadata_object")
@@ -495,7 +498,7 @@ fn unrelated_owner_changes_preserve_the_index_and_neighbor_query() {
     assert!(Arc::ptr_eq(&neighbor, &object(&session, &other)));
     assert!(Arc::ptr_eq(
         &index,
-        config_index(&session.database, session.listing)
+        config_index(&session.database, session.selected_root.listing)
     ));
     assert_eq!(
         session

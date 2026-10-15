@@ -19,6 +19,14 @@ Per-file object/register/defined-type lookup отличает отсутству
 от зарегистрированного недоступного canonical вклада: прежняя база не подменяет
 его текущее значение. Name-only register lookup соблюдает то же правило.
 
+[CF/CFE references](../../docs/research/eska-format/analyzer-cf-cfe-composition.md)
+добавляют `ReferenceArea.candidate_roots`: явные registered native roots расширяют
+name-usage candidates с сортировкой/dedup до cap и прежним `files` intersection.
+`None` сохраняет anchor-root behavior; semantic target identity и file-local
+scope не меняются. Шесть новых и 84 прежних reference tests прошли; SDK —
+184 default / 464 all-features tests. Это bounded synthetic/framed приёмка,
+а не платформенная проверка всей composition.
+
 Для [адаптера роли](../../docs/research/eska-format/role-adapter.md) открыт
 `Role::with_data`: source UUID и current rights передаются явно; serialized
 shape и прежний XML reader не изменены.

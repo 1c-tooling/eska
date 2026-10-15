@@ -62,7 +62,7 @@ fn deep_trim_releases_method_diagnostics_and_preserves_saved_and_editor_inputs()
     let inputs = [&saved, &editor].map(|path| session.module(path).unwrap().clone());
     let editor_hint = session
         .database
-        .parse_snapshot(session.modules[&editor].file)
+        .parse_snapshot(session.selected_root.modules[&editor].file)
         .unwrap();
 
     session.trim_batch_caches();
@@ -78,12 +78,12 @@ fn deep_trim_releases_method_diagnostics_and_preserves_saved_and_editor_inputs()
     assert!(
         session
             .database
-            .parse_snapshot(session.modules[&saved].file)
+            .parse_snapshot(session.selected_root.modules[&saved].file)
             .is_none()
     );
     let retained = session
         .database
-        .parse_snapshot(session.modules[&editor].file)
+        .parse_snapshot(session.selected_root.modules[&editor].file)
         .unwrap();
     assert_eq!(retained.text, editor_hint.text);
     assert_eq!(retained.parse, editor_hint.parse);

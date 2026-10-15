@@ -1,8 +1,8 @@
 use hir::{
-    normalize_match_name, normalize_usage_name, Definition, Name, ReferenceScope, SemanticSymbol,
-    SemanticSymbolKey, Semantics,
+    normalize_match_name, normalize_usage_name, DefDatabase, Definition, Name, ReferenceScope,
+    SemanticSymbol, SemanticSymbolKey, Semantics,
 };
-use ide_db::base_db::{RootQueryDb, SourceDatabase};
+use ide_db::base_db::{RootQueryDb, SourceDatabase, SourceRootId};
 use ide_db::{RootDatabase, RootDatabaseImpl};
 use rustc_hash::FxHashSet;
 use salsa::Database;
@@ -216,8 +216,33 @@ pub struct AnchorSite {
 /// Which part of the workspace the answer is confined to.
 #[derive(Debug, Clone, Default)]
 pub struct ReferenceArea {
-    /// `None` — the whole workspace.
+    /// Explicit registered roots whose name-usage indexes admit workspace-symbol candidates.
+    /// `None` retains the anchor root; an empty list admits no workspace candidates.
+    /// The caller owns visibility selection. File-local symbols ignore this field.
+    pub candidate_roots: Option<Vec<SourceRootId>>,
+    /// Intersect the admitted candidate files; `None` keeps the whole candidate set.
     pub files: Option<FileIdSet>,
+}
+
+/// Merge explicit root indexes before filtering or limiting, without changing symbol identity.
+fn area_candidate_files(
+    db: &RootDatabaseImpl,
+    home_file: FileId,
+    name: &Name,
+    area: &ReferenceArea,
+) -> Vec<FileId> {
+    let Some(roots) = &area.candidate_roots else {
+        return workspace_candidate_files(db, home_file, name);
+    };
+    let normalized = normalize_usage_name(name);
+    let mut files = Vec::new();
+    for &root in roots {
+        db.unwind_if_revision_cancelled();
+        files.extend_from_slice(db.name_usage_index(root).files_with(&normalized));
+    }
+    files.sort_unstable_by_key(|file| file.0);
+    files.dedup();
+    files
 }
 
 #[derive(Debug, Clone)]
@@ -226,7 +251,7 @@ pub struct ReferencesRequest {
     /// Files among which the DECLARATION is looked for. `None` — the whole
     /// workspace. Narrows the candidate set before its size is counted, so it
     /// is the way out of [`ReferencesOutcome::Ambiguous`] — unlike
-    /// [`ReferenceArea`], which narrows the references already found.
+    /// [`ReferenceArea::files`], which filters the reference candidates.
     pub anchor_files: Option<FileIdSet>,
     pub area: ReferenceArea,
     /// `None` — every kind.
@@ -836,7 +861,7 @@ fn collect_references(
             )
         }
         ReferenceScope::ModuleSymbolWorkspace => {
-            workspace_candidate_files(db, home_file, &symbol.name)
+            area_candidate_files(db, home_file, &symbol.name, &req.area)
         }
     };
 

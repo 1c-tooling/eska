@@ -23,28 +23,92 @@ impl AnalysisSession {
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
         self.require_configuration_context(expected)?;
-        self.load_pending_metadata_inputs(request)?;
-        let paths = self
+        let roots = self.visible_root_ids(self.selected_root_id());
+        for root in roots {
+            self.load_root_semantic_inputs(root, request)?;
+            if request.cancellation.is_cancelled() {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    /// Prepare the exact current contributions of one visible root without refreshing editor authority.
+    fn load_root_semantic_inputs(
+        &mut self,
+        id: crate::composition::RootId,
+        request: &InputRequest,
+    ) -> Result<(), SessionRequestError> {
+        use crate::{MetadataResourceState, composition::SourceKey};
+        let resources = self
+            .root_inputs(id)?
+            .metadata_resources
+            .iter()
+            .filter(|(_, entry)| {
+                entry.input.origin == InputOrigin::Saved
+                    && matches!(
+                        entry.input.state,
+                        MetadataResourceState::Pending
+                            | MetadataResourceState::Unavailable(InputFailure::Cancelled)
+                    )
+            })
+            .map(|(source, _)| SourceKey {
+                root: id,
+                source: source.clone(),
+            })
+            .collect::<Vec<_>>();
+        for key in resources {
+            if request.cancellation.is_cancelled() {
+                return Ok(());
+            }
+            self.load_resource_saved_at(&key, self.revision(), request)?;
+        }
+        let owners = self
+            .root_inputs(id)?
+            .owners
+            .iter()
+            .filter(|(_, entry)| {
+                entry.model.origin == InputOrigin::Saved
+                    && matches!(
+                        entry.model.state,
+                        ModelState::Pending | ModelState::Unavailable(InputFailure::Cancelled)
+                    )
+            })
+            .map(|(source, _)| SourceKey {
+                root: id,
+                source: source.clone(),
+            })
+            .collect::<Vec<_>>();
+        for key in owners {
+            if request.cancellation.is_cancelled() {
+                return Ok(());
+            }
+            self.load_saved_at(&key, self.revision(), request)?;
+        }
+        let modules = self
+            .root_inputs(id)?
             .modules
             .iter()
             .filter(|(_, entry)| {
-                let input = &entry.model;
-                input.origin == InputOrigin::Saved
+                entry.model.origin == InputOrigin::Saved
                     && matches!(
-                        input.state,
+                        entry.model.state,
                         ModuleState::Pending
                             | ModuleState::Unavailable(ModuleFailure::Input(
                                 InputFailure::Cancelled
                             ))
                     )
             })
-            .map(|(path, _)| path.clone())
+            .map(|(source, _)| SourceKey {
+                root: id,
+                source: source.clone(),
+            })
             .collect::<Vec<_>>();
-        for path in paths {
+        for key in modules {
             if request.cancellation.is_cancelled() {
-                break;
+                return Ok(());
             }
-            self.load_module_saved(&path, self.revision(), request)?;
+            self.load_module_saved_at(&key, self.revision(), request)?;
         }
         Ok(())
     }
@@ -56,6 +120,7 @@ impl AnalysisSession {
     ) -> Result<(), SessionRequestError> {
         self.load_pending_resources(request)?;
         let paths = self
+            .selected_root
             .owners
             .iter()
             .filter(|(_, entry)| {

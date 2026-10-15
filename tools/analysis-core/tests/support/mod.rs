@@ -37,3 +37,5 @@ pub fn extension_project(body: &str) -> (TestDirectory, PathBuf) {
     std::fs::write(root.join("eska.toml"), "[project]\ntype='extension'\nsource='extension-src'\nsource_format='eska'\n[eska]\naccepted_base='.eska/accepted'\n").unwrap();
     (directory, root)
 }
+
+pub mod composition_project;

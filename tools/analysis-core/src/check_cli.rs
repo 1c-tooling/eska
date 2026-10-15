@@ -86,13 +86,28 @@ fn execute(cli: &args::Cli, localizer: &Localizer) -> Result<ExitCode, Failure> 
         max_retained_source_bytes: cli.max_retained_source_bytes,
         ..BatchOptions::default()
     };
-    let report = match profile {
-        BatchProfile::Syntax => check_syntax(source.into_reader(), &settings.diagnostics, &options),
-        BatchProfile::Semantic => {
-            check_semantic(source.into_reader(), &settings.diagnostics, &options)
+    let sources = crate::composition::cli::Sources::open(
+        source,
+        selected.workspace_root,
+        Some(&settings.source),
+    )?;
+    let guards = sources.project_roots();
+    let report = if sources.configured() {
+        let session = crate::AnalysisSession::from_composition(
+            sources.into_composition(&settings.source)?,
+            profile.session_options(options.max_retained_source_bytes),
+        )
+        .map_err(|error| presentation::batch_failure(crate::batch::BatchError::Open(error)))?;
+        crate::batch::check_session(session, &settings.diagnostics, &options, profile)
+    } else {
+        let reader = sources.into_single()?;
+        match profile {
+            BatchProfile::Syntax => check_syntax(reader, &settings.diagnostics, &options),
+            BatchProfile::Semantic => check_semantic(reader, &settings.diagnostics, &options),
         }
     }
     .map_err(presentation::batch_failure)?;
+    crate::composition::cli::require_idle(&guards)?;
     presentation::emit(&root, &scope, &settings, &report, cli.format, localizer)
 }
 

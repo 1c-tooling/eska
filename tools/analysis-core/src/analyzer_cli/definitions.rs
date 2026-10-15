@@ -58,7 +58,9 @@ pub fn pull(
                 error["data"]["details"] = dto::snapshot(session, id);
                 error
             })?;
-        if session.scope() == crate::AnalysisScope::CanonicalExternal {
+        if session.scope() == crate::AnalysisScope::CanonicalExternal
+            || session.composition_sha256().is_some()
+        {
             session
                 .prepare_completion_metadata(
                     &path,
@@ -103,8 +105,11 @@ pub fn pull(
             return Ok(Value::Null);
         };
         let range = session
-            .with_module_text(
-                &target.source,
+            .with_module_text_at(
+                &crate::composition::SourceKey {
+                    root: target.root,
+                    source: target.source.clone(),
+                },
                 session.revision(),
                 &cancellation.query,
                 |text| {
@@ -114,12 +119,16 @@ pub fn pull(
             )
             .map_err(|error| language::query_error(session, id, &error))?
             .value?;
-        let uri = url::Url::from_file_path(session.root().join(target.source.as_path())).map_err(
-            |()| protocol::error_value(-32603, "path_encoding_unsupported", Value::Null),
-        )?;
+        let uri = url::Url::from_file_path(
+            session
+                .source_root(target.root)
+                .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?
+                .join(target.source.as_path()),
+        )
+        .map_err(|()| protocol::error_value(-32603, "path_encoding_unsupported", Value::Null))?;
         let mut response = json!({"uri":uri.as_str(),"range":range,"eska":{
             "snapshot":dto::snapshot(session,id),"source":result.source,"source_sha256":result.source_sha256,
-            "target":{"source":target.source,"source_sha256":target.source_sha256,
+            "target":{"source":target.source,"root":target.root,"source_sha256":target.source_sha256,
                 "start_byte":target.start_byte,"end_byte":target.end_byte},"coverage":coverage,"resources":session.resources()}});
         super::external_context::coverage(&mut response["eska"], session.scope());
         Ok(response)
@@ -136,11 +145,16 @@ fn metadata_response(
     let target = result
         .value
         .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
-    let uri = url::Url::from_file_path(session.root().join(target.source.as_path()))
-        .map_err(|()| protocol::error_value(-32603, "path_encoding_unsupported", Value::Null))?;
+    let uri = url::Url::from_file_path(
+        session
+            .source_root(target.root)
+            .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?
+            .join(target.source.as_path()),
+    )
+    .map_err(|()| protocol::error_value(-32603, "path_encoding_unsupported", Value::Null))?;
     let mut response = json!({"uri":uri.as_str(),"range":target.range,"eska":{
         "snapshot":dto::snapshot(session,id),"source":result.source,"source_sha256":result.source_sha256,
-        "target":{"kind":"metadata","source":target.source,"source_sha256":target.source_sha256,
+        "target":{"kind":"metadata","source":target.source,"root":target.root,"source_sha256":target.source_sha256,
             "start_byte":target.byte_range.start,"end_byte":target.byte_range.end,
             "uuid":target.uuid,"native_path":target.native_path,"origin":dto::origin(target.origin)},
         "coverage":{"metadata_models_complete":result.metadata_models_complete,

@@ -24,8 +24,8 @@ fn service_by_file(
 ) -> Option<Arc<bsl_metadata::WebService>> {
     ide_db::metadata::resolve_web_service_by_file(
         &session.database,
-        session.listing,
-        session.modules.get(path).unwrap().file,
+        session.selected_root.listing,
+        session.selected_root.modules.get(path).unwrap().file,
     )
 }
 

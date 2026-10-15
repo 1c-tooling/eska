@@ -9,6 +9,7 @@ mod binding;
 mod cancellation;
 #[cfg(feature = "check-cli")]
 pub mod check_cli;
+pub mod composition;
 mod deadline;
 mod memory;
 mod metadata_diagnostics;
@@ -27,6 +28,9 @@ mod session;
 #[cfg(test)]
 #[path = "../tests/support/common_module_project.rs"]
 mod test_common_module_project;
+#[cfg(all(test, any(feature = "analyzer-cli", feature = "check-cli")))]
+#[path = "../tests/support/composition_project.rs"]
+mod test_composition_project;
 #[cfg(test)]
 #[path = "../tests/support/form_project.rs"]
 mod test_form_project;
@@ -81,6 +85,7 @@ pub use query_inputs::{
 };
 pub use request::{SessionRequestError, SessionRevision};
 pub use resources::ResourceSummary;
+pub use session::composition::{CompositionSummary, ContributionInputs, ContributionSummary};
 pub use session::metadata_resources::{
     MetadataResourceInput, MetadataResourceKind, MetadataResourceState,
 };

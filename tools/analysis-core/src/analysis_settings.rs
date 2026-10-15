@@ -13,6 +13,7 @@ pub struct Settings {
     pub path: Option<PathBuf>,
     pub sha256: String,
     pub diagnostics: DiagnosticsConfig,
+    pub source: ProjectConfig,
 }
 
 /// Read conventional analyzer settings at the selected root, with an optional explicit override.
@@ -33,14 +34,9 @@ pub fn load(
     };
     if !config.source_exclude.is_empty()
         || config
-            .extensions
-            .as_ref()
-            .is_some_and(|entries| !entries.is_empty())
-        || config
             .externals
             .as_ref()
             .is_some_and(|entries| !entries.is_empty())
-        || config.configuration_root.is_some()
         || config.configuration_dependency.is_some()
         || config.analysis.diff_base.is_some()
         || !config.analysis.ignored_authors.is_empty()
@@ -70,5 +66,6 @@ pub fn load(
         path: config.config_file_path().map(Path::to_owned),
         sha256,
         diagnostics,
+        source: config,
     })
 }

@@ -67,6 +67,11 @@ impl Inputs {
         Self(inputs)
     }
 
+    /// Union every admitted project's exact controls before publishing a multi-root host.
+    pub fn include(&mut self, source: &EskaSource, workspace: Option<&Path>) {
+        self.0.extend(Self::selected(source, workspace).0);
+    }
+
     /// File event classification is lexical and never reads a changed manifest or settings file.
     pub fn kind(&self, path: &Path) -> Option<Kind> {
         self.0.get(path).copied()
@@ -74,31 +79,31 @@ impl Inputs {
 
     /// A live import retires old inputs even when its watcher notification has not arrived yet.
     pub fn active_import(&self) -> Result<Option<Change>, Value> {
-        let Some((path, kind)) = self
+        for (path, kind) in self
             .0
             .iter()
-            .find(|(_, kind)| matches!(kind, Kind::SourceImport))
-        else {
-            return Ok(None);
-        };
-        match std::fs::symlink_metadata(path) {
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-            Err(_) => {
-                return Err(protocol::error_value(
-                    -32000,
-                    "project_input_unavailable",
-                    Value::Null,
-                ));
+            .filter(|(_, kind)| matches!(kind, Kind::SourceImport))
+        {
+            match std::fs::symlink_metadata(path) {
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(_) => {
+                    return Err(protocol::error_value(
+                        -32000,
+                        "project_input_unavailable",
+                        Value::Null,
+                    ));
+                }
+                Ok(_) => {}
             }
-            Ok(_) => {}
+            let uri = url::Url::from_file_path(path).map_err(|()| {
+                protocol::error_value(-32603, "path_encoding_unsupported", Value::Null)
+            })?;
+            return Ok(Some(Change {
+                kind: *kind,
+                uri: uri.into(),
+            }));
         }
-        let uri = url::Url::from_file_path(path).map_err(|()| {
-            protocol::error_value(-32603, "path_encoding_unsupported", Value::Null)
-        })?;
-        Ok(Some(Change {
-            kind: *kind,
-            uri: uri.into(),
-        }))
+        Ok(None)
     }
 
     /// Initialization rechecks this boundary after allocating the host and before advertising it.

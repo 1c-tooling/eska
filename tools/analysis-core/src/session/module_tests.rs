@@ -51,7 +51,7 @@ fn lazy_module_states_and_current_readability_are_not_empty_success() {
     let mut session = AnalysisSession::open(&root).unwrap();
     let path = tools();
     let caller = owner("Catalogs/Sample/Ext/ObjectModule.bsl");
-    let caller_file = session.modules[&caller].file;
+    let caller_file = session.selected_root.modules[&caller].file;
     let pending = session.revision();
     assert_eq!(session.module_summary().pending, 2);
     assert_eq!(session.module_summary().binary, 1);
@@ -88,7 +88,11 @@ fn lazy_module_states_and_current_readability_are_not_empty_success() {
             .count(),
         0
     );
-    assert!(!session.database.file_is_unread(session.modules[&path].file));
+    assert!(
+        !session
+            .database
+            .file_is_unread(session.selected_root.modules[&path].file)
+    );
     assert!(matches!(
         session.resolve(&owner("CommonModules/Tools/object.yaml"), pending),
         Err(SessionRequestError::StaleRevision { .. })
@@ -108,7 +112,11 @@ fn lazy_module_states_and_current_readability_are_not_empty_success() {
             .count(),
         1
     );
-    assert!(session.database.file_is_unread(session.modules[&path].file));
+    assert!(
+        session
+            .database
+            .file_is_unread(session.selected_root.modules[&path].file)
+    );
     assert_eq!(session.module_summary().loaded_bytes, 0);
     let binary = owner("Catalogs/Sample/Ext/ManagerModule.bin");
     let current = session.revision();

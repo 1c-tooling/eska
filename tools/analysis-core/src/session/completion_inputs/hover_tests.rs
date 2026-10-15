@@ -210,6 +210,7 @@ fn hover_preparation_preserves_non_callee_inputs_and_local_shadowing_before_and_
         if !loaded {
             assert_eq!(
                 session
+                    .selected_root
                     .inputs
                     .owner(&owner("CommonModules/Utility/object.yaml"))
                     .unwrap()

@@ -240,6 +240,7 @@ impl Server<'_> {
                     self.edit_plans.as_ref(),
                     cancellation,
                     timeout,
+                    &request,
                 ),
             ),
         }

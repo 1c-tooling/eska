@@ -126,6 +126,8 @@ pub struct BatchReport {
     pub files: Vec<BatchFile>,
     pub query_files: Vec<BatchQueryFile>,
     pub query_coverage: BatchQueryCoverage,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub composition: Option<crate::CompositionSummary>,
 }
 
 impl BatchFile {
@@ -249,6 +251,7 @@ pub fn finish(
         files,
         query_files: vec![],
         query_coverage: BatchQueryCoverage::default(),
+        composition: session.composition_summary(),
     })
 }
 

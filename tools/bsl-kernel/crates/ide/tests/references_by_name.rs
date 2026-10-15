@@ -315,7 +315,10 @@ fn area_narrows_the_answer_and_the_total() {
     let narrowed = find_references_by_name(
         &db,
         &ReferencesRequest {
-            area: ReferenceArea { files: Some(FxHashSet::from_iter([files[2]])) },
+            area: ReferenceArea {
+                files: Some(FxHashSet::from_iter([files[2]])),
+                ..ReferenceArea::default()
+            },
             ..request(ReferenceAnchor::Name("Продажи.Расчёт".to_string()))
         },
         &[],

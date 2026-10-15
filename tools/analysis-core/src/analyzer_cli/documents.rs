@@ -13,7 +13,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use url::Url;
 
-use crate::{AnalysisSession, SessionRequestError};
+use crate::{AnalysisSession, SessionRequestError, composition::SourceKey};
 
 use super::{dto, protocol, query_syntax};
 
@@ -22,7 +22,7 @@ pub const MAX_REQUEST: usize = 4 * 1024 * 1024;
 /// Only open/close ownership is duplicated here; text, versions and hashes belong to the host.
 #[derive(Default)]
 pub struct Documents {
-    open: BTreeSet<SourcePath>,
+    open: BTreeSet<SourceKey>,
     query_syntax: bool,
 }
 
@@ -109,8 +109,8 @@ impl Documents {
     ) -> Value {
         match self.update(session, method, params, request) {
             Ok(path) => json!({"jsonrpc":"2.0", "method":"eska/inputChanged", "params":{
-                "snapshot":dto::snapshot(session, id), "source":path,
-                "input":current(session, &path), "resources":session.resources()}}),
+                "snapshot":dto::snapshot(session, id), "source":path.source,"root":path.root,
+                "input":current_at(session, &path), "resources":session.resources()}}),
             Err(error) => json!({"jsonrpc":"2.0", "method":"eska/inputRejected", "params":{
                 "snapshot":dto::snapshot(session, id), "operation":method, "error":error}}),
         }
@@ -123,7 +123,7 @@ impl Documents {
         method: &str,
         params: &Value,
         request: &InputRequest,
-    ) -> Result<SourcePath, Value> {
+    ) -> Result<SourceKey, Value> {
         match method {
             "textDocument/didOpen" => self.open(session, protocol::params(params)?, request),
             "textDocument/didChange" => self.change(session, &protocol::params(params)?, request),
@@ -146,11 +146,11 @@ impl Documents {
         session: &mut AnalysisSession,
         params: Open,
         request: &InputRequest,
-    ) -> Result<SourcePath, Value> {
+    ) -> Result<SourceKey, Value> {
         let document = params.text_document;
-        let path = source_path(session, &document.uri)?;
+        let path = source_key(session, &document.uri)?;
         self.check_query(session, &path)?;
-        if session.query_input(&path).is_some() && document.language_id != "sdbl" {
+        if session.query_input_at(&path).is_some() && document.language_id != "sdbl" {
             return Err(protocol::error_value(
                 -32602,
                 "document_language_invalid",
@@ -182,7 +182,7 @@ impl Documents {
         session: &mut AnalysisSession,
         params: &Change,
         request: &InputRequest,
-    ) -> Result<SourcePath, Value> {
+    ) -> Result<SourceKey, Value> {
         let path = self.require_open(session, &params.text_document.uri)?;
         let [content] = params.content_changes.as_slice() else {
             return Err(protocol::error_value(
@@ -214,17 +214,17 @@ impl Documents {
         session: &mut AnalysisSession,
         params: &Close,
         request: &InputRequest,
-    ) -> Result<SourcePath, Value> {
+    ) -> Result<SourceKey, Value> {
         let path = self.require_open(session, &params.text_document.uri)?;
         let revision = session.revision();
-        if session.owner(&path).is_some() {
-            session.close_overlay(&path, revision, request)
-        } else if session.metadata_resource(&path).is_some() {
-            session.close_resource_overlay(&path, revision, request)
-        } else if session.query_input(&path).is_some() {
-            session.close_query_overlay(&path, revision, request)
+        if session.owner_at(&path).is_some() {
+            session.close_overlay_at(&path, revision, request)
+        } else if session.metadata_resource_at(&path).is_some() {
+            session.close_resource_overlay_at(&path, revision, request)
+        } else if session.query_input_at(&path).is_some() {
+            session.close_query_overlay_at(&path, revision, request)
         } else {
-            session.close_module_overlay(&path, revision, request)
+            session.close_module_overlay_at(&path, revision, request)
         }
         .map_err(|error| request_error(&error))?;
         self.open.remove(&path);
@@ -232,8 +232,8 @@ impl Documents {
     }
 
     /// A change/save/close of an unopened document cannot silently reopen a saved input.
-    fn require_open(&self, session: &AnalysisSession, uri: &str) -> Result<SourcePath, Value> {
-        let path = source_path(session, uri)?;
+    fn require_open(&self, session: &AnalysisSession, uri: &str) -> Result<SourceKey, Value> {
+        let path = source_key(session, uri)?;
         self.check_query(session, &path)?;
         if !self.open.contains(&path) {
             return Err(protocol::error_value(
@@ -246,8 +246,8 @@ impl Documents {
     }
 
     /// Declared query identity never silently expands a client that did not negotiate syntax sync.
-    fn check_query(&self, session: &AnalysisSession, path: &SourcePath) -> Result<(), Value> {
-        if session.query_input(path).is_some() && !self.query_syntax {
+    fn check_query(&self, session: &AnalysisSession, path: &SourceKey) -> Result<(), Value> {
+        if session.query_input_at(path).is_some() && !self.query_syntax {
             return Err(query_syntax::not_negotiated());
         }
         Ok(())
@@ -268,6 +268,42 @@ pub fn file_path(uri: &str) -> Result<PathBuf, Value> {
     parsed
         .to_file_path()
         .map_err(|()| protocol::error_value(-32602, "document_uri_invalid", Value::Null))
+}
+
+/// Synchronization recognizes the exact declared owner of a URI across the admitted source set.
+pub fn source_key(session: &AnalysisSession, uri: &str) -> Result<SourceKey, Value> {
+    declared_key(session, &file_path(uri)?)
+}
+
+/// Root qualification keeps equal relative paths distinct without filesystem alias probing.
+pub fn declared_key(session: &AnalysisSession, file: &Path) -> Result<SourceKey, Value> {
+    for root in session.root_ids() {
+        let Some(directory) = session.source_root(root) else {
+            continue;
+        };
+        let Ok(relative) = file.strip_prefix(directory) else {
+            continue;
+        };
+        let relative = relative
+            .to_str()
+            .ok_or_else(|| protocol::error_value(-32602, "document_uri_invalid", Value::Null))?;
+        let source = SourcePath::parse(&relative.replace(std::path::MAIN_SEPARATOR, "/"))
+            .map_err(|error| protocol::error_value(-32602, error.code, Value::Null))?;
+        let key = SourceKey { root, source };
+        if session.owner_at(&key).is_some()
+            || session.module_at(&key).is_some()
+            || session.metadata_resource_at(&key).is_some()
+            || session.query_input_at(&key).is_some()
+        {
+            return Ok(key);
+        }
+        return Err(protocol::error_value(-32602, "unknown_source", Value::Null));
+    }
+    Err(protocol::error_value(
+        -32602,
+        "document_outside_source",
+        Value::Null,
+    ))
 }
 
 /// Resolve only declared inputs under the selected source, without probing filesystem aliases.
@@ -299,38 +335,43 @@ pub fn declared_path(session: &AnalysisSession, file: &Path) -> Result<SourcePat
 /// YAML, declared metadata resources and BSL enter the same revisioned session and byte budget.
 fn overlay(
     session: &mut AnalysisSession,
-    path: &SourcePath,
+    path: &SourceKey,
     version: i32,
     text: &str,
     request: &InputRequest,
 ) -> Result<(), Value> {
     let revision = session.revision();
-    if session.owner(path).is_some() {
-        session.apply_overlay(path, revision, i64::from(version), text, request)
-    } else if session.metadata_resource(path).is_some() {
-        session.apply_resource_overlay(path, revision, i64::from(version), text, request)
-    } else if session.query_input(path).is_some() {
-        session.apply_query_overlay(path, revision, i64::from(version), text, request)
+    if session.owner_at(path).is_some() {
+        session.apply_overlay_at(path, revision, i64::from(version), text, request)
+    } else if session.metadata_resource_at(path).is_some() {
+        session.apply_resource_overlay_at(path, revision, i64::from(version), text, request)
+    } else if session.query_input_at(path).is_some() {
+        session.apply_query_overlay_at(path, revision, i64::from(version), text, request)
     } else {
-        session.apply_module_overlay(path, revision, i64::from(version), text, request)
+        session.apply_module_overlay_at(path, revision, i64::from(version), text, request)
     }
     .map_err(|error| request_error(&error))
 }
 
 /// Current input summaries omit the actual editor text; tree consumers request properties separately.
 pub fn current(session: &AnalysisSession, path: &SourcePath) -> Value {
-    if let Ok(metadata) = session.metadata(path, session.revision()) {
+    current_at(session, &session.selected_source(path))
+}
+
+/// Contribution acknowledgements qualify current bytes without exposing their editor text.
+pub fn current_at(session: &AnalysisSession, path: &SourceKey) -> Value {
+    if let Ok(metadata) = session.metadata_at(path, session.revision()) {
         return json!({"kind":"metadata", "state":dto::state(&metadata)});
     }
-    if let Some(module) = session.module(path) {
+    if let Some(module) = session.module_at(path) {
         return json!({"kind":"module", "state":dto::module(module)});
     }
-    if let Some(input) = session.metadata_resource(path) {
-        return json!({"kind":input.kind, "owner":session.resource_owner(path), "state":dto::metadata_resource(input)});
+    if let Some(input) = session.metadata_resource_at(path) {
+        return json!({"kind":input.kind, "owner":session.resource_owner_at(path), "state":dto::metadata_resource(input)});
     }
-    if let Some(input) = session.query_input(path) {
+    if let Some(input) = session.query_input_at(path) {
         return json!({"kind":"query","scope":"syntax_only","state":dto::query_text(input),
-            "declaration":session.query_declaration(path)});
+            "declaration":session.query_declaration_at(path)});
     }
     json!({"kind":"unavailable"})
 }
@@ -338,6 +379,12 @@ pub fn current(session: &AnalysisSession, path: &SourcePath) -> Value {
 /// Protocol rejection never hides a stale version or reclassifies it as accepted empty input.
 pub fn request_error(error: &SessionRequestError) -> Value {
     let (code, kind, details) = match error {
+        SessionRequestError::UnknownRoot(root) => (-32602, "unknown_source", json!({"root":root})),
+        SessionRequestError::CompositionInputIncomplete(source) => (
+            -32000,
+            "analysis_composition_incomplete",
+            json!({"source":source}),
+        ),
         SessionRequestError::ContextRequired => (
             -32000,
             "analysis_context_required",

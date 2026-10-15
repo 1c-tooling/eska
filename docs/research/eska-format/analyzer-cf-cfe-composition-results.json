@@ -1,0 +1,295 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-15",
+  "status": "verified_bounded_synthetic_composition",
+  "scope": "explicit_current_cf_cfe_composition",
+  "protocol_version": "0.1",
+  "checker_report_schema_version": 1,
+  "evidence_kind": {
+    "sources": "small synthetic native XML imported by the production Queries project factory",
+    "sdk": "real shared database and canonical current inputs",
+    "framed": "real analyzer subprocess with framed JSON-RPC",
+    "checker": "real checker subprocess; full JSON equality across ru-RU/en-US in the current/missing-input group",
+    "native": "registered multi-root database using existing native CF/CFE fixtures",
+    "new_platform_run": false,
+    "new_installed_explorer_run": false,
+    "large_composition_corpus_measured": false
+  },
+  "contract": {
+    "source_config": "existing bsl-analyzer.toml [source] root and structured extensions/dependencies",
+    "path_anchor": "selected Project.root, including workspace member and checker subdirectory config",
+    "one_root_database": true,
+    "global_file_id_allocator": true,
+    "host_owned_revision_and_source_quota": true,
+    "public_source_path_facade": "selected root",
+    "qualified_identity": "SourceKey { root, source }",
+    "foreign_input_sync": "declared URI maps to root-qualified current input",
+    "foreign_language_caller_requests": "outside the selected-root facade; not promised",
+    "semantic_visibility": "base plus selected extension transitive dependencies plus selected root",
+    "semantic_preparation": "all topology-visible current metadata/resource/BSL contributions before semantic queries",
+    "unavailable_current_contribution": "analysis_composition_incomplete; no saved/base fallback",
+    "adoption": "native UUID and ExtendedConfigurationObject, not equal names",
+    "root_identity": "actual SourceReader profile/header; roots session-local",
+    "default_library": "RootId/SourceKey/current input APIs available; admission constructor requires analyzer-cli or check-cli",
+    "experimental_rust_api_change": "ModuleResult/DefinitionTarget/MetadataLocation carry owning root; no compatibility layer",
+    "initialization_addition": "experimental.eska.composition",
+    "checker_addition": "optional report.composition",
+    "current_complete_scope": "supported current visible metadata and BSL; excludes query metadata/consumer semantics"
+  },
+  "references": {
+    "api": "ReferenceArea.candidate_roots: Option<Vec<SourceRootId>>",
+    "none": "previous anchor-root candidates",
+    "some": "native name-usage index union for the explicit registered roots",
+    "empty": "no workspace-symbol candidates",
+    "file_local_scope_unchanged": true,
+    "sort_deduplicate_before_file_limit": true,
+    "area_files_remains_intersection": true,
+    "semantic_target_identity_unchanged": true,
+    "sdk_roots": "only topology-visible roots",
+    "max_reference_files": 200,
+    "max_projected_hits": 10000,
+    "capped_results": "explicit lower bounds; not rename completeness proof"
+  },
+  "controls": {
+    "union": "every admitted project, including semantically invisible siblings",
+    "kinds": [
+      "source_manifest",
+      "root_configuration",
+      "project_settings",
+      "workspace_settings",
+      "analysis_settings",
+      "source_import"
+    ],
+    "foreign_workspace": "actual tool project-selection provenance; no source ancestry inference",
+    "import_receipts": "all admitted projects checked before host publication and request/wire boundaries",
+    "control_events": "workspace/didChangeWatchedFiles retires the previous host",
+    "notification": "eska/restartRequired",
+    "error": "project_restart_required",
+    "snapshot": "last published snapshot",
+    "draft_ownership": "caller retains drafts; a new process requires explicit replay",
+    "saved_watch": "invalidate exact saved SourceKey; do not replace editor overlays",
+    "autonomous_background_watcher_added": false
+  },
+  "test_groups": [
+    {
+      "suite": "admission",
+      "file": "tools/analysis-core/src/composition/tests.rs",
+      "passed": 7,
+      "tests": [
+        "explicit_topology_retains_roles_exact_headers_and_dependency_closures",
+        "default_admission_preserves_cf_and_refuses_uncomposed_extensions",
+        "malformed_dependency_graphs_are_fail_closed",
+        "declared_root_roles_paths_and_header_uuid_are_exact",
+        "incomplete_or_unsupported_source_sets_refuse_admission",
+        "root_header_fingerprints_and_invalid_reopen_require_source_repair",
+        "one_allocator_and_root_qualified_keys_do_not_synthesize_source_prefixes"
+      ]
+    },
+    {
+      "suite": "identity",
+      "file": "tools/analysis-core/src/composition/identities.rs",
+      "passed": 1,
+      "tests": [
+        "file_id_exhaustion_preserves_the_final_identity"
+      ]
+    },
+    {
+      "suite": "direct_host",
+      "file": "tools/analysis-core/src/session/composition/tests.rs",
+      "passed": 4,
+      "tests": [
+        "composition_foreign_overlays_share_quota_clock_and_no_saved_fallback",
+        "composition_uses_one_file_id_universe_and_excludes_sibling_inputs",
+        "composition_invalid_adopted_overlay_has_no_base_fallback_and_keeps_shared_revision",
+        "composition_current_adoption_uuid_controls_inheritance_without_name_fallback"
+      ]
+    },
+    {
+      "suite": "framed",
+      "file": "tools/analysis-core/tests/composition/mod.rs",
+      "passed": 5,
+      "locales": [
+        "ru-RU",
+        "en-US"
+      ],
+      "all_groups_run_in_both_locales": false,
+      "tests": [
+        "composition_framed_current_adoption_same_paths_and_late_sibling_import_are_isolated",
+        "composition_framed_saved_dependency_and_metadata_definition_keep_root_identity",
+        "composition_foreign_workspace_control_retires_the_host_without_discarding_drafts",
+        "composition_cold_definition_and_references_prepare_visible_contributions_after_invalidation",
+        "composition_cold_local_rename_prepares_context_under_the_same_host_request"
+      ]
+    },
+    {
+      "suite": "checker",
+      "file": "tools/analysis-core/tests/composition/checker.rs",
+      "passed": 2,
+      "locales": [
+        "ru-RU",
+        "en-US"
+      ],
+      "tests": [
+        "composition_checker_has_current_visible_inputs_and_rejects_missing_adopted_source",
+        "composition_checker_config_subdirectory_preserves_project_root_anchor"
+      ]
+    },
+    {
+      "suite": "native_references",
+      "file": "tools/bsl-kernel/crates/ide/tests/references_composition.rs",
+      "passed": 6,
+      "tests": [
+        "explicit_roots_expand_candidates_and_preserve_same_path_identity",
+        "default_area_keeps_the_anchor_root",
+        "explicit_candidates_are_deterministic_and_deduplicated_before_the_limit",
+        "files_remain_an_intersection_before_the_limit",
+        "empty_roots_admit_no_workspace_candidates",
+        "explicit_roots_do_not_change_file_local_bindings"
+      ]
+    }
+  ],
+  "sdk_full_tests": {
+    "default": {
+      "library": 184,
+      "failed": 0,
+      "total": 184
+    },
+    "all_features": {
+      "library": 231,
+      "analyzer": 192,
+      "checker": 30,
+      "navigation": 7,
+      "read_permissions": 4,
+      "failed": 0,
+      "total": 464
+    },
+    "general_regressions": "existing BSL/YAML/query source authority, cancellation, deadline, quota and retirement tests included"
+  },
+  "rust_gates": [
+    {
+      "gate": "sdk-fmt",
+      "command": "cargo fmt --manifest-path tools/analysis-core/Cargo.toml --check",
+      "exit_code": 0
+    },
+    {
+      "gate": "sdk-check-default",
+      "command": "cargo check --manifest-path tools/analysis-core/Cargo.toml",
+      "exit_code": 0
+    },
+    {
+      "gate": "sdk-check-all-features",
+      "command": "cargo check --manifest-path tools/analysis-core/Cargo.toml --all-features",
+      "exit_code": 0
+    },
+    {
+      "gate": "sdk-clippy-default",
+      "command": "cargo clippy --manifest-path tools/analysis-core/Cargo.toml --all-targets -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "gate": "sdk-clippy-all-features",
+      "command": "cargo clippy --manifest-path tools/analysis-core/Cargo.toml --all-targets --all-features -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "gate": "sdk-test-default",
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test --manifest-path tools/analysis-core/Cargo.toml",
+      "exit_code": 0,
+      "passed": 184,
+      "failed": 0
+    },
+    {
+      "gate": "sdk-test-all-features",
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test --manifest-path tools/analysis-core/Cargo.toml --all-features",
+      "exit_code": 0,
+      "passed": 464,
+      "failed": 0
+    },
+    {
+      "gate": "sdk-diff-check",
+      "command": "git -c core.whitespace=cr-at-eol diff --check -- tools/analysis-core",
+      "exit_code": 0
+    }
+  ],
+  "native_reference_tests": {
+    "new_composition": 6,
+    "references_by_name": 50,
+    "references_typed_receiver": 10,
+    "reference_unit_filter": 24,
+    "failed": 0,
+    "total": 90
+  },
+  "not_claimed": [
+    "full EF-18 completion",
+    "EF-27 query metadata or consumer completeness",
+    "full MVP acceptance",
+    "arbitrary foreign-root language callers through the selected facade",
+    "base composition for EPF/ERF",
+    "new platform build/dump/runtime proof",
+    "installed Explorer composition acceptance",
+    "large corpus behavior or process heap/RSS bound",
+    "automatic analyzer restart or client draft replay",
+    "root/adapter full matrix in this receipt"
+  ],
+  "sanitization": "no private paths, production configuration names or captured hashes; only repository-relative code/test paths",
+  "native_rust_gates": [
+    {
+      "gate": "native-reference-integration",
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test --manifest-path tools/bsl-kernel/Cargo.toml --locked --offline -p ide --test references_composition --test references_by_name --test references_typed_receiver",
+      "exit_code": 0,
+      "passed": 66,
+      "failed": 0,
+      "suites": {
+        "references_composition": 6,
+        "references_by_name": 50,
+        "references_typed_receiver": 10
+      }
+    },
+    {
+      "gate": "native-reference-unit-filter",
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test --manifest-path tools/bsl-kernel/Cargo.toml --locked --offline -p ide --lib references::tests",
+      "exit_code": 0,
+      "passed": 24,
+      "failed": 0,
+      "filtered": 580
+    },
+    {
+      "gate": "native-ide-fmt",
+      "command": "cargo fmt --manifest-path tools/bsl-kernel/Cargo.toml -p ide --check",
+      "exit_code": 0
+    },
+    {
+      "gate": "native-ide-check",
+      "command": "cargo check --manifest-path tools/bsl-kernel/Cargo.toml --locked --offline -p ide --all-targets --all-features",
+      "exit_code": 0
+    },
+    {
+      "gate": "native-ide-clippy",
+      "command": "cargo clippy --manifest-path tools/bsl-kernel/Cargo.toml --locked --offline -p ide --all-targets --all-features -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "gate": "native-ide-rustdoc",
+      "command": "RUSTDOCFLAGS=\"-D warnings\" cargo doc --manifest-path tools/bsl-kernel/Cargo.toml --locked --offline -p ide --no-deps",
+      "exit_code": 0
+    }
+  ],
+  "commands_cwd": "repository root; each test uses the neighboring eska-playground and its own unique directory",
+  "independent_review": {
+    "kind": "read_only_code_review",
+    "status": "no_blockers_in_reviewed_scope",
+    "previous_blockers_closed": [
+      "foreign_workspace_control_provenance",
+      "cold_definition_reference_preparation",
+      "native_cross_root_reference_candidates"
+    ],
+    "reviewed_invariants": [
+      "shared_database_clock_quota",
+      "root_qualified_file_identity_and_uri",
+      "selected_visibility",
+      "current_invalid_or_pending_contributions",
+      "rooted_saved_watch_and_overlay_routes"
+    ],
+    "tests_rerun_by_reviewer": false
+  }
+}

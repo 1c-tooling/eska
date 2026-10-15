@@ -133,7 +133,9 @@ fn predefined_overlay_updates_completions_without_reprojecting_neighbor_or_neste
     let neighbor = object(&session, &neighbor_path);
     let view = session.metadata(&path, session.revision()).unwrap();
     let form = view.model.forms[0].clone();
-    let form_file = session.modules[&owner("Catalogs/Items/Forms/Shared/Ext/Form/Module.bsl")].file;
+    let form_file = session.selected_root.modules
+        [&owner("Catalogs/Items/Forms/Shared/Ext/Form/Module.bsl")]
+        .file;
     let form_context = session
         .database
         .module_metadata(hir::ModuleId { file_id: form_file });

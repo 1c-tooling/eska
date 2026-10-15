@@ -42,7 +42,7 @@ fn all_four_hosts_share_revision_exact_input_and_native_syntax_without_metadata_
         assert_eq!(session.query_paths().count(), 2);
         assert_eq!(session.query_summary().pending, 2);
         assert_eq!(session.resources().query_text_bytes, 0);
-        let files = session.module_sources.clone();
+        let files = session.selected_root.module_sources.clone();
         let text = "\u{feff}// Я😀\r\nВЫБРАТЬ Таблица. ИЗ Справочник.Нет КАК Таблица\r\n";
         session
             .apply_query_overlay(
@@ -104,7 +104,7 @@ fn all_four_hosts_share_revision_exact_input_and_native_syntax_without_metadata_
             );
         }
         assert_eq!(positions[0], positions[1]);
-        assert_eq!(session.module_sources, files);
+        assert_eq!(session.selected_root.module_sources, files);
         assert_eq!(session.resources().query_text_bytes, text.len() as u64);
         let input = session.query_input(&source).unwrap();
         assert_eq!(

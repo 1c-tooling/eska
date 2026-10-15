@@ -42,10 +42,10 @@ pub fn capability(params: &Value) -> Value {
 }
 
 impl Registration {
-    /// Build one small request from the selected inventory, without opening payloads or scanning directories.
-    pub fn selected(
+    /// A single registration covers all admitted roots without watching arbitrary directories.
+    pub fn sources(
         inputs: &project_changes::Inputs,
-        source: &SourceReader,
+        sources: &[&SourceReader],
         params: &Value,
     ) -> Result<Option<Self>, Value> {
         if !eligible(params) {
@@ -55,7 +55,7 @@ impl Registration {
             "registrations":[{"id":REGISTRATION_ID,"method":watched_files::METHOD,
                 "registerOptions":{"watchers":inputs.watchers()?}},
                 {"id":SAVED_REGISTRATION_ID,"method":watched_files::METHOD,
-                "registerOptions":{"watchers":saved_watchers(source)?}}]}});
+                "registerOptions":{"watchers":sources.iter().map(|source| saved_watchers(source)).collect::<Result<Vec<_>, _>>()?.into_iter().flatten().collect::<Vec<_>>()}}]}});
         Ok(Some(Self(State::Planned(request))))
     }
 

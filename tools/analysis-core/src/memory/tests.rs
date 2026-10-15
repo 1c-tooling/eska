@@ -43,13 +43,13 @@ fn batch_trim_preserves_editor_hints_and_current_inputs_only() {
         assert!(
             session
                 .database
-                .parse_snapshot(session.modules[path].file)
+                .parse_snapshot(session.selected_root.modules[path].file)
                 .is_some()
         );
     }
     let before = session
         .database
-        .parse_snapshot(session.modules[&editor].file)
+        .parse_snapshot(session.selected_root.modules[&editor].file)
         .unwrap();
     let revision = session.revision();
     let resources = session.resources();
@@ -61,13 +61,13 @@ fn batch_trim_preserves_editor_hints_and_current_inputs_only() {
     assert!(
         session
             .database
-            .parse_snapshot(session.modules[&saved].file)
+            .parse_snapshot(session.selected_root.modules[&saved].file)
             .is_none()
     );
     assert_eq!(
         session
             .database
-            .parse_snapshot(session.modules[&editor].file)
+            .parse_snapshot(session.selected_root.modules[&editor].file)
             .unwrap()
             .text,
         before.text
@@ -167,7 +167,7 @@ fn released_saved_module_does_not_pin_native_parse_snapshot() {
     let (_directory, root) = fixture();
     let mut session = AnalysisSession::open(&root).unwrap();
     let module = owner("CommonModules/Tools/Ext/Module.bsl");
-    let file = session.modules[&module].file;
+    let file = session.selected_root.modules[&module].file;
     session
         .load_module_saved(&module, session.revision(), &InputRequest::default())
         .unwrap();
@@ -227,8 +227,8 @@ fn rejected_overlay_releases_parse_hint_and_close_reloads_saved_source() {
             )
             .unwrap();
     }
-    let file = session.modules[&module].file;
-    let other = session.modules[&neighbor].file;
+    let file = session.selected_root.modules[&module].file;
+    let other = session.selected_root.modules[&neighbor].file;
     let before = session.database.parse_snapshot(other).unwrap();
     let original = session
         .module_diagnostics(

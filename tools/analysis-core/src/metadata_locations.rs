@@ -20,6 +20,7 @@ use crate::{AnalysisSession, SessionRequestError, SessionRevision};
 pub struct MetadataLocation {
     pub revision: SessionRevision,
     pub source: SourcePath,
+    pub root: crate::composition::RootId,
     pub source_sha256: String,
     pub origin: InputOrigin,
     pub uuid: String,
@@ -57,8 +58,22 @@ impl AnalysisSession {
         uuid: &NativeUuid,
         property: Option<&PropertyKey>,
     ) -> Result<MetadataLocation, MetadataLocationError> {
+        self.metadata_location_at(&self.selected_source(path), expected, uuid, property)
+    }
+
+    /// Locate a UUID/property only in this root's current captured YAML coordinates.
+    ///
+    /// # Errors
+    /// Returns stale or unavailable input, absent/ambiguous metadata and inconsistent captured ranges.
+    pub fn metadata_location_at(
+        &self,
+        key: &crate::composition::SourceKey,
+        expected: SessionRevision,
+        uuid: &NativeUuid,
+        property: Option<&PropertyKey>,
+    ) -> Result<MetadataLocation, MetadataLocationError> {
         let view = self
-            .metadata(path, expected)
+            .metadata_at(key, expected)
             .map_err(MetadataLocationError::Request)?;
         let snapshot = match &view.input {
             InputState::Ready(snapshot) => snapshot,
@@ -103,7 +118,8 @@ impl AnalysisSession {
             .map_err(MetadataLocationError::InconsistentCoordinates)?;
         Ok(MetadataLocation {
             revision: expected,
-            source: path.clone(),
+            source: key.source.clone(),
+            root: key.root,
             source_sha256: snapshot.source_sha256.clone(),
             origin: view.origin,
             uuid: object.metadata.uuid().to_owned(),

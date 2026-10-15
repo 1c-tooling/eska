@@ -25,8 +25,8 @@ fn service_by_file(
 ) -> Option<Arc<bsl_metadata::HTTPService>> {
     ide_db::metadata::resolve_http_service_by_file(
         &session.database,
-        session.listing,
-        session.modules.get(path).unwrap().file,
+        session.selected_root.listing,
+        session.selected_root.modules.get(path).unwrap().file,
     )
 }
 
@@ -58,7 +58,7 @@ fn relocated_http_service_body_uses_the_current_declared_metadata_slot() {
         .load_module_saved(&module, session.revision(), &request)
         .unwrap();
     let metadata = session.database.module_metadata(hir::ModuleId {
-        file_id: session.modules[&module].file,
+        file_id: session.selected_root.modules[&module].file,
     });
     assert!(
         metadata

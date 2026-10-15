@@ -48,7 +48,12 @@ watcher, quota и native parser без BSL wrapper. Контекстная EF-27
 hashes, общий reserve и replay после отказа квоты на RU/EN; большой проект
 и общий RSS budget остаются отдельной приёмкой.
 [Kernel owners](canonical-module-owners.md) берут object/register/common/service
-metadata из текущих slots без XML fallback; SDK composition ещё в работе.
+metadata из текущих slots без XML fallback.
+[CF/CFE composition](analyzer-cf-cfe-composition.md) связывает явные source roots
+и dependency closure в одном SDK host. Current UUID/overlays, foreign workspace
+controls, холодная navigation и native references проверены на синтетических
+Queries-проектах настоящим framed transport: SDK 184/464 и native 90 tests.
+Это отдельный срез EF-18 без claim полной семантики `.sdbl`, платформы или MVP.
 [Own EPF/ERF context](external-own-context.md) использует реальные external модели,
 сохраняя явную неполноту owning configuration; YAML diagnostics доступны отдельно.
 [Navigation/policy](analyzer-navigation.md) передают declared tree и права чтения

@@ -20,24 +20,17 @@ impl Server<'_> {
     /// Reject an incompatible ESKA protocol before project discovery or source reads.
     pub(super) fn initialize(&mut self, params: &Value) -> Result<Value, Value> {
         self.check_initialize(params)?;
-        let selected = tool_cli::selected(&self.cli.project_dir, self.cli.project.as_deref())
-            .map_err(|failure| {
-                protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
-            })?;
-        let workspace = selected.workspace_root;
-        let locale = self.localizer.locale();
         let profile: BatchProfile = self.cli.profile.into();
-        let settings = analysis_settings::load(selected.project.root(), None, locale, profile);
-        let source = EskaSource::open(selected.project, selected.scope)
-            .map_err(|error| source_error(&error))?;
-        let project_inputs = project_changes::Inputs::selected(&source, workspace.as_deref());
+        let (sources, settings) = open_sources(self.cli, self.localizer.locale(), profile)?;
+        let project_inputs = composition_controls(&sources)?;
+        let readers = sources.iter().map(EskaSource::reader).collect::<Vec<_>>();
         let watcher =
-            watcher_registration::Registration::selected(&project_inputs, source.reader(), params)?;
-        let (scope, edit_plans) = selected_admission(&source, self.cli, params)?;
-        let (navigation, read_permissions) = capture_navigation(&source, self.cli)?;
+            watcher_registration::Registration::sources(&project_inputs, &readers, params)?;
+        let (scope, edit_plans) =
+            selected_admission(sources.selected(), self.cli, params, sources.configured())?;
+        let (navigation, read_permissions) = capture_navigation(sources.selected(), self.cli)?;
         let options = profile.session_options(self.cli.max_retained_source_bytes);
-        let session = AnalysisSession::from_reader_with_scope(source.into_reader(), options, scope)
-            .map_err(|error| session_open_error(&error))?;
+        let session = open_session(sources, &settings, options, scope)?;
         project_inputs.require_idle()?;
         let session_id = bsl_metadata::Uuid::new_v4().to_string();
         let hierarchical_symbols = document_symbols::hierarchical(params);
@@ -72,6 +65,9 @@ impl Server<'_> {
             }}},
             "serverInfo":{"name":"eska-analyzer", "version":env!("CARGO_PKG_VERSION")},
         });
+        if let Some(composition) = session.composition_summary() {
+            result["capabilities"]["experimental"]["eska"]["composition"] = json!(composition);
+        }
         if edit_plans.is_some() {
             result["capabilities"]["experimental"]["eska"]["propertyEditPlans"] =
                 json!({"method":property_edits::METHOD,"scope":"open-document","versioned":true});
@@ -95,10 +91,10 @@ impl Server<'_> {
                 "scope":"current-bsl-call","documentationFormat":signature.documentation.as_str(),
                 "parameterLabel":if signature.parameters.label_offsets {"utf16-offsets"} else {"string"},
                 "incompleteResults":"error","clientHints":"recompute",
-                "inputPreparation":"direct-member-targets"});
+                "inputPreparation":if session.composition_sha256().is_some() {"visible-current-composition"} else {"direct-member-targets"}});
             result["capabilities"]["experimental"]["eska"]["hover"] = json!({
                 "scope":"resolved-bsl-symbol","contentFormat":hover_format.as_str(),
-                "incompleteResults":"error","inputPreparation":"direct-member-callees"});
+                "incompleteResults":"error","inputPreparation":if session.composition_sha256().is_some() {"visible-current-composition"} else {"direct-member-callees"}});
             result["capabilities"]["experimental"]["eska"]["documentSymbols"] = json!({
                 "scope":"current-bsl-module","profile":"structure",
                 "result":if hierarchical_symbols { "hierarchical" } else { "flat" }});
@@ -165,16 +161,91 @@ impl Server<'_> {
     }
 }
 
+/// Selection retains each source's actual project and workspace control provenance.
+fn open_sources(
+    cli: &Cli,
+    locale: tool_cli::localization::Locale,
+    profile: BatchProfile,
+) -> Result<
+    (
+        crate::composition::cli::Sources,
+        Result<analysis_settings::Settings, tool_cli::Failure>,
+    ),
+    Value,
+> {
+    let selected =
+        tool_cli::selected(&cli.project_dir, cli.project.as_deref()).map_err(|failure| {
+            protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
+        })?;
+    let settings = analysis_settings::load(selected.project.root(), None, locale, profile);
+    let source =
+        EskaSource::open(selected.project, selected.scope).map_err(|error| source_error(&error))?;
+    let sources = crate::composition::cli::Sources::open(
+        source,
+        selected.workspace_root,
+        settings.as_ref().ok().map(|settings| &settings.source),
+    )
+    .map_err(|failure| {
+        protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
+    })?;
+    Ok((sources, settings))
+}
+
+/// All admitted control chains participate even when their modules are not semantically visible.
+fn composition_controls(
+    sources: &crate::composition::cli::Sources,
+) -> Result<project_changes::Inputs, Value> {
+    let mut controls = sources.controls();
+    let (source, workspace) = controls
+        .next()
+        .ok_or_else(|| protocol::error_value(-32603, "session_invariant", Value::Null))?;
+    let mut inputs = project_changes::Inputs::selected(source, workspace);
+    for (source, workspace) in controls {
+        inputs.include(source, workspace);
+    }
+    Ok(inputs)
+}
+
+/// Every verified reader moves into the same host before that host is exposed to a query.
+fn open_session(
+    sources: crate::composition::cli::Sources,
+    settings: &Result<analysis_settings::Settings, tool_cli::Failure>,
+    options: crate::SessionOptions,
+    scope: AnalysisScope,
+) -> Result<AnalysisSession, Value> {
+    let session = if sources.configured() {
+        let config = &settings
+            .as_ref()
+            .map_err(|failure| protocol::error_value(-32000, failure.code, Value::Null))?
+            .source;
+        let composition = sources.into_composition(config).map_err(|failure| {
+            protocol::error_value(-32000, failure.code, json!({"location":failure.location}))
+        })?;
+        AnalysisSession::from_composition(composition, options)
+    } else {
+        let reader = sources
+            .into_single()
+            .map_err(|failure| protocol::error_value(-32000, failure.code, Value::Null))?;
+        AnalysisSession::from_reader_with_scope(reader, options, scope)
+    };
+    session.map_err(|error| session_open_error(&error))
+}
+
 /// Select one source scope and its edit authority together, preserving canonical pin checks.
 fn selected_admission(
     source: &EskaSource,
     cli: &Cli,
     params: &Value,
+    configured: bool,
 ) -> Result<(AnalysisScope, Option<edit_authority::Authority>), Value> {
     let profile: BatchProfile = cli.profile.into();
-    let scope = profile
-        .session_scope(source.reader())
-        .map_err(|error| session_open_error(&error))?;
+    let scope = if configured {
+        AnalysisScope::CanonicalConfiguration
+    } else {
+        profile
+            .session_scope(source.reader())
+            .map_err(|error| session_open_error(&error))?
+    };
     let authority = if scope == AnalysisScope::CanonicalConfiguration {
         edit_authority::Authority::selected(source, cli.accepted_base_sha256.as_deref(), params)?
     } else {

@@ -7,6 +7,7 @@ mod checker_metadata_queries;
 #[path = "support/common_module_project.rs"]
 mod common_module_project;
 mod completion_queries;
+mod composition;
 mod definition_chart_queries;
 mod definition_member_queries;
 mod definition_metadata_queries;

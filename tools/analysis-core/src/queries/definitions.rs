@@ -3,7 +3,7 @@
 #[cfg(test)]
 mod tests;
 
-use base_db::{RootQueryDb, SourceDatabase, SourceRootId};
+use base_db::{RootQueryDb, SourceDatabase};
 use eska::project_core::source_format::SourcePath;
 
 use crate::{
@@ -14,6 +14,7 @@ use crate::{
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DefinitionTarget {
     pub source: SourcePath,
+    pub root: crate::composition::RootId,
     pub source_sha256: String,
     pub start_byte: u32,
     pub end_byte: u32,
@@ -57,12 +58,19 @@ pub(super) fn current_target(
     start_byte: u32,
     end_byte: u32,
 ) -> Result<DefinitionTarget, QueryError> {
-    let source = session
+    let source_root = analysis
+        .database()
+        .file_source_root_input(file)
+        .source_root_id(analysis.database());
+    let root = crate::composition::RootId::from_index(source_root.0 as usize)
+        .map_err(|_| QueryError::UnsupportedNavigationTarget)?;
+    let inputs = session.root_inputs(root).map_err(QueryError::Request)?;
+    let source = inputs
         .module_sources
         .get(&file)
         .cloned()
         .ok_or(QueryError::UnsupportedNavigationTarget)?;
-    let entry = session
+    let entry = inputs
         .modules
         .get(&source)
         .filter(|entry| entry.file == file)
@@ -91,6 +99,7 @@ pub(super) fn current_target(
     let source_sha256 = entry.model.source_sha256.clone().ok_or_else(unavailable)?;
     Ok(DefinitionTarget {
         source,
+        root,
         source_sha256,
         start_byte,
         end_byte,
@@ -144,8 +153,17 @@ pub(super) fn source_for_file(
     session: &AnalysisSession,
     analysis: &ide::Analysis,
     file: vfs::FileId,
-) -> Result<SourcePath, QueryError> {
-    let root = analysis.database().source_root_input(SourceRootId(0));
+) -> Result<crate::composition::SourceKey, QueryError> {
+    let source_root = analysis
+        .database()
+        .file_source_root_input(file)
+        .source_root_id(analysis.database());
+    let id = crate::composition::RootId::from_index(source_root.0 as usize)
+        .map_err(|_| QueryError::UnsupportedNavigationTarget)?;
+    let directory = session
+        .source_root(id)
+        .ok_or(QueryError::UnsupportedNavigationTarget)?;
+    let root = analysis.database().source_root_input(source_root);
     let native = root
         .root(analysis.database())
         .file_set()
@@ -153,13 +171,14 @@ pub(super) fn source_for_file(
         .map(vfs::VfsPath::as_path)
         .ok_or(QueryError::UnsupportedNavigationTarget)?;
     let relative = native
-        .strip_prefix(session.root())
+        .strip_prefix(directory)
         .map_err(|_| QueryError::UnsupportedNavigationTarget)?;
-    SourcePath::parse(
+    let source = SourcePath::parse(
         &relative
             .to_str()
             .ok_or(QueryError::UnsupportedNavigationTarget)?
             .replace(std::path::MAIN_SEPARATOR, "/"),
     )
-    .map_err(|_| QueryError::UnsupportedNavigationTarget)
+    .map_err(|_| QueryError::UnsupportedNavigationTarget)?;
+    Ok(crate::composition::SourceKey { root: id, source })
 }

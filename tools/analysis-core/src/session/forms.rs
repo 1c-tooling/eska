@@ -5,7 +5,7 @@ mod tests;
 
 use std::collections::BTreeMap;
 
-use base_db::{SourceDatabase, SourceRootId};
+use base_db::SourceDatabase;
 use eska::{
     analysis_core::{InputState, OwnerInput},
     project_core::{
@@ -17,7 +17,7 @@ use ide_db::{
     RootDatabaseImpl,
     metadata::{CanonicalMetadataInput, CanonicalMetadataInputs},
 };
-use vfs::{FileId, VfsPath, file_set::FileSet};
+use vfs::{VfsPath, file_set::FileSet};
 
 use super::{OwnerEntry, ProjectionRevision, metadata_resources::MetadataResourceEntry, set_slot};
 use crate::{AnalysisScope, FormModel, ModelState, SessionError, SessionRevision, projection};
@@ -36,8 +36,9 @@ pub(super) fn register(
     database: &mut RootDatabaseImpl,
     file_set: &mut FileSet,
     slots: &mut CanonicalMetadataInputs,
-) -> Result<usize, SessionError> {
-    let mut next_file = owners.len();
+    root: base_db::SourceRootId,
+    allocator: &mut crate::composition::FileIdAllocator,
+) -> Result<(), SessionError> {
     for path in reader.form_paths() {
         let identity = reader
             .declared_form(path)
@@ -51,10 +52,11 @@ pub(super) fn register(
         {
             continue;
         }
-        let file = FileId(u32::try_from(next_file).map_err(|_| SessionError::TooManyFiles)?);
-        next_file = next_file.checked_add(1).ok_or(SessionError::TooManyFiles)?;
+        let file = allocator
+            .allocate()
+            .map_err(|_| SessionError::TooManyFiles)?;
         file_set.insert(file, VfsPath::new(reader.root().join(path.as_path())));
-        database.set_file_source_root(file, SourceRootId(0));
+        database.set_file_source_root(file, root);
         database.set_file_unreadable(file);
         let slot = CanonicalMetadataInput::new(database, None, "pending".into());
         slots.insert(file, slot);
@@ -77,7 +79,7 @@ pub(super) fn register(
             },
         );
     }
-    Ok(next_file)
+    Ok(())
 }
 
 /// A sibling resource edit reuses unchanged form values and their Salsa dependency revisions.

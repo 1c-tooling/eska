@@ -4,10 +4,7 @@ use bsl_metadata::MdoType;
 use bsl_types::kind::{ConfigId, MetadataKind as KernelKind};
 use eska::{
     analysis_core::InputState,
-    project_core::{
-        MetadataKind,
-        source_format::{NativeUuid, SourcePath},
-    },
+    project_core::{MetadataKind, source_format::NativeUuid},
 };
 use hir::{HirFieldOrigin, Name, Type, TypeId, TypeKernelDb, TypeKind};
 
@@ -162,9 +159,9 @@ const fn register_parent(kind: KernelKind) -> Option<MdoType> {
 }
 
 /// Follow exact parent IDs inside the main current document; ambiguity never chooses a first match.
-pub(super) fn selected_uuid(
+pub(super) fn selected_uuid_at(
     session: &AnalysisSession,
-    path: &SourcePath,
+    key: &crate::composition::SourceKey,
     expected: SessionRevision,
     root: &NativeUuid,
     children: &[(MetadataKind, String)],
@@ -173,15 +170,17 @@ pub(super) fn selected_uuid(
         return Ok(Some(root.clone()));
     }
     let view = session
-        .metadata(path, expected)
+        .metadata_at(key, expected)
         .map_err(QueryError::Request)?;
     let InputState::Ready(snapshot) = view.input else {
         return Ok(None);
     };
     let native = session
+        .root_inputs(key.root)
+        .map_err(QueryError::Request)?
         .inputs
         .source_reader()
-        .declared_owner(path)
+        .declared_owner(&key.source)
         .map_err(|_| QueryError::UnsupportedNavigationTarget)?
         .native_path;
     let document = snapshot

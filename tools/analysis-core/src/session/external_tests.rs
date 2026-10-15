@@ -266,7 +266,7 @@ fn canonical_external_ownership_uses_native_case_folding_for_mixed_names_and_col
         assert_ne!(current, saved);
         fs::write(&physical, &current).unwrap();
         let mut session = AnalysisSession::open(&root.join("src")).unwrap();
-        let own_kind = session.external_kind.unwrap().mdo_type();
+        let own_kind = session.selected_root.external_kind.unwrap().mdo_type();
         assert_ne!(varied, fixture::NAME);
         assert_eq!(
             session.require_own_external_target(own_kind, &varied),
@@ -322,7 +322,7 @@ fn canonical_external_ownership_uses_native_case_folding_for_mixed_names_and_col
         assert!(result.value.iter().any(|item| item.label == "Сохраненный"));
         assert!(!result.metadata_context_complete);
         let module = session.database.module_metadata(hir::ModuleId {
-            file_id: session.modules[&paths.form_module].file,
+            file_id: session.selected_root.modules[&paths.form_module].file,
         });
         assert_eq!(
             module
@@ -488,8 +488,8 @@ fn assert_module_types(
     paths: &fixture::Paths,
     external_kind: bsl_metadata::ExternalObjectKind,
 ) {
-    let object_file = session.modules[&paths.object_module].file;
-    let form_file = session.modules[&paths.form_module].file;
+    let object_file = session.selected_root.modules[&paths.object_module].file;
+    let form_file = session.selected_root.modules[&paths.form_module].file;
     let object = session.database.module_metadata(hir::ModuleId {
         file_id: object_file,
     });

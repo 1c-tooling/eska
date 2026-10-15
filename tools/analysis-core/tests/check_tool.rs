@@ -6,6 +6,8 @@ mod check_metadata;
 mod check_predefined;
 mod check_roles;
 mod check_semantic;
+#[path = "composition/checker.rs"]
+mod composition;
 #[path = "external_context/checker.rs"]
 mod external_context;
 #[path = "local_syntax/checker.rs"]

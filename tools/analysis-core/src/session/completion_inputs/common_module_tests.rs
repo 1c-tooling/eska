@@ -76,10 +76,10 @@ fn cold_common_module_completion_loads_only_its_current_declared_owner_and_body(
             assert!(!labels.contains("PrivateUtility"));
             assert!(!labels.contains("NeighborUtility"));
         }
-        for path in session.inputs.owner_paths() {
+        for path in session.selected_root.inputs.owner_paths() {
             assert_eq!(
                 matches!(
-                    session.inputs.owner(path).unwrap().state,
+                    session.selected_root.inputs.owner(path).unwrap().state,
                     InputState::Ready(_)
                 ),
                 matches!(path.as_str(), OWN | TARGET),
@@ -182,7 +182,12 @@ fn common_module_preparation_preserves_local_name_ownership_before_and_after_loa
     let (_directory, _source, mut session) = fixture(shadow);
     assert!(!complete(&mut session, shadow, Locale::En).contains("SavedUtility"));
     assert_eq!(
-        session.inputs.owner(&owner(TARGET)).unwrap().state,
+        session
+            .selected_root
+            .inputs
+            .owner(&owner(TARGET))
+            .unwrap()
+            .state,
         InputState::Pending
     );
     assert_eq!(

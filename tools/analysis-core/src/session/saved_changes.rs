@@ -18,24 +18,43 @@ impl AnalysisSession {
         paths: &[SourcePath],
         expected: SessionRevision,
     ) -> Result<Vec<SourcePath>, SessionRequestError> {
+        let keys = paths
+            .iter()
+            .map(|path| self.selected_source(path))
+            .collect::<Vec<_>>();
+        self.invalidate_saved_inputs_at(&keys, expected)
+            .map(|keys| keys.into_iter().map(|key| key.source).collect())
+    }
+
+    /// Validate a complete root-qualified event batch before releasing any current saved contribution.
+    ///
+    /// # Errors
+    /// Rejects stale snapshots, unknown roots/inputs, binary bodies or clock exhaustion without mutation.
+    pub fn invalidate_saved_inputs_at(
+        &mut self,
+        paths: &[crate::composition::SourceKey],
+        expected: SessionRevision,
+    ) -> Result<Vec<crate::composition::SourceKey>, SessionRequestError> {
         self.validate_revision(expected)?;
         let mut changed = BTreeSet::new();
-        for path in paths {
-            let (origin, pending) = if let Some(input) = self.inputs.owner(path) {
+        for key in paths {
+            let path = &key.source;
+            let root = self.root_inputs(key.root)?;
+            let (origin, pending) = if let Some(input) = root.inputs.owner(path) {
                 (input.origin, matches!(input.state, InputState::Pending))
-            } else if let Some(input) = self.metadata_resource(path) {
+            } else if let Some(input) = self.metadata_resource_at(key) {
                 (
                     input.origin,
                     matches!(input.state, crate::MetadataResourceState::Pending),
                 )
-            } else if let Some(input) = self.query_input(path) {
+            } else if let Some(input) = self.query_input_at(key) {
                 (
                     input.origin,
                     matches!(input.state, crate::QueryTextState::Pending),
                 )
             } else {
                 let input = self
-                    .module(path)
+                    .module_at(key)
                     .ok_or_else(|| SessionRequestError::UnknownModule(path.clone()))?;
                 if input.state == ModuleState::Binary {
                     return Err(SessionRequestError::BinaryModule(path.clone()));
@@ -43,7 +62,7 @@ impl AnalysisSession {
                 (input.origin, matches!(input.state, ModuleState::Pending))
             };
             if origin == InputOrigin::Saved && !pending {
-                changed.insert(path.clone());
+                changed.insert(key.clone());
             }
         }
         // The metadata clock advances only with session publications, so this also bounds that clock.
@@ -51,19 +70,20 @@ impl AnalysisSession {
             .0
             .checked_add(changed.len() as u64)
             .ok_or(SessionRequestError::RevisionExhausted)?;
-        for path in &changed {
-            if self.owners.contains_key(path) {
+        for key in &changed {
+            let root = self.root_inputs(key.root)?;
+            if root.owners.contains_key(&key.source) {
                 let next = self.revision.next()?;
-                self.inputs
-                    .invalidate_saved(path, self.inputs.revision())
-                    .map_err(SessionRequestError::Metadata)?;
-                self.publish(path, next)?;
-            } else if self.metadata_resources.contains_key(path) {
-                self.release_resource_saved(path, self.revision())?;
-            } else if self.query_inputs.contains_key(path) {
-                self.release_query_saved(path, self.revision())?;
+                let root = self.root_inputs_mut(key.root)?;
+                root.inputs
+                    .invalidate_saved(&key.source, root.inputs.revision())?;
+                self.publish_at(key, next)?;
+            } else if root.metadata_resources.contains_key(&key.source) {
+                self.release_resource_saved_at(key, self.revision())?;
+            } else if root.query_inputs.contains_key(&key.source) {
+                self.release_query_saved_at(key, self.revision())?;
             } else {
-                self.release_module_saved(path, self.revision())?;
+                self.release_module_saved_at(key, self.revision())?;
             }
         }
         Ok(changed.into_iter().collect())

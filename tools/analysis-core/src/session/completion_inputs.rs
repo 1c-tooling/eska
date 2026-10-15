@@ -26,6 +26,7 @@ impl AnalysisSession {
     /// Prepare the module's own metadata and a direct manager/common-module target only.
     ///
     /// This also prepares the admitted target body, keeping other modules unread.
+    /// Explicit compositions first prepare every topology-visible current contribution.
     /// It does not refresh ready or editor-owned input, load sibling dialogs, scan payloads,
     /// or claim transitive metadata inference is complete. The read-only query stays separate.
     /// # Errors
@@ -39,6 +40,10 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
     ) -> Result<(), QueryError> {
         self.validate_preparation(path, expected, offset, request, cancellation)?;
+        if self.composition_sha256.is_some() {
+            self.load_semantic_inputs(self.revision(), request)
+                .map_err(QueryError::Request)?;
+        }
         self.prepare_module_metadata(path, request)?;
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
@@ -50,9 +55,10 @@ impl AnalysisSession {
                 };
                 self.require_own_external_target(kind, &name)?;
                 let main = if kind == bsl_metadata::MdoType::CommonModule {
-                    common_module_index(analysis.database(), self.listing).lookup(&name)
+                    common_module_index(analysis.database(), self.selected_root.listing)
+                        .lookup(&name)
                 } else {
-                    config_index(analysis.database(), self.listing)
+                    config_index(analysis.database(), self.selected_root.listing)
                         .lookup(kind, &name)
                         .map(|files| files.main)
                 };
@@ -61,6 +67,7 @@ impl AnalysisSession {
                 };
                 // Frozen identities are resident; resolving a FileId never examines owner payloads.
                 Ok(self
+                    .selected_root
                     .owners
                     .iter()
                     .find(|(_, entry)| entry.binding.main == main)
@@ -82,7 +89,8 @@ impl AnalysisSession {
                     .completion_manager_module(file, offset)
                     .or_else(|| analysis.completion_common_module(file, offset));
                 Ok(target.and_then(|file| {
-                    self.modules
+                    self.selected_root
+                        .modules
                         .iter()
                         .find(|(_, entry)| entry.file == file)
                         .map(|(path, _)| path.clone())
@@ -101,6 +109,7 @@ impl AnalysisSession {
     /// Prepare current own context and only an active member call's admitted target before read-only signature help.
     ///
     /// Argument expressions never select a different dependency; non-member or inactive calls perform no metadata reads.
+    /// Explicit compositions first prepare all visible current contributions under the same request control.
     /// # Errors
     /// Rejects stale/unavailable caller input, invalid offset, cancellation or source publication failure.
     pub fn prepare_signature_help_metadata(
@@ -112,6 +121,10 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
     ) -> Result<(), QueryError> {
         self.validate_preparation(path, expected, offset, request, cancellation)?;
+        if self.composition_sha256.is_some() {
+            self.load_semantic_inputs(self.revision(), request)
+                .map_err(QueryError::Request)?;
+        }
         self.prepare_member_call_metadata(
             path,
             offset,
@@ -124,6 +137,7 @@ impl AnalysisSession {
     /// Prepare only a current hovered member callee's own context and admitted direct target before its read-only card.
     ///
     /// Non-callee tokens do not load metadata; native resolution retains ownership of symbols, docs and types.
+    /// Explicit compositions first prepare all visible current contributions under the same request control.
     /// # Errors
     /// Rejects stale/unavailable caller input, invalid offset, cancellation or source publication failure.
     pub fn prepare_symbol_hover_metadata(
@@ -135,7 +149,11 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
     ) -> Result<(), QueryError> {
         self.validate_preparation(path, expected, offset, request, cancellation)?;
-        if self.external_kind.is_some() {
+        if self.composition_sha256.is_some() {
+            self.load_semantic_inputs(self.revision(), request)
+                .map_err(QueryError::Request)?;
+        }
+        if self.selected_root.external_kind.is_some() {
             self.prepare_module_metadata(path, request)?;
         }
         self.prepare_member_call_metadata(
@@ -211,12 +229,14 @@ impl AnalysisSession {
         request: &InputRequest,
     ) -> Result<(), QueryError> {
         let module = self
+            .selected_root
             .inputs
             .source_reader()
             .declared_module(path)
             .ok_or_else(|| QueryError::Request(SessionRequestError::UnknownModule(path.clone())))?;
         let owner = module.owner.clone();
         let dialog = self
+            .selected_root
             .inputs
             .source_reader()
             .declared_form(module.native_descriptor)
@@ -235,7 +255,7 @@ impl AnalysisSession {
         path: &SourcePath,
         request: &InputRequest,
     ) -> Result<(), QueryError> {
-        let Some(input) = self.inputs.owner(path) else {
+        let Some(input) = self.selected_root.inputs.owner(path) else {
             return Ok(());
         };
         if input.origin == InputOrigin::Saved
@@ -248,7 +268,9 @@ impl AnalysisSession {
             self.load_saved(path, self.revision(), request)
                 .map_err(QueryError::Request)?;
         }
-        let resource = metadata_resources::dependency(self.inputs.source_reader(), path).cloned();
+        let resource =
+            metadata_resources::dependency(self.selected_root.inputs.source_reader(), path)
+                .cloned();
         if let Some(resource) = resource {
             self.load_completion_resource(&resource, request)?;
         }

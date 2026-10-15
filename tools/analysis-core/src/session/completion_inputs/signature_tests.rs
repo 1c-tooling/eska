@@ -167,6 +167,7 @@ fn signature_preparation_ignores_argument_namespace_and_shadowed_member_targets(
         signatures(&mut session, offset);
         assert_eq!(
             session
+                .selected_root
                 .inputs
                 .owner(&owner("CommonModules/Utility/object.yaml"))
                 .unwrap()

@@ -82,6 +82,7 @@ impl AnalysisSession {
     ) -> Result<ModuleResult<Option<LocalRenameInput>>, LocalRenameError> {
         self.query_module(path, expected, control, |analysis, file| {
             let entry = self
+                .selected_root
                 .modules
                 .get(path)
                 .ok_or(QueryError::UnsupportedNavigationTarget)?;
@@ -139,6 +140,7 @@ impl AnalysisSession {
             Ok(ModuleResult {
                 revision: result.revision,
                 source: result.source,
+                root: result.root,
                 source_sha256: result.source_sha256,
                 metadata_models_complete: result.metadata_models_complete,
                 metadata_context_complete: result.metadata_context_complete,

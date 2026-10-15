@@ -78,7 +78,8 @@ pub(super) fn occurrences(
                     let hit = hit.target;
                     let start = hit.start_byte;
                     let end = hit.end_byte;
-                    if hit.source != target.source
+                    if hit.root != session.selected_root_id()
+                        || hit.source != target.source
                         || hit.source_sha256 != target.source_sha256
                         || start >= end
                         || start < previous_end
