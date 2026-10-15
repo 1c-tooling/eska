@@ -13,7 +13,8 @@ use super::super::{
     completion, definitions,
     diagnostics::{self, Options as DiagnosticOptions},
     document_symbols, documents, dto, hover, kernel_memory, language, metadata_locations,
-    property_edits, protocol, references, rename, signature_help,
+    navigation::Navigation,
+    permissions, property_edits, protocol, references, rename, signature_help,
 };
 use super::Server;
 use crate::{AnalysisScope, AnalysisSession, RequestCancellation, SessionRequestError};
@@ -28,6 +29,9 @@ impl Server<'_> {
     ) -> Result<Value, Value> {
         if let Some(method) = language::Method::parse(method) {
             return self.language_request(method, value, cancellation);
+        }
+        if method == permissions::METHOD {
+            return self.permissions_request(value, cancellation);
         }
         if method == property_edits::METHOD {
             let params: property_edits::Params = protocol::params(value)?;
@@ -67,24 +71,10 @@ impl Server<'_> {
             }
             "eska/metadata/owners" => {
                 let params: protocol::Owners = protocol::params(value)?;
-                validate_snapshot(session, &self.session_id, &params.snapshot)?;
-                if !(1..=200).contains(&params.limit) {
-                    return Err(protocol::error_value(
-                        -32602,
-                        "page_limit_invalid",
-                        json!({"max":200}),
-                    ));
-                }
-                let owners = session
-                    .owner_paths()
-                    .skip(params.offset)
-                    .take(params.limit)
-                    .map(|path| dto::owner(session, path))
-                    .collect::<Result<Vec<_>, _>>()?;
-                Ok(
-                    json!({"snapshot":dto::snapshot(session, &self.session_id), "total":session.owner_paths().count(),
-                    "offset":params.offset, "owners":owners, "resources":session.resources()}),
-                )
+                let navigation = self.navigation.as_ref().ok_or_else(|| {
+                    protocol::error_value(-32603, "session_invariant", Value::Null)
+                })?;
+                owner_page(session, navigation, &self.session_id, &params)
             }
             "eska/metadata/read" | "eska/metadata/refresh" => {
                 let params: protocol::ReadOwner = protocol::params(value)?;
@@ -124,6 +114,29 @@ impl Server<'_> {
                 Value::Null,
             )),
         }
+    }
+
+    /// Policy scope is independent of semantic readiness and versioned-edit capability.
+    fn permissions_request(
+        &self,
+        value: &Value,
+        cancellation: Option<&RequestCancellation>,
+    ) -> Result<Value, Value> {
+        let params: permissions::Params = protocol::params(value)?;
+        let invariant = || protocol::error_value(-32603, "session_invariant", Value::Null);
+        let session = self.session.as_ref().ok_or_else(invariant)?;
+        validate_snapshot(session, &self.session_id, &params.snapshot)?;
+        let cancellation = cancellation
+            .ok_or_else(|| protocol::error_value(-32603, "request_invariant", Value::Null))?;
+        let authority = self.read_permissions.as_ref().ok_or_else(invariant)?;
+        permissions::read(
+            authority,
+            session,
+            &self.session_id,
+            &params,
+            cancellation,
+            Duration::from_secs(self.cli.timeout_seconds),
+        )
     }
 
     /// Language methods share process settings and input controls while keeping their own payloads.
@@ -230,6 +243,44 @@ impl Server<'_> {
             ),
         }
     }
+}
+
+/// A bounded owner page combines immutable declarations with current input/model state without IO.
+fn owner_page(
+    session: &AnalysisSession,
+    navigation: &Navigation,
+    id: &str,
+    params: &protocol::Owners,
+) -> Result<Value, Value> {
+    validate_snapshot(session, id, &params.snapshot)?;
+    if !(1..=200).contains(&params.limit) {
+        return Err(protocol::error_value(
+            -32602,
+            "page_limit_invalid",
+            json!({"max":200}),
+        ));
+    }
+    let owners = session
+        .owner_paths()
+        .skip(params.offset)
+        .take(params.limit)
+        .map(|path| -> Result<Value, Value> {
+            let invariant = || protocol::error_value(-32603, "session_invariant", Value::Null);
+            let mut owner = dto::owner(session, path)?;
+            let Value::Object(declaration) = navigation.owner(path).ok_or_else(invariant)? else {
+                return Err(invariant());
+            };
+            owner
+                .as_object_mut()
+                .ok_or_else(invariant)?
+                .extend(declaration);
+            Ok(owner)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(
+        json!({"snapshot":dto::snapshot(session,id),"total":session.owner_paths().count(),
+        "offset":params.offset,"owners":owners,"resources":session.resources()}),
+    )
 }
 
 /// Lazy language reads inherit the same document bound and the request's input cancellation handle.

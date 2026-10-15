@@ -10,7 +10,7 @@ use std::{fs, path::Path};
 use super::support::TestDirectory;
 use super::{Client, initialize, notification, request};
 #[path = "../support/local_syntax_project.rs"]
-mod fixture;
+pub mod fixture;
 
 /// The real source URI comes from the declared physical module, never native filename guesses.
 fn uri(root: &Path, module: &SourcePath) -> String {
@@ -67,7 +67,14 @@ fn local_syntax_capabilities_and_direct_semantic_refusals_are_honest() {
                 eska["languageMethods"],
                 json!(["textDocument/diagnostic", "textDocument/documentSymbol"])
             );
-            assert_eq!(eska["cancellableMethods"], eska["languageMethods"]);
+            assert_eq!(
+                eska["cancellableMethods"],
+                json!([
+                    "textDocument/diagnostic",
+                    "textDocument/documentSymbol",
+                    "eska/metadata/permissions",
+                ])
+            );
             assert_eq!(eska["editPlans"], false);
             assert_eq!(eska["nestedFormModels"], false);
             assert_eq!(capabilities["documentSymbolProvider"], true);

@@ -97,6 +97,8 @@ impl Server<'_> {
         self.session = None;
         self.settings = None;
         self.edit_plans = None;
+        self.navigation = None;
+        self.read_permissions = None;
         self.documents = documents::Documents::default();
         self.watcher = None;
         self.restart = Some(state.clone());

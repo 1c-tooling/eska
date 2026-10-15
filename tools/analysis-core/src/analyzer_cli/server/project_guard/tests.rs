@@ -89,6 +89,8 @@ fn initialized<'a>(cli: &'a Cli, localizer: &'a Localizer) -> (Server<'a>, Value
         hover_format: hover::Format::Plaintext,
         signature: signature_help::Capabilities::negotiate(&Value::Null),
         edit_plans: None,
+        navigation: None,
+        read_permissions: None,
         project_inputs: None,
         restart: None,
         watcher: None,
@@ -161,6 +163,57 @@ fn late_import_rejects_computed_semantics_with_the_last_published_snapshot() {
         server.acknowledge_response();
         assert_eq!(server.published_snapshot.as_ref(), Some(&published));
     }
+}
+
+/// Readonly policy success is also private until publication, and retirement releases captured handles.
+#[test]
+fn late_import_discards_permissions_and_retires_navigation_approval_handles() {
+    let (_directory, root) = project();
+    let cli = arguments(&root, "en-US");
+    let localizer = Localizer::try_new(Locale::EnUs).unwrap();
+    let (mut server, published) = initialized(&cli, &localizer);
+    let mut response = dispatched(
+        &mut server,
+        &json!({"jsonrpc":"2.0","id":"permissions","method":"eska/metadata/permissions",
+        "params":{"snapshot":published,"sources":[OWNER,MODULE]}}),
+    );
+    assert!(response.get("result").is_some(), "{response}");
+    assert!(server.navigation.is_some());
+    assert!(server.read_permissions.is_some());
+    fs::write(root.join(PROJECT_SOURCE_IMPORT_RECEIPT), "late owned guard").unwrap();
+    assert!(server.fence_response(&mut response).unwrap());
+    let response = wire(&response);
+    assert_eq!(response["id"], "permissions");
+    assert!(response.get("result").is_none());
+    assert_eq!(response["error"]["data"]["details"]["snapshot"], published);
+    assert!(server.navigation.is_none());
+    assert!(server.read_permissions.is_none());
+}
+
+/// A cancellation accepted before policy evaluation cannot report successful unknown/empty protection.
+#[test]
+fn permissions_cancelled_before_dispatch_keep_the_published_snapshot() {
+    let (_directory, root) = project();
+    let cli = arguments(&root, "en-US");
+    let localizer = Localizer::try_new(Locale::EnUs).unwrap();
+    let (mut server, published) = initialized(&cli, &localizer);
+    let control = RequestCancellation::default();
+    control.cancel();
+    let Step::Continue(Some(response)) = server.process(
+        &message(
+            &json!({"jsonrpc":"2.0","id":"cancelled","method":"eska/metadata/permissions",
+        "params":{"snapshot":published,"sources":[OWNER]}}),
+        ),
+        Some(&control),
+    ) else {
+        panic!("expected cancelled policy response");
+    };
+    assert_eq!(response["error"]["code"], -32800);
+    assert_eq!(response["error"]["data"]["kind"], "analysis_cancelled");
+    assert_eq!(response["error"]["data"]["details"], published);
+    assert!(server.navigation.is_some());
+    assert!(server.read_permissions.is_some());
+    assert_eq!(server.published_snapshot.as_ref(), Some(&published));
 }
 
 /// A version accepted only inside the worker cannot displace the preceding acknowledged editor snapshot.

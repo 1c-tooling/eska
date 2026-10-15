@@ -10,9 +10,9 @@ use crate::{
     deadline::{Deadline, DeadlineError},
 };
 
-use super::{dto, language, property_edits, protocol};
+use super::{dto, language, permissions, property_edits, protocol};
 
-pub const METHODS: [&str; 10] = [
+pub const METHODS: [&str; 11] = [
     "textDocument/diagnostic",
     "textDocument/completion",
     "textDocument/definition",
@@ -23,12 +23,14 @@ pub const METHODS: [&str; 10] = [
     "textDocument/prepareRename",
     "textDocument/rename",
     property_edits::METHOD,
+    permissions::METHOD,
 ];
 
 #[derive(Clone, Copy)]
 pub enum Method {
     Language(language::Method),
     PropertyEdit,
+    ReadPermissions,
 }
 
 impl Method {
@@ -36,6 +38,8 @@ impl Method {
     pub fn parse(name: &str) -> Option<Self> {
         if name == property_edits::METHOD {
             Some(Self::PropertyEdit)
+        } else if name == permissions::METHOD {
+            Some(Self::ReadPermissions)
         } else {
             language::Method::parse(name).map(Self::Language)
         }

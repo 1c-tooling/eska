@@ -46,6 +46,8 @@ workflow/Git/workspace и expected-byte receipt; [init](project-initialization.m
 metadata из текущих slots без XML fallback; SDK composition ещё в работе.
 [Own EPF/ERF context](external-own-context.md) использует реальные external модели,
 сохраняя явную неполноту owning configuration; YAML diagnostics доступны отдельно.
+[Navigation/policy](analyzer-navigation.md) передают declared tree и права чтения
+через тот же host; independent pin не зависит от semantic scope.
 [Language/Template coverage](structural-metadata-coverage.md) проверяет текущие
 descriptor fields без фиктивной canonical модели или проверки СКД.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery

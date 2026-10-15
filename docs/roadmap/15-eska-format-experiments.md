@@ -1927,6 +1927,10 @@ SDK trim теперь включает штатную очистку diagnostic 
 методах подтверждает освобождение значений и сохранность current editor input;
 прежний прямой trim тест не проходит. Общий RSS limit не заявляется.
 
+SDK navigation/policy подключены: selected project context, owner/module/query
+declarations и bounded readonly permissions с independent pin. Framed all4
+groups и полный SDK прошли; установленный Explorer принимается отдельно.
+
 [Структурная проверка](../research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

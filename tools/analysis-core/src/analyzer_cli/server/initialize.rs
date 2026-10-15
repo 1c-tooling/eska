@@ -8,9 +8,10 @@ use serde_json::{Value, json};
 
 use super::super::{
     args::Cli, completion, diagnostics, document_symbols, documents, dto, edit_authority,
-    external_context, hover, kernel_memory, language, metadata_locations, project_changes,
-    property_edits, protocol, references, rename, request_control, signature_help, stream,
-    watched_files, watcher_registration,
+    external_context, hover, kernel_memory, language, metadata_locations, navigation::Navigation,
+    permissions, project_changes, property_edits, protocol, read_permissions::ReadPermissions,
+    references, rename, request_control, signature_help, stream, watched_files,
+    watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisScope, AnalysisSession, analysis_settings, batch::BatchProfile};
@@ -27,13 +28,13 @@ impl Server<'_> {
         let locale = self.localizer.locale();
         let profile: BatchProfile = self.cli.profile.into();
         let settings = analysis_settings::load(selected.project.root(), None, locale, profile);
-        let source = EskaSource::open(selected.project, selected.scope).map_err(|error| {
-            protocol::error_value(-32000, error.code, json!({"location":error.location}))
-        })?;
+        let source = EskaSource::open(selected.project, selected.scope)
+            .map_err(|error| source_error(&error))?;
         let project_inputs = project_changes::Inputs::selected(&source, workspace.as_deref());
         let watcher =
             watcher_registration::Registration::selected(&project_inputs, source.reader(), params)?;
         let (scope, edit_plans) = selected_admission(&source, self.cli, params)?;
+        let (navigation, read_permissions) = capture_navigation(&source, self.cli)?;
         let options = profile.session_options(self.cli.max_retained_source_bytes);
         let session = AnalysisSession::from_reader_with_scope(source.into_reader(), options, scope)
             .map_err(|error| session_open_error(&error))?;
@@ -48,7 +49,9 @@ impl Server<'_> {
                 "experimental":{"eska":{
                 "protocolVersion":protocol::VERSION,
                 "sourceFormat":"eska", "scope":"selected-project",
+                "project":navigation.project(),
                 "metadata":{"owners":true, "read":true, "refresh":true,
+                    "permissions":permissions::capability(),
                     "locate":{"method":metadata_locations::METHOD,"scope":"current-ready-owner","positionEncoding":"utf-16","lazyRead":false}},
                 "documentSync":true, "roleRightsSync":true, "formDialogSync":true, "nestedFormModels":true, "predefinedDataSync":true, "targetedCompletionMetadata":true, "managerModuleCompletion":true, "commonModuleCompletion":true, "languageQueries":true, "requestCancellation":true,
                 "cancellableMethods":request_control::METHODS,"maxQueuedMessages":stream::MAX_QUEUED_MESSAGES,
@@ -108,6 +111,8 @@ impl Server<'_> {
         self.project_inputs = Some(project_inputs);
         self.watcher = watcher;
         self.edit_plans = edit_plans;
+        self.navigation = Some(navigation);
+        self.read_permissions = Some(read_permissions);
         self.session = Some(session);
         self.settings = Some(settings);
         self.session_id = session_id;
@@ -162,6 +167,22 @@ fn selected_admission(
     Ok((scope, authority))
 }
 
+/// Source declarations share one structured protocol error without leaking native payload text.
+fn source_error(error: &eska::project_core::source_format::Error) -> Value {
+    protocol::error_value(-32000, error.code, json!({"location":error.location}))
+}
+
+/// Navigation and policy retain the same selected source before its reader moves into the session.
+fn capture_navigation(
+    source: &EskaSource,
+    cli: &Cli,
+) -> Result<(Navigation, ReadPermissions), Value> {
+    Ok((
+        Navigation::selected(source).map_err(|error| source_error(&error))?,
+        permissions::selected(source, cli.accepted_base_sha256.as_deref())?,
+    ))
+}
+
 /// Local syntax advertises only operations that cannot infer unavailable metadata or produce edit plans.
 fn advertise_scope(result: &mut Value, scope: AnalysisScope) {
     result["capabilities"]["experimental"]["eska"]["analysisScope"] = json!(scope);
@@ -182,7 +203,9 @@ fn advertise_scope(result: &mut Value, scope: AnalysisScope) {
     }
     let eska = &mut result["capabilities"]["experimental"]["eska"];
     eska["languageMethods"] = json!(language::LOCAL_METHODS);
-    eska["cancellableMethods"] = json!(language::LOCAL_METHODS);
+    let mut cancellable = language::LOCAL_METHODS.to_vec();
+    cancellable.push(permissions::METHOD);
+    eska["cancellableMethods"] = json!(cancellable);
     for name in [
         "nestedFormModels",
         "targetedCompletionMetadata",

@@ -5,6 +5,11 @@
 проектная библиотека не зависит от анализатора. Платформа, Git, IDE-сервер и
 XML-экспорт не участвуют в чтении.
 
+[Навигация и права чтения](../../docs/research/eska-format/analyzer-navigation.md)
+используют тот же host: project context, declared owners/modules/queries и
+bounded policy requests с независимым accepted pin. Readonly capability не
+включает edits и не заменяет текущие `read`/`locate` payloads.
+
 [LocalSyntax CFE/EPF/ERF](../../docs/research/eska-format/analyzer-local-syntax.md)
 добавляет parse diagnostics и document symbols в общую сессию без canonical
 Configuration. Scope явно сообщается, model state — SourceOnly, semantic requests

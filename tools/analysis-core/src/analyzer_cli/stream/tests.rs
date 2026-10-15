@@ -6,6 +6,32 @@ use serde_json::json;
 
 use super::*;
 
+/// Policy IDs own the same input-thread cancellation lifetime as language and edit-plan IDs.
+#[test]
+fn permissions_controls_cancel_only_their_current_transport_request() {
+    let requests = Arc::new(Requests::default());
+    let Envelope::Message(_, Some(permission)) = requests.track(message(
+        Some(json!("policy")),
+        super::super::permissions::METHOD,
+        &Value::Null,
+    )) else {
+        panic!("permission request was not tracked");
+    };
+    assert!(matches!(permission.method, Method::ReadPermissions));
+    requests.cancel(&Id::String("policy".into()));
+    assert!(permission.control.input.is_cancelled());
+    assert!(permission.control.query.is_cancelled());
+    drop(permission);
+    let Envelope::Message(_, Some(next)) = requests.track(message(
+        Some(json!("policy")),
+        super::super::permissions::METHOD,
+        &Value::Null,
+    )) else {
+        panic!("released permission ID was not reusable");
+    };
+    assert!(!next.control.is_cancelled());
+}
+
 /// Build actual protocol frames; notifications have no ID field.
 fn message(id: Option<Value>, method: &str, params: &Value) -> Message {
     let mut value = json!({"jsonrpc":"2.0","method":method,"params":params});

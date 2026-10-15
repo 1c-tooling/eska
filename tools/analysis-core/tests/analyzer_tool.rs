@@ -29,6 +29,7 @@ mod local_syntax;
 mod manager_project;
 mod metadata_diagnostic_queries;
 mod metadata_locations;
+mod navigation_protocol;
 mod predefined_queries;
 mod project_changes;
 mod property_edit_plans;
@@ -241,6 +242,7 @@ impl Client {
         let mut child = Command::new(env!("CARGO_BIN_EXE_eska-analyzer"))
             .current_dir(root)
             .env("PATH", "")
+            .env_remove("ESKA_ACCEPTED_BASE_SHA256")
             .args(["--lang", lang])
             .args(extra)
             .stdin(Stdio::piped())

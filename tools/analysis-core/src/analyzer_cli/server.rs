@@ -11,8 +11,9 @@ use serde_json::{Value, json};
 use crate::{AnalysisSession, RequestCancellation, analysis_settings::Settings};
 
 use super::{
-    args::Cli, completion, documents, dto, edit_authority, hover, project_changes, protocol,
-    request_control, signature_help, stream, watched_files, watcher_registration,
+    args::Cli, completion, documents, dto, edit_authority, hover, navigation::Navigation,
+    project_changes, protocol, read_permissions::ReadPermissions, request_control, signature_help,
+    stream, watched_files, watcher_registration,
 };
 
 mod initialize;
@@ -41,6 +42,8 @@ struct Server<'a> {
     hover_format: hover::Format,
     signature: signature_help::Capabilities,
     edit_plans: Option<edit_authority::Authority>,
+    navigation: Option<Navigation>,
+    read_permissions: Option<ReadPermissions>,
     project_inputs: Option<project_changes::Inputs>,
     restart: Option<Value>,
     watcher: Option<watcher_registration::Registration>,
@@ -76,6 +79,8 @@ pub fn run(
         hover_format: hover::Format::Plaintext,
         signature: signature_help::Capabilities::negotiate(&Value::Null),
         edit_plans: None,
+        navigation: None,
+        read_permissions: None,
         project_inputs: None,
         restart: None,
         watcher: None,
@@ -224,6 +229,8 @@ impl Server<'_> {
             self.documents = documents::Documents::default();
             self.settings = None;
             self.edit_plans = None;
+            self.navigation = None;
+            self.read_permissions = None;
             self.project_inputs = None;
             self.restart = None;
             self.watcher = None;
