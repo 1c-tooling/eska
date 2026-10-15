@@ -5,6 +5,7 @@ import argparse
 import ctypes
 import errno
 import hashlib
+import io
 import json
 import math
 import os
@@ -21,10 +22,14 @@ import tempfile
 import threading
 import time
 import tomllib
+import zipfile
+import zlib
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 COMPONENTS = ("eska", "eska-project", "eska-build", "eska-check", "eska-analyzer")
 RECEIPT = ".eska-local-bundle.json"
+EXPLORER_PATH = "extensions/eska-explorer.vsix"
+EXPLORER_LIMIT = 64 * 1024 * 1024
 PROTOCOLS = {"eska": None, "eska-project": 1, "eska-build": 1, "eska-check": 1, "eska-analyzer": "0.1"}
 PROBE_LIMIT = 64 * 1024
 CONTROL_LIMIT = 1024 * 1024
@@ -38,6 +43,7 @@ HELP = {
 Использование:
   local-bundle.py [--lang ru-RU|en-US] build DESTINATION [OPTIONS]
   local-bundle.py [--lang ru-RU|en-US] verify BUNDLE [OPTIONS]
+  local-bundle.py [--lang ru-RU|en-US] package BUNDLE DESTINATION --explorer-vsix PATH
 
 build собирает выбранные инструменты в новый каталог; verify проверяет существующий набор.
 Без --components собираются eska, eska-project, eska-build, eska-check, eska-analyzer.
@@ -47,6 +53,8 @@ build собирает выбранные инструменты в новый �
   --repository PATH       Корень исходников (по умолчанию — репозиторий этого скрипта).
   --components NAME ...   Явный состав нового набора.
   --from PREVIOUS         Проверенный предыдущий набор, задающий состав по умолчанию.
+  --explorer-vsix PATH     Добавить указанный VSIX Explorer; --from сохраняет прежний по умолчанию.
+  --without-explorer       Явно исключить прежний VSIX при сборке.
   --profile release|debug Профиль Cargo (по умолчанию release).
   --cargo PATH            Команда Cargo (по умолчанию cargo).
   --build-timeout SECONDS Предел каждой сборки: 0 < SECONDS <= 7200; по умолчанию 1800.
@@ -58,6 +66,9 @@ build собирает выбранные инструменты в новый �
 
 Утилита не устанавливает канал поставки и не меняет проекты, платформу, Git или PATH.
 Destination должен отсутствовать. Атомарная публикация реализована для Linux/Windows.
+package копирует проверенный набор и VSIX в новый каталог без Cargo и установки в IDE.
+Параметр package --components NAME ... выбирает поднабор уже имеющихся CLI.
+VSIX проверяется по manifest/hash; runtime-совместимость принимает отдельный клиентский прогон.
 Результаты и ошибки — JSON, независимый от языка. Cargo stderr передаётся без перевода.
 """,
     "en-US": """Local ESKA tools bundle for development.
@@ -65,6 +76,7 @@ Destination должен отсутствовать. Атомарная публ
 Usage:
   local-bundle.py [--lang ru-RU|en-US] build DESTINATION [OPTIONS]
   local-bundle.py [--lang ru-RU|en-US] verify BUNDLE [OPTIONS]
+  local-bundle.py [--lang ru-RU|en-US] package BUNDLE DESTINATION --explorer-vsix PATH
 
 build compiles selected tools into a new directory; verify checks an existing bundle.
 Without --components, builds eska, eska-project, eska-build, eska-check, eska-analyzer.
@@ -74,6 +86,8 @@ build options:
   --repository PATH       Source root (default: this script's repository).
   --components NAME ...   Explicit components for the new bundle.
   --from PREVIOUS         Verified previous bundle providing the default components.
+  --explorer-vsix PATH     Add this Explorer VSIX; --from preserves the previous one by default.
+  --without-explorer       Explicitly omit the previous VSIX from this build.
   --profile release|debug Cargo profile (default: release).
   --cargo PATH            Cargo command (default: cargo).
   --build-timeout SECONDS Per-build limit: 0 < SECONDS <= 7200; default 1800.
@@ -85,6 +99,9 @@ Shared options:
 
 The utility installs no distribution channel and changes no projects, platform, Git or PATH.
 Destination must be absent. Atomic publication is implemented for Linux/Windows.
+package copies a verified bundle and VSIX into a new directory without Cargo or IDE installation.
+package --components NAME ... selects a subset of the already available CLI tools.
+VSIX admission checks manifest/hash; runtime compatibility needs separate client acceptance.
 Results and errors use locale-independent JSON. Cargo stderr is passed through untranslated.
 """,
 }
@@ -179,14 +196,16 @@ def control_bytes(path):
     return data
 
 
-def file_hash(path):
+def file_hash(path, limit=None):
     """Hash complete executable bytes with constant memory and no timestamp-based shortcuts."""
     digest = hashlib.sha256()
     size = 0
     with regular_file(path) as source:
         while block := source.read(1024 * 1024):
-            digest.update(block)
             size += len(block)
+            if limit is not None and size > limit:
+                raise Failure("file_oversized", file=path.name)
+            digest.update(block)
     return digest.hexdigest(), size
 
 
@@ -441,6 +460,75 @@ def inspect_binary(root, component, versions, timeout):
     return {"component": component, "path": "bin/" + path.name, "sha256": before[0], "size": before[1], "probe": report}
 
 
+def explorer_bytes(path):
+    """Bound the bytes actually read from one verified descriptor, including concurrent file growth."""
+    with regular_file(path) as source:
+        raw = source.read(EXPLORER_LIMIT + 1)
+    if len(raw) > EXPLORER_LIMIT:
+        raise Failure("explorer_archive_oversized")
+    return raw
+
+
+def inspect_explorer(path):
+    """Read bounded VSIX metadata without extracting or executing extension payloads."""
+    raw_archive = explorer_bytes(path)
+    before = hashlib.sha256(raw_archive).hexdigest(), len(raw_archive)
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw_archive)) as archive:
+            entries = archive.infolist()
+            names = [entry.filename for entry in entries]
+            if len(entries) > 10000 or len(set(names)) != len(names) or sum(entry.file_size for entry in entries) > 512 * 1024 * 1024:
+                raise Failure("explorer_archive_invalid")
+            for entry in entries:
+                parts = entry.filename.replace("\\", "/").split("/")
+                if entry.filename.startswith(("/", "\\")) or ".." in parts or "\\" in entry.filename or stat.S_ISLNK(entry.external_attr >> 16) or entry.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+                    raise Failure("explorer_archive_invalid")
+            metadata = archive.getinfo("extension/package.json")
+            if metadata.file_size > CONTROL_LIMIT:
+                raise Failure("control_oversized")
+            with archive.open(metadata) as member:
+                raw_manifest = member.read(CONTROL_LIMIT + 1)
+            if len(raw_manifest) > CONTROL_LIMIT:
+                raise Failure("control_oversized")
+            value = decode_json(raw_manifest)
+            if not isinstance(value, dict) or value.get("name") != "eska-explorer" or value.get("publisher") != "1c-tooling":
+                raise Failure("explorer_manifest_invalid")
+            version = value.get("version")
+            engines = value.get("engines")
+            contributions = value.get("contributes")
+            if not isinstance(version, str) or not re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?", version) or not isinstance(engines, dict) or not isinstance(engines.get("vscode"), str) or not engines["vscode"].strip():
+                raise Failure("explorer_manifest_invalid")
+            if value.get("main") != "./out/extension.js" or "extension/out/extension.js" not in names or not isinstance(contributions, dict):
+                raise Failure("explorer_manifest_invalid")
+            configuration = contributions.get("configuration")
+            properties = configuration.get("properties") if isinstance(configuration, dict) else None
+            backend = properties.get("eska.explorer.backend") if isinstance(properties, dict) else None
+            executable = properties.get("eska.explorer.analyzerExecutable") if isinstance(properties, dict) else None
+            if not isinstance(backend, dict) or not has_strings(backend.get("enum"), {"analyzer"}) or not isinstance(executable, dict) or executable.get("default") != "eska-analyzer":
+                raise Failure("explorer_manifest_invalid")
+    except (zipfile.BadZipFile, KeyError, RuntimeError, NotImplementedError, ValueError, EOFError, zlib.error) as error:
+        raise Failure("explorer_archive_invalid") from error
+    if file_hash(path, limit=EXPLORER_LIMIT) != before:
+        raise Failure("file_changed", component="eska-explorer")
+    return {"path": EXPLORER_PATH, "sha256": before[0], "size": before[1],
+            "manifest": {"extension_id": "1c-tooling.eska-explorer", "version": version, "vscode_engine": engines["vscode"]},
+            "validation": "manifest-and-hash"}
+
+
+def copy_explorer(path, bundle, components):
+    """The optional IDE artifact accompanies an explicit analyzer and retains its exact admitted bytes."""
+    if "eska-analyzer" not in components:
+        raise Failure("explorer_analyzer_missing")
+    inspected = inspect_explorer(path)
+    destination = bundle / EXPLORER_PATH
+    destination.parent.mkdir()
+    with destination.open("xb") as target:
+        target.write(explorer_bytes(path))
+    if inspect_explorer(destination) != inspected:
+        raise Failure("file_changed", component="eska-explorer")
+    return inspected
+
+
 def read_receipt(root):
     """An exact small receipt addresses only fixed executable names under a regular bundle directory."""
     if not stat.S_ISDIR(root.lstat().st_mode) or not stat.S_ISDIR((root / "bin").lstat().st_mode):
@@ -466,6 +554,12 @@ def read_receipt(root):
     for component, entry in zip(components, files):
         if not isinstance(entry, dict) or entry.get("component") != component or entry.get("path") != "bin/" + binary_name(component) or not valid_hash(entry.get("sha256")) or type(entry.get("size")) is not int or entry["size"] < 0 or not isinstance(entry.get("probe"), dict):
             raise Failure("receipt_invalid")
+    if "explorer" in value:
+        extension = value["explorer"]
+        if "eska-analyzer" not in components or not isinstance(extension, dict) or set(extension) != {"path", "sha256", "size", "manifest", "validation"} or extension.get("path") != EXPLORER_PATH or not valid_hash(extension.get("sha256")) or type(extension.get("size")) is not int or extension["size"] < 0 or not isinstance(extension.get("manifest"), dict) or extension.get("validation") != "manifest-and-hash":
+            raise Failure("receipt_invalid")
+        if not stat.S_ISDIR((root / "extensions").lstat().st_mode):
+            raise Failure("bundle_not_directory")
     return value, hashlib.sha256(raw).hexdigest()
 
 
@@ -480,6 +574,8 @@ def verify(root, timeout=5):
         inspected = inspect_binary(root, entry["component"], value["source"]["versions"], timeout)
         if inspected != entry:
             raise Failure("probe_changed", component=entry["component"])
+    if "explorer" in value and inspect_explorer(root / EXPLORER_PATH) != value["explorer"]:
+        raise Failure("explorer_changed")
     if hashlib.sha256(control_bytes(root / RECEIPT)).hexdigest() != digest:
         raise Failure("receipt_changed")
     return value, digest
@@ -561,12 +657,24 @@ def copy_artifacts(output, names, target, bundle):
         os.chmod(bundle / "bin" / binary_name(name), mode)
 
 
-def build(repository, destination, explicit=None, previous=None, profile="release", cargo="cargo", build_timeout=1800, probe_timeout=5):
+def build(repository, destination, explicit=None, previous=None, profile="release", cargo="cargo", build_timeout=1800, probe_timeout=5, explorer=None, without_explorer=False):
     """Compile selected tools privately; failed or interrupted work never claims a published destination."""
     destination = destination_path(destination)
     function = publication_function()
     old, previous_digest = verify(previous, probe_timeout) if previous is not None else (None, None)
     components = selected_components(explicit, old["components"] if old is not None else None)
+    if explorer is not None and without_explorer:
+        raise Failure("arguments_invalid")
+    inherited_explorer = explorer is None and not without_explorer and old is not None and "explorer" in old
+    if inherited_explorer:
+        explorer = Path(previous) / EXPLORER_PATH
+    expected_explorer = None
+    if explorer is not None:
+        if "eska-analyzer" not in components:
+            raise Failure("explorer_analyzer_missing")
+        expected_explorer = inspect_explorer(explorer)
+        if inherited_explorer and expected_explorer != old["explorer"]:
+            raise Failure("source_changed")
     source = source_contract(repository)
     source["fingerprint"] = source_fingerprint(repository)
     with tempfile.TemporaryDirectory(prefix=".eska-local-bundle-", dir=destination.parent) as temporary:
@@ -581,6 +689,10 @@ def build(repository, destination, explicit=None, previous=None, profile="releas
                    "platform": {"system": platform.system(), "machine": platform.machine()},
                    "profile": profile, "source": source, "files": entries,
                    "previous_receipt_sha256": previous_digest}
+        if explorer is not None:
+            receipt["explorer"] = copy_explorer(explorer, bundle, components)
+            if receipt["explorer"] != expected_explorer:
+                raise Failure("source_changed")
         raw = (json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode()
         if len(raw) > CONTROL_LIMIT:
             raise Failure("control_oversized")
@@ -599,6 +711,39 @@ def build(repository, destination, explicit=None, previous=None, profile="releas
     return receipt, hashlib.sha256(raw).hexdigest()
 
 
+def package(previous, destination, explorer, probe_timeout=5, explicit=None):
+    """Compose verified CLI artifacts and a supplied VSIX into a new no-replace bundle without Cargo."""
+    destination = destination_path(destination)
+    function = publication_function()
+    old, digest = verify(previous, probe_timeout)
+    components = selected_components(explicit, old["components"])
+    if not set(components).issubset(old["components"]):
+        raise Failure("components_unavailable")
+    if "eska-analyzer" not in components:
+        raise Failure("explorer_analyzer_missing")
+    files = [entry for entry in old["files"] if entry["component"] in components]
+    with tempfile.TemporaryDirectory(prefix=".eska-local-bundle-", dir=destination.parent) as temporary:
+        bundle = Path(temporary) / "bundle"
+        (bundle / "bin").mkdir(parents=True)
+        for entry in files:
+            source_path = previous / entry["path"]
+            target = bundle / entry["path"]
+            with regular_file(source_path) as source, target.open("xb") as output:
+                mode = stat.S_IMODE(os.fstat(source.fileno()).st_mode)
+                shutil.copyfileobj(source, output)
+            target.chmod(mode)
+        receipt = dict(old, components=components, files=files, previous_receipt_sha256=digest,
+                       explorer=copy_explorer(explorer, bundle, components))
+        raw = (json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode()
+        if len(raw) > CONTROL_LIMIT:
+            raise Failure("control_oversized")
+        (bundle / RECEIPT).write_bytes(raw)
+        if verify(bundle, probe_timeout)[0] != receipt or verify(previous, probe_timeout)[1] != digest:
+            raise Failure("source_changed")
+        publish(bundle, destination, function)
+    return receipt, hashlib.sha256(raw).hexdigest()
+
+
 def main():
     """The utility emits machine JSON and never modifies PATH, Cargo installs or an existing bundle."""
     parser = Parser()
@@ -612,9 +757,18 @@ def main():
     create.add_argument("--cargo", default="cargo")
     create.add_argument("--build-timeout", type=float, default=1800)
     create.add_argument("--probe-timeout", type=float, default=5)
+    extension = create.add_mutually_exclusive_group()
+    extension.add_argument("--explorer-vsix", type=Path)
+    extension.add_argument("--without-explorer", action="store_true")
     check = commands.add_parser("verify")
     check.add_argument("bundle", type=Path)
     check.add_argument("--probe-timeout", type=float, default=5)
+    compose = commands.add_parser("package")
+    compose.add_argument("bundle", type=Path)
+    compose.add_argument("destination", type=Path)
+    compose.add_argument("--explorer-vsix", type=Path, required=True)
+    compose.add_argument("--probe-timeout", type=float, default=5)
+    compose.add_argument("--components", nargs="+", choices=COMPONENTS)
     try:
         locale, raw_arguments = language_arguments(sys.argv[1:])
         if "--help" in raw_arguments or "-h" in raw_arguments:
@@ -628,11 +782,16 @@ def main():
                 raise Failure("timeout_invalid")
             receipt, digest = build(arguments.repository.resolve(strict=True), arguments.destination,
                                     arguments.components, arguments.previous, arguments.profile,
-                                    arguments.cargo, arguments.build_timeout, arguments.probe_timeout)
+                                    arguments.cargo, arguments.build_timeout, arguments.probe_timeout,
+                                    arguments.explorer_vsix, arguments.without_explorer)
+        elif arguments.command == "package":
+            receipt, digest = package(arguments.bundle, arguments.destination, arguments.explorer_vsix, arguments.probe_timeout, arguments.components)
         else:
             receipt, digest = verify(arguments.bundle, arguments.probe_timeout)
         value = {"schema_version": 1, "status": "success", "command": arguments.command,
                  "components": receipt["components"], "receipt_sha256": digest}
+        if "explorer" in receipt:
+            value["explorer"] = receipt["explorer"]["manifest"]
         code = 0
     except Failure as error:
         value = {"schema_version": 1, "status": "error", "error": {"code": error.code, **error.details}}

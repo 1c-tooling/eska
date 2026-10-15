@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-15",
+  "scope": "local-development-bundle-optional-explorer",
+  "status": "passed",
+  "host": {
+    "system": "Linux",
+    "machine": "x86_64"
+  },
+  "historical_cli_receipt": "local-tool-bundle-results.json",
+  "installed_explorer_acceptance": "explorer-query-syntax.md",
+  "installed_explorer_receipt": "explorer-query-syntax-results.json",
+  "artifact_identity": {
+    "extension_id": "1c-tooling.eska-explorer",
+    "extension_version": "0.0.11",
+    "vscode_engine": "^1.109.0",
+    "vsix_bytes": 1482456,
+    "vsix_same_bytes_as_installed_acceptance": true,
+    "analyzer_same_bytes_as_installed_acceptance": true,
+    "root_package_version": "0.14.2",
+    "sdk_package_version": "0.0.0",
+    "source_core_version": "0.14.2",
+    "validation": "manifest-and-hash",
+    "runtime_compatibility_proven_by_manifest": false
+  },
+  "python_tests": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" python3 -B -m unittest tools/tests/test_local_bundle.py",
+    "groups": 26,
+    "previous_groups": 18,
+    "new_groups": 8,
+    "exit_code": 0,
+    "independent_repeat_seconds": 5.607,
+    "scope": "controlled-process-fixtures",
+    "checks": [
+      "verified-existing-cli-and-vsix-package-without-cargo",
+      "available-component-subset-and-analyzer-requirement",
+      "from-inherits-vsix-unless-explicitly-removed",
+      "manifest-archive-receipt-hash-and-path-refusals",
+      "input-change-before-publication-refusal",
+      "actual-corrupt-deflate-cli-ru-en-machine-error",
+      "actual-read-posthash-and-copy-bounds",
+      "locale-independent-package-json-and-no-replace-publication"
+    ]
+  },
+  "archive_admission": {
+    "actual_archive_limit_bytes": 67108864,
+    "manifest_limit_bytes": 1048576,
+    "maximum_entries": 10000,
+    "maximum_declared_uncompressed_bytes": 536870912,
+    "compression_methods": [
+      "STORED",
+      "DEFLATED"
+    ],
+    "payload_extracted": false,
+    "payload_executed": false,
+    "actual_read_posthash_and_copy_bounded": true
+  },
+  "actual_package_cases": [
+    {
+      "label": "five-cli-plus-explorer",
+      "command": "package BUNDLE DESTINATION --explorer-vsix VSIX",
+      "components": [
+        "eska",
+        "eska-project",
+        "eska-build",
+        "eska-check",
+        "eska-analyzer"
+      ],
+      "seconds": 0.942,
+      "package_exit_code": 0,
+      "verify_ru_exit_code": 0,
+      "verify_en_exit_code": 0,
+      "verify_ru_en_equal": true,
+      "stderr_bytes": 0,
+      "binary_bytes": 147245328,
+      "vsix_bytes": 1482456,
+      "same_binary_and_vsix_bytes": true,
+      "previous_receipt_link_verified": true,
+      "runtime_path": "empty",
+      "cargo_invoked": false,
+      "ide_profile_changed": false
+    },
+    {
+      "label": "analyzer-plus-explorer",
+      "command": "package BUNDLE DESTINATION --explorer-vsix VSIX --components eska-analyzer",
+      "components": [
+        "eska-analyzer"
+      ],
+      "seconds": 0.757,
+      "package_exit_code": 0,
+      "verify_ru_exit_code": 0,
+      "verify_en_exit_code": 0,
+      "verify_ru_en_equal": true,
+      "stderr_bytes": 0,
+      "binary_bytes": 54476432,
+      "vsix_bytes": 1482456,
+      "same_binary_and_vsix_bytes": true,
+      "previous_receipt_link_verified": true,
+      "runtime_path": "empty",
+      "cargo_invoked": false,
+      "ide_profile_changed": false
+    }
+  ],
+  "preservation": {
+    "source_bundle_bytes_mode_mtime": true,
+    "input_vsix_bytes": true,
+    "input_cli_bytes_equal_to_published_cli": true,
+    "input_vsix_bytes_equal_to_published_vsix": true,
+    "private_paths_and_artifact_hash_values_omitted": true
+  },
+  "limitations": [
+    "Actual packaging and probes were checked on Linux x86_64; Windows publication remains untested and other hosts are unsupported.",
+    "Manifest-and-hash admission does not execute the extension or prove analyzer API compatibility; installed runtime acceptance is separate and tied to the exact tested pair.",
+    "The existing release binaries were copied without Cargo; this is not a rebuild of subsequent SDK changes.",
+    "The declared uncompressed ZIP size is bounded; the full extension payload is not decompressed or semantically validated.",
+    "No installer, global update/remove, IDE installation, platform 1C run, full semantic analysis or complete EF-21/MVP acceptance is claimed."
+  ]
+}

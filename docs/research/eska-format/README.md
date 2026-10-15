@@ -78,6 +78,10 @@ checker; восемь all4 RU/EN случаев совпали с direct streams
 [Локальный комплект пяти CLI](local-tool-bundle.md) прошёл настоящую release
 сборку, empty-PATH smoke и выборочное обновление с сохранением прежнего набора.
 Размеры и normal dependency graphs измерены; обычный install/update/remove ещё нужен.
+[Необязательный Explorer в комплекте](local-tool-bundle-explorer-results.json)
+прошёл полную и analyzer-only упаковку без Cargo, empty-PATH verify RU/EN и
+проверку точных bytes установленной пары. Все 26 Python groups прошли;
+manifest/hash не подменяет runtime-приёмку, глобальная установка ещё нужна.
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
 T84 — [DONE по версиям EPF/ERF](external-version.md): экспортная `Версия()`,
 CLI/миграция и платформенная приёмка двух схем; [синтаксический контракт](external-version-syntax.md).

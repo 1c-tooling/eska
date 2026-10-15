@@ -26,7 +26,9 @@ standalone checker с явным профилем и проверенной со
 
 [Локальный комплект пяти CLI](../research/eska-format/local-tool-bundle.md)
 прошёл release build, empty-PATH smoke и выборочное обновление через `--from`.
-Размеры/normal graphs измерены; обычные install/update/remove и VSIX ещё нужны.
+Размеры/normal graphs измерены. Необязательный VSIX теперь упаковывается без
+Cargo с полным комплектом или одним analyzer; exact installed pair, empty-PATH
+verify RU/EN и 26 Python groups прошли. Обычные install/update/remove ещё нужны.
 
 [Синтаксис declared `.sdbl`](../research/eska-format/analyzer-query-syntax.md)
 работает в общей сессии IDE/checker с revision/quota/watch/replay.

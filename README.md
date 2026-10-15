@@ -54,7 +54,9 @@ cargo install eska --locked
 
 Для нового формата ESKA доступна [сборка локального комплекта пяти CLI](docs/research/eska-format/local-tool-bundle.md)
 через `python3 tools/local-bundle.py build <new-directory>`. Можно выбрать
-отдельные инструменты и сохранить этот состав при следующей сборке.
+отдельные инструменты и сохранить этот состав при следующей сборке. Команда
+`package` добавляет готовый VSIX Explorer к проверенным CLI без пересборки;
+доступен поднабор analyzer + Explorer.
 Это developer-поставка в новый каталог; обычные install/update пока поставляют
 прежний CLI.
 

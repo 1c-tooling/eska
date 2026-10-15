@@ -2378,8 +2378,10 @@ standalone checker через bounded probe с отдельной linked-core ve
 
 [Локальный комплект пяти CLI](research/eska-format/local-tool-bundle.md)
 прошёл release build, пустой runtime PATH и выборочное обновление без изменения
-прежнего набора. Размеры/normal graphs измерены; обычный install/update/remove,
-совместная поставка VSIX и остальные условия EF-21 ещё в работе.
+прежнего набора. Размеры/normal graphs измерены. Необязательный VSIX упакован
+с полным комплектом и analyzer-only без Cargo; exact installed pair и
+empty-PATH verify RU/EN прошли, Python groups — 26. Manifest/hash не подменяет
+runtime-приёмку. Обычный install/update/remove и остальные условия EF-21 в работе.
 
 [Declared `.sdbl` syntax](research/eska-format/analyzer-query-syntax.md) подключён
 к общей сессии IDE/checker и source quota с current overlay/watch/replay.

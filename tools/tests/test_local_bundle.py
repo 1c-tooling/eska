@@ -5,11 +5,13 @@ import json
 import os
 from pathlib import Path
 import signal
+import struct
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
+import zipfile
 from unittest import mock
 
 REPOSITORY = Path(__file__).resolve().parents[2]
@@ -123,6 +125,193 @@ class LocalBundleTests(unittest.TestCase):
         """Failures remove only owned staging and leave the requested destination completely unclaimed."""
         self.assertFalse(os.path.lexists(destination))
         self.assertEqual(list(self.root.glob(".eska-local-bundle-*")), [])
+
+    def explorer(self, name="explorer with spaces.vsix", change=None, extra=None):
+        """Write an owned static VSIX fixture; admission never executes or installs its JavaScript."""
+        path = self.root / name
+        value = {"name": "eska-explorer", "publisher": "1c-tooling", "version": "0.0.11",
+                 "main": "./out/extension.js", "engines": {"vscode": "^1.109.0"},
+                 "contributes": {"configuration": {"properties": {
+                     "eska.explorer.backend": {"enum": ["designer-xml", "analyzer"]},
+                     "eska.explorer.analyzerExecutable": {"default": "eska-analyzer"}}}}}
+        if change:
+            change(value)
+        with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("extension/package.json", json.dumps(value))
+            archive.writestr("extension/out/extension.js", "throw new Error('must not execute');")
+            if extra:
+                archive.writestr(*extra)
+        return path
+
+    def test_package_preserves_verified_cli_selection_and_source_without_cargo(self):
+        """A complete new bundle contains exact CLI/VSIX bytes while old inputs and compiler logs stay unchanged."""
+        old, receipt, digest = self.build(components=["eska-check", "eska-analyzer"])
+        vsix = self.explorer()
+        tracked = [p for p in old.rglob("*") if p.is_file()] + [vsix, self.repository / "cargo-log.jsonl"]
+        before = {p: (p.read_bytes(), p.stat().st_mtime_ns, p.stat().st_mode) for p in tracked}
+        destination = self.root / "paired bundle"
+        paired, paired_digest = BUNDLE.package(old, destination, vsix, probe_timeout=1)
+        self.assertEqual(paired["components"], ["eska-check", "eska-analyzer"])
+        self.assertEqual(paired["files"], receipt["files"])
+        self.assertEqual(paired["previous_receipt_sha256"], digest)
+        self.assertEqual(paired["explorer"]["manifest"]["extension_id"], "1c-tooling.eska-explorer")
+        self.assertEqual((destination / BUNDLE.EXPLORER_PATH).read_bytes(), vsix.read_bytes())
+        self.assertEqual(BUNDLE.verify(destination, timeout=1), (paired, paired_digest))
+        self.assertEqual(before, {p: (p.read_bytes(), p.stat().st_mtime_ns, p.stat().st_mode) for p in tracked})
+        selective = self.root / "IDE only"
+        selected, _ = BUNDLE.package(old, selective, vsix, probe_timeout=1, explicit=["eska-analyzer"])
+        self.assertEqual(selected["components"], ["eska-analyzer"])
+        self.assertEqual([p.name for p in (selective / "bin").iterdir()], ["eska-analyzer"])
+        with self.assertRaises(BUNDLE.Failure) as error:
+            BUNDLE.package(old, self.root / "unavailable tool", vsix, explicit=["eska", "eska-analyzer"])
+        self.assertEqual(error.exception.code, "components_unavailable")
+
+    def test_rebuild_preserves_optional_explorer_and_requires_explicit_removal(self):
+        """Selective updates retain the paired IDE artifact; omission is explicit and cannot leave it without an analyzer."""
+        old, _, _ = self.build(components=["eska-analyzer"])
+        paired = self.root / "paired"
+        BUNDLE.package(old, paired, self.explorer(), probe_timeout=1)
+        _, receipt, _ = self.build("inherited explorer", previous=paired)
+        self.assertEqual(receipt["components"], ["eska-analyzer"])
+        self.assertEqual(receipt["explorer"], BUNDLE.verify(paired, 1)[0]["explorer"])
+        before = (self.repository / "cargo-log.jsonl").read_bytes()
+        with self.assertRaises(BUNDLE.Failure) as error:
+            self.build("missing analyzer", ["eska-project"], paired)
+        self.assertEqual(error.exception.code, "explorer_analyzer_missing")
+        self.assertEqual((self.repository / "cargo-log.jsonl").read_bytes(), before)
+        destination = self.root / "without explorer"
+        receipt, _ = BUNDLE.build(self.repository, destination, previous=paired, explicit=["eska-project"],
+                                  without_explorer=True, cargo=self.cargo, probe_timeout=1)
+        self.assertNotIn("explorer", receipt)
+        self.assertEqual(receipt["components"], ["eska-project"])
+
+    def test_optional_explorer_refuses_invalid_manifest_and_archive_before_cargo(self):
+        """Malformed, foreign, aliased or duplicate manifests never start a build or publish a partial bundle."""
+        changes = [lambda p: p.update(publisher="other"), lambda p: p.update(version=True),
+                   lambda p: p.update(main="../escape.js"), lambda p: p.update(contributes={})]
+        inputs = [self.explorer("invalid-" + str(index) + ".vsix", change=change) for index, change in enumerate(changes)]
+        inputs.append(self.explorer("escape.vsix", extra=("../escape", "unrelated")))
+        link = zipfile.ZipInfo("extension/linked"); link.external_attr = (0o120777 << 16)
+        inputs.append(self.explorer("link.vsix", extra=(link, "../outside")))
+        duplicate = self.explorer("duplicate.vsix")
+        with zipfile.ZipFile(duplicate, "a") as archive:
+            with self.assertWarns(UserWarning):
+                archive.writestr("extension/package.json", "{}")
+        inputs.append(duplicate)
+        broken = self.root / "broken.vsix"; broken.write_bytes(b"invalid ZIP"); inputs.append(broken)
+        for index, vsix in enumerate(inputs):
+            destination = self.root / ("rejected-" + str(index))
+            with self.assertRaises(BUNDLE.Failure):
+                BUNDLE.build(self.repository, destination, explicit=["eska-analyzer"], explorer=vsix, cargo=self.cargo)
+            self.assert_no_publication(destination)
+        self.assertFalse((self.repository / "cargo-log.jsonl").exists())
+
+    def test_explorer_changed_during_build_is_not_silently_accepted(self):
+        """VSIX bytes selected before compilation remain part of the exact input boundary."""
+        vsix = self.explorer()
+        original = BUNDLE.copy_artifacts
+        def mutate(*args):
+            """Replace the selected valid archive after compilation but before the bundle copy."""
+            original(*args)
+            self.explorer(change=lambda p: p.update(version="0.0.12"))
+        destination = self.root / "changed explorer"
+        with mock.patch.object(BUNDLE, "copy_artifacts", side_effect=mutate), self.assertRaises(BUNDLE.Failure) as error:
+            BUNDLE.build(self.repository, destination, explicit=["eska-analyzer"], explorer=vsix, cargo=self.cargo)
+        self.assertEqual(error.exception.code, "source_changed")
+        self.assert_no_publication(destination)
+
+    def test_corrupt_deflate_is_a_locale_independent_machine_error(self):
+        """Broken compressed metadata cannot escape the public JSON error boundary as a traceback."""
+        path = self.explorer()
+        with zipfile.ZipFile(path) as archive:
+            member = archive.getinfo("extension/package.json")
+        data = bytearray(path.read_bytes())
+        name_size, extra_size = struct.unpack_from("<HH", data, member.header_offset + 26)
+        start = member.header_offset + 30 + name_size + extra_size
+        data[start:start + member.compress_size] = b"\xff" * member.compress_size
+        path.write_bytes(data)
+        outputs = []
+        for locale in ["ru-RU", "en-US"]:
+            destination = self.root / ("broken-deflate-" + locale)
+            child = subprocess.run([sys.executable, str(REPOSITORY / "tools/local-bundle.py"), "--lang", locale,
+                "build", str(destination), "--repository", str(self.repository), "--components", "eska-analyzer",
+                "--cargo", str(self.cargo), "--explorer-vsix", str(path)], capture_output=True)
+            self.assertEqual(child.returncode, 1)
+            self.assertEqual(child.stderr, b"")
+            outputs.append(json.loads(child.stdout))
+            self.assert_no_publication(destination)
+        self.assertEqual(outputs[0], outputs[1])
+        self.assertEqual(outputs[0]["error"]["code"], "explorer_archive_invalid")
+        self.assertFalse((self.repository / "cargo-log.jsonl").exists())
+
+    def test_explorer_limit_covers_actual_read_posthash_and_copy(self):
+        """Growing a selected archive between admissions cannot bypass its read, hash or copy bound."""
+        path = self.explorer()
+        saved = path.read_bytes()
+        with mock.patch.object(BUNDLE, "EXPLORER_LIMIT", len(saved) - 1), self.assertRaises(BUNDLE.Failure) as error:
+            BUNDLE.inspect_explorer(path)
+        self.assertEqual(error.exception.code, "explorer_archive_oversized")
+        read = BUNDLE.explorer_bytes
+        def growing_read(source):
+            """Change the selected path only after its bounded snapshot was obtained."""
+            raw = read(source)
+            source.write_bytes(raw + b"x")
+            return raw
+        with mock.patch.object(BUNDLE, "EXPLORER_LIMIT", len(saved)), mock.patch.object(BUNDLE, "explorer_bytes", side_effect=growing_read), self.assertRaises(BUNDLE.Failure) as error:
+            BUNDLE.inspect_explorer(path)
+        self.assertEqual(error.exception.code, "file_oversized")
+        path.write_bytes(saved)
+        inspect = BUNDLE.inspect_explorer
+        def growing_inspect(source):
+            """Grow the selected file after admission and before its actual copy read."""
+            report = inspect(source)
+            source.write_bytes(saved + b"x")
+            return report
+        bundle = self.root / "private copying"; bundle.mkdir()
+        with mock.patch.object(BUNDLE, "EXPLORER_LIMIT", len(saved)), mock.patch.object(BUNDLE, "inspect_explorer", side_effect=growing_inspect), self.assertRaises(BUNDLE.Failure) as error:
+            BUNDLE.copy_explorer(path, bundle, ["eska-analyzer"])
+        self.assertEqual(error.exception.code, "explorer_archive_oversized")
+
+    def test_verify_fences_explorer_hash_receipt_path_and_alias(self):
+        """A paired receipt never grants arbitrary paths or accepts a replaced extension archive."""
+        old, _, _ = self.build(components=["eska-analyzer"])
+        paired = self.root / "paired"
+        receipt, _ = BUNDLE.package(old, paired, self.explorer(), probe_timeout=1)
+        archive = paired / BUNDLE.EXPLORER_PATH
+        archive.write_bytes(self.explorer("changed.vsix", change=lambda p: p.update(version="0.0.12")).read_bytes())
+        with self.assertRaises(BUNDLE.Failure) as error:
+            BUNDLE.verify(paired, 1)
+        self.assertEqual(error.exception.code, "explorer_changed")
+        receipt["explorer"]["path"] = "../outside.vsix"
+        (paired / BUNDLE.RECEIPT).write_text(json.dumps(receipt))
+        with self.assertRaises(BUNDLE.Failure) as error:
+            BUNDLE.verify(paired, 1)
+        self.assertEqual(error.exception.code, "receipt_invalid")
+
+    def test_package_cli_is_locale_independent_and_refuses_raced_destination(self):
+        """Actual package CLI emits stable JSON, and no-replace publication preserves an intervening directory."""
+        old, _, _ = self.build(components=["eska-analyzer"])
+        vsix = self.explorer()
+        receipts = []
+        for locale in ["ru-RU", "en-US"]:
+            destination = self.root / locale
+            child = subprocess.run([sys.executable, str(REPOSITORY / "tools/local-bundle.py"), "--lang", locale,
+                                    "package", str(old), str(destination), "--explorer-vsix", str(vsix)], capture_output=True)
+            self.assertEqual(child.returncode, 0, child.stderr.decode())
+            self.assertEqual(child.stderr, b"")
+            receipts.append(json.loads(child.stdout))
+        self.assertEqual(receipts[0], receipts[1])
+        publish = BUNDLE.publish
+        def raced(source, destination, function):
+            """Claim the final name only after all artifact admission has finished."""
+            destination.mkdir(); (destination / "keep").write_bytes(b"user bytes")
+            publish(source, destination, function)
+        destination = self.root / "raced package"
+        with mock.patch.object(BUNDLE, "publish", side_effect=raced), self.assertRaises(BUNDLE.Failure) as error:
+            BUNDLE.package(old, destination, vsix, 1)
+        self.assertEqual(error.exception.code, "destination_exists")
+        self.assertEqual((destination / "keep").read_bytes(), b"user bytes")
+        self.assertFalse((destination / BUNDLE.RECEIPT).exists())
 
     def test_full_set_recipes_versions_and_read_only_verify(self):
         """The real five names retain two package versions, exact core/protocol data and stable hashes."""

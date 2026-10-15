@@ -1,10 +1,11 @@
-# Локальный комплект project/build/check/analyzer
+# Локальный комплект project/build/check/analyzer и Explorer
 
 `tools/local-bundle.py` собирает согласованный локальный набор отдельных
 исполняемых файлов в новый каталог. По умолчанию это `eska`, `eska-project`,
 `eska-build`, `eska-check`, `eska-analyzer`. Утилита использует существующие
 Cargo recipes, не устанавливает канал обновления и не меняет PATH, профиль
-редактора или проекты.
+редактора или проекты. Необязательный готовый VSIX Explorer можно добавить при
+сборке или упаковать с уже проверенными CLI без Cargo.
 
 Для сборки нужны Rust/Cargo с закреплёнными зависимостями и Python 3.11+
 со стандартным [`tomllib`](https://docs.python.org/3/library/tomllib.html).
@@ -56,6 +57,54 @@ python3 tools/local-bundle.py build "$RUN_DIR/project updated" \
 не заменяется и сохраняет bytes/mode/mtime. Это сборка новой версии набора,
 а не переключение глобальной установки.
 
+## Необязательный VSIX Explorer
+
+`package` копирует проверенные бинарники и указанный VSIX в новый каталог,
+не пересобирая инструменты и не устанавливая расширение в редактор:
+
+```sh
+python3 tools/local-bundle.py package "$RUN_DIR/bundle with spaces" \
+  "$RUN_DIR/tools and Explorer" --explorer-vsix "$EXPLORER_VSIX"
+python3 tools/local-bundle.py package "$RUN_DIR/bundle with spaces" \
+  "$RUN_DIR/analyzer and Explorer" --explorer-vsix "$EXPLORER_VSIX" \
+  --components eska-analyzer
+python3 tools/local-bundle.py verify "$RUN_DIR/analyzer and Explorer"
+```
+
+Здесь `EXPLORER_VSIX` — путь к существующему `eska-explorer.vsix`. Без
+`--components` сохраняются все CLI исходного набора. Явный выбор допускает
+только поднабор уже имеющихся инструментов и требует `eska-analyzer`.
+Предыдущий receipt, бинарники и переданный VSIX проверяются; их bytes не
+меняются. Новый receipt связывается с предыдущим через
+`previous_receipt_sha256`.
+
+VSIX лежит по фиксированному пути `extensions/eska-explorer.vsix`.
+Необязательный объект `explorer` в receipt schema 1 содержит этот путь,
+hash/размер, `extension_id`, `version`, `vscode_engine` и
+`validation: "manifest-and-hash"`. Старые наборы без этого объекта остаются
+допустимыми. `verify` повторяет проверку архива вместе с CLI probes.
+
+При сборке `build --explorer-vsix PATH` добавляет явно выбранный VSIX.
+`build --from PREVIOUS` по умолчанию наследует прежний VSIX вместе с составом
+CLI. Удаление задаётся явно через `--without-explorer`; этот флаг несовместим
+с `--explorer-vsix`. Если выбранный состав исключает analyzer, а VSIX остаётся
+явным или унаследованным, команда отказывает до Cargo.
+
+Архив читается из одного проверенного regular-file descriptor с пределом
+64 MiB фактических bytes; повторное хеширование и копирование также ограничены.
+Допускаются не более 10000 ZIP entries, не более 512 MiB суммарного заявленного
+распакованного размера и только методы ZIP STORED/DEFLATED. Для
+`extension/package.json` действует отдельный предел 1 MiB заявленных и
+фактически прочитанных bytes. Повторные имена, выход за каталог, symlink
+entries, повреждённые ZIP/DEFLATE и неподходящий manifest отказывают с JSON
+ошибкой до публикации. Payload не извлекается и не запускается.
+
+Manifest должен объявлять `1c-tooling.eska-explorer`, версию, VS Code engine,
+`./out/extension.js` и настройки analyzer backend. Такая проверка с hash
+подтверждает состав и неизменность выбранных bytes. Она не доказывает запуск
+расширения, совместимость API с analyzer или полноту анализа; для этого нужна
+отдельная установленная клиентская приёмка.
+
 ## Публикация и отказ
 
 Source fingerprint связывает Cargo manifests/locks и текущие production inputs
@@ -71,7 +120,8 @@ build. Ошибка probe, сборки, fingerprint или прерывание
 
 ## Проверки и границы EF-21
 
-18 Python-групп прошли на собственных уникальных playground fixtures:
+В первой приёмке 18 Python-групп прошли на собственных уникальных playground
+fixtures:
 full/selective recipes, RU/EN и JSON, compatibility, source changes, bounded
 outputs/timeouts, raced destinations, interruption/cleanup и verify без записи.
 Это process fixtures с управляемым Cargo, отдельно от настоящей сборки.
@@ -122,7 +172,35 @@ HTTP/TLS или LSP framework crates; framed LSP реализован собст
 [Обезличенный отчёт](local-tool-bundle-results.json) содержит раздельные
 runtime cases, графы и проверки сохранности.
 
+## Приёмка упаковки CLI и Explorer
+
+После добавления необязательного VSIX прошли 26 Python-групп: исходные 18 и
+8 новых для упаковки, выбора поднабора, наследования/явного удаления VSIX,
+проверки архива и manifest, изменения входа, hash/path guards и RU/EN.
+Пределы проверены на фактическом чтении, повторном hash и копировании;
+повреждённый DEFLATE проверен через настоящий CLI на обоих языках.
+Независимый повтор всех 26 групп прошёл за 5.607 s. Это управляемые process
+fixtures, включая имитацию Cargo, отдельно от реальной пары ниже.
+
+Существующий release-комплект из пяти инструментов упакован с точным VSIX,
+использованным в [установленной приёмке Explorer](explorer-query-syntax.md).
+Проверены полный состав и поднабор из одного analyzer. На Linux x86_64
+`package` занял соответственно 0.942 s и 0.757 s. Обе команды прошли с пустым
+PATH; повторные `verify` на RU/EN дали побайтно одинаковый JSON между локалями.
+Cargo не запускался. CLI и VSIX в новых наборах совпали с входами;
+bytes/mode/mtime всего исходного набора и bytes входного VSIX сохранены.
+Упаковка не меняла профиль IDE.
+
+Обе пары содержат Explorer `0.0.11`, engine `^1.109.0`, размер VSIX
+1482456 bytes. Полный набор содержит 147245328 bytes бинарников,
+analyzer-only — 54476432 bytes. Это прежние release-бинарники с SDK
+`0.0.0` и linked source core `0.14.2`, без новой сборки или повышения версии.
+[Отдельный обезличенный receipt](local-tool-bundle-explorer-results.json)
+фиксирует эти проверки; исходный receipt 937.13 s / 18 групп сохранён.
+Runtime-приёмка Explorer относится к указанной точной паре, а не ко всем
+архивам, прошедшим `manifest-and-hash`.
+
 Этот локальный development комплект — часть EF-21. Обычные установщики,
-глобальный update/remove, совместная поставка VSIX и остальные платформы ещё
-не приняты. Полнота анализа, CF/CFE composition и EF-16 остаются отдельными
-условиями MVP; успешная упаковка не меняет их статусы.
+глобальный update/remove и остальные платформы ещё не приняты. Эта проверка
+не принимает полную EF-21, EF-18 или MVP: полнота анализа и остальные условия
+EF-16 проверяются отдельно.

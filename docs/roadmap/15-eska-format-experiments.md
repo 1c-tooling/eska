@@ -111,7 +111,7 @@ EF-18 сохраняет `IN_PROGRESS` как незавершённую реа�
 | EF-18 | IN_PROGRESS | EF-10, EF-17; продолжение после EF-20 | IDE-сервер и checker на завершённой структуре; продолжение отложено |
 | EF-19 | DEFERRED | EF-16, T26 | Самостоятельный VCS после MVP и fmt |
 | EF-20 | IN_PROGRESS | EF-12, EF-14, EF-23, EF-25; T82 | new/init, импорт и сборка CF/CFE/EPF/ERF через общий CLI |
-| EF-21 | PLANNED | EF-11, EF-20 | Устанавливаемый комплект MVP и выборочная установка |
+| EF-21 | IN_PROGRESS | EF-11, EF-20 | Устанавливаемый комплект MVP и выборочная установка |
 | EF-22 | PLANNED | EF-20; fmt — T26; релизы — T83, T84, T56, T32 | Подключение fmt после MVP; автоматические релизы отдельно |
 | EF-23 | DONE | EF-24 | Хранение запросов СКД/динамических списков в .sdbl и обратная сборка |
 | EF-24 | DONE | EF-10, EF-07 | Завершённая структура исходников и миграция экспериментального профиля |
@@ -2114,11 +2114,19 @@ init, сохранённые правки, повторный импорт и с
 
 ## EF-21 Комплект инструментов и выборочная установка
 
+**Статус:** `IN_PROGRESS`; локальная сборка и совместная упаковка приняты отдельно
+от обычной установки и глобального update/remove.
+
 [Локальный development комплект](../research/eska-format/local-tool-bundle.md)
 собирает пять проверенных binaries в новый каталог с no-replace publication.
 18 Python groups, настоящая release-сборка/empty-PATH smoke и selective `--from`
-прошли. Размеры и normal dependency graphs измерены; обычные каналы установки,
-global update/remove, совместный VSIX и другие ОС ещё не приняты.
+прошли. Размеры и normal dependency graphs измерены.
+[Необязательный VSIX](../research/eska-format/local-tool-bundle-explorer-results.json)
+добавлен в тот же receipt: package без Cargo, поднабор analyzer + Explorer,
+наследование/явное исключение при build и 26 Python groups прошли. Полная и
+analyzer-only пары сохранили exact bytes установленной приёмки; empty-PATH
+verify совпал на RU/EN. Manifest/hash не доказывает runtime-совместимость.
+Обычные каналы установки, global update/remove и другие ОС ещё не приняты.
 
 [Оболочка `eska check`](../research/eska-format/shell-check-delegation.md) подключена
 через bounded capabilities probe с отдельной linked-core version. Восемь all4
