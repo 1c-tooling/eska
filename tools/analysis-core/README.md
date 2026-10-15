@@ -5,6 +5,11 @@
 проектная библиотека не зависит от анализатора. Платформа, Git, IDE-сервер и
 XML-экспорт не участвуют в чтении.
 
+`eska-check --capabilities --format json` и `eska-analyzer --capabilities --format json`
+проверяют совместимость бинарников без project discovery. SDK package version
+и linked `source_core_version` сообщаются отдельно; доступный профиль не означает
+полноту анализа. В обычном analyzer режиме stdout остаётся framed JSON-RPC.
+
 [Навигация и права чтения](../../docs/research/eska-format/analyzer-navigation.md)
 используют тот же host: project context, declared owners/modules/queries и
 bounded policy requests с независимым accepted pin. Readonly capability не

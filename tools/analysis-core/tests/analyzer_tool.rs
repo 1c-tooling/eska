@@ -1,6 +1,7 @@
 //! Actual stdio sessions verify negotiation, lazy state and read-only metadata in both locales.
 
 mod adapter_issues;
+mod analyzer_capabilities;
 #[cfg(feature = "check-cli")]
 mod checker_metadata_queries;
 #[path = "support/common_module_project.rs"]

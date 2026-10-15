@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use crate::tool_profile::Profile;
 use clap::{ArgAction, Parser};
+use eska::tool_cli::OutputFormat;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -28,6 +29,10 @@ pub struct Cli {
     pub max_document_bytes: u64,
     #[arg(long, default_value_t = 256 * 1024 * 1024)]
     pub max_retained_source_bytes: u64,
+    #[arg(long, conflicts_with_all = ["project_dir", "project", "profile", "accepted_base_sha256", "timeout_seconds", "max_document_bytes", "max_retained_source_bytes"])]
+    pub capabilities: bool,
+    #[arg(long, value_enum, default_value_t = OutputFormat::Human, requires = "capabilities")]
+    pub format: OutputFormat,
     #[arg(short, long, action = ArgAction::Help)]
     help: Option<bool>,
     #[arg(short = 'V', long, action = ArgAction::Version)]

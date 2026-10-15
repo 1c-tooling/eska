@@ -48,6 +48,7 @@ impl Server<'_> {
                 "positionEncoding":"utf-16",
                 "experimental":{"eska":{
                 "protocolVersion":protocol::VERSION,
+                "sourceCoreVersion":tool_cli::PACKAGE_VERSION,
                 "sourceFormat":"eska", "scope":"selected-project",
                 "project":navigation.project(),
                 "metadata":{"owners":true, "read":true, "refresh":true,

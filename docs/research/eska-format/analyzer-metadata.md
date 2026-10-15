@@ -12,6 +12,14 @@ Feature `analyzer-cli` включает только его process boundary; `c
 Используется stdio с [framing и жизненным циклом LSP 3.17](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/specification.md).
 ESKA methods согласуются отдельно от существующего IDE protocol приложения 1.x.
 CLI help/version локализованы; нормальный stdout содержит только framed JSON-RPC.
+Отдельный `--capabilities --format json` возвращает tool envelope schema 1 без
+проекта и транспорта: SDK `version`, `source_core_version` связанного core,
+`protocol_version="0.1"`, `commands=[serve]`, `profiles=[syntax,semantic]` и
+`source_formats=[eska]`. Для этого режима нельзя передавать server/project options;
+`--format` доступен только с `--capabilities`. Availability не означает Ready
+или полноту моделей. Initialize дополнительно сообщает linked core version
+в `capabilities.experimental.eska.sourceCoreVersion`; SDK version остаётся
+в `serverInfo.version`.
 Общий reader принимает `Content-Type: application/vscode-jsonrpc` с UTF-8 по
 умолчанию, явный `charset=utf-8` и исторический `utf8`, включая quoted значение.
 Регистр и пробелы параметра не меняют кодировку; неоднозначные и неподдержанные

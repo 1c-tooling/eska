@@ -1088,6 +1088,7 @@ tool-check-about = Check saved ESKA modules with an explicit profile without 1C,
 tool-check-command-check = Check ESKA sources with the standalone checker and an explicit profile
 tool-option-capabilities = Print tool compatibility data without opening a project
 tool-check-capabilities-summary = Available check profiles: syntax, semantic.
+tool-analyzer-capabilities-summary = ESKA IDE protocol: 0.1. Available profiles: syntax, semantic.
 tool-error-check-missing = Install a compatible eska-check beside eska or add it to PATH.
 tool-error-check-unavailable = The resolved eska-check executable could not be started or awaited.
 tool-error-check-probe = The checker did not return complete compatibility data within the time and size limits.

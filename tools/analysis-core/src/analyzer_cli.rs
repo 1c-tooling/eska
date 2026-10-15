@@ -1,6 +1,7 @@
 //! IDE transport owns protocol and presentation; metadata and analysis remain in the shared session.
 
 mod args;
+mod capabilities;
 mod completion;
 mod definitions;
 mod diagnostics;
@@ -39,7 +40,7 @@ use eska::tool_cli::{
     localization::{Localizer, resolve_locale_from_environment},
 };
 
-/// Start a bounded stdio session; only explicit help/version may print human text to stdout.
+/// Start bounded stdio or answer an explicit project-free compatibility query.
 #[must_use]
 pub fn run() -> ExitCode {
     let arguments = env::args_os().collect::<Vec<_>>();
@@ -66,6 +67,21 @@ pub fn run() -> ExitCode {
     let Ok(cli) = args::Cli::from_arg_matches(&matches) else {
         return ExitCode::from(3);
     };
+    if cli.capabilities {
+        return match capabilities::emit(cli.format, &localizer) {
+            Ok(exit) => exit,
+            Err(error) => {
+                let _ = tool_cli::emit_failure(
+                    "eska-analyzer",
+                    Some("capabilities"),
+                    cli.format,
+                    &error,
+                    &localizer,
+                );
+                ExitCode::from(3)
+            }
+        };
+    }
     let stdin = io::stdin();
     let stdout = io::stdout();
     ExitCode::from(server::run(

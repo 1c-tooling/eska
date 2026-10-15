@@ -1088,6 +1088,7 @@ tool-check-about = Проверка сохранённых модулей ESKA �
 tool-check-command-check = Проверить исходники ESKA самостоятельным checker по явному профилю
 tool-option-capabilities = Показать совместимость инструмента без открытия проекта
 tool-check-capabilities-summary = Доступные профили проверки: syntax, semantic.
+tool-analyzer-capabilities-summary = Протокол ESKA IDE: 0.1. Доступные профили: syntax, semantic.
 tool-error-check-missing = Установите совместимый eska-check рядом с eska или добавьте его в PATH.
 tool-error-check-unavailable = Не удалось запустить выбранный eska-check или дождаться его завершения.
 tool-error-check-probe = Checker не вернул полные данные совместимости в пределах времени и размера.
