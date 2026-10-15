@@ -55,6 +55,22 @@ platform-enriched MainTable дают явные причины неполнот�
 параметры, вычисляемые поля, связи, итоги и настройки требуют следующих проверок
 EF-27. Это ограничение сериализатора отчёта, а не вывод из пустого списка ошибок.
 
+## BOM в отдельном запросе
+
+Начальный UTF-8 BOM теперь сохраняется как native trivia в общем SDBL token
+converter. Parser tree содержит прежние байты, output fields и параметры
+сохраняют исходные byte ranges; syntax diagnostics и consumer model используют
+одно правило. BOM в середине текста или повторный BOM остаются ошибками.
+Оба parser entry points проверены на RU/EN query vocabulary, comments, Unicode
+и CRLF. SDK current/saved IDE/checker consumer cases также содержат BOM.
+
+Для этого закреплённый пакет `parser` той же upstream-ревизии включён в локальный
+native workspace. Package versions не менялись. Исходные hashes записаны в
+provenance; native fixtures сохранены побайтно. Их whitespace exceptions
+ограничены двумя конкретными файлами с literal source bytes. Snapshot lookup
+в одном upstream test привязан к manifest самого crate: прежний heuristic
+ошибочно выбирал внешний workspace ESKA. Golden CST не менялся.
+
 ## Общий отчёт IDE и checker
 
 `AnalysisSession::query_consumer_report` переводит библиотечный результат в
@@ -117,4 +133,13 @@ Clippy и Rustdoc прошли. Все 1508 Rust/Cargo files совпали до
 opt-in и deadline, текущий XML repair/invalid/close, точные Unicode/CRLF ranges,
 saved IDE/checker parity и locale-independent checker JSON. Тест текущего XML
 не меняет query version; отмена и нехватка контекста не становятся checked empty.
-Это проверка SDK/transport; установленный клиент принимается отдельно.
+Установленный клиент принят [отдельным прогоном](explorer-query-consumers.md).
+
+После BOM-исправления прошли 16 native/SDK gates и debug/release builds:
+4158 native tests (25 ignored), SDK — 213/509 без ignored. Все 1555 Rust/Cargo
+files совпали до и после проверок. Корневые шесть gates повторены: 1508/1629 tests,
+по 24 opt-in ignored; Clippy и Rustdoc чистые. Package names/versions в обоих
+lockfiles не изменились. Полный Explorer — 323/323; прежний неизменяемый VSIX
+с новым release analyzer повторил CF/configured-CFE/native-CF приёмку с BOM
+в самом query buffer, полными output names и без ложного QueryParseError.
+Native CFE отказала semantic context явно; все 12 children завершились.

@@ -3147,6 +3147,9 @@ checker. Current XML, typed authoring ranges, invalid/repair/close и RU/EN pari
 прошёл 323 Node tests и CF/configured-CFE/native-CF XML Problems/repair/replay:
 12 children завершились, source bytes сохранены. Native CFE semantic context
 по-прежнему явно отказан. Параметры пока occurrences; полная EF-27 ещё не принята.
+File-leading BOM исправлен в native parser без изменения source bytes/ranges;
+4158 native и 213/509 SDK tests, root gates и 323 Node tests прошли.
+Installed CF/configured-CFE/native-CF consumer matrix повторена с BOM в query.
 
 Current form snapshot сохраняет UTF-16 endpoints mapped query-consumer nodes
 при parse единственного YAML. Проверка после удаления source tree подтверждает

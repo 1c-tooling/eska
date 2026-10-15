@@ -22,7 +22,7 @@ fn bound_resource(project: &fixture::Project) -> (SourcePath, String) {
     fs::write(path, &text).unwrap();
     fs::write(
         project.root.join("src").join(project.source.as_path()),
-        "SELECT 1 AS Renamed",
+        "\u{feff}// Я😀\r\nSELECT 1 AS Renamed\r\n",
     )
     .unwrap();
     (resource, text)
@@ -55,6 +55,14 @@ fn checked(client: &mut Client, project: &fixture::Project) -> Value {
     assert!(full.get("error").is_none(), "{full}");
     let status = &full["result"]["eska"]["consumers"];
     assert_eq!(status["kind"], "checked", "{full}");
+    assert!(
+        full["result"]["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|item| item["code"] != "QueryParseError"),
+        "{full}"
+    );
     assert_eq!(
         status["report"]["context"]["revision"].to_string(),
         full["result"]["eska"]["snapshot"]["revision"]

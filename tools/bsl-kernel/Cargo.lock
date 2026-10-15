@@ -1371,12 +1371,14 @@ dependencies = [
 [[package]]
 name = "parser"
 version = "0.2.85"
-source = "git+https://github.com/1c-tooling/bsl-analyzer.git?rev=9021ba07471eee8a2614bed2105a2c8699f60780#9021ba07471eee8a2614bed2105a2c8699f60780"
 dependencies = [
+ "criterion",
+ "expect-test",
  "lexer",
  "parser-error",
  "smallvec",
  "stdx",
+ "syn 2.0.119",
  "syntax",
  "tracing",
 ]

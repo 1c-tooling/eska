@@ -1,0 +1,4 @@
+# This pinned parser fixture verifies exact byte ranges and its original license header.
+tools/bsl-kernel/crates/parser/tests/fixtures/Module.bsl -whitespace
+# The pinned raw SDBL literal includes a deliberate trailing space.
+tools/bsl-kernel/crates/parser/tests/sdbl_parser_tests.rs whitespace=-blank-at-eol

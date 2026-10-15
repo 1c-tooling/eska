@@ -151,12 +151,15 @@ fn nested_unknown_types_remain_incomplete() {
     }));
 }
 
-/// BOM and broken input keep original coordinates even when the parser refuses completeness.
+/// A leading BOM preserves complete outputs and exact original ranges; empty input stays empty.
 #[test]
 fn bom_and_empty_input_never_shift_native_ranges() {
     let text = "\u{feff}// 😀\r\nSELECT 1 AS Alias";
     let result = model(text);
+    assert!(result.syntax_complete);
     assert_eq!(result.statements.len(), 1);
+    assert!(select(&result, 0).output_names_complete);
+    assert!(select(&result, 0).output_types_complete);
     for statement in &result.statements {
         if let QueryTextStatement::Select(statement) = statement {
             for branch in &statement.branches {

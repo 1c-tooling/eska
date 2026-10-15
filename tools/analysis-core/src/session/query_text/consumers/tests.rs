@@ -96,7 +96,7 @@ fn dcs_fields_follow_current_query_names_conditions_and_exact_locations() {
     for (version, text, missing) in [
         (
             1,
-            "// 😀\r\nSELECT T.CurrentField AS Renamed FROM Catalog.Items AS T",
+            "\u{feff}// 😀\r\nSELECT T.CurrentField AS Renamed FROM Catalog.Items AS T",
             true,
         ),
         (

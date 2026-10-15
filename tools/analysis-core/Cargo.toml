@@ -66,6 +66,7 @@ hir-def = { path = "../bsl-kernel/crates/hir-def" }
 ide-db = { path = "../bsl-kernel/crates/ide-db" }
 ide = { path = "../bsl-kernel/crates/ide" }
 parser-error = { path = "../bsl-kernel/crates/parser-error" }
+parser = { path = "../bsl-kernel/crates/parser" }
 
 [patch.crates-io]
 salsa = { git = "https://github.com/itrous/salsa.git", rev = "5d2686f1f94dc3d618569652d5576ce997491b3b" }

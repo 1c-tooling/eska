@@ -1,6 +1,6 @@
 # Закреплённое ядро BSL для ESKA
 
-Этот отдельный Cargo workspace содержит семь изменённых пакетов bsl-analyzer из
+Этот отдельный Cargo workspace содержит восемь изменённых пакетов bsl-analyzer из
 ревизии `9021ba07471eee8a2614bed2105a2c8699f60780`. Остальные зависимости на
 bsl-analyzer закреплены на той же Git-ревизии. Это исходники библиотек для
 экспериментального адаптера, а не опубликованный analyzer/check или LSP-сервер.
@@ -39,6 +39,11 @@ object/register/defined-type lookup сохраняет current per-file visibili
 `ide::sdbl_query_codes` открывает прежний native inventory для явного negotiation
 и rule preflight; dispatcher и rules не продублированы. Readiness и source
 authority проверяет SDK перед вызовом native query.
+
+Локальный `parser` сохраняет file-leading BOM как native trivia в standalone
+SDBL. Исходные байты и ranges не сдвигаются; BOM внутри запроса и повторный BOM
+остаются ошибками. Общий converter используется обоими parser entry points,
+поэтому syntax diagnostics и output/consumer model согласованы.
 
 Для [адаптера роли](../../docs/research/eska-format/role-adapter.md) открыт
 `Role::with_data`: source UUID и current rights передаются явно; serialized
@@ -122,7 +127,7 @@ call binding. Argument receivers, non-member/inactive calls не подбира�
 
 [`eska-bsl-adapter`](../bsl-adapter/README.md) уже использует локальный
 `bsl-metadata` через Cargo patch. [`eska-analysis`](../analysis-core/README.md)
-применяет все шесть patch и закрепление Salsa в собственном корневом manifest:
+применяет локальные patch и закрепление Salsa в собственном корневом manifest:
 Cargo не наследует patch зависимости. Контроллер ввода, адаптер и ядро сведены
 в общей библиотеке; самостоятельные `eska-analyzer` и `eska-check` подключены
 экспериментально. Полная семантика и общий бюджет памяти пока не завершены.
