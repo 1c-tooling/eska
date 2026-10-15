@@ -13,6 +13,8 @@ use crate::SessionRevision;
 #[path = "query_inputs/syntax.rs"]
 mod syntax;
 pub use syntax::{QuerySyntaxError, QuerySyntaxResult, QuerySyntaxScope};
+mod analysis;
+pub use analysis::{QueryAnalysisResult, query_analysis_enabled};
 
 #[cfg(test)]
 #[path = "query_inputs/tests.rs"]

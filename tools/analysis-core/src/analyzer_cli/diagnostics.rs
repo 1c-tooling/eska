@@ -58,6 +58,7 @@ pub struct Options<'a> {
     pub localizer: &'a Localizer,
     pub profile: BatchProfile,
     pub query_syntax: bool,
+    pub query_analysis: bool,
 }
 
 impl<'a> Options<'a> {
@@ -76,12 +77,19 @@ impl<'a> Options<'a> {
             localizer,
             profile,
             query_syntax: false,
+            query_analysis: false,
         }
     }
 
     /// The server's explicit query negotiation is independent of its BSL profile.
     pub const fn with_query_syntax(mut self, negotiated: bool) -> Self {
         self.query_syntax = negotiated;
+        self
+    }
+
+    /// Full native query rules require their own explicit client admission.
+    pub const fn with_query_analysis(mut self, negotiated: bool) -> Self {
+        self.query_analysis = negotiated;
         self
     }
 }
@@ -118,6 +126,11 @@ pub fn pull(
 ) -> Result<Value, Value> {
     let path = documents::source_path(session, &params.text_document.uri)?;
     if session.query_input(&path).is_some() {
+        if params.identifier.as_deref() == Some(super::query_analysis::IDENTIFIER)
+            || (params.identifier.is_none() && options.query_analysis && !options.query_syntax)
+        {
+            return super::query_analysis::pull(session, id, &path, settings, options);
+        }
         return super::query_syntax::pull(
             session,
             id,

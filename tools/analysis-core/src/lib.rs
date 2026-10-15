@@ -32,6 +32,11 @@ mod test_common_module_project;
 #[path = "../tests/support/composition_project.rs"]
 mod test_composition_project;
 #[cfg(test)]
+#[path = "../tests/support/query_analysis_project.rs"]
+mod test_query_analysis_project;
+#[cfg(all(test, any(feature = "analyzer-cli", feature = "check-cli")))]
+use test_composition_project as composition_project;
+#[cfg(test)]
 #[path = "../tests/support/form_project.rs"]
 mod test_form_project;
 #[cfg(test)]
@@ -80,8 +85,9 @@ pub use queries::signature_help::{CallParameter, CallSignature, CallSignatures};
 pub use queries::symbol_hover::{HoverKind, SymbolHover};
 pub use queries::{ModuleResult, QueryError};
 pub use query_inputs::{
-    QuerySyntaxError, QuerySyntaxResult, QuerySyntaxScope, QueryTextChange, QueryTextDeclaration,
-    QueryTextError, QueryTextInput, QueryTextSnapshot, QueryTextState,
+    QueryAnalysisResult, QuerySyntaxError, QuerySyntaxResult, QuerySyntaxScope, QueryTextChange,
+    QueryTextDeclaration, QueryTextError, QueryTextInput, QueryTextSnapshot, QueryTextState,
+    query_analysis_enabled,
 };
 pub use request::{SessionRequestError, SessionRevision};
 pub use resources::ResourceSummary;
@@ -89,5 +95,8 @@ pub use session::composition::{CompositionSummary, ContributionInputs, Contribut
 pub use session::metadata_resources::{
     MetadataResourceInput, MetadataResourceKind, MetadataResourceState,
 };
-pub use session::query_text::{QuerySyntaxDiagnostics, QuerySyntaxRequestError, QueryTextSummary};
+pub use session::query_text::{
+    QueryAnalysisDiagnostics, QueryAnalysisRequestError, QuerySyntaxDiagnostics,
+    QuerySyntaxRequestError, QueryTextSummary,
+};
 pub use session::{AnalysisScope, AnalysisSession, SessionError, SessionSummary};

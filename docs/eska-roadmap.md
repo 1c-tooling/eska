@@ -2387,6 +2387,12 @@ runtime-приёмку. Обычный install/update/remove и остальны
 к общей сессии IDE/checker и source quota с current overlay/watch/replay.
 Полный SDK прошёл; metadata/consumer semantics EF-27 ещё не принята.
 
+[Контекстная диагностика SDBL](research/eska-format/analyzer-query-metadata.md)
+подключает native rules к текущим видимым CF/CFE metadata через owner FileId.
+Новый queryAnalysis opt-in сохраняет syntax route; semantic checker получает
+тот же query API с отдельным current context. Параметры, выходные поля и
+current resource consumers ещё нужны; EF-27 — `IN_PROGRESS`.
+
 [500 циклов текущих входов](research/eska-format/current-input-stress.md)
 малых EPF/ERF прошли на RU/EN: 6000 full-sync updates, source reserve,
 current hashes и replay после отказа квоты. Debug RSS измерен отдельно.

@@ -117,7 +117,7 @@ EF-18 сохраняет `IN_PROGRESS` как незавершённую реа�
 | EF-24 | DONE | EF-10, EF-07 | Завершённая структура исходников и миграция экспериментального профиля |
 | EF-25 | IN_PROGRESS | EF-12, EF-14, EF-15, EF-23 | Повторный импорт CF/CFE/EPF/ERF в существующий проект |
 | EF-26 | DEFERRED | EF-19, EF-23, EF-27 | RLS и обоснованные дополнительные тексты ресурсов |
-| EF-27 | PLANNED | EF-18, EF-23 | Анализ .sdbl в контексте СКД/списка и проверка потребителей |
+| EF-27 | IN_PROGRESS | EF-18, EF-23 | Анализ .sdbl в контексте СКД/списка и проверка потребителей |
 
 ID сохраняют историю, порядок выполнения задаёт следующая таблица.
 
@@ -3101,7 +3101,13 @@ SDBL/BSL-диагностику без подходящего диалекта; 
 
 ## EF-27 Контекстный анализ отдельных запросов
 
-**Статус:** `PLANNED`; после EF-18 и EF-23, до EF-11/EF-16.
+**Статус:** `IN_PROGRESS`; после EF-18 и EF-23, до EF-11/EF-16.
+
+[Первая contextual diagnostics часть](../research/eska-format/analyzer-query-metadata.md)
+использует native per-file CF/CFE metadata без BSL bodies для standalone request.
+Независимый queryAnalysis opt-in сохраняет прежний syntax route; semantic checker
+вызывает тот же query API с current context и явной неполнотой. Параметры,
+output fields, current resource consumers и полная приёмка ещё нужны.
 
 Подключить `.sdbl` к общим `eska-analyzer`/`eska-check`: метаданные выбранного
 member, параметры, расширения СКД, настройки динамического списка. Проверять

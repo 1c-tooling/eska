@@ -35,6 +35,9 @@ mod navigation_protocol;
 mod predefined_queries;
 mod project_changes;
 mod property_edit_plans;
+mod query_analysis;
+#[path = "support/query_analysis_project.rs"]
+mod query_analysis_project;
 mod query_text;
 mod reference_queries;
 mod rename_queries;
@@ -63,6 +66,7 @@ use std::{
 use eska::tool_cli::rpc_framing;
 use serde_json::{Value, json};
 use support::predefined_project;
+use support::{composition_project, query_project::native_fixture as query_creation_fixture};
 
 /// Source-profile admission cannot advertise a complete language session for a standalone CFE.
 #[test]

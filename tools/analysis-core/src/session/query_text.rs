@@ -16,7 +16,11 @@ use crate::{
 #[cfg(test)]
 mod tests;
 
+mod analysis;
+#[cfg(test)]
+mod analysis_tests;
 mod rooted;
+pub use analysis::{QueryAnalysisDiagnostics, QueryAnalysisRequestError};
 
 /// Current text readiness is separate from parse validity and metadata/consumer coverage.
 #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize)]

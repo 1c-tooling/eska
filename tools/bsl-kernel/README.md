@@ -27,6 +27,13 @@ scope не меняются. Шесть новых и 84 прежних referenc
 184 default / 464 all-features tests. Это bounded synthetic/framed приёмка,
 а не платформенная проверка всей composition.
 
+[Standalone SDBL](../../docs/research/eska-format/analyzer-query-metadata.md)
+использует `FileQueryResolver` с существующим descriptor FileId владельца:
+object/register/defined-type lookup сохраняет current per-file visibility.
+`ide::sdbl_query_codes` открывает прежний native inventory для явного negotiation
+и rule preflight; dispatcher и rules не продублированы. Readiness и source
+authority проверяет SDK перед вызовом native query.
+
 Для [адаптера роли](../../docs/research/eska-format/role-adapter.md) открыт
 `Role::with_data`: source UUID и current rights передаются явно; serialized
 shape и прежний XML reader не изменены.

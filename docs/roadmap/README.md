@@ -34,6 +34,11 @@ verify RU/EN и 26 Python groups прошли. Обычные install/update/rem
 работает в общей сессии IDE/checker с revision/quota/watch/replay.
 Metadata/consumer semantics остаётся EF-27; EF-18 ещё `IN_PROGRESS`.
 
+[Первая контекстная диагностика SDBL](../research/eska-format/analyzer-query-metadata.md)
+передаёт native rules текущие видимые CF/CFE metadata через owner FileId.
+Новый queryAnalysis согласуется отдельно; старый syntax route сохранён.
+Параметры, output fields и consumers ещё нужны; EF-27 — `IN_PROGRESS`.
+
 [500 циклов current inputs](../research/eska-format/current-input-stress.md)
 прошли на малых native EPF/ERF с отдельным RSS замером, отказом общей квоты
 и точным replay на RU/EN.

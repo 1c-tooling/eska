@@ -172,6 +172,18 @@ fn semantic_profile_reports_incomplete_input_in_both_locales() {
                 value["data"]["report"]["resources"]["total_source_bytes"],
                 0
             );
+            if arguments[0] == "--timeout-seconds" {
+                let checked = &value["data"]["report"];
+                assert_eq!(checked["stop"], "deadline_exceeded");
+                assert!(
+                    checked["metadata_issues"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .all(|issue| issue["code"] == "metadata_pending"
+                            && issue["source_sha256"].is_null())
+                );
+            }
             values.push(value);
         }
         assert_eq!(values[0], values[1]);

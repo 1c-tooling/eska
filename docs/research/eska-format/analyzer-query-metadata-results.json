@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "scope": "current-canonical-metadata-query-diagnostics",
+  "status": "bounded-sdk-and-native-gates-passed",
+  "platform": "linux",
+  "locales": ["ru-RU", "en-US"],
+  "inputs": "synthetic-queries-projects-with-real-framed-transport",
+  "protocol_version": "0.1",
+  "versions_changed": false,
+  "architecture": {
+    "resolver": "existing-owner-descriptor-file-id",
+    "visibility": "native-per-file-cf-cfe-dependency-closure",
+    "metadata_authority": "current-visible-inputs-without-saved-fallback",
+    "standalone_request_reads_bsl_bodies": false,
+    "semantic_checker_may_read_bsl_bodies": true,
+    "shared_clock_and_source_quota": true,
+    "independent_query_analysis_opt_in": true,
+    "previous_query_syntax_route_preserved": true
+  },
+  "coverage": {
+    "metadata_complete_requires_current_ready_inputs": true,
+    "parameters_complete": false,
+    "consumer_complete": false,
+    "semantic_complete": false
+  },
+  "sdk_tests": {
+    "default": 190,
+    "all_features": {
+      "library": 238,
+      "analyzer_process": 198,
+      "checker_process": 30,
+      "navigation": 7,
+      "read_permissions": 4,
+      "total": 477
+    },
+    "fmt_check_clippy_rustdoc_default_and_all_features": "passed"
+  },
+  "native_gates": {
+    "new_resolver_test_groups": 2,
+    "fmt_check_strict_clippy_rustdoc": "passed"
+  },
+  "checks": [
+    "current-metadata-change-with-fixed-query",
+    "foreign-current-authority-and-visible-root-scope",
+    "invalid-or-failed-editor-input-never-falls-back",
+    "watch-close-and-repair",
+    "syntax-route-and-serialization-compatibility",
+    "disabled-rules-and-malformed-negotiation-before-query-reads",
+    "zero-deadline-before-initial-metadata-preparation",
+    "cancellation-and-reused-request-id",
+    "crlf-non-bmp-and-exact-utf16-ranges",
+    "ru-en-machine-parity",
+    "saved-ide-checker-query-diagnostics-parity"
+  ],
+  "remaining": [
+    "native-origin-current-metadata-acceptance",
+    "installed-explorer-contextual-query-client",
+    "output-field-and-parameter-contracts",
+    "current-dcs-and-dynamic-list-resource-authority",
+    "consumer-links-calculated-total-fields-and-settings",
+    "full-ef18-ef27-and-mvp-acceptance"
+  ]
+}

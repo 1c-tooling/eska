@@ -24,6 +24,7 @@ pub const MAX_REQUEST: usize = 4 * 1024 * 1024;
 pub struct Documents {
     open: BTreeSet<SourceKey>,
     query_syntax: bool,
+    query_analysis: bool,
 }
 
 #[derive(Deserialize)]
@@ -90,7 +91,19 @@ impl Documents {
         Self {
             open: BTreeSet::new(),
             query_syntax,
+            query_analysis: false,
         }
+    }
+
+    /// Contextual query synchronization is negotiated independently of the parse-only channel.
+    pub const fn with_query_analysis(mut self, enabled: bool) -> Self {
+        self.query_analysis = enabled;
+        self
+    }
+
+    /// Diagnostic routing preserves both independent choices for this host.
+    pub const fn query_analysis(&self) -> bool {
+        self.query_analysis
     }
 
     /// Diagnostic requests share the same negotiated query document boundary as notifications.
@@ -247,7 +260,7 @@ impl Documents {
 
     /// Declared query identity never silently expands a client that did not negotiate syntax sync.
     fn check_query(&self, session: &AnalysisSession, path: &SourceKey) -> Result<(), Value> {
-        if session.query_input_at(path).is_some() && !self.query_syntax {
+        if session.query_input_at(path).is_some() && !self.query_syntax && !self.query_analysis {
             return Err(query_syntax::not_negotiated());
         }
         Ok(())

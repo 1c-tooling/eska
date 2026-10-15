@@ -151,7 +151,7 @@ fn resolve_pair_candidate(
 /// Pairing is path-structural via [`hir::pair_base_module_path`] over `all_config_paths`
 /// (base root is the unlabelled entry); the candidate base path is resolved to a `FileId`
 /// in the extension file's own source root. The final gate is
-/// [`hir::effective_module_text`] being `Some`, so callers can construct an
+/// [`hir::effective_module_text()`] being `Some`, so callers can construct an
 /// `EffectiveModuleId` from the result and trust it routes to merged data rather than
 /// silently re-deriving the base module under an effective key.
 pub fn effective_target<'db>(

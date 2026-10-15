@@ -111,8 +111,13 @@ fn structural_descriptors_checker_never_claims_dcs_or_query_consumer_validation(
             let checked = &value["data"]["report"];
             assert_eq!(checked["coverage"]["metadata_models_complete"], true);
             assert_eq!(checked["coverage"]["semantic_profile_complete"], true);
-            assert_eq!(checked["query_coverage"]["metadata_complete"], false);
+            assert_eq!(
+                checked["query_coverage"]["metadata_complete"],
+                change != "missing-query"
+            );
             assert_eq!(checked["query_coverage"]["consumer_complete"], false);
+            assert_eq!(checked["query_coverage"]["parameters_complete"], false);
+            assert_eq!(checked["query_coverage"]["semantic_complete"], false);
             assert_eq!(
                 checked["query_coverage"]["syntax_complete"],
                 change != "missing-query"
@@ -122,6 +127,7 @@ fn structural_descriptors_checker_never_claims_dcs_or_query_consumer_validation(
                 .iter()
                 .find(|file| file["source"] == query.as_str())
                 .unwrap();
+            assert_eq!(current["scope"], "current_canonical_metadata");
             if change == "missing-query" {
                 assert_eq!(current["state"]["kind"], "unavailable");
                 assert!(current["source_sha256"].is_null());

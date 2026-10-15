@@ -101,7 +101,7 @@ pub struct RootDatabaseImpl {
         Arc<DashMap<String, metadata::ConfigRevisionInput, BuildHasherDefault<FxHasher>>>,
 
     /// Per-config-root metadata *structure* inputs, keyed by the canonical root
-    /// path. Shared across cloned handles like [`config_revisions`]. Each holds the
+    /// path. Shared across cloned handles like [`Self::config_revisions`]. Each holds the
     /// list of MDOs discovered in that root; a structure change re-sets it, driving
     /// `config_index`/`resolve_metadata_object` re-derivation for that root only.
     metadata_listings:

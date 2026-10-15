@@ -16,7 +16,9 @@ use eska::{
 };
 
 pub use profile::BatchProfile;
-pub use query_text::{BatchQueryCoverage, BatchQueryFile, BatchQueryFinding};
+pub use query_text::{
+    BatchQueryContext, BatchQueryCoverage, BatchQueryFile, BatchQueryFinding, BatchQueryScope,
+};
 pub use report::{
     BatchCoverage, BatchFile, BatchFinding, BatchReport, BatchStatus, FileState, MetadataIssue,
     StopReason,
@@ -155,14 +157,17 @@ pub fn check_session(
         BatchProfile::Semantic => config.clone(),
     };
     let profile_enabled = profile.enabled(&config);
-    if profile == BatchProfile::Semantic && profile_enabled {
-        session
-            .load_semantic_inputs(session.revision(), &request)
-            .map_err(BatchError::Request)?;
-    } else {
-        session
-            .load_pending_metadata_inputs(&request)
-            .map_err(BatchError::Request)?;
+    // The timer thread may not have run yet for an already elapsed deadline.
+    if deadline.stop_reason().is_none() {
+        if profile == BatchProfile::Semantic && profile_enabled {
+            session
+                .load_semantic_inputs(session.revision(), &request)
+                .map_err(BatchError::Request)?;
+        } else {
+            session
+                .load_pending_metadata_inputs(&request)
+                .map_err(BatchError::Request)?;
+        }
     }
     let paths = session.module_paths().cloned().collect::<Vec<_>>();
     let mut files = Vec::with_capacity(paths.len());
@@ -190,8 +195,14 @@ pub fn check_session(
         }
     }
     session.trim_batch_caches();
-    let (query_files, query_coverage) =
-        query_text::check(&mut session, &query_config, &request, &deadline)?;
+    let (query_files, query_coverage) = query_text::check(
+        &mut session,
+        &query_config,
+        &request,
+        &deadline,
+        profile,
+        &options.cancellation.query,
+    )?;
     let mut report = report::finish(
         &session,
         manifest_sha256,
@@ -208,6 +219,7 @@ pub fn check_session(
         report.status = BatchStatus::Incomplete;
         report.coverage.syntax_complete = false;
         report.query_coverage.syntax_complete = false;
+        report.query_coverage.metadata_complete = false;
         if let Some(complete) = &mut report.coverage.semantic_profile_complete {
             *complete = false;
         }

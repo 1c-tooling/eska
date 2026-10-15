@@ -11,7 +11,7 @@ use eska::project_core::{
 use super::TestDirectory;
 
 #[path = "../../../../tests/fixtures/eska-format/query_creation.rs"]
-mod native_fixture;
+pub mod native_fixture;
 
 pub const TYPES: [&str; 4] = native_fixture::TYPES;
 pub const BAD: &str =

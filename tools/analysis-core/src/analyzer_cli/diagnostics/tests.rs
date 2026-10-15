@@ -55,6 +55,7 @@ fn cancelled_saved_read_retries_but_cancelled_overlay_does_not_fall_back_to_disk
             localizer: &localizer,
             profile: BatchProfile::Syntax,
             query_syntax: false,
+            query_analysis: false,
         },
     )
     .unwrap();
@@ -88,6 +89,7 @@ fn cancelled_saved_read_retries_but_cancelled_overlay_does_not_fall_back_to_disk
             localizer: &localizer,
             profile: BatchProfile::Syntax,
             query_syntax: false,
+            query_analysis: false,
         },
     )
     .unwrap_err();
@@ -135,6 +137,7 @@ fn cancelled_metadata_saved_read_recovers_without_replacing_cancelled_editor_aut
         localizer: &localizer,
         profile: BatchProfile::Syntax,
         query_syntax: false,
+        query_analysis: false,
     };
     let report = pull(&mut session, "connection", &params, &settings, &options).unwrap();
     assert_eq!(report["items"], json!([]));

@@ -1,4 +1,4 @@
-//! Standalone query batches stream the same host inputs and retain syntax-only machine coverage.
+//! Standalone query batches stream the same host inputs with explicit syntax or metadata scope.
 
 use eska::{
     analysis_core::InputRequest,
@@ -7,14 +7,31 @@ use eska::{
 
 use crate::{
     AnalysisSession, DiagnosticCode, DiagnosticsConfig, QuerySyntaxError, QuerySyntaxRequestError,
-    QuerySyntaxScope, QueryTextSnapshot, QueryTextState, SessionRequestError, SessionRevision,
-    deadline::Deadline,
+    QueryTextSnapshot, QueryTextState, SessionRequestError, SessionRevision, deadline::Deadline,
 };
 
 use super::{BatchError, BatchFinding, BatchProfile, BatchReport, BatchStatus, FileState, report};
 
+mod analysis;
 #[cfg(test)]
 mod tests;
+
+/// The existing syntax serialization is retained while contextual queries identify their admitted scope.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BatchQueryScope {
+    SyntaxOnly,
+    CurrentCanonicalMetadata,
+}
+
+/// Semantic query results bind the current input and native root without claiming consumer coverage.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+pub struct BatchQueryContext {
+    pub root: crate::composition::RootId,
+    pub input_revision: SessionRevision,
+    pub composition_sha256: Option<String>,
+    pub metadata_complete: bool,
+}
 
 /// Exact byte offsets and zero-based UTF-16 ranges refer to the same current plain query text.
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
@@ -30,10 +47,12 @@ pub struct BatchQueryFile {
     pub source: SourcePath,
     pub revision: SessionRevision,
     pub source_sha256: Option<String>,
-    pub scope: QuerySyntaxScope,
+    pub scope: BatchQueryScope,
     pub position_encoding: &'static str,
     pub state: FileState,
     pub findings: Vec<BatchQueryFinding>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context: Option<BatchQueryContext>,
 }
 
 /// Missing/disabled/stopped checks remain separate from a checked empty result.
@@ -46,6 +65,10 @@ pub struct BatchQueryCoverage {
     pub syntax_complete: bool,
     pub metadata_complete: bool,
     pub consumer_complete: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parameters_complete: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub semantic_complete: Option<bool>,
 }
 
 /// Disabled rules and cancellation stop before reading; each accepted saved text is released after use.
@@ -54,15 +77,26 @@ pub(super) fn check(
     config: &DiagnosticsConfig,
     request: &InputRequest,
     deadline: &Deadline,
+    profile: BatchProfile,
+    cancellation: &crate::QueryCancellation,
 ) -> Result<(Vec<BatchQueryFile>, BatchQueryCoverage), BatchError> {
     let paths = session.query_paths().cloned().collect::<Vec<_>>();
-    let enabled = !config.is_disabled(DiagnosticCode::QueryParseError);
+    let enabled = match profile {
+        BatchProfile::Syntax => !config.is_disabled(DiagnosticCode::QueryParseError),
+        BatchProfile::Semantic => crate::query_analysis_enabled(config),
+    };
     let mut files = Vec::with_capacity(paths.len());
     for path in &paths {
         if !enabled || deadline.stop_reason().is_some() {
             break;
         }
-        let Some(file) = check_one(session, path, config, request)? else {
+        let file = match profile {
+            BatchProfile::Syntax => check_one(session, path, config, request)?,
+            BatchProfile::Semantic => {
+                analysis::check_one(session, path, config, request, cancellation)?
+            }
+        };
+        let Some(file) = file else {
             break;
         };
         files.push(file);
@@ -77,9 +111,17 @@ pub(super) fn check(
         unavailable: files.len() - checked,
         unchecked: paths.len() - files.len(),
         syntax_complete: paths.is_empty()
-            || (enabled && checked == paths.len() && deadline.stop_reason().is_none()),
-        metadata_complete: false,
+            || (enabled
+                && !config.is_disabled(DiagnosticCode::QueryParseError)
+                && checked == paths.len()
+                && deadline.stop_reason().is_none()),
+        metadata_complete: profile == BatchProfile::Semantic
+            && enabled
+            && checked == paths.len()
+            && deadline.stop_reason().is_none(),
         consumer_complete: false,
+        parameters_complete: (profile == BatchProfile::Semantic).then_some(false),
+        semantic_complete: (profile == BatchProfile::Semantic).then_some(false),
     };
     Ok((files, coverage))
 }
@@ -154,10 +196,11 @@ fn unavailable(path: &SourcePath, input: &QueryTextSnapshot) -> BatchQueryFile {
         source: path.clone(),
         revision: input.revision,
         source_sha256: input.source_sha256.clone(),
-        scope: QuerySyntaxScope::SyntaxOnly,
+        scope: BatchQueryScope::SyntaxOnly,
         position_encoding: "utf-16",
         state,
         findings: vec![],
+        context: None,
     }
 }
 

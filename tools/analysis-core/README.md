@@ -13,7 +13,12 @@ XML-экспорт не участвуют в чтении.
 [Declared `.sdbl` syntax](../../docs/research/eska-format/analyzer-query-syntax.md)
 использует те же revision/source quota и native QueryParseError в IDE/checker.
 Несохранённые queries требуют явного negotiation; metadata/consumer completeness
-остаётся false. Контекстная EF-27 остаётся отдельной задачей.
+остаётся false.
+[Контекстная диагностика SDBL](../../docs/research/eska-format/analyzer-query-metadata.md)
+имеет отдельный `queryAnalysis` opt-in: native rules используют текущие видимые
+CF/CFE metadata без BSL bodies. Старый syntax route сохранён; parameters,
+consumer и semantic completeness остаются false. Semantic checker использует
+тот же query API с отдельным current context, сохраняя incomplete/exit 2.
 
 [Навигация и права чтения](../../docs/research/eska-format/analyzer-navigation.md)
 используют тот же host: project context, declared owners/modules/queries и

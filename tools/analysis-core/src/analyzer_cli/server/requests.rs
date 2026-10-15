@@ -160,7 +160,8 @@ impl Server<'_> {
                 &params,
                 settings,
                 &DiagnosticOptions::new(&request, cancellation, timeout, self.localizer, profile)
-                    .with_query_syntax(self.documents.query_syntax()),
+                    .with_query_syntax(self.documents.query_syntax())
+                    .with_query_analysis(self.documents.query_analysis()),
             ),
             language::Request::Completion(params) => completion::pull(
                 session,

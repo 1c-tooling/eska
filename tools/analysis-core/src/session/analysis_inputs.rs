@@ -39,6 +39,16 @@ impl AnalysisSession {
         id: crate::composition::RootId,
         request: &InputRequest,
     ) -> Result<(), SessionRequestError> {
+        self.load_root_metadata_inputs(id, request)?;
+        self.load_root_module_inputs(id, request)
+    }
+
+    /// Query-only consumers prepare the same metadata inputs without opening BSL bodies.
+    pub(crate) fn load_root_metadata_inputs(
+        &mut self,
+        id: crate::composition::RootId,
+        request: &InputRequest,
+    ) -> Result<(), SessionRequestError> {
         use crate::{MetadataResourceState, composition::SourceKey};
         let resources = self
             .root_inputs(id)?
@@ -85,6 +95,16 @@ impl AnalysisSession {
             }
             self.load_saved_at(&key, self.revision(), request)?;
         }
+        Ok(())
+    }
+
+    /// Body preparation stays shared with existing semantic requests after their metadata prefix.
+    fn load_root_module_inputs(
+        &mut self,
+        id: crate::composition::RootId,
+        request: &InputRequest,
+    ) -> Result<(), SessionRequestError> {
+        use crate::composition::SourceKey;
         let modules = self
             .root_inputs(id)?
             .modules

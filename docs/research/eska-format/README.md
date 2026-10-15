@@ -44,6 +44,9 @@ workflow/Git/workspace и expected-byte receipt; [init](project-initialization.m
 общую сессию, сохраняя явную неполноту semantic context.
 [Declared `.sdbl` syntax](analyzer-query-syntax.md) подключён к той же сессии,
 watcher, quota и native parser без BSL wrapper. Контекстная EF-27 ещё нужна.
+[Диагностика по текущим metadata](analyzer-query-metadata.md) добавляет отдельный
+queryAnalysis opt-in и тот же API для semantic checker. Per-file CF/CFE visibility
+и current failures сохранены; параметры, output fields и consumers ещё нужны.
 [500 циклов current inputs](current-input-stress.md) малых EPF/ERF проверили
 hashes, общий reserve и replay после отказа квоты на RU/EN.
 [Большой standalone CF](large-cf-current-input.md) проверен release-сборкой:

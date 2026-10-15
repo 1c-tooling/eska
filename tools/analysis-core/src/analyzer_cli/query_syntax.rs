@@ -137,7 +137,7 @@ pub fn not_negotiated() -> Value {
 }
 
 /// Current input failures remain coded and fingerprint-free; cancellation cannot publish clean findings.
-fn query_error(
+pub(super) fn query_error(
     session: &AnalysisSession,
     id: &str,
     path: &SourcePath,

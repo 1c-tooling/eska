@@ -94,7 +94,7 @@ pub(super) fn syntax_profile(config: &DiagnosticsConfig) -> DiagnosticsConfig {
 }
 
 /// Preserve native codes/ranges while using structured English or a generic fallback for synthetic errors.
-fn translate_parse_errors(text: &str, diagnostics: &mut [Diagnostic]) {
+pub(super) fn translate_parse_errors(text: &str, diagnostics: &mut [Diagnostic]) {
     let parse = parser::parse_sdbl(text);
     let messages: BTreeMap<_, _> = parse
         .errors()
