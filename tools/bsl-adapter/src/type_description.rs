@@ -236,7 +236,8 @@ fn type_set(key: &PropertyKey) -> Option<AttributeType> {
         return None;
     }
     match key.name.as_str() {
-        "AnyIBRef" => Some(AttributeType::AnyRef),
+        // Designer TypeSet retains the legacy spelling of the AnyIBRef reference category.
+        "AnyRef" | "AnyIBRef" => Some(AttributeType::AnyRef),
         "BusinessProcessRoutePointRef" => Some(AttributeType::AnyObjectRef {
             mdo_type: MdoType::BusinessProcess,
         }),

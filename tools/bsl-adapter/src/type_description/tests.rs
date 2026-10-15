@@ -65,6 +65,129 @@ fn type_identity_uses_resolved_namespace_and_local_name() {
     assert_eq!(converted(&canonical).unwrap(), converted(&default).unwrap());
 }
 
+/// Legacy Designer and current reference sets have one logical type, only in `TypeSet` position.
+#[test]
+fn known_reference_sets_preserve_native_semantics_without_admitting_type_tokens() {
+    for token in ["AnyRef", "AnyIBRef"] {
+        let text = xml(&format!(
+            "<Type><v8:TypeSet>cfg:{token}</v8:TypeSet></Type>"
+        ));
+        let value = converted(&text).unwrap();
+        assert_eq!(value.underlying_type(), &AttributeType::AnyRef);
+        assert_eq!(
+            value,
+            bsl_metadata::xml_parser::parse_defined_type_xml(&text).unwrap()
+        );
+        let concrete = xml(&format!("<Type><v8:Type>cfg:{token}</v8:Type></Type>"));
+        assert!(matches!(
+            converted(&concrete).unwrap_err().issue,
+            AdapterIssue::UnsupportedType { .. }
+        ));
+    }
+}
+
+/// Namespace aliases and mixed alternatives keep both logical identity and native grouping order.
+#[test]
+fn reference_sets_resolve_qnames_and_preserve_composite_alternatives() {
+    let text = xml(
+        "<Type><v8:TypeSet>cfg:AnyRef</v8:TypeSet><v8:Type>xs:boolean</v8:Type><v8:TypeSet>cfg:AnyIBRef</v8:TypeSet><v8:Type>xs:string</v8:Type></Type>",
+    );
+    let expected = converted(&text).unwrap();
+    assert_eq!(
+        expected.underlying_type(),
+        &AttributeType::Composite {
+            types: vec![
+                AttributeType::Boolean,
+                AttributeType::String { length: None },
+                AttributeType::AnyRef,
+                AttributeType::AnyRef,
+            ]
+        }
+    );
+    assert_eq!(
+        expected,
+        bsl_metadata::xml_parser::parse_defined_type_xml(&text).unwrap()
+    );
+    let alias = text
+        .replace("xmlns:cfg=", "xmlns:configuration=")
+        .replace("cfg:", "configuration:");
+    assert_eq!(converted(&alias).unwrap(), expected);
+    let default = text.replace(
+        ">cfg:AnyRef</v8:TypeSet>",
+        " xmlns='http://v8.1c.ru/8.1/data/enterprise/current-config'>AnyRef</v8:TypeSet>",
+    );
+    assert_eq!(converted(&default).unwrap(), expected);
+}
+
+/// One supported set cannot hide a foreign, future or unresolved alternative in the same value.
+#[test]
+fn reference_sets_do_not_admit_foreign_or_unknown_qnames() {
+    for token in [
+        "other:AnyRef",
+        "other:AnyIBRef",
+        "v8:AnyRef",
+        "cfg:FutureAnyRef",
+        "cfg:AnyRef.Items",
+        "cfg:anyref",
+    ] {
+        let text = xml(&format!(
+            "<Type><v8:TypeSet>cfg:AnyRef</v8:TypeSet><v8:TypeSet>{token}</v8:TypeSet></Type>"
+        ));
+        let error = converted(&text).unwrap_err();
+        assert!(matches!(error.issue, AdapterIssue::UnsupportedType { .. }));
+        assert!(text[error.range].starts_with("<Type>"));
+    }
+    let text = xml("<Type><v8:TypeSet>unbound:AnyRef</v8:TypeSet></Type>");
+    assert_eq!(
+        converted(&text).unwrap_err().issue,
+        AdapterIssue::UnresolvedTypeName {
+            text: "unbound:AnyRef".into()
+        }
+    );
+    let text = xml("<Type><v8:TypeSet xmlns:cfg='urn:foreign'>cfg:AnyRef</v8:TypeSet></Type>");
+    assert!(matches!(
+        converted(&text).unwrap_err().issue,
+        AdapterIssue::UnsupportedType { .. }
+    ));
+}
+
+/// Object and register fields consume the shared type mapping rather than per-family exceptions.
+#[test]
+fn reference_sets_reach_independent_descriptor_consumers() {
+    for token in ["AnyRef", "AnyIBRef"] {
+        let field = format!(
+            "<ChildObjects><Attribute uuid='20000000-0000-4000-8000-000000000001'><Properties><Name>Value</Name><Type><v8:TypeSet>cfg:{token}</v8:TypeSet></Type></Properties></Attribute></ChildObjects>"
+        );
+        let catalog = xml("").replace("DefinedType", "Catalog").replace(
+            "</Properties></Catalog>",
+            &format!("</Properties>{field}</Catalog>"),
+        );
+        let descriptor = metadata_parser::parse(&catalog, None, PropertiesMode::All).unwrap();
+        let object = crate::metadata_object(&descriptor, Vec::new()).unwrap();
+        assert_eq!(
+            object
+                .attributes
+                .iter()
+                .find(|field| field.name == "Value")
+                .unwrap()
+                .attr_type,
+            AttributeType::AnyRef
+        );
+        let register = catalog.replace("Catalog", "InformationRegister");
+        let descriptor = metadata_parser::parse(&register, None, PropertiesMode::All).unwrap();
+        let register = crate::register(&descriptor).unwrap();
+        assert_eq!(
+            register
+                .attributes()
+                .iter()
+                .find(|field| field.name() == "Value")
+                .unwrap()
+                .attr_type(),
+            Some(&AttributeType::AnyRef)
+        );
+    }
+}
+
 /// Composition settings have their own namespace and must not depend on the legacy XML prefix.
 #[test]
 fn composition_settings_types_use_exact_namespace_identity() {

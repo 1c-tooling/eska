@@ -49,6 +49,12 @@ QName свойства проверяется по namespace и local name. Ош
 хотя модель ядра не хранит различие фиксированной/переменной длины и ограничения знака.
 Обязательный `Type` объектов, полей регистров и определяемых типов читается одним helper.
 
+[Legacy AnyRef TypeSet](../../docs/research/eska-format/analyzer-reference-typeset.md)
+в current-config namespace сохраняет тот же `AttributeType::AnyRef`, что AnyIBRef.
+Конкретный Type, foreign/unresolved/future QName не получают разрешения; общий
+helper действует для всех потребителей TypeDescription. Native type-set reader
+сохраняет ту же известную категорию, source bytes и serialized shape не меняются.
+
 [Проверки](../../docs/research/eska-format/defined-type-adapter-results.json)
 включают точное равенство всех 50/508/531 определяемых типов C1/C2/C3 с нативным
 reader, 12 unit и два файловых теста. Исправный parse YAML и готовность BSL-модели

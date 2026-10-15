@@ -174,7 +174,8 @@ pub(crate) fn parse_type_xml(type_node: roxmltree::Node<'_, '_>) -> Result<Attri
 }
 
 fn parse_type_set(type_set: &str) -> Option<AttributeType> {
-    if type_set == "cfg:AnyIBRef" {
+    // Designer TypeSet may retain the legacy spelling of the AnyIBRef reference category.
+    if matches!(type_set, "cfg:AnyRef" | "cfg:AnyIBRef") {
         return Some(AttributeType::AnyRef);
     }
 
@@ -221,11 +222,7 @@ fn parse_single_type(type_str: &str, qualifiers: &TypeQualifiers) -> Result<Attr
                 .as_deref()
                 .is_some_and(|df| df.eq_ignore_ascii_case("DateTime"));
 
-            if is_datetime {
-                Ok(AttributeType::DateTime)
-            } else {
-                Ok(AttributeType::Date)
-            }
+            if is_datetime { Ok(AttributeType::DateTime) } else { Ok(AttributeType::Date) }
         }
 
         s if s.starts_with("cfg:") => parse_reference_type(s),
@@ -507,5 +504,40 @@ mod tests {
                 ],
             }
         );
+    }
+
+    /// Known legacy/current reference sets retain their category beside concrete scalar types.
+    #[test]
+    fn any_reference_type_sets_preserve_composite_order() {
+        let doc = roxmltree::Document::parse(
+            "<Type><TypeSet>cfg:AnyRef</TypeSet><Type>xs:boolean</Type><TypeSet>cfg:AnyIBRef</TypeSet><Type>xs:string</Type></Type>",
+        )
+        .unwrap();
+        assert_eq!(
+            parse_type_xml(doc.root_element()).unwrap(),
+            AttributeType::Composite {
+                types: vec![
+                    AttributeType::Boolean,
+                    AttributeType::String { length: None },
+                    AttributeType::AnyRef,
+                    AttributeType::AnyRef,
+                ],
+            }
+        );
+    }
+
+    /// A known set name cannot turn an unsupported concrete type or future token into AnyRef.
+    #[test]
+    fn any_reference_type_sets_do_not_widen_concrete_or_unknown_tokens() {
+        for token in ["cfg:AnyRef", "cfg:AnyIBRef"] {
+            assert_eq!(
+                parse_single_type(token, &qualifiers()).unwrap(),
+                AttributeType::UnknownNamed(token.to_owned())
+            );
+            assert_eq!(parse_type_set(token), Some(AttributeType::AnyRef));
+        }
+        for token in ["foreign:AnyRef", "cfg:FutureAnyRef", "cfg:AnyRef.Items", "cfg:anyref"] {
+            assert_eq!(parse_type_set(token), None, "{token}");
+        }
     }
 }
