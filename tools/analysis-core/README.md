@@ -64,6 +64,12 @@ transport настоящий, новая платформа/installed Explorer �
 объекта и DCS/query проверки нет. Покрытие selected BSL rules сохраняет отдельный
 ограниченный `semantic_profile_complete`; `semantic_complete` остаётся false.
 
+[Текущие формы и СКД](../../docs/research/eska-format/query-context-read-view.md#один-текущий-источник-в-sdk)
+используют один owner snapshot для unified form и обычный current controller
+для отдельного DCS XML. Library `prepare_query_context`/`query_context` возвращает
+root/revision/hash-bound storage view без saved fallback и без нового RPC.
+Storage bindings пока не означают проверку output/parameters/consumers.
+
 Состав берётся из проверенного manifest и configuration snapshot. При открытии
 все остальные YAML остаются pending, а их идентичности и slot стабильны.
 Сохранённые файлы и черновики используют одни преобразователи. Неверный текущий

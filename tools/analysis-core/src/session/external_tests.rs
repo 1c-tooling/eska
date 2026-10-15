@@ -3,7 +3,7 @@
 use std::fs;
 
 use eska::{
-    analysis_core::{InputRequest, MetadataInputs},
+    analysis_core::{InputRequest, InputState, MetadataInputs},
     project_core::ProjectType,
 };
 use hir::DefDatabase;
@@ -47,11 +47,7 @@ fn canonical_external_owner_and_form_have_real_types_and_complete_current_models
         assert!(!roots.has_base());
         let request = InputRequest::default();
         session.load_pending_metadata_inputs(&request).unwrap();
-        assert_eq!(
-            session.resource_owner(&paths.dialog),
-            Some(&paths.form_owner)
-        );
-        assert!(session.metadata_resource(&paths.dialog).is_some());
+        assert_unified_form_input(&session, &paths);
         let resolved = session
             .resolve(&paths.owner, session.revision())
             .unwrap()
@@ -111,6 +107,27 @@ fn canonical_external_owner_and_form_have_real_types_and_complete_current_models
         assert!(!root.join("src/Configuration.xml").exists());
         assert!(!root.join(".eska").exists());
     }
+}
+
+/// A unified form has one current owner authority and no independently reserved dialog resource.
+fn assert_unified_form_input(session: &AnalysisSession, paths: &fixture::Paths) {
+    assert_eq!(paths.dialog, paths.form_owner);
+    assert!(session.metadata_resource(&paths.dialog).is_none());
+    assert_eq!(
+        session
+            .selected_root
+            .inputs
+            .source_reader()
+            .form_dialog_owner(&paths.dialog),
+        Some(&paths.form_owner)
+    );
+    let current = session
+        .metadata(&paths.form_owner, session.revision())
+        .unwrap();
+    let InputState::Ready(snapshot) = current.input else {
+        panic!("current unified form input");
+    };
+    assert!(snapshot.form.is_some());
 }
 
 /// Current metadata overlays update both self/form field completion, while invalid inputs clear owners.
@@ -292,9 +309,13 @@ fn canonical_external_ownership_uses_native_case_folding_for_mixed_names_and_col
             session.owner(&paths.form_owner).unwrap().state,
             ModelState::Pending
         ));
+        assert!(session.metadata_resource(&paths.dialog).is_none());
         assert!(matches!(
-            session.metadata_resource(&paths.dialog).unwrap().state,
-            crate::MetadataResourceState::Pending
+            session
+                .metadata(&paths.form_owner, session.revision())
+                .unwrap()
+                .input,
+            InputState::Pending
         ));
         session
             .load_module_saved(&paths.form_module, session.revision(), &request)

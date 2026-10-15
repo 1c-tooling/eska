@@ -4,7 +4,10 @@ use std::sync::Arc;
 
 use eska::{
     analysis_core::{InputFailure, InputOrigin, InputState, OwnerInput},
-    project_core::{MetadataKind, source_format::SourcePath},
+    project_core::{
+        MetadataKind,
+        source_format::{CurrentFormView, SourcePath},
+    },
 };
 use eska_bsl_adapter::AdapterError;
 use ide_db::metadata::CanonicalMetadata;
@@ -157,8 +160,13 @@ pub fn project(
                         | MetadataKind::ChartOfCalculationTypes
                         | MetadataKind::ChartOfCharacteristicTypes
                 ) {
-                    let state =
-                        resource_state(&snapshot.path, &document.descriptor, kind, resource);
+                    let state = resource_state(
+                        &snapshot.path,
+                        &document.descriptor,
+                        kind,
+                        resource,
+                        snapshot.form.as_deref().map(CurrentFormView::reference_xml),
+                    );
                     if matches!(state, ModelState::Ready(_)) {
                         result.modeled_descriptors = 1;
                     }
@@ -208,6 +216,7 @@ pub fn form_state(
                     &document.descriptor,
                     MetadataKind::Form,
                     resource,
+                    snapshot.form.as_deref().map(CurrentFormView::reference_xml),
                 )
             },
         ),
@@ -220,6 +229,7 @@ fn resource_state(
     descriptor: &eska::project_core::metadata_parser::ParsedDescriptor,
     kind: MetadataKind,
     resource: Option<(&SourcePath, &crate::MetadataResourceInput)>,
+    current_form: Option<&str>,
 ) -> ModelState {
     use crate::{MetadataResourceKind, MetadataResourceState};
     if let Some(issue) = descriptor.diagnostics.first() {
@@ -250,6 +260,13 @@ fn resource_state(
                 MetadataResourceState::Ready(text) => Some((path, text)),
             }
         }
+    };
+    let current = if matches!(kind, MetadataKind::CommonForm | MetadataKind::Form) {
+        current_form
+            .map(|text| (source, text))
+            .or_else(|| current.map(|(path, text)| (path, text.as_ref())))
+    } else {
+        current.map(|(path, text)| (path, text.as_ref()))
     };
     let value = if kind == MetadataKind::Role {
         let data = match current {

@@ -96,7 +96,8 @@ pub use session::metadata_resources::{
     MetadataResourceInput, MetadataResourceKind, MetadataResourceState,
 };
 pub use session::query_text::{
-    QueryAnalysisDiagnostics, QueryAnalysisRequestError, QuerySyntaxDiagnostics,
-    QuerySyntaxRequestError, QueryTextSummary,
+    QueryAnalysisDiagnostics, QueryAnalysisRequestError, QueryConsumerContext,
+    QueryContextRequestError, QueryContextSource, QuerySyntaxDiagnostics, QuerySyntaxRequestError,
+    QueryTextSummary,
 };
 pub use session::{AnalysisScope, AnalysisSession, SessionError, SessionSummary};

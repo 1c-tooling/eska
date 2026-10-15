@@ -3118,6 +3118,11 @@ output fields, current resource consumers и полная приёмка ещё 
 Native-origin release прогон подтвердил CF saved IDE/checker parity и dirty
 field/close на RU/EN. Configured CFE сохранила явный отказ Unsupported CommonPicture;
 guard не ослаблен, matching native base/CFE и полная CFE семантика не приняты.
+Последующий [SDK current context](../research/eska-format/query-context-read-view.md#один-текущий-источник-в-sdk)
+устраняет saved form/query rereads и подключает отдельный DCS XML к current
+lifecycle. Library storage view сохраняет root/revision/hash provenance;
+197 default и 488 all-features SDK tests прошли. Output/parameters/consumer
+diagnostics и весь сквозной пункт приёмки остаются в работе.
 
 Подключить `.sdbl` к общим `eska-analyzer`/`eska-check`: метаданные выбранного
 member, параметры, расширения СКД, настройки динамического списка. Проверять

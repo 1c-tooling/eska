@@ -1,12 +1,14 @@
 //! Pure current owner/resource inputs retain reference identity and explicit coordinate precision.
 
-use std::ops::Range;
+use std::{ops::Range, sync::Arc};
 
 use super::{SourcePath, SourceReader, check_bindings, composition_template, invalid};
 use crate::project_core::source_format::{
-    EXTERNAL_LAYOUT_VERSION, Error, FileRole, NativeUuid, QUERY_LAYOUT_VERSION, QueryConsumerView,
-    QueryProfile, QueryReference, QueryReferenceDocument,
+    EXTERNAL_LAYOUT_VERSION, Error, FileRole, MD_NAMESPACE, MetadataSnapshot, NativeUuid,
+    ObjectSource, QUERY_LAYOUT_VERSION, QueryConsumerView, QueryProfile, QueryReference,
+    QueryReferenceDocument,
 };
+use crate::project_core::{MetadataKind, metadata_model::MetadataValue};
 
 #[cfg(test)]
 mod tests;
@@ -30,9 +32,32 @@ pub struct QueryContextView {
     source: SourcePath,
     native: SourcePath,
     uuid: NativeUuid,
-    xml: String,
+    xml: Arc<str>,
     document: QueryReferenceDocument,
     form_locations: Option<Vec<(Range<usize>, Range<usize>)>>,
+}
+
+/// A unified form has one current authoring input, even when several consumers need its XML view.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CurrentFormView {
+    reference_xml: Arc<str>,
+    query_context: Result<Option<QueryContextView>, Error>,
+}
+
+impl CurrentFormView {
+    /// Native form metadata needs reference markup, never separately stored query values.
+    #[must_use]
+    pub fn reference_xml(&self) -> &str {
+        &self.reference_xml
+    }
+
+    /// A current reference error stays explicit without discarding otherwise valid form metadata.
+    ///
+    /// # Errors
+    /// Returns the current reference or binding failure; no previous context is retained.
+    pub fn query_context(&self) -> Result<Option<&QueryContextView>, &Error> {
+        self.query_context.as_ref().map(Option::as_ref)
+    }
 }
 
 impl QueryContextView {
@@ -183,8 +208,167 @@ impl SourceReader {
             }
             (resource_text.to_owned(), None)
         };
+        self.query_context_from_parts(
+            native_resource,
+            owner,
+            &uuid,
+            xml.into(),
+            form_locations,
+            expected_profile,
+        )
+    }
+
+    /// Capture the validated current form while its authoring bytes are available at the parse boundary.
+    pub(in crate::project_core::source_format::reader) fn current_form_view(
+        &self,
+        owner: &SourcePath,
+        source: &ObjectSource,
+        text: &str,
+    ) -> Result<Option<Arc<CurrentFormView>>, Error> {
+        let Some(form) = &source.form else {
+            return Ok(None);
+        };
+        let resource = self
+            .manifest
+            .query_resources
+            .iter()
+            .find(|resource| resource.descriptor == source.document.path);
+        let Some(resource) = resource else {
+            return Ok(Some(Arc::new(CurrentFormView {
+                reference_xml: form.to_xml()?.into(),
+                query_context: Ok(None),
+            })));
+        };
+        let (reference_xml, query_context) = match form.query_reference_context(text, u64::MAX) {
+            Ok(context) => {
+                let xml: Arc<str> = context.xml.into();
+                let query_context = self
+                    .query_context_from_parts(
+                        &resource.path,
+                        owner,
+                        &source.document.descriptor.object.uuid,
+                        Arc::clone(&xml),
+                        Some(context.locations),
+                        QueryProfile::ManagedForm,
+                    )
+                    .map(Some);
+                (xml, query_context)
+            }
+            Err(error) => (form.to_xml()?.into(), Err(error)),
+        };
+        Ok(Some(Arc::new(CurrentFormView {
+            reference_xml,
+            query_context,
+        })))
+    }
+
+    /// Bind a distinct current DCS resource to an already parsed current owner without any file I/O.
+    ///
+    /// # Errors
+    /// Rejects wrong manifests, owner/native identities, unloaded or invalid template properties,
+    /// oversized inputs and inconsistent reference bindings. Unified forms use their captured view.
+    pub fn parse_query_context_from_snapshot(
+        &self,
+        native_resource: &SourcePath,
+        owner: &MetadataSnapshot,
+        current_resource_xml: &str,
+        max_bytes: u64,
+    ) -> Result<QueryContextView, Error> {
+        if !matches!(
+            self.manifest.schema_version,
+            QUERY_LAYOUT_VERSION | EXTERNAL_LAYOUT_VERSION
+        ) {
+            return Err(Error::root("source_query_context_layout_unsupported"));
+        }
+        if owner.source_bytes > max_bytes || current_resource_xml.len() as u64 > max_bytes {
+            return Err(Error::root("source_document_too_large"));
+        }
+        let resource = self
+            .manifest
+            .query_resources
+            .iter()
+            .find(|resource| &resource.path == native_resource)
+            .ok_or_else(|| Error::root("source_query_undeclared"))?;
+        if owner.manifest_sha256 != self.manifest_sha256
+            || self.owner_for_native_main(&resource.descriptor) != Some(&owner.path)
+        {
+            return Err(Error::root("source_query_context_input_mismatch"));
+        }
+        let document = owner
+            .documents
+            .iter()
+            .find(|document| document.path == resource.descriptor)
+            .ok_or_else(invalid)?;
+        let object = document.descriptor.objects.first().ok_or_else(invalid)?;
+        if !document.descriptor.diagnostics.is_empty()
+            || !matches!(
+                object.metadata.kind(),
+                MetadataKind::Template | MetadataKind::CommonTemplate
+            )
+        {
+            return Err(invalid());
+        }
+        let properties = object.properties.as_deref().ok_or_else(invalid)?;
+        let mut types = properties.iter().filter(|field| {
+            field.property.key.namespace.as_deref() == Some(MD_NAMESPACE)
+                && field.property.key.name == "TemplateType"
+        });
+        if !matches!(types.next().map(|field| &field.property.value),
+            Some(MetadataValue::Text(value)) if value == "DataCompositionSchema")
+            || types.next().is_some()
+        {
+            return Err(invalid());
+        }
+        let uuid = NativeUuid::parse(object.metadata.uuid())?;
+        self.query_context_from_parts(
+            native_resource,
+            &owner.path,
+            &uuid,
+            Arc::from(current_resource_xml),
+            None,
+            QueryProfile::Composition,
+        )
+    }
+
+    /// Both current-input routes enforce the same frozen native resource and query declarations.
+    fn query_context_from_parts(
+        &self,
+        native_resource: &SourcePath,
+        owner: &SourcePath,
+        uuid: &NativeUuid,
+        xml: Arc<str>,
+        form_locations: Option<Vec<(Range<usize>, Range<usize>)>>,
+        profile: QueryProfile,
+    ) -> Result<QueryContextView, Error> {
+        let resource = self
+            .manifest
+            .query_resources
+            .iter()
+            .find(|resource| &resource.path == native_resource)
+            .ok_or_else(|| Error::root("source_query_undeclared"))?;
+        let file = self
+            .manifest
+            .files
+            .iter()
+            .find(|file| &file.path == native_resource)
+            .ok_or_else(invalid)?;
+        let declared_owner = self
+            .owner_for_native_main(&resource.descriptor)
+            .ok_or_else(invalid)?;
+        let declared_uuid = self
+            .owners
+            .get(declared_owner)
+            .and_then(|entry| entry.descriptors.get(&resource.descriptor))
+            .ok_or_else(invalid)?;
+        let is_form = matches!(file.role, FileRole::ManagedForm { .. });
+        if owner != declared_owner || uuid != declared_uuid {
+            return Err(Error::root("source_identity_mismatch"));
+        }
+        if is_form != (profile == QueryProfile::ManagedForm) {
+            return Err(invalid());
+        }
         let document = QueryReferenceDocument::from_xml(&xml)?;
-        if document.profile() != expected_profile {
+        if document.profile() != profile {
             return Err(invalid());
         }
         check_bindings(Some(resource), &document)?;
@@ -193,7 +377,7 @@ impl SourceReader {
             descriptor: resource.descriptor.clone(),
             source: file.source_path().clone(),
             native: native_resource.clone(),
-            uuid,
+            uuid: uuid.clone(),
             xml,
             document,
             form_locations,

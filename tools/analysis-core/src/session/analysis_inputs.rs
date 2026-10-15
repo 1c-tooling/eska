@@ -43,7 +43,7 @@ impl AnalysisSession {
         self.load_root_module_inputs(id, request)
     }
 
-    /// Query-only consumers prepare the same metadata inputs without opening BSL bodies.
+    /// Query-only diagnostics prepare canonical metadata without BSL or consumer-only DCS resources.
     pub(crate) fn load_root_metadata_inputs(
         &mut self,
         id: crate::composition::RootId,
@@ -55,7 +55,8 @@ impl AnalysisSession {
             .metadata_resources
             .iter()
             .filter(|(_, entry)| {
-                entry.input.origin == InputOrigin::Saved
+                entry.input.kind != crate::MetadataResourceKind::QueryComposition
+                    && entry.input.origin == InputOrigin::Saved
                     && matches!(
                         entry.input.state,
                         MetadataResourceState::Pending

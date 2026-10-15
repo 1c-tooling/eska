@@ -11,7 +11,7 @@ use std::{collections::BTreeMap, fmt::Write as _, sync::Arc};
 
 use eska::{
     analysis_core::{InputFailure, InputOrigin, InputRequest},
-    project_core::source_format::{SourcePath, SourceReader},
+    project_core::source_format::{FileRole, SourcePath, SourceReader},
 };
 use sha2::{Digest, Sha256};
 
@@ -27,6 +27,7 @@ pub enum MetadataResourceKind {
     RoleRights,
     FormDialog,
     PredefinedData,
+    QueryComposition,
 }
 
 /// Readiness describes current bytes; native XML validity belongs to the owning projection.
@@ -73,15 +74,16 @@ pub(super) fn register(reader: &SourceReader) -> BTreeMap<SourcePath, MetadataRe
                 .map(|owner| (path, owner, MetadataResourceKind::RoleRights))
         })
         .chain(reader.form_dialog_paths().filter_map(|path| {
-            reader
-                .form_dialog_owner(path)
-                .map(|owner| (path, owner, MetadataResourceKind::FormDialog))
+            reader.form_dialog_owner(path).and_then(|owner| {
+                (owner != path).then_some((path, owner, MetadataResourceKind::FormDialog))
+            })
         }))
         .chain(reader.predefined_paths().filter_map(|path| {
             reader
                 .predefined_owner(path)
                 .map(|owner| (path, owner, MetadataResourceKind::PredefinedData))
         }))
+        .chain(composition_resources(reader))
         .map(|(path, owner, kind)| {
             (
                 path.clone(),
@@ -98,6 +100,32 @@ pub(super) fn register(reader: &SourceReader) -> BTreeMap<SourcePath, MetadataRe
             )
         })
         .collect()
+}
+
+/// Distinct DCS authoring XML is declared by the manifest; unified forms use their owner snapshot.
+fn composition_resources(
+    reader: &SourceReader,
+) -> impl Iterator<Item = (&SourcePath, &SourcePath, MetadataResourceKind)> {
+    reader
+        .manifest()
+        .query_resources
+        .iter()
+        .filter_map(|resource| {
+            let file = reader
+                .manifest()
+                .files
+                .iter()
+                .find(|file| file.path == resource.path)?;
+            if matches!(file.role, FileRole::ManagedForm { .. }) {
+                return None;
+            }
+            let owner = reader.owner_for_native_main(&resource.descriptor)?;
+            Some((
+                file.source_path(),
+                owner,
+                MetadataResourceKind::QueryComposition,
+            ))
+        })
 }
 
 /// The primary slot consumes its declared rights, main dialog or predefined-data resource.
@@ -233,7 +261,8 @@ impl AnalysisSession {
             .metadata_resources
             .iter()
             .filter(|(_, entry)| {
-                entry.input.origin == InputOrigin::Saved
+                entry.input.kind != MetadataResourceKind::QueryComposition
+                    && entry.input.origin == InputOrigin::Saved
                     && matches!(
                         entry.input.state,
                         MetadataResourceState::Pending

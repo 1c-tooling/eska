@@ -9,6 +9,8 @@ use crate::project_core::source_format::{
     yaml::{self, Step},
 };
 
+mod snapshots;
+
 /// Capture precisely the physical inputs declared for this resource, without reconstructing query values.
 fn inputs(reader: &SourceReader, native: &str) -> (String, String) {
     let resource = reader
@@ -346,6 +348,37 @@ fn four_native_profiles_keep_declared_resource_ownership_without_disk_reads() {
             let declared = reader.declared_query(&view.references()[0].source).unwrap();
             assert_eq!(view.native_descriptor(), declared.native_descriptor);
             assert_eq!(view.uuid(), declared.uuid);
+            let metadata = reader
+                .parse_metadata(
+                    view.owner(),
+                    &owner,
+                    crate::project_core::metadata_parser::PropertiesMode::All,
+                )
+                .unwrap();
+            if profile == QueryProfile::Composition {
+                assert_eq!(
+                    reader
+                        .parse_query_context_from_snapshot(
+                            &path(resource),
+                            &metadata,
+                            &text,
+                            1_000_000
+                        )
+                        .unwrap(),
+                    view
+                );
+            } else {
+                assert_eq!(
+                    metadata
+                        .form
+                        .as_ref()
+                        .unwrap()
+                        .query_context()
+                        .unwrap()
+                        .unwrap(),
+                    &view
+                );
+            }
             let location = view
                 .locate_reference_range(view.references()[0].source_range())
                 .unwrap();

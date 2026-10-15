@@ -6,6 +6,7 @@ mod tests;
 use std::{
     collections::{BTreeMap, HashSet},
     ops::Range,
+    sync::Arc,
 };
 
 use yaml_edit::YamlFile;
@@ -50,6 +51,8 @@ pub struct MetadataSnapshot {
     pub documents: Vec<NativeMetadata>,
     /// Selected coordinates address object/property spans in the exact text which was parsed.
     pub coordinates: super::super::TextCoordinates,
+    /// Unified form consumers share one view of these exact owner bytes, without another input slot.
+    pub form: Option<Arc<super::CurrentFormView>>,
 }
 
 /// Keep a separate logical descriptor per native file while sharing the physical owner text.

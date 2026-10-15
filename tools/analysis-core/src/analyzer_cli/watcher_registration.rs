@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use eska::project_core::source_format::SourceReader;
+use eska::project_core::source_format::{FileEntry, SourceReader};
 use serde_json::{Value, json};
 
 use super::{project_changes, protocol, watched_files};
@@ -109,6 +109,20 @@ fn saved_watchers(source: &SourceReader) -> Result<Vec<Value>, Value> {
         .chain(source.role_rights_paths())
         .chain(source.form_dialog_paths())
         .chain(source.predefined_paths())
+        .chain(
+            source
+                .manifest()
+                .query_resources
+                .iter()
+                .filter_map(|resource| {
+                    source
+                        .manifest()
+                        .files
+                        .iter()
+                        .find(|file| file.path == resource.path)
+                        .map(FileEntry::source_path)
+                }),
+        )
         .filter(|path| path.as_str() != "configuration.yaml")
         .map(|path| {
             path.as_path()

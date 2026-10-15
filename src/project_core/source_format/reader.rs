@@ -35,7 +35,7 @@ use super::{
 
 pub use form_dialog::DeclaredForm;
 pub use modules::DeclaredModule;
-pub use queries::{DeclaredQuery, QueryAuthoringRange, QueryContextView};
+pub use queries::{CurrentFormView, DeclaredQuery, QueryAuthoringRange, QueryContextView};
 pub use semantic::{MetadataSnapshot, NativeMetadata};
 
 /// One declaration projected directly from typed YAML, with coordinates in its owner snapshot.
@@ -631,6 +631,7 @@ impl SourceReader {
                 .collect::<Vec<_>>();
             let coordinates = super::TextCoordinates::new(text, &offsets)
                 .map_err(|_| Error::root("source_coordinates_invalid"))?;
+            let form = self.current_form_view(path, &source, text)?;
             Ok(MetadataSnapshot {
                 path: path.clone(),
                 source_sha256: files::hex(&Sha256::digest(text.as_bytes())),
@@ -638,6 +639,7 @@ impl SourceReader {
                 manifest_sha256: self.manifest_sha256.clone(),
                 documents,
                 coordinates,
+                form,
             })
         })();
         result.map_err(|error: Error| error.in_field(path.as_str()))

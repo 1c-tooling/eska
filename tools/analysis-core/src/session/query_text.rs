@@ -19,8 +19,10 @@ mod tests;
 mod analysis;
 #[cfg(test)]
 mod analysis_tests;
+mod context;
 mod rooted;
 pub use analysis::{QueryAnalysisDiagnostics, QueryAnalysisRequestError};
+pub use context::{QueryConsumerContext, QueryContextRequestError, QueryContextSource};
 
 /// Current text readiness is separate from parse validity and metadata/consumer coverage.
 #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize)]

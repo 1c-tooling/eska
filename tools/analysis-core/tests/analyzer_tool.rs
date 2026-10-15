@@ -38,6 +38,7 @@ mod property_edit_plans;
 mod query_analysis;
 #[path = "support/query_analysis_project.rs"]
 mod query_analysis_project;
+mod query_context;
 mod query_text;
 mod reference_queries;
 mod rename_queries;

@@ -9,7 +9,7 @@ use crate::project_core::source_format::{
 };
 
 mod context;
-pub use context::{QueryAuthoringRange, QueryContextView};
+pub use context::{CurrentFormView, QueryAuthoringRange, QueryContextView};
 
 /// Plain text keeps explicit native ownership; actual dataset/attribute scope is read from its resource.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -58,6 +58,33 @@ impl SourceReader {
     pub fn read_query_text(&self, path: &SourcePath, max_bytes: u64) -> Result<String, Error> {
         self.declared_query(path)
             .ok_or_else(|| Error::root("source_query_undeclared").in_field(path.as_str()))?;
+        read_text_limited(&self.root, path, max_bytes)
+    }
+
+    /// Read one distinct declared DCS authoring input without parsing it or reading its owner/query values.
+    ///
+    /// # Errors
+    /// Rejects undeclared or unified-form paths and bounded, unsafe or missing source files.
+    /// Malformed XML is still readable current text; context validation belongs to a separate step.
+    pub fn read_query_resource_text(
+        &self,
+        path: &SourcePath,
+        max_bytes: u64,
+    ) -> Result<String, Error> {
+        let declared = self
+            .manifest
+            .files
+            .iter()
+            .find(|file| file.source_path() == path && file.is_payload())
+            .is_some_and(|file| {
+                self.manifest
+                    .query_resources
+                    .iter()
+                    .any(|resource| resource.path == file.path)
+            });
+        if !declared {
+            return Err(Error::root("source_query_undeclared").in_field(path.as_str()));
+        }
         read_text_limited(&self.root, path, max_bytes)
     }
 

@@ -45,6 +45,8 @@ impl Server<'_> {
                 "sourceFormat":"eska", "scope":"selected-project",
                 "project":navigation.project(),
                 "metadata":{"owners":true, "read":true, "refresh":true,
+                    "queryResources":{"sync":true,"kind":"query_composition"},
+                    "mappedFormAuthority":"owner-document",
                     "permissions":permissions::capability(),
                     "locate":{"method":metadata_locations::METHOD,"scope":"current-ready-owner","positionEncoding":"utf-16","lazyRead":false}},
                 "documentSync":true, "roleRightsSync":true, "formDialogSync":true, "nestedFormModels":true, "predefinedDataSync":true, "targetedCompletionMetadata":true, "managerModuleCompletion":true, "commonModuleCompletion":true, "languageQueries":true, "requestCancellation":true,

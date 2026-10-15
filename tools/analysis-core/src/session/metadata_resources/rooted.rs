@@ -152,6 +152,9 @@ impl AnalysisSession {
                 MetadataResourceKind::PredefinedData => {
                     reader.read_predefined_text(path, request.source_limit())
                 }
+                MetadataResourceKind::QueryComposition => {
+                    reader.read_query_resource_text(path, request.source_limit())
+                }
             };
             match text {
                 Ok(text) => Ok(text),

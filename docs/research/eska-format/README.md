@@ -78,6 +78,9 @@ CF/configured-CFE: preview, native edit/undo/redo и restart/import replay.
 [Листовая structural coverage](structural-metadata-coverage.md), включая
 CommonPicture/CommandGroup, проверяет текущие
 descriptor fields без фиктивной canonical модели или проверки СКД.
+[Current form/DCS view](query-context-read-view.md#один-текущий-источник-в-sdk)
+использует принятый owner snapshot и отдельный current XML input без saved
+fallback; полный SDK — 197/488 tests, consumer semantics ещё нужны.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery
 одному совместимому tool с независимыми pins и сохранением streams/exit.
 [Оболочка check](shell-check-delegation.md) передаёт явный профиль совместимому
