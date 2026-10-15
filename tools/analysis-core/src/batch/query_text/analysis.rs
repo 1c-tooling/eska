@@ -4,7 +4,7 @@ use eska::analysis_core::{InputFailure, InputOrigin, InputRequest};
 use eska::project_core::source_format::SourcePath;
 
 use super::{
-    BatchError, BatchQueryContext, BatchQueryFile, BatchQueryScope, FileState, findings,
+    BatchError, BatchQueryContext, BatchQueryFile, BatchQueryScope, FileState, consumers, findings,
     unavailable,
 };
 use crate::{
@@ -37,11 +37,23 @@ pub(super) fn check_one(
     session
         .prepare_query_analysis(session.revision(), request)
         .map_err(BatchError::Request)?;
+    let Some(consumers) = consumers::check(session, path, request, cancellation)? else {
+        if session
+            .query_input(path)
+            .is_some_and(|input| input.origin == InputOrigin::Saved)
+        {
+            session
+                .release_query_saved(path, session.revision())
+                .map_err(BatchError::Request)?;
+        }
+        return Ok(None);
+    };
     let input = session
         .query_input(path)
         .ok_or_else(|| BatchError::Request(SessionRequestError::UnknownQuery(path.clone())))?;
     let mut file = unavailable(path, input);
     file.scope = BatchQueryScope::CurrentCanonicalMetadata;
+    file.consumers = Some(consumers);
     file.context = Some(BatchQueryContext {
         root: session.selected_root_id(),
         input_revision: input.revision,

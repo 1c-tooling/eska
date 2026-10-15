@@ -22,6 +22,7 @@ mod project_changes;
 mod property_edits;
 mod protocol;
 mod query_analysis;
+mod query_consumers;
 mod query_syntax;
 mod read_permissions;
 mod references;

@@ -58,6 +58,24 @@ fn current(session: &AnalysisSession, path: &SourcePath) -> QueryConsumerDiagnos
     assert!(!result.coverage.parameters_complete());
     assert!(!result.coverage.semantic_complete());
     assert_eq!(session.resources().module_text_bytes, 0);
+    let report = session
+        .query_consumer_report(
+            path,
+            revision,
+            &InputRequest::default(),
+            &QueryCancellation::default(),
+        )
+        .unwrap();
+    assert_eq!(report.findings.len(), result.findings.len());
+    assert_eq!(report.context.query, result.context.query);
+    assert_eq!(report.context.resource, result.context.resource);
+    assert_eq!(
+        report.coverage.checked_bindings,
+        result.coverage.checked_bindings
+    );
+    let machine = serde_json::to_value(report).unwrap();
+    assert_eq!(machine["context"]["revision"], serde_json::json!(revision));
+    assert!(machine["context"].get("consumer").is_none());
     result
 }
 

@@ -1265,4 +1265,8 @@ init-eska-git-invalid = Проверьте существующие метада
 init-eska-git-failed = Не удалось завершить новую инициализацию Git. Исходники и опубликованные данные ESKA сохранены.
 
 tool-check-query-result = Запросы: проверено { $checked } из { $total }. Только синтаксис; метаданные и потребители не проверены.
+tool-query-consumer-missing-field = В результате запроса нет поля «{ $field }», используемого этой привязкой.
+tool-query-consumer-incomplete = Потребители запроса: проверено привязок { $checked }; неполных частей { $incomplete }.
+tool-query-consumer-unavailable = Проверка потребителей запроса недоступна ({ $code }).
+tool-check-query-semantic-result = Запросы: проверено { $checked } из { $total }. Текущие метаданные; покрытие потребителей показано отдельно.
 tool-check-query-unavailable = Запрос { $source } недоступен: { $code }.

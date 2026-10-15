@@ -9,9 +9,9 @@ use serde_json::{Value, json};
 use super::super::{
     args::Cli, completion, diagnostics, document_symbols, documents, dto, edit_authority,
     external_context, hover, kernel_memory, language, metadata_locations, navigation::Navigation,
-    permissions, project_changes, property_edits, protocol, query_analysis, query_syntax,
-    read_permissions::ReadPermissions, references, rename, request_control, signature_help, stream,
-    watched_files, watcher_registration,
+    permissions, project_changes, property_edits, protocol, query_analysis, query_consumers,
+    query_syntax, read_permissions::ReadPermissions, references, rename, request_control,
+    signature_help, stream, watched_files, watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisScope, AnalysisSession, analysis_settings, batch::BatchProfile};
@@ -57,6 +57,7 @@ impl Server<'_> {
                 "analysis":diagnostics::availability(&settings, profile),
                 "querySyntax":query_syntax::capability(query_syntax::negotiate(params)?, &settings),
                 "queryAnalysis":query_analysis::capability(query_analysis::negotiate(params)?, &settings, scope),
+                "queryConsumers":query_consumers::capability(query_consumers::negotiate(params)?, &settings, scope),
                 "inputNotifications":["eska/inputChanged", "eska/inputRejected", watched_files::EVENT, project_changes::EVENT, watcher_registration::EVENT],
                 "watchedFiles":watched_files::capabilities(watcher.is_some()),
                 "projectChanges":project_inputs.capability()?,
@@ -131,7 +132,8 @@ impl Server<'_> {
         self.hover_format = hover_format;
         self.signature = signature;
         self.documents = documents::Documents::with_query_syntax(query_syntax::negotiate(params)?)
-            .with_query_analysis(query_analysis::negotiate(params)?);
+            .with_query_analysis(query_analysis::negotiate(params)?)
+            .with_query_consumers(query_consumers::negotiate(params)?);
         Ok(())
     }
 
@@ -162,6 +164,7 @@ impl Server<'_> {
         }
         query_syntax::negotiate(params)?;
         query_analysis::negotiate(params)?;
+        query_consumers::negotiate(params)?;
         Ok(())
     }
 }

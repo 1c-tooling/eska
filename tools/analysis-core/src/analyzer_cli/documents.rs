@@ -25,6 +25,7 @@ pub struct Documents {
     open: BTreeSet<SourceKey>,
     query_syntax: bool,
     query_analysis: bool,
+    query_consumers: bool,
 }
 
 #[derive(Deserialize)]
@@ -92,6 +93,7 @@ impl Documents {
             open: BTreeSet::new(),
             query_syntax,
             query_analysis: false,
+            query_consumers: false,
         }
     }
 
@@ -99,6 +101,17 @@ impl Documents {
     pub const fn with_query_analysis(mut self, enabled: bool) -> Self {
         self.query_analysis = enabled;
         self
+    }
+
+    /// Consumer reports are an optional extension of the contextual diagnostic pull.
+    pub const fn with_query_consumers(mut self, enabled: bool) -> Self {
+        self.query_consumers = enabled;
+        self
+    }
+
+    /// The independent opt-in cannot broaden a legacy query-analysis response.
+    pub const fn query_consumers(&self) -> bool {
+        self.query_consumers
     }
 
     /// Diagnostic routing preserves both independent choices for this host.

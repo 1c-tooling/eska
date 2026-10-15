@@ -20,6 +20,13 @@ CF/CFE metadata без BSL bodies. Старый syntax route сохранён; p
 consumer и semantic completeness остаются false. Semantic checker использует
 тот же query API с отдельным current context, сохраняя incomplete/exit 2.
 
+[Проверка прямых потребителей](../../docs/research/eska-format/query-output-consumers.md)
+согласуется отдельным `queryConsumers: true` вместе с `queryAnalysis: true`.
+Тот же diagnostic pull добавляет `eska.consumers`: текущие DCS fields и прямые
+DynamicList DataPath, source stamps и точность authoring ranges. Semantic checker
+содержит тот же отчёт в `data.report.query_files[].consumers`; syntax payload не меняется.
+Параметры, полная проверка consumers и semantic completeness остаются false.
+
 [Навигация и права чтения](../../docs/research/eska-format/analyzer-navigation.md)
 используют тот же host: project context, declared owners/modules/queries и
 bounded policy requests с независимым accepted pin. Readonly capability не

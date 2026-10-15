@@ -8,7 +8,7 @@ use eska::{
 use serde_json::{Value, json};
 
 use super::{
-    diagnostics, documents, dto, language, protocol, query_syntax,
+    diagnostics, documents, dto, language, protocol, query_consumers, query_syntax,
     request_control::{self, Method},
 };
 use crate::{
@@ -106,6 +106,10 @@ fn analyze(
     session
         .prepare_query_analysis(session.revision(), options.request)
         .map_err(|error| documents::request_error(&error))?;
+    let consumers = options
+        .query_consumers
+        .then(|| query_consumers::check(session, id, path, options))
+        .transpose()?;
     let result = session
         .query_analysis_diagnostics(
             path,
@@ -130,8 +134,7 @@ fn analyze(
         text,
         diagnostics::DiagnosticMessages::Localized,
     )?;
-    Ok(
-        json!({"kind":"full","resultId":format!("{id}:{}:query-analysis:{}:{}",result.revision,settings.sha256,result.result.source_sha256),
+    let mut response = json!({"kind":"full","resultId":format!("{id}:{}:query-analysis:{}:{}",result.revision,settings.sha256,result.result.source_sha256),
         "items":items,"eska":{"snapshot":dto::snapshot(session,id),"profile":"query_analysis","scope":"current_canonical_metadata",
         "source":result.result.source,"root":result.root,"source_sha256":result.result.source_sha256,
         "input_revision":result.result.input_revision.to_string(),"origin":dto::origin(result.result.origin),
@@ -139,8 +142,11 @@ fn analyze(
         "enabled_rules":result.result.enabled_rules.into_iter().map(|code|code.as_str()).collect::<Vec<_>>(),
         "coverage":{"query_syntax_complete":!settings.diagnostics.is_disabled(crate::DiagnosticCode::QueryParseError),
             "metadata_complete":true,"parameters_complete":false,"consumer_complete":false,"semantic_complete":false},
-        "resources":session.resources()}}),
-    )
+        "resources":session.resources()}});
+    if let Some(consumers) = consumers {
+        response["eska"]["consumers"] = consumers;
+    }
+    Ok(response)
 }
 
 /// Existing structured input/native failures keep the same code and snapshot semantics.

@@ -163,12 +163,7 @@ pub fn query_text(input: &crate::QueryTextSnapshot) -> Value {
 
 /// Metadata and module summaries use the same editor authority and document-version contract.
 pub(super) fn origin(origin: InputOrigin) -> Value {
-    match origin {
-        InputOrigin::Saved => json!({"kind":"saved"}),
-        InputOrigin::Overlay { document_version } => {
-            json!({"kind":"overlay", "document_version":document_version})
-        }
-    }
+    json!(origin)
 }
 
 /// Unavailable source remains a coded result for the current revision, never an empty success.

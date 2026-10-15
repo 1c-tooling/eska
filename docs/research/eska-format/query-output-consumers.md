@@ -51,10 +51,45 @@ result sets, temporary packages, nested DataPath, неоднозначные lis
 platform-enriched MainTable дают явные причины неполноты, а не missing field.
 Непроверенные resource parts сохраняют собственные координаты.
 
-Это экспериментальный library contract. Новый RPC, JSON/batch schema и IDE
-consumer diagnostics этой частью не добавлены. `parameters_complete`,
-`consumer_complete` и `semantic_complete` остаются false; параметры, вычисляемые
-поля, связи, итоги и настройки требуют следующих проверок EF-27.
+`parameters_complete`, `consumer_complete` и `semantic_complete` остаются false;
+параметры, вычисляемые поля, связи, итоги и настройки требуют следующих проверок
+EF-27. Это ограничение сериализатора отчёта, а не вывод из пустого списка ошибок.
+
+## Общий отчёт IDE и checker
+
+`AnalysisSession::query_consumer_report` переводит библиотечный результат в
+`QueryConsumerReport`: контекст, coverage и findings без AST, XML или копии
+текущего текста. Контекст содержит root/composition, session/input revisions
+и source/hash/origin трёх входов: query, owner и resource. Unified form использует
+тот же owner snapshot; её `resource_revision` равен null. Отдельный DCS XML
+имеет собственную revision. Invalid current resource возвращает `unavailable`
+с machine code/location; сохранённый XML не подставляется.
+
+Authoring location имеет tagged precision `exact`, `enclosing_node` либо
+`unmapped`. Для XML byte range и UTF-16 endpoints относятся к одному current
+resource. Для формы endpoints берутся из уже принятого YAML snapshot. Если
+отображения нет, координаты не выдумываются и диагностике нельзя назначить
+произвольную строку.
+
+В initialize клиент отдельно передаёт `initializationOptions.eska.queryConsumers:
+true`; без `queryAnalysis: true` сервер отвечает invalid params. Capability
+`experimental.eska.queryConsumers` версии 1 объявляет точный scope и правило
+`query_consumer_output_field_missing`. Существующий
+`textDocument/diagnostic` с identifier `eska-query-analysis` добавляет
+`result.eska.consumers` только согласовавшему расширение клиенту. Новый RPC,
+таймер, writer и cancellation route не создаются. Findings получают локализованное
+`message`; остальные machine fields независимы от языка.
+
+В owner navigation `queries[].resource_source` явно задаёт физический путь
+authoring resource. Он отличается от `native_resource`, особенно для EPF/ERF,
+и позволяет клиенту синхронизировать текущий XML через прежний input journal.
+
+Semantic checker автоматически добавляет optional `data.report.query_files[].consumers` в
+прежнюю JSON schema 1. Отчёт совпадает с IDE по findings, coverage и source
+stamps; session revisions двух процессов могут различаться. В checker JSON
+нет локализованных сообщений, human output показывает их на RU/EN и сохраняет
+явные причины неполноты. Syntax checker не добавляет это поле. Неполный semantic
+профиль по-прежнему завершается exit 2.
 
 ## Проверки
 
@@ -71,3 +106,15 @@ adapter — 100, selected native workspace — 3310 passed / 21 ignored. Все 
 Rust/Cargo files совпали до и после проверок и release build. Корневое приложение
 этим срезом не изменено; его отдельный ранее выполненный gate сохраняется.
 Новый запуск платформы 1С для consumer library не выполнялся.
+
+Следующий report/transport gate прошёл 16 проверок адаптера/SDK и debug/release
+сборок. SDK — 213 default и 509 all-features, adapter — 100; fmt/check/строгие
+Clippy и Rustdoc прошли. Все 1508 Rust/Cargo files совпали до и после gate.
+Корневые fmt/check/Clippy/default/all-features tests/Rustdoc также прошли:
+1508 default и 1629 all-features tests, по 24 opt-in ignored.
+
+Три process-level группы подтверждают CF/configured-CFE на RU/EN, независимый
+opt-in и deadline, текущий XML repair/invalid/close, точные Unicode/CRLF ranges,
+saved IDE/checker parity и locale-independent checker JSON. Тест текущего XML
+не меняет query version; отмена и нехватка контекста не становятся checked empty.
+Это проверка SDK/transport; установленный клиент принимается отдельно.

@@ -16,7 +16,8 @@ pub struct QueryConsumerLocation {
 }
 
 /// Dataset ancestry and form numeric scopes disambiguate equal consumer names.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum QueryConsumerTarget {
     Dataset {
         path: Vec<String>,
@@ -37,7 +38,8 @@ pub struct QueryConsumerFinding {
 }
 
 /// Absence cannot be inferred from an incomplete rowset or from an unimplemented storage rule.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum QueryConsumerIncompleteReason {
     InvalidQuery,
     InvalidQueryMetadata,

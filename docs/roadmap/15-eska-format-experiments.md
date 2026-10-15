@@ -3138,8 +3138,12 @@ lifecycle. Library storage view сохраняет root/revision/hash provenance
 diagnostics и весь сквозной пункт приёмки остаются в работе.
 [Library output/bindings](../research/eska-format/query-output-consumers.md)
 использует native AST/HIR и текущий resource для прямых field references;
-unknown/ambiguous output остаётся неполным. Параметры пока occurrences, новые
-RPC/batch consumer findings и полная EF-27 не приняты.
+unknown/ambiguous output остаётся неполным. Следующий общий report подключён к
+прежнему IDE diagnostic pull через независимый queryConsumers opt-in и к semantic
+checker. Current XML, typed authoring ranges, invalid/repair/close и RU/EN parity
+прошли SDK/process gates: 213/509 SDK tests, 100 adapter; полные root gates —
+1508/1629 tests, по 24 opt-in ignored. Параметры пока occurrences; installed
+consumer client и полная EF-27 ещё не приняты.
 
 Current form snapshot сохраняет UTF-16 endpoints mapped query-consumer nodes
 при parse единственного YAML. Проверка после удаления source tree подтверждает

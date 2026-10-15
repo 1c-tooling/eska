@@ -13,6 +13,7 @@ use crate::{
 use super::{BatchError, BatchFinding, BatchProfile, BatchReport, BatchStatus, FileState, report};
 
 mod analysis;
+mod consumers;
 #[cfg(test)]
 mod tests;
 
@@ -53,6 +54,8 @@ pub struct BatchQueryFile {
     pub findings: Vec<BatchQueryFinding>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<BatchQueryContext>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub consumers: Option<crate::QueryConsumerReportStatus>,
 }
 
 /// Missing/disabled/stopped checks remain separate from a checked empty result.
@@ -201,6 +204,7 @@ fn unavailable(path: &SourcePath, input: &QueryTextSnapshot) -> BatchQueryFile {
         state,
         findings: vec![],
         context: None,
+        consumers: None,
     }
 }
 

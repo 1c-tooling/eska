@@ -34,6 +34,8 @@ mod test_composition_project;
 #[cfg(test)]
 #[path = "../tests/support/query_analysis_project.rs"]
 mod test_query_analysis_project;
+#[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
+mod tool_query_consumers;
 #[cfg(all(test, any(feature = "analyzer-cli", feature = "check-cli")))]
 use test_composition_project as composition_project;
 #[cfg(test)]
@@ -99,9 +101,12 @@ pub use session::metadata_resources::{
     MetadataResourceInput, MetadataResourceKind, MetadataResourceState,
 };
 pub use session::query_text::{
-    QueryAnalysisDiagnostics, QueryAnalysisRequestError, QueryConsumerCheckCoverage,
-    QueryConsumerContext, QueryConsumerDiagnostics, QueryConsumerFinding, QueryConsumerIncomplete,
-    QueryConsumerIncompleteReason, QueryConsumerLocation, QueryConsumerRequestError,
+    QueryAnalysisDiagnostics, QueryAnalysisRequestError, QueryConsumerAuthoringLocation,
+    QueryConsumerCheckCoverage, QueryConsumerContext, QueryConsumerCoverageReport,
+    QueryConsumerDiagnosticReport, QueryConsumerDiagnostics, QueryConsumerFinding,
+    QueryConsumerIncomplete, QueryConsumerIncompleteReason, QueryConsumerIncompleteReport,
+    QueryConsumerLocation, QueryConsumerLocationReport, QueryConsumerReport,
+    QueryConsumerReportContext, QueryConsumerReportStatus, QueryConsumerRequestError,
     QueryConsumerTarget, QueryContextRequestError, QueryContextSource, QuerySyntaxDiagnostics,
     QuerySyntaxRequestError, QueryTextSummary,
 };

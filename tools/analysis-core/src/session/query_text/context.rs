@@ -14,7 +14,7 @@ use crate::{
 mod tests;
 
 /// One current source identity never claims that its bytes have complete consumer semantics.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct QueryContextSource {
     pub source: SourcePath,
     pub source_sha256: String,

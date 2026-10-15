@@ -89,8 +89,10 @@ SessionParameters fields через per-name current slots, native root ownershi
 использует принятый owner snapshot и отдельный current XML input без saved
 fallback; полный SDK — 197/488 tests, consumer semantics ещё нужны.
 [Native output и прямые bindings](query-output-consumers.md) связывают текущий
-query model с DCS/DynamicList в library API. Параметры пока occurrences;
-RPC/batch consumers и полная EF-27 ещё нужны.
+query model с DCS/DynamicList в library API и одном отчёте IDE/checker.
+Независимый queryConsumers opt-in сохраняет прежний pull; current XML и
+authoring ranges проверены на RU/EN. Параметры пока occurrences, полная EF-27
+ещё нужна.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery
 одному совместимому tool с независимыми pins и сохранением streams/exit.
 [Оболочка check](shell-check-delegation.md) передаёт явный профиль совместимому

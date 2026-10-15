@@ -69,6 +69,12 @@ impl Navigation {
                 "native_descriptor":module.native_descriptor,
                 "role":module_role(module.native_path).as_str(),"binary":module.binary}));
         }
+        let resource_sources = reader
+            .manifest()
+            .files
+            .iter()
+            .map(|file| (&file.path, file.source_path()))
+            .collect::<BTreeMap<_, _>>();
         for path in reader.query_paths() {
             let query = reader
                 .declared_query(path)
@@ -76,9 +82,13 @@ impl Navigation {
             let owner = owners
                 .get_mut(query.owner)
                 .ok_or_else(|| failure("source_identity_mismatch", Some(path)))?;
-            owner
-                .queries
-                .push(json!({"source":path,"native_resource":query.native_resource}));
+            let resource_source = resource_sources
+                .get(query.native_resource)
+                .ok_or_else(|| failure("source_query_undeclared", Some(path)))?;
+            owner.queries.push(
+                json!({"source":path,"native_resource":query.native_resource,
+                    "resource_source":resource_source}),
+            );
         }
         let scope = match source.scope() {
             ProjectScope::Standalone => json!({"kind":"standalone"}),

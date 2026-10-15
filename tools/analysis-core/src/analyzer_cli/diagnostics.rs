@@ -59,6 +59,7 @@ pub struct Options<'a> {
     pub profile: BatchProfile,
     pub query_syntax: bool,
     pub query_analysis: bool,
+    pub query_consumers: bool,
 }
 
 impl<'a> Options<'a> {
@@ -78,6 +79,7 @@ impl<'a> Options<'a> {
             profile,
             query_syntax: false,
             query_analysis: false,
+            query_consumers: false,
         }
     }
 
@@ -90,6 +92,12 @@ impl<'a> Options<'a> {
     /// Full native query rules require their own explicit client admission.
     pub const fn with_query_analysis(mut self, negotiated: bool) -> Self {
         self.query_analysis = negotiated;
+        self
+    }
+
+    /// Existing contextual findings stay independent of optional storage-consumer reports.
+    pub const fn with_query_consumers(mut self, negotiated: bool) -> Self {
+        self.query_consumers = negotiated;
         self
     }
 }

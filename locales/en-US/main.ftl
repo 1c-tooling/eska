@@ -1265,4 +1265,8 @@ init-eska-git-invalid = Inspect existing Git metadata; an invalid or bare reposi
 init-eska-git-failed = Could not complete new Git initialization. Source and published ESKA data are retained.
 
 tool-check-query-result = Queries: checked { $checked } of { $total }. Syntax only; metadata and consumers are not checked.
+tool-query-consumer-missing-field = Query output has no field "{ $field }" used by this binding.
+tool-query-consumer-incomplete = Query consumers: checked bindings { $checked }; incomplete parts { $incomplete }.
+tool-query-consumer-unavailable = Query consumer checks are unavailable ({ $code }).
+tool-check-query-semantic-result = Queries: checked { $checked } of { $total }. Current metadata; consumer coverage is reported separately.
 tool-check-query-unavailable = Query { $source } is unavailable: { $code }.

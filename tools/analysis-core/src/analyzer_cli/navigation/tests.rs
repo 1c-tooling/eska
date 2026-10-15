@@ -278,10 +278,16 @@ fn nested_owner_ids_and_module_query_bindings_follow_actual_declarations() {
             value["declaration"]["id"],
             format!("{parent}/template:Schema")
         );
+        let resource_source = if external {
+            "Templates/Schema/Template.xml".to_owned()
+        } else {
+            format!("{base}/Templates/Schema/Template.xml")
+        };
         assert_eq!(
             value["queries"],
             json!([{"source":query_source,
-            "native_resource":format!("{base}/Templates/Schema/Ext/Template.xml")}])
+            "native_resource":format!("{base}/Templates/Schema/Ext/Template.xml"),
+            "resource_source":resource_source}])
         );
         assert_eq!(
             query_source.as_path().extension(),

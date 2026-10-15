@@ -10,6 +10,7 @@ use crate::{
 
 mod checks;
 mod model;
+mod report;
 #[cfg(test)]
 mod tests;
 
@@ -17,6 +18,11 @@ pub use model::{
     QueryConsumerCheckCoverage, QueryConsumerDiagnostics, QueryConsumerFinding,
     QueryConsumerIncomplete, QueryConsumerIncompleteReason, QueryConsumerLocation,
     QueryConsumerTarget,
+};
+pub use report::{
+    QueryConsumerAuthoringLocation, QueryConsumerCoverageReport, QueryConsumerDiagnosticReport,
+    QueryConsumerIncompleteReport, QueryConsumerLocationReport, QueryConsumerReport,
+    QueryConsumerReportContext, QueryConsumerReportStatus,
 };
 
 /// Missing current inputs and native cancellation are refusals, never clean consumer results.

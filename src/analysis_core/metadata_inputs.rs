@@ -113,7 +113,8 @@ impl InputRequest {
 }
 
 /// Disk refreshes must not silently replace an open editor's current text.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum InputOrigin {
     Saved,
     Overlay { document_version: i64 },

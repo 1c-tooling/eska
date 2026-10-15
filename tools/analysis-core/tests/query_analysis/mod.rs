@@ -7,6 +7,8 @@ use super::{
 use serde_json::{Value, json};
 use std::fs;
 
+mod consumers;
+
 /// Full analysis is explicitly independent from the existing parse-only initialization option.
 fn start(
     project: &fixture::Project,

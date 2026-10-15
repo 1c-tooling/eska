@@ -24,9 +24,12 @@ mod context;
 mod rooted;
 pub use analysis::{QueryAnalysisDiagnostics, QueryAnalysisRequestError};
 pub use consumers::{
-    QueryConsumerCheckCoverage, QueryConsumerDiagnostics, QueryConsumerFinding,
-    QueryConsumerIncomplete, QueryConsumerIncompleteReason, QueryConsumerLocation,
-    QueryConsumerRequestError, QueryConsumerTarget,
+    QueryConsumerAuthoringLocation, QueryConsumerCheckCoverage, QueryConsumerCoverageReport,
+    QueryConsumerDiagnosticReport, QueryConsumerDiagnostics, QueryConsumerFinding,
+    QueryConsumerIncomplete, QueryConsumerIncompleteReason, QueryConsumerIncompleteReport,
+    QueryConsumerLocation, QueryConsumerLocationReport, QueryConsumerReport,
+    QueryConsumerReportContext, QueryConsumerReportStatus, QueryConsumerRequestError,
+    QueryConsumerTarget,
 };
 pub use context::{QueryConsumerContext, QueryContextRequestError, QueryContextSource};
 

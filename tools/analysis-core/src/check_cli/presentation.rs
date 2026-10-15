@@ -98,19 +98,7 @@ fn human(report: &BatchReport, localizer: &Localizer) -> String {
     let checked = report.coverage.checked_modules.to_string();
     let total = report.coverage.modules.to_string();
     let metadata = report.metadata_issues.len().to_string();
-    let findings = report
-        .files
-        .iter()
-        .map(|file| file.findings.len())
-        .sum::<usize>()
-        .saturating_add(
-            report
-                .query_files
-                .iter()
-                .map(|file| file.findings.len())
-                .sum::<usize>(),
-        )
-        .to_string();
+    let findings = finding_count(report).to_string();
     let mut text = localizer.format(
         match report.profile {
             crate::batch::BatchProfile::Syntax => "tool-check-result",
@@ -235,7 +223,7 @@ fn metadata_human(report: &BatchReport, localizer: &Localizer, text: &mut String
     }
 }
 
-/// Query findings use the shared native RU/EN parse prose while coverage stays explicitly syntax-only.
+/// Native findings and current consumer bindings retain their separate coverage and presentation.
 fn query_human(report: &BatchReport, localizer: &Localizer, text: &mut String) {
     use std::fmt::Write;
     if report.query_coverage.queries == 0 {
@@ -244,7 +232,11 @@ fn query_human(report: &BatchReport, localizer: &Localizer, text: &mut String) {
     let checked = report.query_coverage.checked.to_string();
     let total = report.query_coverage.queries.to_string();
     text.push_str(&localizer.format(
-        "tool-check-query-result",
+        if report.profile == crate::batch::BatchProfile::Syntax {
+            "tool-check-query-result"
+        } else {
+            "tool-check-query-semantic-result"
+        },
         &[
             ("checked", LocalizationValue::Text(&checked)),
             ("total", LocalizationValue::Text(&total)),
@@ -252,6 +244,7 @@ fn query_human(report: &BatchReport, localizer: &Localizer, text: &mut String) {
     ));
     text.push('\n');
     for file in &report.query_files {
+        consumer_human(file, localizer, text);
         for query in &file.findings {
             let finding = &query.finding;
             let _ = writeln!(
@@ -274,6 +267,77 @@ fn query_human(report: &BatchReport, localizer: &Localizer, text: &mut String) {
             ));
             text.push('\n');
         }
+    }
+}
+
+/// Native and consumer findings contribute to the same localized summary.
+fn finding_count(report: &BatchReport) -> usize {
+    report
+        .files
+        .iter()
+        .map(|file| file.findings.len())
+        .sum::<usize>()
+        .saturating_add(
+            report
+                .query_files
+                .iter()
+                .map(|file| {
+                    file.findings
+                        .len()
+                        .saturating_add(consumer_finding_count(file))
+                })
+                .sum::<usize>(),
+        )
+}
+
+/// Count proven bindings without treating an unavailable current resource as a checked empty result.
+fn consumer_finding_count(file: &crate::batch::BatchQueryFile) -> usize {
+    match &file.consumers {
+        Some(crate::QueryConsumerReportStatus::Checked { report }) => report.findings.len(),
+        Some(crate::QueryConsumerReportStatus::Unavailable { .. }) | None => 0,
+    }
+}
+
+/// A missing authoring map has no invented line/column; machine precision stays available separately.
+fn consumer_human(file: &crate::batch::BatchQueryFile, localizer: &Localizer, text: &mut String) {
+    use std::fmt::Write;
+    match &file.consumers {
+        Some(crate::QueryConsumerReportStatus::Checked { report }) => {
+            let checked = report.coverage.checked_bindings.to_string();
+            let incomplete = report.coverage.incomplete.len().to_string();
+            text.push_str(&localizer.format(
+                "tool-query-consumer-incomplete",
+                &[
+                    ("checked", LocalizationValue::Text(&checked)),
+                    ("incomplete", LocalizationValue::Text(&incomplete)),
+                ],
+            ));
+            text.push('\n');
+            for finding in &report.findings {
+                let source = finding.location.source.as_str();
+                let position = match finding.location.authoring {
+                    crate::QueryConsumerAuthoringLocation::Exact { range, .. }
+                    | crate::QueryConsumerAuthoringLocation::EnclosingNode { range, .. } => {
+                        format!(
+                            "{source}:{}:{}",
+                            range.start.line + 1,
+                            range.start.character + 1
+                        )
+                    }
+                    crate::QueryConsumerAuthoringLocation::Unmapped => source.into(),
+                };
+                let message = crate::tool_query_consumers::message(finding, localizer);
+                let _ = writeln!(text, "{position}: {message} ({})", finding.code);
+            }
+        }
+        Some(crate::QueryConsumerReportStatus::Unavailable { code, .. }) => {
+            text.push_str(&localizer.format(
+                "tool-query-consumer-unavailable",
+                &[("code", LocalizationValue::Text(code))],
+            ));
+            text.push('\n');
+        }
+        None => {}
     }
 }
 
