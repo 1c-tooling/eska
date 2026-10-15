@@ -14,9 +14,23 @@ deep LRU trim через каждые 32 тела. Эта очистка сок�
 
 В существующем `base-db::set_parse_lru_sweep_mode()` окна parse и source-text
 memos теперь меняются вместе: sweep cap 64, interactive cap 512. Общий
-`RootDatabaseImpl::enforce_lru_deep()` выполняет прежние shrink/evict/restore;
-SDK и checker используют этот же метод. Обычный interactive cap и остальные
-LRU caps сохранены. Нового кеша, обхода исходников, зависимостей или настройки нет.
+`RootDatabaseImpl::enforce_lru_deep()` выполняет прежние shrink/evict/restore.
+SDK теперь вызывает существующий `ide::sweep_lru_deep`, который также сокращает
+diagnostics memo window вокруг этой очистки и восстанавливает interactive caps.
+Нового кеша, обхода исходников, зависимостей или настройки нет.
+
+## Очистка диагностических значений
+
+Прямой SDK-вызов database trim пропускал diagnostics sweep. Новый regression
+прогревает 2200 методов с `SelfAssign` и соседний editor draft. Полный wrapper
+уменьшает aggregate heap diagnostic memo values по существующему native hook;
+прежний прямой вызов не проходит этот assert. Это проверка освобождения значений,
+не счётчика memo instances или RSS.
+
+Current bytes, hashes, origin, revision и source reservations сохранены. Saved
+reparse hint освобождён, editor hint остаётся; повторные findings/ranges совпали.
+Три trim tests прошли с minimal и all-features; all-targets check, strict Clippy,
+scoped fmt/diff прошли. Общий hard heap/RSS limit этим изменением не вводится.
 
 Очистка удаляет вычисленные значения, сохраняя текущий resident input.
 Повторный запрос получает его актуальные bytes; недоступный файл остаётся

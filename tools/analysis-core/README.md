@@ -97,8 +97,9 @@ source-byte квоты и недоступного RSS. Имена таблиц 
 отказ по квоте больше не держат старое дерево вне Salsa; другой файл и
 повторная загрузка current bytes сохраняют прежнее поведение.
 [Пакетная очистка](../../docs/research/eska-format/kernel-source-sweep.md)
-сокращает также окно вычисленных source-text memos; текущие resident inputs
-и их версии сохраняются. Это часть существующей LRU policy, не общий лимит RSS.
+сокращает также окна вычисленных source-text и diagnostic memos через штатный
+`ide::sweep_lru_deep`; текущие resident inputs, версии и editor hints сохраняются.
+Это часть существующей LRU policy, не общий лимит RSS.
 `QueryCancellation` прерывает выполняющийся запрос на ближайшем checkpoint
 Salsa; один токен управляет одним запросом и не меняет исходники или ревизию.
 Самостоятельные checker и IDE transport используют профили `syntax` и `semantic`

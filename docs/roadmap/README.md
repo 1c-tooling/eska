@@ -110,6 +110,10 @@ Current query resource read-view теперь читает доказанные 
 списки и UI DataPath с точными node/scalar locations. Неподдержанные потребители
 явно остаются inventory; semantics не заявлена. 32 query/read-view tests прошли.
 
+SDK trim теперь включает штатную очистку diagnostic memos. Regression на 2200
+методах подтверждает освобождение значений и сохранность current editor input;
+прежний прямой trim тест не проходит. Общий RSS limit не заявляется.
+
 [Структурная проверка](../research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

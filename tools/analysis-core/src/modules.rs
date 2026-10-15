@@ -1,5 +1,9 @@
 //! Resident BSL inputs are explicit snapshots; kernel queries never reread untracked disk text.
 
+#[cfg(test)]
+#[path = "modules/cache_trim_tests.rs"]
+mod cache_trim_tests;
+
 use std::fmt::Write as _;
 
 use base_db::SourceDatabase;
@@ -210,7 +214,7 @@ impl AnalysisSession {
 
     /// Trim computed memos and saved reparse hints after short-lived query handles dropped.
     pub fn trim_batch_caches(&mut self) {
-        self.database.enforce_lru_deep();
+        ide::sweep_lru_deep(&mut self.database);
         let editor_files = self
             .modules
             .values()

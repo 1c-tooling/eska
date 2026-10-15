@@ -68,8 +68,8 @@ RU/EN-контракта. SDK сохраняет native message; YAML, help и e
 и конвертацию результата. Stop даёт прежний coded error и сохраняет current
 editor bytes; отменённые saved reads можно продолжить новым запросом.
 
-После успешного semantic pull прежний deep trim очищает computed memos и saved
-reparse hints. Editor hints, готовые resident inputs, hashes и revisions
+После успешного semantic pull штатный `ide::sweep_lru_deep` очищает computed
+diagnostic/source memos и saved reparse hints. Editor hints, готовые resident inputs, hashes и revisions
 сохраняются. Дополнительная dependency или cache не добавлены. Source reserve
 и file-count LRU не являются общим heap/RSS budget.
 
