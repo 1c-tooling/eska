@@ -3123,6 +3123,10 @@ guard не ослаблен, matching native base/CFE и полная CFE сем
 lifecycle. Library storage view сохраняет root/revision/hash provenance;
 197 default и 488 all-features SDK tests прошли. Output/parameters/consumer
 diagnostics и весь сквозной пункт приёмки остаются в работе.
+[Library output/bindings](../research/eska-format/query-output-consumers.md)
+использует native AST/HIR и текущий resource для прямых field references;
+unknown/ambiguous output остаётся неполным. Параметры пока occurrences, новые
+RPC/batch consumer findings и полная EF-27 не приняты.
 
 Подключить `.sdbl` к общим `eska-analyzer`/`eska-check`: метаданные выбранного
 member, параметры, расширения СКД, настройки динамического списка. Проверять

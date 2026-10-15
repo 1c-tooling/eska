@@ -17,6 +17,7 @@ mod inlay_hints;
 pub mod jsonl;
 mod name_lookup;
 pub mod partitioned_diagnostics_baseline;
+mod query_text_model;
 mod receiver_scope;
 mod reference_kind;
 mod references;
@@ -79,6 +80,11 @@ pub use name_lookup::{
     ExternalNameSource, NameCandidate, NameCategory, NameLookupResult, NameMatchTier, NamePlace,
     NameQuery, PlatformRef, ProviderHits, ProviderId, ProviderReport, ProviderState, ResolvedPlace,
     WORKSPACE_SYMBOL_LIMIT,
+};
+pub use query_text_model::{
+    QueryNativeIssue, QueryOutputField, QueryOutputNameOrigin, QueryOutputType,
+    QueryParameterOccurrence, QuerySelectBranch, QuerySelectStatement, QueryTextModel,
+    QueryTextStatement,
 };
 pub use reference_kind::{classify_reference_token, ReferenceKind};
 pub use references::{

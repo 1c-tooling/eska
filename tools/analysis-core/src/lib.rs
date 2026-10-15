@@ -67,6 +67,9 @@ mod tool_profile;
 pub use cancellation::{QueryCancellation, RequestCancellation};
 pub use ide::{
     CompletionItem, Diagnostic, DiagnosticCode, DiagnosticsConfig, DocumentSymbol, Locale,
+    QueryNativeIssue, QueryOutputField, QueryOutputNameOrigin, QueryOutputType,
+    QueryParameterOccurrence, QuerySelectBranch, QuerySelectStatement, QueryTextModel,
+    QueryTextStatement,
 };
 pub use memory::{KernelMemoryReport, KernelMemoryTable};
 pub use metadata_diagnostics::{
@@ -96,8 +99,10 @@ pub use session::metadata_resources::{
     MetadataResourceInput, MetadataResourceKind, MetadataResourceState,
 };
 pub use session::query_text::{
-    QueryAnalysisDiagnostics, QueryAnalysisRequestError, QueryConsumerContext,
-    QueryContextRequestError, QueryContextSource, QuerySyntaxDiagnostics, QuerySyntaxRequestError,
-    QueryTextSummary,
+    QueryAnalysisDiagnostics, QueryAnalysisRequestError, QueryConsumerCheckCoverage,
+    QueryConsumerContext, QueryConsumerDiagnostics, QueryConsumerFinding, QueryConsumerIncomplete,
+    QueryConsumerIncompleteReason, QueryConsumerLocation, QueryConsumerRequestError,
+    QueryConsumerTarget, QueryContextRequestError, QueryContextSource, QuerySyntaxDiagnostics,
+    QuerySyntaxRequestError, QueryTextSummary,
 };
 pub use session::{AnalysisScope, AnalysisSession, SessionError, SessionSummary};

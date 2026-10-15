@@ -81,6 +81,9 @@ descriptor fields без фиктивной canonical модели или про
 [Current form/DCS view](query-context-read-view.md#один-текущий-источник-в-sdk)
 использует принятый owner snapshot и отдельный current XML input без saved
 fallback; полный SDK — 197/488 tests, consumer semantics ещё нужны.
+[Native output и прямые bindings](query-output-consumers.md) связывают текущий
+query model с DCS/DynamicList в library API. Параметры пока occurrences;
+RPC/batch consumers и полная EF-27 ещё нужны.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery
 одному совместимому tool с независимыми pins и сохранением streams/exit.
 [Оболочка check](shell-check-delegation.md) передаёт явный профиль совместимому

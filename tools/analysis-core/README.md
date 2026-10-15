@@ -70,6 +70,12 @@ transport настоящий, новая платформа/installed Explorer �
 root/revision/hash-bound storage view без saved fallback и без нового RPC.
 Storage bindings пока не означают проверку output/parameters/consumers.
 
+[Output и явные bindings](../../docs/research/eska-format/query-output-consumers.md)
+доступны отдельным library API: native AST/HIR result model, параметры как
+occurrences и проверки прямых DCS/DynamicList field references. Unknown или
+неоднозначный output даёт неполноту; полный consumer/parameter анализ и RPC
+для этих findings ещё нужны.
+
 Состав берётся из проверенного manifest и configuration snapshot. При открытии
 все остальные YAML остаются pending, а их идентичности и slot стабильны.
 Сохранённые файлы и черновики используют одни преобразователи. Неверный текущий
