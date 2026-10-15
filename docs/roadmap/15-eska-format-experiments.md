@@ -175,8 +175,20 @@ completion/diagnostics/method hover/signatures. CF/CFE invalid/repair/replay и
 original UUID проверены: SDK — 243/559, kernel — 4430/25 ignored, adapter — 119;
 Node — 371, установленный клиент — 29 завершённых children. Все 27 Rust gates
 прошли; корень — 1511/1632, по 24 ignored. Единственная большая native Sequence
-готова с четырьмя измерениями; следующий отказ композиции — SettingsStorage.
+готова с четырьмя измерениями; тот прогон остановился на SettingsStorage.
+Последующий [аудит ассоциации](../research/eska-format/analyzer-settings-storages.md#проверка-ассоциации-cfcfe)
+выявил несовместимость 37 из 38 заимствованных declarations этой большой пары;
+тот отказ не доказывает единственное препятствие успешной композиции.
 SDBL, memory budget и остальные условия EF-18/EF-27/Explorer/MVP ещё в работе.
+
+[Текущие хранилища настроек](../research/eska-format/analyzer-settings-storages.md)
+дают native manager, текущие exports и cold user-return types с binary barrier.
+Платформа подтвердила отсутствие ThisObject в SettingsStorage/Catalog ManagerModule;
+qualified calls и реальные self других module kinds сохранены. Все 27 Rust gates
+прошли: SDK — 255/573, kernel — 4432/25 ignored, adapter — 123; Node — 376,
+установленный клиент — 33 завершённых children. Все три native storage готовы.
+Большая прежняя CF/CFE пара несовместима по 37 из 38 original UUID links;
+semantic success probe этой пары не повторялся. EF-18 и MVP остаются в работе.
 
 ID сохраняют историю, порядок выполнения задаёт следующая таблица.
 

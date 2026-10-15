@@ -155,6 +155,13 @@ foreign dirty inputs и replay используют обычный controller.
 Cold discovery, diagnostics, method hover/signatures и replay работают через
 тот же controller; неправильный original UUID не получает прежнюю модель.
 
+[Хранилища настроек](../../docs/research/eska-format/analyzer-settings-storages.md)
+используют отдельную current identity и настоящий native manager. Его методы,
+экспортные методы текущего ManagerModule и cold user-return types приходят через
+общий controller; бинарный модуль сохраняет unread barrier. `Load` остаётся
+native arbitrary type. Платформа подтвердила отсутствие предопределённого
+`ThisObject` в модулях менеджера хранилища и справочника; qualified calls доступны.
+
 [Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
 дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
 common completion, unsaved named flags и переход к физическому BSL input;

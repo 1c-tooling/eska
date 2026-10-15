@@ -59,6 +59,9 @@ fn lookup_method_inner(
 ) -> Option<MethodInfo> {
     let eff_id = crate::this_object::coerce_to_metadata_ref_id(db, receiver).unwrap_or(receiver);
 
+    if let Some(info) = crate::settings_storages::method(db, eff_id, method_name) {
+        return Some(info);
+    }
     if let Some(info) = crate::sequences::method(db, eff_id, method_name, refine_ctx) {
         return Some(info);
     }
@@ -524,6 +527,8 @@ pub fn platform_type_key_id(db: &dyn TypeKernelDb, id: TypeId) -> Option<String>
         TypeKind::PlatformObject(f) => {
             Some(if crate::filter_criteria::manager_name(&f.name).is_some() {
                 crate::filter_criteria::PROTOTYPE.into()
+            } else if crate::settings_storages::manager_name(&f.name).is_some() {
+                crate::settings_storages::PROTOTYPE.into()
             } else if let Some((kind, _)) = crate::sequences::generated_name(&f.name) {
                 kind.prototype().into()
             } else {

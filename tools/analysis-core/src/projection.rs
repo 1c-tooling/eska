@@ -353,6 +353,8 @@ fn canonical(
             .map(|model| CanonicalMetadata::SessionParameter(Arc::new(model))),
         MetadataKind::CommonAttribute => adapter::common_attribute(root)
             .map(|model| CanonicalMetadata::CommonAttribute(Arc::new(model))),
+        MetadataKind::SettingsStorage => adapter::settings_storage(root)
+            .map(|model| CanonicalMetadata::SettingsStorage(Arc::new(model))),
         MetadataKind::Sequence => {
             adapter::sequence(descriptor).map(|model| CanonicalMetadata::Sequence(Arc::new(model)))
         }

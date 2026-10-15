@@ -36,6 +36,7 @@ pub mod query_unload_refinement;
 pub mod sdbl_bridge;
 pub mod sequences;
 pub mod session_parameters;
+pub mod settings_storages;
 pub mod structure_keys;
 pub mod structure_param_keys;
 pub mod subtype;

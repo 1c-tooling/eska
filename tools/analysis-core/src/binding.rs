@@ -116,6 +116,15 @@ impl OwnerBinding {
     /// Dedicated configured families keep stable native slots without being fabricated MDOs.
     fn add_configured_to_listing(&self, listing: &mut MetadataListingData, name: &str) -> bool {
         match self.kind {
+            MetadataKind::SettingsStorage => {
+                listing
+                    .settings_storages
+                    .push(ide_db::metadata::SettingsStorageEntry {
+                        name: name.into(),
+                        main: self.main,
+                        module_file: None,
+                    });
+            }
             MetadataKind::Sequence => {
                 listing.sequences.push(ide_db::metadata::SequenceEntry {
                     name: name.into(),
@@ -232,6 +241,19 @@ pub fn connect_common_bodies(
             bodies.get(&SourcePath::parse(&format!("{prefix}.bin")).map_err(SessionError::Source)?)
         {
             entry.unread_module_file = Some(module.file);
+        }
+    }
+    for entry in &mut structure.settings_storages {
+        for extension in ["bsl", "bin"] {
+            let path = SourcePath::parse(&format!(
+                "SettingsStorages/{}/Ext/ManagerModule.{extension}",
+                entry.name
+            ))
+            .map_err(SessionError::Source)?;
+            if let Some(module) = bodies.get(&path) {
+                entry.module_file = Some(module.file);
+                break;
+            }
         }
     }
     for entry in &mut structure.sequences {

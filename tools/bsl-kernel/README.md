@@ -41,6 +41,14 @@ Current known generated shape участвует в UnresolvedField, а method c
 и signatures берут типы из того же call binding. Helper нормализации placeholders
 справочника общий с FilterCriterion; `bsl-types` не копируется и pin не меняется.
 
+[Хранилища настроек](../../docs/research/eska-format/analyzer-settings-storages.md)
+добавляют восемнадцатое canonical family. Native manager methods и текущие
+экспортные методы используют один call binding; `Load` сохраняет `Any`.
+Cold preparation выбирает объявленные тела по receiver и reaching aliases,
+сохраняя видимость, overlays и unread barrier. Предопределённый `ThisObject`
+отозван только в проверенных платформой SettingsStorage/Catalog ManagerModule;
+пользовательские bindings/globals и qualified manager calls сохраняются.
+
 [Canonical владельцы модулей](../../docs/research/eska-format/canonical-module-owners.md)
 разрешаются через текущие slots до native loader; EPF/ERF остаются объектами.
 Все listings регистрируются до запросов; новый состав/topology требует reopen.

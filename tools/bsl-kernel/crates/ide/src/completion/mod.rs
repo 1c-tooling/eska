@@ -4,7 +4,8 @@ mod fuzzy;
 mod mdo_completion;
 pub(crate) use mdo_completion::manager_module_target;
 pub(crate) use platform_completion::{
-    common_module_body_target, uses_filter_criteria, uses_sequences, uses_session_parameters,
+    common_module_body_target, settings_storage_manager_modules, uses_filter_criteria,
+    uses_sequences, uses_session_parameters, uses_settings_storages,
 };
 mod new_expr_completion;
 mod platform_completion;

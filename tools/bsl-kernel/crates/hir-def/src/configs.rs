@@ -201,6 +201,16 @@ impl CommonModuleBodies {
 
 #[salsa::db]
 pub trait ConfigsDatabase: DefDatabase {
+    /// Resolve only a current declaration in the calling file's explicit visibility chain.
+    fn resolve_settings_storage(
+        &self,
+        file: FileId,
+        name: &str,
+    ) -> Option<Arc<bsl_metadata::SettingsStorage>>;
+
+    /// The platform container contains only names declared in visible roots.
+    fn settings_storage_names(&self, file: FileId) -> Vec<String>;
+
     /// Sequence dimensions belong to a generated sequence type, not a register surrogate.
     fn resolve_sequence(&self, file: FileId, name: &str) -> Option<Arc<bsl_metadata::Sequence>>;
 
@@ -341,6 +351,21 @@ pub trait ConfigsDatabase: DefDatabase {
         name: &str,
     ) -> Option<CommonModuleBodies> {
         let _ = (file_id, name);
+        None
+    }
+
+    /// Current settings-storage manager bodies in explicit base/dependency/selected-root order.
+    ///
+    /// Only enrolled owner/module backlinks participate. `None` means current identity or
+    /// visibility is unavailable and must not permit a path-index fallback; `Some(empty)`
+    /// proves that no visible owner has an enrolled optional manager body. Unread enrolled
+    /// bodies retain their priority barrier through [`CommonModuleBodies::search`].
+    fn resolve_settings_storage_manager_module_file_candidates(
+        &self,
+        file: FileId,
+        name: &str,
+    ) -> Option<CommonModuleBodies> {
+        let _ = (file, name);
         None
     }
 

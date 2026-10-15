@@ -19,6 +19,12 @@ use vfs::FileId;
 /// resolver mirrors the same merged + file-scoped semantics for unit tests and
 /// the cold call sites that still carry a `&[VisibleConfig]`.
 pub trait ObjectResolver {
+    /// Settings managers have their own canonical identity rather than an MDO surrogate.
+    fn resolve_settings_storage(&self, name: &str) -> Option<Arc<bsl_metadata::SettingsStorage>>;
+
+    /// Native namespace discovery uses the same explicit root visibility as resolution.
+    fn settings_storage_names(&self) -> Vec<String>;
+
     /// A generated sequence role uses its own current declared dimensions and relation identities.
     fn resolve_sequence(&self, name: &str) -> Option<Arc<bsl_metadata::Sequence>>;
 
@@ -101,6 +107,16 @@ impl<D: ConfigsDatabase + ?Sized> std::fmt::Debug for DbObjectResolver<'_, D> {
 }
 
 impl<D: ConfigsDatabase + ?Sized> ObjectResolver for DbObjectResolver<'_, D> {
+    /// Reuse the current per-file composition without a whole XML loader.
+    fn resolve_settings_storage(&self, name: &str) -> Option<Arc<bsl_metadata::SettingsStorage>> {
+        self.db.resolve_settings_storage(self.file_id, name)
+    }
+
+    /// Root-qualified declarations determine the configured namespace.
+    fn settings_storage_names(&self) -> Vec<String> {
+        self.db.settings_storage_names(self.file_id)
+    }
+
     /// Preserve current per-file sequence composition without loading XML.
     fn resolve_sequence(&self, name: &str) -> Option<Arc<bsl_metadata::Sequence>> {
         self.db.resolve_sequence(self.file_id, name)
@@ -285,6 +301,16 @@ impl ConfigsObjectResolver<'_> {
 }
 
 impl ObjectResolver for ConfigsObjectResolver<'_> {
+    /// Legacy whole XML configurations do not publish canonical storage identities.
+    fn resolve_settings_storage(&self, _name: &str) -> Option<Arc<bsl_metadata::SettingsStorage>> {
+        None
+    }
+
+    /// Missing canonical declarations cannot be replaced by names from another family.
+    fn settings_storage_names(&self) -> Vec<String> {
+        Vec::new()
+    }
+
     /// Legacy whole XML configurations do not contain canonical sequence declarations.
     fn resolve_sequence(&self, _name: &str) -> Option<Arc<bsl_metadata::Sequence>> {
         None

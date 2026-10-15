@@ -39,7 +39,13 @@ fn resolve_iter_element_ty_inner(db: &dyn TypeKernelDb, collection: TypeId) -> O
             IterShape::Row { projection: f.projection.clone(), source: f.source }
         }
         TypeKind::PlatformObject(f) => {
-            if let Some((crate::sequences::SequenceType::RecordSet, name)) =
+            if crate::settings_storages::is_container_name(&f.name) {
+                // The native iterable has no configured owner; its element retains only the generic manager API.
+                lookup_by_type_name(f.name.as_str())?;
+                IterShape::Element(
+                    db.platform_object(crate::settings_storages::PROTOTYPE.to_string()),
+                )
+            } else if let Some((crate::sequences::SequenceType::RecordSet, name)) =
                 crate::sequences::generated_name(&f.name)
             {
                 IterShape::Element(

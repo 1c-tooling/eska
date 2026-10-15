@@ -135,6 +135,9 @@ pub(crate) fn enumerate_fields_inner(
             enumerate_metadata_reference_collection(db, resolver, kind)
         }
         Shape::PlatformObject(name) => {
+            if let Some(fields) = crate::settings_storages::fields(db, resolver, name.as_str()) {
+                return fields;
+            }
             if let Some(fields) = crate::sequences::fields(db, resolver, name.as_str()) {
                 return fields;
             }

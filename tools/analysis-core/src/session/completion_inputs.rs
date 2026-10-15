@@ -11,6 +11,7 @@ mod hover_tests;
 mod manager_tests;
 mod sequences;
 mod session_parameters;
+mod settings_storages;
 #[cfg(test)]
 mod signature_tests;
 #[cfg(test)]
@@ -53,6 +54,7 @@ impl AnalysisSession {
         self.prepare_session_parameters(path, offset, request, cancellation)?;
         self.prepare_filter_criteria(path, offset, request, cancellation)?;
         self.prepare_sequences(path, offset, request, cancellation)?;
+        self.prepare_settings_storages(path, offset, request, cancellation)?;
         self.prepare_functional_options(path, offset, request, cancellation)?;
         self.prepare_functional_option_parameters(path, offset, request, cancellation)?;
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
@@ -216,12 +218,17 @@ impl AnalysisSession {
             .get(path)
             .and_then(|module| self.selected_root.owners.get(&module.owner))
             .is_some_and(|owner| {
-                owner.binding.kind == eska::project_core::MetadataKind::CommonCommand
+                matches!(
+                    owner.binding.kind,
+                    eska::project_core::MetadataKind::CommonCommand
+                        | eska::project_core::MetadataKind::SettingsStorage
+                )
             })
         {
             self.prepare_module_metadata(path, request)?;
         }
         self.prepare_sequences(path, offset, request, cancellation)?;
+        self.prepare_settings_storages(path, offset, request, cancellation)?;
         self.prepare_functional_options(path, offset, request, cancellation)?;
         self.prepare_functional_option_parameters(path, offset, request, cancellation)?;
         let dependency = self

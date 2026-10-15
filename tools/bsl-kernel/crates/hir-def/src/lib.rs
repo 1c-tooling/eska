@@ -366,6 +366,7 @@ pub struct ModuleMetadata {
     pub common_module: Option<Arc<bsl_metadata::CommonModule>>,
     pub common_command: Option<Arc<bsl_metadata::CommonCommand>>,
     pub sequence: Option<Arc<bsl_metadata::Sequence>>,
+    pub settings_storage: Option<Arc<bsl_metadata::SettingsStorage>>,
     pub mdo: Option<Arc<bsl_metadata::MetadataObject>>,
     pub register: Option<Arc<bsl_metadata::Register>>,
     pub form: Option<Arc<bsl_metadata::Form>>,
@@ -391,6 +392,7 @@ impl ModuleMetadata {
             common_module: None,
             common_command: None,
             sequence: None,
+            settings_storage: None,
             mdo: None,
             register: None,
             form: None,
@@ -414,6 +416,10 @@ impl ModuleMetadata {
         if let Some(command) = &self.common_command {
             bytes +=
                 std::mem::size_of::<bsl_metadata::CommonCommand>() + command.estimated_heap_size();
+        }
+        if let Some(storage) = &self.settings_storage {
+            bytes += std::mem::size_of::<bsl_metadata::SettingsStorage>()
+                + storage.estimated_heap_size();
         }
         if let Some(sequence) = &self.sequence {
             bytes += std::mem::size_of::<bsl_metadata::Sequence>() + sequence.estimated_heap_size();

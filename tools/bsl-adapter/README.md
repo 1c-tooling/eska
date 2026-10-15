@@ -66,6 +66,11 @@ AutoUse=Use, разделение данных и неподдержанные t
 Namespace, target kinds, дубли, ownership и reserved field names проверяются
 общими readers до публикации модели; XML sidecar и register surrogate не нужны.
 
+[`settings_storage`](../../docs/research/eska-format/analyzer-settings-storages.md)
+сохраняет UUID, имя и ownership отдельной модели через общий descriptor parser.
+Namespace, повторные значения и неполное заимствование проверяются до публикации;
+тип сохранённого значения и runtime properties из UI defaults не выводятся.
+
 `defined_type` сохраняет UUID и составной тип, `attribute_type` преобразует
 общее свойство `Type` для последующих адаптеров полей. Сохраняются альтернативы
 `Type`/`TypeSet`, ссылки, определяемые и характеристические типы, параметры

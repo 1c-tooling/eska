@@ -78,6 +78,7 @@ fn empty_listing_data() -> MetadataListingData {
         functional_options: Vec::new(),
         functional_option_parameters: Vec::new(),
         sequences: Vec::new(),
+        settings_storages: Vec::new(),
         common_modules: Vec::new(),
         event_subscriptions: Vec::new(),
         scheduled_jobs: Vec::new(),

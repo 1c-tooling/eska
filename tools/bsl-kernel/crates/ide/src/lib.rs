@@ -312,6 +312,36 @@ impl Analysis {
         )
     }
 
+    /// Discover actual native storage receivers before their current descriptor family is prepared.
+    pub fn completion_uses_settings_storages(&self, file_id: FileId, offset: u32) -> bool {
+        completion::uses_settings_storages(
+            &self.db,
+            completion::CompletionPosition {
+                file_id,
+                offset: TextSize::from(offset),
+                workspace_root: None,
+                locale: Locale::Ru,
+            },
+        )
+    }
+
+    /// Return only enrolled visible storage-manager bodies after the current descriptor family is ready.
+    pub fn completion_settings_storage_manager_modules(
+        &self,
+        file_id: FileId,
+        offset: u32,
+    ) -> Vec<FileId> {
+        completion::settings_storage_manager_modules(
+            &self.db,
+            completion::CompletionPosition {
+                file_id,
+                offset: TextSize::from(offset),
+                workspace_root: None,
+                locale: Locale::Ru,
+            },
+        )
+    }
+
     /// Discover the admitted direct object's manager body without reading its text or exports.
     pub fn completion_manager_module(&self, file_id: FileId, offset: u32) -> Option<FileId> {
         completion::manager_module_target(

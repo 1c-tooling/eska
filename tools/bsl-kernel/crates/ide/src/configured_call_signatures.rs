@@ -96,6 +96,7 @@ fn configured_global(id: u32) -> bool {
 /// Each configured generated family keeps its native platform method IDs and current candidate types.
 fn configured_methods() -> Vec<bsl_platform::PlatformMethod> {
     let mut methods = hir_ty::filter_criteria::prototype_methods();
+    methods.extend(hir_ty::settings_storages::prototype_methods());
     for kind in [
         hir_ty::sequences::SequenceType::Manager,
         hir_ty::sequences::SequenceType::RecordSet,

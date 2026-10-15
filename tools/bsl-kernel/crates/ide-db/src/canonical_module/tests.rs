@@ -11,6 +11,7 @@ mod functional_options;
 mod inheritance;
 mod resolution;
 mod session_parameters;
+mod settings_storages;
 
 use std::{
     fs,

@@ -227,6 +227,30 @@ pub fn resolve_aliased_manager_call(
     Ok(MethodResolution::new(resolution.method_id, resolution.is_export, signature))
 }
 
+/// A configured storage manager resolves only exact enrolled bodies in the caller's visible roots.
+fn resolve_settings_storage_manager_call(
+    db: &dyn HirDatabase,
+    file: vfs::FileId,
+    storage: &str,
+    method: &Name,
+) -> Result<MethodResolution, UnresolvedMethodKind> {
+    let bodies = db
+        .resolve_settings_storage_manager_module_file_candidates(file, storage)
+        .ok_or(UnresolvedMethodKind::BodyUnread)?;
+    if bodies.has_missing_expected_body() {
+        return Err(UnresolvedMethodKind::BodyUnread);
+    }
+    let declaration = match bodies
+        .search(|file| db.interface_method_named(hir_def::ModuleId::new(file), method))
+    {
+        hir_def::configs::BodySearch::Found(declaration) => declaration,
+        hir_def::configs::BodySearch::Absent => return Err(UnresolvedMethodKind::MethodNotFound),
+        hir_def::configs::BodySearch::Unread => return Err(UnresolvedMethodKind::BodyUnread),
+    };
+    let signature = materialise_signature_enriched(db, declaration.id, &declaration);
+    Ok(MethodResolution::new(declaration.id, declaration.is_export, signature))
+}
+
 /// Which module answered a call on a typed receiver.
 ///
 /// Carried out of [`resolve_user_call`] because inference names the receiver
@@ -343,6 +367,24 @@ pub fn resolve_user_call(
                 "resolve_aliased_manager_call",
             ) {
                 return UserCallTarget::Method(UserCall { route, resolution, mdo_name });
+            }
+        }
+        TypeKind::PlatformObject(facet) => {
+            if let Some(storage) = crate::settings_storages::manager_name(&facet.name) {
+                let Some(module) = resolver.module_id() else {
+                    return UserCallTarget::BodyUnread;
+                };
+                if let Some((route, resolution)) = consider(
+                    resolve_settings_storage_manager_call(db, module.file_id, storage, method_name),
+                    UserCallRoute::ManagerModule,
+                    "resolve_settings_storage_manager_call",
+                ) {
+                    return UserCallTarget::Method(UserCall {
+                        route,
+                        resolution,
+                        mdo_name: Name::new(storage),
+                    });
+                }
             }
         }
         _ => {}

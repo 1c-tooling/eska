@@ -3,6 +3,7 @@ mod functional_option_parameters;
 mod functional_options;
 mod sequences;
 mod session_parameters;
+mod settings_storages;
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
 use std::path::{Path, PathBuf};
@@ -856,6 +857,7 @@ impl RootDatabaseImpl {
             functional_options,
             functional_option_parameters,
             sequences,
+            settings_storages,
         } = listing;
         let entries = Arc::new(entries);
         let defined_types = Arc::new(defined_types);
@@ -874,6 +876,7 @@ impl RootDatabaseImpl {
         let functional_options = Arc::new(functional_options);
         let functional_option_parameters = Arc::new(functional_option_parameters);
         let sequences = Arc::new(sequences);
+        let settings_storages = Arc::new(settings_storages);
         match self.metadata_listings.get(&key).map(|e| *e.value()) {
             Some(input) => {
                 input.set_entries(self).to(entries);
@@ -893,6 +896,7 @@ impl RootDatabaseImpl {
                 input.set_functional_options(self).to(functional_options);
                 input.set_functional_option_parameters(self).to(functional_option_parameters);
                 input.set_sequences(self).to(sequences);
+                input.set_settings_storages(self).to(settings_storages);
             }
             None => {
                 let input = metadata::MetadataListingInput::builder(
@@ -913,6 +917,7 @@ impl RootDatabaseImpl {
                     functional_options,
                     functional_option_parameters,
                     sequences,
+                    settings_storages,
                     Arc::new(metadata::CanonicalMetadataInputs::default()),
                 )
                 .durability(salsa::Durability::MEDIUM)
@@ -3037,6 +3042,20 @@ impl DefDatabase for RootDatabaseImpl {
 
 #[salsa::db]
 impl hir::ConfigsDatabase for RootDatabaseImpl {
+    /// Configured settings managers require the caller's current proven declaration.
+    fn resolve_settings_storage(
+        &self,
+        file: FileId,
+        name: &str,
+    ) -> Option<Arc<bsl_metadata::SettingsStorage>> {
+        self.resolve_settings_storage_for_file(file, name)
+    }
+
+    /// Hidden roots cannot publish storage names into the calling namespace.
+    fn settings_storage_names(&self, file: FileId) -> Vec<String> {
+        self.settings_storage_names_for_file(file)
+    }
+
     /// Generated sequence types resolve through the caller's current canonical visibility.
     fn resolve_sequence(&self, file: FileId, name: &str) -> Option<Arc<bsl_metadata::Sequence>> {
         self.resolve_sequence_for_file(file, name)
@@ -3226,6 +3245,14 @@ impl hir::ConfigsDatabase for RootDatabaseImpl {
         let mut bodies = self.resolve_common_module_files_for_file(file_id, name);
         bodies.reverse_priority();
         Some(bodies)
+    }
+
+    fn resolve_settings_storage_manager_module_file_candidates(
+        &self,
+        file: FileId,
+        name: &str,
+    ) -> Option<hir::CommonModuleBodies> {
+        self.settings_storage_manager_module_files_for_file(file, name)
     }
 
     fn resolve_application_module_file_candidates(

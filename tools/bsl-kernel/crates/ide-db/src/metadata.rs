@@ -5,6 +5,7 @@ mod functional_option;
 mod functional_option_parameter;
 mod sequence;
 mod session_parameter;
+mod settings_storage;
 use bsl_metadata::Configuration;
 pub use common_attribute::{resolve_common_attribute, CommonAttributeEntry};
 pub use common_command::{resolve_common_command, CommonCommandEntry};
@@ -19,6 +20,7 @@ pub use sequence::{resolve_sequence, SequenceEntry};
 pub use session_parameter::{
     resolve_session_parameter, session_parameter_index, SessionParameterEntry,
 };
+pub use settings_storage::{resolve_settings_storage, SettingsStorageEntry};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use stdx::case::CaseExt;
@@ -125,7 +127,7 @@ pub(crate) mod heap_estimate {
             + snapshot.source_exclusions.heap_bytes()
     }
 
-    /// Heap of a [`super::MetadataListingInput`]: the seventeen per-family `Arc<Vec<_>>`
+    /// Heap of a [`super::MetadataListingInput`]: the eighteen per-family `Arc<Vec<_>>`
     /// entry lists plus each entry's owned name string (the other entry fields —
     /// `FileId`s, the MDO kind — are `Copy`). New heap-owning listing families
     /// must be added here too.
@@ -149,6 +151,7 @@ pub(crate) mod heap_estimate {
             Arc<Vec<super::FunctionalOptionEntry>>,
             Arc<Vec<super::FunctionalOptionsParameterEntry>>,
             Arc<Vec<super::SequenceEntry>>,
+            Arc<Vec<super::SettingsStorageEntry>>,
             Arc<super::CanonicalMetadataInputs>,
         ),
     ) -> usize {
@@ -170,6 +173,7 @@ pub(crate) mod heap_estimate {
             functional_options,
             functional_option_parameters,
             sequences,
+            settings_storages,
             canonical_metadata,
         ) = fields;
 
@@ -209,6 +213,8 @@ pub(crate) mod heap_estimate {
             + functional_option_parameters.iter().map(|entry| entry.name.capacity()).sum::<usize>()
             + stdx::heap::vec_bytes::<super::SequenceEntry>(sequences.len())
             + sequences.iter().map(|entry| entry.name.capacity()).sum::<usize>()
+            + stdx::heap::vec_bytes::<super::SettingsStorageEntry>(settings_storages.len())
+            + settings_storages.iter().map(|entry| entry.name.capacity()).sum::<usize>()
             + stdx::heap::map_table_bytes::<vfs::FileId, super::CanonicalMetadataInput>(
                 canonical_metadata.len(),
             )
@@ -960,6 +966,7 @@ pub struct MetadataListingData {
     pub functional_options: Vec<FunctionalOptionEntry>,
     pub functional_option_parameters: Vec<FunctionalOptionsParameterEntry>,
     pub sequences: Vec<SequenceEntry>,
+    pub settings_storages: Vec<SettingsStorageEntry>,
     pub entries: Vec<MdoEntry>,
     pub defined_types: Vec<DefinedTypeEntry>,
     pub common_modules: Vec<CommonModuleEntry>,
@@ -983,6 +990,7 @@ pub enum CanonicalMetadata {
     FunctionalOption(Arc<bsl_metadata::FunctionalOption>),
     FunctionalOptionsParameter(Arc<bsl_metadata::FunctionalOptionsParameter>),
     Sequence(Arc<bsl_metadata::Sequence>),
+    SettingsStorage(Arc<bsl_metadata::SettingsStorage>),
     Object(Arc<bsl_metadata::MetadataObject>),
     Register(Arc<bsl_metadata::Register>),
     CommonModule(Arc<bsl_metadata::CommonModule>),
@@ -1008,6 +1016,7 @@ impl CanonicalMetadata {
             Self::FunctionalOption(value) => value.estimated_heap_size(),
             Self::FunctionalOptionsParameter(value) => value.estimated_heap_size(),
             Self::Sequence(value) => value.estimated_heap_size(),
+            Self::SettingsStorage(value) => value.estimated_heap_size(),
             Self::Object(value) => value.estimated_heap_size(),
             Self::Register(value) => value.estimated_heap_size(),
             Self::CommonModule(value) => value.estimated_heap_size(),
@@ -1077,6 +1086,7 @@ pub struct MetadataListingInput {
     pub functional_options: Arc<Vec<FunctionalOptionEntry>>,
     pub functional_option_parameters: Arc<Vec<FunctionalOptionsParameterEntry>>,
     pub sequences: Arc<Vec<SequenceEntry>>,
+    pub settings_storages: Arc<Vec<SettingsStorageEntry>>,
     pub canonical_metadata: Arc<CanonicalMetadataInputs>,
 }
 
@@ -2528,6 +2538,7 @@ pub fn build_module_metadata(
         common_module,
         common_command: None,
         sequence: None,
+        settings_storage: None,
         mdo,
         register,
         form,

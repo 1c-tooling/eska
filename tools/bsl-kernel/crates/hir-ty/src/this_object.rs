@@ -73,6 +73,20 @@ pub fn resolve_this_manager_owner(
     Some((mdo_type, name))
 }
 
+/// Platform-checked manager contexts have no implicit ThisObject; their qualified manager API is independent.
+pub(crate) fn manager_has_no_implicit_this_object(
+    db: &dyn DefDatabase,
+    resolver: &Resolver,
+) -> bool {
+    let Some(module) = resolver.module_id() else {
+        return false;
+    };
+    let metadata = db.module_metadata(module);
+    metadata.module_type == ModuleType::ManagerModule
+        && (metadata.settings_storage.is_some()
+            || metadata.mdo.as_ref().is_some_and(|owner| owner.mdo_type == MdoType::Catalog))
+}
+
 /// A canonical sequence record-set module has its own real generated `ThisObject` type.
 pub fn resolve_this_sequence_record_set(
     db: &dyn DefDatabase,

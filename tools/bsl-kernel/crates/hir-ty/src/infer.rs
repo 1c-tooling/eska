@@ -2408,7 +2408,9 @@ impl<'db> InferenceContext<'db> {
                         // A proven generated sequence has a fixed native role and current declared dimensions.
                         || matches!(base_kind, TypeKind::PlatformObject(facet)
                             if crate::sequences::generated_name(&facet.name)
-                                .is_some_and(|(_, name)| self.db.resolve_sequence(self.context_file_id, name).is_some()));
+                                .is_some_and(|(_, name)| self.db.resolve_sequence(self.context_file_id, name).is_some())
+                                || crate::settings_storages::manager_name(&facet.name)
+                                    .is_some_and(|name| self.db.resolve_settings_storage(self.context_file_id, name).is_some()));
                     if !field.is_missing() && closed_receiver {
                         self.push_inference_diagnostic(InferenceDiagnostic::UnresolvedField {
                             expr: expr_id,
@@ -2577,7 +2579,13 @@ impl<'db> InferenceContext<'db> {
         let name_lower = name.as_str().fold_lower();
         let self_name_wins =
             is_self_name(&name_lower) && !self.self_name_is_shadowed(name, &resolver);
-        if self_name_wins && (name_lower == "этотобъект" || name_lower == "thisobject") {
+        let missing_manager_self = self_name_wins
+            && matches!(name_lower.as_str(), "этотобъект" | "thisobject")
+            && crate::this_object::manager_has_no_implicit_this_object(self.db, &resolver);
+        if self_name_wins
+            && (name_lower == "этотобъект" || name_lower == "thisobject")
+            && !missing_manager_self
+        {
             if let Some(owner) = crate::this_object::resolve_this_object_owner(self.db, &resolver) {
                 trace!("resolved {} as ThisObject {{ owner: {:?} }}", name, owner);
                 return found(
@@ -2803,6 +2811,18 @@ impl<'db> InferenceContext<'db> {
                 );
                 return found(self.db.unknown(), BareNameOrigin::GlobalExport, export.availability);
             }
+        }
+
+        // Designer has no predefined ThisObject in the platform-checked manager contexts.
+        // Ordinary bindings and actual user-global exports above still own their names.
+        if missing_manager_self {
+            return if self.global_surface_incomplete {
+                BareNameResolution::Indeterminate {
+                    gaps: vec![BareNameGap::UnreadUserGlobalSurface],
+                }
+            } else {
+                BareNameResolution::Absent
+            };
         }
 
         // Metadata collections are the exception, and it is not a stylistic one: a
@@ -3290,6 +3310,13 @@ impl<'db> InferenceContext<'db> {
                         // condition the branch settled, and then nothing about the
                         // receiver is established here either.
                     } else if let Some(receiver_name) = receiver_display_name(self.db, receiver_ty)
+                        .or_else(|| {
+                            crate::settings_storages::current_receiver_name(
+                                self.db,
+                                self.context_file_id,
+                                receiver_ty,
+                            )
+                        })
                     {
                         self.push_inference_diagnostic(InferenceDiagnostic::UnresolvedMethodCall {
                             expr: callee,

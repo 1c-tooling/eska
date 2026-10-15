@@ -212,6 +212,145 @@ fn sequence_receiver<DB: RootDatabase>(
         && receiver.children().next().is_some_and(|parent| sequence_receiver(db, position, &parent))
 }
 
+/// Only an inferred native storage container or manager requests this current descriptor family.
+pub(crate) fn uses_settings_storages<DB: RootDatabase>(
+    db: &DB,
+    position: CompletionPosition,
+) -> bool {
+    let root = db.parse(position.file_id).syntax_node();
+    let Some(token) = root.token_at_offset(position.offset).left_biased() else {
+        return false;
+    };
+    let Some((dot, _)) = resolve_dot_anchor(&token, position.offset) else {
+        return false;
+    };
+    let Some(receiver) = find_receiver_expr(&dot) else {
+        return false;
+    };
+    if settings_storage_receiver(db, &position, &receiver) {
+        return EnvFilter::at(db, position.file_id, position.offset)
+            .admits(hir_ty::settings_storages::environment());
+    }
+    // Only the enclosing body may contribute a cold native receiver; another procedure cannot force a read.
+    receiver
+        .ancestors()
+        .find(|node| matches!(node.kind(), SyntaxKind::PROCEDURE_DEF | SyntaxKind::FUNCTION_DEF))
+        .is_some_and(|scope| {
+            scope.descendants().filter(|node| node.kind() == SyntaxKind::FIELD_EXPR).any(|node| {
+                let Some(receiver) = node.children().next() else {
+                    return false;
+                };
+                let at = CompletionPosition {
+                    offset: receiver.text_range().start(),
+                    ..position.clone()
+                };
+                settings_storage_receiver(db, &at, &receiver)
+                    && EnvFilter::at(db, at.file_id, at.offset)
+                        .admits(hir_ty::settings_storages::environment())
+            })
+        })
+}
+
+/// Preparing declared manager bodies is separate from resolving the current descriptor family.
+pub(crate) fn settings_storage_manager_modules<DB: RootDatabase>(
+    db: &DB,
+    position: CompletionPosition,
+) -> Vec<FileId> {
+    let root = db.parse(position.file_id).syntax_node();
+    let Some(token) = root.token_at_offset(position.offset).left_biased() else {
+        return Vec::new();
+    };
+    let Some((dot, _)) = resolve_dot_anchor(&token, position.offset) else {
+        return Vec::new();
+    };
+    let Some(receiver) = find_receiver_expr(&dot) else {
+        return Vec::new();
+    };
+    if !EnvFilter::at(db, position.file_id, position.offset)
+        .admits(hir_ty::settings_storages::environment())
+    {
+        return Vec::new();
+    }
+    let mut modules = Vec::new();
+    let mut spine = Some(receiver);
+    let mut visited = Vec::new();
+    while let Some(receiver) = spine {
+        // Red roots can be reconstructed between reaching writes; depth distinguishes transparent same-range wrappers.
+        let key = (receiver.kind(), receiver.text_range(), receiver.ancestors().count());
+        if visited.contains(&key) {
+            break;
+        }
+        visited.push(key);
+        if let Some(ty) = resolved_receiver_type(db, &position, &receiver) {
+            if let TypeKind::PlatformObject(facet) = db.lookup_type(ty) {
+                if let Some(name) = hir_ty::settings_storages::manager_name(&facet.name) {
+                    if let Some(bodies) = db
+                        .resolve_settings_storage_manager_module_file_candidates(
+                            position.file_id,
+                            name,
+                        )
+                    {
+                        for file in bodies.all_for_reference() {
+                            if !modules.contains(&file) {
+                                modules.push(file);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // A cold user return can hide its manager. Follow its callee/base or native reaching write, never arguments or sibling calls.
+        spine =
+            reaching_receiver_value(db, &position, &receiver).or_else(|| match receiver.kind() {
+                SyntaxKind::FIELD_EXPR
+                | SyntaxKind::CALL_EXPR
+                | SyntaxKind::PAREN_EXPR
+                | SyntaxKind::EXPR => receiver.children().next(),
+                _ => None,
+            });
+    }
+    modules
+}
+
+/// Native name ownership and source maps identify the precise preceding value of an alias at this read.
+fn reaching_receiver_value<DB: RootDatabase>(
+    db: &DB,
+    position: &CompletionPosition,
+    receiver: &SyntaxNode,
+) -> Option<SyntaxNode> {
+    let name = Name::new(&extract_receiver_ident(receiver)?);
+    let (claim, owner) =
+        hir::bare_root::claim_at_node(db, position.file_id, position.offset, &name, receiver);
+    let value = claim?.reaching_value?;
+    let bodies = db.module_bodies_ref(hir::ModuleId::new(position.file_id));
+    let lowered = match owner {
+        hir::DefWithBodyId::Method(method) => bodies.lower_result(method),
+        hir::DefWithBodyId::ModuleCode => bodies.module_code_result(),
+    }?;
+    let range = lowered.source_map().expr_range(value)?;
+    db.parse(position.file_id).syntax_node().descendants().find(|node| node.text_range() == range)
+}
+
+/// Current inferred type and receiver ownership take precedence over text that resembles a global.
+fn settings_storage_receiver<DB: RootDatabase>(
+    db: &DB,
+    position: &CompletionPosition,
+    receiver: &SyntaxNode,
+) -> bool {
+    if resolved_receiver_type(db, position, receiver).is_some_and(|ty| {
+        matches!(db.lookup_type(ty), TypeKind::PlatformObject(facet)
+            if hir_ty::settings_storages::is_container_name(&facet.name)
+                || hir_ty::settings_storages::manager_name(&facet.name).is_some())
+    }) {
+        return true;
+    }
+    receiver.kind() == SyntaxKind::FIELD_EXPR
+        && receiver
+            .children()
+            .next()
+            .is_some_and(|parent| settings_storage_receiver(db, position, &parent))
+}
+
 /// Completion and cold-family discovery share the existing native shadowing and reaching-write rules.
 fn resolved_receiver_type<DB: RootDatabase>(
     db: &DB,
@@ -219,7 +358,15 @@ fn resolved_receiver_type<DB: RootDatabase>(
     receiver_expr: &SyntaxNode,
 ) -> Option<TypeId> {
     let sema = Semantics::new(db);
-    let mut receiver_id = sema.type_of_expr(position.file_id, receiver_expr);
+    // Lowering maps the inner expression's range; transparent wrappers have no separate semantic expression id.
+    let mut semantic_receiver = receiver_expr.clone();
+    while matches!(semantic_receiver.kind(), SyntaxKind::EXPR | SyntaxKind::PAREN_EXPR) {
+        let Some(inner) = semantic_receiver.children().next() else {
+            break;
+        };
+        semantic_receiver = inner;
+    }
+    let mut receiver_id = sema.type_of_expr(position.file_id, &semantic_receiver);
 
     // `Unknown` here means inference has no type for the receiver, which happens
     // both when a user symbol holds the name and when the name is a bare TYPE
@@ -426,9 +573,11 @@ fn complete_prefix_methods_for_receiver<DB: RootDatabase>(
 
     let criteria_container = matches!(db.lookup_type(effective),TypeKind::PlatformObject(facet) if hir_ty::filter_criteria::is_container_name(&facet.name));
     let sequence_receiver = matches!(db.lookup_type(effective),TypeKind::PlatformObject(facet) if hir_ty::sequences::is_container_name(&facet.name) || hir_ty::sequences::generated_name(&facet.name).is_some());
+    let settings_storage_receiver = matches!(db.lookup_type(effective),TypeKind::PlatformObject(facet) if hir_ty::settings_storages::is_container_name(&facet.name) || hir_ty::settings_storages::manager_name(&facet.name).is_some());
     if !session_parameter_type(db, effective)
         && !criteria_container
         && !sequence_receiver
+        && !settings_storage_receiver
         && !is_metadata_ref
         && !is_metadata_ref_collection
         && !is_union_with_metadata_ref
@@ -438,7 +587,11 @@ fn complete_prefix_methods_for_receiver<DB: RootDatabase>(
     }
 
     let mut mdo_fields = HirType::from_id(db, file_id, effective).fields();
-    if session_parameter_type(db, effective) || criteria_container || sequence_receiver {
+    if session_parameter_type(db, effective)
+        || criteria_container
+        || sequence_receiver
+        || settings_storage_receiver
+    {
         mdo_fields.retain(|field| field.env.is_none_or(|mask| env.admits(mask)));
     }
     let platform_items = collect_platform_items_for_effective(db, effective, locale, env);
@@ -447,8 +600,8 @@ fn complete_prefix_methods_for_receiver<DB: RootDatabase>(
         return None;
     }
 
-    let mut items: Vec<CompletionItem> =
-        mdo_fields.iter().map(|f| render_mdo_field(db, f, locale)).collect();
+    let mut items = settings_storage_user_methods(db, file_id, effective, env);
+    items.extend(mdo_fields.iter().map(|f| render_mdo_field(db, f, locale)));
     let mut seen: std::collections::HashSet<String> =
         items.iter().map(|i| i.label.fold_lower()).collect();
     for p in platform_items {
@@ -464,13 +617,64 @@ fn complete_prefix_methods_for_receiver<DB: RootDatabase>(
     Some(items)
 }
 
+/// User declarations precede native methods and stop at the same unread body as call resolution.
+fn settings_storage_user_methods<DB: RootDatabase>(
+    db: &DB,
+    file: FileId,
+    receiver: TypeId,
+    env: &EnvFilter,
+) -> Vec<CompletionItem> {
+    let TypeKind::PlatformObject(facet) = db.lookup_type(receiver) else {
+        return Vec::new();
+    };
+    let Some(name) = hir_ty::settings_storages::manager_name(&facet.name) else {
+        return Vec::new();
+    };
+    if !env.admits(hir_ty::settings_storages::environment()) {
+        return Vec::new();
+    }
+    let Some(bodies) = db.resolve_settings_storage_manager_module_file_candidates(file, name)
+    else {
+        return Vec::new();
+    };
+    if bodies.has_missing_expected_body() {
+        return Vec::new();
+    }
+    let mut items = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    let _ = bodies.search(|file| {
+        let module = hir::ModuleId::new(file);
+        for method in db.module_interface(module).methods() {
+            if !seen.insert(method.name.as_str().fold_lower())
+                || !method.is_export
+                || !env.admits(method.preproc_env)
+            {
+                continue;
+            }
+            let callee = CalleeKind::LocalMethod { module_id: module, method: method.name.clone() };
+            if let Some(signatures) = build_signature(db, file, &callee) {
+                if let Some(signature) = signatures.first() {
+                    let mut signature = signature.clone();
+                    signature.source = SignatureSource::ManagerModule;
+                    items.push(item_from_signature(&signature));
+                }
+            }
+        }
+        None::<()>
+    });
+    items
+}
+
 fn collect_platform_items_for_effective<DB: RootDatabase>(
     db: &DB,
     effective: TypeId,
     locale: ide_db::base_db::Locale,
     env: &EnvFilter,
 ) -> Vec<CompletionItem> {
-    if session_parameter_type(db, effective) {
+    if session_parameter_type(db, effective)
+        || matches!(db.lookup_type(effective), TypeKind::PlatformObject(facet)
+            if hir_ty::settings_storages::manager_name(&facet.name).is_some())
+    {
         if let Some(key) = platform_type_key_id(db, effective) {
             return complete_platform_methods(db, &key, locale, env);
         }
@@ -806,6 +1010,13 @@ fn complete_platform_methods(
     locale: ide_db::base_db::Locale,
     env: &EnvFilter,
 ) -> Vec<CompletionItem> {
+    if hir_ty::settings_storages::is_prototype_name(receiver_type) {
+        return hir_ty::settings_storages::prototype_methods()
+            .iter()
+            .filter(|method| env.admits_context(method.context.as_ref()))
+            .map(render_platform_method)
+            .collect();
+    }
     if let Some(methods) = hir_ty::sequences::prototype_methods(receiver_type) {
         return methods
             .iter()

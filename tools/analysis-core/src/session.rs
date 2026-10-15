@@ -50,6 +50,11 @@ mod sequences;
 #[cfg(test)]
 mod session_parameter_tests;
 #[cfg(test)]
+mod settings_storage_iteration_tests;
+#[cfg(test)]
+mod settings_storage_tests;
+mod settings_storages;
+#[cfg(test)]
 mod structural_descriptor_tests;
 #[cfg(test)]
 mod subsystem_tests;
@@ -438,6 +443,10 @@ impl AnalysisSession {
             CanonicalMetadata::CommonAttribute(_) => {
                 ide_db::metadata::resolve_common_attribute(database, listing, name.clone())
                     .map(CanonicalMetadata::CommonAttribute)
+            }
+            CanonicalMetadata::SettingsStorage(_) => {
+                ide_db::metadata::resolve_settings_storage(database, listing, name.clone())
+                    .map(CanonicalMetadata::SettingsStorage)
             }
             CanonicalMetadata::Sequence(_) => {
                 ide_db::metadata::resolve_sequence(database, listing, name.clone())

@@ -46,6 +46,9 @@ mod test_query_analysis_project;
 #[cfg(test)]
 #[path = "../tests/support/sequence_project.rs"]
 mod test_sequence_project;
+#[cfg(test)]
+#[path = "../tests/support/settings_storage_project.rs"]
+mod test_settings_storage_project;
 #[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
 mod tool_query_consumers;
 #[cfg(all(test, any(feature = "analyzer-cli", feature = "check-cli")))]

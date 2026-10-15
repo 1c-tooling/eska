@@ -49,8 +49,9 @@ fn assert_this_manager(db: &RootDatabaseImpl, actual: TypeId, mdo_type: MdoType,
     );
 }
 
+/// Designer rejects this spelling in a catalog manager; unread unrelated globals may keep the miss indeterminate.
 #[test]
-fn infer_this_manager_resolves_to_catalog_owner() {
+fn infer_catalog_manager_has_no_russian_predefined_this_object() {
     let text = r#"
 Функция Тест()
     Э = ЭтотОбъект;
@@ -58,12 +59,14 @@ fn infer_this_manager_resolves_to_catalog_owner() {
 КонецФункции
 "#;
     let (db, file_id) = setup_at(catalog_manager_module_path(), text);
-    let actual = var_ty(&db, file_id, "э").expect("э must be inferred");
-    assert_this_manager(&db, actual, MdoType::Catalog, "Справочник1");
+    assert!(
+        var_ty(&db, file_id, "э").is_none_or(|ty| matches!(db.lookup_type(ty), TypeKind::Unknown))
+    );
 }
 
+/// The English alias has the same absence contract as the Russian spelling.
 #[test]
-fn infer_this_manager_english_spelling() {
+fn infer_catalog_manager_has_no_english_predefined_this_object() {
     let text = r#"
 Функция Test()
     T = ThisObject;
@@ -71,8 +74,9 @@ fn infer_this_manager_english_spelling() {
 КонецФункции
 "#;
     let (db, file_id) = setup_at(catalog_manager_module_path(), text);
-    let actual = var_ty(&db, file_id, "t").expect("t must be inferred");
-    assert_this_manager(&db, actual, MdoType::Catalog, "Справочник1");
+    assert!(
+        var_ty(&db, file_id, "t").is_none_or(|ty| matches!(db.lookup_type(ty), TypeKind::Unknown))
+    );
 }
 
 #[test]
@@ -110,8 +114,9 @@ fn infer_this_manager_in_common_module_stays_unknown() {
     assert!(!has_this_object, "common module must not produce Ty::ThisObject either");
 }
 
+/// An absent self name cannot establish a receiver on which an attribute is proven missing.
 #[test]
-fn infer_this_manager_unknown_field_does_not_escalate_to_unresolved_field() {
+fn infer_catalog_manager_missing_self_does_not_invent_unresolved_field() {
     let text = r#"
 Функция Тест()
     Х = ЭтотОбъект.НесуществующееПоле;
@@ -128,7 +133,6 @@ fn infer_this_manager_unknown_field_does_not_escalate_to_unresolved_field() {
         .count();
     assert_eq!(
         unresolved_count, 0,
-        "ManagerModule's ЭтотОбъект.<missing field> must NOT escalate to \
-         UnresolvedField — see Step J docs in `field_lookup.rs` for the boundary"
+        "An absent catalog-manager ThisObject cannot establish a receiver for UnresolvedField"
     );
 }
