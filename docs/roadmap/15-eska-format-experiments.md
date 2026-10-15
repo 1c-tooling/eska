@@ -101,7 +101,7 @@ EF-18 сохраняет `IN_PROGRESS` как незавершённую реа�
 | EF-08 | DONE | EF-06, EF-07 | Платформенная приёмка небольшой конфигурации |
 | EF-09 | DONE | EF-08 | Сравнение размера, Git и стоимости преобразования |
 | EF-10 | DONE | EF-09, решение о продолжении | Общая модель нового источника и проектные/сборочные инструменты |
-| EF-11 | PLANNED | EF-18, EF-27, EF-20 | Explorer: дерево, поддержка, подсветка и анализ нового формата |
+| EF-11 | IN_PROGRESS | EF-18, EF-27, EF-20 | Explorer: дерево, поддержка, подсветка и анализ нового формата |
 | EF-12 | DONE | EF-24 | Типизированная редактируемая модель управляемой формы |
 | EF-13 | DEFERRED | EF-12, EF-19 | Слияние форм и решение о merge-драйвере после MVP |
 | EF-14 | DONE | EF-24; для EPF/ERF — T83, T84 | Принятые профили CFE/EPF/ERF наряду с CF |
@@ -523,7 +523,12 @@ replay/import guard прошли на CF/CFE/EPF/ERF. Следующая
 [приёмка навигации](../research/eska-format/explorer-current-navigation.md)
 подтвердила search/reveal/current labels/lazy support вместе с отзывом policy
 и dirty restart на всех четырёх типах.
-Editable opening, queries, полная schema групп, composition и остальная матрица
+[Синтаксис `.sdbl` в установленном Explorer](../research/eska-format/explorer-query-syntax.md)
+прошёл all4: общий journal/host, diagnostics, exact dirty reveal, watcher,
+restart/replay и import guard; полный Node gate — 257/257 без skipped.
+Принимается только `QueryParseError`, metadata/consumer/semantic coverage false.
+Generic suggestions редактора не выданы за BSL/query semantic completion.
+Editable opening, контекстные queries EF-27, полная schema групп, composition и остальная матрица
 продолжаются; EF-21/EF-16 не закрываются.
 
 В отдельной задаче репозитория Explorer подключить новый источник к EF-18/EF-27.

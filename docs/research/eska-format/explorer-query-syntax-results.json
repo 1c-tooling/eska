@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-15",
+  "scope": "installed-declared-sdbl-syntax-only",
+  "explorer_commit": "538b17e",
+  "sdk_checkpoint": "2deec7f",
+  "extension_version": "0.0.11",
+  "backend": "analyzer",
+  "artifacts_sha256": {
+    "eska-explorer.vsix": "52629d2065fd5539e39185e16a1b45dd8fb7904f414a033b38b9168f99481156",
+    "eska-analyzer": "13a31afe80b5844a9e1d4631fbdf5d830359d6ce313d19320f4b37c2b673d297",
+    "eska-project": "4dc840b5928a54ff374671cf96b797ad4e2b2daf764d1a361e6d6f635a59b2c5"
+  },
+  "query_contract": {
+    "editor_language_id": "eska-sdbl",
+    "wire_language_id": "sdbl",
+    "identifier": "eska-query-syntax",
+    "scope": "syntax_only",
+    "position_encoding": "utf-16",
+    "rules": [
+      "QueryParseError"
+    ],
+    "metadata_complete": false,
+    "consumer_complete": false,
+    "semantic_complete": false,
+    "only_checked_declarations_synchronized": true,
+    "immediate_grammar_before_ack_and_owner_paging": true,
+    "no_bsl_language_requests": true,
+    "no_query_metadata_locate": true
+  },
+  "checks": {
+    "typescript": "passed",
+    "compile": "passed",
+    "node_passed": 257,
+    "node_failed": 0,
+    "node_skipped": 0,
+    "narrow_node_passed": 59,
+    "routing_node_passed": 12,
+    "callback_node_passed": 23,
+    "narrow_groups_are_subsets_not_additional_full_tests": true,
+    "node_syntax_files": 10,
+    "diff_check": "passed",
+    "vsix_entries": 1311,
+    "vsix_validation": "passed",
+    "payload_drift_files": 0,
+    "post_gate_nonpackaged_fixture_eof_cleanup": {
+      "executable_tokens_unchanged": true,
+      "syntax_check": "passed",
+      "vsix_payload_unchanged": true
+    }
+  },
+  "synthetic_regressions": {
+    "exact_capability_admission": true,
+    "wrong_or_missing_diagnostic_code_refused": true,
+    "wrong_code_withdraws_previous_findings": true,
+    "current_hash_version_origin_coverage_binding": true,
+    "late_pull_success_and_failure_cannot_replace_or_clear_new_result": true,
+    "late_input_ack_cannot_clear_new_result": true,
+    "same_version_close_reopen": true,
+    "quota_failure_retraction": true,
+    "lazy_support_repaint_retains_reveal_ancestor_expansion": true,
+    "late_reveal_epoch_change_refused": true
+  },
+  "real_framed_provider": {
+    "editor_api": "test-fixture",
+    "transport_and_provider": "production-client-and-real-rust-child",
+    "project_types": [
+      "configuration",
+      "extension",
+      "processing",
+      "report"
+    ],
+    "locales": [
+      "ru-RU",
+      "en-US"
+    ],
+    "all4_locale_cases": 8,
+    "utf16_non_bmp_ranges": true,
+    "current_and_stale_inputs": true,
+    "dirty_saved_watcher_preserved": true,
+    "deleted_file_did_close_releases_overlay": true,
+    "restart_replay": true,
+    "import_guard_recovery": true,
+    "real_quota_failure_keeps_draft_clears_findings_and_accepts_repair": true
+  },
+  "installed": {
+    "editor": "VSCodium",
+    "api_driven": true,
+    "isolated_profile_extensions_and_workspace": true,
+    "frozen_runtime_binaries": true,
+    "runtime_path": "owned-analyzer-alias-and-required-launcher-helpers-only",
+    "project_tool_used_before_editor_start": true,
+    "cases": [
+      {
+        "type": "configuration",
+        "protectedQuerySyntax": true,
+        "currentQueryDiagnostics": true,
+        "syntaxOnlyCoverage": true,
+        "protectedStaleRetracted": true,
+        "nativeCompletionItems": 9,
+        "noBslReaders": true,
+        "dirtyExactReveal": true,
+        "dirtyWatcherPreserved": true,
+        "dirtyRestartReplay": true,
+        "importGuardRecovery": true,
+        "sourceBytesPreserved": true,
+        "retainedCleanModel": true,
+        "cleanupPreservedSource": true
+      },
+      {
+        "type": "extension",
+        "protectedQuerySyntax": true,
+        "currentQueryDiagnostics": true,
+        "syntaxOnlyCoverage": true,
+        "protectedStaleRetracted": true,
+        "nativeCompletionItems": 12,
+        "noBslReaders": true,
+        "dirtyExactReveal": true,
+        "dirtyWatcherPreserved": true,
+        "dirtyRestartReplay": true,
+        "importGuardRecovery": true,
+        "sourceBytesPreserved": true,
+        "retainedCleanModel": true,
+        "cleanupPreservedSource": true
+      },
+      {
+        "type": "processing",
+        "protectedQuerySyntax": true,
+        "currentQueryDiagnostics": true,
+        "syntaxOnlyCoverage": true,
+        "protectedStaleRetracted": true,
+        "nativeCompletionItems": 12,
+        "noBslReaders": true,
+        "dirtyExactReveal": true,
+        "dirtyWatcherPreserved": true,
+        "dirtyRestartReplay": true,
+        "importGuardRecovery": true,
+        "sourceBytesPreserved": true,
+        "retainedCleanModel": true,
+        "cleanupPreservedSource": true
+      },
+      {
+        "type": "report",
+        "protectedQuerySyntax": true,
+        "currentQueryDiagnostics": true,
+        "syntaxOnlyCoverage": true,
+        "protectedStaleRetracted": true,
+        "nativeCompletionItems": 12,
+        "noBslReaders": true,
+        "dirtyExactReveal": true,
+        "dirtyWatcherPreserved": true,
+        "dirtyRestartReplay": true,
+        "importGuardRecovery": true,
+        "sourceBytesPreserved": true,
+        "retainedCleanModel": true,
+        "cleanupPreservedSource": true
+      }
+    ],
+    "successful_analyzer_children_exited": 12,
+    "all_recorded_children_across_eight_attempts_exited": 23,
+    "observed_owned_fixture_profile_roots_removed": 8,
+    "failed_attempts_preserved_separately": 7,
+    "user_profile_unchanged": true,
+    "source_bytes_preserved": true
+  },
+  "legacy_compatibility": {
+    "transport": "production-client-and-real-old-and-new-rust-children",
+    "legacy_analyzer_sha256": "79a0b53e648cd8855d80f963796f85ef8f4e601c5b90b983c1c390a36638eb8d",
+    "cases": [
+      {
+        "type": "configuration",
+        "legacyRefusedWithoutRevisionChange": true,
+        "draftRetained": true,
+        "freshPeerReplayed": true,
+        "syntaxFindings": true
+      },
+      {
+        "type": "extension",
+        "legacyRefusedWithoutRevisionChange": true,
+        "draftRetained": true,
+        "freshPeerReplayed": true,
+        "syntaxFindings": true
+      },
+      {
+        "type": "processing",
+        "legacyRefusedWithoutRevisionChange": true,
+        "draftRetained": true,
+        "freshPeerReplayed": true,
+        "syntaxFindings": true
+      },
+      {
+        "type": "report",
+        "legacyRefusedWithoutRevisionChange": true,
+        "draftRetained": true,
+        "freshPeerReplayed": true,
+        "syntaxFindings": true
+      }
+    ],
+    "analyzer_children_exited": 8,
+    "owned_fixture_removed": true
+  },
+  "methodology": {
+    "wrong_code_guard_is_synthetic_boundary_test": true,
+    "native_tree_selection_asserted": true,
+    "reveal_uses_exact_declared_query_and_does_not_reopen_dirty_document": true,
+    "provider_commands_use_controlled_active_editor_selection": true,
+    "native_word_based_suggestions_remain": true,
+    "zero_bsl_requests_asserted_instead_of_zero_generic_suggestions": true,
+    "clean_hidden_models_retained_after_tab_close": true,
+    "retained_journal_ack_matches_actual_model_text": true,
+    "tab_closure_not_equated_with_did_close": true,
+    "deleted_close_proved_separately_by_real_framed_provider": true
+  },
+  "limitations": {
+    "physical_keyboard_mouse_and_focus_acceptance": false,
+    "query_metadata_semantics": false,
+    "dcs_and_consumer_validation": false,
+    "platform_query_execution": false,
+    "installed_cf_cfe_semantic_composition": false,
+    "query_semantic_completion": false,
+    "editable_tree_opening": false,
+    "property_writes": false,
+    "large_project_installed_performance": false,
+    "full_mvp": false
+  }
+}

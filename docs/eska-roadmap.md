@@ -2365,6 +2365,10 @@ groups и полный SDK прошли; установленный Explorer п�
 прошла readonly readers, диагностику, dirty replay/import guard для CF/CFE/EPF/ERF
 с одним analyzer host. [Следующая приёмка навигации](research/eska-format/explorer-current-navigation.md)
 прошла installed all4 для search/reveal/current labels/policy retraction.
+[Query syntax в установленном Explorer](research/eska-format/explorer-query-syntax.md)
+прошёл all4 на том же host: `.sdbl` sync/diagnostics, exact dirty reveal,
+watcher, restart/replay и import guard. Полный Node gate — 257/257 без skipped;
+только `QueryParseError`, metadata/consumer semantics остаётся EF-27.
 Правки и остальные условия EF-11/EF-16 остаются в работе.
 
 [Оболочка `eska check`](research/eska-format/shell-check-delegation.md) подключает

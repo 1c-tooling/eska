@@ -14,6 +14,11 @@ EF-11 — `IN_PROGRESS`; полный комплект EF-21 и приёмка E
 прошла installed all4: поиск/reveal, имена по source/UUID, отзыв policy и dirty
 restart. 231 Node tests без skipped; editable opening и остальная матрица ещё нужны.
 
+[Query syntax в установленном Explorer](../research/eska-format/explorer-query-syntax.md)
+прошёл all4: `.sdbl` sync/diagnostics, exact dirty reveal, watcher, restart/replay
+и import guard на том же host. Полный Node gate — 257/257 без skipped.
+Принимается только `QueryParseError`; metadata/consumer semantics остаётся EF-27.
+
 [Оболочка check](../research/eska-format/shell-check-delegation.md) запускает
 standalone checker с явным профилем и проверенной совместимостью.
 Восемь all4 RU/EN случаев сохранили direct streams/exit и входы;

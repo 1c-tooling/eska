@@ -66,6 +66,9 @@ Queries-проектах настоящим framed transport: SDK 184/464 и nat
 [Текущая навигация](explorer-current-navigation.md) добавляет поиск/reveal,
 current labels и отзыв policy; editable opening и остальная матрица EF-11/EF-16
 продолжаются.
+[Синтаксис `.sdbl` в установленном Explorer](explorer-query-syntax.md) прошёл
+all4 на том же host: sync/diagnostics, dirty reveal, watch/restart/import guard.
+Полный Node gate — 257/257 без skipped; metadata/consumer semantics остаётся EF-27.
 [Language/Template coverage](structural-metadata-coverage.md) проверяет текущие
 descriptor fields без фиктивной canonical модели или проверки СКД.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery
