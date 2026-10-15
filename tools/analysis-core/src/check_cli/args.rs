@@ -22,8 +22,10 @@ pub struct Cli {
     pub project: Option<String>,
     #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
     pub format: OutputFormat,
-    #[arg(long, value_enum)]
-    pub profile: Profile,
+    #[arg(long, value_enum, required_unless_present = "capabilities")]
+    pub profile: Option<Profile>,
+    #[arg(long, conflicts_with_all = ["profile", "project_dir", "project", "config", "timeout_seconds", "max_document_bytes", "max_retained_source_bytes"])]
+    pub capabilities: bool,
     #[arg(long)]
     pub config: Option<PathBuf>,
     #[arg(long, default_value_t = 300)]

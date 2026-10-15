@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-15",
+  "scope": "local-shell-check-parity",
+  "cases": [
+    {"type": "configuration", "locale": "ru-RU", "exit_code": 0, "syntax_complete": true},
+    {"type": "configuration", "locale": "en-US", "exit_code": 0, "syntax_complete": true},
+    {"type": "extension", "locale": "ru-RU", "exit_code": 2, "syntax_complete": true},
+    {"type": "extension", "locale": "en-US", "exit_code": 2, "syntax_complete": true},
+    {"type": "processing", "locale": "ru-RU", "exit_code": 2, "syntax_complete": true},
+    {"type": "processing", "locale": "en-US", "exit_code": 2, "syntax_complete": true},
+    {"type": "report", "locale": "ru-RU", "exit_code": 2, "syntax_complete": true},
+    {"type": "report", "locale": "en-US", "exit_code": 2, "syntax_complete": true}
+  ],
+  "invariants": {"exact_direct_shell_streams_and_exit": true, "all_source_control_base_history_bytes_and_mtimes_unchanged": true, "runtime_path_empty": true},
+  "checks": {"shell_process_cases": 5, "checker_capability_groups": 2, "typed_admission": "passed", "help_registry": "passed", "root_strict_clippy": "passed"},
+  "limitations": {"platform_runtime": false, "full_semantic_acceptance": false, "installed_bundle": false}
+}

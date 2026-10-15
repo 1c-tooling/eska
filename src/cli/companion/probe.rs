@@ -9,7 +9,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::Error;
+use super::{Error, Kind};
 
 const MAX_BYTES: usize = 65_536;
 const DEADLINE: Duration = Duration::from_secs(5);
@@ -28,9 +28,14 @@ impl Drop for RunningProbe {
 }
 
 /// A reader may retain an inherited pipe, so failed probes never wait on its thread indefinitely.
-pub(super) fn capture(executable: &Path, locale: &str) -> Result<Vec<u8>, Error> {
+pub(super) fn capture(executable: &Path, locale: &str, kind: Kind) -> Result<Vec<u8>, Error> {
+    let capabilities = if kind == Kind::Check {
+        "--capabilities"
+    } else {
+        "capabilities"
+    };
     let child = Command::new(executable)
-        .args(["--lang", locale, "capabilities", "--format", "json"])
+        .args(["--lang", locale, capabilities, "--format", "json"])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())

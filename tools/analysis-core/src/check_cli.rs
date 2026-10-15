@@ -1,6 +1,7 @@
 //! Standalone checker presentation; no transport, build, Git or IDE orchestration.
 
 mod args;
+mod capabilities;
 mod presentation;
 
 use std::{env, process::ExitCode, time::Duration};
@@ -62,8 +63,14 @@ pub fn run() -> ExitCode {
 
 /// Compose the selected reader once, without validating or reading an accepted binary baseline.
 fn execute(cli: &args::Cli, localizer: &Localizer) -> Result<ExitCode, Failure> {
+    if cli.capabilities {
+        return capabilities::emit(cli.format, localizer);
+    }
     let selected = tool_cli::selected(&cli.project_dir, cli.project.as_deref())?;
-    let profile: BatchProfile = cli.profile.into();
+    let profile: BatchProfile = cli
+        .profile
+        .ok_or_else(|| Failure::new("arguments_invalid"))?
+        .into();
     let settings = settings::load(
         selected.project.root(),
         cli.config.as_deref(),

@@ -14,6 +14,7 @@ use crate::project_core::ProjectType;
 pub(super) enum Kind {
     Project,
     Build,
+    Check,
 }
 
 impl Kind {
@@ -22,6 +23,7 @@ impl Kind {
         match self {
             Self::Project => "eska-project",
             Self::Build => "eska-build",
+            Self::Check => "eska-check",
         }
     }
 }
@@ -34,6 +36,7 @@ pub(super) enum Capability {
     Init,
     Unpack,
     SourceImport(ProjectType),
+    Check(&'static str),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -73,7 +76,7 @@ impl Tool {
 
     /// Exact package/protocol agreement precedes staging, project claim and workspace file writes.
     pub(super) fn verify(&self, locale: &str, capability: Capability) -> Result<(), Error> {
-        let bytes = probe::capture(&self.path, locale)?;
+        let bytes = probe::capture(&self.path, locale, self.kind)?;
         let report: Value = serde_json::from_slice(&bytes).map_err(|_| Error::Incompatible)?;
         validate(&report, self.kind, capability)
     }
@@ -90,7 +93,13 @@ fn validate(value: &Value, kind: Kind, capability: Capability) -> Result<(), Err
         || value["tool"] != kind.name()
         || value["command"] != "capabilities"
         || value["status"] != "success"
-        || value["data"]["version"] != env!("CARGO_PKG_VERSION")
+        || match kind {
+            Kind::Check => {
+                value["data"]["source_core_version"] != env!("CARGO_PKG_VERSION")
+                    || value["data"]["version"].as_str().is_none_or(str::is_empty)
+            }
+            Kind::Project | Kind::Build => value["data"]["version"] != env!("CARGO_PKG_VERSION"),
+        }
         || value["data"]["protocol_version"] != 1
     {
         return Err(Error::Incompatible);
@@ -133,6 +142,12 @@ fn validate(value: &Value, kind: Kind, capability: Capability) -> Result<(), Err
                 && data["source_import_mode"] == "preview_then_explicit_write"
                 && data["source_import_ancestor"] == "independently_confirmed_sha256"
                 && data["source_import_recovery"] == "eska-project recover-import"
+        }
+        (Kind::Check, Capability::Check(profile)) => {
+            contains(data, "commands", "check")
+                && contains(data, "profiles", profile)
+                && contains(data, "source_formats", "eska")
+                && data["report_schema_version"] == 1
         }
         _ => false,
     };

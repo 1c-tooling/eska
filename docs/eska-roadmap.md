@@ -2354,6 +2354,11 @@ groups и полный SDK прошли; установленный Explorer п�
 с одним analyzer host. Search/reveal, правки и остальные условия EF-11/EF-16
 остаются в работе.
 
+[Оболочка `eska check`](research/eska-format/shell-check-delegation.md) подключает
+standalone checker через bounded probe с отдельной linked-core version.
+Восемь all4 RU/EN случаев сохранили direct streams/exit и source/base/history;
+устанавливаемый комплект и полнота анализа продолжаются.
+
 [Структурная проверка](research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

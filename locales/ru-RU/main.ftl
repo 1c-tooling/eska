@@ -1085,6 +1085,13 @@ metadata-rename-recovery-about = Проверить или восстанови�
 
 # Самостоятельная пакетная проверка.
 tool-check-about = Проверка сохранённых модулей ESKA по явному профилю без 1С, Git и IDE-сервера
+tool-check-command-check = Проверить исходники ESKA самостоятельным checker по явному профилю
+tool-option-capabilities = Показать совместимость инструмента без открытия проекта
+tool-check-capabilities-summary = Доступные профили проверки: syntax, semantic.
+tool-error-check-missing = Установите совместимый eska-check рядом с eska или добавьте его в PATH.
+tool-error-check-unavailable = Не удалось запустить выбранный eska-check или дождаться его завершения.
+tool-error-check-probe = Checker не вернул полные данные совместимости в пределах времени и размера.
+tool-error-check-incompatible = Протокол checker, версия source core или выбранный профиль не совпадают с оболочкой.
 tool-analyzer-about = Метаданные ESKA, планы правки свойств, диагностика YAML, навигация, диагностика выбранного профиля и автодополнение BSL через версионированное соединение IDE без 1С и Git
 tool-option-profile = Явный профиль анализа: syntax или semantic
 tool-option-config = Файл настроек анализатора; иначе искать bsl-analyzer.toml в корне выбранного проекта

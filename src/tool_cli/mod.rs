@@ -7,8 +7,10 @@ pub mod rpc_json;
 mod project;
 mod support;
 pub use project::*;
-#[cfg(any(feature = "project-cli", feature = "build-cli"))]
-pub(crate) use support::emit_success;
 pub use support::{
-    Failure, OutputFormat, accepted_ref, bootstrap_value, emit_failure, localize, parse,
+    Failure, OutputFormat, accepted_ref, bootstrap_value, emit_failure, emit_success, localize,
+    parse,
 };
+
+/// Independently built tools expose the version of their linked source/project core.
+pub const PACKAGE_VERSION: &str = env!("CARGO_PKG_VERSION");

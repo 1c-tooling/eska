@@ -3,8 +3,9 @@
 Первый `eska-check` — отдельный бинарник общей библиотеки `eska-analysis`,
 собираемый feature `check-cli`. Он проверяет сохранённые исходники обычной
 конфигурации ESKA. Сервер IDE, LSP runtime, Git, отладчик, платформа 1С и XML-экспорт
-не участвуют. Команда экспериментальная, не опубликована, не включена в установщик
-и пока не вызывается оболочкой `eska`. Сборка описана в
+не участвуют. Команда экспериментальная, не опубликована и не включена в установщик.
+Оболочка [`eska check`](shell-check-delegation.md) запускает совместимый
+самостоятельный checker с сохранением его потоков и exit codes. Сборка описана в
 [README библиотеки](../../../tools/analysis-core/README.md).
 
 ## Команда и границы профиля
@@ -17,7 +18,14 @@ eska-check --profile syntax --max-retained-source-bytes 268435456
 eska-check --profile semantic --format json
 ```
 
-`--profile` обязателен. `syntax` использует `ParseError` общего ядра;
+`--profile` обязателен для анализа. Отдельный `--capabilities --format json`
+возвращает tool envelope schema 1 без discovery проекта: SDK `version`,
+`source_core_version` связанного core, числовой `protocol_version=1`,
+`commands=[check]`, `profiles=[syntax,semantic]`, `source_formats=[eska]`
+и `report_schema_version=1`. Для этого режима нельзя передавать параметры
+анализа. Он подтверждает совместимость бинарника, а не полноту проверки проекта.
+
+`syntax` использует `ParseError` общего ядра;
 [`semantic`](semantic-check.md) выполняет настроенные native rules с текущими
 метаданными и загруженными соседними модулями. Выбирается один проект тем же selector, что проектным
 и сборочным инструментом: из workspace root нужен `--project`, внутри member

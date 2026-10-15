@@ -55,6 +55,8 @@ metadata из текущих slots без XML fallback; SDK composition ещё �
 descriptor fields без фиктивной canonical модели или проверки СКД.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery
 одному совместимому tool с независимыми pins и сохранением streams/exit.
+[Оболочка check](shell-check-delegation.md) передаёт явный профиль совместимому
+checker; восемь all4 RU/EN случаев совпали с direct streams/exit без изменения входов.
 T83 — [DONE по CF/CFE циклу двух схем версии](project-version.md);
 T84 — [DONE по версиям EPF/ERF](external-version.md): экспортная `Версия()`,
 CLI/миграция и платформенная приёмка двух схем; [синтаксический контракт](external-version-syntax.md).

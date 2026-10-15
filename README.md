@@ -993,6 +993,8 @@ ESKA сборку совместимому `eska-build`; остальные work
 Она собирается отдельно. Первый [самостоятельный `eska-check`](docs/research/eska-format/check-cli.md)
 проверяет сохранённые модули явным профилем `syntax` или
 [`semantic`](docs/research/eska-format/semantic-check.md); неполное покрытие даёт exit 2.
+[Оболочка `eska check`](docs/research/eska-format/shell-check-delegation.md)
+передаёт явный профиль совместимому standalone checker с сохранением streams/exit.
 Первый [самостоятельный `eska-analyzer`](docs/research/eska-format/analyzer-metadata.md)
 обслуживает чтение метаданных через явно согласованный протокол. Открытые
 [YAML и BSL синхронизируются](docs/research/eska-format/analyzer-documents.md)
@@ -1353,6 +1355,7 @@ patch без записи, `metadata apply` применяет одно изме
 | `shelve` / `unshelve [id]` / `shelves` | Сохранить, восстановить или посмотреть полки веток |
 | `finish` | Проверить условия завершения и закрыть локальную задачу |
 | `build [--dry-run|--manifest]` | Просмотреть план или собрать полный нативный файл с необязательным паспортом |
+| `check --profile <syntax|semantic>` | Проверить ESKA исходники самостоятельным checker |
 | `patch` | Собрать ограниченный patch-extension из Git delta |
 | `version` / `version bump <patch|minor|major>` | Показать или точечно изменить версии проектов 1С |
 | `platform list` | Найти установки платформы |
@@ -1361,7 +1364,7 @@ patch без записи, `metadata apply` применяет одно изме
 | `config init` / `config edit` | Настроить локальное окружение |
 
 Все флаги конкретной команды: `eska <command> --help`.
-Публикация, синхронизация, блокировки объектов, `check`, `fmt`, `apply`
+Публикация, синхронизация, блокировки объектов, `fmt`, `apply`
 и `run` пока не представлены отдельными работающими командами.
 
 ### Подключение IDE

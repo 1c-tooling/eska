@@ -3,6 +3,38 @@
 use super::*;
 use serde_json::json;
 
+/// Checker package versions differ from the linked project core; protocol and core remain exact.
+#[test]
+fn checker_admission_checks_core_protocol_and_requested_profile() {
+    let original = json!({"schema_version":1,"tool":"eska-check","command":"capabilities","status":"success",
+        "data":{"version":"0.0.0","source_core_version":env!("CARGO_PKG_VERSION"),
+        "protocol_version":1,"commands":["check"],"profiles":["syntax","semantic"],
+        "source_formats":["eska"],"report_schema_version":1}});
+    for profile in ["syntax", "semantic"] {
+        assert_eq!(
+            validate(&original, Kind::Check, Capability::Check(profile)),
+            Ok(())
+        );
+    }
+    for (pointer, value) in [
+        ("/data/version", json!("")),
+        ("/data/source_core_version", json!("incompatible")),
+        ("/data/protocol_version", json!(2)),
+        ("/data/profiles", json!(["semantic"])),
+        ("/data/commands", json!(["check-preview"])),
+        ("/data/source_formats", json!(["designer-xml"])),
+        ("/data/report_schema_version", json!(2)),
+    ] {
+        let mut report = original.clone();
+        *report.pointer_mut(pointer).unwrap() = value;
+        assert_eq!(
+            validate(&report, Kind::Check, Capability::Check("syntax")),
+            Err(Error::Incompatible),
+            "{pointer}"
+        );
+    }
+}
+
 /// A package-compatible report advertises only current source-only creation requirements.
 fn project() -> Value {
     json!({"schema_version":1,"tool":"eska-project","command":"capabilities","status":"success",

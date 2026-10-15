@@ -179,7 +179,9 @@ pub fn accepted_ref(explicit: Option<&str>) -> Result<AcceptedRef, Failure> {
 }
 
 /// Write a success envelope only after the owning operation has completed.
-#[cfg(any(feature = "project-cli", feature = "build-cli"))]
+///
+/// # Errors
+/// Returns a structured output failure if serialization or writing stdout fails.
 pub fn emit_success(
     tool: &str,
     command: &str,
@@ -280,6 +282,14 @@ fn failure_hint(code: &str) -> Option<&'static str> {
         "project_selection_failed" => Some("tool-error-selection"),
         "project_discovery_failed" => Some("tool-error-discovery"),
         "analysis_config_invalid" => Some("tool-error-analysis-config"),
+        "check_tool_missing" => Some("tool-error-check-missing"),
+        "check_tool_unavailable" | "check_tool_execution_failed" => {
+            Some("tool-error-check-unavailable")
+        }
+        "check_tool_probe_failed" | "check_tool_probe_timeout" | "check_tool_probe_oversized" => {
+            Some("tool-error-check-probe")
+        }
+        "check_tool_incompatible" => Some("tool-error-check-incompatible"),
         "analysis_scope_unsupported" => Some("tool-error-analysis-scope"),
         "analysis_configuration_context_required" => {
             Some("tool-error-analysis-configuration-context")
