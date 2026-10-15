@@ -1,5 +1,6 @@
 //! Current symbol hovers exercise actual stdio, markup, localization and shared input controls.
 
+mod common_commands;
 mod controls;
 mod cross_module;
 mod current;

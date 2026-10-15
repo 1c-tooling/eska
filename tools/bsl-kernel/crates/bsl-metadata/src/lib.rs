@@ -1,6 +1,7 @@
 #![allow(missing_docs)]
 
 pub mod common_attribute;
+pub mod common_command;
 pub mod common_module;
 pub mod configuration;
 pub mod defined_type;
@@ -28,6 +29,7 @@ pub mod web_service;
 pub mod xml_parser;
 
 pub use common_attribute::{CommonAttribute, CommonAttributeTarget, CommonAttributeUse};
+pub use common_command::{CommandParameterUseMode, CommonCommand};
 pub use common_module::{CommonModule, CommonModuleBuilder};
 pub use configuration::Configuration;
 pub use defined_type::{DefinedType, DefinedTypeBuilder};

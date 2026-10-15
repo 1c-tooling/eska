@@ -4,6 +4,8 @@ mod adapter_issues;
 mod analyzer_capabilities;
 #[cfg(feature = "check-cli")]
 mod checker_metadata_queries;
+#[path = "support/command_project.rs"]
+mod command_project;
 #[path = "support/common_module_project.rs"]
 mod common_module_project;
 mod completion_queries;

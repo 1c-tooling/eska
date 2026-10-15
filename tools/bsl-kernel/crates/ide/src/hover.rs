@@ -317,7 +317,8 @@ fn hover_platform_method_on_token<DB: RootDatabase>(
     )
 }
 
-fn type_of_token<DB: RootDatabase>(
+/// Positional cards and native hover share inferred expressions and declaration-binding fallback.
+pub(crate) fn type_of_token<DB: RootDatabase>(
     db: &DB,
     sema: &Semantics<'_, DB>,
     file_id: FileId,

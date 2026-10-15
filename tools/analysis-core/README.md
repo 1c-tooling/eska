@@ -116,6 +116,13 @@ adoption UUID или недоступная видимая база дают с�
 repair, close и foreign replay используют тот же current input controller.
 Автоиспользование и разделение данных пока не поддержаны.
 
+[CommonCommand](../../docs/research/eska-format/analyzer-common-commands.md)
+передаёт текущий тип/режим параметра в объявленный CommandModule. Hover/signature
+готовят этот owner до поиска receiver; completion также готовит cold reference
+target. Семантические запросы и diagnostics отказывают на недоказанном UUID
+заимствования, сохраняя отдельный syntax route. Известные типы параметров и
+локальных значений видны в прежних positional cards с RU/EN заголовком типа.
+
 [Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
 дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
 common completion, unsaved named flags и переход к физическому BSL input;

@@ -36,7 +36,13 @@ pub(super) fn render(card: &SymbolHover, format: Format, localizer: &Localizer) 
         });
     }
     if let Some(return_type) = &card.return_type {
-        let label = localizer.text("tool-hover-return-type");
+        let label = localizer.text(
+            if matches!(card.kind, HoverKind::Method | HoverKind::PlatformFunction) {
+                "tool-hover-return-type"
+            } else {
+                "tool-hover-value-type"
+            },
+        );
         parts.push(match format {
             Format::Plaintext => format!("{label}: {return_type}"),
             Format::Markdown => format!("**{}:** {}", escape(&label), escape(return_type)),

@@ -1144,6 +1144,7 @@ tool-hover-kind-manager-module = Модуль менеджера
 tool-hover-kind-field = Поле
 tool-hover-declaration = Объявление
 tool-hover-return-type = Возвращаемый тип
+tool-hover-value-type = Тип
 tool-hover-documentation = Описание
 
 doctor-check-project-version = Контракт версии внешнего объекта

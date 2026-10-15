@@ -1,5 +1,6 @@
 //! Canonical owners share exact current slots with native consumers while disk XML stays inert.
 
+mod common_commands;
 mod external;
 mod external_configuration;
 mod external_identity;

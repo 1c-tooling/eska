@@ -847,6 +847,7 @@ impl RootDatabaseImpl {
             subsystems,
             session_parameters,
             common_attributes,
+            common_commands,
         } = listing;
         let entries = Arc::new(entries);
         let defined_types = Arc::new(defined_types);
@@ -860,6 +861,7 @@ impl RootDatabaseImpl {
         let subsystems = Arc::new(subsystems);
         let session_parameters = Arc::new(session_parameters);
         let common_attributes = Arc::new(common_attributes);
+        let common_commands = Arc::new(common_commands);
         match self.metadata_listings.get(&key).map(|e| *e.value()) {
             Some(input) => {
                 input.set_entries(self).to(entries);
@@ -874,6 +876,7 @@ impl RootDatabaseImpl {
                 input.set_subsystems(self).to(subsystems);
                 input.set_session_parameters(self).to(session_parameters);
                 input.set_common_attributes(self).to(common_attributes);
+                input.set_common_commands(self).to(common_commands);
             }
             None => {
                 let input = metadata::MetadataListingInput::builder(
@@ -889,6 +892,7 @@ impl RootDatabaseImpl {
                     subsystems,
                     session_parameters,
                     common_attributes,
+                    common_commands,
                     Arc::new(metadata::CanonicalMetadataInputs::default()),
                 )
                 .durability(salsa::Durability::MEDIUM)

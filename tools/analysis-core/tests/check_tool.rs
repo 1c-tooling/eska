@@ -6,6 +6,8 @@ mod check_metadata;
 mod check_predefined;
 mod check_roles;
 mod check_semantic;
+#[path = "support/command_project.rs"]
+mod command_project;
 #[path = "composition/checker.rs"]
 mod composition;
 #[path = "external_context/checker.rs"]

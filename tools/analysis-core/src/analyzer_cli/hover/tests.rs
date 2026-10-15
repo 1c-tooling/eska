@@ -79,6 +79,38 @@ fn localized_card_preserves_source_text_and_escapes_only_markdown_presentation()
     }
 }
 
+/// Parameter and local value types use a type heading, while method return types keep their own heading.
+#[test]
+fn positional_value_types_have_localized_type_labels() {
+    for kind in [
+        HoverKind::Parameter,
+        HoverKind::LocalVariable,
+        HoverKind::Field,
+    ] {
+        let card = SymbolHover {
+            symbol: "Выбор".into(),
+            kind,
+            declaration: None,
+            documentation: None,
+            return_type: Some("String[]".into()),
+            start_byte: 0,
+            end_byte: 10,
+        };
+        for (locale, label) in [(Locale::EnUs, "Type"), (Locale::RuRu, "Тип")] {
+            let localizer = Localizer::try_new(locale).unwrap();
+            let rendered = presentation::render(&card, Format::Plaintext, &localizer);
+            assert!(
+                rendered.contains(&format!("{label}: String[]")),
+                "{rendered}"
+            );
+            assert!(
+                presentation::render(&card, Format::Markdown, &localizer)
+                    .contains(&format!("**{label}:** String\\[\\]"))
+            );
+        }
+    }
+}
+
 /// Every serialized kind has a translated heading in both locale resources.
 #[test]
 fn all_typed_symbol_kinds_have_russian_and_english_headings() {

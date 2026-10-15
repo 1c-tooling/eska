@@ -134,6 +134,13 @@ AutoUse/разделение данных, остальные families и EF-18 
 причина единичного пропуска import marker в первом installed прогоне
 не установлена. Повторный прогон успешен.
 
+[CommonCommand parameters](../research/eska-format/analyzer-common-commands.md)
+передают текущий тип и Single/Multiple в native handler inference, completion,
+hover и checker. SDK — 221/528, Node — 344, installed CF/configured-CFE прошёл
+current/invalid/repair/replay и native hover; 21 children завершились.
+Адресно готовы все 58 native CommonCommand; следующий отказ большой композиции —
+FilterCriterion. Остальные families, EF-18 и MVP ещё нужны.
+
 ID сохраняют историю, порядок выполнения задаёт следующая таблица.
 
 | Порядок | Задачи | Критерий перехода |

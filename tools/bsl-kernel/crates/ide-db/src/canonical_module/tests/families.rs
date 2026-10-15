@@ -10,6 +10,7 @@ enum Family {
     Object,
     Register,
     Common,
+    Command,
     Http,
     Web,
     Integration,
@@ -22,6 +23,7 @@ impl Family {
             Self::Object => "DataProcessors",
             Self::Register => "InformationRegisters",
             Self::Common => "CommonModules",
+            Self::Command => "CommonCommands",
             Self::Http => "HTTPServices",
             Self::Web => "WebServices",
             Self::Integration => "IntegrationServices",
@@ -33,6 +35,7 @@ impl Family {
         match self {
             Self::Object => "ObjectModule.bsl",
             Self::Register => "RecordSetModule.bsl",
+            Self::Command => "CommandModule.bsl",
             _ => "Module.bsl",
         }
     }
@@ -59,6 +62,20 @@ impl Family {
                     .server(field == "Current")
                     .build(),
             )),
+            Self::Command => {
+                CanonicalMetadata::CommonCommand(Arc::new(bsl_metadata::CommonCommand::from_parts(
+                    bsl_metadata::Uuid::from_u128(1),
+                    name.into(),
+                    Some(if field == "Current" {
+                        AttributeType::Boolean
+                    } else {
+                        AttributeType::String { length: None }
+                    }),
+                    Some(bsl_metadata::CommandParameterUseMode::Single),
+                    bsl_metadata::ObjectBelonging::Own,
+                    None,
+                )))
+            }
             Self::Http => CanonicalMetadata::HTTPService(Arc::new(
                 bsl_metadata::HTTPServiceBuilder::new().name(name).root_url(field).build(),
             )),
@@ -80,6 +97,7 @@ impl Family {
             Self::Object => module.mdo.clone().map(CanonicalMetadata::Object),
             Self::Register => module.register.clone().map(CanonicalMetadata::Register),
             Self::Common => module.common_module.clone().map(CanonicalMetadata::CommonModule),
+            Self::Command => module.common_command.clone().map(CanonicalMetadata::CommonCommand),
             Self::Http => module.http_service.clone().map(CanonicalMetadata::HTTPService),
             Self::Web => module.web_service.clone().map(CanonicalMetadata::WebService),
             Self::Integration => {
@@ -109,6 +127,13 @@ impl Family {
                     module_file: Some(FileId(body)),
                     unread_module_file: None,
                 }),
+                Self::Command => {
+                    listing.common_commands.push(crate::metadata::CommonCommandEntry {
+                        name: name.into(),
+                        main: FileId(main),
+                        module_file: Some(FileId(body)),
+                    })
+                }
                 Self::Http => listing.http_services.push(HTTPServiceEntry {
                     name: name.into(),
                     main: FileId(main),
@@ -137,6 +162,7 @@ fn canonical_module_owner_family_matrix() {
         Family::Object,
         Family::Register,
         Family::Common,
+        Family::Command,
         Family::Http,
         Family::Web,
         Family::Integration,

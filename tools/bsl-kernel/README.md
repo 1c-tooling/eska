@@ -19,6 +19,13 @@ root visibility, adoption UUID, shadowing и platform environment masks сохр
 AutoUse=DontUse и DataSeparation=DontUse. Pending/invalid contribution не
 подменяется сохранённым XML; общий реквизит не получает StructureOnly.
 
+[Общая команда](../../docs/research/eska-format/analyzer-common-commands.md)
+передаёт текущий CommandParameterType/ParameterUseMode в отдельный owner
+CommandModule. Native inference задаёт тип первого параметра штатной процедуры;
+Multiple сохраняет тип элемента массива. UUID-proven inheritance, current failure
+и visibility остаются у ядра. Positional symbol cards показывают известные типы
+параметров/локальных значений; cold discovery узнаёт один inferred reference owner.
+
 [Canonical владельцы модулей](../../docs/research/eska-format/canonical-module-owners.md)
 разрешаются через текущие slots до native loader; EPF/ERF остаются объектами.
 Все listings регистрируются до запросов; новый состав/topology требует reopen.

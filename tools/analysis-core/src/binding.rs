@@ -32,6 +32,15 @@ impl OwnerBinding {
             return;
         };
         match self.kind {
+            MetadataKind::CommonCommand => {
+                listing
+                    .common_commands
+                    .push(ide_db::metadata::CommonCommandEntry {
+                        name: name.clone(),
+                        main: self.main,
+                        module_file: None,
+                    });
+            }
             MetadataKind::CommonAttribute => {
                 listing
                     .common_attributes
@@ -190,6 +199,14 @@ pub fn connect_common_bodies(
         {
             entry.unread_module_file = Some(module.file);
         }
+    }
+    for entry in &mut structure.common_commands {
+        let path = SourcePath::parse(&format!(
+            "CommonCommands/{}/Ext/CommandModule.bsl",
+            entry.name
+        ))
+        .map_err(SessionError::Source)?;
+        entry.module_file = bodies.get(&path).map(|module| module.file);
     }
     Ok(())
 }

@@ -1144,6 +1144,7 @@ tool-hover-kind-manager-module = Manager module
 tool-hover-kind-field = Field
 tool-hover-declaration = Declaration
 tool-hover-return-type = Return type
+tool-hover-value-type = Type
 tool-hover-documentation = Documentation
 
 doctor-check-project-version = External object version contract

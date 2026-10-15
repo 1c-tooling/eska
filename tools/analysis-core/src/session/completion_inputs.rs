@@ -201,6 +201,18 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
         discover: fn(&ide::Analysis, vfs::FileId, u32) -> Option<u32>,
     ) -> Result<(), QueryError> {
+        // A command's local parameter type comes from its own descriptor before receiver discovery.
+        if self
+            .selected_root
+            .modules
+            .get(path)
+            .and_then(|module| self.selected_root.owners.get(&module.owner))
+            .is_some_and(|owner| {
+                owner.binding.kind == eska::project_core::MetadataKind::CommonCommand
+            })
+        {
+            self.prepare_module_metadata(path, request)?;
+        }
         let dependency = self
             .query_module(path, self.revision(), cancellation, |analysis, file| {
                 Ok(discover(analysis, file, offset))
@@ -256,6 +268,11 @@ impl AnalysisSession {
             .ok_or_else(|| QueryError::Request(SessionRequestError::UnknownModule(path.clone())))?
             .file;
         self.require_common_attribute_membership(file)?;
+        if self.selected_root.owners.get(&owner).is_some_and(|owner| {
+            owner.binding.kind == eska::project_core::MetadataKind::CommonCommand
+        }) {
+            self.require_common_command_owner(&self.database, file)?;
+        }
         Ok(())
     }
 

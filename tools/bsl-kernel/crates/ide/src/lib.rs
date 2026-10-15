@@ -239,7 +239,7 @@ impl Analysis {
         selection_range::selection_ranges(&self.db, file_id, offsets)
     }
 
-    /// Discover a direct manager or unclaimed common-module owner without loading its current descriptor.
+    /// Discover a direct manager, common-module or inferred reference owner without loading its current descriptor.
     pub fn completion_metadata_target(
         &self,
         file_id: FileId,

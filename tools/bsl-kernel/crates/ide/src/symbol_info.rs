@@ -323,7 +323,7 @@ pub struct SymbolInfoCard {
     /// A one-line signature (methods) or structure summary (aggregate objects).
     pub signature: Option<String>,
     pub doc: Option<String>,
-    /// Declared/inferred return type (methods) or the attribute's type (attribute cards).
+    /// Declared/inferred return type (methods) or current value type (fields, locals and parameters).
     pub return_type: Option<String>,
     pub definition: Option<SymbolDefinition>,
     /// Every declaration of this name with the part it plays: the base one, then any
@@ -1343,6 +1343,9 @@ fn resolve_position(
     if req.sections.type_ {
         if let Definition::Method(method_id) = &def {
             card.return_type = method_return_type_label(db, *method_id, req.locale);
+        } else if matches!(&def, Definition::Parameter { .. } | Definition::Local { .. }) {
+            card.return_type = crate::hover::type_of_token(db, &sema, pos.file_id, &token)
+                .and_then(|ty| type_label(db, ty, req.locale));
         }
     }
 

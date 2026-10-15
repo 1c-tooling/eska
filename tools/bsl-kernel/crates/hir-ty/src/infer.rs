@@ -1895,6 +1895,50 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
+    /// Seed only the platform's predefined command procedure, independent of parameter spelling.
+    /// Unrelated methods and unavailable canonical owners cannot acquire this metadata type.
+    fn seed_command_parameter(&mut self) {
+        let DefWithBodyId::Method(local_id) = self.owner else {
+            return;
+        };
+        if self.local_symbols.is_some() || self.weaving_base.is_some() {
+            return;
+        }
+        let module = hir_def::ModuleId::new(self.context_file_id);
+        let Some(method) = self.db.interface_method(hir_def::MethodId { module, local_id }) else {
+            return;
+        };
+        if method.is_function
+            || method.params.len() != 2
+            || !["ОбработкаКоманды", "CommandProcessing"]
+                .iter()
+                .any(|name| stdx::case::eq_ignore_case(method.name.as_str(), name))
+        {
+            return;
+        }
+        let metadata = self.db.module_metadata(module);
+        let Some(command) = &metadata.common_command else {
+            return;
+        };
+        let (Some(value), Some(usage)) = (command.parameter_type(), command.parameter_use()) else {
+            return;
+        };
+        if matches!(value, bsl_metadata::AttributeType::Unknown) {
+            return;
+        }
+        let Some(binding) = self.body.params().next() else {
+            return;
+        };
+        let resolver = crate::object_resolver::DbObjectResolver::new(self.db, self.context_file_id);
+        let value = crate::field_enum::attribute_type_to_typeid(self.db, value, &resolver);
+        let ty = match usage {
+            bsl_metadata::CommandParameterUseMode::Single => value,
+            bsl_metadata::CommandParameterUseMode::Multiple => self.db.array(Some(value)),
+        };
+        self.binding_types.insert(binding, ty);
+        self.var_types.insert(NormName::intern(self.body.binding(binding).name.as_str()), ty);
+    }
+
     pub fn infer_all(&mut self) {
         let _p = tracing::debug_span!("infer_all").entered();
 
@@ -1929,6 +1973,7 @@ impl<'db> InferenceContext<'db> {
             }
         };
 
+        self.seed_command_parameter();
         self.seed_documented_structure_parameters();
 
         let stmts: Vec<StmtIdx> = self.body.body_stmts_typed().to_vec();

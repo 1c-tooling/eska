@@ -26,6 +26,9 @@ mod request;
 mod resources;
 mod session;
 #[cfg(test)]
+#[path = "../tests/support/command_project.rs"]
+mod test_command_project;
+#[cfg(test)]
 #[path = "../tests/support/common_module_project.rs"]
 mod test_common_module_project;
 #[cfg(all(test, any(feature = "analyzer-cli", feature = "check-cli")))]

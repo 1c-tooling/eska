@@ -1,0 +1,172 @@
+{
+  "root_gates": 6,
+  "tool_gates": 21,
+  "frozen_inputs": 1619,
+  "source_sha256": "50a7eba0f481e3ec48f61cde924b95534e3fccb054fc2a8c0c93e2cae17aa0b0",
+  "root_reuse": {
+    "root_inputs_unchanged_after_sdk_only_refinement": true,
+    "files": 749,
+    "root_scope_sha256": "1c5c5704dc571c3ebe388315a9de2d4be8b15f63155eacb6738d5389340bcdb7",
+    "root_gates": 6
+  },
+  "tests": {
+    "root-test-default": {
+      "passed": 1511,
+      "failed": 0,
+      "ignored": 24
+    },
+    "root-test-all": {
+      "passed": 1632,
+      "failed": 0,
+      "ignored": 24
+    },
+    "kernel-test": {
+      "passed": 4423,
+      "failed": 0,
+      "ignored": 25
+    },
+    "adapter-test": {
+      "passed": 106,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-default": {
+      "passed": 221,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-all": {
+      "passed": 528,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "binaries": {
+    "eska-analyzer-debug": {
+      "sha256": "9e1822582e5a7f4a304aee2fafc9669aab948639b7ea14e18e5bc57e15b60984",
+      "bytes": 134221304
+    },
+    "eska-analyzer": {
+      "sha256": "b105874b57cb797a5dc7829a95dcff2f4a0b29bda858428b02577299402d449d",
+      "bytes": 55695712
+    },
+    "eska-check": {
+      "sha256": "0c1083807fcfce88f00c1c01e773ef032364d319fdc8af20473e7fd72b17aaf5",
+      "bytes": 50282112
+    }
+  },
+  "vsix_sha256": "05bc15ba5ddb99068002aa8c90e29657d1cf3cb078dc52ac49fae014aa42f8fe",
+  "compiled_modules_match": 54,
+  "node": {
+    "passed": 344,
+    "failed": 0,
+    "skipped": 0,
+    "duration_ms": 6576.906595,
+    "executor": "root direct PTY"
+  },
+  "installed": {
+    "passed": true,
+    "executor": "root direct PTY",
+    "children_reaped": 21,
+    "cases": [
+      {
+        "case": "generated-cf",
+        "origin": "generated-native",
+        "type": "configuration",
+        "currentCommandParameters": true,
+        "commandFailureRetracted": true,
+        "commandRestartReplay": true,
+        "nativeCommandHover": true,
+        "foreignCommandParameter": false,
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": false,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 33,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "generated-cfe",
+        "origin": "generated-native",
+        "type": "extension",
+        "currentCommandParameters": true,
+        "commandFailureRetracted": true,
+        "commandRestartReplay": true,
+        "nativeCommandHover": true,
+        "foreignCommandParameter": true,
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": true,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "foreignCurrentMetadata": true,
+        "foreignInvalidNoSavedFallback": true,
+        "hiddenSiblingIgnored": true,
+        "foreignRestartImportReplay": true,
+        "foreignSourceBytesPreserved": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 31,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cf",
+        "origin": "1c-native",
+        "type": "configuration",
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 151,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cfe",
+        "origin": "1c-native",
+        "type": "extension",
+        "semanticContextRefused": true,
+        "syntaxAvailable": true,
+        "sourceBytesPreserved": true
+      }
+    ],
+    "native_save_invoked": false,
+    "previous_import_event_miss_cause_unproven": true
+  },
+  "native_large": {
+    "common_command_models_ready": 58,
+    "targeted_sources_preserved": true,
+    "next_unsupported_family": "FilterCriterion",
+    "cold_seconds": 14.983896024001297,
+    "peak_rss_bytes": 393396224,
+    "sources_preserved": true,
+    "association_verified": false,
+    "performance_accepted": false,
+    "child_reaped": true
+  }
+}

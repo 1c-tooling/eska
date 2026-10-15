@@ -353,6 +353,8 @@ fn canonical(
             .map(|model| CanonicalMetadata::SessionParameter(Arc::new(model))),
         MetadataKind::CommonAttribute => adapter::common_attribute(root)
             .map(|model| CanonicalMetadata::CommonAttribute(Arc::new(model))),
+        MetadataKind::CommonCommand => adapter::common_command(root)
+            .map(|model| CanonicalMetadata::CommonCommand(Arc::new(model))),
         MetadataKind::DefinedType => {
             adapter::defined_type(root).map(|model| CanonicalMetadata::DefinedType(Arc::new(model)))
         }

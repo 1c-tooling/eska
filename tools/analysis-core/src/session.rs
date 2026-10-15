@@ -29,6 +29,9 @@ pub use scope::AnalysisScope;
 mod common_attribute_tests;
 mod common_attributes;
 #[cfg(test)]
+mod common_command_tests;
+mod common_commands;
+#[cfg(test)]
 mod local_syntax_tests;
 #[cfg(test)]
 mod scheduled_job_tests;
@@ -436,6 +439,12 @@ impl AnalysisSession {
                 name.clone(),
             )
             .map(CanonicalMetadata::CommonAttribute),
+            CanonicalMetadata::CommonCommand(_) => ide_db::metadata::resolve_common_command(
+                &self.database,
+                self.selected_root.listing,
+                name.clone(),
+            )
+            .map(CanonicalMetadata::CommonCommand),
             CanonicalMetadata::DefinedType(model) => {
                 resolve_defined_type(&self.database, self.selected_root.listing, name.clone())
                     .map(|_| CanonicalMetadata::DefinedType(Arc::clone(model)))

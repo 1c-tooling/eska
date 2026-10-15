@@ -48,6 +48,12 @@ namespace записей, повторные targets, ownership и управл�
 AutoUse=Use, разделение данных и неподдержанные targets возвращают typed issue;
 они не превращаются в пустой состав или StructureOnly.
 
+[`common_command`](../../docs/research/eska-format/analyzer-common-commands.md)
+сохраняет CommandParameterType и Single/Multiple без отдельного parser.
+Обычная команда требует явных type/use; заимствованная сохраняет отсутствие
+до native UUID merge. Повторные/неизвестные значения и неверный ownership
+отклоняются; текущий BSL handler получает реальный тип вместо фиктивного MDO.
+
 `defined_type` сохраняет UUID и составной тип, `attribute_type` преобразует
 общее свойство `Type` для последующих адаптеров полей. Сохраняются альтернативы
 `Type`/`TypeSet`, ссылки, определяемые и характеристические типы, параметры

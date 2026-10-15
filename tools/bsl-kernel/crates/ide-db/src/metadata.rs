@@ -1,7 +1,9 @@
 mod common_attribute;
+mod common_command;
 mod session_parameter;
 use bsl_metadata::Configuration;
 pub use common_attribute::{resolve_common_attribute, CommonAttributeEntry};
+pub use common_command::{resolve_common_command, CommonCommandEntry};
 use intern::NormName;
 use rustc_hash::FxHashMap;
 pub use session_parameter::{
@@ -113,7 +115,7 @@ pub(crate) mod heap_estimate {
             + snapshot.source_exclusions.heap_bytes()
     }
 
-    /// Heap of a [`super::MetadataListingInput`]: the twelve per-family `Arc<Vec<_>>`
+    /// Heap of a [`super::MetadataListingInput`]: the thirteen per-family `Arc<Vec<_>>`
     /// entry lists plus each entry's owned name string (the other entry fields —
     /// `FileId`s, the MDO kind — are `Copy`). New heap-owning listing families
     /// must be added here too.
@@ -132,6 +134,7 @@ pub(crate) mod heap_estimate {
             Arc<Vec<super::SubsystemEntry>>,
             Arc<Vec<super::SessionParameterEntry>>,
             Arc<Vec<super::CommonAttributeEntry>>,
+            Arc<Vec<super::CommonCommandEntry>>,
             Arc<super::CanonicalMetadataInputs>,
         ),
     ) -> usize {
@@ -148,6 +151,7 @@ pub(crate) mod heap_estimate {
             subsystems,
             session_parameters,
             common_attributes,
+            common_commands,
             canonical_metadata,
         ) = fields;
 
@@ -175,6 +179,8 @@ pub(crate) mod heap_estimate {
             + session_parameters.iter().map(|entry| entry.name.capacity()).sum::<usize>()
             + stdx::heap::vec_bytes::<super::CommonAttributeEntry>(common_attributes.len())
             + common_attributes.iter().map(|entry| entry.name.capacity()).sum::<usize>()
+            + stdx::heap::vec_bytes::<super::CommonCommandEntry>(common_commands.len())
+            + common_commands.iter().map(|entry| entry.name.capacity()).sum::<usize>()
             + stdx::heap::map_table_bytes::<vfs::FileId, super::CanonicalMetadataInput>(
                 canonical_metadata.len(),
             )
@@ -921,6 +927,7 @@ pub struct SubsystemEntry {
 pub struct MetadataListingData {
     pub session_parameters: Vec<SessionParameterEntry>,
     pub common_attributes: Vec<CommonAttributeEntry>,
+    pub common_commands: Vec<CommonCommandEntry>,
     pub entries: Vec<MdoEntry>,
     pub defined_types: Vec<DefinedTypeEntry>,
     pub common_modules: Vec<CommonModuleEntry>,
@@ -939,6 +946,7 @@ pub struct MetadataListingData {
 pub enum CanonicalMetadata {
     SessionParameter(Arc<bsl_metadata::SessionParameter>),
     CommonAttribute(Arc<bsl_metadata::CommonAttribute>),
+    CommonCommand(Arc<bsl_metadata::CommonCommand>),
     Object(Arc<bsl_metadata::MetadataObject>),
     Register(Arc<bsl_metadata::Register>),
     CommonModule(Arc<bsl_metadata::CommonModule>),
@@ -959,6 +967,7 @@ impl CanonicalMetadata {
         match self {
             Self::SessionParameter(value) => value.estimated_heap_size(),
             Self::CommonAttribute(value) => value.estimated_heap_size(),
+            Self::CommonCommand(value) => value.estimated_heap_size(),
             Self::Object(value) => value.estimated_heap_size(),
             Self::Register(value) => value.estimated_heap_size(),
             Self::CommonModule(value) => value.estimated_heap_size(),
@@ -1023,6 +1032,7 @@ pub struct MetadataListingInput {
     pub subsystems: Arc<Vec<SubsystemEntry>>,
     pub session_parameters: Arc<Vec<SessionParameterEntry>>,
     pub common_attributes: Arc<Vec<CommonAttributeEntry>>,
+    pub common_commands: Arc<Vec<CommonCommandEntry>>,
     pub canonical_metadata: Arc<CanonicalMetadataInputs>,
 }
 
@@ -2472,6 +2482,7 @@ pub fn build_module_metadata(
         module_type,
         execution_context,
         common_module,
+        common_command: None,
         mdo,
         register,
         form,

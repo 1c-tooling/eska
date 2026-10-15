@@ -9,15 +9,17 @@ mod platform_completion;
 mod sdbl;
 mod templates;
 
-/// Both direct namespace kinds select an owner before the host loads payload-dependent visibility.
+/// Namespace and inferred reference receivers select an owner before the host loads its current payload.
 pub(crate) fn metadata_target<DB: ide_db::RootDatabase>(
     db: &DB,
     position: CompletionPosition,
 ) -> Option<(bsl_metadata::MdoType, String)> {
-    mdo_completion::metadata_target(db, position.clone()).or_else(|| {
-        platform_completion::common_module_target(db, position)
-            .map(|name| (bsl_metadata::MdoType::CommonModule, name))
-    })
+    mdo_completion::metadata_target(db, position.clone())
+        .or_else(|| {
+            platform_completion::common_module_target(db, position.clone())
+                .map(|name| (bsl_metadata::MdoType::CommonModule, name))
+        })
+        .or_else(|| platform_completion::reference_metadata_target(db, position))
 }
 
 use ide_db::base_db::Locale;

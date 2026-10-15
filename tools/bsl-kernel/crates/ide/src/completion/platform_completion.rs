@@ -19,6 +19,23 @@ use super::env_filter::EnvFilter;
 use super::fuzzy::{MatchTier, PrefixMatcher};
 use super::{CompletionItem, CompletionItemKind, CompletionPosition};
 
+/// A proven reference receiver identifies one cold descriptor without reading it or choosing a union arm.
+pub(crate) fn reference_metadata_target<DB: RootDatabase>(
+    db: &DB,
+    position: CompletionPosition,
+) -> Option<(bsl_metadata::MdoType, String)> {
+    let root = db.parse(position.file_id).syntax_node();
+    let token = root.token_at_offset(position.offset).left_biased()?;
+    let (dot, _) = resolve_dot_anchor(&token, position.offset)?;
+    let receiver = find_receiver_expr(&dot)?;
+    let ty = resolved_receiver_type(db, &position, &receiver)?;
+    let effective = coerce_to_metadata_ref_id(db, ty).unwrap_or(ty);
+    let TypeKind::MetadataRef(reference) = db.lookup_type(effective) else {
+        return None;
+    };
+    Some((reference.kind.ref_mdo_type()?, reference.name.to_string()))
+}
+
 /// Discover only an unclaimed bare name present in the resident module index; payload visibility is resolved later.
 pub(crate) fn common_module_target<DB: RootDatabase>(
     db: &DB,

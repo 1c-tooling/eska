@@ -131,9 +131,9 @@ impl AnalysisSession {
     ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
         self.require_configuration_context(expected)
             .map_err(QueryError::Request)?;
-        self.require_current_composition()
-            .map_err(QueryError::Request)?;
-        self.diagnostics_current(path, expected, config, cancellation)
+        self.query_module(path, expected, cancellation, |analysis, file| {
+            diagnostics_in_snapshot(analysis, file, config)
+        })
     }
 
     /// Check syntax explicitly; all metadata-dependent rules remain outside this method's scope.
@@ -148,59 +148,8 @@ impl AnalysisSession {
         cancellation: &QueryCancellation,
     ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
         let config = crate::batch::syntax_profile(config).0;
-        self.diagnostics_current(path, expected, &config, cancellation)
-    }
-
-    /// Keep localization and range validation shared by the explicitly chosen diagnostics profiles.
-    fn diagnostics_current(
-        &self,
-        path: &SourcePath,
-        expected: SessionRevision,
-        config: &DiagnosticsConfig,
-        cancellation: &QueryCancellation,
-    ) -> Result<ModuleResult<Vec<Diagnostic>>, QueryError> {
         self.query_local_module(path, expected, cancellation, |analysis, file| {
-            let mut diagnostics = analysis.diagnostics(file, config);
-            if config.locale == Locale::En
-                && diagnostics
-                    .iter()
-                    .any(|item| item.code == DiagnosticCode::ParseError)
-            {
-                // The pinned handler ignores locale. Reuse its cached structured parse errors;
-                // range plus the original rendering identifies errors after suppression/sorting.
-                let parse = analysis.database().parse(file);
-                let messages: BTreeMap<_, _> = parse
-                    .errors()
-                    .iter()
-                    .map(|error| {
-                        (
-                            (
-                                u32::from(error.range().start()),
-                                u32::from(error.range().end()),
-                                error.structured().format_ru(),
-                            ),
-                            error.structured().format_en(),
-                        )
-                    })
-                    .collect();
-                for item in diagnostics
-                    .iter_mut()
-                    .filter(|item| item.code == DiagnosticCode::ParseError)
-                {
-                    let message = messages
-                        .get(&(
-                            u32::from(item.range.start()),
-                            u32::from(item.range.end()),
-                            item.message.clone(),
-                        ))
-                        .ok_or_else(|| QueryError::InconsistentDiagnostic {
-                            start_byte: item.range.start().into(),
-                            end_byte: item.range.end().into(),
-                        })?;
-                    item.message.clone_from(message);
-                }
-            }
-            Ok(diagnostics)
+            diagnostics_in_snapshot(analysis, file, &config)
         })
     }
 
@@ -249,7 +198,10 @@ impl AnalysisSession {
             .map_err(QueryError::Request)?;
         self.require_current_composition()
             .map_err(QueryError::Request)?;
-        self.query_local_module(path, expected, cancellation, query)
+        self.query_local_module(path, expected, cancellation, |analysis, file| {
+            self.require_common_command_owner(analysis.database(), file)?;
+            query(analysis, file)
+        })
     }
 
     /// Source-only queries retain the same revision, input, cancellation and publication boundary.
@@ -325,4 +277,53 @@ impl AnalysisSession {
             value,
         })
     }
+}
+
+/// Both diagnostics profiles share native rules, localization and exact source-range validation.
+fn diagnostics_in_snapshot(
+    analysis: &ide::Analysis,
+    file: vfs::FileId,
+    config: &DiagnosticsConfig,
+) -> Result<Vec<Diagnostic>, QueryError> {
+    let mut diagnostics = analysis.diagnostics(file, config);
+    if config.locale == Locale::En
+        && diagnostics
+            .iter()
+            .any(|item| item.code == DiagnosticCode::ParseError)
+    {
+        // The pinned handler ignores locale. Reuse its cached structured parse errors;
+        // range plus the original rendering identifies errors after suppression/sorting.
+        let parse = analysis.database().parse(file);
+        let messages: BTreeMap<_, _> = parse
+            .errors()
+            .iter()
+            .map(|error| {
+                (
+                    (
+                        u32::from(error.range().start()),
+                        u32::from(error.range().end()),
+                        error.structured().format_ru(),
+                    ),
+                    error.structured().format_en(),
+                )
+            })
+            .collect();
+        for item in diagnostics
+            .iter_mut()
+            .filter(|item| item.code == DiagnosticCode::ParseError)
+        {
+            let message = messages
+                .get(&(
+                    u32::from(item.range.start()),
+                    u32::from(item.range.end()),
+                    item.message.clone(),
+                ))
+                .ok_or_else(|| QueryError::InconsistentDiagnostic {
+                    start_byte: item.range.start().into(),
+                    end_byte: item.range.end().into(),
+                })?;
+            item.message.clone_from(message);
+        }
+    }
+    Ok(diagnostics)
 }

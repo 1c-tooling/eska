@@ -63,6 +63,9 @@ impl RootDatabaseImpl {
                     .as_ref()
                     .map(|owner| hir::compute_execution_context(owner));
             }
+            ModuleType::CommandModule => {
+                module.common_command = self.common_command_for_file(file).ok().flatten();
+            }
             ModuleType::HTTPServiceModule => {
                 module.http_service = families::http(self, file, listing);
             }
@@ -95,6 +98,52 @@ impl RootDatabaseImpl {
                 (!listing.canonical_metadata(self).is_empty()).then_some(listing)
             })
             .collect()
+    }
+
+    /// Compose the exact declared command module, rejecting unavailable or unproven contributions.
+    ///
+    /// # Errors
+    /// Returns the current declaration's FileId when a required value or adopted UUID is unavailable.
+    pub fn common_command_for_file(
+        &self,
+        file: FileId,
+    ) -> Result<Option<Arc<bsl_metadata::CommonCommand>>, FileId> {
+        let Some(listings) = self.canonical_visible_listings(file) else {
+            return Ok(None);
+        };
+        let mut own = listings
+            .iter()
+            .flat_map(|listing| listing.common_commands(self).iter())
+            .filter(|entry| entry.module_file == Some(file));
+        let Some(entry) = own.next() else {
+            return Ok(None);
+        };
+        if own.next().is_some() {
+            return Err(entry.main);
+        }
+        let name = &entry.name;
+        let mut merged: Option<Arc<bsl_metadata::CommonCommand>> = None;
+        for listing in listings.iter().copied() {
+            let Some(current) = listing
+                .common_commands(self)
+                .iter()
+                .find(|entry| stdx::case::eq_ignore_case(&entry.name, name))
+            else {
+                continue;
+            };
+            let value = metadata::resolve_common_command(self, listing, name.clone())
+                .ok_or(current.main)?;
+            match &mut merged {
+                Some(base) if value.adopts(base) => {
+                    Arc::make_mut(base).apply_extension_overlay(&value)
+                }
+                _ if value.object_belonging() == bsl_metadata::ObjectBelonging::Adopted => {
+                    return Err(current.main)
+                }
+                _ => merged = Some(value),
+            }
+        }
+        Ok(merged)
     }
 }
 

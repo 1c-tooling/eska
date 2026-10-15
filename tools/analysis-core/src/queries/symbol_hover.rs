@@ -38,6 +38,7 @@ pub struct SymbolHover {
     pub declaration: Option<String>,
     /// Authored BSL purpose text is preserved verbatim.
     pub documentation: Option<String>,
+    /// Methods carry a return type; parameters, locals and fields carry their inferred value type.
     pub return_type: Option<String>,
     pub start_byte: u32,
     pub end_byte: u32,

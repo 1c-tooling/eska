@@ -85,6 +85,13 @@ CommonCommand. Автоиспользование, разделение данн
 Один installed прогон не наблюдал import marker; повтор прошёл, причина
 не установлена и остаётся ограничением приёмки.
 
+[Текущие параметры общих команд](../research/eska-format/analyzer-common-commands.md)
+подключены к native inference, completion, hover и checker. CF/CFE current type,
+Single/Multiple, наследование по UUID, invalid/refusal и replay проверены:
+SDK — 221/528 tests, Node — 344, установленный client — 21 reaped children.
+Все 58 native CommonCommand готовы; следующий блокер большой композиции —
+FilterCriterion. EF-18 и MVP остаются в работе.
+
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка
