@@ -28,12 +28,71 @@ pub(crate) fn reference_metadata_target<DB: RootDatabase>(
     let token = root.token_at_offset(position.offset).left_biased()?;
     let (dot, _) = resolve_dot_anchor(&token, position.offset)?;
     let receiver = find_receiver_expr(&dot)?;
-    let ty = resolved_receiver_type(db, &position, &receiver)?;
-    let effective = coerce_to_metadata_ref_id(db, ty).unwrap_or(ty);
-    let TypeKind::MetadataRef(reference) = db.lookup_type(effective) else {
-        return None;
-    };
-    Some((reference.kind.ref_mdo_type()?, reference.name.to_string()))
+    reaching_metadata_target(db, &position, receiver)
+}
+
+/// A cold descriptor can hide a receiver's type; its exact reaching callee still identifies the native namespace.
+fn reaching_metadata_target<DB: RootDatabase>(
+    db: &DB,
+    position: &CompletionPosition,
+    receiver: SyntaxNode,
+) -> Option<(bsl_metadata::MdoType, String)> {
+    let mut spine = Some(receiver);
+    let mut visited = Vec::new();
+    while let Some(receiver) = spine {
+        let key = (receiver.kind(), receiver.text_range(), receiver.ancestors().count());
+        if visited.contains(&key) {
+            break;
+        }
+        visited.push(key);
+        if let Some(ty) = resolved_receiver_type(db, position, &receiver) {
+            let effective = coerce_to_metadata_ref_id(db, ty).unwrap_or(ty);
+            match db.lookup_type(effective) {
+                TypeKind::MetadataRef(reference) => {
+                    return Some((reference.kind.ref_mdo_type()?, reference.name.to_string()));
+                }
+                // An already known scalar or unresolved union cannot recover another owner from an earlier value.
+                TypeKind::Union(_)
+                | TypeKind::Number(_)
+                | TypeKind::String(_)
+                | TypeKind::Date(_)
+                | TypeKind::Boolean
+                | TypeKind::Uuid
+                | TypeKind::Null
+                | TypeKind::Undefined
+                | TypeKind::Never => return None,
+                _ => {}
+            }
+        }
+        if receiver.kind() == SyntaxKind::FIELD_EXPR {
+            if let Some(dot) =
+                receiver.children_with_tokens().find(|element| element.kind() == SyntaxKind::DOT)
+            {
+                let at = CompletionPosition { offset: dot.text_range().end(), ..position.clone() };
+                if let Some(target) = super::mdo_completion::metadata_target(db, at) {
+                    return Some(target);
+                }
+            }
+        }
+        // Reaching writes are source based: a write inside another branch cannot prove this read's owner.
+        spine = if let Some(value) = reaching_receiver_value(db, position, &receiver) {
+            let scope = value.ancestors().find(|node| node.kind() == SyntaxKind::STMT_LIST)?;
+            if !scope.text_range().contains_range(receiver.text_range()) {
+                return None;
+            }
+            Some(value)
+        } else {
+            // Only the receiver/callee spine is relevant; arguments and sibling calls own no part of this value.
+            match receiver.kind() {
+                SyntaxKind::FIELD_EXPR
+                | SyntaxKind::CALL_EXPR
+                | SyntaxKind::PAREN_EXPR
+                | SyntaxKind::EXPR => receiver.children().next(),
+                _ => None,
+            }
+        };
+    }
+    None
 }
 
 /// Discover only an unclaimed bare name present in the resident module index; payload visibility is resolved later.

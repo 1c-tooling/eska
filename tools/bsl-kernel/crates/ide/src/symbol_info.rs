@@ -1338,6 +1338,20 @@ fn resolve_position(
     // A called member belongs to its inferred receiver. The textual qualified-name
     // resolver can otherwise borrow a foreign export when a local shadows its module.
     let def = match hir::classify_token(&token) {
+        hir::NameClass::FieldName { receiver, is_call: false, .. } => {
+            if let Some(definition) =
+                crate::receiver_scope::unclaimed_namespace_root(db, pos.file_id, offset, &receiver)
+                    .and_then(|_| sema.resolve_name_to_definition(pos.file_id, &token))
+            {
+                definition
+            } else {
+                let symbol = sema.symbol_for_token(pos.file_id, &token).filter(|symbol| {
+                    symbol.kind == hir::SemanticSymbolKind::Property
+                        && matches!(symbol.key, hir::SemanticSymbolKey::TypedMember { .. })
+                })?;
+                return typed_property_card(db, symbol, req);
+            }
+        }
         hir::NameClass::FieldName { receiver, is_call: true, .. } => {
             sema.resolve_method_call_to_definition(pos.file_id, &token).or_else(|| {
                 // Qualified namespaces may be lowered as one path without a separately
@@ -1417,6 +1431,20 @@ fn resolve_position(
         }
     }
 
+    Some(card)
+}
+
+/// A native typed property needs no invented definition or navigation location to publish its known value type.
+fn typed_property_card(
+    db: &RootDatabaseImpl,
+    symbol: hir::SemanticSymbol,
+    req: &SymbolInfoRequest,
+) -> Option<SymbolInfoCard> {
+    let ty = symbol.ty.filter(|ty| !matches!(db.lookup_type(*ty), hir::TypeKind::Unknown))?;
+    let mut card = SymbolInfoCard::empty(symbol.name.as_str().to_owned(), "field");
+    if req.sections.type_ {
+        card.return_type = type_label(db, ty, req.locale);
+    }
     Some(card)
 }
 

@@ -193,9 +193,16 @@ semantic success probe этой пары не повторялся. EF-18 и MVP
 [Связанная native CF/CFE пара](../research/eska-format/native-matching-composition.md)
 прошла build, свежий dump с 3/3 original UUID links, реальное применение,
 Designer applicability и compile с контрольной ошибкой/repair. Обе базы удалены.
-Текущий release подтвердил KeyЯ:String completion и полный selected semantic
-profile diagnostic pull; общий semantic_complete=false, field hover вернул null.
-Установленная/редактируемая приёмка этой пары и полный EF-16 ещё нужны.
+Первоначальный release подтвердил KeyЯ:String completion и полный selected
+semantic profile diagnostic pull, но field hover вернул null; receipt сохранён.
+Последующий [hover типизированных полей](../research/eska-format/analyzer-field-hover.md)
+закрыл этот пробел через native semantic symbol и адресную подготовку receiver
+chain. Новый release и установленный Explorer подтвердили String hover, точный
+range и четыре Problems на той же паре; semantic_complete=false сохранён.
+Все 27 Rust gates прошли: SDK — 262/580, kernel — 4439/25 ignored, adapter — 123;
+Node — 376. Две установленные матрицы завершили все 35 children, source bytes
+сохранены. Guarded Save, остальные EF-18/EF-27, комплект EF-21 и полный EF-16
+ещё нужны; порядок этапов и статус MVP не меняются.
 
 ID сохраняют историю, порядок выполнения задаёт следующая таблица.
 

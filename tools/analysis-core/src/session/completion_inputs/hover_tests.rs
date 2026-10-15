@@ -161,12 +161,11 @@ fn member_hover_follows_current_docs_types_and_saved_restoration_without_changin
     assert_eq!(hover(&mut session, at, Locale::En), Some(saved));
 }
 
-/// Non-callee names and locally owned receivers never cause preparation to read a foreign namespace.
+/// Non-member names and locally owned receivers never cause preparation to read a foreign namespace.
 #[test]
 fn hover_preparation_preserves_non_callee_inputs_and_local_shadowing_before_and_after_loading() {
     for template in [
         "Procedure Run()\n $0Utility.SavedUtility();\nEndProcedure\n",
-        "Procedure Run()\n Value=Utility.$0Field;\nEndProcedure\n",
         "Procedure Local(Value)\nEndProcedure\nProcedure Run()\n $0Local(Utility.SavedUtility());\nEndProcedure\n",
         "Procedure Run()\n // Utility.$0SavedUtility()\nEndProcedure\n",
     ] {
@@ -174,8 +173,35 @@ fn hover_preparation_preserves_non_callee_inputs_and_local_shadowing_before_and_
         let (_directory, _source, mut session) = fixture(&template.replace("$0", ""), false);
         let before = session.summary();
         hover(&mut session, at, Locale::En);
-        assert_eq!(session.summary(), before);
+        assert_eq!(session.summary(), before, "{template}");
     }
+    let shadowed_field = "Procedure Run(Utility)\n Value=Utility.Field;\nEndProcedure\n";
+    let (_directory, _source, mut session) = fixture(shadowed_field, false);
+    assert!(
+        hover(
+            &mut session,
+            u32::try_from(shadowed_field.find("Field").unwrap()).unwrap(),
+            Locale::En,
+        )
+        .is_none()
+    );
+    // Own context may be prepared, but a local receiver never admits the foreign namespace.
+    assert_eq!(
+        session
+            .selected_root
+            .inputs
+            .owner(&owner("CommonModules/Utility/object.yaml"))
+            .unwrap()
+            .state,
+        InputState::Pending
+    );
+    assert_eq!(
+        session
+            .module(&owner("CommonModules/Utility/Ext/Module.bsl"))
+            .unwrap()
+            .state,
+        ModuleState::Pending
+    );
     let body = "Procedure Run()\n Utility.SavedUtility();\nEndProcedure\n";
     let shadowed = "Procedure Run(Utility)\n Utility.SavedUtility();\nEndProcedure\n";
     for loaded in [false, true] {

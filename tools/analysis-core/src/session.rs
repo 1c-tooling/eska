@@ -10,6 +10,10 @@ mod event_subscription_tests;
 mod external;
 #[cfg(test)]
 mod external_tests;
+#[cfg(test)]
+mod field_hover_chain_tests;
+#[cfg(test)]
+mod field_hover_tests;
 mod forms;
 #[cfg(test)]
 mod http_service_tests;

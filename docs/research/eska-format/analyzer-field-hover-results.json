@@ -1,0 +1,957 @@
+{
+  "schema_version": 1,
+  "status": "typed_field_hover_and_native_matching_installed_publication_verified",
+  "frozen_inputs": 1684,
+  "source_sha256": "9a5d4be0b7c4118cf6818c458a972ff51cc7d42968408c33d90b553f6fcefc20",
+  "all_input_snapshots_match": true,
+  "gates_executed": 27,
+  "gates_reused": 0,
+  "gates": [
+    {
+      "name": "kernel-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--manifest-path",
+        "tools/bsl-kernel/Cargo.toml",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.357
+    },
+    {
+      "name": "adapter-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--manifest-path",
+        "tools/bsl-adapter/Cargo.toml",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.151
+    },
+    {
+      "name": "sdk-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.56
+    },
+    {
+      "name": "kernel-check",
+      "command": [
+        "cargo",
+        "check",
+        "--manifest-path",
+        "tools/bsl-kernel/Cargo.toml",
+        "--workspace",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 0.978
+    },
+    {
+      "name": "adapter-check",
+      "command": [
+        "cargo",
+        "check",
+        "--manifest-path",
+        "tools/bsl-adapter/Cargo.toml",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 0.117
+    },
+    {
+      "name": "sdk-check-default",
+      "command": [
+        "cargo",
+        "check",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 1.343
+    },
+    {
+      "name": "sdk-check-all",
+      "command": [
+        "cargo",
+        "check",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 1.65
+    },
+    {
+      "name": "kernel-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--manifest-path",
+        "tools/bsl-kernel/Cargo.toml",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 2.401
+    },
+    {
+      "name": "adapter-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--manifest-path",
+        "tools/bsl-adapter/Cargo.toml",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.188
+    },
+    {
+      "name": "sdk-clippy-default",
+      "command": [
+        "cargo",
+        "clippy",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-targets",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.749
+    },
+    {
+      "name": "sdk-clippy-all",
+      "command": [
+        "cargo",
+        "clippy",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.428
+    },
+    {
+      "name": "kernel-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--manifest-path",
+        "tools/bsl-kernel/Cargo.toml",
+        "--workspace",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "--document-private-items"
+      ],
+      "exit_code": 0,
+      "seconds": 2.577
+    },
+    {
+      "name": "adapter-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--manifest-path",
+        "tools/bsl-adapter/Cargo.toml",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "--document-private-items"
+      ],
+      "exit_code": 0,
+      "seconds": 0.139
+    },
+    {
+      "name": "sdk-doc-default",
+      "command": [
+        "cargo",
+        "doc",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--no-deps",
+        "--document-private-items",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 3.472
+    },
+    {
+      "name": "sdk-doc-all",
+      "command": [
+        "cargo",
+        "doc",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--no-deps",
+        "--document-private-items",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 8.896
+    },
+    {
+      "name": "kernel-test",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "tools/bsl-kernel/Cargo.toml",
+        "--workspace",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 112.191
+    },
+    {
+      "name": "adapter-test",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "tools/bsl-adapter/Cargo.toml",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 0.641
+    },
+    {
+      "name": "sdk-test-default",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 6.191
+    },
+    {
+      "name": "sdk-test-all",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 32.61
+    },
+    {
+      "name": "sdk-debug-bins",
+      "command": [
+        "cargo",
+        "build",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-features",
+        "--bins",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 0.169
+    },
+    {
+      "name": "sdk-release-bins",
+      "command": [
+        "cargo",
+        "build",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-features",
+        "--bins",
+        "--release",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 23.977
+    },
+    {
+      "name": "root-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.503
+    },
+    {
+      "name": "root-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 0.344
+    },
+    {
+      "name": "root-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.293
+    },
+    {
+      "name": "root-test-default",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 52.74
+    },
+    {
+      "name": "root-test-all",
+      "command": [
+        "cargo",
+        "test",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 77.662
+    },
+    {
+      "name": "root-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 5.262
+    }
+  ],
+  "test_totals": {
+    "root-test-default": {
+      "passed": 1511,
+      "failed": 0,
+      "ignored": 24
+    },
+    "root-test-all": {
+      "passed": 1632,
+      "failed": 0,
+      "ignored": 24
+    },
+    "kernel-test": {
+      "passed": 4439,
+      "failed": 0,
+      "ignored": 25
+    },
+    "adapter-test": {
+      "passed": 123,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-default": {
+      "passed": 262,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-all": {
+      "passed": 580,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "binaries": {
+    "eska-analyzer": {
+      "bytes": 56365064,
+      "sha256": "0778e568946a0013b76b8fdbd21083e1a718359e8be1c71586f845ee501dc681"
+    },
+    "eska-analyzer-debug": {
+      "bytes": 136732848,
+      "sha256": "43e2a71a915571a3bf4bed0a75a9127861b9f01dc5b62a6b37f2e8da36fd797a"
+    },
+    "eska-check": {
+      "bytes": 50809184,
+      "sha256": "af5a838b17281c1219df84336c7d15e7740ee8ea8606a83d10741440193eb818"
+    }
+  },
+  "node": {
+    "tests": 376,
+    "passed": 376,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "duration_ms": 16226.791047,
+    "source": "root direct PTY stdout and TAP reporter",
+    "frozen_binary": "bins/eska-analyzer-debug",
+    "final_run_outside_sandbox": true
+  },
+  "installed": {
+    "passed": true,
+    "frozen_binary": "bins/eska-analyzer",
+    "vsix": {
+      "sha256": "4c959b2a88ad52ca3146b685c185df0fecf0d15a57945b08e0a1f514c381b74d",
+      "version": "0.0.11",
+      "production_modules_matching": 55,
+      "changed_production_modules": [],
+      "helpers_included": false,
+      "reused_previous_vsix": true
+    },
+    "native_matching": {
+      "passed": true,
+      "cases": [
+        {
+          "case": "native-matching-cfe",
+          "origin": "1c-native-matching",
+          "type": "extension",
+          "physicalTyping": false,
+          "nativeSaveInvoked": false,
+          "currentBufferEdits": 0,
+          "generalSemanticCompleteClaimed": false,
+          "composition": {
+            "selected": 1,
+            "rootCount": 2
+          },
+          "semanticContextRefused": false,
+          "productionFieldCompletion": true,
+          "completionString": true,
+          "completionCoverage": {
+            "metadata_inputs_complete": true,
+            "metadata_models_complete": true,
+            "module_inputs_complete": true,
+            "semantic_complete": false
+          },
+          "productionFieldHover": true,
+          "hoverString": true,
+          "hoverRangeMatchesField": true,
+          "hoverCoverage": {
+            "metadata_models_complete": true,
+            "module_inputs_complete": true,
+            "semantic_complete": false
+          },
+          "productionDiagnosticPull": true,
+          "nativeDiagnosticPublicationMatched": true,
+          "diagnosticCoverage": {
+            "metadata_inputs_complete": true,
+            "metadata_models_complete": true,
+            "module_inputs_complete": true,
+            "module_syntax_complete": true,
+            "semantic_complete": false,
+            "semantic_profile_complete": true
+          },
+          "diagnosticCount": 4,
+          "diagnosticCodes": [
+            "CodeOutOfRegion",
+            "CommonModuleMissingAPI",
+            "MissingReturnedValueDescription",
+            "MissingReturnedValueDescription"
+          ],
+          "expectedStyleDiagnosticsMatched": true,
+          "diagnosticCodeSeverities": [
+            "CodeOutOfRegion:4",
+            "CommonModuleMissingAPI:3",
+            "MissingReturnedValueDescription:2",
+            "MissingReturnedValueDescription:2"
+          ],
+          "sourceBytesModeMtimePreserved": true,
+          "copiedProjectFiles": {
+            "configuration": 51,
+            "extension": 29
+          }
+        }
+      ],
+      "child_processes": 2,
+      "all_children_reaped": true,
+      "process_exit_proof": "owned process start-time guarded Linux pidfd cleanup; both exited without intervention",
+      "original_fixture_files": {
+        "configuration": 51,
+        "extension": 28
+      },
+      "original_source_bytes_modes_mtimes_preserved": true,
+      "copied_original_bytes_match": true,
+      "copied_project_file_count_includes_one_harness_editor_settings_file": true,
+      "diagnostic_publication": {
+        "complete_multiset_matched": true,
+        "duplicate_findings_retained": true,
+        "messages_severities_ranges_matched": true,
+        "expected": [
+          {
+            "code": "CodeOutOfRegion",
+            "message": "CodeOutOfRegion (Hint)",
+            "severity": 4,
+            "range": {
+              "start": {
+                "line": 1,
+                "character": 9
+              },
+              "end": {
+                "line": 1,
+                "character": 21
+              }
+            }
+          },
+          {
+            "code": "CommonModuleMissingAPI",
+            "message": "CommonModuleMissingAPI (Information)",
+            "severity": 3,
+            "range": {
+              "start": {
+                "line": 0,
+                "character": 0
+              },
+              "end": {
+                "line": 0,
+                "character": 0
+              }
+            }
+          },
+          {
+            "code": "MissingReturnedValueDescription",
+            "message": "MissingReturnedValueDescription (Warning)",
+            "severity": 2,
+            "range": {
+              "start": {
+                "line": 1,
+                "character": 9
+              },
+              "end": {
+                "line": 1,
+                "character": 21
+              }
+            }
+          },
+          {
+            "code": "MissingReturnedValueDescription",
+            "message": "MissingReturnedValueDescription (Warning)",
+            "severity": 2,
+            "range": {
+              "start": {
+                "line": 8,
+                "character": 9
+              },
+              "end": {
+                "line": 8,
+                "character": 23
+              }
+            }
+          }
+        ],
+        "actual": [
+          {
+            "code": "CodeOutOfRegion",
+            "message": "CodeOutOfRegion (Hint)",
+            "severity": 4,
+            "range": {
+              "start": {
+                "line": 1,
+                "character": 9
+              },
+              "end": {
+                "line": 1,
+                "character": 21
+              }
+            }
+          },
+          {
+            "code": "CommonModuleMissingAPI",
+            "message": "CommonModuleMissingAPI (Information)",
+            "severity": 3,
+            "range": {
+              "start": {
+                "line": 0,
+                "character": 0
+              },
+              "end": {
+                "line": 0,
+                "character": 0
+              }
+            }
+          },
+          {
+            "code": "MissingReturnedValueDescription",
+            "message": "MissingReturnedValueDescription (Warning)",
+            "severity": 2,
+            "range": {
+              "start": {
+                "line": 1,
+                "character": 9
+              },
+              "end": {
+                "line": 1,
+                "character": 21
+              }
+            }
+          },
+          {
+            "code": "MissingReturnedValueDescription",
+            "message": "MissingReturnedValueDescription (Warning)",
+            "severity": 2,
+            "range": {
+              "start": {
+                "line": 8,
+                "character": 9
+              },
+              "end": {
+                "line": 8,
+                "character": 23
+              }
+            }
+          }
+        ]
+      },
+      "raw_diagnostic_reports_retained": true,
+      "initial_test_only_object_key_order_failure_retained": true,
+      "production_provider_changes_for_publication_comparison": false
+    },
+    "query_consumers_regression": {
+      "passed": true,
+      "child_processes": 33,
+      "all_children_reaped": true,
+      "process_exit_proof": "successful harness checks every recorded owned child with process.kill(pid, 0)",
+      "cases": [
+        {
+          "case": "generated-cf",
+          "origin": "generated-native",
+          "type": "configuration",
+          "nativeSettingsStorageCompletion": true,
+          "nativeSettingsStorageManager": true,
+          "nativeSettingsStorageHover": true,
+          "nativeSettingsStorageSignature": true,
+          "settingsStorageCurrentExports": true,
+          "settingsStorageFailureRetracted": true,
+          "settingsStorageRestartImportReplay": true,
+          "foreignSettingsStorage": false,
+          "nativeSequenceCompletion": true,
+          "nativeSequenceRecordSet": true,
+          "nativeSequenceHover": true,
+          "sequenceFailureRetracted": true,
+          "sequenceRestartReplay": true,
+          "foreignSequenceDimensions": false,
+          "nativeOptionParameterCompletion": true,
+          "nativeOptionParameterGlobalHover": true,
+          "optionParameterFailureRetracted": true,
+          "optionParameterRestartReplay": true,
+          "foreignOptionParameterType": false,
+          "nativeOptionResultHover": true,
+          "nativeOptionGlobalHover": true,
+          "optionFailureRetracted": true,
+          "optionRestartReplay": true,
+          "foreignOptionStorage": false,
+          "nativeCriterionCompletion": true,
+          "nativeCriterionHover": true,
+          "criterionFailureRetracted": true,
+          "criterionRestartReplay": true,
+          "foreignCriterionContent": false,
+          "currentCommandParameters": true,
+          "commandFailureRetracted": true,
+          "commandRestartReplay": true,
+          "nativeCommandHover": true,
+          "foreignCommandParameter": false,
+          "currentCommonFields": true,
+          "commonFieldFailureRetracted": true,
+          "commonFieldRestartReplay": true,
+          "foreignCommonField": false,
+          "protectedReadonly": true,
+          "savedAndOpenCoordinates": true,
+          "currentParameterTypes": true,
+          "unknownParameterTypesRetracted": true,
+          "parameterRestartReplay": true,
+          "unchangedQueryRepair": true,
+          "invalidCurrentNoSavedFallback": true,
+          "nativeUtf16Coordinates": true,
+          "restartReplay": true,
+          "importReplay": true,
+          "sourceBytesPreserved": true,
+          "sourceFilesPreserved": 96,
+          "nativeSaveInvoked": false
+        },
+        {
+          "case": "generated-cfe",
+          "origin": "generated-native",
+          "type": "extension",
+          "nativeSettingsStorageCompletion": true,
+          "nativeSettingsStorageManager": true,
+          "nativeSettingsStorageHover": true,
+          "nativeSettingsStorageSignature": true,
+          "settingsStorageCurrentExports": true,
+          "settingsStorageFailureRetracted": true,
+          "settingsStorageRestartImportReplay": true,
+          "foreignSettingsStorage": true,
+          "nativeSequenceCompletion": true,
+          "nativeSequenceRecordSet": true,
+          "nativeSequenceHover": true,
+          "sequenceFailureRetracted": true,
+          "sequenceRestartReplay": true,
+          "foreignSequenceDimensions": true,
+          "nativeOptionParameterCompletion": true,
+          "nativeOptionParameterGlobalHover": true,
+          "optionParameterFailureRetracted": true,
+          "optionParameterRestartReplay": true,
+          "foreignOptionParameterType": true,
+          "nativeOptionResultHover": true,
+          "nativeOptionGlobalHover": true,
+          "optionFailureRetracted": true,
+          "optionRestartReplay": true,
+          "foreignOptionStorage": true,
+          "nativeCriterionCompletion": true,
+          "nativeCriterionHover": true,
+          "criterionFailureRetracted": true,
+          "criterionRestartReplay": true,
+          "foreignCriterionContent": true,
+          "currentCommandParameters": true,
+          "commandFailureRetracted": true,
+          "commandRestartReplay": true,
+          "nativeCommandHover": true,
+          "foreignCommandParameter": true,
+          "currentCommonFields": true,
+          "commonFieldFailureRetracted": true,
+          "commonFieldRestartReplay": true,
+          "foreignCommonField": true,
+          "protectedReadonly": true,
+          "savedAndOpenCoordinates": true,
+          "currentParameterTypes": true,
+          "unknownParameterTypesRetracted": true,
+          "parameterRestartReplay": true,
+          "unchangedQueryRepair": true,
+          "invalidCurrentNoSavedFallback": true,
+          "nativeUtf16Coordinates": true,
+          "restartReplay": true,
+          "importReplay": true,
+          "foreignCurrentMetadata": true,
+          "foreignInvalidNoSavedFallback": true,
+          "hiddenSiblingIgnored": true,
+          "foreignRestartImportReplay": true,
+          "foreignSourceBytesPreserved": true,
+          "sourceBytesPreserved": true,
+          "sourceFilesPreserved": 85,
+          "nativeSaveInvoked": false
+        },
+        {
+          "case": "native-cf",
+          "origin": "1c-native",
+          "type": "configuration",
+          "protectedReadonly": true,
+          "savedAndOpenCoordinates": true,
+          "currentParameterTypes": true,
+          "unknownParameterTypesRetracted": true,
+          "parameterRestartReplay": true,
+          "unchangedQueryRepair": true,
+          "invalidCurrentNoSavedFallback": true,
+          "nativeUtf16Coordinates": true,
+          "restartReplay": true,
+          "importReplay": true,
+          "sourceBytesPreserved": true,
+          "sourceFilesPreserved": 133,
+          "nativeSaveInvoked": false
+        },
+        {
+          "case": "native-cfe",
+          "origin": "1c-native",
+          "type": "extension",
+          "semanticContextRefused": true,
+          "syntaxAvailable": true,
+          "sourceBytesPreserved": true
+        }
+      ],
+      "all_fixture_source_bytes_preserved": true,
+      "standalone_native_cfe_proves_semantic_refusal_and_syntax_availability": true,
+      "standalone_native_cfe_proves_matching_composition": false
+    }
+  },
+  "framed_native_matching_saved_module": {
+    "schema_version": 1,
+    "scope": "one_actual_native_matching_base_selected_extension_saved_module",
+    "status": "bounded_typed_field_verified",
+    "binary_sha256": "0778e568946a0013b76b8fdbd21083e1a718359e8be1c71586f845ee501dc681",
+    "request_deadline_seconds": 20,
+    "external_wall_limit_seconds": 60,
+    "external_rss_limit_bytes": 1610612736,
+    "saved_text_only": true,
+    "text_changes_sent": 0,
+    "disk_source_writes": 0,
+    "warm_requests": 2,
+    "general_semantic_complete_claimed": false,
+    "native_platform_run": false,
+    "client_ui_run": false,
+    "composition": {
+      "selected": 1,
+      "root_count": 2
+    },
+    "initial_metadata_context_complete": null,
+    "semantic_profile_negotiated": true,
+    "cold_completion_seconds": 0.07693763399947784,
+    "completion_field_present": true,
+    "completion_field_type_string": true,
+    "completion_is_incomplete": false,
+    "completion_coverage": {
+      "metadata_inputs_complete": true,
+      "metadata_models_complete": true,
+      "module_inputs_complete": true,
+      "semantic_complete": false
+    },
+    "hover_field_type_string": true,
+    "hover_coverage": {
+      "metadata_models_complete": true,
+      "module_inputs_complete": true,
+      "semantic_complete": false
+    },
+    "diagnostic_coverage": {
+      "metadata_inputs_complete": true,
+      "metadata_models_complete": true,
+      "module_inputs_complete": true,
+      "module_syntax_complete": true,
+      "semantic_complete": false,
+      "semantic_profile_complete": true
+    },
+    "diagnostic_codes": [
+      "CodeOutOfRegion",
+      "CommonModuleMissingAPI",
+      "MissingReturnedValueDescription",
+      "MissingReturnedValueDescription"
+    ],
+    "diagnostic_count": 4,
+    "diagnostic_semantic_profile_complete_observed": true,
+    "warm_coverage": [
+      {
+        "is_incomplete": false,
+        "coverage": {
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": true,
+          "module_inputs_complete": true,
+          "semantic_complete": false
+        }
+      },
+      {
+        "is_incomplete": false,
+        "coverage": {
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": true,
+          "module_inputs_complete": true,
+          "semantic_complete": false
+        }
+      }
+    ],
+    "saved_document_closed": true,
+    "child_exit_code": 0,
+    "child_reaped": true,
+    "killed_by": null,
+    "child_wall_seconds": 0.11258557600012864,
+    "peak_observed_rss_bytes": 60911616,
+    "source_files_preserved": true,
+    "source_files": {
+      "cf": 51,
+      "cfe": 28
+    }
+  },
+  "native_fixture_origin": {
+    "prior_native_acceptance": "native-matching-composition-results.json",
+    "explicit_matching_base_and_selected_extension": true,
+    "borrowed_non_root_exact_uuid_kind_name_parent_links": 3,
+    "native_platform_build_apply_and_module_checks_repeated_in_this_slice": false,
+    "new_infobases": 0
+  },
+  "verification_scope": {
+    "typed_field_hover": true,
+    "cold_transitive_metadata_preparation": true,
+    "installed_production_field_completion": true,
+    "installed_production_field_hover": true,
+    "installed_native_problems_publication": true,
+    "native_runtime_query_execution": false,
+    "physical_ui_typing": false,
+    "native_save": false,
+    "general_semantic_complete": false,
+    "global_memory_budget_accepted": false,
+    "full_ef16_acceptance": false,
+    "mvp_complete": false
+  },
+  "validation_environment": {
+    "final_node_outside_sandbox": true,
+    "final_root_gates_outside_sandbox": true,
+    "root_test_threads": 4,
+    "prior_root_attempt_failures_retained": 3,
+    "sandbox_parent_repository_placeholder_race_verified": true,
+    "unrelated_shelf_lock_isolated_replay_passed": true,
+    "application_source_changes_for_environment_failures": false
+  },
+  "limitations": [
+    "The matching CF/CFE fixture was previously built, applied and checked by 1C; this slice consumes those saved imported files and does not execute a runtime function or query.",
+    "The installed matching case opens saved text without edits; it proves production completion, exact field hover and complete Problems publication, not physical typing, save or a full editable round trip.",
+    "The old standalone native CFE case intentionally refuses semantic composition while preserving syntax support; its success is not evidence of a matching CF/CFE composition.",
+    "All observed semantic_complete flags remain false; semantic_profile_complete is a narrower diagnostic coverage fact.",
+    "The framed process completed in about 0.113 seconds and one bounded RSS observation was 60911616 bytes. This is not a peak-memory guarantee or acceptance of the global memory budget.",
+    "The original null-hover baseline and the first installed comparison failure are retained. The latter was a test-only JSON object-key-order mismatch; complete diagnostic multisets now compare messages, severity and exact ranges with duplicates preserved.",
+    "The final root run passed outside the sandbox without concurrent sandbox filesystem calls. A verified transient ancestor repository placeholder explains repository-discovery failures; a separate earlier shelf-lock failure passed in isolation and is not attributed to that race.",
+    "Guarded normal editor save, remaining semantic coverage and the complete EF-16 platform and client acceptance are still required for MVP."
+  ]
+}

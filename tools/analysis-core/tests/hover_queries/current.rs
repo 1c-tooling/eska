@@ -26,7 +26,7 @@ fn current_cards_and_identifier_edges_follow_editor_authority_in_both_formats_an
             assert_eq!(initialized["result"]["capabilities"]["hoverProvider"], true);
             assert_eq!(
                 initialized["result"]["capabilities"]["experimental"]["eska"]["hover"],
-                json!({"scope":"resolved-bsl-symbol","contentFormat":format,"incompleteResults":"error","inputPreparation":"direct-member-callees"})
+                json!({"scope":"resolved-bsl-symbol","contentFormat":format,"incompleteResults":"error","inputPreparation":"member-receiver-dependencies"})
             );
             client.send(&notification("initialized"));
             let first = client.ask(&pull(&root, MODULE, "src", "0", position(BODY, at)));

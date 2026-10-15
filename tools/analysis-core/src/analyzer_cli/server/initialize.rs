@@ -100,7 +100,7 @@ impl Server<'_> {
                 "inputPreparation":if session.composition_sha256().is_some() {"visible-current-composition"} else {"direct-member-targets"}});
             result["capabilities"]["experimental"]["eska"]["hover"] = json!({
                 "scope":"resolved-bsl-symbol","contentFormat":hover_format.as_str(),
-                "incompleteResults":"error","inputPreparation":if session.composition_sha256().is_some() {"visible-current-composition"} else {"direct-member-callees"}});
+                "incompleteResults":"error","inputPreparation":if session.composition_sha256().is_some() {"visible-current-composition"} else {"member-receiver-dependencies"}});
             result["capabilities"]["experimental"]["eska"]["documentSymbols"] = json!({
                 "scope":"current-bsl-module","profile":"structure",
                 "result":if hierarchical_symbols { "hierarchical" } else { "flat" }});

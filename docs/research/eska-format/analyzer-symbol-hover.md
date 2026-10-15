@@ -19,10 +19,12 @@ native XML locations и graph ids в карточку не попадают. К�
 position в UTF-16 и необязательный `eska.snapshot`. Snapshot/URI проверяются
 до lazy IO. Pending caller читается по запросу, saved CancelledSaved допускает
 повтор, editor input сохраняет приоритет. Settings фиксируются при initialize.
-Для called-member token [адресная подготовка](analyzer-targeted-hover.md)
-загружает current own context и доступный прямой common/manager target.
-Непрямые зависимости и соседние bodies не загружаются; read-only query остаётся
-отдельным API. Остальные токены не вызывают metadata IO через эту подготовку.
+Для метода и обычного свойства [адресная подготовка](analyzer-field-hover.md)
+загружает current own context и нужные native targets выбранного receiver.
+Каждый owner/body пробуется один раз; соседние inputs не загружаются.
+Read-only query остаётся отдельным API. Остальные токены не вызывают metadata IO
+через эту подготовку. Типизированное поле не получает фиктивного объявления
+или координат перехода.
 Повреждённая конфигурация анализа запрещает hover и не публикует provider;
 отключённый ParseError не отключает карточку.
 
@@ -35,7 +37,8 @@ workDoneToken принимается; progress не отправляется. pa
 не является параметром hover и отклоняется как rpc_invalid_params.
 
 `experimental.eska.hover` сообщает scope `resolved-bsl-symbol`, согласованный
-contentFormat, incompleteResults `error` и inputPreparation `direct-member-callees`.
+contentFormat, incompleteResults `error` и inputPreparation
+`member-receiver-dependencies`; явная композиция сообщает `visible-current-composition`.
 Native вид преобразуется в закрытый
 машинный enum: method, module_variable, parameter, local_variable,
 platform_function, module, metadata_object, manager_module, field.

@@ -162,6 +162,15 @@ Cold discovery, diagnostics, method hover/signatures и replay работают 
 native arbitrary type. Платформа подтвердила отсутствие предопределённого
 `ThisObject` в модулях менеджера хранилища и справочника; qualified calls доступны.
 
+[Hover типизированных полей](../../docs/research/eska-format/analyzer-field-hover.md)
+использует native semantic symbol без фиктивной definition. Холодный standalone
+запрос готовит только доказанную receiver chain через прежний current-input
+controller; editor metadata, invalid/repair и close меняют текущий тип.
+Неизвестное поле, неполный union и mutable Structure hint не получают выдуманного
+типа. Protocol 0.1 standalone hover теперь сообщает
+`inputPreparation=member-receiver-dependencies`; явная composition сохраняет
+`visible-current-composition`.
+
 [Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
 дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
 common completion, unsaved named flags и переход к физическому BSL input;

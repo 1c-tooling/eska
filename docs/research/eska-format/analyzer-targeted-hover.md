@@ -1,5 +1,9 @@
 # Адресная подготовка карточки метода
 
+Ниже сохранён первый срез прямых вызовов и его проверки. Текущий путь расширен
+на [типизированные поля и цепочки receiver](analyzer-field-hover.md); standalone
+capability теперь сообщает `member-receiver-dependencies`.
+
 Первый `textDocument/hover` на имени метода прямого common/manager вызова
 подготавливает его текущий ввод. Предварительный metadata read, documentSymbol
 или completion не требуется. Документацию, объявление и возвращаемый тип

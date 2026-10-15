@@ -67,7 +67,7 @@ fn cold_member_hover(manager: bool) {
         let initialized = client.ask(&initialize_hover(json!(["plaintext"])));
         assert_eq!(
             initialized["result"]["capabilities"]["experimental"]["eska"]["hover"]["inputPreparation"],
-            "direct-member-callees"
+            "member-receiver-dependencies"
         );
         client.send(&notification("initialized"));
         let first = client.ask(&call.pull("0", false));

@@ -29,12 +29,13 @@ use crate::{
 };
 
 impl AnalysisSession {
-    /// Prepare the module's own metadata and a direct manager/common-module target only.
+    /// Prepare the module's own metadata and each native dependency on the selected receiver chain.
     ///
-    /// This also prepares the admitted target body, keeping other modules unread.
+    /// This also prepares admitted target bodies, keeping unrelated modules unread.
+    /// Each declared owner/body is attempted once: loading one may reveal the next referenced owner.
     /// Explicit compositions first prepare every topology-visible current contribution.
     /// It does not refresh ready or editor-owned input, load sibling dialogs, scan payloads,
-    /// or claim transitive metadata inference is complete. The read-only query stays separate.
+    /// or claim metadata inference is complete. The read-only query stays separate.
     /// # Errors
     /// Rejects stale/unknown/unavailable module input, an invalid offset, cancellation or publication failure.
     pub fn prepare_completion_metadata(
@@ -60,60 +61,71 @@ impl AnalysisSession {
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
         }
-        let owner = self
-            .query_module(path, self.revision(), cancellation, |analysis, file| {
-                let Some((kind, name)) = analysis.completion_metadata_target(file, offset) else {
-                    return Ok(None);
-                };
-                self.require_own_external_target(kind, &name)?;
-                let main = if kind == bsl_metadata::MdoType::CommonModule {
-                    common_module_index(analysis.database(), self.selected_root.listing)
-                        .lookup(&name)
-                } else {
-                    config_index(analysis.database(), self.selected_root.listing)
-                        .lookup(kind, &name)
-                        .map(|files| files.main)
-                };
-                let Some(main) = main else {
-                    return Ok(None);
-                };
-                // Frozen identities are resident; resolving a FileId never examines owner payloads.
-                Ok(self
-                    .selected_root
-                    .owners
-                    .iter()
-                    .find(|(_, entry)| entry.binding.main == main)
-                    .map(|(path, _)| path.clone()))
-            })?
-            .value;
-        if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
-            return Err(QueryError::Cancelled);
-        }
-        if let Some(owner) = owner {
-            self.load_completion_owner(&owner, request)?;
-        }
-        if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
-            return Err(QueryError::Cancelled);
-        }
-        let dependency = self
-            .query_module(path, self.revision(), cancellation, |analysis, file| {
-                let target = analysis
-                    .completion_manager_module(file, offset)
-                    .or_else(|| analysis.completion_common_module(file, offset));
-                Ok(target.and_then(|file| {
-                    self.selected_root
-                        .modules
+        let mut owners = std::collections::BTreeSet::new();
+        let mut modules = std::collections::BTreeSet::new();
+        loop {
+            let mut prepared = false;
+            let owner = self
+                .query_module(path, self.revision(), cancellation, |analysis, file| {
+                    let Some((kind, name)) = analysis.completion_metadata_target(file, offset)
+                    else {
+                        return Ok(None);
+                    };
+                    self.require_own_external_target(kind, &name)?;
+                    let main = if kind == bsl_metadata::MdoType::CommonModule {
+                        common_module_index(analysis.database(), self.selected_root.listing)
+                            .lookup(&name)
+                    } else {
+                        config_index(analysis.database(), self.selected_root.listing)
+                            .lookup(kind, &name)
+                            .map(|files| files.main)
+                    };
+                    let Some(main) = main else {
+                        return Ok(None);
+                    };
+                    // Frozen identities are resident; resolving a FileId never examines owner payloads.
+                    Ok(self
+                        .selected_root
+                        .owners
                         .iter()
-                        .find(|(_, entry)| entry.file == file)
-                        .map(|(path, _)| path.clone())
-                }))
-            })?
-            .value;
-        if let Some(dependency) = dependency {
-            self.load_completion_module(&dependency, request)?;
-        }
-        if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
-            return Err(QueryError::Cancelled);
+                        .find(|(_, entry)| entry.binding.main == main)
+                        .map(|(path, _)| path.clone()))
+                })?
+                .value;
+            if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
+                return Err(QueryError::Cancelled);
+            }
+            if let Some(owner) = owner.filter(|owner| owners.insert(owner.clone())) {
+                self.load_completion_owner(&owner, request)?;
+                prepared = true;
+            }
+            if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
+                return Err(QueryError::Cancelled);
+            }
+            let dependency = self
+                .query_module(path, self.revision(), cancellation, |analysis, file| {
+                    let target = analysis
+                        .completion_manager_module(file, offset)
+                        .or_else(|| analysis.completion_common_module(file, offset));
+                    Ok(target.and_then(|file| {
+                        self.selected_root
+                            .modules
+                            .iter()
+                            .find(|(_, entry)| entry.file == file)
+                            .map(|(path, _)| path.clone())
+                    }))
+                })?
+                .value;
+            if let Some(dependency) = dependency.filter(|path| modules.insert(path.clone())) {
+                self.load_completion_module(&dependency, request)?;
+                prepared = true;
+            }
+            if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
+                return Err(QueryError::Cancelled);
+            }
+            if !prepared {
+                break;
+            }
         }
         Ok(())
     }
@@ -146,9 +158,9 @@ impl AnalysisSession {
         )
     }
 
-    /// Prepare only a current hovered member callee's own context and admitted direct target before its read-only card.
+    /// Prepare only a current hovered member's own context and admitted receiver chain before its read-only card.
     ///
-    /// Non-callee tokens do not load metadata; native resolution retains ownership of symbols, docs and types.
+    /// Non-member tokens do not load metadata; native resolution retains ownership of symbols, docs and types.
     /// Explicit compositions first prepare all visible current contributions under the same request control.
     /// # Errors
     /// Rejects stale/unavailable caller input, invalid offset, cancellation or source publication failure.

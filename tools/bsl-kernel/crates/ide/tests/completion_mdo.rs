@@ -1,7 +1,10 @@
 use ide::{Analysis, CompletionItem, CompletionItemKind};
 use ide_db::base_db::{SourceDatabase, SourceRoot, SourceRootId};
+use ide_db::metadata::{CanonicalMetadataInput, MdoEntry, MetadataListingData};
 use ide_db::RootDatabaseImpl;
+use salsa::Setter;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use test_fixture::Fixture;
 use vfs::{FileId, FileSet};
 
@@ -51,6 +54,90 @@ fn direct_completion_dependency_discovery_rejects_unclaimed_or_unavailable_roots
         let (analysis, file, offset) = setup_with_config(&fixture);
         assert_eq!(analysis.completion_metadata_target(file, offset), None, "{body}");
     }
+}
+
+/// Cold references retain the exact native namespace reached through aliases and transparent callees.
+#[test]
+fn cold_reference_dependency_discovery_follows_exact_reaching_values() {
+    for body in [
+        "Procedure Run()\n Item=Catalogs.Справочник1.CreateItem();\n Alias=Item;\n Result=Alias.$0Реквизит1;\nEndProcedure\n",
+        "Procedure Run()\n Result=(Catalogs.Справочник1.CreateItem()).$0Реквизит1;\nEndProcedure\n",
+        "Procedure Run(Flag)\n If Flag Then\n Item=Catalogs.Справочник1.CreateItem();\n Alias=Item;\n Result=Alias.$0Реквизит1;\n EndIf;\nEndProcedure\n",
+    ] {
+        let (analysis, file, offset) = setup_with_pending_catalog(body);
+        assert_eq!(
+            analysis.completion_metadata_target(file, offset),
+            Some((bsl_metadata::MdoType::Catalog, "Справочник1".into())),
+            "{body}"
+        );
+    }
+}
+
+/// Overwrites, shadowing, cycles and unrelated calls cannot select a cold descriptor for this receiver.
+#[test]
+fn cold_reference_dependency_discovery_rejects_unproven_owners() {
+    for body in [
+        "Procedure Run()\n Item=Catalogs.Справочник1.CreateItem();\n Item=1;\n Result=Item.$0Реквизит1;\nEndProcedure\n",
+        "Procedure Run(Catalogs)\n Item=Catalogs.Справочник1.CreateItem();\n Result=Item.$0Реквизит1;\nEndProcedure\n",
+        "Procedure Run()\n Result=Echo(Catalogs.Справочник1.CreateItem()).$0Реквизит1;\nEndProcedure\n",
+        "Procedure Run()\n Other=Catalogs.Справочник1.CreateItem();\n Result=Missing.$0Реквизит1;\nEndProcedure\n",
+        "Procedure Other()\n Item=Catalogs.Справочник1.CreateItem();\nEndProcedure\nProcedure Run()\n Result=Item.$0Реквизит1;\nEndProcedure\n",
+        "Procedure Run()\n Other=Catalogs.Справочник1.CreateItem();\n Item=Item;\n Result=Item.$0Реквизит1;\nEndProcedure\n",
+        "Procedure Run()\n Other=Catalogs.Справочник1.CreateItem();\n Item=Alias;\n Alias=Item;\n Result=Alias.$0Реквизит1;\nEndProcedure\n",
+    ] {
+        let (analysis, file, offset) = setup_with_pending_catalog(body);
+        assert_eq!(analysis.completion_metadata_target(file, offset), None, "{body}");
+    }
+}
+
+/// Source-order reaching writes do not prove which branch supplies a value read after the conditional.
+#[test]
+fn cold_reference_dependency_discovery_does_not_choose_a_branch() {
+    for body in [
+        "Procedure Run(Flag)\n If Flag Then\n Item=Catalogs.Справочник1.CreateItem();\n Else\n Item=Catalogs.Справочник2.CreateItem();\n EndIf;\n Result=Item.$0Реквизит1;\nEndProcedure\n",
+        "Procedure Run(Flag)\n If Flag Then\n Item=Catalogs.Справочник1.CreateItem();\n EndIf;\n Result=Item.$0Реквизит1;\nEndProcedure\n",
+    ] {
+        let (analysis, file, offset) = setup_with_pending_catalog(body);
+        assert_eq!(analysis.completion_metadata_target(file, offset), None, "{body}");
+    }
+}
+
+/// Pending canonical slots prohibit XML fallback, reproducing first-request discovery before host preparation.
+fn setup_with_pending_catalog(body: &str) -> (Analysis, FileId, u32) {
+    let (analysis, file, offset) = setup_with_config(&format!("//- /test.bsl\n{body}"));
+    let mut db = analysis.database().clone();
+    // A live analysis snapshot would prevent Salsa's exclusive input publication below.
+    drop(analysis);
+    let root = designer_fixture_path();
+    let root = root.to_string_lossy();
+    let entries = ["Справочник1", "Справочник2"]
+        .into_iter()
+        .enumerate()
+        .map(|(index, name)| MdoEntry {
+            kind: bsl_metadata::MdoType::Catalog,
+            name: name.into(),
+            main: FileId(90 + index as u32),
+            predefined: None,
+        })
+        .collect();
+    db.set_metadata_listing(
+        &root,
+        MetadataListingData { entries, ..MetadataListingData::default() },
+    );
+    let listing = db.metadata_listing(&root).expect("registered listing");
+    let slots = [FileId(90), FileId(91)]
+        .into_iter()
+        .map(|file| (file, CanonicalMetadataInput::new(&db, None, "pending".into())))
+        .collect();
+    listing.set_canonical_metadata(&mut db).to(Arc::new(slots));
+    assert!(ide_db::metadata::resolve_metadata_object(
+        &db,
+        listing,
+        bsl_metadata::MdoType::Catalog,
+        "Справочник1".into()
+    )
+    .is_none());
+    (Analysis::from_database(db), file, offset)
 }
 
 /// A direct manager dependency uses the same native case-insensitive structural module index as completion.

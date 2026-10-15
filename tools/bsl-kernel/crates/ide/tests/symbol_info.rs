@@ -1348,6 +1348,117 @@ fn positional_member_call_preserves_native_and_platform_methods() {
     assert_ne!(platform.doc.as_deref(), Some("Foreign module purpose."));
 }
 
+/// Positional field requests keep UTF-16 coordinates without inventing a declaration site.
+fn field_card(
+    db: &RootDatabaseImpl,
+    file: FileId,
+    body: &str,
+    field: &str,
+    locale: ide::Locale,
+    sections: SymbolInfoSections,
+) -> Option<ide::SymbolInfoCard> {
+    let offset = body.rfind(field).expect("field in fixture");
+    let prefix = &body[..offset];
+    symbol_info(
+        db,
+        &SymbolInfoRequest {
+            symbol: None,
+            position: Some(SymbolPosition {
+                file_id: file,
+                line: prefix.bytes().filter(|byte| *byte == b'\n').count() as u32,
+                column: prefix.rsplit('\n').next().unwrap().encode_utf16().count() as u32,
+            }),
+            locale,
+            sections,
+            workspace_root: None,
+        },
+    )
+}
+
+/// Native configured field identity and type survive direct reads, aliases and both locales.
+#[test]
+fn positional_typed_catalog_field_and_alias_publish_type_without_fake_definition() {
+    let mut db = setup_catalog();
+    for receiver in ["Item", "Alias"] {
+        let body = format!("\u{feff}// Я😀\r\nProcedure Run()\r\n Item=Catalogs.Справочник1.CreateItem();\r\n Alias=Item;\r\n Result={receiver}.Реквизит1;\r\nEndProcedure\r\n");
+        db.set_file_text(FileId(0), &body);
+        for (locale, expected) in [(ide::Locale::En, "String"), (ide::Locale::Ru, "Строка")] {
+            let card =
+                field_card(&db, FileId(0), &body, "Реквизит1", locale, SymbolInfoSections::all())
+                    .expect("native typed field");
+            assert_eq!(card.kind, "field");
+            assert_eq!(card.symbol, "Реквизит1");
+            assert_eq!(card.return_type.as_deref(), Some(expected));
+            assert!(
+                card.definition.is_none() && card.definitions.is_empty() && card.graph_id.is_none()
+            );
+            assert!(card.signature.is_none() && card.doc.is_none());
+        }
+        let card = field_card(
+            &db,
+            FileId(0),
+            &body,
+            "Реквизит1",
+            ide::Locale::En,
+            SymbolInfoSections { definition: true, type_: false, doc: true },
+        )
+        .unwrap();
+        assert_eq!(card.kind, "field");
+        assert!(card.return_type.is_none() && card.definition.is_none());
+    }
+}
+
+/// A missing configured field, unknown value and a member absent from one union arm have no typed property card.
+#[test]
+fn positional_missing_unknown_and_partial_union_fields_have_no_card() {
+    let mut db = setup_catalog();
+    for body in [
+        "Procedure Run()\n Item=Catalogs.Справочник1.CreateItem();\n Result=Item.MissingЯ;\nEndProcedure\n",
+        "Procedure Run(Item)\n Result=Item.MissingЯ;\nEndProcedure\n",
+        "Function Pick(Flag)\n If Flag Then\n  Return Catalogs.Справочник1.CreateItem();\n EndIf;\n Return New Query;\nEndFunction\nProcedure Run(Flag)\n Result=Pick(Flag).Реквизит1;\nEndProcedure\n",
+    ] {
+        db.set_file_text(FileId(0), body);
+        let field = if body.contains("MissingЯ") { "MissingЯ" } else { "Реквизит1" };
+        assert!(field_card(&db, FileId(0), body, field, ide::Locale::En, SymbolInfoSections::all()).is_none(), "{body}");
+    }
+}
+
+/// A typed local's platform property wins over a foreign common-module method of the same spelling.
+#[test]
+fn positional_platform_property_respects_receiver_ownership() {
+    for (binding, expected) in [
+        ("Procedure Run(Utility)\n", None),
+        ("Procedure Run()\n Var Utility;\n", None),
+        ("Procedure Run()\n Utility=1;\n", None),
+        ("Procedure Run()\n Utility=New Query;\n", Some("String")),
+    ] {
+        let body = format!("{binding} Result=Utility.Text;\nEndProcedure\n");
+        let fixture = format!("//- /test.bsl\n{body}//- /CommonModules/Utility/Ext/Module.bsl\nFunction Text() Export\n Return 1;\nEndFunction\n");
+        let (db, file) = setup_bsl(&fixture);
+        let card = field_card(&db, file, &body, "Text", ide::Locale::En, SymbolInfoSections::all());
+        match expected {
+            Some(expected) => {
+                let card = card.expect("typed native platform property");
+                assert_eq!(card.kind, "field");
+                assert_eq!(card.return_type.as_deref(), Some(expected));
+                assert!(card.definition.is_none() && card.definitions.is_empty());
+            }
+            None => assert!(card.is_none(), "{body}: {card:?}"),
+        }
+    }
+}
+
+/// A mutable structure's soft scalar hint cannot become an authoritative property type or borrow a foreign declaration.
+#[test]
+fn positional_soft_user_field_does_not_invent_a_typed_card() {
+    let body = "Procedure Run()\n Utility=New Structure(\"Text\", \"value\");\n Result=Utility.Text;\nEndProcedure\n";
+    let fixture = format!("//- /test.bsl\n{body}//- /CommonModules/Utility/Ext/Module.bsl\nFunction Text() Export\n Return 1;\nEndFunction\n");
+    let (db, file) = setup_bsl(&fixture);
+    assert!(
+        field_card(&db, file, body, "Text", ide::Locale::En, SymbolInfoSections::all()).is_none()
+    );
+}
+
 #[test]
 fn exported_object_module_method_resolves_and_private_does_not() {
     let (db, _) = setup_bsl(OBJECT_MODULE);
