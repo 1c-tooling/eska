@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-15",
+  "scope": "EF-11 current query consumer reports",
+  "sdk_commit": "083facd",
+  "explorer_commit": "7558a85",
+  "versions_changed": false,
+  "typescript": "passed",
+  "node": { "passed": 323, "failed": 0, "skipped": 0 },
+  "real_process": {
+    "locales": ["ru-RU", "en-US"],
+    "contexts": ["CF", "explicit CF/dependency/CFE composition"],
+    "xml_repair_invalid_close_and_restart": true,
+    "query_version_preserved": true,
+    "source_bytes_preserved": true
+  },
+  "installed": {
+    "os": "Linux x86-64",
+    "editor": "VSCodium 1.109.51242",
+    "vsix_version": "0.0.11",
+    "vsix_entries": 1317,
+    "compiled_files_match": 54,
+    "test_helpers_excluded": true,
+    "positive_contexts": ["generated CF", "generated configured CFE", "1C-origin CF"],
+    "standalone_1c_origin_cfe": "semantic initialize refused; separate syntax available",
+    "readonly_problems_target": true,
+    "native_xml_language": true,
+    "bom_unicode_ranges": true,
+    "unchanged_query_xml_repair": true,
+    "invalid_current_without_saved_fallback": true,
+    "restart_and_import_replay": true,
+    "source_bytes_preserved": true,
+    "analyzer_children": 12,
+    "surviving_analyzer_children": 0,
+    "native_editor_api": true,
+    "physical_keyboard": false,
+    "native_save_invoked": false
+  },
+  "coverage": { "parameters_complete": false, "consumer_complete": false, "semantic_complete": false },
+  "mvp_complete": false
+}

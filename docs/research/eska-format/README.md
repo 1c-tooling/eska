@@ -93,6 +93,9 @@ query model с DCS/DynamicList в library API и одном отчёте IDE/che
 Независимый queryConsumers opt-in сохраняет прежний pull; current XML и
 authoring ranges проверены на RU/EN. Параметры пока occurrences, полная EF-27
 ещё нужна.
+[Установленный consumer client](explorer-query-consumers.md) прошёл 323 Node tests,
+CF/configured-CFE/native-CF XML Problems/repair/replay без saved fallback.
+Полная семантика и Save остаются отдельными границами.
 [Main source import](shell-source-import.md) делегирует preview/write/recovery
 одному совместимому tool с независимыми pins и сохранением streams/exit.
 [Оболочка check](shell-check-delegation.md) передаёт явный профиль совместимому

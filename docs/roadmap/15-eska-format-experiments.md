@@ -3142,8 +3142,11 @@ unknown/ambiguous output остаётся неполным. Следующий �
 прежнему IDE diagnostic pull через независимый queryConsumers opt-in и к semantic
 checker. Current XML, typed authoring ranges, invalid/repair/close и RU/EN parity
 прошли SDK/process gates: 213/509 SDK tests, 100 adapter; полные root gates —
-1508/1629 tests, по 24 opt-in ignored. Параметры пока occurrences; installed
-consumer client и полная EF-27 ещё не приняты.
+1508/1629 tests, по 24 opt-in ignored.
+[Installed consumer client](../research/eska-format/explorer-query-consumers.md)
+прошёл 323 Node tests и CF/configured-CFE/native-CF XML Problems/repair/replay:
+12 children завершились, source bytes сохранены. Native CFE semantic context
+по-прежнему явно отказан. Параметры пока occurrences; полная EF-27 ещё не принята.
 
 Current form snapshot сохраняет UTF-16 endpoints mapped query-consumer nodes
 при parse единственного YAML. Проверка после удаления source tree подтверждает

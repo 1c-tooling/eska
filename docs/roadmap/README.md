@@ -45,8 +45,10 @@ Metadata/consumer semantics остаётся EF-27; EF-18 ещё `IN_PROGRESS`.
 Параметры, output fields и consumers ещё нужны; EF-27 — `IN_PROGRESS`.
 Следующий [output/consumer report](../research/eska-format/query-output-consumers.md)
 подключает прямые DCS/DynamicList bindings к IDE/checker с текущими source stamps
-и authoring ranges. SDK/process RU/EN gates прошли; установленный consumer client
-и остальная EF-27 ещё нужны. Параметры пока occurrences, completeness остаётся false.
+и authoring ranges. SDK/process RU/EN gates прошли;
+[установленный consumer client](../research/eska-format/explorer-query-consumers.md)
+прошёл 323 Node tests и CF/configured-CFE/native-CF XML Problems/repair/replay.
+Остальная EF-27 ещё нужна. Параметры пока occurrences, completeness остаётся false.
 Native-origin CF прошёл saved IDE/checker parity и dirty field/close на RU/EN;
 configured CFE явно отказала на Unsupported CommonPicture. Синтаксис сохранён,
 успешная native CFE semantic приёмка ещё нужна.
