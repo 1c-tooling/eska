@@ -1,5 +1,10 @@
 # Общая квота текущих входов анализа
 
+[500 циклов текущих YAML/form/BSL/query inputs](current-input-stress.md) прошли
+на собственных EPF/ERF: source reserve, hashes, отказ нулевой квоты и точный
+replay проверены на RU/EN. Debug RSS измерен отдельно; это не большой проект
+и не общий предел памяти процесса.
+
 Сессия IDE и `eska-check` используют одну квоту исходных байтов YAML/rights/BSL/`.sdbl`.
 `SessionOptions.max_retained_source_bytes` и
 `BatchOptions.max_retained_source_bytes` по умолчанию равны 256 MiB.

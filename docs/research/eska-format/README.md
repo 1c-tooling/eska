@@ -44,6 +44,9 @@ workflow/Git/workspace и expected-byte receipt; [init](project-initialization.m
 общую сессию, сохраняя явную неполноту semantic context.
 [Declared `.sdbl` syntax](analyzer-query-syntax.md) подключён к той же сессии,
 watcher, quota и native parser без BSL wrapper. Контекстная EF-27 ещё нужна.
+[500 циклов current inputs](current-input-stress.md) малых EPF/ERF проверили
+hashes, общий reserve и replay после отказа квоты на RU/EN; большой проект
+и общий RSS budget остаются отдельной приёмкой.
 [Kernel owners](canonical-module-owners.md) берут object/register/common/service
 metadata из текущих slots без XML fallback; SDK composition ещё в работе.
 [Own EPF/ERF context](external-own-context.md) использует реальные external модели,

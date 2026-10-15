@@ -2363,6 +2363,11 @@ standalone checker через bounded probe с отдельной linked-core ve
 к общей сессии IDE/checker и source quota с current overlay/watch/replay.
 Полный SDK прошёл; metadata/consumer semantics EF-27 ещё не принята.
 
+[500 циклов текущих входов](research/eska-format/current-input-stress.md)
+малых EPF/ERF прошли на RU/EN: 6000 full-sync updates, source reserve,
+current hashes и replay после отказа квоты. Debug RSS измерен отдельно;
+большой проект и hard memory budget ещё не приняты.
+
 [Структурная проверка](research/eska-format/structural-metadata-coverage.md) закрывает
 Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests,
 полный SDK и восемь actual framed cases прошли; CF metadata models complete

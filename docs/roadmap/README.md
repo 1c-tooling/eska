@@ -19,6 +19,10 @@ standalone checker с явным профилем и проверенной со
 работает в общей сессии IDE/checker с revision/quota/watch/replay.
 Metadata/consumer semantics остаётся EF-27; EF-18 ещё `IN_PROGRESS`.
 
+[500 циклов current inputs](../research/eska-format/current-input-stress.md)
+прошли на малых native EPF/ERF с отдельным RSS замером, отказом общей квоты
+и точным replay на RU/EN. Большой проект и hard RSS budget ещё не приняты.
+
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий
 проект, сборка, дерево Explorer с прежней информацией о поддержке, подсветка
