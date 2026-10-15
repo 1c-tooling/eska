@@ -58,6 +58,24 @@ impl CurrentFormView {
     pub fn query_context(&self) -> Result<Option<&QueryContextView>, &Error> {
         self.query_context.as_ref().map(Option::as_ref)
     }
+
+    /// Capture mapped form endpoints while the sole current authoring text is still available.
+    pub(in crate::project_core::source_format::reader) fn authoring_ranges(
+        &self,
+    ) -> impl Iterator<Item = &Range<usize>> {
+        self.query_context
+            .as_ref()
+            .ok()
+            .and_then(Option::as_ref)
+            .into_iter()
+            .flat_map(|context| {
+                context
+                    .form_locations
+                    .iter()
+                    .flatten()
+                    .map(|(_, authoring)| authoring)
+            })
+    }
 }
 
 impl QueryContextView {

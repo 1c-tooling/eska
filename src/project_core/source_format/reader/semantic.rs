@@ -49,7 +49,7 @@ pub struct MetadataSnapshot {
     pub source_bytes: u64,
     pub manifest_sha256: String,
     pub documents: Vec<NativeMetadata>,
-    /// Selected coordinates address object/property spans in the exact text which was parsed.
+    /// Selected coordinates address metadata and mapped query-consumer spans in this exact input.
     pub coordinates: super::super::TextCoordinates,
     /// Unified form consumers share one view of these exact owner bytes, without another input slot.
     pub form: Option<Arc<super::CurrentFormView>>,

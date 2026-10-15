@@ -603,6 +603,7 @@ impl SourceReader {
                 self.spec(path)?.logical_parent.as_ref(),
                 mode,
             )?;
+            let form = self.current_form_view(path, &source, text)?;
             let offsets = documents
                 .iter()
                 .flat_map(|document| {
@@ -627,11 +628,11 @@ impl SourceReader {
                                 .map(|diagnostic| &diagnostic.range),
                         )
                 })
+                .chain(form.iter().flat_map(|form| form.authoring_ranges()))
                 .flat_map(|range| [range.start, range.end])
                 .collect::<Vec<_>>();
             let coordinates = super::TextCoordinates::new(text, &offsets)
                 .map_err(|_| Error::root("source_coordinates_invalid"))?;
-            let form = self.current_form_view(path, &source, text)?;
             Ok(MetadataSnapshot {
                 path: path.clone(),
                 source_sha256: files::hex(&Sha256::digest(text.as_bytes())),

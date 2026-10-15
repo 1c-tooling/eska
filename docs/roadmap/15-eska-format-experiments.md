@@ -3141,6 +3141,11 @@ diagnostics и весь сквозной пункт приёмки остают�
 unknown/ambiguous output остаётся неполным. Параметры пока occurrences, новые
 RPC/batch consumer findings и полная EF-27 не приняты.
 
+Current form snapshot сохраняет UTF-16 endpoints mapped query-consumer nodes
+при parse единственного YAML. Проверка после удаления source tree подтверждает
+координаты текущего буфера с Unicode/CRLF без повторного чтения. Полные root gates
+и SDK all-features прошли; это координатная основа следующих consumer findings.
+
 Подключить `.sdbl` к общим `eska-analyzer`/`eska-check`: метаданные выбранного
 member, параметры, расширения СКД, настройки динамического списка. Проверять
 поля результата, ресурсы, вычисляемые поля, связи, сохранённые настройки и

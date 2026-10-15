@@ -25,6 +25,11 @@ DataCompositionSchema; иной XML root не подменяет объявле�
 рендеринг формы сохраняет прежний output; trace нужен для координат read-view.
 Quoted и literal YAML проверены; folded scalars отвергает существующий decoder.
 
+Текущий `MetadataSnapshot.coordinates` также хранит UTF-16 endpoints отображённых
+form/query source nodes. Они захватываются при parse единственного authoring
+буфера; после его освобождения или удаления файла consumer location не требует
+повторного YAML/дискового чтения. Точность EnclosingNode/Unmapped сохраняется.
+
 Прошли 64 профильных теста: 7 новых context, 30 form, 19 query codec и 8 query
 layout. Включены CF/CFE/EPF/ERF XML fixtures, отличающийся native stem, формы и СКД,
 current strings после удаления source tree, неверные identity/profile/links,

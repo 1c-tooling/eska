@@ -44,7 +44,17 @@ fn unified_form_snapshot_shares_current_reference_bytes_and_authoring_maps() {
     let QueryAuthoringRange::EnclosingNode(range) = location else {
         panic!("a native preserved fragment must keep its current YAML scalar");
     };
-    assert!(changed[range].contains("Attribute"));
+    assert!(changed[range.clone()].contains("Attribute"));
+    let captured = metadata.coordinates.range(range.clone()).unwrap();
+    for (offset, position) in [(range.start, captured.start), (range.end, captured.end)] {
+        let prefix = &changed[..offset];
+        let column = prefix.rsplit('\n').next().unwrap().encode_utf16().count();
+        assert_eq!(
+            position.line as usize,
+            prefix.bytes().filter(|&byte| byte == b'\n').count()
+        );
+        assert_eq!(position.character as usize, column);
+    }
 }
 
 /// An unsupported current link cannot resurrect a previous good query context or hide form metadata.
