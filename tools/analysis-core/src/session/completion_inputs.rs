@@ -9,6 +9,7 @@ mod functional_options;
 mod hover_tests;
 #[cfg(test)]
 mod manager_tests;
+mod sequences;
 mod session_parameters;
 #[cfg(test)]
 mod signature_tests;
@@ -51,6 +52,7 @@ impl AnalysisSession {
         self.prepare_module_metadata(path, request)?;
         self.prepare_session_parameters(path, offset, request, cancellation)?;
         self.prepare_filter_criteria(path, offset, request, cancellation)?;
+        self.prepare_sequences(path, offset, request, cancellation)?;
         self.prepare_functional_options(path, offset, request, cancellation)?;
         self.prepare_functional_option_parameters(path, offset, request, cancellation)?;
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
@@ -219,6 +221,7 @@ impl AnalysisSession {
         {
             self.prepare_module_metadata(path, request)?;
         }
+        self.prepare_sequences(path, offset, request, cancellation)?;
         self.prepare_functional_options(path, offset, request, cancellation)?;
         self.prepare_functional_option_parameters(path, offset, request, cancellation)?;
         let dependency = self

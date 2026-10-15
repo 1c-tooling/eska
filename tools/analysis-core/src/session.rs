@@ -45,6 +45,9 @@ mod local_syntax_tests;
 #[cfg(test)]
 mod scheduled_job_tests;
 #[cfg(test)]
+mod sequence_tests;
+mod sequences;
+#[cfg(test)]
 mod session_parameter_tests;
 #[cfg(test)]
 mod structural_descriptor_tests;
@@ -435,6 +438,10 @@ impl AnalysisSession {
             CanonicalMetadata::CommonAttribute(_) => {
                 ide_db::metadata::resolve_common_attribute(database, listing, name.clone())
                     .map(CanonicalMetadata::CommonAttribute)
+            }
+            CanonicalMetadata::Sequence(_) => {
+                ide_db::metadata::resolve_sequence(database, listing, name.clone())
+                    .map(CanonicalMetadata::Sequence)
             }
             CanonicalMetadata::FunctionalOptionsParameter(_) => {
                 ide_db::metadata::resolve_functional_option_parameter(

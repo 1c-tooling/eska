@@ -24,6 +24,11 @@ pub fn module_implicit_fields(db: &dyn HirDatabase, file_id: FileId) -> Vec<Fiel
             enumerate_fields_inner(db, &obj_resolver, receiver)
         }
         ModuleType::RecordSetModule => {
+            if let Some(sequence) = &metadata.sequence {
+                let ty = crate::sequences::SequenceType::RecordSet.type_name(sequence.name());
+                return crate::sequences::fields(db, &obj_resolver, &ty).unwrap_or_default();
+            }
+
             let Some((mdo_type, name)) = module_owner_mdo(&metadata) else {
                 return Vec::new();
             };

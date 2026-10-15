@@ -147,3 +147,5 @@ fn update(fixture: &mut Fixture, slot: CanonicalMetadataInput, value: Option<Can
     slot.set_value(&mut fixture.database).to(value.map(Arc::new));
     slot.set_source_revision(&mut fixture.database).to("editor".into());
 }
+
+mod sequences;

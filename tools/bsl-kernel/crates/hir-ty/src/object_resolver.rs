@@ -19,6 +19,12 @@ use vfs::FileId;
 /// resolver mirrors the same merged + file-scoped semantics for unit tests and
 /// the cold call sites that still carry a `&[VisibleConfig]`.
 pub trait ObjectResolver {
+    /// A generated sequence role uses its own current declared dimensions and relation identities.
+    fn resolve_sequence(&self, name: &str) -> Option<Arc<bsl_metadata::Sequence>>;
+
+    /// Sequence names are limited to the calling file's explicit visible roots.
+    fn sequence_names(&self) -> Vec<String>;
+
     /// Resolve a current criterion before exposing a named manager or refining Find's signature.
     fn resolve_filter_criterion(&self, name: &str) -> Option<Arc<bsl_metadata::FilterCriterion>>;
 
@@ -95,6 +101,16 @@ impl<D: ConfigsDatabase + ?Sized> std::fmt::Debug for DbObjectResolver<'_, D> {
 }
 
 impl<D: ConfigsDatabase + ?Sized> ObjectResolver for DbObjectResolver<'_, D> {
+    /// Preserve current per-file sequence composition without loading XML.
+    fn resolve_sequence(&self, name: &str) -> Option<Arc<bsl_metadata::Sequence>> {
+        self.db.resolve_sequence(self.file_id, name)
+    }
+
+    /// Declared names and current payloads remain separate queries.
+    fn sequence_names(&self) -> Vec<String> {
+        self.db.sequence_names(self.file_id)
+    }
+
     /// Preserve the caller's native file visibility and current canonical ownership.
     fn resolve_filter_criterion(&self, name: &str) -> Option<Arc<bsl_metadata::FilterCriterion>> {
         self.db.resolve_filter_criterion(self.file_id, name)
@@ -269,6 +285,16 @@ impl ConfigsObjectResolver<'_> {
 }
 
 impl ObjectResolver for ConfigsObjectResolver<'_> {
+    /// Legacy whole XML configurations do not contain canonical sequence declarations.
+    fn resolve_sequence(&self, _name: &str) -> Option<Arc<bsl_metadata::Sequence>> {
+        None
+    }
+
+    /// Another metadata family cannot fabricate configured sequence names.
+    fn sequence_names(&self) -> Vec<String> {
+        Vec::new()
+    }
+
     /// Whole native XML configurations do not yet contain canonical criterion inputs.
     fn resolve_filter_criterion(&self, _name: &str) -> Option<Arc<bsl_metadata::FilterCriterion>> {
         None

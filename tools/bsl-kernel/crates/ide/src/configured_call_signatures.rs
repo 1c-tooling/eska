@@ -12,7 +12,7 @@ pub(crate) fn refine<DB: RootDatabase>(
     binding: &CandidateCallBinding,
     signatures: &mut [SymbolSignature],
 ) {
-    let methods = hir_ty::filter_criteria::prototype_methods();
+    let methods = configured_methods();
     for signature in signatures {
         if signature.source == SignatureSource::GlobalFunction {
             if let Some(id) = signature.platform_id.filter(|id| configured_global(*id)) {
@@ -70,7 +70,7 @@ pub(crate) fn at_token<DB: RootDatabase>(
     let arguments = call.children().find(|node| node.kind() == SyntaxKind::ARG_LIST)?;
     let offset = arguments.text_range().start() + syntax::TextSize::from(1);
     let binding = Semantics::new(db).call_binding_at(file, offset)?;
-    let methods = hir_ty::filter_criteria::prototype_methods();
+    let methods = configured_methods();
     if !binding.candidates.as_slice().iter().any(|candidate| match candidate.id {
         hir::CandidateId::Platform { method_id, .. } => {
             methods.iter().any(|method| method.id == method_id)
@@ -91,4 +91,17 @@ pub(crate) fn at_token<DB: RootDatabase>(
 fn configured_global(id: u32) -> bool {
     hir_ty::functional_options::platform_id() == Some(id)
         || hir_ty::functional_option_parameters::platform_id() == Some(id)
+}
+
+/// Each configured generated family keeps its native platform method IDs and current candidate types.
+fn configured_methods() -> Vec<bsl_platform::PlatformMethod> {
+    let mut methods = hir_ty::filter_criteria::prototype_methods();
+    for kind in [
+        hir_ty::sequences::SequenceType::Manager,
+        hir_ty::sequences::SequenceType::RecordSet,
+        hir_ty::sequences::SequenceType::Record,
+    ] {
+        methods.extend(hir_ty::generated_platform::methods(kind.prototype()));
+    }
+    methods
 }

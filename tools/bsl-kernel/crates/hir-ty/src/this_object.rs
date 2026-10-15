@@ -73,6 +73,18 @@ pub fn resolve_this_manager_owner(
     Some((mdo_type, name))
 }
 
+/// A canonical sequence record-set module has its own real generated `ThisObject` type.
+pub fn resolve_this_sequence_record_set(
+    db: &dyn DefDatabase,
+    resolver: &Resolver,
+) -> Option<String> {
+    let metadata = db.module_metadata(resolver.module_id()?);
+    if metadata.module_type != ModuleType::RecordSetModule {
+        return None;
+    }
+    Some(crate::sequences::SequenceType::RecordSet.type_name(metadata.sequence.as_ref()?.name()))
+}
+
 pub fn resolve_this_record_set_owner(
     db: &dyn DefDatabase,
     resolver: &Resolver,

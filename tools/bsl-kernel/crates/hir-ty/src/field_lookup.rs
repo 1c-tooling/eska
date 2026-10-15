@@ -114,6 +114,11 @@ fn lookup_field_raw(
     }
 
     if let TypeKind::PlatformObject(facet) = db.lookup_type(effective_ty) {
+        if crate::sequences::is_container_name(&facet.name)
+            || crate::sequences::generated_name(&facet.name).is_some()
+        {
+            return crate::sequences::field(db, resolver, &facet.name, field_name);
+        }
         if crate::filter_criteria::is_container_name(&facet.name) {
             if let Some(field) = crate::filter_criteria::field(db, resolver, field_name.as_str()) {
                 return Some(field);

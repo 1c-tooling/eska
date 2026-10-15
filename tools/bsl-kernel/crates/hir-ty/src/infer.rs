@@ -2404,7 +2404,11 @@ impl<'db> InferenceContext<'db> {
                         TypeKind::MetadataRef(_)
                             | TypeKind::ThisObject { .. }
                             | TypeKind::ManagerCollection(_)
-                    ) || matches!(base_kind, TypeKind::Structure(facet) if facet.closed);
+                    ) || matches!(base_kind, TypeKind::Structure(facet) if facet.closed)
+                        // A proven generated sequence has a fixed native role and current declared dimensions.
+                        || matches!(base_kind, TypeKind::PlatformObject(facet)
+                            if crate::sequences::generated_name(&facet.name)
+                                .is_some_and(|(_, name)| self.db.resolve_sequence(self.context_file_id, name).is_some()));
                     if !field.is_missing() && closed_receiver {
                         self.push_inference_diagnostic(InferenceDiagnostic::UnresolvedField {
                             expr: expr_id,
@@ -2596,6 +2600,11 @@ impl<'db> InferenceContext<'db> {
                     BareNameOrigin::SelfName,
                     all_env,
                 );
+            }
+            if let Some(name) =
+                crate::this_object::resolve_this_sequence_record_set(self.db, &resolver)
+            {
+                return found(self.db.platform_object(name), BareNameOrigin::SelfName, all_env);
             }
             if let Some((mdo, name)) =
                 crate::this_object::resolve_this_record_set_owner(self.db, &resolver)

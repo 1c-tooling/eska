@@ -208,6 +208,7 @@ fn resolve_metadata_object_isolates_content_and_structure() {
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
+        Arc::new(Vec::new()),
         Arc::new(crate::metadata::CanonicalMetadataInputs::default()),
     );
     assert_eq!(config_index(&db, listing).len(), 1);
@@ -312,6 +313,7 @@ fn resolve_register_by_name_resolves_via_listing_substrate() {
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
+        Arc::new(Vec::new()),
         Arc::new(crate::metadata::CanonicalMetadataInputs::default()),
     );
 
@@ -369,6 +371,7 @@ fn resolve_defined_type_isolates_content_and_structure() {
         Arc::new(vec![DefinedTypeEntry {
             name: "ДенежнаяСумма".to_string(), main: f1
         }]),
+        Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
@@ -452,6 +455,7 @@ fn resolve_common_module_by_name_and_by_body_file() {
             module_file: Some(bsl_file),
             unread_module_file: None,
         }]),
+        Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
@@ -580,6 +584,7 @@ fn resolve_event_subscription_isolates_content_and_structure() {
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
+        Arc::new(Vec::new()),
         Arc::new(crate::metadata::CanonicalMetadataInputs::default()),
     );
     assert_eq!(event_subscription_index(&db, listing).lookup("передзаписью"), Some(before_file));
@@ -694,6 +699,7 @@ fn resolve_event_subscription_for_file_uses_bootstrapped_listing() {
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: vec![EventSubscriptionEntry {
                 name: "ПередЗаписью".to_string(),
@@ -786,6 +792,7 @@ fn main_event_subscription_names_fall_back_to_the_chain_for_an_extension_only_pr
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: vec![EventSubscriptionEntry {
                 name: "ПередЗаписью".to_string(),
@@ -951,6 +958,7 @@ fn resolve_scheduled_job_isolates_content_and_structure() {
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
+        Arc::new(Vec::new()),
         Arc::new(crate::metadata::CanonicalMetadataInputs::default()),
     );
     assert_eq!(scheduled_job_index(&db, listing).lookup("регламентноезадание1"), Some(before_file));
@@ -1067,6 +1075,7 @@ fn resolve_scheduled_job_for_file_uses_bootstrapped_listing() {
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: vec![ScheduledJobEntry {
@@ -1186,6 +1195,7 @@ fn resolve_role_isolates_main_and_rights_content() {
                 rights: Some(role2_rights),
             },
         ]),
+        Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
@@ -1324,6 +1334,7 @@ fn resolve_role_for_file_uses_bootstrapped_listing() {
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -1433,6 +1444,7 @@ fn a_chain_resolves_the_owning_extension_first_and_lists_each_name_once() {
                 filter_criteria: Vec::new(),
                 functional_options: Vec::new(),
                 functional_option_parameters: Vec::new(),
+                sequences: Vec::new(),
                 common_modules: Vec::new(),
                 event_subscriptions: Vec::new(),
                 scheduled_jobs: Vec::new(),
@@ -1519,6 +1531,7 @@ fn per_file_lookups_serve_an_extension_only_project_from_its_chain() {
                 filter_criteria: Vec::new(),
                 functional_options: Vec::new(),
                 functional_option_parameters: Vec::new(),
+                sequences: Vec::new(),
                 common_modules: Vec::new(),
                 event_subscriptions: Vec::new(),
                 scheduled_jobs: Vec::new(),
@@ -1644,6 +1657,7 @@ fn role_links_to_object_rights_and_rls_condition_object_from_listed_substrate() 
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -1756,6 +1770,7 @@ fn role_names_for_file_uses_bootstrapped_listing() {
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -5432,6 +5447,7 @@ fn service_indexes_are_case_insensitive_and_track_module_file() {
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
         Arc::new(Vec::new()),
+        Arc::new(Vec::new()),
         Arc::new(crate::metadata::CanonicalMetadataInputs::default()),
     );
     listing.set_http_services(&mut db).to(Arc::new(vec![HTTPServiceEntry {
@@ -5511,6 +5527,7 @@ fn module_metadata_http_service_late_module_file_registration_falls_back_to_whol
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -5583,6 +5600,7 @@ fn module_metadata_web_service_late_module_file_registration_falls_back_to_whole
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -5661,6 +5679,7 @@ fn subsystem_index_is_case_insensitive() {
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -5811,6 +5830,7 @@ fn subsystem_membership_from_listed_substrate() {
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -5835,6 +5855,7 @@ fn subsystem_membership_from_listed_substrate() {
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -5947,6 +5968,7 @@ fn subsystem_reference_resolver_uses_listed_substrate() {
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -5971,6 +5993,7 @@ fn subsystem_reference_resolver_uses_listed_substrate() {
             filter_criteria: Vec::new(),
             functional_options: Vec::new(),
             functional_option_parameters: Vec::new(),
+            sequences: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -6020,6 +6043,7 @@ fn empty_listing_data() -> MetadataListingData {
         filter_criteria: Vec::new(),
         functional_options: Vec::new(),
         functional_option_parameters: Vec::new(),
+        sequences: Vec::new(),
         common_modules: Vec::new(),
         event_subscriptions: Vec::new(),
         scheduled_jobs: Vec::new(),

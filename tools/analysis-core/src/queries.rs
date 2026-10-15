@@ -133,6 +133,7 @@ impl AnalysisSession {
             .map_err(QueryError::Request)?;
         self.query_module(path, expected, cancellation, |analysis, file| {
             self.require_filter_criteria_context(analysis.database(), file)?;
+            self.require_sequences_context(analysis.database(), file)?;
             self.require_functional_options_context(analysis.database(), file)?;
             self.require_functional_option_parameters_context(analysis.database(), file)?;
             diagnostics_in_snapshot(analysis, file, config)

@@ -33,6 +33,14 @@ Multiple сохраняет тип элемента массива. UUID-proven 
 runtime presence и жёсткий scalar field inference не утверждаются.
 Экспериментальные constructors/listing inputs расширены шестнадцатым семейством.
 
+[Последовательности](../../docs/research/eska-format/analyzer-sequences.md)
+добавляют семнадцатое canonical family и отдельный record-set module context.
+Настоящие generated platform types сохраняют native method IDs и текущие
+измерения; Add/Get/iteration и ThisObject используют один тип записи.
+Current known generated shape участвует в UnresolvedField, а method cards
+и signatures берут типы из того же call binding. Helper нормализации placeholders
+справочника общий с FilterCriterion; `bsl-types` не копируется и pin не меняется.
+
 [Canonical владельцы модулей](../../docs/research/eska-format/canonical-module-owners.md)
 разрешаются через текущие slots до native loader; EPF/ERF остаются объектами.
 Все listings регистрируются до запросов; новый состав/topology требует reopen.

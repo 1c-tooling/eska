@@ -38,7 +38,17 @@ fn resolve_iter_element_ty_inner(db: &dyn TypeKernelDb, collection: TypeId) -> O
         TypeKind::ValueTable(f) if f.projection.is_some() => {
             IterShape::Row { projection: f.projection.clone(), source: f.source }
         }
-        TypeKind::PlatformObject(f) => from_name(f.name.as_str()),
+        TypeKind::PlatformObject(f) => {
+            if let Some((crate::sequences::SequenceType::RecordSet, name)) =
+                crate::sequences::generated_name(&f.name)
+            {
+                IterShape::Element(
+                    db.platform_object(crate::sequences::SequenceType::Record.type_name(name)),
+                )
+            } else {
+                from_name(f.name.as_str())
+            }
+        }
         // A tabular section iterates over its own rows: the same row facet that
         // `Добавить()` returns, so both keep the section's column schema.
         TypeKind::MetadataRef(f) => match f.kind {

@@ -135,6 +135,10 @@ pub(crate) fn enumerate_fields_inner(
             enumerate_metadata_reference_collection(db, resolver, kind)
         }
         Shape::PlatformObject(name) => {
+            if let Some(fields) = crate::sequences::fields(db, resolver, name.as_str()) {
+                return fields;
+            }
+
             let mut fields = enumerate_platform_object_fields(db, &name);
             if crate::session_parameters::is_session_parameters_type_name(name.as_str()) {
                 fields.extend(crate::session_parameters::fields(db, resolver));

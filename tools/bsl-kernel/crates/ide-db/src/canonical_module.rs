@@ -77,6 +77,9 @@ impl RootDatabaseImpl {
             }
             _ => {}
         }
+        if module_type == ModuleType::RecordSetModule {
+            module.sequence = self.sequence_module_for_file(file).ok().flatten();
+        }
         Some(Arc::new(module))
     }
 

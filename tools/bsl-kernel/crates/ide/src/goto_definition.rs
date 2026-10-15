@@ -1006,6 +1006,7 @@ mod tests {
                 filter_criteria: Vec::new(),
                 functional_options: Vec::new(),
                 functional_option_parameters: Vec::new(),
+                sequences: Vec::new(),
                 common_modules: Vec::new(),
                 event_subscriptions: Vec::new(),
                 scheduled_jobs: Vec::new(),

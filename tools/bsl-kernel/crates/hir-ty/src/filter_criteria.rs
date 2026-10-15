@@ -63,27 +63,16 @@ pub(crate) fn fields(db: &dyn TypeKernelDb, resolver: &dyn MetadataResolution) -
 
 /// The pinned help embeds the generic placeholder in method names; native documentation supplies callable spelling.
 pub fn prototype_methods() -> Vec<bsl_platform::PlatformMethod> {
-    let platform = bsl_platform::PlatformData::instance();
-    platform
-        .get_type_methods(PROTOTYPE)
+    crate::generated_platform::methods(PROTOTYPE)
         .into_iter()
-        .filter_map(|method| {
-            let english = method.english_name.rsplit('.').next()?;
-            let docs = platform.get_method_docs(method.id)?;
-            let russian = docs.syntax.split_once('(')?.0.trim();
-            if russian.is_empty() || russian.contains(['.', '<', '>', '&', ';', ' ']) {
-                return None;
-            }
-            let mut value = method.clone();
-            value.name = russian.into();
-            value.english_name = english.into();
-            if english == "Find" {
-                // The help's search-value type is not a context-free Array; its actual type is configured.
-                if let Some(parameter) = value.parameters.first_mut() {
+        .map(|mut method| {
+            if method.english_name.as_str() == "Find" {
+                // The help's search-value type is configured rather than a context-free Array.
+                if let Some(parameter) = method.parameters.first_mut() {
                     parameter.param_type = None;
                 }
             }
-            Some(value)
+            method
         })
         .collect()
 }

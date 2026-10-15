@@ -201,6 +201,12 @@ impl CommonModuleBodies {
 
 #[salsa::db]
 pub trait ConfigsDatabase: DefDatabase {
+    /// Sequence dimensions belong to a generated sequence type, not a register surrogate.
+    fn resolve_sequence(&self, file: FileId, name: &str) -> Option<Arc<bsl_metadata::Sequence>>;
+
+    /// Names follow the same file-scoped roots as the current sequence resolver.
+    fn sequence_names(&self, file: FileId) -> Vec<String>;
+
     /// Potential interface-parameter keys come from the current visible declarations.
     fn resolve_functional_option_parameters(
         &self,

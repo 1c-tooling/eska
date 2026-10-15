@@ -24,6 +24,7 @@ pub mod register;
 pub mod role;
 pub mod scheduled_job;
 pub mod scoped_fs;
+mod sequence;
 pub mod session_parameter;
 pub mod subsystem;
 pub mod tabular_section;
@@ -90,6 +91,7 @@ pub use register::{
 pub use role::{Role, RoleData, RoleObjectRef};
 pub use scheduled_job::{ScheduledJob, ScheduledJobHandler};
 pub use scoped_fs::ScopedFs;
+pub use sequence::{Sequence, SequenceDimension};
 pub use session_parameter::SessionParameter;
 pub use subsystem::Subsystem;
 pub use tabular_section::{TabularSection, TabularSectionAttribute};

@@ -149,6 +149,12 @@ foreign dirty inputs и replay используют обычный controller.
 чтения изменяемого поля и runtime presence не утверждаются. Неполная BSL
 композиция даёт `analysis_composition_incomplete` и exit 2 checker на RU/EN.
 
+[Последовательности](../../docs/research/eska-format/analyzer-sequences.md)
+имеют отдельные current slots. Native generated manager/record-set/record,
+измерения, Recorder и ThisObject модуля используют текущую CF/CFE композицию.
+Cold discovery, diagnostics, method hover/signatures и replay работают через
+тот же controller; неправильный original UUID не получает прежнюю модель.
+
 [Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
 дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
 common completion, unsaved named flags и переход к физическому BSL input;

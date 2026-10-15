@@ -116,6 +116,13 @@ impl OwnerBinding {
     /// Dedicated configured families keep stable native slots without being fabricated MDOs.
     fn add_configured_to_listing(&self, listing: &mut MetadataListingData, name: &str) -> bool {
         match self.kind {
+            MetadataKind::Sequence => {
+                listing.sequences.push(ide_db::metadata::SequenceEntry {
+                    name: name.into(),
+                    main: self.main,
+                    module_file: None,
+                });
+            }
             MetadataKind::FunctionalOptionsParameter => {
                 listing.functional_option_parameters.push(
                     ide_db::metadata::FunctionalOptionsParameterEntry {
@@ -226,6 +233,11 @@ pub fn connect_common_bodies(
         {
             entry.unread_module_file = Some(module.file);
         }
+    }
+    for entry in &mut structure.sequences {
+        let path = SourcePath::parse(&format!("Sequences/{}/Ext/RecordSetModule.bsl", entry.name))
+            .map_err(SessionError::Source)?;
+        entry.module_file = bodies.get(&path).map(|module| module.file);
     }
     for entry in &mut structure.common_commands {
         let path = SourcePath::parse(&format!(

@@ -3,6 +3,7 @@
 mod common_commands;
 mod filter_criteria;
 mod functional_options;
+mod sequences;
 
 use super::{fs, report, run, support};
 use eska_analysis::DiagnosticCode;

@@ -1,0 +1,641 @@
+{
+  "frozen_inputs": 1669,
+  "source_sha256": "bd3528bc26e800cd2a46940194d141a05e673ee9f349a37f305a836ab5860cc9",
+  "all_input_snapshots_match": true,
+  "gates_executed": 27,
+  "gates_reused": 0,
+  "gates": [
+    {
+      "name": "root-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.844
+    },
+    {
+      "name": "root-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 48.884
+    },
+    {
+      "name": "root-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 26.294
+    },
+    {
+      "name": "root-test-default",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 150.839
+    },
+    {
+      "name": "root-test-all",
+      "command": [
+        "cargo",
+        "test",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 146.891
+    },
+    {
+      "name": "root-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--no-deps",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 14.964
+    },
+    {
+      "name": "kernel-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--manifest-path",
+        "tools/bsl-kernel/Cargo.toml",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.345
+    },
+    {
+      "name": "kernel-check",
+      "command": [
+        "cargo",
+        "check",
+        "--manifest-path",
+        "tools/bsl-kernel/Cargo.toml",
+        "--workspace",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 10.458
+    },
+    {
+      "name": "kernel-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--manifest-path",
+        "tools/bsl-kernel/Cargo.toml",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.287
+    },
+    {
+      "name": "kernel-test",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "tools/bsl-kernel/Cargo.toml",
+        "--workspace",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 167.674
+    },
+    {
+      "name": "kernel-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--manifest-path",
+        "tools/bsl-kernel/Cargo.toml",
+        "--workspace",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "--document-private-items"
+      ],
+      "exit_code": 0,
+      "seconds": 9.219
+    },
+    {
+      "name": "adapter-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--manifest-path",
+        "tools/bsl-adapter/Cargo.toml",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.257
+    },
+    {
+      "name": "adapter-check",
+      "command": [
+        "cargo",
+        "check",
+        "--manifest-path",
+        "tools/bsl-adapter/Cargo.toml",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 0.714
+    },
+    {
+      "name": "adapter-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--manifest-path",
+        "tools/bsl-adapter/Cargo.toml",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.333
+    },
+    {
+      "name": "adapter-test",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "tools/bsl-adapter/Cargo.toml",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 5.396
+    },
+    {
+      "name": "adapter-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--manifest-path",
+        "tools/bsl-adapter/Cargo.toml",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "--document-private-items"
+      ],
+      "exit_code": 0,
+      "seconds": 1.155
+    },
+    {
+      "name": "sdk-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.012
+    },
+    {
+      "name": "sdk-check-default",
+      "command": [
+        "cargo",
+        "check",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 14.393
+    },
+    {
+      "name": "sdk-check-all",
+      "command": [
+        "cargo",
+        "check",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 5.351
+    },
+    {
+      "name": "sdk-clippy-default",
+      "command": [
+        "cargo",
+        "clippy",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-targets",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 4.111
+    },
+    {
+      "name": "sdk-clippy-all",
+      "command": [
+        "cargo",
+        "clippy",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 3.07
+    },
+    {
+      "name": "sdk-test-default",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 34.709
+    },
+    {
+      "name": "sdk-test-all",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 41.585
+    },
+    {
+      "name": "sdk-doc-default",
+      "command": [
+        "cargo",
+        "doc",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--no-deps",
+        "--document-private-items",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 3.952
+    },
+    {
+      "name": "sdk-doc-all",
+      "command": [
+        "cargo",
+        "doc",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--no-deps",
+        "--document-private-items",
+        "--all-features",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 9.048
+    },
+    {
+      "name": "sdk-debug-bins",
+      "command": [
+        "cargo",
+        "build",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-features",
+        "--bins",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 0.178
+    },
+    {
+      "name": "sdk-release-bins",
+      "command": [
+        "cargo",
+        "build",
+        "--manifest-path",
+        "tools/analysis-core/Cargo.toml",
+        "--all-features",
+        "--bins",
+        "--release",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 79.184
+    }
+  ],
+  "test_totals": {
+    "root-test-default": {
+      "passed": 1511,
+      "failed": 0,
+      "ignored": 24
+    },
+    "root-test-all": {
+      "passed": 1632,
+      "failed": 0,
+      "ignored": 24
+    },
+    "kernel-test": {
+      "passed": 4430,
+      "failed": 0,
+      "ignored": 25
+    },
+    "adapter-test": {
+      "passed": 119,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-default": {
+      "passed": 243,
+      "failed": 0,
+      "ignored": 0
+    },
+    "sdk-test-all": {
+      "passed": 559,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "binaries": {
+    "eska-analyzer-debug": {
+      "bytes": 136236144,
+      "sha256": "ffff95b84eee97628cf7df14f9da4380ddaf07b7a6379f90f8ee8f6385520240"
+    },
+    "eska-analyzer": {
+      "bytes": 56326784,
+      "sha256": "8190b00193733a41afa4dd4d41ba6413c092c23e0ccdc844c7207af309448abd"
+    },
+    "eska-check": {
+      "bytes": 50748808,
+      "sha256": "e07fea2ee55be8f87eb18d0ed28234ac3111a6a503a2ae69b228b4ccc721bbcf"
+    }
+  },
+  "node": {
+    "tests": 371,
+    "passed": 371,
+    "failed": 0,
+    "skipped": 0,
+    "duration_ms": 16540.265774
+  },
+  "installed": {
+    "passed": true,
+    "child_processes": 29,
+    "all_children_reaped": true,
+    "cases": [
+      {
+        "case": "generated-cf",
+        "origin": "generated-native",
+        "type": "configuration",
+        "nativeSequenceCompletion": true,
+        "nativeSequenceRecordSet": true,
+        "nativeSequenceHover": true,
+        "sequenceFailureRetracted": true,
+        "sequenceRestartReplay": true,
+        "foreignSequenceDimensions": false,
+        "nativeOptionParameterCompletion": true,
+        "nativeOptionParameterGlobalHover": true,
+        "optionParameterFailureRetracted": true,
+        "optionParameterRestartReplay": true,
+        "foreignOptionParameterType": false,
+        "nativeOptionResultHover": true,
+        "nativeOptionGlobalHover": true,
+        "optionFailureRetracted": true,
+        "optionRestartReplay": true,
+        "foreignOptionStorage": false,
+        "nativeCriterionCompletion": true,
+        "nativeCriterionHover": true,
+        "criterionFailureRetracted": true,
+        "criterionRestartReplay": true,
+        "foreignCriterionContent": false,
+        "currentCommandParameters": true,
+        "commandFailureRetracted": true,
+        "commandRestartReplay": true,
+        "nativeCommandHover": true,
+        "foreignCommandParameter": false,
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": false,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 84,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "generated-cfe",
+        "origin": "generated-native",
+        "type": "extension",
+        "nativeSequenceCompletion": true,
+        "nativeSequenceRecordSet": true,
+        "nativeSequenceHover": true,
+        "sequenceFailureRetracted": true,
+        "sequenceRestartReplay": true,
+        "foreignSequenceDimensions": true,
+        "nativeOptionParameterCompletion": true,
+        "nativeOptionParameterGlobalHover": true,
+        "optionParameterFailureRetracted": true,
+        "optionParameterRestartReplay": true,
+        "foreignOptionParameterType": true,
+        "nativeOptionResultHover": true,
+        "nativeOptionGlobalHover": true,
+        "optionFailureRetracted": true,
+        "optionRestartReplay": true,
+        "foreignOptionStorage": true,
+        "nativeCriterionCompletion": true,
+        "nativeCriterionHover": true,
+        "criterionFailureRetracted": true,
+        "criterionRestartReplay": true,
+        "foreignCriterionContent": true,
+        "currentCommandParameters": true,
+        "commandFailureRetracted": true,
+        "commandRestartReplay": true,
+        "nativeCommandHover": true,
+        "foreignCommandParameter": true,
+        "currentCommonFields": true,
+        "commonFieldFailureRetracted": true,
+        "commonFieldRestartReplay": true,
+        "foreignCommonField": true,
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "foreignCurrentMetadata": true,
+        "foreignInvalidNoSavedFallback": true,
+        "hiddenSiblingIgnored": true,
+        "foreignRestartImportReplay": true,
+        "foreignSourceBytesPreserved": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 73,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cf",
+        "origin": "1c-native",
+        "type": "configuration",
+        "protectedReadonly": true,
+        "savedAndOpenCoordinates": true,
+        "currentParameterTypes": true,
+        "unknownParameterTypesRetracted": true,
+        "parameterRestartReplay": true,
+        "unchangedQueryRepair": true,
+        "invalidCurrentNoSavedFallback": true,
+        "nativeUtf16Coordinates": true,
+        "restartReplay": true,
+        "importReplay": true,
+        "sourceBytesPreserved": true,
+        "sourceFilesPreserved": 133,
+        "nativeSaveInvoked": false
+      },
+      {
+        "case": "native-cfe",
+        "origin": "1c-native",
+        "type": "extension",
+        "semanticContextRefused": true,
+        "syntaxAvailable": true,
+        "sourceBytesPreserved": true
+      }
+    ],
+    "vsix": {
+      "sha256": "4c959b2a88ad52ca3146b685c185df0fecf0d15a57945b08e0a1f514c381b74d",
+      "version": "0.0.11",
+      "production_modules_matching": 55,
+      "changed_production_modules": [],
+      "helpers_included": false,
+      "reused_previous_vsix": true
+    }
+  },
+  "large_native_sequence_read": {
+    "owners": 1,
+    "ready": 1,
+    "parse_issues": 0,
+    "source_preserved": true,
+    "child_reaped": true,
+    "exit_code": 0,
+    "peak_observed_rss_bytes": 63074304
+  },
+  "large_composition": {
+    "status": "stopped",
+    "reason": "analysis_composition_incomplete",
+    "stopped_phase": "cold_completion",
+    "next_family": "SettingsStorage",
+    "cold_completion_seconds": 18.559852028000023,
+    "child_wall_seconds": 18.912237433999962,
+    "peak_observed_rss_bytes": 394944512,
+    "request_deadline_seconds": 20,
+    "external_wall_limit_seconds": 60,
+    "external_rss_limit_bytes": 1610612736,
+    "warm_requests": 0,
+    "field_cycles": 0,
+    "child_exit_code": 0,
+    "child_reaped": true,
+    "killed_by": null,
+    "original_bytes_modes_mtimes_preserved": true,
+    "copies_bytes_modes_mtimes_preserved": true,
+    "resources": {
+      "max_source_bytes": 268435456,
+      "metadata_source_bytes": 173928942,
+      "module_text_bytes": 69803921,
+      "query_text_bytes": 0,
+      "total_source_bytes": 243732863
+    },
+    "heap_estimate_complete": false,
+    "live_tables_without_heap_hook": 2,
+    "telemetry_stale_revision_retries": 1,
+    "semantic_retries": 0,
+    "new_source_copies": 0,
+    "new_infobases": 0,
+    "vendor_association_verified": false,
+    "complete_large_composition_accepted": false,
+    "global_memory_budget_accepted": false
+  },
+  "mvp_complete": false
+}

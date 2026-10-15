@@ -24,6 +24,11 @@ pub(crate) fn resolve_this_record_set_member(
     resolver: &Resolver,
     name: &Name,
 ) -> Option<TypeId> {
+    if let Some(type_name) = crate::this_object::resolve_this_sequence_record_set(db, resolver) {
+        let module_id = resolver.module_id()?;
+        let obj_resolver = crate::object_resolver::DbObjectResolver::new(db, module_id.file_id);
+        return crate::sequences::field(db, &obj_resolver, &type_name, name).map(|field| field.ty);
+    }
     let (mdo_type, mdo_name) = crate::this_object::resolve_this_record_set_owner(db, resolver)?;
     let kind = hir_def::ty::MetadataKind::record_set_kind_for(mdo_type)?;
     let module_id = resolver.module_id()?;

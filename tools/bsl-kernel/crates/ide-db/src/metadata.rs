@@ -3,6 +3,7 @@ mod common_command;
 mod filter_criterion;
 mod functional_option;
 mod functional_option_parameter;
+mod sequence;
 mod session_parameter;
 use bsl_metadata::Configuration;
 pub use common_attribute::{resolve_common_attribute, CommonAttributeEntry};
@@ -14,6 +15,7 @@ pub use functional_option_parameter::{
 };
 use intern::NormName;
 use rustc_hash::FxHashMap;
+pub use sequence::{resolve_sequence, SequenceEntry};
 pub use session_parameter::{
     resolve_session_parameter, session_parameter_index, SessionParameterEntry,
 };
@@ -123,7 +125,7 @@ pub(crate) mod heap_estimate {
             + snapshot.source_exclusions.heap_bytes()
     }
 
-    /// Heap of a [`super::MetadataListingInput`]: the sixteen per-family `Arc<Vec<_>>`
+    /// Heap of a [`super::MetadataListingInput`]: the seventeen per-family `Arc<Vec<_>>`
     /// entry lists plus each entry's owned name string (the other entry fields —
     /// `FileId`s, the MDO kind — are `Copy`). New heap-owning listing families
     /// must be added here too.
@@ -146,6 +148,7 @@ pub(crate) mod heap_estimate {
             Arc<Vec<super::FilterCriterionEntry>>,
             Arc<Vec<super::FunctionalOptionEntry>>,
             Arc<Vec<super::FunctionalOptionsParameterEntry>>,
+            Arc<Vec<super::SequenceEntry>>,
             Arc<super::CanonicalMetadataInputs>,
         ),
     ) -> usize {
@@ -166,6 +169,7 @@ pub(crate) mod heap_estimate {
             filter_criteria,
             functional_options,
             functional_option_parameters,
+            sequences,
             canonical_metadata,
         ) = fields;
 
@@ -203,6 +207,8 @@ pub(crate) mod heap_estimate {
                 functional_option_parameters.len(),
             )
             + functional_option_parameters.iter().map(|entry| entry.name.capacity()).sum::<usize>()
+            + stdx::heap::vec_bytes::<super::SequenceEntry>(sequences.len())
+            + sequences.iter().map(|entry| entry.name.capacity()).sum::<usize>()
             + stdx::heap::map_table_bytes::<vfs::FileId, super::CanonicalMetadataInput>(
                 canonical_metadata.len(),
             )
@@ -953,6 +959,7 @@ pub struct MetadataListingData {
     pub filter_criteria: Vec<FilterCriterionEntry>,
     pub functional_options: Vec<FunctionalOptionEntry>,
     pub functional_option_parameters: Vec<FunctionalOptionsParameterEntry>,
+    pub sequences: Vec<SequenceEntry>,
     pub entries: Vec<MdoEntry>,
     pub defined_types: Vec<DefinedTypeEntry>,
     pub common_modules: Vec<CommonModuleEntry>,
@@ -975,6 +982,7 @@ pub enum CanonicalMetadata {
     FilterCriterion(Arc<bsl_metadata::FilterCriterion>),
     FunctionalOption(Arc<bsl_metadata::FunctionalOption>),
     FunctionalOptionsParameter(Arc<bsl_metadata::FunctionalOptionsParameter>),
+    Sequence(Arc<bsl_metadata::Sequence>),
     Object(Arc<bsl_metadata::MetadataObject>),
     Register(Arc<bsl_metadata::Register>),
     CommonModule(Arc<bsl_metadata::CommonModule>),
@@ -999,6 +1007,7 @@ impl CanonicalMetadata {
             Self::FilterCriterion(value) => value.estimated_heap_size(),
             Self::FunctionalOption(value) => value.estimated_heap_size(),
             Self::FunctionalOptionsParameter(value) => value.estimated_heap_size(),
+            Self::Sequence(value) => value.estimated_heap_size(),
             Self::Object(value) => value.estimated_heap_size(),
             Self::Register(value) => value.estimated_heap_size(),
             Self::CommonModule(value) => value.estimated_heap_size(),
@@ -1067,6 +1076,7 @@ pub struct MetadataListingInput {
     pub filter_criteria: Arc<Vec<FilterCriterionEntry>>,
     pub functional_options: Arc<Vec<FunctionalOptionEntry>>,
     pub functional_option_parameters: Arc<Vec<FunctionalOptionsParameterEntry>>,
+    pub sequences: Arc<Vec<SequenceEntry>>,
     pub canonical_metadata: Arc<CanonicalMetadataInputs>,
 }
 
@@ -2517,6 +2527,7 @@ pub fn build_module_metadata(
         execution_context,
         common_module,
         common_command: None,
+        sequence: None,
         mdo,
         register,
         form,

@@ -55,7 +55,7 @@ mod parameters_fixture;
 /// Native mutable-structure leaf hints stay soft, while an invalid current parameter prevents complete batch success.
 #[test]
 fn functional_option_parameter_checker_keeps_soft_values_and_current_failure_ruen() {
-    let body = "&AtClient\nProcedure Run()\n Params=GetInterfaceFunctionalOptionParameters();\n Value=StringLength(Params.SettingЯ);\nEndProcedure\n";
+    let body = "&AtClient\nProcedure Run()\n Params=GetInterfaceFunctionalOptionParameters();\n Value=Month(Params.SettingЯ);\nEndProcedure\n";
     let (directory, root) = support::project(body, false);
     let native = directory.0.join("native");
     fixture::add_options(&root, &native);
@@ -84,6 +84,28 @@ fn functional_option_parameter_checker_keeps_soft_values_and_current_failure_rue
         results.push(value);
     }
     assert_eq!(results[0], results[1]);
+    // A known incompatible scalar proves the real global's date parameter is checked.
+    let module = source.join("CommonModules/Tools/Module.bsl");
+    fs::write(&module, body.replace("Params.SettingЯ", "False")).unwrap();
+    for locale in ["ru-RU", "en-US"] {
+        let value = report(
+            &run(
+                &root,
+                locale,
+                &["--profile", "semantic", "--format", "json"],
+            ),
+            1,
+        );
+        assert!(
+            value["data"]["report"]["files"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .flat_map(|file| file["findings"].as_array().unwrap())
+                .any(|finding| finding["code"] == "TypeMismatch")
+        );
+    }
+    fs::write(&module, body).unwrap();
     let parameter = source.join("FunctionalOptionsParameters/SettingЯ/object.yaml");
     let saved = fs::read_to_string(&parameter).unwrap();
     let invalid = saved.replace(

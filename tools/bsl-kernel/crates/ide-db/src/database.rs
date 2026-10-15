@@ -1,6 +1,7 @@
 mod filter_criteria;
 mod functional_option_parameters;
 mod functional_options;
+mod sequences;
 mod session_parameters;
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
@@ -854,6 +855,7 @@ impl RootDatabaseImpl {
             filter_criteria,
             functional_options,
             functional_option_parameters,
+            sequences,
         } = listing;
         let entries = Arc::new(entries);
         let defined_types = Arc::new(defined_types);
@@ -871,6 +873,7 @@ impl RootDatabaseImpl {
         let filter_criteria = Arc::new(filter_criteria);
         let functional_options = Arc::new(functional_options);
         let functional_option_parameters = Arc::new(functional_option_parameters);
+        let sequences = Arc::new(sequences);
         match self.metadata_listings.get(&key).map(|e| *e.value()) {
             Some(input) => {
                 input.set_entries(self).to(entries);
@@ -889,6 +892,7 @@ impl RootDatabaseImpl {
                 input.set_filter_criteria(self).to(filter_criteria);
                 input.set_functional_options(self).to(functional_options);
                 input.set_functional_option_parameters(self).to(functional_option_parameters);
+                input.set_sequences(self).to(sequences);
             }
             None => {
                 let input = metadata::MetadataListingInput::builder(
@@ -908,6 +912,7 @@ impl RootDatabaseImpl {
                     filter_criteria,
                     functional_options,
                     functional_option_parameters,
+                    sequences,
                     Arc::new(metadata::CanonicalMetadataInputs::default()),
                 )
                 .durability(salsa::Durability::MEDIUM)
@@ -3032,6 +3037,16 @@ impl DefDatabase for RootDatabaseImpl {
 
 #[salsa::db]
 impl hir::ConfigsDatabase for RootDatabaseImpl {
+    /// Generated sequence types resolve through the caller's current canonical visibility.
+    fn resolve_sequence(&self, file: FileId, name: &str) -> Option<Arc<bsl_metadata::Sequence>> {
+        self.resolve_sequence_for_file(file, name)
+    }
+
+    /// Only declared visible sequence names enter the platform container.
+    fn sequence_names(&self, file: FileId) -> Vec<String> {
+        self.sequence_names_for_file(file)
+    }
+
     /// Getter fields share the caller's current proven parameter declarations.
     fn resolve_functional_option_parameters(
         &self,

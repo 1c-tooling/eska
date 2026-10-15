@@ -60,6 +60,12 @@ AutoUse=Use, разделение данных и неподдержанные t
 неизвестные категории проверяются до публикации. Отсутствие borrowed Use
 сохраняется до проверки оригинального UUID; собственный Use обязателен.
 
+[`sequence`](../../docs/research/eska-format/analyzer-sequences.md) сохраняет
+настоящие UUID/Type измерений, Documents и RegisterRecords в собственной модели.
+Новые измерения требуют Type; borrowed отсутствие сохраняется до native merge.
+Namespace, target kinds, дубли, ownership и reserved field names проверяются
+общими readers до публикации модели; XML sidecar и register surrogate не нужны.
+
 `defined_type` сохраняет UUID и составной тип, `attribute_type` преобразует
 общее свойство `Type` для последующих адаптеров полей. Сохраняются альтернативы
 `Type`/`TypeSet`, ссылки, определяемые и характеристические типы, параметры

@@ -117,9 +117,18 @@ SDK — 233/544, Node — 361; installed CF/CFE без Var прошёл current/
 и типы completion, без жёсткого scalar inference. Analyzer/Explorer сохраняют
 штатный detail; BSL incomplete даёт checker exit 2. SDK — 237/551, kernel —
 4429/25 ignored, adapter — 116; Node — 366, installed CF/CFE — 27 завершённых
-children. Все 3 native параметра готовы; следующий отказ большой композиции —
-Sequence. Шесть корневых gates выполнены заново: 1511/1632 tests, 24 ignored.
+children. Все 3 native параметра готовы; тот прогон остановился на Sequence.
+Шесть корневых gates выполнены заново: 1511/1632 tests, 24 ignored.
 EF-18/EF-27, editable opening/guarded Save, комплект EF-21 и приёмка EF-16 ещё нужны.
+
+[Текущие последовательности](../research/eska-format/analyzer-sequences.md)
+дают native generated record types, текущие измерения и record-set ThisObject,
+completion/diagnostics/method hover/signatures. CF/CFE invalid/repair/replay и
+original UUID проверены: SDK — 243/559, kernel — 4430/25 ignored, adapter — 119;
+Node — 371, установленный клиент — 29 завершённых children. Все 27 Rust gates
+прошли; корень — 1511/1632, по 24 ignored. Единственная большая native Sequence
+готова с четырьмя измерениями; следующий отказ композиции — SettingsStorage.
+SDBL, memory budget и остальные условия EF-18/EF-27/Explorer/MVP ещё в работе.
 
 По запросу пользователя ближайшая цель — работа с боевыми проектами в новой
 структуре ESKA: new/init, импорт изменений из CF/CFE/EPF/ERF в существующий
