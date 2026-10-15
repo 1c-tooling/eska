@@ -257,6 +257,19 @@ impl Analysis {
         )
     }
 
+    /// Discover a typed SessionParameters receiver without loading configured value payloads.
+    pub fn completion_uses_session_parameters(&self, file_id: FileId, offset: u32) -> bool {
+        completion::uses_session_parameters(
+            &self.db,
+            completion::CompletionPosition {
+                file_id,
+                offset: TextSize::from(offset),
+                workspace_root: None,
+                locale: Locale::Ru,
+            },
+        )
+    }
+
     /// Discover the admitted direct object's manager body without reading its text or exports.
     pub fn completion_manager_module(&self, file_id: FileId, offset: u32) -> Option<FileId> {
         completion::manager_module_target(

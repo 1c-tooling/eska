@@ -1,6 +1,10 @@
+mod session_parameter;
 use bsl_metadata::Configuration;
 use intern::NormName;
 use rustc_hash::FxHashMap;
+pub use session_parameter::{
+    resolve_session_parameter, session_parameter_index, SessionParameterEntry,
+};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use stdx::case::CaseExt;
@@ -107,7 +111,7 @@ pub(crate) mod heap_estimate {
             + snapshot.source_exclusions.heap_bytes()
     }
 
-    /// Heap of a [`super::MetadataListingInput`]: the ten per-family `Arc<Vec<_>>`
+    /// Heap of a [`super::MetadataListingInput`]: the eleven per-family `Arc<Vec<_>>`
     /// entry lists plus each entry's owned name string (the other entry fields —
     /// `FileId`s, the MDO kind — are `Copy`). New heap-owning listing families
     /// must be added here too.
@@ -124,6 +128,7 @@ pub(crate) mod heap_estimate {
             Arc<Vec<super::WebServiceEntry>>,
             Arc<Vec<super::IntegrationServiceEntry>>,
             Arc<Vec<super::SubsystemEntry>>,
+            Arc<Vec<super::SessionParameterEntry>>,
             Arc<super::CanonicalMetadataInputs>,
         ),
     ) -> usize {
@@ -138,6 +143,7 @@ pub(crate) mod heap_estimate {
             web_services,
             integration_services,
             subsystems,
+            session_parameters,
             canonical_metadata,
         ) = fields;
 
@@ -161,6 +167,8 @@ pub(crate) mod heap_estimate {
             + integration_services.iter().map(|e| e.name.capacity()).sum::<usize>()
             + stdx::heap::vec_bytes::<super::SubsystemEntry>(subsystems.len())
             + subsystems.iter().map(|e| e.name.capacity()).sum::<usize>()
+            + stdx::heap::vec_bytes::<super::SessionParameterEntry>(session_parameters.len())
+            + session_parameters.iter().map(|entry| entry.name.capacity()).sum::<usize>()
             + stdx::heap::map_table_bytes::<vfs::FileId, super::CanonicalMetadataInput>(
                 canonical_metadata.len(),
             )
@@ -905,6 +913,7 @@ pub struct SubsystemEntry {
 /// while keeping each metadata family typed separately.
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub struct MetadataListingData {
+    pub session_parameters: Vec<SessionParameterEntry>,
     pub entries: Vec<MdoEntry>,
     pub defined_types: Vec<DefinedTypeEntry>,
     pub common_modules: Vec<CommonModuleEntry>,
@@ -921,6 +930,7 @@ pub struct MetadataListingData {
 /// Inner Arcs let memoized resolvers share payloads without cloning their owned metadata.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CanonicalMetadata {
+    SessionParameter(Arc<bsl_metadata::SessionParameter>),
     Object(Arc<bsl_metadata::MetadataObject>),
     Register(Arc<bsl_metadata::Register>),
     CommonModule(Arc<bsl_metadata::CommonModule>),
@@ -939,6 +949,7 @@ impl CanonicalMetadata {
     /// Count the owned family payload once at its canonical input, not at shared query results.
     fn estimated_heap_size(&self) -> usize {
         match self {
+            Self::SessionParameter(value) => value.estimated_heap_size(),
             Self::Object(value) => value.estimated_heap_size(),
             Self::Register(value) => value.estimated_heap_size(),
             Self::CommonModule(value) => value.estimated_heap_size(),
@@ -1001,6 +1012,7 @@ pub struct MetadataListingInput {
     pub web_services: Arc<Vec<WebServiceEntry>>,
     pub integration_services: Arc<Vec<IntegrationServiceEntry>>,
     pub subsystems: Arc<Vec<SubsystemEntry>>,
+    pub session_parameters: Arc<Vec<SessionParameterEntry>>,
     pub canonical_metadata: Arc<CanonicalMetadataInputs>,
 }
 

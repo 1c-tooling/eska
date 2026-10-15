@@ -30,6 +30,8 @@ mod local_syntax_tests;
 #[cfg(test)]
 mod scheduled_job_tests;
 #[cfg(test)]
+mod session_parameter_tests;
+#[cfg(test)]
 mod structural_descriptor_tests;
 #[cfg(test)]
 mod subsystem_tests;
@@ -419,6 +421,12 @@ impl AnalysisSession {
                 resolve_common_module(&self.database, self.selected_root.listing, name.clone())
                     .map(CanonicalMetadata::CommonModule)
             }
+            CanonicalMetadata::SessionParameter(_) => ide_db::metadata::resolve_session_parameter(
+                &self.database,
+                self.selected_root.listing,
+                name.clone(),
+            )
+            .map(CanonicalMetadata::SessionParameter),
             CanonicalMetadata::DefinedType(model) => {
                 resolve_defined_type(&self.database, self.selected_root.listing, name.clone())
                     .map(|_| CanonicalMetadata::DefinedType(Arc::clone(model)))

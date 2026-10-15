@@ -1,0 +1,40 @@
+[package]
+name = "hir-def"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+bsl-conventions.workspace = true
+stdx.workspace = true
+cfg-types.workspace = true
+base-db.workspace = true
+syntax.workspace = true
+vfs.workspace = true
+intern.workspace = true
+salsa.workspace = true
+rayon.workspace = true
+rustc-hash.workspace = true
+la-arena.workspace = true
+ordered-float.workspace = true
+smol_str.workspace = true
+smallvec.workspace = true
+text-size.workspace = true
+tracing.workspace = true
+parser.workspace = true
+parser-error.workspace = true
+sdbl-hir.workspace = true
+bsl-config.workspace = true
+bsl-metadata.workspace = true
+bsl-platform.workspace = true
+bsl-types.workspace = true
+project-model.workspace = true
+line-index.workspace = true
+indexmap.workspace = true
+
+[dev-dependencies]
+expect-test.workspace = true
+lexer.workspace = true
+parser.workspace = true
+ide-db.workspace = true

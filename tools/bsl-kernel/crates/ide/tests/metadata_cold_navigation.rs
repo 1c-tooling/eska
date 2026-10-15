@@ -135,6 +135,7 @@ fn setup_with_role_substrate(fixture_text: &str) -> (Analysis, FileId, u32) {
         MetadataListingData {
             entries: Vec::new(),
             defined_types: Vec::new(),
+            session_parameters: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -233,6 +234,7 @@ fn setup_with_http_service_substrate(fixture_text: &str) -> (Analysis, FileId, u
         MetadataListingData {
             entries: Vec::new(),
             defined_types: Vec::new(),
+            session_parameters: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -295,6 +297,7 @@ fn setup_with_web_service_substrate(fixture_text: &str) -> (Analysis, FileId, u3
         MetadataListingData {
             entries: Vec::new(),
             defined_types: Vec::new(),
+            session_parameters: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -361,6 +364,7 @@ fn setup_with_integration_service_substrate(fixture_text: &str) -> (Analysis, Fi
         MetadataListingData {
             entries: Vec::new(),
             defined_types: Vec::new(),
+            session_parameters: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: Vec::new(),
@@ -417,6 +421,7 @@ fn setup_with_scheduled_job_xml(
         MetadataListingData {
             entries: Vec::new(),
             defined_types: Vec::new(),
+            session_parameters: Vec::new(),
             common_modules: Vec::new(),
             event_subscriptions: Vec::new(),
             scheduled_jobs: vec![ScheduledJobEntry {

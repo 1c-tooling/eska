@@ -836,7 +836,6 @@ dependencies = [
 [[package]]
 name = "hir-def"
 version = "0.2.85"
-source = "git+https://github.com/1c-tooling/bsl-analyzer.git?rev=9021ba07471eee8a2614bed2105a2c8699f60780#9021ba07471eee8a2614bed2105a2c8699f60780"
 dependencies = [
  "base-db",
  "bsl-config",
@@ -1019,6 +1018,7 @@ dependencies = [
  "code-chunk",
  "either",
  "hir",
+ "hir-ty",
  "ide-assists",
  "ide-db",
  "ide-diagnostics",

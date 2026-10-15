@@ -349,6 +349,8 @@ fn canonical(
             .map(|model| CanonicalMetadata::EventSubscription(Arc::new(model))),
         MetadataKind::CommonModule => adapter::common_module(root)
             .map(|model| CanonicalMetadata::CommonModule(Arc::new(model))),
+        MetadataKind::SessionParameter => adapter::session_parameter(root)
+            .map(|model| CanonicalMetadata::SessionParameter(Arc::new(model))),
         MetadataKind::DefinedType => {
             adapter::defined_type(root).map(|model| CanonicalMetadata::DefinedType(Arc::new(model)))
         }

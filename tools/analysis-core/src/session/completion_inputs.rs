@@ -6,6 +6,7 @@ mod common_module_tests;
 mod hover_tests;
 #[cfg(test)]
 mod manager_tests;
+mod session_parameters;
 #[cfg(test)]
 mod signature_tests;
 #[cfg(test)]
@@ -45,6 +46,7 @@ impl AnalysisSession {
                 .map_err(QueryError::Request)?;
         }
         self.prepare_module_metadata(path, request)?;
+        self.prepare_session_parameters(path, offset, request, cancellation)?;
         if cancellation.is_cancelled() || request.cancellation.is_cancelled() {
             return Err(QueryError::Cancelled);
         }

@@ -1,0 +1,351 @@
+use super::{parse_type_expr, DocTypeExpr};
+use crate::docs::{parse_method_docs, TypeDoc};
+
+fn parse_docs(lines: &[&str]) -> crate::docs::MethodDocs {
+    let comments = lines.iter().map(|line| (*line).to_string()).collect::<Vec<_>>();
+    parse_method_docs(&comments).expect("test documentation must parse")
+}
+
+#[test]
+fn parses_russian_and_english_method_collection_see_returns() {
+    let russian = parse_docs(&[
+        "Параметры:",
+        "  Данные - см. ОбщийМодуль.ДанныеФайла",
+        "Возвращаемое значение:",
+        "  Массив из см. РаботаСФайлами.ДанныеФайла",
+    ]);
+    let english = parse_docs(&[
+        "Parameters:",
+        "  Data - See CommonModule.FileData",
+        "Returns:",
+        "  Array of See FileService.FileData",
+    ]);
+
+    assert_eq!(
+        russian.returned_value[0].description.as_deref(),
+        Some("из см. РаботаСФайлами.ДанныеФайла")
+    );
+    assert_eq!(
+        english.returned_value[0].description.as_deref(),
+        Some("of See FileService.FileData")
+    );
+    assert!(matches!(parse_type_expr(&russian.parameters[0].types[0]), Some(DocTypeExpr::See(_))));
+    assert!(matches!(
+        parse_type_expr(&russian.returned_value[0]),
+        Some(DocTypeExpr::Array(element)) if matches!(*element, DocTypeExpr::See(_))
+    ));
+    assert!(matches!(parse_type_expr(&english.parameters[0].types[0]), Some(DocTypeExpr::See(_))));
+    assert!(matches!(
+        parse_type_expr(&english.returned_value[0]),
+        Some(DocTypeExpr::Array(element)) if matches!(*element, DocTypeExpr::See(_))
+    ));
+}
+
+#[test]
+fn parses_structure_fields_recursively() {
+    let docs = parse_docs(&[
+        "Возвращаемое значение:",
+        "  Структура:",
+        "    * Адрес - Структура:",
+        "    ** Город - Строка - город.",
+    ]);
+
+    let Some(DocTypeExpr::Structure { fields }) = parse_type_expr(&docs.returned_value[0]) else {
+        panic!("expected documented structure");
+    };
+
+    assert_eq!(fields.len(), 1);
+    assert_eq!(fields[0].name, "Адрес");
+    let [DocTypeExpr::Structure { fields }] = fields[0].types.as_slice() else {
+        panic!("expected nested documented structure");
+    };
+    assert_eq!(fields.len(), 1);
+    assert_eq!(fields[0].name, "Город");
+    assert!(matches!(fields[0].types.as_slice(), [DocTypeExpr::TypeRef(_)]));
+}
+
+#[test]
+fn parses_full_name_collections_and_merged_descriptions() {
+    let docs = parse_docs(&[
+        "Параметры:",
+        "  Русские - МаСсИв ИЗ Строка",
+        "  English - aRrAy OF Number",
+        "Возвращаемое значение:",
+        "  МаСсИв ИЗ Структура - элементы результата:",
+        "    * РусскоеПоле - Массив из Строка",
+        "    * EnglishField - Array of Number",
+    ]);
+
+    assert!(matches!(
+        parse_type_expr(&docs.parameters[0].types[0]),
+        Some(DocTypeExpr::Array(element)) if matches!(*element, DocTypeExpr::TypeRef(_))
+    ));
+    assert!(matches!(
+        parse_type_expr(&docs.parameters[1].types[0]),
+        Some(DocTypeExpr::Array(element)) if matches!(*element, DocTypeExpr::TypeRef(_))
+    ));
+
+    let Some(DocTypeExpr::Array(element)) = parse_type_expr(&docs.returned_value[0]) else {
+        panic!("expected documented array");
+    };
+    let DocTypeExpr::Structure { fields } = *element else {
+        panic!("expected array element structure");
+    };
+    assert_eq!(
+        docs.returned_value[0].description.as_deref(),
+        Some("из Структура - элементы результата:")
+    );
+    assert_eq!(fields.len(), 2);
+    assert!(fields.iter().all(|field| {
+        matches!(field.types.as_slice(), [DocTypeExpr::Array(element)] if matches!(**element, DocTypeExpr::TypeRef(_)))
+    }));
+}
+
+#[test]
+fn rejects_prose_and_malformed_see_targets() {
+    for invalid in [
+        "См. 5",
+        "See Service.Type trailing prose",
+        "5 см.",
+        "(см. Модуль.Тип)",
+        "описание полей см. Модуль.Тип. Иначе текст",
+    ] {
+        assert_eq!(parse_type_expr(&TypeDoc::simple(invalid.to_string(), None)), None);
+    }
+
+    for type_name in ["СметнаяСтрока", "Смещение"] {
+        assert!(matches!(
+            parse_type_expr(&TypeDoc::simple(type_name.to_string(), None)),
+            Some(DocTypeExpr::TypeRef(_))
+        ));
+    }
+}
+
+#[test]
+fn structure_of_a_value_type_is_a_structure_with_its_documented_fields() {
+    // A parameter keeps the `из <Тип>` tail inside the type name, and the tail names the values,
+    // not the container: the slot is still the structure its bullets describe.
+    let docs = parse_docs(&[
+        "Параметры:",
+        "  Данные - Структура из КлючИЗначение:",
+        "   * Ключ - Строка - имя таблицы.",
+        "Возвращаемое значение:",
+        "  Structure of KeyAndValue - таблицы:",
+        "   * Значение - Число - число строк.",
+    ]);
+
+    let parameter = parse_type_expr(&docs.parameters[0].types[0]);
+    let Some(DocTypeExpr::Structure { fields }) = parameter else {
+        panic!("parameter must lower to a structure, got {parameter:?}");
+    };
+    assert_eq!(fields.iter().map(|f| f.name.as_str()).collect::<Vec<_>>(), ["Ключ"]);
+
+    let returned = parse_type_expr(&docs.returned_value[0]);
+    let Some(DocTypeExpr::Structure { fields }) = returned else {
+        panic!("return must lower to a structure, got {returned:?}");
+    };
+    assert_eq!(fields.iter().map(|f| f.name.as_str()).collect::<Vec<_>>(), ["Значение"]);
+}
+
+#[test]
+fn a_collection_that_is_not_a_structure_keeps_its_own_lowering() {
+    // The `из` tail alone must not turn every collection into a structure.
+    assert!(matches!(
+        parse_type_expr(&TypeDoc::simple("Массив из Строка".to_string(), None)),
+        Some(DocTypeExpr::Array(_))
+    ));
+    assert!(parse_type_expr(&TypeDoc::simple("Соответствие из Строка".to_string(), None)).is_none());
+}
+
+/// The slot's alternatives, in the order the documentation declares them.
+fn param_types(docs: &crate::docs::MethodDocs, name: &str) -> Vec<DocTypeExpr> {
+    docs.parameters
+        .iter()
+        .find(|param| param.name == name)
+        .expect("test documentation must declare the parameter")
+        .types
+        .iter()
+        .filter_map(parse_type_expr)
+        .collect()
+}
+
+fn names_target(docs: &crate::docs::MethodDocs, param: &str) -> bool {
+    param_types(docs, param).iter().any(DocTypeExpr::names_documentation_target)
+}
+
+#[test]
+fn a_reference_is_found_wherever_the_slot_puts_it() {
+    // A reference is not only ever the whole slot: an array holds it as its element, and a
+    // documented structure holds it in a field. A predicate reading only the root of the
+    // expression answers `false` for both, and the slots that need resolving most go unnoticed.
+    let docs = parse_docs(&[
+        "Параметры:",
+        "  Прямая - см. База.Создать",
+        "  Параметр - см. База.Создать.Настройки",
+        "  ВМассиве - Массив из см. База.Создать",
+        "  ВПоле - Структура:",
+        "   * Ключ - см. База.Создать - вложенная ссылка.",
+    ]);
+
+    assert!(names_target(&docs, "Прямая"), "две части — метод и его возврат");
+    assert!(names_target(&docs, "Параметр"), "три части — параметр названного метода");
+    assert!(names_target(&docs, "ВМассиве"), "ссылка под массивом");
+    assert!(names_target(&docs, "ВПоле"), "ссылка в поле документированной структуры");
+}
+
+/// `Имя - Структура - см. Модуль.Метод`: the marker stands in the description, and the slot
+/// must name the same target the plain `- см. ...` form names — 1 244 such slots in one
+/// configuration alone.
+#[test]
+fn a_marker_in_the_description_names_the_target_too() {
+    let docs = parse_docs(&[
+        "Параметры:",
+        "  Параметры - Структура - см. ОбщегоНазначенияКлиентСервер.ПараметрыЗаписи",
+    ]);
+
+    assert!(
+        names_target(&docs, "Параметры"),
+        "the marker in the description was lost: {:?}",
+        param_types(&docs, "Параметры")
+    );
+    let parsed = param_types(&docs, "Параметры");
+    let [DocTypeExpr::See(target)] = parsed.as_slice() else {
+        panic!("expected the documented reference, got {parsed:?}");
+    };
+    assert_eq!(
+        target.segments().iter().map(|segment| segment.as_str()).collect::<Vec<_>>(),
+        ["ОбщегоНазначенияКлиентСервер", "ПараметрыЗаписи"]
+    );
+}
+
+/// A slot that documents its own bullets keeps them: a marker in the description refines a
+/// PLACEHOLDER, and a structure with local fields is not one.
+#[test]
+fn a_marker_beside_local_fields_keeps_them() {
+    let docs = parse_docs(&[
+        "Параметры:",
+        "  Данные - Структура - см. База.Создать",
+        "   * Ключ - Строка - локальное поле.",
+    ]);
+
+    let parsed = parse_type_expr(&docs.parameters[0].types[0]);
+    let Some(DocTypeExpr::Structure { fields }) = parsed else {
+        panic!("expected the locally documented structure, got {parsed:?}");
+    };
+    assert_eq!(fields.iter().map(|f| f.name.as_str()).collect::<Vec<_>>(), ["Ключ"]);
+}
+
+/// A return union may declare a `см.` member. Every order and both shapes from the
+/// measurement keep two alternatives, one of them naming a target; today the slot is lost
+/// whole (0 alternatives, or 1 with the marker as the type name).
+#[test]
+fn a_see_member_of_a_return_union_survives_in_every_order() {
+    for line in [
+        "  Неопределено, см. База.Создать",
+        "  Неопределено, см. База.Создать - описание.",
+        "  Строка, см. База.Создать",
+        "  см. База.Создать, Неопределено",
+    ] {
+        let docs = parse_docs(&["Возвращаемое значение:", line]);
+        let returned: Vec<DocTypeExpr> =
+            docs.returned_value.iter().filter_map(parse_type_expr).collect();
+        assert_eq!(returned.len(), 2, "{line}: {returned:?}");
+        assert!(
+            returned.iter().any(DocTypeExpr::names_documentation_target),
+            "{line}: the reference member was lost: {returned:?}"
+        );
+        assert!(
+            returned.iter().any(|expr| matches!(expr, DocTypeExpr::TypeRef(_))),
+            "{line}: the plain member was lost: {returned:?}"
+        );
+    }
+}
+
+/// A continuation of a field's type list belongs to the FIELD, and the bullets after it are
+/// still parsed. The shape is live: an ERP method documents its returned structure this way.
+#[test]
+fn a_field_continuation_stays_with_its_field() {
+    let docs = parse_docs(&[
+        "Возвращаемое значение:",
+        "  Структура:",
+        "   * Ссылка - Неопределено",
+        "            - ДокументСсылка.ЭлектронныйДокументИсходящийЭДО",
+        "            - ДокументСсылка.ЭлектронныйДокументВходящийЭДО",
+        "   * ПометкаУдаления - Булево",
+        "   * ВидДокумента - СправочникСсылка.ВидыДокументовЭДО",
+    ]);
+
+    assert_eq!(docs.returned_value.len(), 1, "{:?}", docs.returned_value);
+    let Some(DocTypeExpr::Structure { fields }) = parse_type_expr(&docs.returned_value[0]) else {
+        panic!(
+            "expected one documented structure, got {:?}",
+            parse_type_expr(&docs.returned_value[0])
+        );
+    };
+    assert_eq!(
+        fields.iter().map(|field| field.name.as_str()).collect::<Vec<_>>(),
+        ["Ссылка", "ПометкаУдаления", "ВидДокумента"]
+    );
+    assert_eq!(fields[0].types.len(), 3, "{:?}", fields[0].types);
+}
+
+/// One-word prose after the marker (`см. также`, `см. ниже`) names no target wherever it stands:
+/// in a placeholder's description it must not replace the declared structure, and as a union
+/// member it must not turn a prose line into a type alternative.
+#[test]
+fn one_word_prose_beside_a_type_stays_prose() {
+    let docs = parse_docs(&[
+        "Параметры:",
+        "  Параметры - Структура - см. также",
+        "Возвращаемое значение:",
+        "  Структура:",
+        "   * Данные - Структура - см. ниже",
+    ]);
+
+    let parsed = parse_type_expr(&docs.parameters[0].types[0]);
+    assert!(
+        matches!(parsed, Some(DocTypeExpr::Structure { .. })),
+        "проза в описании заменила объявленную структуру: {parsed:?}"
+    );
+    let Some(DocTypeExpr::Structure { fields }) = parse_type_expr(&docs.returned_value[0]) else {
+        panic!("expected the documented structure, got {:?}", docs.returned_value);
+    };
+    assert!(
+        matches!(fields[0].types.as_slice(), [DocTypeExpr::Structure { .. }]),
+        "проза в описании поля заменила объявленную структуру: {:?}",
+        fields[0].types
+    );
+
+    let docs = parse_docs(&["Возвращаемое значение:", "  Строка, см. ниже."]);
+    assert!(
+        docs.returned_value.iter().all(|ty| !is_see_candidate_name(&ty.name)),
+        "проза стала членом союза: {:?}",
+        docs.returned_value
+    );
+}
+
+fn is_see_candidate_name(name: &str) -> bool {
+    name.trim().to_lowercase().starts_with("см.")
+}
+
+#[test]
+fn prose_and_plain_types_name_no_target() {
+    // `см. в`, `см. также` and their kin parse into a one-segment reference — there are 16 291 of
+    // them in one configuration alone. Counting those as cross-references would claim a target for
+    // slots that never had one. `Произвольный` matters for the opposite reason: it lowers to the
+    // same permissive top type a reference does, so a predicate that looked at the lowered type
+    // instead of the parse could not tell the two apart.
+    let docs = parse_docs(&[
+        "Параметры:",
+        "  Проза - см. в описании",
+        "  Ещё - см. также",
+        "  Любой - Произвольный",
+        "  Обычный - Строка",
+        "  Своя - Структура:",
+        "   * Ключ - Строка - без ссылок.",
+    ]);
+
+    for param in ["Проза", "Ещё", "Любой", "Обычный", "Своя"] {
+        assert!(!names_target(&docs, param), "{param} не называет цель");
+    }
+}

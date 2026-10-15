@@ -54,6 +54,87 @@ pub(crate) fn common_module_body_target<DB: RootDatabase>(
     db.module_index(root).resolve_common_module(&Name::new(&name))
 }
 
+/// Native discovery requests only this configured family and follows the actual receiver's ownership.
+pub(crate) fn uses_session_parameters<DB: RootDatabase>(
+    db: &DB,
+    position: CompletionPosition,
+) -> bool {
+    let root = db.parse(position.file_id).syntax_node();
+    let Some(token) = root.token_at_offset(position.offset).left_biased() else {
+        return false;
+    };
+    let Some((dot, _)) = resolve_dot_anchor(&token, position.offset) else {
+        return false;
+    };
+    let Some(receiver) = find_receiver_expr(&dot) else {
+        return false;
+    };
+    resolved_receiver_type(db, &position, &receiver)
+        .is_some_and(|ty| session_parameter_type(db, ty))
+        && EnvFilter::at(db, position.file_id, position.offset)
+            .admits(hir_ty::session_parameters::environment())
+}
+
+/// Type identity comes from inference; merely spelling a user variable like the global proves nothing.
+fn session_parameter_type<DB: RootDatabase>(db: &DB, ty: TypeId) -> bool {
+    match db.lookup_type(ty) {
+        TypeKind::PlatformObject(facet) => {
+            hir_ty::session_parameters::is_session_parameters_type_name(&facet.name)
+        }
+        TypeKind::Union(arms) => arms.iter().any(|ty| session_parameter_type(db, *ty)),
+        _ => false,
+    }
+}
+
+/// Completion and cold-family discovery share the existing native shadowing and reaching-write rules.
+fn resolved_receiver_type<DB: RootDatabase>(
+    db: &DB,
+    position: &CompletionPosition,
+    receiver_expr: &SyntaxNode,
+) -> Option<TypeId> {
+    let sema = Semantics::new(db);
+    let mut receiver_id = sema.type_of_expr(position.file_id, receiver_expr);
+
+    // `Unknown` here means inference has no type for the receiver, which happens
+    // both when a user symbol holds the name and when the name is a bare TYPE
+    // (`XBase.`, `Запрос.`) that the cascade never types. Only the claim below
+    // tells those apart — the lowering status cannot, since both are lowered.
+    if matches!(db.lookup_type(receiver_id), TypeKind::Unknown) {
+        if let Some(name) = extract_receiver_ident(receiver_expr) {
+            let name_node = Name::new(&name);
+            let (claim, owner) = hir::bare_root::claim_at_node(
+                db,
+                position.file_id,
+                position.offset,
+                &name_node,
+                receiver_expr,
+            );
+            match claim {
+                // A user symbol holds the name, so it does not denote the global.
+                // Its reaching assignment carries the receiver's real type; with no
+                // reaching write (a declared-but-unwritten local, a module item)
+                // there is nothing to complete against — and naming the global here
+                // is exactly the suggestion the availability diagnostic rejects.
+                Some(claim) => {
+                    let value_id = claim.reaching_value?;
+                    receiver_id =
+                        hir::bare_root::reaching_value_ty(db, position.file_id, owner, value_id)?;
+                }
+                None => {
+                    if let Some(id) = hir::resolve_platform_global_property_type(db, &name_node) {
+                        receiver_id = id;
+                    }
+                    if matches!(db.lookup_type(receiver_id), TypeKind::Unknown) {
+                        receiver_id = TyLoweringContext::new().lower_bare_name_id(db, &name_node);
+                    }
+                }
+            }
+        }
+    }
+
+    Some(receiver_id)
+}
+
 pub(super) fn platform_completions<DB: RootDatabase>(
     db: &DB,
     position: CompletionPosition,
@@ -89,45 +170,7 @@ pub(super) fn platform_completions<DB: RootDatabase>(
         }
     }
 
-    let sema = Semantics::new(db);
-    let mut receiver_id = sema.type_of_expr(position.file_id, &receiver_expr);
-
-    // `Unknown` here means inference has no type for the receiver, which happens
-    // both when a user symbol holds the name and when the name is a bare TYPE
-    // (`XBase.`, `Запрос.`) that the cascade never types. Only the claim below
-    // tells those apart — the lowering status cannot, since both are lowered.
-    if matches!(db.lookup_type(receiver_id), TypeKind::Unknown) {
-        if let Some(name) = extract_receiver_ident(&receiver_expr) {
-            let name_node = Name::new(&name);
-            let (claim, owner) = hir::bare_root::claim_at_node(
-                db,
-                position.file_id,
-                position.offset,
-                &name_node,
-                &receiver_expr,
-            );
-            match claim {
-                // A user symbol holds the name, so it does not denote the global.
-                // Its reaching assignment carries the receiver's real type; with no
-                // reaching write (a declared-but-unwritten local, a module item)
-                // there is nothing to complete against — and naming the global here
-                // is exactly the suggestion the availability diagnostic rejects.
-                Some(claim) => {
-                    let value_id = claim.reaching_value?;
-                    receiver_id =
-                        hir::bare_root::reaching_value_ty(db, position.file_id, owner, value_id)?;
-                }
-                None => {
-                    if let Some(id) = hir::resolve_platform_global_property_type(db, &name_node) {
-                        receiver_id = id;
-                    }
-                    if matches!(db.lookup_type(receiver_id), TypeKind::Unknown) {
-                        receiver_id = TyLoweringContext::new().lower_bare_name_id(db, &name_node);
-                    }
-                }
-            }
-        }
-    }
+    let receiver_id = resolved_receiver_type(db, &position, &receiver_expr)?;
 
     tracing::debug!(receiver_id = ?receiver_id, "Resolved receiver type");
 
@@ -255,7 +298,8 @@ fn complete_prefix_methods_for_receiver<DB: RootDatabase>(
         return collect_platform_items_or_none(db, effective, locale, env);
     }
 
-    if !is_metadata_ref
+    if !session_parameter_type(db, effective)
+        && !is_metadata_ref
         && !is_metadata_ref_collection
         && !is_union_with_metadata_ref
         && !is_form_data_with_underlying
@@ -263,7 +307,10 @@ fn complete_prefix_methods_for_receiver<DB: RootDatabase>(
         return None;
     }
 
-    let mdo_fields = HirType::from_id(db, file_id, effective).fields();
+    let mut mdo_fields = HirType::from_id(db, file_id, effective).fields();
+    if session_parameter_type(db, effective) {
+        mdo_fields.retain(|field| field.env.is_none_or(|mask| env.admits(mask)));
+    }
     let platform_items = collect_platform_items_for_effective(db, effective, locale, env);
 
     if mdo_fields.is_empty() && platform_items.is_empty() {
@@ -293,6 +340,11 @@ fn collect_platform_items_for_effective<DB: RootDatabase>(
     locale: ide_db::base_db::Locale,
     env: &EnvFilter,
 ) -> Vec<CompletionItem> {
+    if session_parameter_type(db, effective) {
+        if let Some(key) = platform_type_key_id(db, effective) {
+            return complete_platform_methods(db, &key, locale, env);
+        }
+    }
     let TypeKind::Union(arms) = db.lookup_type(effective) else {
         return collect_platform_items(db, effective, locale, env);
     };

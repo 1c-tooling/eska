@@ -6,6 +6,7 @@ mod external_identity;
 mod families;
 mod inheritance;
 mod resolution;
+mod session_parameters;
 
 use std::{
     fs,

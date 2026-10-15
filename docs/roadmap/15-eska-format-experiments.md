@@ -1985,6 +1985,14 @@ Language/Template descriptor gaps как StructureOnly. 4 adapter и 7 SDK tests
 tests, lifecycle/metadata/framed/checker groups и адресные native-origin owners
 прошли. Image payload, семантические kinds и весь состав CF/CFE не приняты.
 
+[SessionParameter](../research/eska-format/analyzer-session-parameters.md) имеет
+отдельную native модель и per-name slots, настоящие configured fields
+SessionParameters, UUID adoption и current failure authority. Cold preparation
+использует typed receiver и только объявленное семейство; ThinClient/WebClient
+не получают недоступные поля. Общие 21 native/adapter/SDK gates прошли:
+SDK 213/506, adapter 100, native 3310 passed / 21 ignored. Версии packages прежние;
+остальные semantic metadata families и полный EF-18 остаются в работе.
+
 [Query resource read-view](../research/eska-format/query-context-read-view.md) проверяет
 current owner/resource strings layouts 5/6 без filesystem и `.sdbl` reads.
 XML Exact, YAML EnclosingNode/Unmapped; 64 профильных Rust tests прошли.

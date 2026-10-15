@@ -62,6 +62,7 @@ serde_json = "1.0"
 base-db = { path = "../bsl-kernel/crates/base-db" }
 bsl-metadata = { path = "../bsl-kernel/crates/bsl-metadata" }
 hir-ty = { path = "../bsl-kernel/crates/hir-ty" }
+hir-def = { path = "../bsl-kernel/crates/hir-def" }
 ide-db = { path = "../bsl-kernel/crates/ide-db" }
 ide = { path = "../bsl-kernel/crates/ide" }
 parser-error = { path = "../bsl-kernel/crates/parser-error" }

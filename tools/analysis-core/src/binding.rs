@@ -7,7 +7,7 @@ use eska::project_core::{MetadataKind, source_format::SourcePath};
 use ide_db::metadata::{
     CommonModuleEntry, DefinedTypeEntry, EventSubscriptionEntry, HTTPServiceEntry,
     IntegrationServiceEntry, MdoEntry, MetadataListingData, RoleEntry, ScheduledJobEntry,
-    SubsystemEntry, WebServiceEntry,
+    SessionParameterEntry, SubsystemEntry, WebServiceEntry,
 };
 use vfs::FileId;
 
@@ -84,6 +84,12 @@ impl OwnerBinding {
                 module_file: None,
                 unread_module_file: None,
             }),
+            MetadataKind::SessionParameter => {
+                listing.session_parameters.push(SessionParameterEntry {
+                    name: name.clone(),
+                    main: self.main,
+                });
+            }
             MetadataKind::DefinedType => listing.defined_types.push(DefinedTypeEntry {
                 name: name.clone(),
                 main: self.main,

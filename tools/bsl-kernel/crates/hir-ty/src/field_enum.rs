@@ -134,7 +134,13 @@ pub(crate) fn enumerate_fields_inner(
         Shape::MetadataReferenceCollection(kind) => {
             enumerate_metadata_reference_collection(db, resolver, kind)
         }
-        Shape::PlatformObject(name) => enumerate_platform_object_fields(db, &name),
+        Shape::PlatformObject(name) => {
+            let mut fields = enumerate_platform_object_fields(db, &name);
+            if crate::session_parameters::is_session_parameters_type_name(name.as_str()) {
+                fields.extend(crate::session_parameters::fields(db, resolver));
+            }
+            fields
+        }
         Shape::Other => Vec::new(),
     }
 }

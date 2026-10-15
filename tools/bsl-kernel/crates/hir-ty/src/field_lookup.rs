@@ -113,6 +113,15 @@ fn lookup_field_raw(
         return Some(info);
     }
 
+    if let TypeKind::PlatformObject(facet) = db.lookup_type(effective_ty) {
+        if crate::session_parameters::is_session_parameters_type_name(&facet.name) {
+            if let Some(field) = crate::session_parameters::field(db, resolver, field_name.as_str())
+            {
+                return Some(field);
+            }
+        }
+    }
+
     if let TypeKind::MetadataReferenceCollection(kind) = db.lookup_type(effective_ty) {
         return lookup_metadata_reference_member(db, resolver, *kind, field_name);
     }

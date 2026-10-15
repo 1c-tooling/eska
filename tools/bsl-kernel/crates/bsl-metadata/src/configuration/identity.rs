@@ -18,6 +18,7 @@ impl Configuration {
             registers: Vec::new(),
             event_subscriptions: Vec::new(),
             defined_types: Vec::new(),
+            session_parameters: Vec::new(),
             scheduled_jobs: Vec::new(),
             roles: Vec::new(),
             subsystems: Vec::new(),

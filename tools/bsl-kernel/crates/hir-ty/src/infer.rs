@@ -546,7 +546,7 @@ pub struct InferenceContext<'db> {
     body_env: hir_def::execution_env::EnvFlags,
 
     /// Environments availability diagnostics may report on
-    /// ([`EnvOptions::checked_environments`]) — the missing set is clipped to
+    /// ([`hir_def::execution_env::EnvOptions::checked_environments`]) — the missing set is clipped to
     /// this mask, keeping opt-in environments (external connection, mobile)
     /// out of default verdicts.
     checked_env: hir_def::execution_env::EnvFlags,
@@ -574,7 +574,7 @@ pub struct InferenceContext<'db> {
     /// (skip); `Some((env, server_call))` — feed the environment compare.
     callee_module_env: FxHashMap<FileId, Option<(hir_def::execution_env::EnvFlags, bool)>>,
 
-    /// [`method_body_env`] per same-module callee, for the local cross-directive
+    /// `method_body_env` per same-module callee, for the local cross-directive
     /// accessibility check.
     local_callee_env: FxHashMap<hir_def::MethodKey, hir_def::execution_env::EnvFlags>,
 }

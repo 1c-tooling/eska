@@ -48,6 +48,7 @@ mod role_queries;
 mod saved_watcher_registration;
 mod scheduled_job_queries;
 mod semantic_diagnostic_queries;
+mod session_parameter_queries;
 mod signature_queries;
 mod structural_metadata;
 mod subsystem_queries;

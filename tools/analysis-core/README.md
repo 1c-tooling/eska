@@ -87,6 +87,12 @@ occurrences и проверки прямых DCS/DynamicList field references. U
 Подключены главные дескрипторы реализованных адаптеров и вложенные формы с XML dialog. Полнота чтения,
 полнота главных моделей и покрытие всех вложенных документов различаются.
 
+[SessionParameter](../../docs/research/eska-format/analyzer-session-parameters.md)
+передаёт текущий configured value в настоящий native SessionParameters receiver.
+Cold completion готовит только объявленное семейство; aliases/shadowing,
+execution contexts, current failure и root-qualified adoption остаются у ядра.
+Обычный query parameter не получает тип одноимённого параметра сеанса.
+
 [Читаемые свойства EF-24](../../docs/research/eska-format/readable-layout.md)
 дают ту же lossless/semantic модель из descriptor schema 2. Проверены RU/EN
 common completion, unsaved named flags и переход к физическому BSL input;

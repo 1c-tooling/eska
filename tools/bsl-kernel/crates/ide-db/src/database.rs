@@ -1,3 +1,4 @@
+mod session_parameters;
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
 use std::path::{Path, PathBuf};
@@ -844,6 +845,7 @@ impl RootDatabaseImpl {
             web_services,
             integration_services,
             subsystems,
+            session_parameters,
         } = listing;
         let entries = Arc::new(entries);
         let defined_types = Arc::new(defined_types);
@@ -855,6 +857,7 @@ impl RootDatabaseImpl {
         let web_services = Arc::new(web_services);
         let integration_services = Arc::new(integration_services);
         let subsystems = Arc::new(subsystems);
+        let session_parameters = Arc::new(session_parameters);
         match self.metadata_listings.get(&key).map(|e| *e.value()) {
             Some(input) => {
                 input.set_entries(self).to(entries);
@@ -867,6 +870,7 @@ impl RootDatabaseImpl {
                 input.set_web_services(self).to(web_services);
                 input.set_integration_services(self).to(integration_services);
                 input.set_subsystems(self).to(subsystems);
+                input.set_session_parameters(self).to(session_parameters);
             }
             None => {
                 let input = metadata::MetadataListingInput::builder(
@@ -880,6 +884,7 @@ impl RootDatabaseImpl {
                     web_services,
                     integration_services,
                     subsystems,
+                    session_parameters,
                     Arc::new(metadata::CanonicalMetadataInputs::default()),
                 )
                 .durability(salsa::Durability::MEDIUM)
@@ -2956,6 +2961,20 @@ impl DefDatabase for RootDatabaseImpl {
 
 #[salsa::db]
 impl hir::ConfigsDatabase for RootDatabaseImpl {
+    /// Session values use the per-file listing chain, never a whole-configuration fallback.
+    fn resolve_session_parameter(
+        &self,
+        file_id: FileId,
+        name: &str,
+    ) -> Option<Arc<bsl_metadata::SessionParameter>> {
+        self.resolve_session_parameter_for_file(file_id, name)
+    }
+
+    /// Declared names can be listed without loading parameter payloads.
+    fn session_parameter_names(&self, file_id: FileId) -> Vec<String> {
+        self.session_parameter_names_for_file(file_id)
+    }
+
     fn configurations(&self, file_id: FileId) -> Vec<hir::VisibleConfig> {
         RootDatabase::get_all_configurations(self, file_id)
             .into_iter()

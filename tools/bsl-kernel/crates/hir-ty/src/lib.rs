@@ -30,6 +30,7 @@ pub mod proc_signature_lookup;
 pub mod query_text_dataflow;
 pub mod query_unload_refinement;
 pub mod sdbl_bridge;
+pub mod session_parameters;
 pub mod structure_keys;
 pub mod structure_param_keys;
 pub mod subtype;

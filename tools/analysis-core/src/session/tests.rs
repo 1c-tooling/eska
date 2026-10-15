@@ -139,16 +139,16 @@ pub fn fixture_with_unmodeled_family() -> (support::TestDirectory, PathBuf) {
         native.join("Configuration.xml"),
         configuration.replace(
             "<Role>Reader</Role>",
-            "<SessionParameter>Reader</SessionParameter>",
+            "<CommonAttribute>Reader</CommonAttribute>",
         ),
     )
     .unwrap();
     let role = fs::read_to_string(native.join("Roles/Reader.xml")).unwrap();
-    fs::create_dir(native.join("SessionParameters")).unwrap();
+    fs::create_dir(native.join("CommonAttributes")).unwrap();
     fs::write(
-        native.join("SessionParameters/Reader.xml"),
-        role.replace("<Role ", "<SessionParameter ")
-            .replace("</Role>", "</SessionParameter>")
+        native.join("CommonAttributes/Reader.xml"),
+        role.replace("<Role ", "<CommonAttribute ")
+            .replace("</Role>", "</CommonAttribute>")
             .replace(
                 "</Properties>",
                 "<Type><v8:Type>xs:string</v8:Type></Type></Properties>",
@@ -156,7 +156,7 @@ pub fn fixture_with_unmodeled_family() -> (support::TestDirectory, PathBuf) {
     )
     .unwrap();
     fs::remove_file(native.join("Roles/Reader.xml")).unwrap();
-    let source = directory.0.join("source-with-parameter");
+    let source = directory.0.join("source-with-unmodeled");
     import_designer(&native, &source).unwrap();
     (directory, source)
 }
@@ -533,7 +533,7 @@ fn unrelated_owner_changes_preserve_the_index_and_neighbor_query() {
 fn metadata_views_share_current_snapshots_without_requiring_bsl_projection() {
     let (_directory, root) = fixture_with_unmodeled_family();
     let mut session = AnalysisSession::open(&root).unwrap();
-    let path = owner("SessionParameters/Reader/object.yaml");
+    let path = owner("CommonAttributes/Reader/object.yaml");
     session
         .load_saved(&path, session.revision(), &InputRequest::default())
         .unwrap();

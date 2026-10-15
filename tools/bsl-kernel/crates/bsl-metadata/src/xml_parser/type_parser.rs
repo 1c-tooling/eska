@@ -173,6 +173,130 @@ pub(crate) fn parse_type_xml(type_node: roxmltree::Node<'_, '_>) -> Result<Attri
     }
 }
 
+/// New typed descriptors resolve QName namespaces before using the shared native type mapping.
+/// Legacy tolerant readers retain their original entry point and unknown-name behavior.
+pub(crate) fn parse_type_xml_strict(node: roxmltree::Node<'_, '_>) -> Result<AttributeType> {
+    const CORE: &str = "http://v8.1c.ru/8.1/data/core";
+    let invalid = || crate::MetadataError::InvalidFormat("Invalid SessionParameter Type".into());
+    let mut seen = std::collections::HashSet::new();
+    for field in node.children().filter(|field| field.is_element()) {
+        let name = field.tag_name().name();
+        if field.tag_name().namespace() != Some(CORE) {
+            return Err(invalid());
+        }
+        let allowed: &[&str] = match name {
+            "Type" | "TypeSet" => continue,
+            "StringQualifiers" => &["Length", "AllowedLength"],
+            "NumberQualifiers" => &["Digits", "FractionDigits", "AllowedSign"],
+            "DateQualifiers" => &["DateFractions"],
+            _ => return Err(invalid()),
+        };
+        if !seen.insert(name) {
+            return Err(invalid());
+        }
+        let mut inner_seen = std::collections::HashSet::new();
+        for value in field.children().filter(|value| value.is_element()) {
+            let key = value.tag_name().name();
+            if value.tag_name().namespace() != Some(CORE)
+                || !allowed.contains(&key)
+                || !inner_seen.insert(key)
+                || value.children().any(|child| child.is_element())
+            {
+                return Err(invalid());
+            }
+            let text = value.text().unwrap_or("");
+            let valid = match key {
+                "Length" => text.parse::<u32>().is_ok(),
+                "Digits" | "FractionDigits" => text.parse::<u8>().is_ok(),
+                "AllowedLength" => matches!(text, "Fixed" | "Variable"),
+                "AllowedSign" => matches!(text, "Any" | "Nonnegative"),
+                "DateFractions" => {
+                    ["Date", "Time", "DateTime"].iter().any(|name| text.eq_ignore_ascii_case(name))
+                }
+                _ => false,
+            };
+            if !valid {
+                return Err(invalid());
+            }
+        }
+    }
+    let qualifiers = TypeQualifiers::from_node(node);
+    let mut types = Vec::new();
+    for kind in ["Type", "TypeSet"] {
+        for value in node.children().filter(|value| value.has_tag_name((CORE, kind))) {
+            if value.children().any(|child| child.is_element()) {
+                return Err(invalid());
+            }
+            let text = value.text().unwrap_or("");
+            if text.is_empty() {
+                continue;
+            }
+            let parsed =
+                parse_checked_type_name(value, text, kind, &qualifiers).ok_or_else(invalid)?;
+            if matches!(parsed, AttributeType::UnknownNamed(_)) {
+                return Err(invalid());
+            }
+            if let AttributeType::Ref { name, .. } | AttributeType::DefinedType { name } = &parsed {
+                if name.is_empty() || name.contains('.') || name.contains(char::is_whitespace) {
+                    return Err(invalid());
+                }
+            }
+            types.push(parsed);
+        }
+    }
+    Ok(match types.len() {
+        0 => AttributeType::Unknown,
+        1 => types.remove(0),
+        _ => AttributeType::Composite { types },
+    })
+}
+
+/// Namespace authority precedes the existing known native mappings and platform catalogue lookup.
+fn parse_checked_type_name(
+    node: roxmltree::Node<'_, '_>,
+    text: &str,
+    kind: &str,
+    qualifiers: &TypeQualifiers,
+) -> Option<AttributeType> {
+    let (prefix, name) = text.split_once(':')?;
+    let namespace = node.lookup_namespace_uri(Some(prefix))?;
+    if kind == "TypeSet" {
+        return (namespace == "http://v8.1c.ru/8.1/data/enterprise/current-config")
+            .then(|| parse_type_set(&format!("cfg:{name}")))
+            .flatten();
+    }
+    match namespace {
+        "http://www.w3.org/2001/XMLSchema" => {
+            parse_single_type(&format!("xs:{name}"), qualifiers).ok()
+        }
+        "http://v8.1c.ru/8.1/data/enterprise/current-config" => {
+            parse_single_type(&format!("cfg:{name}"), qualifiers).ok()
+        }
+        "http://v8.1c.ru/8.1/data/core" if matches!(name, "UUID" | "ValueStorage") => {
+            parse_single_type(&format!("v8:{name}"), qualifiers).ok()
+        }
+        "http://v8.1c.ru/8.1/data-composition-system/settings" => match name {
+            "SettingsComposer" | "Filter" => {
+                parse_platform_value_type(&format!("dcsset:{name}")).map(AttributeType::Platform)
+            }
+            _ => None,
+        },
+        namespace
+            if namespace
+                .strip_prefix("http://v8.1c.ru/")
+                .is_some_and(|rest| rest.contains("/data/")) =>
+        {
+            // Known value categories have several XDTO namespaces; prefix spelling is not identity.
+            ["v8", "v8ui", "mxl", "fd", "d7p1", "d5p1", "dcsset"]
+                .iter()
+                .find_map(|prefix| parse_platform_value_type(&format!("{prefix}:{name}")))
+                .map(AttributeType::Platform)
+                .or_else(|| resolve_platform_named(text))
+        }
+        _ => None,
+    }
+}
+
 fn parse_type_set(type_set: &str) -> Option<AttributeType> {
     // Designer TypeSet may retain the legacy spelling of the AnyIBRef reference category.
     if matches!(type_set, "cfg:AnyRef" | "cfg:AnyIBRef") {
@@ -222,7 +346,11 @@ fn parse_single_type(type_str: &str, qualifiers: &TypeQualifiers) -> Result<Attr
                 .as_deref()
                 .is_some_and(|df| df.eq_ignore_ascii_case("DateTime"));
 
-            if is_datetime { Ok(AttributeType::DateTime) } else { Ok(AttributeType::Date) }
+            if is_datetime {
+                Ok(AttributeType::DateTime)
+            } else {
+                Ok(AttributeType::Date)
+            }
         }
 
         s if s.starts_with("cfg:") => parse_reference_type(s),

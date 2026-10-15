@@ -122,6 +122,7 @@ struct LoadedMetadata {
     scheduled_jobs: Vec<crate::scheduled_job::ScheduledJob>,
     roles: Vec<crate::role::Role>,
     defined_types: Vec<crate::defined_type::DefinedType>,
+    session_parameters: Vec<crate::SessionParameter>,
     charts_char_types: Vec<MetadataObject>,
     constants: Vec<MetadataObject>,
     exchange_plans: Vec<MetadataObject>,
@@ -152,6 +153,7 @@ fn load_all_metadata_parallel(path: &Path, scope: &ScopedFs<'_>) -> LoadedMetada
     let scheduled_jobs = Mutex::new(Vec::new());
     let roles = Mutex::new(Vec::new());
     let defined_types = Mutex::new(Vec::new());
+    let session_parameters = Mutex::new(Vec::new());
     let charts_char_types = Mutex::new(Vec::new());
     let constants = Mutex::new(Vec::new());
     let exchange_plans = Mutex::new(Vec::new());
@@ -169,6 +171,15 @@ fn load_all_metadata_parallel(path: &Path, scope: &ScopedFs<'_>) -> LoadedMetada
     let subsystems = Mutex::new(Vec::new());
 
     rayon::scope(|s| {
+        s.spawn(|_| {
+            *session_parameters.lock().unwrap() = discover_session_parameter_structure(path, scope)
+                .into_par_iter()
+                .filter_map(|entry| {
+                    let text = fs::read_to_string(entry.main).ok()?;
+                    xml_parser::parse_session_parameter_xml(&text).ok()
+                })
+                .collect();
+        });
         s.spawn(|_| {
             *common_modules.lock().unwrap() =
                 load_common_modules_parallel(scope, &collection_dir(scope, path, "CommonModules"))
@@ -310,6 +321,7 @@ fn load_all_metadata_parallel(path: &Path, scope: &ScopedFs<'_>) -> LoadedMetada
         scheduled_jobs: scheduled_jobs.into_inner().unwrap(),
         roles: roles.into_inner().unwrap(),
         defined_types: defined_types.into_inner().unwrap(),
+        session_parameters: session_parameters.into_inner().unwrap(),
         charts_char_types: charts_char_types.into_inner().unwrap(),
         constants: constants.into_inner().unwrap(),
         exchange_plans: exchange_plans.into_inner().unwrap(),
@@ -373,6 +385,9 @@ fn build_configuration(loaded: LoadedMetadata) -> Configuration {
     }
     for role in loaded.roles {
         config.add_role(role);
+    }
+    for parameter in loaded.session_parameters {
+        config.add_session_parameter(parameter);
     }
     for dt in loaded.defined_types {
         config.add_defined_type(dt);
@@ -922,6 +937,27 @@ pub fn discover_defined_type_structure(
     // watch events on an unchanged filesystem (see `discover_metadata_structure`).
     out.sort_by(|a, b| (a.name.fold_lower(), &a.main).cmp(&(b.name.fold_lower(), &b.main)));
     out
+}
+
+/// One native session-parameter declaration; payloads are parsed only on demand.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DiscoveredSessionParameter {
+    pub name: String,
+    pub main: PathBuf,
+}
+
+/// Discover configured session-value identities without reading their type payloads.
+pub fn discover_session_parameter_structure(
+    root: &Path,
+    tree: &dyn DirTree,
+) -> Vec<DiscoveredSessionParameter> {
+    let mut values: Vec<_> =
+        loose_xml_children(tree, &collection_dir(tree, root, "SessionParameters"))
+            .into_iter()
+            .map(|(name, main)| DiscoveredSessionParameter { name, main })
+            .collect();
+    values.sort_by(|a, b| (a.name.fold_lower(), &a.main).cmp(&(b.name.fold_lower(), &b.main)));
+    values
 }
 
 /// Walk one config root and list its event subscriptions by structure only (name +

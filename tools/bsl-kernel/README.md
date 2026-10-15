@@ -1,10 +1,16 @@
 # Закреплённое ядро BSL для ESKA
 
-Этот отдельный Cargo workspace содержит шесть изменённых пакетов bsl-analyzer из
+Этот отдельный Cargo workspace содержит семь изменённых пакетов bsl-analyzer из
 ревизии `9021ba07471eee8a2614bed2105a2c8699f60780`. Остальные зависимости на
 bsl-analyzer закреплены на той же Git-ревизии. Это исходники библиотек для
 экспериментального адаптера, а не опубликованный analyzer/check или LSP-сервер.
 Главный workspace ESKA и его минимальный project core от ядра не зависят.
+
+[Параметры сеанса](../../docs/research/eska-format/analyzer-session-parameters.md)
+имеют отдельные current slots и typed fields настоящего SessionParameters.
+Локальный `hir-def` расширяет прежний ConfigsDatabase двумя per-file методами;
+root visibility, adoption UUID, shadowing и platform environment masks сохраняются.
+Неизвестное текущее значение не подменяется base/XML fallback.
 
 [Canonical владельцы модулей](../../docs/research/eska-format/canonical-module-owners.md)
 разрешаются через текущие slots до native loader; EPF/ERF остаются объектами.

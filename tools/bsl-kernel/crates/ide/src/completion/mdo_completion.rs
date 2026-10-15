@@ -814,6 +814,7 @@ mod tests {
             MetadataListingData {
                 entries: Vec::new(),
                 defined_types: Vec::new(),
+                session_parameters: Vec::new(),
                 common_modules: Vec::new(),
                 event_subscriptions: Vec::new(),
                 scheduled_jobs: Vec::new(),

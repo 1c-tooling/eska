@@ -9,6 +9,7 @@ use crate::role::Role;
 use crate::scheduled_job::ScheduledJob;
 use crate::traits::{MdObject, Module};
 use crate::web_service::WebService;
+use crate::SessionParameter;
 use intern::NormName;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
@@ -38,6 +39,9 @@ pub struct Configuration {
 
     #[serde(rename = "eventSubscriptions", default)]
     event_subscriptions: Vec<EventSubscription>,
+
+    #[serde(rename = "sessionParameters", default)]
+    session_parameters: Vec<SessionParameter>,
 
     #[serde(rename = "definedTypes", default)]
     defined_types: Vec<DefinedType>,
@@ -120,6 +124,7 @@ impl PartialEq for Configuration {
             && self.metadata_objects == other.metadata_objects
             && self.registers == other.registers
             && self.event_subscriptions == other.event_subscriptions
+            && self.session_parameters == other.session_parameters
             && self.defined_types == other.defined_types
             && self.scheduled_jobs == other.scheduled_jobs
             && self.roles == other.roles
@@ -398,6 +403,21 @@ impl Configuration {
             }
         }
 
+        for overlay in &extension.session_parameters {
+            if let Some(index) = self
+                .session_parameters
+                .iter()
+                .position(|base| stdx::case::eq_ignore_case(base.name(), overlay.name()))
+            {
+                if overlay.adopts(&self.session_parameters[index]) {
+                    self.session_parameters[index] = overlay.clone();
+                } else {
+                    self.session_parameters.remove(index);
+                }
+            } else if overlay.object_belonging() != crate::ObjectBelonging::Adopted {
+                self.session_parameters.push(overlay.clone());
+            }
+        }
         for ext_defined_type in &extension.defined_types {
             if let Some(idx) = self
                 .defined_types
@@ -515,6 +535,21 @@ impl Configuration {
 
     pub(crate) fn add_subsystem(&mut self, subsystem: crate::subsystem::Subsystem) {
         self.subsystems.push(subsystem);
+    }
+
+    /// Configured values have their own family, separate from MDO managers and query parameters.
+    pub fn session_parameters(&self) -> &[SessionParameter] {
+        &self.session_parameters
+    }
+
+    /// Resolve a cold configuration value by its configured BSL name.
+    pub fn find_session_parameter(&self, name: &str) -> Option<&SessionParameter> {
+        self.session_parameters.iter().find(|value| stdx::case::eq_ignore_case(value.name(), name))
+    }
+
+    /// Install one explicitly supplied session-parameter declaration.
+    pub fn add_session_parameter(&mut self, value: SessionParameter) {
+        self.session_parameters.push(value);
     }
 
     pub fn defined_types(&self) -> &[DefinedType] {
@@ -636,6 +671,12 @@ impl Configuration {
                 .event_subscriptions
                 .iter()
                 .map(EventSubscription::estimated_heap_size)
+                .sum::<usize>();
+        bytes += stdx::heap::vec_bytes::<SessionParameter>(self.session_parameters.len())
+            + self
+                .session_parameters
+                .iter()
+                .map(SessionParameter::estimated_heap_size)
                 .sum::<usize>();
         bytes += stdx::heap::vec_bytes::<DefinedType>(self.defined_types.len())
             + self.defined_types.iter().map(DefinedType::estimated_heap_size).sum::<usize>();

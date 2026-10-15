@@ -78,6 +78,9 @@ CF/configured-CFE: preview, native edit/undo/redo и restart/import replay.
 [Листовая structural coverage](structural-metadata-coverage.md), включая
 CommonPicture/CommandGroup, проверяет текущие
 descriptor fields без фиктивной canonical модели или проверки СКД.
+[Параметры сеанса](analyzer-session-parameters.md) добавляют настоящие typed
+SessionParameters fields через per-name current slots, native root ownership
+и execution contexts; одноимённые query parameters не типизируются по ним.
 [Current form/DCS view](query-context-read-view.md#один-текущий-источник-в-sdk)
 использует принятый owner snapshot и отдельный current XML input без saved
 fallback; полный SDK — 197/488 tests, consumer semantics ещё нужны.

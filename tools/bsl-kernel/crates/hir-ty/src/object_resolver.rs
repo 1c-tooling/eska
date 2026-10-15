@@ -19,6 +19,12 @@ use vfs::FileId;
 /// resolver mirrors the same merged + file-scoped semantics for unit tests and
 /// the cold call sites that still carry a `&[VisibleConfig]`.
 pub trait ObjectResolver {
+    /// Resolve one configured value; ordinary SDBL parameters are a separate namespace.
+    fn resolve_session_parameter(&self, name: &str) -> Option<Arc<bsl_metadata::SessionParameter>>;
+
+    /// Enumerate the file-scoped configured member names without whole-configuration loading.
+    fn session_parameter_names(&self) -> Vec<String>;
+
     fn resolve_metadata_object(&self, mdo_type: MdoType, name: &str)
         -> Option<Arc<MetadataObject>>;
 
@@ -84,6 +90,14 @@ impl<D: ConfigsDatabase + ?Sized> std::fmt::Debug for DbObjectResolver<'_, D> {
 }
 
 impl<D: ConfigsDatabase + ?Sized> ObjectResolver for DbObjectResolver<'_, D> {
+    fn resolve_session_parameter(&self, name: &str) -> Option<Arc<bsl_metadata::SessionParameter>> {
+        self.db.resolve_session_parameter(self.file_id, name)
+    }
+
+    fn session_parameter_names(&self) -> Vec<String> {
+        self.db.session_parameter_names(self.file_id)
+    }
+
     fn resolve_metadata_object(
         &self,
         mdo_type: MdoType,
@@ -241,6 +255,36 @@ impl ConfigsObjectResolver<'_> {
 }
 
 impl ObjectResolver for ConfigsObjectResolver<'_> {
+    fn resolve_session_parameter(&self, name: &str) -> Option<Arc<bsl_metadata::SessionParameter>> {
+        let mut current: Option<Arc<bsl_metadata::SessionParameter>> = None;
+        for config in self.0 {
+            if let Some(value) = config.configuration.find_session_parameter(name) {
+                if let Some(base) = current.as_ref() {
+                    if !value.adopts(base) {
+                        return None;
+                    }
+                } else if value.object_belonging() == bsl_metadata::ObjectBelonging::Adopted {
+                    return None;
+                }
+                current = Some(Arc::new(value.clone()));
+            }
+        }
+        current
+    }
+
+    fn session_parameter_names(&self) -> Vec<String> {
+        let mut names = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+        for config in self.0 {
+            for value in config.configuration.session_parameters() {
+                if seen.insert(value.name().fold_lower()) {
+                    names.push(value.name().into());
+                }
+            }
+        }
+        names
+    }
+
     fn resolve_metadata_object(
         &self,
         mdo_type: MdoType,

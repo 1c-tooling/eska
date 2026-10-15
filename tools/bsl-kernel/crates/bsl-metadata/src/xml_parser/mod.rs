@@ -12,6 +12,7 @@ mod predefined_parser;
 mod register;
 mod role;
 mod scheduled_job;
+mod session_parameter;
 mod standard_attributes;
 mod subsystem;
 mod type_parser;
@@ -38,6 +39,7 @@ pub use register::{
 };
 pub use role::{parse_rights_xml, parse_role_xml};
 pub use scheduled_job::parse_scheduled_job_xml;
+pub use session_parameter::parse_session_parameter_xml;
 pub use subsystem::parse_subsystem_xml;
 pub use web_service::parse_web_service_xml;
 
