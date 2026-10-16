@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "status": "borrowed_cfe_project_reimport_core_verified",
+  "change_scope": "test-only",
+  "project_type": "extension",
+  "new_adopted_owner_added": true,
+  "descriptor_and_extended_target_uuids_distinct": true,
+  "direct_namespace_aware_properties_verified": true,
+  "addition_absent_from_ancestor_and_working": true,
+  "old_independent_approval_used_for_strict_prepare": true,
+  "accepted_storage_and_original_ancestor_unchanged": true,
+  "local_and_incoming_module_bytes_preserved": true,
+  "bom_and_crlf_preserved": true,
+  "read_only_preview_preserves_inputs": true,
+  "fresh_repeat_unchanged": true,
+  "project_settings_and_all_root_inventory_unchanged_on_repeat": true,
+  "verified_frozen_rust_inputs": 1694,
+  "only_test_file_changed_since_previous_root_sdk_acceptance": true,
+  "gates": [
+    {
+      "name": "borrowed-targeted",
+      "exit_code": 0
+    },
+    {
+      "name": "root-fmt",
+      "exit_code": 0
+    },
+    {
+      "name": "root-check",
+      "exit_code": 0
+    },
+    {
+      "name": "root-clippy",
+      "exit_code": 0
+    },
+    {
+      "name": "root-test-default",
+      "exit_code": 0
+    },
+    {
+      "name": "root-test-all",
+      "exit_code": 0
+    }
+  ],
+  "test_counts": {
+    "borrowed-targeted": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered_out": 907
+    },
+    "root-test-default": {
+      "passed": 1543,
+      "failed": 0,
+      "ignored": 24,
+      "measured": 0,
+      "filtered_out": 0
+    },
+    "root-test-all": {
+      "passed": 1664,
+      "failed": 0,
+      "ignored": 24,
+      "measured": 0,
+      "filtered_out": 0
+    }
+  },
+  "sdk_gates_rerun": false,
+  "one_c_platform_started": false,
+  "native_borrowed_applicability_claimed": false,
+  "full_mvp_complete": false
+}

@@ -7,7 +7,9 @@
 CFE/EPF/ERF циклы и выполнение непустых ERF на 1С 8.3.27.2325.
 [Обновление принятой базы EF-15](base-update.md) принято для standalone/workspace
 с независимыми pin и контролируемыми native поставками.
-Текущая EF-25 добавляет [распаковку артефактов](native-unpack.md),
+EF-25 принята по [итоговой сверке повторного импорта](borrowed-native-reimport.md);
+текущая EF-20 завершает общую CLI-приёмку. Далее сохранена история срезов.
+EF-25 добавляет [распаковку артефактов](native-unpack.md),
 [историю исходников и трёхсторонний план](import-ancestry.md),
 [применение и recovery выбранного проекта/member](source-import-recovery.md).
 [Native staging → project plan](native-project-import.md) проверены на четырёх
@@ -27,8 +29,8 @@ publication, освобождает старый host с последним от
 проверил all4 addition/deletion/rename и обе recovery actions: 20 случаев,
 63 Save и 24 orphan drafts. Dirty сосед с теми же UUID/bytes получает собственный
 ACK до переключения и не передаётся выбранному member; остальные members и
-workspace controls сохранены. Отдельный borrowed reimport и общий CLI workflow
-ещё требуют приёмки; EF-25 остаётся `IN_PROGRESS`.
+workspace controls сохранены. Позднее [borrowed reimport](borrowed-native-reimport.md)
+закрыл EF-25; общий CLI workflow остаётся EF-20.
 EF-23 — [DONE в принятом профиле](query-acceptance.md).
 [Создание полного Queries проекта](query-project-creation.md) подключает
 managed forms/plain queries к `eska-project import` для всех четырёх типов.

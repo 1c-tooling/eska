@@ -46,7 +46,8 @@ T84 — **DONE** по [версии EPF/ERF и вызовам функций в 
 EF-14 — **DONE** по [CFE](../research/eska-format/extensions.md) и
 [EPF/ERF циклам и выполнению непустого отчёта](../research/eska-format/external-projects.md);
 EF-15 — **DONE** по [обновлению базы и поставщика](../research/eska-format/base-update.md);
-текущий EF-25 — **IN_PROGRESS**, повторный импорт изменений в существующий проект.
+EF-25 — **DONE** по [итоговой сверке повторного импорта](../research/eska-format/borrowed-native-reimport.md);
+текущий EF-20 — **IN_PROGRESS**, сквозная приёмка общего CLI.
 EF-18 сохраняет `IN_PROGRESS` как незавершённую реализацию; её продолжение
 отложено до завершения блока структуры, результаты не отменяются. Решение
 заменяет прежний ограниченный CF-пилот и указание от 2026-10-10 не менять очередь.
@@ -115,7 +116,7 @@ EF-18 сохраняет `IN_PROGRESS` как незавершённую реа�
 | EF-22 | PLANNED | EF-20; fmt — T26; релизы — T83, T84, T56, T32 | Подключение fmt после MVP; автоматические релизы отдельно |
 | EF-23 | DONE | EF-24 | Хранение запросов СКД/динамических списков в .sdbl и обратная сборка |
 | EF-24 | DONE | EF-10, EF-07 | Завершённая структура исходников и миграция экспериментального профиля |
-| EF-25 | IN_PROGRESS | EF-12, EF-14, EF-15, EF-23 | Повторный импорт CF/CFE/EPF/ERF в существующий проект |
+| EF-25 | DONE | EF-12, EF-14, EF-15, EF-23 | Повторный импорт CF/CFE/EPF/ERF в существующий проект |
 | EF-26 | DEFERRED | EF-19, EF-23, EF-27 | RLS и обоснованные дополнительные тексты ресурсов |
 | EF-27 | IN_PROGRESS | EF-18, EF-23 | Анализ .sdbl в контексте СКД/списка и проверка потребителей |
 
@@ -3083,7 +3084,7 @@ CFE/EPF/ERF и клиент/рабочая ИБ этой частью не пр�
 
 ## EF-25 Повторный импорт нативных артефактов
 
-**Статус:** `IN_PROGRESS`; обязательная часть MVP.
+**Статус:** `DONE` в принятой матрице; обязательная часть MVP.
 
 Импортировать изменения из CF/CFE/EPF/ERF в выбранный существующий проект/member.
 Build core распаковывает артефакт в принадлежащий операции staging; project core
@@ -3254,8 +3255,19 @@ member; барьер наблюдения начинается до перекл
 1694 прежних Rust inputs и шесть бинарников повторно сверены с 17 green gates.
 Все 164 наблюдавшихся процесса завершены; лишних `.1CD` нет, четыре пользовательские
 базы сохранены. Эта часть не принимает semantic completeness и другие ОС.
-Явный reimport нового заимствованного CFE owner ещё требует проверки; общий
-workflow EF-20 и итоговая приёмка EF-16 продолжаются. EF-25 — `IN_PROGRESS`.
+На момент workspace-среза явный reimport нового заимствованного CFE owner ещё
+требовал проверки; EF-25 оставалась `IN_PROGRESS`.
+
+[Заимствованный CFE owner при project reimport](../research/eska-format/borrowed-native-reimport.md)
+закрыл отдельное условие DoD: incoming Adopted сохраняет собственный descriptor
+UUID и отдельный target UUID, прежний pin, exact модули/BOM/CRLF и raw ancestor.
+Strict prepare и свежий repeat Unchanged проверены; initial import/export не
+подменяет этот case. Свежие root fmt/check/strict Clippy/default/all-features
+прошли: 1543/1664 tests, по 24 ignored, failed нет. Менялся только test-код;
+новая runtime applicability к CF-базе этой регрессией не заявляется.
+Итоговая сверка DoD учитывает прежние all4 native build/dump, core negative
+и recovery cases, installed standalone/workspace lifecycle. EF-25 — `DONE`;
+следующий текущий этап — сквозная приёмка CLI EF-20. MVP целиком не завершён.
 
 ## EF-26 RLS и дополнительные тексты ресурсов
 
