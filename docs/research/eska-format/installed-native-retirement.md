@@ -92,6 +92,8 @@ family declarations предоставляют enclosing owner UUID и slot, н�
 child UUID не выдумывается. Эти границы не объявляются полной защитой всех
 возможных подстановок.
 
-Настоящее прерывание с `Complete`/`RollBack`, workspace-матрица, общий workflow
-EF-20 и полная EF-16/MVP приёмка остаются открыты. Native build/dump этой
-частью не повторяются; физический ввод человеком не заявляется.
+Последующая [приёмка прерванного импорта](installed-native-recovery.md) проверила
+`BackedUp` → `Complete`/`RollBack` для all4 в установленном клиенте.
+Workspace-матрица, общий workflow EF-20 и полная EF-16/MVP приёмка остаются
+открыты. Native build/dump этой частью не повторяются; физический ввод человеком
+не заявляется.

@@ -64,7 +64,9 @@ Rust production inputs не изменены; прежний проверенн�
 базы сохранены с прежними размером, mtime и inode.
 
 Это приёмка native addition. Последующая [матрица удаления и переименования](installed-native-retirement.md)
-приняла all4 с сохранением orphan drafts. Настоящее прерывание с
-`Complete`/`RollBack`, workspace-матрица и общий workflow EF-20 остаются открыты.
+приняла all4 с сохранением orphan drafts. Последующая
+[приёмка прерванного импорта](installed-native-recovery.md) проверила
+`BackedUp` → `Complete`/`RollBack` для all4. Workspace-матрица и общий workflow
+EF-20 остаются открыты.
 Build/dump и выполнение модулей/запросов здесь не повторяются;
 physical human typing и полная EF-16/MVP приёмка не заявляются.

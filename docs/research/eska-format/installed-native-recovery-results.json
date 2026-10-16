@@ -1,0 +1,377 @@
+{
+  "schema_version": 1,
+  "status": "installed_native_backed_up_recovery_verified",
+  "project_scope": "standalone",
+  "interruption_boundary": "backed-up",
+  "other_interruption_phases_verified": false,
+  "workspace_verified": false,
+  "mvp_complete": false,
+  "recovery_cases": [
+    {
+      "project_type": "configuration",
+      "action": "complete",
+      "drafts": 5,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_drafts_and_versions_retained": true,
+      "accepted_pin_and_history_unchanged": true,
+      "save_rpc_calls_while_guard_held": 0,
+      "new_draft_inputs_while_guard_held": 0,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "extension",
+      "action": "complete",
+      "drafts": 5,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_drafts_and_versions_retained": true,
+      "accepted_pin_and_history_unchanged": true,
+      "save_rpc_calls_while_guard_held": 0,
+      "new_draft_inputs_while_guard_held": 0,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "processing",
+      "action": "complete",
+      "drafts": 4,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 2,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_drafts_and_versions_retained": true,
+      "accepted_pin_and_history_unchanged": true,
+      "save_rpc_calls_while_guard_held": 0,
+      "new_draft_inputs_while_guard_held": 0,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "report",
+      "action": "complete",
+      "drafts": 5,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_drafts_and_versions_retained": true,
+      "accepted_pin_and_history_unchanged": true,
+      "save_rpc_calls_while_guard_held": 0,
+      "new_draft_inputs_while_guard_held": 0,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "configuration",
+      "action": "roll-back",
+      "drafts": 5,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 5,
+      "restored_retired_bindings": 2,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_drafts_and_versions_retained": true,
+      "accepted_pin_and_history_unchanged": true,
+      "save_rpc_calls_while_guard_held": 0,
+      "new_draft_inputs_while_guard_held": 0,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    },
+    {
+      "project_type": "extension",
+      "action": "roll-back",
+      "drafts": 5,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 5,
+      "restored_retired_bindings": 2,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_drafts_and_versions_retained": true,
+      "accepted_pin_and_history_unchanged": true,
+      "save_rpc_calls_while_guard_held": 0,
+      "new_draft_inputs_while_guard_held": 0,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    },
+    {
+      "project_type": "processing",
+      "action": "roll-back",
+      "drafts": 4,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 4,
+      "restored_retired_bindings": 2,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_drafts_and_versions_retained": true,
+      "accepted_pin_and_history_unchanged": true,
+      "save_rpc_calls_while_guard_held": 0,
+      "new_draft_inputs_while_guard_held": 0,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    },
+    {
+      "project_type": "report",
+      "action": "roll-back",
+      "drafts": 5,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 5,
+      "restored_retired_bindings": 2,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_drafts_and_versions_retained": true,
+      "accepted_pin_and_history_unchanged": true,
+      "save_rpc_calls_while_guard_held": 0,
+      "new_draft_inputs_while_guard_held": 0,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    }
+  ],
+  "recovery_case_count": 8,
+  "complete_case_count": 4,
+  "roll_back_case_count": 4,
+  "interruption_method": "gdb-kill",
+  "observed_signal": null,
+  "numeric_sigkill_claimed": false,
+  "total_recovery_save_publications": 30,
+  "total_orphan_drafts": 8,
+  "total_restored_retired_bindings": 8,
+  "total_staging_directories_removed": 8,
+  "total_native_infobases_removed": 8,
+  "owned_run_runtime_databases_remaining": 0,
+  "case_native_staging_cleanup_verified": true,
+  "owned_processes_exited_without_intervention": 90,
+  "verified_client_inputs": 183,
+  "verified_rust_inputs": 1694,
+  "verified_frozen_tool_binaries": 6,
+  "production_js_files_verified": 58,
+  "vsix_sha256": "ce459551cc5378b31a9db55597ff600fb01e303ea88175262715832399033bb8",
+  "tool_sha256": {
+    "eska-analyzer": "e1766e680936d0423b9eea6c7c8c71e2d495cbf31d6ae0ba2bec834ed3fb23eb",
+    "eska-analyzer-debug": "15751a25cb171a8a776f9c7ddd4a7ef8e410416877dc799d8b8e6fa05efb027c",
+    "eska-check": "0d87d48ba82152ed1372e14eb7e878f5114c697a52ef5a75c6c529c432248c55",
+    "eska": "5933878d3632a9bd3528b4b2f978350d807c55f28737dc2c878653589835f2de",
+    "eska-project": "beb5fe9bff30a67ed3ee30f83ce0fe03efa939bb64d904a4060abf827b22d964",
+    "eska-build": "dcd5009b98fa1101cb5b36e5fc1afb095fb842b74190f03e3176b94c9cde4550"
+  },
+  "rust_gates": [
+    {
+      "name": "sdk-guard-green",
+      "exit_code": 0
+    },
+    {
+      "name": "root-fmt",
+      "exit_code": 0
+    },
+    {
+      "name": "root-check",
+      "exit_code": 0
+    },
+    {
+      "name": "root-clippy",
+      "exit_code": 0
+    },
+    {
+      "name": "root-test-default",
+      "exit_code": 0
+    },
+    {
+      "name": "root-test-all",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-fmt",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-check-default",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-check-all",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-clippy-default",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-clippy-all",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-test-default",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-test-all",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-doc-default",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-doc-all",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-debug-bins",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-release-bins",
+      "exit_code": 0
+    }
+  ],
+  "client_gates": [
+    {
+      "name": "compile",
+      "exit_code": 0
+    },
+    {
+      "name": "typecheck",
+      "exit_code": 0
+    },
+    {
+      "name": "node",
+      "exit_code": 0
+    },
+    {
+      "name": "package",
+      "exit_code": 0
+    }
+  ],
+  "node": {
+    "tests": 425,
+    "pass": 425,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "rust_test_counts": {
+    "root-test-default": {
+      "passed": 1542,
+      "failed": 0,
+      "ignored": 24,
+      "filtered_out": 0
+    },
+    "root-test-all": {
+      "passed": 1663,
+      "failed": 0,
+      "ignored": 24,
+      "filtered_out": 0
+    },
+    "sdk-test-default": {
+      "passed": 264,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 0
+    },
+    "sdk-test-all": {
+      "passed": 601,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 0
+    },
+    "sdk-guard-green": {
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 225
+    }
+  },
+  "addition_regression_cases": 4,
+  "addition_regression_save_publications": 11,
+  "installed_regressions": [
+    {
+      "name": "save",
+      "exit_code": 0
+    },
+    {
+      "name": "native-matching",
+      "exit_code": 0
+    }
+  ],
+  "save_regression_cases": 4,
+  "save_regression_publications": 28,
+  "native_matching_regression_cases": 1,
+  "physical_human_typing": false,
+  "general_semantic_analysis_claimed": false,
+  "platform_version": "8.3.27.2325",
+  "host_os": "linux",
+  "client_commit": "6e3287f",
+  "sdk_fix_commit": "7a0e634",
+  "planned_writer_interruptions": 8,
+  "user_databases": {
+    "expected": 4,
+    "matched": 4,
+    "unexpected": 0,
+    "metadata_unchanged": true
+  },
+  "free_disk_bytes_after_runs": 260122349568
+}

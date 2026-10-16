@@ -85,5 +85,7 @@ Settings, original support pin и предыдущий CF сохранились
 Последующая [installed-матрица](installed-native-import.md) приняла all4 addition
 с автоматическим восстановлением вкладок и последующим Save. Последующая
 [rename/delete-матрица](installed-native-retirement.md) приняла all4 и orphan drafts.
-Настоящие прерывания/recovery в установленном клиенте остаются открыты;
-EF-25 остаётся `IN_PROGRESS`, MVP — в работе.
+Следующая [installed recovery-матрица](installed-native-recovery.md) приняла
+настоящую границу `BackedUp` и обе recovery actions для all4 standalone.
+Workspace и остальные точки прерывания остаются открыты; EF-25 — `IN_PROGRESS`,
+MVP — в работе.

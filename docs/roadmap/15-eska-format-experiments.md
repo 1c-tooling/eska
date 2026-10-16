@@ -3221,14 +3221,25 @@ root/owner UUID и относительный slot до actual editor close: д�
 rename с одинаковыми bytes больше не переносят старый draft на другого owner
 по прежнему URI. 425 Node-тестов, installed Save/matching и BSL SyntaxError
 проверки прошли; полная semantic context-проверка этим не объявляется.
-Foreign/inline/legacy DTO identity limits, настоящее interrupted recovery,
-workspace и общий workflow остаются открыты; EF-25 — `IN_PROGRESS`.
+Эта матрица не принимала настоящее interrupted recovery. Foreign/inline/legacy
+DTO identity limits, workspace и общий workflow остаются открыты;
+EF-25 — `IN_PROGRESS`.
 
 SDK сохраняет `source_import` hint и при первом root/manifest deletion batch,
 пока настоящий `src` отсутствует; одновременные settings changes не скрываются.
 RU/EN process regression и полный root/SDK gate прошли: SDK 264/601 tests,
-strict Clippy/Rustdoc и release bins. Installed interruption ещё проверяется;
-это исправление само по себе не закрывает recovery приёмку.
+strict Clippy/Rustdoc и release bins. Само исправление не заменяет installed
+приёмку ниже.
+
+[Installed interrupted recovery](../research/eska-format/installed-native-recovery.md)
+проверила настоящий native writer в `BackedUp` для CF/CFE/EPF/ERF. Все восемь
+`Complete`/`RollBack` прошли actual process interruption, first/repeat recovery,
+один automatic restart и 30 обычных Save. Восемь Complete orphan drafts
+сохранены без replay/пересоздания; RollBack восстановил весь source/import state
+и все восемь прежних bindings. Guard удерживает exact texts/versions без новых
+inputs/Save RPC. Временная native база каждого writer удалена после exit proof.
+Это одна standalone граница; workspace, остальные точки прерывания и общий
+workflow EF-20 ещё нужны. EF-25 и MVP остаются в работе.
 
 ## EF-26 RLS и дополнительные тексты ресурсов
 
