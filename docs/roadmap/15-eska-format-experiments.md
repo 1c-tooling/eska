@@ -47,9 +47,9 @@ EF-14 — **DONE** по [CFE](../research/eska-format/extensions.md) и
 [EPF/ERF циклам и выполнению непустого отчёта](../research/eska-format/external-projects.md);
 EF-15 — **DONE** по [обновлению базы и поставщика](../research/eska-format/base-update.md);
 EF-25 — **DONE** по [итоговой сверке повторного импорта](../research/eska-format/borrowed-native-reimport.md);
-текущий EF-20 — **IN_PROGRESS**, сквозная приёмка общего CLI.
-EF-18 сохраняет `IN_PROGRESS` как незавершённую реализацию; её продолжение
-отложено до завершения блока структуры, результаты не отменяются. Решение
+EF-20 — **DONE** по [итоговой сверке CLI-цикла](../research/eska-format/cli-workflow-acceptance.md).
+Текущий EF-18 — **IN_PROGRESS**; продолжается после завершения блока структуры
+и CLI, накопленные результаты сохраняются. Решение
 заменяет прежний ограниченный CF-пилот и указание от 2026-10-10 не менять очередь.
 [Исследование и целевая структура](../research/eska-format/project-layout.md)
 разделяют проверенное поведение и предлагаемый формат. Изменение плана не запускает
@@ -109,9 +109,9 @@ EF-18 сохраняет `IN_PROGRESS` как незавершённую реа�
 | EF-15 | DONE | EF-06, EF-24, EF-14 | Принятие новой базы/поставщика с сохранением правок |
 | EF-16 | PLANNED | EF-11, EF-20, EF-21, EF-25 | Приёмка MVP на четырёх типах проектов |
 | EF-17 | DONE | EF-02 | Выбор основы анализа BSL и адаптера метаданных |
-| EF-18 | IN_PROGRESS | EF-10, EF-17; продолжение после EF-20 | IDE-сервер и checker на завершённой структуре; продолжение отложено |
+| EF-18 | IN_PROGRESS | EF-10, EF-17, EF-20 | IDE-сервер и checker на завершённой структуре |
 | EF-19 | DEFERRED | EF-16, T26 | Самостоятельный VCS после MVP и fmt |
-| EF-20 | IN_PROGRESS | EF-12, EF-14, EF-23, EF-25; T82 | new/init, импорт и сборка CF/CFE/EPF/ERF через общий CLI |
+| EF-20 | DONE | EF-12, EF-14, EF-23, EF-25; T82 | new/init, импорт и сборка CF/CFE/EPF/ERF через общий CLI |
 | EF-21 | IN_PROGRESS | EF-11, EF-20 | Устанавливаемый комплект MVP и выборочная установка |
 | EF-22 | PLANNED | EF-20; fmt — T26; релизы — T83, T84, T56, T32 | Подключение fmt после MVP; автоматические релизы отдельно |
 | EF-23 | DONE | EF-24 | Хранение запросов СКД/динамических списков в .sdbl и обратная сборка |
@@ -978,7 +978,7 @@ Source/heap counters совпали между локалями; нулевая 
 сохранены. Это выбранные зависимости, не полный semantic load. Большой
 настроенный CFE/base, установленный UI и hard RSS budget ещё не приняты.
 
-**Статус:** `IN_PROGRESS`; параллельно завершаются CLI EF-20 и приёмка EF-11/EF-21.
+**Статус:** `IN_PROGRESS`; текущий этап после принятого CLI EF-20.
 Приоритет изменён 2026-10-11; накопленные компоненты и результаты ниже сохраняются.
 Host использует принятую схему EF-24/EF-12/EF-14/EF-23 без параллельной модели
 старого расположения файлов. Анализ выделенных
@@ -2126,7 +2126,8 @@ IDE и ядра полного BSL-анализа. Сохранность нез
 
 ## EF-20 Сквозной CLI: new/init, импорт и сборка
 
-**Статус:** `IN_PROGRESS`.
+**Статус:** `DONE` в [проверенном профиле](../research/eska-format/cli-workflow-acceptance.md).
+Ниже сохранена история срезов; её прежние ограничения не заменяют итоговую сверку.
 
 Первая [Queries creation часть](../research/eska-format/query-project-creation.md)
 добавляет `creation::import_query_project` и явный `--layout queries` в
@@ -2228,6 +2229,16 @@ init, сохранённые правки, повторный импорт и с
 Перенос проекта через чистый checkout сохраняет bytes исходников, обратной карты
 и принятой базы по правилам EF-10. Несовпадение pin/байтов даёт явный отказ;
 перенос этой проверки на отложенную EF-19 недопустим.
+
+[Итоговая CLI-приёмка](../research/eska-format/cli-workflow-acceptance.md)
+сопоставила каждое условие DoD с существующими receipts и актуальными тестами:
+восемь all4 empty/from new, четыре main init, четыре main import/build/dump,
+selected workspace import/recovery, RU/EN/JSON/no-TTY, отказы и clean clone.
+Свежие root gates — 1543/1664 passed, strict Clippy без warnings; новых
+платформенных прогонов для документальной сверки не запускалось.
+EF-20 — `DONE`; aggregate workspace build, physical parent Ctrl+C и Windows
+этой матрицей не заявляются. Общий анализатор/check/IDE и MVP принимает EF-16;
+текущий этап — продолжение EF-18.
 
 ## EF-21 Комплект инструментов и выборочная установка
 
@@ -3266,8 +3277,9 @@ Strict prepare и свежий repeat Unchanged проверены; initial impo
 прошли: 1543/1664 tests, по 24 ignored, failed нет. Менялся только test-код;
 новая runtime applicability к CF-базе этой регрессией не заявляется.
 Итоговая сверка DoD учитывает прежние all4 native build/dump, core negative
-и recovery cases, installed standalone/workspace lifecycle. EF-25 — `DONE`;
-следующий текущий этап — сквозная приёмка CLI EF-20. MVP целиком не завершён.
+и recovery cases, installed standalone/workspace lifecycle. EF-25 — `DONE`.
+Позднее [принята CLI EF-20](../research/eska-format/cli-workflow-acceptance.md);
+текущий этап — EF-18. MVP целиком не завершён.
 
 ## EF-26 RLS и дополнительные тексты ресурсов
 

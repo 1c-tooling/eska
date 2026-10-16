@@ -50,5 +50,6 @@ fixture/assertion helpers сохранило проверки без `allow`.
 EF-25 — `DONE` в этой проверенной матрице. Core проверяет четыре journal-границы
 с обеими recovery actions; installed Linux проверяет настоящий BackedUp для
 четырёх типов standalone/workspace. Остальные installed фазы/ОС не заявляются;
-отдельной обязательной матрицы всех фаз DoD не задаёт. Общий CLI workflow EF-20,
+отдельной обязательной матрицы всех фаз DoD не задаёт.
+[Общий CLI workflow EF-20 принят отдельно](cli-workflow-acceptance.md);
 анализатор, комплект и итоговая приёмка MVP продолжаются.
