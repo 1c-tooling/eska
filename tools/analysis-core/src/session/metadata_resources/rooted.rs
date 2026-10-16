@@ -109,7 +109,7 @@ impl AnalysisSession {
             source: entry.owner.clone(),
         };
         self.loaded_resource_bytes -= previous;
-        self.publish_at(&owner, next)
+        self.publish_resource_owner_at(&owner, next, 0)
     }
 
     /// Keep this resource and its canonical owner in the same root and host publication.
@@ -221,6 +221,6 @@ impl AnalysisSession {
             source: entry.owner.clone(),
         };
         self.loaded_resource_bytes = self.loaded_resource_bytes - previous + current;
-        self.publish_at(&owner, next)
+        self.publish_resource_owner_at(&owner, next, current)
     }
 }

@@ -93,9 +93,17 @@ en-US
 → Explorer и MVP → fmt → VCS. MVP включает создание через new/init, импорт
 изменений из CF/CFE/EPF/ERF в существующий проект и сборку, дерево метаданных
 с прежней информацией о поддержке, подсветку и анализ кода. Текущая задача —
-EF-18, общий анализатор и checker; EF-20 принята по
+EF-27, контекстный анализ запросов и их потребителей. EF-18 — `DONE` по
+[приёмке общей сессии и ресурсной ротации](research/eska-format/analyzer-process-retirement.md);
+EF-20 принята по
 [сверке CLI-цикла](research/eska-format/cli-workflow-acceptance.md), EF-25 — по
 [сверке повторного импорта](research/eska-format/borrowed-native-reimport.md).
+На RU/EN свежий checker проверил все 1992 модуля большого CF; выбранный IDE-отчёт
+совпал по inputs/settings/findings. Installed all4 подтвердил завершение старого
+процесса, точный replay и ограничение автоматических повторов без потери черновиков.
+Exit 2 сохраняет явную неполноту моделей/профиля; жёсткий RSS limit не заявлен.
+Заметки отдельных частей ниже сохраняют исторические статусы EF-18;
+они не заменяют итоговую приёмку.
 История EF-24: [28 новых typed-скаляров](research/eska-format/typed-scalars.md) добавлены
 в общий writer, reader и редактор.
 [Самостоятельные descriptors и план миграции исходников](research/eska-format/descriptor-layout.md)
@@ -2235,7 +2243,8 @@ cargo test
 # 14. Ближайший порядок задач после текущего состояния
 
 Реестр статусов и зависимости — в [трекере](roadmap/README.md#ближайший-порядок-выполнения)
-и [очереди EF](roadmap/15-eska-format-experiments.md). **Текущий EF-18 — `IN_PROGRESS`;
+и [очереди EF](roadmap/15-eska-format-experiments.md). **Текущий EF-27 — `IN_PROGRESS`;
+EF-18 — `DONE` по [приёмке общей сессии и ресурсной ротации](research/eska-format/analyzer-process-retirement.md);
 EF-20 принята по [CLI-приёмке](research/eska-format/cli-workflow-acceptance.md);
 EF-25 принята по [итоговой сверке](research/eska-format/borrowed-native-reimport.md);
 EF-15 принята по [обновлению базы и поставщика](research/eska-format/base-update.md);
@@ -2480,7 +2489,7 @@ CF/build/dump и исполнение изменённых условий СКД
 | Этап | Задачи |
 |---|---|
 | Структура и файловый цикл | EF-24 (`DONE`) → EF-12 (`DONE`) → EF-23 (`DONE`) → T83/T84 (`DONE`) → EF-14 (`DONE`) → EF-15 (`DONE`) → EF-25 (`DONE`) → EF-20 (`DONE`) |
-| Анализатор | Продолжить незавершённую EF-18 → EF-27 |
+| Анализатор | EF-18 (`DONE`) → EF-27 (`IN_PROGRESS`) |
 | Explorer и приёмка MVP | EF-11 → EF-21 → EF-16 |
 | Форматирование | T26 → часть EF-22 о fmt |
 | VCS | EF-19 → EF-13 |

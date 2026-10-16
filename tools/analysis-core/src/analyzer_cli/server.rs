@@ -12,13 +12,14 @@ use crate::{AnalysisSession, RequestCancellation, analysis_settings::Settings};
 
 use super::{
     args::Cli, completion, documents, dto, edit_authority, hover, navigation::Navigation,
-    project_changes, protocol, read_permissions::ReadPermissions, request_control, signature_help,
-    source_saves, stream, watched_files, watcher_registration,
+    project_changes, protocol, read_permissions::ReadPermissions, request_control, resource_budget,
+    signature_help, source_saves, stream, watched_files, watcher_registration,
 };
 
 mod initialize;
 mod project_guard;
 mod requests;
+mod resource_limits;
 mod response;
 #[cfg(test)]
 mod source_save_tests;
@@ -53,6 +54,7 @@ struct Server<'a> {
     watcher: Option<watcher_registration::Registration>,
     published_snapshot: Option<Value>,
     pending_operation: Option<&'static str>,
+    resource_budget: Option<resource_budget::Policy>,
 }
 
 enum Step {
@@ -93,6 +95,7 @@ pub fn run(
         watcher: None,
         published_snapshot: None,
         pending_operation: None,
+        resource_budget: None,
     };
     loop {
         let Ok(envelope) = incoming.receive() else {
@@ -118,6 +121,19 @@ pub fn run(
                 return 1;
             }
             server.acknowledge_response();
+        }
+        match server.check_resource_budget() {
+            Ok(Some(notification)) => {
+                let Ok(body) = response::encode(&notification, None, rpc_framing::MAX_RESPONSE)
+                else {
+                    return 1;
+                };
+                if rpc_framing::write_frame(output, &body).is_err() {
+                    return 1;
+                }
+            }
+            Ok(None) => (),
+            Err(()) => return 1,
         }
     }
 }

@@ -11,7 +11,7 @@ use super::super::{
     external_context, hover, kernel_memory, language, metadata_locations, navigation::Navigation,
     permissions, project_changes, property_edits, protocol, query_analysis, query_consumers,
     query_syntax, read_permissions::ReadPermissions, references, rename, request_control,
-    signature_help, source_saves, stream, watched_files, watcher_registration,
+    resource_budget, signature_help, source_saves, stream, watched_files, watcher_registration,
 };
 use super::{Phase, Server};
 use crate::{AnalysisScope, AnalysisSession, analysis_settings, batch::BatchProfile};
@@ -20,6 +20,8 @@ impl Server<'_> {
     /// Reject an incompatible ESKA protocol before project discovery or source reads.
     pub(super) fn initialize(&mut self, params: &Value) -> Result<Value, Value> {
         self.check_initialize(params)?;
+        let resource_budget =
+            resource_budget::Policy::new(self.cli, resource_budget::negotiate(params)?);
         let profile: BatchProfile = self.cli.profile.into();
         let (sources, settings) = open_sources(self.cli, self.localizer.locale(), profile)?;
         let project_inputs = composition_controls(&sources)?;
@@ -58,6 +60,7 @@ impl Server<'_> {
                 "requestTimeoutSeconds":self.cli.timeout_seconds,
                 "languageMethods":language::METHODS,
                 "kernelMemory":kernel_memory::capability(),
+                "resourceRestart":resource_budget.capability(),
                 "analysis":diagnostics::availability(&settings, profile),
                 "querySyntax":query_syntax::capability(query_syntax::negotiate(params)?, &settings),
                 "queryAnalysis":query_analysis::capability(query_analysis::negotiate(params)?, &settings, scope),
@@ -73,11 +76,7 @@ impl Server<'_> {
             }}},
             "serverInfo":{"name":"eska-analyzer", "version":env!("CARGO_PKG_VERSION")},
         });
-        if let Some(composition) = session.composition_summary() {
-            result["capabilities"]["experimental"]["eska"]["composition"] = json!(composition);
-            result["capabilities"]["experimental"]["eska"]["inputDeclarations"] =
-                super::super::input_declarations::capability();
-        }
+        advertise_composition(&mut result, &session);
         let editing = (edit_plans.is_some(), save_authority.is_some());
         advertise_editing(&mut result, params, editing, settings.is_ok());
         result["capabilities"]["diagnosticProvider"] = json!({
@@ -118,6 +117,7 @@ impl Server<'_> {
         self.settings = Some(settings);
         self.session_id = session_id;
         self.phase = Phase::Initializing;
+        self.resource_budget = Some(resource_budget);
         Ok(result)
     }
 
@@ -168,6 +168,15 @@ impl Server<'_> {
         query_analysis::negotiate(params)?;
         query_consumers::negotiate(params)?;
         Ok(())
+    }
+}
+
+/// Expose foreign input declarations only when the selected session admits a composition.
+fn advertise_composition(result: &mut Value, session: &AnalysisSession) {
+    if let Some(composition) = session.composition_summary() {
+        result["capabilities"]["experimental"]["eska"]["composition"] = json!(composition);
+        result["capabilities"]["experimental"]["eska"]["inputDeclarations"] =
+            super::super::input_declarations::capability();
     }
 }
 

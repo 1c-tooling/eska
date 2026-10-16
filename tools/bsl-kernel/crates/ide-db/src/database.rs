@@ -142,6 +142,15 @@ pub struct RootDatabaseImpl {
 /// instance) never sees a stale entry — so no version key is needed.
 pub type GraphConfigCache = dashmap::DashMap<PathBuf, Arc<bsl_metadata::Configuration>>;
 
+/// Count process-wide canonical names without exposing their identities.
+///
+/// The existing pool sample also walks retained strings for its heap estimator,
+/// so this is O(retained strings), not an RSS or heap measurement.
+#[must_use]
+pub fn interner_norm_entries() -> usize {
+    intern::pool_stats().norm_count
+}
+
 /// Whether to install the salsa event-counter callback, gated by `BSL_SALSA_EVENTS=1`.
 /// Off leaves the runtime hot path at salsa's single `is_some` branch per event.
 fn salsa_events_enabled_by_env() -> bool {
@@ -256,6 +265,15 @@ impl RootDatabaseImpl {
 
     pub(crate) fn type_kernel_inner(&self) -> &Arc<TypeKernelInner> {
         &self.type_kernel
+    }
+
+    /// Count exact retained types in this database generation, including native sentinels.
+    ///
+    /// Database clones share this append-only table; a fresh database has its own
+    /// table. The synchronized count exposes no type IDs and measures no heap or RSS.
+    #[must_use]
+    pub fn type_kernel_entries(&self) -> usize {
+        self.type_kernel.entries()
     }
 
     /// Run salsa's LRU trim now, dropping memoized values beyond each query's

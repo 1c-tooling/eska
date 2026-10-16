@@ -85,3 +85,8 @@ Append-only native type arena, process-global interner, immutable composition,
 внешние `Arc`, временные аллокации и allocator требуют отдельного решения.
 Пересоздание одной native-базы не освобождает process-global canonical names.
 EF-18 и MVP остаются в работе.
+
+Следующий [process lifecycle](analyzer-process-retirement.md) добавляет
+пороговый отзыв поколения и exact journal replay, включая освобождение
+process-global names при выходе старого процесса. Итоговая приёмка EF-18
+зафиксирована там; приведённые выше результаты относятся к исходному cache-срезу.

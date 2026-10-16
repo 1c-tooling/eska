@@ -52,6 +52,7 @@ mod test_sequence_project;
 mod test_settings_storage_project;
 #[cfg(any(feature = "analyzer-cli", feature = "check-cli"))]
 mod tool_query_consumers;
+mod traffic;
 #[cfg(all(test, any(feature = "analyzer-cli", feature = "check-cli")))]
 use test_composition_project as composition_project;
 #[cfg(test)]
@@ -128,3 +129,4 @@ pub use session::query_text::{
 };
 pub use session::{AnalysisScope, AnalysisSession, SessionError, SessionSummary};
 pub use source_saves::{SourceSaveError, SourceSaveInput, SourceSaveKind};
+pub use traffic::SessionTraffic;

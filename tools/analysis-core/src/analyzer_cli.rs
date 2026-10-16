@@ -29,6 +29,7 @@ mod read_permissions;
 mod references;
 mod rename;
 mod request_control;
+mod resource_budget;
 mod server;
 mod signature_help;
 mod source_saves;

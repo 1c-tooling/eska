@@ -236,11 +236,31 @@ impl AnalysisSession {
         key: &SourceKey,
         next: SessionRevision,
     ) -> Result<(), SessionRequestError> {
+        self.publish_owner_at(key, next, None)
+    }
+
+    /// Reprojecting an owner consumes only the resource bytes newly accepted in this publication.
+    pub(super) fn publish_resource_owner_at(
+        &mut self,
+        key: &SourceKey,
+        next: SessionRevision,
+        ready_resource_bytes: u64,
+    ) -> Result<(), SessionRequestError> {
+        self.publish_owner_at(key, next, Some(ready_resource_bytes))
+    }
+
+    /// Resource projections must not charge the unchanged owning YAML a second time.
+    fn publish_owner_at(
+        &mut self,
+        key: &SourceKey,
+        next: SessionRevision,
+        ready_resource_bytes: Option<u64>,
+    ) -> Result<(), SessionRequestError> {
         let scope = self.scope;
         let (root, database) = self.root_database_mut(key.root)?;
         let (previous, current) = root.publish(database, &key.source, next, scope)?;
         self.loaded_metadata_source_bytes = self.loaded_metadata_source_bytes - previous + current;
-        self.revision = next;
+        self.commit_input(next, ready_resource_bytes.unwrap_or(current));
         Ok(())
     }
 
@@ -396,6 +416,7 @@ impl AnalysisSession {
             loaded_metadata_source_bytes: 0,
             loaded_resource_bytes: 0,
             loaded_query_bytes: 0,
+            cumulative_ready_source_bytes: 0,
             options,
         })
     }

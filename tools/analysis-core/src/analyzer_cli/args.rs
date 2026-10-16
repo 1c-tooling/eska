@@ -29,7 +29,15 @@ pub struct Cli {
     pub max_document_bytes: u64,
     #[arg(long, default_value_t = 256 * 1024 * 1024)]
     pub max_retained_source_bytes: u64,
-    #[arg(long, conflicts_with_all = ["project_dir", "project", "profile", "accepted_base_sha256", "timeout_seconds", "max_document_bytes", "max_retained_source_bytes"])]
+    #[arg(long, default_value_t = 1024 * 1024 * 1024)]
+    pub max_process_source_bytes: u64,
+    #[arg(long, default_value_t = 100_000)]
+    pub max_process_input_publications: u64,
+    #[arg(long, default_value_t = 1_000_000)]
+    pub max_type_kernel_entries: u64,
+    #[arg(long, default_value_t = 1_000_000)]
+    pub max_interner_norm_entries: u64,
+    #[arg(long, conflicts_with_all = ["project_dir", "project", "profile", "accepted_base_sha256", "timeout_seconds", "max_document_bytes", "max_retained_source_bytes", "max_process_source_bytes", "max_process_input_publications", "max_type_kernel_entries", "max_interner_norm_entries"])]
     pub capabilities: bool,
     #[arg(long, value_enum, default_value_t = OutputFormat::Human, requires = "capabilities")]
     pub format: OutputFormat,

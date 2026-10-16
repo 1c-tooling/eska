@@ -151,6 +151,7 @@ pub struct AnalysisSession {
     pub(super) loaded_metadata_source_bytes: u64,
     pub(super) loaded_resource_bytes: u64,
     pub(super) loaded_query_bytes: u64,
+    pub(super) cumulative_ready_source_bytes: u64,
     pub(super) options: SessionOptions,
 }
 
@@ -264,6 +265,7 @@ impl AnalysisSession {
             loaded_metadata_source_bytes: 0,
             loaded_resource_bytes: 0,
             loaded_query_bytes: 0,
+            cumulative_ready_source_bytes: 0,
             options,
         })
     }

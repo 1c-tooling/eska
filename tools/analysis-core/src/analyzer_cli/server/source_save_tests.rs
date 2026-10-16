@@ -70,6 +70,7 @@ fn server<'a>(cli: &'a Cli, localizer: &'a Localizer) -> Server<'a> {
         watcher: None,
         published_snapshot: None,
         pending_operation: None,
+        resource_budget: None,
     }
 }
 
@@ -188,4 +189,57 @@ fn confirmed_save_survives_late_cancel_and_import_until_its_wire_result() {
     assert!(server.ensure_current().is_err());
     assert!(server.session.is_none());
     assert!(server.save_authority.is_none());
+}
+
+/// Resource retirement follows the confirmed frame and cannot reinterpret a committed Save as rejected.
+#[test]
+fn confirmed_save_is_written_before_resource_retirement() {
+    let (_directory, root, pin) = project();
+    let cli = arguments(&root, &pin);
+    let localizer = Localizer::try_new(Locale::EnUs).unwrap();
+    let mut server = server(&cli, &localizer);
+    let save = initialized(&mut server, &root);
+    // Force pressure at this publication boundary, independently of how an earlier input was admitted.
+    let mut exhausted = arguments(&root, &pin);
+    exhausted.max_process_source_bytes = 0;
+    server.resource_budget = Some(super::resource_budget::Policy::new(&exhausted, true));
+    let (message, tracked) = tracked(&save);
+    let step = server.process(&message, Some(&tracked.control));
+    assert!(matches!(step, Step::Committed(_)));
+    tracked.control.cancel();
+    let body = server
+        .encode_step_response(step, Some(&tracked))
+        .unwrap()
+        .unwrap();
+    let mut output = Vec::new();
+    rpc_framing::write_frame(&mut output, &body).unwrap();
+    server.acknowledge_response();
+    let notification = server.check_resource_budget().unwrap().unwrap();
+    rpc_framing::write_frame(&mut output, &serde_json::to_vec(&notification).unwrap()).unwrap();
+    let mut reader = Cursor::new(output);
+    let receipt: Value =
+        serde_json::from_slice(&rpc_framing::read_frame(&mut reader).unwrap().unwrap()).unwrap();
+    let retired: Value =
+        serde_json::from_slice(&rpc_framing::read_frame(&mut reader).unwrap().unwrap()).unwrap();
+    assert_eq!(receipt["result"]["outcome"], "published");
+    assert_eq!(receipt["result"]["snapshot"], save["params"]["snapshot"]);
+    assert!(receipt.get("error").is_none());
+    assert_eq!(retired["method"], "eska/restartRequired");
+    assert_eq!(retired["params"]["snapshot"], receipt["result"]["snapshot"]);
+    assert_eq!(retired["params"]["cause"], "resource_limit");
+    assert_eq!(
+        retired["params"]["resource_limit"]["exceeded"],
+        json!(["cumulative_ready_source_bytes"])
+    );
+    assert_eq!(
+        fs::read_to_string(root.join("src").join(MODULE)).unwrap(),
+        DRAFT
+    );
+    assert!(server.session.is_none());
+    assert!(server.save_authority.is_none());
+    assert_eq!(
+        server.ensure_current().unwrap_err()["data"]["kind"],
+        "project_restart_required"
+    );
+    assert!(server.check_resource_budget().unwrap().is_none());
 }

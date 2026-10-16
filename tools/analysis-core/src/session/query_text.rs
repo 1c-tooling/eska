@@ -184,7 +184,7 @@ impl AnalysisSession {
     const fn publish_query_change(&mut self, next: SessionRevision, change: QueryTextChange) {
         self.loaded_query_bytes =
             self.loaded_query_bytes - change.previous_bytes + change.current_bytes;
-        self.revision = next;
+        self.commit_input(next, change.current_bytes);
     }
 }
 

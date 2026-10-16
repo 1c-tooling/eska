@@ -46,6 +46,7 @@ mod reference_queries;
 mod rename_queries;
 mod request_cancellation;
 mod request_deadline;
+mod resource_restart_queries;
 mod role_queries;
 mod saved_watcher_registration;
 mod scheduled_job_queries;

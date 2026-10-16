@@ -8,6 +8,13 @@ replay проверены на RU/EN. Debug RSS измерен отдельно;
 500 изменений одного реквизита на RU/EN, независимый RSS и отказ/replay той же
 квоты. Загружены выбранные зависимости; общий heap/RSS limit не реализован.
 
+[Ротация IDE-процесса](analyzer-process-retirement.md) добавляет отдельные
+пределы накопленного Ready input traffic и удерживаемых native identities.
+Она проверяется после публикации ответа, сохраняет исходный input ACK/Save
+receipt и требует завершения старого процесса для освобождения global names.
+Текущая source quota и lifetime counters имеют разные назначения; одноразовый
+checker сохраняет обычное завершение без IDE-ротации.
+
 Сессия IDE и `eska-check` используют одну квоту исходных байтов YAML/rights/BSL/`.sdbl`.
 `SessionOptions.max_retained_source_bytes` и
 `BatchOptions.max_retained_source_bytes` по умолчанию равны 256 MiB.
@@ -45,6 +52,16 @@ replacement reserve; [query syntax](analyzer-query-syntax.md) не добавл�
 обычно имеет нулевой `module_text_bytes`. Это не число всех проверенных байтов:
 результаты файлов и их hash сохраняются отдельно.
 
+Экспериментальный `AnalysisSession::input_traffic()` возвращает независимый
+`SessionTraffic`. Его `cumulative_ready_source_bytes` — насыщаемая сумма полных
+UTF-8 размеров каждого вновь принятого Ready YAML/BSL/resource/query input.
+Замена учитывает полный новый размер, включая одинаковый текст с новой версией,
+а не разницу текущих резервов. Принятый unavailable input или release добавляет
+ноль байтов. Resource publication учитывает ресурс без повторного owning YAML.
+`accepted_publications` совпадает с общим `SessionRevision` и включает принятые
+ошибки чтения и releases. Stale/unknown requests и фактические no-op не меняют
+эти счётчики; освобождение текущего резерва не вычитает накопленный трафик.
+
 В JSON metadata/module issues используют `analysis_source_budget_exceeded`.
 Human output объясняет отказ на RU/EN и показывает текущий резерв и предел.
 Неполная проверка возвращает exit 2. Settings hash по-прежнему относится
@@ -59,8 +76,12 @@ Human output объясняет отказ на RU/EN и показывает т
 или гарантия RSS. [Общий выход языковых запросов](analyzer-query-cache-lifecycle.md)
 очищает computed native caches при успехе и ошибке под тем же deadline,
 сохраняя текущие inputs и editor parse hints. Это LRU окна по entries.
-Дальнейшая работа должна отдельно ограничивать и измерять
-удерживаемую память ядра и временные вычисления; EF-18 остаётся `IN_PROGRESS`.
+Ротация отдельно ограничивает жизнь host по накопленному input traffic,
+native type entries и process-global canonical names. Один запрос может
+превысить порог до публикации ответа; счётчики не задают размер отдельных
+types/strings, временных вычислений или RSS. Повторное создание одной базы
+не освобождает process-global names: старый процесс нужно завершить.
+Итоговая [приёмка EF-18](analyzer-process-retirement.md) сохраняет эту границу.
 
 Изменено неопубликованное Rust API: `InputRequest` получил необязательный
 `source_budget`, `SessionOptions`/`BatchOptions` — общий предел,

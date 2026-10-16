@@ -30,6 +30,12 @@ pub struct KernelMemoryReport {
 }
 
 impl AnalysisSession {
+    /// Native identity lifetimes are sampled separately from incomplete table heap estimates.
+    #[cfg(feature = "analyzer-cli")]
+    pub(crate) fn retention_counters(&self) -> ide::RetentionCounters {
+        ide::retention_counters(&self.database)
+    }
+
     /// Sample existing tables without evaluating queries or changing any current input revision.
     #[must_use]
     pub fn kernel_memory(&self) -> KernelMemoryReport {

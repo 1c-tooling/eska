@@ -98,6 +98,7 @@ fn initialized<'a>(cli: &'a Cli, localizer: &'a Localizer) -> (Server<'a>, Value
         watcher: None,
         published_snapshot: None,
         pending_operation: None,
+        resource_budget: None,
     };
     let mut response = dispatched(
         &mut server,

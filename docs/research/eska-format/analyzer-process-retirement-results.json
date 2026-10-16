@@ -1,0 +1,660 @@
+{
+  "schema_version": 1,
+  "scope": "ef18_process_retirement_acceptance",
+  "ef18_definition_of_done_accepted": true,
+  "mvp_complete": false,
+  "next_stage": "EF-27",
+  "policy": {
+    "check_boundary": "after-published-frame",
+    "overshoot": "one-operation",
+    "counts_encoding": "canonical-decimal-u64-strings",
+    "process_rss_limit": false,
+    "default_limits": {
+      "cumulative_ready_source_bytes": "1073741824",
+      "accepted_publications": "100000",
+      "type_kernel_entries": "1000000",
+      "interner_norm_entries": "1000000"
+    }
+  },
+  "gates": {
+    "all_passed": true,
+    "invocations": 20,
+    "unchanged_local_inputs": 2624,
+    "commands": [
+      {
+        "name": "sdk-fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "sdk-check-default",
+        "command": [
+          "cargo",
+          "check",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "sdk-check-all",
+        "command": [
+          "cargo",
+          "check",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-features",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "sdk-clippy-default",
+        "command": [
+          "cargo",
+          "clippy",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "sdk-clippy-all",
+        "command": [
+          "cargo",
+          "clippy",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "native-fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--all",
+          "--check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "native-check",
+        "command": [
+          "cargo",
+          "check",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-features",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "native-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "native-test",
+        "command": [
+          "cargo",
+          "test",
+          "--manifest-path",
+          "tools/bsl-kernel/Cargo.toml",
+          "--workspace",
+          "--all-features",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "sdk-test-default",
+        "command": [
+          "cargo",
+          "test",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "sdk-test-all",
+        "command": [
+          "cargo",
+          "test",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-features",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "sdk-doc-default",
+        "command": [
+          "cargo",
+          "doc",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--no-deps",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "sdk-doc-all",
+        "command": [
+          "cargo",
+          "doc",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--no-deps",
+          "--all-features",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "root-fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "root-check",
+        "command": [
+          "cargo",
+          "check",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "root-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "root-test-default",
+        "command": [
+          "cargo",
+          "test",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "root-test-all",
+        "command": [
+          "cargo",
+          "test",
+          "--all-features",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "sdk-debug-bins",
+        "command": [
+          "cargo",
+          "build",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-features",
+          "--bins",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "sdk-release-bins",
+        "command": [
+          "cargo",
+          "build",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-features",
+          "--bins",
+          "--release",
+          "--locked"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "tests": {
+      "root-test-default": {
+        "passed": 1543,
+        "failed": 0,
+        "ignored": 24
+      },
+      "root-test-all": {
+        "passed": 1664,
+        "failed": 0,
+        "ignored": 24
+      },
+      "sdk-test-default": {
+        "passed": 270,
+        "failed": 0,
+        "ignored": 0
+      },
+      "sdk-test-all": {
+        "passed": 620,
+        "failed": 0,
+        "ignored": 0
+      },
+      "native-test": {
+        "passed": 6645,
+        "failed": 0,
+        "ignored": 32
+      }
+    },
+    "rustdoc_warnings_denied": true,
+    "client_tsc_check": 0,
+    "client_node": {
+      "passed": 454,
+      "failed": 0,
+      "skipped": 0
+    },
+    "targeted_parser_lifecycle_tests": 94,
+    "vsix_packaging": {
+      "exit_code": 0,
+      "bytes": 1534247
+    }
+  },
+  "matched_current_input_churn": {
+    "baseline": {
+      "cases": [
+        {
+          "locale": "en-US",
+          "cycles": 500,
+          "owners": 3617,
+          "cold_spawn_initialize_seconds": 0.15595437699812464,
+          "first_completion_seconds": 0.03675056800420862,
+          "warm_median_seconds": 0.0011809985007857904,
+          "cycle_median_seconds": 0.03525131650167168,
+          "completion_requests": 512,
+          "incomplete_completion_count": 512,
+          "exact_hashes_and_versions": true,
+          "new_present_old_absent": true,
+          "close_restores_saved": true
+        },
+        {
+          "locale": "ru-RU",
+          "cycles": 500,
+          "owners": 3617,
+          "cold_spawn_initialize_seconds": 0.1505930979983532,
+          "first_completion_seconds": 0.0366054059995804,
+          "warm_median_seconds": 0.001570723998156609,
+          "cycle_median_seconds": 0.03527166449930519,
+          "completion_requests": 512,
+          "incomplete_completion_count": 512,
+          "exact_hashes_and_versions": true,
+          "new_present_old_absent": true,
+          "close_restores_saved": true
+        }
+      ],
+      "peak_observed_rss_bytes": 96997376
+    },
+    "with_policy": {
+      "cases": [
+        {
+          "locale": "en-US",
+          "cycles": 500,
+          "owners": 3617,
+          "cold_spawn_initialize_seconds": 0.1505420329995104,
+          "first_completion_seconds": 0.03939832399919396,
+          "warm_median_seconds": 0.001291993998165708,
+          "cycle_median_seconds": 0.0357344740004919,
+          "completion_requests": 512,
+          "incomplete_completion_count": 512,
+          "exact_hashes_and_versions": true,
+          "new_present_old_absent": true,
+          "close_restores_saved": true
+        },
+        {
+          "locale": "ru-RU",
+          "cycles": 500,
+          "owners": 3617,
+          "cold_spawn_initialize_seconds": 0.15107919200090691,
+          "first_completion_seconds": 0.03736612800275907,
+          "warm_median_seconds": 0.0015352030022768304,
+          "cycle_median_seconds": 0.03587303499807604,
+          "completion_requests": 512,
+          "incomplete_completion_count": 512,
+          "exact_hashes_and_versions": true,
+          "new_present_old_absent": true,
+          "close_restores_saved": true
+        }
+      ],
+      "peak_observed_rss_bytes": 97738752
+    }
+  },
+  "full_saved_ide": {
+    "profile": "semantic",
+    "cases": [
+      {
+        "locale": "en-US",
+        "seconds": 14.36978816199553,
+        "finding_count": 19,
+        "coverage": {
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": false,
+          "module_inputs_complete": true,
+          "module_syntax_complete": true,
+          "semantic_complete": false,
+          "semantic_profile_complete": false
+        },
+        "resource_limit": {
+          "checked_after": "published-frame",
+          "counters": {
+            "accepted_publications": "5845",
+            "cumulative_ready_source_bytes": "242052766",
+            "interner_norm_entries": "1439",
+            "type_kernel_entries": "214"
+          },
+          "exceeded": [
+            "cumulative_ready_source_bytes"
+          ],
+          "limits": {
+            "accepted_publications": "100000",
+            "cumulative_ready_source_bytes": "1",
+            "interner_norm_entries": "1000000",
+            "type_kernel_entries": "1000000"
+          },
+          "overshoot": "one-operation",
+          "process_rss_limit": false,
+          "schema_version": 1
+        },
+        "published_diagnostic_precedes_retirement": true,
+        "retired_admission_refused": true,
+        "memory_before": {
+          "label": "before",
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 0,
+            "module_text_bytes": 0,
+            "query_text_bytes": 0,
+            "total_source_bytes": 0
+          },
+          "kernel_heap_estimates": 3293667
+        }
+      },
+      {
+        "locale": "ru-RU",
+        "seconds": 14.36463524300052,
+        "finding_count": 19,
+        "coverage": {
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": false,
+          "module_inputs_complete": true,
+          "module_syntax_complete": true,
+          "semantic_complete": false,
+          "semantic_profile_complete": false
+        },
+        "resource_limit": {
+          "checked_after": "published-frame",
+          "counters": {
+            "accepted_publications": "5845",
+            "cumulative_ready_source_bytes": "242052766",
+            "interner_norm_entries": "1439",
+            "type_kernel_entries": "214"
+          },
+          "exceeded": [
+            "cumulative_ready_source_bytes"
+          ],
+          "limits": {
+            "accepted_publications": "100000",
+            "cumulative_ready_source_bytes": "1",
+            "interner_norm_entries": "1000000",
+            "type_kernel_entries": "1000000"
+          },
+          "overshoot": "one-operation",
+          "process_rss_limit": false,
+          "schema_version": 1
+        },
+        "published_diagnostic_precedes_retirement": true,
+        "retired_admission_refused": true,
+        "memory_before": {
+          "label": "before",
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 0,
+            "module_text_bytes": 0,
+            "query_text_bytes": 0,
+            "total_source_bytes": 0
+          },
+          "kernel_heap_estimates": 3293667
+        }
+      }
+    ],
+    "peak_observed_rss_bytes": 419639296,
+    "default_thresholds_fit_observed_full_load": true,
+    "retirement_forced_by_source_threshold_one_byte": true
+  },
+  "fresh_saved_checker": {
+    "profile": "semantic",
+    "cases": [
+      {
+        "locale": "en-US",
+        "attempts": 1,
+        "same_saved_profile_parity": "target_hash_profile_hash_and_findings_equal",
+        "general_semantics_claimed": false,
+        "outcome": "response",
+        "exit_code": 2,
+        "status": "incomplete",
+        "coverage": {
+          "binary_modules": 0,
+          "checked_modules": 1992,
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": false,
+          "metadata_owners": 3617,
+          "modules": 1992,
+          "semantic_profile_complete": false,
+          "syntax_complete": true,
+          "unavailable_modules": 0,
+          "unchecked_modules": 0
+        },
+        "resources": {
+          "max_source_bytes": 268435456,
+          "metadata_source_bytes": 173379296,
+          "module_text_bytes": 69553466,
+          "query_text_bytes": 0,
+          "total_source_bytes": 242932762
+        }
+      },
+      {
+        "locale": "ru-RU",
+        "attempts": 1,
+        "same_saved_profile_parity": "target_hash_profile_hash_and_findings_equal",
+        "general_semantics_claimed": false,
+        "outcome": "response",
+        "exit_code": 2,
+        "status": "incomplete",
+        "coverage": {
+          "binary_modules": 0,
+          "checked_modules": 1992,
+          "metadata_inputs_complete": true,
+          "metadata_models_complete": false,
+          "metadata_owners": 3617,
+          "modules": 1992,
+          "semantic_profile_complete": false,
+          "syntax_complete": true,
+          "unavailable_modules": 0,
+          "unchecked_modules": 0
+        },
+        "resources": {
+          "max_source_bytes": 268435456,
+          "metadata_source_bytes": 173379296,
+          "module_text_bytes": 69553466,
+          "query_text_bytes": 0,
+          "total_source_bytes": 242932762
+        }
+      }
+    ],
+    "peak_observed_rss_bytes": 1071489024
+  },
+  "installed_client": {
+    "passed": true,
+    "locale": "en",
+    "cases": [
+      {
+        "type": "configuration",
+        "resourceNoticeAfterExactAck": true,
+        "automaticReplacement": true,
+        "oldChildReaped": true,
+        "sourceKinds": [
+          "yaml",
+          "bsl",
+          "sdbl"
+        ],
+        "exactVersionsBytesHashesAndReplayAcks": true,
+        "currentDiagnostics": true,
+        "workingSetOneAutomaticReplacement": true,
+        "noRestartLoop": true,
+        "draftsPreservedOnStoppedWorkingSet": true,
+        "sourceAndAcceptedHistoryPreserved": true,
+        "explicitManualRecovery": true
+      },
+      {
+        "type": "extension",
+        "resourceNoticeAfterExactAck": true,
+        "automaticReplacement": true,
+        "oldChildReaped": true,
+        "sourceKinds": [
+          "yaml",
+          "bsl",
+          "sdbl"
+        ],
+        "exactVersionsBytesHashesAndReplayAcks": true,
+        "currentDiagnostics": true,
+        "workingSetOneAutomaticReplacement": true,
+        "noRestartLoop": true,
+        "draftsPreservedOnStoppedWorkingSet": true,
+        "sourceAndAcceptedHistoryPreserved": true,
+        "explicitManualRecovery": true
+      },
+      {
+        "type": "processing",
+        "resourceNoticeAfterExactAck": true,
+        "automaticReplacement": true,
+        "oldChildReaped": true,
+        "sourceKinds": [
+          "yaml",
+          "bsl",
+          "sdbl"
+        ],
+        "exactVersionsBytesHashesAndReplayAcks": true,
+        "currentDiagnostics": true,
+        "workingSetOneAutomaticReplacement": true,
+        "noRestartLoop": true,
+        "draftsPreservedOnStoppedWorkingSet": true,
+        "sourceAndAcceptedHistoryPreserved": true,
+        "explicitManualRecovery": true
+      },
+      {
+        "type": "report",
+        "resourceNoticeAfterExactAck": true,
+        "automaticReplacement": true,
+        "oldChildReaped": true,
+        "sourceKinds": [
+          "yaml",
+          "bsl",
+          "sdbl"
+        ],
+        "exactVersionsBytesHashesAndReplayAcks": true,
+        "currentDiagnostics": true,
+        "workingSetOneAutomaticReplacement": true,
+        "noRestartLoop": true,
+        "draftsPreservedOnStoppedWorkingSet": true,
+        "sourceAndAcceptedHistoryPreserved": true,
+        "explicitManualRecovery": true
+      }
+    ],
+    "owned_children": 21,
+    "all_owned_identities_exited": true,
+    "cleanup_signal_sent": false,
+    "physical_human_typing": false,
+    "save_publication_tested_here": false
+  },
+  "preservation": {
+    "files": 22117,
+    "directories": 6327,
+    "large_project_bytes_modes_mtimes_preserved": true,
+    "large_project_copies_created": 0,
+    "native_databases_created": 0,
+    "platform_invoked": false,
+    "accepted_runtime_children": 29,
+    "accepted_runtime_children_natural_exit": true
+  },
+  "limits": {
+    "global_heap_or_rss_cap_claimed": false,
+    "within_query_allocation_cap_claimed": false,
+    "initialization_bound_by_this_policy": false,
+    "general_semantic_completeness_claimed": false,
+    "interner_sampling_cost": "O(retained strings)",
+    "batch_uses_one_shot_process": true,
+    "os_cache_flushed": false,
+    "churn_executed_serially_without_cargo_or_installed_host": true,
+    "checker_may_overlap_installed_functional_acceptance": true
+  },
+  "unaccepted_preliminary_attempts": [
+    {
+      "kind": "probe_startup_identity",
+      "reason": "transient_single_empty_argv_during_exec",
+      "owned_children_reaped": 2,
+      "forced_owned_cleanup": 1
+    },
+    {
+      "kind": "installed_harness_eol_assertion",
+      "reason": "editor_normalizes_query_text_to_current_document_eol",
+      "owned_children_natural_exit": 2
+    }
+  ]
+}

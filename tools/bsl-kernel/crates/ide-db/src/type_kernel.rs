@@ -52,6 +52,11 @@ impl TypeKernelInner {
         Self { table, intern: RwLock::new(intern), sentinels }
     }
 
+    /// Count retained types, including sentinels, through the synchronized append-only table.
+    pub(crate) fn entries(&self) -> usize {
+        self.table.len()
+    }
+
     pub fn unknown(&self) -> TypeId {
         TypeId::from_raw(self.sentinels.unknown)
     }
@@ -147,10 +152,57 @@ mod tests {
         assert_eq!(db.lookup_type(id_from_clone), clone.lookup_type(id_from_clone));
     }
 
+    /// Repeated types deduplicate, clones share growth and a fresh database starts a new table.
+    #[test]
+    fn retained_type_entries_follow_database_lifetime() {
+        let db = RootDatabaseImpl::new();
+        let baseline = db.type_kernel_entries();
+        let first = TypeKind::Number(NumberFacet::with_scale(15, 2));
+        let first_id = db.intern_type(first.clone());
+        assert_eq!(db.type_kernel_entries(), baseline + 1);
+        assert_eq!(db.intern_type(first), first_id);
+        assert_eq!(db.type_kernel_entries(), baseline + 1);
+
+        let clone = db.clone();
+        let second_id = clone.intern_type(TypeKind::Number(NumberFacet::with_scale(12, 3)));
+        assert_ne!(first_id, second_id);
+        assert_eq!(db.type_kernel_entries(), baseline + 2);
+        assert_eq!(clone.type_kernel_entries(), baseline + 2);
+
+        let fresh = RootDatabaseImpl::new();
+        assert_eq!(fresh.type_kernel_entries(), baseline);
+        assert_eq!(db.type_kernel_entries(), baseline + 2);
+    }
+
+    /// Canonical name identity deduplicates case variants and survives database replacement.
+    #[test]
+    fn retained_names_follow_process_lifetime() {
+        use crate::database::interner_norm_entries;
+        use intern::NormName;
+
+        let db = RootDatabaseImpl::new();
+        let before = interner_norm_entries();
+        let first = NormName::intern("__eska_retention_counter_native_first_Я");
+        let second = NormName::intern("__eska_retention_counter_native_second_😀");
+        assert_ne!(first, second);
+        let after = interner_norm_entries();
+        assert!(after >= before + 2);
+        assert_eq!(NormName::intern("__ESKA_RETENTION_COUNTER_NATIVE_FIRST_я"), first);
+        assert!(interner_norm_entries() >= after);
+
+        drop(db);
+        let fresh = RootDatabaseImpl::new();
+        assert!(interner_norm_entries() >= after);
+        assert_eq!(NormName::intern("__eska_retention_counter_native_second_😀"), second);
+        assert!(fresh.type_kernel_entries() > 0);
+    }
+
+    /// Concurrent duplicate insertions publish one retained type entry in the shared table.
     #[test]
     fn concurrent_intern_of_same_type_returns_identical_type_id() {
         for _ in 0..1000 {
             let db = RootDatabaseImpl::new();
+            let baseline = db.type_kernel_entries();
             let kind = TypeKind::Number(NumberFacet::with_scale(15, 2));
 
             let left_db = db.clone();
@@ -164,6 +216,7 @@ mod tests {
             let right = right.join().expect("right intern thread panicked");
 
             assert_eq!(left, right);
+            assert_eq!(db.type_kernel_entries(), baseline + 1);
         }
     }
 }

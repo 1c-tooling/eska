@@ -216,6 +216,19 @@ saved/overlay/close; diagnostics и completions используют те же �
 считает исходный размер готовых YAML-моделей, declared rights/dialog/predefined и BSL-текстов,
 по умолчанию 256 MiB.
 Замены переиспользуют свой резерв; недостаточная квота очищает прежний вход.
+[Пределы жизни IDE-процесса](../../docs/research/eska-format/analyzer-process-retirement.md)
+отдельно учитывают накопленные Ready bytes, принятые публикации, native types
+и process-global canonical names. После опубликованного ответа достигнутый
+порог отзывает host; для освобождения global names клиент завершает старый
+процесс и повторяет текущий journal в новом. Это ограничение поколения,
+без гарантии RSS или временных аллокаций одного запроса. Одноразовый checker
+не получает IDE-ротацию.
+Экспериментальный `AnalysisSession::input_traffic()` возвращает `SessionTraffic`:
+насыщаемую сумму полных UTF-8 размеров принятых Ready входов и число публикаций
+из общего `SessionRevision`. Unavailable и releases добавляют публикацию без
+Ready bytes; stale/unknown/no-op не меняют счётчики. Замена и повторное принятие
+идентичного текста новой версии учитываются полностью; resource projection
+не считает неизменившийся YAML повторно.
 `kernel_memory()` возвращает отдельный снимок таблиц Salsa: число instances,
 размеры полей и optional heap estimate. `entries` включает memo с вытесненным
 значением; нулевая оценка также может означать отсутствие сохранённого значения.
@@ -237,8 +250,9 @@ source-byte квоты и недоступного RSS. Имена таблиц 
 `QueryCancellation` прерывает выполняющийся запрос на ближайшем checkpoint
 Salsa; один токен управляет одним запросом и не меняет исходники или ревизию.
 Самостоятельные checker и IDE transport используют профили `syntax` и `semantic`
-этой же сессии с кооперативным deadline. Общий бюджет памяти, полные модели
-и семантика ещё не реализованы.
+этой же сессии с кооперативным deadline. Пределы текущих входов, очистка кешей
+и ротация IDE-процесса имеют отдельные контракты; общего byte-accurate heap/RSS
+предела, полных моделей и семантики пока нет.
 Библиотека не опубликована и не входит в установленный комплект.
 
 Read-only пример `project_session` принимает каталог исходников ESKA, читает
@@ -341,6 +355,27 @@ eska-analyzer --project-dir . --project main
 eska-analyzer --project-dir . --timeout-seconds 300
 eska-analyzer --project-dir . --accepted-base-sha256 <approved-base-sha256>
 ```
+
+Только `eska-analyzer` принимает четыре предела поколения:
+
+| Option | По умолчанию | Что достигает порога |
+|---|---:|---|
+| `--max-process-source-bytes` | `1073741824` (1 GiB) | Сумма полных Ready source bytes всех принятых публикаций |
+| `--max-process-input-publications` | `100000` | Число принятых input publications, включая unavailable и releases |
+| `--max-type-kernel-entries` | `1000000` | Удерживаемые native types общей базы, включая sentinels |
+| `--max-interner-norm-entries` | `1000000` | Process-global canonical names |
+
+Порог достигается при `counter >= limit`; `0` разрешён. Проверка начинается
+после `initialized`, когда уже отправлен snapshot, и допускает превышение
+за одну операцию. `initializationOptions.eska.resourceRestart: true` включает
+отдельную notification `eska/restartRequired` с `cause: resource_limit` после
+исходного ответа или input ACK. Hello сообщает `experimental.eska.resourceRestart`;
+все четыре limit/counter передаются точными десятичными u64 strings.
+Без opt-in host также отзывается, но следующая операция получает обычный
+`project_restart_required` без дополнительной notification. Подтверждённый
+Save сохраняет свой результат; клиент не должен автоматически повторять запись.
+Полная схема, области счётчиков и границы — в
+[контракте ротации](../../docs/research/eska-format/analyzer-process-retirement.md).
 
 Стандартный initialize должен явно запросить ESKA protocol `0.1`; после
 initialized доступны страницы владельцев и чтение/refresh одного YAML.

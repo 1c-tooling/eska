@@ -24,6 +24,7 @@ mod receiver_scope;
 mod reference_kind;
 mod references;
 mod rename;
+mod retention;
 mod selection_range;
 mod signature_help;
 pub mod symbol_info;
@@ -94,6 +95,7 @@ pub use references::{
     ReferenceArea, ReferenceHit, ReferencesOutcome, ReferencesRequest, ReferencesResult,
 };
 pub use rename::{prepare_rename, rename, RenameError, RenameTarget};
+pub use retention::{retention_counters, RetentionCounters};
 pub use signature_help::{ParameterInfo, SignatureHelp, SignatureInformation};
 pub use symbol_info::{
     is_well_formed_symbol, symbol_info, DefinitionRole, SymbolContainer, SymbolDefinition,

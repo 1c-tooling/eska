@@ -105,7 +105,7 @@ impl AnalysisSession {
             root.incomplete_modules += 1;
         }
         self.loaded_module_bytes -= previous;
-        self.revision = next;
+        self.commit_input(next, 0);
         Ok(())
     }
 
@@ -234,7 +234,7 @@ impl AnalysisSession {
             root.incomplete_modules -= 1;
         }
         self.loaded_module_bytes = self.loaded_module_bytes - previous + current;
-        self.revision = next;
+        self.commit_input(next, current);
         Ok(())
     }
 }
