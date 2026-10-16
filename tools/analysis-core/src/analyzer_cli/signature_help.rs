@@ -195,5 +195,5 @@ pub fn pull(
         rendered["eska"] = context;
         Ok(rendered)
     })();
-    request_control::finish(session, options.session_id, method, &deadline, result)
+    request_control::finish_language(session, options.session_id, method, &deadline, result)
 }

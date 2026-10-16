@@ -168,7 +168,7 @@ pub fn pull(
             options.timeout,
         )?;
         let result = metadata::pull(session, id, &path, options);
-        return request_control::finish(
+        return request_control::finish_language(
             session,
             id,
             Method::Language(language::Method::Diagnostic),
@@ -198,7 +198,7 @@ pub fn pull(
         options.timeout,
     )?;
     let result = analyze(session, id, &path, settings, &config, options);
-    request_control::finish(
+    request_control::finish_language(
         session,
         id,
         Method::Language(language::Method::Diagnostic),
@@ -265,7 +265,6 @@ fn analyze(
         "metadata_models_complete":summary.descriptor_models_complete,"module_inputs_complete":result.module_inputs_complete,
         "semantic_complete":false});
     if options.profile == BatchProfile::Semantic {
-        session.trim_batch_caches();
         coverage["semantic_profile_complete"] = json!(
             summary.inputs.metadata_input_complete
                 && summary.descriptor_models_complete

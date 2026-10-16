@@ -93,7 +93,7 @@ pub fn pull(
             "resources":session.resources()});
         render(result.value, &positions, uri.as_str(), &context, options)
     })();
-    request_control::finish(session, options.session_id, method, &deadline, result)
+    request_control::finish_language(session, options.session_id, method, &deadline, result)
 }
 
 /// Collect all current endpoints for one linear UTF-16 conversion, including nested regions.

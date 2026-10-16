@@ -78,7 +78,7 @@ pub fn pull(
     let deadline =
         request_control::start(session, id, method, options.cancellation, options.timeout)?;
     let result = analyze(session, id, path, settings, options);
-    request_control::finish(session, id, method, &deadline, result)
+    request_control::finish_language(session, id, method, &deadline, result)
 }
 
 /// Current query bytes and metadata use one clock, shared source quota and cancellation boundary.

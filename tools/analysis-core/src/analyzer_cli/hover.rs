@@ -137,7 +137,7 @@ pub fn pull(
             "value":presentation::render(&card, options.format, options.localizer)},
             "range":range,"eska":context}))
     })();
-    request_control::finish(session, options.session_id, method, &deadline, result)
+    request_control::finish_language(session, options.session_id, method, &deadline, result)
 }
 
 #[cfg(test)]

@@ -97,7 +97,7 @@ pub fn pull(
         options.timeout,
     )?;
     let result = analyze(session, &path, params.position, settings, options);
-    request_control::finish(
+    request_control::finish_language(
         session,
         options.session_id,
         Method::Language(language::Method::Completion),

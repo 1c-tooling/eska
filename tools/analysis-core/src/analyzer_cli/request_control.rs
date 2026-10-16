@@ -1,5 +1,8 @@
 //! Language queries and property plans share first-cause cancellation and cooperative deadlines.
 
+#[cfg(test)]
+mod cache_trim_tests;
+
 use std::time::Duration;
 
 use serde_json::{Value, json};
@@ -78,6 +81,19 @@ pub fn start(
         return Err(stopped(session, id, method, reason));
     }
     Ok(deadline)
+}
+
+/// Deep eviction needs exclusive access after native query handles have dropped.
+/// The same deadline covers this maintenance and is rechecked afterward.
+pub fn finish_language(
+    session: &mut AnalysisSession,
+    id: &str,
+    method: Method,
+    deadline: &Deadline,
+    result: Result<Value, Value>,
+) -> Result<Value, Value> {
+    session.trim_batch_caches();
+    finish(session, id, method, deadline, result)
 }
 
 /// Neither late findings nor a successful empty list may hide an elapsed deadline.

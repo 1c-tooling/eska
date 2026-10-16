@@ -985,6 +985,11 @@ root/SDK/native gates прошли. На исправленной release сбо
 совпал с IDE, source/settings hashes и machine JSON сохранены. Exit 2 честно
 сохраняет неполноту metadata models; общий heap/RSS budget этим не реализован.
 
+[Очистка native-кешей после language requests](../research/eska-format/analyzer-query-cache-lifecycle.md)
+перенесена в общий контролируемый выход всех девяти методов: успех и ошибка
+выполняют прежний deep sweep до повторной проверки того же deadline.
+Текущие inputs/revision и editor parse hints сохраняются; это не общий RSS limit.
+
 **Статус:** `IN_PROGRESS`; текущий этап после принятого CLI EF-20.
 Приоритет изменён 2026-10-11; накопленные компоненты и результаты ниже сохраняются.
 Host использует принятую схему EF-24/EF-12/EF-14/EF-23 без параллельной модели

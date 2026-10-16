@@ -133,7 +133,7 @@ pub fn pull(
         super::external_context::coverage(&mut response["eska"], session.scope());
         Ok(response)
     })();
-    request_control::finish(session, id, method, &deadline, result)
+    request_control::finish_language(session, id, method, &deadline, result)
 }
 
 /// Canonical YAML ranges carry their own input authority rather than borrowing a module's text.

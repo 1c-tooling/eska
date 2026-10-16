@@ -203,5 +203,5 @@ pub fn pull(
             }
         }
     })();
-    request_control::finish(session, options.session_id, method, &deadline, result)
+    request_control::finish_language(session, options.session_id, method, &deadline, result)
 }

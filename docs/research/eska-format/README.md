@@ -65,6 +65,9 @@ hashes, общий reserve и replay после отказа квоты на RU/
 [Unicode metadata ranges](analyzer-unicode-ranges.md) исправляют падение полного
 checker на кириллице/BOM. Все 1992 BSL modules большого CF обработаны на RU/EN,
 выбранный модуль совпал с IDE; exit 2 сохраняет явную неполноту моделей.
+[Общая очистка native-кешей](analyzer-query-cache-lifecycle.md) охватывает
+успех/ошибку всех language methods под прежним deadline, сохраняя текущие
+inputs и editor parse hints. Общий heap/RSS budget остаётся отдельной задачей.
 [Kernel owners](canonical-module-owners.md) берут object/register/common/service
 metadata из текущих slots без XML fallback.
 [CF/CFE composition](analyzer-cf-cfe-composition.md) связывает явные source roots

@@ -1,0 +1,1234 @@
+{
+  "schema_version": 1,
+  "environment": {
+    "platform": "Linux x86_64",
+    "rustc": "1.98.1",
+    "os_cache_flushed": false
+  },
+  "versions": {
+    "core": "0.14.2",
+    "sdk": "0.0.0"
+  },
+  "change": {
+    "language_methods": 9,
+    "finish_paths": 11,
+    "same_deadline_covers_trim": true,
+    "native_handles_dropped_before_trim": true,
+    "current_inputs_and_editor_parse_hints_preserved": true,
+    "public_protocol_changed": false
+  },
+  "validation": {
+    "frozen_local_inputs": 2618,
+    "compiler_inputs_unchanged": true,
+    "gates": [
+      {
+        "name": "sdk-lifecycle-regression",
+        "command": [
+          "cargo",
+          "test",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-features",
+          "--locked",
+          "language_completion_trims",
+          "--",
+          "--nocapture"
+        ],
+        "exit_code": 0,
+        "seconds": 5.798
+      },
+      {
+        "name": "root-fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 1.466
+      },
+      {
+        "name": "root-check",
+        "command": [
+          "cargo",
+          "check",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 0.195
+      },
+      {
+        "name": "root-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 0.27
+      },
+      {
+        "name": "root-test-default",
+        "command": [
+          "cargo",
+          "test",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 84.145
+      },
+      {
+        "name": "root-test-all",
+        "command": [
+          "cargo",
+          "test",
+          "--all-features",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 123.945
+      },
+      {
+        "name": "sdk-fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 0.584
+      },
+      {
+        "name": "sdk-check-default",
+        "command": [
+          "cargo",
+          "check",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 0.141
+      },
+      {
+        "name": "sdk-check-all",
+        "command": [
+          "cargo",
+          "check",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-features",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 0.148
+      },
+      {
+        "name": "sdk-clippy-default",
+        "command": [
+          "cargo",
+          "clippy",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 0.235
+      },
+      {
+        "name": "sdk-clippy-all",
+        "command": [
+          "cargo",
+          "clippy",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 4.277
+      },
+      {
+        "name": "sdk-test-default",
+        "command": [
+          "cargo",
+          "test",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 6.14
+      },
+      {
+        "name": "sdk-test-all",
+        "command": [
+          "cargo",
+          "test",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-features",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 48.281
+      },
+      {
+        "name": "sdk-doc-default",
+        "command": [
+          "cargo",
+          "doc",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--no-deps",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 3.425
+      },
+      {
+        "name": "sdk-doc-all",
+        "command": [
+          "cargo",
+          "doc",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--no-deps",
+          "--all-features",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 8.614
+      },
+      {
+        "name": "sdk-debug-bins",
+        "command": [
+          "cargo",
+          "build",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-features",
+          "--bins",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 0.148
+      },
+      {
+        "name": "sdk-release-bins",
+        "command": [
+          "cargo",
+          "build",
+          "--manifest-path",
+          "tools/analysis-core/Cargo.toml",
+          "--all-features",
+          "--bins",
+          "--release",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 21.252
+      }
+    ],
+    "test_suites": {
+      "root-test-default": {
+        "passed": 1543,
+        "failed": 0,
+        "ignored": 24
+      },
+      "root-test-all": {
+        "passed": 1664,
+        "failed": 0,
+        "ignored": 24
+      },
+      "sdk-test-default": {
+        "passed": 265,
+        "failed": 0,
+        "ignored": 0
+      },
+      "sdk-test-all": {
+        "passed": 604,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "actual_native_methods_in_regression": 2200,
+    "locales": [
+      "en-US",
+      "ru-RU"
+    ],
+    "regression_red_control": {
+      "exit_code": 101,
+      "expected_failure": "diagnostic_heap(&session) < heap",
+      "control": "documentSymbol handler uses previous finish without deep trim"
+    },
+    "initial_test_semicolon_lint_fixed": true
+  },
+  "runtime": {
+    "baseline_churn": {
+      "schema_version": 1,
+      "probe_completed": true,
+      "mode": "baseline-churn",
+      "cases": [
+        {
+          "locale": "en-US",
+          "cycles": 500,
+          "owners": 3617,
+          "cold_spawn_initialize_seconds": 0.15082223899662495,
+          "first_completion_seconds": 0.03830812899832381,
+          "warm_median_seconds": 0.0010927120019914582,
+          "cycle_median_seconds": 0.035438507999060676,
+          "samples": [
+            {
+              "label": "initialized",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 0,
+                "module_text_bytes": 0,
+                "query_text_bytes": 0,
+                "total_source_bytes": 0
+              },
+              "kernel_heap_estimates": 3293667
+            },
+            {
+              "label": "warm",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196643,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196773
+              },
+              "kernel_heap_estimates": 4442211
+            },
+            {
+              "label": 1,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196651,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196781
+              },
+              "kernel_heap_estimates": 4442219
+            },
+            {
+              "label": 50,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196652,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196782
+              },
+              "kernel_heap_estimates": 4442220
+            },
+            {
+              "label": 100,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196652,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196782
+              },
+              "kernel_heap_estimates": 4442220
+            },
+            {
+              "label": 150,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 200,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 250,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 300,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 350,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 400,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 450,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 500,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": "closed",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196643,
+                "module_text_bytes": 3922,
+                "query_text_bytes": 0,
+                "total_source_bytes": 200565
+              },
+              "kernel_heap_estimates": 4446003
+            }
+          ],
+          "completion_requests": 512,
+          "incomplete_completion_count": 512,
+          "completion_coverage_observed": [
+            {
+              "metadata_inputs_complete": false,
+              "metadata_models_complete": false,
+              "module_inputs_complete": false,
+              "semantic_complete": false
+            }
+          ],
+          "exact_hashes_and_versions": true,
+          "new_present_old_absent": true,
+          "close_restores_saved": true
+        },
+        {
+          "locale": "ru-RU",
+          "cycles": 500,
+          "owners": 3617,
+          "cold_spawn_initialize_seconds": 0.14727882500301348,
+          "first_completion_seconds": 0.03743496800598223,
+          "warm_median_seconds": 0.0012294490006752312,
+          "cycle_median_seconds": 0.035476055501931114,
+          "samples": [
+            {
+              "label": "initialized",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 0,
+                "module_text_bytes": 0,
+                "query_text_bytes": 0,
+                "total_source_bytes": 0
+              },
+              "kernel_heap_estimates": 3293667
+            },
+            {
+              "label": "warm",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196643,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196773
+              },
+              "kernel_heap_estimates": 4442211
+            },
+            {
+              "label": 1,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196651,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196781
+              },
+              "kernel_heap_estimates": 4442219
+            },
+            {
+              "label": 50,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196652,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196782
+              },
+              "kernel_heap_estimates": 4442220
+            },
+            {
+              "label": 100,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196652,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196782
+              },
+              "kernel_heap_estimates": 4442220
+            },
+            {
+              "label": 150,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 200,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 250,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 300,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 350,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 400,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 450,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 500,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": "closed",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196643,
+                "module_text_bytes": 3922,
+                "query_text_bytes": 0,
+                "total_source_bytes": 200565
+              },
+              "kernel_heap_estimates": 4446003
+            }
+          ],
+          "completion_requests": 512,
+          "incomplete_completion_count": 512,
+          "completion_coverage_observed": [
+            {
+              "metadata_inputs_complete": false,
+              "metadata_models_complete": false,
+              "module_inputs_complete": false,
+              "semantic_complete": false
+            }
+          ],
+          "exact_hashes_and_versions": true,
+          "new_present_old_absent": true,
+          "close_restores_saved": true
+        }
+      ],
+      "owned_children": 2,
+      "owned_reaped": 2,
+      "natural_exits": 2,
+      "external_guard_stops": 0,
+      "peak_observed_rss_bytes": 98930688,
+      "peak_observed_hwm_bytes": 98930688,
+      "full_project_bytes_modes_mtimes_preserved": true,
+      "copied_projects": 0,
+      "native_databases_created": 0,
+      "native_platform_invoked": false,
+      "physical_human_typing": false,
+      "os_cache_flushed": false,
+      "external_probe_rss_limit_bytes": 1610612736,
+      "external_probe_wall_limit_seconds": 330,
+      "product_hard_rss_budget_claimed": false,
+      "memory_estimates_complete": false,
+      "mvp_complete": false,
+      "build": "baseline",
+      "product_request_timeout_seconds": 300
+    },
+    "fixed_churn": {
+      "schema_version": 1,
+      "probe_completed": true,
+      "mode": "fixed-churn",
+      "cases": [
+        {
+          "locale": "en-US",
+          "cycles": 500,
+          "owners": 3617,
+          "cold_spawn_initialize_seconds": 0.15168916300171986,
+          "first_completion_seconds": 0.03839048400550382,
+          "warm_median_seconds": 0.001458292499592062,
+          "cycle_median_seconds": 0.0354358205004246,
+          "samples": [
+            {
+              "label": "initialized",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 0,
+                "module_text_bytes": 0,
+                "query_text_bytes": 0,
+                "total_source_bytes": 0
+              },
+              "kernel_heap_estimates": 3293667
+            },
+            {
+              "label": "warm",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196643,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196773
+              },
+              "kernel_heap_estimates": 4442211
+            },
+            {
+              "label": 1,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196651,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196781
+              },
+              "kernel_heap_estimates": 4442219
+            },
+            {
+              "label": 50,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196652,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196782
+              },
+              "kernel_heap_estimates": 4442220
+            },
+            {
+              "label": 100,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196652,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196782
+              },
+              "kernel_heap_estimates": 4442220
+            },
+            {
+              "label": 150,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 200,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 250,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 300,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 350,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 400,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 450,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 500,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": "closed",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196643,
+                "module_text_bytes": 3922,
+                "query_text_bytes": 0,
+                "total_source_bytes": 200565
+              },
+              "kernel_heap_estimates": 4446003
+            }
+          ],
+          "completion_requests": 512,
+          "incomplete_completion_count": 512,
+          "completion_coverage_observed": [
+            {
+              "metadata_inputs_complete": false,
+              "metadata_models_complete": false,
+              "module_inputs_complete": false,
+              "semantic_complete": false
+            }
+          ],
+          "exact_hashes_and_versions": true,
+          "new_present_old_absent": true,
+          "close_restores_saved": true
+        },
+        {
+          "locale": "ru-RU",
+          "cycles": 500,
+          "owners": 3617,
+          "cold_spawn_initialize_seconds": 0.15029490099550458,
+          "first_completion_seconds": 0.03687759600143181,
+          "warm_median_seconds": 0.0016105569993669633,
+          "cycle_median_seconds": 0.035512979000486666,
+          "samples": [
+            {
+              "label": "initialized",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 0,
+                "module_text_bytes": 0,
+                "query_text_bytes": 0,
+                "total_source_bytes": 0
+              },
+              "kernel_heap_estimates": 3293667
+            },
+            {
+              "label": "warm",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196643,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196773
+              },
+              "kernel_heap_estimates": 4442211
+            },
+            {
+              "label": 1,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196651,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196781
+              },
+              "kernel_heap_estimates": 4442219
+            },
+            {
+              "label": 50,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196652,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196782
+              },
+              "kernel_heap_estimates": 4442220
+            },
+            {
+              "label": 100,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196652,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196782
+              },
+              "kernel_heap_estimates": 4442220
+            },
+            {
+              "label": 150,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 200,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 250,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 300,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 350,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 400,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 450,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": 500,
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196653,
+                "module_text_bytes": 130,
+                "query_text_bytes": 0,
+                "total_source_bytes": 196783
+              },
+              "kernel_heap_estimates": 4442221
+            },
+            {
+              "label": "closed",
+              "resources": {
+                "max_source_bytes": 268435456,
+                "metadata_source_bytes": 196643,
+                "module_text_bytes": 3922,
+                "query_text_bytes": 0,
+                "total_source_bytes": 200565
+              },
+              "kernel_heap_estimates": 4446003
+            }
+          ],
+          "completion_requests": 512,
+          "incomplete_completion_count": 512,
+          "completion_coverage_observed": [
+            {
+              "metadata_inputs_complete": false,
+              "metadata_models_complete": false,
+              "module_inputs_complete": false,
+              "semantic_complete": false
+            }
+          ],
+          "exact_hashes_and_versions": true,
+          "new_present_old_absent": true,
+          "close_restores_saved": true
+        }
+      ],
+      "owned_children": 2,
+      "owned_reaped": 2,
+      "natural_exits": 2,
+      "external_guard_stops": 0,
+      "peak_observed_rss_bytes": 99762176,
+      "peak_observed_hwm_bytes": 99762176,
+      "full_project_bytes_modes_mtimes_preserved": true,
+      "copied_projects": 0,
+      "native_databases_created": 0,
+      "native_platform_invoked": false,
+      "physical_human_typing": false,
+      "os_cache_flushed": false,
+      "external_probe_rss_limit_bytes": 1610612736,
+      "external_probe_wall_limit_seconds": 330,
+      "product_hard_rss_budget_claimed": false,
+      "memory_estimates_complete": false,
+      "mvp_complete": false,
+      "build": "fixed",
+      "product_request_timeout_seconds": 300
+    },
+    "fixed_quota": {
+      "schema_version": 1,
+      "probe_completed": true,
+      "mode": "fixed-quota",
+      "cases": [
+        {
+          "locale": "en-US",
+          "quota_bytes": 0,
+          "drafts": 2,
+          "unavailable_has_no_old_hash": true,
+          "editor_versions_retained": true,
+          "stale_update_nonmutating": true,
+          "exact_drafts_replayed": true,
+          "close_restores_saved": true
+        },
+        {
+          "locale": "ru-RU",
+          "quota_bytes": 0,
+          "drafts": 2,
+          "unavailable_has_no_old_hash": true,
+          "editor_versions_retained": true,
+          "stale_update_nonmutating": true,
+          "exact_drafts_replayed": true,
+          "close_restores_saved": true
+        }
+      ],
+      "owned_children": 4,
+      "owned_reaped": 4,
+      "natural_exits": 4,
+      "external_guard_stops": 0,
+      "peak_observed_rss_bytes": 76726272,
+      "peak_observed_hwm_bytes": 76726272,
+      "full_project_bytes_modes_mtimes_preserved": true,
+      "copied_projects": 0,
+      "native_databases_created": 0,
+      "native_platform_invoked": false,
+      "physical_human_typing": false,
+      "os_cache_flushed": false,
+      "external_probe_rss_limit_bytes": 1610612736,
+      "external_probe_wall_limit_seconds": 330,
+      "product_hard_rss_budget_claimed": false,
+      "memory_estimates_complete": false,
+      "mvp_complete": false,
+      "build": "fixed",
+      "product_request_timeout_seconds": 300
+    },
+    "fixed_full": {
+      "schema_version": 1,
+      "probe_completed": true,
+      "mode": "fixed-full",
+      "cases": [
+        {
+          "locale": "en-US",
+          "attempts": 1,
+          "saved_only": true,
+          "general_semantics_claimed": false,
+          "memory_before": {
+            "label": "before",
+            "resources": {
+              "max_source_bytes": 268435456,
+              "metadata_source_bytes": 0,
+              "module_text_bytes": 0,
+              "query_text_bytes": 0,
+              "total_source_bytes": 0
+            },
+            "kernel_heap_estimates": 3293667
+          },
+          "seconds": 14.348848585999804,
+          "outcome": "response",
+          "coverage": {
+            "metadata_inputs_complete": true,
+            "metadata_models_complete": false,
+            "module_inputs_complete": true,
+            "module_syntax_complete": true,
+            "semantic_complete": false,
+            "semantic_profile_complete": false
+          },
+          "finding_count": 19,
+          "memory_after": {
+            "label": "after",
+            "resources": {
+              "max_source_bytes": 268435456,
+              "metadata_source_bytes": 172499300,
+              "module_text_bytes": 69553466,
+              "query_text_bytes": 0,
+              "total_source_bytes": 242052766
+            },
+            "kernel_heap_estimates": 120595366
+          }
+        },
+        {
+          "locale": "ru-RU",
+          "attempts": 1,
+          "saved_only": true,
+          "general_semantics_claimed": false,
+          "memory_before": {
+            "label": "before",
+            "resources": {
+              "max_source_bytes": 268435456,
+              "metadata_source_bytes": 0,
+              "module_text_bytes": 0,
+              "query_text_bytes": 0,
+              "total_source_bytes": 0
+            },
+            "kernel_heap_estimates": 3293667
+          },
+          "seconds": 14.344241466998938,
+          "outcome": "response",
+          "coverage": {
+            "metadata_inputs_complete": true,
+            "metadata_models_complete": false,
+            "module_inputs_complete": true,
+            "module_syntax_complete": true,
+            "semantic_complete": false,
+            "semantic_profile_complete": false
+          },
+          "finding_count": 19,
+          "memory_after": {
+            "label": "after",
+            "resources": {
+              "max_source_bytes": 268435456,
+              "metadata_source_bytes": 172499300,
+              "module_text_bytes": 69553466,
+              "query_text_bytes": 0,
+              "total_source_bytes": 242052766
+            },
+            "kernel_heap_estimates": 120595366
+          }
+        }
+      ],
+      "owned_children": 2,
+      "owned_reaped": 2,
+      "natural_exits": 2,
+      "external_guard_stops": 0,
+      "peak_observed_rss_bytes": 426729472,
+      "peak_observed_hwm_bytes": 426729472,
+      "full_project_bytes_modes_mtimes_preserved": true,
+      "copied_projects": 0,
+      "native_databases_created": 0,
+      "native_platform_invoked": false,
+      "physical_human_typing": false,
+      "os_cache_flushed": false,
+      "external_probe_rss_limit_bytes": 1610612736,
+      "external_probe_wall_limit_seconds": 330,
+      "product_hard_rss_budget_claimed": false,
+      "memory_estimates_complete": false,
+      "mvp_complete": false,
+      "build": "fixed",
+      "product_request_timeout_seconds": 300
+    }
+  },
+  "accepted_checker_snapshot_comparison": {
+    "checker_rerun_in_this_packet": false,
+    "origin": "previous Unicode-ranges acceptance",
+    "whole_source_inventory_matches": true,
+    "files_preserved": 22117,
+    "directories_preserved": 6327,
+    "cases": [
+      {
+        "locale": "en-US",
+        "finding_count": 19,
+        "wrong_data_path_count": 1,
+        "source_settings_and_findings_match": true
+      },
+      {
+        "locale": "ru-RU",
+        "finding_count": 19,
+        "wrong_data_path_count": 1,
+        "source_settings_and_findings_match": true
+      }
+    ]
+  },
+  "playground_final_verification": {
+    "expected_databases": 4,
+    "found_databases": 4,
+    "matched_databases": 4,
+    "unexpected_databases": 0,
+    "free_bytes": 255039754240,
+    "errors": 0
+  },
+  "limits": {
+    "hard_process_rss_budget": false,
+    "heap_estimates_complete": false,
+    "process_global_interner_bounded": false,
+    "physical_client_acceptance": false,
+    "mvp_complete": false
+  }
+}

@@ -78,7 +78,7 @@ pub fn pull(
     let deadline =
         request_control::start(session, id, method, options.cancellation, options.timeout)?;
     let result = analyze(session, id, path, settings, options);
-    request_control::finish(session, id, method, &deadline, result)
+    request_control::finish_language(session, id, method, &deadline, result)
 }
 
 /// Read only a pending or cancelled saved query; failed editor authority never falls back to disk.
