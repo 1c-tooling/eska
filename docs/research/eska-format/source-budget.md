@@ -11,8 +11,11 @@ replay проверены на RU/EN. Debug RSS измерен отдельно;
 Сессия IDE и `eska-check` используют одну квоту исходных байтов YAML/rights/BSL/`.sdbl`.
 `SessionOptions.max_retained_source_bytes` и
 `BatchOptions.max_retained_source_bytes` по умолчанию равны 256 MiB.
-Checker задаёт её через `--max-retained-source-bytes`; локальный предел документа
-64 MiB и отдельная квота BSL-текстов 64 MiB сохраняются.
+Checker задаёт её через `--max-retained-source-bytes`; предел одного документа
+64 MiB сохраняется. Default `SessionOptions` и syntax CLI ограничивают также
+сумму BSL-текстов 64 MiB. Semantic CLI используют для неё общий source reserve:
+межмодульные правила могут удерживать больше 64 MiB BSL, пока сумма всех
+текущих входов укладывается в `max_retained_source_bytes`.
 
 Квота учитывает точный размер owning YAML для каждого текущего `Ready`
 metadata snapshot, verbatim текст [прав роли](analyzer-roles.md) и размер каждого

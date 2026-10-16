@@ -1,5 +1,7 @@
 //! Framed resource edits and saved notifications update the same form dependencies as the checker.
 
+#[cfg(feature = "check-cli")]
+mod header_ranges;
 mod nested;
 
 use super::*;

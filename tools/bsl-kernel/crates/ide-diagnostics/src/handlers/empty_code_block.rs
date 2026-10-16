@@ -1,0 +1,133 @@
+use crate::define_metadata;
+use crate::metadata::*;
+use crate::AnalysisContext;
+use crate::{Diagnostic, DiagnosticCode};
+use hir::LocalRange;
+
+pub const METADATA: DiagnosticMetadata = define_metadata! {
+    diagnostic_type: DiagnosticType::CodeSmell,
+    severity: DiagnosticSeverityLevel::Major,
+    scope: DiagnosticScope::All,
+    modules: &[],
+    minutes_to_fix: 5,
+    activated_by_default: true,
+    compatibility_mode: DiagnosticCompatibilityMode::Undefined,
+    tags: &[MetadataTag::Badpractice, MetadataTag::Suspicious],
+    can_locate_on_project: false,
+    extra_min_for_complexity: 0.0,
+    lsp_severity_override: "",
+};
+
+pub fn from_hir(range: LocalRange, ctx: &AnalysisContext) -> Option<Diagnostic<LocalRange>> {
+    crate::simple_hir_diagnostic(DiagnosticCode::EmptyCodeBlock, "Пустой блок кода", range, ctx)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::test_utils::*;
+    use crate::DiagnosticCode;
+    use expect_test::expect;
+
+    #[test]
+    fn test_empty_else_block() {
+        let code = r#"Процедура А()
+    Якорь = 0;
+    Если Истина Тогда
+        А = 0;
+    Иначе
+        // только комментарий - пустой блок
+    КонецЕсли;
+КонецПроцедуры"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let diags: Vec<_> =
+            diagnostics.into_iter().filter(|d| d.code == DiagnosticCode::EmptyCodeBlock).collect();
+        expect![[r#"
+            EmptyCodeBlock @ 5:5..5:10
+              message: Пустой блок кода
+              severity: Warning"#]]
+        .assert_eq(&format_diags(code, &diags));
+    }
+
+    #[test]
+    fn test_empty_while_loop() {
+        let code = r#"Процедура А()
+    Пока Истина Цикл
+        // только комментарий - пустой цикл
+    КонецЦикла;
+КонецПроцедуры"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let diags: Vec<_> =
+            diagnostics.into_iter().filter(|d| d.code == DiagnosticCode::EmptyCodeBlock).collect();
+        expect![[r#"
+            EmptyCodeBlock @ 2:5..2:21
+              message: Пустой блок кода
+              severity: Warning"#]]
+        .assert_eq(&format_diags(code, &diags));
+    }
+
+    #[test]
+    fn test_empty_if_block() {
+        let code = r#"Процедура А()
+    Если Истина Тогда
+
+    КонецЕсли;
+КонецПроцедуры"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let diags: Vec<_> =
+            diagnostics.into_iter().filter(|d| d.code == DiagnosticCode::EmptyCodeBlock).collect();
+        expect![[r#"
+            EmptyCodeBlock @ 2:5..2:22
+              message: Пустой блок кода
+              severity: Warning"#]]
+        .assert_eq(&format_diags(code, &diags));
+    }
+
+    #[test]
+    fn test_empty_elseif_and_else() {
+        let code = r#"а = 5;
+Если а = 0 Тогда
+ИначеЕсли А = 1 Тогда
+    Иначе
+КонецЕсли;"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let diags: Vec<_> =
+            diagnostics.into_iter().filter(|d| d.code == DiagnosticCode::EmptyCodeBlock).collect();
+        expect![[r#"
+            EmptyCodeBlock @ 2:1..2:17
+              message: Пустой блок кода
+              severity: Warning
+            EmptyCodeBlock @ 3:1..3:22
+              message: Пустой блок кода
+              severity: Warning
+            EmptyCodeBlock @ 4:5..4:10
+              message: Пустой блок кода
+              severity: Warning"#]]
+        .assert_eq(&format_diags(code, &diags));
+    }
+
+    #[test]
+    fn test_no_diagnostic_for_empty_try_except() {
+        let code = r#"Процедура А()
+    Попытка
+        А = 0;
+    Исключение
+        // комментарий
+    КонецПопытки;
+КонецПроцедуры"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let diags: Vec<_> =
+            diagnostics.into_iter().filter(|d| d.code == DiagnosticCode::EmptyCodeBlock).collect();
+        expect![[r#""#]].assert_eq(&format_diags(code, &diags));
+    }
+
+    #[test]
+    fn test_no_diagnostic_for_empty_procedure_body() {
+        let code = r#"Функция В()
+    // только комментарий
+КонецФункции"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let diags: Vec<_> =
+            diagnostics.into_iter().filter(|d| d.code == DiagnosticCode::EmptyCodeBlock).collect();
+        expect![[r#""#]].assert_eq(&format_diags(code, &diags));
+    }
+}

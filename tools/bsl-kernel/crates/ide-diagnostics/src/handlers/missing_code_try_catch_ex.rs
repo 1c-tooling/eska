@@ -1,0 +1,661 @@
+use crate::define_metadata;
+use crate::metadata::*;
+use crate::{BodyContext, Diagnostic, DiagnosticCode};
+use hir::catch_class::{classify_catch_body, CatchBodyClass};
+use hir::BodySourceMap;
+use hir::LocalRange;
+use hir::{IdConversion, Stmt, StmtId};
+use syntax::{NodeOrToken, SyntaxKind};
+
+pub const METADATA: DiagnosticMetadata = define_metadata! {
+    diagnostic_type: DiagnosticType::Error,
+    severity: DiagnosticSeverityLevel::Major,
+    scope: DiagnosticScope::All,
+    modules: &[],
+    minutes_to_fix: 15,
+    activated_by_default: true,
+    compatibility_mode: DiagnosticCompatibilityMode::Undefined,
+    tags: &[MetadataTag::Standard, MetadataTag::Badpractice],
+    can_locate_on_project: false,
+    extra_min_for_complexity: 0.0,
+    lsp_severity_override: "",
+    clean_code_attribute: CleanCodeAttribute::Intentional,
+};
+
+pub fn check_body(ctx: &BodyContext, acc: &mut Vec<Diagnostic<LocalRange>>) {
+    let code = DiagnosticCode::MissingCodeTryCatchEx;
+
+    if ctx.is_disabled_with_metadata(code) {
+        return;
+    }
+
+    let comment_as_code = ctx
+        .config
+        .get_bool(DiagnosticCode::MissingCodeTryCatchEx, "commentAsCode")
+        .unwrap_or(false);
+
+    check_body_for_empty_except(ctx.body(), ctx.source_map(), comment_as_code, code, ctx, acc);
+}
+
+fn check_body_for_empty_except(
+    body: &hir::Body,
+    source_map: &BodySourceMap,
+    comment_as_code: bool,
+    code: DiagnosticCode,
+    ctx: &BodyContext,
+    diagnostics: &mut Vec<Diagnostic<LocalRange>>,
+) {
+    for stmt_id in body.body_stmts() {
+        check_stmt_recursive(stmt_id, body, source_map, comment_as_code, code, ctx, diagnostics);
+    }
+}
+
+fn check_stmt_recursive(
+    stmt_id: StmtId,
+    body: &hir::Body,
+    source_map: &BodySourceMap,
+    comment_as_code: bool,
+    code: DiagnosticCode,
+    ctx: &BodyContext,
+    diagnostics: &mut Vec<Diagnostic<LocalRange>>,
+) {
+    let stmt = body.stmt(stmt_id);
+
+    if let Stmt::Try { body: try_body, except } = stmt {
+        let class = classify_catch_body(body, except);
+        let should_emit = match class {
+            CatchBodyClass::Empty => {
+                !(comment_as_code && except_clause_has_comments(stmt_id, source_map, ctx))
+            }
+            CatchBodyClass::Silent => true,
+            CatchBodyClass::RollbackOnly => true,
+            CatchBodyClass::RaisesOnly | CatchBodyClass::LogsOnly | CatchBodyClass::Mixed => false,
+        };
+
+        if should_emit {
+            emit_at_except_keyword(stmt_id, source_map, code, ctx, diagnostics, class);
+        }
+
+        for &nested_stmt_idx in try_body.iter() {
+            check_stmt_recursive(
+                StmtId::from_idx(nested_stmt_idx),
+                body,
+                source_map,
+                comment_as_code,
+                code,
+                ctx,
+                diagnostics,
+            );
+        }
+
+        for &nested_stmt_idx in except.iter() {
+            check_stmt_recursive(
+                StmtId::from_idx(nested_stmt_idx),
+                body,
+                source_map,
+                comment_as_code,
+                code,
+                ctx,
+                diagnostics,
+            );
+        }
+    } else {
+        match stmt {
+            Stmt::If(if_stmt) => {
+                for &nested_idx in if_stmt.then_branch.iter() {
+                    check_stmt_recursive(
+                        StmtId::from_idx(nested_idx),
+                        body,
+                        source_map,
+                        comment_as_code,
+                        code,
+                        ctx,
+                        diagnostics,
+                    );
+                }
+                for (_, branch) in if_stmt.elsif_branches.iter() {
+                    for &nested_idx in branch.iter() {
+                        check_stmt_recursive(
+                            StmtId::from_idx(nested_idx),
+                            body,
+                            source_map,
+                            comment_as_code,
+                            code,
+                            ctx,
+                            diagnostics,
+                        );
+                    }
+                }
+                if let Some(ref branch) = if_stmt.else_branch {
+                    for &nested_idx in branch.iter() {
+                        check_stmt_recursive(
+                            StmtId::from_idx(nested_idx),
+                            body,
+                            source_map,
+                            comment_as_code,
+                            code,
+                            ctx,
+                            diagnostics,
+                        );
+                    }
+                }
+            }
+            Stmt::While { body: while_body, .. } => {
+                for &nested_idx in while_body.iter() {
+                    check_stmt_recursive(
+                        StmtId::from_idx(nested_idx),
+                        body,
+                        source_map,
+                        comment_as_code,
+                        code,
+                        ctx,
+                        diagnostics,
+                    );
+                }
+            }
+            Stmt::For { body: for_body, .. } | Stmt::ForEach { body: for_body, .. } => {
+                for &nested_idx in for_body.iter() {
+                    check_stmt_recursive(
+                        StmtId::from_idx(nested_idx),
+                        body,
+                        source_map,
+                        comment_as_code,
+                        code,
+                        ctx,
+                        diagnostics,
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+fn except_clause_has_comments(
+    stmt_id: StmtId,
+    source_map: &BodySourceMap,
+    ctx: &BodyContext,
+) -> bool {
+    let Some(stmt_range) = source_map.stmt_range(stmt_id) else { return false };
+    let Some(try_node) = ctx
+        .root()
+        .descendants()
+        .find(|n| n.kind() == SyntaxKind::TRY_STMT && n.text_range() == stmt_range.in_root())
+    else {
+        return false;
+    };
+    // Область блока задаётся ключевыми словами, а не узлом клаузы: тривия
+    // принадлежит общему предку соседних значимых токенов, поэтому
+    // комментарий пустого блока лежит уже не внутри `EXCEPT_CLAUSE`, а рядом
+    // с ней. Вложенная `Попытка` границу не сдвигает — её `КонецПопытки`
+    // лежит внутри своего узла и прямым ребёнком этого не является.
+    try_node
+        .children_with_tokens()
+        .skip_while(|el| el.kind() != SyntaxKind::KW_EXCEPT)
+        .take_while(|el| el.kind() != SyntaxKind::KW_END_TRY)
+        .any(|el| match el {
+            NodeOrToken::Token(token) => token.kind() == SyntaxKind::COMMENT,
+            NodeOrToken::Node(node) => node
+                .descendants_with_tokens()
+                .filter_map(|el| el.into_token())
+                .any(|token| token.kind() == SyntaxKind::COMMENT),
+        })
+}
+
+fn emit_at_except_keyword(
+    stmt_id: StmtId,
+    source_map: &BodySourceMap,
+    code: DiagnosticCode,
+    ctx: &BodyContext,
+    diagnostics: &mut Vec<Diagnostic<LocalRange>>,
+    class: CatchBodyClass,
+) {
+    let message = match class {
+        CatchBodyClass::Silent => "Блок исключения молча подавляет ошибку: добавьте \
+             `ВызватьИсключение` или вызов журналирования"
+            .to_string(),
+        CatchBodyClass::RollbackOnly => "Блок исключения только откатывает транзакцию, \
+             но не фиксирует ошибку: добавьте логирование или `ВызватьИсключение`"
+            .to_string(),
+        _ => "Отсутствует код в блоке исключения".to_string(),
+    };
+
+    let range = source_map
+        .stmt_range(stmt_id)
+        .and_then(|stmt_range| {
+            let try_node = ctx.root().descendants().find(|n| {
+                n.kind() == SyntaxKind::TRY_STMT && n.text_range() == stmt_range.in_root()
+            })?;
+            try_node
+                .children_with_tokens()
+                .filter_map(|el| el.into_token())
+                .find(|tok| tok.kind() == SyntaxKind::KW_EXCEPT)
+                .map(|tok| ctx.token_range(&tok))
+        })
+        .or_else(|| source_map.stmt_range(stmt_id));
+
+    if let Some(range) = range {
+        diagnostics.push(Diagnostic {
+            code,
+            message,
+            severity: ctx.severity(code),
+            range,
+            tags: ctx.tags(code),
+            fixes: vec![],
+        });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::check_body;
+    use crate::test_utils::{
+        check_body_diagnostic, check_body_diagnostic_with_config, check_diagnostics_snapshot_for,
+        format_diags,
+    };
+    use crate::{DiagnosticCode, DiagnosticsConfig};
+    use expect_test::expect;
+
+    #[test]
+    fn raises_only_does_not_emit() {
+        let code = r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        ВызватьИсключение;
+    КонецПопытки;
+КонецПроцедуры"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn logs_only_does_not_emit() {
+        let code = r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        Сообщить("error");
+    КонецПопытки;
+КонецПроцедуры"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn silent_swallow_emits() {
+        let code = r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        ОбработатьОшибку();
+    КонецПопытки;
+КонецПроцедуры"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#"
+                MissingCodeTryCatchEx @ 4:5..4:15
+                  message: Блок исключения молча подавляет ошибку: добавьте `ВызватьИсключение` или вызов журналирования
+                  severity: Major"#]],
+        );
+
+        let diagnostics = check_body_diagnostic(code, check_body);
+        assert!(
+            diagnostics[0].message.contains("молча"),
+            "Silent message should mention the swallow, got: {}",
+            diagnostics[0].message
+        );
+    }
+
+    #[test]
+    fn rollback_only_emits_with_rollback_message() {
+        let code = r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        ОтменитьТранзакцию();
+    КонецПопытки;
+КонецПроцедуры"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#"
+                MissingCodeTryCatchEx @ 4:5..4:15
+                  message: Блок исключения только откатывает транзакцию, но не фиксирует ошибку: добавьте логирование или `ВызватьИсключение`
+                  severity: Major"#]],
+        );
+
+        let diagnostics = check_body_diagnostic(code, check_body);
+        assert!(
+            diagnostics[0].message.contains("откатывает"),
+            "Rollback message should mention rollback, got: {}",
+            diagnostics[0].message
+        );
+    }
+
+    #[test]
+    fn rollback_plus_log_does_not_emit() {
+        let code = r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        ОтменитьТранзакцию();
+        Сообщить("error");
+    КонецПопытки;
+КонецПроцедуры"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn mixed_does_not_emit() {
+        let code = r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        Сообщить("error");
+        ВызватьИсключение;
+    КонецПопытки;
+КонецПроцедуры"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_missing_code_try_catch_ex() {
+        let code = r#"Процедура Проц1()
+    Попытка
+        Действие();
+    Исключение
+        ВызватьИсключение;
+    КонецПопытки;
+КонецПроцедуры
+
+Процедура Проц11()
+    Попытка
+        Действие();
+    Исключение
+
+        // просто коментарий
+
+        ВызватьИсключение;
+    КонецПопытки;
+КонецПроцедуры
+
+Процедура Проц2()
+    // в исключении пустой блок, это ошибка
+    Попытка
+        Действие();
+    Исключение
+
+    КонецПопытки;
+КонецПроцедуры
+
+Функция Функ1()
+
+    Попытка
+        Действие();
+    Исключение
+
+        // в исключении просто комментарий, это ошибка
+        // но иногда нет
+
+    КонецПопытки;
+
+    Возврат 1;
+КонецФункции
+
+Процедура Проц3()
+    // Nested try without re-raise keeps the outer handler Silent:
+    // a Raise inside the nested try body would be caught by the
+    // nested handler and never escape, and the nested handler here
+    // is empty, so nothing in the outer except logs or rethrows the
+    // original exception.
+    Попытка
+        Действие();
+    Исключение
+        // в исключении пустой блок, это ошибка
+        Попытка
+            Действие2();
+        Исключение
+
+        КонецПопытки;
+    КонецПопытки;
+КонецПроцедуры"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#"
+                MissingCodeTryCatchEx @ 24:5..24:15
+                  message: Отсутствует код в блоке исключения
+                  severity: Major
+                MissingCodeTryCatchEx @ 33:5..33:15
+                  message: Отсутствует код в блоке исключения
+                  severity: Major
+                MissingCodeTryCatchEx @ 51:5..51:15
+                  message: Блок исключения молча подавляет ошибку: добавьте `ВызватьИсключение` или вызов журналирования
+                  severity: Major
+                MissingCodeTryCatchEx @ 55:9..55:19
+                  message: Отсутствует код в блоке исключения
+                  severity: Major"#]],
+        );
+    }
+
+    #[test]
+    fn test_comment_as_code() {
+        let code = r#"Процедура Проц1()
+    Попытка
+        Действие();
+    Исключение
+        ВызватьИсключение;
+    КонецПопытки;
+КонецПроцедуры
+
+Процедура Проц11()
+    Попытка
+        Действие();
+    Исключение
+
+        // просто коментарий
+
+        ВызватьИсключение;
+    КонецПопытки;
+КонецПроцедуры
+
+Процедура Проц2()
+    // в исключении пустой блок, это ошибка
+    Попытка
+        Действие();
+    Исключение
+
+    КонецПопытки;
+КонецПроцедуры
+
+Функция Функ1()
+
+    Попытка
+        Действие();
+    Исключение
+
+        // в исключении просто комментарий, это ошибка
+        // но иногда нет
+
+    КонецПопытки;
+
+    Возврат 1;
+КонецФункции
+
+Процедура Проц3()
+    // Nested try without re-raise keeps the outer handler Silent:
+    // a Raise inside the nested try body would be caught by the
+    // nested handler and never escape, and the nested handler here
+    // is empty, so nothing in the outer except logs or rethrows the
+    // original exception.
+    Попытка
+        Действие();
+    Исключение
+        // в исключении пустой блок, это ошибка
+        Попытка
+            Действие2();
+        Исключение
+
+        КонецПопытки;
+    КонецПопытки;
+КонецПроцедуры"#;
+
+        let mut config = DiagnosticsConfig::default();
+        let mut params = serde_json::Map::new();
+        params.insert("commentAsCode".to_string(), serde_json::Value::Bool(true));
+        config
+            .parameters
+            .insert(DiagnosticCode::MissingCodeTryCatchEx, serde_json::Value::Object(params));
+
+        let diagnostics = check_body_diagnostic_with_config(code, config, check_body);
+        expect![[r#"
+            MissingCodeTryCatchEx @ 24:5..24:15
+              message: Отсутствует код в блоке исключения
+              severity: Major
+            MissingCodeTryCatchEx @ 51:5..51:15
+              message: Блок исключения молча подавляет ошибку: добавьте `ВызватьИсключение` или вызов журналирования
+              severity: Major
+            MissingCodeTryCatchEx @ 55:9..55:19
+              message: Отсутствует код в блоке исключения
+              severity: Major"#]].assert_eq(&format_diags(code, &diagnostics));
+    }
+
+    #[test]
+    fn conditional_reraise_does_not_emit() {
+        // Suppressing one known error and rethrowing everything else is a
+        // legitimate handler; the Raise lives on a nested path.
+        let code = r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        Если ИнформацияОбОшибке().Описание <> ТекстИсключенияДублирование Тогда
+            ВызватьИсключение;
+        КонецЕсли;
+    КонецПопытки;
+КонецПроцедуры"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn conditional_swallow_still_emits() {
+        let code = r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        Если Условие Тогда
+            Х = 1;
+        КонецЕсли;
+    КонецПопытки;
+КонецПроцедуры"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#"
+                MissingCodeTryCatchEx @ 4:5..4:15
+                  message: Блок исключения молча подавляет ошибку: добавьте `ВызватьИсключение` или вызов журналирования
+                  severity: Major"#]],
+        );
+    }
+
+    #[test]
+    fn test_valid_exception_handlers() {
+        let code = r#"
+Процедура Проц1()
+    Попытка
+        Действие();
+    Исключение
+        ВызватьИсключение;
+    КонецПопытки;
+КонецПроцедуры
+"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_module_level_raises_only_snapshot() {
+        check_diagnostics_snapshot_for(
+            r#"Попытка
+    Действие();
+Исключение
+    ВызватьИсключение;
+КонецПопытки;"#,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_logs_only_write_log_event_snapshot() {
+        check_diagnostics_snapshot_for(
+            r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        ЗаписьЖурналаРегистрации("Ошибки", УровеньЖурналаРегистрации.Ошибка);
+    КонецПопытки;
+КонецПроцедуры"#,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_mixed_message_and_raise_snapshot() {
+        check_diagnostics_snapshot_for(
+            r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        Сообщить("error");
+        ВызватьИсключение;
+    КонецПопытки;
+КонецПроцедуры"#,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_rollback_only_snapshot() {
+        check_diagnostics_snapshot_for(
+            r#"Процедура Тест()
+    Попытка
+        Действие();
+    Исключение
+        ОтменитьТранзакцию();
+    КонецПопытки;
+КонецПроцедуры"#,
+            DiagnosticCode::MissingCodeTryCatchEx,
+            expect![[r#"
+                MissingCodeTryCatchEx @ 4:5..4:15
+                  message: Блок исключения только откатывает транзакцию, но не фиксирует ошибку: добавьте логирование или `ВызватьИсключение`
+                  severity: Major"#]],
+        );
+    }
+}

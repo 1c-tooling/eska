@@ -978,6 +978,13 @@ Source/heap counters совпали между локалями; нулевая 
 сохранены. Это выбранные зависимости, не полный semantic load. Большой
 настроенный CFE/base, установленный UI и hard RSS budget ещё не приняты.
 
+[Unicode ranges metadata-диагностик](../research/eska-format/analyzer-unicode-ranges.md)
+исправлены в общем native header helper без ослабления SDK guard. Финальные
+root/SDK/native gates прошли. На исправленной release сборке полный checker
+обработал 1992 BSL modules большого CF на RU/EN; ранее проблемный модуль
+совпал с IDE, source/settings hashes и machine JSON сохранены. Exit 2 честно
+сохраняет неполноту metadata models; общий heap/RSS budget этим не реализован.
+
 **Статус:** `IN_PROGRESS`; текущий этап после принятого CLI EF-20.
 Приоритет изменён 2026-10-11; накопленные компоненты и результаты ниже сохраняются.
 Host использует принятую схему EF-24/EF-12/EF-14/EF-23 без параллельной модели

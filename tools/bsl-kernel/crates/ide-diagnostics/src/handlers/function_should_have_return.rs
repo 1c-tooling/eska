@@ -1,0 +1,186 @@
+use crate::define_metadata;
+use crate::metadata::*;
+use crate::AnalysisContext;
+use crate::{Diagnostic, DiagnosticCode};
+use hir::LocalRange;
+
+pub const METADATA: DiagnosticMetadata = define_metadata! {
+    diagnostic_type: DiagnosticType::Error,
+    severity: DiagnosticSeverityLevel::Major,
+    scope: DiagnosticScope::All,
+    modules: &[],
+    minutes_to_fix: 10,
+    activated_by_default: true,
+    compatibility_mode: DiagnosticCompatibilityMode::Undefined,
+    tags: &[MetadataTag::Suspicious, MetadataTag::Unpredictable],
+    can_locate_on_project: false,
+    extra_min_for_complexity: 0.0,
+    lsp_severity_override: "",
+};
+
+pub fn from_hir(range: LocalRange, ctx: &AnalysisContext) -> Option<Diagnostic<LocalRange>> {
+    crate::simple_hir_diagnostic(
+        DiagnosticCode::FunctionShouldHaveReturn,
+        "Функция должна содержать хотя бы один оператор Возврат",
+        range,
+        ctx,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::test_utils::{check_hir_diagnostic, format_diags};
+    use crate::DiagnosticCode;
+    use expect_test::expect;
+    #[test]
+    fn test_function_without_return() {
+        let code = r#"Функция БезВозврата()
+    Перем Х;
+    Х = 42;
+КонецФункции"#;
+
+        let diagnostics = check_hir_diagnostic(code);
+        let return_diags: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::FunctionShouldHaveReturn)
+            .collect();
+        expect![[r#"
+            FunctionShouldHaveReturn @ 1:9..1:20
+              message: Функция должна содержать хотя бы один оператор Возврат
+              severity: Major"#]]
+        .assert_eq(&format_diags(code, &return_diags));
+    }
+
+    #[test]
+    fn test_function_with_return() {
+        let code = r#"Функция СВозвратом()
+    Возврат 42;
+КонецФункции"#;
+
+        let diagnostics = check_hir_diagnostic(code);
+        assert!(
+            diagnostics.iter().all(|d| d.code != DiagnosticCode::FunctionShouldHaveReturn),
+            "Function with return should not trigger diagnostic"
+        );
+    }
+
+    #[test]
+    fn test_procedure_no_return_needed() {
+        let code = r#"Процедура БезВозврата()
+    Сообщить("Привет");
+КонецПроцедуры"#;
+
+        let diagnostics = check_hir_diagnostic(code);
+        assert!(
+            diagnostics.iter().all(|d| d.code != DiagnosticCode::FunctionShouldHaveReturn),
+            "Procedures should not trigger FunctionShouldHaveReturn"
+        );
+    }
+
+    #[test]
+    fn test_function_with_conditional_return() {
+        let code = r#"Функция Проверка(Значение)
+    Если Значение > 0 Тогда
+        Возврат Истина;
+    Иначе
+        Возврат Ложь;
+    КонецЕсли;
+КонецФункции"#;
+
+        let diagnostics = check_hir_diagnostic(code);
+        assert!(
+            diagnostics.iter().all(|d| d.code != DiagnosticCode::FunctionShouldHaveReturn),
+            "Function with conditional returns should not trigger"
+        );
+    }
+
+    #[test]
+    fn test_multiple_functions() {
+        let code = r#"Функция Первая()
+    Возврат 1;
+КонецФункции
+
+Функция Вторая()
+    Перем Х;
+    Х = 2;
+КонецФункции
+
+Функция Третья()
+    Возврат 3;
+КонецФункции"#;
+
+        let diagnostics = check_hir_diagnostic(code);
+        let return_diags: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::FunctionShouldHaveReturn)
+            .collect();
+        expect![[r#"
+            FunctionShouldHaveReturn @ 5:9..5:15
+              message: Функция должна содержать хотя бы один оператор Возврат
+              severity: Major"#]]
+        .assert_eq(&format_diags(code, &return_diags));
+    }
+
+    #[test]
+    fn test_english_function_with_return() {
+        let code = r#"Function Add(A, B)
+    Return A + B;
+EndFunction"#;
+
+        let diagnostics = check_hir_diagnostic(code);
+        assert!(
+            diagnostics.iter().all(|d| d.code != DiagnosticCode::FunctionShouldHaveReturn),
+            "English function with return should not trigger"
+        );
+    }
+
+    #[test]
+    fn test_english_function_without_return() {
+        let code = r#"Function NoReturn()
+    Var X;
+EndFunction"#;
+
+        let diagnostics = check_hir_diagnostic(code);
+        let return_diags: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::FunctionShouldHaveReturn)
+            .collect();
+        expect![[r#"
+            FunctionShouldHaveReturn @ 1:10..1:18
+              message: Функция должна содержать хотя бы один оператор Возврат
+              severity: Major"#]]
+        .assert_eq(&format_diags(code, &return_diags));
+    }
+
+    #[test]
+    fn test_fixture_only_function_without_return_triggers() {
+        let code = r#"Функция ФункцияБезВозврата()
+    ПолезныйКод = 0;
+КонецФункции
+
+Функция ФункцияСВозвратом()
+    Возврат "ЧтоНибудь";
+КонецФункции
+
+Процедура ПроцедураБезВозврата()
+
+КонецПроцедуры
+
+Процедура ПроцедураСВозвратом()
+    Возврат;
+КонецПроцедуры
+"#;
+        let diagnostics = check_hir_diagnostic(code);
+
+        let return_diags: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::FunctionShouldHaveReturn)
+            .collect();
+
+        expect![[r#"
+            FunctionShouldHaveReturn @ 1:9..1:27
+              message: Функция должна содержать хотя бы один оператор Возврат
+              severity: Major"#]]
+        .assert_eq(&format_diags(code, &return_diags));
+    }
+}

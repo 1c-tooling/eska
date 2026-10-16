@@ -1,0 +1,405 @@
+use crate::define_metadata;
+use crate::metadata::*;
+use crate::{Diagnostic, DiagnosticCode, DiagnosticsConfig, DiagnosticsContext};
+
+pub const METADATA: DiagnosticMetadata = define_metadata! {
+    diagnostic_type: DiagnosticType::CodeSmell,
+    severity: DiagnosticSeverityLevel::Major,
+    scope: DiagnosticScope::All,
+    modules: &[],
+    minutes_to_fix: 10,
+    activated_by_default: true,
+    compatibility_mode: DiagnosticCompatibilityMode::Undefined,
+    tags: &[MetadataTag::Standard, MetadataTag::Sql, MetadataTag::Performance],
+    can_locate_on_project: false,
+    extra_min_for_complexity: 0.0,
+    lsp_severity_override: "",
+};
+
+const DEFAULT_MIN_PATH_DEPTH: i64 = 3;
+
+pub(crate) fn dispatch(
+    config: &DiagnosticsConfig,
+    diag: &sdbl_hir::SdblDiagnostic,
+    mapper: &crate::sdbl_utils::SdblPositionMapper,
+    query_text: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
+    if let sdbl_hir::SdblDiagnostic::QueryNestedFieldsByDot { range, parts_count } = diag {
+        if let Some(n) = parts_count {
+            let min = config
+                .get_int(DiagnosticCode::QueryNestedFieldsByDot, "minPathDepth")
+                .unwrap_or(DEFAULT_MIN_PATH_DEPTH);
+            if (*n as i64) < min {
+                return;
+            }
+        }
+        crate::sdbl_utils::dispatch_simple(
+            config,
+            DiagnosticCode::QueryNestedFieldsByDot,
+            "Обнаружено разыменование ссылочного поля",
+            *range,
+            mapper,
+            query_text,
+            diagnostics,
+        );
+    }
+}
+
+pub fn check(ctx: &DiagnosticsContext) -> Vec<Diagnostic> {
+    crate::sdbl_utils::collect_sdbl_via_dispatch(
+        ctx,
+        DiagnosticCode::QueryNestedFieldsByDot,
+        dispatch,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::test_utils::{
+        check_diagnostics_snapshot_for, check_hir_diagnostic_with_config, format_diags,
+    };
+    use crate::DiagnosticCode;
+    use expect_test::expect;
+    #[test]
+    fn test_query_nested_fields_by_dot() {
+        let code = r#"//Проверяемые кейсы:
+
+//1.Базовое разыменование ссылочных полей в выборке (во временную таблицу или в результат запроса) Должна зафиксироваться ошибка
+//2.Разыменование ссылочных полей в соединениях таблиц (Должна зафиксироваться ошибка)
+//3.Разыменование ссылочных полей в виртуальных таблиц (Должна зафиксироваться ошибка)
+//4.Агрегатные и иные функции над полем (Не должна фиксироваться ошибка)
+//5.Конструкция "ВЫРАЗИТЬ" без разыменования получаемого поля (Не должна фиксироваться ошибка)
+//6.Конструкция "ВЫРАЗИТЬ" с разыменованием получаемого поля (Должна фиксироваться ошибка)
+//7.Разыменование ссылочных полей в секции "ГДЕ" (Должна фиксироваться ошибка)
+
+Процедура ПолучениеДанныхЗаказовКлиентов()
+
+	Запрос = Новый Запрос;
+	Запрос.Текст =
+	"ВЫБРАТЬ
+	|	ЗаказКлиентаТовары.Ссылка КАК Ссылка,
+	|	ЗаказКлиентаТовары.Номенклатура КАК Номенклатура,
+	|	ЗаказКлиентаТовары.Характеристика КАК Характеристика,
+	|	ЗаказКлиентаТовары.Упаковка КАК Упаковка,
+	|	ЗаказКлиентаТовары.Серия КАК Серия,
+	|	ЗаказКлиентаТовары.СуммаНДС + ЗаказКлиентаТовары.Сумма КАК СуммаСНДС,
+	|	ЗаказКлиентаТовары.Ссылка.Организация КАК Организация, //Ошибка №1
+	|	ЗаказКлиентаТовары.Ссылка.Контрагент КАК Контрагент, //Ошибка №1
+	|	ЗаказКлиентаТовары.Ссылка.Партнер КАК Партнер, //Ошибка №1
+	|	ЗаказКлиентаТовары.Ссылка.ОбъектРасчетов КАК ОбъектРасчетов //Ошибка №1
+	|ПОМЕСТИТЬ ВТ_ДанныеЗаказовКлиента
+	|ИЗ
+	|	Документ.ЗаказКлиента.Товары КАК ЗаказКлиентаТовары
+	|ГДЕ
+	|	ЗаказКлиентаТовары.Ссылка.Дата МЕЖДУ &НачалоПериода И &КонецПериода //Ошибка №7
+	|
+	|ИНДЕКСИРОВАТЬ ПО
+	|	Контрагент,
+	|	Партнер,
+	|	ОбъектРасчетов,
+	|	Организация
+	|;
+	|
+	|////////////////////////////////////////////////////////////////////////////////
+	|ВЫБРАТЬ
+	|	РасчетыСКлиентамиОбороты.АналитикаУчетаПоПартнерам КАК АналитикаУчетаПоПартнерам,
+	|	РасчетыСКлиентамиОбороты.ОбъектРасчетов КАК ОбъектРасчетов,
+	|	РасчетыСКлиентамиОбороты.Валюта КАК Валюта,
+	|	РасчетыСКлиентамиОбороты.СуммаОборот КАК СуммаОборот,
+	|	РасчетыСКлиентамиОбороты.КОплатеОборот КАК КОплатеОборот,
+	|	РасчетыСКлиентамиОбороты.КОтгрузкеОборот КАК КОтгрузкеОборот,
+	|	РасчетыСКлиентамиОбороты.ОтгружаетсяОборот КАК ОтгружаетсяОборот
+	|ПОМЕСТИТЬ ВТ_РасчетыСКлиентами
+	|ИЗ
+	|	РегистрНакопления.РасчетыСКлиентами.Обороты(
+	|			&НачалоПериода,
+	|			&КонецПериода,
+	|			,
+	|			(АналитикаУчетаПоПартнерам.Партнер, АналитикаУчетаПоПартнерам.Контрагент, АналитикаУчетаПоПартнерам.Организация, ОбъектРасчетов) В //Ошибка №3
+	|				(ВЫБРАТЬ
+	|					ВТ_ДанныеЗаказовКлиента.Партнер КАК Партнер,
+	|					ВТ_ДанныеЗаказовКлиента.Контрагент КАК Контрагент,
+	|					ВТ_ДанныеЗаказовКлиента.Организация КАК Организация,
+	|					ВТ_ДанныеЗаказовКлиента.ОбъектРасчетов КАК ОбъектРасчетов
+	|				ИЗ
+	|					ВТ_ДанныеЗаказовКлиента КАК ВТ_ДанныеЗаказовКлиента)) КАК РасчетыСКлиентамиОбороты
+	|;
+	|
+	|////////////////////////////////////////////////////////////////////////////////
+	|ВЫБРАТЬ
+	|	РасчетыСКлиентамиПланОтгрузокОбороты.АналитикаУчетаПоПартнерам КАК АналитикаУчетаПоПартнерам,
+	|	РасчетыСКлиентамиПланОтгрузокОбороты.ОбъектРасчетов КАК ОбъектРасчетов,
+	|	РасчетыСКлиентамиПланОтгрузокОбороты.ДокументПлан КАК ДокументПлан,
+	|	РасчетыСКлиентамиПланОтгрузокОбороты.Валюта КАК Валюта,
+	|	РасчетыСКлиентамиПланОтгрузокОбороты.СуммаОборот КАК СуммаОборот
+	|ПОМЕСТИТЬ ВТ_ПланОтгрузок
+	|ИЗ
+	|	РегистрНакопления.РасчетыСКлиентамиПланОтгрузок.Обороты(
+	|			&НачалоПериода,
+	|			&КонецПериода,
+	|			,
+	|			(ДокументПлан, ОбъектРасчетов) В
+	|				(ВЫБРАТЬ
+	|					ВТ_ДанныеЗаказовКлиента.Ссылка КАК Ссылка,
+	|					ВТ_ДанныеЗаказовКлиента.ОбъектРасчетов КАК ОбъектРасчетов
+	|				ИЗ
+	|					ВТ_ДанныеЗаказовКлиента КАК ВТ_ДанныеЗаказовКлиента)) КАК РасчетыСКлиентамиПланОтгрузокОбороты
+	|;
+	|
+	|////////////////////////////////////////////////////////////////////////////////
+	|ВЫБРАТЬ
+	|	ВТ_РасчетыСКлиентами.АналитикаУчетаПоПартнерам КАК АналитикаУчетаПоПартнерам,
+	|	ВТ_РасчетыСКлиентами.ОбъектРасчетов КАК ОбъектРасчетов,
+	|	ВТ_РасчетыСКлиентами.Валюта КАК Валюта,
+	|	ВТ_РасчетыСКлиентами.СуммаОборот КАК СуммаОборот,
+	|	ВТ_РасчетыСКлиентами.КОплатеОборот КАК КОплатеОборот,
+	|	ВТ_РасчетыСКлиентами.КОтгрузкеОборот КАК КОтгрузкеОборот,
+	|	ВТ_РасчетыСКлиентами.ОтгружаетсяОборот КАК ОтгружаетсяОборот,
+	|	ВТ_ДанныеЗаказовКлиента.Номенклатура КАК Номенклатура,
+	|	ВТ_ДанныеЗаказовКлиента.Характеристика КАК Характеристика,
+	|	ВТ_ДанныеЗаказовКлиента.Упаковка КАК Упаковка,
+	|	ЕСТЬNULL(ВТ_ДанныеЗаказовКлиента.Ссылка, ЗНАЧЕНИЕ(Документ.ЗаказКлиента.ПустаяСсылка)) КАК ЗаказКлиента
+	|ПОМЕСТИТЬ ВТ_РасчетыСКлиентамиРасш
+	|ИЗ
+	|	ВТ_РасчетыСКлиентами КАК ВТ_РасчетыСКлиентами
+	|		ЛЕВОЕ СОЕДИНЕНИЕ ВТ_ДанныеЗаказовКлиента КАК ВТ_ДанныеЗаказовКлиента
+	|		ПО ВТ_РасчетыСКлиентами.АналитикаУчетаПоПартнерам.Партнер = ВТ_ДанныеЗаказовКлиента.Партнер //Ошибка №2
+	|			И ВТ_РасчетыСКлиентами.АналитикаУчетаПоПартнерам.Контрагент = ВТ_ДанныеЗаказовКлиента.Контрагент //Ошибка №2
+	|			И ВТ_РасчетыСКлиентами.АналитикаУчетаПоПартнерам.Организация = ВТ_ДанныеЗаказовКлиента.Организация //Ошибка №2
+	|;
+	|
+	|////////////////////////////////////////////////////////////////////////////////
+	|ВЫБРАТЬ
+	|	ВТ_РасчетыСКлиентамиРасш.АналитикаУчетаПоПартнерам КАК АналитикаУчетаПоПартнерам,
+	|	ВТ_РасчетыСКлиентамиРасш.ОбъектРасчетов КАК ОбъектРасчетов,
+	|	ВТ_РасчетыСКлиентамиРасш.ЗаказКлиента КАК ЗаказКлиента,
+	|	ВТ_РасчетыСКлиентамиРасш.Номенклатура КАК Номенклатура,
+	|	ВТ_РасчетыСКлиентамиРасш.Характеристика КАК Характеристика,
+	|	ВТ_РасчетыСКлиентамиРасш.Упаковка КАК Упаковка,
+	|	ВЫРАЗИТЬ(ВТ_ПланОтгрузок.ДокументПлан КАК Документ.ЗаказКлиента).Валюта КАК ВалютаДокумента,
+	|	ВЫРАЗИТЬ(ВТ_ПланОтгрузок.ДокументПлан КАК Документ.ЗаказКлиента).Валюта.Наценка КАК НаценкаВалюыДокумента //Ошибка №6
+	|ИЗ
+	|	ВТ_РасчетыСКлиентамиРасш КАК ВТ_РасчетыСКлиентамиРасш
+	|		ВНУТРЕННЕЕ СОЕДИНЕНИЕ ВТ_ПланОтгрузок КАК ВТ_ПланОтгрузок
+	|		ПО ВТ_РасчетыСКлиентамиРасш.АналитикаУчетаПоПартнерам = ВТ_ПланОтгрузок.АналитикаУчетаПоПартнерам
+	|			И ВТ_РасчетыСКлиентамиРасш.ОбъектРасчетов = ВТ_ПланОтгрузок.ОбъектРасчетов
+	|			И ВТ_РасчетыСКлиентамиРасш.ЗаказКлиента = ВТ_ПланОтгрузок.ДокументПлан";
+
+	Запрос.УстановитьПараметр("КонецПериода", КонецГода(ТекущаяДата()));
+	Запрос.УстановитьПараметр("НачалоПериода", НачалоГода(ТекущаяДата()));
+
+	РезультатЗапроса = Запрос.Выполнить().Выгрузить();
+
+	Запрос = Новый Запрос;
+	Запрос.Текст =
+		"ВЫБРАТЬ
+		|	КурсыВалютСрезПоследних.Курс КАК Курс
+		|ИЗ
+		|	РегистрСведений.КурсыВалют.СрезПоследних(&Период, Валюта = &Валюта) КАК КурсыВалютСрезПоследних";
+
+	Запрос.УстановитьПараметр("Валюта", Справочники.Валюты.ПустаяСсылка());
+	Запрос.УстановитьПараметр("Период", ТекущаяДата());
+
+	РезультатЗапроса = Запрос.Выполнить();
+
+	ВыборкаДетальныеЗаписи = РезультатЗапроса.Выбрать();
+
+КонецПроцедуры;
+
+//Итоговое ожидаемое количество срабатываний:
+//Номер тест кейса | Число срабатываний
+// №1 | 4
+// №2 | 3
+// №3 | 3
+// №4 | 0
+// №5 | 0
+// №6 | 1
+// №7 | 1
+//Итого: 12"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::QueryNestedFieldsByDot,
+            expect![[r#"
+                QueryNestedFieldsByDot @ 22:4..22:41
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 23:4..23:40
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 24:4..24:37
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 25:4..25:44
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 30:4..30:34
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 54:7..54:40
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 54:42..54:78
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 54:80..54:117
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 102:8..102:62
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 103:8..103:65
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 104:8..104:66
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning
+                QueryNestedFieldsByDot @ 116:4..116:83
+                  message: Обнаружено разыменование ссылочного поля
+                  severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_no_false_positives_for_mdo_types() {
+        let code = r#"
+Процедура Тест()
+    Запрос = Новый Запрос;
+    Запрос.Текст = "ВЫБРАТЬ Справочник.Валюты.Код ИЗ Справочник.Валюты";
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::QueryNestedFieldsByDot,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_no_false_positives_for_two_parts() {
+        let code = r#"
+Процедура Тест()
+    Запрос = Новый Запрос;
+    Запрос.Текст = "ВЫБРАТЬ T.Ссылка ИЗ Документ.Заказ КАК T";
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::QueryNestedFieldsByDot,
+            expect![[r#""#]],
+        );
+    }
+
+    fn config_with_min_path_depth(depth: i64) -> crate::DiagnosticsConfig {
+        let mut config = crate::DiagnosticsConfig::default();
+        config.enabled.push(DiagnosticCode::QueryNestedFieldsByDot);
+        config.parameters.insert(
+            DiagnosticCode::QueryNestedFieldsByDot,
+            serde_json::json!({ "minPathDepth": depth }),
+        );
+        config
+    }
+
+    #[test]
+    fn test_min_path_depth_above_three_drops_three_part_normal_context() {
+        let code = r#"
+Процедура Тест()
+    Запрос = Новый Запрос;
+    Запрос.Текст = "ВЫБРАТЬ T.Ссылка.Контрагент ИЗ Документ.Заказ КАК T";
+КонецПроцедуры
+"#;
+        let config = config_with_min_path_depth(4);
+        let diagnostics = check_hir_diagnostic_with_config(code, config, crate::diagnostics);
+        let diagnostics: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::QueryNestedFieldsByDot)
+            .collect();
+        expect![[r#""#]].assert_eq(&format_diags(code, &diagnostics));
+    }
+
+    #[test]
+    fn test_min_path_depth_above_three_preserves_cast_member_chain() {
+        let code = r#"
+Процедура Тест()
+    Запрос = Новый Запрос;
+    Запрос.Текст =
+    "ВЫБРАТЬ ВЫРАЗИТЬ(T.Ссылка КАК Документ.Заказ).Валюта.Курс
+    |ИЗ Документ.Заказ КАК T";
+КонецПроцедуры
+"#;
+        let config = config_with_min_path_depth(99);
+        let diagnostics = check_hir_diagnostic_with_config(code, config, crate::diagnostics);
+        let diagnostics: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::QueryNestedFieldsByDot)
+            .collect();
+        expect![[r#"
+            QueryNestedFieldsByDot @ 5:14..5:63
+              message: Обнаружено разыменование ссылочного поля
+              severity: Warning"#]]
+        .assert_eq(&format_diags(code, &diagnostics));
+    }
+
+    #[test]
+    fn inline_tabular_fields_are_not_a_dereference_hop() {
+        // `Т.ТЧ.(А, Б)` — выбор полей табличной части. Разыменования ссылки
+        // здесь нет, глубина пути равна двум, и при пороге по умолчанию
+        // находки быть не должно.
+        let code = r#"
+Процедура Тест()
+    Запрос = Новый Запрос;
+    Запрос.Текст = "ВЫБРАТЬ T.Товары.(Номенклатура, Количество) ИЗ Документ.Заказ КАК T";
+КонецПроцедуры
+"#;
+        let config = config_with_min_path_depth(3);
+        let diagnostics = check_hir_diagnostic_with_config(code, config, crate::diagnostics);
+        let diagnostics: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::QueryNestedFieldsByDot)
+            .collect();
+        expect![[r#""#]].assert_eq(&format_diags(code, &diagnostics));
+    }
+
+    #[test]
+    fn a_dereference_before_inline_tabular_fields_still_fires() {
+        let code = r#"
+Процедура Тест()
+    Запрос = Новый Запрос;
+    Запрос.Текст = "ВЫБРАТЬ T.Ссылка.Товары.(Номенклатура) ИЗ Документ.Заказ КАК T";
+КонецПроцедуры
+"#;
+        let config = config_with_min_path_depth(3);
+        let diagnostics = check_hir_diagnostic_with_config(code, config, crate::diagnostics);
+        let diagnostics: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::QueryNestedFieldsByDot)
+            .collect();
+        expect![[r#"
+            QueryNestedFieldsByDot @ 4:29..4:44
+              message: Обнаружено разыменование ссылочного поля
+              severity: Warning"#]]
+        .assert_eq(&format_diags(code, &diagnostics));
+    }
+
+    #[test]
+    fn test_min_path_depth_two_emits_two_part_normal_context() {
+        let code = r#"
+Процедура Тест()
+    Запрос = Новый Запрос;
+    Запрос.Текст = "ВЫБРАТЬ T.Поле ИЗ Документ.Заказ КАК T";
+КонецПроцедуры
+"#;
+        let config = config_with_min_path_depth(2);
+        let diagnostics = check_hir_diagnostic_with_config(code, config, crate::diagnostics);
+        let diagnostics: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::QueryNestedFieldsByDot)
+            .collect();
+        expect![[r#"
+            QueryNestedFieldsByDot @ 4:29..4:35
+              message: Обнаружено разыменование ссылочного поля
+              severity: Warning"#]]
+        .assert_eq(&format_diags(code, &diagnostics));
+    }
+}

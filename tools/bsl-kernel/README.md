@@ -1,6 +1,6 @@
 # Закреплённое ядро BSL для ESKA
 
-Этот отдельный Cargo workspace содержит девять изменённых пакетов bsl-analyzer из
+Этот отдельный Cargo workspace содержит десять изменённых пакетов bsl-analyzer из
 ревизии `9021ba07471eee8a2614bed2105a2c8699f60780`. Остальные зависимости на
 bsl-analyzer закреплены на той же Git-ревизии. Это исходники библиотек для
 экспериментального адаптера, а не опубликованный analyzer/check или LSP-сервер.
@@ -132,6 +132,12 @@ call binding. Argument receivers, non-member/inactive calls не подбира�
 
 Назначение локальных пакетов:
 
+- `ide-diagnostics`: metadata diagnostics используют общий диапазон первых
+  Unicode scalar values файла вместо фиксированного числа байтов. BOM, CRLF,
+  кириллица и emoji сохраняют исходные позиции; настоящие AST/method ranges
+  и строгая проверка диапазонов адаптера не меняются. Копия того же pinned crate
+  включает его build script, descriptions, dictionaries и tests; его прежняя
+  лицензия `LGPL-3.0-or-later` и upstream notices сохранены.
 - `ide`: [автодополнение сервисов интеграции](../../docs/research/eska-format/analyzer-integration-completion.md)
   использует прежний semantic root claim, context masks и новый getter видимых
   объявленных имён. YAML каналов и BSL bodies целей не читаются. Detail RU/EN

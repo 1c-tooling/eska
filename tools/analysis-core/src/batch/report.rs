@@ -1,5 +1,9 @@
 //! Stable machine fields never serialize a translated diagnostic message.
 
+#[cfg(test)]
+#[path = "report_tests.rs"]
+mod tests;
+
 use eska::{analysis_core::InputFailure, project_core::source_format::SourcePath};
 
 use crate::{

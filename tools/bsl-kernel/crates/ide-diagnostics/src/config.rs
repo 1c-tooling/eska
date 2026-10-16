@@ -1,0 +1,556 @@
+use crate::handlers;
+use crate::metadata::{DiagnosticSeverityLevel, DiagnosticType, MetadataTag};
+use crate::{DiagnosticCode, Severity};
+use base_db::{DiagnosticsConfigInput, Locale};
+use std::collections::HashMap;
+use stdx::case::CaseExt;
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct MetadataOverride {
+    pub severity: Option<DiagnosticSeverityLevel>,
+    pub diagnostic_type: Option<DiagnosticType>,
+    pub tags: Option<Vec<MetadataTag>>,
+    pub lsp_severity: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct EffectiveMetadata {
+    base: &'static crate::metadata::DiagnosticMetadata,
+    tags_override: Option<Vec<MetadataTag>>,
+    lsp_severity_override: Option<String>,
+}
+
+impl EffectiveMetadata {
+    pub fn severity_value(&self) -> Severity {
+        if let Some(override_str) = &self.lsp_severity_override {
+            return parse_severity(override_str);
+        }
+        self.base.calculate_severity()
+    }
+
+    pub fn tags(&self) -> Vec<MetadataTag> {
+        self.tags_override.clone().unwrap_or_else(|| self.base.tags.to_vec())
+    }
+}
+
+fn parse_severity(s: &str) -> Severity {
+    match s.fold_lower().as_str() {
+        "error" => Severity::Error,
+        "warning" => Severity::Warning,
+        "information" | "info" => Severity::Information,
+        "hint" => Severity::Hint,
+        "blocker" => Severity::Blocker,
+        "critical" => Severity::Critical,
+        "major" => Severity::Major,
+        _ => Severity::Warning,
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct DiagnosticsConfig {
+    pub disabled: Vec<DiagnosticCode>,
+    pub enabled: Vec<DiagnosticCode>,
+    pub parameters: HashMap<DiagnosticCode, serde_json::Value>,
+    pub ordinary_app_support: bool,
+    pub dataflow_max_iterations: usize,
+    pub metadata_overrides: HashMap<DiagnosticCode, MetadataOverride>,
+    pub only_enabled: Option<Vec<DiagnosticCode>>,
+    pub locale: Locale,
+    /// Recognise bsl-language-server suppression directives (`// BSLLS:Код-off` …) as aliases of
+    /// the native ones, so migrating a project does not require rewriting suppression comments.
+    /// On by default; set `bsllsSuppressionCompat = false` in the project config to disable.
+    pub bslls_suppression_compat: bool,
+    /// Restricts diagnostics to files/lines changed relative to a reference state
+    /// (vendor-diff filter). Set programmatically by the driving surface, never
+    /// from the `[diagnostics]` project config.
+    pub scope: Option<std::sync::Arc<base_db::AnalysisScope>>,
+}
+
+/// `serde_json::Value` is only `PartialEq` (floats); a configuration is still
+/// a value with a total identity for memoisation.
+impl Eq for DiagnosticsConfig {}
+
+impl Default for DiagnosticsConfig {
+    fn default() -> Self {
+        Self {
+            disabled: Vec::new(),
+            enabled: Vec::new(),
+            parameters: HashMap::new(),
+            ordinary_app_support: false,
+            dataflow_max_iterations: hir::dataflow::DEFAULT_MAX_ITERATIONS,
+            metadata_overrides: HashMap::new(),
+            only_enabled: None,
+            locale: Locale::default(),
+            bslls_suppression_compat: true,
+            scope: None,
+        }
+    }
+}
+
+impl DiagnosticsConfig {
+    /// Build the effective diagnostics config from the raw `[diagnostics]` value that
+    /// `project-model` loads from `bsl-analyzer.toml` / `.bsl-analyzer.json` /
+    /// `.bsl-language-server.json`, then stamp the resolved `locale`.
+    ///
+    /// This is the single source of truth shared by every runtime mode (LSP, CLI,
+    /// MCP), so a project's settings apply identically regardless of how the analyzer
+    /// is driven. A malformed config logs a warning and falls back to defaults rather
+    /// than failing the analysis.
+    pub fn from_project_json(diagnostics: &serde_json::Value, locale: Locale) -> Self {
+        let mut config: Self = if diagnostics.is_null() {
+            Self::default()
+        } else {
+            serde_json::from_value(diagnostics.clone()).unwrap_or_else(|e| {
+                tracing::warn!(error = %e, "failed to deserialize project diagnostics config; using defaults");
+                Self::default()
+            })
+        };
+        config.locale = locale;
+        config
+    }
+
+    pub fn all_enabled() -> Self {
+        let mut enabled = Vec::new();
+        for code in [
+            DiagnosticCode::BadWords,
+            DiagnosticCode::CodeAfterAsyncCall,
+            DiagnosticCode::DenyIncompleteValues,
+            DiagnosticCode::FieldsFromJoinsWithoutIsNull,
+            DiagnosticCode::FileSystemAccess,
+            DiagnosticCode::FunctionNameStartsWithGet,
+            DiagnosticCode::FunctionOutParameter,
+            DiagnosticCode::InternetAccess,
+            DiagnosticCode::MissingTempStorageDeletion,
+            DiagnosticCode::TernaryOperatorUsage,
+            DiagnosticCode::TooManyReturns,
+            DiagnosticCode::TypeMismatchByDocComment,
+            DiagnosticCode::UnresolvedName,
+            DiagnosticCode::UseSystemInformation,
+            DiagnosticCode::UsingLikeInQuery,
+        ] {
+            if let Some(meta) = handlers::get_metadata(code) {
+                if !meta.activated_by_default {
+                    enabled.push(code);
+                }
+            }
+        }
+
+        Self {
+            disabled: Vec::new(),
+            enabled,
+            parameters: HashMap::new(),
+            ordinary_app_support: false,
+            dataflow_max_iterations: hir::dataflow::DEFAULT_MAX_ITERATIONS,
+            metadata_overrides: HashMap::new(),
+            only_enabled: None,
+            locale: Locale::default(),
+            bslls_suppression_compat: true,
+            scope: None,
+        }
+    }
+
+    /// The severity a finding of `code` carries under this configuration.
+    ///
+    /// Lives on the config, not only on `DiagnosticsContext`, because a diagnostic can be
+    /// produced without a file to anchor it — validating a bare query text has a
+    /// configuration but no `FileId`.
+    pub fn severity(&self, code: DiagnosticCode) -> Severity {
+        self.get_effective_metadata(code).map(|m| m.severity_value()).unwrap_or(Severity::Warning)
+    }
+
+    /// The LSP tags a finding of `code` carries under this configuration. File-free for the
+    /// same reason as [`Self::severity`].
+    pub fn tags(&self, code: DiagnosticCode) -> Vec<crate::DiagnosticTag> {
+        self.get_effective_metadata(code)
+            .map(|m| {
+                m.tags()
+                    .iter()
+                    .filter_map(|tag| match tag {
+                        MetadataTag::Unused => Some(crate::DiagnosticTag::Unnecessary),
+                        MetadataTag::Deprecated => Some(crate::DiagnosticTag::Deprecated),
+                        _ => None,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    pub fn get_effective_metadata(&self, code: DiagnosticCode) -> Option<EffectiveMetadata> {
+        let base = handlers::get_metadata(code)?;
+        let override_data = self.metadata_overrides.get(&code);
+
+        Some(EffectiveMetadata {
+            base,
+            tags_override: override_data.and_then(|o| o.tags.clone()),
+            lsp_severity_override: override_data.and_then(|o| o.lsp_severity.clone()),
+        })
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for DiagnosticsConfig {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::{MapAccess, Visitor};
+        use std::fmt;
+
+        struct DiagnosticsConfigVisitor;
+
+        impl<'de> Visitor<'de> for DiagnosticsConfigVisitor {
+            type Value = DiagnosticsConfig;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a diagnostics configuration object")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> Result<DiagnosticsConfig, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut disabled = Vec::new();
+                let mut enabled = Vec::new();
+                let mut parameters = HashMap::new();
+                let mut ordinary_app_support = false;
+                let mut dataflow_max_iterations = hir::dataflow::DEFAULT_MAX_ITERATIONS;
+                let mut bslls_suppression_compat = true;
+
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_str() {
+                        "ordinaryAppSupport" => {
+                            ordinary_app_support = map.next_value()?;
+                        }
+                        "dataflowMaxIterations" => {
+                            dataflow_max_iterations = map.next_value()?;
+                        }
+                        "bsllsSuppressionCompat" => {
+                            bslls_suppression_compat = map.next_value()?;
+                        }
+                        "parameters" => {
+                            let params: HashMap<String, serde_json::Value> = map.next_value()?;
+                            for (code_str, value) in params {
+                                if let Ok(code) = code_str.parse::<DiagnosticCode>() {
+                                    match &value {
+                                        serde_json::Value::Bool(false) => {
+                                            disabled.push(code);
+                                        }
+                                        serde_json::Value::Bool(true) => {
+                                            enabled.push(code);
+                                        }
+                                        serde_json::Value::Object(_) => {
+                                            enabled.push(code);
+                                            parameters.insert(code, value);
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            let _: serde_json::Value = map.next_value()?;
+                        }
+                    }
+                }
+
+                Ok(DiagnosticsConfig {
+                    disabled,
+                    enabled,
+                    parameters,
+                    ordinary_app_support,
+                    dataflow_max_iterations,
+                    metadata_overrides: HashMap::new(),
+                    only_enabled: None,
+                    locale: Locale::default(),
+                    bslls_suppression_compat,
+                    scope: None,
+                })
+            }
+        }
+
+        deserializer.deserialize_map(DiagnosticsConfigVisitor)
+    }
+}
+
+impl DiagnosticsConfig {
+    #[inline]
+    pub fn any_enabled(&self, codes: &[DiagnosticCode]) -> bool {
+        if let Some(ref only) = self.only_enabled {
+            return codes.iter().any(|code| only.contains(code));
+        }
+
+        codes.iter().any(|code| !self.is_disabled(*code))
+    }
+
+    pub fn is_disabled(&self, code: DiagnosticCode) -> bool {
+        if let Some(ref only) = self.only_enabled {
+            return !only.contains(&code);
+        }
+
+        if self.disabled.contains(&code) {
+            return true;
+        }
+
+        if let Some(metadata) = handlers::get_metadata(code) {
+            if !metadata.activated_by_default
+                && !self.enabled.contains(&code)
+                && !self.parameters.contains_key(&code)
+            {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    pub fn get_bool(&self, code: DiagnosticCode, param: &str) -> Option<bool> {
+        self.parameters.get(&code).and_then(|v| v.get(param)).and_then(|v| v.as_bool())
+    }
+
+    pub fn get_int(&self, code: DiagnosticCode, param: &str) -> Option<i64> {
+        self.parameters.get(&code).and_then(|v| v.get(param)).and_then(|v| v.as_i64())
+    }
+
+    pub fn get_string(&self, code: DiagnosticCode, param: &str) -> Option<&str> {
+        self.parameters.get(&code).and_then(|v| v.get(param)).and_then(|v| v.as_str())
+    }
+
+    pub fn get_string_param(&self, code: DiagnosticCode, param: &str) -> Option<String> {
+        self.parameters
+            .get(&code)
+            .and_then(|v| v.get(param))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+    }
+
+    pub fn get_string_array(&self, code: DiagnosticCode, param: &str) -> Option<Vec<String>> {
+        self.parameters
+            .get(&code)
+            .and_then(|v| v.get(param))
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+    }
+
+    pub fn from_input(input: &DiagnosticsConfigInput) -> Self {
+        let disabled: Vec<DiagnosticCode> =
+            input.disabled.iter().filter_map(|s| s.parse().ok()).collect();
+
+        let enabled: Vec<DiagnosticCode> =
+            input.enabled.iter().filter_map(|s| s.parse().ok()).collect();
+
+        let parameters: HashMap<DiagnosticCode, serde_json::Value> = input
+            .parameters
+            .iter()
+            .filter_map(|(code_str, json_str)| {
+                let code: DiagnosticCode = code_str.parse().ok()?;
+                let value: serde_json::Value = serde_json::from_str(json_str).ok()?;
+                Some((code, value))
+            })
+            .collect();
+
+        Self {
+            disabled,
+            enabled,
+            parameters,
+            ordinary_app_support: input.ordinary_app_support,
+            dataflow_max_iterations: input.dataflow_max_iterations,
+            metadata_overrides: input
+                .metadata_overrides
+                .iter()
+                .filter_map(|(code_str, json_str)| {
+                    let code: DiagnosticCode = code_str.parse().ok()?;
+                    let value: MetadataOverride = serde_json::from_str(json_str).ok()?;
+                    Some((code, value))
+                })
+                .collect(),
+            only_enabled: input
+                .only_enabled
+                .as_ref()
+                .map(|codes| codes.iter().filter_map(|s| s.parse().ok()).collect()),
+            locale: input.locale,
+            bslls_suppression_compat: input.bslls_suppression_compat,
+            scope: input.scope.clone(),
+        }
+    }
+
+    /// The interned form of this configuration: the key the memoised
+    /// diagnostics are stored under. `from_input` restores every field that
+    /// influences a diagnostic, so a configuration and its input agree on the
+    /// result (`config_survives_the_interned_round_trip`).
+    pub fn to_input(&self) -> DiagnosticsConfigInput {
+        DiagnosticsConfigInput::from_raw(
+            self.disabled.iter().map(|c| c.as_str().to_owned()),
+            self.enabled.iter().map(|c| c.as_str().to_owned()),
+            self.parameters.iter().map(|(c, v)| (c.as_str().to_owned(), v.to_string())),
+            self.ordinary_app_support,
+            self.dataflow_max_iterations,
+            self.locale,
+            self.bslls_suppression_compat,
+        )
+        .with_filters(
+            self.only_enabled.as_ref().map(|codes| codes.iter().map(|c| c.as_str().to_owned())),
+            self.metadata_overrides.iter().map(|(c, o)| {
+                (c.as_str().to_owned(), serde_json::to_string(o).expect("plain enums serialize"))
+            }),
+        )
+        .with_scope(self.scope.clone())
+    }
+
+    pub fn apply_cli_filters(&mut self, only_diagnostic: &[String], disable_diagnostic: &[String]) {
+        if !only_diagnostic.is_empty() {
+            let codes: Vec<DiagnosticCode> =
+                only_diagnostic.iter().filter_map(|s| s.parse().ok()).collect();
+            if !codes.is_empty() {
+                self.only_enabled = Some(codes);
+            }
+        }
+
+        for code_str in disable_diagnostic {
+            if let Ok(code) = code_str.parse::<DiagnosticCode>() {
+                if !self.disabled.contains(&code) {
+                    self.disabled.push(code);
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+    use tracing::{span, Event, Id, Metadata, Subscriber};
+
+    struct WarningCounter(Arc<AtomicUsize>);
+
+    impl Subscriber for WarningCounter {
+        fn enabled(&self, _: &Metadata<'_>) -> bool {
+            true
+        }
+
+        fn new_span(&self, _: &span::Attributes<'_>) -> Id {
+            Id::from_u64(1)
+        }
+
+        fn record(&self, _: &Id, _: &span::Record<'_>) {}
+
+        fn record_follows_from(&self, _: &Id, _: &Id) {}
+
+        fn event(&self, event: &Event<'_>) {
+            if *event.metadata().level() == tracing::Level::WARN {
+                self.0.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+
+        fn enter(&self, _: &Id) {}
+
+        fn exit(&self, _: &Id) {}
+    }
+
+    fn parse_with_warning_count(
+        raw: &serde_json::Value,
+        locale: Locale,
+    ) -> (DiagnosticsConfig, usize) {
+        let warnings = Arc::new(AtomicUsize::new(0));
+        let config = tracing::subscriber::with_default(WarningCounter(warnings.clone()), || {
+            DiagnosticsConfig::from_project_json(raw, locale)
+        });
+        (config, warnings.load(Ordering::Relaxed))
+    }
+
+    /// The shared project-config parser turns the raw `[diagnostics]` value into the
+    /// same effective config every runtime mode consumes: a `parameters` entry of
+    /// `false` disables a code, an object enables it with parameters, and the resolved
+    /// locale is stamped over the default.
+    #[test]
+    fn from_project_json_parses_params_and_stamps_locale() {
+        let raw = json!({
+            "parameters": {
+                "Typo": false,
+                "LineLength": { "maxLineLength": 150 },
+            }
+        });
+        let (config, warnings) = parse_with_warning_count(&raw, Locale::En);
+
+        assert_eq!(warnings, 0);
+        assert!(config.is_disabled(DiagnosticCode::Typo), "a `false` param disables the code");
+        assert_eq!(
+            config.get_int(DiagnosticCode::LineLength, "maxLineLength"),
+            Some(150),
+            "an object param carries the project threshold"
+        );
+        assert_eq!(config.locale, Locale::En, "the resolved locale overrides the default");
+    }
+
+    /// A malformed config (not an object) must not fail the analysis: it falls back to
+    /// defaults while still stamping the locale.
+    #[test]
+    fn from_project_json_falls_back_on_garbage() {
+        let (config, warnings) = parse_with_warning_count(&json!("not an object"), Locale::Ru);
+        assert_eq!(warnings, 1);
+        assert!(config.disabled.is_empty());
+        assert!(config.parameters.is_empty());
+        assert_eq!(config.locale, Locale::Ru);
+    }
+
+    /// An absent `[diagnostics]` section (serde null) yields defaults without warning.
+    #[test]
+    fn from_project_json_handles_null() {
+        let (config, warnings) = parse_with_warning_count(&serde_json::Value::Null, Locale::En);
+        assert_eq!(warnings, 0);
+        assert!(config.disabled.is_empty());
+        assert!(config.enabled.is_empty());
+        assert_eq!(config.locale, Locale::En);
+    }
+
+    #[test]
+    fn from_project_json_accepts_empty_object_without_warning() {
+        let (config, warnings) = parse_with_warning_count(&json!({}), Locale::Ru);
+        assert_eq!(warnings, 0);
+        assert!(config.disabled.is_empty());
+        assert!(config.enabled.is_empty());
+        assert_eq!(config.locale, Locale::Ru);
+    }
+}
+
+#[cfg(test)]
+mod interned_round_trip {
+    use super::*;
+
+    /// A configuration and the input it interns to must agree on every
+    /// field that influences a diagnostic: the memoised checks run under
+    /// `from_input(to_input(config))`, the caller under `config`.
+    #[test]
+    fn config_survives_the_interned_round_trip() {
+        let mut config = DiagnosticsConfig::all_enabled();
+        config.disabled = vec![DiagnosticCode::LineLength];
+        config
+            .parameters
+            .insert(DiagnosticCode::MethodSize, serde_json::json!({ "maxMethodSize": 10 }));
+        config.only_enabled =
+            Some(vec![DiagnosticCode::MethodSize, DiagnosticCode::UnusedLocalVariable]);
+        config.metadata_overrides.insert(
+            DiagnosticCode::MethodSize,
+            MetadataOverride {
+                severity: Some(DiagnosticSeverityLevel::Blocker),
+                diagnostic_type: Some(DiagnosticType::Vulnerability),
+                tags: Some(vec![MetadataTag::Performance]),
+                lsp_severity: Some("Error".to_owned()),
+            },
+        );
+        config.dataflow_max_iterations = 7;
+        config.bslls_suppression_compat = false;
+
+        let restored = DiagnosticsConfig::from_input(&config.to_input());
+        assert_eq!(restored, config);
+
+        // The round trip is not vacuous: a configuration that differs in a
+        // filter interns to a different key.
+        let mut other = config.clone();
+        other.only_enabled = None;
+        assert_ne!(other.to_input(), config.to_input());
+    }
+}

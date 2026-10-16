@@ -1,0 +1,1195 @@
+{
+  "schema_version": 1,
+  "environment": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "rustc": "1.98.1"
+  },
+  "versions": {
+    "eska": "0.14.2",
+    "eska-analysis": "0.0.0"
+  },
+  "fix": {
+    "unsafe_header_sites": 11,
+    "unicode_scalar_prefix": true,
+    "original_ast_method_ranges_unchanged": true,
+    "strict_invalid_range_guard_preserved": true,
+    "original_upstream_files": 651,
+    "upstream_revision_unchanged": true
+  },
+  "validation": {
+    "all_gates_passed": true,
+    "frozen_input_files": 2617,
+    "source_before_equals_after": true,
+    "gates": [
+      {
+        "name": "sdk-header-regression",
+        "exit_code": 0,
+        "seconds": 7.584
+      },
+      {
+        "name": "root-fmt",
+        "exit_code": 0,
+        "seconds": 1.493
+      },
+      {
+        "name": "root-check",
+        "exit_code": 0,
+        "seconds": 0.34
+      },
+      {
+        "name": "root-clippy",
+        "exit_code": 0,
+        "seconds": 0.295
+      },
+      {
+        "name": "root-test-default",
+        "exit_code": 0,
+        "seconds": 84.293
+      },
+      {
+        "name": "root-test-all",
+        "exit_code": 0,
+        "seconds": 122.216
+      },
+      {
+        "name": "sdk-fmt",
+        "exit_code": 0,
+        "seconds": 0.611
+      },
+      {
+        "name": "sdk-check-default",
+        "exit_code": 0,
+        "seconds": 1.77
+      },
+      {
+        "name": "sdk-check-all",
+        "exit_code": 0,
+        "seconds": 2.059
+      },
+      {
+        "name": "sdk-clippy-default",
+        "exit_code": 0,
+        "seconds": 1.483
+      },
+      {
+        "name": "sdk-clippy-all",
+        "exit_code": 0,
+        "seconds": 3.047
+      },
+      {
+        "name": "sdk-test-default",
+        "exit_code": 0,
+        "seconds": 12.48
+      },
+      {
+        "name": "sdk-test-all",
+        "exit_code": 0,
+        "seconds": 46.177
+      },
+      {
+        "name": "sdk-doc-default",
+        "exit_code": 0,
+        "seconds": 3.436
+      },
+      {
+        "name": "sdk-doc-all",
+        "exit_code": 0,
+        "seconds": 8.575
+      },
+      {
+        "name": "native-fmt",
+        "exit_code": 0,
+        "seconds": 1.655
+      },
+      {
+        "name": "native-check",
+        "exit_code": 0,
+        "seconds": 0.84
+      },
+      {
+        "name": "native-clippy",
+        "exit_code": 0,
+        "seconds": 2.035
+      },
+      {
+        "name": "native-test",
+        "exit_code": 0,
+        "seconds": 14.217
+      },
+      {
+        "name": "sdk-debug-bins",
+        "exit_code": 0,
+        "seconds": 0.163
+      },
+      {
+        "name": "sdk-release-bins",
+        "exit_code": 0,
+        "seconds": 51.75
+      }
+    ],
+    "tests": {
+      "root-test-default": {
+        "passed": 1543,
+        "failed": 0,
+        "ignored": 24
+      },
+      "root-test-all": {
+        "passed": 1664,
+        "failed": 0,
+        "ignored": 24
+      },
+      "sdk-test-default": {
+        "passed": 265,
+        "failed": 0,
+        "ignored": 0
+      },
+      "sdk-test-all": {
+        "passed": 603,
+        "failed": 0,
+        "ignored": 0
+      },
+      "native-test": {
+        "passed": 2204,
+        "failed": 0,
+        "ignored": 7
+      }
+    }
+  },
+  "pre_fix_large_cf": {
+    "default_checker_error_code": "analysis_diagnostic_range_invalid",
+    "rule": "WrongDataPathForFormElements",
+    "both_locales_same_error": true,
+    "failed_receipts_retained": true,
+    "default_checker_observation": {
+      "owned_children": 2,
+      "owned_reaped": 2,
+      "natural_exits": 2,
+      "external_guard_stops": 0,
+      "peak_observed_rss_bytes": 1000648704,
+      "full_project_bytes_modes_mtimes_preserved": true
+    },
+    "unchanged_input_workloads": {
+      "churn": {
+        "schema_version": 1,
+        "probe_completed": true,
+        "mode": "churn",
+        "cases": [
+          {
+            "locale": "en-US",
+            "cycles": 500,
+            "owners": 3617,
+            "cold_spawn_initialize_seconds": 0.14725891000125557,
+            "first_completion_seconds": 0.03807817299821181,
+            "warm_median_seconds": 0.001289546002226416,
+            "cycle_median_seconds": 0.03537959650566336,
+            "samples": [
+              {
+                "label": "initialized",
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 0,
+                  "module_text_bytes": 0,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 0
+                },
+                "kernel_heap_estimates": 3293667
+              },
+              {
+                "label": "warm",
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196643,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196773
+                },
+                "kernel_heap_estimates": 4442211
+              },
+              {
+                "label": 1,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196651,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196781
+                },
+                "kernel_heap_estimates": 4442219
+              },
+              {
+                "label": 50,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196652,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196782
+                },
+                "kernel_heap_estimates": 4442220
+              },
+              {
+                "label": 100,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196652,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196782
+                },
+                "kernel_heap_estimates": 4442220
+              },
+              {
+                "label": 150,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 200,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 250,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 300,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 350,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 400,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 450,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 500,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": "closed",
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196643,
+                  "module_text_bytes": 3922,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 200565
+                },
+                "kernel_heap_estimates": 4446003
+              }
+            ],
+            "completion_requests": 512,
+            "incomplete_completion_count": 512,
+            "completion_coverage_observed": [
+              {
+                "metadata_inputs_complete": false,
+                "metadata_models_complete": false,
+                "module_inputs_complete": false,
+                "semantic_complete": false
+              }
+            ],
+            "exact_hashes_and_versions": true,
+            "new_present_old_absent": true,
+            "close_restores_saved": true
+          },
+          {
+            "locale": "ru-RU",
+            "cycles": 500,
+            "owners": 3617,
+            "cold_spawn_initialize_seconds": 0.152360904001398,
+            "first_completion_seconds": 0.03913430299871834,
+            "warm_median_seconds": 0.0015073700014909264,
+            "cycle_median_seconds": 0.035373446000448894,
+            "samples": [
+              {
+                "label": "initialized",
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 0,
+                  "module_text_bytes": 0,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 0
+                },
+                "kernel_heap_estimates": 3293667
+              },
+              {
+                "label": "warm",
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196643,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196773
+                },
+                "kernel_heap_estimates": 4442211
+              },
+              {
+                "label": 1,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196651,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196781
+                },
+                "kernel_heap_estimates": 4442219
+              },
+              {
+                "label": 50,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196652,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196782
+                },
+                "kernel_heap_estimates": 4442220
+              },
+              {
+                "label": 100,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196652,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196782
+                },
+                "kernel_heap_estimates": 4442220
+              },
+              {
+                "label": 150,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 200,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 250,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 300,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 350,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 400,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 450,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": 500,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196653,
+                  "module_text_bytes": 130,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 196783
+                },
+                "kernel_heap_estimates": 4442221
+              },
+              {
+                "label": "closed",
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 196643,
+                  "module_text_bytes": 3922,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 200565
+                },
+                "kernel_heap_estimates": 4446003
+              }
+            ],
+            "completion_requests": 512,
+            "incomplete_completion_count": 512,
+            "completion_coverage_observed": [
+              {
+                "metadata_inputs_complete": false,
+                "metadata_models_complete": false,
+                "module_inputs_complete": false,
+                "semantic_complete": false
+              }
+            ],
+            "exact_hashes_and_versions": true,
+            "new_present_old_absent": true,
+            "close_restores_saved": true
+          }
+        ],
+        "owned_children": 2,
+        "owned_reaped": 2,
+        "natural_exits": 2,
+        "external_guard_stops": 0,
+        "peak_observed_rss_bytes": 96014336,
+        "peak_observed_hwm_bytes": 96014336,
+        "full_project_bytes_modes_mtimes_preserved": true,
+        "copied_projects": 0,
+        "native_databases_created": 0,
+        "native_platform_invoked": false,
+        "physical_human_typing": false,
+        "os_cache_flushed": false,
+        "external_probe_rss_limit_bytes": 1610612736,
+        "external_probe_wall_limit_seconds": 60,
+        "product_hard_rss_budget_claimed": false,
+        "memory_estimates_complete": false,
+        "mvp_complete": false
+      },
+      "quota": {
+        "schema_version": 1,
+        "probe_completed": true,
+        "mode": "quota",
+        "cases": [
+          {
+            "locale": "en-US",
+            "quota_bytes": 0,
+            "drafts": 2,
+            "unavailable_has_no_old_hash": true,
+            "editor_versions_retained": true,
+            "stale_update_nonmutating": true,
+            "exact_drafts_replayed": true,
+            "close_restores_saved": true
+          },
+          {
+            "locale": "ru-RU",
+            "quota_bytes": 0,
+            "drafts": 2,
+            "unavailable_has_no_old_hash": true,
+            "editor_versions_retained": true,
+            "stale_update_nonmutating": true,
+            "exact_drafts_replayed": true,
+            "close_restores_saved": true
+          }
+        ],
+        "owned_children": 4,
+        "owned_reaped": 4,
+        "natural_exits": 4,
+        "external_guard_stops": 0,
+        "peak_observed_rss_bytes": 70725632,
+        "peak_observed_hwm_bytes": 70725632,
+        "full_project_bytes_modes_mtimes_preserved": true,
+        "copied_projects": 0,
+        "native_databases_created": 0,
+        "native_platform_invoked": false,
+        "physical_human_typing": false,
+        "os_cache_flushed": false,
+        "external_probe_rss_limit_bytes": 1610612736,
+        "external_probe_wall_limit_seconds": 60,
+        "product_hard_rss_budget_claimed": false,
+        "memory_estimates_complete": false,
+        "mvp_complete": false
+      },
+      "type-churn": {
+        "schema_version": 1,
+        "probe_completed": true,
+        "mode": "type-churn",
+        "cases": [
+          {
+            "arm": "unique-keys",
+            "locale": "en-US",
+            "profile": "semantic",
+            "cycles": 500,
+            "fixed_draft_bytes": 127,
+            "fixed_completion_character_offset": 97,
+            "median_cycle_seconds": 0.0011464894996606745,
+            "samples": [
+              {
+                "label": "initialized",
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 0,
+                  "module_text_bytes": 0,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 0
+                },
+                "kernel_heap_estimates": 3293667,
+                "external_sampler_observations": 3,
+                "external_sampler_seconds": 0.15215175800403813,
+                "last_observed_rss_bytes": 61419520,
+                "last_observed_hwm_bytes": 61419520,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 1,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 3,
+                "external_sampler_seconds": 0.15215175800403813,
+                "last_observed_rss_bytes": 61419520,
+                "last_observed_hwm_bytes": 61419520,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 2,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 3,
+                "external_sampler_seconds": 0.15215175800403813,
+                "last_observed_rss_bytes": 61419520,
+                "last_observed_hwm_bytes": 61419520,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 10,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 4,
+                "external_sampler_seconds": 0.20242969500395702,
+                "last_observed_rss_bytes": 91115520,
+                "last_observed_hwm_bytes": 91115520,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 50,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 5,
+                "external_sampler_seconds": 0.2527243590011494,
+                "last_observed_rss_bytes": 91119616,
+                "last_observed_hwm_bytes": 91119616,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 100,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 6,
+                "external_sampler_seconds": 0.30306445300084306,
+                "last_observed_rss_bytes": 91119616,
+                "last_observed_hwm_bytes": 91119616,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 250,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 10,
+                "external_sampler_seconds": 0.5042618020015652,
+                "last_observed_rss_bytes": 91127808,
+                "last_observed_hwm_bytes": 91127808,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 500,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 16,
+                "external_sampler_seconds": 0.8059307709991117,
+                "last_observed_rss_bytes": 91549696,
+                "last_observed_hwm_bytes": 91549696,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": "closed",
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 3922,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 39788
+                },
+                "kernel_heap_estimates": 3489918,
+                "external_sampler_observations": 16,
+                "external_sampler_seconds": 0.8059307709991117,
+                "last_observed_rss_bytes": 91549696,
+                "last_observed_hwm_bytes": 91549696,
+                "rss_is_asynchronous_external_observation": true
+              }
+            ],
+            "current_keys_present_previous_unique_absent": true,
+            "exact_hashes_and_versions": true,
+            "hover_outcomes": {
+              "incomplete": 500
+            },
+            "incomplete_completion_count": 500,
+            "authoritative_structure_field_hover_claimed": false,
+            "close_restores_saved": true,
+            "fresh_session": true,
+            "same_session_through_all_edits": true,
+            "native_type_arena_count_available": false,
+            "interner_leak_or_rss_regression_claimed": false,
+            "peak_observed_rss_bytes": 91549696,
+            "peak_observed_hwm_bytes": 91549696
+          },
+          {
+            "arm": "constant-key-control",
+            "locale": "en-US",
+            "profile": "semantic",
+            "cycles": 500,
+            "fixed_draft_bytes": 127,
+            "fixed_completion_character_offset": 97,
+            "median_cycle_seconds": 0.000976391998847248,
+            "samples": [
+              {
+                "label": "initialized",
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 0,
+                  "module_text_bytes": 0,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 0
+                },
+                "kernel_heap_estimates": 3293667,
+                "external_sampler_observations": 3,
+                "external_sampler_seconds": 0.15201796399924206,
+                "last_observed_rss_bytes": 60854272,
+                "last_observed_hwm_bytes": 60854272,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 1,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 3,
+                "external_sampler_seconds": 0.15201796399924206,
+                "last_observed_rss_bytes": 60854272,
+                "last_observed_hwm_bytes": 60854272,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 2,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 4,
+                "external_sampler_seconds": 0.2024906739970902,
+                "last_observed_rss_bytes": 90861568,
+                "last_observed_hwm_bytes": 90861568,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 10,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 4,
+                "external_sampler_seconds": 0.2024906739970902,
+                "last_observed_rss_bytes": 90861568,
+                "last_observed_hwm_bytes": 90861568,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 50,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 5,
+                "external_sampler_seconds": 0.2527050680000684,
+                "last_observed_rss_bytes": 90865664,
+                "last_observed_hwm_bytes": 90865664,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 100,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 6,
+                "external_sampler_seconds": 0.30291647499689134,
+                "last_observed_rss_bytes": 90865664,
+                "last_observed_hwm_bytes": 90865664,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 250,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 9,
+                "external_sampler_seconds": 0.453667301000678,
+                "last_observed_rss_bytes": 90865664,
+                "last_observed_hwm_bytes": 90865664,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": 500,
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 127,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 35993
+                },
+                "kernel_heap_estimates": 3486123,
+                "external_sampler_observations": 15,
+                "external_sampler_seconds": 0.7551524649970816,
+                "last_observed_rss_bytes": 90865664,
+                "last_observed_hwm_bytes": 90865664,
+                "rss_is_asynchronous_external_observation": true
+              },
+              {
+                "label": "closed",
+                "resources": {
+                  "max_source_bytes": 268435456,
+                  "metadata_source_bytes": 35866,
+                  "module_text_bytes": 3922,
+                  "query_text_bytes": 0,
+                  "total_source_bytes": 39788
+                },
+                "kernel_heap_estimates": 3489918,
+                "external_sampler_observations": 15,
+                "external_sampler_seconds": 0.7551524649970816,
+                "last_observed_rss_bytes": 90865664,
+                "last_observed_hwm_bytes": 90865664,
+                "rss_is_asynchronous_external_observation": true
+              }
+            ],
+            "current_keys_present_previous_unique_absent": true,
+            "exact_hashes_and_versions": true,
+            "hover_outcomes": {
+              "incomplete": 500
+            },
+            "incomplete_completion_count": 500,
+            "authoritative_structure_field_hover_claimed": false,
+            "close_restores_saved": true,
+            "fresh_session": true,
+            "same_session_through_all_edits": true,
+            "native_type_arena_count_available": false,
+            "interner_leak_or_rss_regression_claimed": false,
+            "peak_observed_rss_bytes": 90865664,
+            "peak_observed_hwm_bytes": 90865664
+          }
+        ],
+        "owned_children": 2,
+        "owned_reaped": 2,
+        "natural_exits": 2,
+        "external_guard_stops": 0,
+        "peak_observed_rss_bytes": 91549696,
+        "peak_observed_hwm_bytes": 91549696,
+        "full_project_bytes_modes_mtimes_preserved": true,
+        "copied_projects": 0,
+        "native_databases_created": 0,
+        "native_platform_invoked": false,
+        "physical_human_typing": false,
+        "os_cache_flushed": false,
+        "external_probe_rss_limit_bytes": 1610612736,
+        "external_probe_wall_limit_seconds": 60,
+        "product_hard_rss_budget_claimed": false,
+        "memory_estimates_complete": false,
+        "mvp_complete": false,
+        "workload": "equal-size-structure-key-vs-comment-control",
+        "requested_cycles": 500,
+        "interner_growth_directly_measured": false,
+        "product_memory_regression_claimed": false
+      }
+    },
+    "zero_source_checker_machine_output_equal_between_locales": true
+  },
+  "fixed_large_cf": {
+    "saved_ide": {
+      "schema_version": 1,
+      "probe_completed": true,
+      "mode": "full",
+      "cases": [
+        {
+          "locale": "en-US",
+          "attempts": 1,
+          "saved_only": true,
+          "general_semantics_claimed": false,
+          "memory_before": {
+            "label": "before",
+            "resources": {
+              "max_source_bytes": 268435456,
+              "metadata_source_bytes": 0,
+              "module_text_bytes": 0,
+              "query_text_bytes": 0,
+              "total_source_bytes": 0
+            },
+            "kernel_heap_estimates": 3293667
+          },
+          "seconds": 14.403879640995001,
+          "outcome": "response",
+          "coverage": {
+            "metadata_inputs_complete": true,
+            "metadata_models_complete": false,
+            "module_inputs_complete": true,
+            "module_syntax_complete": true,
+            "semantic_complete": false,
+            "semantic_profile_complete": false
+          },
+          "finding_count": 19,
+          "memory_after": {
+            "label": "after",
+            "resources": {
+              "max_source_bytes": 268435456,
+              "metadata_source_bytes": 172499300,
+              "module_text_bytes": 69553466,
+              "query_text_bytes": 0,
+              "total_source_bytes": 242052766
+            },
+            "kernel_heap_estimates": 120595366
+          }
+        },
+        {
+          "locale": "ru-RU",
+          "attempts": 1,
+          "saved_only": true,
+          "general_semantics_claimed": false,
+          "memory_before": {
+            "label": "before",
+            "resources": {
+              "max_source_bytes": 268435456,
+              "metadata_source_bytes": 0,
+              "module_text_bytes": 0,
+              "query_text_bytes": 0,
+              "total_source_bytes": 0
+            },
+            "kernel_heap_estimates": 3293667
+          },
+          "seconds": 14.280921762001526,
+          "outcome": "response",
+          "coverage": {
+            "metadata_inputs_complete": true,
+            "metadata_models_complete": false,
+            "module_inputs_complete": true,
+            "module_syntax_complete": true,
+            "semantic_complete": false,
+            "semantic_profile_complete": false
+          },
+          "finding_count": 19,
+          "memory_after": {
+            "label": "after",
+            "resources": {
+              "max_source_bytes": 268435456,
+              "metadata_source_bytes": 172499300,
+              "module_text_bytes": 69553466,
+              "query_text_bytes": 0,
+              "total_source_bytes": 242052766
+            },
+            "kernel_heap_estimates": 120595366
+          }
+        }
+      ],
+      "owned_children": 2,
+      "owned_reaped": 2,
+      "natural_exits": 2,
+      "external_guard_stops": 0,
+      "peak_observed_rss_bytes": 426926080,
+      "peak_observed_hwm_bytes": 426926080,
+      "full_project_bytes_modes_mtimes_preserved": true,
+      "copied_projects": 0,
+      "native_databases_created": 0,
+      "native_platform_invoked": false,
+      "physical_human_typing": false,
+      "os_cache_flushed": false,
+      "external_probe_rss_limit_bytes": 1610612736,
+      "external_probe_wall_limit_seconds": 330,
+      "product_hard_rss_budget_claimed": false,
+      "memory_estimates_complete": false,
+      "mvp_complete": false,
+      "product_request_timeout_seconds": 300,
+      "external_wall_guard_seconds": 330,
+      "target_is_exact_previously_failing_module": true
+    },
+    "default_checker": {
+      "schema_version": 1,
+      "probe_completed": true,
+      "mode": "checker-full",
+      "cases": [
+        {
+          "locale": "en-US",
+          "attempts": 1,
+          "same_saved_profile_parity": "target_hash_profile_hash_and_findings_equal",
+          "general_semantics_claimed": false,
+          "outcome": "response",
+          "exit_code": 2,
+          "status": "incomplete",
+          "coverage": {
+            "binary_modules": 0,
+            "checked_modules": 1992,
+            "metadata_inputs_complete": true,
+            "metadata_models_complete": false,
+            "metadata_owners": 3617,
+            "modules": 1992,
+            "semantic_profile_complete": false,
+            "syntax_complete": true,
+            "unavailable_modules": 0,
+            "unchecked_modules": 0
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 173379296,
+            "module_text_bytes": 69553466,
+            "query_text_bytes": 0,
+            "total_source_bytes": 242932762
+          }
+        },
+        {
+          "locale": "ru-RU",
+          "attempts": 1,
+          "same_saved_profile_parity": "target_hash_profile_hash_and_findings_equal",
+          "general_semantics_claimed": false,
+          "outcome": "response",
+          "exit_code": 2,
+          "status": "incomplete",
+          "coverage": {
+            "binary_modules": 0,
+            "checked_modules": 1992,
+            "metadata_inputs_complete": true,
+            "metadata_models_complete": false,
+            "metadata_owners": 3617,
+            "modules": 1992,
+            "semantic_profile_complete": false,
+            "syntax_complete": true,
+            "unavailable_modules": 0,
+            "unchecked_modules": 0
+          },
+          "resources": {
+            "max_source_bytes": 268435456,
+            "metadata_source_bytes": 173379296,
+            "module_text_bytes": 69553466,
+            "query_text_bytes": 0,
+            "total_source_bytes": 242932762
+          }
+        }
+      ],
+      "owned_children": 2,
+      "owned_reaped": 2,
+      "natural_exits": 2,
+      "external_guard_stops": 0,
+      "peak_observed_rss_bytes": 1073262592,
+      "peak_observed_hwm_bytes": 1073262592,
+      "full_project_bytes_modes_mtimes_preserved": true,
+      "copied_projects": 0,
+      "native_databases_created": 0,
+      "native_platform_invoked": false,
+      "physical_human_typing": false,
+      "os_cache_flushed": false,
+      "external_probe_rss_limit_bytes": 1610612736,
+      "external_probe_wall_limit_seconds": 330,
+      "product_hard_rss_budget_claimed": false,
+      "memory_estimates_complete": false,
+      "mvp_complete": false,
+      "product_request_timeout_seconds": 300,
+      "external_wall_guard_seconds": 330,
+      "target_is_exact_previously_failing_module": true
+    },
+    "target_parity": [
+      {
+        "locale": "en-US",
+        "target_findings": 19,
+        "original_metadata_rule_retained": true,
+        "exact_code_severity_byte_span_parity": true,
+        "source_and_settings_hashes_equal": true
+      },
+      {
+        "locale": "ru-RU",
+        "target_findings": 19,
+        "original_metadata_rule_retained": true,
+        "exact_code_severity_byte_span_parity": true,
+        "source_and_settings_hashes_equal": true
+      }
+    ],
+    "full_checker_machine_output_equal_between_locales": true
+  },
+  "disk_cleanup": {
+    "removed_runtime_databases": 182,
+    "removed_generated_directories": 16,
+    "actual_cleanup_free_increase_bytes": 8938754048,
+    "final_verification": {
+      "expected_databases": 4,
+      "found_databases": 4,
+      "matched_databases": 4,
+      "unexpected_databases": 0,
+      "free_bytes": 255025172480,
+      "errors": 0
+    }
+  },
+  "limits": {
+    "product_hard_rss_limit": false,
+    "heap_estimate_complete": false,
+    "large_configured_cfe_accepted": false,
+    "physical_human_typing": false,
+    "native_platform_invoked_by_runtime_probes": false,
+    "copied_large_projects": 0,
+    "mvp_complete": false
+  }
+}

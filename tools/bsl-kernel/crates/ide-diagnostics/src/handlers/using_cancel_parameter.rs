@@ -1,0 +1,221 @@
+use crate::define_metadata;
+use crate::metadata::*;
+use crate::AnalysisContext;
+use crate::{Diagnostic, DiagnosticCode};
+use hir::LocalRange;
+
+pub const METADATA: DiagnosticMetadata = define_metadata! {
+    diagnostic_type: DiagnosticType::CodeSmell,
+    severity: DiagnosticSeverityLevel::Major,
+    scope: DiagnosticScope::Bsl,
+    modules: &[],
+    minutes_to_fix: 10,
+    activated_by_default: true,
+    compatibility_mode: DiagnosticCompatibilityMode::Undefined,
+    tags: &[MetadataTag::Standard, MetadataTag::Badpractice],
+    can_locate_on_project: false,
+    extra_min_for_complexity: 0.0,
+    lsp_severity_override: "",
+};
+
+pub fn from_hir(range: LocalRange, ctx: &AnalysisContext) -> Option<Diagnostic<LocalRange>> {
+    crate::simple_hir_diagnostic(
+        DiagnosticCode::UsingCancelParameter,
+        "Неправильное использование параметра \"Отказ\"",
+        range,
+        ctx,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::test_utils::check_diagnostics_snapshot_for;
+    use crate::DiagnosticCode;
+    use expect_test::expect;
+    #[test]
+    fn test_cancel_assign_false() {
+        let code = r#"Процедура Обработчик(Отказ)
+    Отказ = Ложь;
+КонецПроцедуры"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::UsingCancelParameter,
+            expect![[r#"
+            UsingCancelParameter @ 2:5..2:18
+              message: Неправильное использование параметра "Отказ"
+              severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_cancel_assign_true_ok() {
+        let code = r#"Процедура Обработчик(Отказ)
+    Отказ = Истина;
+КонецПроцедуры"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::UsingCancelParameter,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_cancel_or_expr_ok() {
+        let code = r#"Процедура Обработчик(Отказ)
+    Отказ = Отказ ИЛИ НашаПроверка();
+КонецПроцедуры"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::UsingCancelParameter,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_cancel_expr_or_cancel_ok() {
+        let code = r#"Процедура Обработчик(Отказ)
+    Отказ = НашаПроверка() ИЛИ Отказ;
+КонецПроцедуры"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::UsingCancelParameter,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_cancel_and_not_allowed() {
+        let code = r#"Процедура Обработчик(Отказ)
+    Отказ = Отказ И НашаПроверка();
+КонецПроцедуры"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::UsingCancelParameter,
+            expect![[r#"
+            UsingCancelParameter @ 2:5..2:36
+              message: Неправильное использование параметра "Отказ"
+              severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_cancel_method_call() {
+        let code = r#"Процедура Обработчик(Отказ)
+    Отказ = Метод(Отказ);
+КонецПроцедуры"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::UsingCancelParameter,
+            expect![[r#"
+            UsingCancelParameter @ 2:5..2:26
+              message: Неправильное использование параметра "Отказ"
+              severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_no_cancel_param_no_diagnostic() {
+        let code = r#"Процедура Обработчик(Параметр)
+    Отказ = Ложь;
+КонецПроцедуры"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::UsingCancelParameter,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_fixture_using_cancel_parameter() {
+        let code = r#"Функция Обработчик(Параметр1, Параметр2, Отказ, Параметр4)
+    Отказ = Истина;
+    Возврат А;
+КонецФункции
+
+Функция Обработчик(Параметр21, Параметр22, ОТказ, Параметр24)
+    Если Истина Тогда
+        ОТказ = Ложь; //Раз
+        F =1;
+    КонецЕсли;
+    Возврат А;
+КонецФункции
+
+Функция Обработчик(Параметр31, Параметр32, cancEl = Ложь, Параметр34)
+    canceL = Метод(cancel); //Два
+    F =1;
+    Возврат А;
+КонецФункции
+
+Функция Обработчик(Параметр41, Параметр42, Параметр43)
+    Отказ = Ложь;
+    Если  Метод(Отказ) Тогда
+        Отказ = Истина;
+    КонецЕсли;
+     F = Истина;
+    Возврат А;
+КонецФункции
+
+Функция Обработчик(Параметр51, Параметр52, Параметр53)
+    Отказ = Ложь;
+    Отказ = Метод(Отказ); //Три
+    Возврат А;
+КонецФункции
+
+Функция Обработчик(Параметр61, Параметр62, Параметр63)
+    Отказ = Метод(Отказ);
+    Возврат А;
+КонецФункции
+
+Функция Обработчик(Параметр71, Параметр72, Отказ, Параметр73)
+    Отказ = Отказ ИЛИ ОбработатьПараметрыЗапуска(ПараметрыЗапуска);
+    Отказ = ОбработатьПараметрыЗапуска(ПараметрыЗапуска) ИЛИ Отказ;
+    Отказ = ОбработатьПараметрыЗапуска(ПараметрыЗапуска) = Отказ;
+    Отказ = ОбработатьПараметрыЗапуска(ПараметрыЗапуска) И Отказ;
+    Отказ = Отказ И ОбработатьПараметрыЗапуска(ПараметрыЗапуска);
+    Отказ = ОбработатьПараметрыЗапуска(ПараметрыЗапуска) И А И Отказ;
+
+    Отказ = (ОбработатьПараметрыЗапуска(ПараметрыЗапуска) И А) ИЛИ отказ;
+    Отказ = Отказ ИЛИ (ОбработатьПараметрыЗапуска(ПараметрыЗапуска) И А);
+
+    Возврат А;
+КонецФункции
+
+
+Процедура Запуститься(т, 0)
+КонецПроцедуры
+
+
+"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::UsingCancelParameter,
+            expect![[r#"
+            UsingCancelParameter @ 8:9..8:22
+              message: Неправильное использование параметра "Отказ"
+              severity: Warning
+            UsingCancelParameter @ 15:5..15:28
+              message: Неправильное использование параметра "Отказ"
+              severity: Warning
+            UsingCancelParameter @ 43:5..43:66
+              message: Неправильное использование параметра "Отказ"
+              severity: Warning
+            UsingCancelParameter @ 44:5..44:66
+              message: Неправильное использование параметра "Отказ"
+              severity: Warning
+            UsingCancelParameter @ 45:5..45:66
+              message: Неправильное использование параметра "Отказ"
+              severity: Warning
+            UsingCancelParameter @ 46:5..46:70
+              message: Неправильное использование параметра "Отказ"
+              severity: Warning"#]],
+        );
+    }
+}

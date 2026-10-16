@@ -1,0 +1,518 @@
+use crate::define_metadata;
+use crate::metadata::*;
+use crate::AnalysisContext;
+use crate::{Diagnostic, DiagnosticCode};
+use hir::LocalRange;
+
+pub const METADATA: DiagnosticMetadata = define_metadata! {
+    diagnostic_type: DiagnosticType::SecurityHotspot,
+    severity: DiagnosticSeverityLevel::Major,
+    scope: DiagnosticScope::Bsl,
+    modules: &[],
+    minutes_to_fix: 5,
+    activated_by_default: true,
+    compatibility_mode: DiagnosticCompatibilityMode::Undefined,
+    tags: &[MetadataTag::Suspicious],
+    can_locate_on_project: false,
+    extra_min_for_complexity: 0.0,
+    lsp_severity_override: "",
+};
+
+pub fn from_hir(range: LocalRange, ctx: &AnalysisContext) -> Option<Diagnostic<LocalRange>> {
+    crate::simple_hir_diagnostic(
+        DiagnosticCode::ExternalAppStarting,
+        "External application launch detected",
+        range,
+        ctx,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::test_utils::{
+        check_diagnostics_snapshot_for, check_hir_diagnostic_with_fixtures,
+        check_hir_diagnostic_with_unreadable,
+    };
+    use crate::DiagnosticCode;
+    use expect_test::expect;
+
+    const FILE_SYSTEM_CLIENT_MODULE: &str = r#"
+//- /CommonModules/ФайловаяСистемаКлиент/Ext/Module.bsl
+Процедура ОткрытьФайл(Путь) Экспорт
+КонецПроцедуры
+
+Процедура ЗапуститьПрограмму(Команда) Экспорт
+КонецПроцедуры
+"#;
+
+    fn fires_in_configuration(body: &str) -> bool {
+        let fixture = format!("{FILE_SYSTEM_CLIENT_MODULE}\n//- /test.bsl\n{body}");
+        check_hir_diagnostic_with_fixtures(&fixture)
+            .iter()
+            .any(|d| d.code == DiagnosticCode::ExternalAppStarting)
+    }
+
+    /// Положительный контроль всей правки: модуль назван прямо.
+    #[test]
+    fn module_named_directly_detected() {
+        assert!(fires_in_configuration(
+            "Процедура Тест()\n    ФайловаяСистемаКлиент.ОткрытьФайл(Путь);\nКонецПроцедуры",
+        ));
+    }
+
+    /// Модуль, положенный в переменную: сегодня пропуск, после переноса — нет.
+    #[test]
+    fn module_through_variable_detected() {
+        assert!(fires_in_configuration(
+            "Процедура Тест()\n    ФС = ФайловаяСистемаКлиент;\n    ФС.ОткрытьФайл(Путь);\nКонецПроцедуры",
+        ));
+    }
+
+    /// Поле с именем модуля модулем не является.
+    #[test]
+    fn module_name_as_field_not_detected() {
+        assert!(!fires_in_configuration(
+            "Процедура Тест(Структура)\n    Структура.ФайловаяСистемаКлиент.ОткрытьФайл(Путь);\nКонецПроцедуры",
+        ));
+    }
+
+    /// Владелец не тот: инвариант этапа 0 не должен сломаться при переносе.
+    #[test]
+    fn wrong_owner_not_detected() {
+        assert!(!fires_in_configuration(
+            "Процедура Тест()\n    ФайловаяСистема.ОткрытьФайл(Путь);\nКонецПроцедуры",
+        ));
+    }
+
+    /// Рабочая область есть, но модуля в ней нет — имя признаётся доказанно
+    /// отсутствующим. Замечание всё равно даётся: отсутствие имени не довод
+    /// в пользу того, что вызывают что-то другое.
+    #[test]
+    fn absent_module_still_detected_by_name() {
+        let fixture = r#"
+//- /CommonModules/Прочий/Ext/Module.bsl
+Процедура Что() Экспорт
+КонецПроцедуры
+
+//- /test.bsl
+Процедура Тест()
+    ФайловаяСистемаКлиент.ОткрытьФайл(Путь);
+    ЗаписьXML.ОткрытьФайл(Путь, "UTF-8");
+КонецПроцедуры
+"#;
+        let codes: Vec<_> = check_hir_diagnostic_with_fixtures(fixture)
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::ExternalAppStarting)
+            .collect();
+        assert_eq!(codes.len(), 1, "ожидался ровно вызов модуля, не сериализатор: {codes:?}");
+    }
+
+    /// Нечитаемое тело постороннего общего модуля не должно гасить вердикт
+    /// о голом запуске: это суждение об имени, а не о контракте аргументов.
+    #[test]
+    fn bare_call_survives_unreadable_global_module() {
+        let fixture = r#"
+//- /CommonModules/Глобальный/Ext/Module.bsl
+
+//- /test.bsl
+Процедура Тест()
+    КомандаСистемы("cmd");
+КонецПроцедуры
+"#;
+        let diagnostics = check_hir_diagnostic_with_unreadable(
+            fixture,
+            &["/CommonModules/Глобальный/Ext/Module.bsl"],
+        );
+        assert!(diagnostics.iter().any(|d| d.code == DiagnosticCode::ExternalAppStarting));
+    }
+
+    #[test]
+    fn test_global_methods_detected() {
+        let code = r#"
+Процедура Метод()
+    СтрокаКоманды = "";
+    ТекущийКаталог = "";
+    ДождатьсяЗавершения = Истина;
+    ОписаниеОповещения = Неопределено;
+
+    КомандаСистемы(СтрокаКоманды, ТекущийКаталог);
+    ЗапуститьПриложение(СтрокаКоманды, ТекущийКаталог);
+    ЗапуститьПриложение(СтрокаКоманды, ТекущийКаталог, Истина);
+    НачатьЗапускПриложения(ОписаниеОповещения, СтрокаКоманды, ТекущийКаталог, ДождатьсяЗавершения);
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 8:5..8:19
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 9:5..9:24
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 10:5..10:24
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 11:5..11:27
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_run_program_methods_detected() {
+        let code = r#"
+Процедура Метод()
+    СтрокаКоманды = "";
+    ПараметрыКоманды = Новый Структура;
+
+    ФайловаяСистемаКлиент.ЗапуститьПрограмму("ping 127.0.0.1 -n 5", ПараметрыКоманды);
+    ФайловаяСистемаКлиент.ЗапуститьПрограмму(СтрокаКоманды, ПараметрыКоманды);
+    ФайловаяСистема.ЗапуститьПрограмму(СтрокаКоманды);
+    ФайловаяСистема.ЗапуститьПрограмму(СтрокаКоманды, ПараметрыКоманды);
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 6:5..6:45
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 7:5..7:45
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 8:5..8:39
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 9:5..9:39
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_open_explorer_and_file_detected() {
+        let code = r#"
+Процедура Метод()
+    СтрокаКоманды = "";
+    ОписаниеОповещения = Неопределено;
+
+    ФайловаяСистемаКлиент.ОткрытьПроводник("C:\Users");
+    ФайловаяСистемаКлиент.ОткрытьФайл(СтрокаКоманды);
+    ФайловаяСистемаКлиент.ОткрытьФайл(СтрокаКоманды, ОписаниеОповещения);
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 6:5..6:43
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 7:5..7:38
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 8:5..8:38
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_run_app_async_detected() {
+        let code = r#"
+&НаКлиенте
+Асинх Процедура Подключить()
+    СтрокаКоманды = "";
+    ТекущийКаталог = "";
+    ДождатьсяЗавершения = Истина;
+
+    Ждать ЗапуститьПриложениеАсинх(СтрокаКоманды, ТекущийКаталог, ДождатьсяЗавершения);
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 8:11..8:35
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_zapustit_sistemu_variants_detected() {
+        let code = r#"
+&НаКлиенте
+Процедура ПроверкаЗапуститьСистему()
+    ДополнительныеПараметрыКоманднойСтроки = "";
+    ДождатьсяЗавершения = Истина;
+    КодВозврата = Неопределено;
+
+    ЗапуститьСистему();
+    ЗапуститьСистему(ДополнительныеПараметрыКоманднойСтроки);
+    ЗапуститьСистему(ДополнительныеПараметрыКоманднойСтроки, ДождатьсяЗавершения);
+    ЗапуститьСистему(ДополнительныеПараметрыКоманднойСтроки, ДождатьсяЗавершения, КодВозврата);
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 8:5..8:21
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 9:5..9:21
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 10:5..10:21
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 11:5..11:21
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_global_call() {
+        let code = r#"
+Процедура Тест()
+    КомандаСистемы("cmd.exe");
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 3:5..3:19
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_object_method_call() {
+        let code = r#"
+Процедура Тест()
+    ФайловаяСистемаКлиент.ЗапуститьПрограмму("calc.exe");
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 3:5..3:45
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    /// `ОткрытьФайл` принадлежит общим модулям БСП, а не платформе; у девяти
+    /// платформенных сериализаторов метод с тем же именем открывает поток на
+    /// запись и никакого приложения не запускает.
+    #[test]
+    fn test_serializer_open_file_not_detected() {
+        let code = r#"
+Процедура Тест()
+    ЗаписьXML = Новый ЗаписьXML;
+    ЗаписьXML.ОткрытьФайл(Путь, "UTF-8");
+
+    ЧтениеXML = Новый ЧтениеXML;
+    ЧтениеXML.ОткрытьФайл(Путь);
+
+    ЗаписьHTML = Новый ЗаписьHTML;
+    ЗаписьHTML.ОткрытьФайл(Путь);
+
+    ЧтениеHTML = Новый ЧтениеHTML;
+    ЧтениеHTML.ОткрытьФайл(Путь);
+
+    ЗаписьJSON = Новый ЗаписьJSON;
+    ЗаписьJSON.ОткрытьФайл(Путь);
+
+    ЧтениеJSON = Новый ЧтениеJSON;
+    ЧтениеJSON.ОткрытьФайл(Путь);
+
+    ЗаписьFastInfoset = Новый ЗаписьFastInfoset;
+    ЗаписьFastInfoset.ОткрытьФайл(Путь);
+
+    ЧтениеFastInfoset = Новый ЧтениеFastInfoset;
+    ЧтениеFastInfoset.ОткрытьФайл(Путь);
+
+    БазаDBF = Новый xBase;
+    БазаDBF.ОткрытьФайл(Путь);
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(code, DiagnosticCode::ExternalAppStarting, expect![[r#""#]]);
+    }
+
+    #[test]
+    fn test_foreign_receiver_not_detected() {
+        let code = r#"
+Процедура Тест()
+    МойМодуль.ОткрытьФайл(Путь);
+    Обработчик.ЗапуститьПрограмму(Команда);
+    ПравилаОбмена.ОткрытьФайл(Путь);
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(code, DiagnosticCode::ExternalAppStarting, expect![[r#""#]]);
+    }
+
+    /// Устаревший модуль БСП, но вызов настоящий: файл открывается
+    /// ассоциированным приложением.
+    #[test]
+    fn test_legacy_file_module_detected() {
+        let code = r#"
+Процедура Тест()
+    РаботаСФайламиКлиент.ОткрытьФайл(Путь);
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 3:5..3:37
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    /// Голое имя метода общего модуля не принадлежит платформе: без получателя
+    /// это вызов чего-то своего.
+    #[test]
+    fn test_bare_module_method_not_detected() {
+        let code = r#"
+Процедура Тест()
+    ОткрытьФайл(Путь);
+    ЗапуститьПрограмму(Команда);
+    ОткрытьПроводник(Путь);
+КонецПроцедуры
+
+Процедура ОткрытьФайл(Путь)
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(code, DiagnosticCode::ExternalAppStarting, expect![[r#""#]]);
+    }
+
+    /// A variable is not a method: `КомандаСистемы(...)` looks among methods only, so a
+    /// parameter or a module `Перем` of that name leaves the call to the platform.
+    #[test]
+    fn test_variable_named_like_the_global_still_detected() {
+        let code = r#"
+Перем КомандаСистемы;
+
+Процедура Тест(ЗапуститьПриложение)
+    КомандаСистемы("cmd.exe");
+    ЗапуститьПриложение("calc.exe");
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 5:5..5:19
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 6:5..6:24
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    /// Owners are per method: a module that does not export the method cannot
+    /// be the one being called.
+    #[test]
+    fn test_module_without_the_method_not_detected() {
+        let code = r#"
+Процедура Тест()
+    ФайловаяСистема.ОткрытьФайл(Путь);
+    ФайловаяСистема.ОткрытьПроводник(Путь);
+    РаботаСФайламиКлиент.ЗапуститьПрограмму(Команда);
+    РаботаСФайламиКлиент.ОткрытьПроводник(Путь);
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(code, DiagnosticCode::ExternalAppStarting, expect![[r#""#]]);
+    }
+
+    /// Only a bare name identifies the module without types; anything richer
+    /// merely ends in a matching identifier.
+    #[test]
+    fn test_non_bare_receiver_not_detected() {
+        let code = r#"
+Процедура Тест()
+    Обернуть(ФайловаяСистема).ОткрытьФайл(Путь);
+    Массив[ФайловаяСистемаКлиент].ОткрытьФайл(Путь);
+    Структура.ФайловаяСистемаКлиент.ОткрытьФайл(Путь);
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(code, DiagnosticCode::ExternalAppStarting, expect![[r#""#]]);
+    }
+
+    #[test]
+    fn test_similar_name_ignored() {
+        let code = r#"
+Процедура Тест()
+    МойМодуль.ЗапуститьВнешнееПриложение("cmd");
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(code, DiagnosticCode::ExternalAppStarting, expect![[r#""#]]);
+    }
+
+    #[test]
+    fn test_english_keywords() {
+        let code = r#"
+Procedure Test()
+    System("cmd.exe");
+    RunApp("calc.exe");
+    RunSystem();
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 3:5..3:11
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 4:5..4:11
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 5:5..5:14
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_case_insensitive() {
+        let code = r#"
+Процедура Тест()
+    КОМАНДАСИСТЕМЫ("cmd");
+    ЗАПУСТИТЬПриложение("app");
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::ExternalAppStarting,
+            expect![[r#"
+                ExternalAppStarting @ 3:5..3:19
+                  message: External application launch detected
+                  severity: Warning
+                ExternalAppStarting @ 4:5..4:24
+                  message: External application launch detected
+                  severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_no_args_not_detected() {
+        let code = r#"
+Процедура Тест()
+    Переменная = КомандаСистемы;
+КонецПроцедуры
+"#;
+        check_diagnostics_snapshot_for(code, DiagnosticCode::ExternalAppStarting, expect![[r#""#]]);
+    }
+}

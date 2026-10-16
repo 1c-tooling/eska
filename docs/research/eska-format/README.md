@@ -62,6 +62,9 @@ hashes, общий reserve и replay после отказа квоты на RU/
 3617 owners, холодное/тёплое открытие и 500 current field updates на RU/EN,
 отдельный RSS и quota/replay. Большой настроенный CFE/base и общий RSS budget
 остаются отдельной приёмкой.
+[Unicode metadata ranges](analyzer-unicode-ranges.md) исправляют падение полного
+checker на кириллице/BOM. Все 1992 BSL modules большого CF обработаны на RU/EN,
+выбранный модуль совпал с IDE; exit 2 сохраняет явную неполноту моделей.
 [Kernel owners](canonical-module-owners.md) берут object/register/common/service
 metadata из текущих slots без XML fallback.
 [CF/CFE composition](analyzer-cf-cfe-composition.md) связывает явные source roots

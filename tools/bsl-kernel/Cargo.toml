@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/base-db", "crates/bsl-metadata", "crates/hir-ty", "crates/hir-def", "crates/ide-db", "crates/parser-error", "crates/parser", "crates/sdbl-hir", "crates/ide"]
+members = ["crates/base-db", "crates/bsl-metadata", "crates/hir-ty", "crates/hir-def", "crates/ide-db", "crates/parser-error", "crates/parser", "crates/sdbl-hir", "crates/ide", "crates/ide-diagnostics"]
 
 [workspace.package]
 version = "0.2.85"
@@ -24,17 +24,19 @@ dashmap = "5.5"
 dataflow = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 elsa = "1.10"
 expect-test = "1.4"
+fixedbitset = "0.5"
 hir = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 hir-def = { path = "crates/hir-def" }
 hir-ty = { path = "crates/hir-ty" }
 ide = { path = "crates/ide" }
 ide-db = { path = "crates/ide-db" }
 ide-assists = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
-ide-diagnostics = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
+ide-diagnostics = { path = "crates/ide-diagnostics" }
 code-chunk = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 symbol-info = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 indexmap = "2.1"
 intern = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
+itertools = "0.12"
 la-arena = "0.3"
 lexer = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 line-index = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
@@ -45,6 +47,7 @@ parser = { path = "crates/parser" }
 parser-error = { path = "crates/parser-error" }
 project-model = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 rayon = "1.8"
+regex = "1.10"
 rustc-hash = "2.0"
 salsa = { version = "=0.28.2", features = ["rayon", "macros", "salsa_unstable"] }
 sdbl-hir = { path = "crates/sdbl-hir" }
@@ -54,6 +57,8 @@ triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
 nucleo-matcher = "0.3"
 smol_str = "0.3.2"
 smallvec = "1.13"
+spellbook = "0.4"
+strum = { version = "0.26", features = ["derive"] }
 text-size = "1.1"
 stdx = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
 syntax = { git = "https://github.com/1c-tooling/bsl-analyzer.git", rev = "9021ba07471eee8a2614bed2105a2c8699f60780" }
@@ -71,6 +76,7 @@ hir-ty = { path = "crates/hir-ty" }
 hir-def = { path = "crates/hir-def" }
 ide-db = { path = "crates/ide-db" }
 ide = { path = "crates/ide" }
+ide-diagnostics = { path = "crates/ide-diagnostics" }
 parser-error = { path = "crates/parser-error" }
 parser = { path = "crates/parser" }
 sdbl-hir = { path = "crates/sdbl-hir" }

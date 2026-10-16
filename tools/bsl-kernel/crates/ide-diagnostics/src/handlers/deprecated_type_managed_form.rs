@@ -1,0 +1,201 @@
+use crate::AnalysisContext;
+use crate::{Diagnostic, DiagnosticCode};
+use bsl_platform::deprecation::DeprecationEntry;
+use hir::LocalRange;
+
+use super::deprecated_platform_facts::{
+    canonical_name_for, is_russian_alias, managed_form_type_fact, replacement_for_name,
+};
+
+pub fn from_hir(
+    type_name: &str,
+    range: LocalRange,
+    ctx: &AnalysisContext,
+) -> Option<Diagnostic<LocalRange>> {
+    let code = DiagnosticCode::DeprecatedPlatformApi;
+
+    if ctx.is_disabled_with_metadata(code) {
+        return None;
+    }
+
+    let fact = managed_form_type_fact(type_name)?;
+    let message = get_message(type_name, fact)?;
+
+    Some(Diagnostic {
+        code,
+        message,
+        severity: ctx.severity(code),
+        range,
+        tags: ctx.tags(code),
+        fixes: vec![],
+    })
+}
+
+fn get_message(arg_value: &str, fact: &DeprecationEntry) -> Option<String> {
+    let replacement = replacement_for_name(fact, arg_value)?;
+    let deprecated = canonical_name_for(fact, arg_value)?;
+    if is_russian_alias(fact, arg_value) {
+        Some(format!(
+            "Использование устаревшего типа \"{}\". Рекомендуется использовать \"{}\"",
+            deprecated, replacement
+        ))
+    } else {
+        Some(format!(
+            "Usage of deprecated type \"{}\". Recommended to use \"{}\"",
+            deprecated, replacement
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::*;
+    use crate::Severity;
+    use expect_test::expect;
+    #[test]
+    fn test_deprecated_type_russian() {
+        let code = r#"
+Процедура Тест()
+    Если ТипЗнч(Форма) = Тип("УправляемаяФорма") Тогда
+        Возврат;
+    КонецЕсли;
+КонецПроцедуры
+"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let deprecated_diags: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::DeprecatedPlatformApi)
+            .collect();
+
+        expect![[r#"
+            DeprecatedPlatformApi @ 3:30..3:48
+              message: Использование устаревшего типа "УправляемаяФорма". Рекомендуется использовать "ФормаКлиентскогоПриложения"
+              severity: Warning"#]].assert_eq(&format_diags(code, &deprecated_diags));
+        assert_eq!(deprecated_diags[0].severity, Severity::Warning);
+        assert!(deprecated_diags[0].message.contains("УправляемаяФорма"));
+    }
+
+    #[test]
+    fn test_deprecated_type_english() {
+        let code = r#"
+Procedure Test()
+    If TypeOf(Form) = Type("ManagedForm") Then
+        Return;
+    EndIf;
+EndProcedure
+"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let deprecated_diags: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::DeprecatedPlatformApi)
+            .collect();
+
+        expect![[r#"
+            DeprecatedPlatformApi @ 3:28..3:41
+              message: Usage of deprecated type "ManagedForm". Recommended to use "ClientApplicationForm"
+              severity: Warning"#]].assert_eq(&format_diags(code, &deprecated_diags));
+        assert!(deprecated_diags[0].message.contains("ManagedForm"));
+    }
+
+    #[test]
+    fn test_string_literal_not_detected() {
+        let code = r#"
+Процедура Тест()
+    Представление = "УправляемаяФорма";
+КонецПроцедуры
+"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let deprecated_diags: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::DeprecatedPlatformApi)
+            .collect();
+
+        expect![[r#""#]].assert_eq(&format_diags(code, &deprecated_diags));
+    }
+
+    #[test]
+    fn test_case_insensitive() {
+        let code = r#"
+Процедура Тест()
+    Т1 = ТИП("УПРАВЛЯЕМАЯФОРМА");
+    Т2 = тип("управляемаяформа");
+    Т3 = Тип("УправляемаяФорма");
+    Т4 = TYPE("MANAGEDFORM");
+    Т5 = type("managedform");
+    Т6 = Type("ManagedForm");
+КонецПроцедуры
+"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let deprecated_diags: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::DeprecatedPlatformApi)
+            .collect();
+
+        expect![[r#"
+            DeprecatedPlatformApi @ 3:14..3:32
+              message: Использование устаревшего типа "УправляемаяФорма". Рекомендуется использовать "ФормаКлиентскогоПриложения"
+              severity: Warning
+            DeprecatedPlatformApi @ 4:14..4:32
+              message: Использование устаревшего типа "УправляемаяФорма". Рекомендуется использовать "ФормаКлиентскогоПриложения"
+              severity: Warning
+            DeprecatedPlatformApi @ 5:14..5:32
+              message: Использование устаревшего типа "УправляемаяФорма". Рекомендуется использовать "ФормаКлиентскогоПриложения"
+              severity: Warning
+            DeprecatedPlatformApi @ 6:15..6:28
+              message: Usage of deprecated type "ManagedForm". Recommended to use "ClientApplicationForm"
+              severity: Warning
+            DeprecatedPlatformApi @ 7:15..7:28
+              message: Usage of deprecated type "ManagedForm". Recommended to use "ClientApplicationForm"
+              severity: Warning
+            DeprecatedPlatformApi @ 8:15..8:28
+              message: Usage of deprecated type "ManagedForm". Recommended to use "ClientApplicationForm"
+              severity: Warning"#]].assert_eq(&format_diags(code, &deprecated_diags));
+    }
+
+    #[test]
+    fn test_russian_in_if_triggers_string_literal_does_not() {
+        let code = r#"Процедура Тест()
+    Если ТипЗнч(Форма) = Тип("УправляемаяФорма") Тогда
+        Возврат;
+    КонецЕсли;
+КонецПроцедуры
+
+Процедура Тест2()
+    Представление = "УправляемаяФорма";
+КонецПроцедуры
+"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let diags: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::DeprecatedPlatformApi)
+            .collect();
+
+        expect![[r#"
+            DeprecatedPlatformApi @ 2:30..2:48
+              message: Использование устаревшего типа "УправляемаяФорма". Рекомендуется использовать "ФормаКлиентскогоПриложения"
+              severity: Warning"#]].assert_eq(&format_diags(code, &diags));
+        assert!(diags[0].message.contains("УправляемаяФорма"));
+    }
+
+    #[test]
+    fn test_english_in_if_triggers() {
+        let code = r#"Procedure Test()
+    If TypeOf(Form) = Type("ManagedForm") Then
+        Return;
+    EndIf;
+EndProcedure
+"#;
+        let diagnostics = check_hir_diagnostic(code);
+        let diags: Vec<_> = diagnostics
+            .into_iter()
+            .filter(|d| d.code == DiagnosticCode::DeprecatedPlatformApi)
+            .collect();
+
+        expect![[r#"
+            DeprecatedPlatformApi @ 2:28..2:41
+              message: Usage of deprecated type "ManagedForm". Recommended to use "ClientApplicationForm"
+              severity: Warning"#]].assert_eq(&format_diags(code, &diags));
+        assert!(diags[0].message.contains("ManagedForm"));
+    }
+}

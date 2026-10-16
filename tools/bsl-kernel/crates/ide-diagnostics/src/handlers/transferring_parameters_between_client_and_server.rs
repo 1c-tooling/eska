@@ -1,0 +1,299 @@
+use crate::define_metadata;
+use crate::metadata::*;
+use crate::{Diagnostic, DiagnosticCode, DiagnosticsContext};
+use hir::call_graph::{CallTarget, CallerId, EdgeKind};
+use hir::{AnnotationKind, Expr, IdConversion, Stmt};
+use rustc_hash::FxHashSet;
+use stdx::case::CaseExt;
+
+pub const METADATA: DiagnosticMetadata = define_metadata! {
+    diagnostic_type: DiagnosticType::CodeSmell,
+    severity: DiagnosticSeverityLevel::Major,
+    scope: DiagnosticScope::Bsl,
+    modules: &[],
+    minutes_to_fix: 2,
+    activated_by_default: true,
+    compatibility_mode: DiagnosticCompatibilityMode::Undefined,
+    tags: &[MetadataTag::Badpractice, MetadataTag::Performance, MetadataTag::Standard],
+    can_locate_on_project: false,
+    extra_min_for_complexity: 0.0,
+    lsp_severity_override: "",
+    clean_code_attribute: CleanCodeAttribute::Adaptable,
+};
+
+const SERVER_ANNOTATIONS: &[AnnotationKind] =
+    &[AnnotationKind::AtServer, AnnotationKind::AtServerNoContext];
+
+const CLIENT_ANNOTATION: AnnotationKind = AnnotationKind::AtClient;
+
+pub fn check(ctx: &DiagnosticsContext) -> Vec<Diagnostic> {
+    let code = DiagnosticCode::TransferringParametersBetweenClientAndServer;
+
+    if ctx.is_disabled_with_metadata(code) {
+        return Vec::new();
+    }
+
+    let symbol_tree = ctx.symbol_tree();
+    let module_bodies = ctx.module_bodies();
+    let summary = ctx.call_summary(hir::ModuleId::new(ctx.file_id));
+    let mut diagnostics = Vec::new();
+
+    let client_method_ids: FxHashSet<hir::MethodKey> = symbol_tree
+        .methods()
+        .filter(|m| m.annotations.iter().any(|ann| ann.kind == CLIENT_ANNOTATION))
+        .map(|m| m.id.local_id)
+        .collect();
+
+    for method in symbol_tree.methods() {
+        let has_server_annotation =
+            method.annotations.iter().any(|ann| SERVER_ANNOTATIONS.contains(&ann.kind));
+
+        if !has_server_annotation {
+            continue;
+        }
+
+        let by_ref_params: Vec<_> =
+            method.params.iter().enumerate().filter(|(_, param)| !param.is_val).collect();
+
+        if by_ref_params.is_empty() {
+            continue;
+        }
+
+        let server_local_id = method.id.local_id;
+        let has_client_call = summary.call_edges.iter().any(|edge| {
+            edge.kind == EdgeKind::DirectLocal
+                && matches!(&edge.target, CallTarget::Local { callee_local_id } if *callee_local_id == server_local_id)
+                && matches!(edge.caller, CallerId::Method(caller_id) if client_method_ids.contains(&caller_id))
+        });
+
+        if !has_client_call {
+            continue;
+        }
+
+        let local_id = method.id.local_id;
+        let Some(lower_result) = module_bodies.lower_result(local_id) else {
+            continue;
+        };
+
+        let body = lower_result.body();
+        let assigned_params = collect_assigned_params(body);
+
+        for (param_idx, param) in by_ref_params {
+            let param_name_lower = param.name.as_str().fold_lower();
+
+            if assigned_params.contains(&param_name_lower) {
+                continue;
+            }
+
+            let param_range = ctx
+                .item_tree()
+                .method(local_id)
+                .and_then(|item| item.params().get(param_idx))
+                .map(|param_info| param_info.name_range);
+
+            if let Some(range) = param_range {
+                diagnostics.push(Diagnostic {
+                    code,
+                    message: format!(
+                        "Установите модификатор \"Знач\" для параметра {} метода {}",
+                        param.name.as_str(),
+                        method.name.as_str()
+                    ),
+                    severity: ctx.severity(code),
+                    range,
+                    tags: ctx.tags(code),
+                    fixes: vec![],
+                });
+            }
+        }
+    }
+
+    diagnostics
+}
+
+fn collect_assigned_params(body: &hir::Body) -> FxHashSet<String> {
+    let mut assigned = FxHashSet::default();
+
+    for (_stmt_id, stmt) in body.stmts_iter() {
+        collect_assigned_from_stmt(stmt, body, &mut assigned);
+    }
+
+    assigned
+}
+
+fn collect_assigned_from_stmt(stmt: &Stmt, body: &hir::Body, assigned: &mut FxHashSet<String>) {
+    match stmt {
+        Stmt::Assign { target, .. } => {
+            let target_id = hir::ExprId::from_idx(*target);
+            if let Expr::Path(name) = body.expr(target_id) {
+                assigned.insert(name.as_str().fold_lower());
+            }
+        }
+        Stmt::If(if_stmt) => {
+            for &stmt_idx in if_stmt.then_branch.iter() {
+                let stmt_id = hir::StmtId::from_idx(stmt_idx);
+                collect_assigned_from_stmt(body.stmt(stmt_id), body, assigned);
+            }
+            for (_, elsif_stmts) in if_stmt.elsif_branches.iter() {
+                for &stmt_idx in elsif_stmts.iter() {
+                    let stmt_id = hir::StmtId::from_idx(stmt_idx);
+                    collect_assigned_from_stmt(body.stmt(stmt_id), body, assigned);
+                }
+            }
+            if let Some(ref else_branch) = if_stmt.else_branch {
+                for &stmt_idx in else_branch.iter() {
+                    let stmt_id = hir::StmtId::from_idx(stmt_idx);
+                    collect_assigned_from_stmt(body.stmt(stmt_id), body, assigned);
+                }
+            }
+        }
+        Stmt::While { body: stmts, .. }
+        | Stmt::For { body: stmts, .. }
+        | Stmt::ForEach { body: stmts, .. } => {
+            for &stmt_idx in stmts.iter() {
+                let stmt_id = hir::StmtId::from_idx(stmt_idx);
+                collect_assigned_from_stmt(body.stmt(stmt_id), body, assigned);
+            }
+        }
+        Stmt::Try { body: try_block, except, .. } => {
+            for &stmt_idx in try_block.iter() {
+                let stmt_id = hir::StmtId::from_idx(stmt_idx);
+                collect_assigned_from_stmt(body.stmt(stmt_id), body, assigned);
+            }
+            for &stmt_idx in except.iter() {
+                let stmt_id = hir::StmtId::from_idx(stmt_idx);
+                collect_assigned_from_stmt(body.stmt(stmt_id), body, assigned);
+            }
+        }
+        _ => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::check_diagnostics_snapshot_for;
+    use expect_test::expect;
+    #[test]
+    fn test_by_ref_param_in_server_method_called_from_client() {
+        let code = r#"&НаКлиенте
+Процедура Клиент1()
+    Сервер1(2);
+КонецПроцедуры
+
+&НаСервере
+Процедура Сервер1(Парам1) // ошибка
+    Метод(Парам1);
+КонецПроцедуры
+
+&НаКлиенте
+Процедура Клиент2()
+    Сервер2(2);
+КонецПроцедуры
+
+&НаСервере
+Процедура Сервер2(Знач Парам1) // не ошибка
+КонецПроцедуры
+
+&НаКлиенте
+Процедура Клиент3()
+    Сервер3(2);
+КонецПроцедуры
+
+&НаСервере
+Процедура Сервер3(Парам1) // не ошибка
+    Парам1 = 10;
+КонецПроцедуры
+
+&НаКлиентеНаСервереБезКонтекста
+Процедура КлиентСервер4(Парам1) // не ошибка
+    Сервер4(2);
+КонецПроцедуры
+
+&НаСервере
+Процедура Сервер4(Парам1) // не ошибка
+    ЕщеМетод(Парам1);
+КонецПроцедуры
+
+&НаСервере
+Процедура Метод(Парам1)
+КонецПроцедуры
+
+&НаСервере
+Процедура ЕщеМетод(Парам1)
+КонецПроцедуры
+"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::TransferringParametersBetweenClientAndServer,
+            expect![[r#"
+                TransferringParametersBetweenClientAndServer @ 7:19..7:25
+                  message: Установите модификатор "Знач" для параметра Парам1 метода Сервер1
+                  severity: Warning"#]],
+        );
+    }
+
+    #[test]
+    fn test_no_diagnostic_for_by_value_param() {
+        let code = r#"
+&НаКлиенте
+Процедура Клиент()
+    Сервер(2);
+КонецПроцедуры
+
+&НаСервере
+Процедура Сервер(Знач Парам)
+    Результат = Парам + 1;
+КонецПроцедуры
+"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::TransferringParametersBetweenClientAndServer,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_no_diagnostic_when_param_assigned() {
+        let code = r#"
+&НаКлиенте
+Процедура Клиент()
+    Сервер(2);
+КонецПроцедуры
+
+&НаСервере
+Процедура Сервер(Парам)
+    Парам = 10;
+КонецПроцедуры
+"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::TransferringParametersBetweenClientAndServer,
+            expect![[r#""#]],
+        );
+    }
+
+    #[test]
+    fn test_no_diagnostic_when_not_called_from_client() {
+        let code = r#"
+&НаКлиентеНаСервереБезКонтекста
+Процедура КлиентСервер()
+    Сервер(2);
+КонецПроцедуры
+
+&НаСервере
+Процедура Сервер(Парам)
+    Результат = Парам + 1;
+КонецПроцедуры
+"#;
+
+        check_diagnostics_snapshot_for(
+            code,
+            DiagnosticCode::TransferringParametersBetweenClientAndServer,
+            expect![[r#""#]],
+        );
+    }
+}

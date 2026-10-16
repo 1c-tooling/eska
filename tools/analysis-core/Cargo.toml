@@ -65,6 +65,7 @@ hir-ty = { path = "../bsl-kernel/crates/hir-ty" }
 hir-def = { path = "../bsl-kernel/crates/hir-def" }
 ide-db = { path = "../bsl-kernel/crates/ide-db" }
 ide = { path = "../bsl-kernel/crates/ide" }
+ide-diagnostics = { path = "../bsl-kernel/crates/ide-diagnostics" }
 parser-error = { path = "../bsl-kernel/crates/parser-error" }
 parser = { path = "../bsl-kernel/crates/parser" }
 sdbl-hir = { path = "../bsl-kernel/crates/sdbl-hir" }
