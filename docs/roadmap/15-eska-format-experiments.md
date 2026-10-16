@@ -3238,8 +3238,24 @@ strict Clippy/Rustdoc и release bins. Само исправление не за
 сохранены без replay/пересоздания; RollBack восстановил весь source/import state
 и все восемь прежних bindings. Guard удерживает exact texts/versions без новых
 inputs/Save RPC. Временная native база каждого writer удалена после exit proof.
-Это одна standalone граница; workspace, остальные точки прерывания и общий
-workflow EF-20 ещё нужны. EF-25 и MVP остаются в работе.
+Это одна standalone граница. Другие фазы не проверялись в установленном клиенте;
+core отдельно проверяет prepared/backed-up/installed/state с обеими actions и
+повтором. DoD не требует installed-прерывания каждой journal-фазы.
+
+[Installed workspace import/recovery](../research/eska-format/installed-native-workspace.md)
+прошёл 20 all4 addition/deletion/rename/Complete/RollBack случаев в mixed workspace
+из пяти members. Настоящий dirty сосед с теми же root/owner UUID и bytes сначала
+получает собственный ACK, затем теряет authority без replay/Save в выбранный
+member; барьер наблюдения начинается до переключения проекта.
+Выполнены 63 обычных Save, сохранены 24 orphan drafts, восемь rename и восемь
+восстановленных RollBack bindings. Все остальные members и workspace controls
+сохранили bytes/modes/mtime; platform version унаследована без CLI override.
+120 RU/EN inspect checks, 425 Node tests и Save/matching regressions прошли;
+1694 прежних Rust inputs и шесть бинарников повторно сверены с 17 green gates.
+Все 164 наблюдавшихся процесса завершены; лишних `.1CD` нет, четыре пользовательские
+базы сохранены. Эта часть не принимает semantic completeness и другие ОС.
+Явный reimport нового заимствованного CFE owner ещё требует проверки; общий
+workflow EF-20 и итоговая приёмка EF-16 продолжаются. EF-25 — `IN_PROGRESS`.
 
 ## EF-26 RLS и дополнительные тексты ресурсов
 

@@ -1,0 +1,684 @@
+{
+  "schema_version": 1,
+  "status": "installed_native_workspace_composition_and_backed_up_recovery_verified",
+  "project_scope": "selected-workspace-member",
+  "mixed_native_members_per_workspace": 5,
+  "other_members_preserved_per_case": 4,
+  "workspace_cases": [
+    {
+      "project_type": "configuration",
+      "composition": "deletion",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "extension",
+      "composition": "deletion",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "processing",
+      "composition": "deletion",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 2,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "report",
+      "composition": "deletion",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "configuration",
+      "composition": "addition",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    },
+    {
+      "project_type": "extension",
+      "composition": "addition",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    },
+    {
+      "project_type": "processing",
+      "composition": "addition",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 2,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    },
+    {
+      "project_type": "report",
+      "composition": "addition",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    },
+    {
+      "project_type": "configuration",
+      "composition": "rename",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 2,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "extension",
+      "composition": "rename",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 2,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "processing",
+      "composition": "rename",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 2,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 2,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "report",
+      "composition": "rename",
+      "recovery_action": null,
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 2,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 0,
+      "native_infobases_removed": 0,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "configuration",
+      "composition": "deletion",
+      "recovery_action": "complete",
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "extension",
+      "composition": "deletion",
+      "recovery_action": "complete",
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "processing",
+      "composition": "deletion",
+      "recovery_action": "complete",
+      "project_scope": "member",
+      "ordinary_save_publications": 2,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "report",
+      "composition": "deletion",
+      "recovery_action": "complete",
+      "project_scope": "member",
+      "ordinary_save_publications": 3,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 0,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 2,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2
+    },
+    {
+      "project_type": "configuration",
+      "composition": "deletion",
+      "recovery_action": "roll-back",
+      "project_scope": "member",
+      "ordinary_save_publications": 5,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 2,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    },
+    {
+      "project_type": "extension",
+      "composition": "deletion",
+      "recovery_action": "roll-back",
+      "project_scope": "member",
+      "ordinary_save_publications": 5,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 2,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    },
+    {
+      "project_type": "processing",
+      "composition": "deletion",
+      "recovery_action": "roll-back",
+      "project_scope": "member",
+      "ordinary_save_publications": 4,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 2,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    },
+    {
+      "project_type": "report",
+      "composition": "deletion",
+      "recovery_action": "roll-back",
+      "project_scope": "member",
+      "ordinary_save_publications": 5,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "renamed_bindings_same_owner_uuid": 0,
+      "restored_retired_bindings": 2,
+      "staging_directories_removed": 1,
+      "native_infobases_removed": 1,
+      "single_automatic_replacement": true,
+      "exact_dirty_text_and_versions_retained": true,
+      "independent_pin_and_settings_unchanged": true,
+      "duplicate_neighbor_refused_after_retarget": true,
+      "orphan_drafts": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0
+    }
+  ],
+  "workspace_case_count": 20,
+  "normal_composition_case_count": 12,
+  "complete_case_count": 4,
+  "roll_back_case_count": 4,
+  "total_workspace_save_publications": 63,
+  "total_orphan_drafts": 24,
+  "total_renamed_bindings_same_owner_uuid": 8,
+  "total_restored_retired_bindings": 8,
+  "total_native_staging_directories_removed": 8,
+  "total_native_infobases_removed": 8,
+  "duplicate_neighbor_initial_real_ack_verified": true,
+  "duplicate_neighbor_barrier_before_retarget": true,
+  "duplicate_neighbor_inputs_and_save_rpc_after_retarget": 0,
+  "outside_selected_member_bytes_mode_mtime_preserved": true,
+  "inherited_platform_version": "8.3.27.2325",
+  "native_cli_platform_override_used": false,
+  "original_workspace_preflight_checks": 40,
+  "all_compositions_workspace_preflight_checks": 120,
+  "workspace_preflight_locales": [
+    "ru",
+    "en"
+  ],
+  "workspace_preflight_json_locale_independent": true,
+  "interruption_boundary": "backed-up",
+  "interruption_method": "gdb-kill",
+  "observed_signal": null,
+  "numeric_sigkill_claimed": false,
+  "other_interruption_phases_verified": false,
+  "verified_client_inputs": 184,
+  "verified_rust_inputs": 1694,
+  "verified_frozen_tool_binaries": 6,
+  "production_js_files_verified": 58,
+  "vsix_sha256": "237735a27641e7b59cc682be3effdf1c1704d2903b38b21ed312ff424262856c",
+  "tool_sha256": {
+    "eska-analyzer": "e1766e680936d0423b9eea6c7c8c71e2d495cbf31d6ae0ba2bec834ed3fb23eb",
+    "eska-analyzer-debug": "15751a25cb171a8a776f9c7ddd4a7ef8e410416877dc799d8b8e6fa05efb027c",
+    "eska-check": "0d87d48ba82152ed1372e14eb7e878f5114c697a52ef5a75c6c529c432248c55",
+    "eska": "5933878d3632a9bd3528b4b2f978350d807c55f28737dc2c878653589835f2de",
+    "eska-project": "beb5fe9bff30a67ed3ee30f83ce0fe03efa939bb64d904a4060abf827b22d964",
+    "eska-build": "dcd5009b98fa1101cb5b36e5fc1afb095fb842b74190f03e3176b94c9cde4550"
+  },
+  "rust_full_gates_rerun": false,
+  "previous_verified_rust_gates_rechecked": [
+    {
+      "name": "sdk-guard-green",
+      "exit_code": 0
+    },
+    {
+      "name": "root-fmt",
+      "exit_code": 0
+    },
+    {
+      "name": "root-check",
+      "exit_code": 0
+    },
+    {
+      "name": "root-clippy",
+      "exit_code": 0
+    },
+    {
+      "name": "root-test-default",
+      "exit_code": 0
+    },
+    {
+      "name": "root-test-all",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-fmt",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-check-default",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-check-all",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-clippy-default",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-clippy-all",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-test-default",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-test-all",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-doc-default",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-doc-all",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-debug-bins",
+      "exit_code": 0
+    },
+    {
+      "name": "sdk-release-bins",
+      "exit_code": 0
+    }
+  ],
+  "previous_verified_rust_test_counts": {
+    "root-test-default": {
+      "passed": 1542,
+      "failed": 0,
+      "ignored": 24,
+      "filtered_out": 0
+    },
+    "root-test-all": {
+      "passed": 1663,
+      "failed": 0,
+      "ignored": 24,
+      "filtered_out": 0
+    },
+    "sdk-test-default": {
+      "passed": 264,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 0
+    },
+    "sdk-test-all": {
+      "passed": 601,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 0
+    },
+    "sdk-guard-green": {
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 225
+    }
+  },
+  "client_gates": [
+    {
+      "name": "compile",
+      "exit_code": 0
+    },
+    {
+      "name": "typecheck",
+      "exit_code": 0
+    },
+    {
+      "name": "node",
+      "exit_code": 0
+    },
+    {
+      "name": "package",
+      "exit_code": 0
+    }
+  ],
+  "node": {
+    "tests": 425,
+    "pass": 425,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "installed_regressions": [
+    {
+      "name": "save",
+      "exit_code": 0
+    },
+    {
+      "name": "native-matching",
+      "exit_code": 0
+    }
+  ],
+  "save_regression_cases": 4,
+  "save_regression_publications": 28,
+  "native_matching_regression_cases": 1,
+  "standalone_composition_regression_verified": false,
+  "standalone_regression_cases": [],
+  "owned_processes_exited_without_runner_intervention": 164,
+  "owned_run_runtime_databases_remaining": 0,
+  "original_native_inputs_preserved": true,
+  "physical_human_typing": false,
+  "general_semantic_analysis_claimed": false,
+  "bsl_syntax_validation_claimed": false,
+  "mvp_complete": false,
+  "playground_databases": {
+    "expected_databases": 4,
+    "found_databases": 4,
+    "matched_databases": 4,
+    "unexpected_databases": 0,
+    "free_bytes": 260024266752,
+    "errors": 0
+  }
+}

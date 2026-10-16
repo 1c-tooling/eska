@@ -329,6 +329,14 @@ preview/write/recovery, streams/exit и независимые pins. Четыр�
 import/repeat/build/dump прошли с local BSL и прежней базой; IDE/client coordination
 и комплект ещё нужны. EF-20/EF-25 остаются `IN_PROGRESS`.
 
+[Installed workspace import/recovery](../research/eska-format/installed-native-workspace.md)
+позже проверил 20 all4 addition/deletion/rename/Complete/RollBack случаев:
+63 Save, 24 orphan drafts и изоляцию dirty member с теми же UUID/bytes.
+Остальные members и workspace settings сохранены; 120 RU/EN inspect checks,
+425 Node tests и Save/matching regressions прошли. Лишних `.1CD` нет, четыре
+пользовательские базы сохранены. Явный borrowed reimport CFE ещё требует проверки;
+общий workflow EF-20 и приёмка MVP продолжаются, EF-25 — `IN_PROGRESS`.
+
 Первый [библиотечный план](../research/eska-format/base-update.md) разделяет
 старую базу, независимо принятую поставку и локальные правки.
 Добавлен standalone `eska-project update-base` с preview/write, независимыми

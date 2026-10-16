@@ -13,16 +13,22 @@ CFE/EPF/ERF циклы и выполнение непустых ERF на 1С 8.3
 [Native staging → project plan](native-project-import.md) проверены на четырёх
 настоящих artifact/import/build/dump циклах под прежним CI pin.
 Новая карта и самостоятельный native CLI подключены в EF-25;
-согласованное обновление IDE ещё в работе. Общий CLI и анализ остаются
+согласованное обновление IDE в том срезе не принималось. Общий CLI и анализ остаются
 отдельными задачами.
 [Editor bindings после импорта](post-import-edit-bindings.md) проверяют текущие
 пути/UUID под прежним pin и блокируют stale saved edits. JSON preview показывает
 support изменённых UUID; четыре native edit/build/dump прошли. Refresh работающего
-IDE и unsaved вкладки при импорте ещё требуют координации.
+IDE и unsaved вкладки при импорте в том срезе не принимались.
 [Guard анализатора](analyzer-import-guard.md) проверяется перед dispatch и wire
 publication, освобождает старый host с последним отправленным snapshot и
 сохраняет caller-owned dirty buffers для явного replay. Настоящий CF import
-прошёл с открытыми документами; автоматический клиентский restart ещё нужен.
+прошёл с открытыми документами; автоматический клиентский restart в том срезе не принимался.
+[Установленный workspace import/recovery](installed-native-workspace.md) позже
+проверил all4 addition/deletion/rename и обе recovery actions: 20 случаев,
+63 Save и 24 orphan drafts. Dirty сосед с теми же UUID/bytes получает собственный
+ACK до переключения и не передаётся выбранному member; остальные members и
+workspace controls сохранены. Отдельный borrowed reimport и общий CLI workflow
+ещё требуют приёмки; EF-25 остаётся `IN_PROGRESS`.
 EF-23 — [DONE в принятом профиле](query-acceptance.md).
 [Создание полного Queries проекта](query-project-creation.md) подключает
 managed forms/plain queries к `eska-project import` для всех четырёх типов.

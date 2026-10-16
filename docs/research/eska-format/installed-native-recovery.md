@@ -90,7 +90,10 @@ size, device/inode и mtime совпали с keep-планом, лишних `.
 около 242 GiB. Клиентская приёмка сохранена в commit `6e3287f`, SDK fix — `7a0e634`.
 
 Принимается одна реальная граница `BackedUp` и обе recovery actions для четырёх
-standalone типов. Остальные точки прерывания, workspace-матрица и общий workflow
-EF-20 остаются открыты. Эта проверка не расширяет semantic completeness SDK,
+standalone типов. Остальные точки прерывания не проверялись в установленном
+клиенте; core отдельно проверяет четыре journal-границы с обеими actions и
+повтором. DoD EF-25 не требует installed-прерывания каждой фазы.
+[Workspace-матрица](installed-native-workspace.md) принята отдельно;
+общий workflow EF-20 остаётся открытым. Эта проверка не расширяет semantic completeness SDK,
 пределы foreign/inline/legacy identity и матрицу ОС. EF-25 — `IN_PROGRESS`;
 общая приёмка MVP EF-16 продолжается.
