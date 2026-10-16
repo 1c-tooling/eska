@@ -26,6 +26,12 @@ watcher registration. RPC получает `project_restart_required`, document 
 `eska/inputRejected`, file batch — `eska/restartRequired`. Старый host остаётся
 завершённым после удаления guard, завершения импорта или rollback.
 
+Если первый file batch содержит только удалённый root descriptor или
+`source.json`, SDK добавляет наблюдаемый `source_import` к control changes.
+Отдельного watcher event для guard ждать не нужно. Одновременные изменения
+project/analysis settings сохраняются: наличие guard не скрывает причину,
+которая требует явного перезапуска с новыми настройками.
+
 Restart state содержит snapshot последнего полностью отправленного frame.
 Внутренний результат lazy semantic load и обработанная, но ещё не отправленная
 версия документа не становятся подтверждённым вводом клиента. Исходный request
@@ -54,6 +60,11 @@ Server transport не заменяет остальные клиентские �
 
 Process matrix на RU/EN проверяет query/document/saved-event triggers без события
 guard, file/directory/dangling-symlink marker, холодный отказ и неизменность диска.
+Дополнительные RU/EN cases действительно перемещают `src` и передают только
+root/manifest deletion batch; оба control changes и import hint сохраняются.
+Отдельно проверены project/analysis settings вместе с guard. Полный SDK gate —
+264 default / 601 all-features tests, strict Clippy и Rustdoc; все 17 root/SDK
+проверок прошли. Это process-проверки, installed interruption описывается отдельно.
 Реальный source-only journal меняет native composition; обе recovery actions
 проверены после удаления incoming store. Старый host остаётся заблокированным,
 новый видит актуальный состав и принимает exact dirty replay по выбранному URI.

@@ -63,6 +63,76 @@ fn cold_start_refused(root: &Path, lang: &str) {
     );
 }
 
+/// Source directory moves may deliver root or manifest deletion before the advertised guard event.
+#[test]
+fn active_guard_survives_root_and_manifest_only_watcher_batches_in_both_locales() {
+    for controls in [
+        vec![("src/configuration.yaml", "root_configuration")],
+        vec![("src/source.json", "source_manifest")],
+        vec![
+            ("src/configuration.yaml", "root_configuration"),
+            ("src/source.json", "source_manifest"),
+        ],
+    ] {
+        for lang in ["ru-RU", "en-US"] {
+            let (_directory, root) = support::project("// Saved body.\r\n", false);
+            let (mut client, _) = start(&root, lang);
+            let ready = read(&mut client, "0");
+            let guard = root.join(PROJECT_SOURCE_IMPORT_RECEIPT);
+            fs::write(&guard, "active import; content is not SDK authority").unwrap();
+            fs::rename(root.join("src"), root.join("previous-source")).unwrap();
+            let changes = controls
+                .iter()
+                .map(|(path, _)| {
+                    json!({"uri":Url::from_file_path(root.join(path)).unwrap().as_str(),"type":3})
+                })
+                .collect::<Vec<_>>();
+            let event = client.ask(&watch(json!(changes)));
+            assert_eq!(event["method"], "eska/restartRequired");
+            let state = &event["params"];
+            assert_eq!(state["snapshot"], ready["result"]["snapshot"]);
+            let changes = state["changes"].as_array().unwrap();
+            assert_eq!(changes.len(), controls.len() + 1);
+            assert!(changes.contains(&json!({"kind":"source_import",
+                "uri":Url::from_file_path(&guard).unwrap().as_str()})));
+            for (path, kind) in &controls {
+                assert!(changes.contains(&json!({"kind":kind,
+                    "uri":Url::from_file_path(root.join(path)).unwrap().as_str()})));
+            }
+            let _ = blocked(&mut client, state);
+            client.finish();
+        }
+    }
+}
+
+/// An active guard adds its recovery hint without hiding settings that require explicit restart.
+#[test]
+fn active_guard_keeps_settings_changes_in_restart_batches_in_both_locales() {
+    for (path, kind) in [
+        ("eska.toml", "project_settings"),
+        ("bsl-analyzer.toml", "analysis_settings"),
+    ] {
+        for lang in ["ru-RU", "en-US"] {
+            let (_directory, root) = support::project("// Saved body.\r\n", false);
+            let (mut client, _) = start(&root, lang);
+            read(&mut client, "0");
+            let guard = root.join(PROJECT_SOURCE_IMPORT_RECEIPT);
+            fs::write(&guard, "active import; content is not SDK authority").unwrap();
+            let event = client.ask(&watch(
+                json!([{"uri":Url::from_file_path(root.join(path)).unwrap().as_str(),"type":2}]),
+            ));
+            assert_eq!(event["method"], "eska/restartRequired");
+            let changes = event["params"]["changes"].as_array().unwrap();
+            assert_eq!(changes.len(), 2);
+            assert!(changes.contains(&json!({"kind":kind,
+                "uri":Url::from_file_path(root.join(path)).unwrap().as_str()})));
+            assert!(changes.contains(&json!({"kind":"source_import",
+                "uri":Url::from_file_path(&guard).unwrap().as_str()})));
+            client.finish();
+        }
+    }
+}
+
 /// Any visible marker type is a guard; requests, document inputs and valid file batches all observe it.
 #[test]
 fn live_guard_retires_without_waiting_for_its_file_event_in_both_locales() {

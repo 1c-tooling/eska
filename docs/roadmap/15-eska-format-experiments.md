@@ -3224,6 +3224,12 @@ rename с одинаковыми bytes больше не переносят ст
 Foreign/inline/legacy DTO identity limits, настоящее interrupted recovery,
 workspace и общий workflow остаются открыты; EF-25 — `IN_PROGRESS`.
 
+SDK сохраняет `source_import` hint и при первом root/manifest deletion batch,
+пока настоящий `src` отсутствует; одновременные settings changes не скрываются.
+RU/EN process regression и полный root/SDK gate прошли: SDK 264/601 tests,
+strict Clippy/Rustdoc и release bins. Installed interruption ещё проверяется;
+это исправление само по себе не закрывает recovery приёмку.
+
 ## EF-26 RLS и дополнительные тексты ресурсов
 
 **Статус:** `DEFERRED`; после MVP, fmt и VCS.

@@ -122,13 +122,14 @@ fn update(
             ));
         }
     }
+    if let Some(change) = controls.active_import()? {
+        // Source moves may deliver root/manifest events first; retain the guard without hiding settings changes.
+        changed_controls.insert(documents::file_path(&change.uri)?, change);
+    }
     if !changed_controls.is_empty() {
         return Ok(Notification::Restart(
             changed_controls.into_values().collect(),
         ));
-    }
-    if let Some(change) = controls.active_import()? {
-        return Ok(Notification::Restart(vec![change]));
     }
     let mut paths = Vec::new();
     let mut ignored = 0_usize;
