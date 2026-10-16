@@ -1,0 +1,507 @@
+{
+  "schema_version": 1,
+  "status": "installed_native_composition_drafts_verified",
+  "platform_version": "8.3.27.2325",
+  "production_js_files_verified": 58,
+  "frozen_client_inputs": 176,
+  "vsix_sha256": "ff84c0a916f54058b06ed8d984269c19c3abd87428ada8a63fb5629d75800bf6",
+  "unchanged_rust_inputs_verified": 1694,
+  "verified_frozen_cli_binaries": 6,
+  "rust_full_gates_rerun": false,
+  "source_only_two_imports_same_uri_different_owner_identical_bytes_verified": true,
+  "binding_regression_red_before_fix": {
+    "passed": 1,
+    "failed": 3
+  },
+  "client_gates": [
+    {
+      "name": "compile",
+      "exit_code": 0,
+      "seconds": 0.581
+    },
+    {
+      "name": "typecheck",
+      "exit_code": 0,
+      "seconds": 0.354
+    },
+    {
+      "name": "node",
+      "exit_code": 0,
+      "seconds": 17.849
+    },
+    {
+      "name": "package",
+      "exit_code": 0,
+      "seconds": 1.47
+    }
+  ],
+  "node": {
+    "tests": 425,
+    "pass": 425,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "bsl_cli_syntax_only": [
+    {
+      "composition": "addition",
+      "project_type": "configuration",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 0,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.129
+    },
+    {
+      "composition": "addition",
+      "project_type": "extension",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 4,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.133
+    },
+    {
+      "composition": "addition",
+      "project_type": "processing",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 56,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.144
+    },
+    {
+      "composition": "addition",
+      "project_type": "report",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 2,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.128
+    },
+    {
+      "composition": "deletion",
+      "project_type": "configuration",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 9,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.132
+    },
+    {
+      "composition": "deletion",
+      "project_type": "extension",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 12,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.129
+    },
+    {
+      "composition": "deletion",
+      "project_type": "processing",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 56,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.14
+    },
+    {
+      "composition": "deletion",
+      "project_type": "report",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 2,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.127
+    },
+    {
+      "composition": "rename",
+      "project_type": "configuration",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 9,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.137
+    },
+    {
+      "composition": "rename",
+      "project_type": "extension",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 12,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.131
+    },
+    {
+      "composition": "rename",
+      "project_type": "processing",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 56,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.151
+    },
+    {
+      "composition": "rename",
+      "project_type": "report",
+      "exit_code": 0,
+      "completed": true,
+      "files_checked": 1,
+      "failed_files": 0,
+      "syntax_errors": 0,
+      "other_diagnostics_reported": 2,
+      "semantic_context_accepted": false,
+      "exact_published_raw_hash_matched": true,
+      "input_mode": "published-byte-copy-verified-by-runtime-save-hash",
+      "seconds": 0.126
+    }
+  ],
+  "workspace_mcp_available": false,
+  "installed_cases": [
+    {
+      "composition": "addition",
+      "project_type": "configuration",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "orphan_drafts": 0,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0,
+      "renamed_sources_opened_with_same_owner_uuid": 0
+    },
+    {
+      "composition": "addition",
+      "project_type": "extension",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "orphan_drafts": 0,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0,
+      "renamed_sources_opened_with_same_owner_uuid": 0
+    },
+    {
+      "composition": "addition",
+      "project_type": "processing",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 2,
+      "orphan_drafts": 0,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0,
+      "renamed_sources_opened_with_same_owner_uuid": 0
+    },
+    {
+      "composition": "addition",
+      "project_type": "report",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "orphan_drafts": 0,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 0,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 0,
+      "renamed_sources_opened_with_same_owner_uuid": 0
+    },
+    {
+      "composition": "deletion",
+      "project_type": "configuration",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "orphan_drafts": 2,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2,
+      "renamed_sources_opened_with_same_owner_uuid": 0
+    },
+    {
+      "composition": "deletion",
+      "project_type": "extension",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "orphan_drafts": 2,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2,
+      "renamed_sources_opened_with_same_owner_uuid": 0
+    },
+    {
+      "composition": "deletion",
+      "project_type": "processing",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 2,
+      "orphan_drafts": 2,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2,
+      "renamed_sources_opened_with_same_owner_uuid": 0
+    },
+    {
+      "composition": "deletion",
+      "project_type": "report",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "orphan_drafts": 2,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2,
+      "renamed_sources_opened_with_same_owner_uuid": 0
+    },
+    {
+      "composition": "rename",
+      "project_type": "configuration",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "orphan_drafts": 2,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2,
+      "renamed_sources_opened_with_same_owner_uuid": 2
+    },
+    {
+      "composition": "rename",
+      "project_type": "extension",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "orphan_drafts": 2,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2,
+      "renamed_sources_opened_with_same_owner_uuid": 2
+    },
+    {
+      "composition": "rename",
+      "project_type": "processing",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 2,
+      "orphan_drafts": 2,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2,
+      "renamed_sources_opened_with_same_owner_uuid": 2
+    },
+    {
+      "composition": "rename",
+      "project_type": "report",
+      "real_native_preview_and_exact_plan_apply": true,
+      "single_automatic_replacement": true,
+      "completed_receipt_and_state_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "ordinary_save_publications": 3,
+      "orphan_drafts": 2,
+      "orphan_editor_and_wire_versions_retained": true,
+      "orphan_document_inputs_and_save_rpc_calls": 0,
+      "orphan_paths_recreated": 0,
+      "ordinary_orphan_save_attempts": 2,
+      "ordinary_orphan_save_fsp_observed": 0,
+      "separate_rejection_only_fsp_cross_checks": 2,
+      "renamed_sources_opened_with_same_owner_uuid": 2
+    }
+  ],
+  "total_ordinary_save_publications": 33,
+  "orphan_drafts_preserved": 16,
+  "installed_regressions": [
+    {
+      "name": "save",
+      "exit_code": 0,
+      "seconds": 9.568
+    },
+    {
+      "name": "native-matching",
+      "exit_code": 0,
+      "seconds": 3.736
+    }
+  ],
+  "owned_child_processes_exited_without_intervention": 58,
+  "original_native_inputs_preserved": true,
+  "persistent_runtime_databases_created": 0,
+  "protected_user_databases_unchanged": 4,
+  "binding_identity_scope": "selected-root-owner-uuid-and-relative-slot",
+  "binding_identity_limits": [
+    "Foreign inputs retain exact-root/path replay; their declarations expose no UUID.",
+    "Inline commands and legacy family declarations expose enclosing owner UUID and slot, not hidden child UUID."
+  ],
+  "limitations": [
+    "Native processing fixture has no declared SDBL; its live drafts are YAML and BSL.",
+    "Ordinary orphan Save and separately marked rejection-only FSP checks are distinct evidence.",
+    "Physical human typing, actual interrupted Complete/RollBack, workspace and full EF-16 acceptance remain open."
+  ]
+}

@@ -3207,8 +3207,22 @@ owner/module/query/resource bindings. Receipt/history и independent pin све�
 11 обычных Save после импорта публикуют точные bytes. Causal stamp до запуска
 replacement отличает запоздалое marker event от новой операции, включая rollback
 с прежней history. У каждого типа подтверждён один restart/replay без ручного
-переподключения. Installed rename/delete/orphan и реальные interrupted recovery,
-workspace и общий workflow EF-20 остаются открыты; EF-25 — `IN_PROGRESS`.
+переподключения. Этот addition-срез не включал installed rename/delete/orphan;
+их последующая приёмка описана ниже. Реальные interrupted recovery, workspace
+и общий workflow EF-20 остаются открыты; EF-25 — `IN_PROGRESS`.
+
+[Installed rename/delete и orphan drafts](../research/eska-format/installed-native-retirement.md)
+приняты для CF/CFE/EPF/ERF. Повторная all12 addition/deletion/rename матрица
+сохранила 16 исчезнувших dirty YAML/BSL/SDBL, запретила их replay/Save без
+пересоздания файлов и выполнила 33 обычных Save независимых источников.
+Восемь новых rename URI открылись с прежними UUID; receipt/history, pin/settings
+и один automatic restart на import проверены. Client binding теперь удерживает
+root/owner UUID и относительный slot до actual editor close: два разрешённых
+rename с одинаковыми bytes больше не переносят старый draft на другого owner
+по прежнему URI. 425 Node-тестов, installed Save/matching и BSL SyntaxError
+проверки прошли; полная semantic context-проверка этим не объявляется.
+Foreign/inline/legacy DTO identity limits, настоящее interrupted recovery,
+workspace и общий workflow остаются открыты; EF-25 — `IN_PROGRESS`.
 
 ## EF-26 RLS и дополнительные тексты ресурсов
 
