@@ -3199,6 +3199,17 @@ dirty YAML/BSL: новый host видит удалённый owner, orphan inpu
 Original pin/settings и прежний CF сохранены. Native CFE/EPF/ERF и автоматический
 клиентский restart/replay этой частью не приняты; EF-25 остаётся `IN_PROGRESS`.
 
+[Native addition в установленном Explorer](../research/eska-format/installed-native-import.md)
+принят для CF/CFE/EPF/ERF на Linux и 1С 8.3.27.2325. Настоящий CLI preview/write
+меняет состав при dirty YAML/BSL/SDBL; у native EPF этого набора query отсутствует.
+Новый host полностью подтверждает прежние тексты и версии, дерево получает новые
+owner/module/query/resource bindings. Receipt/history и independent pin сверены;
+11 обычных Save после импорта публикуют точные bytes. Causal stamp до запуска
+replacement отличает запоздалое marker event от новой операции, включая rollback
+с прежней history. У каждого типа подтверждён один restart/replay без ручного
+переподключения. Installed rename/delete/orphan и реальные interrupted recovery,
+workspace и общий workflow EF-20 остаются открыты; EF-25 — `IN_PROGRESS`.
+
 ## EF-26 RLS и дополнительные тексты ресурсов
 
 **Статус:** `DEFERRED`; после MVP, fmt и VCS.

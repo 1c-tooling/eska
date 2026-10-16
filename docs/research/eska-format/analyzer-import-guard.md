@@ -46,8 +46,9 @@ ID и имя отклонённой document operation сохраняются.
 
 Проверка guard не является cross-process lock. Импорт, целиком прошедший между
 двумя проверками, обнаруживается через обязательные control file events.
-Автоматический restart, сохранение буферов и replay в установленном Explorer
-ещё не приняты. Server transport не заменяет эту клиентскую часть EF-25/EF-11.
+[Native addition в установленном Explorer](installed-native-import.md) теперь
+проверяет автоматический restart, сохранение буферов и replay для четырёх типов.
+Server transport не заменяет остальные клиентские сценарии EF-25/EF-11.
 
 ## Проверки
 
@@ -69,5 +70,8 @@ CLI импорта; query без watcher event завершил прежний h
 Settings, original support pin и предыдущий CF сохранились.
 [Обезличенные результаты](analyzer-import-guard-results.json).
 
-Native CFE/EPF/ERF, реальный OS/client watcher и автоматическое восстановление
-вкладок этой частью не принимаются. EF-25 остаётся `IN_PROGRESS`, MVP — в работе.
+Эта server-матрица не принимала native CFE/EPF/ERF и реальный OS/client watcher.
+Последующая [installed-матрица](installed-native-import.md) приняла all4 addition
+с автоматическим восстановлением вкладок и последующим Save. Rename/delete и
+настоящие прерывания/recovery в установленном клиенте остаются открыты;
+EF-25 остаётся `IN_PROGRESS`, MVP — в работе.

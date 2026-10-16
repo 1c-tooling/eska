@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "status": "installed_native_addition_and_replay_verified",
+  "platform_version": "8.3.27.2325",
+  "production_js_files_verified": 58,
+  "frozen_client_inputs": 176,
+  "vsix_sha256": "8f70e2d1651a2ec0cfb09940bdcee0d266aaf284210b0ad1850e0ebc29342c60",
+  "unchanged_rust_inputs_verified": 1694,
+  "rust_full_gates_rerun": false,
+  "diagnostic_cst_probe_passed": true,
+  "client_gates": [
+    {
+      "name": "compile",
+      "exit_code": 0,
+      "seconds": 0.58
+    },
+    {
+      "name": "typecheck",
+      "exit_code": 0,
+      "seconds": 0.366
+    },
+    {
+      "name": "node",
+      "exit_code": 0,
+      "seconds": 18.073
+    },
+    {
+      "name": "package",
+      "exit_code": 0,
+      "seconds": 1.38
+    }
+  ],
+  "node": {
+    "tests": 414,
+    "pass": 414,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "installed_cases": [
+    {
+      "project_type": "configuration",
+      "property_preview_used": false,
+      "guarded_save_without_property_preview": false,
+      "real_native_preview_and_exact_plan_apply": true,
+      "new_owner_and_bindings_verified": true,
+      "new_module": true,
+      "new_query_and_resource": false,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "single_automatic_replacement": true,
+      "exact_dirty_versions_and_text_replayed": true,
+      "receipt_and_completed_journal_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "ordinary_save_publications": 3,
+      "bom_line_endings_and_unicode_preserved": true
+    },
+    {
+      "project_type": "extension",
+      "property_preview_used": false,
+      "guarded_save_without_property_preview": true,
+      "real_native_preview_and_exact_plan_apply": true,
+      "new_owner_and_bindings_verified": true,
+      "new_module": true,
+      "new_query_and_resource": false,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "single_automatic_replacement": true,
+      "exact_dirty_versions_and_text_replayed": true,
+      "receipt_and_completed_journal_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "ordinary_save_publications": 3,
+      "bom_line_endings_and_unicode_preserved": true
+    },
+    {
+      "project_type": "processing",
+      "property_preview_used": false,
+      "guarded_save_without_property_preview": true,
+      "real_native_preview_and_exact_plan_apply": true,
+      "new_owner_and_bindings_verified": true,
+      "new_module": true,
+      "new_query_and_resource": false,
+      "dirty_kinds": [
+        "bsl",
+        "yaml"
+      ],
+      "single_automatic_replacement": true,
+      "exact_dirty_versions_and_text_replayed": true,
+      "receipt_and_completed_journal_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "ordinary_save_publications": 2,
+      "bom_line_endings_and_unicode_preserved": true
+    },
+    {
+      "project_type": "report",
+      "property_preview_used": false,
+      "guarded_save_without_property_preview": true,
+      "real_native_preview_and_exact_plan_apply": true,
+      "new_owner_and_bindings_verified": true,
+      "new_module": false,
+      "new_query_and_resource": true,
+      "dirty_kinds": [
+        "bsl",
+        "sdbl",
+        "yaml"
+      ],
+      "single_automatic_replacement": true,
+      "exact_dirty_versions_and_text_replayed": true,
+      "receipt_and_completed_journal_verified": true,
+      "independent_pin_and_settings_unchanged": true,
+      "ordinary_save_publications": 3,
+      "bom_line_endings_and_unicode_preserved": true
+    }
+  ],
+  "total_ordinary_save_publications": 11,
+  "installed_regressions": [
+    {
+      "name": "save",
+      "exit_code": 0,
+      "seconds": 9.587
+    },
+    {
+      "name": "native-matching",
+      "exit_code": 0,
+      "seconds": 3.521
+    }
+  ],
+  "owned_child_processes_exited_without_intervention": 24,
+  "original_native_inputs_preserved": true,
+  "persistent_runtime_databases_created": 0,
+  "protected_user_databases_unchanged": 4,
+  "limitations": [
+    "Native processing fixture has no declared SDBL; its live drafts are YAML and BSL.",
+    "YAML drafts preserve the admitted CST value boundary; arbitrary equivalent lexical spellings remain outside this exact Save subset.",
+    "The editor is driven through real commands and transactions; no physical human typing is claimed.",
+    "Installed native deletion/rename, orphan drafts, actual interrupted Complete/RollBack and workspace matrix remain open.",
+    "This part does not repeat native build/dump or accept the complete EF-16 MVP."
+  ]
+}
