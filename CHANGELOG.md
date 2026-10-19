@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.3](https://github.com/1c-tooling/eska/compare/v0.14.2...v0.14.3) - 2026-10-19
+
+### Fixed
+
+- *(support)* Разрешено редактирование внешних обработок и отчетов
+
+### Other
+
+- Merge pull request #63 from 1c-tooling/codex/fix-external-editing
+
 ## [0.14.2](https://github.com/1c-tooling/eska/compare/v0.14.1...v0.14.2) - 2026-10-01
 
 ### Added
