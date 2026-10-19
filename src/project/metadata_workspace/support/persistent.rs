@@ -8,7 +8,7 @@ use std::{
     sync::Arc,
 };
 
-const KEY: &str = "support-snapshot-2";
+const KEY: &str = "support-snapshot-3";
 const CHUNK: usize = 16;
 const MAX_FILES: usize = 1_000_000;
 const MAX_INPUT: u64 = 1024 * 1024 * 1024;
