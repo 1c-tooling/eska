@@ -114,7 +114,10 @@ impl ProjectSession {
             .take()
             .filter(|cache| cache.generation == self.generation)
             .unwrap_or_else(|| {
-                let (policy, diagnostics) = self.support_rules.read(self.source.project().source());
+                let project = self.source.project();
+                let (policy, diagnostics) = self
+                    .support_rules
+                    .read(project.source(), project.configuration().project_type());
                 let fingerprint = self.support_fingerprint();
                 let pages = fingerprint.and_then(|hash| self.load_support_pages(hash));
                 let pending = if pages.is_some() {

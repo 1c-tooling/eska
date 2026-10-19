@@ -1,6 +1,6 @@
 //! Parsed supplier rules survive tree generations, but never an unverified file change.
 
-use crate::project::support::Support;
+use crate::project::{ProjectType, support::Support};
 use sha2::{Digest, Sha256};
 use std::{io::Read, path::Path, sync::Arc};
 
@@ -23,8 +23,20 @@ impl RuleCache {
                 .is_ok_and(|input| self.hash == Some(Sha256::digest(input.as_bytes()).into()))
     }
 
-    /// Reread bytes only when the support snapshot is rebuilt, not per tree node or page.
-    pub(super) fn read(&mut self, root: &Path) -> (Option<Arc<Support>>, Vec<String>) {
+    /// External artifacts have no configuration support; configuration rules still require bytes.
+    pub(super) fn read(
+        &mut self,
+        root: &Path,
+        kind: ProjectType,
+    ) -> (Option<Arc<Support>>, Vec<String>) {
+        if matches!(kind, ProjectType::Processing | ProjectType::Report) {
+            return (
+                Some(Arc::new(Support {
+                    suppliers: Vec::new(),
+                })),
+                Vec::new(),
+            );
+        }
         match read_input(root) {
             Ok(input) => {
                 self.readable = true;

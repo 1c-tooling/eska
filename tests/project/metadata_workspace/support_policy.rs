@@ -148,6 +148,65 @@ fn targeted_policy_matches_source_ownership_across_all_project_types() {
     }
 }
 
+/// EPF/ERF need no supplier file, but broken ownership must still deny editing.
+#[test]
+fn external_artifacts_need_no_configuration_support_file() {
+    for kind in ["processing", "report"] {
+        let directory = TestDir::new();
+        super::fixture(&directory.0, kind);
+        let before = super::bytes(&directory.0);
+        let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+        let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+        let inventory = session.support_page(0).unwrap();
+        assert!(inventory.next_offset.is_none());
+        assert!(
+            inventory.diagnostics.is_empty(),
+            "{kind}: {:?}",
+            inventory.diagnostics
+        );
+        assert!(!inventory.files.is_empty());
+        let paths: Vec<_> = inventory
+            .files
+            .iter()
+            .map(|file| file.path.clone())
+            .collect();
+        let targeted = session.support_files(&paths).unwrap();
+        for snapshot in [&*inventory, &targeted] {
+            assert!(
+                snapshot.diagnostics.is_empty(),
+                "{kind}: {:?}",
+                snapshot.diagnostics
+            );
+            assert!(
+                snapshot
+                    .objects
+                    .iter()
+                    .all(|object| object.state == State::Unrestricted
+                        && object.reason == Reason::OwnObject)
+            );
+            assert!(
+                snapshot
+                    .files
+                    .iter()
+                    .all(|file| !file.read_only && !file.unknown)
+            );
+        }
+        assert_eq!(before, super::bytes(&directory.0));
+        let module = paths
+            .iter()
+            .find(|path| path.ends_with("Form/Module.bsl"))
+            .unwrap();
+        let descriptor = if kind == "processing" {
+            "Выгрузка/Forms/Основная.xml"
+        } else {
+            "Forms/Основная.xml"
+        };
+        fs::write(directory.0.join("src").join(descriptor), "broken").unwrap();
+        let unknown = session.support_files(std::slice::from_ref(module)).unwrap();
+        assert!(unknown.files[0].read_only && unknown.files[0].unknown);
+    }
+}
+
 #[test]
 fn targeted_permissions_follow_descriptor_uuid_with_unchanged_mtime() {
     let directory = TestDir::new();

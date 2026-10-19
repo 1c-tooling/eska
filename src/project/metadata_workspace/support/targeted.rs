@@ -55,9 +55,10 @@ impl ProjectSession {
             }
         }
         let source = self.project().source().to_path_buf();
+        let kind = self.project().configuration().project_type();
         let (policy, diagnostics) = if unaliased(&source, Path::new("Ext/ParentConfigurations.bin"))
         {
-            self.support_rules.read(&source)
+            self.support_rules.read(&source, kind)
         } else {
             (None, vec!["support_aliased".to_owned()])
         };
