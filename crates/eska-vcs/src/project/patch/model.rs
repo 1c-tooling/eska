@@ -13,7 +13,7 @@ pub struct PatchError {
 
 impl PatchError {
     /// Keep machine-facing classification separate from localized presentation.
-    pub(super) fn new(code: &'static str, detail: impl Into<String>) -> Self {
+    pub fn new(code: &'static str, detail: impl Into<String>) -> Self {
         Self {
             code,
             detail: detail.into(),
@@ -32,9 +32,9 @@ pub struct PatchPlan {
     pub ignored_paths: Vec<String>,
     pub changes: Vec<PatchChange>,
     #[serde(skip)]
-    pub(super) repository_root: PathBuf,
+    pub repository_root: PathBuf,
     #[serde(skip)]
-    pub(super) source_files: BTreeMap<String, ObjectId>,
+    pub source_files: BTreeMap<String, ObjectId>,
     #[serde(skip)]
     pub platform_version: Option<PlatformVersion>,
 }
@@ -44,9 +44,9 @@ pub struct PatchModule {
     pub name: String,
     pub methods: Vec<String>,
     #[serde(skip)]
-    pub(super) descriptor: String,
+    pub descriptor: String,
     #[serde(skip)]
-    pub(super) code: String,
+    pub code: String,
 }
 
 #[derive(Debug, Serialize)]

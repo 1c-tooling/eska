@@ -69,7 +69,7 @@ crates/eska-vcs/
     ├── bridge.rs                   # provenance/source checks and guarded Git initialization
     ├── cli/                        # standalone parsing and shared VCS command presentation
     ├── vcs/                        # embedded Git, snapshots, shelves and isolated fallback
-    └── project/                    # project workflow and semantic changes over shared XML core
+    └── project/                    # workflow, semantic changes and committed patch planner
 crates/eska-tool-runtime/
 └── src/                            # component resolution, Unix exec and bounded internal queries
 crates/eska-terminal/
@@ -93,7 +93,7 @@ src/
 ├── project/
 │   ├── mod.rs                      # reexports of shared project operations
 │   ├── artifact.rs, build.rs        # reexports of the single build runtime
-│   ├── patch/                      # VCS-based patch plans and native extension assembly
+│   ├── patch/                      # temporary baseline/native adapter; plans belong to VCS
 │   ├── create.rs, init.rs          # reexports of project-owner onboarding transactions
 │   ├── onboarding.rs               # workspace enrollment and manifest preservation
 │   ├── doctor.rs                   # combined project/build/VCS readiness checks
