@@ -7,12 +7,17 @@
 ## Текущее состояние
 
 По решению пользователя от 2026-10-20 развитие продолжается на Designer XML:
-`eska.toml` становится первичным конфигом, Explorer устанавливает ESKA и
-bsl-analyzer и содержит собственный LSP-клиент. При конфликте со сторонним
-расширением приостанавливается свой клиент и показывается предупреждение.
-[План T83–T89](15-designer-xml-analyzer.md) подготовлен от актуального `main`;
-реализация не начата. Первым выполняется T83. Экспериментальный формат ESKA
-в этот план не переносится; статусы прежних задач сохраняются.
+самостоятельные `eska-project`, `eska-check`, `eska-build`, `eska-vcs` и общая
+делегирующая команда `eska`; `eska-debug` — отдельная опциональная очередь.
+`eska.toml` — первичный конфиг, bsl-analyzer — внешний upstream-бинарник без
+форка и встраивания его Rust-ядра. Explorer устанавливает project-компонент
+и анализатор, использует Metadata API и свой LSP-клиент. При конфликте
+приостанавливается свой клиент; два индикатора и обновления независимы.
+[План T83–T99](15-designer-xml-analyzer.md) подготовлен от `main`;
+реализация не начата. Первой выполняется T90 — выделение общего ядра и
+зависимостей. Номера T83–T89 сохраняются, модульность добавлена в T90–T99.
+Экспериментальный формат ESKA в этот план не переносится; статусы прежних
+задач сохраняются.
 
 По запросу от 2026-09-28 в `feat/cli` завершена T82: создание и обновление
 проектов из CF/CFE/EPF/ERF. Контракт и состояние — в
@@ -164,9 +169,11 @@ TUI разделён на обработку клавиш, отрисовку и
 ## Ближайший порядок выполнения
 
 Новая последовательность по запросу от 2026-10-20:
-**T83 → T84 → T85 → T86 → T87 → T88 → T89**.
-Задачи и критерии приведены в
-[плане единого конфига и языковой интеграции](15-designer-xml-analyzer.md).
+**T90 → T83 → T91 → T84 → T92 → T93 → T94 → T95 → T96 → T97 →
+T85 → T86 → T87 → T88 → T89**.
+После основной приёмки — опциональные **T98 → T99** для отдельного отладчика.
+Фазы, зависимости и критерии приведены в
+[плане модульных инструментов](15-designer-xml-analyzer.md).
 Все новые задачи пока `PLANNED`; текущий запрос оформляет план, а не запускает
 его реализацию. Ниже сохранена очередь и история первой IDE-поставки.
 
@@ -332,13 +339,23 @@ BSL LSP и визуальный редактор форм в это направ
 | T80 | DONE | Иконки метаданных | [14-vscode-extension.md](14-vscode-extension.md) |
 | T81 | IN-PROGRESS | Производительность интерфейса, приёмка и VSIX | [14-vscode-extension.md](14-vscode-extension.md) |
 | T82 | DONE | Создание и обновление из файлов 1С | [02-project-creation.md](02-project-creation.md) |
-| T83 | PLANNED | Контекст приложения в основном конфиге ESKA | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T83 | PLANNED | Контекст приложения в основном конфиге ESKA после выделения ядра | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T84 | PLANNED | Производный конфиг bsl-analyzer и миграция | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T85 | PLANNED | Установка ESKA и анализатора из Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T85 | PLANNED | Установка project/analyzer из Explorer, независимые индикаторы и обновления | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T86 | PLANNED | Базовая подсветка и собственный LSP-клиент Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T87 | PLANNED | Приостановка клиента при конфликте расширений | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T88 | PLANNED | Согласование LSP с изменениями и защитой исходников | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T89 | PLANNED | Приёмка единой установки и производительности buhmfo | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T89 | PLANNED | Приёмка выборочной поставки, Explorer и производительности buhmfo | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T90 | PLANNED | Cargo workspace, общее ядро проекта и границы зависимостей | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T91 | PLANNED | Самостоятельный eska-project и общие правила проекта | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T92 | PLANNED | Сервер метаданных eska-project serve и переход Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T93 | PLANNED | Статическая проверка CI через eska-check и внешний bsl-analyzer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T94 | PLANNED | Самостоятельный eska-build и проверки реальной платформой | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T95 | PLANNED | Самостоятельный eska-vcs с сохранением workflow | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T96 | PLANNED | Делегирование команд eska самостоятельным инструментам | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T97 | PLANNED | Выборочные пакеты, установка и совместимость инструментов | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T98 | PLANNED | Опциональная проверка DAP backend и контракт отладчика | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T99 | PLANNED | Опциональный самостоятельный eska-debug | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в
