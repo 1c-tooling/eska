@@ -50,10 +50,11 @@ fn context_and_freshness_are_read_only_and_negotiate_api_12() {
 /// Only orchestration is mocked here; upstream validation has a separate explicit real-binary test.
 #[cfg(unix)]
 fn fake(root: &std::path::Path) -> std::path::PathBuf {
-    use std::os::unix::fs::PermissionsExt;
     let path = root.join("analyzer fixture");
-    fs::write(&path, include_str!("../../../fixtures/analyzer-config.py")).unwrap();
-    fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
+    // Keep the executable inode immutable while parallel tests spawn child processes.
+    let fixture =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/analyzer-config.py");
+    std::os::unix::fs::symlink(fixture, &path).unwrap();
     path
 }
 
