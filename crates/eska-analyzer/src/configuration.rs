@@ -344,7 +344,7 @@ pub(crate) fn sha256(bytes: &[u8]) -> String {
 }
 
 /// Format bytes without relying on an output-array formatting implementation in the hash crate.
-fn hex(bytes: &[u8]) -> String {
+pub(crate) fn hex(bytes: &[u8]) -> String {
     const DIGITS: &[u8; 16] = b"0123456789abcdef";
     bytes
         .iter()

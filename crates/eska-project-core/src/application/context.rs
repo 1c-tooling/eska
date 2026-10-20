@@ -14,7 +14,8 @@ use crate::project::{
 };
 
 use super::{
-    AnalysisSettings, AnalyzerPolicy, Application, SettingsError, TargetPlatformVersion, graph,
+    AnalysisSettings, AnalyzerPolicy, Application, CheckPolicy, SettingsError,
+    TargetPlatformVersion, graph,
 };
 
 /// The explicit role of one selected source directory.
@@ -102,9 +103,15 @@ pub struct AnalysisContext {
     extension_dependencies: BTreeMap<ProjectName, Vec<ProjectName>>,
     target_platform_version: Option<TargetPlatformVersion>,
     analyzer_policy: AnalyzerPolicy,
+    check_policy: CheckPolicy,
 }
 
 impl AnalysisContext {
+    /// Return CI limits from the same owning manifest as the analyzer policy and source set.
+    #[must_use]
+    pub const fn check_policy(&self) -> &CheckPolicy {
+        &self.check_policy
+    }
     /// Return the policy selected from the same owning manifest as the source composition.
     #[must_use]
     pub const fn analyzer_policy(&self) -> &AnalyzerPolicy {
@@ -217,6 +224,7 @@ fn single(
         extension_dependencies: BTreeMap::new(),
         target_platform_version: target(settings.options().target_platform_version(), project),
         analyzer_policy: settings.tools().bsl_analyzer.clone(),
+        check_policy: settings.tools().check.clone(),
     })
 }
 
@@ -316,6 +324,7 @@ fn application_context(
         extension_dependencies: application.extension_dependencies().clone(),
         target_platform_version: target(application.target_platform_version(), base.project()),
         analyzer_policy: workspace.analysis_settings().tools().bsl_analyzer.clone(),
+        check_policy: workspace.analysis_settings().tools().check.clone(),
     })
 }
 

@@ -20,6 +20,7 @@ pub mod onboarding;
 pub mod selection;
 pub mod support;
 pub mod templates;
+pub mod validation;
 pub mod version;
 mod workspace;
 

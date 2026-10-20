@@ -63,30 +63,58 @@ impl Serialize for AnalyzerPolicy {
 pub struct RawTools {
     #[serde(rename = "bsl-analyzer")]
     pub bsl_analyzer: Option<toml::Table>,
+    #[serde(rename = "eska-check")]
+    pub check: Option<CheckPolicy>,
 }
 
-/// One root-owned analyzer policy, serialized with the public tool key unchanged.
+/// CI thresholds count effective upstream diagnostics: zero errors, other limits unbounded by default.
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct CheckPolicy {
+    pub max_errors: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_warnings: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_information: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_hints: Option<u64>,
+}
+
+impl CheckPolicy {
+    /// Keep existing manifests unchanged when the default CI policy is sufficient.
+    #[must_use]
+    pub fn is_default(&self) -> bool {
+        self == &Self::default()
+    }
+}
+
+/// Root-owned policies retain independent tool namespaces when serialized.
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq, Serialize)]
 pub struct ToolSettings {
     #[serde(rename = "bsl-analyzer")]
+    #[serde(skip_serializing_if = "AnalyzerPolicy::is_empty")]
     pub bsl_analyzer: AnalyzerPolicy,
+    #[serde(rename = "eska-check", skip_serializing_if = "CheckPolicy::is_default")]
+    pub check: CheckPolicy,
 }
 
 impl ToolSettings {
     /// Validate raw policy once during strict manifest loading.
     pub(super) fn parse(raw: Option<RawTools>) -> Result<Self, SettingsError> {
+        let raw = raw.unwrap_or_default();
         Ok(Self {
             bsl_analyzer: raw
-                .and_then(|raw| raw.bsl_analyzer)
+                .bsl_analyzer
                 .map(|table| AnalyzerPolicy::parse(&table))
                 .transpose()?
                 .unwrap_or_default(),
+            check: raw.check.unwrap_or_default(),
         })
     }
 
     /// Root ownership checks include policy-only member declarations.
     #[must_use]
-    pub const fn is_empty(&self) -> bool {
-        self.bsl_analyzer.is_empty()
+    pub fn is_empty(&self) -> bool {
+        self.bsl_analyzer.is_empty() && self.check.is_default()
     }
 }

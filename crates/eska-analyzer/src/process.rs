@@ -4,7 +4,7 @@ use std::{
     ffi::OsStr,
     io::{self, Read},
     path::{Path, PathBuf},
-    process::{Command, ExitStatus, Stdio},
+    process::{ChildStdout, Command, ExitStatus, Stdio},
     sync::atomic::{AtomicBool, Ordering},
     thread,
     time::{Duration, Instant},
@@ -29,6 +29,13 @@ pub struct Analyzer<'a> {
 pub struct Output {
     pub status: ExitStatus,
     pub stdout: Vec<u8>,
+    pub stderr: Vec<u8>,
+}
+
+/// Streaming consumers choose their own bounded representation instead of buffering raw JSONL.
+pub(crate) struct StreamOutput<T> {
+    pub status: ExitStatus,
+    pub stdout: T,
     pub stderr: Vec<u8>,
 }
 
@@ -112,6 +119,21 @@ impl Analyzer<'_> {
         root: &Path,
         args: impl IntoIterator<Item = &'a OsStr>,
     ) -> Result<Output, Error> {
+        let output = self.run_with_stdout(root, args, read_bounded)?;
+        Ok(Output {
+            status: output.status,
+            stdout: output.stdout,
+            stderr: output.stderr,
+        })
+    }
+
+    /// Share cancellation, bounded stderr and reaping with the incremental JSONL reader.
+    pub(crate) fn run_with_stdout<'a, T: Send + 'static>(
+        &self,
+        root: &Path,
+        args: impl IntoIterator<Item = &'a OsStr>,
+        read_stdout: impl FnOnce(ChildStdout) -> Result<T, Error> + Send + 'static,
+    ) -> Result<StreamOutput<T>, Error> {
         if self.is_cancelled() {
             return Err(Error::Cancelled);
         }
@@ -135,7 +157,7 @@ impl Analyzer<'_> {
         };
         let stdout = match thread::Builder::new()
             .name("eska-analyzer-stdout".into())
-            .spawn(|| read_bounded(stdout))
+            .spawn(move || read_stdout(stdout))
         {
             Ok(reader) => reader,
             Err(source) => {
@@ -181,7 +203,7 @@ impl Analyzer<'_> {
         let stderr =
             stderr.map_err(|_| Error::ProcessIo(io::Error::other("stderr reader stopped")))?;
         let status = result?;
-        Ok(Output {
+        Ok(StreamOutput {
             status,
             stdout: stdout?,
             stderr: stderr?,

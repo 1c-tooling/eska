@@ -1,5 +1,6 @@
 //! Integration with the published analyzer executable; no BSL engine is linked or copied.
 
+pub mod check;
 pub mod configuration;
 pub mod migration;
 pub mod process;

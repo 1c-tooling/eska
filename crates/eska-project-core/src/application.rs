@@ -7,7 +7,7 @@ mod settings;
 
 pub use context::{AnalysisContext, ContextError, ContextSource, SourceRole, resolve};
 pub(crate) use policy::RawTools;
-pub use policy::{AnalyzerPolicy, ToolSettings};
+pub use policy::{AnalyzerPolicy, CheckPolicy, ToolSettings};
 pub use settings::{
     AnalysisOptions, AnalysisSettings, Application, SettingsError, TargetPlatformVersion,
 };

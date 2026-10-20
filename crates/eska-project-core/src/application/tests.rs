@@ -16,6 +16,58 @@ use crate::{
 
 use super::{ContextError, SettingsError, SourceRole, TargetPlatformVersion, resolve};
 
+/// CI limits are strict root policy and survive serialization without entering the upstream table.
+#[test]
+fn check_policy_roundtrips_and_rejects_invalid_limits() {
+    let text = "[project]\ntype='configuration'\n[tools.eska-check]\nmax_errors=2\nmax_warnings=0\nmax_information=3\nmax_hints=4\n";
+    let config = ProjectConfig::from_toml(text).unwrap();
+    let serialized = config.to_toml().unwrap();
+    assert!(serialized.contains("eska-check"));
+    assert!(!serialized.contains("bsl-analyzer"));
+    assert_eq!(ProjectConfig::from_toml(&serialized).unwrap(), config);
+    for value in [
+        "max_errors=-1",
+        "max_errors='2'",
+        "max_errors=2.5",
+        "unknown=0",
+    ] {
+        assert!(
+            ProjectConfig::from_toml(&format!(
+                "[project]\ntype='configuration'\n[tools.eska-check]\n{value}\n"
+            ))
+            .is_err()
+        );
+    }
+    let fixture = TestDir::new();
+    let member = fixture.0.join("base");
+    project(&member, "configuration", Some("base"), None);
+    fs::write(
+        member.join("eska.toml"),
+        text.replace("[project]", "[project]\nname='base'").replace(
+            "type='configuration'",
+            "type='configuration'\nsource='исходники XML'",
+        ),
+    )
+    .unwrap();
+    workspace(&fixture.0, &["base"], "");
+    let error = resolve(&fixture.0, None).unwrap_err();
+    let ContextError::Discovery(error) = error else {
+        panic!("{error:?}");
+    };
+    let ContextDiscoveryError::Manifest {
+        source:
+            crate::config::ManifestConfigError::Workspace(WorkspaceConfigError::InvalidAnalysis(error)),
+        ..
+    } = *error
+    else {
+        panic!("{error:?}");
+    };
+    assert!(matches!(
+        *error,
+        SettingsError::MemberAnalysisUnsupported { .. }
+    ));
+}
+
 /// Create one declared project with a nonstandard source and a real Designer root descriptor.
 fn project(root: &Path, kind: &str, name: Option<&str>, version: Option<&str>) -> PathBuf {
     let source = root.join("исходники XML");
