@@ -53,6 +53,7 @@ analysis-member-unknown = Приложение «{ $application }» ссылае
 analysis-member-type = В приложении «{ $application }» member «{ $member }» должен иметь project.type = { $expected }, получено { $actual }.
 analysis-member-settings = Настройки analysis для member «{ $member }» задаются в корневом манифесте workspace.
 analysis-platform-scope = Целевая платформа приложения задаётся в applications.<имя>.target_platform_version; удалите общий analysis.target_platform_version.
+project-serve-about = Запустить самостоятельный сервер Metadata API проекта через stdio
 project-tool-about = Работа с проектами Designer XML
 project-new-about = Создать проект Designer XML без инициализации Git
 project-init-about = Подключить существующую выгрузку Designer XML без инициализации Git

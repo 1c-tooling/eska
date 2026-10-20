@@ -3,7 +3,7 @@
 use super::{
     envelope::{self, Id, domain, error, response},
     framing,
-    server::Server,
+    server::{Identity, Server},
 };
 use serde_json::{Value, json};
 use std::{
@@ -51,8 +51,8 @@ struct Output {
 type Writer = mpsc::SyncSender<Output>;
 
 /// Run the worker on the calling thread; process exit also releases blocked native pipe reads.
-pub(super) fn run() -> u8 {
-    let Ok(mut server) = Server::new() else {
+pub(super) fn run(identity: Identity) -> u8 {
+    let Ok(mut server) = Server::new(identity) else {
         return 1;
     };
     let shared = Arc::new(Shared {

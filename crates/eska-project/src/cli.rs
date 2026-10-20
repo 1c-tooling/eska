@@ -37,6 +37,8 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Commands {
     #[command(disable_help_flag = true)]
+    Serve(ServeArgs),
+    #[command(disable_help_flag = true)]
     AnalyzerConfig(crate::analyzer_config::ConfigArgs),
     #[command(disable_help_flag = true)]
     Validate(ValidateArgs),
@@ -50,6 +52,14 @@ enum Commands {
     Metadata(crate::metadata::MetadataArgs),
     #[command(disable_help_flag = true)]
     Version(crate::version::VersionArgs),
+}
+
+#[derive(Debug, Args)]
+struct ServeArgs {
+    #[arg(long, required = true)]
+    stdio: bool,
+    #[arg(short,long,action=ArgAction::Help)]
+    help: Option<bool>,
 }
 
 #[derive(Clone, Copy, Debug, Default, ValueEnum)]
@@ -128,6 +138,13 @@ pub fn run() -> ExitCode {
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
     match cli.command.as_ref() {
+        Some(Commands::Serve(args)) => {
+            if args.stdio {
+                crate::ide::serve()
+            } else {
+                ExitCode::from(2)
+            }
+        }
         Some(Commands::AnalyzerConfig(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Metadata(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Version(args)) => args.run(&cli.project_dir, &localizer),
@@ -168,6 +185,7 @@ fn localize_operation(mut command: clap::Command, localizer: &Localizer) -> clap
         "new" => "project-new-about",
         "init" => "project-init-about",
         "context" => "project-context-about",
+        "serve" => "project-serve-about",
         _ => "project-validate-about",
     };
     command = command.about(localizer.text(about)).help_template(format!(
@@ -177,6 +195,7 @@ fn localize_operation(mut command: clap::Command, localizer: &Localizer) -> clap
     ));
     for (name, help, value) in [
         ("help", "cli-help", None),
+        ("stdio", "ide-stdio-help", None),
         (
             "format",
             "version-format-help",

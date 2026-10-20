@@ -19,7 +19,8 @@ T90 — `DONE`: сохранён baseline, выделены общее ядро 
 T83 — `DONE`: схема и read-only resolver контекстов приложений.
 T91 — `DONE`: самостоятельный проектный CLI и общие filesystem/presentation операции.
 T84 — `DONE`: производный конфиг, миграция с сохранением оригинала и API 1.12.
-T92 — `NEXT`: project serve и переход Explorer.
+T92 — `DONE`: project serve, API 1.12 и прямое подключение Explorer.
+T93 — `NEXT`: самостоятельная полная проверка CI через внешний анализатор.
 Номера T83–T89 сохраняются, модульность добавлена в T90–T99.
 Экспериментальный формат ESKA в этот план не переносится; статусы прежних
 задач сохраняются.
@@ -354,7 +355,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T89 | PLANNED | Приёмка выборочной поставки, Explorer и производительности buhmfo | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T90 | DONE | Cargo workspace, общее ядро проекта и границы зависимостей | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T91 | DONE | Самостоятельный eska-project и общие правила проекта | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T92 | NEXT | Сервер метаданных eska-project serve и переход Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T92 | IN-PROGRESS | Сервер метаданных eska-project serve и переход Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T93 | PLANNED | Статическая проверка CI через eska-check и внешний bsl-analyzer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T94 | PLANNED | Самостоятельный eska-build и проверки реальной платформой | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T95 | PLANNED | Самостоятельный eska-vcs с сохранением workflow | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |

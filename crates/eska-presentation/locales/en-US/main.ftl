@@ -53,6 +53,7 @@ analysis-member-unknown = Application "{ $application }" refers to missing membe
 analysis-member-type = Member "{ $member }" in application "{ $application }" requires project.type = { $expected }, found { $actual }.
 analysis-member-settings = Analysis settings for member "{ $member }" belong in the root workspace manifest.
 analysis-platform-scope = Set the application target in applications.<name>.target_platform_version; remove the shared analysis.target_platform_version.
+project-serve-about = Run the standalone project Metadata API server over stdio
 project-tool-about = Designer XML project operations
 project-new-about = Create a Designer XML project without initializing Git
 project-init-about = Attach an existing Designer XML export without initializing Git

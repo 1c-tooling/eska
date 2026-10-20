@@ -50,7 +50,13 @@ BSL и непрозрачных файлов. Git не инициализиру�
 
 `analyzer-config` готовит [производный конфиг и миграцию](analyzer-configuration.md).
 `metadata` и `version` перенесены без изменения операций, accepted-base checks,
-ownership снимков и существующих JSON-схем. Сервер `serve` относится к T92.
+ownership снимков и существующих JSON-схем.
+
+`serve --stdio` запускает самостоятельный сервер [Metadata API](ide-protocol.md).
+Он объявляет identity `eska-project`, API 1.12 и `selfUpdate: false`; языковой
+сервер не запускается при открытии дерева. Полная ESKA, Git, платформа и analyzer
+в PATH не требуются. Прежний `eska ide --stdio` сохраняет identity `eska` и прежнее
+поведение CLI. Это два входа одной реализации сервера, без второго дерева или индекса.
 
 ## Вывод
 
@@ -93,3 +99,18 @@ platform runner, Tokio, HTTP/updater или ядра анализатора. `gi
 `gix-validate` остаются переносимыми утилитами модели.
 Экспериментальные Rust-типы native ошибок new/init теперь содержат
 `Operation(CreationFailure/InitFailure)`; публичный CLI и JSON не изменены.
+
+## Проверка T92
+
+`eska-project serve --stdio` и новый Explorer проверены на Linux x86_64.
+Полный Rust-набор: fmt/check/strict Clippy/Rustdoc, 784 теста passed, 9 ignored.
+Process-тест без PATH проверяет четыре типа, обе локали, identity/capabilities,
+контекст, сохранность исходников и завершение процесса. Прежний вход
+`eska ide` сохраняет свои тесты и совместимость API.
+
+Explorer: typecheck и 143 Node-теста с настоящим project и прежним API 1.11
+прошли. В VSCodium 1.109.5 прошли отдельные нативные профили общего дерева,
+свойств, явного legacy и пользовательского пути с отклонением старого CLI.
+Тест дерева исправлен под существующее свёрнутое состояние группы Modules;
+продуктовое значение не менялось. Windows/macOS и Remote этими запусками
+не проверены. Установщик project и языковой клиент остаются следующими этапами.

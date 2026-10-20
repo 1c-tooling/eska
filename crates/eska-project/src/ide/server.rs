@@ -28,7 +28,25 @@ pub(super) struct Session {
     pub workspace: MetadataWorkspace,
     pub projects: Vec<ProjectState>,
 }
+/// A compatibility entry and a standalone component expose different executable identities.
+#[derive(Clone, Copy)]
+pub(super) enum Identity {
+    Legacy,
+    Project,
+}
+
+impl Identity {
+    /// Identity is selected by the entry point, never supplied by an untrusted protocol request.
+    const fn name(self) -> &'static str {
+        match self {
+            Self::Legacy => "eska",
+            Self::Project => "eska-project",
+        }
+    }
+}
+
 pub(super) struct Server {
+    identity: Identity,
     pub analyzer_lease: Option<(String, eska_analyzer::configuration::Lease)>,
     pub initialized: bool,
     pub closing: bool,
@@ -42,8 +60,11 @@ pub(super) struct Server {
 
 impl Server {
     /// Construct locale-independent protocol state without discovering a project.
-    pub(super) fn new() -> Result<Self, eska_presentation::localization::LocalizationError> {
+    pub(super) fn new(
+        identity: Identity,
+    ) -> Result<Self, eska_presentation::localization::LocalizationError> {
         Ok(Self {
+            identity,
             analyzer_lease: None,
             initialized: false,
             closing: false,
@@ -166,7 +187,7 @@ impl Server {
         self.property_editing =
             input.api_version.minor >= 6 && input.allow_property_edits == Some(true);
         Ok(
-            json!({"apiVersion":{"major":1,"minor":12},"server":{"name":"eska","version":env!("CARGO_PKG_VERSION")},"capabilities":{"analyzerConfiguration":self.client_minor>=12,"propertyEditing":self.property_editing,"unsignedIntegerProperties":self.property_editing && self.client_minor >= 11,"linkedPropertyEdits":self.property_editing && self.client_minor >= 10,"metadataRename":self.property_editing && self.client_minor >= 9,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":true,"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
+            json!({"apiVersion":{"major":1,"minor":12},"server":{"name":self.identity.name(),"version":env!("CARGO_PKG_VERSION")},"capabilities":{"analyzerConfiguration":self.client_minor>=12,"propertyEditing":self.property_editing,"unsignedIntegerProperties":self.property_editing && self.client_minor >= 11,"linkedPropertyEdits":self.property_editing && self.client_minor >= 10,"metadataRename":self.property_editing && self.client_minor >= 9,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":matches!(self.identity,Identity::Legacy),"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
         )
     }
 
