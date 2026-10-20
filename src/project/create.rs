@@ -1,50 +1,32 @@
-//! Creation of a new project directory; no CLI parsing or localized output.
-
-use std::{
-    fs,
-    io::{self, Write},
-    path::{Component, Path, PathBuf},
-};
-
-use crate::{
-    config::ProjectConfig,
-    vcs::{git, workflow::WorkflowPreset},
-};
+//! Native creation orchestration; filesystem transactions belong to the shared project core.
 
 use super::{
     Project, ProjectName, ProjectType, Workspace,
     artifact::{ArtifactError, PreparedArtifact},
-    discovery::{self, ContextDiscoveryError, DiscoveryContext, DiscoveryError},
-    onboarding::{self, WorkspaceEnrollmentError, WorkspaceMemberEnrollment},
-    templates::Template,
 };
+use crate::{
+    config::ProjectConfig,
+    vcs::{git, workflow::WorkflowPreset},
+};
+use eska_project_core::project::create as core;
+use std::path::{Path, PathBuf};
 
-/// A collision-free workspace destination prepared before interactive input.
+pub use core::WorkspaceCreationPlan;
+
+/// Native failures remain typed in the caller without adding Git/platform dependencies to core.
 #[derive(Debug)]
-pub struct WorkspaceCreationPlan {
-    destination: PathBuf,
-    parent: PathBuf,
-    create_parent: bool,
-    name: ProjectName,
-    enrollment: WorkspaceMemberEnrollment,
+pub enum CreationFailure {
+    Artifact(Box<ArtifactError>),
+    Git(Box<gix::init::Error>),
 }
 
-impl WorkspaceCreationPlan {
-    #[must_use]
-    pub fn destination(&self) -> &Path {
-        &self.destination
-    }
-}
+/// The existing CLI adds native failures to the shared filesystem transaction's errors.
+pub type CreationError = core::CreationError<CreationFailure>;
 
-/// Creates a project without modifying any pre-existing destination.
-///
-/// The parent directory must exist. Ordinary errors roll back only the newly
-/// created directory; cleanup failures retain both errors and the affected path.
-/// Process termination and concurrent external edits are not transactional.
+/// Keep legacy workflow settings and optional Git initialization on the shared creation path.
 ///
 /// # Errors
-///
-/// Returns structured path, I/O, Git, validation or rollback errors.
+/// Returns configuration, Git, I/O or rollback failures.
 pub fn create(
     destination: &Path,
     project_type: ProjectType,
@@ -52,13 +34,15 @@ pub fn create(
     initialize_vcs: bool,
 ) -> Result<Project, CreationError> {
     let config = ProjectConfig::new(project_type).with_workflow(workflow);
-    create_configured(destination, &config, initialize_vcs)
+    core::create_with(destination, &config, |root| {
+        initialize(root, initialize_vcs)
+    })
 }
 
-/// Claim the project directory before preparing its isolated artifact sources.
+/// Claim the destination before native unpacking and preserve the prepared source owner until publication.
 ///
 /// # Errors
-/// Returns creation errors and rolls back the exclusively owned destination on failure.
+/// Retains preparation failures and rolls back only the newly claimed directory.
 pub fn create_imported(
     destination: &Path,
     initialize_vcs: bool,
@@ -66,341 +50,86 @@ pub fn create_imported(
 ) -> Result<Project, CreationError> {
     let destination = resolve_destination(destination)?;
     in_new_directory(&destination, |root| {
-        let (config, artifact) = prepare(root)?;
+        let (config, artifact) = prepare(root.path())?;
         publish_project(root, &config, initialize_vcs, Some(&artifact.sources()))
     })
 }
 
-/// Share scaffold publication and rollback between empty and imported projects.
-fn create_configured(
-    destination: &Path,
-    config: &ProjectConfig,
-    initialize_vcs: bool,
-) -> Result<Project, CreationError> {
-    let destination = resolve_destination(destination)?;
-    in_new_directory(&destination, |root| {
-        publish_project(root, config, initialize_vcs, None)
-    })
-}
-
-/// Finish standalone files and validation only inside an exclusively owned directory.
-fn publish_project(
-    root: &Path,
-    config: &ProjectConfig,
-    initialize_vcs: bool,
-    sources: Option<&Path>,
-) -> Result<Project, CreationError> {
-    let template = Template::from_config(config).map_err(CreationError::Template)?;
-    write_template(root, &template)?;
-    if let Some(sources) = sources {
-        install_sources(root, config.source(), sources)?;
-    }
-    if initialize_vcs {
-        git::initialize(root).map_err(CreationError::Git)?;
-    }
-    discovery::discover(root).map_err(|error| CreationError::Validation(Box::new(error)))
-}
-
-/// Preflights the conventional `src/<name>` destination of a workspace member.
+/// Preflight the same member destination used by the standalone project tool.
 ///
 /// # Errors
-/// Returns structured name, path, collision, manifest, or workspace-layout errors.
+/// Returns shared path, name or workspace validation failures.
 pub fn inspect_workspace_member(
     workspace: &Workspace,
     name: ProjectName,
 ) -> Result<WorkspaceCreationPlan, CreationError> {
-    let parent = workspace.root().join("src");
-    let (resolved_parent, create_parent) = match fs::symlink_metadata(&parent) {
-        Ok(_) => {
-            let resolved = fs::canonicalize(&parent).map_err(|source| CreationError::Io {
-                path: parent.clone(),
-                source,
-            })?;
-            if !resolved.is_dir() || !resolved.starts_with(workspace.root()) {
-                return Err(CreationError::InvalidDestination { path: parent });
-            }
-            (resolved, false)
-        }
-        Err(error) if error.kind() == io::ErrorKind::NotFound => (parent.clone(), true),
-        Err(source) => {
-            return Err(CreationError::Io {
-                path: parent,
-                source,
-            });
-        }
-    };
-    let destination = resolved_parent.join(name.as_str());
-    match fs::symlink_metadata(&destination) {
-        Ok(_) => {
-            return Err(CreationError::AlreadyExists { path: destination });
-        }
-        Err(error) if error.kind() == io::ErrorKind::NotFound => {}
-        Err(source) => {
-            return Err(CreationError::Io {
-                path: destination,
-                source,
-            });
-        }
-    }
-    let member_path = PathBuf::from("src").join(name.as_str());
-    let enrollment = onboarding::prepare(workspace, destination.clone(), member_path, &name)
-        .map_err(CreationError::Workspace)?;
-    Ok(WorkspaceCreationPlan {
-        destination,
-        parent,
-        create_parent,
-        name,
-        enrollment,
-    })
+    core::inspect_workspace_member(workspace, name)
 }
 
-/// Creates and enrolls one workspace member without nested Git or workflow files.
+/// Create a member without introducing Git or platform execution into its filesystem writer.
 ///
 /// # Errors
-/// Rolls back the new directory and exact root manifest bytes on ordinary failure.
+/// Rolls back both owned files and root enrollment after ordinary failure.
 pub fn create_workspace_member(
     plan: &WorkspaceCreationPlan,
     project_type: ProjectType,
 ) -> Result<Project, CreationError> {
-    let config = ProjectConfig::new(project_type).with_name(plan.name.clone());
-    create_member_configured(plan, &config, None)
+    core::create_workspace_member(plan, project_type)
 }
 
-/// Create and enroll an imported member with optional explicit platform overrides.
+/// Publish native XML using the same member transaction as ordinary project creation.
 ///
 /// # Errors
-/// Returns creation errors, restoring the workspace manifest on ordinary failure.
+/// Returns native source publication or enrollment failures.
 pub fn create_imported_member(
     plan: &WorkspaceCreationPlan,
     config: &ProjectConfig,
-    artifact: &super::artifact::PreparedArtifact,
+    artifact: &PreparedArtifact,
 ) -> Result<Project, CreationError> {
-    let config = config.clone().with_name(plan.name.clone());
-    create_member_configured(plan, &config, Some(&artifact.sources()))
+    core::create_imported_member(plan, config, &artifact.sources())
 }
 
-/// Publish member files before enrolling them in the shared workspace manifest.
-fn create_member_configured(
-    plan: &WorkspaceCreationPlan,
+/// Preserve legacy preflight before interactive prompts.
+///
+/// # Errors
+/// Rejects invalid, missing-parent or existing destinations.
+pub fn resolve_destination(destination: &Path) -> Result<PathBuf, CreationError> {
+    core::resolve_destination(destination)
+}
+
+/// The caller owns Git initialization; the core owns its surrounding filesystem transaction.
+fn initialize(root: &Path, enabled: bool) -> Result<(), CreationFailure> {
+    if enabled {
+        git::initialize(root).map_err(CreationFailure::Git)
+    } else {
+        Ok(())
+    }
+}
+
+/// Share publication with imported creation and native rollback tests.
+fn publish_project(
+    root: &core::NewDirectory<'_>,
     config: &ProjectConfig,
+    initialize_vcs: bool,
     sources: Option<&Path>,
 ) -> Result<Project, CreationError> {
-    let template = Template::workspace_config(config).map_err(CreationError::Template)?;
-    let owns_parent = if plan.create_parent {
-        fs::create_dir(&plan.parent).map_err(|source| CreationError::Io {
-            path: plan.parent.clone(),
-            source,
-        })?;
-        true
-    } else {
-        false
-    };
-    if let Err(error) = fs::create_dir(&plan.destination) {
-        if owns_parent {
-            let _ = fs::remove_dir(&plan.parent);
-        }
-        return Err(if error.kind() == io::ErrorKind::AlreadyExists {
-            CreationError::AlreadyExists {
-                path: plan.destination.clone(),
-            }
-        } else {
-            CreationError::Io {
-                path: plan.destination.clone(),
-                source: error,
-            }
-        });
-    }
-    let mut manifest_published = false;
-    let result = (|| {
-        write_template(&plan.destination, &template)?;
-        if let Some(sources) = sources {
-            install_sources(&plan.destination, config.source(), sources)?;
-        }
-        plan.enrollment
-            .publish()
-            .map_err(CreationError::Workspace)?;
-        manifest_published = true;
-        let context = discovery::discover_context(plan.enrollment.workspace_root())
-            .map_err(|error| CreationError::WorkspaceValidation(Box::new(error)))?;
-        let DiscoveryContext::Workspace { workspace, .. } = context else {
-            return Err(CreationError::WorkspaceMemberMissing {
-                name: plan.name.clone(),
-            });
-        };
-        workspace
-            .member(&plan.name)
-            .map(|member| member.project().clone())
-            .ok_or_else(|| CreationError::WorkspaceMemberMissing {
-                name: plan.name.clone(),
-            })
-    })();
-    if let Ok(project) = result {
-        return Ok(project);
-    }
-    let original = result.expect_err("handled successful result");
-    let mut paths = Vec::new();
-    if manifest_published && plan.enrollment.restore().is_err() {
-        paths.push(
-            plan.enrollment
-                .workspace_root()
-                .join(crate::config::FILE_NAME),
-        );
-    }
-    if fs::remove_dir_all(&plan.destination).is_err() {
-        paths.push(plan.destination.clone());
-    }
-    if owns_parent && fs::remove_dir(&plan.parent).is_err() {
-        paths.push(plan.parent.clone());
-    }
-    if paths.is_empty() {
-        Err(original)
-    } else {
-        Err(CreationError::WorkspaceRollback {
-            paths,
-            original: Box::new(original),
-        })
-    }
-}
-
-/// Replace only the empty, newly owned scaffold source directory.
-fn install_sources(root: &Path, relative: &Path, sources: &Path) -> Result<(), CreationError> {
-    let destination = root.join(relative);
-    let placeholder = destination.join(".gitkeep");
-    fs::remove_file(&placeholder).map_err(|source| CreationError::Io {
-        path: placeholder,
-        source,
-    })?;
-    fs::remove_dir(&destination).map_err(|source| CreationError::Io {
-        path: destination.clone(),
-        source,
-    })?;
-    fs::rename(sources, &destination).map_err(|source| CreationError::Io {
-        path: destination,
-        source,
+    core::publish_project(root, config, sources, |root| {
+        initialize(root, initialize_vcs)
     })
 }
 
-/// Materialize a template only inside a newly created directory.
-fn write_template(root: &Path, template: &Template) -> Result<(), CreationError> {
-    for directory in template.directories() {
-        let path = root.join(directory);
-        fs::create_dir(&path).map_err(|source| CreationError::Io { path, source })?;
-    }
-    for entry in template.files() {
-        let path = root.join(entry.path());
-        let mut file = fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&path)
-            .map_err(|source| CreationError::Io {
-                path: path.clone(),
-                source,
-            })?;
-        file.write_all(entry.contents().as_bytes())
-            .and_then(|()| file.sync_all())
-            .map_err(|source| CreationError::Io { path, source })?;
-    }
-    Ok(())
-}
-
-/// Preflights a destination without creating it, useful before interactive prompts.
-///
-/// # Errors
-///
-/// Rejects empty/current/parent paths, missing parents, and existing destinations.
-pub fn resolve_destination(destination: &Path) -> Result<PathBuf, CreationError> {
-    if destination.as_os_str().is_empty()
-        || destination
-            .components()
-            .any(|part| part == Component::ParentDir)
-    {
-        return Err(CreationError::InvalidDestination {
-            path: destination.to_path_buf(),
-        });
-    }
-    let name = destination
-        .file_name()
-        .ok_or_else(|| CreationError::InvalidDestination {
-            path: destination.to_path_buf(),
-        })?;
-    let parent = destination
-        .parent()
-        .filter(|path| !path.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."));
-    let parent = fs::canonicalize(parent).map_err(|source| CreationError::Io {
-        path: parent.to_path_buf(),
-        source,
-    })?;
-    let path = parent.join(name);
-    match fs::symlink_metadata(&path) {
-        Ok(_) => Err(CreationError::AlreadyExists { path }),
-        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(path),
-        Err(source) => Err(CreationError::Io { path, source }),
-    }
-}
-
-/// Run preparation and publication under one exclusively claimed destination.
+/// Share exclusive directory ownership with preparation and native rollback tests.
 fn in_new_directory(
     destination: &Path,
-    operation: impl FnOnce(&Path) -> Result<Project, CreationError>,
+    operation: impl FnOnce(&core::NewDirectory<'_>) -> Result<Project, CreationError>,
 ) -> Result<Project, CreationError> {
-    // create_dir, unlike create_dir_all, claims the destination exclusively.
-    fs::create_dir(destination).map_err(|source| {
-        if source.kind() == io::ErrorKind::AlreadyExists {
-            CreationError::AlreadyExists {
-                path: destination.to_path_buf(),
-            }
-        } else {
-            CreationError::Io {
-                path: destination.to_path_buf(),
-                source,
-            }
-        }
-    })?;
-    match operation(destination) {
-        Ok(project) => Ok(project),
-        Err(original) => match fs::remove_dir_all(destination) {
-            Ok(()) => Err(original),
-            Err(source) => Err(CreationError::Rollback {
-                path: destination.to_path_buf(),
-                original: Box::new(original),
-                source,
-            }),
-        },
-    }
+    core::in_new_directory(destination, operation)
 }
 
-#[derive(Debug)]
-pub enum CreationError {
-    Artifact(Box<ArtifactError>),
-    InvalidDestination {
-        path: PathBuf,
-    },
-    AlreadyExists {
-        path: PathBuf,
-    },
-    Io {
-        path: PathBuf,
-        source: io::Error,
-    },
-    Template(toml::ser::Error),
-    Git(Box<gix::init::Error>),
-    Validation(Box<DiscoveryError>),
-    Workspace(WorkspaceEnrollmentError),
-    WorkspaceValidation(Box<ContextDiscoveryError>),
-    WorkspaceMemberMissing {
-        name: ProjectName,
-    },
-    Rollback {
-        path: PathBuf,
-        original: Box<Self>,
-        source: io::Error,
-    },
-    WorkspaceRollback {
-        paths: Vec<PathBuf>,
-        original: Box<Self>,
-    },
-}
+#[cfg(test)]
+use super::discovery::{self, DiscoveryContext};
+#[cfg(test)]
+use std::fs;
 
 #[cfg(test)]
 mod tests {
@@ -419,11 +148,14 @@ mod tests {
             assert_eq!(root, destination);
             fs::create_dir_all(root.join(".eska/import/partial")).unwrap();
             fs::write(root.join(".eska/import/partial/input.epf"), "partial").unwrap();
-            Err(CreationError::Artifact(Box::new(
-                ArtifactError::UnsupportedFile(sentinel.clone()),
+            Err(CreationError::Operation(CreationFailure::Artifact(
+                Box::new(ArtifactError::UnsupportedFile(sentinel.clone())),
             )))
         });
-        assert!(matches!(result, Err(CreationError::Artifact(_))));
+        assert!(matches!(
+            result,
+            Err(CreationError::Operation(CreationFailure::Artifact(_)))
+        ));
         assert!(!destination.exists());
         assert!(!fixture.0.join(".eska").exists());
         assert_eq!(fs::read(sentinel).unwrap(), b"preserved");
@@ -436,12 +168,12 @@ mod tests {
         fs::write(&sentinel, "preserved").expect("sentinel");
         let destination = fixture.0.join("partial-project");
         let result = in_new_directory(&destination, |root| {
-            fs::create_dir(root.join("src")).expect("partial source");
-            fs::write(root.join("eska.toml"), "partial config").expect("partial config");
-            git::initialize(root).expect("partial Git repository");
+            fs::create_dir(root.path().join("src")).expect("partial source");
+            fs::write(root.path().join("eska.toml"), "partial config").expect("partial config");
+            git::initialize(root.path()).expect("partial Git repository");
             Err(CreationError::Io {
-                path: root.join("injected-error"),
-                source: io::Error::other("injected failure"),
+                path: root.path().join("injected-error"),
+                source: std::io::Error::other("injected failure"),
             })
         });
         assert!(matches!(result, Err(CreationError::Io { .. })));
@@ -466,11 +198,11 @@ mod tests {
         let destination = fixture.0.join("cleanup-failure");
         let result = in_new_directory(&destination, |root| {
             // Inject a deterministic cleanup failure without relying on user privileges.
-            fs::remove_dir(root).expect("remove owned empty directory");
-            fs::write(root, "leftover").expect("replace owned directory with file");
+            fs::remove_dir(root.path()).expect("remove owned empty directory");
+            fs::write(root.path(), "leftover").expect("replace owned directory with file");
             Err(CreationError::Io {
-                path: root.to_path_buf(),
-                source: io::Error::other("original failure"),
+                path: root.path().to_path_buf(),
+                source: std::io::Error::other("original failure"),
             })
         });
         let Err(CreationError::Rollback { path, original, .. }) = result else {

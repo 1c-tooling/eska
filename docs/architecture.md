@@ -24,6 +24,8 @@ crates/eska-project-core/
         ├── workspace.rs            # Workspace, members and portable names
         ├── discovery.rs            # manifest discovery and source validation
         ├── selection.rs            # current/named/all project selection
+        ├── create.rs, init.rs       # filesystem-only creation/attachment with rollback
+        ├── onboarding.rs            # exact root-manifest enrollment
         ├── designer_xml.rs         # root descriptor classification
         ├── designer_source/        # checked source mapping and bounded reads
         ├── metadata.rs             # logical paths and descriptor-child comparisons
@@ -40,17 +42,26 @@ crates/eska-project-core/
         ├── support/tests.rs        # support-rule fixtures
         ├── version.rs              # narrow Properties/Version reads and writes
         └── templates.rs            # project scaffold plans without filesystem writes
+crates/eska-presentation/
+├── locales/                        # common Fluent/catalog source for all tools
+└── src/                            # localization, paths, locale bootstrap and core diagnostics
+crates/eska-project/
+└── src/
+    ├── main.rs, cli.rs              # standalone project CLI
+    ├── context.rs, operations.rs    # checked project commands without native runtimes
+    ├── metadata.rs, version.rs     # shared legacy command presentation
+    └── ide/                        # Metadata API framing, DTOs and server lifecycle
 src/
 ├── main.rs                         # existing binary entry point
 ├── lib.rs                          # current CLI and operation namespaces
 ├── cli/
 │   ├── mod.rs, args.rs             # startup, parsing, locale and top-level help
 │   ├── commands/                   # command-specific human/JSON presentation
-│   ├── ide/                        # Metadata API framing, DTOs and server lifecycle
+│   ├── ide.rs                      # shared project server entry point
 │   ├── platform.rs                 # machine-local runner selection
 │   ├── process_output/             # platform diagnostics and progress lifecycle
 │   ├── interactive/                # keyboard selection, confirmation and terminal state
-│   └── localization/               # Fluent resource loading and formatting
+│   └── diagnostics.rs              # machine config/tool errors; core errors reexported
 ├── config/
 │   ├── mod.rs                      # reexports of shared manifest types
 │   └── global.rs                   # machine-local runner config and transactional editing
@@ -71,7 +82,7 @@ src/
     ├── command.rs                  # isolated system Git capability fallback
     ├── network.rs                  # gix transport and documented fallback
     └── diff.rs, snapshot.rs, status.rs, shelves/
-locales/{ru-RU,en-US}/main.ftl       # human-readable strings
+crates/eska-presentation/locales/{ru-RU,en-US}/main.ftl       # human-readable strings
 assets/                            # presentation resources
 tests/integration.rs               # CLI/project/VCS integration suite
 tests/support/mod.rs               # exclusively owned playground directories
@@ -95,7 +106,7 @@ tests/support/mod.rs               # exclusively owned playground directories
 | Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`src/project/build/tool.rs`](../src/project/build/tool.rs) |
 | Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
 | Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
-| Изменить обратимое кодирование JSON-путей и Git-строк | [`src/cli/encoding.rs`](../src/cli/encoding.rs) |
+| Изменить обратимое кодирование JSON-путей и Git-строк | [`crates/eska-presentation/src/encoding.rs`](../crates/eska-presentation/src/encoding.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
 | Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`crates/eska-project-core/src/project/version.rs`](../crates/eska-project-core/src/project/version.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
@@ -119,7 +130,7 @@ tests/support/mod.rs               # exclusively owned playground directories
 | Изменить workflow policy или план задачи | [`crates/eska-project-core/src/workflow/policy.rs`](../crates/eska-project-core/src/workflow/policy.rs) |
 | Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../src/cli/interactive/keyboard.rs) |
 | Изменить оформление меню | [`src/cli/interactive/render.rs`](../src/cli/interactive/render.rs) |
-| Изменить приоритет языка | [`src/cli/localization/locale.rs`](../src/cli/localization/locale.rs) |
+| Изменить приоритет языка | [`crates/eska-presentation/src/localization/locale.rs`](../crates/eska-presentation/src/localization/locale.rs) |
 
 ## Границы ответственности
 

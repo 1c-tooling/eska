@@ -690,7 +690,9 @@ fn rejects_unsupported_roots_config_directories_and_bare_repositories() {
     let plan = init::inspect(&bare, None).expect("XML");
     assert!(matches!(
         init::apply(&plan, WorkflowPreset::Trunk, BuildSettings::default(), true),
-        Err(InitError::ExistingGit { .. })
+        Err(InitError::Operation(
+            eska::project::init::InitFailure::ExistingGit { .. }
+        ))
     ));
     assert_eq!(snapshot(&bare), before);
 }

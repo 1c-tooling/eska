@@ -1,0 +1,20 @@
+[package]
+name = "eska-presentation"
+version = "0.14.3"
+edition = "2024"
+publish = false
+description = "Shared localization and path presentation for ESKA tools"
+license = "Apache-2.0"
+repository = "https://github.com/1c-tooling/eska"
+readme = "../../README.md"
+keywords = ["1c-enterprise", "cli", "localization"]
+categories = ["command-line-interface", "localization"]
+authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
+
+[lints]
+workspace = true
+
+[dependencies]
+eska-project-core = { path = "../eska-project-core" }
+fluent = "0.17.0"
+sys-locale = "0.3.2"

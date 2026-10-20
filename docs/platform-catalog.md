@@ -6,25 +6,25 @@
 
 ## Ресурсы
 
-- `locales/{ru-RU,en-US}/main.ftl` — интерфейс CLI, сообщения и диагностика ESKA.
-- `locales/{ru-RU,en-US}/platform-8.3.27.ftl` — базовый словарь: 424 подписи
+- `crates/eska-presentation/locales/{ru-RU,en-US}/main.ftl` — интерфейс CLI, сообщения и диагностика ESKA.
+- `crates/eska-presentation/locales/{ru-RU,en-US}/platform-8.3.27.ftl` — базовый словарь: 424 подписи
   свойств/вложенных полей и 81 ранее существовавшая подпись дерева.
-- `locales/{ru-RU,en-US}/platform-8.5.1.ftl` — 16 дополнительных подписей.
-- `locales/{ru-RU,en-US}/platform-values.ftl` — 785 подписей значений: 678 членов
+- `crates/eska-presentation/locales/{ru-RU,en-US}/platform-8.5.1.ftl` — 16 дополнительных подписей.
+- `crates/eska-presentation/locales/{ru-RU,en-US}/platform-values.ftl` — 785 подписей значений: 678 членов
   135 перечислений EDT, дополнительные токены Designer, встроенные типы,
   стандартные реквизиты, события и группы команд.
-- [platform-values.tsv](../locales/platform-values.tsv) — тип, имя, литерал и FTL-ключ
+- [platform-values.tsv](../crates/eska-presentation/locales/platform-values.tsv) — тип, имя, литерал и FTL-ключ
   каждого значения; тексты переводов остаются только в FTL.
-- [platform-catalog.tsv](../locales/platform-catalog.tsv) — 440 идентичностей
+- [platform-catalog.tsv](../crates/eska-presentation/locales/platform-catalog.tsv) — 440 идентичностей
   подписей: Fluent key, XML namespace, имя, контекст владельца, версия каталога.
-- [platform-coverage.tsv](../locales/platform-coverage.tsv) — соответствие
+- [platform-coverage.tsv](../crates/eska-presentation/locales/platform-coverage.tsv) — соответствие
   свойств модели экспорта словарю: 2 639 вхождений, 328 разных XML-имён.
-- [platform-sources.json](../locales/platform-sources.json) — версии и SHA-256
+- [platform-sources.json](../crates/eska-presentation/locales/platform-sources.json) — версии и SHA-256
   исходных пакетов EDT. Сами пакеты в репозитории не хранятся.
 
 Переводы хранятся только в FTL. TSV содержит идентификаторы для аудита и тестов.
 Ключи `tree-*` сохранены при переносе из `main.ftl`; wire-контракт дерева не меняется.
-Технические признаки булевых полей находятся в `src/cli/ide/property_types.rs`:
+Технические признаки булевых полей находятся в `crates/eska-project/src/ide/property_types.rs`:
 они проверены по `EBoolean` модели экспорта EDT из того же манифеста источников.
 Для неоднозначных имён учитываются владелец и вложенность; namespace вложенных
 флагов мобильного приложения сопоставлен с Designer XML. Признак `scalarType`

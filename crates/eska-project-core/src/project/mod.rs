@@ -2,9 +2,11 @@
 
 pub mod build;
 pub mod configurator;
+pub mod create;
 pub mod designer_source;
 pub mod designer_xml;
 pub mod discovery;
+pub mod init;
 pub mod metadata;
 mod metadata_disk_cache;
 pub mod metadata_edit;
@@ -14,6 +16,7 @@ pub mod metadata_rename;
 pub mod metadata_workspace;
 pub mod model;
 pub mod object_model;
+pub mod onboarding;
 pub mod selection;
 pub mod support;
 pub mod templates;

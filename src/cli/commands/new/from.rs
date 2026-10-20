@@ -75,7 +75,9 @@ fn execute(
         )
     })?;
     let creation_error = |error| match error {
-        create::CreationError::Artifact(error) => artifact::present(&error, localizer),
+        create::CreationError::Operation(create::CreationFailure::Artifact(error)) => {
+            artifact::present(&error, localizer)
+        }
         error => Failure::new("creation", super::present(&error, localizer)),
     };
     let (destination, member) = if let Some(workspace) = &workspace {
@@ -130,7 +132,9 @@ fn execute(
     };
     let prepare = |destination: &Path| {
         let prepared = artifact::unpack(&base.join(input), destination, &tool, true, localizer)
-            .map_err(|error| create::CreationError::Artifact(Box::new(error)))?;
+            .map_err(|error| {
+                create::CreationError::Operation(create::CreationFailure::Artifact(Box::new(error)))
+            })?;
         let mut config = ProjectConfig::new(prepared.identity().project_type);
         if let Some(workflow) = workflow {
             config = config.with_workflow(workflow);

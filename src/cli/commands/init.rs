@@ -242,11 +242,13 @@ fn present(error: &InitError, localizer: &Localizer) -> String {
         InitError::InvalidDescriptor { path } => ("init-descriptor-invalid", path),
         InitError::InvalidXml { path, .. } => ("init-xml-invalid", path),
         InitError::DescriptorTooLarge { path } => ("init-descriptor-large", path),
-        InitError::ExistingGit { path, .. } => ("init-git-invalid", path),
+        InitError::Operation(init::InitFailure::ExistingGit { path, .. }) => {
+            ("init-git-invalid", path)
+        }
         InitError::ChangedSource { path } => ("init-source-changed", path),
         InitError::Config(_) => return localizer.text("init-source-path-invalid"),
         InitError::Serialize(_) => return localizer.text("init-config-error"),
-        InitError::Git(_) => return localizer.text("new-git-error"),
+        InitError::Operation(init::InitFailure::Git(_)) => return localizer.text("new-git-error"),
         InitError::Validation(error) => {
             return diagnostics::present_project_error(error, localizer);
         }

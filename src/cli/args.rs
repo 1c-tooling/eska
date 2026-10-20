@@ -1,6 +1,6 @@
 //! Global options, argument parsing and localized top-level help.
 
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsString;
 use std::path::PathBuf;
 
 use clap::{ArgAction, CommandFactory, FromArgMatches, Parser};
@@ -75,29 +75,7 @@ impl Cli {
     }
 }
 
-/// Extracts only the global `--lang` value needed before clap renders help.
-#[must_use]
-pub(super) fn bootstrap_lang<T: AsRef<OsStr>>(args: &[T]) -> Option<String> {
-    let mut arguments = args.iter().skip(1);
-    while let Some(argument) = arguments.next() {
-        let argument = argument.as_ref();
-        if argument == "--" {
-            break;
-        }
-        if argument == "--lang" {
-            return arguments
-                .next()
-                .and_then(|value| value.as_ref().to_str())
-                .map(str::to_owned);
-        }
-        if let Some(argument) = argument.to_str()
-            && let Some(value) = argument.strip_prefix("--lang=")
-        {
-            return Some(value.to_owned());
-        }
-    }
-    None
-}
+pub(super) use eska_presentation::arguments::bootstrap_lang;
 
 #[cfg(test)]
 mod tests {

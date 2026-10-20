@@ -127,7 +127,7 @@ EOF внутри кадра — exit 2. Broken pipe stdout — exit 1, без д
 Все payload keys и enum literals — английские, не зависят от locale.
 
 - `Path = {value:string,encoding:"utf-8"|"percent"|"utf-16-percent"}`:
-  правила T49 из `src/cli/encoding.rs`. UTF-8 сохраняется буквально, включая `%`;
+  правила T49 из `crates/eska-presentation/src/encoding.rs`. UTF-8 сохраняется буквально, включая `%`;
   Unix fallback кодирует **все** байты `%HH`, Windows fallback — все units `%HHHH`.
   Это native path, не URI; кодировка другой ОС отклоняется. Пути sources и
   file events относительны sourcePath; `..`, абсолютные пути и выход через
@@ -449,7 +449,7 @@ XML/BSL, manifest и Git сравниваются побайтно до/посл
 
 ## Реализация T70
 
-CLI adapter расположен в `src/cli/ide`: отдельные reader и writer, последовательный
+CLI adapter расположен в `crates/eska-project/src/ide`: отдельные reader и writer, последовательный
 worker, ограниченная очередь и атомарные флаги отмены. Новых зависимостей нет.
 Reader проверяет framing/envelope и отмечает отмену до исполнения обычной очереди.
 Writer — единственный владелец stdout. На idle worker выполняет один descriptor

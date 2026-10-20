@@ -6,16 +6,15 @@ mod args;
 mod changes;
 mod commands;
 mod diagnostics;
-mod encoding;
 mod ide;
 mod interactive;
-pub mod localization;
-mod path_output;
 mod platform;
 mod process_output;
 mod shelves;
 
 pub use args::Cli;
+pub use eska_presentation::localization;
+pub(crate) use eska_presentation::{encoding, path_output};
 
 use localization::{Localizer, resolve_locale_from_environment};
 

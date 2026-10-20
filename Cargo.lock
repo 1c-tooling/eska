@@ -704,8 +704,9 @@ dependencies = [
  "crossterm",
  "ctrlc",
  "directories",
+ "eska-presentation",
+ "eska-project",
  "eska-project-core",
- "fluent",
  "gix",
  "quick-xml",
  "reqwest",
@@ -715,11 +716,30 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "sys-locale",
  "tokio",
  "toml",
- "toml_edit",
  "zip",
+]
+
+[[package]]
+name = "eska-presentation"
+version = "0.14.3"
+dependencies = [
+ "eska-project-core",
+ "fluent",
+ "sys-locale",
+]
+
+[[package]]
+name = "eska-project"
+version = "0.14.3"
+dependencies = [
+ "base64 0.23.1",
+ "clap",
+ "eska-presentation",
+ "eska-project-core",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -735,6 +755,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "toml",
+ "toml_edit",
  "unicode-general-category",
  "zip",
 ]

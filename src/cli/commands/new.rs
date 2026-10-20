@@ -270,14 +270,16 @@ fn workspace_project_name(path: &Path) -> Option<ProjectName> {
 /// Render nested creation errors without decorating their reasons more than once.
 fn present(error: &CreationError, localizer: &Localizer) -> String {
     let (key, path) = match error {
-        CreationError::Artifact(error) => {
+        CreationError::Operation(create::CreationFailure::Artifact(error)) => {
             return super::artifact::present(error, localizer).message;
         }
         CreationError::InvalidDestination { path } => ("new-destination-invalid", path),
         CreationError::AlreadyExists { path } => ("new-destination-exists", path),
         CreationError::Io { path, .. } => ("new-io-error", path),
         CreationError::Template(_) => return localizer.text("new-template-error"),
-        CreationError::Git(_) => return localizer.text("new-git-error"),
+        CreationError::Operation(create::CreationFailure::Git(_)) => {
+            return localizer.text("new-git-error");
+        }
         CreationError::Validation(error) => {
             return diagnostics::present_project_error_with_links(
                 error,
