@@ -1,6 +1,7 @@
 //! Command registration and dispatch. Each handler owns its arguments and help.
 
-use std::{path::Path, process::ExitCode};
+use crate::component::{self, Component, Invocation};
+use std::{ffi::OsString, path::Path, process::ExitCode};
 
 use clap::Subcommand;
 
@@ -28,7 +29,6 @@ mod start;
 mod status;
 mod switch;
 mod update;
-mod validate;
 mod version;
 
 #[derive(Debug, Subcommand)]
@@ -87,35 +87,55 @@ pub(super) fn run(
     command: Option<&Commands>,
     project_dir: &Path,
     localizer: &Localizer,
+    process_args: &[OsString],
 ) -> ExitCode {
     match command {
         Some(Commands::Update(args)) => args.run(localizer),
-        Some(Commands::Metadata(args)) => args.run(project_dir, localizer),
-        Some(Commands::Ide(args)) => args.run(),
-        Some(Commands::Shelve(args)) => args.run(project_dir, localizer),
-        Some(Commands::Unshelve(args)) => args.run(project_dir, localizer),
-        Some(Commands::Shelves(args)) => args.run(project_dir, localizer),
+        Some(Commands::Metadata(_) | Commands::Version(_)) => component::run(
+            Component::Project,
+            process_args,
+            Invocation::Direct,
+            localizer,
+        ),
+        Some(Commands::Ide(_)) => component::run(
+            Component::Project,
+            process_args,
+            Invocation::LegacyIde,
+            localizer,
+        ),
+        Some(
+            Commands::Shelve(_)
+            | Commands::Unshelve(_)
+            | Commands::Shelves(_)
+            | Commands::Clone(_)
+            | Commands::Diff(_)
+            | Commands::Finish(_)
+            | Commands::History(_)
+            | Commands::Save(_)
+            | Commands::Start(_)
+            | Commands::Status(_)
+            | Commands::Switch(_),
+        ) => component::run(Component::Vcs, process_args, Invocation::Direct, localizer),
+        Some(Commands::Clean(_) | Commands::Config(_) | Commands::Platform(_)) => component::run(
+            Component::Build,
+            process_args,
+            Invocation::Direct,
+            localizer,
+        ),
         Some(Commands::Build(args)) => {
             args.run(project_dir, localizer, crate::vcs::build::provenance)
         }
-        Some(Commands::Clean(args)) => args.run(project_dir, localizer),
-        Some(Commands::Clone(args)) => args.run(project_dir, localizer),
-        Some(Commands::Config(args)) => args.run(localizer),
         Some(Commands::New(args)) => args.run(project_dir, localizer),
         Some(Commands::Init(args)) => args.run(project_dir, localizer),
         Some(Commands::Import(args)) => args.run(project_dir, localizer),
-        Some(Commands::Platform(args)) => args.run(localizer),
         Some(Commands::Patch(args)) => args.run(project_dir, localizer),
-        Some(Commands::Diff(args)) => args.run(project_dir, localizer),
         Some(Commands::Doctor(args)) => args.run(project_dir, localizer),
-        Some(Commands::Finish(_)) => finish::FinishArgs::run(project_dir, localizer),
-        Some(Commands::History(args)) => args.run(project_dir, localizer),
-        Some(Commands::Save(args)) => args.run(project_dir, localizer),
-        Some(Commands::Start(args)) => args.run(project_dir, localizer),
-        Some(Commands::Status(args)) => args.run(project_dir, localizer),
-        Some(Commands::Switch(args)) => args.run(project_dir, localizer),
-        Some(Commands::Version(args)) => args.run(project_dir, localizer),
-        None => validate::run(project_dir, localizer),
+        None => component::run(
+            Component::Project,
+            process_args,
+            Invocation::LegacyValidate,
+            localizer,
+        ),
     }
 }
 

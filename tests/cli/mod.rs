@@ -24,3 +24,5 @@ mod shelves;
 mod update;
 
 mod metadata;
+
+mod delegation;

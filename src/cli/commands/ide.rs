@@ -11,17 +11,6 @@ pub(in crate::cli) struct IdeArgs {
     help: Option<bool>,
 }
 
-impl IdeArgs {
-    /// Standard streams belong exclusively to the protocol after argument parsing.
-    pub(super) fn run(&self) -> std::process::ExitCode {
-        if self.stdio {
-            crate::cli::ide::run()
-        } else {
-            std::process::ExitCode::from(2)
-        }
-    }
-}
-
 /// Localize CLI help only; protocol values are deliberately locale independent.
 pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
     command

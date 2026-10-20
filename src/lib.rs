@@ -4,6 +4,7 @@
 //! [`config`] for `eska.toml`, and [`vcs`] for Git and workflow settings.
 
 pub mod cli;
+pub(crate) mod component;
 pub mod config;
 pub mod project;
 mod update;

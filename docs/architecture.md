@@ -77,10 +77,10 @@ crates/eska-build-runtime/
 src/
 ├── main.rs                         # existing binary entry point
 ├── lib.rs                          # current CLI and operation namespaces
+├── component.rs                    # component location, inherited streams, signals and reaping
 ├── cli/
 │   ├── mod.rs, args.rs             # startup, parsing, locale and top-level help
 │   ├── commands/                   # command-specific human/JSON presentation
-│   ├── ide.rs                      # shared project server entry point
 │   ├── platform.rs                 # machine-local runner selection
 │   ├── interactive.rs              # shared terminal menu reexports
 │   └── diagnostics.rs              # shared native/core error presentation reexports
@@ -99,8 +99,8 @@ src/
     └── build.rs                    # provenance and source-change inspector for build orchestration
 ```
 
-`validate.rs` — обработчик существующего запуска `eska` без подкоманды,
-а не новая команда `validate`. Самостоятельный `eska-check` использует общий
+Тихий запуск `eska` без подкоманды делегирован скрытому project-входу
+`__shell-validate`; native/composite-адаптеры пока остаются в общей команде. Самостоятельный `eska-check` использует общий
 контекст, полный XML-обход и внешний анализатор; его CLI находится в отдельном package. `crates/eska-vcs/src/vcs/git.rs` содержит
 общее открытие и инициализацию Git; чтение репозитория находится в
 `crates/eska-vcs/src/vcs/repository.rs`. `crates/eska-vcs/src/project/start.rs` исполняет workflow plan через

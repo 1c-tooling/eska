@@ -997,3 +997,8 @@ metadata-rename-apply-about = Применить проверенный план
 metadata-rename-recovery-about = Проверить или восстановить прерванное переименование
 
 vcs-tool-about = Git/workflow, полки и смысловое сравнение Designer XML
+
+component-missing = Не найден { $tool }. Установите компонент или задайте { $variable }.
+component-invalid = Компонент { $tool } недоступен: { $path }. { $reason }
+component-process-error = Ошибка запуска { $tool }: { $reason }
+component-signal-error = Не удалось подготовить отмену дочернего процесса: { $reason }.

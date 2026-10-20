@@ -19,6 +19,9 @@ use super::{
     disable_help_subcommand = true
 )]
 pub struct Cli {
+    #[arg(skip)]
+    pub(super) process_args: Vec<OsString>,
+
     /// Selected UI locale.
     #[arg(long, global = true)]
     pub lang: Option<String>,
@@ -43,8 +46,11 @@ impl Cli {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let matches = Self::localized_command(localizer).get_matches_from(args);
-        Self::from_arg_matches(&matches).unwrap_or_else(|error| error.exit())
+        let args: Vec<OsString> = args.into_iter().map(Into::into).collect();
+        let matches = Self::localized_command(localizer).get_matches_from(&args);
+        let mut cli = Self::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
+        cli.process_args = args.into_iter().skip(1).collect();
+        cli
     }
 
     fn localized_command(localizer: &Localizer) -> clap::Command {

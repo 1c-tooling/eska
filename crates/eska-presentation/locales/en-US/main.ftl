@@ -997,3 +997,8 @@ metadata-rename-apply-about = Apply a reviewed rename plan against its source sn
 metadata-rename-recovery-about = Inspect or recover an interrupted rename
 
 vcs-tool-about = Git workflows, shelves and semantic Designer XML comparisons
+
+component-missing = Cannot find { $tool }. Install the component or set { $variable }.
+component-invalid = Component { $tool } is unavailable: { $path }. { $reason }
+component-process-error = Cannot run { $tool }: { $reason }
+component-signal-error = Cannot prepare child process cancellation: { $reason }.

@@ -36,6 +36,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    #[command(name = "__shell-validate", hide = true)]
+    ShellValidate,
     #[command(disable_help_flag = true)]
     Serve(ServeArgs),
     #[command(disable_help_flag = true)]
@@ -56,6 +58,8 @@ enum Commands {
 
 #[derive(Debug, Args)]
 struct ServeArgs {
+    #[arg(long, hide = true)]
+    legacy_identity: bool,
     #[arg(long, required = true)]
     stdio: bool,
     #[arg(short,long,action=ArgAction::Help)]
@@ -138,9 +142,14 @@ pub fn run() -> ExitCode {
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
     match cli.command.as_ref() {
+        Some(Commands::ShellValidate) => shell_validate(&cli.project_dir, &localizer),
         Some(Commands::Serve(args)) => {
             if args.stdio {
-                crate::ide::serve()
+                if args.legacy_identity {
+                    crate::ide::run()
+                } else {
+                    crate::ide::serve()
+                }
             } else {
                 ExitCode::from(2)
             }
@@ -248,5 +257,19 @@ pub fn command_path(start: &Path, path: &Path) -> PathBuf {
         path.into()
     } else {
         start.join(path)
+    }
+}
+
+/// Preserve the quiet manifest-only default of the delegating shell.
+fn shell_validate(start: &Path, localizer: &Localizer) -> ExitCode {
+    match eska_project_core::project::discovery::discover_context(start) {
+        Ok(_) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!(
+                "{}",
+                eska_presentation::diagnostics::present_context_error(&error, localizer)
+            );
+            ExitCode::FAILURE
+        }
     }
 }

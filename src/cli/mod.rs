@@ -5,7 +5,6 @@ use std::{env, process::ExitCode};
 mod args;
 mod commands;
 mod diagnostics;
-mod ide;
 mod interactive;
 mod platform;
 
@@ -35,6 +34,11 @@ pub fn run() -> ExitCode {
 impl Cli {
     /// Runs the selected command, or validates a project, in the UI locale.
     pub fn run(&self, localizer: &Localizer) -> ExitCode {
-        commands::run(self.command.as_ref(), &self.project_dir, localizer)
+        commands::run(
+            self.command.as_ref(),
+            &self.project_dir,
+            localizer,
+            &self.process_args,
+        )
     }
 }
