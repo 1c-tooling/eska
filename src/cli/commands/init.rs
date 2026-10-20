@@ -248,7 +248,9 @@ fn present(error: &InitError, localizer: &Localizer) -> String {
         InitError::ChangedSource { path } => ("init-source-changed", path),
         InitError::Config(_) => return localizer.text("init-source-path-invalid"),
         InitError::Serialize(_) => return localizer.text("init-config-error"),
-        InitError::Operation(init::InitFailure::Git(_)) => return localizer.text("new-git-error"),
+        InitError::Operation(init::InitFailure::Vcs(error)) => {
+            return eska_presentation::components::present(error, localizer);
+        }
         InitError::Validation(error) => {
             return diagnostics::present_project_error(error, localizer);
         }

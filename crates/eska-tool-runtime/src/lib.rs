@@ -3,6 +3,7 @@
 mod process;
 mod query;
 mod resolver;
+pub mod vcs;
 
 pub use process::delegate;
 pub use query::query;
@@ -64,6 +65,10 @@ pub enum Error {
     InvalidResponse,
     OutputTooLarge,
     Failed,
+    Rejected {
+        component: Component,
+        code: String,
+    },
 }
 
 impl Error {
@@ -80,6 +85,7 @@ impl Error {
             Self::InvalidResponse => "component_response_invalid",
             Self::OutputTooLarge => "component_output_too_large",
             Self::Failed => "component_failed",
+            Self::Rejected { .. } => "component_rejected",
         }
     }
 }

@@ -227,3 +227,71 @@ fn explicit_missing_component_is_localized_and_help_remains_local() {
     }
     assert!(fs::read_dir(&fixture.0).unwrap().next().is_none());
 }
+
+/// Required VCS absence is detected before new/init writes; no-vcs keeps structural work usable.
+#[test]
+fn onboarding_preflights_required_vcs_before_writing() {
+    for locale in ["ru", "en"] {
+        let fixture = TestDir::new();
+        let missing = fixture.0.join("missing vcs");
+        let create = |no_vcs: bool| {
+            let mut command = Command::new(env!("CARGO_BIN_EXE_eska"));
+            command
+                .current_dir(&fixture.0)
+                .env("ESKA_VCS_BINARY", &missing)
+                .args([
+                    "--lang",
+                    locale,
+                    "new",
+                    "project",
+                    "--type",
+                    "configuration",
+                    "--workflow",
+                    "trunk",
+                ]);
+            if no_vcs {
+                command.arg("--no-vcs");
+            }
+            command.output().unwrap()
+        };
+        let refused = create(false);
+        assert_eq!(refused.status.code(), Some(1));
+        assert!(String::from_utf8_lossy(&refused.stderr).contains("eska-vcs"));
+        assert!(!fixture.0.join("project").exists());
+        assert!(create(true).status.success());
+        assert!(!fixture.0.join("project/.git").exists());
+        let root = fixture.0.join("existing");
+        let ibcmd = super::build::fake_ibcmd(&fixture);
+        fs::create_dir(&root).unwrap();
+        let bytes = b"<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><ExternalDataProcessor uuid=\"11111111-1111-1111-1111-111111111111\"><Properties><Name>Existing</Name></Properties></ExternalDataProcessor></MetaDataObject>\r\n";
+        fs::write(root.join("Existing.xml"), bytes).unwrap();
+        let initialize = |no_vcs: bool| {
+            let mut command = Command::new(env!("CARGO_BIN_EXE_eska"));
+            command
+                .current_dir(&root)
+                .env("ESKA_VCS_BINARY", &missing)
+                .args([
+                    "--lang",
+                    locale,
+                    "init",
+                    "--workflow",
+                    "trunk",
+                    "--platform-version",
+                    "8.3.27.2325",
+                    "--ibcmd",
+                ])
+                .arg(&ibcmd);
+            if no_vcs {
+                command.arg("--no-vcs");
+            }
+            command.output().unwrap()
+        };
+        let refused = initialize(false);
+        assert_eq!(refused.status.code(), Some(1), "{refused:?}");
+        assert!(String::from_utf8_lossy(&refused.stderr).contains("eska-vcs"));
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+        assert_eq!(fs::read(root.join("Existing.xml")).unwrap(), bytes);
+        assert!(initialize(true).status.success());
+        assert!(!root.join(".git").exists());
+    }
+}

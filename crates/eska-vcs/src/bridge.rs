@@ -1,6 +1,9 @@
-//! Narrow read-only process contracts for build provenance and source replacement preflight.
+//! Narrow process contracts; callers retain ownership of their surrounding file transactions.
 
-use crate::vcs::repository::{Error, Head, Repository};
+use crate::vcs::{
+    git,
+    repository::{Error, Head, Repository},
+};
 use clap::{Args, Subcommand};
 use eska_project_core::{
     project::{Project, discovery},
@@ -8,7 +11,12 @@ use eska_project_core::{
 };
 use gix::bstr::ByteSlice;
 use serde_json::json;
-use std::{path::Path, process::ExitCode};
+use std::{
+    fs,
+    io::{self, Write},
+    path::Path,
+    process::ExitCode,
+};
 
 #[derive(Debug, Args)]
 pub struct BridgeArgs {
@@ -19,6 +27,9 @@ pub struct BridgeArgs {
 #[derive(Debug, Subcommand)]
 enum Operation {
     Provenance,
+    RepositoryExists,
+    Initialize,
+    InitializeReserved,
     SourceChanges {
         #[arg(long)]
         empty_scaffold: bool,
@@ -75,11 +86,19 @@ pub fn source_changes(
 }
 
 impl BridgeArgs {
-    /// Emit one locale-independent response; hidden bridge operations do not write project state.
+    /// Emit a complete machine response; mutators require an exclusively owned new namespace.
     #[must_use]
     pub fn run(&self, root: &Path) -> ExitCode {
         let (operation, result) = match self.operation {
             Operation::Provenance => ("provenance", Ok(json!(provenance(root)))),
+            Operation::RepositoryExists => (
+                "repository_exists",
+                git::exists(root)
+                    .map(|exists| json!({"exists":exists}))
+                    .map_err(|_| "repository"),
+            ),
+            Operation::Initialize => ("initialize", initialize(root, false)),
+            Operation::InitializeReserved => ("initialize_reserved", initialize(root, true)),
             Operation::SourceChanges {
                 empty_scaffold,
                 files,
@@ -97,10 +116,34 @@ impl BridgeArgs {
             Ok(data) => (Some(data), None, ExitCode::SUCCESS),
             Err(error) => (None, Some(error), ExitCode::FAILURE),
         };
-        println!(
-            "{}",
-            json!({"schema_version":1,"operation":operation,"data":data,"error":error})
-        );
+        let document = json!({"schema_version":1,"operation":operation,"data":data,"error":error});
+        let mut stdout = io::stdout().lock();
+        if serde_json::to_writer(&mut stdout, &document).is_err() || writeln!(stdout).is_err() {
+            return ExitCode::FAILURE;
+        }
         code
     }
+}
+
+/// Refuse collisions before invoking the initializer; rollback remains the caller's responsibility.
+fn initialize(root: &Path, reserved: bool) -> Result<serde_json::Value, &'static str> {
+    let metadata = fs::symlink_metadata(root).map_err(|_| "io")?;
+    if metadata.is_symlink() || !metadata.is_dir() {
+        return Err("destination");
+    }
+    if reserved {
+        if root.file_name().is_none_or(|name| name != ".git")
+            || fs::read_dir(root).map_err(|_| "io")?.next().is_some()
+        {
+            return Err("git_collision");
+        }
+        git::initialize_reserved(root).map_err(|_| "git_init")?;
+    } else {
+        match fs::symlink_metadata(root.join(".git")) {
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            _ => return Err("git_collision"),
+        }
+        git::initialize(root).map_err(|_| "git_init")?;
+    }
+    Ok(json!({"initialized":true}))
 }

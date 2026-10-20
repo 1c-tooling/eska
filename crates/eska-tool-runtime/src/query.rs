@@ -107,6 +107,23 @@ fn query_with_timeout(
             .map_err(|source| Error::Process { component, source })?;
     }
     if !status.success() {
+        if let Ok(Value::Object(document)) = serde_json::from_slice(&stdout)
+            && document.len() == 4
+            && document.get("schema_version") == Some(&Value::from(1))
+            && document.get("operation").and_then(Value::as_str) == Some(operation)
+            && document.get("data") == Some(&Value::Null)
+            && let Some(code) = document.get("error").and_then(Value::as_str)
+            && !code.is_empty()
+            && code.len() <= 64
+            && code
+                .bytes()
+                .all(|byte| byte.is_ascii_lowercase() || matches!(byte, b'_' | b'-'))
+        {
+            return Err(Error::Rejected {
+                component,
+                code: code.to_owned(),
+            });
+        }
         return Err(Error::Failed);
     }
     response(&stdout, operation)

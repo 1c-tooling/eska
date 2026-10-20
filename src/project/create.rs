@@ -4,10 +4,7 @@ use super::{
     Project, ProjectName, ProjectType, Workspace,
     artifact::{ArtifactError, PreparedArtifact},
 };
-use crate::{
-    config::ProjectConfig,
-    vcs::{git, workflow::WorkflowPreset},
-};
+use crate::{config::ProjectConfig, vcs::workflow::WorkflowPreset};
 use eska_project_core::project::create as core;
 use std::path::{Path, PathBuf};
 
@@ -17,7 +14,7 @@ pub use core::WorkspaceCreationPlan;
 #[derive(Debug)]
 pub enum CreationFailure {
     Artifact(Box<ArtifactError>),
-    Git(Box<gix::init::Error>),
+    Vcs(eska_tool_runtime::Error),
 }
 
 /// The existing CLI adds native failures to the shared filesystem transaction's errors.
@@ -33,9 +30,11 @@ pub fn create(
     workflow: WorkflowPreset,
     initialize_vcs: bool,
 ) -> Result<Project, CreationError> {
+    let destination = resolve_destination(destination)?;
+    let vcs = preflight_vcs(initialize_vcs)?;
     let config = ProjectConfig::new(project_type).with_workflow(workflow);
-    core::create_with(destination, &config, |root| {
-        initialize(root, initialize_vcs)
+    core::create_with(&destination, &config, |root| {
+        initialize(root, vcs.as_deref())
     })
 }
 
@@ -49,9 +48,10 @@ pub fn create_imported(
     prepare: impl FnOnce(&Path) -> Result<(ProjectConfig, PreparedArtifact), CreationError>,
 ) -> Result<Project, CreationError> {
     let destination = resolve_destination(destination)?;
+    let vcs = preflight_vcs(initialize_vcs)?;
     in_new_directory(&destination, |root| {
         let (config, artifact) = prepare(root.path())?;
-        publish_project(root, &config, initialize_vcs, Some(&artifact.sources()))
+        publish_project(root, &config, vcs.as_deref(), Some(&artifact.sources()))
     })
 }
 
@@ -97,25 +97,29 @@ pub fn resolve_destination(destination: &Path) -> Result<PathBuf, CreationError>
     core::resolve_destination(destination)
 }
 
-/// The caller owns Git initialization; the core owns its surrounding filesystem transaction.
-fn initialize(root: &Path, enabled: bool) -> Result<(), CreationFailure> {
-    if enabled {
-        git::initialize(root).map_err(CreationFailure::Git)
-    } else {
-        Ok(())
-    }
+/// Resolve every required component before claiming or writing the destination.
+fn preflight_vcs(enabled: bool) -> Result<Option<PathBuf>, CreationError> {
+    enabled
+        .then(|| eska_tool_runtime::resolve(eska_tool_runtime::Component::Vcs))
+        .transpose()
+        .map_err(|error| CreationError::Operation(CreationFailure::Vcs(error)))
+}
+
+/// Keep the VCS process inside the core's exclusive directory transaction.
+fn initialize(root: &Path, binary: Option<&Path>) -> Result<(), CreationFailure> {
+    binary.map_or(Ok(()), |binary| {
+        eska_tool_runtime::vcs::initialize_new(binary, root).map_err(CreationFailure::Vcs)
+    })
 }
 
 /// Share publication with imported creation and native rollback tests.
 fn publish_project(
     root: &core::NewDirectory<'_>,
     config: &ProjectConfig,
-    initialize_vcs: bool,
+    vcs: Option<&Path>,
     sources: Option<&Path>,
 ) -> Result<Project, CreationError> {
-    core::publish_project(root, config, sources, |root| {
-        initialize(root, initialize_vcs)
-    })
+    core::publish_project(root, config, sources, |root| initialize(root, vcs))
 }
 
 /// Share exclusive directory ownership with preparation and native rollback tests.
@@ -170,7 +174,9 @@ mod tests {
         let result = in_new_directory(&destination, |root| {
             fs::create_dir(root.path().join("src")).expect("partial source");
             fs::write(root.path().join("eska.toml"), "partial config").expect("partial config");
-            git::initialize(root.path()).expect("partial Git repository");
+            let binary = crate::test_component(eska_tool_runtime::Component::Vcs);
+            eska_tool_runtime::vcs::initialize_new(&binary, root.path())
+                .expect("partial Git repository");
             Err(CreationError::Io {
                 path: root.path().join("injected-error"),
                 source: std::io::Error::other("injected failure"),

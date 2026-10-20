@@ -277,8 +277,8 @@ fn present(error: &CreationError, localizer: &Localizer) -> String {
         CreationError::AlreadyExists { path } => ("new-destination-exists", path),
         CreationError::Io { path, .. } => ("new-io-error", path),
         CreationError::Template(_) => return localizer.text("new-template-error"),
-        CreationError::Operation(create::CreationFailure::Git(_)) => {
-            return localizer.text("new-git-error");
+        CreationError::Operation(create::CreationFailure::Vcs(error)) => {
+            return eska_presentation::components::present(error, localizer);
         }
         CreationError::Validation(error) => {
             return diagnostics::present_project_error_with_links(

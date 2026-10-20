@@ -3,10 +3,7 @@
 #[cfg(test)]
 use super::templates::TemplateFile;
 use super::{Project, ProjectName, Workspace, build::BuildSettings};
-use crate::{
-    config::ProjectConfig,
-    vcs::{git, workflow::WorkflowPreset},
-};
+use crate::{config::ProjectConfig, vcs::workflow::WorkflowPreset};
 use eska_project_core::project::init as core;
 use std::path::{Path, PathBuf};
 
@@ -15,10 +12,10 @@ pub use core::{InitPlan, WorkspaceInitPlan};
 /// Git failures remain outside the shared XML/filesystem implementation.
 #[derive(Debug)]
 pub enum InitFailure {
-    Git(Box<gix::init::Error>),
+    Vcs(eska_tool_runtime::Error),
     ExistingGit {
         path: PathBuf,
-        source: Option<Box<gix::open::Error>>,
+        source: eska_tool_runtime::Error,
     },
 }
 
@@ -68,32 +65,54 @@ pub fn apply(
             path: plan.root().into(),
         });
     }
-    let create_git = initialize_vcs
-        && !git::exists(plan.root()).map_err(|error| match error {
-            git::ExistingError::Io { path, source } => InitError::Io { path, source },
-            git::ExistingError::Open(source) => InitError::Operation(InitFailure::ExistingGit {
-                path: plan.root().into(),
-                source: Some(source),
-            }),
-            git::ExistingError::Bare => InitError::Operation(InitFailure::ExistingGit {
-                path: plan.root().into(),
-                source: None,
-            }),
-        })?;
+    let vcs = initialize_vcs
+        .then(|| eska_tool_runtime::resolve(eska_tool_runtime::Component::Vcs))
+        .transpose()
+        .map_err(|error| InitError::Operation(InitFailure::Vcs(error)))?;
+    let create_git = if let Some(binary) = &vcs {
+        !eska_tool_runtime::vcs::exists(binary, plan.root())
+            .map_err(|source| existing_failure(plan.root(), source))?
+    } else {
+        false
+    };
     let config = ProjectConfig::new(plan.project_type())
         .with_source(plan.source().into())
         .map_err(InitError::Config)?
         .with_workflow(workflow)
         .with_build_settings(build);
-    core::apply_configured(plan, &config, create_git, initialize_reserved)
+    core::apply_configured(plan, &config, create_git, |path| {
+        initialize_reserved_with(vcs.as_deref(), path)
+    })
 }
 
-/// Only the VCS boundary knows how to populate the core's exclusively reserved repository directory.
+/// Keep known repository failures distinct from broken component transport or responses.
+fn existing_failure(root: &Path, source: eska_tool_runtime::Error) -> InitError {
+    let failure = if matches!(&source, eska_tool_runtime::Error::Rejected { code, .. } if code == "repository")
+    {
+        InitFailure::ExistingGit {
+            path: root.into(),
+            source,
+        }
+    } else {
+        InitFailure::Vcs(source)
+    };
+    InitError::Operation(failure)
+}
+
+/// Populate only the directory the core has just reserved, using the preflighted VCS owner.
+fn initialize_reserved_with(binary: Option<&Path>, path: &Path) -> Result<(), InitError> {
+    let binary = binary.ok_or(InitError::Operation(InitFailure::Vcs(
+        eska_tool_runtime::Error::InvalidResponse,
+    )))?;
+    eska_tool_runtime::vcs::initialize_reserved(binary, path)
+        .map_err(|error| InitError::Operation(InitFailure::Vcs(error)))
+}
+
+/// Test entry keeps the same real process initializer within rollback fault injection.
+#[cfg(test)]
 fn initialize_reserved(path: &Path) -> Result<(), InitError> {
-    git::initialize_reserved(path).map_err(|error| match error {
-        git::InitializeError::Io { path, source } => InitError::Io { path, source },
-        git::InitializeError::Git(error) => InitError::Operation(InitFailure::Git(error)),
-    })
+    let binary = crate::test_component(eska_tool_runtime::Component::Vcs);
+    initialize_reserved_with(Some(&binary), path)
 }
 
 /// Keep the existing native rollback scenarios on the same filesystem writer used by project core.

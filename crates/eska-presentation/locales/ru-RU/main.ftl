@@ -1010,3 +1010,5 @@ component-cancelled = Операция компонента отменена.
 component-response-invalid = Компонент вернул некорректный ответ.
 component-output-too-large = Ответ компонента превышает допустимый размер.
 component-failed = Компонент завершился с ошибкой.
+
+component-rejected = Компонент { $tool } отклонил операцию: { $code }.

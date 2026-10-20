@@ -687,13 +687,16 @@ fn rejects_unsupported_roots_config_directories_and_bare_repositories() {
     gix::init_bare(&bare).expect("bare repo");
     descriptor(&bare.join("src"), "report");
     let before = snapshot(&bare);
-    let plan = init::inspect(&bare, None).expect("XML");
-    assert!(matches!(
-        init::apply(&plan, WorkflowPreset::Trunk, BuildSettings::default(), true),
-        Err(InitError::Operation(
-            eska::project::init::InitFailure::ExistingGit { .. }
-        ))
-    ));
+    init::inspect(&bare, None).expect("XML");
+    let output = configured_command(&bare, "en", &fixture)
+        .args(["--workflow", "trunk"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("Cannot use the existing Git metadata"),
+        "{output:?}"
+    );
     assert_eq!(snapshot(&bare), before);
 }
 

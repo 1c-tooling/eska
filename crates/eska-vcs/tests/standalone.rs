@@ -55,6 +55,8 @@ fn tool(root: &Path, path: &OsStr, locale: &str, args: &[&str]) -> Output {
         .env("GIT_COMMITTER_EMAIL", "eska@example.invalid")
         .env("NO_COLOR", "1")
         .args(["--lang", locale])
+        .arg("--project-dir")
+        .arg(root)
         .args(args)
         .output()
         .unwrap()
@@ -264,6 +266,68 @@ fn source_bridge_distinguishes_absent_and_broken_git() {
         fs::read(fixture.0.join("src/module.bsl")).unwrap(),
         b"user bytes\r\n"
     );
+}
+
+/// Both initialization forms target only the claimed namespace and preserve existing Git bytes.
+#[test]
+fn initialization_bridge_preserves_existing_repository_metadata() {
+    let fixture = TestDir::new();
+    for locale in ["ru", "en"] {
+        for reserved in [false, true] {
+            let root = fixture.0.join(format!("{locale}-{reserved}"));
+            fs::create_dir(&root).unwrap();
+            fs::write(root.join("user-file"), b"preserved\r\n").unwrap();
+            let exists = json(&tool(
+                &root,
+                OsStr::new(""),
+                locale,
+                &["__bridge", "repository-exists"],
+            ));
+            assert_eq!(exists["data"]["exists"], false);
+            let target = if reserved {
+                fs::create_dir(root.join(".git")).unwrap();
+                root.join(".git")
+            } else {
+                root.clone()
+            };
+            let operation = if reserved {
+                "initialize-reserved"
+            } else {
+                "initialize"
+            };
+            let initialized = json(&tool(
+                &target,
+                OsStr::new(""),
+                locale,
+                &["__bridge", operation],
+            ));
+            assert_eq!(initialized["data"]["initialized"], true);
+            assert!(!root.join(".git/eska-init").exists());
+            let head = fs::read(root.join(".git/HEAD")).unwrap();
+            let config = fs::read(root.join(".git/config")).unwrap();
+            assert_eq!(
+                json(&tool(
+                    &root,
+                    OsStr::new(""),
+                    locale,
+                    &["__bridge", "repository-exists"]
+                ))["data"]["exists"],
+                true
+            );
+            for (directory, operation) in [
+                (&root, "initialize"),
+                (&root.join(".git"), "initialize-reserved"),
+            ] {
+                let rejected = tool(directory, OsStr::new(""), locale, &["__bridge", operation]);
+                assert_eq!(rejected.status.code(), Some(1));
+                let body: Value = serde_json::from_slice(&rejected.stdout).unwrap();
+                assert_eq!(body["error"], "git_collision");
+            }
+            assert_eq!(fs::read(root.join(".git/HEAD")).unwrap(), head);
+            assert_eq!(fs::read(root.join(".git/config")).unwrap(), config);
+            assert_eq!(fs::read(root.join("user-file")).unwrap(), b"preserved\r\n");
+        }
+    }
 }
 
 /// Only the documented Git capability fallback is present during task and shelf mutations.
