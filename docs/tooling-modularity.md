@@ -72,6 +72,17 @@ CLI-обработчики build/clean/platform/config. Распаковка sta
 не получают эту зависимость. Формат Configurator path находится в общей
 presentation-библиотеке, VCS semantic presentation остаётся у своего владельца.
 
+В T95 общие Git-операции и проектные workflow/полки/semantic diff перенесены
+в `eska-vcs`: root CLI временно использует реэкспорты единственной реализации.
+Native provenance/import-инспектор остаётся адаптером общей команды;
+библиотека VCS не зависит от build runtime, анализатора или project-сервера.
+Планировщик patch получает прежние read-only commit entries/merge bases через
+явные методы repository; платформа в эту библиотеку не переносится.
+Неиспользуемые прямые `quick-xml` и `sha2` удалены из root package.
+Промежуточные проверки: строгий workspace Clippy и 537 тестов прежнего CLI/VCS
+прошли, 6 ignored. Самостоятельный CLI и его приёмка завершают T95 следующим
+логическим изменением.
+
 Экспериментальный Rust API теперь принимает `GitProvenance` при сборке
 с паспортом и `SourceChanges` при создании import-плана. Ошибка инспектора
 имеет структурную категорию `ChangeInspection`; публичный CLI сохраняет

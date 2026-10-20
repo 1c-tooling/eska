@@ -22,7 +22,7 @@ T84 — `DONE`: производный конфиг, миграция с сох�
 T92 — `DONE`: project serve, API 1.12 и прямое подключение Explorer.
 T93 — `DONE`: самостоятельный eska-check, полнота JSONL, пороги и отчёт CI.
 T94 — `DONE`: самостоятельный build/unpack, общий runtime и нативная матрица 8.3.27.2325.
-T95 — `NEXT`: самостоятельный VCS с прежними workflow, shelves и semantic diff.
+T95 — `IN PROGRESS`: самостоятельный VCS с прежними workflow, shelves и semantic diff.
 Номера T83–T89 сохраняются, модульность добавлена в T90–T99.
 Экспериментальный формат ESKA в этот план не переносится; статусы прежних
 задач сохраняются.
@@ -360,7 +360,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T92 | IN-PROGRESS | Сервер метаданных eska-project serve и переход Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T93 | PLANNED | Статическая проверка CI через eska-check и внешний bsl-analyzer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T94 | PLANNED | Самостоятельный eska-build и проверки реальной платформой | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T95 | PLANNED | Самостоятельный eska-vcs с сохранением workflow | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T95 | IN-PROGRESS | Самостоятельный eska-vcs с сохранением workflow | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T96 | PLANNED | Делегирование команд eska самостоятельным инструментам | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T97 | PLANNED | Выборочные пакеты, установка и совместимость инструментов | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T98 | PLANNED | Опциональная проверка DAP backend и контракт отладчика | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |

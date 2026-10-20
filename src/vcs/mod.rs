@@ -1,12 +1,4 @@
-//! Git integration, isolated command execution and declarative workflow policies.
+//! Shared Git engine with the full CLI's explicit build composition adapter.
 
 pub(crate) mod build;
-pub mod command;
-pub mod diff;
-pub(crate) mod git;
-pub mod network;
-pub mod repository;
-pub mod shelves;
-pub(crate) mod snapshot;
-pub mod status;
-pub mod workflow;
+pub use eska_vcs::vcs::*;

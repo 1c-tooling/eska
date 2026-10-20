@@ -62,6 +62,10 @@ crates/eska-check/
 └── src/                            # standalone CI CLI, stable report and shared analyzer adapter
 crates/eska-build/
 └── src/cli/                        # standalone build/unpack and shared legacy platform presentation
+crates/eska-vcs/
+└── src/
+    ├── vcs/                        # embedded Git, snapshots, shelves and isolated fallback
+    └── project/                    # project workflow and semantic changes over shared XML core
 crates/eska-terminal/
 └── src/                            # shared keyboard menus, confirmation and progress
 crates/eska-build-runtime/
@@ -88,20 +92,10 @@ src/
 │   ├── create.rs, init.rs          # existing onboarding with optional Git/platform selection
 │   ├── onboarding.rs               # workspace enrollment and manifest preservation
 │   ├── doctor.rs                   # combined project/build/VCS readiness checks
-│   ├── diff.rs, semantic/          # exact Git snapshots and semantic ChangeSet
-│   └── *.rs                        # existing Git workflow operations
+│   └── *.rs                        # reexports of Git workflow and semantic changes
 └── vcs/
-    ├── mod.rs                      # repository execution boundary
-    ├── build.rs                    # provenance and source-change inspector for build orchestration
-    ├── workflow.rs                 # reexports of shared settings/policy
-    ├── git.rs, repository.rs       # gix opening, refs and history
-    ├── command.rs                  # isolated system Git capability fallback
-    ├── network.rs                  # gix transport and documented fallback
-    └── diff.rs, snapshot.rs, status.rs, shelves/
-crates/eska-presentation/locales/{ru-RU,en-US}/main.ftl       # human-readable strings
-assets/                            # presentation resources
-tests/integration.rs               # CLI/project/VCS integration suite
-tests/support/mod.rs               # exclusively owned playground directories
+    ├── mod.rs                      # shared VCS reexports
+    └── build.rs                    # provenance and source-change inspector for build orchestration
 ```
 
 `validate.rs` — обработчик существующего запуска `eska` без подкоманды,
@@ -139,11 +133,11 @@ tests/support/mod.rs               # exclusively owned playground directories
 | Изменить схему project `eska.toml` | [`crates/eska-project-core/src/config/schema.rs`](../crates/eska-project-core/src/config/schema.rs), затем [`crates/eska-project-core/src/config/project.rs`](../crates/eska-project-core/src/config/project.rs) |
 | Изменить схему workspace `eska.toml` | [`crates/eska-project-core/src/config/workspace.rs`](../crates/eska-project-core/src/config/workspace.rs), затем [`crates/eska-project-core/src/project/discovery.rs`](../crates/eska-project-core/src/project/discovery.rs) |
 | Изменить распознавание типа выгрузки | [`crates/eska-project-core/src/project/designer_xml.rs`](../crates/eska-project-core/src/project/designer_xml.rs) |
-| Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
-| Изменить clone/fetch или transport fallback policy | [`src/vcs/network.rs`](../src/vcs/network.rs) |
-| Изменить system Git capability fallback | [`src/vcs/command.rs`](../src/vcs/command.rs) |
-| Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../src/vcs/repository.rs) |
-| Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../src/vcs/status.rs) |
+| Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../crates/eska-vcs/src/vcs/git.rs) |
+| Изменить clone/fetch или transport fallback policy | [`src/vcs/network.rs`](../crates/eska-vcs/src/vcs/network.rs) |
+| Изменить system Git capability fallback | [`src/vcs/command.rs`](../crates/eska-vcs/src/vcs/command.rs) |
+| Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../crates/eska-vcs/src/vcs/repository.rs) |
+| Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../crates/eska-vcs/src/vcs/status.rs) |
 | Изменить workflow policy или план задачи | [`crates/eska-project-core/src/workflow/policy.rs`](../crates/eska-project-core/src/workflow/policy.rs) |
 | Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../crates/eska-terminal/src/interactive/keyboard.rs) |
 | Изменить оформление меню | [`src/cli/interactive/render.rs`](../crates/eska-terminal/src/interactive/render.rs) |

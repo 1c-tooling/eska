@@ -5,6 +5,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// Initialize only the transaction-owned directory, ignoring redirecting configuration.
+///
+/// # Errors
+/// Returns the initialization error without retrying in another directory.
 pub fn initialize(root: &Path) -> Result<(), Box<gix::init::Error>> {
     // Ignore user/system config and Git environment overrides: initialization
     // must affect only the directory owned by the creation transaction.
@@ -31,6 +35,9 @@ pub enum InitializeError {
 }
 
 /// Inspect only on-disk repository markers, ignoring redirecting environment.
+///
+/// # Errors
+/// Returns the nearest broken marker or filesystem error instead of selecting a parent.
 pub fn exists(root: &Path) -> Result<bool, ExistingError> {
     open_existing(root).map(|repository| repository.is_some())
 }
@@ -63,8 +70,12 @@ pub(super) fn open_existing(root: &Path) -> Result<Option<gix::Repository>, Exis
 }
 
 /// Populate an empty `.git` directory exclusively owned by the caller.
+///
 /// Stage through the same initializer as `new`, without ever reinitializing
 /// existing user metadata. The caller owns rollback of the reserved directory.
+///
+/// # Errors
+/// Returns initialization or filesystem errors; caller retains cleanup ownership.
 pub fn initialize_reserved(git_dir: &Path) -> Result<(), InitializeError> {
     let staging = git_dir.join("eska-init");
     fs::create_dir(&staging).map_err(|source| InitializeError::Io {

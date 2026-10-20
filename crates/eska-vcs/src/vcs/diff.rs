@@ -26,7 +26,10 @@ pub struct TreeChange {
 
 impl Repository {
     /// List committed entries without checking them out or invoking filters.
-    pub(crate) fn snapshot_entries(
+    ///
+    /// # Errors
+    /// Returns a tree-reading error without changing the repository.
+    pub fn snapshot_entries(
         &self,
         commit: ResolvedCommit,
     ) -> Result<Vec<gix::traverse::tree::recorder::Entry>, Error> {
@@ -42,7 +45,10 @@ impl Repository {
     }
 
     /// Return every best common ancestor so patch planning can reject ambiguity.
-    pub(crate) fn merge_bases(
+    ///
+    /// # Errors
+    /// Returns a history-reading error when ancestry cannot be resolved.
+    pub fn merge_bases(
         &self,
         left: ResolvedCommit,
         right: ResolvedCommit,

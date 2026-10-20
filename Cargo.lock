@@ -707,15 +707,14 @@ dependencies = [
  "eska-project",
  "eska-project-core",
  "eska-terminal",
+ "eska-vcs",
  "gix",
- "quick-xml",
  "reqwest",
  "roxmltree",
  "self-replace",
  "semver",
  "serde",
  "serde_json",
- "sha2",
  "tokio",
  "toml",
  "zip",
@@ -821,6 +820,18 @@ version = "0.14.3"
 dependencies = [
  "crossterm",
  "eska-presentation",
+]
+
+[[package]]
+name = "eska-vcs"
+version = "0.14.3"
+dependencies = [
+ "eska-project-core",
+ "gix",
+ "roxmltree",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]
