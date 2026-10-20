@@ -4,6 +4,8 @@ mod descriptor;
 mod methods;
 mod model;
 mod plan;
+mod transfer;
+pub(crate) use transfer::{plan_reply, prepare_reply};
 
 pub use model::{PatchChange, PatchDescription, PatchError, PatchModule, PatchPlan};
 mod materialize;

@@ -10,11 +10,11 @@ use eska_project_core::{
     provenance::GitProvenance,
 };
 use gix::bstr::ByteSlice;
-use serde_json::json;
+use serde_json::{Value, json};
 use std::{
     fs,
     io::{self, Write},
-    path::Path,
+    path::{Path, PathBuf},
     process::ExitCode,
 };
 
@@ -26,6 +26,18 @@ pub struct BridgeArgs {
 
 #[derive(Debug, Subcommand)]
 enum Operation {
+    PatchPlan {
+        #[arg(long)]
+        base: Option<String>,
+    },
+    PreparePatch {
+        #[arg(long)]
+        base: Option<String>,
+        #[arg(long)]
+        workspace: PathBuf,
+        #[arg(long)]
+        expected: String,
+    },
     Provenance,
     RepositoryExists,
     Initialize,
@@ -89,25 +101,46 @@ impl BridgeArgs {
     /// Emit a complete machine response; mutators require an exclusively owned new namespace.
     #[must_use]
     pub fn run(&self, root: &Path) -> ExitCode {
-        let (operation, result) = match self.operation {
+        let (operation, result): (&str, Result<Value, Value>) = match &self.operation {
+            Operation::PatchPlan { base } => (
+                "patch_plan",
+                crate::project::patch::plan_reply(root, base.as_deref())
+                    .map_err(|error| json!(error)),
+            ),
+            Operation::PreparePatch {
+                base,
+                workspace,
+                expected,
+            } => (
+                "prepare_patch",
+                crate::project::patch::prepare_reply(root, base.as_deref(), workspace, expected)
+                    .map_err(|error| json!(error)),
+            ),
             Operation::Provenance => ("provenance", Ok(json!(provenance(root)))),
             Operation::RepositoryExists => (
                 "repository_exists",
                 git::exists(root)
                     .map(|exists| json!({"exists":exists}))
-                    .map_err(|_| "repository"),
+                    .map_err(|_| json!("repository")),
             ),
-            Operation::Initialize => ("initialize", initialize(root, false)),
-            Operation::InitializeReserved => ("initialize_reserved", initialize(root, true)),
+            Operation::Initialize => (
+                "initialize",
+                initialize(root, false).map_err(|error| json!(error)),
+            ),
+            Operation::InitializeReserved => (
+                "initialize_reserved",
+                initialize(root, true).map_err(|error| json!(error)),
+            ),
             Operation::SourceChanges {
                 empty_scaffold,
                 files,
             } => (
                 "source_changes",
                 discovery::discover(root)
-                    .map_err(|_| "project")
+                    .map_err(|_| json!("project"))
                     .and_then(|project| {
-                        source_changes(&project, empty_scaffold, files).map_err(|_| "repository")
+                        source_changes(&project, *empty_scaffold, *files)
+                            .map_err(|_| json!("repository"))
                     })
                     .map(|count| json!({"local_changes": count})),
             ),

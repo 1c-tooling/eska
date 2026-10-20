@@ -81,7 +81,7 @@ pub struct PatchChange {
 }
 
 /// Keep machine classification portable; each CLI localizes its presentation.
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct PatchError {
     pub code: String,
     pub detail: String,

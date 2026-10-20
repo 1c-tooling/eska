@@ -8,7 +8,7 @@ pub mod vcs;
 
 pub use exchange::{Operation, exchange};
 pub use process::delegate;
-pub use query::query;
+pub use query::{QueryPolicy, query, query_with_policy};
 pub use resolver::{resolve, resolve_at};
 
 use std::{io, path::PathBuf};
@@ -70,6 +70,7 @@ pub enum Error {
     Rejected {
         component: Component,
         code: String,
+        detail: Option<String>,
     },
 }
 

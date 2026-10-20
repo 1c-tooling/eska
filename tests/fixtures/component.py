@@ -25,6 +25,8 @@ if mode.startswith("bridge-"):
     operation = sys.argv[operation_index].replace("-", "_")
     result = {"schema_version": 1, "operation": operation,
               "data": {"status": "available", "commit": "a" * 40, "dirty": False}, "error": None}
+    if mode == "bridge-large-plan":
+        result["data"] = {"padding": "x" * (1024 * 1024 + 1)}
     if mode.startswith("bridge-onboarding-"):
         if operation == "select_platform":
             result["data"] = {"platform_version": "8.3.27.2325"}

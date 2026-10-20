@@ -57,6 +57,98 @@ fn dry_run(root: &std::path::Path, locale: &str) -> Value {
     serde_json::from_slice(&output.stdout).expect("patch JSON")
 }
 
+/// Execute the real VCS owner using an empty PATH; planning never needs a native runtime.
+fn bridge(root: &std::path::Path, locale: &str, args: &[&str]) -> std::process::Output {
+    Command::new(
+        std::path::Path::new(env!("CARGO_BIN_EXE_eska"))
+            .with_file_name(format!("eska-vcs{}", std::env::consts::EXE_SUFFIX)),
+    )
+    .current_dir(root)
+    .env("PATH", "")
+    .args(["--lang", locale, "--project-dir"])
+    .arg(root)
+    .arg("__bridge")
+    .args(args)
+    .output()
+    .unwrap()
+}
+
+/// Both locales describe the same plan, and preparation accepts only its unchanged fingerprint.
+#[test]
+fn process_plan_and_snapshot_reject_stale_state_without_writing() {
+    let (fixture, root) = project();
+    let mut replies = Vec::new();
+    for locale in ["ru", "en"] {
+        let output = bridge(&root, locale, &["patch-plan"]);
+        assert!(output.status.success(), "{output:?}");
+        assert!(output.stderr.is_empty());
+        replies.push(serde_json::from_slice::<Value>(&output.stdout).unwrap());
+    }
+    assert_eq!(replies[0], replies[1]);
+    let data = &replies[0]["data"];
+    assert_eq!(data["plan"], dry_run(&root, "en")["plan"]);
+    let fingerprint = data["fingerprint"].as_str().unwrap();
+    let staging = fixture.0.join("empty transfer");
+    fs::create_dir(&staging).unwrap();
+    let wrong = bridge(
+        &root,
+        "en",
+        &[
+            "prepare-patch",
+            "--workspace",
+            staging.to_str().unwrap(),
+            "--expected",
+            &"0".repeat(64),
+        ],
+    );
+    assert_eq!(wrong.status.code(), Some(1));
+    let document: Value = serde_json::from_slice(&wrong.stdout).unwrap();
+    assert_eq!(document["error"]["code"], "plan-changed");
+    assert!(document["data"].is_null());
+    assert!(fs::read_dir(&staging).unwrap().next().is_none());
+    let prepared = bridge(
+        &root,
+        "en",
+        &[
+            "prepare-patch",
+            "--workspace",
+            staging.to_str().unwrap(),
+            "--expected",
+            fingerprint,
+        ],
+    );
+    assert!(prepared.status.success(), "{prepared:?}");
+    let document: Value = serde_json::from_slice(&prepared.stdout).unwrap();
+    assert_eq!(document["data"]["prepared"], true);
+    assert_eq!(document["data"]["fingerprint"], fingerprint);
+    assert!(staging.join("base/Configuration.xml").is_file());
+    assert!(staging.join("modules/Math/Ext/Module.bsl").is_file());
+    fs::remove_dir_all(&staging).unwrap();
+    fs::create_dir(&staging).unwrap();
+    fs::write(
+        root.join("src/CommonModules/Math/Ext/Module.bsl"),
+        "Function AddOne(Value) Export\n Return Value + 3;\nEndFunction\n",
+    )
+    .unwrap();
+    git(&fixture.0, &["add", "--all"]);
+    git(&fixture.0, &["commit", "-m", "moved head"]);
+    let stale = bridge(
+        &root,
+        "ru",
+        &[
+            "prepare-patch",
+            "--workspace",
+            staging.to_str().unwrap(),
+            "--expected",
+            fingerprint,
+        ],
+    );
+    assert_eq!(stale.status.code(), Some(1));
+    let document: Value = serde_json::from_slice(&stale.stdout).unwrap();
+    assert_eq!(document["error"]["code"], "plan-changed");
+    assert!(fs::read_dir(&staging).unwrap().next().is_none());
+}
+
 /// Install a fake paired ibcmd and Designer that exercises every pipeline transition.
 fn fake_platform(fixture: &TestDir) -> PathBuf {
     let ibcmd = fixture.0.join("ibcmd");

@@ -168,6 +168,27 @@ Windows сохраняет прежний console-handler. Запросы и nat
 
 ## VCS provenance и preflight
 
+Для `patch` подготовлены отдельные schema-1 запросы:
+`__bridge patch-plan [--base REF]` возвращает public `plan`, точную
+`platform_version` либо null и `fingerprint`. `__bridge prepare-patch`
+принимает `--workspace` и `--expected` (с тем же optional base), заново
+проверяет проект, чистоту, endpoints и подготовленные данные, затем заполняет
+только пустой workspace. Fingerprint включает metadata, platform, Git blobs,
+adopted descriptors и BSL bodies. При несовпадении `plan-changed` возвращается
+до записи. Подключение этих запросов к общему CLI ещё не завершено.
+
+Отказ patch имеет exit 1, `data: null` и `error: {code,detail}`; строковые
+категории прежних bridge-операций сохранены. Транспорт проверяет обе формы
+полностью, ненулевой child exit с partial data не принимается за успех.
+Внутренний Rust `Error::Rejected` теперь сохраняет optional detail.
+Вызывающий код может задать `QueryPolicy` для конкретной операции; обычные
+запросы сохраняют 30 секунд и 1 MiB на stream. Это не меняет API Metadata.
+
+Проверены реальные VCS-процессы с пустым PATH: одинаковые RU/EN планы,
+точный public JSON, заполнение workspace, неверный fingerprint и смена HEAD
+с отказом до записи. Три transport-теста покрывают domain error/partial reply,
+явный лимит большого JSON без ослабления default и timeout с reaping child.
+
 `eska-vcs --project-dir ROOT __bridge provenance` возвращает schema 1,
 operation `provenance`, `data` с прежними status/commit/dirty и `error: null`.
 `__bridge source-changes --files N [--empty-scaffold]` возвращает operation

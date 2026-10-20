@@ -53,7 +53,9 @@ pub fn present(error: &Error, localizer: &Localizer) -> String {
         Error::InvalidResponse => localizer.text("component-response-invalid"),
         Error::OutputTooLarge => localizer.text("component-output-too-large"),
         Error::Failed => localizer.text("component-failed"),
-        Error::Rejected { component, code } => localizer.format(
+        Error::Rejected {
+            component, code, ..
+        } => localizer.format(
             "component-rejected",
             &[
                 ("tool", LocalizationValue::Text(component.name())),
