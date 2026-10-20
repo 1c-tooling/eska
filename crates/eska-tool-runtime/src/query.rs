@@ -106,8 +106,18 @@ fn query_with_timeout(
             .write_all(&stderr)
             .map_err(|source| Error::Process { component, source })?;
     }
-    if !status.success() {
-        if let Ok(Value::Object(document)) = serde_json::from_slice(&stdout)
+    decode(component, status.success(), &stdout, operation)
+}
+
+/// Both IPC transports share framing and domain-error validation.
+pub fn decode(
+    component: Component,
+    success: bool,
+    stdout: &[u8],
+    operation: &str,
+) -> Result<Value, Error> {
+    if !success {
+        if let Ok(Value::Object(document)) = serde_json::from_slice(stdout)
             && document.len() == 4
             && document.get("schema_version") == Some(&Value::from(1))
             && document.get("operation").and_then(Value::as_str) == Some(operation)
@@ -126,7 +136,7 @@ fn query_with_timeout(
         }
         return Err(Error::Failed);
     }
-    response(&stdout, operation)
+    response(stdout, operation)
 }
 
 /// Drain one stream concurrently, retaining at most the protocol's fixed maximum.
@@ -147,7 +157,7 @@ fn reader(
 }
 
 /// Reading one extra byte distinguishes a complete small response from truncated output.
-fn bounded(component: Component, stream: impl Read) -> Result<Vec<u8>, Error> {
+pub fn bounded(component: Component, stream: impl Read) -> Result<Vec<u8>, Error> {
     let mut bytes = Vec::new();
     stream
         .take(MAX_OUTPUT + 1)

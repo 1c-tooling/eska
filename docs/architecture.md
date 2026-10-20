@@ -56,16 +56,17 @@ crates/eska-project/
 └── src/
     ├── main.rs, cli.rs              # standalone project CLI
     ├── context.rs, operations.rs    # checked project commands without native runtimes
+    ├── onboarding/                 # legacy UX, native process client and project transactions
     ├── analyzer_config.rs          # config CLI; no embedded BSL engine
     ├── metadata.rs, version.rs     # shared legacy command presentation
     └── ide/                        # Metadata API framing, DTOs and server lifecycle
 crates/eska-check/
 └── src/                            # standalone CI CLI, stable report and shared analyzer adapter
 crates/eska-build/
-└── src/cli/                        # standalone build/unpack and shared legacy platform presentation
+└── src/                            # build/unpack/import CLI and private native onboarding bridge
 crates/eska-vcs/
 └── src/
-    ├── bridge.rs                   # read-only provenance/source-changes protocol
+    ├── bridge.rs                   # provenance/source checks and guarded Git initialization
     ├── cli/                        # standalone parsing and shared VCS command presentation
     ├── vcs/                        # embedded Git, snapshots, shelves and isolated fallback
     └── project/                    # project workflow and semantic changes over shared XML core
@@ -86,7 +87,6 @@ src/
 │   ├── mod.rs, args.rs             # startup, parsing, locale and top-level help
 │   ├── commands/                   # command-specific human/JSON presentation
 │   ├── platform.rs                 # machine-local runner selection
-│   ├── interactive.rs              # shared terminal menu reexports
 │   └── diagnostics.rs              # shared native/core error presentation reexports
 ├── config/
 │   └── mod.rs                      # shared manifests and build-runtime machine config reexports
@@ -94,17 +94,16 @@ src/
 │   ├── mod.rs                      # reexports of shared project operations
 │   ├── artifact.rs, build.rs        # reexports of the single build runtime
 │   ├── patch/                      # VCS-based patch plans and native extension assembly
-│   ├── create.rs, init.rs          # existing onboarding with optional Git/platform selection
+│   ├── create.rs, init.rs          # reexports of project-owner onboarding transactions
 │   ├── onboarding.rs               # workspace enrollment and manifest preservation
 │   ├── doctor.rs                   # combined project/build/VCS readiness checks
 │   └── *.rs                        # reexports of Git workflow and semantic changes
-└── vcs/
-    ├── mod.rs                      # shared VCS reexports
-    └── build.rs                    # source preflight callback using the VCS process
+└── vcs/mod.rs                      # shared VCS reexports
 ```
 
 Тихий запуск `eska` без подкоманды делегирован скрытому project-входу
-`__shell-validate`; native/composite-адаптеры пока остаются в общей команде. Самостоятельный `eska-check` использует общий
+`__shell-validate`; интерактивные new/init — `__shell-new`/`__shell-init`.
+Составные patch/doctor пока остаются в общей команде. Самостоятельный `eska-check` использует общий
 контекст, полный XML-обход и внешний анализатор; его CLI находится в отдельном package. `crates/eska-vcs/src/vcs/git.rs` содержит
 общее открытие и инициализацию Git; чтение репозитория находится в
 `crates/eska-vcs/src/vcs/repository.rs`. `crates/eska-vcs/src/project/start.rs` исполняет workflow plan через

@@ -4,12 +4,14 @@ T96 выполняется по частям. Сейчас `eska` запуска
 
 | Команды общего CLI | Владелец |
 |---|---|
-| Без команды, `metadata`, `version`, `ide` | `eska-project` |
+| Без команды, `metadata`, `version`, `ide`, `new`, `init` | `eska-project` |
 | `build`, `import`, `clean`, `platform`, `config` | `eska-build` |
 | `clone`, `status`, `diff`, `history`, `start`, `switch`, `save`, `finish`, `shelve`, `unshelve`, `shelves` | `eska-vcs` |
 
-`new/init`, `new --from`, `patch`, `doctor` пока сохраняют составные
-адаптеры общей команды. `import` целиком выполняет build-компонент: он заранее
+`patch`, `doctor` пока сохраняют составные адаптеры общей команды.
+`new/init`, включая `new --from`, выполняет project-компонент; он вызывает
+build для выбора платформы и распаковки, VCS — для Git-инициализации.
+`import` целиком выполняет build-компонент: он заранее
 выбирает VCS executable и использует его для обеих проверок changed paths,
 включая повторную проверку перед заменой. Git-инициализация `new/init` тоже
 вызывает VCS-процесс: его наличие проверяется до файловой транзакции, а
@@ -26,6 +28,60 @@ RU/EN preview общего и прямого запуска совпали по�
 отсутствие новой `.git` и очистка staging. Настоящая 1С этим process-тестом
 не подменяется. Экспериментальный Rust `ImportPlan` теперь заимствует callback
 с lifetime: обе проверки сохраняют один выбранный VCS executable.
+
+## Создание и подключение проектов
+
+Публичные `eska-project new/init` сохраняют структурный контракт T91, без
+автоматического Git и проверки установленной платформы. Прежний интерактивный
+контракт общего `eska new/init` обслуживают приватные project-входы
+`__shell-new`/`__shell-init`. Оболочка меняет только имя входа; остальные
+аргументы, потоки и exit сохраняются. Эти приватные входы не являются новым
+публичным CLI-контрактом самостоятельного инструмента.
+
+Для `new --from` сначала проверяются компоненты и платформа. Затем ядро
+эксклюзивно создаёт проект. Project владеет transfer-каталогом, build —
+соседним native workspace; оба находятся в прежнем игнорируемом `.eska/import`.
+После ответа build project заново читает identity из фактического XML,
+сверяет её с ответом и публикует через прежний writer/enrollment.
+Чужие каталоги и ignore rules не заменяются. Ошибка компонента, повреждённый
+ответ или отказ native не оставляют частичный новый проект.
+
+Интерактивный IPC сохраняет stdin и stderr у дочернего владельца, ограничивая
+машинный stdout одним MiB. У него нет нового ограничения длительности native
+операции. Один cancellation scope живёт от выбора платформы до публикации;
+Unix-сигнал пересылается только direct child. Ему даётся 30 секунд на cleanup,
+после чего действует kill/reap fallback. Владелец временного каталога в ядре
+конструируется только эксклюзивным созданием, его путь нельзя подменить.
+Экспериментальные Rust-реэкспорты `create/init` теперь принадлежат project;
+`create_imported` принимает `PreparedSources` вместо native `PreparedArtifact`,
+а `CreationFailure::Native` хранит отказ процесса. Публичные CLI/JSON сохранены.
+
+[Нативный отчёт onboarding](measurements/t96-onboarding.json) содержит реальные
+CF/CFE/EPF/ERF: общий и прямой compatibility-входы прошли `new --from`, `import`
+и `init` на 8.3.27.2325 в Distrobox. Identity совпала, project manifests равны,
+входы и XML при init сохранены, staging удалён. Реальная отмена вернула exit 1,
+завершила owned native PID и удалила только новый проект. Проверенные бинарники
+и точные копии скриптов сохранены в указанном стенде. Во время последующих
+проверок project executable был пересобран; сохранена именно проверенная версия.
+
+Повтор из checkout после `cargo build --workspace --bins --locked`:
+
+```sh
+ESKA_TEST_ROOT="$(realpath ../eska-playground)" python3 -B tests/native_onboarding.py \
+  --fixtures ../eska-playground/COMPLETED_NATIVE_BUILD_STAND \
+  --platform-version 8.3.27.2325 --distrobox YOUR_CONTAINER
+```
+
+Fixtures принимает только завершённый собственный стенд `tests/native_build.py`
+в соседнем playground и читает его без изменений. Новый стенд создаётся отдельно.
+Эта проверка не покрывает Windows/macOS/Remote, host runner, большую `buhmfo`
+или работу клиента 1С. Они остаются в приёмке T89.
+
+После переноса прошли полный fmt/check/clippy, 877 тестов (12 ignored) и rustdoc
+с `-D warnings`. Отдельно проверены все три Unix-сигнала в RU/EN, отсутствие build,
+повреждённый ответ до/после создания каталога и rollback. В первом полном запуске
+существующий switch-тест получил `Shelf(Locked)`; отдельно и при полном повторе
+он прошёл. Причина этого единичного отказа не установлена, VCS-код не менялся.
 
 ## Поиск компонента
 

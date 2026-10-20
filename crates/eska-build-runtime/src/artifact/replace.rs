@@ -136,10 +136,10 @@ fn replace_directory(
     destination: &std::path::Path,
 ) -> Result<ImportResult, ArtifactError> {
     let mut backup = Staging::create(destination).map_err(super::structural_error)?;
-    let previous = backup.path.join("previous");
+    let previous = backup.path().join("previous");
     fs::rename(destination, &previous).map_err(|error| io_error(destination, error))?;
     // From this point, automatic cleanup must never discard the user's only surviving tree.
-    backup.preserve = true;
+    backup.retain();
     if let Err(original) = fs::rename(sources, destination) {
         if let Err(restore) = fs::rename(&previous, destination) {
             return Err(ArtifactError::Rollback {
@@ -148,12 +148,12 @@ fn replace_directory(
                 restore,
             });
         }
-        backup.preserve = false;
+        backup.resume_cleanup();
         return Err(io_error(destination, original));
     }
-    let retained_backup = fs::remove_dir_all(&backup.path)
+    let retained_backup = fs::remove_dir_all(backup.path())
         .err()
-        .map(|_| backup.path.clone());
+        .map(|_| backup.path().to_owned());
     Ok(ImportResult { retained_backup })
 }
 

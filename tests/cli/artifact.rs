@@ -11,6 +11,101 @@ use serde_json::Value;
 
 const UUID: &str = "12345678-1234-1234-1234-123456789012";
 
+/// A signal to the project PID must reach the build owner and its exact native child.
+#[cfg(unix)]
+#[test]
+fn cancelled_native_onboarding_reaps_both_children_and_removes_owned_project() {
+    use nix::{
+        sys::signal::{Signal, kill},
+        unistd::Pid,
+    };
+    use std::{
+        io::Read,
+        process::Stdio,
+        thread,
+        time::{Duration, Instant},
+    };
+    for locale in ["ru", "en"] {
+        for signal in [Signal::SIGINT, Signal::SIGTERM, Signal::SIGHUP] {
+            let fixture = TestDir::new();
+            let input = artifact(&fixture.0, "epf", "ExternalDataProcessor", "Current", UUID);
+            let original = fs::read(&input).unwrap();
+            fs::create_dir(fixture.0.join(".eska")).unwrap();
+            fs::write(fixture.0.join(".eska/keep"), b"user service bytes").unwrap();
+            let ready = fixture.0.join("ready");
+            let mut child = PreflightChild(
+                Command::new(env!("CARGO_BIN_EXE_eska"))
+                    .current_dir(&fixture.0)
+                    .env("ESKA_CONFIG_DIR", fixture.0.join("machine"))
+                    .env("FAKE_IBCMD_IMPORT_READY", &ready)
+                    .env("FAKE_IBCMD_IMPORT_CONTINUE", fixture.0.join("continue"))
+                    .args([
+                        "--lang",
+                        locale,
+                        "new",
+                        "project",
+                        "--from",
+                        "incoming.epf",
+                        "--workflow",
+                        "trunk",
+                        "--platform-version",
+                        "8.3.27.2325",
+                        "--no-vcs",
+                        "--ibcmd",
+                    ])
+                    .arg(super::build::fake_ibcmd(&fixture))
+                    .stdin(Stdio::null())
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .spawn()
+                    .unwrap(),
+            );
+            let native_pid = ready_pid(&mut child.0, &ready);
+            let root = fixture.0.join("project");
+            let build_pid = native_workspace_pid(&root);
+            kill(Pid::from_raw(i32::try_from(child.0.id()).unwrap()), signal).unwrap();
+            let deadline = Instant::now() + Duration::from_secs(10);
+            let status = loop {
+                if let Some(status) = child.0.try_wait().unwrap() {
+                    break status;
+                }
+                assert!(
+                    Instant::now() < deadline,
+                    "onboarding cancellation was lost"
+                );
+                thread::sleep(Duration::from_millis(10));
+            };
+            assert_eq!(status.code(), Some(1));
+            let mut stderr = String::new();
+            child
+                .0
+                .stderr
+                .take()
+                .unwrap()
+                .read_to_string(&mut stderr)
+                .unwrap();
+            assert_eq!(
+                stderr.lines().filter(|line| line.starts_with('↩')).count(),
+                1,
+                "{stderr}"
+            );
+            assert!(!root.exists());
+            assert_eq!(fs::read(&input).unwrap(), original);
+            assert_eq!(
+                fs::read(fixture.0.join(".eska/keep")).unwrap(),
+                b"user service bytes"
+            );
+            assert_eq!(fs::read_dir(fixture.0.join(".eska")).unwrap().count(), 1);
+            for pid in [native_pid, build_pid] {
+                assert_eq!(
+                    kill(Pid::from_raw(pid), None),
+                    Err(nix::errno::Errno::ESRCH)
+                );
+            }
+        }
+    }
+}
+
 #[cfg(unix)]
 struct PreflightChild(std::process::Child);
 #[cfg(unix)]
@@ -21,6 +116,47 @@ impl Drop for PreflightChild {
             let _ = self.0.kill();
             let _ = self.0.wait();
         }
+    }
+}
+
+/// Read the native owner's PID from its exclusively claimed workspace while export is paused.
+#[cfg(unix)]
+fn native_workspace_pid(root: &Path) -> i32 {
+    let native = fs::read_dir(root.join(".eska/import"))
+        .unwrap()
+        .map(Result::unwrap)
+        .find(|entry| entry.path().join("input.epf").is_file())
+        .unwrap();
+    native
+        .file_name()
+        .to_str()
+        .unwrap()
+        .strip_prefix(".eska-import-")
+        .unwrap()
+        .split('-')
+        .next()
+        .unwrap()
+        .parse()
+        .unwrap()
+}
+
+/// Wait for an atomically usable PID value rather than racing the ready file's creation.
+#[cfg(unix)]
+fn ready_pid(child: &mut std::process::Child, ready: &Path) -> i32 {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    loop {
+        if let Some(pid) = fs::read_to_string(ready)
+            .ok()
+            .and_then(|value| value.parse().ok())
+        {
+            return pid;
+        }
+        assert!(child.try_wait().unwrap().is_none());
+        assert!(
+            std::time::Instant::now() < deadline,
+            "native readiness timeout"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
     }
 }
 
@@ -827,15 +963,21 @@ fn standalone_unpacking_uses_the_new_project_directory() {
     }
     assert!(root.is_dir());
     let storage = root.join(".eska/import");
-    let staging = fs::read_dir(&storage)
+    let staging: Vec<_> = fs::read_dir(&storage)
         .unwrap()
-        .find_map(|entry| {
+        .filter_map(|entry| {
             let entry = entry.unwrap();
             entry.file_type().unwrap().is_dir().then(|| entry.path())
         })
+        .collect();
+    // Project owns one transfer directory while build owns the separate native workspace.
+    assert_eq!(staging.len(), 2);
+    let native = staging
+        .iter()
+        .find(|path| path.join("input.epf").is_file())
         .unwrap();
     assert_eq!(
-        fs::read(staging.join("input.epf")).unwrap(),
+        fs::read(native.join("input.epf")).unwrap(),
         fs::read(fixture.0.join("incoming.epf")).unwrap()
     );
     assert!(!root.join("eska.toml").exists());

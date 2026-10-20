@@ -1,5 +1,6 @@
 //! Standalone platform CLI and shared presentation; actual native execution lives in one runtime.
 
+mod bridge;
 pub mod cli;
 pub(crate) mod config {
     pub use eska_build_runtime::config::{

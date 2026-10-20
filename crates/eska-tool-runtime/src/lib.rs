@@ -1,10 +1,12 @@
 //! Lightweight component discovery and owned process I/O; no domain engines or localization.
 
+mod exchange;
 mod process;
 mod query;
 mod resolver;
 pub mod vcs;
 
+pub use exchange::{Operation, exchange};
 pub use process::delegate;
 pub use query::query;
 pub use resolver::{resolve, resolve_at};

@@ -187,7 +187,7 @@ fn wait_for_test_release() {
     let Some(proceed) = env::var_os("FAKE_IBCMD_IMPORT_CONTINUE") else {
         process::exit(9);
     };
-    if let Err(error) = fs::write(&ready, b"") {
+    if let Err(error) = fs::write(&ready, process::id().to_string()) {
         eprintln!("fake ready marker failed: {error}");
         process::exit(9);
     }

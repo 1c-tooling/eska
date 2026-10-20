@@ -5,12 +5,11 @@ use std::{env, process::ExitCode};
 mod args;
 mod commands;
 mod diagnostics;
-mod interactive;
 mod platform;
 
 pub use args::Cli;
+pub(crate) use eska_presentation::encoding;
 pub use eska_presentation::localization;
-pub(crate) use eska_presentation::{encoding, path_output};
 
 use localization::{Localizer, resolve_locale_from_environment};
 

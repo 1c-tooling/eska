@@ -12,6 +12,63 @@ use serde_json::Value;
 mod support;
 use support::TestDir;
 
+/// Protocol failures before and after directory claiming cannot publish incomplete onboarding.
+#[cfg(unix)]
+#[test]
+fn native_onboarding_refuses_invalid_component_replies_and_rolls_back() {
+    for locale in ["ru", "en"] {
+        for mode in [
+            "missing",
+            "bridge-schema",
+            "bridge-onboarding-identity",
+            "bridge-onboarding-failed",
+        ] {
+            let fixture = TestDir::new();
+            let root = fixture.0.join("project");
+            fs::create_dir(fixture.0.join(".eska")).unwrap();
+            fs::write(fixture.0.join(".eska/keep"), b"user bytes").unwrap();
+            let input = fixture.0.join("input.epf");
+            let bytes = b"<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><ExternalDataProcessor uuid=\"11111111-1111-1111-1111-111111111111\"><Properties><Name>Existing</Name></Properties></ExternalDataProcessor></MetaDataObject>\r\n";
+            fs::write(&input, bytes).unwrap();
+            let component =
+                Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/component.py");
+            let output = command(&fixture.0, locale)
+                .env(
+                    "ESKA_BUILD_BINARY",
+                    if mode == "missing" {
+                        fixture.0.join("missing")
+                    } else {
+                        component
+                    },
+                )
+                .env("ESKA_COMPONENT_FIXTURE_MODE", mode)
+                .args([
+                    "__shell-new",
+                    "project",
+                    "--from",
+                    "input.epf",
+                    "--workflow",
+                    "trunk",
+                    "--no-vcs",
+                    "--platform-version",
+                    "8.3.27.2325",
+                ])
+                .output()
+                .unwrap();
+            assert_eq!(output.status.code(), Some(1), "{output:?}");
+            assert!(output.stdout.is_empty());
+            assert!(!output.stderr.is_empty());
+            assert!(!root.exists());
+            assert_eq!(fs::read(&input).unwrap(), bytes);
+            assert_eq!(
+                fs::read(fixture.0.join(".eska/keep")).unwrap(),
+                b"user bytes"
+            );
+            assert_eq!(fs::read_dir(fixture.0.join(".eska")).unwrap().count(), 1);
+        }
+    }
+}
+
 /// Invoke the real component using only its absolute executable path.
 fn command(root: &Path, locale: &str) -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_eska-project"));

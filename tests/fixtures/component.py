@@ -21,9 +21,18 @@ if "--fixture-ready" in sys.argv:
     os.environ["ESKA_COMPONENT_FIXTURE_READY"] = sys.argv[sys.argv.index("--fixture-ready") + 1]
 
 if mode.startswith("bridge-"):
-    operation = sys.argv[2].replace("-", "_")
+    operation_index = sys.argv.index("__bridge") + 1
+    operation = sys.argv[operation_index].replace("-", "_")
     result = {"schema_version": 1, "operation": operation,
               "data": {"status": "available", "commit": "a" * 40, "dirty": False}, "error": None}
+    if mode.startswith("bridge-onboarding-"):
+        if operation == "select_platform":
+            result["data"] = {"platform_version": "8.3.27.2325"}
+        else:
+            destination = Path(sys.argv[operation_index + 2])
+            destination.mkdir()
+            destination.joinpath("Object.xml").write_bytes(Path(sys.argv[operation_index + 1]).read_bytes())
+            result["data"] = {"identity": {"type": "processing", "name": "wrong", "uuid": "wrong"}}
     if mode == "bridge-import-cancel":
         counter = Path(os.environ["ESKA_COMPONENT_FIXTURE_COUNTER"])
         count = int(counter.read_text()) + 1 if counter.exists() else 1
@@ -49,7 +58,7 @@ if mode.startswith("bridge-"):
         print(json.dumps(result))
         if mode == "bridge-extra":
             print(json.dumps(result))
-    sys.exit(4 if mode == "bridge-failed" else 0)
+    sys.exit(4 if mode in ("bridge-failed", "bridge-onboarding-failed") and operation != "select_platform" else 0)
 elif mode == "signals":
     for number in [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]:
         signal.signal(number, stop)

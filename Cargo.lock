@@ -797,6 +797,8 @@ dependencies = [
  "eska-analyzer",
  "eska-presentation",
  "eska-project-core",
+ "eska-terminal",
+ "eska-tool-runtime",
  "serde",
  "serde_json",
 ]
@@ -832,6 +834,7 @@ name = "eska-tool-runtime"
 version = "0.14.3"
 dependencies = [
  "ctrlc",
+ "nix 0.31.3",
  "serde_json",
  "signal-hook 0.4.5",
 ]

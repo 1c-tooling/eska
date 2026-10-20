@@ -43,6 +43,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    #[command(name = "__bridge", hide = true)]
+    Bridge(crate::bridge::BridgeArgs),
     #[command(disable_help_flag = true)]
     Build(commands::build::BuildArgs),
     #[command(disable_help_flag = true)]
@@ -88,6 +90,7 @@ pub fn run() -> ExitCode {
     };
     let provenance = |root: &Path| query_provenance(vcs_binary.as_deref(), root);
     match cli.command {
+        Some(Commands::Bridge(args)) => args.run(&localizer),
         Some(Commands::Build(args)) => args.run(&cli.project_dir, &localizer, &provenance),
         Some(Commands::Unpack(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Import(args)) => {

@@ -6,7 +6,7 @@ use std::{
     process::ExitCode,
 };
 
-use crate::{
+use crate::onboarding::{
     cli::{
         diagnostics,
         interactive::{Selector, WORKFLOW_CHOICES},
@@ -24,7 +24,7 @@ use super::{
 };
 
 /// Report one creation result through the existing localized CLI contract.
-pub(super) fn run(args: &NewArgs, base: &Path, localizer: &Localizer) -> ExitCode {
+pub fn run(args: &NewArgs, base: &Path, localizer: &Localizer) -> ExitCode {
     match execute(args, base, localizer) {
         Ok(project) => {
             artifact::success(&localizer.format(
@@ -42,7 +42,7 @@ pub(super) fn run(args: &NewArgs, base: &Path, localizer: &Localizer) -> ExitCod
         Err(error) => {
             error.report();
             if matches!(
-                error.code,
+                error.code.as_str(),
                 "platform-required"
                     | "platform-version-invalid"
                     | "workflow-required"
@@ -63,7 +63,7 @@ fn execute(
     args: &NewArgs,
     base: &Path,
     localizer: &Localizer,
-) -> Result<crate::project::Project, Failure> {
+) -> Result<crate::onboarding::project::Project, Failure> {
     let workspace = onboarding::find_workspace(base).map_err(|error| {
         Failure::new(
             "discovery",
@@ -75,9 +75,7 @@ fn execute(
         )
     })?;
     let creation_error = |error| match error {
-        create::CreationError::Operation(create::CreationFailure::Artifact(error)) => {
-            artifact::present(&error, localizer)
-        }
+        create::CreationError::Operation(create::CreationFailure::Native(error)) => error,
         error => Failure::new("creation", super::present(&error, localizer)),
     };
     let (destination, member) = if let Some(workspace) = &workspace {
@@ -133,7 +131,7 @@ fn execute(
     let prepare = |destination: &Path| {
         let prepared = artifact::unpack(&base.join(input), destination, &tool, true, localizer)
             .map_err(|error| {
-                create::CreationError::Operation(create::CreationFailure::Artifact(Box::new(error)))
+                create::CreationError::Operation(create::CreationFailure::Native(error))
             })?;
         let mut config = ProjectConfig::new(prepared.identity().project_type);
         if let Some(workflow) = workflow {

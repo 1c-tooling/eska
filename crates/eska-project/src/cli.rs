@@ -36,6 +36,10 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    #[command(name = "__shell-new", hide = true, disable_help_flag = true)]
+    ShellNew(crate::onboarding::new::NewArgs),
+    #[command(name = "__shell-init", hide = true, disable_help_flag = true)]
+    ShellInit(crate::onboarding::init::InitArgs),
     #[command(name = "__shell-validate", hide = true)]
     ShellValidate,
     #[command(disable_help_flag = true)]
@@ -142,6 +146,8 @@ pub fn run() -> ExitCode {
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
     match cli.command.as_ref() {
+        Some(Commands::ShellNew(args)) => args.run(&cli.project_dir, &localizer),
+        Some(Commands::ShellInit(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::ShellValidate) => shell_validate(&cli.project_dir, &localizer),
         Some(Commands::Serve(args)) => {
             if args.stdio {

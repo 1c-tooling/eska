@@ -7,7 +7,6 @@ use clap::Subcommand;
 
 use super::localization::Localizer;
 
-mod artifact;
 mod build;
 mod clean;
 mod clone;
@@ -132,8 +131,18 @@ pub(super) fn run(
             },
             localizer,
         ),
-        Some(Commands::New(args)) => args.run(project_dir, localizer),
-        Some(Commands::Init(args)) => args.run(project_dir, localizer),
+        Some(Commands::New(_)) => component::run(
+            Component::Project,
+            process_args,
+            Invocation::LegacyNew,
+            localizer,
+        ),
+        Some(Commands::Init(_)) => component::run(
+            Component::Project,
+            process_args,
+            Invocation::LegacyInit,
+            localizer,
+        ),
         Some(Commands::Patch(args)) => args.run(project_dir, localizer),
         Some(Commands::Doctor(args)) => args.run(project_dir, localizer),
         None => component::run(

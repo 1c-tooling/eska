@@ -1,0 +1,126 @@
+{
+  "complete": true,
+  "platform_version": "8.3.27.2325",
+  "runner": "1c-ubuntu-env",
+  "binary_sha256": {
+    "eska": "95d9c29d707d5d90fe112fb7a0b0ba2ab032b89ceb46fcb1a8555e12c5a791c0",
+    "eska-project": "3f70551821f07249165747915491ab03c316faf8a2b14ef5b47f6968aef77009",
+    "eska-build": "62230bf8b1b7531f8af97d3d4223a74970166441af673afdb092ae45168b9623",
+    "eska-vcs": "af5a87cc36873e54c8348fb2bbd55f39daf2d0cffce7806558a6dacf802a41cb"
+  },
+  "fixture_stand": "t96-native-c22ssl6v",
+  "fixture_unchanged": true,
+  "wrapper_direct_manifests_equal": true,
+  "cases": [
+    {
+      "entry": "wrapper",
+      "project_type": "configuration",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "direct",
+      "project_type": "configuration",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "wrapper",
+      "project_type": "extension",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "direct",
+      "project_type": "extension",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "wrapper",
+      "project_type": "processing",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "direct",
+      "project_type": "processing",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "wrapper",
+      "project_type": "report",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "direct",
+      "project_type": "report",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    }
+  ],
+  "cancellation": {
+    "status": "passed",
+    "exit": 1,
+    "native_pid_absent": true,
+    "owned_project_absent": true,
+    "input_unchanged": true
+  },
+  "evidence": {
+    "stand": "../eska-playground/t96-onboarding-3fodw88x",
+    "source_base_commit": "e2f27295efbc87801d3c22d0f9f6f176458d87bd",
+    "working_changes": true,
+    "source_files_sha256": "5554372adf4a5a4b8e2bd2b0296dda07b2573e0c988bb5a6affe66cfac2f666b",
+    "harness_sha256": "26a886bcb1e74f4b6c8c6c00eff155c087898e3fd39632df3bb828b7d0ae51a2",
+    "tested_binaries_preserved": "bin/",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)"
+  },
+  "limitations": [
+    "Linux x86_64 Distrobox only; Windows, macOS, Remote and host runner not accepted here.",
+    "Direct compatibility onboarding uses private __shell-new/__shell-init; public structural new/init retains its Git-less contract.",
+    "Small native fixture configurations; not a native build or client validation of buhmfo."
+  ]
+}

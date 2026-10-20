@@ -26,6 +26,8 @@ impl PreparedArtifact {
     where
         F: FnMut(ProcessStream, &[u8]),
     {
+        tool.begin_interruptible_operation()
+            .map_err(ArtifactError::Run)?;
         let input = fs::canonicalize(input).map_err(|error| io_error(input, error))?;
         let extension = input
             .extension()
@@ -36,20 +38,18 @@ impl PreparedArtifact {
             return Err(ArtifactError::UnsupportedFile(input));
         }
         let staging = Staging::create(destination).map_err(super::structural_error)?;
-        let snapshot = staging.path.join(format!("input.{extension}"));
+        let snapshot = staging.path().join(format!("input.{extension}"));
         fs::copy(&input, &snapshot).map_err(|error| io_error(&input, error))?;
-        let sources = staging.path.join("sources");
-        let unpacked = staging.path.join("unpacked");
+        let sources = staging.path().join("sources");
+        let unpacked = staging.path().join("unpacked");
         fs::create_dir(&unpacked).map_err(|error| io_error(&unpacked, error))?;
         let export = unpacked.join(
             input
                 .file_stem()
                 .ok_or_else(|| ArtifactError::UnsupportedFile(input.clone()))?,
         );
-        let data = staging.path.join("infobase");
-        let pid = staging.path.join("ibcmd.pid");
-        tool.begin_interruptible_operation()
-            .map_err(ArtifactError::Run)?;
+        let data = staging.path().join("infobase");
+        let pid = staging.path().join("ibcmd.pid");
         run(
             tool,
             &pid,
@@ -81,7 +81,7 @@ impl PreparedArtifact {
     /// Return the isolated source directory ready for publication.
     #[must_use]
     pub fn sources(&self) -> std::path::PathBuf {
-        self.staging.path.join("sources")
+        self.staging.path().join("sources")
     }
 
     /// Publish only into an exclusively claimed new directory; an existing destination is preserved.
@@ -253,7 +253,7 @@ mod tests {
     /// Owned staging models the result of native export without pretending to test a platform.
     fn prepared(destination: &Path) -> PreparedArtifact {
         let staging = Staging::create(destination).unwrap();
-        let sources = staging.path.join("sources");
+        let sources = staging.path().join("sources");
         fs::create_dir(&sources).unwrap();
         fs::write(sources.join("Configuration.xml"),"<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><Configuration uuid=\"11111111-1111-1111-1111-111111111111\"><Properties><Name>Example</Name></Properties></Configuration></MetaDataObject>\r\n").unwrap();
         let identity = inspect_identity(&sources).unwrap().unwrap();

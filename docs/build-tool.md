@@ -125,7 +125,8 @@ build с паспортом, повторное использование ИБ,
 паспорт, source и managed infobase, освободив PID и временный workspace.
 
 Нормальные зависимости build не содержат полной ESKA, project-сервера,
-анализатора или `gix`. Project/check также проверены без build runtime и TTY.
+анализатора или `gix`. Project/check проверены без build runtime; TTY project
+использует только для интерактивного compatibility-onboarding, check обходится без него.
 Windows/macOS, настоящий host runner, runtime/client-функции 1С и нативная
 сборка большого `buhmfo` этим результатом не покрываются.
 

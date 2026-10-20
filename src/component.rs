@@ -14,6 +14,8 @@ pub enum Invocation {
     Direct,
     LegacyIde,
     LegacyValidate,
+    LegacyNew,
+    LegacyInit,
     Build { provenance: bool },
 }
 
@@ -66,6 +68,15 @@ fn forward_args(args: &[OsString], invocation: Invocation) -> Vec<OsString> {
     let mut args = args.to_vec();
     match invocation {
         Invocation::Direct | Invocation::Build { .. } => {}
+        Invocation::LegacyNew | Invocation::LegacyInit => {
+            if let Some(position) = command_position(&args) {
+                args[position] = OsString::from(if matches!(invocation, Invocation::LegacyNew) {
+                    "__shell-new"
+                } else {
+                    "__shell-init"
+                });
+            }
+        }
         Invocation::LegacyIde => {
             if let Some(position) = command_position(&args) {
                 args[position] = OsString::from("serve");

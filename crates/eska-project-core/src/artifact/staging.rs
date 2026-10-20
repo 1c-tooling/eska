@@ -10,11 +10,27 @@ use std::{
 use super::{Error as ArtifactError, io_error};
 
 pub struct Staging {
-    pub path: PathBuf,
-    pub preserve: bool,
+    path: PathBuf,
+    preserve: bool,
 }
 
 impl Staging {
+    /// Expose the claimed namespace without allowing callers to forge a filesystem owner.
+    #[must_use]
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    /// Retain a recovery copy while it is the only surviving user source tree.
+    pub const fn retain(&mut self) {
+        self.preserve = true;
+    }
+
+    /// Resume owned cleanup after the user source tree has been restored successfully.
+    pub const fn resume_cleanup(&mut self) {
+        self.preserve = false;
+    }
+
     /// Claim ignored storage near the destination, including before workspace parents exist.
     ///
     /// # Errors

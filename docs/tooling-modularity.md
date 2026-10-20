@@ -12,8 +12,9 @@
 | `metadata` | project | Существующие операции XML и правила поддержки |
 | `ide --stdio` | project `serve` | Metadata API, без LSP-прокси |
 | `version` | project | Версия в XML, без Git и запуска платформы |
-| `new`, `init` | project; общий CLI согласует VCS и выбор платформы | Самостоятельное создание манифеста не инициализирует Git |
-| `new --from`, `import` | build распаковывает, project проверяет, общий CLI согласует VCS | Замена source сохраняет preflight, preview и восстановление |
+| `new`, `init` | project согласует VCS и выбор платформы через процессы | Самостоятельное структурное создание манифеста не инициализирует Git |
+| `new --from` | project владеет транзакцией, build распаковывает, VCS инициализирует Git | Transfer и native workspace имеют отдельных владельцев в общем игнорируемом storage |
+| `import` | build с VCS preflight | Замена source сохраняет preview, повторную проверку и восстановление |
 | `build`, `clean`, `platform` | build | Runner, managed infobase, артефакты и их паспорт |
 | `patch` | build с VCS-снимками | Нужны build и VCS; ошибка отсутствующего компонента до записи |
 | `config init`, `config edit` | build | Текущий machine config содержит только настройки runner |
@@ -68,8 +69,9 @@ Git provenance и проверку changed paths передаёт текущий
 Standalone [eska-build](build-tool.md) и прежняя команда используют общие
 CLI-обработчики build/clean/platform/config. Распаковка standalone публикует
 только новый XML-каталог через общий writer с эксклюзивным созданием.
-`eska-terminal` содержит переиспользуемый TTY-код двух CLI; project/check
-не получают эту зависимость. Формат Configurator path находится в общей
+`eska-terminal` содержит переиспользуемый TTY-код build и интерактивного
+onboarding project; check и чистое ядро не получают эту зависимость.
+Формат Configurator path находится в общей
 presentation-библиотеке, VCS semantic presentation остаётся у своего владельца.
 
 В T95 общие Git-операции и проектные workflow/полки/semantic diff перенесены
@@ -91,8 +93,9 @@ Native provenance/import-инспектор остаётся адаптером 
 Начальное [делегирование T96](component-delegation.md) охватывает project/VCS
 и полный build; provenance и import preflight уже идут через VCS-процесс.
 `eska-tool-runtime` переиспользуется оболочкой и сборщиком; native cancellation
-на Unix больше не перезаписывает IPC subscriptions. Составные операции
-new/init/import/patch/doctor ещё не перенесены целиком.
+на Unix больше не перезаписывает IPC subscriptions. `new/init/import` перенесены
+к владельцам, включая нативный onboarding и его отмену. Составные `patch/doctor`
+и окончательная очистка зависимостей оболочки ещё не завершены.
 
 Пока выделены внутренние crates с `publish = false`; раскладка публикуемых
 packages и выборочная поставка относятся к T97. Автоматизация релизов,
