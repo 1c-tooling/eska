@@ -1,0 +1,19 @@
+[package]
+name = "eska-terminal"
+version = "0.14.3"
+edition = "2024"
+publish = false
+description = "Shared keyboard selection and terminal progress for ESKA CLI tools"
+license = "Apache-2.0"
+repository = "https://github.com/1c-tooling/eska"
+readme = "../../README.md"
+keywords = ["1c-enterprise", "cli", "terminal"]
+categories = ["command-line-interface"]
+authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
+
+[lints]
+workspace = true
+
+[dependencies]
+eska-presentation = { path = "../eska-presentation" }
+crossterm = { version = "0.29.0", default-features = false, features = ["events", "windows", "bracketed-paste"] }

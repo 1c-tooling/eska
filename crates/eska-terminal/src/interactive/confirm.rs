@@ -13,9 +13,10 @@ use crossterm::{
 use super::PromptError;
 
 /// Accept only an explicit overwrite key, ignoring pasted text and repeated key events.
-pub(in crate::cli) fn confirm_overwrite(
-    interrupted: impl Fn() -> bool,
-) -> Result<bool, PromptError> {
+///
+/// # Errors
+/// Returns cancellation or terminal setup/input failure.
+pub fn confirm_overwrite(interrupted: impl Fn() -> bool) -> Result<bool, PromptError> {
     terminal::enable_raw_mode().map_err(|_| PromptError::Io)?;
     let _guard = ConfirmationTerminal;
     execute!(io::stderr(), EnableBracketedPaste).map_err(|_| PromptError::Io)?;

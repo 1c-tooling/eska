@@ -3,7 +3,6 @@ use std::{
     io::{BufRead, BufReader, Read},
     path::{Path, PathBuf},
     process::{Command, Output, Stdio},
-    sync::OnceLock,
     thread,
     time::Duration,
 };
@@ -12,7 +11,8 @@ use serde_json::Value;
 
 use crate::support::TestDir;
 
-static IBCMD_FIXTURE: OnceLock<PathBuf> = OnceLock::new();
+#[path = "../support/ibcmd.rs"]
+mod ibcmd_fixture;
 
 /// Run eska with an isolated locale and optional fake import failure.
 fn eska(current_dir: &Path, locale: &str, ibcmd: &Path, args: &[&str], fail: bool) -> Output {
@@ -117,26 +117,7 @@ pub(super) fn workspace() -> TestDir {
 
 /// Return the native portable process fixture shared by build scenarios.
 pub(super) fn fake_ibcmd(_fixture: &TestDir) -> PathBuf {
-    IBCMD_FIXTURE
-        .get_or_init(|| {
-            let repository = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-            let manifest = repository.join("tests/fixtures/ibcmd/Cargo.toml");
-            let target = repository.join("target/test-fixtures/ibcmd");
-            let status = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()))
-                .args(["build", "--quiet", "--locked", "--manifest-path"])
-                .arg(&manifest)
-                .arg("--target-dir")
-                .arg(&target)
-                .status()
-                .expect("build portable ibcmd fixture");
-            assert!(status.success(), "portable ibcmd fixture build failed");
-            let executable = target
-                .join("debug")
-                .join(format!("eska-test-ibcmd{}", std::env::consts::EXE_SUFFIX));
-            assert!(executable.is_file(), "portable ibcmd fixture is missing");
-            executable
-        })
-        .clone()
+    ibcmd_fixture::executable(Path::new(env!("CARGO_MANIFEST_DIR")))
 }
 
 /// Capture directory names and file bytes without following links.

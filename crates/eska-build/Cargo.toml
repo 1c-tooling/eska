@@ -1,0 +1,25 @@
+[package]
+name = "eska-build"
+version = "0.14.3"
+edition = "2024"
+publish = false
+description = "Standalone native 1C artifact build and Designer XML export"
+license = "Apache-2.0"
+repository = "https://github.com/1c-tooling/eska"
+readme = "../../README.md"
+keywords = ["1c-enterprise", "cli", "build"]
+categories = ["command-line-utilities", "development-tools"]
+authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
+
+[lints]
+workspace = true
+
+[dependencies]
+eska-project-core = { path = "../eska-project-core" }
+eska-build-runtime = { path = "../eska-build-runtime" }
+eska-presentation = { path = "../eska-presentation" }
+eska-terminal = { path = "../eska-terminal" }
+bstr = { version = "1.13.1", default-features = false, features = ["std"] }
+clap = { version = "4.6.6", features = ["derive", "string"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"

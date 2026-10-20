@@ -340,10 +340,10 @@ pub fn resolve_destination<E>(destination: &Path) -> Result<PathBuf, CreationErr
 ///
 /// # Errors
 /// Preserves operation errors and reports any failure to remove the owned directory.
-pub fn in_new_directory<E>(
+pub fn in_new_directory<E, T>(
     destination: &Path,
-    operation: impl FnOnce(&NewDirectory<'_>) -> Result<Project, CreationError<E>>,
-) -> Result<Project, CreationError<E>> {
+    operation: impl FnOnce(&NewDirectory<'_>) -> Result<T, CreationError<E>>,
+) -> Result<T, CreationError<E>> {
     // create_dir, unlike create_dir_all, claims the destination exclusively.
     fs::create_dir(destination).map_err(|source| {
         if source.kind() == io::ErrorKind::AlreadyExists {

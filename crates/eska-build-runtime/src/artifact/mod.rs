@@ -13,7 +13,14 @@ use eska_project_core::project::ProjectType;
 
 pub use identity::{Identity, inspect_identity};
 pub use replace::{ImportPlan, ImportResult, SourceChanges};
-pub use unpack::PreparedArtifact;
+pub use unpack::{PreparedArtifact, new_destination};
+
+/// Publication keeps cancellation distinct from native filesystem errors after rollback completes.
+#[derive(Debug)]
+pub enum PublicationError {
+    Cancelled,
+    Io(io::Error),
+}
 
 /// Import failures retain their operation and affected path without presentation text.
 #[derive(Debug)]
@@ -29,6 +36,10 @@ pub enum ArtifactError {
     UnsafePath(PathBuf),
     Config(eska_project_core::config::ProjectConfigError),
     ChangeInspection,
+    Publication {
+        path: PathBuf,
+        source: Box<eska_project_core::project::create::CreationError<PublicationError>>,
+    },
     ConfirmationRequired,
     SourceChanged(PathBuf),
     Rollback {

@@ -1,3 +1,10 @@
+artifact-new-publication-error = Не удалось опубликовать XML в новый каталог: { $path }.
+artifact-new-publication-cleanup = Публикация XML не завершена; частичный новый каталог сохранён: { $path }.
+unpack-about = Распаковать CF/CFE/EPF/ERF в новый каталог Designer XML
+unpack-input-help = Исходный файл CF, CFE, EPF или ERF
+unpack-destination-help = Новый каталог XML; родительский каталог должен существовать
+unpack-complete = XML сохранён в { $path }.
+build-tool-about = Сборка и распаковка нативных артефактов 1С
 check-project-dir-help = Начать поиск проекта с этого каталога
 check-tool-about = Полная проверка Designer XML и BSL для CI
 check-report-help = Создать новый JSON-отчёт вне source; существующий файл сохраняется

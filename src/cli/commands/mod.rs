@@ -95,7 +95,9 @@ pub(super) fn run(
         Some(Commands::Shelve(args)) => args.run(project_dir, localizer),
         Some(Commands::Unshelve(args)) => args.run(project_dir, localizer),
         Some(Commands::Shelves(args)) => args.run(project_dir, localizer),
-        Some(Commands::Build(args)) => args.run(project_dir, localizer),
+        Some(Commands::Build(args)) => {
+            args.run(project_dir, localizer, crate::vcs::build::provenance)
+        }
         Some(Commands::Clean(args)) => args.run(project_dir, localizer),
         Some(Commands::Clone(args)) => args.run(project_dir, localizer),
         Some(Commands::Config(args)) => args.run(localizer),

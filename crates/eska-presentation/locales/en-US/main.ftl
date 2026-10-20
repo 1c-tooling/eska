@@ -1,3 +1,10 @@
+artifact-new-publication-error = Cannot publish XML into a new directory: { $path }.
+artifact-new-publication-cleanup = XML publication failed; the partial new directory is retained: { $path }.
+unpack-about = Unpack CF/CFE/EPF/ERF into a new Designer XML directory
+unpack-input-help = Input CF, CFE, EPF or ERF file
+unpack-destination-help = New XML directory; its parent must exist
+unpack-complete = XML exported to { $path }.
+build-tool-about = Build and unpack native 1C artifacts
 check-project-dir-help = Search for a project from this directory
 check-tool-about = Complete Designer XML and BSL check for CI
 check-report-help = Create a new JSON report outside source; existing files are preserved

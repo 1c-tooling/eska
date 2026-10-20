@@ -60,6 +60,10 @@ crates/eska-project/
     └── ide/                        # Metadata API framing, DTOs and server lifecycle
 crates/eska-check/
 └── src/                            # standalone CI CLI, stable report and shared analyzer adapter
+crates/eska-build/
+└── src/cli/                        # standalone build/unpack and shared legacy platform presentation
+crates/eska-terminal/
+└── src/                            # shared keyboard menus, confirmation and progress
 crates/eska-build-runtime/
 └── src/
     ├── build/                      # runner, plans, managed infobases and artifact snapshots
@@ -73,9 +77,8 @@ src/
 │   ├── commands/                   # command-specific human/JSON presentation
 │   ├── ide.rs                      # shared project server entry point
 │   ├── platform.rs                 # machine-local runner selection
-│   ├── process_output/             # platform diagnostics and progress lifecycle
-│   ├── interactive/                # keyboard selection, confirmation and terminal state
-│   └── diagnostics.rs              # machine config/tool errors; core errors reexported
+│   ├── interactive.rs              # shared terminal menu reexports
+│   └── diagnostics.rs              # shared native/core error presentation reexports
 ├── config/
 │   └── mod.rs                      # shared manifests and build-runtime machine config reexports
 ├── project/
@@ -114,8 +117,8 @@ tests/support/mod.rs               # exclusively owned playground directories
 |---|---|
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
-| Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`crates/eska-build-runtime/src/build/`](../crates/eska-build-runtime/src/build/) |
-| Изменить вывод, JSON или ошибки сборки | [`src/cli/commands/build/output.rs`](../src/cli/commands/build/output.rs), [`json.rs`](../src/cli/commands/build/json.rs), [`errors.rs`](../src/cli/commands/build/errors.rs) |
+| Изменить сборку или её вывод | [`crates/eska-build/src/cli/commands/build.rs`](../crates/eska-build/src/cli/commands/build.rs), затем [`crates/eska-build-runtime/src/build/`](../crates/eska-build-runtime/src/build/) |
+| Изменить вывод, JSON или ошибки сборки | [`crates/eska-build/src/cli/commands/build/output.rs`](../crates/eska-build/src/cli/commands/build/output.rs), [`json.rs`](../crates/eska-build/src/cli/commands/build/json.rs), [`errors.rs`](../crates/eska-build/src/cli/commands/build/errors.rs) |
 | Изменить план или генерацию patch-extension | [`src/cli/commands/patch.rs`](../src/cli/commands/patch.rs), затем [`src/project/patch/`](../src/project/patch/) |
 | Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`crates/eska-build-runtime/src/build/tool.rs`](../crates/eska-build-runtime/src/build/tool.rs) |
 | Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
@@ -142,8 +145,8 @@ tests/support/mod.rs               # exclusively owned playground directories
 | Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../src/vcs/repository.rs) |
 | Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../src/vcs/status.rs) |
 | Изменить workflow policy или план задачи | [`crates/eska-project-core/src/workflow/policy.rs`](../crates/eska-project-core/src/workflow/policy.rs) |
-| Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../src/cli/interactive/keyboard.rs) |
-| Изменить оформление меню | [`src/cli/interactive/render.rs`](../src/cli/interactive/render.rs) |
+| Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../crates/eska-terminal/src/interactive/keyboard.rs) |
+| Изменить оформление меню | [`src/cli/interactive/render.rs`](../crates/eska-terminal/src/interactive/render.rs) |
 | Изменить приоритет языка | [`crates/eska-presentation/src/localization/locale.rs`](../crates/eska-presentation/src/localization/locale.rs) |
 
 ## Границы ответственности

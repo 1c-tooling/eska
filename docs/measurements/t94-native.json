@@ -1,0 +1,109 @@
+{
+  "complete": true,
+  "platform_version": "8.3.27.2325",
+  "runner": "distrobox",
+  "cases": [
+    {
+      "project_type": "configuration",
+      "build": "passed",
+      "repeat": "reused_infobase",
+      "unpack": "passed",
+      "clean": "passed",
+      "artifact_sha256": "594c44a9b969814cdf56b36f9b13c61aeede3b366411cc85facd30ea631f7dde",
+      "artifact_bytes": 76066,
+      "identity": {
+        "name": "Configuration",
+        "project_type": "configuration",
+        "uuid": "43ec3919-40a5-4209-8046-bddb0cf0e64d"
+      },
+      "source_unchanged": true,
+      "export_identity_matches_source": true
+    },
+    {
+      "project_type": "extension",
+      "build": "passed",
+      "repeat": "reused_infobase",
+      "unpack": "passed",
+      "clean": "passed",
+      "artifact_sha256": "622beb75a3381c8c2fee4b71b568c2959575831c091fae89d013df46d485e7d1",
+      "artifact_bytes": 4618,
+      "identity": {
+        "name": "EskaTestExtension",
+        "project_type": "extension",
+        "uuid": "a11d1bcf-e0a3-4ecb-9b86-9791be25558e"
+      },
+      "source_unchanged": true,
+      "export_identity_matches_source": true
+    },
+    {
+      "project_type": "processing",
+      "build": "passed",
+      "repeat": "reused_infobase",
+      "unpack": "passed",
+      "clean": "passed",
+      "artifact_sha256": "b2442572dcf9e926052b7a3bea45ed8e2ba12a42b46d8529e0946eca89db9dea",
+      "artifact_bytes": 4394,
+      "identity": {
+        "name": "EskaTestprocessing",
+        "project_type": "processing",
+        "uuid": "20994e3d-6b52-4bb5-9caf-235ba41df115"
+      },
+      "source_unchanged": true,
+      "export_identity_matches_source": true
+    },
+    {
+      "project_type": "report",
+      "build": "passed",
+      "repeat": "reused_infobase",
+      "unpack": "passed",
+      "clean": "passed",
+      "artifact_sha256": "ee10822683a7419161e4bf0e5e1d981cf8b7de8dce258d3ec3a91513ed43bac8",
+      "artifact_bytes": 4394,
+      "identity": {
+        "name": "EskaTestreport",
+        "project_type": "report",
+        "uuid": "4c19134d-19e5-4248-97cf-bf7ebd11ecfa"
+      },
+      "source_unchanged": true,
+      "export_identity_matches_source": true
+    }
+  ],
+  "cancellation": {
+    "unpack": {
+      "status": "passed",
+      "exit": 130,
+      "native_pid_absent": true,
+      "staging_absent": true,
+      "input_unchanged": true
+    },
+    "build": {
+      "status": "passed",
+      "exit": 1,
+      "stage": "import-sources",
+      "native_pid_absent": true,
+      "previous_result_unchanged": true,
+      "source_unchanged": true,
+      "managed_infobase_preserved": true,
+      "staging_absent": true
+    }
+  },
+  "measurement": {
+    "at_utc": "2026-10-20T20:45:52.755279+00:00",
+    "os": "Fedora Linux 44 (Workstation Edition)",
+    "architecture": "x86_64",
+    "rust": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "profile": "debug",
+    "base_commit": "df34b2a23200c1d63fcdb5694c4d0ac0e9b2403b",
+    "stand_relative_to_repo": "../eska-playground/t94-native-8h8x6w51",
+    "stand_parent": "sibling eska-playground",
+    "script_sha256": "963b6572cffa2a7ea0bc2b42d8bda5d8d342d487612b316c6258adcd3f9fc51b",
+    "binary_sha256": "1670a37bf14080961b968543a0dd0283185fb7b1ec0764eae2890cd99394f32d",
+    "workspace_code_sha256": "ab66d6b25283818a51e2725c5b19ea73991892bf135c77487c9d45c463051721"
+  },
+  "limits": [
+    "Linux x86_64 Distrobox only; Windows/macOS/native host runner unverified",
+    "Small own fixtures; no buhmfo native build",
+    "Empty configuration and external objects; no runtime/client functional acceptance",
+    "Version and setup details are recorded locally; no release artifacts published"
+  ]
+}

@@ -50,6 +50,7 @@ Windows. Проверка символических ссылок также о�
 |---|---|---|---|---|
 | 2026-09-09 | Fedora Linux 44, x86_64 | 1.98.1 | `PASS`: 28/28, включая SIGTERM и symlink | `UNVERIFIED`: `ibcmd` отсутствует |
 | 2026-09-09 | Fedora Linux 44 + Distrobox `1c-ubuntu-env`, x86_64 | 1.98.1 | — | `PARTIAL`: `.epf` с базовым `.cf` на 8.3.27.2325 |
+| 2026-10-20 | Linux x86_64 + Distrobox `1c-ubuntu-env` | 1.98.1 | полный Rust workspace: 805 passed, 12 ignored | `PASS` T94: build/repeat/unpack/clean CF/CFE/EPF/ERF, native cancellation; [отчёт](measurements/t94-native.json) |
 | — | Windows, x86_64 | — | `UNVERIFIED`: host-runner недоступен | `UNVERIFIED` |
 | — | macOS, x86_64/aarch64 | — | `UNVERIFIED`: host-runner недоступен | `UNVERIFIED` |
 
@@ -83,3 +84,9 @@ eska build --manifest --format json --ibcmd <полный-путь-к-ibcmd>
 `--distrobox <container>`; он не считается проверкой host runner. Если ОС,
 архитектура или версия 1С недоступны, строка результата должна оставаться
 `UNVERIFIED` с причиной.
+
+T94 проверяет самостоятельный [eska-build](build-tool.md). Повторная нативная
+матрица запускается `tests/native_build.py` с явными Distrobox, путём ibcmd
+и точной версией; все проекты и базы создаются в уникальном соседнем playground.
+Этот запуск не закрывает оставшуюся OS-матрицу T55 и не считается проверкой
+настоящего host runner или функциональной работой клиента 1С.

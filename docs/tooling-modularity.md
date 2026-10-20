@@ -65,6 +65,13 @@ Git provenance и проверку changed paths передаёт текущий
 6 ignored; ошибка callback отдельно проверена как отказ. Нативная матрица
 и полный финальный workspace-набор выполняются со standalone CLI T94.
 
+Standalone [eska-build](build-tool.md) и прежняя команда используют общие
+CLI-обработчики build/clean/platform/config. Распаковка standalone публикует
+только новый XML-каталог через общий writer с эксклюзивным созданием.
+`eska-terminal` содержит переиспользуемый TTY-код двух CLI; project/check
+не получают эту зависимость. Формат Configurator path находится в общей
+presentation-библиотеке, VCS semantic presentation остаётся у своего владельца.
+
 Экспериментальный Rust API теперь принимает `GitProvenance` при сборке
 с паспортом и `SourceChanges` при создании import-плана. Ошибка инспектора
 имеет структурную категорию `ChangeInspection`; публичный CLI сохраняет

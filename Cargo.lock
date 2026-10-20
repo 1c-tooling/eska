@@ -701,11 +701,12 @@ dependencies = [
  "axoupdater",
  "base64 0.23.1",
  "clap",
- "crossterm",
+ "eska-build",
  "eska-build-runtime",
  "eska-presentation",
  "eska-project",
  "eska-project-core",
+ "eska-terminal",
  "gix",
  "quick-xml",
  "reqwest",
@@ -730,6 +731,20 @@ dependencies = [
  "sha2",
  "toml",
  "toml_edit",
+]
+
+[[package]]
+name = "eska-build"
+version = "0.14.3"
+dependencies = [
+ "bstr",
+ "clap",
+ "eska-build-runtime",
+ "eska-presentation",
+ "eska-project-core",
+ "eska-terminal",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -798,6 +813,14 @@ dependencies = [
  "toml_edit",
  "unicode-general-category",
  "zip",
+]
+
+[[package]]
+name = "eska-terminal"
+version = "0.14.3"
+dependencies = [
+ "crossterm",
+ "eska-presentation",
 ]
 
 [[package]]

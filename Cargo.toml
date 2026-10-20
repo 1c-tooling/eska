@@ -47,12 +47,13 @@ eska-project-core = { path = "crates/eska-project-core" }
 eska-presentation = { path = "crates/eska-presentation" }
 eska-project = { path = "crates/eska-project" }
 eska-build-runtime = { path = "crates/eska-build-runtime" }
+eska-build = { path = "crates/eska-build" }
+eska-terminal = { path = "crates/eska-terminal" }
 axoupdater = { version = "0.10.2", default-features = false, features = ["github_releases"] }
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json"] }
 semver = "1.0.28"
 tokio = { version = "1.53.1", default-features = false, features = ["rt", "time", "net"] }
 clap = { version = "4.6.6", features = ["derive", "string"] }
-crossterm = { version = "0.29.0", default-features = false, features = ["events", "windows", "bracketed-paste"] }
 gix = { version = "0.87.1", default-features = false, features = ["blocking-http-transport-curl-rustls", "max-performance", "revision", "sha1", "status", "worktree-mutation"] }
 roxmltree = { version = "0.21.1", default-features = false, features = ["std", "positions"] }
 quick-xml = { version = "0.42.0", default-features = false }

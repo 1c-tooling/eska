@@ -9,7 +9,6 @@ mod diagnostics;
 mod ide;
 mod interactive;
 mod platform;
-mod process_output;
 mod shelves;
 
 pub use args::Cli;

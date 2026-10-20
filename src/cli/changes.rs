@@ -2,31 +2,11 @@
 
 use crate::{
     cli::localization::Localizer,
-    project::{
-        metadata::MetadataPath,
-        semantic::{SemanticEventKind, SemanticFallbackReason},
-    },
+    project::semantic::{SemanticEventKind, SemanticFallbackReason},
 };
 use gix::bstr::{BStr, ByteSlice};
 
-/// Render a logical metadata identity in Configurator notation.
-pub(super) fn render_metadata_path(path: &MetadataPath, localizer: &Localizer) -> String {
-    path.parts
-        .iter()
-        .map(|part| {
-            let kind = metadata_kind(part.kind, localizer);
-            part.name
-                .as_ref()
-                .map_or_else(|| kind.clone(), |name| format!("{kind}.{name}"))
-        })
-        .collect::<Vec<_>>()
-        .join(".")
-}
-
-/// Resolve the localized Configurator name of a stable metadata kind.
-pub(super) fn metadata_kind(kind: &str, localizer: &Localizer) -> String {
-    localizer.text(&format!("diff-metadata-{kind}"))
-}
+pub(super) use eska_presentation::metadata::{metadata_kind, render_metadata_path};
 
 /// Return the top-level metadata kind encoded in a stable semantic object ID.
 pub(super) fn semantic_object_group(id: &str) -> &str {

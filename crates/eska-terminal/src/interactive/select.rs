@@ -7,7 +7,7 @@ use crossterm::{
     terminal,
 };
 
-use crate::cli::localization::Localizer;
+use eska_presentation::localization::Localizer;
 
 use super::{
     PromptError,
@@ -16,18 +16,26 @@ use super::{
     terminal::Terminal,
 };
 
-pub(in crate::cli) struct Selector {
+pub struct Selector {
     heading: &'static str,
     terminal: Terminal,
 }
 
 impl Selector {
-    pub(in crate::cli) fn start(heading: &'static str) -> Result<Self, PromptError> {
+    /// Claim terminal state until selection finishes or the selector is dropped.
+    ///
+    /// # Errors
+    /// Returns a terminal setup failure without leaving raw mode active.
+    pub fn start(heading: &'static str) -> Result<Self, PromptError> {
         let terminal = Terminal::start().map_err(|_| PromptError::Io)?;
         Ok(Self { heading, terminal })
     }
 
-    pub(in crate::cli) fn choose(
+    /// Select a localized key from an explicit nonempty choice list.
+    ///
+    /// # Errors
+    /// Returns cancellation, empty choices or terminal I/O failure.
+    pub fn choose(
         &mut self,
         localizer: &Localizer,
         title: &str,
@@ -70,7 +78,11 @@ impl Selector {
         }
     }
 
-    pub(in crate::cli) fn choose_values(
+    /// Select a caller-provided label while preserving its machine value.
+    ///
+    /// # Errors
+    /// Returns cancellation, empty choices or terminal I/O failure.
+    pub fn choose_values(
         &mut self,
         localizer: &Localizer,
         title: &str,
@@ -154,7 +166,11 @@ impl Selector {
         .map_err(|_| PromptError::Io)
     }
 
-    pub(in crate::cli) fn finish(&mut self) -> io::Result<()> {
+    /// Restore the terminal before other command output is written.
+    ///
+    /// # Errors
+    /// Returns terminal restoration or output failures.
+    pub fn finish(&mut self) -> io::Result<()> {
         self.terminal.finish()
     }
 }

@@ -2,11 +2,14 @@
 
 use std::io::{self, IsTerminal, Write};
 
-pub(super) mod progress;
+pub mod progress;
 use progress::ProgressLine;
 
 /// Preserve native bytes and line endings, styling only recognized severity prefixes.
-pub(super) fn write_diagnostic(
+///
+/// # Errors
+/// Returns an output or synchronized progress-line failure.
+pub fn write_diagnostic(
     line: &[u8],
     styled: bool,
     progress: Option<&ProgressLine>,
@@ -52,17 +55,20 @@ fn style_diagnostic_level(message: &str, styled: bool) -> String {
 }
 
 /// Enable diagnostic colors only for an interactive stderr that permits color.
-pub(super) fn diagnostic_styling_enabled() -> bool {
+#[must_use]
+pub fn diagnostic_styling_enabled() -> bool {
     io::stderr().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
 }
 
 /// Enable result colors only for an interactive stdout that permits color.
-pub(super) fn result_styling_enabled() -> bool {
+#[must_use]
+pub fn result_styling_enabled() -> bool {
     io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
 }
 
 /// Add a stable marker and optionally color only that marker.
-pub(super) fn decorate_status(marker: &str, message: &str, styled: bool, color: &str) -> String {
+#[must_use]
+pub fn decorate_status(marker: &str, message: &str, styled: bool, color: &str) -> String {
     if styled {
         format!("\x1b[1;{color}m{marker}\x1b[0m {message}")
     } else {

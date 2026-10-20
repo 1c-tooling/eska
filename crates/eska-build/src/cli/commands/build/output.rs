@@ -6,11 +6,10 @@ use std::{
     process::ExitCode,
 };
 
-use gix::bstr::ByteSlice;
+use bstr::ByteSlice;
 
 use crate::{
     cli::{
-        changes,
         localization::{LocalizationValue, Localizer},
         path_output::{self, display_path},
     },
@@ -20,6 +19,8 @@ use crate::{
         metadata,
     },
 };
+
+use eska_presentation::metadata as changes;
 
 use super::{
     OutputFormat, PreparedBuild,

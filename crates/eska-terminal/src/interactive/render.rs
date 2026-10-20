@@ -9,7 +9,7 @@ use crossterm::{
     terminal::{Clear, ClearType},
 };
 
-use crate::cli::localization::Localizer;
+use eska_presentation::localization::Localizer;
 
 pub(super) fn fits((width, height): (u16, u16), count: usize) -> bool {
     width >= 50 && usize::from(height) >= count + 10
@@ -113,7 +113,8 @@ fn line(output: &mut impl Write, row: u16, text: &str, width: u16, height: u16) 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cli::{interactive::PROJECT_TYPE_CHOICES as CHOICES, localization::Locale};
+    use crate::interactive::PROJECT_TYPE_CHOICES as CHOICES;
+    use eska_presentation::localization::Locale;
 
     #[test]
     fn menus_are_localized_and_selection_is_visible_without_color() {

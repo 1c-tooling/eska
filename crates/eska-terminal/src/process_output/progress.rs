@@ -28,7 +28,7 @@ struct ProgressState {
     styled: bool,
 }
 
-pub(in crate::cli) struct ProgressLine {
+pub struct ProgressLine {
     state: Arc<ProgressState>,
     stop: Sender<()>,
     worker: Option<thread::JoinHandle<io::Result<()>>>,
@@ -37,7 +37,8 @@ pub(in crate::cli) struct ProgressLine {
 
 impl ProgressLine {
     /// Start a terminal-owned spinner that remains below streamed diagnostics.
-    pub(in crate::cli) fn start(message: String, styled: bool) -> Self {
+    #[must_use]
+    pub fn start(message: String, styled: bool) -> Self {
         let state = Arc::new(ProgressState {
             output: Mutex::new(()),
             frame: AtomicUsize::new(0),
@@ -79,7 +80,10 @@ impl ProgressLine {
     }
 
     /// Stop animation and remove its final line before result presentation.
-    pub(in crate::cli) fn finish(&mut self) -> io::Result<()> {
+    ///
+    /// # Errors
+    /// Returns a failed worker or terminal output operation.
+    pub fn finish(&mut self) -> io::Result<()> {
         if !self.active {
             return Ok(());
         }
