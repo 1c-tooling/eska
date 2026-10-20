@@ -1,0 +1,261 @@
+{
+  "complete": true,
+  "entry": "eska",
+  "platform_version": "8.3.27.2325",
+  "runner": "distrobox",
+  "cases": [
+    {
+      "project_type": "configuration",
+      "build": "passed",
+      "repeat": "reused_infobase",
+      "unpack": "passed",
+      "clean": "passed",
+      "artifact_sha256": "d8df34b7256c6971180141020c253b8b5ae4f67ec00651eea210816494818a80",
+      "artifact_bytes": 76064,
+      "identity": {
+        "name": "Configuration",
+        "project_type": "configuration",
+        "uuid": "c51f63fd-6fec-4ca1-b992-db49727944cf"
+      },
+      "source_unchanged": true,
+      "export_identity_matches_source": true,
+      "git_status": "absent",
+      "direct_wrapper_json_equal_except_duration": true,
+      "direct_wrapper_manifest_metadata_equal": true,
+      "first_artifact_sha256": "9e1b027a9860bb13bba83b9636bf6cbdaa1c90e3d967b379c877f4f55d695727",
+      "repeated_artifact_bytes_equal": false
+    },
+    {
+      "project_type": "extension",
+      "build": "passed",
+      "repeat": "reused_infobase",
+      "unpack": "passed",
+      "clean": "passed",
+      "artifact_sha256": "1608d88256e9d9bb1f3992d05d87ac08da188243f3dad0655f2e6e904c647757",
+      "artifact_bytes": 4618,
+      "identity": {
+        "name": "EskaTestExtension",
+        "project_type": "extension",
+        "uuid": "035adab0-6d48-4e48-ab79-f568ea96919a"
+      },
+      "source_unchanged": true,
+      "export_identity_matches_source": true,
+      "git_status": "absent",
+      "direct_wrapper_json_equal_except_duration": true,
+      "direct_wrapper_manifest_metadata_equal": true,
+      "first_artifact_sha256": "3aec6a4c489c548072a3e5ca3e2a7fe02233e59770366d53704ead78715a96b5",
+      "repeated_artifact_bytes_equal": false
+    },
+    {
+      "project_type": "processing",
+      "build": "passed",
+      "repeat": "reused_infobase",
+      "unpack": "passed",
+      "clean": "passed",
+      "artifact_sha256": "9423729710ac51643b1c792e84d067d2c652afb53519648b871f2cf70a98c023",
+      "artifact_bytes": 4394,
+      "identity": {
+        "name": "EskaTestprocessing",
+        "project_type": "processing",
+        "uuid": "83244396-185b-4302-92ba-e8c5cfbfad9b"
+      },
+      "source_unchanged": true,
+      "export_identity_matches_source": true,
+      "git_status": "absent",
+      "direct_wrapper_json_equal_except_duration": true,
+      "direct_wrapper_manifest_metadata_equal": true,
+      "first_artifact_sha256": "57e8669c880b752904d4eb7b32202ab20aaf31545b20e379eb692204a37e6157",
+      "repeated_artifact_bytes_equal": false
+    },
+    {
+      "project_type": "report",
+      "build": "passed",
+      "repeat": "reused_infobase",
+      "unpack": "passed",
+      "clean": "passed",
+      "artifact_sha256": "d7e615335165a7935cd483e96ed73a9a5ddf1c0700f98d74d06fb7b907e75123",
+      "artifact_bytes": 4394,
+      "identity": {
+        "name": "EskaTestreport",
+        "project_type": "report",
+        "uuid": "df571459-df89-4f00-ac99-dcf2f4eddaeb"
+      },
+      "source_unchanged": true,
+      "export_identity_matches_source": true,
+      "git_status": "absent",
+      "direct_wrapper_json_equal_except_duration": true,
+      "direct_wrapper_manifest_metadata_equal": true,
+      "first_artifact_sha256": "ca472b853f389373439bcbc9d2bff5b5f37fbb7c675d5cbcda755c31a599bf85",
+      "repeated_artifact_bytes_equal": false
+    }
+  ],
+  "cancellation": {
+    "unpack": {
+      "status": "passed",
+      "exit": 130,
+      "native_pid_absent": true,
+      "staging_absent": true,
+      "input_unchanged": true
+    },
+    "build": {
+      "status": "passed",
+      "exit": 1,
+      "stage": "import-sources",
+      "native_pid_absent": true,
+      "previous_result_unchanged": true,
+      "source_unchanged": true,
+      "managed_infobase_preserved": true,
+      "staging_absent": true
+    }
+  },
+  "recorded_at_utc": "2026-10-20T21:58:59.379965+00:00",
+  "stand_relative_to_repo": "../eska-playground/t96-native-c22ssl6v",
+  "source_base_commit": "bf5b4000891e7ea1a03180a93dbeb8aa2144efd3",
+  "source_working_tree_changes": true,
+  "system": {
+    "os": "Fedora Linux 44 (Workstation Edition)",
+    "architecture": "x86_64",
+    "rust": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "profile": "debug",
+    "container": "1c-ubuntu-env"
+  },
+  "binaries": {
+    "eska": {
+      "sha256": "4ab7a833006db8a39862f055ce5cc3fa5237d6b0a750e712f2a4e6a357f7d13d"
+    },
+    "eska-build": {
+      "sha256": "fc410d934e240f8faad26a4c2649b952b3c560009f589e1c4d0ff08d497e27a5"
+    },
+    "eska-vcs": {
+      "sha256": "51be004f6f897e11131281b09e7fc438720bf06b1119d3a68c2a2b040918fe06"
+    }
+  },
+  "harness_sha256": "2e20509e0a8f93bef00f22ac103641c82547e12e874d5109d3f715076e821a56",
+  "workspace_code_sha256": "7965f6696f154c746f1f418c957fdf1c0d8d4944dab2dee73436fe6270762dbb",
+  "code_fingerprint_includes": [
+    "src/**/*.rs",
+    "crates/**/*.rs",
+    "Cargo.toml",
+    "Cargo.lock",
+    "crates/**/Cargo.toml",
+    "crates/eska-presentation/locales/**/*.ftl"
+  ],
+  "direct_only_control": {
+    "stand_relative_to_repo": "../eska-playground/t94-native-qqjqzi5d",
+    "complete": true,
+    "entry": "eska-build",
+    "platform_version": "8.3.27.2325",
+    "runner": "distrobox",
+    "cases": [
+      {
+        "project_type": "configuration",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "30cb0573d3ba0768965ab21a60d201386cc00b2e81dceebe95797cdc3d387de1",
+        "artifact_bytes": 76064,
+        "identity": {
+          "name": "Configuration",
+          "project_type": "configuration",
+          "uuid": "7b0b7c5f-e486-4c27-8331-5921b1dbb3ec"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "unavailable",
+        "direct_wrapper_json_equal_except_duration": null,
+        "direct_wrapper_manifest_metadata_equal": null,
+        "first_artifact_sha256": "aad38019317281298c47beeb230391339992a0f992f867e8f4e175ea18fb2721",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "extension",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "fe8f65be01069210a30803f5eca9d0b533874c5c99d468e89708f18b92ff2452",
+        "artifact_bytes": 4621,
+        "identity": {
+          "name": "EskaTestExtension",
+          "project_type": "extension",
+          "uuid": "0b8ecf6b-9b4c-4342-bcf5-036ffb934739"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "unavailable",
+        "direct_wrapper_json_equal_except_duration": null,
+        "direct_wrapper_manifest_metadata_equal": null,
+        "first_artifact_sha256": "a13133255b73a8c35cdd75de692467905fc956ab563e5117724260095df81d8d",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "processing",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "b3843db09716f16953d84c6800ff6e2f6670df182660f47ececc0e27b486aee3",
+        "artifact_bytes": 4394,
+        "identity": {
+          "name": "EskaTestprocessing",
+          "project_type": "processing",
+          "uuid": "bc0eabf5-002e-45af-925a-14eee3156043"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "unavailable",
+        "direct_wrapper_json_equal_except_duration": null,
+        "direct_wrapper_manifest_metadata_equal": null,
+        "first_artifact_sha256": "00a54351767ae481710ab43cd8f001bc9634f13b00bcba6574df019099de6a94",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "report",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "5d2c5cc62563ed8fcb375b741cf6a119cf9546a0ff8561f7c7e56c82945d7bc8",
+        "artifact_bytes": 4394,
+        "identity": {
+          "name": "EskaTestreport",
+          "project_type": "report",
+          "uuid": "b9d076ba-30f7-4adc-bc47-93a24e27fb61"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "unavailable",
+        "direct_wrapper_json_equal_except_duration": null,
+        "direct_wrapper_manifest_metadata_equal": null,
+        "first_artifact_sha256": "b8681566e1fe1a101e410eafcea3c9a19bae453e7c5f33d3ede57ef4e913faec",
+        "repeated_artifact_bytes_equal": false
+      }
+    ],
+    "cancellation": {
+      "unpack": {
+        "status": "passed",
+        "exit": 130,
+        "native_pid_absent": true,
+        "staging_absent": true,
+        "input_unchanged": true
+      },
+      "build": {
+        "status": "passed",
+        "exit": 1,
+        "stage": "import-sources",
+        "native_pid_absent": true,
+        "previous_result_unchanged": true,
+        "source_unchanged": true,
+        "managed_infobase_preserved": true,
+        "staging_absent": true
+      }
+    }
+  },
+  "limitations": [
+    "Linux x86_64 / POSIX Distrobox only; no Windows, macOS, Remote or host-native acceptance",
+    "Native artifact bytes differ on repeated builds in both wrapper/direct and direct/direct runs; deterministic native artifacts are not claimed",
+    "Build JSON is compared after removing duration_ms; manifest metadata is compared without the independently validated native artifact checksum",
+    "No heavy buhmfo build or target 1C runtime/client functional acceptance"
+  ]
+}

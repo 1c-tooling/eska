@@ -1002,3 +1002,11 @@ component-missing = Не найден { $tool }. Установите компо
 component-invalid = Компонент { $tool } недоступен: { $path }. { $reason }
 component-process-error = Ошибка запуска { $tool }: { $reason }
 component-signal-error = Не удалось подготовить отмену дочернего процесса: { $reason }.
+
+
+component-executable-required = Ожидался отдельный исполняемый файл компонента.
+component-timeout = Компонент не завершил запрос за отведённое время.
+component-cancelled = Операция компонента отменена.
+component-response-invalid = Компонент вернул некорректный ответ.
+component-output-too-large = Ответ компонента превышает допустимый размер.
+component-failed = Компонент завершился с ошибкой.

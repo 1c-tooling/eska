@@ -27,6 +27,8 @@ use std::{
     disable_help_subcommand = true
 )]
 struct Cli {
+    #[arg(long, global = true, hide = true)]
+    vcs_binary: Option<PathBuf>,
     #[arg(long, global = true)]
     lang: Option<String>,
     #[arg(long, global = true, default_value = ".")]
@@ -67,26 +69,50 @@ pub fn run() -> ExitCode {
     };
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
-    match cli.command {
-        Some(Commands::Build(args)) => {
-            args.run(&cli.project_dir, &localizer, unavailable_provenance)
+    let vcs_binary = match cli
+        .vcs_binary
+        .as_deref()
+        .map(|path| eska_tool_runtime::resolve_at(eska_tool_runtime::Component::Vcs, path))
+        .transpose()
+    {
+        Ok(binary) => binary,
+        Err(error) => {
+            eprintln!(
+                "{}",
+                eska_presentation::components::present(&error, &localizer)
+            );
+            return ExitCode::FAILURE;
         }
+    };
+    let provenance = |root: &Path| query_provenance(vcs_binary.as_deref(), root);
+    match cli.command {
+        Some(Commands::Build(args)) => args.run(&cli.project_dir, &localizer, &provenance),
         Some(Commands::Unpack(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Clean(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Platform(args)) => args.run(&localizer),
         Some(Commands::Config(args)) => args.run(&localizer),
-        None => commands::build::BuildArgs::default().run(
-            &cli.project_dir,
-            &localizer,
-            unavailable_provenance,
-        ),
+        None => {
+            commands::build::BuildArgs::default().run(&cli.project_dir, &localizer, &provenance)
+        }
     }
 }
 
-/// A standalone build does not claim to have inspected repository state.
-#[must_use]
-pub const fn unavailable_provenance(_: &Path) -> GitProvenance {
-    GitProvenance::unavailable()
+/// Standalone builds keep provenance unknown; an explicitly selected VCS must answer correctly.
+fn query_provenance(
+    binary: Option<&Path>,
+    root: &Path,
+) -> Result<GitProvenance, eska_tool_runtime::Error> {
+    let Some(binary) = binary else {
+        return Ok(GitProvenance::unavailable());
+    };
+    let value = eska_tool_runtime::query(
+        eska_tool_runtime::Component::Vcs,
+        binary,
+        "provenance",
+        root,
+        &[],
+    )?;
+    serde_json::from_value(value).map_err(|_| eska_tool_runtime::Error::InvalidResponse)
 }
 
 /// Reuse command help while allowing clap to generate the actual standalone executable paths.

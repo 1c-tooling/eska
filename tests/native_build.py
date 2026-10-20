@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 import time
 import uuid
+import xml.etree.ElementTree as ET
 
 
 def digest(path):
@@ -23,6 +24,20 @@ def digest(path):
 def snapshot(source):
     """Record every source file, including opaque files and unchanged line endings."""
     return {str(path.relative_to(source)): digest(path) for path in source.rglob("*") if path.is_file()}
+
+
+def source_identity(source):
+    """Compare native export identity with the exact incoming Designer root descriptor."""
+    for path in source.glob("*.xml"):
+        document = ET.parse(path).getroot()
+        for element in document:
+            properties = next((node for node in element if node.tag.rsplit("}", 1)[-1] == "Properties"), None)
+            if properties is None or "uuid" not in element.attrib:
+                continue
+            name = next((node.text for node in properties if node.tag.rsplit("}", 1)[-1] == "Name"), None)
+            if name:
+                return name, element.attrib["uuid"]
+    raise AssertionError("native source identity is missing")
 
 
 def external_descriptor(header, name, tag, class_id):
@@ -43,12 +58,20 @@ def run_matrix(args, repo, stand):
     binary = Path(args.binary).resolve() if args.binary else repo / "target/debug/eska-build"
     if not binary.is_file():
         raise ValueError("build eska-build first or select --binary")
+    shell = Path(args.shell_binary).resolve() if args.shell_binary else None
+    vcs = Path(args.vcs_binary).resolve() if args.vcs_binary else repo / "target/debug/eska-vcs"
+    if shell and (not shell.is_file() or not vcs.is_file()):
+        raise ValueError("build the selected shell and VCS binaries first")
+    builder = shell or binary
     native = (["distrobox", "enter", "--name", args.distrobox, "--"] if args.distrobox else []) + [args.ibcmd]
     tools = ["--distrobox", args.distrobox] if args.distrobox else ["--ibcmd", args.ibcmd]
     env = os.environ.copy()
     for key in ["ESKA_IBCMD", "ESKA_DISTROBOX", "ESKA_PLATFORM_ARCH", "ESKA_LANG"]:
         env.pop(key, None)
     env["ESKA_CONFIG_DIR"] = str(stand / "machine-config")
+    if shell:
+        env["ESKA_BUILD_BINARY"] = str(binary)
+        env["ESKA_VCS_BINARY"] = str(vcs)
 
     def call(label, command, cwd=stand):
         """Save raw evidence and stop on the actual exit code, preserving the failed stand."""
@@ -90,39 +113,59 @@ def run_matrix(args, repo, stand):
         root = stand / name
         (root / "eska.toml").write_text(f"[project]\ntype='{name}'\n[build]\nplatform_version='{args.platform_version}'\n")
         before = snapshot(root / "src")
-        command = [str(binary), "--lang", "en", "build", "--format", "json", "--manifest"] + tools
-        call(name + "-build", command, root)
+        command = [str(builder), "--lang", "en", "build", "--format", "json", "--manifest"] + tools
+        built = call(name + "-build", command, root)
         artifact = root / "build" / f"{name}.{extension}"
         manifest = Path(str(artifact) + ".manifest.json")
         first = json.loads(manifest.read_text())
-        repeated = call(name + "-repeat", command, root)
+        first_checksum = digest(artifact)
+        direct = [str(binary)] + (["--vcs-binary", str(vcs)] if shell else []) + command[1:]
+        repeated = call(name + "-repeat", direct, root)
+        first_result, repeated_result = json.loads(built.stdout), json.loads(repeated.stdout)
+        first_result.pop("duration_ms")
+        repeated_result.pop("duration_ms")
+        if first_result != repeated_result:
+            raise AssertionError("wrapper and direct build returned different JSON contracts")
         if b"Creating infobase" in repeated.stderr:
             raise AssertionError("repeat recreated a compatible managed infobase")
         document = json.loads(manifest.read_text())
         if document["source"]["snapshot_id"] != first["source"]["snapshot_id"]:
             raise AssertionError("unchanged inputs produced a different source snapshot")
+        expected_git = "absent" if shell else "unavailable"
+        if document["source"]["git"]["status"] != expected_git:
+            raise AssertionError("build did not retain the selected VCS provenance policy")
+        for field in ["schema_version", "kind", "source", "project", "platform"]:
+            if first[field] != document[field]:
+                raise AssertionError("wrapper and direct build returned different manifest metadata")
         checksum = digest(artifact)
         if document["artifact"]["checksum"]["value"] != checksum:
             raise AssertionError("manifest checksum does not match the native artifact")
         exported = call(name + "-unpack", [str(binary), "--lang", "en", "unpack", str(artifact),
             str(exports / name), "--format", "json", "--platform-version", args.platform_version] + tools)
         identity = json.loads(exported.stdout)["identity"]
-        if identity["project_type"] != name or digest(artifact) != checksum:
+        original_identity = source_identity(root / "src")
+        if (identity["project_type"] != name or digest(artifact) != checksum
+                or (identity["name"], identity["uuid"]) != original_identity):
             raise AssertionError("export changed the input or reported another project type")
         if list((exports / ".eska/import").glob(".eska-import-*")):
             raise AssertionError("an owned native export staging directory remains")
-        call(name + "-clean", [str(binary), "--lang", "en", "clean"], root)
+        call(name + "-clean", [str(builder), "--lang", "en", "clean"], root)
         if digest(artifact) != checksum or not manifest.is_file() or snapshot(root / "src") != before:
             raise AssertionError("build/clean changed source bytes or removed a published result")
         if list((root / "build").glob("build.eska-work-*")):
             raise AssertionError("an owned temporary build workspace remains")
         results.append({"project_type": name, "build": "passed", "repeat": "reused_infobase",
             "unpack": "passed", "clean": "passed", "artifact_sha256": checksum,
-            "artifact_bytes": artifact.stat().st_size, "identity": identity, "source_unchanged": True})
+            "artifact_bytes": artifact.stat().st_size, "identity": identity, "source_unchanged": True,
+            "export_identity_matches_source": True, "git_status": expected_git,
+            "direct_wrapper_json_equal_except_duration": True if shell else None,
+            "direct_wrapper_manifest_metadata_equal": True if shell else None,
+            "first_artifact_sha256": first_checksum,
+            "repeated_artifact_bytes_equal": first_checksum == checksum})
         print(name + ": passed", flush=True)
     cancellation = {"unpack": cancel_export(binary, stand, args, tools, env),
-                    "build": cancel_build(binary, stand, args, tools, env, call)}
-    return {"complete": True, "platform_version": version, "runner": "distrobox" if args.distrobox else "host",
+                    "build": cancel_build(builder, stand, args, tools, env, call)}
+    return {"complete": True, "entry": "eska" if shell else "eska-build", "platform_version": version, "runner": "distrobox" if args.distrobox else "host",
             "cases": results, "cancellation": cancellation}
 
 
@@ -207,6 +250,8 @@ def main():
     """Require an explicit platform and preserve each exclusively owned acceptance run for review."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary")
+    parser.add_argument("--shell-binary")
+    parser.add_argument("--vcs-binary")
     parser.add_argument("--ibcmd", required=True)
     parser.add_argument("--platform-version", required=True)
     parser.add_argument("--distrobox")
@@ -217,7 +262,7 @@ def main():
     playground = (repo.parent / "eska-playground").resolve()
     if Path(os.environ.get("ESKA_TEST_ROOT", playground)).resolve() != playground:
         raise ValueError("ESKA_TEST_ROOT must identify the sibling eska-playground")
-    stand = Path(tempfile.mkdtemp(prefix="t94-native-", dir=playground))
+    stand = Path(tempfile.mkdtemp(prefix="t96-native-" if args.shell_binary else "t94-native-", dir=playground))
     print(str(stand), flush=True)
     (stand / "owner.json").write_text(json.dumps({"kind": "eska-native-build-acceptance", "repository": str(repo)}))
     try:

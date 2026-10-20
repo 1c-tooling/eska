@@ -36,6 +36,7 @@ pub enum ArtifactError {
     UnsafePath(PathBuf),
     Config(eska_project_core::config::ProjectConfigError),
     ChangeInspection,
+    Cancelled,
     Publication {
         path: PathBuf,
         source: Box<eska_project_core::project::create::CreationError<PublicationError>>,

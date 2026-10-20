@@ -102,6 +102,12 @@ impl ImportArgs {
             )
         })?;
         let project = selected.project();
+        eska_tool_runtime::resolve(eska_tool_runtime::Component::Vcs).map_err(|error| {
+            Failure::new(
+                "vcs-component",
+                eska_presentation::components::present(&error, localizer),
+            )
+        })?;
         let plan = ImportPlan::inspect(project, crate::vcs::build::source_changes)
             .map_err(|error| artifact::present(&error, localizer))?;
         let tool = self.platform.resolve(

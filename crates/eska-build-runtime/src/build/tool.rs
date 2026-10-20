@@ -13,12 +13,109 @@ use std::{
     time::Duration,
 };
 
+#[cfg(unix)]
+use std::sync::Arc;
+
 use super::PlatformVersion;
 
 const IBCMD_ENV: &str = "ESKA_IBCMD";
 const ARCH_ENV: &str = "ESKA_PLATFORM_ARCH";
 const DISTROBOX_ENV: &str = "ESKA_DISTROBOX";
+
+/// Native cancellation shares signal-hook subscriptions with short component queries on Unix.
+#[cfg(unix)]
+#[derive(Debug, Default)]
+struct Cancellation {
+    interrupted: Arc<AtomicBool>,
+    handlers: OnceLock<Result<Vec<signal_hook::SigId>, String>>,
+}
+
+#[cfg(all(test, unix))]
+mod cancellation_tests {
+    use super::Cancellation;
+    use signal_hook::consts::signal::{SIGINT, SIGTERM};
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    };
+
+    /// Native operation setup must neither replace nor lose component-query subscriptions.
+    #[test]
+    fn cancellation_coexists_with_queries_and_has_operation_ownership() {
+        let before = Arc::new(AtomicBool::new(false));
+        let first = signal_hook::flag::register(SIGINT, Arc::clone(&before)).unwrap();
+        let native = Cancellation::default();
+        native.begin().unwrap();
+        let after = Arc::new(AtomicBool::new(false));
+        let second = signal_hook::flag::register(SIGINT, Arc::clone(&after)).unwrap();
+        signal_hook::low_level::raise(SIGINT).unwrap();
+        assert!(before.load(Ordering::SeqCst));
+        assert!(after.load(Ordering::SeqCst));
+        assert!(native.interrupted.load(Ordering::SeqCst));
+        native.begin().unwrap();
+        assert!(!native.interrupted.load(Ordering::SeqCst));
+        assert!(before.load(Ordering::SeqCst));
+        signal_hook::low_level::unregister(first);
+        signal_hook::low_level::unregister(second);
+        drop(native);
+        // Releasing a native context must keep another subscriber functional.
+        let alive = Arc::new(AtomicBool::new(false));
+        let handler = signal_hook::flag::register(SIGTERM, Arc::clone(&alive)).unwrap();
+        let native = Cancellation::default();
+        native.begin().unwrap();
+        drop(native);
+        signal_hook::low_level::raise(SIGTERM).unwrap();
+        assert!(alive.load(Ordering::SeqCst));
+        signal_hook::low_level::unregister(handler);
+    }
+}
+
+#[cfg(unix)]
+impl Cancellation {
+    /// Clear only this tool's operation state; existing IPC subscriptions remain registered.
+    fn begin(&self) -> Result<(), RunError> {
+        self.handlers
+            .get_or_init(|| self.install())
+            .as_ref()
+            .map_err(|error| RunError::SignalHandler(error.clone()))?;
+        self.interrupted.store(false, Ordering::SeqCst);
+        Ok(())
+    }
+
+    /// Register safe atomic callbacks without replacing another consumer's signal handlers.
+    fn install(&self) -> Result<Vec<signal_hook::SigId>, String> {
+        use signal_hook::consts::signal::{SIGHUP, SIGINT, SIGTERM};
+        let mut handlers = Vec::new();
+        for signal in [SIGINT, SIGTERM, SIGHUP] {
+            match signal_hook::flag::register(signal, Arc::clone(&self.interrupted)) {
+                Ok(handler) => handlers.push(handler),
+                Err(error) => {
+                    for handler in handlers {
+                        signal_hook::low_level::unregister(handler);
+                    }
+                    return Err(error.to_string());
+                }
+            }
+        }
+        Ok(handlers)
+    }
+}
+
+#[cfg(unix)]
+impl Drop for Cancellation {
+    /// The last native tool clone releases only its own callbacks.
+    fn drop(&mut self) {
+        if let Some(Ok(handlers)) = self.handlers.get() {
+            for handler in handlers {
+                signal_hook::low_level::unregister(*handler);
+            }
+        }
+    }
+}
+
+#[cfg(windows)]
 static INTERRUPTED: AtomicBool = AtomicBool::new(false);
+#[cfg(windows)]
 static SIGNAL_HANDLER: OnceLock<Result<(), String>> = OnceLock::new();
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -97,8 +194,10 @@ enum Runner {
     Distrobox { container: String, path: PathBuf },
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Ibcmd {
+    #[cfg(unix)]
+    cancellation: Arc<Cancellation>,
     runner: Runner,
     source: ToolSource,
     version: PlatformVersion,
@@ -262,6 +361,8 @@ impl Ibcmd {
             });
         }
         Ok(Self {
+            #[cfg(unix)]
+            cancellation: Arc::new(Cancellation::default()),
             runner,
             source,
             version,
@@ -330,16 +431,30 @@ impl Ibcmd {
     /// Install cancellation handling and clear stale state before a complete build pipeline.
     ///
     /// # Errors
-    /// Returns an error if another library already owns the process signal handler.
+    /// Returns an error if the OS cannot register cancellation handlers.
     pub fn begin_interruptible_operation(&self) -> Result<(), RunError> {
-        install_signal_handler()?;
-        INTERRUPTED.store(false, Ordering::SeqCst);
-        Ok(())
+        #[cfg(unix)]
+        {
+            self.cancellation.begin()
+        }
+        #[cfg(windows)]
+        {
+            install_signal_handler()?;
+            INTERRUPTED.store(false, Ordering::SeqCst);
+            Ok(())
+        }
     }
 
     #[must_use]
     pub fn was_interrupted(&self) -> bool {
-        INTERRUPTED.load(Ordering::SeqCst)
+        #[cfg(unix)]
+        {
+            self.cancellation.interrupted.load(Ordering::SeqCst)
+        }
+        #[cfg(windows)]
+        {
+            INTERRUPTED.load(Ordering::SeqCst)
+        }
     }
 
     /// Run one verified `ibcmd` command without invoking a shell for host paths.
@@ -390,7 +505,7 @@ impl Ibcmd {
         let mut stderr_bytes = Vec::new();
         let (status, interrupted) = loop {
             drain_output(&receiver, &mut stdout_bytes, &mut stderr_bytes, on_output);
-            if INTERRUPTED.load(Ordering::SeqCst) {
+            if self.was_interrupted() {
                 terminate_distrobox_process(&self.runner, pid_file);
                 child.kill().map_err(RunError::Io)?;
                 break (child.wait().map_err(RunError::Io)?, true);
@@ -651,7 +766,8 @@ fn terminate_distrobox_process(runner: &Runner, pid_file: &Path) {
         .output();
 }
 
-/// Install one process-wide handler that records cancellation for the active build command.
+/// Install one Windows console handler that records cancellation for the active build command.
+#[cfg(windows)]
 fn install_signal_handler() -> Result<(), RunError> {
     SIGNAL_HANDLER
         .get_or_init(|| {

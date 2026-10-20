@@ -1,20 +1,33 @@
-//! VCS orchestration supplies provenance and source-change checks to the independent build runtime.
+//! Import preflight queries the VCS owner without interpreting repository state locally.
 
-use std::path::Path;
+use crate::project::{Project, artifact::ArtifactError};
+use eska_tool_runtime::{Component, query, resolve};
+use std::ffi::OsString;
 
-use crate::project::{Project, artifact::ArtifactError, build::GitProvenance};
-
-/// Capture repository metadata through the same owner used by the standalone VCS CLI.
-pub fn provenance(root: &Path) -> GitProvenance {
-    eska_vcs::bridge::provenance(root)
-}
-
-/// Preserve the import callback category while the process client is being extracted.
+/// Preserve the import callback category and re-query the selected source before publication.
 pub fn source_changes(
     project: &Project,
     empty_scaffold: bool,
     files: usize,
 ) -> Result<usize, ArtifactError> {
-    eska_vcs::bridge::source_changes(project, empty_scaffold, files)
-        .map_err(|_| ArtifactError::ChangeInspection)
+    let binary = resolve(Component::Vcs).map_err(|_| ArtifactError::ChangeInspection)?;
+    let mut options = vec![OsString::from("--files"), OsString::from(files.to_string())];
+    if empty_scaffold {
+        options.push(OsString::from("--empty-scaffold"));
+    }
+    let data = query(
+        Component::Vcs,
+        &binary,
+        "source_changes",
+        project.root(),
+        &options,
+    )
+    .map_err(|error| match error {
+        eska_tool_runtime::Error::Cancelled => ArtifactError::Cancelled,
+        _ => ArtifactError::ChangeInspection,
+    })?;
+    data.get("local_changes")
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|count| usize::try_from(count).ok())
+        .ok_or(ArtifactError::ChangeInspection)
 }

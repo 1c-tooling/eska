@@ -19,6 +19,7 @@ use crate::{
 pub(super) enum BuildExecutionError {
     Build(BuildError),
     Output(io::Error),
+    Vcs(eska_tool_runtime::Error),
 }
 
 /// Present execution or output failures through localized diagnostics.
@@ -27,6 +28,7 @@ pub(super) fn execution_error_message(
     localizer: &Localizer,
 ) -> String {
     match error {
+        BuildExecutionError::Vcs(error) => eska_presentation::components::present(error, localizer),
         BuildExecutionError::Build(error) => present_streamed_build_error(error, localizer),
         BuildExecutionError::Output(error) => localizer.format(
             "build-output-write-error",
@@ -260,8 +262,11 @@ pub(super) const fn tool_error_code(error: &ToolError) -> &'static str {
 
 /// Map execution and output failures to stable machine-facing codes.
 pub(super) const fn execution_error_code(error: &BuildExecutionError) -> &'static str {
-    let BuildExecutionError::Build(error) = error else {
-        return "output-write";
+    let error = match error {
+        BuildExecutionError::Build(error) => error,
+        BuildExecutionError::Output(_) => return "output-write",
+        BuildExecutionError::Vcs(eska_tool_runtime::Error::Cancelled) => return "interrupted",
+        BuildExecutionError::Vcs(_) => return "vcs-component",
     };
     match error {
         BuildError::OutputParentMissing(_) => "output-parent-missing",
@@ -320,6 +325,7 @@ pub(super) const fn execution_error_stage(error: &BuildExecutionError) -> Option
         )) => Some("manifest"),
         BuildExecutionError::Build(BuildError::Manifest(_)) => Some("snapshot"),
         BuildExecutionError::Build(_) | BuildExecutionError::Output(_) => None,
+        BuildExecutionError::Vcs(_) => Some("provenance"),
     }
 }
 
@@ -327,9 +333,10 @@ pub(super) const fn execution_error_stage(error: &BuildExecutionError) -> Option
 pub(super) const fn execution_was_interrupted(error: &BuildExecutionError) -> bool {
     matches!(
         error,
-        BuildExecutionError::Build(BuildError::Run {
-            source: RunError::Interrupted,
-            ..
-        })
+        BuildExecutionError::Vcs(eska_tool_runtime::Error::Cancelled)
+            | BuildExecutionError::Build(BuildError::Run {
+                source: RunError::Interrupted,
+                ..
+            })
     )
 }

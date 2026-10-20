@@ -107,6 +107,84 @@ fn standalone_builds_all_types_and_clean_preserves_artifacts() {
     }
 }
 
+/// A selected VCS is optional for standalone, but its broken contract must stop publication.
+#[cfg(unix)]
+#[test]
+fn invalid_vcs_responses_preserve_previous_artifact_and_manifest() {
+    let fixture = support::TestDir::new();
+    let binary = ibcmd_fixture::executable(&repository());
+    let vcs = repository().join("tests/fixtures/component.py");
+    for locale in ["ru", "en"] {
+        for mode in [
+            "bridge-schema",
+            "bridge-data",
+            "bridge-operation",
+            "bridge-extra",
+            "bridge-oversized",
+            "bridge-failed",
+        ] {
+            let project = project(
+                &fixture.0.join(format!("{locale}-{mode}")),
+                ProjectType::Configuration,
+            );
+            let plan = eska_build_runtime::build::BuildPlan::new(&project, None).unwrap();
+            fs::create_dir_all(plan.output().parent().unwrap()).unwrap();
+            fs::write(plan.output(), b"previous artifact").unwrap();
+            let manifest = eska_build_runtime::build::manifest_path(plan.output());
+            fs::write(&manifest, b"previous manifest").unwrap();
+            let source = fs::read(project.source().join("Configuration.xml")).unwrap();
+            let output = command(project.root(), &fixture.0.join("config"), locale)
+                .env("ESKA_COMPONENT_FIXTURE_MODE", mode)
+                .arg("--vcs-binary")
+                .arg(&vcs)
+                .args(["build", "--format", "json", "--manifest", "--ibcmd"])
+                .arg(&binary)
+                .output()
+                .unwrap();
+            let report = document(&output, false);
+            assert_eq!(report["error"]["code"], "vcs-component", "{report}");
+            assert_eq!(report["error"]["stage"], "provenance");
+            assert_eq!(fs::read(plan.output()).unwrap(), b"previous artifact");
+            assert_eq!(fs::read(manifest).unwrap(), b"previous manifest");
+            assert_eq!(
+                fs::read(project.source().join("Configuration.xml")).unwrap(),
+                source
+            );
+            assert!(!project.root().join(".eska/build").exists());
+        }
+    }
+}
+
+/// A complete VCS response retains the old manifest schema without linking Git into build.
+#[cfg(unix)]
+#[test]
+fn explicit_vcs_provenance_crosses_the_process_boundary() {
+    let fixture = support::TestDir::new();
+    let binary = ibcmd_fixture::executable(&repository());
+    let vcs = repository().join("tests/fixtures/component.py");
+    let project = project(&fixture.0.join("project"), ProjectType::Configuration);
+    for locale in ["ru", "en"] {
+        let output = command(project.root(), &fixture.0.join("config"), locale)
+            .env("ESKA_COMPONENT_FIXTURE_MODE", "bridge-good")
+            .arg("--vcs-binary")
+            .arg(&vcs)
+            .args(["build", "--format", "json", "--manifest", "--ibcmd"])
+            .arg(&binary)
+            .output()
+            .unwrap();
+        document(&output, true);
+        let plan = eska_build_runtime::build::BuildPlan::new(&project, None).unwrap();
+        let manifest: Value = serde_json::from_slice(
+            &fs::read(eska_build_runtime::build::manifest_path(plan.output())).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            manifest["source"]["git"],
+            serde_json::json!({"status":"available","commit":"a".repeat(40),"dirty":false})
+        );
+    }
+}
+
 /// Standalone export creates only XML in a new directory and reports the content's actual type.
 #[test]
 fn standalone_unpacks_four_types_in_both_languages() {

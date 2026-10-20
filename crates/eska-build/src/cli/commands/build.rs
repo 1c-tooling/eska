@@ -102,12 +102,18 @@ struct PreparedBuild<'a> {
 }
 
 impl BuildArgs {
+    /// The shell needs VCS only when execution will actually publish a provenance manifest.
+    #[must_use]
+    pub const fn needs_provenance(&self) -> bool {
+        self.mode.manifest && !self.mode.dry_run
+    }
+
     /// Discover, preflight and sequentially build the selected projects.
     pub fn run(
         &self,
         project_dir: &Path,
         localizer: &Localizer,
-        provenance: fn(&Path) -> build::GitProvenance,
+        provenance: &dyn Fn(&Path) -> Result<build::GitProvenance, eska_tool_runtime::Error>,
     ) -> ExitCode {
         let context = match discovery::discover_context(project_dir) {
             Ok(context) => context,
@@ -244,27 +250,17 @@ impl BuildArgs {
         prepared: &PreparedBuild<'_>,
         ibcmd: &Ibcmd,
         localizer: &Localizer,
-        provenance: fn(&Path) -> build::GitProvenance,
+        provenance: &dyn Fn(&Path) -> Result<build::GitProvenance, eska_tool_runtime::Error>,
     ) -> ExitCode {
         match self.execute_plan(prepared, ibcmd, localizer, provenance) {
             Ok(result) => write_build_result(self.format, &prepared.plan, &result, localizer),
-            Err(BuildExecutionError::Build(error)) => {
-                let machine_error = BuildExecutionError::Build(error);
-                self.fail_project(
-                    execution_error_code(&machine_error),
-                    execution_error_stage(&machine_error),
-                    prepared.name,
-                    &execution_error_message(&machine_error, localizer),
-                    localizer,
-                )
-            }
-            Err(BuildExecutionError::Output(error)) => {
-                let detail = localizer.format(
-                    "build-output-write-error",
-                    &[("reason", LocalizationValue::Text(&error.to_string()))],
-                );
-                self.fail_project("output-write", None, prepared.name, &detail, localizer)
-            }
+            Err(error) => self.fail_project(
+                execution_error_code(&error),
+                execution_error_stage(&error),
+                prepared.name,
+                &execution_error_message(&error, localizer),
+                localizer,
+            ),
         }
     }
 
@@ -274,7 +270,7 @@ impl BuildArgs {
         prepared: &[PreparedBuild<'_>],
         tools: &[Ibcmd],
         localizer: &Localizer,
-        provenance: fn(&Path) -> build::GitProvenance,
+        provenance: &dyn Fn(&Path) -> Result<build::GitProvenance, eska_tool_runtime::Error>,
     ) -> ExitCode {
         let mut entries = Vec::with_capacity(prepared.len());
         let mut failed = false;
@@ -347,7 +343,7 @@ impl BuildArgs {
         prepared: &PreparedBuild<'_>,
         ibcmd: &Ibcmd,
         localizer: &Localizer,
-        provenance: fn(&Path) -> build::GitProvenance,
+        provenance: &dyn Fn(&Path) -> Result<build::GitProvenance, eska_tool_runtime::Error>,
     ) -> Result<build::BuildResult, BuildExecutionError> {
         let project = prepared.project;
         let plan = &prepared.plan;
@@ -400,7 +396,7 @@ impl BuildArgs {
                 plan,
                 project,
                 project_name,
-                provenance(project.root()),
+                provenance(project.root()).map_err(BuildExecutionError::Vcs)?,
                 ibcmd,
                 &mut on_output,
             )

@@ -701,13 +701,13 @@ dependencies = [
  "axoupdater",
  "base64 0.23.1",
  "clap",
- "ctrlc",
  "eska-build",
  "eska-build-runtime",
  "eska-presentation",
  "eska-project",
  "eska-project-core",
  "eska-terminal",
+ "eska-tool-runtime",
  "eska-vcs",
  "gix",
  "nix 0.31.3",
@@ -717,7 +717,6 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "signal-hook 0.4.5",
  "tokio",
  "toml",
  "zip",
@@ -745,6 +744,7 @@ dependencies = [
  "eska-presentation",
  "eska-project-core",
  "eska-terminal",
+ "eska-tool-runtime",
  "serde",
  "serde_json",
 ]
@@ -761,6 +761,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "signal-hook 0.4.5",
  "toml",
 ]
 
@@ -781,6 +782,7 @@ name = "eska-presentation"
 version = "0.14.3"
 dependencies = [
  "eska-project-core",
+ "eska-tool-runtime",
  "fluent",
  "sys-locale",
 ]
@@ -823,6 +825,15 @@ version = "0.14.3"
 dependencies = [
  "crossterm",
  "eska-presentation",
+]
+
+[[package]]
+name = "eska-tool-runtime"
+version = "0.14.3"
+dependencies = [
+ "ctrlc",
+ "serde_json",
+ "signal-hook 0.4.5",
 ]
 
 [[package]]

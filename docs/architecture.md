@@ -69,6 +69,8 @@ crates/eska-vcs/
     ├── cli/                        # standalone parsing and shared VCS command presentation
     ├── vcs/                        # embedded Git, snapshots, shelves and isolated fallback
     └── project/                    # project workflow and semantic changes over shared XML core
+crates/eska-tool-runtime/
+└── src/                            # component resolution, Unix exec and bounded internal queries
 crates/eska-terminal/
 └── src/                            # shared keyboard menus, confirmation and progress
 crates/eska-build-runtime/
@@ -79,7 +81,7 @@ crates/eska-build-runtime/
 src/
 ├── main.rs                         # existing binary entry point
 ├── lib.rs                          # current CLI and operation namespaces
-├── component.rs                    # component location, inherited streams, signals and reaping
+├── component.rs                    # legacy aliases and selection around the shared tool runtime
 ├── cli/
 │   ├── mod.rs, args.rs             # startup, parsing, locale and top-level help
 │   ├── commands/                   # command-specific human/JSON presentation
@@ -98,7 +100,7 @@ src/
 │   └── *.rs                        # reexports of Git workflow and semantic changes
 └── vcs/
     ├── mod.rs                      # shared VCS reexports
-    └── build.rs                    # provenance and source-change inspector for build orchestration
+    └── build.rs                    # source preflight callback using the VCS process
 ```
 
 Тихий запуск `eska` без подкоманды делегирован скрытому project-входу

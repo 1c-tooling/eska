@@ -15,6 +15,7 @@ authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 workspace = true
 
 [dependencies]
+eska-tool-runtime = { path = "../eska-tool-runtime" }
 eska-project-core = { path = "../eska-project-core" }
 eska-build-runtime = { path = "../eska-build-runtime" }
 eska-presentation = { path = "../eska-presentation" }

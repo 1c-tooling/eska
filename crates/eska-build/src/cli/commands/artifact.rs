@@ -337,6 +337,9 @@ pub fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
                 ("publication", "artifact-new-publication-error", path)
             }
         }
+        ArtifactError::Cancelled => {
+            return Failure::new("cancelled", localizer.text("artifact-cancelled"));
+        }
         ArtifactError::ChangeInspection => {
             return Failure::new("repository", localizer.text("artifact-repository-error"));
         }

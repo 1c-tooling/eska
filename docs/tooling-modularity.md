@@ -89,7 +89,10 @@ Native provenance/import-инспектор остаётся адаптером 
 `repository`. Это внутренние интерфейсы без compatibility layer.
 
 Начальное [делегирование T96](component-delegation.md) охватывает project/VCS
-и обслуживание build; составные операции ещё не перенесены.
+и полный build; provenance и import preflight уже идут через VCS-процесс.
+`eska-tool-runtime` переиспользуется оболочкой и сборщиком; native cancellation
+на Unix больше не перезаписывает IPC subscriptions. Составные операции
+new/init/import/patch/doctor ещё не перенесены целиком.
 
 Пока выделены внутренние crates с `publish = false`; раскладка публикуемых
 packages и выборочная поставка относятся к T97. Автоматизация релизов,

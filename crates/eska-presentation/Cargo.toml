@@ -15,6 +15,7 @@ authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 workspace = true
 
 [dependencies]
+eska-tool-runtime = { path = "../eska-tool-runtime" }
 eska-project-core = { path = "../eska-project-core" }
 fluent = "0.17.0"
 sys-locale = "0.3.2"

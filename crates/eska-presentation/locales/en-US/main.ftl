@@ -1002,3 +1002,11 @@ component-missing = Cannot find { $tool }. Install the component or set { $varia
 component-invalid = Component { $tool } is unavailable: { $path }. { $reason }
 component-process-error = Cannot run { $tool }: { $reason }
 component-signal-error = Cannot prepare child process cancellation: { $reason }.
+
+
+component-executable-required = A separate component executable is required.
+component-timeout = The component did not complete its request in time.
+component-cancelled = Component operation cancelled.
+component-response-invalid = The component returned an invalid response.
+component-output-too-large = The component response exceeds the size limit.
+component-failed = The component exited with an error.

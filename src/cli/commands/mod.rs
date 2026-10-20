@@ -122,9 +122,14 @@ pub(super) fn run(
             Invocation::Direct,
             localizer,
         ),
-        Some(Commands::Build(args)) => {
-            args.run(project_dir, localizer, crate::vcs::build::provenance)
-        }
+        Some(Commands::Build(args)) => component::run(
+            Component::Build,
+            process_args,
+            Invocation::Build {
+                provenance: args.needs_provenance(),
+            },
+            localizer,
+        ),
         Some(Commands::New(args)) => args.run(project_dir, localizer),
         Some(Commands::Init(args)) => args.run(project_dir, localizer),
         Some(Commands::Import(args)) => args.run(project_dir, localizer),

@@ -1,108 +1,136 @@
 # Делегирование общей команды
 
-T96 выполняется по частям. Сейчас `eska` запускает отдельный процесс владельца:
+T96 выполняется по частям. Сейчас `eska` запускает executable владельца:
 
-| Команды общего CLI | Процесс |
+| Команды общего CLI | Владелец |
 |---|---|
 | Без команды, `metadata`, `version`, `ide` | `eska-project` |
-| `clean`, `platform`, `config` | `eska-build` |
+| `build`, `clean`, `platform`, `config` | `eska-build` |
 | `clone`, `status`, `diff`, `history`, `start`, `switch`, `save`, `finish`, `shelve`, `unshelve`, `shelves` | `eska-vcs` |
 
-`build`, `new/init`, `new --from`, `import`, `patch`, `doctor` пока используют
-прежние адаптеры общей команды. Их процессные клиенты provenance,
-preflight и транзакций ещё не завершены; T96 остаётся `IN PROGRESS`. `update` сохраняет прежнего
-владельца до выборочного установщика T97. Состав зависимостей root package
-пока не является окончательным составом лёгкой оболочки.
+`new/init`, `new --from`, `import`, `patch`, `doctor` пока сохраняют составные
+адаптеры общей команды. Source preflight import уже идёт через процесс VCS,
+включая повторную проверку перед заменой. Перенос остальных частей транзакций
+и окончательная очистка зависимостей оболочки ещё не завершены;
+T96 остаётся `IN PROGRESS`. `update` сохраняет прежнего владельца до T97.
 
 ## Поиск компонента
 
-Для каждого инструмента можно явно задать полный или относительный путь:
-`ESKA_PROJECT_BINARY`, `ESKA_BUILD_BINARY`, `ESKA_VCS_BINARY`. Явный неверный
-путь даёт ошибку; другой установленный бинарник его не заменяет.
-Без override порядок такой: рядом с реально запущенной `eska`, затем PATH,
+`ESKA_PROJECT_BINARY`, `ESKA_BUILD_BINARY`, `ESKA_VCS_BINARY` задают явные
+пути. Неверный override даёт ошибку и не заменяется другим установленным
+бинарником. Без override порядок: рядом с реальным executable `eska`, PATH,
 затем `~/.eska/bin` (USERPROFILE на Windows). Имена учитывают `.exe`.
-Каталог и сама оболочка не принимаются за исполняемый файл компонента.
-Выбранный файл должен разрешаться существующей файловой системой.
+Каталог и сама оболочка не принимаются за отдельный executable компонента.
 
-Если компонент отсутствует, операция завершается до проектных изменений.
-Вывод содержит имя инструмента и переменную его пути; автоматическая установка
-не запускается. Справка и версия самой оболочки доступны без компонентов.
-Согласование смешанных версий и manifests установки завершается в T97.
+Отсутствующий обязательный компонент останавливает операцию до проектных
+изменений; установщик автоматически не запускается. Справка и версия оболочки
+доступны без компонентов. Проверка смешанных версий и manifests установки
+завершается в T97. Из checkout перед CLI-регрессиями можно явно собрать все
+входы: `cargo build --workspace --bins --locked`.
 
 ## Потоки и отмена
 
-Оболочка передаёт исходные аргументы без shell quoting или UTF-8 преобразования.
-`stdin`, `stdout`, `stderr` наследуются напрямую; оболочка не читает протокол,
-не буферизует native output и не добавляет свои сообщения в stdout компонента.
-Процесс остаётся в той же группе терминала, поэтому TTY и интерактивный ввод
-сохраняются. Возвращается exit code дочернего процесса; Unix signal termination
-представляется как 128 + signal. На Windows сохранение полного exit status
-использует stable `process::exit` для значений вне u8 после завершения ребёнка.
+`eska-tool-runtime` содержит только поиск компонентов и process/IPC-механику,
+без Git, платформы, проектного сервера, анализатора и локализации. Presentation
+преобразует структурированные ошибки в RU/EN. Аргументы сохраняют native bytes;
+оболочка не использует shell quoting, не декодирует пользовательские streams
+и не добавляет сообщения в stdout компонента.
 
-На Unix SIGINT/SIGTERM/SIGHUP регистрируются через `signal-hook` 0.4.5
-с отключёнными default features. Передача точному owned PID использует
-закреплённый `nix` 0.31.3 с `signal/process`; stable std не предоставляет
-эквивалент отправки произвольного сигнала. Handler меняет только atomic flag,
-обычный код передаёт сигнал и ждёт cleanup компонента. Через 10 секунд
-не завершившийся процесс принудительно завершается и reaped. Ошибка wait/signal
-также не оставляет принадлежащий оболочке прямой child.
-Процессы по имени не ищутся и не завершаются.
+На Unix `CommandExt::exec` заменяет оболочку выбранным компонентом. PID, группа
+терминала, stdin/stdout/stderr, TTY и OS-сигналы остаются у той же операции.
+Ожидающего wrapper-процесса и polling нет. Именно прежнее ожидание по 10 мс
+поймал существующий idle-тест Metadata API; после перехода на exec он прошёл.
+На Windows child остаётся в той же консоли; wrapper возвращает его exit code
+и ограничивает ожидание после console cancellation десятью секундами.
+Полный Windows status вне u8 сохраняется через stable `process::exit` после
+завершения child. Windows console delivery, idle и descendants ещё не приняты.
 
-На Windows оба процесса прикреплены к одной консоли; `ctrlc` принимает событие,
-предусмотрено такое же ограниченное ожидание с forced fallback. Программная
-адресная доставка console event отдельному child и его native descendants
-ещё не проверена. Windows-проверка не объявлена пройденной.
+Внутренний одноразовый IPC имеет отдельные piped streams, deadline 30 секунд
+и лимит по 1 MiB для stdout/stderr. Проверяются полный JSON, schema 1,
+ожидаемая operation, error=null, payload и нулевой exit. Логи передаются
+на stderr. Ошибка, переполнение, timeout или отмена не превращаются в пустой
+успешный результат. Owned direct child завершается и reaped при отказе.
 
-Контракт проверен по [std Child](https://doc.rust-lang.org/std/process/struct.Child.html),
-[signal-hook register_usize](https://docs.rs/signal-hook/0.4.5/signal_hook/flag/fn.register_usize.html)
-и [nix kill](https://docs.rs/nix/0.31.3/nix/sys/signal/fn.kill.html).
+На Unix IPC и native runner используют совместимые subscriptions `signal-hook`
+0.4.5 без default features. Native-флаг принадлежит конкретному `Ibcmd` и его
+clones; очистка освобождает только его callbacks. Это устраняет перезапись
+IPC-handler прежним `ctrlc` и не добавляет global mutable state на Unix.
+Windows сохраняет прежний console-handler. Запросы и native cleanup не ищут
+и не завершают процессы по имени.
+
+[Unix exec](https://doc.rust-lang.org/std/os/unix/process/trait.CommandExt.html#tymethod.exec),
+[std Child](https://doc.rust-lang.org/std/process/struct.Child.html),
+[signal-hook](https://docs.rs/signal-hook/0.4.5/signal_hook/flag/fn.register_usize.html).
 
 ## Старые входы проекта
 
 `eska ide --stdio` становится `eska-project serve --legacy-identity --stdio`.
-Скрытый compatibility flag выбирает прежние identity `eska` и capabilities;
-обычный `eska-project serve` продолжает объявлять `eska-project`.
-Сервер и lifecycle остаются одной реализацией, второй proxy не создан.
-Завершение stdin останавливает сам сервер, оболочка ждёт и возвращает его код.
+Скрытый flag сохраняет identity `eska` и прежние capabilities; обычный serve
+объявляет `eska-project`. Второй сервер или proxy не созданы. EOF останавливает
+тот же API runtime. Тихий запуск `eska` без команды использует скрытый
+`eska-project __shell-validate` и сохраняет прежний manifest/discovery-контракт.
+Эти внутренние входы не появляются в обычной справке project-компонента.
 
-Запуск `eska` без команды сохраняет тихую проверку manifest/discovery через
-скрытый `eska-project __shell-validate`. Он не подменяется новым standalone
-validate с полным выводом и проверкой XML. Это внутренние входы композиции,
-в обычной справке проектного инструмента они не появляются.
-
-## Промежуточные проверки
-
-Workspace strict Clippy и сборка всех бинарников прошли. 534 теста общего CLI
-и project-компонента passed, 7 ignored, включая настоящие API-сессии и прежние
-workflow/semantic регрессии, теперь идущие через отдельный процесс.
-Новые process-тесты подтвердили точные бинарные streams, native аргументы,
-exit 197, identity rewrite при `--project-dir ide`, отсутствие fallback после
-неверного override и передачу трёх Unix-сигналов с reaping фактического PID.
-Нативные составные операции и полный финальный workspace-набор остаются
-следующими проверками T96.
-
-## Протокол VCS для составных операций
+## VCS provenance и preflight
 
 `eska-vcs --project-dir ROOT __bridge provenance` возвращает schema 1,
 operation `provenance`, `data` с прежними status/commit/dirty и `error: null`.
 `__bridge source-changes --files N [--empty-scaffold]` возвращает operation
-`source_changes` и `data.local_changes`. Это скрытые read-only входы для
-композиции. Параметры files/empty-scaffold передаёт владелец уже проверенного
-source-плана; они не являются самостоятельной проверкой его содержимого.
+`source_changes` и `data.local_changes`. Это скрытые read-only входы композиции.
+Files/empty-scaffold передаёт владелец уже проверенного source-плана.
 
-Git-less source сохраняет прежнее правило подтверждения (N либо 0 для
-проверенного scaffold). Повреждённый Git даёт `data: null`, `error: "repository"`
-и exit 1 при source preflight. Provenance в том же случае сообщает unavailable;
-это не доказанная чистота. Исходники, HEAD и raw index запросы не меняют.
-Пути передаются через native аргументы, protocol JSON их не перекодирует.
+Git-less source сохраняет правило подтверждения (N либо 0 для проверенного
+scaffold). Повреждённый Git даёт error=repository и exit 1 для source preflight.
+Для provenance тот же случай даёт unavailable, что не доказывает чистоту.
+Исходники, HEAD и raw index запросы не меняют. Пути передаются native аргументами.
 
-`GitProvenance` теперь находится в общей библиотеке как чистые данные без
-repository runtime. Старые поля/значения паспорта сохраняются, десериализация
-отклоняет несогласованные status/commit/dirty, неизвестные поля и неверные IDs.
-Вызов самой VCS-реализации в оставшихся native-адаптерах пока библиотечный;
-переход на этот process-контракт — следующая часть T96.
+`eska build --manifest` перед запуском проверяет наличие VCS и передаёт
+путь сборщику. `eska-build` запрашивает provenance у владельца в прежней точке
+перед snapshot/publication. Протокольный сбой даёт code=vcs-component,
+stage=provenance и сохраняет прежнюю пару artifact/manifest. Отмена даёт
+interrupted. В dry-run VCS не нужен. Самостоятельный build без выбранного
+VCS сохраняет status=unavailable. Для внутренней композиции существует скрытый
+`eska-build --vcs-binary PATH`; он не добавляет Git runtime в normal graph build.
 
-Проверки этой границы: workspace strict Clippy и 275 тестов core/VCS/build
-runtime passed, 1 ignored. Два новых настоящих process-теста подтвердили scope
-source, локальную историю, byte-read-only HEAD/index/source, обе локали,
-пустой PATH, отличие absent от broken Git и отказ вместо ложного нуля.
+Import запрашивает changed paths при подготовке и повторно перед записью.
+Неверный ответ и отказ не дают ложный ноль; отмена сохраняет категорию cancelled,
+исходники и prepared staging cleanup. `GitProvenance` находится в общем ядре
+как данные; десериализация отклоняет несогласованные поля и неверные IDs.
+
+Экспериментальный Rust API обработчика build принимает fallible provenance
+provider. `Ibcmd` больше не имеет Eq/PartialEq: transient cancellation context
+принадлежит экземпляру, clones разделяют этот контекст. JSON-схемы не изменены.
+
+## Проверки текущей части T96
+
+Полный workspace fmt/check/strict Clippy/test/Rustdoc прошёл: 872 теста passed,
+12 ignored. Сохранены прежние CLI/API/workflow/semantic проверки. Дополнительно
+проверены binary streams, native/non-UTF8 args, exit 197, identity rewrite,
+неверный override, Unix-сигналы, idle API, timeout с фактическим reaping,
+шесть вариантов сломанного provenance и отмена второго preflight после export.
+
+[Нативный отчёт](measurements/t96-native.json): Linux x86_64, Distrobox,
+8.3.27.2325, только собственные маленькие CF/CFE/EPF/ERF. Build через оболочку
+и повтор напрямую с тем же VCS дали одинаковый JSON после удаления duration_ms
+и одинаковые source/project/platform данные паспорта. Проверены checksums,
+исходные Name/UUID, повторное использование ИБ, unpack, clean и сохранность
+source. Реальные отмены unpack и import-stage build освободили owned PID/staging
+и сохранили прежние артефакт, паспорт и managed infobase.
+
+Побайтовое равенство native-артефактов не подтверждено: все четыре типа меняют
+checksum и при контрольном повторе «standalone → standalone» с тем же входом.
+Оба SHA-256 сохранены; каждый паспорт проверен против своего результата.
+Причина различия внутри native-артефактов здесь не установлена.
+
+Повтор матрицы оболочки и прямого входа:
+
+```sh
+ESKA_TEST_ROOT="$(realpath ../eska-playground)" python3 tests/native_build.py \
+  --binary target/debug/eska-build --shell-binary target/debug/eska \
+  --vcs-binary target/debug/eska-vcs --distrobox "$ESKA_DISTROBOX" \
+  --ibcmd "$ESKA_IBCMD" --platform-version "$PLATFORM_VERSION"
+```
+
+Без shell-binary выполняется контрольный прямой повтор. Параметры платформы
+задаёт оператор. Windows/macOS, Remote, настоящий host runner, тяжёлая сборка
+buhmfo и функции приложения в клиенте 1С этим результатом не покрыты.

@@ -6,3 +6,5 @@ pub mod encoding;
 pub mod localization;
 pub mod metadata;
 pub mod path_output;
+
+pub mod components;

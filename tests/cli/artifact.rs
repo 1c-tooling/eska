@@ -11,6 +11,125 @@ use serde_json::Value;
 
 const UUID: &str = "12345678-1234-1234-1234-123456789012";
 
+#[cfg(unix)]
+struct PreflightChild(std::process::Child);
+#[cfg(unix)]
+impl Drop for PreflightChild {
+    /// The fixture's query process also exits if its parent disappears during a failed test.
+    fn drop(&mut self) {
+        if !matches!(self.0.try_wait(), Ok(Some(_))) {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+}
+
+/// Cancel the second VCS preflight after native export, preserving the previous source and input.
+#[cfg(unix)]
+#[test]
+fn cancellation_during_repeated_vcs_preflight_keeps_source_unchanged() {
+    use nix::{
+        sys::signal::{Signal, kill},
+        unistd::Pid,
+    };
+    use std::{
+        io::Read,
+        process::Stdio,
+        thread,
+        time::{Duration, Instant},
+    };
+
+    for locale in ["ru", "en"] {
+        let fixture = TestDir::new();
+        let source = artifact(&fixture.0, "cf", "Configuration", "Incoming", UUID);
+        let original_input = fs::read(&source).unwrap();
+        let config = eska_project_core::config::ProjectConfig::new(
+            eska_project_core::project::ProjectType::Configuration,
+        )
+        .with_build_settings(
+            eska_project_core::project::build::BuildSettings::new("8.3.27.2325", "build".into())
+                .unwrap(),
+        );
+        let project =
+            eska_project_core::project::create::create(&fixture.0.join("project"), &config)
+                .unwrap();
+        let manifest = fs::read(project.root().join("eska.toml")).unwrap();
+        let ready = fixture.0.join("query-ready");
+        let mut child = PreflightChild(
+            Command::new(env!("CARGO_BIN_EXE_eska"))
+                .current_dir(project.root())
+                .env("ESKA_CONFIG_DIR", fixture.0.join("machine-config"))
+                .env(
+                    "ESKA_VCS_BINARY",
+                    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/component.py"),
+                )
+                .env("ESKA_COMPONENT_FIXTURE_MODE", "bridge-import-cancel")
+                .env("ESKA_COMPONENT_FIXTURE_READY", &ready)
+                .env("ESKA_COMPONENT_FIXTURE_COUNTER", fixture.0.join("counter"))
+                .args(["--lang", locale, "import", "--format", "json", "--force"])
+                .arg(&source)
+                .arg("--ibcmd")
+                .arg(super::build::fake_ibcmd(&fixture))
+                .stdin(Stdio::null())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .unwrap(),
+        );
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while !ready.is_file() {
+            assert!(child.0.try_wait().unwrap().is_none());
+            assert!(
+                Instant::now() < deadline,
+                "repeated VCS preflight was not reached"
+            );
+            thread::sleep(Duration::from_millis(10));
+        }
+        kill(
+            Pid::from_raw(i32::try_from(child.0.id()).unwrap()),
+            Signal::SIGINT,
+        )
+        .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let status = loop {
+            if let Some(status) = child.0.try_wait().unwrap() {
+                break status;
+            }
+            assert!(Instant::now() < deadline, "VCS cancellation was lost");
+            thread::sleep(Duration::from_millis(10));
+        };
+        assert_eq!(status.code(), Some(1));
+        let mut stdout = Vec::new();
+        child
+            .0
+            .stdout
+            .take()
+            .unwrap()
+            .read_to_end(&mut stdout)
+            .unwrap();
+        let document: Value = serde_json::from_slice(&stdout).unwrap();
+        assert_eq!(document["error"]["code"], "cancelled", "{document}");
+        assert_eq!(
+            fs::read(project.root().join("eska.toml")).unwrap(),
+            manifest
+        );
+        assert!(project.source().join(".gitkeep").is_file());
+        assert_eq!(fs::read_dir(project.source()).unwrap().count(), 1);
+        assert_eq!(fs::read(&source).unwrap(), original_input);
+        assert_eq!(
+            fs::read_dir(project.root().join(".eska/import"))
+                .unwrap()
+                .count(),
+            1
+        );
+        let pid: i32 = fs::read_to_string(ready).unwrap().parse().unwrap();
+        assert_eq!(
+            kill(Pid::from_raw(pid), None),
+            Err(nix::errno::Errno::ESRCH)
+        );
+    }
+}
+
 /// Carry a controlled root descriptor through the fake binary unpacking boundary.
 fn artifact(root: &Path, extension: &str, tag: &str, name: &str, uuid: &str) -> std::path::PathBuf {
     let path = root.join(format!("incoming.{extension}"));
