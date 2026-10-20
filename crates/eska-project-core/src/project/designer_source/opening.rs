@@ -50,19 +50,28 @@ pub fn open_projects_cached(
             let scope = selected.name().map_or(ProjectScope::Standalone, |name| {
                 ProjectScope::Member(name.clone())
             });
-            let disk_cache = cached.then(|| DiskCache::new(&project));
-            let mut stats = SourceIoStats::default();
-            let (descriptor, root) = read_root(&project, disk_cache.as_ref(), &mut stats)?;
-            Ok(DesignerSource {
-                project,
-                scope,
-                root,
-                descriptor,
-                disk_cache,
-                io_stats: std::cell::Cell::new(stats),
-            })
+            open_project(project, scope, cached)
         })
         .collect()
+}
+
+/// Reuse the checked root reader after a consumer has already resolved its manifest context.
+pub fn open_project(
+    project: Project,
+    scope: ProjectScope,
+    cached: bool,
+) -> Result<DesignerSource, SourceError> {
+    let disk_cache = cached.then(|| DiskCache::new(&project));
+    let mut stats = SourceIoStats::default();
+    let (descriptor, root) = read_root(&project, disk_cache.as_ref(), &mut stats)?;
+    Ok(DesignerSource {
+        project,
+        scope,
+        root,
+        descriptor,
+        disk_cache,
+        io_stats: std::cell::Cell::new(stats),
+    })
 }
 
 impl DesignerSource {

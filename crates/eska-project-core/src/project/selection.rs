@@ -201,7 +201,13 @@ mod tests {
             })
             .collect();
         DiscoveryContext::Workspace {
-            workspace: Workspace::new(root, BuildSettings::default(), None, members),
+            workspace: Workspace::new(
+                root,
+                BuildSettings::default(),
+                None,
+                members,
+                crate::application::AnalysisSettings::default(),
+            ),
             current_member: current.map(|name| ProjectName::parse(name.to_owned()).unwrap()),
         }
     }

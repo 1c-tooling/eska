@@ -157,11 +157,18 @@ fn load_workspace(
         members.push(member);
     }
 
+    config
+        .validate_applications(&members)
+        .map_err(|source| ContextDiscoveryError::Manifest {
+            path: root.join(FILE_NAME),
+            source: ManifestConfigError::Workspace(source),
+        })?;
     Ok(Workspace::new(
         root.to_path_buf(),
         config.build_settings().clone(),
         config.workflow_settings().cloned(),
         members,
+        config.analysis_settings().clone(),
     ))
 }
 
@@ -288,6 +295,7 @@ fn resolve_member_configuration(
         member.configuration().project_type(),
         member.configuration().source_format(),
     )
+    .with_analysis_settings(member.configuration().analysis_settings().clone())
     .with_build_settings(build);
     if let Some(workflow) = workspace.workflow_settings() {
         configuration = configuration.with_workflow_settings(workflow.clone());

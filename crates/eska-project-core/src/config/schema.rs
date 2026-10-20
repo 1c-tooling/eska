@@ -1,11 +1,15 @@
 //! TOML field layout, defaults and machine-facing value conversions.
 
-use std::path::{Path, PathBuf};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 use serde::{Deserialize, Serialize};
 
 use super::ProjectConfigError;
-use crate::project::{ProjectType, SourceFormat};
+use crate::application::{AnalysisOptions, Application, RawAnalysis, RawApplication};
+use crate::project::{ProjectName, ProjectType, SourceFormat};
 
 pub(super) const DEFAULT_SOURCE: &str = "src";
 const DEFAULT_SOURCE_FORMAT: &str = "designer-xml";
@@ -16,6 +20,9 @@ pub(super) struct RawDocument {
     pub(super) project: RawProject,
     pub(super) build: Option<RawBuild>,
     pub(super) vcs: Option<RawVcs>,
+    pub(super) analysis: Option<RawAnalysis>,
+    #[serde(default)]
+    pub(super) applications: BTreeMap<String, RawApplication>,
 }
 
 #[derive(Default, Deserialize)]
@@ -73,6 +80,10 @@ pub(super) struct SerializedDocument<'a> {
     pub(super) build: Option<SerializedBuild<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) vcs: Option<SerializedVcs<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) analysis: Option<&'a AnalysisOptions>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(super) applications: &'a BTreeMap<ProjectName, Application>,
 }
 
 #[derive(Serialize)]

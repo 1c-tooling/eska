@@ -806,6 +806,27 @@ eska init
 `history`, а также `shelve`, `unshelve`, `shelves` не делятся по members.
 Полный контракт: [project workspaces](docs/roadmap/11-workspaces.md).
 
+### Контекст приложения для анализа
+
+Корневой workspace может явно связать конфигурацию, расширения и внешние
+объекты через имена members:
+
+```toml
+[analysis]
+default_application = "accounting"
+
+[applications.accounting]
+configuration = "main"
+extensions = ["integration", "reports"]
+external_objects = ["data-import"]
+extension_dependencies = { reports = ["integration"] }
+```
+
+`eska` без подкоманды проверяет имена, типы members и граф. Пути берутся из
+их `project.source`; несколько приложений не объединяются. Resolver контекста
+доступен в общей Rust-библиотеке; самостоятельный CLI и интеграция анализатора
+ещё разрабатываются. [Полная схема, выбор и платформа](docs/application-context.md).
+
 ### Правила работы с Git
 
 | Preset | Основная ветка | Базовая ветка | Ветка задачи | Цель интеграции |

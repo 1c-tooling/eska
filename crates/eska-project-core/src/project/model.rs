@@ -3,6 +3,7 @@
 use std::path::{Component, Path, PathBuf};
 
 use crate::{
+    application::AnalysisSettings,
     project::build::BuildSettings,
     workflow::{WorkflowPreset, WorkflowSettings},
 };
@@ -67,6 +68,7 @@ pub struct ProjectConfiguration {
     source_format: SourceFormat,
     build: BuildSettings,
     workflow: Option<WorkflowSettings>,
+    analysis: AnalysisSettings,
 }
 
 impl ProjectConfiguration {
@@ -77,6 +79,7 @@ impl ProjectConfiguration {
             source_format,
             build: BuildSettings::default(),
             workflow: None,
+            analysis: AnalysisSettings::default(),
         }
     }
 
@@ -124,6 +127,19 @@ impl ProjectConfiguration {
     #[must_use]
     pub const fn workflow_settings(&self) -> Option<&WorkflowSettings> {
         self.workflow.as_ref()
+    }
+
+    /// Return standalone analysis settings without adding an analyzer runtime dependency.
+    #[must_use]
+    pub const fn analysis_settings(&self) -> &AnalysisSettings {
+        &self.analysis
+    }
+
+    /// Carry validated root selection settings through ordinary project discovery.
+    #[must_use]
+    pub fn with_analysis_settings(mut self, analysis: AnalysisSettings) -> Self {
+        self.analysis = analysis;
+        self
     }
 }
 

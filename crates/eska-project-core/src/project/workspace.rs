@@ -6,12 +6,14 @@ use std::{
 };
 
 use crate::{
+    application::AnalysisSettings,
     project::{Project, build::BuildSettings},
     workflow::WorkflowSettings,
 };
 
 /// A portable, stable workspace member identifier.
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Serialize)]
+#[serde(transparent)]
 pub struct ProjectName(String);
 
 impl ProjectName {
@@ -93,6 +95,7 @@ pub struct Workspace {
     root: PathBuf,
     build: BuildSettings,
     workflow: Option<WorkflowSettings>,
+    analysis: AnalysisSettings,
     members: Vec<WorkspaceMember>,
 }
 
@@ -102,11 +105,13 @@ impl Workspace {
         build: BuildSettings,
         workflow: Option<WorkflowSettings>,
         members: Vec<WorkspaceMember>,
+        analysis: AnalysisSettings,
     ) -> Self {
         Self {
             root,
             build,
             workflow,
+            analysis,
             members,
         }
     }
@@ -124,6 +129,12 @@ impl Workspace {
     #[must_use]
     pub const fn workflow_settings(&self) -> Option<&WorkflowSettings> {
         self.workflow.as_ref()
+    }
+
+    /// Return the single root-owned application composition used by all analysis consumers.
+    #[must_use]
+    pub const fn analysis_settings(&self) -> &AnalysisSettings {
+        &self.analysis
     }
 
     #[must_use]

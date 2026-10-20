@@ -13,6 +13,7 @@ crates/eska-project-core/
 ├── assets/project/                 # built-in .gitattributes and .gitignore
 └── src/
     ├── lib.rs                      # config, project and workflow boundaries
+    ├── application/                # explicit composition, dependency graph and read-only resolver
     ├── config/                     # strict manifest schemas, serialization and validation
     ├── workflow.rs                 # presets and portable settings
     ├── workflow/policy.rs          # pure policy validation and task plans

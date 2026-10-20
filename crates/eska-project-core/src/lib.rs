@@ -2,6 +2,7 @@
 //!
 //! This crate contains no Git repository, platform runner or language-server runtime.
 
+pub mod application;
 pub mod config;
 pub mod project;
 pub mod workflow;

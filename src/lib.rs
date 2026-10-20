@@ -8,6 +8,7 @@ pub mod config;
 pub mod project;
 mod update;
 pub mod vcs;
+pub use eska_project_core::application;
 
 #[cfg(test)]
 #[path = "../tests/support/mod.rs"]

@@ -17,6 +17,7 @@ use super::{
 
 pub(crate) use mapping::decode as identity_parts;
 pub use mapping::{LogicalLocation, SourceLocation, SourceRole};
+pub(crate) use opening::open_project;
 pub use opening::open_projects;
 pub(crate) use opening::open_projects_cached;
 pub use picture::{Picture, PictureError, PicturePreview};

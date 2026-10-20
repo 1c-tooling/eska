@@ -1,3 +1,4 @@
+mod application;
 mod artifact;
 mod build;
 mod clean;

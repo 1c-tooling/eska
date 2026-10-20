@@ -1,6 +1,7 @@
 //! Strict root workspace configuration and member path validation.
 
 use std::{
+    collections::BTreeMap,
     fs, io,
     path::{Component, Path, PathBuf},
 };
@@ -8,7 +9,12 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    application::{
+        AnalysisOptions, AnalysisSettings, Application, RawAnalysis, RawApplication,
+        SettingsError as AnalysisSettingsError,
+    },
     project::build::{BuildSettings, BuildSettingsError},
+    project::{ProjectName, WorkspaceMember},
     workflow::WorkflowSettings,
 };
 
@@ -23,6 +29,9 @@ struct RawWorkspaceDocument {
     workspace: RawWorkspace,
     build: Option<RawBuild>,
     vcs: Option<RawVcs>,
+    analysis: Option<RawAnalysis>,
+    #[serde(default)]
+    applications: BTreeMap<String, RawApplication>,
 }
 
 #[derive(Deserialize)]
@@ -37,6 +46,10 @@ struct SerializedWorkspaceDocument<'a> {
     build: SerializedBuild<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
     vcs: Option<SerializedVcs<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    analysis: Option<&'a AnalysisOptions>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    applications: &'a BTreeMap<ProjectName, Application>,
 }
 
 #[derive(Serialize)]
@@ -50,6 +63,7 @@ pub struct WorkspaceConfig {
     members: Vec<PathBuf>,
     build: BuildSettings,
     workflow: Option<WorkflowSettings>,
+    analysis: AnalysisSettings,
 }
 
 impl WorkspaceConfig {
@@ -90,11 +104,14 @@ impl WorkspaceConfig {
             .map(|vcs| super::workflow::parse(vcs.workflow))
             .transpose()
             .map_err(WorkspaceConfigError::InvalidWorkflow)?;
+        let analysis = AnalysisSettings::parse(document.analysis, document.applications, true)
+            .map_err(|error| WorkspaceConfigError::InvalidAnalysis(Box::new(error)))?;
 
         Ok(Self {
             members: document.workspace.members,
             build,
             workflow,
+            analysis,
         })
     }
 
@@ -120,6 +137,8 @@ impl WorkspaceConfig {
             vcs: self.workflow.as_ref().map(|settings| SerializedVcs {
                 workflow: super::workflow::serialize(settings),
             }),
+            analysis: (!self.analysis.options().is_empty()).then_some(self.analysis.options()),
+            applications: self.analysis.applications(),
         };
         toml::to_string_pretty(&document)
     }
@@ -138,6 +157,22 @@ impl WorkspaceConfig {
     pub const fn workflow_settings(&self) -> Option<&WorkflowSettings> {
         self.workflow.as_ref()
     }
+
+    /// Return validated root declarations without reloading a second configuration source.
+    #[must_use]
+    pub const fn analysis_settings(&self) -> &AnalysisSettings {
+        &self.analysis
+    }
+
+    /// Check actual member types and names after filesystem-backed discovery.
+    pub(crate) fn validate_applications(
+        &self,
+        members: &[WorkspaceMember],
+    ) -> Result<(), WorkspaceConfigError> {
+        self.analysis
+            .validate_workspace(members)
+            .map_err(|error| WorkspaceConfigError::InvalidAnalysis(Box::new(error)))
+    }
 }
 
 /// The reason a workspace member path was rejected.
@@ -151,6 +186,7 @@ pub enum InvalidMemberPathReason {
 /// A structured root workspace configuration error.
 #[derive(Debug)]
 pub enum WorkspaceConfigError {
+    InvalidAnalysis(Box<AnalysisSettingsError>),
     Io {
         path: PathBuf,
         source: io::Error,

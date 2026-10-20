@@ -1,4 +1,16 @@
 app-about = Инструментарий разработки проектов 1С:Предприятие
+analysis-config-invalid = Некорректный контекст анализа в { $path }: { $detail }
+analysis-name-invalid = В поле { $field } указано некорректное имя «{ $value }». Ожидается: [a-z0-9][a-z0-9_-]*.
+analysis-platform-invalid = Некорректная целевая платформа «{ $value }». Укажите три или четыре числовых компонента.
+analysis-workspace-required = Секция applications допустима только в корневом манифесте workspace.
+analysis-default-unknown = Приложение по умолчанию «{ $name }» не объявлено в applications.
+analysis-member-duplicate = Проект «{ $member }» указан в приложении «{ $application }» несколько раз.
+analysis-dependency-outside = Зависимость «{ $member }» приложения «{ $application }» не входит в его extensions.
+analysis-dependency-cycle = Зависимости расширений приложения «{ $application }» содержат цикл.
+analysis-member-unknown = Приложение «{ $application }» ссылается на отсутствующий member «{ $member }».
+analysis-member-type = В приложении «{ $application }» member «{ $member }» должен иметь project.type = { $expected }, получено { $actual }.
+analysis-member-settings = Настройки analysis для member «{ $member }» задаются в корневом манифесте workspace.
+analysis-platform-scope = Целевая платформа приложения задаётся в applications.<имя>.target_platform_version; удалите общий analysis.target_platform_version.
 cli-usage = Использование
 cli-usage-syntax = eska [ПАРАМЕТРЫ] [КОМАНДА]
 cli-options = Параметры

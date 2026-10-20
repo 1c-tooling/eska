@@ -2,6 +2,8 @@
 
 use std::{io, path::Path};
 
+mod application;
+
 use crate::{
     cli::{
         localization::{LocalizationValue, Localizer},
@@ -297,6 +299,9 @@ fn workspace_config_message(
     hyperlinks: bool,
 ) -> String {
     match error {
+        WorkspaceConfigError::InvalidAnalysis(error) => {
+            application::present(localizer, manifest_path, error, hyperlinks)
+        }
         WorkspaceConfigError::Io { path, source } => {
             io_message(localizer, path, source, hyperlinks)
         }
@@ -522,6 +527,9 @@ fn config_message(
 ) -> String {
     let manifest_path = path;
     match error {
+        ProjectConfigError::InvalidAnalysis(error) => {
+            application::present(localizer, path, error, hyperlinks)
+        }
         ProjectConfigError::InvalidName(error) => localizer.format(
             "project-name-invalid",
             &[

@@ -11,6 +11,7 @@ use crate::project::{
     build::{BuildSettings, BuildSettingsError},
 };
 
+use crate::application::{AnalysisSettings, SettingsError as AnalysisSettingsError};
 use crate::workflow::WorkflowPreset;
 
 use super::schema::{
@@ -145,6 +146,9 @@ impl ProjectConfig {
             configuration =
                 configuration.with_workflow_settings(super::workflow::parse(vcs.workflow)?);
         }
+        let analysis = AnalysisSettings::parse(document.analysis, document.applications, false)
+            .map_err(|error| ProjectConfigError::InvalidAnalysis(Box::new(error)))?;
+        configuration = configuration.with_analysis_settings(analysis);
         Ok(Self {
             name,
             source: document.project.source,
@@ -164,7 +168,7 @@ impl ProjectConfig {
 
     /// Serializes a member manifest without workspace-owned workflow and defaults.
     ///
-    /// Callers construct member configs without workflow or artifact overrides;
+    /// Callers construct member configs without workflow, analysis or artifact overrides;
     /// only an explicit platform override is retained.
     ///
     /// # Errors
@@ -204,6 +208,9 @@ impl ProjectConfig {
                 .map(|settings| SerializedVcs {
                     workflow: super::workflow::serialize(settings),
                 }),
+            analysis: (!self.configuration.analysis_settings().options().is_empty())
+                .then_some(self.configuration.analysis_settings().options()),
+            applications: self.configuration.analysis_settings().applications(),
         };
 
         toml::to_string_pretty(&document)
@@ -259,6 +266,7 @@ pub enum InvalidSourceReason {
 /// A structured project configuration error.
 #[derive(Debug)]
 pub enum ProjectConfigError {
+    InvalidAnalysis(Box<AnalysisSettingsError>),
     InvalidName(ProjectNameError),
     InvalidBuild(BuildSettingsError),
     InvalidWorkflow(crate::workflow::PolicyError),

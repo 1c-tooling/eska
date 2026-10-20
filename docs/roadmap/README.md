@@ -16,7 +16,8 @@
 [План T83–T99](15-designer-xml-analyzer.md) подготовлен от `main`.
 По запросу пользователя от 2026-10-20 выполняется очередь до T89 включительно.
 T90 — `DONE`: сохранён baseline, выделены общее ядро и границы зависимостей.
-Следующая задача — T83 (`NEXT`), контексты приложений.
+T83 — `DONE`: схема и read-only resolver контекстов приложений.
+T91 — `NEXT`, самостоятельный проектный CLI.
 Номера T83–T89 сохраняются, модульность добавлена в T90–T99.
 Экспериментальный формат ESKA в этот план не переносится; статусы прежних
 задач сохраняются.
@@ -176,7 +177,7 @@ T85 → T86 → T87 → T88 → T89**.
 После основной приёмки — опциональные **T98 → T99** для отдельного отладчика.
 Фазы, зависимости и критерии приведены в
 [плане модульных инструментов](15-designer-xml-analyzer.md).
-T90 завершена; T83 — `NEXT`, остальные задачи ожидают своих зависимостей.
+T90 и T83 завершены; T91 — `NEXT`, остальные задачи ожидают своих зависимостей.
 T98–T99 не входят в текущую цель. Ниже сохранена очередь и история первой
 IDE-поставки.
 
@@ -342,7 +343,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T80 | DONE | Иконки метаданных | [14-vscode-extension.md](14-vscode-extension.md) |
 | T81 | IN-PROGRESS | Производительность интерфейса, приёмка и VSIX | [14-vscode-extension.md](14-vscode-extension.md) |
 | T82 | DONE | Создание и обновление из файлов 1С | [02-project-creation.md](02-project-creation.md) |
-| T83 | NEXT | Контекст приложения в основном конфиге ESKA после выделения ядра | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T83 | DONE | Контекст приложения в основном конфиге ESKA после выделения ядра | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T84 | PLANNED | Производный конфиг bsl-analyzer и миграция | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T85 | PLANNED | Установка project/analyzer из Explorer, независимые индикаторы и обновления | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T86 | PLANNED | Базовая подсветка и собственный LSP-клиент Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
@@ -350,7 +351,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T88 | PLANNED | Согласование LSP с изменениями и защитой исходников | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T89 | PLANNED | Приёмка выборочной поставки, Explorer и производительности buhmfo | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T90 | DONE | Cargo workspace, общее ядро проекта и границы зависимостей | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T91 | PLANNED | Самостоятельный eska-project и общие правила проекта | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T91 | NEXT | Самостоятельный eska-project и общие правила проекта | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T92 | PLANNED | Сервер метаданных eska-project serve и переход Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T93 | PLANNED | Статическая проверка CI через eska-check и внешний bsl-analyzer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T94 | PLANNED | Самостоятельный eska-build и проверки реальной платформой | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |

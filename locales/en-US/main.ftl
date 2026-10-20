@@ -1,4 +1,16 @@
 app-about = Developer tooling for 1C:Enterprise projects
+analysis-config-invalid = Invalid analysis context in { $path }: { $detail }
+analysis-name-invalid = Invalid name "{ $value }" in { $field }. Expected: [a-z0-9][a-z0-9_-]*.
+analysis-platform-invalid = Invalid target platform "{ $value }". Use three or four numeric components.
+analysis-workspace-required = The applications table is only supported in the root workspace manifest.
+analysis-default-unknown = Default application "{ $name }" is not declared in applications.
+analysis-member-duplicate = Member "{ $member }" occurs more than once in application "{ $application }".
+analysis-dependency-outside = Dependency "{ $member }" of application "{ $application }" is not in its extensions.
+analysis-dependency-cycle = Extension dependencies of application "{ $application }" contain a cycle.
+analysis-member-unknown = Application "{ $application }" refers to missing member "{ $member }".
+analysis-member-type = Member "{ $member }" in application "{ $application }" requires project.type = { $expected }, found { $actual }.
+analysis-member-settings = Analysis settings for member "{ $member }" belong in the root workspace manifest.
+analysis-platform-scope = Set the application target in applications.<name>.target_platform_version; remove the shared analysis.target_platform_version.
 cli-usage = Usage
 cli-usage-syntax = eska [OPTIONS] [COMMAND]
 cli-options = Options
