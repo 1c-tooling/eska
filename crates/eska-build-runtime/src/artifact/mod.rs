@@ -8,10 +8,11 @@ mod unpack;
 
 use std::{io, path::PathBuf};
 
-use super::{ProjectType, build::RunError};
+use crate::build::RunError;
+use eska_project_core::project::ProjectType;
 
 pub use identity::{Identity, inspect_identity};
-pub use replace::{ImportPlan, ImportResult};
+pub use replace::{ImportPlan, ImportResult, SourceChanges};
 pub use unpack::PreparedArtifact;
 
 /// Import failures retain their operation and affected path without presentation text.
@@ -26,8 +27,8 @@ pub enum ArtifactError {
     MissingDescriptor(PathBuf),
     AmbiguousDescriptor(PathBuf),
     UnsafePath(PathBuf),
-    Config(crate::config::ProjectConfigError),
-    Repository(crate::vcs::repository::Error),
+    Config(eska_project_core::config::ProjectConfigError),
+    ChangeInspection,
     ConfirmationRequired,
     SourceChanged(PathBuf),
     Rollback {

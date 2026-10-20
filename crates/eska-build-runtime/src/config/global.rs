@@ -35,6 +35,9 @@ pub struct GlobalConfig {
 
 impl GlobalConfig {
     /// Load the machine config, or return portable defaults when it does not exist.
+    ///
+    /// # Errors
+    /// Rejects unreadable files, invalid TOML and contradictory runner settings.
     pub fn load(path: &Path) -> Result<Self, GlobalConfigError> {
         let input = match fs::read_to_string(path) {
             Ok(input) => input,
@@ -77,6 +80,9 @@ impl GlobalConfig {
 }
 
 /// Load the machine config from its resolved path.
+///
+/// # Errors
+/// Returns unavailable user locations and the same validation errors as [`GlobalConfig::load`].
 pub fn load() -> Result<(PathBuf, GlobalConfig), GlobalConfigError> {
     let path = config_path()?;
     let config = GlobalConfig::load(&path)?;
@@ -148,6 +154,9 @@ pub enum GlobalConfigError {
 }
 
 /// Resolve the standard per-user config location on the current operating system.
+///
+/// # Errors
+/// Returns an unavailable user location when no explicit config directory is set.
 pub fn config_path() -> Result<PathBuf, GlobalConfigError> {
     if let Some(directory) = std::env::var_os(CONFIG_DIRECTORY_ENV) {
         return Ok(PathBuf::from(directory).join("config.toml"));
@@ -158,6 +167,9 @@ pub fn config_path() -> Result<PathBuf, GlobalConfigError> {
 }
 
 /// Create the default config without overwriting an existing file.
+///
+/// # Errors
+/// Rejects inaccessible parents and failed writes without replacing an existing config.
 pub fn init_at(path: &Path) -> Result<InitOutcome, GlobalConfigError> {
     let parent = path
         .parent()
@@ -183,6 +195,9 @@ pub fn init_at(path: &Path) -> Result<InitOutcome, GlobalConfigError> {
 }
 
 /// Edit a temporary copy, validate it and atomically retain the previous config as backup.
+///
+/// # Errors
+/// Preserves the previous config on editor failures, invalid settings or failed publication.
 pub fn edit_at<F>(path: &Path, edit: F) -> Result<EditOutcome, GlobalConfigError>
 where
     F: FnOnce(&Path) -> Result<(), GlobalConfigError>,

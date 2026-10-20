@@ -392,6 +392,7 @@ impl BuildArgs {
                 plan,
                 project,
                 project_name,
+                crate::vcs::build::provenance(project.root()),
                 ibcmd,
                 &mut on_output,
             )

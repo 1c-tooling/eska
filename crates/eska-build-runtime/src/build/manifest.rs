@@ -10,10 +10,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 
 use super::{ArtifactType, BuildPlan};
-use crate::{
-    project::{Project, ProjectPathError, version},
-    vcs::repository::{Error as RepositoryError, Head, Repository},
-};
+use eska_project_core::project::{Project, ProjectPathError, version};
 
 #[derive(Debug)]
 pub enum ManifestError {
@@ -27,16 +24,16 @@ pub enum ManifestError {
 
 pub(super) struct ManifestSeed {
     project_name: Option<String>,
-    git: GitDocument,
+    git: GitProvenance,
 }
 
 impl ManifestSeed {
-    /// Capture repository metadata before temporary build paths can affect Git status.
+    /// Bind caller-supplied provenance to the immutable build seed without inspecting repositories.
     #[must_use]
-    pub(super) fn capture(project: &Project, project_name: Option<&str>) -> Self {
+    pub(super) fn capture(project_name: Option<&str>, git: GitProvenance) -> Self {
         Self {
             project_name: project_name.map(str::to_owned),
-            git: inspect_git(project.root()),
+            git,
         }
     }
 }
@@ -319,25 +316,6 @@ fn hex(bytes: &[u8]) -> String {
     output
 }
 
-/// Treat missing Git separately while keeping broken repository details out of the manifest.
-fn inspect_git(root: &Path) -> GitDocument {
-    let repository = match Repository::discover(root) {
-        Ok(repository) => repository,
-        Err(RepositoryError::NotFound { .. }) => return GitDocument::absent(),
-        Err(_) => return GitDocument::unavailable(),
-    };
-    let commit = match repository.head() {
-        Ok(Head::Unborn { .. }) => None,
-        Ok(head) => head.id().map(|id| id.to_string()),
-        Err(_) => return GitDocument::unavailable(),
-    };
-    let dirty = match repository.status() {
-        Ok(status) => status.is_dirty(),
-        Err(_) => return GitDocument::unavailable(),
-    };
-    GitDocument::available(commit, dirty)
-}
-
 #[derive(Clone, Serialize)]
 struct VersionDocument {
     status: &'static str,
@@ -405,20 +383,23 @@ struct PlatformDocument {
 #[derive(Serialize)]
 struct SourceDocument {
     snapshot_id: String,
-    git: GitDocument,
+    git: GitProvenance,
     #[serde(skip_serializing_if = "Option::is_none")]
     base_configuration: Option<ChecksumDocument>,
 }
 
-#[derive(Serialize)]
-struct GitDocument {
+/// Optional VCS data is captured by the caller before temporary build files are created.
+#[derive(Clone, Debug, Serialize)]
+pub struct GitProvenance {
     status: &'static str,
     commit: Option<String>,
     dirty: Option<bool>,
 }
 
-impl GitDocument {
-    const fn available(commit: Option<String>, dirty: bool) -> Self {
+impl GitProvenance {
+    /// Record a repository snapshot supplied by the VCS owner.
+    #[must_use]
+    pub const fn available(commit: Option<String>, dirty: bool) -> Self {
         Self {
             status: "available",
             commit,
@@ -426,7 +407,9 @@ impl GitDocument {
         }
     }
 
-    const fn absent() -> Self {
+    /// Record a verified absence of repository metadata.
+    #[must_use]
+    pub const fn absent() -> Self {
         Self {
             status: "absent",
             commit: None,
@@ -434,7 +417,9 @@ impl GitDocument {
         }
     }
 
-    const fn unavailable() -> Self {
+    /// Retain unknown provenance when no VCS inspector was requested or it could not complete.
+    #[must_use]
+    pub const fn unavailable() -> Self {
         Self {
             status: "unavailable",
             commit: None,

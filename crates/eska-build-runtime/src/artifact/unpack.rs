@@ -3,7 +3,7 @@
 use std::{ffi::OsString, fs, path::Path};
 
 use super::{ArtifactError, Identity, identity::inspect_identity, io_error, staging::Staging};
-use crate::project::build::{Ibcmd, ProcessStream};
+use crate::build::{Ibcmd, ProcessStream};
 
 /// An owned, unpacked artifact whose sources survive until publication or cancellation.
 pub struct PreparedArtifact {

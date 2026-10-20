@@ -310,7 +310,7 @@ pub(super) fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
         ArtifactError::Config(_) => {
             return Failure::new("project-config", localizer.text("artifact-config-error"));
         }
-        ArtifactError::Repository(_) => {
+        ArtifactError::ChangeInspection => {
             return Failure::new("repository", localizer.text("artifact-repository-error"));
         }
         ArtifactError::ConfirmationRequired => {

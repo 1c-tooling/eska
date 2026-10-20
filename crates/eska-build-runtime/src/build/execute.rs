@@ -10,7 +10,7 @@ use super::{
     ArtifactType, BuildPlan, Ibcmd, ManagedInfobaseError, ManifestError, ProcessStream, RunError,
     infobase::ManagedInfobase, manifest,
 };
-use crate::project::{Project, ProjectType, designer_xml};
+use eska_project_core::project::{Project, ProjectType, designer_xml};
 
 static WORKSPACE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
@@ -111,20 +111,26 @@ pub fn execute_streaming_with_manifest<F>(
     plan: &BuildPlan,
     project: &Project,
     project_name: Option<&str>,
+    git: super::GitProvenance,
     ibcmd: &Ibcmd,
     mut on_output: F,
 ) -> Result<BuildResult, BuildError>
 where
     F: FnMut(BuildStage, ProcessStream, &[u8]),
 {
-    execute_streaming_inner(plan, ibcmd, Some((project, project_name)), &mut on_output)
+    execute_streaming_inner(
+        plan,
+        ibcmd,
+        Some((project, project_name, git)),
+        &mut on_output,
+    )
 }
 
 /// Share the verified platform pipeline between ordinary and manifested builds.
 fn execute_streaming_inner<F>(
     plan: &BuildPlan,
     ibcmd: &Ibcmd,
-    manifest_request: Option<(&Project, Option<&str>)>,
+    manifest_request: Option<(&Project, Option<&str>, super::GitProvenance)>,
     on_output: &mut F,
 ) -> Result<BuildResult, BuildError>
 where
@@ -136,8 +142,9 @@ where
     } else {
         preflight(plan)?;
     }
+    let manifest_project = manifest_request.as_ref().map(|(project, _, _)| *project);
     let manifest_seed =
-        manifest_request.map(|(project, name)| manifest::ManifestSeed::capture(project, name));
+        manifest_request.map(|(_, name, git)| manifest::ManifestSeed::capture(name, git));
     ibcmd
         .begin_interruptible_operation()
         .map_err(|source| BuildError::Run {
@@ -158,8 +165,8 @@ where
     let artifact = workspace
         .path
         .join(format!("artifact.{}", plan.artifact_type().extension()));
-    let snapshot = manifest_request
-        .map(|(project, _)| manifest::capture_source(project, plan, &workspace.path))
+    let snapshot = manifest_project
+        .map(|project| manifest::capture_source(project, plan, &workspace.path))
         .transpose()
         .map_err(BuildError::Manifest)?;
     let effective_plan = snapshot.as_ref().map_or_else(
@@ -169,7 +176,7 @@ where
     let import_source = import_source(&effective_plan)?;
     let effective_base_configuration = prepare_base_configuration(
         plan.base_configuration(),
-        manifest_request.is_some(),
+        manifest_project.is_some(),
         &workspace.path,
     )?;
     let infobase = ManagedInfobase::prepare(plan, effective_base_configuration.as_deref())

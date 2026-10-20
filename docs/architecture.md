@@ -58,6 +58,13 @@ crates/eska-project/
     ├── analyzer_config.rs          # config CLI; no embedded BSL engine
     ├── metadata.rs, version.rs     # shared legacy command presentation
     └── ide/                        # Metadata API framing, DTOs and server lifecycle
+crates/eska-check/
+└── src/                            # standalone CI CLI, stable report and shared analyzer adapter
+crates/eska-build-runtime/
+└── src/
+    ├── build/                      # runner, plans, managed infobases and artifact snapshots
+    ├── artifact/                   # unpack, identity and reversible source publication
+    └── config/global.rs            # machine-local runner config and transactional editing
 src/
 ├── main.rs                         # existing binary entry point
 ├── lib.rs                          # current CLI and operation namespaces
@@ -70,12 +77,10 @@ src/
 │   ├── interactive/                # keyboard selection, confirmation and terminal state
 │   └── diagnostics.rs              # machine config/tool errors; core errors reexported
 ├── config/
-│   ├── mod.rs                      # reexports of shared manifest types
-│   └── global.rs                   # machine-local runner config and transactional editing
+│   └── mod.rs                      # shared manifests and build-runtime machine config reexports
 ├── project/
 │   ├── mod.rs                      # reexports of shared project operations
-│   ├── artifact/                   # native unpack, identity, source preflight and rollback
-│   ├── build/                      # runner, infobase, artifact plan and execution
+│   ├── artifact.rs, build.rs        # reexports of the single build runtime
 │   ├── patch/                      # VCS-based patch plans and native extension assembly
 │   ├── create.rs, init.rs          # existing onboarding with optional Git/platform selection
 │   ├── onboarding.rs               # workspace enrollment and manifest preservation
@@ -84,6 +89,7 @@ src/
 │   └── *.rs                        # existing Git workflow operations
 └── vcs/
     ├── mod.rs                      # repository execution boundary
+    ├── build.rs                    # provenance and source-change inspector for build orchestration
     ├── workflow.rs                 # reexports of shared settings/policy
     ├── git.rs, repository.rs       # gix opening, refs and history
     ├── command.rs                  # isolated system Git capability fallback
@@ -96,7 +102,8 @@ tests/support/mod.rs               # exclusively owned playground directories
 ```
 
 `validate.rs` — обработчик существующего запуска `eska` без подкоманды,
-а не новая команда `validate` или запланированная `check`. `src/vcs/git.rs` содержит
+а не новая команда `validate`. Самостоятельный `eska-check` использует общий
+контекст, полный XML-обход и внешний анализатор; его CLI находится в отдельном package. `src/vcs/git.rs` содержит
 общее открытие и инициализацию Git; чтение репозитория находится в
 `src/vcs/repository.rs`. `src/project/start.rs` исполняет workflow plan через
 `src/vcs/network.rs`, `src/vcs/repository.rs` и узкий fallback в `src/vcs/command.rs`.
@@ -107,10 +114,10 @@ tests/support/mod.rs               # exclusively owned playground directories
 |---|---|
 | Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
 | Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
-| Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`src/project/build/`](../src/project/build/) |
+| Изменить сборку или её вывод | [`src/cli/commands/build.rs`](../src/cli/commands/build.rs), затем [`crates/eska-build-runtime/src/build/`](../crates/eska-build-runtime/src/build/) |
 | Изменить вывод, JSON или ошибки сборки | [`src/cli/commands/build/output.rs`](../src/cli/commands/build/output.rs), [`json.rs`](../src/cli/commands/build/json.rs), [`errors.rs`](../src/cli/commands/build/errors.rs) |
 | Изменить план или генерацию patch-extension | [`src/cli/commands/patch.rs`](../src/cli/commands/patch.rs), затем [`src/project/patch/`](../src/project/patch/) |
-| Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`src/project/build/tool.rs`](../src/project/build/tool.rs) |
+| Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`crates/eska-build-runtime/src/build/tool.rs`](../crates/eska-build-runtime/src/build/tool.rs) |
 | Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
 | Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
 | Изменить обратимое кодирование JSON-путей и Git-строк | [`crates/eska-presentation/src/encoding.rs`](../crates/eska-presentation/src/encoding.rs) |

@@ -3,7 +3,7 @@
 use std::{fs, io::Read, path::Path};
 
 use super::{ArtifactError, io_error};
-use crate::project::{ProjectType, designer_xml};
+use eska_project_core::project::{ProjectType, designer_xml};
 
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
 const MAX_BYTES: u64 = 64 * 1024 * 1024;

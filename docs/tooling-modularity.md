@@ -52,6 +52,24 @@ metadata/version/Metadata API — в `eska-project`. Существующий CL
 в его адаптерах. [Самостоятельные команды](project-cli.md) не запускают
 эти адаптеры.
 
+T93 добавила самостоятельный [eska-check](check-cli.md), общий адаптер внешнего
+процесса и строгую политику CI; project-сервер как процесс не требуется.
+В T94 platform runner, build/clean, распаковка и обратимая замена source,
+снимки артефактов и machine config перенесены в `eska-build-runtime`.
+В normal dependency graph runtime нет `gix`, анализатора, IDE и `clap`.
+Git provenance и проверку changed paths передаёт текущий VCS-владелец через
+явную границу; отсутствие или ошибка инспектора не выдаются за чистый source.
+Общий CLI сохраняет прежние Git preflight, подтверждения, JSON и восстановление.
+Транзакция повторно вызывает тот же инспектор перед заменой. Промежуточные
+проверки: workspace strict Clippy и 572 теста runtime/прежнего CLI passed,
+6 ignored; ошибка callback отдельно проверена как отказ. Нативная матрица
+и полный финальный workspace-набор выполняются со standalone CLI T94.
+
+Экспериментальный Rust API теперь принимает `GitProvenance` при сборке
+с паспортом и `SourceChanges` при создании import-плана. Ошибка инспектора
+имеет структурную категорию `ChangeInspection`; публичный CLI сохраняет
+`repository`. Это внутренние интерфейсы без compatibility layer.
+
 Пока выделены внутренние crates с `publish = false`; раскладка публикуемых
 packages и выборочная поставка относятся к T97. Автоматизация релизов,
 workflow Actions и версия существующего пакета этим шагом не изменены.

@@ -1,5 +1,6 @@
 //! Git integration, isolated command execution and declarative workflow policies.
 
+pub(crate) mod build;
 pub mod command;
 pub mod diff;
 pub(crate) mod git;

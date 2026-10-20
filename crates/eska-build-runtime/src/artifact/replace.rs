@@ -2,18 +2,16 @@
 
 use std::{fs, path::PathBuf};
 
-use gix::bstr::ByteSlice;
-
 use super::{
     ArtifactError, Identity, PreparedArtifact, inspect_identity, io_error,
     snapshot::{self, Snapshot},
     staging::Staging,
 };
-use crate::{
-    config::ProjectConfig,
-    project::Project,
-    vcs::repository::{Error as RepositoryError, Repository},
-};
+use eska_project_core::config::ProjectConfig;
+use eska_project_core::project::Project;
+
+/// The orchestration owner checks changed paths; errors always stop replacement.
+pub type SourceChanges = fn(&Project, bool, usize) -> Result<usize, ArtifactError>;
 
 /// The original source state and identity observed before unpacking or asking the user.
 pub struct ImportPlan {
@@ -22,6 +20,7 @@ pub struct ImportPlan {
     snapshot: Snapshot,
     current: Option<Identity>,
     local_changes: usize,
+    inspect_changes: SourceChanges,
 }
 
 /// Successful publication may retain an old tree only when cleanup failed.
@@ -34,9 +33,12 @@ impl ImportPlan {
     ///
     /// # Errors
     /// Rejects root-level sources, symlinks, nested projects and unreadable source/Git state.
-    pub fn inspect(project: &Project) -> Result<Self, ArtifactError> {
+    pub fn inspect(
+        project: &Project,
+        inspect_changes: SourceChanges,
+    ) -> Result<Self, ArtifactError> {
         validate_location(project)?;
-        let config_path = project.root().join(crate::config::FILE_NAME);
+        let config_path = project.root().join(eska_project_core::config::FILE_NAME);
         let config = fs::read(&config_path).map_err(|error| io_error(&config_path, error))?;
         let snapshot = snapshot::capture(project.source())?;
         let current = inspect_identity(project.source())?;
@@ -48,13 +50,14 @@ impl ImportPlan {
         if let Some(identity) = &current {
             ensure_type(project, identity)?;
         }
-        let local_changes = local_changes(project, &snapshot)?;
+        let local_changes = inspect_changes(project, snapshot.empty_scaffold, snapshot.files)?;
         Ok(Self {
             project: project.clone(),
             config,
             snapshot,
             current,
             local_changes,
+            inspect_changes,
         })
     }
 
@@ -103,10 +106,17 @@ impl ImportPlan {
             return Err(ArtifactError::ConfirmationRequired);
         }
         validate_location(&self.project)?;
-        let config_path = self.project.root().join(crate::config::FILE_NAME);
+        let config_path = self
+            .project
+            .root()
+            .join(eska_project_core::config::FILE_NAME);
         if fs::read(&config_path).map_err(|error| io_error(&config_path, error))? != self.config
             || snapshot::capture(self.project.source())? != self.snapshot
-            || local_changes(&self.project, &self.snapshot)? != self.local_changes
+            || (self.inspect_changes)(
+                &self.project,
+                self.snapshot.empty_scaffold,
+                self.snapshot.files,
+            )? != self.local_changes
         {
             return Err(ArtifactError::SourceChanged(
                 self.project.source().to_owned(),
@@ -162,7 +172,7 @@ fn ensure_type(project: &Project, identity: &Identity) -> Result<(), ArtifactErr
 
 /// Check raw configured components because discovery canonicalizes and erases symlink paths.
 fn validate_location(project: &Project) -> Result<(), ArtifactError> {
-    let config = ProjectConfig::load(&project.root().join(crate::config::FILE_NAME))
+    let config = ProjectConfig::load(&project.root().join(eska_project_core::config::FILE_NAME))
         .map_err(ArtifactError::Config)?;
     let mut path = project.root().to_owned();
     for component in config.source().components() {
@@ -182,37 +192,30 @@ fn validate_location(project: &Project) -> Result<(), ArtifactError> {
     Ok(())
 }
 
-/// Count only changed paths inside this source tree, preserving unrelated workspace edits.
-fn local_changes(project: &Project, snapshot: &Snapshot) -> Result<usize, ArtifactError> {
-    let repository = match Repository::discover(project.root()) {
-        Ok(repository) => repository,
-        Err(RepositoryError::NotFound { .. }) => {
-            return Ok(if snapshot.empty_scaffold {
-                0
-            } else {
-                snapshot.files
-            });
-        }
-        Err(error) => return Err(ArtifactError::Repository(error)),
-    };
-    let status = repository.status().map_err(ArtifactError::Repository)?;
-    Ok(status
-        .entries
-        .iter()
-        .filter(|entry| {
-            repository
-                .work_dir()
-                .join(gix::path::from_bstr(entry.path.as_bstr()).as_ref())
-                .starts_with(project.source())
-                && !(snapshot.empty_scaffold && entry.path.ends_with(b"/.gitkeep"))
-        })
-        .count())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::test_support::TestDir;
+
+    /// Failure to inspect changes must never become an empty or clean source result.
+    #[test]
+    fn change_inspection_failure_stops_the_plan() {
+        let fixture = TestDir::new();
+        let config = ProjectConfig::new(eska_project_core::project::ProjectType::Configuration);
+        fs::write(fixture.0.join("eska.toml"), config.to_toml().unwrap()).unwrap();
+        fs::create_dir(fixture.0.join("src")).unwrap();
+        fs::write(fixture.0.join("src/Configuration.xml"),"<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><Configuration uuid=\"11111111-1111-1111-1111-111111111111\"><Properties><Name>Example</Name></Properties></Configuration></MetaDataObject>").unwrap();
+        let project = config.into_project(fixture.0.clone()).unwrap();
+        assert!(matches!(
+            ImportPlan::inspect(&project, reject_changes),
+            Err(ArtifactError::ChangeInspection)
+        ));
+    }
+
+    /// Model an unavailable VCS inspector without adding a repository dependency to the runner.
+    const fn reject_changes(_: &Project, _: bool, _: usize) -> Result<usize, ArtifactError> {
+        Err(ArtifactError::ChangeInspection)
+    }
 
     /// A failed directory publication restores the complete previous tree before returning.
     #[test]

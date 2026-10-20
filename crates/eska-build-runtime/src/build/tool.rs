@@ -159,7 +159,10 @@ impl Ibcmd {
     }
 
     /// Run the matching Designer executable through the same interruptible runner.
-    pub(crate) fn run_designer(
+    ///
+    /// # Errors
+    /// Returns native process, output or cancellation errors while reaping the owned runner.
+    pub fn run_designer(
         &self,
         arguments: Vec<OsString>,
         pid_file: &Path,

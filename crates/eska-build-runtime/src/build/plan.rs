@@ -4,7 +4,7 @@ use std::{
 };
 
 use super::PlatformVersion;
-use crate::project::{Project, ProjectType};
+use eska_project_core::project::{Project, ProjectType};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ArtifactType {
@@ -381,7 +381,7 @@ fn resolve_explicit_output(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project::{ProjectConfiguration, SourceFormat, build::BuildSettings};
+    use eska_project_core::project::{ProjectConfiguration, SourceFormat, build::BuildSettings};
 
     /// Construct a filesystem-independent project for plan tests.
     fn project(project_type: ProjectType, root: &str) -> Project {

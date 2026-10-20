@@ -102,8 +102,8 @@ impl ImportArgs {
             )
         })?;
         let project = selected.project();
-        let plan =
-            ImportPlan::inspect(project).map_err(|error| artifact::present(&error, localizer))?;
+        let plan = ImportPlan::inspect(project, crate::vcs::build::source_changes)
+            .map_err(|error| artifact::present(&error, localizer))?;
         let tool = self.platform.resolve(
             project.configuration().build_settings().platform_version(),
             self.format == Format::Human,

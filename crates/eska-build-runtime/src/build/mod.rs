@@ -16,7 +16,7 @@ pub use execute::{
 pub use infobase::{
     CleanOutcome as InfobaseCleanOutcome, ManagedInfobaseError, clean as clean_infobase,
 };
-pub use manifest::{ManifestError, path_for_artifact as manifest_path};
+pub use manifest::{GitProvenance, ManifestError, path_for_artifact as manifest_path};
 pub use plan::{
     ArtifactType, BuildPlan, PlanError, managed_infobase_root, validate_unique_outputs,
 };

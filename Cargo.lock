@@ -702,8 +702,7 @@ dependencies = [
  "base64 0.23.1",
  "clap",
  "crossterm",
- "ctrlc",
- "directories",
+ "eska-build-runtime",
  "eska-presentation",
  "eska-project",
  "eska-project-core",
@@ -731,6 +730,21 @@ dependencies = [
  "sha2",
  "toml",
  "toml_edit",
+]
+
+[[package]]
+name = "eska-build-runtime"
+version = "0.14.3"
+dependencies = [
+ "ctrlc",
+ "directories",
+ "eska-project-core",
+ "gix-path",
+ "roxmltree",
+ "serde",
+ "serde_json",
+ "sha2",
+ "toml",
 ]
 
 [[package]]

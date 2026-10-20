@@ -60,7 +60,7 @@ fn walk(
         let relative = path
             .strip_prefix(root)
             .map_err(|_| ArtifactError::UnsafePath(path.clone()))?;
-        let encoded = gix::path::into_bstr(relative);
+        let encoded = gix_path::into_bstr(relative);
         hasher.update((encoded.len() as u64).to_le_bytes());
         hasher.update(encoded.as_ref());
         hasher.update([u8::from(metadata.is_dir())]);
