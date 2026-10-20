@@ -7,15 +7,18 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use super::{ArtifactError, io_error};
+use super::{Error as ArtifactError, io_error};
 
-pub(super) struct Staging {
+pub struct Staging {
     pub path: PathBuf,
     pub preserve: bool,
 }
 
 impl Staging {
     /// Claim ignored storage near the destination, including before workspace parents exist.
+    ///
+    /// # Errors
+    /// Rejects collisions, symlinks, foreign ignore rules and storage inside the destination.
     pub fn create(destination: &Path) -> Result<Self, ArtifactError> {
         let parent = destination
             .ancestors()

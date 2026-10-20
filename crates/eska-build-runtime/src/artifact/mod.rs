@@ -3,7 +3,6 @@
 mod identity;
 mod replace;
 mod snapshot;
-mod staging;
 mod unpack;
 
 use std::{io, path::PathBuf};
@@ -65,5 +64,16 @@ fn io_error(path: &std::path::Path, source: io::Error) -> ArtifactError {
     ArtifactError::Io {
         path: path.to_owned(),
         source,
+    }
+}
+
+/// Preserve existing native error codes around the shared structural implementation.
+fn structural_error(error: eska_project_core::artifact::Error) -> ArtifactError {
+    use eska_project_core::artifact::Error;
+    match error {
+        Error::Io { path, source } => ArtifactError::Io { path, source },
+        Error::InvalidDescriptor(path) => ArtifactError::InvalidDescriptor(path),
+        Error::AmbiguousDescriptor(path) => ArtifactError::AmbiguousDescriptor(path),
+        Error::UnsafePath(path) => ArtifactError::UnsafePath(path),
     }
 }

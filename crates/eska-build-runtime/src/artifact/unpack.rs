@@ -2,11 +2,9 @@
 
 use std::{ffi::OsString, fs, path::Path};
 
-use super::{
-    ArtifactError, Identity, PublicationError, identity::inspect_identity, io_error,
-    staging::Staging,
-};
+use super::{ArtifactError, Identity, PublicationError, identity::inspect_identity, io_error};
 use crate::build::{Ibcmd, ProcessStream};
+use eska_project_core::artifact::Staging;
 
 /// An owned, unpacked artifact whose sources survive until publication or cancellation.
 pub struct PreparedArtifact {
@@ -37,7 +35,7 @@ impl PreparedArtifact {
         if !matches!(extension.as_str(), "cf" | "cfe" | "epf" | "erf") || !input.is_file() {
             return Err(ArtifactError::UnsupportedFile(input));
         }
-        let staging = Staging::create(destination)?;
+        let staging = Staging::create(destination).map_err(super::structural_error)?;
         let snapshot = staging.path.join(format!("input.{extension}"));
         fs::copy(&input, &snapshot).map_err(|error| io_error(&input, error))?;
         let sources = staging.path.join("sources");

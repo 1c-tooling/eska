@@ -5,8 +5,8 @@ use std::{fs, path::PathBuf};
 use super::{
     ArtifactError, Identity, PreparedArtifact, inspect_identity, io_error,
     snapshot::{self, Snapshot},
-    staging::Staging,
 };
+use eska_project_core::artifact::Staging;
 use eska_project_core::config::ProjectConfig;
 use eska_project_core::project::Project;
 
@@ -135,7 +135,7 @@ fn replace_directory(
     sources: &std::path::Path,
     destination: &std::path::Path,
 ) -> Result<ImportResult, ArtifactError> {
-    let mut backup = Staging::create(destination)?;
+    let mut backup = Staging::create(destination).map_err(super::structural_error)?;
     let previous = backup.path.join("previous");
     fs::rename(destination, &previous).map_err(|error| io_error(destination, error))?;
     // From this point, automatic cleanup must never discard the user's only surviving tree.

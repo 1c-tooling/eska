@@ -3,6 +3,7 @@
 //! This crate contains no Git repository, platform runner or language-server runtime.
 
 pub mod application;
+pub mod artifact;
 pub mod config;
 pub mod project;
 pub mod provenance;
