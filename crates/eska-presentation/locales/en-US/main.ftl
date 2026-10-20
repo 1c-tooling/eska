@@ -867,6 +867,8 @@ patch-error-output = Invalid or existing .cfe output path
 patch-error-io = Patch filesystem operation failed
 patch-error-tool = Patch platform operation failed
 patch-error-validation = Designer patch validation failed
+patch-error-component = Patch component failed
+patch-error-plan-changed = Patch plan changed; run the command again
 patch-error-empty = An empty patch cannot be published
 
 # Repository-wide shelves

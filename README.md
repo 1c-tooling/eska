@@ -676,6 +676,9 @@ eska patch --dry-run
 eska patch --base main --output build/fix.cfe
 ```
 
+`eska patch` делегирует `eska-build patch`; планирование и снимок выполняет
+`eska-vcs`. Самостоятельный вход работает без полной ESKA.
+
 `patch` берёт **закоммиченные изменения от общей базы выбранной ветки и HEAD**.
 Без `--base` используется локальный `integration_target` из workflow.
 Рабочая копия должна быть чистой. `--dry-run` показывает план без запуска 1С.

@@ -5,10 +5,10 @@ T96 выполняется по частям. Сейчас `eska` запуска
 | Команды общего CLI | Владелец |
 |---|---|
 | Без команды, `metadata`, `version`, `ide`, `new`, `init` | `eska-project` |
-| `build`, `import`, `clean`, `platform`, `config` | `eska-build` |
+| `build`, `import`, `patch`, `clean`, `platform`, `config` | `eska-build` |
 | `clone`, `status`, `diff`, `history`, `start`, `switch`, `save`, `finish`, `shelve`, `unshelve`, `shelves` | `eska-vcs` |
 
-`patch`, `doctor` пока сохраняют составные адаптеры общей команды.
+`doctor` пока сохраняет составной адаптер общей команды.
 `new/init`, включая `new --from`, выполняет project-компонент; он вызывает
 build для выбора платформы и распаковки, VCS — для Git-инициализации.
 `import` целиком выполняет build-компонент: он заранее
@@ -23,8 +23,10 @@ T96 остаётся `IN PROGRESS`. `update` сохраняет прежнего
 Планировщик immutable `patch` уже принадлежит VCS: merge-base, committed delta,
 допустимые изменения BSL и adopted descriptors используют единственную
 реализацию. Baseline и подготовленные модули материализует VCS, native pipeline
-принадлежит build runtime, который не открывает Git. Общая команда пока
-согласует их через Rust-вызовы; process-перенос ещё не завершён.
+принадлежит build runtime, который не открывает Git. Общая команда делегирует
+`patch` сборщику; он связывает оба владельца внутренним process-протоколом.
+Самостоятельный `eska-build patch` использует тот же путь; даже dry-run требует
+VCS-компонент, но не project-сервер, анализатор или установленную платформу.
 
 `eska-project-core::patch::PatchDescription` сохраняет прежние восемь полей
 публичного JSON плана. Git OID, repository root, BSL bodies и descriptors
@@ -169,6 +171,21 @@ Windows сохраняет прежний console-handler. Запросы и nat
 ## VCS provenance и preflight
 
 Для `patch` подготовлены отдельные schema-1 запросы:
+Build принимает ровно три поля результата plan: public description, fingerprint
+из 64 lowercase hex и optional platform version. Public plan проверяется до
+путей и native-вызовов. Ответ plan ограничен 64 MiB на stream и 30 секундами;
+prepare — 1 MiB на stream и 30 минутами. Другие IPC-запросы сохраняют default.
+Непосредственно перед материализацией VCS повторяет планирование и проверку
+чистоты, затем сверяет fingerprint. Смена HEAD даёт code=plan-changed.
+Build владеет новым пустым workspace и удаляет его после любого отказа;
+только прошедший прежние native-проверки кандидат публикуется как новый `.cfe`.
+
+Прямой и общий fake pipeline публикуют один раз и сохраняют прежний artifact
+при повторе. Проверена отдельная установка только build+VCS с пустым PATH,
+одинаковый RU/EN JSON dry-run, malformed plan/prepare и domain stale-plan
+с сохранением source/другого artifact и cleanup. Реальная платформа этим
+process-тестом не проверялась.
+
 `__bridge patch-plan [--base REF]` возвращает public `plan`, точную
 `platform_version` либо null и `fingerprint`. `__bridge prepare-patch`
 принимает `--workspace` и `--expected` (с тем же optional base), заново

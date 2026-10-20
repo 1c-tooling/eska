@@ -9,6 +9,7 @@
 eska-build --project-dir "$PROJECT_ROOT" build --manifest
 eska-build --project-dir "$PROJECT_ROOT" build --dry-run --format json
 eska-build --project-dir "$PROJECT_ROOT" clean
+eska-build --project-dir "$PROJECT_ROOT" patch --dry-run --format json
 eska-build unpack "$ARTIFACT" "$NEW_XML_DIRECTORY" --platform-version "$PLATFORM_VERSION" --format json
 eska-build platform list --format json
 ```
@@ -30,8 +31,8 @@ aggregate JSON, `--output`, базовый CF для EPF/ERF, `--recreate-infoba
 
 Общий `eska-build-runtime` отвечает за планы, аргументы, host/Distrobox,
 изолированные infobases, снимки, публикацию пары artifact/manifest и cleanup.
-Терминальные меню и progress находятся в общем `eska-terminal`; project/check
-этот package не используют. Core по-прежнему не зависит от TTY или runtime.
+Терминальные меню и progress находятся в общем `eska-terminal`; check
+этот package не использует. Core по-прежнему не зависит от TTY или runtime.
 
 Паспорт использует прежнюю schema 1 и неизменяемый снимок source.
 Самостоятельный инструмент не открывает repository и записывает
@@ -47,6 +48,16 @@ available/absent/unavailable. Ошибка процесса/протокола �
 Повторная совместимая сборка переиспользует infobase. Прерванная сборка
 сохраняет прежний результат и managed infobase, удаляет свой staging.
 [Контракты и OS-матрица сборки](build-validation.md).
+
+## Patch-extension
+
+`eska-build patch` сохраняет аргументы, ограничения и JSON schema 1 общего
+`eska patch`. Для плана нужен `eska-vcs`; build не линкует Git. При реальной
+сборке VCS повторно проверяет исходный fingerprint и заполняет новый workspace,
+а build выполняет прежние metadata/BSL/applicability проверки и публикацию.
+Оболочка, project-сервер и анализатор не требуются. Версия платформы и наличие
+`1cv8` остаются ограничениями [patch-контракта](roadmap/t42-patch-extension.md).
+`runtime_verified` остаётся false. [Внутренние лимиты и проверки](component-delegation.md).
 
 ## Распаковка
 

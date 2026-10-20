@@ -5,5 +5,6 @@ pub mod build;
 pub mod clean;
 pub mod config;
 pub mod import;
+pub mod patch;
 pub mod platform;
 pub mod unpack;

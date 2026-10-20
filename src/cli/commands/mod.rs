@@ -116,7 +116,11 @@ pub(super) fn run(
             | Commands::Switch(_),
         ) => component::run(Component::Vcs, process_args, Invocation::Direct, localizer),
         Some(
-            Commands::Clean(_) | Commands::Config(_) | Commands::Platform(_) | Commands::Import(_),
+            Commands::Clean(_)
+            | Commands::Config(_)
+            | Commands::Platform(_)
+            | Commands::Import(_)
+            | Commands::Patch(_),
         ) => component::run(
             Component::Build,
             process_args,
@@ -143,7 +147,6 @@ pub(super) fn run(
             Invocation::LegacyInit,
             localizer,
         ),
-        Some(Commands::Patch(args)) => args.run(project_dir, localizer),
         Some(Commands::Doctor(args)) => args.run(project_dir, localizer),
         None => component::run(
             Component::Project,

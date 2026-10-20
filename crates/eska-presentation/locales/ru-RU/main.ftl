@@ -867,6 +867,8 @@ patch-error-output = Недопустимый или существующий п
 patch-error-io = Ошибка файловой операции при сборке патча
 patch-error-tool = Ошибка запуска платформы при сборке патча
 patch-error-validation = Проверка патча Конфигуратором не пройдена
+patch-error-component = Ошибка компонента patch
+patch-error-plan-changed = План patch изменился; повторите команду
 patch-error-empty = Пустой патч не может быть опубликован
 
 # Repository-wide shelves
