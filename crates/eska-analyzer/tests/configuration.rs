@@ -327,10 +327,11 @@ fn unsupported_release_preserves_existing_config() {
     let plan = configuration::prepare(&plan, &analyzer, false).unwrap();
     let original = fs::read(plan.path()).unwrap();
     fs::write(root.join("version"), b"0.3.1").unwrap();
-    assert!(matches!(
-        configuration::prepare(&plan, &analyzer, false),
-        Err(Error::AnalyzerVersion { .. })
-    ));
+    let result = configuration::prepare(&plan, &analyzer, false);
+    assert!(
+        matches!(result, Err(Error::AnalyzerVersion { .. })),
+        "{result:?}"
+    );
     assert_eq!(fs::read(plan.path()).unwrap(), original);
 }
 
