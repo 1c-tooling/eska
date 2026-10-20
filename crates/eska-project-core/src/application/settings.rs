@@ -6,7 +6,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::project::{ProjectName, ProjectType, WorkspaceMember, build::PlatformVersion};
 
-use super::{SourceRole, graph};
+use super::{
+    SourceRole, graph,
+    policy::{RawTools, ToolSettings},
+};
 
 /// An analysis target accepts upstream's release line or exact platform build.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
@@ -199,14 +202,20 @@ impl Application {
     }
 }
 
-/// Validated root selection and application declarations, without analyzer policy or processes.
+/// Validated root selection, application declarations and policy data, without analyzer processes.
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct AnalysisSettings {
     options: AnalysisOptions,
     applications: BTreeMap<ProjectName, Application>,
+    tools: ToolSettings,
 }
 
 impl AnalysisSettings {
+    /// Return the root-owned policy without starting or linking an analyzer runtime.
+    #[must_use]
+    pub const fn tools(&self) -> &ToolSettings {
+        &self.tools
+    }
     /// Return portable root selection options.
     #[must_use]
     pub const fn options(&self) -> &AnalysisOptions {
@@ -222,13 +231,14 @@ impl AnalysisSettings {
     /// Detect settings that would otherwise be silently ignored in a workspace member.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.options.is_empty() && self.applications.is_empty()
+        self.options.is_empty() && self.applications.is_empty() && self.tools.is_empty()
     }
 
     /// Validate the strict TOML fields before constructing the shared model.
     pub(crate) fn parse(
         raw: Option<RawAnalysis>,
         applications: BTreeMap<String, RawApplication>,
+        tools: Option<RawTools>,
         workspace: bool,
     ) -> Result<Self, SettingsError> {
         if !workspace && !applications.is_empty() {
@@ -267,6 +277,7 @@ impl AnalysisSettings {
         Ok(Self {
             options,
             applications,
+            tools: ToolSettings::parse(tools)?,
         })
     }
 
@@ -319,6 +330,10 @@ pub struct RawApplication {
 /// Structured configuration errors contain machine-facing values, never localized sentences.
 #[derive(Debug, Eq, PartialEq)]
 pub enum SettingsError {
+    ManagedAnalyzerField {
+        field: String,
+    },
+    InvalidAnalyzerPolicy,
     InvalidName {
         field: &'static str,
         value: String,

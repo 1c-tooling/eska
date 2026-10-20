@@ -8,7 +8,9 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use super::ProjectConfigError;
-use crate::application::{AnalysisOptions, Application, RawAnalysis, RawApplication};
+use crate::application::{
+    AnalysisOptions, Application, RawAnalysis, RawApplication, RawTools, ToolSettings,
+};
 use crate::project::{ProjectName, ProjectType, SourceFormat};
 
 pub(super) const DEFAULT_SOURCE: &str = "src";
@@ -21,6 +23,7 @@ pub(super) struct RawDocument {
     pub(super) build: Option<RawBuild>,
     pub(super) vcs: Option<RawVcs>,
     pub(super) analysis: Option<RawAnalysis>,
+    pub(super) tools: Option<RawTools>,
     #[serde(default)]
     pub(super) applications: BTreeMap<String, RawApplication>,
 }
@@ -84,6 +87,8 @@ pub(super) struct SerializedDocument<'a> {
     pub(super) analysis: Option<&'a AnalysisOptions>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(super) applications: &'a BTreeMap<ProjectName, Application>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) tools: Option<&'a ToolSettings>,
 }
 
 #[derive(Serialize)]

@@ -1,5 +1,6 @@
 //! Read-only IDE protocol presentation, separate from CLI JSON and the metadata core.
 
+mod analyzer;
 pub(crate) mod dto;
 pub(crate) mod editing;
 mod envelope;

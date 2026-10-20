@@ -48,6 +48,7 @@ BSL и непрозрачных файлов. Git не инициализиру�
 источников. Standalone-расширение, EPF и ERF допустимы и отмечаются
 `limited_context: true`. Команда не создаёт `bsl-analyzer.toml`, кеш или индекс.
 
+`analyzer-config` готовит [производный конфиг и миграцию](analyzer-configuration.md).
 `metadata` и `version` перенесены без изменения операций, accepted-base checks,
 ownership снимков и существующих JSON-схем. Сервер `serve` относится к T92.
 

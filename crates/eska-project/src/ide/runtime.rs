@@ -37,6 +37,7 @@ struct Shared {
     queue: Mutex<Queue>,
     worker: thread::Thread,
     stop: AtomicI32,
+    connection_closed: AtomicBool,
     initialized: AtomicBool,
     diagnostics: AtomicUsize,
     exit: AtomicI32,
@@ -58,6 +59,7 @@ pub(super) fn run() -> u8 {
         queue: Mutex::new(Queue::default()),
         worker: thread::current(),
         stop: AtomicI32::new(-1),
+        connection_closed: AtomicBool::new(false),
         initialized: AtomicBool::new(false),
         diagnostics: AtomicUsize::new(0),
         exit: AtomicI32::new(-1),
@@ -130,6 +132,7 @@ pub(super) fn run() -> u8 {
 
 /// Preserve the first terminal condition across racing reader, worker and writer failures.
 fn stop(shared: &Shared, code: i32) {
+    shared.connection_closed.store(true, Ordering::Release);
     let _ = shared
         .stop
         .compare_exchange(-1, code, Ordering::AcqRel, Ordering::Acquire);
@@ -375,6 +378,7 @@ fn process_one(
                 if server.initialized
                     && !server.closing
                     && (super::metadata::is_method(method)
+                        || super::analyzer::is_method(method)
                         || matches!(
                             method,
                             "initialize"
@@ -401,7 +405,14 @@ fn process_one(
         return Some(response(Some(id), Err(domain("cancelled", json!({})))));
     }
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        server.execute(request.method, &request.params, events)
+        let not_cancelled = AtomicBool::new(false);
+        server.execute(
+            request.method,
+            &request.params,
+            events,
+            cancelled.as_deref().unwrap_or(&not_cancelled),
+            &shared.connection_closed,
+        )
     }))
     .unwrap_or_else(|_| Err(error(-32603)));
     let committed = matches!(
@@ -415,6 +426,10 @@ fn process_one(
             | "metadata/updateProperty"
             | "metadata/undoProperty"
             | "metadata/renameApply"
+            | "analyzer/configPrepare"
+            | "analyzer/migrationApply"
+            | "analyzer/acquire"
+            | "analyzer/release"
     );
     if request.method == "metadata/refresh"
         && result.is_ok()
@@ -504,6 +519,7 @@ mod tests {
             queue: Mutex::new(Queue::default()),
             worker: thread::current(),
             stop: AtomicI32::new(-1),
+            connection_closed: AtomicBool::new(false),
             initialized: AtomicBool::new(true),
             diagnostics: AtomicUsize::new(0),
             exit: AtomicI32::new(-1),
@@ -551,6 +567,7 @@ mod tests {
             queue: Mutex::new(Queue::default()),
             worker: thread::current(),
             stop: AtomicI32::new(-1),
+            connection_closed: AtomicBool::new(false),
             initialized: AtomicBool::new(true),
             diagnostics: AtomicUsize::new(0),
             exit: AtomicI32::new(-1),
@@ -574,6 +591,7 @@ mod tests {
             queue: Mutex::new(Queue::default()),
             worker: thread::current(),
             stop: AtomicI32::new(0),
+            connection_closed: AtomicBool::new(true),
             initialized: AtomicBool::new(true),
             diagnostics: AtomicUsize::new(0),
             exit: AtomicI32::new(-1),

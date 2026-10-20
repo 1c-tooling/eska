@@ -722,6 +722,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "eska-analyzer"
+version = "0.14.3"
+dependencies = [
+ "eska-project-core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "toml",
+ "toml_edit",
+]
+
+[[package]]
 name = "eska-presentation"
 version = "0.14.3"
 dependencies = [
@@ -736,6 +748,8 @@ version = "0.14.3"
 dependencies = [
  "base64 0.23.1",
  "clap",
+ "ctrlc",
+ "eska-analyzer",
  "eska-presentation",
  "eska-project-core",
  "serde",

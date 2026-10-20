@@ -11,6 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+mod analyzer;
 mod editing;
 mod numbering;
 mod picture;
@@ -169,7 +170,7 @@ fn targeted_support_protocol_is_bounded_and_locale_independent() {
         let mut client = Client::new(locale);
         let initialize = client.initialize(locale);
         assert_eq!(initialize["capabilities"]["supportFiles"], true);
-        assert_eq!(initialize["apiVersion"]["minor"], 11);
+        assert_eq!(initialize["apiVersion"]["minor"], 12);
         let open = client.open(&directory.0);
         let result = client.ok(
             "metadata/supportFiles",

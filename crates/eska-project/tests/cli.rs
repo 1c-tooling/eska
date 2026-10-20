@@ -413,3 +413,92 @@ fn metadata_version_and_help_are_available_without_the_wrapper() {
         }
     }
 }
+
+/// Freshness requires no executable, does not create state and yields locale-independent JSON.
+#[test]
+fn analyzer_configuration_status_is_read_only_and_independent_of_locale() {
+    let fixture = TestDir::new();
+    export(&fixture.0.join("src"), "configuration");
+    success(
+        &command(&fixture.0, "en")
+            .args(["init", "--format", "json"])
+            .output()
+            .unwrap(),
+    );
+    for expected in ["missing", "migration_required"] {
+        if expected == "migration_required" {
+            fs::write(
+                fixture.0.join("bsl-analyzer.toml"),
+                "[source]\nroot='src'\n[diagnostics.parameters]\nLineLength=false\n",
+            )
+            .unwrap();
+        }
+        let en = command(&fixture.0, "en")
+            .args(["analyzer-config", "status", "--format", "json"])
+            .output()
+            .unwrap();
+        let ru = command(&fixture.0, "ru")
+            .args(["analyzer-config", "status", "--format", "json"])
+            .output()
+            .unwrap();
+        assert_eq!(en.status.code(), Some(1));
+        assert_eq!(ru.status.code(), Some(1));
+        assert_eq!(en.stdout, ru.stdout);
+        let result: Value = serde_json::from_slice(&en.stdout).unwrap();
+        assert_eq!(result["status"], expected);
+        assert!(!fixture.0.join(".eska").exists());
+    }
+}
+
+/// The real published analyzer validates preview and migration through the standalone process CLI.
+#[test]
+#[ignore = "requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2"]
+fn analyzer_migration_process_uses_real_check_config_and_stable_json() {
+    let fixture = TestDir::new();
+    export(&fixture.0.join("src"), "configuration");
+    success(
+        &command(&fixture.0, "en")
+            .args(["init", "--format", "json"])
+            .output()
+            .unwrap(),
+    );
+    let original =
+        b"# retain original\r\n[source]\r\nroot='src'\r\n[formatting]\r\nindent_size=2\r\n";
+    fs::write(fixture.0.join("bsl-analyzer.toml"), original).unwrap();
+    let args = ["analyzer-config", "migrate", "--format", "json"];
+    let en = success(&command(&fixture.0, "en").args(args).output().unwrap());
+    let ru = success(&command(&fixture.0, "ru").args(args).output().unwrap());
+    assert_eq!(en, ru);
+    let token = en["preview"]["token"].as_str().unwrap();
+    let applied = success(
+        &command(&fixture.0, "ru")
+            .args([
+                "analyzer-config",
+                "migrate",
+                "--apply",
+                "--preview-token",
+                token,
+                "--format",
+                "json",
+            ])
+            .output()
+            .unwrap(),
+    );
+    assert_eq!(applied["status"], "migrated");
+    let backup = applied["backup"]["value"].as_str().unwrap();
+    assert_eq!(fs::read(backup).unwrap(), original);
+    let en = success(
+        &command(&fixture.0, "en")
+            .args(["analyzer-config", "prepare", "--format", "json"])
+            .output()
+            .unwrap(),
+    );
+    let ru = success(
+        &command(&fixture.0, "ru")
+            .args(["analyzer-config", "prepare", "--format", "json"])
+            .output()
+            .unwrap(),
+    );
+    assert_eq!(en, ru);
+    assert_eq!(en["changed"], false);
+}

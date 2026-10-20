@@ -649,3 +649,50 @@ Capability `unsignedIntegerProperties:true` требует minor 11 и
 `readOnlyProperties.reason:"client_version"`; чтение значения сохраняется.
 Отрицательные, дробные значения и переполнение отклоняются до изменения XML.
 CLI JSON использует тот же вариант схемы без handshake.
+
+### API 1.12: контекст и конфигурация внешнего анализатора
+
+Capability `analyzerConfiguration:true` доступна при запросе minor 12.
+Прежние клиенты продолжают использовать Metadata API без анализатора.
+Новые методы не являются LSP; только явные prepare/migration requests
+запускают опубликованный executable для `--version`, `contract`, `check-config`.
+Дерево, свойства и support от него не зависят.
+
+Параметр `start` — абсолютный обратимый path DTO. Необязательный
+`application` — имя приложения из ESKA; explicit null отклоняется.
+
+| Request | Дополнительные параметры | Результат |
+|---|---|---|
+| `analyzer/context` | — | JSON контекста самостоятельного project CLI |
+| `analyzer/configStatus` | — | Read-only freshness, ownership, fingerprint и preview token |
+| `analyzer/configPrepare` | `analyzer`, optional `timeoutSeconds`, `switchContext` | Тот же JSON подготовки, что в CLI |
+| `analyzer/migrationPreview` | `analyzer`, optional `timeoutSeconds` | Полный preview, политика, конфликты, оба предлагаемых текста и token |
+| `analyzer/migrationApply` | `analyzer`, `previewToken`, optional `timeoutSeconds` | Подготовленный конфиг и path DTO сохранённого оригинала |
+| `analyzer/acquire` | — | Подготовленный актуальный конфиг и `leaseId` |
+| `analyzer/release` | Только `leaseId`, без `start` | null |
+
+`analyzer` — абсолютный path DTO выбранного executable, без поиска полной ESKA.
+`timeoutSeconds` — целое 1–600, default 60 на subprocess. Все методы —
+request-only. Они не требуют metadata generation и могут выполняться до
+`workspace/open`; owning root определяется общим resolver.
+
+Ошибка возвращает domain `analyzer_configuration_failed`, details
+`{code,data}` совпадают с CLI. Localized/upstream сообщения в JSON не включаются.
+Существующие `unknown_session`, `invalid_state` и transport errors сохраняются.
+При отклонении `check-config` отдельная notification `analyzer/validationOutput`
+содержит исходные `stdout`/`stderr` upstream для output panel; она не входит
+в стабильную структуру ошибки и может содержать время и временный путь кандидата.
+
+Один connection удерживает не более одного shared lease. Его можно получить
+только для точного актуального config. Другие окна того же контекста получают
+shared lease, запись требует exclusive lock. До запуска своего LSP клиент
+обязан acquire; перед изменением контекста — остановить LSP и release.
+Ложный или уже освобождённый id даёт `unknown_analyzer_lease`.
+`workspace/close`, `shutdown` и закрытие процесса освобождают lease.
+
+`$/cancelRequest` прерывает уже работающий validator; EOF отменяет его и
+освобождает ресурсы соединения. Публикация прошедшего проверку файла —
+commit boundary: пришедшая после неё отмена не переименовывается в неуспех.
+Миграция публикует оба конфига под одной exclusive lock с откатом обычной
+ошибки второй записи. Не участвующие в блокировке внешние редакторы проверяются
+по точным исходным байтам перед заменой.

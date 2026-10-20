@@ -31,6 +31,10 @@ pub struct Failure {
 }
 
 impl Failure {
+    /// Share a checked core error's localized message with the analyzer command presentation.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
     /// Keep the category and coordinates separate from its human translation.
     pub const fn new(code: &'static str, data: Value, message: String) -> Self {
         Self {

@@ -37,6 +37,8 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Commands {
     #[command(disable_help_flag = true)]
+    AnalyzerConfig(crate::analyzer_config::ConfigArgs),
+    #[command(disable_help_flag = true)]
     Validate(ValidateArgs),
     #[command(disable_help_flag = true)]
     Context(ContextArgs),
@@ -126,6 +128,7 @@ pub fn run() -> ExitCode {
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
     match cli.command.as_ref() {
+        Some(Commands::AnalyzerConfig(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Metadata(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Version(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Context(args)) => context::run(&cli.project_dir, args, &localizer),
@@ -145,6 +148,7 @@ fn localized(localizer: &Localizer) -> clap::Command {
         .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
         .mut_arg("version", |arg| arg.help(localizer.text("cli-version")))
         .mut_subcommands(|command| match command.get_name() {
+            "analyzer-config"=>crate::analyzer_config::localize(command,localizer),
             "metadata" => standalone_help(crate::metadata::localize(command, localizer)),
             "version" => standalone_help(crate::version::localize(command, localizer)),
             _ => localize_operation(command, localizer),

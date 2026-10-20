@@ -17,6 +17,8 @@ workspace = true
 [dependencies]
 eska-project-core = { path = "../eska-project-core" }
 eska-presentation = { path = "../eska-presentation" }
+eska-analyzer = { path = "../eska-analyzer" }
+ctrlc = { version = "3.5.2", features = ["termination"] }
 base64 = { version = "0.23.1", default-features = false, features = ["std"] }
 clap = { version = "4.6.6", features = ["derive", "string"] }
 serde = { version = "1.0.229", features = ["derive"] }

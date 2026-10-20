@@ -19,6 +19,8 @@
 `eska-project`: создание и подключение Designer XML, проверка корневых
 дескрипторов, контексты приложений, существующие metadata/version без полной
 ESKA, Git и платформы 1С. Сборка: `cargo build -p eska-project`.
+Производный [конфиг bsl-analyzer и миграция](docs/analyzer-configuration.md)
+доступны через `eska-project analyzer-config` и Metadata API 1.12.
 
 [Установка](#установка) · [Быстрый старт](#быстрый-старт) ·
 [Работа над задачей](#работа-над-задачей) · [Сборка](#сборка) ·

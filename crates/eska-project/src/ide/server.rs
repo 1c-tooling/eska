@@ -11,6 +11,7 @@ use eska_project_core::project::{
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
+use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
 pub(super) struct ProjectState {
@@ -28,6 +29,7 @@ pub(super) struct Session {
     pub projects: Vec<ProjectState>,
 }
 pub(super) struct Server {
+    pub analyzer_lease: Option<(String, eska_analyzer::configuration::Lease)>,
     pub initialized: bool,
     pub closing: bool,
     pub session: Option<Session>,
@@ -42,6 +44,7 @@ impl Server {
     /// Construct locale-independent protocol state without discovering a project.
     pub(super) fn new() -> Result<Self, eska_presentation::localization::LocalizationError> {
         Ok(Self {
+            analyzer_lease: None,
             initialized: false,
             closing: false,
             session: None,
@@ -59,6 +62,8 @@ impl Server {
         method: &str,
         args: &Value,
         events: &mut Vec<Value>,
+        cancelled: &AtomicBool,
+        connection_closed: &AtomicBool,
     ) -> Result<Value, Value> {
         if self.closing || (!self.initialized && method != "initialize") {
             return Err(domain(
@@ -98,15 +103,20 @@ impl Server {
             }
             "workspace/close" => {
                 self.check_session(args)?;
+                self.analyzer_lease = None;
                 self.session = None;
                 Ok(Value::Null)
             }
             "shutdown" => {
+                self.analyzer_lease = None;
                 self.session = None;
                 self.closing = true;
                 Ok(Value::Null)
             }
             method if super::metadata::is_method(method) => self.metadata(method, args, events),
+            method if super::analyzer::is_method(method) && self.client_minor >= 12 => {
+                self.analyzer(method, args, cancelled, connection_closed, events)
+            }
             _ => Err(error(-32601)),
         }
     }
@@ -145,10 +155,10 @@ impl Server {
         {
             return Err(error(-32602));
         }
-        if input.api_version.major != 1 || input.api_version.minor > 11 {
+        if input.api_version.major != 1 || input.api_version.minor > 12 {
             return Err(domain(
                 "unsupported_version",
-                json!({"requested":args["apiVersion"],"supported":{"major":1,"minor":11}}),
+                json!({"requested":args["apiVersion"],"supported":{"major":1,"minor":12}}),
             ));
         }
         self.initialized = true;
@@ -156,7 +166,7 @@ impl Server {
         self.property_editing =
             input.api_version.minor >= 6 && input.allow_property_edits == Some(true);
         Ok(
-            json!({"apiVersion":{"major":1,"minor":11},"server":{"name":"eska","version":env!("CARGO_PKG_VERSION")},"capabilities":{"propertyEditing":self.property_editing,"unsignedIntegerProperties":self.property_editing && self.client_minor >= 11,"linkedPropertyEdits":self.property_editing && self.client_minor >= 10,"metadataRename":self.property_editing && self.client_minor >= 9,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":true,"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
+            json!({"apiVersion":{"major":1,"minor":12},"server":{"name":"eska","version":env!("CARGO_PKG_VERSION")},"capabilities":{"analyzerConfiguration":self.client_minor>=12,"propertyEditing":self.property_editing,"unsignedIntegerProperties":self.property_editing && self.client_minor >= 11,"linkedPropertyEdits":self.property_editing && self.client_minor >= 10,"metadataRename":self.property_editing && self.client_minor >= 9,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":true,"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
         )
     }
 

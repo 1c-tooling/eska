@@ -4,6 +4,7 @@ pub mod ide;
 pub mod metadata;
 pub mod version;
 
+mod analyzer_config;
 mod cli;
 mod context;
 mod operations;

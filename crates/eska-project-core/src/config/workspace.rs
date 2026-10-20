@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     application::{
-        AnalysisOptions, AnalysisSettings, Application, RawAnalysis, RawApplication,
-        SettingsError as AnalysisSettingsError,
+        AnalysisOptions, AnalysisSettings, Application, RawAnalysis, RawApplication, RawTools,
+        SettingsError as AnalysisSettingsError, ToolSettings,
     },
     project::build::{BuildSettings, BuildSettingsError},
     project::{ProjectName, WorkspaceMember},
@@ -30,6 +30,7 @@ struct RawWorkspaceDocument {
     build: Option<RawBuild>,
     vcs: Option<RawVcs>,
     analysis: Option<RawAnalysis>,
+    tools: Option<RawTools>,
     #[serde(default)]
     applications: BTreeMap<String, RawApplication>,
 }
@@ -50,6 +51,8 @@ struct SerializedWorkspaceDocument<'a> {
     analysis: Option<&'a AnalysisOptions>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     applications: &'a BTreeMap<ProjectName, Application>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tools: Option<&'a ToolSettings>,
 }
 
 #[derive(Serialize)]
@@ -104,8 +107,13 @@ impl WorkspaceConfig {
             .map(|vcs| super::workflow::parse(vcs.workflow))
             .transpose()
             .map_err(WorkspaceConfigError::InvalidWorkflow)?;
-        let analysis = AnalysisSettings::parse(document.analysis, document.applications, true)
-            .map_err(|error| WorkspaceConfigError::InvalidAnalysis(Box::new(error)))?;
+        let analysis = AnalysisSettings::parse(
+            document.analysis,
+            document.applications,
+            document.tools,
+            true,
+        )
+        .map_err(|error| WorkspaceConfigError::InvalidAnalysis(Box::new(error)))?;
 
         Ok(Self {
             members: document.workspace.members,
@@ -139,6 +147,7 @@ impl WorkspaceConfig {
             }),
             analysis: (!self.analysis.options().is_empty()).then_some(self.analysis.options()),
             applications: self.analysis.applications(),
+            tools: (!self.analysis.tools().is_empty()).then_some(self.analysis.tools()),
         };
         toml::to_string_pretty(&document)
     }

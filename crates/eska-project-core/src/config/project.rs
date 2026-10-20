@@ -146,8 +146,13 @@ impl ProjectConfig {
             configuration =
                 configuration.with_workflow_settings(super::workflow::parse(vcs.workflow)?);
         }
-        let analysis = AnalysisSettings::parse(document.analysis, document.applications, false)
-            .map_err(|error| ProjectConfigError::InvalidAnalysis(Box::new(error)))?;
+        let analysis = AnalysisSettings::parse(
+            document.analysis,
+            document.applications,
+            document.tools,
+            false,
+        )
+        .map_err(|error| ProjectConfigError::InvalidAnalysis(Box::new(error)))?;
         configuration = configuration.with_analysis_settings(analysis);
         Ok(Self {
             name,
@@ -211,6 +216,8 @@ impl ProjectConfig {
             analysis: (!self.configuration.analysis_settings().options().is_empty())
                 .then_some(self.configuration.analysis_settings().options()),
             applications: self.configuration.analysis_settings().applications(),
+            tools: (!self.configuration.analysis_settings().tools().is_empty())
+                .then_some(self.configuration.analysis_settings().tools()),
         };
 
         toml::to_string_pretty(&document)

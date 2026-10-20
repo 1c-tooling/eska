@@ -42,6 +42,12 @@ crates/eska-project-core/
         ├── support/tests.rs        # support-rule fixtures
         ├── version.rs              # narrow Properties/Version reads and writes
         └── templates.rs            # project scaffold plans without filesystem writes
+crates/eska-analyzer/
+└── src/
+    ├── configuration.rs            # derived config, snapshots, ownership and leases
+    ├── migration.rs                # preview/token, complete policy import and rollback
+    ├── process.rs                  # published executable contract, bounded I/O and cancellation
+    └── storage.rs                  # sibling staging files and OS locks
 crates/eska-presentation/
 ├── locales/                        # common Fluent/catalog source for all tools
 └── src/                            # localization, paths, locale bootstrap and core diagnostics
@@ -49,6 +55,7 @@ crates/eska-project/
 └── src/
     ├── main.rs, cli.rs              # standalone project CLI
     ├── context.rs, operations.rs    # checked project commands without native runtimes
+    ├── analyzer_config.rs          # config CLI; no embedded BSL engine
     ├── metadata.rs, version.rs     # shared legacy command presentation
     └── ide/                        # Metadata API framing, DTOs and server lifecycle
 src/

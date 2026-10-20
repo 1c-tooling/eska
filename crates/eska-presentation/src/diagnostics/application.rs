@@ -31,6 +31,11 @@ pub fn present(
 /// Describe the rejected relationship without turning machine-facing names into translated keys.
 fn reason(localizer: &Localizer, error: &SettingsError) -> String {
     match error {
+        SettingsError::ManagedAnalyzerField { field } => localizer.format(
+            "analysis-managed-field",
+            &[("field", LocalizationValue::Text(field))],
+        ),
+        SettingsError::InvalidAnalyzerPolicy => localizer.text("analysis-policy-invalid"),
         SettingsError::InvalidName { field, value } => localizer.format(
             "analysis-name-invalid",
             &[

@@ -46,7 +46,7 @@ pub fn run(start: &Path, args: &ContextArgs, localizer: &Localizer) -> ExitCode 
 }
 
 /// Keep paths reversible and machine keys independent of the selected presentation language.
-fn document(context: &AnalysisContext) -> Value {
+pub fn document(context: &AnalysisContext) -> Value {
     let sources: Vec<_> = context.sources().iter().map(|source| json!({
         "member":source.member(),
         "role":match source.role() {SourceRole::Configuration=>"configuration", SourceRole::Extension=>"extension", SourceRole::ExternalObject=>"external_object"},
@@ -66,7 +66,7 @@ fn document(context: &AnalysisContext) -> Value {
 }
 
 /// Preserve ambiguity and invalid context as failures, including valid standalone limited contexts.
-fn failure(error: &ContextError, start: &Path, localizer: &Localizer) -> Failure {
+pub fn failure(error: &ContextError, start: &Path, localizer: &Localizer) -> Failure {
     match error {
         ContextError::Discovery(error) => response::discovery(error, localizer),
         ContextError::Source(error) => response::source(error, start, localizer),
