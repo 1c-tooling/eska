@@ -659,7 +659,13 @@ fn rejects_missing_sources_unsafe_paths_and_changes_after_detection() {
     let plan = init::inspect(&fixture.0, None).expect("plan");
     descriptor(&fixture.0.join("src"), "extension");
     assert!(matches!(
-        init::apply(&plan, WorkflowPreset::Trunk, BuildSettings::default(), true),
+        init::apply(
+            &plan,
+            WorkflowPreset::Trunk,
+            BuildSettings::default(),
+            true,
+            &|| false
+        ),
         Err(InitError::ChangedSource { .. })
     ));
     assert!(!fixture.0.join("eska.toml").exists());
@@ -714,6 +720,7 @@ fn internal_source_symlink_is_canonicalized_without_becoming_ambiguous() {
         WorkflowPreset::Trunk,
         BuildSettings::default(),
         false,
+        &|| false,
     )
     .expect("init");
     assert_eq!(

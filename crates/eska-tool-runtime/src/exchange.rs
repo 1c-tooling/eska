@@ -11,13 +11,14 @@ use std::{
     io,
     path::Path,
     process::{Command, Stdio},
-    sync::{atomic::Ordering, mpsc},
+    sync::{Arc, atomic::Ordering, mpsc},
     thread,
     time::{Duration, Instant},
 };
 
 /// One sticky cancellation scope spans selection, preparation, confirmation and publication.
-pub struct Operation(SignalState);
+#[derive(Clone)]
+pub struct Operation(Arc<SignalState>);
 
 impl Operation {
     /// Install only this operation's signal subscriptions before invoking component work.
@@ -25,7 +26,9 @@ impl Operation {
     /// # Errors
     /// Returns OS handler installation failures before creating a child or changing files.
     pub fn new() -> Result<Self, Error> {
-        SignalState::new().map(Self).map_err(Error::Signal)
+        SignalState::new()
+            .map(|state| Self(Arc::new(state)))
+            .map_err(Error::Signal)
     }
 
     /// A received cancellation remains set until the entire surrounding operation is dropped.

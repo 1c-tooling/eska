@@ -10,6 +10,7 @@ pub use core::WorkspaceCreationPlan;
 /// Native failures remain typed in the caller without adding Git/platform dependencies to core.
 #[derive(Debug)]
 pub enum CreationFailure {
+    Cancelled,
     Native(crate::onboarding::artifact::Failure),
     Vcs(eska_tool_runtime::Error),
 }
@@ -26,12 +27,16 @@ pub fn create(
     project_type: ProjectType,
     workflow: WorkflowPreset,
     initialize_vcs: bool,
+    cancelled: &dyn Fn() -> bool,
 ) -> Result<Project, CreationError> {
     let destination = resolve_destination(destination)?;
+    check_cancelled(cancelled).map_err(CreationError::Operation)?;
     let vcs = preflight_vcs(initialize_vcs)?;
     let config = ProjectConfig::new(project_type).with_workflow(workflow);
     core::create_with(&destination, &config, |root| {
-        initialize(root, vcs.as_deref())
+        check_cancelled(cancelled)?;
+        initialize(root, vcs.as_deref())?;
+        check_cancelled(cancelled)
     })
 }
 
@@ -48,7 +53,13 @@ pub fn create_imported(
     let vcs = preflight_vcs(initialize_vcs)?;
     in_new_directory(&destination, |root| {
         let (config, artifact) = prepare(root.path())?;
-        publish_project(root, &config, vcs.as_deref(), Some(&artifact.sources()))
+        publish_project(
+            root,
+            &config,
+            vcs.as_deref(),
+            Some(&artifact.sources()),
+            &|| artifact.was_interrupted(),
+        )
     })
 }
 
@@ -70,8 +81,10 @@ pub fn inspect_workspace_member(
 pub fn create_workspace_member(
     plan: &WorkspaceCreationPlan,
     project_type: ProjectType,
+    cancelled: &dyn Fn() -> bool,
 ) -> Result<Project, CreationError> {
-    core::create_workspace_member(plan, project_type)
+    let config = ProjectConfig::new(project_type);
+    core::create_member_configured(plan, &config, None, || check_cancelled(cancelled))
 }
 
 /// Publish native XML using the same member transaction as ordinary project creation.
@@ -83,7 +96,9 @@ pub fn create_imported_member(
     config: &ProjectConfig,
     artifact: &PreparedSources,
 ) -> Result<Project, CreationError> {
-    core::create_imported_member(plan, config, &artifact.sources())
+    core::create_imported_member(plan, config, &artifact.sources(), || {
+        check_cancelled(&|| artifact.was_interrupted())
+    })
 }
 
 /// Preserve legacy preflight before interactive prompts.
@@ -115,8 +130,22 @@ fn publish_project(
     config: &ProjectConfig,
     vcs: Option<&Path>,
     sources: Option<&Path>,
+    cancelled: &dyn Fn() -> bool,
 ) -> Result<Project, CreationError> {
-    core::publish_project(root, config, sources, |root| initialize(root, vcs))
+    core::publish_project(root, config, sources, |root| {
+        check_cancelled(cancelled)?;
+        initialize(root, vcs)?;
+        check_cancelled(cancelled)
+    })
+}
+
+/// The last successful guard defines publication; earlier cancellation must unwind the owner.
+fn check_cancelled(cancelled: &dyn Fn() -> bool) -> Result<(), CreationFailure> {
+    if cancelled() {
+        Err(CreationFailure::Cancelled)
+    } else {
+        Ok(())
+    }
 }
 
 /// Share exclusive directory ownership with preparation and native rollback tests.
@@ -244,7 +273,7 @@ mod tests {
         fs::remove_dir(existing.join("src")).unwrap();
 
         assert!(matches!(
-            create_workspace_member(&plan, ProjectType::Processing),
+            create_workspace_member(&plan, ProjectType::Processing, &|| false),
             Err(CreationError::WorkspaceValidation(_))
         ));
         assert_eq!(fs::read(manifest).unwrap(), original);

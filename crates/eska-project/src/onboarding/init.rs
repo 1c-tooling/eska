@@ -43,7 +43,28 @@ pub struct InitArgs {
 }
 
 impl InitArgs {
+    /// Keep one cancellation owner alive until every file transaction has committed or rolled back.
     pub fn run(&self, base: &Path, localizer: &Localizer) -> ExitCode {
+        let scope = match eska_tool_runtime::Operation::new() {
+            Ok(scope) => scope,
+            Err(error) => {
+                eprintln!(
+                    "{}",
+                    eska_presentation::components::present(&error, localizer)
+                );
+                return ExitCode::FAILURE;
+            }
+        };
+        self.run_interruptible(base, localizer, &scope)
+    }
+
+    /// Resolve options and context under the same operation scope as the final write.
+    fn run_interruptible(
+        &self,
+        base: &Path,
+        localizer: &Localizer,
+        scope: &eska_tool_runtime::Operation,
+    ) -> ExitCode {
         if self
             .workflow
             .as_deref()
@@ -67,13 +88,18 @@ impl InitArgs {
             }
         };
         if let Some(workspace) = workspace {
-            return self.run_workspace(plan, &workspace, localizer);
+            return self.run_workspace(plan, &workspace, localizer, scope);
         }
-        self.run_standalone(&plan, localizer)
+        self.run_standalone(&plan, localizer, scope)
     }
 
     /// Select standalone policy and platform before writing any project files.
-    fn run_standalone(&self, plan: &init::InitPlan, localizer: &Localizer) -> ExitCode {
+    fn run_standalone(
+        &self,
+        plan: &init::InitPlan,
+        localizer: &Localizer,
+        scope: &eska_tool_runtime::Operation,
+    ) -> ExitCode {
         let mut workflow = match self.workflow.as_deref() {
             Some(value) => {
                 let Some(preset) = WorkflowPreset::from_name(value) else {
@@ -116,11 +142,13 @@ impl InitArgs {
         let Some(workflow) = workflow else {
             return ExitCode::from(2);
         };
-        let build = match self.build_settings(localizer) {
+        let build = match self.build_settings(localizer, scope) {
             Ok(build) => build,
             Err(error) => return platform_failure(&error),
         };
-        match init::apply(plan, workflow, build, !self.no_vcs) {
+        match init::apply(plan, workflow, build, !self.no_vcs, &|| {
+            scope.is_cancelled()
+        }) {
             Ok(project) => {
                 println!(
                     "{}",
@@ -147,6 +175,7 @@ impl InitArgs {
         plan: init::InitPlan,
         workspace: &crate::onboarding::project::Workspace,
         localizer: &Localizer,
+        scope: &eska_tool_runtime::Operation,
     ) -> ExitCode {
         if self.workflow.is_some() {
             eprintln!("{}", localizer.text("workspace-onboarding-workflow-owned"));
@@ -179,14 +208,14 @@ impl InitArgs {
             || self.platform.select_platform
             || workspace.build_settings().platform_version().is_none()
         {
-            match self.build_settings(localizer) {
+            match self.build_settings(localizer, scope) {
                 Ok(build) => plan.with_build_settings(build),
                 Err(error) => return platform_failure(&error),
             }
         } else {
             plan
         };
-        match init::apply_workspace_member(&plan) {
+        match init::apply_workspace_member(&plan, &|| scope.is_cancelled()) {
             Ok(project) => {
                 println!(
                     "{}",
@@ -208,8 +237,12 @@ impl InitArgs {
     }
 
     /// Store the selected version without persisting machine-local runner settings.
-    fn build_settings(&self, localizer: &Localizer) -> Result<BuildSettings, Failure> {
-        let tool = self.platform.resolve_for_init(localizer)?;
+    fn build_settings(
+        &self,
+        localizer: &Localizer,
+        scope: &eska_tool_runtime::Operation,
+    ) -> Result<BuildSettings, Failure> {
+        let tool = self.platform.resolve_for_init(localizer, scope)?;
         BuildSettings::new(tool.version().as_str(), "build".into()).map_err(|_| {
             Failure::new(
                 "platform-version-invalid",
@@ -249,6 +282,9 @@ fn present(error: &InitError, localizer: &Localizer) -> String {
         InitError::DescriptorTooLarge { path } => ("init-descriptor-large", path),
         InitError::Operation(init::InitFailure::ExistingGit { path, .. }) => {
             ("init-git-invalid", path)
+        }
+        InitError::Operation(init::InitFailure::Cancelled) => {
+            return localizer.text("init-cancelled");
         }
         InitError::ChangedSource { path } => ("init-source-changed", path),
         InitError::Config(_) => return localizer.text("init-source-path-invalid"),

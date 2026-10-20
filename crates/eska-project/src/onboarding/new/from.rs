@@ -24,8 +24,13 @@ use super::{
 };
 
 /// Report one creation result through the existing localized CLI contract.
-pub fn run(args: &NewArgs, base: &Path, localizer: &Localizer) -> ExitCode {
-    match execute(args, base, localizer) {
+pub fn run(
+    args: &NewArgs,
+    base: &Path,
+    localizer: &Localizer,
+    scope: &eska_tool_runtime::Operation,
+) -> ExitCode {
+    match execute(args, base, localizer, scope) {
         Ok(project) => {
             artifact::success(&localizer.format(
                 "artifact-created",
@@ -63,6 +68,7 @@ fn execute(
     args: &NewArgs,
     base: &Path,
     localizer: &Localizer,
+    scope: &eska_tool_runtime::Operation,
 ) -> Result<crate::onboarding::project::Project, Failure> {
     let workspace = onboarding::find_workspace(base).map_err(|error| {
         Failure::new(
@@ -76,6 +82,9 @@ fn execute(
     })?;
     let creation_error = |error| match error {
         create::CreationError::Operation(create::CreationFailure::Native(error)) => error,
+        create::CreationError::Operation(create::CreationFailure::Cancelled) => {
+            Failure::new("cancelled", localizer.text("artifact-cancelled"))
+        }
         error => Failure::new("creation", super::present(&error, localizer)),
     };
     let (destination, member) = if let Some(workspace) = &workspace {
@@ -107,7 +116,7 @@ fn execute(
     let inherited = workspace
         .as_ref()
         .and_then(|workspace| workspace.build_settings().platform_version());
-    let tool = args.platform.resolve(inherited, true, localizer)?;
+    let tool = args.platform.resolve(inherited, true, localizer, scope)?;
     let input = args
         .from
         .as_ref()

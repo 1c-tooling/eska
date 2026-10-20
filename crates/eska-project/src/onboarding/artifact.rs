@@ -80,6 +80,7 @@ impl ToolSelection {
 pub struct PreparedSources {
     staging: Staging,
     identity: Identity,
+    scope: Operation,
 }
 
 impl PreparedSources {
@@ -92,6 +93,12 @@ impl PreparedSources {
     #[must_use]
     pub fn sources(&self) -> PathBuf {
         self.staging.path().join("sources")
+    }
+
+    /// Retain the same sticky cancellation flag through source publication and enrollment.
+    #[must_use]
+    pub fn was_interrupted(&self) -> bool {
+        self.scope.is_cancelled()
     }
 }
 
@@ -110,12 +117,17 @@ impl PlatformArgs {
         inherited: Option<&PlatformVersion>,
         _: bool,
         localizer: &Localizer,
+        scope: &Operation,
     ) -> Result<ToolSelection, Failure> {
-        self.select(inherited, false, localizer)
+        self.select(inherited, false, localizer, scope)
     }
     /// Keep initialization-specific selection and cancellation in the native owner.
-    pub fn resolve_for_init(&self, localizer: &Localizer) -> Result<ToolSelection, Failure> {
-        self.select(None, true, localizer)
+    pub fn resolve_for_init(
+        &self,
+        localizer: &Localizer,
+        scope: &Operation,
+    ) -> Result<ToolSelection, Failure> {
+        self.select(None, true, localizer, scope)
     }
     /// Bind one executable and one sticky cancellation scope across both native requests.
     fn select(
@@ -123,6 +135,7 @@ impl PlatformArgs {
         inherited: Option<&PlatformVersion>,
         init: bool,
         localizer: &Localizer,
+        scope: &Operation,
     ) -> Result<ToolSelection, Failure> {
         let cancellation = if init {
             "init-cancelled"
@@ -131,7 +144,6 @@ impl PlatformArgs {
         };
         let failure = |error| component_failure(error, localizer, cancellation);
         let binary = resolve(Component::Build).map_err(failure)?;
-        let scope = Operation::new().map_err(failure)?;
         let language = localizer.locale().as_str();
         let options = self.options();
         let mut args: Vec<OsString> = ["--lang", language, "__bridge", "select-platform"]
@@ -151,7 +163,7 @@ impl PlatformArgs {
         if let Some(version) = inherited {
             args.extend(["--inherited".into(), version.as_str().into()]);
         }
-        let data = exchange(Component::Build, &binary, &args, "select_platform", &scope)
+        let data = exchange(Component::Build, &binary, &args, "select_platform", scope)
             .map_err(failure)?;
         let version = data
             .as_object()
@@ -165,7 +177,7 @@ impl PlatformArgs {
             version,
             options,
             language,
-            scope,
+            scope: scope.clone(),
         })
     }
     /// Preserve OS-native option values; command lines never pass through a shell.
@@ -198,6 +210,13 @@ pub fn unpack(
     _: bool,
     localizer: &Localizer,
 ) -> Result<PreparedSources, Failure> {
+    if tool.scope.is_cancelled() {
+        return Err(component_failure(
+            Error::Cancelled,
+            localizer,
+            "artifact-cancelled",
+        ));
+    }
     let staging =
         Staging::create(destination).map_err(|error| structural_failure(&error, localizer))?;
     let output = staging.path().join("sources");
@@ -224,7 +243,11 @@ pub fn unpack(
     if data != expected {
         return Err(failure(Error::InvalidResponse));
     }
-    Ok(PreparedSources { staging, identity })
+    Ok(PreparedSources {
+        staging,
+        identity,
+        scope: tool.scope.clone(),
+    })
 }
 
 /// Preserve known native error codes after their localized text has already been emitted.

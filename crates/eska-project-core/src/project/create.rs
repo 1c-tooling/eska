@@ -151,7 +151,7 @@ pub fn create_workspace_member<E>(
     project_type: ProjectType,
 ) -> Result<Project, CreationError<E>> {
     let config = ProjectConfig::new(project_type).with_name(plan.name.clone());
-    create_member_configured(plan, &config, None)
+    create_member_configured(plan, &config, None, || Ok(()))
 }
 
 /// Create and enroll prepared XML sources with optional explicit platform overrides.
@@ -162,12 +162,13 @@ pub fn create_imported_member<E>(
     plan: &WorkspaceCreationPlan,
     config: &ProjectConfig,
     sources: &Path,
+    verify: impl Fn() -> Result<(), E>,
 ) -> Result<Project, CreationError<E>> {
     let config = config.clone().with_name(plan.name.clone());
-    create_member_configured(plan, &config, Some(sources))
+    create_member_configured(plan, &config, Some(sources), verify)
 }
 
-/// Publish member files before enrolling them in the shared workspace manifest.
+/// Publish member files and verify caller state before committing the shared workspace enrollment.
 ///
 /// # Errors
 /// Preserves unrelated files and restores the exact root manifest on ordinary failure.
@@ -175,7 +176,9 @@ pub fn create_member_configured<E>(
     plan: &WorkspaceCreationPlan,
     config: &ProjectConfig,
     sources: Option<&Path>,
+    verify: impl Fn() -> Result<(), E>,
 ) -> Result<Project, CreationError<E>> {
+    verify().map_err(CreationError::Operation)?;
     let config = config.clone().with_name(plan.name.clone());
     let config = &config;
     let template = Template::workspace_config(config).map_err(CreationError::Template)?;
@@ -209,6 +212,7 @@ pub fn create_member_configured<E>(
         if let Some(sources) = sources {
             install_sources(&plan.destination, config.source(), sources)?;
         }
+        verify().map_err(CreationError::Operation)?;
         plan.enrollment
             .publish()
             .map_err(CreationError::Workspace)?;
@@ -220,12 +224,14 @@ pub fn create_member_configured<E>(
                 name: plan.name.clone(),
             });
         };
-        workspace
+        let project = workspace
             .member(&plan.name)
             .map(|member| member.project().clone())
             .ok_or_else(|| CreationError::WorkspaceMemberMissing {
                 name: plan.name.clone(),
-            })
+            })?;
+        verify().map_err(CreationError::Operation)?;
+        Ok(project)
     })();
     if let Ok(project) = result {
         return Ok(project);

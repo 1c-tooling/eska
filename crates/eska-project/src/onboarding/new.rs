@@ -44,9 +44,30 @@ pub struct NewArgs {
 }
 
 impl NewArgs {
+    /// Keep one cancellation owner alive until every file transaction has committed or rolled back.
     pub fn run(&self, base: &Path, localizer: &Localizer) -> ExitCode {
+        let scope = match eska_tool_runtime::Operation::new() {
+            Ok(scope) => scope,
+            Err(error) => {
+                eprintln!(
+                    "{}",
+                    eska_presentation::components::present(&error, localizer)
+                );
+                return ExitCode::FAILURE;
+            }
+        };
+        self.run_interruptible(base, localizer, &scope)
+    }
+
+    /// Resolve options and context under the same operation scope as the final write.
+    fn run_interruptible(
+        &self,
+        base: &Path,
+        localizer: &Localizer,
+        scope: &eska_tool_runtime::Operation,
+    ) -> ExitCode {
         if self.from.is_some() {
-            return from::run(self, base, localizer);
+            return from::run(self, base, localizer, scope);
         }
         if self.platform.is_set() {
             artifact::report("✗", &localizer.text("artifact-from-required"), "31");
@@ -68,13 +89,18 @@ impl NewArgs {
             }
         };
         if let Some(workspace) = workspace {
-            return self.run_workspace(&workspace, localizer);
+            return self.run_workspace(&workspace, localizer, scope);
         }
-        self.run_standalone(base, localizer)
+        self.run_standalone(base, localizer, scope)
     }
 
     /// Preserve standalone creation policy while styling its human result.
-    fn run_standalone(&self, base: &Path, localizer: &Localizer) -> ExitCode {
+    fn run_standalone(
+        &self,
+        base: &Path,
+        localizer: &Localizer,
+        scope: &eska_tool_runtime::Operation,
+    ) -> ExitCode {
         let destination = base.join(&self.path);
         let destination = match create::resolve_destination(&destination) {
             Ok(path) => path,
@@ -138,7 +164,9 @@ impl NewArgs {
             artifact::report("✗", &localizer.text("new-workflow-invalid"), "31");
             return ExitCode::from(2);
         };
-        match create::create(&destination, project_type, workflow, !self.no_vcs) {
+        match create::create(&destination, project_type, workflow, !self.no_vcs, &|| {
+            scope.is_cancelled()
+        }) {
             Ok(project) => {
                 artifact::success(&localizer.format(
                     "new-created",
@@ -164,6 +192,7 @@ impl NewArgs {
         &self,
         workspace: &crate::onboarding::project::Workspace,
         localizer: &Localizer,
+        scope: &eska_tool_runtime::Operation,
     ) -> ExitCode {
         let Some(name) = workspace_project_name(&self.path) else {
             artifact::report(
@@ -230,7 +259,7 @@ impl NewArgs {
             artifact::report("✗", &localizer.text("new-type-invalid"), "31");
             return ExitCode::from(2);
         };
-        match create::create_workspace_member(&plan, project_type) {
+        match create::create_workspace_member(&plan, project_type, &|| scope.is_cancelled()) {
             Ok(project) => {
                 artifact::success(&localizer.format(
                     "new-member-created",
@@ -270,6 +299,9 @@ fn present(error: &CreationError, localizer: &Localizer) -> String {
     let (key, path) = match error {
         CreationError::Operation(create::CreationFailure::Native(error)) => {
             return error.message.clone();
+        }
+        CreationError::Operation(create::CreationFailure::Cancelled) => {
+            return localizer.text("new-cancelled");
         }
         CreationError::InvalidDestination { path } => ("new-destination-invalid", path),
         CreationError::AlreadyExists { path } => ("new-destination-exists", path),

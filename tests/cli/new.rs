@@ -326,7 +326,13 @@ fn destination_symlinks_are_never_followed_or_replaced() {
         let link = fixture.0.join(name);
         symlink(&destination, &link).expect("symlink");
         assert!(matches!(
-            create::create(&link, ProjectType::Report, WorkflowPreset::Trunk, true),
+            create::create(
+                &link,
+                ProjectType::Report,
+                WorkflowPreset::Trunk,
+                true,
+                &|| false
+            ),
             Err(CreationError::AlreadyExists { .. })
         ));
         assert_eq!(fs::read_link(&link).expect("unchanged link"), destination);

@@ -12,6 +12,7 @@ pub use core::{InitPlan, WorkspaceInitPlan};
 /// Git failures remain outside the shared XML/filesystem implementation.
 #[derive(Debug)]
 pub enum InitFailure {
+    Cancelled,
     Vcs(eska_tool_runtime::Error),
     ExistingGit {
         path: PathBuf,
@@ -46,8 +47,11 @@ pub fn prepare_workspace_member(
 ///
 /// # Errors
 /// Rolls back only this call's files and exact root enrollment after an ordinary failure.
-pub fn apply_workspace_member(plan: &WorkspaceInitPlan) -> Result<Project, InitError> {
-    core::apply_workspace_member(plan)
+pub fn apply_workspace_member(
+    plan: &WorkspaceInitPlan,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<Project, InitError> {
+    core::apply_workspace_member(plan, || check_cancelled(cancelled))
 }
 
 /// Keep repository preflight before writes and execute initialization inside the shared transaction.
@@ -59,7 +63,9 @@ pub fn apply(
     workflow: WorkflowPreset,
     build: BuildSettings,
     initialize_vcs: bool,
+    cancelled: &dyn Fn() -> bool,
 ) -> Result<Project, InitError> {
+    check_cancelled(cancelled).map_err(InitError::Operation)?;
     if inspect(plan.root(), Some(plan.source()))? != *plan {
         return Err(InitError::ChangedSource {
             path: plan.root().into(),
@@ -80,9 +86,25 @@ pub fn apply(
         .map_err(InitError::Config)?
         .with_workflow(workflow)
         .with_build_settings(build);
-    core::apply_configured(plan, &config, create_git, |path| {
-        initialize_reserved_with(vcs.as_deref(), path)
-    })
+    core::apply_configured(
+        plan,
+        &config,
+        create_git,
+        |path| {
+            check_cancelled(cancelled).map_err(InitError::Operation)?;
+            initialize_reserved_with(vcs.as_deref(), path)
+        },
+        || check_cancelled(cancelled),
+    )
+}
+
+/// Keep cancellation outside the core while retaining its exact-file rollback transaction.
+fn check_cancelled(cancelled: &dyn Fn() -> bool) -> Result<(), InitFailure> {
+    if cancelled() {
+        Err(InitFailure::Cancelled)
+    } else {
+        Ok(())
+    }
 }
 
 /// Keep known repository failures distinct from broken component transport or responses.
@@ -243,7 +265,7 @@ mod tests {
         fs::remove_dir(existing.join("src")).unwrap();
 
         assert!(matches!(
-            apply_workspace_member(&plan),
+            apply_workspace_member(&plan, &|| false),
             Err(InitError::WorkspaceValidation(_))
         ));
         assert_eq!(fs::read(manifest).unwrap(), original);

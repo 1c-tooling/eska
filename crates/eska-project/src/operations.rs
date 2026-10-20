@@ -109,7 +109,7 @@ pub fn new(start: &Path, args: &NewArgs, localizer: &Localizer) -> ExitCode {
             Err(error) => return error.emit(args.format),
         };
         create::inspect_workspace_member::<Infallible>(workspace, name)
-            .and_then(|plan| create::create_member_configured(&plan, &config, None))
+            .and_then(|plan| create::create_member_configured(&plan, &config, None, || Ok(())))
     } else {
         create::create(&cli::command_path(start, &args.path), &config)
     };
@@ -156,7 +156,7 @@ pub fn init(start: &Path, args: &InitArgs, localizer: &Localizer) -> ExitCode {
                 Some(settings) => plan.with_build_settings(settings),
                 None => plan,
             };
-            init::apply_workspace_member(&plan)
+            init::apply_workspace_member(&plan, || Ok(()))
         })
     } else {
         if args.name.is_some() {

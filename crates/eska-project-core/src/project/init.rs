@@ -151,7 +151,11 @@ pub fn prepare_workspace_member<E>(
 ///
 /// # Errors
 /// Rolls back the new member manifest and exact root manifest bytes on failure.
-pub fn apply_workspace_member<E>(plan: &WorkspaceInitPlan) -> Result<Project, InitError<E>> {
+pub fn apply_workspace_member<E>(
+    plan: &WorkspaceInitPlan,
+    verify: impl Fn() -> Result<(), E>,
+) -> Result<Project, InitError<E>> {
+    verify().map_err(InitError::Operation)?;
     if inspect(&plan.detected.root, Some(&plan.detected.source))? != plan.detected {
         return Err(InitError::ChangedSource {
             path: plan.detected.root.clone(),
@@ -187,6 +191,7 @@ pub fn apply_workspace_member<E>(plan: &WorkspaceInitPlan) -> Result<Project, In
                 path: config_path.clone(),
                 source,
             })?;
+        verify().map_err(InitError::Operation)?;
         plan.enrollment.publish().map_err(InitError::Workspace)?;
         manifest_published = true;
         let context = discovery::discover_context(plan.enrollment.workspace_root())
@@ -196,12 +201,14 @@ pub fn apply_workspace_member<E>(plan: &WorkspaceInitPlan) -> Result<Project, In
                 name: plan.name.clone(),
             });
         };
-        workspace
+        let project = workspace
             .member(&plan.name)
             .map(|member| member.project().clone())
             .ok_or_else(|| InitError::WorkspaceMemberMissing {
                 name: plan.name.clone(),
-            })
+            })?;
+        verify().map_err(InitError::Operation)?;
+        Ok(project)
     })();
     drop(config_file);
     if let Ok(project) = result {
@@ -363,10 +370,10 @@ fn detect_directory<E>(directory: &Path, root: &Path) -> Result<Option<ProjectTy
 /// # Errors
 /// Refuses stale plans or mismatched settings and rolls back only exclusively owned files.
 pub fn apply(plan: &InitPlan, config: &ProjectConfig) -> Result<Project, InitError> {
-    apply_configured(plan, config, false, |_| Ok(()))
+    apply_configured(plan, config, false, |_| Ok(()), || Ok(()))
 }
 
-/// Keep a caller-owned repository initializer inside the same filesystem transaction.
+/// Keep initialization and final caller-state verification inside the same file transaction.
 ///
 /// # Errors
 /// Returns validation, serialization, initialization or exact rollback failures.
@@ -375,7 +382,9 @@ pub fn apply_configured<E>(
     config: &ProjectConfig,
     reserve_repository: bool,
     initialize: impl FnOnce(&Path) -> Result<(), InitError<E>>,
+    verify: impl Fn() -> Result<(), E>,
 ) -> Result<Project, InitError<E>> {
+    verify().map_err(InitError::Operation)?;
     if inspect(&plan.root, Some(&plan.source))? != *plan
         || config.configuration().project_type() != plan.project_type
         || config.source() != plan.source
@@ -392,7 +401,12 @@ pub fn apply_configured<E>(
         &project_files,
         reserve_repository,
         initialize,
-        || discovery::discover(&plan.root).map_err(|error| InitError::Validation(Box::new(error))),
+        || {
+            let project = discovery::discover(&plan.root)
+                .map_err(|error| InitError::Validation(Box::new(error)))?;
+            verify().map_err(InitError::Operation)?;
+            Ok(project)
+        },
     )
 }
 

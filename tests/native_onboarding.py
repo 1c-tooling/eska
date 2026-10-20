@@ -14,9 +14,16 @@ from native_build import digest, interrupt_native, snapshot, source_identity
 
 def run_matrix(args, repo, stand, fixtures):
     """Keep all writes in the new stand; the previous stand supplies read-only native inputs."""
-    binaries = {name: repo / "target/debug" / name for name in ["eska", "eska-project", "eska-build", "eska-vcs"]}
-    if not all(binary.is_file() for binary in binaries.values()):
+    sources = {name: repo / "target/debug" / name for name in ["eska", "eska-project", "eska-build", "eska-vcs"]}
+    if not all(binary.is_file() for binary in sources.values()):
         raise ValueError("build all workspace binaries first")
+    (stand / "bin").mkdir()
+    binaries = {}
+    for name, source in sources.items():
+        binaries[name] = stand / "bin" / name
+        shutil.copy2(source, binaries[name])
+    shutil.copy2(Path(__file__), stand / "native_onboarding.py")
+    shutil.copy2(Path(__file__).with_name("native_build.py"), stand / "native_build.py")
     env = os.environ.copy()
     for key in ["ESKA_IBCMD", "ESKA_DISTROBOX", "ESKA_PLATFORM_ARCH", "ESKA_LANG"]:
         env.pop(key, None)
