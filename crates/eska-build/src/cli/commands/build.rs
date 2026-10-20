@@ -115,6 +115,44 @@ impl BuildArgs {
         localizer: &Localizer,
         provenance: &dyn Fn(&Path) -> Result<build::GitProvenance, eska_tool_runtime::Error>,
     ) -> ExitCode {
+        let cancellation = match super::artifact::cancellation_scope(localizer) {
+            Ok(cancellation) => cancellation,
+            Err(error) => {
+                return self.fail(
+                    error.code,
+                    Some("tool-discovery"),
+                    None,
+                    &error.message,
+                    localizer,
+                    ExitCode::FAILURE,
+                );
+            }
+        };
+        let guarded_provenance = |root: &Path| {
+            if cancellation
+                .as_ref()
+                .is_some_and(eska_tool_runtime::Operation::is_cancelled)
+            {
+                return Err(eska_tool_runtime::Error::Cancelled);
+            }
+            provenance(root)
+        };
+        self.run_interruptible(
+            project_dir,
+            localizer,
+            &guarded_provenance,
+            cancellation.as_ref(),
+        )
+    }
+
+    /// Retain one caller cancellation scope through all preflighted members and native operations.
+    fn run_interruptible(
+        &self,
+        project_dir: &Path,
+        localizer: &Localizer,
+        provenance: &dyn Fn(&Path) -> Result<build::GitProvenance, eska_tool_runtime::Error>,
+        cancellation: Option<&eska_tool_runtime::Operation>,
+    ) -> ExitCode {
         let context = match discovery::discover_context(project_dir) {
             Ok(context) => context,
             Err(error) => {
@@ -188,7 +226,7 @@ impl BuildArgs {
         if let Err(code) = preflight_group(self.format, &prepared, self.mode.manifest, localizer) {
             return code;
         }
-        let tools = match discover_tools(self.format, &prepared, &options, localizer) {
+        let tools = match self.operation_tools(&prepared, &options, cancellation, localizer) {
             Ok(tools) => tools,
             Err(code) => return code,
         };
@@ -215,6 +253,31 @@ impl BuildArgs {
                 ExitCode::FAILURE,
             )
         }
+    }
+
+    /// Bind each native runner to the caller's scope before preview or execution.
+    fn operation_tools(
+        &self,
+        prepared: &[PreparedBuild<'_>],
+        options: &ToolOptions,
+        cancellation: Option<&eska_tool_runtime::Operation>,
+        localizer: &Localizer,
+    ) -> Result<Vec<Ibcmd>, ExitCode> {
+        let tools = discover_tools(self.format, prepared, options, localizer)?;
+        if cancellation.is_some_and(eska_tool_runtime::Operation::is_cancelled) {
+            return Err(self.fail(
+                "interrupted",
+                Some("tool-discovery"),
+                None,
+                &localizer.text("component-cancelled"),
+                localizer,
+                ExitCode::FAILURE,
+            ));
+        }
+        Ok(tools
+            .into_iter()
+            .map(|tool| super::artifact::attach_cancellation(tool, cancellation))
+            .collect())
     }
 
     /// Resolve the optional base CF once so every selected plan uses the same host path.

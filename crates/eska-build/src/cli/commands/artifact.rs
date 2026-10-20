@@ -38,6 +38,48 @@ pub struct PlatformArgs {
     pub select_platform: bool,
 }
 
+/// Keep Unix cancellation alive across short VCS queries and native version probes.
+///
+/// # Errors
+/// Returns signal subscription failures before any command-owned file transaction starts.
+pub fn cancellation_scope(
+    localizer: &Localizer,
+) -> Result<Option<eska_tool_runtime::Operation>, Failure> {
+    #[cfg(unix)]
+    {
+        eska_tool_runtime::Operation::new()
+            .map(Some)
+            .map_err(|error| {
+                Failure::new(
+                    "signal-handler",
+                    eska_presentation::components::present(&error, localizer),
+                )
+            })
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = localizer;
+        Ok(None)
+    }
+}
+
+/// Attach the already installed Unix scope; preserve the existing Windows console controller.
+#[must_use]
+pub fn attach_cancellation(tool: Ibcmd, scope: Option<&eska_tool_runtime::Operation>) -> Ibcmd {
+    #[cfg(unix)]
+    {
+        match scope {
+            Some(scope) => tool.with_cancellation(scope.clone()),
+            None => tool,
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = scope;
+        tool
+    }
+}
+
 /// Stream platform diagnostics with the same color and progress policy used by build.
 ///
 /// # Errors

@@ -756,6 +756,7 @@ dependencies = [
  "ctrlc",
  "directories",
  "eska-project-core",
+ "eska-tool-runtime",
  "gix-path",
  "roxmltree",
  "serde",

@@ -11,6 +11,99 @@ use serde_json::Value;
 
 const UUID: &str = "12345678-1234-1234-1234-123456789012";
 
+/// Cancellation between VCS inspection and native setup cannot be reset by the version probe.
+#[cfg(unix)]
+#[test]
+fn cancellation_during_import_platform_probe_keeps_existing_sources() {
+    for locale in ["ru", "en"] {
+        assert_import_probe_cancelled(locale);
+    }
+}
+
+/// Exercise the race through the public shell and verify exact filesystem preservation.
+#[cfg(unix)]
+fn assert_import_probe_cancelled(locale: &str) {
+    use nix::{
+        sys::signal::{Signal, kill},
+        unistd::Pid,
+    };
+    use std::{
+        io::Read,
+        process::Stdio,
+        thread,
+        time::{Duration, Instant},
+    };
+    let fixture = TestDir::new();
+    let input = artifact(&fixture.0, "cf", "Configuration", "Incoming", UUID);
+    let original = fs::read(&input).unwrap();
+    let config = eska_project_core::config::ProjectConfig::new(
+        eska_project_core::project::ProjectType::Configuration,
+    )
+    .with_build_settings(
+        eska_project_core::project::build::BuildSettings::new("8.3.27.2325", "build".into())
+            .unwrap(),
+    );
+    let project =
+        eska_project_core::project::create::create(&fixture.0.join("project"), &config).unwrap();
+    let manifest = fs::read(project.root().join("eska.toml")).unwrap();
+    let ready = fixture.0.join("version-ready");
+    let proceed = fixture.0.join("version-continue");
+    let mut child = PreflightChild(
+        Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(project.root())
+            .env("ESKA_CONFIG_DIR", fixture.0.join("machine"))
+            .env("FAKE_IBCMD_VERSION_READY", &ready)
+            .env("FAKE_IBCMD_VERSION_CONTINUE", &proceed)
+            .args([
+                "--lang", locale, "import", "--format", "json", "--force", "--ibcmd",
+            ])
+            .arg(super::build::fake_ibcmd(&fixture))
+            .arg(&input)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap(),
+    );
+    let probe_pid = ready_pid(&mut child.0, &ready);
+    kill(
+        Pid::from_raw(i32::try_from(child.0.id()).unwrap()),
+        Signal::SIGINT,
+    )
+    .unwrap();
+    fs::write(proceed, b"").unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let status = loop {
+        if let Some(status) = child.0.try_wait().unwrap() {
+            break status;
+        }
+        assert!(Instant::now() < deadline, "probe cancellation was lost");
+        thread::sleep(Duration::from_millis(10));
+    };
+    assert_eq!(status.code(), Some(1));
+    let mut stdout = Vec::new();
+    child
+        .0
+        .stdout
+        .take()
+        .unwrap()
+        .read_to_end(&mut stdout)
+        .unwrap();
+    let document: Value = serde_json::from_slice(&stdout).unwrap();
+    assert_eq!(document["error"]["code"], "cancelled", "{document}");
+    assert_eq!(
+        fs::read(project.root().join("eska.toml")).unwrap(),
+        manifest
+    );
+    assert!(project.source().join(".gitkeep").is_file());
+    assert_eq!(fs::read_dir(project.source()).unwrap().count(), 1);
+    assert_eq!(fs::read(input).unwrap(), original);
+    assert_eq!(
+        kill(Pid::from_raw(probe_pid), None),
+        Err(nix::errno::Errno::ESRCH)
+    );
+}
+
 /// A signal to the project PID must reach the build owner and its exact native child.
 #[cfg(unix)]
 #[test]

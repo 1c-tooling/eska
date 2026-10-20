@@ -115,6 +115,7 @@ fn log_invocation(arguments: &[OsString]) -> io::Result<()> {
 
 /// Print a selectable platform version using the real process stdout channel.
 fn print_version() {
+    wait_for_release("FAKE_IBCMD_VERSION_READY", "FAKE_IBCMD_VERSION_CONTINUE");
     let version = env::var("FAKE_IBCMD_VERSION").unwrap_or_else(|_| DEFAULT_VERSION.to_owned());
     println!("1C ibcmd version {version}");
 }
@@ -181,10 +182,15 @@ fn source_contains(source: &Path, needle: &OsStr) -> bool {
 
 /// Coordinate a source mutation with the manifested-build scenario.
 fn wait_for_test_release() {
-    let Some(ready) = env::var_os("FAKE_IBCMD_IMPORT_READY") else {
+    wait_for_release("FAKE_IBCMD_IMPORT_READY", "FAKE_IBCMD_IMPORT_CONTINUE");
+}
+
+/// Publish the exact fixture PID and wait for a release owned by the current test.
+fn wait_for_release(ready_key: &str, continue_key: &str) {
+    let Some(ready) = env::var_os(ready_key) else {
         return;
     };
-    let Some(proceed) = env::var_os("FAKE_IBCMD_IMPORT_CONTINUE") else {
+    let Some(proceed) = env::var_os(continue_key) else {
         process::exit(9);
     };
     if let Err(error) = fs::write(&ready, process::id().to_string()) {

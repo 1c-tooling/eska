@@ -20,6 +20,16 @@ use std::{
 #[derive(Clone)]
 pub struct Operation(Arc<SignalState>);
 
+impl std::fmt::Debug for Operation {
+    /// Report cancellation state without exposing OS subscription internals.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Operation")
+            .field("cancelled", &self.is_cancelled())
+            .finish_non_exhaustive()
+    }
+}
+
 impl Operation {
     /// Install only this operation's signal subscriptions before invoking component work.
     ///

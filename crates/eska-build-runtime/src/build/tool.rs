@@ -198,6 +198,8 @@ enum Runner {
 pub struct Ibcmd {
     #[cfg(unix)]
     cancellation: Arc<Cancellation>,
+    #[cfg(unix)]
+    outer_cancellation: Option<eska_tool_runtime::Operation>,
     runner: Runner,
     source: ToolSource,
     version: PlatformVersion,
@@ -363,6 +365,8 @@ impl Ibcmd {
         Ok(Self {
             #[cfg(unix)]
             cancellation: Arc::new(Cancellation::default()),
+            #[cfg(unix)]
+            outer_cancellation: None,
             runner,
             source,
             version,
@@ -428,14 +432,27 @@ impl Ibcmd {
         &self.version
     }
 
-    /// Install cancellation handling and clear stale state before a complete build pipeline.
+    /// Share a caller's Unix cancellation lifetime across process queries and native setup.
+    #[cfg(unix)]
+    #[must_use]
+    pub fn with_cancellation(mut self, operation: eska_tool_runtime::Operation) -> Self {
+        self.outer_cancellation = Some(operation);
+        self
+    }
+
+    /// Clear only native state; cancellation from the surrounding operation remains sticky.
     ///
     /// # Errors
     /// Returns an error if the OS cannot register cancellation handlers.
     pub fn begin_interruptible_operation(&self) -> Result<(), RunError> {
         #[cfg(unix)]
         {
-            self.cancellation.begin()
+            self.cancellation.begin()?;
+            if self.was_interrupted() {
+                Err(RunError::Interrupted)
+            } else {
+                Ok(())
+            }
         }
         #[cfg(windows)]
         {
@@ -450,6 +467,10 @@ impl Ibcmd {
         #[cfg(unix)]
         {
             self.cancellation.interrupted.load(Ordering::SeqCst)
+                || self
+                    .outer_cancellation
+                    .as_ref()
+                    .is_some_and(eska_tool_runtime::Operation::is_cancelled)
         }
         #[cfg(windows)]
         {

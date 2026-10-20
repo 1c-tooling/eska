@@ -74,6 +74,27 @@ impl ImportArgs {
         code
     }
 
+    /// Preserve cancellation observed during version discovery before creating native staging.
+    fn resolve_import_tool(
+        &self,
+        project: &crate::project::Project,
+        cancellation: Option<&eska_tool_runtime::Operation>,
+        localizer: &Localizer,
+    ) -> Result<crate::project::build::Ibcmd, Failure> {
+        let tool_result = self.platform.resolve(
+            project.configuration().build_settings().platform_version(),
+            self.format == Format::Human,
+            localizer,
+        );
+        if cancellation.is_some_and(eska_tool_runtime::Operation::is_cancelled) {
+            return Err(Failure::new(
+                "cancelled",
+                localizer.text("artifact-cancelled"),
+            ));
+        }
+        Ok(artifact::attach_cancellation(tool_result?, cancellation))
+    }
+
     /// Keep source selection, validation, confirmation and publication strictly ordered.
     fn execute(
         &self,
@@ -81,6 +102,7 @@ impl ImportArgs {
         localizer: &Localizer,
         vcs: Option<&Path>,
     ) -> Result<Value, Failure> {
+        let cancellation = artifact::cancellation_scope(localizer)?;
         let context = discovery::discover_context(base).map_err(|error| {
             Failure::new(
                 "discovery",
@@ -109,15 +131,11 @@ impl ImportArgs {
         let project = selected.project();
         let vcs = resolve_vcs(vcs, localizer)?;
         let inspect_changes = |project: &crate::project::Project, empty, files| {
-            inspect_source(&vcs, project, empty, files)
+            inspect_source(&vcs, project, empty, files, cancellation.as_ref())
         };
         let plan = ImportPlan::inspect(project, &inspect_changes)
             .map_err(|error| artifact::present(&error, localizer))?;
-        let tool = self.platform.resolve(
-            project.configuration().build_settings().platform_version(),
-            self.format == Format::Human,
-            localizer,
-        )?;
+        let tool = self.resolve_import_tool(project, cancellation.as_ref(), localizer)?;
         let prepared = artifact::unpack(
             &base.join(&self.file),
             project.source(),
@@ -203,15 +221,23 @@ fn inspect_source(
     project: &crate::project::Project,
     empty: bool,
     files: usize,
+    cancellation: Option<&eska_tool_runtime::Operation>,
 ) -> Result<usize, crate::project::artifact::ArtifactError> {
-    eska_tool_runtime::vcs::source_changes(binary, project.root(), empty, files).map_err(|error| {
-        match error {
+    let cancelled = || cancellation.is_some_and(eska_tool_runtime::Operation::is_cancelled);
+    if cancelled() {
+        return Err(crate::project::artifact::ArtifactError::Cancelled);
+    }
+    let result = eska_tool_runtime::vcs::source_changes(binary, project.root(), empty, files)
+        .map_err(|error| match error {
             eska_tool_runtime::Error::Cancelled => {
                 crate::project::artifact::ArtifactError::Cancelled
             }
             _ => crate::project::artifact::ArtifactError::ChangeInspection,
-        }
-    })
+        });
+    if cancelled() {
+        return Err(crate::project::artifact::ArtifactError::Cancelled);
+    }
+    result
 }
 
 /// Render identity values with locale-independent keys and stable project-type names.
