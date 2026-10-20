@@ -734,6 +734,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "eska-check"
+version = "0.14.3"
+dependencies = [
+ "clap",
+ "ctrlc",
+ "eska-analyzer",
+ "eska-presentation",
+ "eska-project-core",
+ "serde_json",
+]
+
+[[package]]
 name = "eska-presentation"
 version = "0.14.3"
 dependencies = [

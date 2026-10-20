@@ -21,6 +21,9 @@
 ESKA, Git и платформы 1С. Сборка: `cargo build -p eska-project`.
 Производный [конфиг bsl-analyzer и миграция](docs/analyzer-configuration.md)
 доступны через `eska-project analyzer-config` и Metadata API 1.12.
+Самостоятельный [CI-компонент](docs/check-cli.md) `eska-check` проверяет XML,
+запускает полный анализ внешним bsl-analyzer и выдаёт проверенный отчёт с порогами.
+Сборка: `cargo build -p eska-check`; Git, IDE и платформа для него не нужны.
 
 [Установка](#установка) · [Быстрый старт](#быстрый-старт) ·
 [Работа над задачей](#работа-над-задачей) · [Сборка](#сборка) ·

@@ -3,10 +3,12 @@
 use std::{
     fs,
     path::{Path, PathBuf},
-    sync::atomic::{AtomicBool, Ordering},
-    thread,
-    time::{Duration, Instant},
+    sync::atomic::AtomicBool,
+    time::Duration,
 };
+
+#[cfg(unix)]
+use std::{sync::atomic::Ordering, thread, time::Instant};
 
 use eska_analyzer::{
     check::{self, Failure},

@@ -81,6 +81,9 @@ pub struct FileResult {
 /// A report exists only after successful exit, complete JSONL and unchanged input checks.
 #[derive(Debug)]
 pub struct Report {
+    pub root: PathBuf,
+    pub application: Option<String>,
+    pub limited_context: bool,
     pub files: Vec<FileResult>,
     pub counts: Counts,
     pub policy: CheckPolicy,
@@ -206,6 +209,9 @@ pub fn analyze(plan: &Plan, analyzer: &Analyzer<'_>) -> Result<Report, Failure> 
         }
     }
     Ok(Report {
+        root: plan.context.root().into(),
+        application: plan.context.name().map(|name| name.as_str().to_owned()),
+        limited_context: plan.context.limited_context(),
         files,
         counts,
         policy: plan.context.check_policy().clone(),
