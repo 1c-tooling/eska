@@ -415,7 +415,7 @@ UTF-16 единиц, буква/подчёркивание в начале, да
 до его переименования. Проверка импорта не заменяет проверку BSL-вызовов.
 Исходные пары извлекает `tools/platform-catalog/extract_edt.py` в
 `global-properties-<profile>.tsv`; проверенный поднабор хранится в
-`src/project/metadata_rename/reserved_common_modules.tsv`.
+`crates/eska-project-core/src/project/metadata_rename/reserved_common_modules.tsv`.
 
 Вывод типов переменных, обработка запросов
 и подключение поля «Имя» к этому плану пока не реализованы. Предопределённые

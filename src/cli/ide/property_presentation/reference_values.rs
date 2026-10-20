@@ -102,7 +102,10 @@ impl Presenter<'_> {
             result["detail"] =
                 self.localized(|locale| reference_name(owner, locale.locale().as_str()));
         }
-        let resolved = owner.and_then(|owner| self.project.predefined_reference(&owner.id, item));
+        let resolved = match owner {
+            Ok(owner) => self.project.predefined_reference(&owner.id, item),
+            Err(error) => Err(error),
+        };
         self.reference_result(&mut result, resolved);
         self.references.insert(raw.to_owned(), result.clone());
         Some(result)

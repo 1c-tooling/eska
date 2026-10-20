@@ -4,40 +4,29 @@ pub mod artifact;
 pub mod build;
 pub mod clone;
 pub mod create;
-pub mod designer_source;
-mod designer_xml;
 pub mod diff;
-pub mod discovery;
 pub mod doctor;
 pub mod finish;
 pub mod history;
 pub mod init;
-pub(crate) mod metadata;
-mod metadata_disk_cache;
-pub mod metadata_edit;
-pub mod metadata_model;
-pub mod metadata_parser;
-pub mod metadata_rename;
-pub mod metadata_workspace;
-pub mod model;
-pub mod object_model;
 pub mod onboarding;
 pub mod patch;
 pub mod save;
-pub mod selection;
 pub mod semantic;
 pub mod start;
 pub mod status;
-pub mod support;
 pub mod switch;
-pub mod templates;
-pub mod version;
-mod workspace;
 
-pub use model::{
+pub use eska_project_core::project::model::{
     InvalidPathReason, Project, ProjectConfiguration, ProjectPath, ProjectPathError, ProjectType,
     SourceFormat,
 };
-pub use workspace::{ProjectName, ProjectNameError, Workspace, WorkspaceMember};
+pub use eska_project_core::project::{ProjectName, ProjectNameError, Workspace, WorkspaceMember};
 
-pub mod configurator;
+// Keep the existing CLI on the single shared implementation during extraction.
+pub use eska_project_core::project::{
+    configurator, designer_source, discovery, metadata_edit, metadata_model, metadata_parser,
+    metadata_rename, metadata_workspace, model, object_model, selection, support, templates,
+    version,
+};
+pub(crate) use eska_project_core::project::{designer_xml, metadata};

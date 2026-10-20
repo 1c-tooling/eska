@@ -10,7 +10,8 @@ const GIT_ATTRIBUTES: &str = include_str!("../../assets/project/.gitattributes")
 const GIT_IGNORE: &str = include_str!("../../assets/project/.gitignore");
 
 /// Returns the Git control files shared by all built-in project types.
-pub(crate) fn built_in_git_files() -> [TemplateFile; 2] {
+#[must_use]
+pub fn built_in_git_files() -> [TemplateFile; 2] {
     [
         TemplateFile {
             path: PathBuf::from(".gitattributes"),
@@ -62,7 +63,10 @@ impl Template {
     }
 
     /// Render a member with explicit build overrides supplied during artifact import.
-    pub(crate) fn workspace_config(config: &ProjectConfig) -> Result<Self, toml::ser::Error> {
+    ///
+    /// # Errors
+    /// Returns an error if the manifest cannot be represented by the TOML serializer.
+    pub fn workspace_config(config: &ProjectConfig) -> Result<Self, toml::ser::Error> {
         let source = config.source().to_path_buf();
         Ok(Self {
             files: vec![

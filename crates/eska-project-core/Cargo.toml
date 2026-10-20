@@ -1,0 +1,28 @@
+[package]
+name = "eska-project-core"
+version = "0.14.3"
+edition = "2024"
+publish = false
+description = "Shared Designer XML project model and checked metadata operations"
+license = "Apache-2.0"
+repository = "https://github.com/1c-tooling/eska"
+readme = "../../README.md"
+keywords = ["1c-enterprise", "designer-xml", "metadata"]
+categories = ["development-tools", "filesystem"]
+authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
+
+[lints]
+workspace = true
+
+[dependencies]
+bstr = { version = "1.13.1", default-features = false, features = ["std"] }
+gix-path = "0.12.6"
+gix-validate = "0.11.4"
+quick-xml = { version = "0.42.0", default-features = false }
+roxmltree = { version = "0.21.1", default-features = false, features = ["std", "positions"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.151", features = ["raw_value"] }
+sha2 = "0.11.0"
+toml = { version = "1.1.5", default-features = false, features = ["display", "parse", "serde"] }
+unicode-general-category = "1.1.0"
+zip = { version = "8.6.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }

@@ -233,10 +233,7 @@ fn metadata_request(
         "metadata/search" => search(project, args),
         "metadata/reveal" => {
             let id: ObjectId = params::decode(&args["objectId"])?;
-            let ancestry = project
-                .ancestry(&NodeId::Object(id.clone()))
-                .or_else(|_| project.reveal_indexed_object(&id))
-                .map_err(|failure| errors::workspace(&failure))?;
+            let ancestry = reveal_ancestry(project, &id)?;
             Ok(json!({"ancestry":ancestry.iter().map(dto::node_id).collect::<Vec<_>>()}))
         }
         "metadata/refresh" => refresh(session, state, project, args, events),
@@ -244,6 +241,16 @@ fn metadata_request(
         "metadata/indexErrors" => index_errors(project, args),
         _ => Err(error(-32601)),
     }
+}
+
+/// Reuse visible ancestry before asking the lazy index to reveal an unloaded object.
+fn reveal_ancestry(project: &mut ProjectSession, id: &ObjectId) -> Result<Vec<NodeId>, Value> {
+    if let Ok(ancestry) = project.ancestry(&NodeId::Object(id.clone())) {
+        return Ok(ancestry);
+    }
+    project
+        .reveal_indexed_object(id)
+        .map_err(|failure| errors::workspace(&failure))
 }
 
 /// Mutations publish an ordered invalidation once; clients must never replay them after a lost reply.

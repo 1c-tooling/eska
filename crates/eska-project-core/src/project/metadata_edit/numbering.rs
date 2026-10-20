@@ -106,6 +106,7 @@ impl Numbering {
 }
 
 /// Only direct document/numerator parameters participate in related-file edits.
+#[must_use]
 pub fn linked_field(kind: MetadataKind, path: &[FieldStep]) -> bool {
     path.len() == 1
         && path[0].occurrence == 0

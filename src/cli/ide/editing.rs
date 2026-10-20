@@ -73,7 +73,7 @@ pub(in crate::cli) fn describe(
         .iter()
         .map(|field| {
             let mut value = json!({"path":field.path,"value":field.value,"schema":field.schema,"language":field.language});
-            if crate::project::metadata_edit::numbering::linked_field(owner, &field.path) {
+            if crate::project::metadata_edit::linked_numbering_field(owner, &field.path) {
                 value["linked"] = json!(true);
             }
             value["captions"] = json!(
@@ -116,7 +116,7 @@ pub(in crate::cli) fn describe(
                 } else if field.value.is_empty() { locale.text("platform-presentation-empty-string")
                 } else if field.value.ends_with(".EmptyRef") { locale.text("platform-presentation-empty-reference")
                 } else { field.value.clone() });
-                if key.as_ref().is_some_and(|key| crate::project::metadata_edit::value_schema::reference_prefix(key).is_some())
+                if key.as_ref().is_some_and(|key| crate::project::metadata_edit::reference_prefix(key).is_some())
                     && let Some(reference) = presenter.design_reference(&field.value)
                 {
                     value["caption"] = reference["caption"].clone();
@@ -312,7 +312,7 @@ fn reference_caption(locale: &crate::cli::localization::Localizer, raw: &str) ->
             .unwrap_or_else(|| name.to_owned());
         return format!("{} › {caption}", reference_caption(locale, owner));
     }
-    crate::project::metadata_edit::references::parts(raw).map_or_else(
+    crate::project::metadata_edit::reference_parts(raw).map_or_else(
         || raw.to_owned(),
         |parts| {
             parts

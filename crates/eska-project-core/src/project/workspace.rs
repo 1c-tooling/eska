@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     project::{Project, build::BuildSettings},
-    vcs::workflow::WorkflowSettings,
+    workflow::WorkflowSettings,
 };
 
 /// A portable, stable workspace member identifier.

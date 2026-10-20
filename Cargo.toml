@@ -11,6 +11,12 @@ keywords = ["1c-enterpirse", "cli"]
 categories = ["command-line-utilities", "filesystem"]
 authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 
+[workspace]
+members = [".", "crates/eska-project-core"]
+default-members = [".", "crates/eska-project-core"]
+exclude = ["tests/fixtures/ibcmd"]
+resolver = "3"
+
 [profile.dev]
 opt-level = 0 # No optimization for fast compile times
 debug = true  # Include debug symbols
@@ -24,7 +30,10 @@ lto = true    # Link-Time Optimization for further size reduction
 inherits = "release"
 lto = "thin"
 
-[lints.clippy]
+[lints]
+workspace = true
+
+[workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 nursery = { level = "warn", priority = -1 }
@@ -33,6 +42,7 @@ cargo = { level = "warn", priority = -1 }
 multiple_crate_versions = { level = "allow", priority = 1 }
 
 [dependencies]
+eska-project-core = { path = "crates/eska-project-core" }
 axoupdater = { version = "0.10.2", default-features = false, features = ["github_releases"] }
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json"] }
 semver = "1.0.28"
@@ -49,10 +59,11 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.151", features = ["raw_value"] }
 sha2 = "0.11.0"
 sys-locale = "0.3.2"
-unicode-general-category = "1.1.0"
 toml = { version = "1.1.5", default-features = false, features = ["display", "parse", "serde"] }
 toml_edit = { version = "0.25.13", default-features = false, features = ["display", "parse"] }
 base64 = { version = "0.23.1", default-features = false, features = ["std"] }
+
+[dev-dependencies]
 zip = { version = "8.6.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [target.'cfg(windows)'.dependencies]

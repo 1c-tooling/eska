@@ -11,7 +11,7 @@ use crate::project::{
     build::{BuildSettings, BuildSettingsError},
 };
 
-use crate::vcs::workflow::WorkflowPreset;
+use crate::workflow::WorkflowPreset;
 
 use super::schema::{
     DEFAULT_SOURCE, RawDocument, SerializedBuild, SerializedDocument, SerializedProject,
@@ -166,7 +166,10 @@ impl ProjectConfig {
     ///
     /// Callers construct member configs without workflow or artifact overrides;
     /// only an explicit platform override is retained.
-    pub(crate) fn to_workspace_member_toml(&self) -> Result<String, toml::ser::Error> {
+    ///
+    /// # Errors
+    /// Returns an error if a path cannot be represented by the TOML serializer.
+    pub fn to_workspace_member_toml(&self) -> Result<String, toml::ser::Error> {
         self.serialize(true)
     }
 
@@ -258,7 +261,7 @@ pub enum InvalidSourceReason {
 pub enum ProjectConfigError {
     InvalidName(ProjectNameError),
     InvalidBuild(BuildSettingsError),
-    InvalidWorkflow(crate::vcs::workflow::PolicyError),
+    InvalidWorkflow(crate::workflow::PolicyError),
     UnknownWorkflow {
         value: String,
     },
@@ -319,7 +322,7 @@ mod tests {
     use super::{InvalidSourceReason, ProjectConfig, ProjectConfigError};
     use crate::{
         project::{ProjectType, SourceFormat},
-        vcs::workflow::WorkflowPreset,
+        workflow::WorkflowPreset,
     };
 
     #[test]

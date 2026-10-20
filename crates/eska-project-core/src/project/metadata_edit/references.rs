@@ -29,6 +29,7 @@ pub fn target(domain: &str) -> Option<(MetadataKind, Option<MetadataKind>)> {
 }
 
 /// Designer paths alternate exact type and object name, never filesystem coordinates.
+#[must_use]
 pub fn parts(raw: &str) -> Option<Vec<(MetadataKind, &str)>> {
     let tokens: Vec<_> = raw.split('.').collect();
     if tokens.len() > 64 || !tokens.len().is_multiple_of(2) {

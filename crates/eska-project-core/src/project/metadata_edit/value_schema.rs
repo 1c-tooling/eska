@@ -276,6 +276,7 @@ fn value_type(key: PropertyKey, description: Node<'_, '_>) -> Option<EditableVal
 }
 
 /// Generated reference types serialize design-time values using the object's Designer tag.
+#[must_use]
 pub fn reference_prefix(key: &PropertyKey) -> Option<String> {
     if key.namespace.as_deref() != Some(types::CFG) {
         return None;

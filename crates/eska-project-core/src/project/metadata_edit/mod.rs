@@ -22,7 +22,10 @@ pub(crate) use write::publish_snapshot_in;
 pub(crate) use document::EditingDocument;
 pub(crate) use document::ReadOnlyProperty;
 pub use document::{EditableField, FieldStep, PropertyChange, PropertyEditing};
+pub use numbering::linked_field as linked_numbering_field;
+pub use references::parts as reference_parts;
 pub use schema::{ScalarSchema, TextDomain, ValueDomain};
+pub use value_schema::reference_prefix;
 pub use value_schema::{EditableValueType, ValueConstraints};
 
 use std::{fmt::Write, io, ops::Range};
@@ -82,7 +85,8 @@ pub fn snapshot(input: &str) -> String {
 
 impl EditPlan {
     /// Dependency checks compare the planned source, including during history replay.
-    pub(crate) fn original(&self) -> &str {
+    #[must_use]
+    pub fn original(&self) -> &str {
         &self.original
     }
 

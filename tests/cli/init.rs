@@ -384,11 +384,11 @@ fn detects_all_types_locations_and_locales_without_touching_sources() {
                 let config = ProjectConfig::load(&root.join("eska.toml")).expect("config");
                 assert_eq!(
                     fs::read(root.join(".gitattributes")).expect("attributes"),
-                    include_bytes!("../../assets/project/.gitattributes")
+                    include_bytes!("../../crates/eska-project-core/assets/project/.gitattributes")
                 );
                 assert_eq!(
                     fs::read(root.join(".gitignore")).expect("ignore rules"),
-                    include_bytes!("../../assets/project/.gitignore")
+                    include_bytes!("../../crates/eska-project-core/assets/project/.gitignore")
                 );
                 assert_eq!(config.source(), Path::new(location));
                 assert_eq!(
@@ -445,7 +445,8 @@ fn creates_only_missing_git_files_and_preserves_existing_files() {
         assert_eq!(
             fs::read(root.join(".gitattributes")).expect("attributes"),
             if missing == Some(".gitattributes") {
-                include_bytes!("../../assets/project/.gitattributes").as_slice()
+                include_bytes!("../../crates/eska-project-core/assets/project/.gitattributes")
+                    .as_slice()
             } else {
                 b"user attributes\n"
             }
@@ -453,7 +454,8 @@ fn creates_only_missing_git_files_and_preserves_existing_files() {
         assert_eq!(
             fs::read(root.join(".gitignore")).expect("ignore rules"),
             if missing == Some(".gitignore") {
-                include_bytes!("../../assets/project/.gitignore").as_slice()
+                include_bytes!("../../crates/eska-project-core/assets/project/.gitignore")
+                    .as_slice()
             } else {
                 b"user ignore rules\n"
             }

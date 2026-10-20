@@ -4,7 +4,7 @@ use super::{
     ProjectConfigError,
     schema::{RawWorkflow, SerializedPolicy, SerializedWorkflow},
 };
-use crate::vcs::workflow::{
+use crate::workflow::{
     FinishRequirement, PolicyError, PolicyField, PolicyOverrides, PublishBehavior, SyncStrategy,
     WorkflowPreset, WorkflowSettings, WorkingBranchPolicy,
 };
@@ -102,7 +102,7 @@ pub(super) fn serialize(settings: &WorkflowSettings) -> SerializedWorkflow<'_> {
 mod tests {
     use crate::{
         config::{ProjectConfig, ProjectConfigError},
-        vcs::workflow::{PolicyError, PolicyField, PublishPlan, SyncStrategy},
+        workflow::{PolicyError, PolicyField, PublishPlan, SyncStrategy},
     };
 
     const FULL: &str = r#"

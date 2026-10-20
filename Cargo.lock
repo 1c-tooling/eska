@@ -704,6 +704,7 @@ dependencies = [
  "crossterm",
  "ctrlc",
  "directories",
+ "eska-project-core",
  "fluent",
  "gix",
  "quick-xml",
@@ -718,6 +719,22 @@ dependencies = [
  "tokio",
  "toml",
  "toml_edit",
+ "zip",
+]
+
+[[package]]
+name = "eska-project-core"
+version = "0.14.3"
+dependencies = [
+ "bstr",
+ "gix-path",
+ "gix-validate",
+ "quick-xml",
+ "roxmltree",
+ "serde",
+ "serde_json",
+ "sha2",
+ "toml",
  "unicode-general-category",
  "zip",
 ]

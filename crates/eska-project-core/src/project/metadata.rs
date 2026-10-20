@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use gix::bstr::{BStr, ByteSlice};
+use bstr::{BStr, ByteSlice};
 
 use super::ProjectType;
 
@@ -24,6 +24,7 @@ pub struct MetadataPath {
 
 impl MetadataPath {
     /// Append a nested metadata child to an existing owner path.
+    #[must_use]
     pub fn with_suffix(&self, suffix: &[MetadataPart]) -> Self {
         let mut parts = self.parts.clone();
         parts.extend_from_slice(suffix);
@@ -35,6 +36,7 @@ impl MetadataPath {
 }
 
 /// Resolve a project-relative Designer XML path when its ownership is unambiguous.
+#[must_use]
 pub fn from_path(project_type: ProjectType, path: &BStr) -> Option<MetadataPath> {
     let path = path.to_str().ok()?;
     let components: Vec<_> = path.split('/').collect();
@@ -58,6 +60,7 @@ pub fn from_path(project_type: ProjectType, path: &BStr) -> Option<MetadataPath>
 }
 
 /// Tell whether a path is the main XML descriptor whose children can be compared semantically.
+#[must_use]
 pub fn is_main_descriptor(project_type: ProjectType, path: &BStr) -> bool {
     let Ok(path) = path.to_str() else {
         return false;
@@ -75,6 +78,7 @@ pub fn is_main_descriptor(project_type: ProjectType, path: &BStr) -> bool {
 }
 
 /// Tell whether a path is a metadata descriptor represented as a logical object.
+#[must_use]
 pub fn is_object_descriptor(project_type: ProjectType, path: &BStr) -> bool {
     let Ok(path) = path.to_str() else {
         return false;
@@ -115,6 +119,7 @@ fn is_nested_descriptor(components: &[&str]) -> bool {
 }
 
 /// Compare metadata child objects in two UTF-8 Designer XML descriptor snapshots.
+#[must_use]
 pub fn changed_children(before: &[u8], after: &[u8]) -> Option<Vec<Vec<MetadataPart>>> {
     let before = parse_children(before)?;
     let after = parse_children(after)?;
@@ -444,6 +449,7 @@ fn fingerprint_into(node: roxmltree::Node<'_, '_>, output: &mut String) {
 }
 
 /// Recognize standard Designer BSL implementation module names.
+#[must_use]
 pub fn is_module_path(path: &std::path::Path) -> bool {
     let Some(file) = path.file_name().and_then(|value| value.to_str()) else {
         return false;
@@ -470,7 +476,7 @@ pub fn is_module_path(path: &std::path::Path) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use gix::bstr::ByteSlice;
+    use bstr::ByteSlice;
 
     use super::{changed_children, from_path};
     use crate::project::ProjectType;

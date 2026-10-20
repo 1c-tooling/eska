@@ -1,6 +1,6 @@
 //! Pure policy validation and planning. No repository access or command execution.
 
-use gix::bstr::ByteSlice;
+use bstr::ByteSlice;
 
 use super::WorkflowPreset;
 
@@ -320,7 +320,7 @@ fn validate_branch(value: &str, field: PolicyField) -> Result<(), PolicyError> {
         || value.starts_with('-')
         || value.starts_with("refs/")
         || value.contains(['{', '}'])
-        || gix::validate::reference::branch_name(format!("refs/heads/{value}").as_bytes().as_bstr())
+        || gix_validate::reference::branch_name(format!("refs/heads/{value}").as_bytes().as_bstr())
             .is_err()
     {
         return Err(invalid(field, value));
@@ -455,7 +455,7 @@ impl WorkflowPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vcs::workflow::WorkflowSettings;
+    use crate::workflow::WorkflowSettings;
 
     fn complete() -> PolicyOverrides {
         PolicyOverrides {

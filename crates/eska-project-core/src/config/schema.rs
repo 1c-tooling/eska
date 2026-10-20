@@ -140,6 +140,10 @@ pub(super) fn default_source_format() -> String {
     DEFAULT_SOURCE_FORMAT.to_owned()
 }
 
+/// Parse the stable machine-facing project type name.
+///
+/// # Errors
+/// Returns the original value when the project type is unsupported.
 pub fn parse_project_type(value: String) -> Result<ProjectType, ProjectConfigError> {
     match value.as_str() {
         "configuration" => Ok(ProjectType::Configuration),

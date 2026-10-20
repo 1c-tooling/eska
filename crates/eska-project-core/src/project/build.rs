@@ -1,3 +1,5 @@
+//! Portable build settings, without platform discovery or process execution.
+
 use std::{
     cmp::Ordering,
     path::{Component, Path, PathBuf},

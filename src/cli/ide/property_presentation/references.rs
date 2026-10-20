@@ -1,7 +1,7 @@
 //! Explicit reference syntax is interpreted only in schema-defined property contexts.
 
 use super::{MD, Presenter, READABLE, key_is, reference_context, text};
-pub(super) use crate::project::metadata_edit::references::parts as reference_parts;
+pub(super) use crate::project::metadata_edit::reference_parts;
 use crate::project::{
     metadata_model::{MetadataKind, MetadataProperty, MetadataValue, PropertyKey},
     metadata_workspace::ObjectSummary,

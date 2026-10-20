@@ -7,148 +7,80 @@
 ## Структура
 
 ```text
+Cargo.toml                          # workspace; existing eska package remains the CLI
+crates/eska-project-core/
+├── Cargo.toml                      # shared library without Git/platform/BSL runtimes
+├── assets/project/                 # built-in .gitattributes and .gitignore
+└── src/
+    ├── lib.rs                      # config, project and workflow boundaries
+    ├── config/                     # strict manifest schemas, serialization and validation
+    ├── workflow.rs                 # presets and portable settings
+    ├── workflow/policy.rs          # pure policy validation and task plans
+    └── project/
+        ├── mod.rs                  # shared model and metadata operations
+        ├── model.rs                # Project, source format and path invariants
+        ├── build.rs                # build settings and platform version only
+        ├── workspace.rs            # Workspace, members and portable names
+        ├── discovery.rs            # manifest discovery and source validation
+        ├── selection.rs            # current/named/all project selection
+        ├── designer_xml.rs         # root descriptor classification
+        ├── designer_source/        # checked source mapping and bounded reads
+        ├── metadata.rs             # logical paths and descriptor-child comparisons
+        ├── object_model.rs         # source ownership and affected-object discovery
+        ├── metadata_model/         # typed identities, kinds and values
+        ├── metadata_parser.rs      # bounded Designer XML parsing
+        ├── metadata_parser/        # properties, predefined values and tests
+        ├── metadata_workspace/     # tree sessions, search, support and checked edits
+        ├── metadata_disk_cache.rs  # disposable source-verified metadata cache
+        ├── configurator/           # typed Configurator tree schema and projection
+        ├── metadata_edit/          # checked property writes and snapshots
+        ├── metadata_rename/        # proven reference changes and atomic transactions
+        ├── support.rs              # ParentConfigurations.bin support rules
+        ├── support/tests.rs        # support-rule fixtures
+        ├── version.rs              # narrow Properties/Version reads and writes
+        └── templates.rs            # project scaffold plans without filesystem writes
 src/
-├── main.rs                      # точка входа бинарника
-├── lib.rs                       # карта модулей библиотеки
+├── main.rs                         # existing binary entry point
+├── lib.rs                          # current CLI and operation namespaces
 ├── cli/
-│   ├── mod.rs                   # запуск CLI и выбор локали
-│   ├── args.rs                  # общие аргументы, bootstrap --lang, общий help
-│   ├── changes.rs               # общее представление путей и semantic changes
-│   ├── encoding.rs              # обратимые JSON-пути и Git byte strings
-│   ├── platform.rs              # общие machine-local настройки запуска 1С
-│   ├── process_output.rs        # общий вывод диагностики платформы и цветовые правила
-│   ├── process_output/progress.rs # lifecycle spinner и синхронизация stderr
-│   ├── commands/
-│   │   ├── mod.rs               # регистрация и диспетчеризация команд
-│   │   ├── build.rs             # eska build: аргументы, selection, preflight и запуск
-│   │   ├── build/
-│   │   │   ├── errors.rs        # RU/EN ошибки и стабильные machine-facing codes
-│   │   │   ├── json.rs          # версии JSON-схем preview, result и error
-│   │   │   └── output.rs        # preview, streaming diagnostics и результат
-│   │   ├── clean.rs             # удаление управляемых build-баз
-│   │   ├── config.rs            # eska config: init/edit глобальных настроек
-│   │   ├── doctor.rs            # eska doctor: selectors, RU/EN и versioned JSON
-│   │   ├── platform.rs          # eska platform list: human/JSON presentation
-│   │   ├── patch.rs             # eska patch: аргументы, preview и JSON result
-│   │   ├── init.rs              # eska init: аргументы, prompts, help, вывод
-│   │   ├── new.rs               # eska new: аргументы, prompts, help, вывод
-│   │   ├── new/from.rs          # создание из нативного файла и onboarding workspace
-│   │   ├── artifact.rs          # общая настройка платформы и диагностика импорта
-│   │   ├── import.rs            # выбор проекта, preview, подтверждение и human/JSON
-│   │   ├── diff.rs              # eska diff: аргументы, selection и выбор представления
-│   │   ├── diff/
-│   │   │   ├── analysis.rs     # semantic-анализ выбранных проектов и fallback diagnostics
-│   │   │   ├── human.rs        # локализованные группы, подписи и стили
-│   │   │   ├── human/tests.rs  # проверки представлений и группировки
-│   │   │   ├── raw.rs          # стабильные tab-separated строки
-│   │   │   └── json.rs         # versioned DTO и сериализация machine output
-│   │   ├── finish.rs            # eska finish: localized result и ошибки
-│   │   ├── history.rs           # eska history: human/JSON presentation
-│   │   ├── save.rs              # eska save: draft сообщения и presentation
-│   │   ├── start.rs             # eska start: localized result и ошибки
-│   │   ├── status.rs            # eska status: human/JSON presentation
-│   │   ├── shelves.rs           # явные команды полок и read-only previews
-│   │   ├── switch.rs            # eska switch: выбор цели и presentation
-│   │   ├── version.rs           # version одного проекта или списка workspace members
-│   │   └── validate.rs          # проверка при запуске без подкоманды
-│   ├── shelves.rs               # общий human/JSON контракт полок и switch
-│   ├── diagnostics.rs           # общие ошибки project/config/platform
-│   ├── interactive/
-│   │   ├── mod.rs               # общие варианты выбора и ошибки prompts
-│   │   ├── select.rs            # цикл событий и подтверждение выбора
-│   │   ├── keyboard.rs          # клавиши, модификаторы, fallback раскладки
-│   │   ├── render.rs            # отрисовка, цвета, минимальный размер окна
-│   │   ├── confirm.rs           # inline-подтверждение с видимым preview и отменой
-│   │   └── terminal.rs          # raw mode, alternate screen и восстановление
-│   └── localization/
-│       ├── mod.rs               # интерфейс локализации
-│       ├── locale.rs            # поддерживаемые локали и их приоритет
-│       └── localizer.rs         # загрузка Fluent-ресурсов и форматирование
-├── project/
-│   ├── mod.rs                   # интерфейс модели и операций проекта
-│   ├── model.rs                 # Project, типы проекта, инварианты путей
-│   ├── create.rs                # создание нового каталога и откат
-│   ├── artifact/                # изолированная распаковка CF/CFE/EPF/ERF и identity
-│   │   ├── identity.rs          # bounded namespace-aware проверка type/UUID/Name
-│   │   ├── unpack.rs            # native runner, snapshot файла и нормализация XML
-│   │   ├── snapshot.rs          # fingerprint дерева и отказ от ссылок/вложенных проектов
-│   │   ├── replace.rs           # preflight, проверка Git, публикация и восстановление
-│   │   └── staging.rs           # эксклюзивное владение временными каталогами
-│   ├── init.rs                  # обнаружение выгрузки, подключение и откат
-│   ├── designer_xml.rs          # распознавание корневого XML-дескриптора
-│   ├── discovery.rs             # поиск ближайшего проекта и проверка source
-│   ├── doctor.rs                # read-only проверки project/build/VCS окружения
-│   ├── workspace.rs             # Workspace, members и переносимые имена проектов
-│   ├── diff.rs                  # file-level изменения внутри корня проекта
-│   ├── finish.rs                # preflight, policy refs и локальное завершение задачи
-│   ├── history.rs               # локальная commit history и task attribution
-│   ├── metadata.rs              # human-проекция путей и XML-дочерних объектов
-│   ├── object_model.rs          # логические Designer XML objects и двусторонний path index
-│   ├── clone.rs                 # план clone, владение destination и validation
-│   ├── build/
-│   │   ├── mod.rs               # публичная граница build subsystem
-│   │   ├── settings.rs          # переносимые settings и версия платформы
-│   │   ├── plan.rs              # тип и путь build artifact без запуска процессов
-│   │   ├── tool.rs              # поиск, version check и запуск ibcmd/Distrobox
-│   │   ├── manifest.rs          # снимок source, SHA-256 и паспорт артефакта
-│   │   ├── infobase.rs          # хранение, валидация и очистка служебных баз
-│   │   └── execute.rs           # import, staging cleanup и публикация
-│   ├── patch/
-│   │   ├── mod.rs               # публичная граница patch subsystem
-│   │   ├── model.rs             # PatchPlan, изменения, модули и ошибки
-│   │   ├── plan.rs              # immutable Git endpoints и классификация delta
-│   │   ├── methods.rs           # консервативный разбор и замена BSL-методов
-│   │   ├── descriptor.rs        # проверка и adoption CommonModule.xml
-│   │   ├── extension.rs         # запись Designer XML/BSL с BOM и CRLF
-│   │   └── execute.rs           # временная ИБ, platform checks и публикация
-│   ├── save.rs                  # project-scoped staging, commit и rollback index
-│   ├── selection.rs             # общий выбор current/named/all workspace projects
-│   ├── semantic.rs              # сравнение Git/file snapshots и генерация событий
-│   ├── semantic/
-│   │   ├── changes.rs          # ChangeSet → object ownership → ChangeSummary
-│   │   ├── model.rs            # публичные события, completeness и ошибки
-│   │   ├── descriptor.rs       # XML identities и структурные сигнатуры свойств
-│   │   ├── routines.rs         # потоковое чтение BSL routine snapshots
-│   │   └── tests.rs            # контракты событий и XML-сравнения
-│   ├── start.rs                 # preflight и исполнение task plan
-│   ├── status.rs                # снимок проекта, ChangeSet summary и readiness
-│   ├── version.rs               # точечное чтение и замена Properties/Version
-│   └── templates.rs             # план файлов встроенного каркаса
+│   ├── mod.rs, args.rs             # startup, parsing, locale and top-level help
+│   ├── commands/                   # command-specific human/JSON presentation
+│   ├── ide/                        # Metadata API framing, DTOs and server lifecycle
+│   ├── platform.rs                 # machine-local runner selection
+│   ├── process_output/             # platform diagnostics and progress lifecycle
+│   ├── interactive/                # keyboard selection, confirmation and terminal state
+│   └── localization/               # Fluent resource loading and formatting
 ├── config/
-│   ├── mod.rs                   # интерфейс config и имя eska.toml
-│   ├── project.rs               # ProjectConfig, загрузка и валидация
-│   ├── manifest.rs              # различение строгих project/workspace manifests
-│   ├── workspace.rs             # WorkspaceConfig и проверка member paths
-│   ├── workflow.rs              # преобразование workflow-полей в доменную модель
-│   └── schema.rs                # TOML-поля, defaults и строковые значения
+│   ├── mod.rs                      # reexports of shared manifest types
+│   └── global.rs                   # machine-local runner config and transactional editing
+├── project/
+│   ├── mod.rs                      # reexports of shared project operations
+│   ├── artifact/                   # native unpack, identity, source preflight and rollback
+│   ├── build/                      # runner, infobase, artifact plan and execution
+│   ├── patch/                      # VCS-based patch plans and native extension assembly
+│   ├── create.rs, init.rs          # existing onboarding with optional Git/platform selection
+│   ├── onboarding.rs               # workspace enrollment and manifest preservation
+│   ├── doctor.rs                   # combined project/build/VCS readiness checks
+│   ├── diff.rs, semantic/          # exact Git snapshots and semantic ChangeSet
+│   └── *.rs                        # existing Git workflow operations
 └── vcs/
-    ├── mod.rs                   # граница VCS
-    ├── git.rs                   # общее открытие и инициализация Git через gix
-    ├── command.rs               # единый system Git capability fallback
-    ├── network.rs               # clone/fetch через gix и transport fallback policy
-    ├── diff.rs                  # разрешение revisions и tree-to-tree diff через gix
-    ├── repository.rs            # discovery, HEAD, refs и ограниченная история
-    ├── snapshot.rs              # общий HEAD/index reader на время анализа файлов
-    ├── status.rs                # изменения HEAD/index/worktree и changed paths
-    ├── workflow.rs              # выбор preset, overrides и разрешение policy
-    └── workflow/
-        └── policy.rs            # валидация policy и декларативный план задачи
-
-locales/{ru-RU,en-US}/main.ftl    # пользовательские тексты
-assets/project/                    # встроенные .gitattributes и .gitignore для new
-tests/
-├── integration.rs               # точка входа интеграционных тестов
-├── cli/{build,diff,doctor,finish,history,init,new,save,start,status,version,localization}.rs
-├── project/{discovery,finish,history,save,start,templates,version,workflow}.rs
-├── vcs/{diff,network,repository,status,support}.rs # Git-сценарии и fixture-команды
-└── support/mod.rs               # общий изолированный временный каталог
+    ├── mod.rs                      # repository execution boundary
+    ├── workflow.rs                 # reexports of shared settings/policy
+    ├── git.rs, repository.rs       # gix opening, refs and history
+    ├── command.rs                  # isolated system Git capability fallback
+    ├── network.rs                  # gix transport and documented fallback
+    └── diff.rs, snapshot.rs, status.rs, shelves/
+locales/{ru-RU,en-US}/main.ftl       # human-readable strings
+assets/                            # presentation resources
+tests/integration.rs               # CLI/project/VCS integration suite
+tests/support/mod.rs               # exclusively owned playground directories
 ```
 
 `validate.rs` — обработчик существующего запуска `eska` без подкоманды,
-а не новая команда `validate` или запланированная `check`. `vcs/git.rs` содержит
+а не новая команда `validate` или запланированная `check`. `src/vcs/git.rs` содержит
 общее открытие и инициализацию Git; чтение репозитория находится в
-`vcs/repository.rs`. `project/start.rs` исполняет workflow plan через
-`vcs/network.rs`, `vcs/repository.rs` и узкий fallback в `vcs/command.rs`.
+`src/vcs/repository.rs`. `src/project/start.rs` исполняет workflow plan через
+`src/vcs/network.rs`, `src/vcs/repository.rs` и узкий fallback в `src/vcs/command.rs`.
 
 ## Что менять и где
 
@@ -164,7 +96,7 @@ tests/
 | Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
 | Изменить обратимое кодирование JSON-путей и Git-строк | [`src/cli/encoding.rs`](../src/cli/encoding.rs) |
 | Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
-| Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`src/project/version.rs`](../src/project/version.rs) |
+| Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`crates/eska-project-core/src/project/version.rs`](../crates/eska-project-core/src/project/version.rs) |
 | Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
 | Изменить вывод или связь commit с task в `history` | [`src/cli/commands/history.rs`](../src/cli/commands/history.rs), затем [`src/project/history.rs`](../src/project/history.rs) |
 | Изменить запуск задачи или его ошибки | [`src/cli/commands/start.rs`](../src/cli/commands/start.rs), затем [`src/project/start.rs`](../src/project/start.rs) |
@@ -172,18 +104,18 @@ tests/
 | Изменить общий `--help`, `--lang`, `--project-dir` | [`src/cli/args.rs`](../src/cli/args.rs) |
 | Изменить подключение существующего проекта | [`src/project/init.rs`](../src/project/init.rs): `inspect` — без записи, `apply` — применение |
 | Изменить создание проекта или откат | [`src/project/create.rs`](../src/project/create.rs) |
-| Изменить состав создаваемых файлов | [`src/project/templates.rs`](../src/project/templates.rs) |
-| Изменить поиск project/workspace и проверку исходников | [`src/project/discovery.rs`](../src/project/discovery.rs) |
+| Изменить состав создаваемых файлов | [`crates/eska-project-core/src/project/templates.rs`](../crates/eska-project-core/src/project/templates.rs) |
+| Изменить поиск project/workspace и проверку исходников | [`crates/eska-project-core/src/project/discovery.rs`](../crates/eska-project-core/src/project/discovery.rs) |
 | Изменить расчёт состояния проекта и readiness | [`src/project/status.rs`](../src/project/status.rs) |
-| Изменить схему project `eska.toml` | [`src/config/schema.rs`](../src/config/schema.rs), затем [`src/config/project.rs`](../src/config/project.rs) |
-| Изменить схему workspace `eska.toml` | [`src/config/workspace.rs`](../src/config/workspace.rs), затем [`src/project/discovery.rs`](../src/project/discovery.rs) |
-| Изменить распознавание типа выгрузки | [`src/project/designer_xml.rs`](../src/project/designer_xml.rs) |
+| Изменить схему project `eska.toml` | [`crates/eska-project-core/src/config/schema.rs`](../crates/eska-project-core/src/config/schema.rs), затем [`crates/eska-project-core/src/config/project.rs`](../crates/eska-project-core/src/config/project.rs) |
+| Изменить схему workspace `eska.toml` | [`crates/eska-project-core/src/config/workspace.rs`](../crates/eska-project-core/src/config/workspace.rs), затем [`crates/eska-project-core/src/project/discovery.rs`](../crates/eska-project-core/src/project/discovery.rs) |
+| Изменить распознавание типа выгрузки | [`crates/eska-project-core/src/project/designer_xml.rs`](../crates/eska-project-core/src/project/designer_xml.rs) |
 | Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../src/vcs/git.rs) |
 | Изменить clone/fetch или transport fallback policy | [`src/vcs/network.rs`](../src/vcs/network.rs) |
 | Изменить system Git capability fallback | [`src/vcs/command.rs`](../src/vcs/command.rs) |
 | Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../src/vcs/repository.rs) |
 | Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../src/vcs/status.rs) |
-| Изменить workflow policy или план задачи | [`src/vcs/workflow/policy.rs`](../src/vcs/workflow/policy.rs) |
+| Изменить workflow policy или план задачи | [`crates/eska-project-core/src/workflow/policy.rs`](../crates/eska-project-core/src/workflow/policy.rs) |
 | Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../src/cli/interactive/keyboard.rs) |
 | Изменить оформление меню | [`src/cli/interactive/render.rs`](../src/cli/interactive/render.rs) |
 | Изменить приоритет языка | [`src/cli/localization/locale.rs`](../src/cli/localization/locale.rs) |
@@ -304,8 +236,8 @@ tests/
   проходит ту же подготовку, затем выполняет index snapshot/stage/commit/rollback.
   System Git получает точный cwd и pathspec `.`, поэтому staged sibling paths
   большого репозитория не входят в commit и сохраняются в index.
-- `project/start.rs` выполняет locale-independent preflight всего worktree,
-  получает remote refs через `vcs/network.rs`, проверяет ancestry через `gix`,
+- `src/project/start.rs` выполняет locale-independent preflight всего worktree,
+  получает remote refs через `src/vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую
   task-ветку. System Git обновляет активную base и переключает worktree, потому
   что эти операции должны согласованно изменить HEAD, index и файлы.
@@ -366,6 +298,22 @@ cargo test --test integration vcs::
 
 Полный набор проверок и правила временных каталогов описаны в
 [`AGENTS.md`](../AGENTS.md#проверки-и-завершение-задачи).
+После выделения Cargo workspace проверяйте все packages:
+
+```bash
+cargo fmt --check
+cargo check --workspace
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+ESKA_TEST_ROOT="$(realpath ../eska-playground)" cargo test --workspace
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps
+```
+
+Изолированная сборка ядра и проверка его normal dependencies:
+
+```bash
+cargo check -p eska-project-core
+cargo tree -p eska-project-core --edges normal
+```
 
 ## Изменение путей Rust-модулей
 
@@ -376,6 +324,11 @@ cargo test --test integration vcs::
 `project::{Project, ProjectType, ...}` и `config::ProjectConfig` остаются точками
 доступа к основным типам. Команды, флаги, пользовательские тексты, exit codes и
 формат `eska.toml` при этом не изменены.
+
+T90 выделяет реализации манифестов, модели и Designer XML в
+`eska-project-core`; существующий CLI использует их через `config`, `project`
+и `vcs::workflow`. Корневой пакет остаётся потребителем общей библиотеки,
+повторных реализаций этих операций нет. [Границы и baseline](tooling-modularity.md).
 
 В T08 `ProjectConfiguration` хранит `WorkflowSettings` со строковыми overrides,
 поэтому больше не реализует `Copy`; getters принимают `&self`.

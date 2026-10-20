@@ -5,6 +5,9 @@ use super::ProjectType;
 const NAMESPACE: &str = "http://v8.1c.ru/8.3/MDClasses";
 
 /// Detects the project type represented by a Designer XML root descriptor.
+///
+/// # Errors
+/// Returns an XML parser error for malformed input or exceeded parser limits.
 pub fn project_type(input: &str) -> Result<Option<ProjectType>, roxmltree::Error> {
     let document = roxmltree::Document::parse_with_options(
         input,
@@ -17,7 +20,8 @@ pub fn project_type(input: &str) -> Result<Option<ProjectType>, roxmltree::Error
 }
 
 /// Inspect an already parsed root so metadata opening does not parse the same file again.
-pub(super) fn project_type_from_root(root: roxmltree::Node<'_, '_>) -> Option<ProjectType> {
+#[must_use]
+pub fn project_type_from_root(root: roxmltree::Node<'_, '_>) -> Option<ProjectType> {
     if !root.has_tag_name((NAMESPACE, "MetaDataObject")) {
         return None;
     }

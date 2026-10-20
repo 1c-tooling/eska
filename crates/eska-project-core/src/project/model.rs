@@ -4,7 +4,7 @@ use std::path::{Component, Path, PathBuf};
 
 use crate::{
     project::build::BuildSettings,
-    vcs::workflow::{WorkflowPreset, WorkflowSettings},
+    workflow::{WorkflowPreset, WorkflowSettings},
 };
 
 /// A validated eska project.

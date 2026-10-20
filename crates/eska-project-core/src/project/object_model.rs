@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use gix::bstr::ByteSlice;
+use bstr::ByteSlice;
 
 use super::{
     Project, metadata,
@@ -366,7 +366,7 @@ fn affected_descriptor_paths(
     .then(|| external_root_descriptors(project_type, source))
     .transpose()?;
     for path in source_paths {
-        let path_bytes = gix::path::to_unix_separators_on_windows(gix::path::into_bstr(path));
+        let path_bytes = gix_path::to_unix_separators_on_windows(gix_path::into_bstr(path));
         let Ok(path_text) = path_bytes.to_str() else {
             continue;
         };
@@ -610,7 +610,7 @@ fn index_descriptor(
     by_source_path: &mut BTreeMap<PathBuf, BTreeSet<ObjectId>>,
 ) -> Result<(), ObjectModelError> {
     let relative_bytes =
-        gix::path::to_unix_separators_on_windows(gix::path::into_bstr(&file.relative));
+        gix_path::to_unix_separators_on_windows(gix_path::into_bstr(&file.relative));
     let Ok(relative) = relative_bytes.to_str() else {
         return Ok(());
     };
@@ -912,7 +912,7 @@ pub(crate) fn logical_path_for_source(
     project_type: super::ProjectType,
     path: &Path,
 ) -> Option<metadata::MetadataPath> {
-    let normalized = gix::path::to_unix_separators_on_windows(gix::path::into_bstr(path));
+    let normalized = gix_path::to_unix_separators_on_windows(gix_path::into_bstr(path));
     let path = normalized.to_str().ok()?;
     let mut logical = match project_type {
         super::ProjectType::Configuration | super::ProjectType::Extension => {

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     project::build::{BuildSettings, BuildSettingsError},
-    vcs::workflow::WorkflowSettings,
+    workflow::WorkflowSettings,
 };
 
 use super::{
