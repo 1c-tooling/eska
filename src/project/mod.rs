@@ -30,6 +30,3 @@ pub use eska_project_core::project::{
     metadata_rename, metadata_workspace, model, object_model, selection, support, templates,
     version,
 };
-
-#[cfg(test)]
-pub(crate) use eska_project_core::project::metadata;

@@ -15,6 +15,8 @@ authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 workspace = true
 
 [dependencies]
+eska-presentation = { path = "../eska-presentation" }
+clap = { version = "4.6.6", features = ["derive", "string"] }
 eska-project-core = { path = "../eska-project-core" }
 gix = { version = "0.87.1", default-features = false, features = ["blocking-http-transport-curl-rustls", "max-performance", "revision", "sha1", "status", "worktree-mutation"] }
 roxmltree = { version = "0.21.1", default-features = false, features = ["std", "positions"] }

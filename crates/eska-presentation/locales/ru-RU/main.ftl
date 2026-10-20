@@ -995,3 +995,5 @@ metadata-input-help = Файл запроса JSON или - для чтения 
 metadata-rename-preview-about = Показать план переименования и сомнительные ссылки без записи файлов
 metadata-rename-apply-about = Применить проверенный план переименования по снимку источников
 metadata-rename-recovery-about = Проверить или восстановить прерванное переименование
+
+vcs-tool-about = Git/workflow, полки и смысловое сравнение Designer XML

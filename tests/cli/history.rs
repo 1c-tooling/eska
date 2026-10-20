@@ -9,7 +9,7 @@ use crate::{
 
 /// Run the built CLI with an explicit locale and isolated project directory.
 fn eska(current_dir: &Path, locale: &str, args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_eska"))
+    Command::new(crate::vcs_cli())
         .current_dir(current_dir)
         .env_remove("ESKA_LANG")
         .args(["--lang", locale])

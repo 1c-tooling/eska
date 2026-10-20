@@ -3,13 +3,11 @@
 use std::{env, process::ExitCode};
 
 mod args;
-mod changes;
 mod commands;
 mod diagnostics;
 mod ide;
 mod interactive;
 mod platform;
-mod shelves;
 
 pub use args::Cli;
 pub use eska_presentation::localization;

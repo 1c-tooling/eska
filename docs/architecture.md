@@ -64,6 +64,7 @@ crates/eska-build/
 └── src/cli/                        # standalone build/unpack and shared legacy platform presentation
 crates/eska-vcs/
 └── src/
+    ├── cli/                        # standalone parsing and shared VCS command presentation
     ├── vcs/                        # embedded Git, snapshots, shelves and isolated fallback
     └── project/                    # project workflow and semantic changes over shared XML core
 crates/eska-terminal/
@@ -100,10 +101,10 @@ src/
 
 `validate.rs` — обработчик существующего запуска `eska` без подкоманды,
 а не новая команда `validate`. Самостоятельный `eska-check` использует общий
-контекст, полный XML-обход и внешний анализатор; его CLI находится в отдельном package. `src/vcs/git.rs` содержит
+контекст, полный XML-обход и внешний анализатор; его CLI находится в отдельном package. `crates/eska-vcs/src/vcs/git.rs` содержит
 общее открытие и инициализацию Git; чтение репозитория находится в
-`src/vcs/repository.rs`. `src/project/start.rs` исполняет workflow plan через
-`src/vcs/network.rs`, `src/vcs/repository.rs` и узкий fallback в `src/vcs/command.rs`.
+`crates/eska-vcs/src/vcs/repository.rs`. `crates/eska-vcs/src/project/start.rs` исполняет workflow plan через
+`crates/eska-vcs/src/vcs/network.rs`, `crates/eska-vcs/src/vcs/repository.rs` и узкий fallback в `crates/eska-vcs/src/vcs/command.rs`.
 
 ## Что менять и где
 
@@ -116,28 +117,28 @@ src/
 | Изменить план или генерацию patch-extension | [`src/cli/commands/patch.rs`](../src/cli/commands/patch.rs), затем [`src/project/patch/`](../src/project/patch/) |
 | Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`crates/eska-build-runtime/src/build/tool.rs`](../crates/eska-build-runtime/src/build/tool.rs) |
 | Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
-| Изменить общие имена объектов и путей в CLI | [`src/cli/changes.rs`](../src/cli/changes.rs) |
+| Изменить общие имена объектов и путей в CLI | [`crates/eska-vcs/src/cli/changes.rs`](../crates/eska-vcs/src/cli/changes.rs) |
 | Изменить обратимое кодирование JSON-путей и Git-строк | [`crates/eska-presentation/src/encoding.rs`](../crates/eska-presentation/src/encoding.rs) |
-| Изменить human/JSON вывод `status` | [`src/cli/commands/status.rs`](../src/cli/commands/status.rs) |
+| Изменить human/JSON вывод `status` | [`crates/eska-vcs/src/cli/commands/status.rs`](../crates/eska-vcs/src/cli/commands/status.rs) |
 | Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`crates/eska-project-core/src/project/version.rs`](../crates/eska-project-core/src/project/version.rs) |
-| Изменить режимы или вывод `diff` | [`src/cli/commands/diff.rs`](../src/cli/commands/diff.rs), затем [`src/project/diff.rs`](../src/project/diff.rs) |
-| Изменить вывод или связь commit с task в `history` | [`src/cli/commands/history.rs`](../src/cli/commands/history.rs), затем [`src/project/history.rs`](../src/project/history.rs) |
-| Изменить запуск задачи или его ошибки | [`src/cli/commands/start.rs`](../src/cli/commands/start.rs), затем [`src/project/start.rs`](../src/project/start.rs) |
+| Изменить режимы или вывод `diff` | [`crates/eska-vcs/src/cli/commands/diff.rs`](../crates/eska-vcs/src/cli/commands/diff.rs), затем [`crates/eska-vcs/src/project/diff.rs`](../crates/eska-vcs/src/project/diff.rs) |
+| Изменить вывод или связь commit с task в `history` | [`crates/eska-vcs/src/cli/commands/history.rs`](../crates/eska-vcs/src/cli/commands/history.rs), затем [`crates/eska-vcs/src/project/history.rs`](../crates/eska-vcs/src/project/history.rs) |
+| Изменить запуск задачи или его ошибки | [`crates/eska-vcs/src/cli/commands/start.rs`](../crates/eska-vcs/src/cli/commands/start.rs), затем [`crates/eska-vcs/src/project/start.rs`](../crates/eska-vcs/src/project/start.rs) |
 | Подключить новую явно запрошенную команду | [`src/cli/commands/mod.rs`](../src/cli/commands/mod.rs) |
 | Изменить общий `--help`, `--lang`, `--project-dir` | [`src/cli/args.rs`](../src/cli/args.rs) |
 | Изменить подключение существующего проекта | [`src/project/init.rs`](../src/project/init.rs): `inspect` — без записи, `apply` — применение |
 | Изменить создание проекта или откат | [`src/project/create.rs`](../src/project/create.rs) |
 | Изменить состав создаваемых файлов | [`crates/eska-project-core/src/project/templates.rs`](../crates/eska-project-core/src/project/templates.rs) |
 | Изменить поиск project/workspace и проверку исходников | [`crates/eska-project-core/src/project/discovery.rs`](../crates/eska-project-core/src/project/discovery.rs) |
-| Изменить расчёт состояния проекта и readiness | [`src/project/status.rs`](../src/project/status.rs) |
+| Изменить расчёт состояния проекта и readiness | [`crates/eska-vcs/src/project/status.rs`](../crates/eska-vcs/src/project/status.rs) |
 | Изменить схему project `eska.toml` | [`crates/eska-project-core/src/config/schema.rs`](../crates/eska-project-core/src/config/schema.rs), затем [`crates/eska-project-core/src/config/project.rs`](../crates/eska-project-core/src/config/project.rs) |
 | Изменить схему workspace `eska.toml` | [`crates/eska-project-core/src/config/workspace.rs`](../crates/eska-project-core/src/config/workspace.rs), затем [`crates/eska-project-core/src/project/discovery.rs`](../crates/eska-project-core/src/project/discovery.rs) |
 | Изменить распознавание типа выгрузки | [`crates/eska-project-core/src/project/designer_xml.rs`](../crates/eska-project-core/src/project/designer_xml.rs) |
-| Изменить Git init или обнаружение Git | [`src/vcs/git.rs`](../crates/eska-vcs/src/vcs/git.rs) |
-| Изменить clone/fetch или transport fallback policy | [`src/vcs/network.rs`](../crates/eska-vcs/src/vcs/network.rs) |
-| Изменить system Git capability fallback | [`src/vcs/command.rs`](../crates/eska-vcs/src/vcs/command.rs) |
-| Изменить чтение HEAD, refs или истории | [`src/vcs/repository.rs`](../crates/eska-vcs/src/vcs/repository.rs) |
-| Изменить состояние файлов и changed paths | [`src/vcs/status.rs`](../crates/eska-vcs/src/vcs/status.rs) |
+| Изменить Git init или обнаружение Git | [`crates/eska-vcs/src/vcs/git.rs`](../crates/eska-vcs/src/vcs/git.rs) |
+| Изменить clone/fetch или transport fallback policy | [`crates/eska-vcs/src/vcs/network.rs`](../crates/eska-vcs/src/vcs/network.rs) |
+| Изменить system Git capability fallback | [`crates/eska-vcs/src/vcs/command.rs`](../crates/eska-vcs/src/vcs/command.rs) |
+| Изменить чтение HEAD, refs или истории | [`crates/eska-vcs/src/vcs/repository.rs`](../crates/eska-vcs/src/vcs/repository.rs) |
+| Изменить состояние файлов и changed paths | [`crates/eska-vcs/src/vcs/status.rs`](../crates/eska-vcs/src/vcs/status.rs) |
 | Изменить workflow policy или план задачи | [`crates/eska-project-core/src/workflow/policy.rs`](../crates/eska-project-core/src/workflow/policy.rs) |
 | Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../crates/eska-terminal/src/interactive/keyboard.rs) |
 | Изменить оформление меню | [`src/cli/interactive/render.rs`](../crates/eska-terminal/src/interactive/render.rs) |
@@ -259,8 +260,8 @@ src/
   проходит ту же подготовку, затем выполняет index snapshot/stage/commit/rollback.
   System Git получает точный cwd и pathspec `.`, поэтому staged sibling paths
   большого репозитория не входят в commit и сохраняются в index.
-- `src/project/start.rs` выполняет locale-independent preflight всего worktree,
-  получает remote refs через `src/vcs/network.rs`, проверяет ancestry через `gix`,
+- `crates/eska-vcs/src/project/start.rs` выполняет locale-independent preflight всего worktree,
+  получает remote refs через `crates/eska-vcs/src/vcs/network.rs`, проверяет ancestry через `gix`,
   обновляет неактивную base ref транзакцией compare-and-swap и активирует новую
   task-ветку. System Git обновляет активную base и переключает worktree, потому
   что эти операции должны согласованно изменить HEAD, index и файлы.

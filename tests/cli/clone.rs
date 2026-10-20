@@ -71,7 +71,7 @@ fn repository_address(source: &Path, as_url: bool) -> String {
 
 /// Run eska with a deterministic locale.
 fn eska(base: &Path, locale: &str, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_eska"))
+    Command::new(crate::vcs_cli())
         .current_dir(base)
         .env_remove("ESKA_LANG")
         .args(["--lang", locale])
@@ -82,7 +82,7 @@ fn eska(base: &Path, locale: &str, args: &[&str]) -> Output {
 
 /// Run eska without protocol helpers available in `PATH`.
 fn eska_without_helpers(base: &Path, locale: &str, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_eska"))
+    Command::new(crate::vcs_cli())
         .current_dir(base)
         .env_remove("ESKA_LANG")
         .env("PATH", "")

@@ -10,7 +10,7 @@ use crate::support::TestDir;
 
 /// Run eska with an explicit locale in an isolated project fixture.
 fn eska(current_dir: &Path, locale: &str, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_eska"))
+    Command::new(crate::vcs_cli())
         .current_dir(current_dir)
         .env_remove("ESKA_LANG")
         .args(["--lang", locale])
@@ -21,7 +21,7 @@ fn eska(current_dir: &Path, locale: &str, args: &[&str]) -> Output {
 
 /// Run redirected semantic output with explicit color suppression.
 fn eska_no_color(current_dir: &Path, locale: &str, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_eska"))
+    Command::new(crate::vcs_cli())
         .current_dir(current_dir)
         .env_remove("ESKA_LANG")
         .env("NO_COLOR", "1")

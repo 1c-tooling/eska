@@ -995,3 +995,5 @@ metadata-input-help = JSON request file, or - to read stdin
 metadata-rename-preview-about = Preview a rename and uncertain references without writing files
 metadata-rename-apply-about = Apply a reviewed rename plan against its source snapshot
 metadata-rename-recovery-about = Inspect or recover an interrupted rename
+
+vcs-tool-about = Git workflows, shelves and semantic Designer XML comparisons

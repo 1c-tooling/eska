@@ -10,7 +10,7 @@ use std::os::unix::fs::PermissionsExt;
 use crate::support::TestDir;
 
 fn eska(current_dir: &Path, locale: &str, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_eska"))
+    Command::new(crate::vcs_cli())
         .current_dir(current_dir)
         .env_remove("ESKA_LANG")
         .args(["--lang", locale])
@@ -667,7 +667,7 @@ fn generated_draft_editor_inherits_the_caller_locale() {
     let editor_command = format!("'{}'", editor.display());
     git_ok(&fixture.0, &["config", "core.editor", &editor_command]);
 
-    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+    let output = Command::new(crate::vcs_cli())
         .current_dir(&root)
         .env_remove("ESKA_LANG")
         .env("LC_ALL", "C.UTF-8")
