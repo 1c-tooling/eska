@@ -36,6 +36,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    #[command(name = "__bridge", hide = true)]
+    Bridge(crate::bridge::BridgeArgs),
     #[command(disable_help_flag = true)]
     Clone(commands::clone::CloneArgs),
     #[command(disable_help_flag = true)]
@@ -75,6 +77,7 @@ pub fn run() -> ExitCode {
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
     match cli.command {
+        Commands::Bridge(args) => args.run(&cli.project_dir),
         Commands::Clone(args) => args.run(&cli.project_dir, &localizer),
         Commands::Diff(args) => args.run(&cli.project_dir, &localizer),
         Commands::Finish(_) => commands::finish::FinishArgs::run(&cli.project_dir, &localizer),

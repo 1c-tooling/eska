@@ -5,6 +5,7 @@
 pub mod application;
 pub mod config;
 pub mod project;
+pub mod provenance;
 pub mod workflow;
 
 #[cfg(test)]

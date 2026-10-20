@@ -153,6 +153,119 @@ fn every_project_type_is_readable_in_a_minimal_installation() {
     }
 }
 
+/// The bridge scopes changed paths to the selected source and remains independent of locale/Git CLI.
+#[test]
+fn read_only_bridge_keeps_provenance_and_source_scope() {
+    let fixture = TestDir::new();
+    fs::create_dir(fixture.0.join("src")).unwrap();
+    fs::write(
+        fixture.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    fs::write(fixture.0.join("src/module.bsl"), b"base\r\n").unwrap();
+    fs::write(fixture.0.join("outside.txt"), b"base").unwrap();
+    git(
+        &fixture.0,
+        &["init", "--initial-branch=main", "--template="],
+    );
+    git(&fixture.0, &["add", "."]);
+    git(&fixture.0, &["commit", "-m", "base"]);
+    let commit = String::from_utf8(git(&fixture.0, &["rev-parse", "HEAD"])).unwrap();
+    let head = fs::read(fixture.0.join(".git/HEAD")).unwrap();
+    let index = fs::read(fixture.0.join(".git/index")).unwrap();
+    fs::write(fixture.0.join("outside.txt"), b"changed outside source").unwrap();
+    for locale in ["ru", "en"] {
+        let provenance = json(&tool(
+            &fixture.0,
+            OsStr::new(""),
+            locale,
+            &["__bridge", "provenance"],
+        ));
+        assert_eq!(provenance["schema_version"], 1);
+        assert_eq!(provenance["operation"], "provenance");
+        assert_eq!(provenance["data"]["status"], "available");
+        assert_eq!(provenance["data"]["commit"], commit.trim());
+        assert_eq!(provenance["data"]["dirty"], true);
+        let changes = json(&tool(
+            &fixture.0,
+            OsStr::new(""),
+            locale,
+            &["__bridge", "source-changes", "--files", "1"],
+        ));
+        assert_eq!(changes["operation"], "source_changes");
+        assert_eq!(changes["data"]["local_changes"], 0);
+    }
+    fs::write(fixture.0.join("src/module.bsl"), b"pending\r\n").unwrap();
+    let changes = json(&tool(
+        &fixture.0,
+        OsStr::new(""),
+        "en",
+        &["__bridge", "source-changes", "--files", "1"],
+    ));
+    assert_eq!(changes["data"]["local_changes"], 1);
+    assert_eq!(fs::read(fixture.0.join(".git/HEAD")).unwrap(), head);
+    assert_eq!(fs::read(fixture.0.join(".git/index")).unwrap(), index);
+    assert_eq!(
+        fs::read(fixture.0.join("src/module.bsl")).unwrap(),
+        b"pending\r\n"
+    );
+}
+
+/// Broken repository metadata cannot be reported as a clean source; Git-less fallback stays explicit.
+#[test]
+fn source_bridge_distinguishes_absent_and_broken_git() {
+    let fixture = TestDir::new();
+    fs::create_dir(fixture.0.join("src")).unwrap();
+    fs::write(
+        fixture.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    fs::write(fixture.0.join("src/module.bsl"), b"user bytes\r\n").unwrap();
+    for locale in ["ru", "en"] {
+        let absent = json(&tool(
+            &fixture.0,
+            OsStr::new(""),
+            locale,
+            &["__bridge", "provenance"],
+        ));
+        assert_eq!(absent["data"]["status"], "absent");
+        let changes = json(&tool(
+            &fixture.0,
+            OsStr::new(""),
+            locale,
+            &["__bridge", "source-changes", "--files", "1"],
+        ));
+        assert_eq!(changes["data"]["local_changes"], 1);
+    }
+    fs::create_dir(fixture.0.join(".git")).unwrap();
+    for locale in ["ru", "en"] {
+        let unknown = json(&tool(
+            &fixture.0,
+            OsStr::new(""),
+            locale,
+            &["__bridge", "provenance"],
+        ));
+        assert_eq!(unknown["data"]["status"], "unavailable");
+        let output = tool(
+            &fixture.0,
+            OsStr::new(""),
+            locale,
+            &["__bridge", "source-changes", "--files", "1"],
+        );
+        assert_eq!(output.status.code(), Some(1));
+        assert!(output.stderr.is_empty());
+        let error: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert!(error["data"].is_null());
+        assert_eq!(error["error"], "repository");
+    }
+    assert_eq!(
+        fs::read(fixture.0.join("src/module.bsl")).unwrap(),
+        b"user bytes\r\n"
+    );
+}
+
 /// Only the documented Git capability fallback is present during task and shelf mutations.
 #[cfg(unix)]
 #[test]

@@ -388,42 +388,4 @@ struct SourceDocument {
     base_configuration: Option<ChecksumDocument>,
 }
 
-/// Optional VCS data is captured by the caller before temporary build files are created.
-#[derive(Clone, Debug, Serialize)]
-pub struct GitProvenance {
-    status: &'static str,
-    commit: Option<String>,
-    dirty: Option<bool>,
-}
-
-impl GitProvenance {
-    /// Record a repository snapshot supplied by the VCS owner.
-    #[must_use]
-    pub const fn available(commit: Option<String>, dirty: bool) -> Self {
-        Self {
-            status: "available",
-            commit,
-            dirty: Some(dirty),
-        }
-    }
-
-    /// Record a verified absence of repository metadata.
-    #[must_use]
-    pub const fn absent() -> Self {
-        Self {
-            status: "absent",
-            commit: None,
-            dirty: None,
-        }
-    }
-
-    /// Retain unknown provenance when no VCS inspector was requested or it could not complete.
-    #[must_use]
-    pub const fn unavailable() -> Self {
-        Self {
-            status: "unavailable",
-            commit: None,
-            dirty: None,
-        }
-    }
-}
+pub use eska_project_core::provenance::GitProvenance;

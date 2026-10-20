@@ -9,8 +9,8 @@ T96 выполняется по частям. Сейчас `eska` запуска
 | `clone`, `status`, `diff`, `history`, `start`, `switch`, `save`, `finish`, `shelve`, `unshelve`, `shelves` | `eska-vcs` |
 
 `build`, `new/init`, `new --from`, `import`, `patch`, `doctor` пока используют
-прежние адаптеры общей команды. Им ещё нужны отдельные контракты provenance,
-preflight и транзакций; T96 остаётся `IN PROGRESS`. `update` сохраняет прежнего
+прежние адаптеры общей команды. Их процессные клиенты provenance,
+preflight и транзакций ещё не завершены; T96 остаётся `IN PROGRESS`. `update` сохраняет прежнего
 владельца до выборочного установщика T97. Состав зависимостей root package
 пока не является окончательным составом лёгкой оболочки.
 
@@ -80,3 +80,29 @@ exit 197, identity rewrite при `--project-dir ide`, отсутствие fall
 неверного override и передачу трёх Unix-сигналов с reaping фактического PID.
 Нативные составные операции и полный финальный workspace-набор остаются
 следующими проверками T96.
+
+## Протокол VCS для составных операций
+
+`eska-vcs --project-dir ROOT __bridge provenance` возвращает schema 1,
+operation `provenance`, `data` с прежними status/commit/dirty и `error: null`.
+`__bridge source-changes --files N [--empty-scaffold]` возвращает operation
+`source_changes` и `data.local_changes`. Это скрытые read-only входы для
+композиции. Параметры files/empty-scaffold передаёт владелец уже проверенного
+source-плана; они не являются самостоятельной проверкой его содержимого.
+
+Git-less source сохраняет прежнее правило подтверждения (N либо 0 для
+проверенного scaffold). Повреждённый Git даёт `data: null`, `error: "repository"`
+и exit 1 при source preflight. Provenance в том же случае сообщает unavailable;
+это не доказанная чистота. Исходники, HEAD и raw index запросы не меняют.
+Пути передаются через native аргументы, protocol JSON их не перекодирует.
+
+`GitProvenance` теперь находится в общей библиотеке как чистые данные без
+repository runtime. Старые поля/значения паспорта сохраняются, десериализация
+отклоняет несогласованные status/commit/dirty, неизвестные поля и неверные IDs.
+Вызов самой VCS-реализации в оставшихся native-адаптерах пока библиотечный;
+переход на этот process-контракт — следующая часть T96.
+
+Проверки этой границы: workspace strict Clippy и 275 тестов core/VCS/build
+runtime passed, 1 ignored. Два новых настоящих process-теста подтвердили scope
+source, локальную историю, byte-read-only HEAD/index/source, обе локали,
+пустой PATH, отличие absent от broken Git и отказ вместо ложного нуля.

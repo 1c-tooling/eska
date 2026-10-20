@@ -13,6 +13,7 @@ crates/eska-project-core/
 ├── assets/project/                 # built-in .gitattributes and .gitignore
 └── src/
     ├── lib.rs                      # config, project and workflow boundaries
+    ├── provenance.rs               # typed portable VCS data without repository execution
     ├── application/                # explicit composition, dependency graph and read-only resolver
     ├── config/                     # strict manifest schemas, serialization and validation
     ├── workflow.rs                 # presets and portable settings
@@ -64,6 +65,7 @@ crates/eska-build/
 └── src/cli/                        # standalone build/unpack and shared legacy platform presentation
 crates/eska-vcs/
 └── src/
+    ├── bridge.rs                   # read-only provenance/source-changes protocol
     ├── cli/                        # standalone parsing and shared VCS command presentation
     ├── vcs/                        # embedded Git, snapshots, shelves and isolated fallback
     └── project/                    # project workflow and semantic changes over shared XML core
