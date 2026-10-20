@@ -11,16 +11,16 @@ use eska_project_core::config::ProjectConfig;
 use eska_project_core::project::Project;
 
 /// The orchestration owner checks changed paths; errors always stop replacement.
-pub type SourceChanges = fn(&Project, bool, usize) -> Result<usize, ArtifactError>;
+pub type SourceChanges<'a> = &'a dyn Fn(&Project, bool, usize) -> Result<usize, ArtifactError>;
 
 /// The original source state and identity observed before unpacking or asking the user.
-pub struct ImportPlan {
+pub struct ImportPlan<'a> {
     project: Project,
     config: Vec<u8>,
     snapshot: Snapshot,
     current: Option<Identity>,
     local_changes: usize,
-    inspect_changes: SourceChanges,
+    inspect_changes: SourceChanges<'a>,
 }
 
 /// Successful publication may retain an old tree only when cleanup failed.
@@ -28,14 +28,14 @@ pub struct ImportResult {
     pub retained_backup: Option<PathBuf>,
 }
 
-impl ImportPlan {
+impl<'a> ImportPlan<'a> {
     /// Validate the entire replacement boundary without changing project or Git files.
     ///
     /// # Errors
     /// Rejects root-level sources, symlinks, nested projects and unreadable source/Git state.
     pub fn inspect(
         project: &Project,
-        inspect_changes: SourceChanges,
+        inspect_changes: SourceChanges<'a>,
     ) -> Result<Self, ArtifactError> {
         validate_location(project)?;
         let config_path = project.root().join(eska_project_core::config::FILE_NAME);
@@ -207,7 +207,7 @@ mod tests {
         fs::write(fixture.0.join("src/Configuration.xml"),"<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><Configuration uuid=\"11111111-1111-1111-1111-111111111111\"><Properties><Name>Example</Name></Properties></Configuration></MetaDataObject>").unwrap();
         let project = config.into_project(fixture.0.clone()).unwrap();
         assert!(matches!(
-            ImportPlan::inspect(&project, reject_changes),
+            ImportPlan::inspect(&project, &reject_changes),
             Err(ArtifactError::ChangeInspection)
         ));
     }

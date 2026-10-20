@@ -116,7 +116,9 @@ pub(super) fn run(
             | Commands::Status(_)
             | Commands::Switch(_),
         ) => component::run(Component::Vcs, process_args, Invocation::Direct, localizer),
-        Some(Commands::Clean(_) | Commands::Config(_) | Commands::Platform(_)) => component::run(
+        Some(
+            Commands::Clean(_) | Commands::Config(_) | Commands::Platform(_) | Commands::Import(_),
+        ) => component::run(
             Component::Build,
             process_args,
             Invocation::Direct,
@@ -132,7 +134,6 @@ pub(super) fn run(
         ),
         Some(Commands::New(args)) => args.run(project_dir, localizer),
         Some(Commands::Init(args)) => args.run(project_dir, localizer),
-        Some(Commands::Import(args)) => args.run(project_dir, localizer),
         Some(Commands::Patch(args)) => args.run(project_dir, localizer),
         Some(Commands::Doctor(args)) => args.run(project_dir, localizer),
         None => component::run(

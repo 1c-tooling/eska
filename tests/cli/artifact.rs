@@ -348,6 +348,27 @@ fn clean_matching_import_replaces_sources_and_preserves_git() {
     let index = fs::read(root.join(".git/index")).unwrap();
     let head = fs::read(root.join(".git/HEAD")).unwrap();
     fs::write(root.join("outside-source.txt"), "preserve unrelated change").unwrap();
+    for locale in ["ru", "en"] {
+        let preview = ["import", "../incoming.cf", "--dry-run", "--format", "json"];
+        let wrapper = run(&root, &fixture, locale, &preview);
+        let direct = Command::new(
+            Path::new(env!("CARGO_BIN_EXE_eska"))
+                .with_file_name(format!("eska-build{}", std::env::consts::EXE_SUFFIX)),
+        )
+        .current_dir(&root)
+        .args(["--lang", locale])
+        .args(preview)
+        .arg("--ibcmd")
+        .arg(super::build::fake_ibcmd(&fixture))
+        .output()
+        .unwrap();
+        assert!(
+            wrapper.status.success() && direct.status.success(),
+            "{wrapper:?} {direct:?}"
+        );
+        assert_eq!(wrapper.stdout, direct.stdout);
+        assert_eq!(wrapper.stderr, direct.stderr);
+    }
     let output = run(
         &root,
         &fixture,

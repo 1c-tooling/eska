@@ -48,6 +48,8 @@ enum Commands {
     #[command(disable_help_flag = true)]
     Unpack(commands::unpack::UnpackArgs),
     #[command(disable_help_flag = true)]
+    Import(commands::import::ImportArgs),
+    #[command(disable_help_flag = true)]
     Clean(commands::clean::CleanArgs),
     #[command(disable_help_flag = true)]
     Platform(commands::platform::PlatformArgs),
@@ -88,6 +90,9 @@ pub fn run() -> ExitCode {
     match cli.command {
         Some(Commands::Build(args)) => args.run(&cli.project_dir, &localizer, &provenance),
         Some(Commands::Unpack(args)) => args.run(&cli.project_dir, &localizer),
+        Some(Commands::Import(args)) => {
+            args.run(&cli.project_dir, &localizer, vcs_binary.as_deref())
+        }
         Some(Commands::Clean(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Platform(args)) => args.run(&localizer),
         Some(Commands::Config(args)) => args.run(&localizer),
@@ -125,6 +130,7 @@ fn localized(localizer: &Localizer) -> clap::Command {
         .mut_arg("version",|arg|arg.help(localizer.text("cli-version")))
         .mut_subcommand("build",|command|commands::build::localize(command,localizer))
         .mut_subcommand("unpack", |command| commands::unpack::localize(command, localizer))
+        .mut_subcommand("import", |command| commands::import::localize(command, localizer))
         .mut_subcommand("clean",|command|commands::clean::localize(command,localizer))
         .mut_subcommand("platform",|command|commands::platform::localize(command,localizer))
         .mut_subcommand("config",|command|commands::config::localize(command,localizer));

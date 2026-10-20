@@ -1,7 +1,28 @@
 //! Small typed calls to the VCS owner's private protocol, without a repository implementation.
 
 use crate::{Component, Error, query};
-use std::path::Path;
+use std::{ffi::OsString, path::Path};
+
+/// Recheck only selected source paths using the same preflighted executable throughout a transaction.
+///
+/// # Errors
+/// Returns cancellation, repository failures and invalid counts without claiming a clean source.
+pub fn source_changes(
+    binary: &Path,
+    root: &Path,
+    empty: bool,
+    files: usize,
+) -> Result<usize, Error> {
+    let mut options = vec![OsString::from("--files"), OsString::from(files.to_string())];
+    if empty {
+        options.push(OsString::from("--empty-scaffold"));
+    }
+    query(Component::Vcs, binary, "source_changes", root, &options)?
+        .get("local_changes")
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|count| usize::try_from(count).ok())
+        .ok_or(Error::InvalidResponse)
+}
 
 /// Inspect the nearest on-disk repository before the caller starts a file transaction.
 ///

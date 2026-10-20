@@ -67,9 +67,13 @@ cleanup сообщает путь сохранённого частичного 
 В DESTINATION находятся только экспортированные исходники: `eska.toml`
 и Git не создаются. Родительский `.eska/import/.gitignore` и управляемое
 служебное хранилище переиспользуются. Для подключения экспорта далее
-используется `eska-project init`. Замена существующего source остаётся
-составной операцией общего `eska import` с VCS preflight и подтверждением.
+используется `eska-project init`. Для замены существующего source есть
+`eska-build import FILE` (общий вход — `eska import FILE`) с VCS preflight и подтверждением.
 Обратимая транзакция повторно проверяет исходники и changed paths перед записью.
+Для `import` требуется `eska-vcs`; выбор следует общим правилам
+[поиска компонентов](component-delegation.md). Флаги `--dry-run`, `--force`,
+`-p/--project`, `--format human|json` и platform flags сохранены. JSON schema 1,
+exit codes и порядок preview/подтверждения совпадают с общим входом.
 
 JSON schema 1 успеха: `kind: "unpack"`, `status: "unpacked"`,
 `destination: {value,encoding}`, `identity: {project_type,name,uuid}` и

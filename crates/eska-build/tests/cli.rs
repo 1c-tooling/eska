@@ -46,7 +46,17 @@ fn project(root: &Path, kind: ProjectType) -> Project {
 
 /// The standalone executable has no wrapper, project server, analyzer or Git on PATH.
 fn command(root: &Path, config: &Path, locale: &str) -> Command {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_eska-build"));
+    command_at(
+        Path::new(env!("CARGO_BIN_EXE_eska-build")),
+        root,
+        config,
+        locale,
+    )
+}
+
+/// Select a test-owned installation while retaining the same isolated machine environment.
+fn command_at(binary: &Path, root: &Path, config: &Path, locale: &str) -> Command {
+    let mut command = Command::new(binary);
     command
         .current_dir(root)
         .env("PATH", "")
@@ -57,6 +67,87 @@ fn command(root: &Path, config: &Path, locale: &str) -> Command {
         .env_remove("ESKA_LANG")
         .args(["--lang", locale]);
     command
+}
+
+/// Only build and VCS executables are installed; imports still preserve consent and source identity.
+#[test]
+fn import_works_with_only_build_and_vcs_installed() {
+    let fixture = support::TestDir::new();
+    let bin = fixture.0.join("minimal-bin");
+    fs::create_dir(&bin).unwrap();
+    let build = Path::new(env!("CARGO_BIN_EXE_eska-build"));
+    for name in ["eska-build", "eska-vcs"] {
+        let name = format!("{name}{}", std::env::consts::EXE_SUFFIX);
+        fs::hard_link(build.parent().unwrap().join(&name), bin.join(name)).unwrap();
+    }
+    let installed = bin.join(build.file_name().unwrap());
+    let native = ibcmd_fixture::executable(&repository());
+    for locale in ["ru", "en"] {
+        for (index, kind) in [
+            ProjectType::Configuration,
+            ProjectType::Extension,
+            ProjectType::Processing,
+            ProjectType::Report,
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let project = project(&fixture.0.join(format!("{locale}-{index}")), kind);
+            let descriptor = fs::read_dir(project.source())
+                .unwrap()
+                .map(Result::unwrap)
+                .find(|entry| {
+                    entry
+                        .path()
+                        .extension()
+                        .is_some_and(|extension| extension == "xml")
+                })
+                .unwrap()
+                .path();
+            let before = fs::read(&descriptor).unwrap();
+            let config = fs::read(project.root().join("eska.toml")).unwrap();
+            let extension = match kind {
+                ProjectType::Configuration => "cf",
+                ProjectType::Extension => "cfe",
+                ProjectType::Processing => "epf",
+                ProjectType::Report => "erf",
+            };
+            let input = fixture.0.join(format!("{locale}-{index}.{extension}"));
+            fs::write(&input, &before).unwrap();
+            for force in [false, true] {
+                let mut command = command_at(
+                    &installed,
+                    project.root(),
+                    &fixture.0.join("config"),
+                    locale,
+                );
+                command
+                    .env_remove("ESKA_VCS_BINARY")
+                    .args(["import", "--format", "json", "--ibcmd"])
+                    .arg(&native)
+                    .arg(&input);
+                if force {
+                    command.arg("--force");
+                }
+                let result = document(&command.output().unwrap(), force);
+                if force {
+                    assert_eq!(result["applied"], true);
+                    assert_eq!(result["incoming"]["type"], kind.as_str());
+                } else {
+                    assert_eq!(result["error"]["code"], "confirmation-required");
+                    assert_eq!(fs::read(&descriptor).unwrap(), before);
+                }
+                assert_eq!(fs::read(project.root().join("eska.toml")).unwrap(), config);
+            }
+            assert!(!project.root().join(".git").exists());
+            assert_eq!(
+                fs::read_dir(project.root().join(".eska/import"))
+                    .unwrap()
+                    .count(),
+                1
+            );
+        }
+    }
 }
 
 /// Machine stdout is exactly one JSON document; native diagnostics are emitted on stderr.
