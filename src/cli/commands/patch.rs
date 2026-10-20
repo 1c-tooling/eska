@@ -61,7 +61,7 @@ impl PatchArgs {
         };
         let mut plan = match patch::plan(&project, self.base.as_deref()) {
             Ok(plan) => plan,
-            Err(e) => return self.fail(e.code, &e.detail, localizer),
+            Err(e) => return self.fail(&e.code, &e.detail, localizer),
         };
         if let Some(version) = &self.platform_version {
             match PlatformVersion::parse(version) {
@@ -79,7 +79,7 @@ impl PatchArgs {
                             .build_settings()
                             .artifacts_directory(),
                     )
-                    .join(format!("{}.cfe", plan.name))
+                    .join(format!("{}.cfe", plan.description.name))
             },
             |path| {
                 if path.is_absolute() {
@@ -96,7 +96,7 @@ impl PatchArgs {
         {
             return self.fail("output", &output.to_string_lossy(), localizer);
         }
-        let state = if plan.modules.is_empty() {
+        let state = if plan.description.modules.is_empty() {
             "empty"
         } else if self.dry_run {
             "planned"
@@ -109,17 +109,20 @@ impl PatchArgs {
                 localizer.format(
                     "patch-preview",
                     &[
-                        ("base", LocalizationValue::Text(&plan.merge_base)),
-                        ("head", LocalizationValue::Text(&plan.head))
+                        (
+                            "base",
+                            LocalizationValue::Text(&plan.description.merge_base)
+                        ),
+                        ("head", LocalizationValue::Text(&plan.description.head))
                     ]
                 )
             );
-            for module in &plan.modules {
+            for module in &plan.description.modules {
                 println!("  {}: {}", module.name, module.methods.join(", "));
             }
         }
         if !self.dry_run
-            && !plan.modules.is_empty()
+            && !plan.description.modules.is_empty()
             && let Err(code) = self.build(&plan, &output, localizer)
         {
             return code;
@@ -127,7 +130,7 @@ impl PatchArgs {
         if matches!(self.format, Format::Json) {
             println!(
                 "{}",
-                json!({"schema_version": 1, "status": state, "plan": plan,
+                json!({"schema_version": 1, "status": state, "plan": plan.description,
                 "output": if state == "empty" { None } else { output.to_str() },
                 "validation": if state == "built" { Some("metadata_bsl_applicability") } else { None },
                 "runtime_verified": false, "requires_safe_mode_disabled": true})
@@ -174,7 +177,7 @@ impl PatchArgs {
                 localizer,
             )
         })?;
-        patch::execute(plan, &tool, output).map_err(|e| self.fail(e.code, &e.detail, localizer))
+        patch::execute(plan, &tool, output).map_err(|e| self.fail(&e.code, &e.detail, localizer))
     }
 
     /// Keep JSON error codes independent of locale while presenting human details separately.

@@ -77,7 +77,8 @@ crates/eska-terminal/
 crates/eska-build-runtime/
 └── src/
     ├── build/                      # runner, plans, managed infobases and artifact snapshots
-    ├── artifact/                   # unpack, identity and reversible source publication
+    ├── artifact/                   # unpack and reversible source publication
+    ├── patch/                      # native validation from prepared XML, without Git
     └── config/global.rs            # machine-local runner config and transactional editing
 src/
 ├── main.rs                         # existing binary entry point
@@ -93,7 +94,7 @@ src/
 ├── project/
 │   ├── mod.rs                      # reexports of shared project operations
 │   ├── artifact.rs, build.rs        # reexports of the single build runtime
-│   ├── patch/                      # temporary baseline/native adapter; plans belong to VCS
+│   ├── patch/                      # temporary composition of VCS materializer and build runtime
 │   ├── create.rs, init.rs          # reexports of project-owner onboarding transactions
 │   ├── onboarding.rs               # workspace enrollment and manifest preservation
 │   ├── doctor.rs                   # combined project/build/VCS readiness checks

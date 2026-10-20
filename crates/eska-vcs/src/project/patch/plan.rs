@@ -1,6 +1,7 @@
 //! Committed patch planning and a deliberately narrow common-module support gate.
 
-use super::{PatchChange, PatchError, PatchModule, PatchPlan};
+use super::model::ModuleProjection;
+use super::{PatchChange, PatchDescription, PatchError, PatchModule, PatchPlan};
 use crate::project::{Project, ProjectType};
 use crate::vcs::{repository::Repository, status::Change};
 use gix::{ObjectId, bstr::ByteSlice};
@@ -10,7 +11,7 @@ use std::{
 };
 
 struct ClassifiedChanges {
-    modules: Vec<PatchModule>,
+    modules: Vec<ModuleProjection>,
     ignored_paths: Vec<String>,
     changes: Vec<PatchChange>,
 }
@@ -77,15 +78,26 @@ pub fn plan(project: &Project, base: Option<&str>) -> Result<PatchPlan, PatchErr
         &source_files,
         &name,
     )?;
+    let modules = classified
+        .modules
+        .iter()
+        .map(|module| PatchModule {
+            name: module.name.clone(),
+            methods: module.methods.clone(),
+        })
+        .collect();
     Ok(PatchPlan {
-        base,
-        base_commit: from.id.to_string(),
-        merge_base: ancestor.id.to_string(),
-        head: head.id.to_string(),
-        name,
+        description: PatchDescription {
+            base,
+            base_commit: from.id.to_string(),
+            merge_base: ancestor.id.to_string(),
+            head: head.id.to_string(),
+            name,
+            modules,
+            ignored_paths: classified.ignored_paths,
+            changes: classified.changes,
+        },
         modules: classified.modules,
-        ignored_paths: classified.ignored_paths,
-        changes: classified.changes,
         repository_root: repository.work_dir().to_owned(),
         source_files,
         platform_version: project
@@ -139,8 +151,8 @@ fn collect_changes(
             ignored_paths.push(path.to_owned());
             changes.push(PatchChange {
                 path: path.to_owned(),
-                decision: "ignored",
-                reason: "outside_project_source",
+                decision: "ignored".into(),
+                reason: "outside_project_source".into(),
             });
             continue;
         };
@@ -170,8 +182,8 @@ fn collect_changes(
         if methods.is_empty() {
             changes.push(PatchChange {
                 path: path.to_owned(),
-                decision: "ignored",
-                reason: "nonsemantic",
+                decision: "ignored".into(),
+                reason: "nonsemantic".into(),
             });
             continue;
         }
@@ -185,10 +197,10 @@ fn collect_changes(
         let descriptor = super::descriptor::adopt(&descriptor, module, &head.id.to_string())?;
         changes.push(PatchChange {
             path: path.to_owned(),
-            decision: "included",
-            reason: "changed_method_bodies",
+            decision: "included".into(),
+            reason: "changed_method_bodies".into(),
         });
-        modules.push(PatchModule {
+        modules.push(ModuleProjection {
             name: module.to_owned(),
             methods,
             descriptor,
@@ -231,9 +243,7 @@ fn validate_path(path: &str) -> Result<(), PatchError> {
 
 /// Admit simple platform identifiers without quoting or path syntax.
 fn valid_name(name: &str) -> bool {
-    let mut chars = name.chars();
-    chars.next().is_some_and(|c| c.is_alphabetic() || c == '_')
-        && chars.all(|c| c.is_alphanumeric() || c == '_')
+    eska_project_core::patch::valid_module_name(name)
 }
 
 /// Collect only regular committed source entries without materializing worktree files.

@@ -22,9 +22,23 @@ build для выбора платформы и распаковки, VCS — д
 T96 остаётся `IN PROGRESS`. `update` сохраняет прежнего владельца до T97.
 Планировщик immutable `patch` уже принадлежит VCS: merge-base, committed delta,
 допустимые изменения BSL и adopted descriptors используют единственную
-реализацию. Подготовка baseline и native pipeline пока остаются в общей команде;
-их process-перенос ещё не завершён. После выделения прошли 34 unit-проверки VCS,
-6 плановых/CLI-сценариев patch и strict clippy всего workspace.
+реализацию. Baseline и подготовленные модули материализует VCS, native pipeline
+принадлежит build runtime, который не открывает Git. Общая команда пока
+согласует их через Rust-вызовы; process-перенос ещё не завершён.
+
+`eska-project-core::patch::PatchDescription` сохраняет прежние восемь полей
+публичного JSON плана. Git OID, repository root, BSL bodies и descriptors
+остались приватными данными VCS. Native runtime получает описание и callback
+подготовки только своего нового пустого workspace. Повторное заполнение
+существующего namespace запрещено. Baseline и opaque bytes копируются точно;
+generated XML/BSL сохраняют прежние BOM/CRLF, без дополнительного newline
+для однострочного XML. Промежуточный полный набор прошёл: 882 теста (12 ignored),
+fmt/check/strict clippy и rustdoc. Fake pipeline подтверждает orchestration,
+а не реальную проверку patch платформой.
+
+Экспериментальный Rust `PatchPlan` содержит public `description`, а его Git
+и module internals скрыты. `PatchError.code` стал owned `String` для передачи
+между владельцами; публичные значения и JSON schema 1 сохранены.
 
 Для переноса `import` прошли 17 прежних CLI-сценариев и 34 проверки build/runtime.
 RU/EN preview общего и прямого запуска совпали побайтно в stdout/stderr.

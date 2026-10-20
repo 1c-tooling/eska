@@ -1,9 +1,17 @@
-//! VCS owns committed planning; this temporary adapter still composes native execution.
-
-mod execute;
-mod extension;
+//! Temporary composition adapter; VCS owns snapshots and build owns native execution.
 
 pub use eska_vcs::project::patch::{PatchChange, PatchError, PatchModule, PatchPlan, plan};
-pub use execute::execute;
 
-const MD: &str = "http://v8.1c.ru/8.3/MDClasses";
+/// Preserve the existing composite call while both implementations live with their tool owners.
+///
+/// # Errors
+/// Returns planning, materialization, native validation or exclusive publication failures.
+pub fn execute(
+    plan: &PatchPlan,
+    tool: &crate::project::build::Ibcmd,
+    output: &std::path::Path,
+) -> Result<(), PatchError> {
+    eska_build_runtime::patch::execute(&plan.description, tool, output, |workspace| {
+        eska_vcs::project::patch::materialize(plan, workspace)
+    })
+}

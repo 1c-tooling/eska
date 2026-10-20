@@ -3,6 +3,7 @@
 pub mod artifact;
 pub mod build;
 pub mod config;
+pub mod patch;
 
 #[cfg(test)]
 #[path = "../../../tests/support/mod.rs"]

@@ -1,57 +1,23 @@
-//! Stable patch plan data shared by planning, execution and CLI presentation.
+//! Immutable repository objects and prepared module bodies belong only to the VCS owner.
 
 use crate::project::build::PlatformVersion;
+pub use eska_project_core::patch::{PatchChange, PatchDescription, PatchError, PatchModule};
 use gix::ObjectId;
-use serde::Serialize;
 use std::{collections::BTreeMap, path::PathBuf};
 
 #[derive(Debug)]
-pub struct PatchError {
-    pub code: &'static str,
-    pub detail: String,
-}
-
-impl PatchError {
-    /// Keep machine-facing classification separate from localized presentation.
-    pub fn new(code: &'static str, detail: impl Into<String>) -> Self {
-        Self {
-            code,
-            detail: detail.into(),
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
 pub struct PatchPlan {
-    pub base: String,
-    pub base_commit: String,
-    pub merge_base: String,
-    pub head: String,
-    pub name: String,
-    pub modules: Vec<PatchModule>,
-    pub ignored_paths: Vec<String>,
-    pub changes: Vec<PatchChange>,
-    #[serde(skip)]
-    pub repository_root: PathBuf,
-    #[serde(skip)]
-    pub source_files: BTreeMap<String, ObjectId>,
-    #[serde(skip)]
+    pub description: PatchDescription,
     pub platform_version: Option<PlatformVersion>,
+    pub(super) repository_root: PathBuf,
+    pub(super) source_files: BTreeMap<String, ObjectId>,
+    pub(super) modules: Vec<ModuleProjection>,
 }
 
-#[derive(Debug, Serialize)]
-pub struct PatchModule {
+#[derive(Debug)]
+pub(super) struct ModuleProjection {
     pub name: String,
     pub methods: Vec<String>,
-    #[serde(skip)]
     pub descriptor: String,
-    #[serde(skip)]
     pub code: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct PatchChange {
-    pub path: String,
-    pub decision: &'static str,
-    pub reason: &'static str,
 }

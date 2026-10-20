@@ -1,7 +1,7 @@
 //! Isolated patch generation; only a checked candidate can become a final artifact.
 
-use super::{PatchError, PatchPlan, extension};
-use crate::{project::build::Ibcmd, vcs::repository::Repository};
+use super::{PatchDescription, PatchError, extension};
+use crate::build::Ibcmd;
 use std::{
     ffi::OsString,
     fs,
@@ -22,7 +22,12 @@ impl Drop for Workspace {
 ///
 /// # Errors
 /// Returns errors before publication for platform, source, validation or output failures.
-pub fn execute(plan: &PatchPlan, tool: &Ibcmd, output: &Path) -> Result<(), PatchError> {
+pub fn execute(
+    plan: &PatchDescription,
+    tool: &Ibcmd,
+    output: &Path,
+    prepare: impl FnOnce(&Path) -> Result<(), PatchError>,
+) -> Result<(), PatchError> {
     validate_output(plan, tool, output)?;
     let parent = output
         .parent()
@@ -31,7 +36,8 @@ pub fn execute(plan: &PatchPlan, tool: &Ibcmd, output: &Path) -> Result<(), Patc
     let workspace = workspace(parent)?;
     tool.begin_interruptible_operation()
         .map_err(|e| PatchError::new("tool", format!("{e:?}")))?;
-    let base = stage_base(plan, &workspace)?;
+    prepare(&workspace.0)?;
+    let base = workspace.0.join("base");
     let candidate = build_candidate(plan, tool, &workspace, &base)?;
     if tool.was_interrupted() {
         return Err(PatchError::new("tool", "interrupted"));
@@ -40,7 +46,8 @@ pub fn execute(plan: &PatchPlan, tool: &Ibcmd, output: &Path) -> Result<(), Patc
 }
 
 /// Reject unsupported plans and unsafe publication paths before any write.
-fn validate_output(plan: &PatchPlan, tool: &Ibcmd, output: &Path) -> Result<(), PatchError> {
+fn validate_output(plan: &PatchDescription, tool: &Ibcmd, output: &Path) -> Result<(), PatchError> {
+    plan.validate()?;
     if plan.modules.is_empty() {
         return Err(PatchError::new("empty", ""));
     }
@@ -60,30 +67,9 @@ fn validate_output(plan: &PatchPlan, tool: &Ibcmd, output: &Path) -> Result<(), 
     Ok(())
 }
 
-/// Materialize the exact merge-base source tree in the owned workspace.
-fn stage_base(plan: &PatchPlan, workspace: &Workspace) -> Result<PathBuf, PatchError> {
-    let repository = Repository::discover(&plan.repository_root)
-        .map_err(|e| PatchError::new("repository", format!("{e:?}")))?;
-    let base = workspace.0.join("base");
-    for (path, id) in &plan.source_files {
-        let contents = repository
-            .blob(*id)
-            .map_err(|e| PatchError::new("repository", format!("{e:?}")))?;
-        if contents.starts_with(b"version https://git-lfs.github.com/spec/v1") {
-            return Err(PatchError::new("unsupported", path));
-        }
-        let target = base.join(path);
-        if let Some(parent) = target.parent() {
-            fs::create_dir_all(parent).map_err(|e| PatchError::new("io", e.to_string()))?;
-        }
-        fs::write(target, contents).map_err(|e| PatchError::new("io", e.to_string()))?;
-    }
-    Ok(base)
-}
-
 /// Produce and validate an unpublished candidate in the temporary database.
 fn build_candidate(
-    plan: &PatchPlan,
+    plan: &PatchDescription,
     tool: &Ibcmd,
     workspace: &Workspace,
     base: &Path,
@@ -150,7 +136,7 @@ fn prepare_infobase(
 fn create_extension(
     tool: &Ibcmd,
     workspace: &Workspace,
-    plan: &PatchPlan,
+    plan: &PatchDescription,
     data_arg: &OsString,
     extension_arg: &OsString,
     extension: &Path,
@@ -180,7 +166,7 @@ fn create_extension(
             extension.as_os_str().to_owned(),
         ],
     )?;
-    extension::write(plan, extension)?;
+    extension::write(plan, &workspace.0.join("modules"), extension)?;
     run(
         tool,
         workspace,

@@ -5,6 +5,7 @@
 pub mod application;
 pub mod artifact;
 pub mod config;
+pub mod patch;
 pub mod project;
 pub mod provenance;
 pub mod workflow;

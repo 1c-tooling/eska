@@ -121,6 +121,26 @@ fn dry_run_json_is_stable_and_does_not_create_artifacts() {
     assert_eq!(ru["plan"]["base"], "refs/heads/main");
     assert_eq!(ru["plan"]["modules"][0]["name"], "Math");
     assert_eq!(ru["plan"]["modules"][0]["methods"][0], "AddOne");
+    let fields: Vec<_> = ru["plan"]
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    assert_eq!(
+        fields,
+        [
+            "base",
+            "base_commit",
+            "changes",
+            "head",
+            "ignored_paths",
+            "merge_base",
+            "modules",
+            "name"
+        ]
+    );
+    assert_eq!(ru["plan"]["modules"][0].as_object().unwrap().len(), 2);
     assert_eq!(ru["runtime_verified"], false);
     assert_eq!(ru["requires_safe_mode_disabled"], true);
     assert!(!root.join("build").exists());
