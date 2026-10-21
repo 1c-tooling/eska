@@ -360,7 +360,7 @@ fn kind(node: Node<'_, '_>) -> Result<MetadataKind, Diagnostic> {
 }
 
 /// Preserve all decoded text segments, including text separated by comments or CDATA.
-fn simple_text(node: Node<'_, '_>) -> Option<String> {
+pub(crate) fn simple_text(node: Node<'_, '_>) -> Option<String> {
     (!node.children().any(|node| node.is_element())).then(|| {
         node.children()
             .filter(Node::is_text)

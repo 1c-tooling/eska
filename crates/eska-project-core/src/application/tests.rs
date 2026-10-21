@@ -481,6 +481,69 @@ fn compatibility_does_not_accept_foreign_or_duplicate_fields() {
     ));
 }
 
+/// Analysis reads each root once and does not materialize its child declarations or open BSL bodies.
+#[test]
+fn analysis_root_snapshot_reads_identity_and_compatibility_once() {
+    let fixture = TestDir::new();
+    let path = project(&fixture.0, "configuration", None, None);
+    let original = fs::read_to_string(&path).unwrap();
+    let children = "<Catalog>NeverOpened</Catalog>".repeat(2000);
+    fs::write(
+        &path,
+        original.replace(
+            "<ChildObjects/>",
+            &format!("<ChildObjects>{children}</ChildObjects>"),
+        ),
+    )
+    .unwrap();
+    let context = resolve(&fixture.0, None).unwrap();
+    let (source, mode) = crate::project::designer_source::open_analysis_project(
+        context.sources()[0].project().clone(),
+        crate::project::metadata_model::ProjectScope::Standalone,
+    )
+    .unwrap();
+    assert_eq!(mode.as_deref(), Some("Version8_3_20"));
+    assert_eq!(source.io_stats().xml_reads, 1);
+    assert_eq!(source.io_stats().root_parses, 1);
+    assert_eq!(
+        source.io_stats().xml_bytes,
+        fs::metadata(path).unwrap().len()
+    );
+    assert_eq!(source.io_stats().directory_reads, 0);
+}
+
+/// A focused root reader retains scalar, namespace and uniqueness rules of the complete metadata parser.
+#[test]
+fn focused_analysis_root_preserves_strict_identity_and_scalar_rules() {
+    let fixture = TestDir::new();
+    let path = project(&fixture.0, "configuration", None, None);
+    let original = fs::read_to_string(&path).unwrap();
+    fs::write(
+        &path,
+        original.replace("Version8_3_20", "<![CDATA[Version8_]]><!-- kept -->3_20"),
+    )
+    .unwrap();
+    assert_eq!(
+        resolve(&fixture.0, None).unwrap().sources()[0].compatibility_mode(),
+        Some("Version8_3_20")
+    );
+    for bad in [
+        original.replace("</CompatibilityMode>", "<Nested/></CompatibilityMode>"),
+        original.replace(
+            "</Properties>",
+            "</Properties><Properties><Name>Other</Name></Properties>",
+        ),
+        original.replace("</Name>", "</Name><Name>Other</Name>"),
+        original.replace("ИмяИзXML", " ИмяИзXML "),
+    ] {
+        fs::write(&path, bad).unwrap();
+        assert!(matches!(
+            resolve(&fixture.0, None),
+            Err(ContextError::Source(_))
+        ));
+    }
+}
+
 #[test]
 /// The existing root classifier rejects a declared configuration containing an extension export.
 fn xml_root_type_is_verified_after_manifest_selection() {

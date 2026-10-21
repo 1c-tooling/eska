@@ -61,17 +61,39 @@ pub fn open_project(
     scope: ProjectScope,
     cached: bool,
 ) -> Result<DesignerSource, SourceError> {
+    open_project_root(project, scope, cached, false).map(|(source, _)| source)
+}
+
+/// Read analysis identity and compatibility from the same checked root snapshot without parsing its children again.
+pub fn open_analysis_project(
+    project: Project,
+    scope: ProjectScope,
+) -> Result<(DesignerSource, Option<String>), SourceError> {
+    open_project_root(project, scope, false, true)
+}
+
+/// Ordinary metadata callers keep their cache contract; analysis always validates its root without a cache.
+fn open_project_root(
+    project: Project,
+    scope: ProjectScope,
+    cached: bool,
+    analysis: bool,
+) -> Result<(DesignerSource, Option<String>), SourceError> {
     let disk_cache = cached.then(|| DiskCache::new(&project));
     let mut stats = SourceIoStats::default();
-    let (descriptor, root) = read_root(&project, disk_cache.as_ref(), &mut stats)?;
-    Ok(DesignerSource {
-        project,
-        scope,
-        root,
-        descriptor,
-        disk_cache,
-        io_stats: std::cell::Cell::new(stats),
-    })
+    let (descriptor, root, compatibility) =
+        read_root(&project, disk_cache.as_ref(), &mut stats, analysis)?;
+    Ok((
+        DesignerSource {
+            project,
+            scope,
+            root,
+            descriptor,
+            disk_cache,
+            io_stats: std::cell::Cell::new(stats),
+        },
+        compatibility,
+    ))
 }
 
 impl DesignerSource {
@@ -98,35 +120,9 @@ fn read_root(
     project: &Project,
     cache: Option<&DiskCache>,
     stats: &mut SourceIoStats,
-) -> Result<(PathBuf, MetadataObject), SourceError> {
-    let candidates = if matches!(
-        project.configuration().project_type(),
-        ProjectType::Configuration | ProjectType::Extension
-    ) {
-        vec![PathBuf::from("Configuration.xml")]
-    } else {
-        let mut paths = Vec::new();
-        stats.directory_reads += 1;
-        for entry in fs::read_dir(project.source()).map_err(|source| SourceError::Io {
-            path: project.source().to_owned(),
-            source,
-        })? {
-            let entry = entry.map_err(|source| SourceError::Io {
-                path: project.source().to_owned(),
-                source,
-            })?;
-            let path = PathBuf::from(entry.file_name());
-            if path
-                .extension()
-                .is_some_and(|ext| ext.eq_ignore_ascii_case("xml"))
-                && path != Path::new("ConfigDumpInfo.xml")
-            {
-                paths.push(path);
-            }
-        }
-        paths.sort();
-        paths
-    };
+    analysis: bool,
+) -> Result<(PathBuf, MetadataObject, Option<String>), SourceError> {
+    let candidates = root_candidates(project, stats)?;
     let mut roots = Vec::new();
     for path in candidates {
         let Some(physical) = existing_file(project.source(), &path, stats)? else {
@@ -146,7 +142,7 @@ fn read_root(
             project.configuration().project_type().as_str()
         );
         if let Some(root) = cache.and_then(|cache| cache.get::<MetadataObject>(&key, hash)) {
-            roots.push((path, root));
+            roots.push((path, root, None));
             continue;
         }
         stats.root_parses += 1;
@@ -184,17 +180,110 @@ fn read_root(
             },
         )?;
         let root = root_metadata(&path, document.root_element())?;
+        let compatibility = if analysis {
+            analysis_compatibility(project, &path, document.root_element(), &root)?
+        } else {
+            None
+        };
         if let Some(cache) = cache {
             cache.put(&key, hash, &root);
         }
-        roots.push((path, root));
+        roots.push((path, root, compatibility));
     }
     if roots.len() > 1 {
         return Err(SourceError::AmbiguousRoot {
-            paths: roots.into_iter().map(|(path, _)| path).collect(),
+            paths: roots.into_iter().map(|(path, _, _)| path).collect(),
         });
     }
     roots.pop().ok_or(SourceError::MissingRoot)
+}
+
+/// Locate root candidates without opening child directories or guessing external-object filenames.
+fn root_candidates(
+    project: &Project,
+    stats: &mut SourceIoStats,
+) -> Result<Vec<PathBuf>, SourceError> {
+    let candidates = if matches!(
+        project.configuration().project_type(),
+        ProjectType::Configuration | ProjectType::Extension
+    ) {
+        vec![PathBuf::from("Configuration.xml")]
+    } else {
+        let mut paths = Vec::new();
+        stats.directory_reads += 1;
+        for entry in fs::read_dir(project.source()).map_err(|source| SourceError::Io {
+            path: project.source().to_owned(),
+            source,
+        })? {
+            let entry = entry.map_err(|source| SourceError::Io {
+                path: project.source().to_owned(),
+                source,
+            })?;
+            let path = PathBuf::from(entry.file_name());
+            if path
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("xml"))
+                && path != Path::new("ConfigDumpInfo.xml")
+            {
+                paths.push(path);
+            }
+        }
+        paths.sort();
+        paths
+    };
+    Ok(candidates)
+}
+
+/// Analysis needs one scalar property, not an owned model of thousands of child declarations.
+fn analysis_compatibility(
+    project: &Project,
+    path: &Path,
+    root: roxmltree::Node<'_, '_>,
+    metadata: &MetadataObject,
+) -> Result<Option<String>, SourceError> {
+    let invalid = || SourceError::InvalidMetadata {
+        path: path.to_owned(),
+        reason: "invalid_analysis_root",
+    };
+    let object = root
+        .children()
+        .find(roxmltree::Node::is_element)
+        .ok_or_else(invalid)?;
+    let mut property_nodes = object
+        .children()
+        .filter(|node| node.has_tag_name((MD_NAMESPACE, "Properties")));
+    let properties = property_nodes
+        .next()
+        .filter(|_| property_nodes.next().is_none())
+        .ok_or_else(invalid)?;
+    let mut names = properties
+        .children()
+        .filter(|node| node.has_tag_name((MD_NAMESPACE, "Name")));
+    let name = names
+        .next()
+        .and_then(crate::project::metadata_parser::simple_text)
+        .filter(|_| names.next().is_none())
+        .ok_or_else(invalid)?;
+    if metadata.name() != name.trim() {
+        return Err(invalid());
+    }
+    let field = if project.configuration().project_type() == ProjectType::Extension {
+        "ConfigurationExtensionCompatibilityMode"
+    } else {
+        "CompatibilityMode"
+    };
+    let mut values = properties
+        .children()
+        .filter(|node| node.has_tag_name((MD_NAMESPACE, field)));
+    let Some(value) = values.next() else {
+        return Ok(None);
+    };
+    if values.next().is_some() {
+        return Err(invalid());
+    }
+    crate::project::metadata_parser::simple_text(value)
+        .map(Some)
+        .ok_or_else(invalid)
 }
 
 /// Extract the logical root's name and UUID after checking the descriptor's project type.

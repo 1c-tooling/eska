@@ -9,8 +9,7 @@ use crate::project::{
     Project, ProjectName, ProjectType, Workspace, WorkspaceMember,
     designer_source::{self, SourceError},
     discovery::{self, ContextDiscoveryError, DiscoveryContext},
-    metadata_model::{MetadataValue, ProjectScope},
-    metadata_parser::{self, PropertiesMode},
+    metadata_model::ProjectScope,
 };
 
 use super::{
@@ -374,31 +373,10 @@ fn read_source(
     let scope = name.map_or(ProjectScope::Standalone, |name| {
         ProjectScope::Member(name.clone())
     });
-    let source = designer_source::open_project(project.clone(), scope, false)
-        .map_err(|error| ContextError::Source(Box::new(error)))?;
+    let (source, compatibility_mode) =
+        designer_source::open_analysis_project(project.clone(), scope)
+            .map_err(|error| ContextError::Source(Box::new(error)))?;
     let path = source.descriptor().to_owned();
-    let input = source
-        .read_xml(&path)
-        .map_err(|error| ContextError::Source(Box::new(error)))?
-        .ok_or_else(|| ContextError::Source(Box::new(SourceError::MissingRoot)))?;
-    let parsed = metadata_parser::parse(&input, None, PropertiesMode::All).map_err(|error| {
-        ContextError::Source(Box::new(SourceError::Parse {
-            path: project.source().join(&path),
-            source: error,
-        }))
-    })?;
-    let field = if project.configuration().project_type() == ProjectType::Extension {
-        "ConfigurationExtensionCompatibilityMode"
-    } else {
-        "CompatibilityMode"
-    };
-    let root = parsed
-        .objects
-        .iter()
-        .find(|object| &object.metadata == source.root())
-        .ok_or_else(|| invalid_root(project, &path, "root_identity_changed"))?;
-    let compatibility_mode = compatibility(root, field)
-        .map_err(|()| invalid_root(project, &path, "invalid_compatibility_mode"))?;
     Ok(ContextSource {
         member: name.cloned(),
         role,
@@ -408,32 +386,4 @@ fn read_source(
         uuid: source.root().uuid().into(),
         compatibility_mode,
     })
-}
-
-/// Unknown namespaces cannot supply platform properties; duplicate or structured modes are invalid.
-fn compatibility(root: &metadata_parser::ParsedObject, field: &str) -> Result<Option<String>, ()> {
-    let mut values = root.properties.iter().flatten().filter(|property| {
-        property.property.key.name == field
-            && property.property.key.namespace.as_deref() == Some("http://v8.1c.ru/8.3/MDClasses")
-    });
-    let Some(value) = values.next() else {
-        return Ok(None);
-    };
-    if values.next().is_some() {
-        return Err(());
-    }
-    match &value.property.value {
-        MetadataValue::Text(text)
-        | MetadataValue::QualifiedText { text, .. }
-        | MetadataValue::TypedText { text, .. } => Ok(Some(text.clone())),
-        _ => Err(()),
-    }
-}
-
-/// Report inconsistent root metadata without reusing a previously successful context.
-fn invalid_root(project: &Project, path: &Path, reason: &'static str) -> ContextError {
-    ContextError::Source(Box::new(SourceError::InvalidMetadata {
-        path: project.source().join(path),
-        reason,
-    }))
 }
