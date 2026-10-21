@@ -2233,5 +2233,10 @@
     "vsix_payload_files": 1311,
     "ide_selected_bytes": 88982724,
     "note": "Regular-file bytes in these local installed profiles; excludes editor, platform and filesystem allocation/shared extents. No baseline-size comparison is claimed."
+  },
+  "interpretation_update": {
+    "current_report": "t89-corrected.json",
+    "status": "superseded",
+    "reason": "The original repaired-buffer wait could finish on editor invalidation before fresh semantic diagnostics. Raw runs are preserved; use the corrected complete series for current gates."
   }
 }
