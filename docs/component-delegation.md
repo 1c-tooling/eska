@@ -298,7 +298,7 @@ Import запрашивает changed paths при подготовке и по�
 provider. `Ibcmd` больше не имеет Eq/PartialEq: transient cancellation context
 принадлежит экземпляру, clones разделяют этот контекст. JSON-схемы не изменены.
 
-## Проверки текущей части T96
+## Первые проверки делегирования
 
 Полный workspace fmt/check/strict Clippy/test/Rustdoc прошёл: 872 теста passed,
 12 ignored. Сохранены прежние CLI/API/workflow/semantic проверки. Дополнительно
@@ -331,3 +331,23 @@ ESKA_TEST_ROOT="$(realpath ../eska-playground)" python3 tests/native_build.py \
 Без shell-binary выполняется контрольный прямой повтор. Параметры платформы
 задаёт оператор. Windows/macOS, Remote, настоящий host runner, тяжёлая сборка
 buhmfo и функции приложения в клиенте 1С этим результатом не покрыты.
+
+## Повтор после исправления probes
+
+Полный workspace fmt/check/strict Clippy/test/Rustdoc для `5c955ff` прошёл:
+896 тестов passed, 12 ignored. [Нативный отчёт](measurements/t96-probe-native.json)
+повторяет обе матрицы после нового capture и передачи cancellation scope.
+Бинарники не менялись между началом build-матрицы и сохранёнными копиями
+onboarding; SHA-256 проверены. Для всех CF/CFE/EPF/ERF прошли общий/прямой build,
+reuse, паспорта, unpack/clean и общий/прямой new/import/init. Отмены build,
+unpack и создания проекта освободили native PID и staging, сохранили входы,
+прежние результаты и managed infobase. Оба control storage пусты после проверки.
+
+Это Linux/Distrobox 8.3.27.2325 на малых собственных fixtures. Побайтовое
+равенство повторных native-артефактов по-прежнему не установлено; предыдущий
+контроль standalone тоже давал разные байты. Windows/macOS, Remote,
+host runner, нативная сборка buhmfo и поведение клиента 1С не проверены.
+
+T96 ещё требует выделения общей чистой схемы CLI и удаления переходных
+зависимостей оболочки от исполнителей. Текущее делегирование не означает
+завершённую выборочную поставку T97.
