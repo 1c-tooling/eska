@@ -1,7 +1,7 @@
 //! Shelf integration tests against real repositories and native filesystem paths.
 
 use super::support::{commit, git, repository};
-use eska::vcs::{
+use crate::backend::vcs::{
     repository::Repository,
     shelves::{self, Session},
 };

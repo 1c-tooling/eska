@@ -148,9 +148,10 @@ Clippy и полный `cargo test` с `ESKA_TEST_ROOT` прошли: 116 unit-�
 
 ## Архитектурные границы
 
-Переиспользуются `src/vcs/diff.rs` (refs, commit trees, blobs),
-`src/project/diff.rs` и `src/project/semantic.rs` (сравнение committed snapshots),
-build settings/tool discovery из `src/project/build/`. Текущий
+Переиспользуются `crates/eska-vcs/src/vcs/diff.rs` (refs, commit trees, blobs),
+`crates/eska-vcs/src/project/diff.rs` и `semantic.rs` (committed snapshots),
+build settings из `crates/eska-project-core/src/project/build.rs` и tool discovery
+из `crates/eska-build-runtime/src/build/`. Текущий
 `merge_base_commit` возвращает одну базу: для нового строгого контракта нужна
 отдельная проверка неоднозначности. Чтение полного базового дерева нужно для
 временной базы, но не должно превращаться в полный parse каждого вызова diff.

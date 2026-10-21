@@ -1,12 +1,12 @@
 use super::{bytes, fixture, object};
-use crate::support::TestDir;
-use eska::project::{
+use crate::backend::project::{
     metadata_model::{MetadataKind, ProjectScope},
     metadata_workspace::{
         MetadataWorkspace, ProjectSession, WorkspaceError,
         search::{IndexState, MatchRank, SearchOptions},
     },
 };
+use crate::support::TestDir;
 use std::{fmt::Write, fs, path::PathBuf};
 
 /// Drain small cooperative steps with an explicit guard against a scheduling cycle.

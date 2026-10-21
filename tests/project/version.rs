@@ -1,6 +1,6 @@
 use std::fs;
 
-use eska::project::{
+use crate::backend::project::{
     ProjectType, discovery,
     version::{self, BumpKind, VersionError},
 };
@@ -11,7 +11,7 @@ const PREFIX: &str = "\u{feff}<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<Met
 const SUFFIX: &str = "</Version>\r\n\t\t\t<Comment>Не менять</Comment>\r\n\t\t</Properties>\r\n\t\t<ChildObjects><Catalog><Properties><Version>9.9.9.9</Version></Properties></Catalog></ChildObjects>\r\n\t</Configuration>\r\n</MetaDataObject>\r\n";
 
 /// Create one discovered configuration project with a byte-sensitive descriptor.
-fn project(version: &str) -> (TestDir, eska::project::Project) {
+fn project(version: &str) -> (TestDir, crate::backend::project::Project) {
     let fixture = TestDir::new();
     let source = fixture.0.join("src");
     fs::create_dir(&source).expect("source");

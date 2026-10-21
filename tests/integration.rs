@@ -1,5 +1,10 @@
 //! End-to-end CLI and filesystem-backed project scenarios.
 
+#[path = "support/backend.rs"]
+mod backend;
+#[path = "support/dependencies.rs"]
+mod dependencies;
+
 mod cli;
 mod project;
 mod support;

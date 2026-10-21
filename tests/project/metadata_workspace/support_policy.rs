@@ -1,9 +1,9 @@
-use crate::support::TestDir;
-use eska::project::{
+use crate::backend::project::{
     metadata_model::ProjectScope,
     metadata_workspace::MetadataWorkspace,
     support::{Reason, State},
 };
+use crate::support::TestDir;
 use std::{fs, path::Path};
 const ROOT: &str = "11111111-1111-1111-1111-111111111111";
 const CHILD: &str = "22222222-2222-2222-2222-222222222222";
@@ -385,7 +385,7 @@ fn identical_uuids_in_different_sessions_do_not_share_policy() {
 
 #[test]
 fn background_reuses_loaded_descriptors_and_refresh_checks_rule_contents() {
-    use eska::project::{configurator::TreeOptions, metadata_model::NodeId};
+    use crate::backend::project::{configurator::TreeOptions, metadata_model::NodeId};
     use std::fmt::Write;
     let dir = TestDir::new();
     fixture(&dir.0);
@@ -409,7 +409,7 @@ fn background_reuses_loaded_descriptors_and_refresh_checks_rule_contents() {
     fs::write(dir.0.join("src/Ext/ParentConfigurations.bin"), rules(0, 0)).unwrap();
     let mut workspace = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
     let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
-    let priority: eska::project::metadata_model::ObjectId =
+    let priority: crate::backend::project::metadata_model::ObjectId =
         serde_json::from_value(serde_json::json!("common-module:M000")).unwrap();
     // Expanding this reference populates the regular lazy-tree descriptor cache.
     session

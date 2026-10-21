@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use eska::project::{discovery, patch};
+use crate::backend::project::{discovery, patch};
 
 use crate::{
     support::TestDir,

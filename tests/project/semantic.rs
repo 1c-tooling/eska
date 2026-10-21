@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use eska::project::{
+use crate::backend::project::{
     diff, discovery, object_model,
     semantic::{ChangeSet, ChangeStage, ObjectPathRole, SemanticChangeAnalyzer},
 };

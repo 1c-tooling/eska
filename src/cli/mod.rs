@@ -6,7 +6,6 @@ mod args;
 mod commands;
 
 pub use args::Cli;
-pub(crate) use eska_presentation::encoding;
 pub use eska_presentation::localization;
 
 use localization::{Localizer, resolve_locale_from_environment};
@@ -31,11 +30,6 @@ pub fn run() -> ExitCode {
 impl Cli {
     /// Runs the selected command, or validates a project, in the UI locale.
     pub fn run(&self, localizer: &Localizer) -> ExitCode {
-        commands::run(
-            self.command.as_ref(),
-            &self.project_dir,
-            localizer,
-            &self.process_args,
-        )
+        commands::run(self.command.as_ref(), localizer, &self.process_args)
     }
 }

@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use eska::{
+use crate::backend::{
     project::{Project, ProjectConfiguration, ProjectType, SourceFormat, switch},
     vcs::workflow::WorkflowPreset,
 };
@@ -121,7 +121,7 @@ fn round_trip_between_two_dirty_tasks_restores_exact_indexes() {
 /// A moved or corrupt target shelf fails before capturing the source branch.
 #[test]
 fn invalid_target_shelf_preserves_the_dirty_source() {
-    use eska::vcs::{repository::Repository, shelves};
+    use crate::backend::vcs::{repository::Repository, shelves};
     for corrupt in [false, true] {
         let root = repository();
         commit(&root.0, "initial");

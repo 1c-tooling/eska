@@ -1,6 +1,6 @@
 use std::io::{Cursor, Write};
 
-use eska::project::designer_source::{Picture, PictureError, PicturePreview};
+use crate::backend::project::designer_source::{Picture, PictureError, PicturePreview};
 
 use super::{DesignerSource, MetadataKind, ObjectId, TestDir, fixture, id, write, xml};
 

@@ -1,6 +1,6 @@
 use std::{fs, path::Path, time::Instant};
 
-use eska::project::{
+use crate::backend::project::{
     Project, ProjectConfiguration, ProjectType, SourceFormat,
     object_model::{ObjectModel, ObjectModelError, discover, discover_affected},
 };
@@ -503,7 +503,10 @@ fn write_file(source: &Path, path: &str, contents: &str) {
 }
 
 /// Find one fixture object by its known stable UUID.
-fn object<'a>(model: &'a ObjectModel, id: &str) -> &'a eska::project::object_model::LogicalObject {
+fn object<'a>(
+    model: &'a ObjectModel,
+    id: &str,
+) -> &'a crate::backend::project::object_model::LogicalObject {
     model
         .objects()
         .find(|object| object.uuid() == id)
@@ -511,10 +514,12 @@ fn object<'a>(model: &'a ObjectModel, id: &str) -> &'a eska::project::object_mod
 }
 
 /// Convert mapped objects to deterministic stable identifiers for assertions.
-fn ids<const N: usize>(objects: Vec<&eska::project::object_model::LogicalObject>) -> [&str; N] {
+fn ids<const N: usize>(
+    objects: Vec<&crate::backend::project::object_model::LogicalObject>,
+) -> [&str; N] {
     objects
         .into_iter()
-        .map(eska::project::object_model::LogicalObject::uuid)
+        .map(crate::backend::project::object_model::LogicalObject::uuid)
         .collect::<Vec<_>>()
         .try_into()
         .expect("expected object count")

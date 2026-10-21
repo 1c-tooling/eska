@@ -1,20 +1,17 @@
+use eska_presentation::localization::{Locale, Localizer};
+
 use std::{collections::BTreeMap, fs, path::Path};
 
-use crate::support::TestDir;
-use eska::{
-    cli::localization::{Locale, Localizer},
-    project::{
-        configurator::{
-            ChildrenState, ConfiguratorSchema, ConfiguratorTree, ModuleAvailability, TreeLabel,
-            TreeOptions,
-        },
-        designer_source::{DesignerSource, open_projects},
-        metadata_model::{
-            CollectionKind, MetadataKind, MetadataObject, ModuleRole, NodeId, ObjectId,
-        },
-        metadata_parser::{self, PropertiesMode},
+use crate::backend::project::{
+    configurator::{
+        ChildrenState, ConfiguratorSchema, ConfiguratorTree, ModuleAvailability, TreeLabel,
+        TreeOptions,
     },
+    designer_source::{DesignerSource, open_projects},
+    metadata_model::{CollectionKind, MetadataKind, MetadataObject, ModuleRole, NodeId, ObjectId},
+    metadata_parser::{self, PropertiesMode},
 };
+use crate::support::TestDir;
 use serde::Deserialize;
 use serde_json::{Value, json};
 

@@ -51,12 +51,13 @@ crates/eska-analyzer/
     └── storage.rs                  # sibling staging files and OS locks
 crates/eska-presentation/
 ├── locales/                        # common Fluent/catalog source for all tools
-└── src/                            # localization, paths, locale bootstrap and core diagnostics
+└── src/                            # pure argument schemas, localization, paths and diagnostics
 crates/eska-project/
 └── src/
     ├── main.rs, cli.rs              # standalone project CLI
     ├── context.rs, operations.rs    # checked project commands without native runtimes
     ├── onboarding/                 # legacy UX, native process client and project transactions
+    ├── doctor.rs                   # composition of core, build and VCS readiness checks
     ├── analyzer_config.rs          # config CLI; no embedded BSL engine
     ├── metadata.rs, version.rs     # shared legacy command presentation
     └── ide/                        # Metadata API framing, DTOs and server lifecycle
@@ -81,30 +82,21 @@ crates/eska-build-runtime/
     ├── patch/                      # native validation from prepared XML, without Git
     └── config/global.rs            # machine-local runner config and transactional editing
 src/
-├── main.rs                         # existing binary entry point
-├── lib.rs                          # current CLI and operation namespaces
-├── component.rs                    # legacy aliases and selection around the shared tool runtime
+├── main.rs                         # optional shell entry point
+├── lib.rs                          # localized parsing and component delegation
+├── component.rs                    # legacy argv aliases around the shared tool runtime
 ├── cli/
 │   ├── mod.rs, args.rs             # startup, parsing, locale and top-level help
-│   ├── commands/                   # command-specific human/JSON presentation
-│   ├── platform.rs                 # machine-local runner selection
-│   └── diagnostics.rs              # shared native/core error presentation reexports
-├── config/
-│   └── mod.rs                      # shared manifests and build-runtime machine config reexports
-├── project/
-│   ├── mod.rs                      # reexports of shared project operations
-│   ├── artifact.rs, build.rs        # reexports of the single build runtime
-│   ├── patch/                      # temporary composition of VCS materializer and build runtime
-│   ├── create.rs, init.rs          # reexports of project-owner onboarding transactions
-│   ├── onboarding.rs               # workspace enrollment and manifest preservation
-│   ├── doctor.rs                   # combined project/build/VCS readiness checks
-│   └── *.rs                        # reexports of Git workflow and semantic changes
-└── vcs/mod.rs                      # shared VCS reexports
+│   └── commands/                   # shared schemas and delegation; update presentation
+└── update/                         # existing shell updater until selective delivery (T97)
 ```
 
 Тихий запуск `eska` без подкоманды делегирован скрытому project-входу
 `__shell-validate`; интерактивные new/init — `__shell-new`/`__shell-init`.
-Составные patch/doctor пока остаются в общей команде. Самостоятельный `eska-check` использует общий
+Составной patch принадлежит build, doctor — project; остальные владельцы
+вызываются процессами. Normal-зависимости оболочки не включают библиотеки
+исполнителей. Схемы CLI находятся в `crates/eska-presentation/src/arguments/`.
+Самостоятельный `eska-check` использует общий
 контекст, полный XML-обход и внешний анализатор; его CLI находится в отдельном package. `crates/eska-vcs/src/vcs/git.rs` содержит
 общее открытие и инициализацию Git; чтение репозитория находится в
 `crates/eska-vcs/src/vcs/repository.rs`. `crates/eska-vcs/src/project/start.rs` исполняет workflow plan через
@@ -114,24 +106,24 @@ src/
 
 | Задача | Первый файл |
 |---|---|
-| Изменить флаги, help или вывод `init` | [`src/cli/commands/init.rs`](../src/cli/commands/init.rs) |
-| Изменить флаги, help или вывод `new` | [`src/cli/commands/new.rs`](../src/cli/commands/new.rs) |
+| Изменить флаги, help или вывод `init` | [`crates/eska-project/src/onboarding/init.rs`](../crates/eska-project/src/onboarding/init.rs) |
+| Изменить флаги, help или вывод `new` | [`crates/eska-project/src/onboarding/new.rs`](../crates/eska-project/src/onboarding/new.rs) |
 | Изменить сборку или её вывод | [`crates/eska-build/src/cli/commands/build.rs`](../crates/eska-build/src/cli/commands/build.rs), затем [`crates/eska-build-runtime/src/build/`](../crates/eska-build-runtime/src/build/) |
 | Изменить вывод, JSON или ошибки сборки | [`crates/eska-build/src/cli/commands/build/output.rs`](../crates/eska-build/src/cli/commands/build/output.rs), [`json.rs`](../crates/eska-build/src/cli/commands/build/json.rs), [`errors.rs`](../crates/eska-build/src/cli/commands/build/errors.rs) |
-| Изменить план или генерацию patch-extension | [`src/cli/commands/patch.rs`](../src/cli/commands/patch.rs), затем [`src/project/patch/`](../src/project/patch/) |
-| Изменить общие настройки запуска платформы | [`src/cli/platform.rs`](../src/cli/platform.rs), затем [`crates/eska-build-runtime/src/build/tool.rs`](../crates/eska-build-runtime/src/build/tool.rs) |
-| Изменить проверки или вывод `doctor` | [`src/cli/commands/doctor.rs`](../src/cli/commands/doctor.rs), затем [`src/project/doctor.rs`](../src/project/doctor.rs) |
+| Изменить план или генерацию patch-extension | [`crates/eska-build/src/cli/commands/patch.rs`](../crates/eska-build/src/cli/commands/patch.rs), затем [`crates/eska-vcs/src/project/patch/`](../crates/eska-vcs/src/project/patch/) и [`crates/eska-build-runtime/src/patch/`](../crates/eska-build-runtime/src/patch/) |
+| Изменить общие настройки запуска платформы | [`crates/eska-build/src/cli/platform.rs`](../crates/eska-build/src/cli/platform.rs), затем [`crates/eska-build-runtime/src/build/tool.rs`](../crates/eska-build-runtime/src/build/tool.rs) |
+| Изменить проверки или вывод `doctor` | [`crates/eska-project/src/doctor.rs`](../crates/eska-project/src/doctor.rs), затем core/build-runtime/VCS `doctor.rs` |
 | Изменить общие имена объектов и путей в CLI | [`crates/eska-vcs/src/cli/changes.rs`](../crates/eska-vcs/src/cli/changes.rs) |
 | Изменить обратимое кодирование JSON-путей и Git-строк | [`crates/eska-presentation/src/encoding.rs`](../crates/eska-presentation/src/encoding.rs) |
 | Изменить human/JSON вывод `status` | [`crates/eska-vcs/src/cli/commands/status.rs`](../crates/eska-vcs/src/cli/commands/status.rs) |
-| Изменить версию проекта 1С или её вывод | [`src/cli/commands/version.rs`](../src/cli/commands/version.rs), затем [`crates/eska-project-core/src/project/version.rs`](../crates/eska-project-core/src/project/version.rs) |
+| Изменить версию проекта 1С или её вывод | [`crates/eska-project/src/version.rs`](../crates/eska-project/src/version.rs), затем [`crates/eska-project-core/src/project/version.rs`](../crates/eska-project-core/src/project/version.rs) |
 | Изменить режимы или вывод `diff` | [`crates/eska-vcs/src/cli/commands/diff.rs`](../crates/eska-vcs/src/cli/commands/diff.rs), затем [`crates/eska-vcs/src/project/diff.rs`](../crates/eska-vcs/src/project/diff.rs) |
 | Изменить вывод или связь commit с task в `history` | [`crates/eska-vcs/src/cli/commands/history.rs`](../crates/eska-vcs/src/cli/commands/history.rs), затем [`crates/eska-vcs/src/project/history.rs`](../crates/eska-vcs/src/project/history.rs) |
 | Изменить запуск задачи или его ошибки | [`crates/eska-vcs/src/cli/commands/start.rs`](../crates/eska-vcs/src/cli/commands/start.rs), затем [`crates/eska-vcs/src/project/start.rs`](../crates/eska-vcs/src/project/start.rs) |
 | Подключить новую явно запрошенную команду | [`src/cli/commands/mod.rs`](../src/cli/commands/mod.rs) |
 | Изменить общий `--help`, `--lang`, `--project-dir` | [`src/cli/args.rs`](../src/cli/args.rs) |
-| Изменить подключение существующего проекта | [`src/project/init.rs`](../src/project/init.rs): `inspect` — без записи, `apply` — применение |
-| Изменить создание проекта или откат | [`src/project/create.rs`](../src/project/create.rs) |
+| Изменить подключение существующего проекта | [`crates/eska-project/src/onboarding/project/init.rs`](../crates/eska-project/src/onboarding/project/init.rs): `inspect` — без записи, `apply` — применение |
+| Изменить создание проекта или откат | [`crates/eska-project/src/onboarding/project/create.rs`](../crates/eska-project/src/onboarding/project/create.rs) |
 | Изменить состав создаваемых файлов | [`crates/eska-project-core/src/project/templates.rs`](../crates/eska-project-core/src/project/templates.rs) |
 | Изменить поиск project/workspace и проверку исходников | [`crates/eska-project-core/src/project/discovery.rs`](../crates/eska-project-core/src/project/discovery.rs) |
 | Изменить расчёт состояния проекта и readiness | [`crates/eska-vcs/src/project/status.rs`](../crates/eska-vcs/src/project/status.rs) |
@@ -144,16 +136,16 @@ src/
 | Изменить чтение HEAD, refs или истории | [`crates/eska-vcs/src/vcs/repository.rs`](../crates/eska-vcs/src/vcs/repository.rs) |
 | Изменить состояние файлов и changed paths | [`crates/eska-vcs/src/vcs/status.rs`](../crates/eska-vcs/src/vcs/status.rs) |
 | Изменить workflow policy или план задачи | [`crates/eska-project-core/src/workflow/policy.rs`](../crates/eska-project-core/src/workflow/policy.rs) |
-| Изменить клавиши меню | [`src/cli/interactive/keyboard.rs`](../crates/eska-terminal/src/interactive/keyboard.rs) |
-| Изменить оформление меню | [`src/cli/interactive/render.rs`](../crates/eska-terminal/src/interactive/render.rs) |
+| Изменить клавиши меню | [`crates/eska-terminal/src/interactive/keyboard.rs`](../crates/eska-terminal/src/interactive/keyboard.rs) |
+| Изменить оформление меню | [`crates/eska-terminal/src/interactive/render.rs`](../crates/eska-terminal/src/interactive/render.rs) |
 | Изменить приоритет языка | [`crates/eska-presentation/src/localization/locale.rs`](../crates/eska-presentation/src/localization/locale.rs) |
 
 ## Границы ответственности
 
 - `main.rs` только передаёт управление CLI. Общие аргументы находятся в `args.rs`;
   список команд и их диспетчеризация — в `commands/mod.rs`.
-- Каждый обработчик команды держит вместе свои аргументы, help, диалог и
-  представление специфичных для команды ошибок. Общие ошибки проекта, global
+- Чистые аргументы и локализация help разделяются через presentation, диалог и
+  представление специфичных ошибок принадлежат CLI владельца. Общие ошибки проекта, global
   config и платформы находятся в `diagnostics.rs`; общие machine-local options —
   в `platform.rs`, представление путей и semantic identities — в `changes.rs`,
   обратимые JSON-пути и Git byte strings — в `encoding.rs`.

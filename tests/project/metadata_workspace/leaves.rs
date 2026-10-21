@@ -1,10 +1,10 @@
 use super::{fixture, object};
-use crate::support::TestDir;
-use eska::project::{
+use crate::backend::project::{
     configurator::{ChildrenState, TreeOptions},
     metadata_model::{MetadataKind, NodeId, ProjectScope},
     metadata_workspace::MetadataWorkspace,
 };
+use crate::support::TestDir;
 use std::{fmt::Write, fs, path::PathBuf};
 
 const LEAVES: &[&str] = &[

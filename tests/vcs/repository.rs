@@ -1,6 +1,8 @@
 use std::fs;
 
-use eska::vcs::repository::{Divergence, Error, Head, OpenError, ReferenceTarget, Repository};
+use crate::backend::vcs::repository::{
+    Divergence, Error, Head, OpenError, ReferenceTarget, Repository,
+};
 
 use super::support::{commit, git, git_output, repository};
 use crate::support::TestDir;

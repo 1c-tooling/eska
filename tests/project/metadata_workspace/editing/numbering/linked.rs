@@ -1,5 +1,7 @@
 use super::*;
-use eska::project::metadata_workspace::{EditingSnapshot, HistoryOperation, ProjectSession};
+use crate::backend::project::metadata_workspace::{
+    EditingSnapshot, HistoryOperation, ProjectSession,
+};
 
 /// Keep a second linked document, a different numerator, and unlinked content in the same declared source.
 fn linked_fixture() -> (TestDir, ObjectId, PathBuf, String) {
@@ -40,7 +42,7 @@ fn change(
     state: &EditingSnapshot,
     name: &str,
     value: &str,
-) -> Result<eska::project::metadata_workspace::RefreshReport, PropertyEditError> {
+) -> Result<crate::backend::project::metadata_workspace::RefreshReport, PropertyEditError> {
     project.update_property(
         id,
         &state.properties.snapshot,

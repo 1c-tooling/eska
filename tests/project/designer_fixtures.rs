@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use eska::project::{
+use crate::backend::project::{
     designer_source::{SourceError, SourceRole, open_projects},
     metadata_model::{MetadataKind, MetadataObject, ModuleRole},
     metadata_parser::{self, PropertiesMode},

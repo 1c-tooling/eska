@@ -4,7 +4,7 @@ use std::{
     process::{Command, Output},
 };
 
-use eska::{
+use crate::backend::{
     config::ProjectConfigError,
     project::ProjectType,
     project::discovery::{
@@ -571,7 +571,7 @@ fn symlinks_resolve_without_escaping_the_project_or_skipping_broken_configs() {
         discover(&root),
         Err(DiscoveryError::Config {
             source: ProjectConfigError::ProjectPath(
-                eska::project::ProjectPathError::SourceOutsideRoot { .. }
+                crate::backend::project::ProjectPathError::SourceOutsideRoot { .. }
             ),
             ..
         })

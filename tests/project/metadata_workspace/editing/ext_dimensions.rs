@@ -1,5 +1,5 @@
 use super::*;
-use eska::project::metadata_edit::ScalarSchema;
+use crate::backend::project::metadata_edit::ScalarSchema;
 use std::fmt::Write;
 
 /// Charts and their referenced plans are real declared objects; payload edits remain separate.

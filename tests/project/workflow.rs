@@ -4,7 +4,7 @@ use std::{
     process::{Command, Output},
 };
 
-use eska::{
+use crate::backend::{
     config::ProjectConfig,
     project::discovery,
     vcs::workflow::{FinishRequirement, PublishPlan, SyncStrategy},

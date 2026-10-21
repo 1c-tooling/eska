@@ -3,13 +3,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::support::TestDir;
-use eska::project::{
+use crate::backend::project::{
     designer_source::{DesignerSource, SourceError, SourceRole, open_projects},
     metadata_model::{
         MetadataKind, MetadataObject, MetadataProjectError, ModuleRole, ObjectId, ProjectScope,
     },
 };
+use crate::support::TestDir;
 
 const MD: &str = "http://v8.1c.ru/8.3/MDClasses";
 

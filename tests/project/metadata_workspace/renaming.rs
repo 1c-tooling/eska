@@ -1,7 +1,7 @@
 //! Structural previews must be useful without granting publication of unverified references.
 
 use super::*;
-use eska::project::metadata_workspace::RenameError;
+use crate::backend::project::metadata_workspace::RenameError;
 
 mod bsl;
 mod history;

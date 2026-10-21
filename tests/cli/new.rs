@@ -4,7 +4,7 @@ use std::{
     process::{Command, Output},
 };
 
-use eska::{
+use crate::backend::{
     config::{ProjectConfig, WorkspaceConfig},
     project::ProjectType,
     project::create::{self, CreationError},

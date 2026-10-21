@@ -23,7 +23,8 @@ T92 — `DONE`: project serve, API 1.12 и прямое подключение E
 T93 — `DONE`: самостоятельный eska-check, полнота JSONL, пороги и отчёт CI.
 T94 — `DONE`: самостоятельный build/unpack, общий runtime и нативная матрица 8.3.27.2325.
 T95 — `DONE`: самостоятельный VCS, общие обработчики и проверенная минимальная установка.
-T96 — `IN PROGRESS`: делегирование общей команды специализированным инструментам.
+T96 — `DONE`: делегирование общей команды, process-композиция и отделённые runtime-зависимости.
+T97 — `NEXT`: выборочные пакеты, установка и совместимость компонентов.
 Номера T83–T89 сохраняются, модульность добавлена в T90–T99.
 Экспериментальный формат ESKA в этот план не переносится; статусы прежних
 задач сохраняются.
@@ -153,7 +154,7 @@ T35 добавила автоматические полки при `switch` и 
 Поиск T78, фильтр T79 и иконки T80 реализованы. В работе T81: итоговая приёмка и VSIX. T56 остаётся в backlog.
 
 Структурный рефакторинг после T06: команды сгруппированы в `src/cli/commands/`,
-операции проекта — в `src/project/`, TOML-схема отделена от проверенных настроек,
+операции проекта выделены в пакеты-владельцы `crates/eska-*`, TOML-схема отделена от проверенных настроек,
 TUI разделён на обработку клавиш, отрисовку и управление терминалом. CLI и config
 сохранены; T07 не реализуется в рамках рефакторинга. Актуальные пути и границы:
 [карта исходного кода](../architecture.md).
@@ -362,8 +363,8 @@ BSL LSP и визуальный редактор форм в это направ
 | T93 | DONE | Статическая проверка CI через eska-check и внешний bsl-analyzer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T94 | DONE | Самостоятельный eska-build и проверки реальной платформой | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T95 | DONE | Самостоятельный eska-vcs с сохранением workflow | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T96 | IN-PROGRESS | Делегирование команд eska самостоятельным инструментам | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T97 | PLANNED | Выборочные пакеты, установка и совместимость инструментов | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T96 | DONE | Делегирование команд eska самостоятельным инструментам | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T97 | NEXT | Выборочные пакеты, установка и совместимость инструментов | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T98 | PLANNED | Опциональная проверка DAP backend и контракт отладчика | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T99 | PLANNED | Опциональный самостоятельный eska-debug | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 

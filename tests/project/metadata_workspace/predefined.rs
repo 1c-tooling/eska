@@ -1,6 +1,5 @@
 use super::{fixture, object};
-use crate::support::TestDir;
-use eska::project::{
+use crate::backend::project::{
     configurator::{ChildrenState, TreeOptions},
     metadata_model::{CollectionKind, MetadataKind, NodeId, ProjectScope},
     metadata_workspace::{
@@ -8,6 +7,7 @@ use eska::project::{
         search::{IndexState, SearchOptions},
     },
 };
+use crate::support::TestDir;
 use std::{fs, path::PathBuf};
 
 const PATH: &str = "Catalogs/Контрагенты/Ext/Predefined.xml";

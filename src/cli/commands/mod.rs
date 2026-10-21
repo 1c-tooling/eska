@@ -1,7 +1,7 @@
 //! Command registration and dispatch. Each handler owns its arguments and help.
 
 use crate::component::{self, Component, Invocation};
-use std::{ffi::OsString, path::Path, process::ExitCode};
+use std::{ffi::OsString, process::ExitCode};
 
 use clap::Subcommand;
 
@@ -85,9 +85,9 @@ pub(super) enum Commands {
     Version(version::VersionArgs),
 }
 
+/// Routes the parsed intent while preserving the original native process arguments.
 pub(super) fn run(
     command: Option<&Commands>,
-    _project_dir: &Path,
     localizer: &Localizer,
     process_args: &[OsString],
 ) -> ExitCode {

@@ -1,12 +1,7 @@
-//! eska's project operations and CLI presentation.
+//! Optional ESKA shell: localized parsing and delegation to independently installed tools.
 //!
-//! Start with [`cli`] for commands, [`project`] for project operations,
-//! [`config`] for `eska.toml`, and [`vcs`] for Git and workflow settings.
+//! Domain models, project sessions, native execution and Git live in their owning packages.
 
 pub mod cli;
 pub(crate) mod component;
-pub mod config;
-pub mod project;
 mod update;
-pub mod vcs;
-pub use eska_project_core::application;

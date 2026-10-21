@@ -1,6 +1,6 @@
 use std::{fs, process::Command};
 
-use eska::project::{ProjectType, discovery::discover, templates::Template};
+use crate::backend::project::{ProjectType, discovery::discover, templates::Template};
 
 use crate::support::TestDir as Fixture;
 

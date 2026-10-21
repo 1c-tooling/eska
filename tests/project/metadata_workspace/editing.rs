@@ -1,5 +1,5 @@
 use super::*;
-use eska::project::{
+use crate::backend::project::{
     metadata_edit::{EditError, PropertyChange},
     metadata_workspace::PropertyEditError,
 };
@@ -445,7 +445,7 @@ fn filling_fixture(type_xml: &str) -> (TestDir, MetadataWorkspace, ObjectId, Pat
 /// Nil is different from an empty string; qualifiers and the backend's declared types constrain writes.
 #[test]
 fn filling_values_enforce_primitive_types_and_preserve_exact_undo() {
-    use eska::project::metadata_model::PropertyKey;
+    use crate::backend::project::metadata_model::PropertyKey;
     for (description, kind, valid, invalid) in [
         (
             "<v:Type>xs:string</v:Type><v:StringQualifiers><v:Length>3</v:Length><v:AllowedLength>Variable</v:AllowedLength></v:StringQualifiers>",
@@ -540,7 +540,7 @@ fn filling_values_enforce_primitive_types_and_preserve_exact_undo() {
 /// Design-time selectors never accept arbitrary runtime data or a value belonging to another type.
 #[test]
 fn filling_reference_values_reject_invented_targets() {
-    use eska::project::metadata_model::PropertyKey;
+    use crate::backend::project::metadata_model::PropertyKey;
     let (_directory, mut workspace, id, file, input) =
         filling_fixture("<v:Type>c:CatalogRef.Other</v:Type>");
     let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
@@ -626,7 +626,7 @@ fn filling_reference_values_reject_invented_targets() {
 /// Enum values and nested predefined records come from declared objects, never free-form strings.
 #[test]
 fn filling_reference_choices_include_enum_and_unique_predefined_records() {
-    use eska::project::metadata_model::PropertyKey;
+    use crate::backend::project::metadata_model::PropertyKey;
     let (directory, workspace, id, _, _) =
         filling_fixture("<v:Type>c:CatalogRef.Other</v:Type><v:Type>c:EnumRef.Status</v:Type>");
     drop(workspace);
@@ -707,7 +707,7 @@ fn filling_reference_choices_include_enum_and_unique_predefined_records() {
 /// A type or qualifier cannot invalidate an existing dependent value; clearing is a separate user edit.
 #[test]
 fn type_changes_require_incompatible_values_to_be_cleared_first() {
-    use eska::project::metadata_model::PropertyKey;
+    use crate::backend::project::metadata_model::PropertyKey;
     let (_directory, mut workspace, id, file, _) = filling_fixture(
         "<v:Type>xs:string</v:Type><v:StringQualifiers><v:Length>10</v:Length><v:AllowedLength>Variable</v:AllowedLength></v:StringQualifiers>",
     );
@@ -743,7 +743,7 @@ fn type_changes_require_incompatible_values_to_be_cleared_first() {
         .find(|field| {
             matches!(
                 field.schema,
-                eska::project::metadata_edit::ScalarSchema::DataType { .. }
+                crate::backend::project::metadata_edit::ScalarSchema::DataType { .. }
             )
         })
         .unwrap();
@@ -795,7 +795,7 @@ fn type_changes_require_incompatible_values_to_be_cleared_first() {
 /// Choice forms belong to the selected reference type, including when only qualifiers change.
 #[test]
 fn type_changes_cannot_retarget_an_existing_choice_form() {
-    use eska::project::metadata_model::PropertyKey;
+    use crate::backend::project::metadata_model::PropertyKey;
     let (directory, workspace, id, file, input) =
         filling_fixture("<v:Type>c:CatalogRef.Other</v:Type>");
     drop(workspace);
@@ -818,7 +818,7 @@ fn type_changes_cannot_retarget_an_existing_choice_form() {
         .find(|field| {
             matches!(
                 field.schema,
-                eska::project::metadata_edit::ScalarSchema::DataType { .. }
+                crate::backend::project::metadata_edit::ScalarSchema::DataType { .. }
             )
         })
         .unwrap();
@@ -1053,7 +1053,7 @@ fn external_changes_and_missing_support_rules_reject_writes_without_losing_sourc
 /// Construct a semantic type proposal without encoding XML prefixes in the test.
 fn data_type(namespace: &str, name: &str) -> PropertyChange {
     PropertyChange::DataType {
-        key: eska::project::metadata_model::PropertyKey {
+        key: crate::backend::project::metadata_model::PropertyKey {
             namespace: Some(namespace.into()),
             name: name.into(),
         },
@@ -1062,7 +1062,7 @@ fn data_type(namespace: &str, name: &str) -> PropertyChange {
 
 #[test]
 fn existing_attribute_type_uses_declared_choices_and_validates_qualifier_dependencies() {
-    use eska::project::metadata_edit::ScalarSchema;
+    use crate::backend::project::metadata_edit::ScalarSchema;
     let (directory, _, _, root_path) = editable_fixture("configuration");
     let source = directory.0.join("src");
     let root = source.join(root_path);

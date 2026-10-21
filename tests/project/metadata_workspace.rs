@@ -1,5 +1,4 @@
-use crate::support::TestDir;
-use eska::project::{
+use crate::backend::project::{
     configurator::{ChildrenState, TreeOptions},
     designer_source::SourceRole,
     metadata_model::{
@@ -8,6 +7,7 @@ use eska::project::{
     metadata_parser::LoadError,
     metadata_workspace::{MetadataWorkspace, WorkspaceError},
 };
+use crate::support::TestDir;
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
@@ -521,7 +521,7 @@ fn incremental_root_membership_and_rename_are_consistent() {
 /// LRU eviction bounds the retained parse cache; explicit refresh handles missed events.
 #[test]
 fn incremental_cache_limits_and_full_refresh() {
-    use eska::project::metadata_workspace::CacheLimits;
+    use crate::backend::project::metadata_workspace::CacheLimits;
     let directory = TestDir::new();
     fixture(&directory.0, "configuration");
     let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();

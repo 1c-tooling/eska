@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use eska::{
+use crate::backend::{
     project::{discovery, save},
     vcs::status::Change,
 };

@@ -1,7 +1,6 @@
 //! Reproducible read-only backend measurements; never invoke the 1C platform.
 use super::{fixture, object};
-use crate::support::TestDir;
-use eska::project::{
+use crate::backend::project::{
     configurator::TreeOptions,
     metadata_model::{MetadataKind, NodeId, ProjectScope},
     metadata_workspace::{
@@ -9,6 +8,7 @@ use eska::project::{
         search::{IndexState, SearchOptions},
     },
 };
+use crate::support::TestDir;
 use std::{fmt::Write, fs, path::Path, time::Instant};
 
 /// Measure batched removal on a synthetic index without invoking the 1C platform.

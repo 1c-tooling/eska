@@ -163,7 +163,7 @@ fn common_module_names_reject_platform_properties_before_writing() {
             matches!(
                 project.preview_rename(&id, name),
                 Err(RenameError::Name(
-                    eska::project::metadata_rename::NameError::ReservedProperty
+                    crate::backend::project::metadata_rename::NameError::ReservedProperty
                 ))
             ),
             "{name}"
