@@ -1,0 +1,2237 @@
+{
+  "schema_version": 1,
+  "stage": "T89",
+  "date": "2026-10-21",
+  "status": "in-progress",
+  "performance_acceptance": "failed",
+  "reason": "The new integration exceeds the fixed T90 overhead tolerance; functional correctness does not close the performance gate.",
+  "platform": "Linux x86_64 GNU; VSCodium 1.109.5",
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1",
+  "provenance": {
+    "date": "2026-10-21",
+    "source_copy": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p/buhmfo",
+    "stand": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1",
+    "probe": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/probe.cjs",
+    "probe_sha256": "9990b9f3b49848d1b6581f60368af61399d0390e4734daa694552123c41d95dd",
+    "candidate_revision": "87d3cee1970f50ef9a1d233b9b695893df8f7937",
+    "root_revision": "2a7a2061a71320909321607ef78ae9481215ec57",
+    "baseline_revision": "443134c23d66a0b12902e185d9b4ea8032c42f92",
+    "analyzer_sha256": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+    "analyzer_configuration": {
+      "compatibility_mode": "Version8_3_27",
+      "target_platform_version": "8.3.27.2325",
+      "diagnostics": {
+        "parameters": {
+          "LineLength": false
+        }
+      },
+      "source": {
+        "externals": [],
+        "root": "src/buhmfo/src",
+        "extensions": [
+          {
+            "dependsOn": [],
+            "name": "external-systems",
+            "path": "src/ExternalSystems/src"
+          },
+          {
+            "dependsOn": [],
+            "name": "dzp-auto-statements",
+            "path": "src/dzp_АвтоматическаяЗагрузкаВыписок/src"
+          },
+          {
+            "dependsOn": [],
+            "name": "dzp-typical-code",
+            "path": "src/dzp_АдаптацияКодаТиповойКонфигурации/src"
+          },
+          {
+            "dependsOn": [],
+            "name": "dzp-fill-bank-statements",
+            "path": "src/dzp_ЗаполнениеБанковскихВыписок/src"
+          },
+          {
+            "dependsOn": [],
+            "name": "dzp-config-fixes",
+            "path": "src/dzp_ИсправлениеОшибокКонфигурации/src"
+          }
+        ]
+      }
+    },
+    "support_policy": false,
+    "settings_note": "Fresh frozen-code replay and candidate use the same generated analyzer body. Project manifests differ only by the declared application/policy. The original T90 series is preserved.",
+    "runner_sha256": "e5daab1479f718cec2d95ad60812be3e945bdb46681edaa424f04336bd21f361",
+    "excluded": "excluded-debug-preflight: debug candidate vs release baseline; not acceptance data.",
+    "candidate_binary": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/candidate-tools/eska-project",
+      "sha256": "2e876e5fa189fcac1e337164255e9c267d91f82c3840963b320e81e57ffa6e11",
+      "profile": "release",
+      "contract": {
+        "bridge_schema": 1,
+        "config_schema": "designer-xml-1",
+        "metadata_api": {
+          "major": 1,
+          "minor": 12
+        },
+        "schema_version": 2,
+        "target": "x86_64-unknown-linux-gnu",
+        "tool": "eska-project",
+        "version": "0.14.3"
+      },
+      "source_revision": "2a7a2061a71320909321607ef78ae9481215ec57"
+    },
+    "xml_bsl_inputs": {
+      "frozen": {
+        "files": 103719,
+        "bytes": 6202842333,
+        "sha256": "7233dcdadf0c5782d6bb49e9a01d6f106d327f36bb79688a340a8a264c2d37d6"
+      },
+      "baseline": {
+        "files": 103719,
+        "bytes": 6202842333,
+        "sha256": "7233dcdadf0c5782d6bb49e9a01d6f106d327f36bb79688a340a8a264c2d37d6"
+      },
+      "candidate": {
+        "files": 103719,
+        "bytes": 6202842333,
+        "sha256": "7233dcdadf0c5782d6bb49e9a01d6f106d327f36bb79688a340a8a264c2d37d6"
+      }
+    }
+  },
+  "method": {
+    "openings_per_variant": {
+      "cold": 5,
+      "repeat": 5
+    },
+    "operations_per_launch": {
+      "hover": 30,
+      "completion": 30,
+      "definition": 30,
+      "unsaved_edit_and_diagnostics_repair": 30
+    },
+    "correct_native_launches": 20,
+    "same_server_and_configuration": true,
+    "original_t90_times_used_as_current_baseline": false,
+    "fixed_t90_tolerance_rule": "max(10 percent, original T90 variation of startup runs or per-run latency medians)",
+    "sampling": "Owned descendants only; RSS/CPU/physical I/O approximately 100 ms, complete PSS approximately 1 second. Setup and installation excluded.",
+    "cold": "Only own copied .eska caches removed; OS caches are not flushed. Repeat uses remaining project caches.",
+    "comparison_order": "Interleaved frozen baseline then candidate for each round; no concurrent builds or test suites.",
+    "provider_assertions": "Hover and completion are non-empty; definition must target the actual probe function; 30 error/repair cycles complete and the module disk bytes remain unchanged. This is not an exhaustive semantic comparison of every response."
+  },
+  "summary": {
+    "baseline": {
+      "cold": {
+        "treeReadyMs": {
+          "count": 5,
+          "median": 544.4298,
+          "p95": 578.3834,
+          "min": 437.5977,
+          "max": 578.3834,
+          "range_percent_of_median": 25.8593
+        },
+        "languageReadyMs": {
+          "count": 5,
+          "median": 5331.0662,
+          "p95": 5447.4686,
+          "min": 4886.3432,
+          "max": 5447.4686,
+          "range_percent_of_median": 10.5256
+        },
+        "latency": {
+          "hover": {
+            "count": 150,
+            "median": 66.1856,
+            "p95": 103.3662,
+            "min": 45.8964,
+            "max": 114.0308,
+            "range_percent_of_median": 102.9445,
+            "per_run_median_ms": [
+              56.7914,
+              66.574,
+              72.2825,
+              67.9327,
+              64.3313
+            ],
+            "comparison_variation_percent": 23.269
+          },
+          "completion": {
+            "count": 150,
+            "median": 64.7163,
+            "p95": 99.7356,
+            "min": 58.2348,
+            "max": 207.6371,
+            "range_percent_of_median": 230.8574,
+            "per_run_median_ms": [
+              61.7045,
+              64.9688,
+              66.1995,
+              64.1495,
+              65.914
+            ],
+            "comparison_variation_percent": 6.9187
+          },
+          "definition": {
+            "count": 150,
+            "median": 53.3964,
+            "p95": 199.4396,
+            "min": 43.2903,
+            "max": 262.4708,
+            "range_percent_of_median": 410.4784,
+            "per_run_median_ms": [
+              48.1451,
+              57.1594,
+              51.8497,
+              57.688,
+              59.3546
+            ],
+            "comparison_variation_percent": 19.6109
+          },
+          "editDiagnostics": {
+            "count": 150,
+            "median": 146.23,
+            "p95": 261.9379,
+            "min": 63.3743,
+            "max": 350.7864,
+            "range_percent_of_median": 196.5479,
+            "per_run_median_ms": [
+              143.5967,
+              145.7584,
+              146.0858,
+              146.23,
+              146.8492
+            ],
+            "comparison_variation_percent": 2.2264
+          }
+        },
+        "resources": {
+          "peak_rss_mib": {
+            "count": 5,
+            "median": 2095.6094,
+            "p95": 2134.6836,
+            "min": 2081.3516,
+            "max": 2134.6836,
+            "range_percent_of_median": 2.5449
+          },
+          "peak_pss_mib": {
+            "count": 5,
+            "median": 1349.543,
+            "p95": 1354.1416,
+            "min": 1326.6631,
+            "max": 1354.1416,
+            "range_percent_of_median": 2.0361
+          },
+          "end_of_scenario_rss_mib": {
+            "count": 5,
+            "median": 2074.7305,
+            "p95": 2076.3164,
+            "min": 2049.0664,
+            "max": 2076.3164,
+            "range_percent_of_median": 1.3134
+          },
+          "end_of_scenario_pss_mib": {
+            "count": 5,
+            "median": 1343.1064,
+            "p95": 1349.543,
+            "min": 1325.1982,
+            "max": 1349.543,
+            "range_percent_of_median": 1.8126
+          },
+          "cpu_seconds": {
+            "count": 5,
+            "median": 58.92,
+            "p95": 59.46,
+            "min": 52.07,
+            "max": 59.46,
+            "range_percent_of_median": 12.5424
+          },
+          "physical_read_bytes": {
+            "count": 5,
+            "median": 62251008,
+            "p95": 493932544,
+            "min": 7372800,
+            "max": 493932544,
+            "range_percent_of_median": 781.6094
+          },
+          "physical_write_bytes": {
+            "count": 5,
+            "median": 44609536,
+            "p95": 60887040,
+            "min": 43327488,
+            "max": 60887040,
+            "range_percent_of_median": 39.3628
+          }
+        }
+      },
+      "repeat": {
+        "treeReadyMs": {
+          "count": 5,
+          "median": 520.4872,
+          "p95": 582.2194,
+          "min": 488.4493,
+          "max": 582.2194,
+          "range_percent_of_median": 18.0158
+        },
+        "languageReadyMs": {
+          "count": 5,
+          "median": 5192.5734,
+          "p95": 5318.9871,
+          "min": 5141.8915,
+          "max": 5318.9871,
+          "range_percent_of_median": 3.4106
+        },
+        "latency": {
+          "hover": {
+            "count": 150,
+            "median": 61.9976,
+            "p95": 106.0029,
+            "min": 46.8376,
+            "max": 152.3584,
+            "range_percent_of_median": 170.2012,
+            "per_run_median_ms": [
+              58.7223,
+              68.7465,
+              61.3657,
+              58.2484,
+              63.2447
+            ],
+            "comparison_variation_percent": 17.1074
+          },
+          "completion": {
+            "count": 150,
+            "median": 65.5316,
+            "p95": 76.2781,
+            "min": 58.2135,
+            "max": 111.2111,
+            "range_percent_of_median": 80.8734,
+            "per_run_median_ms": [
+              66.2075,
+              66.1056,
+              65.7039,
+              63.5352,
+              65.0143
+            ],
+            "comparison_variation_percent": 4.0672
+          },
+          "definition": {
+            "count": 150,
+            "median": 58.8455,
+            "p95": 220.3691,
+            "min": 45.0409,
+            "max": 303.0607,
+            "range_percent_of_median": 438.4697,
+            "per_run_median_ms": [
+              99.0795,
+              80.3057,
+              75.1918,
+              53.3006,
+              113.3174
+            ],
+            "comparison_variation_percent": 74.7354
+          },
+          "editDiagnostics": {
+            "count": 150,
+            "median": 145.9721,
+            "p95": 243.6523,
+            "min": 59.5463,
+            "max": 247.7261,
+            "range_percent_of_median": 128.915,
+            "per_run_median_ms": [
+              145.8025,
+              145.8759,
+              145.4958,
+              148.144,
+              146.322
+            ],
+            "comparison_variation_percent": 1.8154
+          }
+        },
+        "resources": {
+          "peak_rss_mib": {
+            "count": 5,
+            "median": 2082.0234,
+            "p95": 2134.2656,
+            "min": 2072.3359,
+            "max": 2134.2656,
+            "range_percent_of_median": 2.9745
+          },
+          "peak_pss_mib": {
+            "count": 5,
+            "median": 1333.2959,
+            "p95": 1352.7891,
+            "min": 1331.8125,
+            "max": 1352.7891,
+            "range_percent_of_median": 1.5733
+          },
+          "end_of_scenario_rss_mib": {
+            "count": 5,
+            "median": 2082.0234,
+            "p95": 2090.6367,
+            "min": 1885.2734,
+            "max": 2090.6367,
+            "range_percent_of_median": 9.8636
+          },
+          "end_of_scenario_pss_mib": {
+            "count": 5,
+            "median": 1332.2139,
+            "p95": 1352.7891,
+            "min": 1327.4131,
+            "max": 1352.7891,
+            "range_percent_of_median": 1.9048
+          },
+          "cpu_seconds": {
+            "count": 5,
+            "median": 57.94,
+            "p95": 58.39,
+            "min": 57.45,
+            "max": 58.39,
+            "range_percent_of_median": 1.6224
+          },
+          "physical_read_bytes": {
+            "count": 5,
+            "median": 245760,
+            "p95": 602112,
+            "min": 176128,
+            "max": 602112,
+            "range_percent_of_median": 173.3333
+          },
+          "physical_write_bytes": {
+            "count": 5,
+            "median": 25944064,
+            "p95": 28454912,
+            "min": 25706496,
+            "max": 28454912,
+            "range_percent_of_median": 10.5936
+          }
+        }
+      }
+    },
+    "candidate": {
+      "cold": {
+        "treeReadyMs": {
+          "count": 5,
+          "median": 578.7851,
+          "p95": 644.2404,
+          "min": 561.3535,
+          "max": 644.2404,
+          "range_percent_of_median": 14.3208
+        },
+        "languageReadyMs": {
+          "count": 5,
+          "median": 6572.7801,
+          "p95": 6883.574,
+          "min": 6302.7856,
+          "max": 6883.574,
+          "range_percent_of_median": 8.8363
+        },
+        "latency": {
+          "hover": {
+            "count": 150,
+            "median": 151.8564,
+            "p95": 221.8377,
+            "min": 63.3325,
+            "max": 405.4876,
+            "range_percent_of_median": 225.3149,
+            "per_run_median_ms": [
+              153.5776,
+              163.6023,
+              167.5171,
+              145.6408,
+              143.4826
+            ],
+            "comparison_variation_percent": 15.6497
+          },
+          "completion": {
+            "count": 150,
+            "median": 70.8449,
+            "p95": 112.111,
+            "min": 56.4805,
+            "max": 403.4253,
+            "range_percent_of_median": 489.7244,
+            "per_run_median_ms": [
+              72.3126,
+              71.7288,
+              66.5266,
+              73.5181,
+              70.9288
+            ],
+            "comparison_variation_percent": 9.7471
+          },
+          "definition": {
+            "count": 150,
+            "median": 56.6254,
+            "p95": 248.8713,
+            "min": 42.9519,
+            "max": 324.5763,
+            "range_percent_of_median": 497.346,
+            "per_run_median_ms": [
+              60.0019,
+              57.6101,
+              53.7102,
+              63.011,
+              52.589
+            ],
+            "comparison_variation_percent": 18.0906
+          },
+          "editDiagnostics": {
+            "count": 150,
+            "median": 57.5793,
+            "p95": 178.9485,
+            "min": 42.5481,
+            "max": 239.6663,
+            "range_percent_of_median": 342.3419,
+            "per_run_median_ms": [
+              57.674,
+              57.7832,
+              57.0104,
+              58.2817,
+              56.8046
+            ],
+            "comparison_variation_percent": 2.5611
+          }
+        },
+        "resources": {
+          "peak_rss_mib": {
+            "count": 5,
+            "median": 2132.5938,
+            "p95": 2265.3867,
+            "min": 2113.7891,
+            "max": 2265.3867,
+            "range_percent_of_median": 7.1086
+          },
+          "peak_pss_mib": {
+            "count": 5,
+            "median": 1387.2207,
+            "p95": 1392.083,
+            "min": 1360.0908,
+            "max": 1392.083,
+            "range_percent_of_median": 2.3062
+          },
+          "end_of_scenario_rss_mib": {
+            "count": 5,
+            "median": 1763.3516,
+            "p95": 2128.0352,
+            "min": 1726.9727,
+            "max": 2128.0352,
+            "range_percent_of_median": 22.7443
+          },
+          "end_of_scenario_pss_mib": {
+            "count": 5,
+            "median": 1387.2207,
+            "p95": 1392.083,
+            "min": 1356.6338,
+            "max": 1392.083,
+            "range_percent_of_median": 2.5554
+          },
+          "cpu_seconds": {
+            "count": 5,
+            "median": 61.9,
+            "p95": 65.07,
+            "min": 58.77,
+            "max": 65.07,
+            "range_percent_of_median": 10.1777
+          },
+          "physical_read_bytes": {
+            "count": 5,
+            "median": 153608192,
+            "p95": 391962624,
+            "min": 23945216,
+            "max": 391962624,
+            "range_percent_of_median": 239.5819
+          },
+          "physical_write_bytes": {
+            "count": 5,
+            "median": 44736512,
+            "p95": 80117760,
+            "min": 43950080,
+            "max": 80117760,
+            "range_percent_of_median": 80.846
+          }
+        }
+      },
+      "repeat": {
+        "treeReadyMs": {
+          "count": 5,
+          "median": 554.7673,
+          "p95": 570.6035,
+          "min": 539.0758,
+          "max": 570.6035,
+          "range_percent_of_median": 5.6831
+        },
+        "languageReadyMs": {
+          "count": 5,
+          "median": 6228.0081,
+          "p95": 6322.4737,
+          "min": 6161.2136,
+          "max": 6322.4737,
+          "range_percent_of_median": 2.5893
+        },
+        "latency": {
+          "hover": {
+            "count": 150,
+            "median": 151.0292,
+            "p95": 198.5339,
+            "min": 63.0693,
+            "max": 268.7414,
+            "range_percent_of_median": 136.1803,
+            "per_run_median_ms": [
+              158.8544,
+              148.755,
+              173.9425,
+              155.9678,
+              143.2741
+            ],
+            "comparison_variation_percent": 19.6633
+          },
+          "completion": {
+            "count": 150,
+            "median": 69.7566,
+            "p95": 104.6849,
+            "min": 60.6437,
+            "max": 165.9988,
+            "range_percent_of_median": 151.0325,
+            "per_run_median_ms": [
+              71.2883,
+              67.3197,
+              70.8251,
+              69.5098,
+              68.6025
+            ],
+            "comparison_variation_percent": 5.7094
+          },
+          "definition": {
+            "count": 150,
+            "median": 54.6624,
+            "p95": 251.3342,
+            "min": 44.8277,
+            "max": 320.0638,
+            "range_percent_of_median": 503.52,
+            "per_run_median_ms": [
+              56.0495,
+              53.2895,
+              58.0825,
+              56.9485,
+              51.7274
+            ],
+            "comparison_variation_percent": 11.3384
+          },
+          "editDiagnostics": {
+            "count": 150,
+            "median": 57.707,
+            "p95": 173.8448,
+            "min": 47.7837,
+            "max": 225.8747,
+            "range_percent_of_median": 308.6122,
+            "per_run_median_ms": [
+              57.397,
+              57.579,
+              57.4967,
+              58.137,
+              57.7099
+            ],
+            "comparison_variation_percent": 1.2852
+          }
+        },
+        "resources": {
+          "peak_rss_mib": {
+            "count": 5,
+            "median": 2140.3047,
+            "p95": 2158.1719,
+            "min": 2122.1094,
+            "max": 2158.1719,
+            "range_percent_of_median": 1.6849
+          },
+          "peak_pss_mib": {
+            "count": 5,
+            "median": 1367.9102,
+            "p95": 1378.5693,
+            "min": 1349.377,
+            "max": 1378.5693,
+            "range_percent_of_median": 2.1341
+          },
+          "end_of_scenario_rss_mib": {
+            "count": 5,
+            "median": 1791.9258,
+            "p95": 2152.6211,
+            "min": 1725.7734,
+            "max": 2152.6211,
+            "range_percent_of_median": 23.8206
+          },
+          "end_of_scenario_pss_mib": {
+            "count": 5,
+            "median": 1367.9102,
+            "p95": 1377.2607,
+            "min": 1349.377,
+            "max": 1377.2607,
+            "range_percent_of_median": 2.0384
+          },
+          "cpu_seconds": {
+            "count": 5,
+            "median": 60.85,
+            "p95": 62.31,
+            "min": 58.28,
+            "max": 62.31,
+            "range_percent_of_median": 6.6228
+          },
+          "physical_read_bytes": {
+            "count": 5,
+            "median": 77824,
+            "p95": 5922816,
+            "min": 0,
+            "max": 5922816,
+            "range_percent_of_median": 7610.5263
+          },
+          "physical_write_bytes": {
+            "count": 5,
+            "median": 31903744,
+            "p95": 52031488,
+            "min": 26103808,
+            "max": 52031488,
+            "range_percent_of_median": 81.2685
+          }
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "cold": {
+      "treeReadyMs": {
+        "baseline_median_ms": 544.4298,
+        "candidate_median_ms": 578.7851,
+        "overhead_percent": 6.3103,
+        "fixed_t90_allowance_percent": 10.622,
+        "fresh_baseline_variation_percent": 25.8593,
+        "within_fixed_t90_tolerance": true
+      },
+      "languageReadyMs": {
+        "baseline_median_ms": 5331.0662,
+        "candidate_median_ms": 6572.7801,
+        "overhead_percent": 23.292,
+        "fixed_t90_allowance_percent": 10,
+        "fresh_baseline_variation_percent": 10.5256,
+        "within_fixed_t90_tolerance": false
+      },
+      "hover": {
+        "baseline_median_ms": 66.1856,
+        "candidate_median_ms": 151.8564,
+        "overhead_percent": 129.4402,
+        "fixed_t90_allowance_percent": 12.79,
+        "fresh_baseline_variation_percent": 23.269,
+        "within_fixed_t90_tolerance": false
+      },
+      "completion": {
+        "baseline_median_ms": 64.7163,
+        "candidate_median_ms": 70.8449,
+        "overhead_percent": 9.4699,
+        "fixed_t90_allowance_percent": 10,
+        "fresh_baseline_variation_percent": 6.9187,
+        "within_fixed_t90_tolerance": true
+      },
+      "definition": {
+        "baseline_median_ms": 53.3964,
+        "candidate_median_ms": 56.6254,
+        "overhead_percent": 6.0472,
+        "fixed_t90_allowance_percent": 10,
+        "fresh_baseline_variation_percent": 19.6109,
+        "within_fixed_t90_tolerance": true
+      },
+      "editDiagnostics": {
+        "baseline_median_ms": 146.23,
+        "candidate_median_ms": 57.5793,
+        "overhead_percent": -60.6242,
+        "fixed_t90_allowance_percent": 40.759,
+        "fresh_baseline_variation_percent": 2.2264,
+        "within_fixed_t90_tolerance": true
+      }
+    },
+    "repeat": {
+      "treeReadyMs": {
+        "baseline_median_ms": 520.4872,
+        "candidate_median_ms": 554.7673,
+        "overhead_percent": 6.5862,
+        "fixed_t90_allowance_percent": 17.113,
+        "fresh_baseline_variation_percent": 18.0158,
+        "within_fixed_t90_tolerance": true
+      },
+      "languageReadyMs": {
+        "baseline_median_ms": 5192.5734,
+        "candidate_median_ms": 6228.0081,
+        "overhead_percent": 19.9407,
+        "fixed_t90_allowance_percent": 10,
+        "fresh_baseline_variation_percent": 3.4106,
+        "within_fixed_t90_tolerance": false
+      },
+      "hover": {
+        "baseline_median_ms": 61.9976,
+        "candidate_median_ms": 151.0292,
+        "overhead_percent": 143.6049,
+        "fixed_t90_allowance_percent": 10,
+        "fresh_baseline_variation_percent": 17.1074,
+        "within_fixed_t90_tolerance": false
+      },
+      "completion": {
+        "baseline_median_ms": 65.5316,
+        "candidate_median_ms": 69.7566,
+        "overhead_percent": 6.4473,
+        "fixed_t90_allowance_percent": 10,
+        "fresh_baseline_variation_percent": 4.0672,
+        "within_fixed_t90_tolerance": true
+      },
+      "definition": {
+        "baseline_median_ms": 58.8455,
+        "candidate_median_ms": 54.6624,
+        "overhead_percent": -7.1086,
+        "fixed_t90_allowance_percent": 10,
+        "fresh_baseline_variation_percent": 74.7354,
+        "within_fixed_t90_tolerance": true
+      },
+      "editDiagnostics": {
+        "baseline_median_ms": 145.9721,
+        "candidate_median_ms": 57.707,
+        "overhead_percent": -60.4671,
+        "fixed_t90_allowance_percent": 41.069,
+        "fresh_baseline_variation_percent": 1.8154,
+        "within_fixed_t90_tolerance": true
+      }
+    }
+  },
+  "failed_criteria": [
+    {
+      "mode": "cold",
+      "metric": "languageReadyMs",
+      "baseline_median_ms": 5331.0662,
+      "candidate_median_ms": 6572.7801,
+      "overhead_percent": 23.292,
+      "fixed_t90_allowance_percent": 10,
+      "fresh_baseline_variation_percent": 10.5256,
+      "within_fixed_t90_tolerance": false
+    },
+    {
+      "mode": "cold",
+      "metric": "hover",
+      "baseline_median_ms": 66.1856,
+      "candidate_median_ms": 151.8564,
+      "overhead_percent": 129.4402,
+      "fixed_t90_allowance_percent": 12.79,
+      "fresh_baseline_variation_percent": 23.269,
+      "within_fixed_t90_tolerance": false
+    },
+    {
+      "mode": "repeat",
+      "metric": "languageReadyMs",
+      "baseline_median_ms": 5192.5734,
+      "candidate_median_ms": 6228.0081,
+      "overhead_percent": 19.9407,
+      "fixed_t90_allowance_percent": 10,
+      "fresh_baseline_variation_percent": 3.4106,
+      "within_fixed_t90_tolerance": false
+    },
+    {
+      "mode": "repeat",
+      "metric": "hover",
+      "baseline_median_ms": 61.9976,
+      "candidate_median_ms": 151.0292,
+      "overhead_percent": 143.6049,
+      "fixed_t90_allowance_percent": 10,
+      "fresh_baseline_variation_percent": 17.1074,
+      "within_fixed_t90_tolerance": false
+    }
+  ],
+  "rounds": [
+    {
+      "variant": "baseline",
+      "mode": "cold",
+      "round": 0,
+      "correct": true,
+      "treeReadyMs": 437.59772599999997,
+      "languageReadyMs": 4886.3431519999995,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 56.7914,
+          "p95": 95.7973,
+          "min": 45.8964,
+          "max": 98.0745,
+          "range_percent_of_median": 91.8767
+        },
+        "completion": {
+          "count": 30,
+          "median": 61.7045,
+          "p95": 99.7356,
+          "min": 58.4002,
+          "max": 144.5448,
+          "range_percent_of_median": 139.6084
+        },
+        "definition": {
+          "count": 30,
+          "median": 48.1451,
+          "p95": 174.9772,
+          "min": 43.2903,
+          "max": 191.7427,
+          "range_percent_of_median": 308.3437
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 143.5967,
+          "p95": 276.0056,
+          "min": 138.2257,
+          "max": 298.0177,
+          "range_percent_of_median": 111.2783
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2134.68359375,
+        "peak_pss_mib": 1354.1416015625,
+        "end_of_scenario_rss_mib": 2076.31640625,
+        "end_of_scenario_pss_mib": 1343.1064453125,
+        "cpu_seconds": 52.07,
+        "physical_read_bytes": 493932544,
+        "physical_write_bytes": 60887040,
+        "pss_samples": 17,
+        "complete_pss_samples": 17
+      },
+      "result_sha256": "b3c84298ad1fee19dab1c6fdaa26fefcb8021430ba430002c115d5083733df9e",
+      "resources_sha256": "f9aebb2b83da029702716e813dffb5dd73bc44129293d36e011e76131c7b0f8b"
+    },
+    {
+      "variant": "candidate",
+      "mode": "cold",
+      "round": 0,
+      "correct": true,
+      "treeReadyMs": 561.3534840000001,
+      "languageReadyMs": 6883.573964,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 153.5776,
+          "p95": 239.1501,
+          "min": 75.5214,
+          "max": 405.4876,
+          "range_percent_of_median": 214.8531
+        },
+        "completion": {
+          "count": 30,
+          "median": 72.3126,
+          "p95": 181.4567,
+          "min": 56.4805,
+          "max": 236.3027,
+          "range_percent_of_median": 248.6734
+        },
+        "definition": {
+          "count": 30,
+          "median": 60.0019,
+          "p95": 225.8197,
+          "min": 42.9519,
+          "max": 255.0944,
+          "range_percent_of_median": 353.5596
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 57.674,
+          "p95": 184.7077,
+          "min": 42.5481,
+          "max": 221.1758,
+          "range_percent_of_median": 309.7196
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2132.59375,
+        "peak_pss_mib": 1387.220703125,
+        "end_of_scenario_rss_mib": 1763.3515625,
+        "end_of_scenario_pss_mib": 1387.220703125,
+        "cpu_seconds": 64.3,
+        "physical_read_bytes": 391962624,
+        "physical_write_bytes": 80117760,
+        "pss_samples": 20,
+        "complete_pss_samples": 20
+      },
+      "result_sha256": "298820e60e820f19a57dd52d85325b97c3f2849abedbdd9d720fa038206ebe21",
+      "resources_sha256": "09ee2233fa8825c3cac6d005e0854874033d1a52cf7b276117e456160a4c16f1"
+    },
+    {
+      "variant": "baseline",
+      "mode": "cold",
+      "round": 1,
+      "correct": true,
+      "treeReadyMs": 578.383381,
+      "languageReadyMs": 5396.913363000001,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 66.574,
+          "p95": 105.4931,
+          "min": 48.3249,
+          "max": 114.0308,
+          "range_percent_of_median": 98.6961
+        },
+        "completion": {
+          "count": 30,
+          "median": 64.9688,
+          "p95": 82.4618,
+          "min": 60.4724,
+          "max": 207.6371,
+          "range_percent_of_median": 226.5161
+        },
+        "definition": {
+          "count": 30,
+          "median": 57.1594,
+          "p95": 227.1852,
+          "min": 46.5479,
+          "max": 232.1634,
+          "range_percent_of_median": 324.7329
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 145.7584,
+          "p95": 241.5447,
+          "min": 63.3743,
+          "max": 260.6494,
+          "range_percent_of_median": 135.3439
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2092.7578125,
+        "peak_pss_mib": 1338.9033203125,
+        "end_of_scenario_rss_mib": 2049.06640625,
+        "end_of_scenario_pss_mib": 1325.1982421875,
+        "cpu_seconds": 59.46,
+        "physical_read_bytes": 84758528,
+        "physical_write_bytes": 44527616,
+        "pss_samples": 19,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "0edadf0d6194e75719274e38df25196eda05d0590bf1b247ac5c47218761a37b",
+      "resources_sha256": "d41ecd6154ace20c2e81a4316e69e66120f75095bb6315f49ef1c7ecc3ab6675"
+    },
+    {
+      "variant": "candidate",
+      "mode": "cold",
+      "round": 1,
+      "correct": true,
+      "treeReadyMs": 581.818969,
+      "languageReadyMs": 6672.970485000001,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 163.6023,
+          "p95": 233.3868,
+          "min": 70.1362,
+          "max": 240.5472,
+          "range_percent_of_median": 104.1617
+        },
+        "completion": {
+          "count": 30,
+          "median": 71.7288,
+          "p95": 99.753,
+          "min": 60.1801,
+          "max": 403.4253,
+          "range_percent_of_median": 478.5319
+        },
+        "definition": {
+          "count": 30,
+          "median": 57.6101,
+          "p95": 310.8731,
+          "min": 43.7368,
+          "max": 324.5763,
+          "range_percent_of_median": 487.4834
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 57.7832,
+          "p95": 195.3292,
+          "min": 55.6707,
+          "max": 239.6663,
+          "range_percent_of_median": 318.4237
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2147.296875,
+        "peak_pss_mib": 1392.0830078125,
+        "end_of_scenario_rss_mib": 2128.03515625,
+        "end_of_scenario_pss_mib": 1392.0830078125,
+        "cpu_seconds": 65.07,
+        "physical_read_bytes": 203976704,
+        "physical_write_bytes": 43950080,
+        "pss_samples": 20,
+        "complete_pss_samples": 20
+      },
+      "result_sha256": "11af06ea6b71bab89bbe8d26b2b62d0b09df7bb1a83dc4fc6ffb3fd3feb26264",
+      "resources_sha256": "922bf0a519ea0ca3d5deb9250242040f75b6aa37801a9c19c23bad8012da13b2"
+    },
+    {
+      "variant": "baseline",
+      "mode": "cold",
+      "round": 2,
+      "correct": true,
+      "treeReadyMs": 517.9962609999999,
+      "languageReadyMs": 5447.468629,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 72.2825,
+          "p95": 104.3239,
+          "min": 47.1104,
+          "max": 110.3215,
+          "range_percent_of_median": 87.4501
+        },
+        "completion": {
+          "count": 30,
+          "median": 66.1995,
+          "p95": 108.2969,
+          "min": 58.2348,
+          "max": 157.6455,
+          "range_percent_of_median": 150.1683
+        },
+        "definition": {
+          "count": 30,
+          "median": 51.8497,
+          "p95": 187.6964,
+          "min": 46.5189,
+          "max": 199.4396,
+          "range_percent_of_median": 294.9308
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 146.0858,
+          "p95": 281.5341,
+          "min": 139.4766,
+          "max": 296.7525,
+          "range_percent_of_median": 107.66
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2081.3515625,
+        "peak_pss_mib": 1349.54296875,
+        "end_of_scenario_rss_mib": 2074.796875,
+        "end_of_scenario_pss_mib": 1349.54296875,
+        "cpu_seconds": 58.92,
+        "physical_read_bytes": 62251008,
+        "physical_write_bytes": 44609536,
+        "pss_samples": 19,
+        "complete_pss_samples": 19
+      },
+      "result_sha256": "0b7f50f55023c80243b8fdda0c1e1e33c92d6407639c336ea7e59ad54962d822",
+      "resources_sha256": "1a892d01969b36820f08305776f898fb580bf29315f483e2325da342d031d32f"
+    },
+    {
+      "variant": "candidate",
+      "mode": "cold",
+      "round": 2,
+      "correct": true,
+      "treeReadyMs": 578.7850850000001,
+      "languageReadyMs": 6572.780088,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 167.5171,
+          "p95": 206.8624,
+          "min": 67.9495,
+          "max": 237.1583,
+          "range_percent_of_median": 101.0099
+        },
+        "completion": {
+          "count": 30,
+          "median": 66.5266,
+          "p95": 81.376,
+          "min": 61.9451,
+          "max": 176.8886,
+          "range_percent_of_median": 172.7784
+        },
+        "definition": {
+          "count": 30,
+          "median": 53.7102,
+          "p95": 243.8488,
+          "min": 46.1403,
+          "max": 248.8713,
+          "range_percent_of_median": 377.4536
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 57.0104,
+          "p95": 168.2889,
+          "min": 54.8001,
+          "max": 221.067,
+          "range_percent_of_median": 291.6429
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2113.7890625,
+        "peak_pss_mib": 1370.5341796875,
+        "end_of_scenario_rss_mib": 1726.97265625,
+        "end_of_scenario_pss_mib": 1356.6337890625,
+        "cpu_seconds": 60.24,
+        "physical_read_bytes": 153608192,
+        "physical_write_bytes": 44552192,
+        "pss_samples": 18,
+        "complete_pss_samples": 17
+      },
+      "result_sha256": "a40164948059190d795ed8ace08ef54832732ca757c509f6b2ff4afe7669277b",
+      "resources_sha256": "0c1b20baca02457ac245e26144343aa527116237943f2831547bf8b7fb3f7585"
+    },
+    {
+      "variant": "baseline",
+      "mode": "cold",
+      "round": 3,
+      "correct": true,
+      "treeReadyMs": 549.8225490000001,
+      "languageReadyMs": 5331.066237,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 67.9327,
+          "p95": 101.531,
+          "min": 47.4084,
+          "max": 104.7862,
+          "range_percent_of_median": 84.4627
+        },
+        "completion": {
+          "count": 30,
+          "median": 64.1495,
+          "p95": 100.1832,
+          "min": 58.4369,
+          "max": 113.9319,
+          "range_percent_of_median": 86.5089
+        },
+        "definition": {
+          "count": 30,
+          "median": 57.688,
+          "p95": 234.8077,
+          "min": 46.0666,
+          "max": 262.4708,
+          "range_percent_of_median": 375.1287
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 146.23,
+          "p95": 258.2651,
+          "min": 140.934,
+          "max": 264.4686,
+          "range_percent_of_median": 84.4796
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2116.8671875,
+        "peak_pss_mib": 1349.6298828125,
+        "end_of_scenario_rss_mib": 2074.73046875,
+        "end_of_scenario_pss_mib": 1348.29296875,
+        "cpu_seconds": 58.92,
+        "physical_read_bytes": 11042816,
+        "physical_write_bytes": 43327488,
+        "pss_samples": 19,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "b2310ca47e4ebba896609b73a90d1098a70a8f4fc6c96f7b1fed4d1869a96901",
+      "resources_sha256": "7c547526da0b37bb1d984d58c91edca1c7a2bfe5e46658e475eb23e07d825f16"
+    },
+    {
+      "variant": "candidate",
+      "mode": "cold",
+      "round": 3,
+      "correct": true,
+      "treeReadyMs": 644.24036,
+      "languageReadyMs": 6302.785626,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 145.6408,
+          "p95": 209.0771,
+          "min": 73.0154,
+          "max": 249.9447,
+          "range_percent_of_median": 121.4833
+        },
+        "completion": {
+          "count": 30,
+          "median": 73.5181,
+          "p95": 112.5665,
+          "min": 62.3108,
+          "max": 164.9507,
+          "range_percent_of_median": 139.6118
+        },
+        "definition": {
+          "count": 30,
+          "median": 63.011,
+          "p95": 292.75,
+          "min": 46.5469,
+          "max": 306.6777,
+          "range_percent_of_median": 412.8337
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 58.2817,
+          "p95": 169.4379,
+          "min": 54.5016,
+          "max": 176.3992,
+          "range_percent_of_median": 209.1525
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2265.38671875,
+        "peak_pss_mib": 1392.0615234375,
+        "end_of_scenario_rss_mib": 1868.83203125,
+        "end_of_scenario_pss_mib": 1392.0615234375,
+        "cpu_seconds": 61.9,
+        "physical_read_bytes": 49909760,
+        "physical_write_bytes": 45785088,
+        "pss_samples": 19,
+        "complete_pss_samples": 19
+      },
+      "result_sha256": "6a83489795acd0589fa0b59608c3330e6c1d79785c4cd286e2a6c319a0b924fc",
+      "resources_sha256": "d5d1447ce71af81e61043b0af1a656310024c445aad51585178854fc736fc3f3"
+    },
+    {
+      "variant": "baseline",
+      "mode": "cold",
+      "round": 4,
+      "correct": true,
+      "treeReadyMs": 544.429775,
+      "languageReadyMs": 5192.922565,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 64.3313,
+          "p95": 103.3662,
+          "min": 49.2418,
+          "max": 106.68,
+          "range_percent_of_median": 89.285
+        },
+        "completion": {
+          "count": 30,
+          "median": 65.914,
+          "p95": 75.238,
+          "min": 60.7406,
+          "max": 106.2677,
+          "range_percent_of_median": 69.0705
+        },
+        "definition": {
+          "count": 30,
+          "median": 59.3546,
+          "p95": 194.6951,
+          "min": 46.7018,
+          "max": 230.6345,
+          "range_percent_of_median": 309.8879
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 146.8492,
+          "p95": 261.9379,
+          "min": 140.7925,
+          "max": 350.7864,
+          "range_percent_of_median": 142.9997
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2095.609375,
+        "peak_pss_mib": 1326.6630859375,
+        "end_of_scenario_rss_mib": 2054.39453125,
+        "end_of_scenario_pss_mib": 1326.6630859375,
+        "cpu_seconds": 58.85,
+        "physical_read_bytes": 7372800,
+        "physical_write_bytes": 59518976,
+        "pss_samples": 18,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "80909836fdafde84bf2f8545242f2350e05a0c9be60041e91e9af9208120321f",
+      "resources_sha256": "719b797c590c696df953209d5ac8f5a33f77e6ed8649aecb53f4fc857ebd6597"
+    },
+    {
+      "variant": "candidate",
+      "mode": "cold",
+      "round": 4,
+      "correct": true,
+      "treeReadyMs": 571.78152,
+      "languageReadyMs": 6320.2425459999995,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 143.4826,
+          "p95": 191.5198,
+          "min": 63.3325,
+          "max": 195.1468,
+          "range_percent_of_median": 91.8678
+        },
+        "completion": {
+          "count": 30,
+          "median": 70.9288,
+          "p95": 104.2601,
+          "min": 61.3422,
+          "max": 106.3537,
+          "range_percent_of_median": 63.4601
+        },
+        "definition": {
+          "count": 30,
+          "median": 52.589,
+          "p95": 161.5399,
+          "min": 47.4421,
+          "max": 202.7005,
+          "range_percent_of_median": 295.2298
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 56.8046,
+          "p95": 197.0176,
+          "min": 55.4855,
+          "max": 217.8202,
+          "range_percent_of_median": 285.7775
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2118.37890625,
+        "peak_pss_mib": 1360.0908203125,
+        "end_of_scenario_rss_mib": 1728.79296875,
+        "end_of_scenario_pss_mib": 1360.0908203125,
+        "cpu_seconds": 58.77,
+        "physical_read_bytes": 23945216,
+        "physical_write_bytes": 44736512,
+        "pss_samples": 18,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "fbdf76190a44fef5ebc6ba0568a3a0eab177113175fe88f92aad72d50316cd76",
+      "resources_sha256": "2e5168c1efba7fadb9c6237479149e733354f56234c944b2c99a060e535e0a4b"
+    },
+    {
+      "variant": "baseline",
+      "mode": "repeat",
+      "round": 0,
+      "correct": true,
+      "treeReadyMs": 582.219412,
+      "languageReadyMs": 5318.987056,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 58.7223,
+          "p95": 106.0029,
+          "min": 48.7055,
+          "max": 108.0991,
+          "range_percent_of_median": 101.1432
+        },
+        "completion": {
+          "count": 30,
+          "median": 66.2075,
+          "p95": 79.7184,
+          "min": 59.5992,
+          "max": 111.2111,
+          "range_percent_of_median": 77.9547
+        },
+        "definition": {
+          "count": 30,
+          "median": 99.0795,
+          "p95": 218.566,
+          "min": 45.0409,
+          "max": 229.9592,
+          "range_percent_of_median": 186.6364
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 145.8025,
+          "p95": 245.8701,
+          "min": 141.0105,
+          "max": 247.674,
+          "range_percent_of_median": 73.1562
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2075.5703125,
+        "peak_pss_mib": 1332.2138671875,
+        "end_of_scenario_rss_mib": 2058.2734375,
+        "end_of_scenario_pss_mib": 1332.2138671875,
+        "cpu_seconds": 58.38,
+        "physical_read_bytes": 602112,
+        "physical_write_bytes": 25706496,
+        "pss_samples": 19,
+        "complete_pss_samples": 19
+      },
+      "result_sha256": "f8dedee11bd8525a9666c9c0c3730a34735010bba7f896ddc4bea3e746aa5237",
+      "resources_sha256": "62e4f1b98ed6f13267811cae2bd0f22b70b77ac69cf696f20d7bc3a92659503a"
+    },
+    {
+      "variant": "candidate",
+      "mode": "repeat",
+      "round": 0,
+      "correct": true,
+      "treeReadyMs": 570.6035069999999,
+      "languageReadyMs": 6228.008108999999,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 158.8544,
+          "p95": 196.2637,
+          "min": 72.2297,
+          "max": 203.7953,
+          "range_percent_of_median": 82.8215
+        },
+        "completion": {
+          "count": 30,
+          "median": 71.2883,
+          "p95": 103.8417,
+          "min": 63.2641,
+          "max": 106.5926,
+          "range_percent_of_median": 60.7793
+        },
+        "definition": {
+          "count": 30,
+          "median": 56.0495,
+          "p95": 251.3342,
+          "min": 46.3867,
+          "max": 265.3328,
+          "range_percent_of_median": 390.6298
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 57.397,
+          "p95": 223.4232,
+          "min": 55.1685,
+          "max": 225.8747,
+          "range_percent_of_median": 297.4132
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2152.62109375,
+        "peak_pss_mib": 1356.9765625,
+        "end_of_scenario_rss_mib": 2152.62109375,
+        "end_of_scenario_pss_mib": 1356.9765625,
+        "cpu_seconds": 60.85,
+        "physical_read_bytes": 5922816,
+        "physical_write_bytes": 51744768,
+        "pss_samples": 19,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "09ff1a43d26f92f43c55b1aba360164a0de2d62f3f7ab197fb40b6bee15fcf88",
+      "resources_sha256": "3ad394c8680ff7d6cdff8345e20ee455c80fc94d04dd5c977dd11bf047c081c0"
+    },
+    {
+      "variant": "baseline",
+      "mode": "repeat",
+      "round": 1,
+      "correct": true,
+      "treeReadyMs": 520.4871659999999,
+      "languageReadyMs": 5194.26692,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 68.7465,
+          "p95": 109.2803,
+          "min": 51.3411,
+          "max": 114.3359,
+          "range_percent_of_median": 91.6335
+        },
+        "completion": {
+          "count": 30,
+          "median": 66.1056,
+          "p95": 75.8048,
+          "min": 58.8838,
+          "max": 78.8696,
+          "range_percent_of_median": 30.233
+        },
+        "definition": {
+          "count": 30,
+          "median": 80.3057,
+          "p95": 233.1997,
+          "min": 47.501,
+          "max": 233.4233,
+          "range_percent_of_median": 231.5182
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 145.8759,
+          "p95": 200.4158,
+          "min": 140.7148,
+          "max": 201.9496,
+          "range_percent_of_median": 41.9773
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2082.0234375,
+        "peak_pss_mib": 1345.931640625,
+        "end_of_scenario_rss_mib": 2082.0234375,
+        "end_of_scenario_pss_mib": 1345.931640625,
+        "cpu_seconds": 57.94,
+        "physical_read_bytes": 180224,
+        "physical_write_bytes": 25944064,
+        "pss_samples": 18,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "9a6be05aecc3ec046379043e3d55b54fc8738ebb65dd3baa9d4904f0d50b6e2c",
+      "resources_sha256": "9f9d134c69bd04576095329100fcdcf3ed08a69313aed1631706dba32ea1c838"
+    },
+    {
+      "variant": "candidate",
+      "mode": "repeat",
+      "round": 1,
+      "correct": true,
+      "treeReadyMs": 554.767327,
+      "languageReadyMs": 6322.473722000001,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 148.755,
+          "p95": 192.3973,
+          "min": 72.4119,
+          "max": 193.1319,
+          "range_percent_of_median": 81.1536
+        },
+        "completion": {
+          "count": 30,
+          "median": 67.3197,
+          "p95": 104.6849,
+          "min": 61.1425,
+          "max": 106.9768,
+          "range_percent_of_median": 68.0846
+        },
+        "definition": {
+          "count": 30,
+          "median": 53.2895,
+          "p95": 159.5577,
+          "min": 47.0433,
+          "max": 257.3239,
+          "range_percent_of_median": 394.6007
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 57.579,
+          "p95": 160.7928,
+          "min": 55.2843,
+          "max": 219.2329,
+          "range_percent_of_median": 284.7367
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2122.109375,
+        "peak_pss_mib": 1367.91015625,
+        "end_of_scenario_rss_mib": 1732.484375,
+        "end_of_scenario_pss_mib": 1367.91015625,
+        "cpu_seconds": 58.28,
+        "physical_read_bytes": 0,
+        "physical_write_bytes": 31903744,
+        "pss_samples": 18,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "d3e5de66a4e0922430de221443faf95d5eb126b290c43cdeb01201edb657da6d",
+      "resources_sha256": "84ec893024f9fbfeb0afd0d9fee3d057b2898e6fae4e64da385b1ff4fa49104b"
+    },
+    {
+      "variant": "baseline",
+      "mode": "repeat",
+      "round": 2,
+      "correct": true,
+      "treeReadyMs": 495.32234800000003,
+      "languageReadyMs": 5152.430832,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 61.3657,
+          "p95": 107.936,
+          "min": 47.4598,
+          "max": 152.3584,
+          "range_percent_of_median": 170.9399
+        },
+        "completion": {
+          "count": 30,
+          "median": 65.7039,
+          "p95": 73.4949,
+          "min": 58.2135,
+          "max": 101.9356,
+          "range_percent_of_median": 66.5442
+        },
+        "definition": {
+          "count": 30,
+          "median": 75.1918,
+          "p95": 197.3264,
+          "min": 46.2637,
+          "max": 303.0607,
+          "range_percent_of_median": 341.5226
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 145.4958,
+          "p95": 230.4829,
+          "min": 59.5463,
+          "max": 243.6523,
+          "range_percent_of_median": 126.537
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2134.265625,
+        "peak_pss_mib": 1352.7890625,
+        "end_of_scenario_rss_mib": 2090.63671875,
+        "end_of_scenario_pss_mib": 1352.7890625,
+        "cpu_seconds": 57.45,
+        "physical_read_bytes": 176128,
+        "physical_write_bytes": 26603520,
+        "pss_samples": 18,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "e3c86cdbebed2c67bc7656595879a2507db90c3ba7858d6472e214edc6a37926",
+      "resources_sha256": "3bd70dfb101a0f20a4d635271fc3ee974f1b4584b66c43039fca79360c92aead"
+    },
+    {
+      "variant": "candidate",
+      "mode": "repeat",
+      "round": 2,
+      "correct": true,
+      "treeReadyMs": 569.0218,
+      "languageReadyMs": 6161.213611,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 173.9425,
+          "p95": 237.57,
+          "min": 70.5202,
+          "max": 247.7017,
+          "range_percent_of_median": 101.8621
+        },
+        "completion": {
+          "count": 30,
+          "median": 70.8251,
+          "p95": 112.0799,
+          "min": 60.6437,
+          "max": 165.9494,
+          "range_percent_of_median": 148.6841
+        },
+        "definition": {
+          "count": 30,
+          "median": 58.0825,
+          "p95": 265.4624,
+          "min": 44.8277,
+          "max": 287.2347,
+          "range_percent_of_median": 417.3495
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 57.4967,
+          "p95": 157.1616,
+          "min": 47.7837,
+          "max": 159.9562,
+          "range_percent_of_median": 195.0937
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2140.3046875,
+        "peak_pss_mib": 1376.6962890625,
+        "end_of_scenario_rss_mib": 2131.19140625,
+        "end_of_scenario_pss_mib": 1376.6962890625,
+        "cpu_seconds": 62.31,
+        "physical_read_bytes": 0,
+        "physical_write_bytes": 26103808,
+        "pss_samples": 19,
+        "complete_pss_samples": 19
+      },
+      "result_sha256": "05b82bf096f24492ad3c3ed2a3cc7509a26e7308fae07d01312f1a3731484879",
+      "resources_sha256": "f9a722ec8b2a065a9b4168887b29efe1ea2b06ed28351088aec2e6a6eb2bd7d2"
+    },
+    {
+      "variant": "baseline",
+      "mode": "repeat",
+      "round": 3,
+      "correct": true,
+      "treeReadyMs": 558.347048,
+      "languageReadyMs": 5192.5733979999995,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 58.2484,
+          "p95": 99.6442,
+          "min": 46.8376,
+          "max": 102.3684,
+          "range_percent_of_median": 95.3345
+        },
+        "completion": {
+          "count": 30,
+          "median": 63.5352,
+          "p95": 75.5325,
+          "min": 59.5579,
+          "max": 76.2781,
+          "range_percent_of_median": 26.3164
+        },
+        "definition": {
+          "count": 30,
+          "median": 53.3006,
+          "p95": 220.3691,
+          "min": 45.2276,
+          "max": 256.8682,
+          "range_percent_of_median": 397.07
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 148.144,
+          "p95": 247.0035,
+          "min": 63.9153,
+          "max": 247.7261,
+          "range_percent_of_median": 124.0758
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2072.3359375,
+        "peak_pss_mib": 1331.8125,
+        "end_of_scenario_rss_mib": 1885.2734375,
+        "end_of_scenario_pss_mib": 1331.8125,
+        "cpu_seconds": 57.8,
+        "physical_read_bytes": 245760,
+        "physical_write_bytes": 25731072,
+        "pss_samples": 18,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "96aabeb823810d32c062f3b7bbd15d664316c935e537f063081f89e82580c302",
+      "resources_sha256": "1d8de26e0ff586710fcb7cc5e4c88b964aa4c7f756b54c1bbe0ca9f33e11bf39"
+    },
+    {
+      "variant": "candidate",
+      "mode": "repeat",
+      "round": 3,
+      "correct": true,
+      "treeReadyMs": 539.0757500000001,
+      "languageReadyMs": 6223.848192,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 155.9678,
+          "p95": 205.3517,
+          "min": 68.5568,
+          "max": 268.7414,
+          "range_percent_of_median": 128.35
+        },
+        "completion": {
+          "count": 30,
+          "median": 69.5098,
+          "p95": 104.8918,
+          "min": 63.8571,
+          "max": 165.9988,
+          "range_percent_of_median": 146.9457
+        },
+        "definition": {
+          "count": 30,
+          "median": 56.9485,
+          "p95": 252.3645,
+          "min": 48.7238,
+          "max": 320.0638,
+          "range_percent_of_median": 476.466
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 58.137,
+          "p95": 173.8343,
+          "min": 55.3004,
+          "max": 173.8448,
+          "range_percent_of_median": 203.9052
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2158.171875,
+        "peak_pss_mib": 1378.5693359375,
+        "end_of_scenario_rss_mib": 1791.92578125,
+        "end_of_scenario_pss_mib": 1377.2607421875,
+        "cpu_seconds": 61.32,
+        "physical_read_bytes": 77824,
+        "physical_write_bytes": 27136000,
+        "pss_samples": 19,
+        "complete_pss_samples": 19
+      },
+      "result_sha256": "63c647d13980c42c878a63ebd64b9d4c3018e005c1f42884e72c9c4caada830e",
+      "resources_sha256": "e8b2a147c6f8364f55d978fe9b9877d008147633312e808fe810b041653cc56b"
+    },
+    {
+      "variant": "baseline",
+      "mode": "repeat",
+      "round": 4,
+      "correct": true,
+      "treeReadyMs": 488.449348,
+      "languageReadyMs": 5141.891454,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 63.2447,
+          "p95": 105.3671,
+          "min": 49.0281,
+          "max": 105.9688,
+          "range_percent_of_median": 90.0324
+        },
+        "completion": {
+          "count": 30,
+          "median": 65.0143,
+          "p95": 72.4466,
+          "min": 60.7353,
+          "max": 82.985,
+          "range_percent_of_median": 34.2228
+        },
+        "definition": {
+          "count": 30,
+          "median": 113.3174,
+          "p95": 237.445,
+          "min": 45.8885,
+          "max": 287.5109,
+          "range_percent_of_median": 213.2261
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 146.322,
+          "p95": 216.8612,
+          "min": 140.7875,
+          "max": 247.5472,
+          "range_percent_of_median": 72.9622
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2094.98828125,
+        "peak_pss_mib": 1333.2958984375,
+        "end_of_scenario_rss_mib": 2088.421875,
+        "end_of_scenario_pss_mib": 1327.4130859375,
+        "cpu_seconds": 58.39,
+        "physical_read_bytes": 442368,
+        "physical_write_bytes": 28454912,
+        "pss_samples": 18,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "a6becf0ca85882449ec7398c6823343cbe35919c814e10ac7614678474ad8c49",
+      "resources_sha256": "6cca3652fefac34ffe80cf00ceef066248e7f7a6359a1b26922ddb6f20ee33be"
+    },
+    {
+      "variant": "candidate",
+      "mode": "repeat",
+      "round": 4,
+      "correct": true,
+      "treeReadyMs": 545.2719109999999,
+      "languageReadyMs": 6278.745516,
+      "latency": {
+        "hover": {
+          "count": 30,
+          "median": 143.2741,
+          "p95": 191.2418,
+          "min": 63.0693,
+          "max": 193.0561,
+          "range_percent_of_median": 90.7259
+        },
+        "completion": {
+          "count": 30,
+          "median": 68.6025,
+          "p95": 103.3383,
+          "min": 62.4933,
+          "max": 108.9525,
+          "range_percent_of_median": 67.7222
+        },
+        "definition": {
+          "count": 30,
+          "median": 51.7274,
+          "p95": 166.6219,
+          "min": 47.8549,
+          "max": 227.2092,
+          "range_percent_of_median": 346.7298
+        },
+        "editDiagnostics": {
+          "count": 30,
+          "median": 57.7099,
+          "p95": 192.5863,
+          "min": 55.3582,
+          "max": 221.2202,
+          "range_percent_of_median": 287.4064
+        }
+      },
+      "resources": {
+        "peak_rss_mib": 2126.34375,
+        "peak_pss_mib": 1349.376953125,
+        "end_of_scenario_rss_mib": 1725.7734375,
+        "end_of_scenario_pss_mib": 1349.376953125,
+        "cpu_seconds": 58.33,
+        "physical_read_bytes": 217088,
+        "physical_write_bytes": 52031488,
+        "pss_samples": 18,
+        "complete_pss_samples": 18
+      },
+      "result_sha256": "b95f1652df9215f55e83a7df24f33cab79b3303061379d166df2654a7487ca28",
+      "resources_sha256": "a0fdbe86f839f6b782b2aaf9cdd79b70a8b8119070992e8d0762ef404182d4fd"
+    }
+  ],
+  "limitations": [
+    "Published 0.3.2 omits diagnostic push versions; the 30 repair cycles establish these scenarios only.",
+    "End-of-scenario RSS/PSS is recorded while the primary services remain alive; no separate idle plateau was sampled.",
+    "RSS sums include shared pages more than once; PSS completeness is recorded per round.",
+    "Processes shorter than the sampling interval may be missed; physical I/O is not logical per-file I/O.",
+    "No Windows, macOS, VS Code or Remote acceptance; explicitly outside this run.",
+    "Excluded debug-candidate preflights remain archived and are not included in the summary.",
+    "End-of-scenario memory may include shutdown of other editor descendants; it is not an idle memory comparison."
+  ],
+  "remaining": [
+    "Profile and fix language readiness and hover regressions, or obtain an explicit decision to change the performance criterion.",
+    "Finish the final acceptance audit, including CLI/LSP equivalence and buhmfo XML/branch/context transitions; preserve prior small-fixture evidence.",
+    "Measure a separate idle memory plateau and audit all cache/install-size figures."
+  ],
+  "checks": {
+    "release_workspace_bins": "passed",
+    "node_198_bun_198": "passed in T88",
+    "minimal_release_installation": "passed",
+    "minimal_installed_ide": "passed",
+    "root_validation_scope": "No Rust source change in T88/T89; the existing complete Rust validation is not rerun for docs. Current release workspace binaries were built and fresh minimal installations tested.",
+    "installed_vsix_scenarios_9_profiles_10": "passed in T88"
+  },
+  "minimal_installation": {
+    "status": "passed",
+    "report": "/home/akalsin/Documents/Projects/eska-playground/t97-installed-ykk3ldw6/report.json",
+    "report_sha256": "be8bf7a8d979875ef7231371b5ee41a88acf316abfaaa340b2b6d4f9ec987506",
+    "profiles": [
+      "eska-project",
+      "eska-check",
+      "eska-build",
+      "eska-vcs",
+      "eska"
+    ],
+    "metadata_api": "1.12",
+    "check_direct_wrapper_locales_equal": true,
+    "source_preserved": true,
+    "selective_remove": "passed",
+    "commands": 73,
+    "path": "empty for owner processes; system Git only prepares the tiny fixture",
+    "bundle": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/release",
+    "release_index_sha256": "9f12efefaa68fbb9a0e746a608eaaff366ff9057a4d8a2f474f01611f3ef0f0d",
+    "artifacts": {
+      "eska": {
+        "archive": "eska-0.14.3-x86_64-unknown-linux-gnu.zip",
+        "contract": {
+          "bridge_schema": 1,
+          "config_schema": "designer-xml-1",
+          "metadata_api": null,
+          "schema_version": 2,
+          "target": "x86_64-unknown-linux-gnu",
+          "tool": "eska",
+          "version": "0.14.3"
+        },
+        "sha256": "ccb4df184dab46a84d7aacd738bf27fde39da83571481acd01ddb571d6809b04",
+        "size": 3867758
+      },
+      "eska-build": {
+        "archive": "eska-build-0.14.3-x86_64-unknown-linux-gnu.zip",
+        "contract": {
+          "bridge_schema": 1,
+          "config_schema": "designer-xml-1",
+          "metadata_api": null,
+          "schema_version": 2,
+          "target": "x86_64-unknown-linux-gnu",
+          "tool": "eska-build",
+          "version": "0.14.3"
+        },
+        "sha256": "8e28cf4cc702c7b32076cddac20f45a998f793c3e228375e0bdad352af3d9cc1",
+        "size": 2053936
+      },
+      "eska-check": {
+        "archive": "eska-check-0.14.3-x86_64-unknown-linux-gnu.zip",
+        "contract": {
+          "bridge_schema": 1,
+          "config_schema": "designer-xml-1",
+          "metadata_api": null,
+          "schema_version": 2,
+          "target": "x86_64-unknown-linux-gnu",
+          "tool": "eska-check",
+          "version": "0.14.3"
+        },
+        "sha256": "41ab8b0c59696a5236cc3eda475d14ccb28095ea435f6b17a7bd26e46b1331c8",
+        "size": 1676742
+      },
+      "eska-project": {
+        "archive": "eska-project-0.14.3-x86_64-unknown-linux-gnu.zip",
+        "contract": {
+          "bridge_schema": 1,
+          "config_schema": "designer-xml-1",
+          "metadata_api": {
+            "major": 1,
+            "minor": 12
+          },
+          "schema_version": 2,
+          "target": "x86_64-unknown-linux-gnu",
+          "tool": "eska-project",
+          "version": "0.14.3"
+        },
+        "sha256": "f6fb77a0989c3b61ffca3b2617c9fc2eab5d456f57b20416a12dcaa7157092a3",
+        "size": 3381580
+      },
+      "eska-vcs": {
+        "archive": "eska-vcs-0.14.3-x86_64-unknown-linux-gnu.zip",
+        "contract": {
+          "bridge_schema": 1,
+          "config_schema": "designer-xml-1",
+          "metadata_api": null,
+          "schema_version": 2,
+          "target": "x86_64-unknown-linux-gnu",
+          "tool": "eska-vcs",
+          "version": "0.14.3"
+        },
+        "sha256": "90f17ccd59c9d93eeb0cd1da19d89a3e7d3fe9373a9ad589d23659eca97f9763",
+        "size": 7571600
+      }
+    }
+  },
+  "minimal_ide": {
+    "status": "passed",
+    "result": {
+      "passed": true,
+      "suite": "own-language",
+      "vscode": "1.109.5",
+      "node": "22.21.1",
+      "capabilities": {
+        "callHierarchyProvider": true,
+        "codeActionProvider": {
+          "codeActionKinds": [
+            "quickfix",
+            "source.fixAll.bsl-analyzer"
+          ]
+        },
+        "completionProvider": {
+          "triggerCharacters": [
+            "."
+          ]
+        },
+        "definitionProvider": true,
+        "documentFormattingProvider": true,
+        "documentHighlightProvider": true,
+        "documentOnTypeFormattingProvider": {
+          "firstTriggerCharacter": ";",
+          "moreTriggerCharacter": [
+            "\n"
+          ]
+        },
+        "documentRangeFormattingProvider": true,
+        "documentSymbolProvider": true,
+        "foldingRangeProvider": true,
+        "hoverProvider": true,
+        "inlayHintProvider": true,
+        "positionEncoding": "utf-16",
+        "referencesProvider": true,
+        "renameProvider": {
+          "prepareProvider": true
+        },
+        "selectionRangeProvider": true,
+        "semanticTokensProvider": {
+          "full": true,
+          "legend": {
+            "tokenModifiers": [
+              "defaultLibrary",
+              "deprecated",
+              "async",
+              "declaration",
+              "definition",
+              "documentation"
+            ],
+            "tokenTypes": [
+              "keyword",
+              "function",
+              "parameter",
+              "variable",
+              "string",
+              "number",
+              "comment",
+              "macro",
+              "decorator",
+              "property",
+              "operator",
+              "unresolvedReference",
+              "type",
+              "enumMember",
+              "namespace",
+              "class"
+            ]
+          }
+        },
+        "signatureHelpProvider": {
+          "retriggerCharacters": [
+            ","
+          ],
+          "triggerCharacters": [
+            "(",
+            ","
+          ]
+        },
+        "textDocumentSync": 2,
+        "typeDefinitionProvider": true,
+        "workspaceSymbolProvider": true
+      },
+      "hover": 1,
+      "definitions": 1,
+      "symbols": 1,
+      "completions": 26,
+      "semantic_integers": 60,
+      "broken_syntax_errors": 2,
+      "repaired_syntax_errors": 0,
+      "disk_unchanged": true,
+      "live_on_host_shutdown": true,
+      "shutdownPids": [
+        61493,
+        61564,
+        61631,
+        61466
+      ]
+    },
+    "binary": "/home/akalsin/Documents/Projects/eska-playground/t97-installed-ykk3ldw6/profiles/eska-project/bin/eska-project",
+    "binary_sha256": "2e876e5fa189fcac1e337164255e9c267d91f82c3840963b320e81e57ffa6e11",
+    "analyzer": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+    "vsix_sha256": "6ea9657d30f684ad022208d7d8733b3ff6d088262d344c0751cd6fa28db7ea87",
+    "path": "/usr/bin:/bin plus the runner-owned bin directory containing only eska-project",
+    "other_eska_components": "absent from the selected installation"
+  },
+  "project_caches": {
+    "baseline": {
+      "files": 18,
+      "bytes": 9138613,
+      "scope": "Final project-owned .eska caches only; no global cache claim."
+    },
+    "candidate": {
+      "files": 19,
+      "bytes": 9138613,
+      "scope": "Final project-owned .eska caches only; no global cache claim."
+    }
+  },
+  "unverified_environments": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ],
+  "reproduction": {
+    "command": "python3 run-comparison.py --new-series",
+    "directory": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1",
+    "recorded_runner": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/run-comparison-recorded.py",
+    "recorded_runner_sha256": "e5daab1479f718cec2d95ad60812be3e945bdb46681edaa424f04336bd21f361",
+    "reproduction_runner_sha256": "adb023fab82fdca71c7c379323a025f3c31cfba8902f836dd730fd202943305d",
+    "note": "The reproduction variant adds only a unique output directory. It reuses these owned input copies and clears only their own .eska caches; it never modifies the user project or the original frozen baseline.",
+    "summary_script_sha256": "52508c4883297508e2f2377423ac18a85146e95aa088b3ed28a5cf5da1ee428b"
+  },
+  "post_series_xml_bsl": {
+    "baseline": {
+      "files": 103719,
+      "bytes": 6202842333,
+      "sha256": "7233dcdadf0c5782d6bb49e9a01d6f106d327f36bb79688a340a8a264c2d37d6"
+    },
+    "candidate": {
+      "files": 103719,
+      "bytes": 6202842333,
+      "sha256": "7233dcdadf0c5782d6bb49e9a01d6f106d327f36bb79688a340a8a264c2d37d6"
+    }
+  },
+  "installation_sizes": {
+    "components": {
+      "eska-project": {
+        "files": 191,
+        "bytes": 8811089,
+        "binary_bytes": 7663696
+      },
+      "eska-check": {
+        "files": 161,
+        "bytes": 4412013,
+        "binary_bytes": 3449048
+      },
+      "eska-build": {
+        "files": 193,
+        "bytes": 5329513,
+        "binary_bytes": 4159352
+      },
+      "eska-vcs": {
+        "files": 439,
+        "bytes": 19086907,
+        "binary_bytes": 16505296
+      },
+      "eska": {
+        "files": 340,
+        "bytes": 10132832,
+        "binary_bytes": 8225696
+      }
+    },
+    "analyzer_binary_bytes": 75963744,
+    "vsix_payload_bytes": 4207891,
+    "vsix_payload_files": 1311,
+    "ide_selected_bytes": 88982724,
+    "note": "Regular-file bytes in these local installed profiles; excludes editor, platform and filesystem allocation/shared extents. No baseline-size comparison is claimed."
+  }
+}

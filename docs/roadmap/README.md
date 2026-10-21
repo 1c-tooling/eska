@@ -30,7 +30,8 @@ T86 — `DONE`: грамматики BSL/SDBL и собственный BSL-кл
 T87 — `DONE`: конфликт до и во время старта, остановка своего LSP, реестр install/uninstall и disabled/re-enabled проверены на Linux/VSIX.
 T88 — `DONE`: защита правок, XML/BSL refresh, все sources приложения,
 protected bridge и два одновременных окна проверены на Linux/VSIX.
-T89 — `NEXT`: окончательная матрица поставки и измерения `buhmfo`.
+T89 — `IN-PROGRESS`: release-матрица прошла; 20 запусков `buhmfo` выявили
+регрессии старта языка и hover сверх допуска. [Отчёт и остаток](15-designer-xml-analyzer.md#отчёт-2026-10-21-что-сделано-и-что-осталось).
 Номера T83–T89 сохраняются, модульность добавлена в T90–T99.
 Экспериментальный формат ESKA в этот план не переносится; статусы прежних
 задач сохраняются.
@@ -197,7 +198,8 @@ T85 → T86 → T87 → T88 → T89**.
 Фазы, зависимости и критерии приведены в
 [плане модульных инструментов](15-designer-xml-analyzer.md).
 T90, T83, T91, T84, T92–T97 и T85–T88 завершены.
-Следующая T89 — окончательная матрица поставки и измерения `buhmfo`.
+T89 выполняется: минимальные установки прошли, performance gate `buhmfo`
+не пройден из-за старта языка и hover; итоговый аудит остаётся.
 Приёмка выполняется в текущем
 Linux/VSCodium; остальные ОС, VS Code и Remote отмечаются непроверенными.
 T98–T99 не входят в текущую цель. Ниже сохранена очередь и история первой
@@ -377,7 +379,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T86 | DONE | Базовая подсветка и собственный LSP-клиент Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T87 | DONE | Приостановка клиента при конфликте расширений | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T88 | DONE | Защита правок, XML/BSL refresh, все sources приложения, protected bridge и два окна | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T89 | NEXT | Приёмка выборочной поставки, Explorer и производительности buhmfo | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T89 | IN-PROGRESS | Минимальные установки прошли; buhmfo не прошёл допуск старта языка и hover | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T90 | DONE | Cargo workspace, общее ядро проекта и границы зависимостей | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T91 | DONE | Самостоятельный eska-project и общие правила проекта | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T92 | DONE | Сервер метаданных eska-project serve и переход Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
