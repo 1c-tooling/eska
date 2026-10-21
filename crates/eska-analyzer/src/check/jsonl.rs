@@ -12,7 +12,8 @@ use super::{Diagnostic, Failure, FileResult};
 use crate::process::SUPPORTED_VERSION;
 
 const MAX_LINE: u64 = 8 * 1024 * 1024;
-const MAX_REPORT: u64 = 256 * 1024 * 1024;
+// Large configurations can exceed 256 MiB while every individual file event remains small.
+const MAX_REPORT: u64 = 512 * 1024 * 1024;
 
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -47,7 +48,7 @@ pub(super) fn read(
     expected: &BTreeSet<PathBuf>,
 ) -> Result<Vec<FileResult>, Failure> {
     let mut reader = BufReader::new(stream);
-    let result = parse(&mut reader, expected);
+    let result = parse(&mut reader, expected, MAX_REPORT);
     if result.is_err() {
         let _ = io::copy(&mut reader, &mut io::sink());
     }
@@ -58,6 +59,7 @@ pub(super) fn read(
 fn parse(
     reader: &mut impl BufRead,
     expected: &BTreeSet<PathBuf>,
+    max_report_bytes: u64,
 ) -> Result<Vec<FileResult>, Failure> {
     let invalid = |reason| Failure::Stream { reason };
     let mut started = false;
@@ -75,7 +77,7 @@ fn parse(
             break;
         }
         bytes_count += count as u64;
-        if count as u64 > MAX_LINE || bytes_count > MAX_REPORT {
+        if count as u64 > MAX_LINE || bytes_count > max_report_bytes {
             return Err(invalid("output_limit"));
         }
         if line.last() != Some(&b'\n') {
@@ -237,6 +239,21 @@ mod tests {
                 "{values:?}"
             );
         }
+    }
+
+    /// A valid final event must fit the aggregate byte budget, including every framing newline.
+    #[test]
+    fn enforces_total_report_budget_at_the_exact_boundary() {
+        let expected = BTreeSet::from([PathBuf::from("/selected/Module.bsl")]);
+        let bytes = stream(&events());
+        let length = u64::try_from(bytes.len()).unwrap();
+        assert!(parse(&mut BufReader::new(bytes.as_slice()), &expected, length).is_ok());
+        assert!(matches!(
+            parse(&mut BufReader::new(bytes.as_slice()), &expected, length - 1),
+            Err(Failure::Stream {
+                reason: "output_limit"
+            })
+        ));
     }
 
     /// The line bound limits allocations even if the child never emits a newline.
