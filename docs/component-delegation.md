@@ -6,6 +6,7 @@ T96 выполняется по частям. Сейчас `eska` запуска
 |---|---|
 | Без команды, `metadata`, `version`, `ide`, `new`, `init`, `doctor` | `eska-project` |
 | `build`, `import`, `patch`, `clean`, `platform`, `config` | `eska-build` |
+| `check` | `eska-check` |
 | `clone`, `status`, `diff`, `history`, `start`, `switch`, `save`, `finish`, `shelve`, `unshelve`, `shelves` | `eska-vcs` |
 
 `new/init`, включая `new --from`, выполняет project-компонент; он вызывает
@@ -110,6 +111,17 @@ Fixtures принимает только завершённый собствен
 существующий switch-тест получил `Shelf(Locked)`; отдельно и при полном повторе
 он прошёл. Причина этого единичного отказа не установлена, VCS-код не менялся.
 
+## Статическая проверка
+
+`eska check` делегирует `eska-check`, удаляя только имя команды из native argv.
+`--project-dir`, пути анализатора/отчёта, stdin/stdout/stderr и статус процесса
+сохраняются. Схема аргументов общая и находится в presentation; оболочка
+не ссылается на реализацию анализатора. `eska check --help` работает без check.
+Проверены полный успех (exit 0), превышение порога (1), неполный поток (3)
+в RU/EN с пустым PATH: JSON и stderr прямого и общего входа совпали побайтно,
+BSL сохранил BOM/CRLF. Отдельный process fixture подтверждает exit 197 и значение
+`--project-dir check`, совпадающее с именем удаляемой команды.
+
 ## Диагностика окружения
 
 `eska doctor` делегирует `eska-project doctor`. Чистое ядро проверяет project
@@ -133,7 +145,7 @@ Rust facade остаются только реэкспорты и компози
 
 ## Поиск компонента
 
-`ESKA_PROJECT_BINARY`, `ESKA_BUILD_BINARY`, `ESKA_VCS_BINARY` задают явные
+`ESKA_PROJECT_BINARY`, `ESKA_BUILD_BINARY`, `ESKA_VCS_BINARY`, `ESKA_CHECK_BINARY` задают явные
 пути. Неверный override даёт ошибку и не заменяется другим установленным
 бинарником. Без override порядок: рядом с реальным executable `eska`, PATH,
 затем `~/.eska/bin` (USERPROFILE на Windows). Имена учитывают `.exe`.

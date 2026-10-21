@@ -1,6 +1,7 @@
 mod application;
 mod artifact;
 mod build;
+mod check;
 mod clean;
 mod clone;
 mod config;

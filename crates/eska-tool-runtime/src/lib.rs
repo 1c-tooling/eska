@@ -16,6 +16,7 @@ use std::{io, path::PathBuf};
 #[derive(Clone, Copy, Debug)]
 pub enum Component {
     Project,
+    Check,
     Build,
     Vcs,
 }
@@ -26,6 +27,7 @@ impl Component {
     pub const fn name(self) -> &'static str {
         match self {
             Self::Project => "eska-project",
+            Self::Check => "eska-check",
             Self::Build => "eska-build",
             Self::Vcs => "eska-vcs",
         }
@@ -36,6 +38,7 @@ impl Component {
     pub const fn variable(self) -> &'static str {
         match self {
             Self::Project => "ESKA_PROJECT_BINARY",
+            Self::Check => "ESKA_CHECK_BINARY",
             Self::Build => "ESKA_BUILD_BINARY",
             Self::Vcs => "ESKA_VCS_BINARY",
         }

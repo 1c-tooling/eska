@@ -8,6 +8,7 @@ use clap::Subcommand;
 use super::localization::Localizer;
 
 mod build;
+mod check;
 mod clean;
 mod clone;
 mod config;
@@ -40,6 +41,8 @@ pub(super) enum Commands {
     Ide(ide::IdeArgs),
     #[command(disable_help_flag = true)]
     Build(build::BuildArgs),
+    #[command(disable_help_flag = true)]
+    Check(check::CheckArgs),
     #[command(disable_help_flag = true)]
     Clean(clean::CleanArgs),
     #[command(disable_help_flag = true)]
@@ -90,6 +93,9 @@ pub(super) fn run(
 ) -> ExitCode {
     match command {
         Some(Commands::Update(args)) => args.run(localizer),
+        Some(Commands::Check(_)) => {
+            component::run(Component::Check, process_args, Invocation::Check, localizer)
+        }
         Some(Commands::Metadata(_) | Commands::Version(_) | Commands::Doctor(_)) => component::run(
             Component::Project,
             process_args,
@@ -162,6 +168,7 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         .mut_subcommand("update", |command| update::localize(command, localizer))
         .mut_subcommand("ide", |command| ide::localize(command, localizer))
         .mut_subcommand("build", |command| build::localize(command, localizer))
+        .mut_subcommand("check", |command| check::localize(command, localizer))
         .mut_subcommand("clean", |command| clean::localize(command, localizer))
         .mut_subcommand("clone", |command| clone::localize(command, localizer))
         .mut_subcommand("config", |command| config::localize(command, localizer))

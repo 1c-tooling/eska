@@ -15,6 +15,7 @@
 | `new`, `init` | project согласует VCS и выбор платформы через процессы | Самостоятельное структурное создание манифеста не инициализирует Git |
 | `new --from` | project владеет транзакцией, build распаковывает, VCS инициализирует Git | Transfer и native workspace имеют отдельных владельцев в общем игнорируемом storage |
 | `import` | build с VCS preflight | Замена source сохраняет preview, повторную проверку и восстановление |
+| `check` | check | Полный статический анализ внешним процессом, без IDE/платформы |
 | `build`, `clean`, `platform` | build | Runner, managed infobase, артефакты и их паспорт |
 | `patch` | build с VCS-снимками | Нужны build и VCS; ошибка отсутствующего компонента до записи |
 | `config init`, `config edit` | build | Текущий machine config содержит только настройки runner |

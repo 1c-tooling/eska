@@ -13,14 +13,17 @@ use std::{
     time::Duration,
 };
 
-use clap::{ArgAction, CommandFactory, FromArgMatches, Parser, ValueEnum};
+use clap::{ArgAction, CommandFactory, FromArgMatches, Parser};
 use eska_analyzer::{
     check::{self, Failure, Report},
     configuration,
     process::Analyzer,
 };
 use eska_presentation::{
-    arguments::bootstrap_lang,
+    arguments::{
+        bootstrap_lang,
+        check::{CheckArgs, Format},
+    },
     localization::{Localizer, resolve_locale_from_environment},
 };
 use serde_json::json;
@@ -38,26 +41,18 @@ struct Cli {
     lang: Option<String>,
     #[arg(long, default_value = ".")]
     project_dir: PathBuf,
-    #[arg(long)]
-    application: Option<String>,
-    #[arg(long)]
-    analyzer: Option<PathBuf>,
-    #[arg(long, default_value_t=600, value_parser=clap::value_parser!(u64).range(1..))]
-    timeout: u64,
-    #[arg(long, value_enum, default_value_t=Format::Human)]
-    format: Format,
-    #[arg(long)]
-    report: Option<PathBuf>,
-    #[arg(short, long, action=ArgAction::Help)]
-    help: Option<bool>,
+    #[command(flatten)]
+    arguments: CheckArgs,
     #[arg(short='V', long, action=ArgAction::Version)]
     version: Option<bool>,
 }
 
-#[derive(Clone, Copy, Debug, ValueEnum)]
-enum Format {
-    Human,
-    Json,
+impl std::ops::Deref for Cli {
+    type Target = CheckArgs;
+    /// Reuse one pure option schema while execution remains in this standalone owner.
+    fn deref(&self) -> &Self::Target {
+        &self.arguments
+    }
 }
 
 /// Parse help before any project discovery; every real run has one owned cancellation flag.
@@ -190,15 +185,10 @@ fn localized(localizer: &Localizer) -> clap::Command {
             localizer.text("cli-usage"),
             localizer.text("cli-options")
         ));
+    command = eska_presentation::arguments::check::localize(command, localizer);
     for (name, key) in [
         ("lang", "cli-lang-help"),
         ("project_dir", "check-project-dir-help"),
-        ("application", "project-application-help"),
-        ("analyzer", "analyzer-binary-help"),
-        ("timeout", "analyzer-timeout-help"),
-        ("format", "version-format-help"),
-        ("report", "check-report-help"),
-        ("help", "cli-help"),
         ("version", "cli-version"),
     ] {
         command = command.mut_arg(name, |arg| arg.help(localizer.text(key)));

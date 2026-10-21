@@ -154,6 +154,43 @@ mod unix {
         assert_eq!(record["args"], serde_json::json!(expected));
     }
 
+    /// Strip only the actual check command, preserving native option values and child status.
+    #[test]
+    fn check_command_is_removed_without_changing_its_option_values() {
+        let directory = TestDir::new();
+        let record = directory.0.join("arguments.json");
+        let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&directory.0)
+            .env("ESKA_CHECK_BINARY", fixture())
+            .env("ESKA_COMPONENT_FIXTURE_ARGS", &record)
+            .args([
+                "--project-dir",
+                "check",
+                "check",
+                "--analyzer",
+                "check",
+                "--format",
+                "json",
+            ])
+            .stdin(Stdio::null())
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(197));
+        let record: Value = serde_json::from_slice(&fs::read(record).unwrap()).unwrap();
+        let expected: Vec<_> = [
+            "--project-dir",
+            "check",
+            "--analyzer",
+            "check",
+            "--format",
+            "json",
+        ]
+        .into_iter()
+        .map(|value| hex(value.as_bytes()))
+        .collect();
+        assert_eq!(record["args"], serde_json::json!(expected));
+    }
+
     /// Programmatic wrapper signals reach its owned child and preserve the child's cleanup status.
     #[test]
     fn signals_are_forwarded_and_the_child_is_reaped() {

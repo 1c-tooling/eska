@@ -1,5 +1,7 @@
 //! Locale bootstrap before command-line parsing renders help or errors.
 
+pub mod check;
+
 use std::ffi::OsStr;
 
 /// Extracts only the global `--lang` value needed before clap renders help.

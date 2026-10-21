@@ -12,6 +12,7 @@ use std::{
 #[derive(Clone, Copy)]
 pub enum Invocation {
     Direct,
+    Check,
     LegacyIde,
     LegacyValidate,
     LegacyNew,
@@ -81,6 +82,11 @@ fn forward_args(args: &[OsString], invocation: Invocation) -> Vec<OsString> {
             if let Some(position) = command_position(&args) {
                 args[position] = OsString::from("serve");
                 args.insert(position + 1, OsString::from("--legacy-identity"));
+            }
+        }
+        Invocation::Check => {
+            if let Some(position) = command_position(&args) {
+                args.remove(position);
             }
         }
         Invocation::LegacyValidate => {
