@@ -100,28 +100,24 @@ pub fn run() -> ExitCode {
         })
         .and(initial)
         .and_then(|plan| execute(&cli, &plan, &cancelled));
-    let (document, code) = match &result {
-        Ok(report) => (
-            report::document(report),
-            u8::from(report.counts.exceeds(&report.policy)),
-        ),
-        Err(error) => (
-            report::failure(error),
-            if error.code() == "cancelled" { 130 } else { 3 },
-        ),
+    let code = match &result {
+        Ok(report) => u8::from(report.counts.exceeds(&report.policy)),
+        Err(error) => {
+            if error.code() == "cancelled" {
+                130
+            } else {
+                3
+            }
+        }
     };
-    let Ok(mut output) = serde_json::to_vec(&document) else {
-        eprintln!("{}", localizer.text("check-output-error"));
-        return ExitCode::from(3);
-    };
-    output.push(b'\n');
     if let Some(file) = &mut report_file
-        && let Err(source) = file.write_all(&output).and_then(|()| file.sync_all())
+        && let Err(source) =
+            report::write_json(file, result.as_ref()).and_then(|()| file.sync_all())
     {
         return emit_report_error(&cli, &localizer, &source);
     }
     let written = match cli.format {
-        Format::Json => io::stdout().lock().write_all(&output),
+        Format::Json => report::write_json(&mut io::stdout().lock(), result.as_ref()),
         Format::Human => result.as_ref().map_or(Ok(()), |report| {
             report::human(&mut io::stdout().lock(), report, &localizer)
         }),

@@ -253,10 +253,13 @@ fn human_output_is_localized_in_both_languages() {
     let fixture = Fixture::new();
     fs::write(fixture.root.join("stream-mode"), "warning").unwrap();
     for locale in ["ru", "en"] {
+        let report_path = fixture.directory.0.join(format!("human-{locale}.json"));
         let output = Command::new(env!("CARGO_BIN_EXE_eska-check"))
             .current_dir(&fixture.root)
             .args(["--lang", locale, "--analyzer"])
             .arg(&fixture.binary)
+            .arg("--report")
+            .arg(&report_path)
             .env("PATH", "")
             .output()
             .unwrap();
@@ -273,6 +276,9 @@ fn human_output_is_localized_in_both_languages() {
             "warning FixtureRule"
         }));
         assert!(output.stderr.is_empty());
+        let json = fixture.command(locale).output().unwrap();
+        assert!(json.status.success());
+        assert_eq!(fs::read(report_path).unwrap(), json.stdout);
     }
     fs::write(fixture.root.join("stream-mode"), "no-done").unwrap();
     for locale in ["ru", "en"] {

@@ -772,6 +772,7 @@ dependencies = [
  "eska-analyzer",
  "eska-presentation",
  "eska-project-core",
+ "serde",
  "serde_json",
 ]
 
