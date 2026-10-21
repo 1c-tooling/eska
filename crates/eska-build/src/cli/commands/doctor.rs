@@ -30,11 +30,20 @@ impl DoctorArgs {
     /// Keep machine checks available even when project discovery or selection is invalid.
     #[must_use]
     pub fn inspect(&self, root: &Path, localizer: &Localizer) -> Value {
+        let cancellation = super::artifact::cancellation_scope(localizer);
         let options = platform::tool_options(
             self.ibcmd.clone(),
             self.platform_arch.clone(),
             self.distrobox.clone(),
         );
+        let scope = match cancellation {
+            Ok(scope) => scope,
+            Err(error) => {
+                return json!({"checks":[Check::new("machine.config", CheckStatus::Fail, "invalid", &["doctor"])],"details":[error.message]});
+            }
+        };
+        let options =
+            options.map(|options| super::artifact::scoped_options(options, scope.as_ref()));
         let (machine, detail) = match &options {
             Ok(_) => (
                 Check::new(

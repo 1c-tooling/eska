@@ -131,7 +131,16 @@ pub(super) fn vcs(
 /// Require every check to have a corresponding detail before accepting a successful child exit.
 fn query(component: Component, root: &Path, options: &[OsString]) -> Result<Packet, Error> {
     let binary = eska_tool_runtime::resolve(component)?;
-    let value = eska_tool_runtime::query(component, &binary, "doctor", root, options)?;
+    let policy = eska_tool_runtime::QueryPolicy {
+        cancellation_grace: if matches!(component, Component::Build) {
+            std::time::Duration::from_secs(30)
+        } else {
+            std::time::Duration::ZERO
+        },
+        ..eska_tool_runtime::QueryPolicy::default()
+    };
+    let value =
+        eska_tool_runtime::query_with_policy(component, &binary, "doctor", root, options, policy)?;
     let packet: Packet = serde_json::from_value(value).map_err(|_| Error::InvalidResponse)?;
     if packet.checks.is_empty() || packet.checks.len() != packet.details.len() {
         return Err(Error::InvalidResponse);

@@ -63,6 +63,26 @@ pub fn cancellation_scope(
     }
 }
 
+/// Carry caller cancellation into discovery rather than attaching it after a probe has finished.
+#[must_use]
+pub fn scoped_options(
+    options: crate::project::build::ToolOptions,
+    scope: Option<&eska_tool_runtime::Operation>,
+) -> crate::project::build::ToolOptions {
+    #[cfg(unix)]
+    {
+        match scope {
+            Some(scope) => options.with_cancellation(scope.clone()),
+            None => options,
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = scope;
+        options
+    }
+}
+
 /// Attach the already installed Unix scope; preserve the existing Windows console controller.
 #[must_use]
 pub fn attach_cancellation(tool: Ibcmd, scope: Option<&eska_tool_runtime::Operation>) -> Ibcmd {
@@ -199,7 +219,14 @@ impl PlatformArgs {
         interactive: bool,
         localizer: &Localizer,
     ) -> Result<Ibcmd, Failure> {
-        self.resolve_with_cancellation(inherited, interactive, localizer, "artifact-cancelled")
+        let scope = cancellation_scope(localizer)?;
+        self.resolve_with_cancellation(
+            inherited,
+            interactive,
+            localizer,
+            "artifact-cancelled",
+            scope.as_ref(),
+        )
     }
 
     /// Reuse native creation's platform selector with initialization-specific cancellation.
@@ -207,7 +234,8 @@ impl PlatformArgs {
     /// # Errors
     /// Returns the same machine selection and validation failures as `resolve`.
     pub fn resolve_for_init(&self, localizer: &Localizer) -> Result<Ibcmd, Failure> {
-        self.resolve_with_cancellation(None, true, localizer, "init-cancelled")
+        let scope = cancellation_scope(localizer)?;
+        self.resolve_with_cancellation(None, true, localizer, "init-cancelled", scope.as_ref())
     }
 
     /// Keep selection and installed-version verification identical across onboarding commands.
@@ -217,6 +245,7 @@ impl PlatformArgs {
         interactive: bool,
         localizer: &Localizer,
         cancellation_key: &str,
+        scope: Option<&eska_tool_runtime::Operation>,
     ) -> Result<Ibcmd, Failure> {
         let options = platform::tool_options(
             self.ibcmd.clone(),
@@ -233,6 +262,7 @@ impl PlatformArgs {
                 ),
             )
         })?;
+        let options = scoped_options(options, scope);
         let version = if let Some(value) = &self.platform_version {
             value.clone()
         } else if !self.select_platform

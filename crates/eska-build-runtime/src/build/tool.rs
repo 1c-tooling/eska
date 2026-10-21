@@ -18,6 +18,9 @@ use std::sync::Arc;
 
 use super::PlatformVersion;
 
+#[cfg(unix)]
+mod probe;
+
 const IBCMD_ENV: &str = "ESKA_IBCMD";
 const ARCH_ENV: &str = "ESKA_PLATFORM_ARCH";
 const DISTROBOX_ENV: &str = "ESKA_DISTROBOX";
@@ -118,8 +121,10 @@ static INTERRUPTED: AtomicBool = AtomicBool::new(false);
 #[cfg(windows)]
 static SIGNAL_HANDLER: OnceLock<Result<(), String>> = OnceLock::new();
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct ToolOptions {
+    #[cfg(unix)]
+    cancellation: Option<eska_tool_runtime::Operation>,
     ibcmd: Option<PathBuf>,
     platform_arch: Option<String>,
     distrobox: Option<String>,
@@ -143,11 +148,21 @@ impl ToolOptions {
         distrobox: Option<String>,
     ) -> Self {
         Self {
+            #[cfg(unix)]
+            cancellation: None,
             ibcmd,
             platform_arch,
             distrobox,
             runner: RunnerPreference::Auto,
         }
+    }
+
+    /// Preserve the caller's sticky Unix state before any discovery subprocess starts.
+    #[cfg(unix)]
+    #[must_use]
+    pub fn with_cancellation(mut self, scope: eska_tool_runtime::Operation) -> Self {
+        self.cancellation = Some(scope);
+        self
     }
 
     /// Add machine-local defaults loaded from the global config.
@@ -251,11 +266,20 @@ impl Ibcmd {
         });
         match &self.runner {
             Runner::Host(_) => Ok(path.is_file()),
-            Runner::Distrobox { container, .. } => Command::new("distrobox")
-                .args(["enter", "--name", container, "--", "test", "-f"])
-                .arg(path)
-                .output()
-                .map(|output| output.status.success()),
+            Runner::Distrobox { container, .. } => {
+                let options = ToolOptions::default();
+                #[cfg(unix)]
+                let options = ToolOptions {
+                    cancellation: self.outer_cancellation.clone(),
+                    ..options
+                };
+                let runner = Runner::Distrobox {
+                    container: container.clone(),
+                    path: "test".into(),
+                };
+                probe_runner(&runner, &["-f".into(), path.into_os_string()], &options)
+                    .map(|output| output.status.success())
+            }
         }
     }
 
@@ -346,7 +370,7 @@ impl Ibcmd {
             }
         };
 
-        let output = run_runner(&runner, [OsStr::new("--version")])?;
+        let output = probe_runner(&runner, &["--version".into()], options)?;
         if !output.status.success() {
             return Err(ToolError::VersionCommandFailed {
                 source,
@@ -366,7 +390,7 @@ impl Ibcmd {
             #[cfg(unix)]
             cancellation: Arc::new(Cancellation::default()),
             #[cfg(unix)]
-            outer_cancellation: None,
+            outer_cancellation: options.cancellation.clone(),
             runner,
             source,
             version,
@@ -390,8 +414,12 @@ impl Ibcmd {
             .or_else(|| env::var_os(IBCMD_ENV).map(PathBuf::from))
         {
             validate_executable(&path)?;
-            return platform_from_runner(&Runner::Host(path.clone()), ToolSource::Explicit(path))
-                .map(|platform| vec![platform]);
+            return platform_from_runner(
+                &Runner::Host(path.clone()),
+                ToolSource::Explicit(path),
+                options,
+            )
+            .map(|platform| vec![platform]);
         }
         let distrobox_override = options
             .distrobox
@@ -404,12 +432,12 @@ impl Ibcmd {
         };
         let mut installed = if preference == RunnerPreference::Distrobox {
             let container = distrobox_override.ok_or(ToolError::DistroboxContainerRequired)?;
-            scan_distrobox(&container, &arch)?
+            scan_distrobox(&container, &arch, options)?
         } else {
-            let host = scan_host(&arch)?;
+            let host = scan_host(&arch, options)?;
             if host.is_empty() && preference == RunnerPreference::Auto {
                 if let Some(container) = distrobox_override {
-                    scan_distrobox(&container, &arch)?
+                    scan_distrobox(&container, &arch, options)?
                 } else {
                     host
                 }
@@ -593,7 +621,7 @@ pub enum ToolError {
 }
 
 /// Inspect standard host installation directories and verify each discovered executable.
-fn scan_host(arch: &str) -> Result<Vec<InstalledPlatform>, ToolError> {
+fn scan_host(arch: &str, options: &ToolOptions) -> Result<Vec<InstalledPlatform>, ToolError> {
     let mut installed = Vec::new();
     for root in standard_roots(arch) {
         let entries = match std::fs::read_dir(&root) {
@@ -618,6 +646,7 @@ fn scan_host(arch: &str) -> Result<Vec<InstalledPlatform>, ToolError> {
                 installed.push(platform_from_runner(
                     &Runner::Host(path.clone()),
                     ToolSource::Standard(path),
+                    options,
                 )?);
             }
         }
@@ -626,34 +655,38 @@ fn scan_host(arch: &str) -> Result<Vec<InstalledPlatform>, ToolError> {
         installed.push(platform_from_runner(
             &Runner::Host(path.clone()),
             ToolSource::Path(path),
+            options,
         )?);
     }
     Ok(installed)
 }
 
 /// Enumerate standard Linux installations inside a Distrobox container.
-fn scan_distrobox(container: &str, arch: &str) -> Result<Vec<InstalledPlatform>, ToolError> {
+fn scan_distrobox(
+    container: &str,
+    arch: &str,
+    options: &ToolOptions,
+) -> Result<Vec<InstalledPlatform>, ToolError> {
     validate_component(container)
         .map_err(|()| ToolError::InvalidContainer(container.to_owned()))?;
     let root = format!("/opt/1cv8/{arch}");
-    let output = Command::new("distrobox")
-        .args([
-            "enter",
-            "--name",
-            container,
-            "--",
-            "find",
-            &root,
-            "-mindepth",
-            "2",
-            "-maxdepth",
-            "2",
-            "-type",
-            "f",
-            "-name",
-            "ibcmd",
-        ])
-        .output()?;
+    let runner = Runner::Distrobox {
+        container: container.to_owned(),
+        path: "find".into(),
+    };
+    let arguments = [
+        root.as_str(),
+        "-mindepth",
+        "2",
+        "-maxdepth",
+        "2",
+        "-type",
+        "f",
+        "-name",
+        "ibcmd",
+    ]
+    .map(OsString::from);
+    let output = probe_runner(&runner, &arguments, options)?;
     if !output.status.success() {
         return Err(ToolError::ScanCommandFailed {
             container: container.to_owned(),
@@ -681,6 +714,7 @@ fn scan_distrobox(container: &str, arch: &str) -> Result<Vec<InstalledPlatform>,
                 path,
             },
             source,
+            options,
         )?;
         if platform.version == version {
             installed.push(platform);
@@ -693,8 +727,9 @@ fn scan_distrobox(container: &str, arch: &str) -> Result<Vec<InstalledPlatform>,
 fn platform_from_runner(
     runner: &Runner,
     source: ToolSource,
+    options: &ToolOptions,
 ) -> Result<InstalledPlatform, ToolError> {
-    let output = run_runner(runner, [OsStr::new("--version")])?;
+    let output = probe_runner(runner, &["--version".into()], options)?;
     if !output.status.success() {
         return Err(ToolError::VersionCommandFailed {
             source,
@@ -704,6 +739,23 @@ fn platform_from_runner(
     let version = parse_version(&output.stdout, &output.stderr)
         .ok_or_else(|| ToolError::VersionUnreadable(source.clone()))?;
     Ok(InstalledPlatform { version, source })
+}
+
+/// Discovery probes share caller cancellation and bounded process ownership before verification.
+fn probe_runner(
+    runner: &Runner,
+    arguments: &[OsString],
+    options: &ToolOptions,
+) -> Result<Output, io::Error> {
+    #[cfg(unix)]
+    {
+        probe::output(runner, arguments, options.cancellation.as_ref())
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = options;
+        run_runner(runner, arguments)
+    }
 }
 
 /// Run either the host executable or Distrobox with values passed as distinct arguments.
@@ -750,7 +802,7 @@ fn interruptible_runner_command(
             let mut command = Command::new("distrobox");
             command
                 .args(["enter", "--name", container, "--", "sh", "-c"])
-                .arg("printf '%s\\n' \"$$\" > \"$1\"; shift; exec \"$@\"")
+                .arg("printf '%s\\n' \"$$\" > \"$1\" || exit 1; shift; exec \"$@\"")
                 .arg("sh")
                 .arg(pid_file)
                 .arg(path)

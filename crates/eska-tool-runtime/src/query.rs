@@ -1,19 +1,15 @@
 //! One bounded internal response, distinct from inherited user-facing command streams.
 
-#[cfg(unix)]
-use crate::process::SignalState;
-use crate::{Component, Error, process::OwnedChild};
+use crate::{Component, Error, Operation};
 use serde_json::Value;
-#[cfg(unix)]
-use std::sync::atomic::Ordering;
 use std::{
     ffi::OsString,
     io::{Read, Write},
     path::Path,
-    process::{Command, Stdio},
+    process::Command,
     sync::mpsc,
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 const MAX_OUTPUT: u64 = 1024 * 1024;
@@ -24,6 +20,7 @@ const TIMEOUT: Duration = Duration::from_secs(30);
 pub struct QueryPolicy {
     pub timeout: Duration,
     pub output_limit: u64,
+    pub cancellation_grace: Duration,
 }
 
 impl Default for QueryPolicy {
@@ -32,12 +29,13 @@ impl Default for QueryPolicy {
         Self {
             timeout: TIMEOUT,
             output_limit: MAX_OUTPUT,
+            cancellation_grace: Duration::ZERO,
         }
     }
 }
 
 #[derive(Clone, Copy)]
-enum Stream {
+pub enum Stream {
     Stdout,
     Stderr,
 }
@@ -77,75 +75,27 @@ pub fn query_with_policy(
     policy: QueryPolicy,
 ) -> Result<Value, Error> {
     #[cfg(unix)]
-    let signal = SignalState::new().map_err(Error::Signal)?;
-    let child = Command::new(binary)
+    let scope = Some(Operation::new()?);
+    #[cfg(not(unix))]
+    let scope: Option<Operation> = None;
+    let mut command = Command::new(binary);
+    command
         .args(["__bridge", &operation.replace('_', "-"), "--project-dir"])
         .arg(root)
-        .args(options)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|source| Error::Process { component, source })?;
-    let mut child = OwnedChild(child);
-    let stdout = child.0.stdout.take().ok_or(Error::InvalidResponse)?;
-    let stderr = child.0.stderr.take().ok_or(Error::InvalidResponse)?;
-    let (sender, receiver) = mpsc::channel();
-    reader(
-        component,
-        stdout,
-        Stream::Stdout,
-        sender.clone(),
-        policy.output_limit,
-    )?;
-    reader(
-        component,
-        stderr,
-        Stream::Stderr,
-        sender,
-        policy.output_limit,
-    )?;
-    let started = Instant::now();
-    let mut status = None;
-    let mut stdout = None;
-    let mut stderr = None;
-    let (status, stdout, stderr) = loop {
-        while let Ok((stream, result)) = receiver.try_recv() {
-            let output = Some(result?);
-            match stream {
-                Stream::Stdout => stdout = output,
-                Stream::Stderr => stderr = output,
-            }
-        }
-        if status.is_none() {
-            status = child
-                .0
-                .try_wait()
-                .map_err(|source| Error::Process { component, source })?;
-        }
-        if status.is_some() && stdout.is_some() && stderr.is_some() {
-            break (
-                status.ok_or(Error::InvalidResponse)?,
-                stdout.ok_or(Error::InvalidResponse)?,
-                stderr.ok_or(Error::InvalidResponse)?,
-            );
-        }
-        #[cfg(unix)]
-        if signal.received.load(Ordering::Acquire) != 0 {
-            return Err(Error::Cancelled);
-        }
-        if started.elapsed() >= policy.timeout {
-            return Err(Error::Timeout);
-        }
-        thread::sleep(Duration::from_millis(10));
-    };
-    if !stderr.is_empty() {
+        .args(options);
+    let output = crate::capture::run(component, &mut command, scope.as_ref(), policy, || {})?;
+    if !output.stderr.is_empty() {
         std::io::stderr()
             .lock()
-            .write_all(&stderr)
+            .write_all(&output.stderr)
             .map_err(|source| Error::Process { component, source })?;
     }
-    decode(component, status.success(), &stdout, operation)
+    decode(
+        component,
+        output.status.success(),
+        &output.stdout,
+        operation,
+    )
 }
 
 /// Both IPC transports share framing and domain-error validation.
@@ -196,7 +146,7 @@ fn rejection(value: &Value) -> Option<(String, Option<String>)> {
 }
 
 /// Drain one stream concurrently, retaining at most the protocol's fixed maximum.
-fn reader(
+pub fn reader(
     component: Component,
     stream: impl Read + Send + 'static,
     kind: Stream,
@@ -355,5 +305,41 @@ mod tests {
         assert!(!Path::new("/proc").join(pid.to_string()).exists());
         #[cfg(not(target_os = "linux"))]
         assert!(pid > 0);
+    }
+
+    /// Graceful timeout signals the owner, permits cleanup and never accepts its zero exit.
+    #[test]
+    fn graceful_timeout_keeps_failure_after_successful_child_cleanup() {
+        let fixture = TestDir::new();
+        let ready = fixture.0.join("ready");
+        let binary =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/component.py");
+        let result = query_with_policy(
+            Component::Build,
+            &binary,
+            "doctor",
+            &fixture.0,
+            &[
+                "--fixture-mode".into(),
+                "bridge-graceful-timeout".into(),
+                "--fixture-ready".into(),
+                ready.clone().into_os_string(),
+            ],
+            QueryPolicy {
+                timeout: Duration::from_secs(1),
+                cancellation_grace: Duration::from_secs(2),
+                ..QueryPolicy::default()
+            },
+        );
+        assert!(matches!(result, Err(Error::Timeout)), "{result:?}");
+        assert_eq!(
+            fs::read_to_string(ready.with_extension("stopped")).unwrap(),
+            signal_hook::consts::signal::SIGTERM.to_string()
+        );
+        let pid: i32 = fs::read_to_string(ready).unwrap().parse().unwrap();
+        assert_eq!(
+            nix::sys::signal::kill(nix::unistd::Pid::from_raw(pid), None),
+            Err(nix::errno::Errno::ESRCH)
+        );
     }
 }

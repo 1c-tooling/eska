@@ -71,6 +71,7 @@ impl Client {
             QueryPolicy {
                 timeout: Duration::from_secs(30),
                 output_limit: 64 * 1024 * 1024,
+                ..QueryPolicy::default()
             },
         )
         .map_err(|error| present(error, localizer))?;

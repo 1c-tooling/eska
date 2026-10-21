@@ -245,7 +245,7 @@ pub(super) const fn plan_error_code(error: &PlanError) -> &'static str {
 }
 
 /// Map tool discovery failures to stable machine-facing codes.
-pub(super) const fn tool_error_code(error: &ToolError) -> &'static str {
+pub(super) fn tool_error_code(error: &ToolError) -> &'static str {
     match error {
         ToolError::InvalidArchitecture(_) => "platform-architecture-invalid",
         ToolError::InvalidContainer(_) => "distrobox-container-invalid",
@@ -253,6 +253,7 @@ pub(super) const fn tool_error_code(error: &ToolError) -> &'static str {
         ToolError::DistroboxContainerRequired => "distrobox-container-required",
         ToolError::Scan { .. } | ToolError::ScanCommandFailed { .. } => "platform-scan-failed",
         ToolError::NotFound { .. } => "ibcmd-not-found",
+        ToolError::Run(error) if error.kind() == std::io::ErrorKind::Interrupted => "interrupted",
         ToolError::Run(_) => "ibcmd-run-failed",
         ToolError::VersionCommandFailed { .. } => "ibcmd-version-command-failed",
         ToolError::VersionUnreadable(_) => "ibcmd-version-unreadable",

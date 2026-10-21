@@ -262,9 +262,32 @@ VCS сохраняет status=unavailable. Для внутренней комп�
 полученный сигнал при начале native-операции. Воспроизведённый регрессионный
 тест до исправления завершал import с exit 0 после SIGINT; теперь обе локали
 возвращают code=cancelled и exit 1, сохраняя manifest, source и входной файл.
-Проверка версии остаётся блокирующим вызовом: PID-only сигнал фиксируется,
-но этот тест освобождает probe перед проверкой завершения; немедленная отмена
-самого probe этим результатом не подтверждается. Windows здесь не проверен.
+Последующий process-тест обнаружил orphan `ibcmd --version` при отмене doctor:
+после завершения build-владельца native PID оставался жив. Теперь discovery
+использует общий bounded capture: 30 секунд и 1 MiB на stream, точный kill/reap.
+Версия, поиск установок в Distrobox и Designer prerequisite используют эту
+механику; длительность native build/unpack pipeline не ограничена этим timeout.
+Один scope передаётся через ToolOptions в discovery и в созданный Ibcmd;
+полученный сигнал сохраняется между probe и native setup. Artifact selector
+тоже сохраняет свой scope в возвращаемом инструменте.
+
+Doctor даёт build-владельцу до 30 секунд на cleanup при отмене или timeout,
+пересылая исходный Unix-сигнал (при timeout — TERM). Причина отказа сохраняется,
+даже если child успел вернуть exit 0 после cleanup. Прочие IPC-запросы по
+умолчанию сохраняют немедленный kill/reap. `QueryPolicy.cancellation_grace`
+и raw `capture` — внутренние Rust-входы транспорта, публичный JSON не меняется.
+
+Для Distrobox PID-файл должен быть виден host и контейнеру: он находится в
+новом приватном каталоге `~/.cache/eska/probes`, а при изолированном
+`ESKA_CONFIG_DIR` — в соседнем `.eska-probes` своего стенда. Каталог имеет mode
+0700 и удаляется после reaping. Неудачная запись PID не запускает native-команду.
+Исходники и manifests не используются как control-файлы. Host probe отдельного PID-файла
+не требует. ToolOptions теперь содержит transient cancellation state и больше
+не реализует Eq/PartialEq; экспериментальный Rust API изменён, CLI/JSON сохранены.
+
+Прошли 30 сочетаний doctor/build/import/unpack/platform × RU/EN × INT/TERM/HUP:
+probe не освобождался тестом, команда вернула exit 1, PID исчез, исходный XML
+сохранился, новый artifact/export не появился. Windows lifecycle пока не принят.
 
 Import запрашивает changed paths при подготовке и повторно перед записью.
 Неверный ответ и отказ не дают ложный ноль; отмена сохраняет категорию cancelled,

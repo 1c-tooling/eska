@@ -74,6 +74,13 @@ impl PlatformArgs {
 impl PlatformListArgs {
     /// Print every verified platform visible through the selected runner.
     fn run(&self, localizer: &Localizer) -> ExitCode {
+        let scope = match super::artifact::cancellation_scope(localizer) {
+            Ok(scope) => scope,
+            Err(error) => {
+                error.report();
+                return ExitCode::FAILURE;
+            }
+        };
         let options = match platform::tool_options(
             self.ibcmd.clone(),
             self.platform_arch.clone(),
@@ -88,6 +95,7 @@ impl PlatformListArgs {
                 return ExitCode::FAILURE;
             }
         };
+        let options = super::artifact::scoped_options(options, scope.as_ref());
         let platforms = match Ibcmd::installed(&options) {
             Ok(platforms) => platforms,
             Err(error) => {
@@ -95,6 +103,13 @@ impl PlatformListArgs {
                 return ExitCode::FAILURE;
             }
         };
+        if scope
+            .as_ref()
+            .is_some_and(eska_tool_runtime::Operation::is_cancelled)
+        {
+            eprintln!("{}", localizer.text("component-cancelled"));
+            return ExitCode::FAILURE;
+        }
         match self.format {
             PlatformOutputFormat::Human => {
                 if platforms.is_empty() {

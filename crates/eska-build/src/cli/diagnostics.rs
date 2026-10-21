@@ -127,6 +127,9 @@ pub fn present_tool_error_with_links(
                 ),
             ],
         ),
+        ToolError::Run(error) if error.kind() == std::io::ErrorKind::Interrupted => {
+            localizer.text("component-cancelled")
+        }
         ToolError::Run(error) => localizer.format(
             "build-ibcmd-run-error",
             &[("reason", LocalizationValue::Text(&error.to_string()))],

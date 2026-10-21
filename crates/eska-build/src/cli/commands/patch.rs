@@ -199,6 +199,7 @@ impl PatchArgs {
                 localizer,
             )
         })?;
+        let options = super::artifact::scoped_options(options, cancellation);
         let tool = Ibcmd::discover(version, &options).map_err(|e| {
             self.fail(
                 "tool",

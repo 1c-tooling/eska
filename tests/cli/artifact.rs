@@ -11,6 +11,117 @@ use serde_json::Value;
 
 const UUID: &str = "12345678-1234-1234-1234-123456789012";
 
+/// Cancelling a composed diagnostic must let the native owner reap its active version probe.
+#[cfg(unix)]
+#[test]
+fn cancellation_during_platform_probes_reaps_native_processes() {
+    use nix::sys::signal::Signal;
+    for command in ["doctor", "build", "import", "unpack", "platform"] {
+        for locale in ["ru", "en"] {
+            for signal in [Signal::SIGINT, Signal::SIGTERM, Signal::SIGHUP] {
+                assert_probe_reaped(command, locale, signal);
+            }
+        }
+    }
+}
+
+/// The signal alone must stop the probe; no fixture release or native work is allowed.
+#[cfg(unix)]
+fn assert_probe_reaped(command: &str, locale: &str, signal: nix::sys::signal::Signal) {
+    use nix::{sys::signal::kill, unistd::Pid};
+    use std::{
+        process::Stdio,
+        thread,
+        time::{Duration, Instant},
+    };
+    let fixture = TestDir::new();
+    let config = eska_project_core::config::ProjectConfig::new(
+        eska_project_core::project::ProjectType::Configuration,
+    )
+    .with_build_settings(
+        eska_project_core::project::build::BuildSettings::new("8.3.27.2325", "build".into())
+            .unwrap(),
+    );
+    let project =
+        eska_project_core::project::create::create(&fixture.0.join("project"), &config).unwrap();
+    let descriptor = project.source().join("Configuration.xml");
+    let xml = "<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><Configuration uuid=\"12345678-1234-1234-1234-123456789012\"><Properties><Name>Current</Name></Properties></Configuration></MetaDataObject>";
+    fs::write(&descriptor, xml).unwrap();
+    let binary = Path::new(env!("CARGO_BIN_EXE_eska"));
+    let binary = if command == "unpack" {
+        binary.with_file_name(format!("eska-build{}", std::env::consts::EXE_SUFFIX))
+    } else {
+        binary.to_owned()
+    };
+    let mut invocation = Command::new(binary);
+    invocation.args(["--lang", locale, command]);
+    if command == "platform" {
+        invocation.arg("list");
+    }
+    invocation.args(["--format", "json"]);
+    if command == "import" || command == "unpack" {
+        invocation.arg(artifact(&fixture.0, "cf", "Configuration", "Current", UUID));
+        if command == "import" {
+            invocation.arg("--force");
+        } else {
+            invocation
+                .arg(fixture.0.join("unpacked"))
+                .args(["--platform-version", "8.3.27.2325"]);
+        }
+    }
+    let ready = fixture.0.join("probe-ready");
+    let mut child = PreflightChild(
+        invocation
+            .current_dir(project.root())
+            .env("ESKA_CONFIG_DIR", fixture.0.join("machine"))
+            .env("FAKE_IBCMD_VERSION_READY", &ready)
+            .env(
+                "FAKE_IBCMD_VERSION_CONTINUE",
+                fixture.0.join("never-released"),
+            )
+            .arg("--ibcmd")
+            .arg(super::build::fake_ibcmd(&fixture))
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap(),
+    );
+    let mut probe = ProbePid(Some(ready_pid(&mut child.0, &ready)));
+    kill(Pid::from_raw(i32::try_from(child.0.id()).unwrap()), signal).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while child.0.try_wait().unwrap().is_none() {
+        assert!(Instant::now() < deadline, "{command}: cancellation hung");
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert_eq!(child.0.try_wait().unwrap().unwrap().code(), Some(1));
+    assert_eq!(
+        kill(Pid::from_raw(probe.0.unwrap()), None),
+        Err(nix::errno::Errno::ESRCH),
+        "native version probe outlived its owner"
+    );
+    probe.0 = None;
+    assert_eq!(fs::read_to_string(descriptor).unwrap(), xml);
+    assert!(!project.root().join("build").exists());
+    assert!(!fixture.0.join("unpacked").exists());
+}
+
+#[cfg(unix)]
+struct ProbePid(Option<i32>);
+
+#[cfg(unix)]
+impl Drop for ProbePid {
+    /// A failed lifecycle assertion must still terminate only the fixture's recorded process.
+    fn drop(&mut self) {
+        if let Some(pid) = self.0 {
+            let _ = nix::sys::signal::kill(
+                nix::unistd::Pid::from_raw(pid),
+                nix::sys::signal::Signal::SIGKILL,
+            );
+        }
+    }
+}
+
 /// Cancellation between VCS inspection and native setup cannot be reset by the version probe.
 #[cfg(unix)]
 #[test]

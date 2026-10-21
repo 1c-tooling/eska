@@ -186,7 +186,7 @@ impl BuildArgs {
                 ExitCode::FAILURE,
             );
         }
-        let options = match self.tool_options(localizer) {
+        let options = match self.tool_options(localizer, cancellation) {
             Ok(options) => options,
             Err(code) => return code,
         };
@@ -288,12 +288,17 @@ impl BuildArgs {
     }
 
     /// Resolve machine-local tool settings through the selected output contract.
-    fn tool_options(&self, localizer: &Localizer) -> Result<ToolOptions, ExitCode> {
+    fn tool_options(
+        &self,
+        localizer: &Localizer,
+        scope: Option<&eska_tool_runtime::Operation>,
+    ) -> Result<ToolOptions, ExitCode> {
         platform::tool_options(
             self.ibcmd.clone(),
             self.platform_arch.clone(),
             self.distrobox.clone(),
         )
+        .map(|options| super::artifact::scoped_options(options, scope))
         .map_err(|error| {
             let detail = diagnostics::present_global_config_error(&error, localizer);
             self.fail(

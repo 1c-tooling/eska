@@ -42,7 +42,13 @@ if mode.startswith("bridge-"):
         result["data"] = {"local_changes": 0}
         if count > 1:
             mode = "bridge-timeout"
-    if mode == "bridge-timeout":
+    if mode in ("bridge-timeout", "bridge-graceful-timeout"):
+        if mode == "bridge-graceful-timeout":
+            def graceful_stop(number, _frame):
+                """An owner may exit zero after cleanup, while the initiating timeout still wins."""
+                Path(os.environ["ESKA_COMPONENT_FIXTURE_READY"] + ".stopped").write_text(str(number))
+                sys.exit(0)
+            signal.signal(signal.SIGTERM, graceful_stop)
         Path(os.environ["ESKA_COMPONENT_FIXTURE_READY"]).write_text(str(os.getpid()))
         parent = os.getppid()
         while os.getppid() == parent:

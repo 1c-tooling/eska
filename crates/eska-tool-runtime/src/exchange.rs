@@ -41,6 +41,13 @@ impl Operation {
             .map_err(Error::Signal)
     }
 
+    /// Internal process controllers preserve the exact originally received Unix signal.
+    pub(crate) fn received_signal(&self) -> Option<i32> {
+        i32::try_from(self.0.received.load(Ordering::Acquire))
+            .ok()
+            .filter(|value| *value != 0)
+    }
+
     /// A received cancellation remains set until the entire surrounding operation is dropped.
     #[must_use]
     pub fn is_cancelled(&self) -> bool {
