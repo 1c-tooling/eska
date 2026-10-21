@@ -84,13 +84,13 @@ pub(super) enum Commands {
 
 pub(super) fn run(
     command: Option<&Commands>,
-    project_dir: &Path,
+    _project_dir: &Path,
     localizer: &Localizer,
     process_args: &[OsString],
 ) -> ExitCode {
     match command {
         Some(Commands::Update(args)) => args.run(localizer),
-        Some(Commands::Metadata(_) | Commands::Version(_)) => component::run(
+        Some(Commands::Metadata(_) | Commands::Version(_) | Commands::Doctor(_)) => component::run(
             Component::Project,
             process_args,
             Invocation::Direct,
@@ -147,7 +147,6 @@ pub(super) fn run(
             Invocation::LegacyInit,
             localizer,
         ),
-        Some(Commands::Doctor(args)) => args.run(project_dir, localizer),
         None => component::run(
             Component::Project,
             process_args,

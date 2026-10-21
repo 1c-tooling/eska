@@ -1,5 +1,6 @@
 //! Project command presentation shared by the standalone tool and the existing ESKA CLI.
 
+pub mod doctor;
 pub mod ide;
 pub mod metadata;
 pub mod onboarding;

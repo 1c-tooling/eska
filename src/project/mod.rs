@@ -23,8 +23,6 @@ pub use eska_project_core::project::model::{
 };
 pub use eska_project_core::project::{ProjectName, ProjectNameError, Workspace, WorkspaceMember};
 
-// Keep the existing CLI on the single shared implementation during extraction.
-pub(crate) use eska_project_core::project::designer_xml;
 pub use eska_project_core::project::{
     configurator, designer_source, discovery, metadata_edit, metadata_model, metadata_parser,
     metadata_rename, metadata_workspace, model, object_model, selection, support, templates,

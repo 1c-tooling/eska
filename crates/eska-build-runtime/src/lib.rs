@@ -1,5 +1,7 @@
 //! Platform execution shares the Designer project model and never opens a Git repository.
 
+pub mod doctor;
+
 pub mod artifact;
 pub mod build;
 pub mod config;

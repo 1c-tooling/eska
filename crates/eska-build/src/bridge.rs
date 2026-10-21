@@ -19,6 +19,7 @@ pub struct BridgeArgs {
 
 #[derive(Debug, Subcommand)]
 enum Operation {
+    Doctor(crate::cli::commands::doctor::DoctorArgs),
     SelectPlatform {
         #[command(flatten)]
         platform: PlatformArgs,
@@ -40,8 +41,9 @@ enum Operation {
 impl BridgeArgs {
     /// Keep human interaction on inherited streams and emit exactly one private machine reply.
     #[must_use]
-    pub fn run(&self, localizer: &Localizer) -> ExitCode {
+    pub fn run(&self, root: &std::path::Path, localizer: &Localizer) -> ExitCode {
         let (operation, init, result) = match &self.command {
+            Operation::Doctor(args) => ("doctor", false, Ok(args.inspect(root, localizer))),
             Operation::SelectPlatform {
                 platform,
                 inherited,

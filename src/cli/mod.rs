@@ -4,8 +4,6 @@ use std::{env, process::ExitCode};
 
 mod args;
 mod commands;
-mod diagnostics;
-mod platform;
 
 pub use args::Cli;
 pub(crate) use eska_presentation::encoding;

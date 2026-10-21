@@ -26,6 +26,12 @@ pub struct BridgeArgs {
 
 #[derive(Debug, Subcommand)]
 enum Operation {
+    Doctor {
+        #[arg(long)]
+        project: Option<PathBuf>,
+        #[arg(long = "attribute-root")]
+        attribute_roots: Vec<PathBuf>,
+    },
     PatchPlan {
         #[arg(long)]
         base: Option<String>,
@@ -102,6 +108,10 @@ impl BridgeArgs {
     #[must_use]
     pub fn run(&self, root: &Path) -> ExitCode {
         let (operation, result): (&str, Result<Value, Value>) = match &self.operation {
+            Operation::Doctor {
+                project,
+                attribute_roots,
+            } => ("doctor", doctor(root, project.as_deref(), attribute_roots)),
             Operation::PatchPlan { base } => (
                 "patch_plan",
                 crate::project::patch::plan_reply(root, base.as_deref())
@@ -179,4 +189,17 @@ fn initialize(root: &Path, reserved: bool) -> Result<serde_json::Value, &'static
         git::initialize(root).map_err(|_| "git_init")?;
     }
     Ok(json!({"initialized":true}))
+}
+
+/// A project failure cannot prevent the caller from requesting independent system Git checks.
+fn doctor(root: &Path, project: Option<&Path>, attributes: &[PathBuf]) -> Result<Value, Value> {
+    let checks = match project {
+        Some(path) => {
+            let project = discovery::discover(path).map_err(|_| json!("project"))?;
+            crate::doctor::inspect_vcs(root, &project, attributes)
+        }
+        None => crate::doctor::inspect_system_git(root, attributes),
+    };
+    let details = vec![None::<String>; checks.len()];
+    Ok(json!({"checks":checks,"details":details}))
 }

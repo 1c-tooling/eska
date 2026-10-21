@@ -36,6 +36,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    #[command(disable_help_flag = true)]
+    Doctor(crate::doctor::DoctorArgs),
     #[command(name = "__shell-new", hide = true, disable_help_flag = true)]
     ShellNew(crate::onboarding::new::NewArgs),
     #[command(name = "__shell-init", hide = true, disable_help_flag = true)]
@@ -146,6 +148,7 @@ pub fn run() -> ExitCode {
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
     match cli.command.as_ref() {
+        Some(Commands::Doctor(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::ShellNew(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::ShellInit(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::ShellValidate) => shell_validate(&cli.project_dir, &localizer),
@@ -181,6 +184,7 @@ fn localized(localizer: &Localizer) -> clap::Command {
         .mut_arg("version", |arg| arg.help(localizer.text("cli-version")))
         .mut_subcommands(|command| match command.get_name() {
             "analyzer-config"=>crate::analyzer_config::localize(command,localizer),
+            "doctor" => standalone_help(crate::doctor::localize(command, localizer)),
             "metadata" => standalone_help(crate::metadata::localize(command, localizer)),
             "version" => standalone_help(crate::version::localize(command, localizer)),
             _ => localize_operation(command, localizer),

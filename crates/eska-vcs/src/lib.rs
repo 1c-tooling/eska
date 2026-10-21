@@ -1,5 +1,7 @@
 //! Git workflow and semantic Designer XML comparisons shared by standalone and full CLI.
 
+pub mod doctor;
+
 pub mod bridge;
 pub mod cli;
 pub mod project;

@@ -92,7 +92,7 @@ pub fn run() -> ExitCode {
     };
     let provenance = |root: &Path| query_provenance(vcs_binary.as_deref(), root);
     match cli.command {
-        Some(Commands::Bridge(args)) => args.run(&localizer),
+        Some(Commands::Bridge(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Build(args)) => args.run(&cli.project_dir, &localizer, &provenance),
         Some(Commands::Patch(args)) => {
             args.run(&cli.project_dir, &localizer, vcs_binary.as_deref())
