@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "stage": "T89",
-  "status": "in-progress",
+  "status": "done_with_deferred_performance",
   "performance_acceptance": "failed",
   "source_revision": "4cbdde3db6d5b36c0bd81595661da030f67c6688",
   "explorer_runtime_revision": "87d3cee1970f50ef9a1d233b9b695893df8f7937",
@@ -896,5 +896,39 @@
     "Tree and language readiness still exceed the fixed original T90 tolerance.",
     "Original hover/repair results are preserved but are not the final acceptance evidence.",
     "Windows, macOS, VS Code and Remote are unverified by user-agreed scope."
-  ]
+  ],
+  "acceptance_decision": {
+    "date": "2026-10-22",
+    "source": "Direct human reply in this chat",
+    "user_quote": "Добавить как задачу оптимизации. Прогодим более сильной моделью",
+    "t89_acceptance": "accepted_with_documented_performance_deferral",
+    "performance_gates": "failed; original numeric results and tolerances preserved",
+    "follow_up_task": "T106",
+    "follow_up_status": "PLANNED",
+    "follow_up_execution": "Later with a stronger model; not started",
+    "scope": "Current Linux/VSCodium; other environments unverified by prior user decision"
+  },
+  "reproduction": {
+    "cwd": "eska repository root",
+    "playground": "../eska-playground",
+    "method": "Copy frozen launch/probe/provenance/tools to a unique series directory under the same acceptance stand; preserve original results.",
+    "launch_script_sha256": "5a2b01068d994effadf170aa6afb6ea2d0af3152a499c9d15745b0d5facbffc6",
+    "probe_sha256": "a1eeb5297288d98392db852691a4aa3631936fe4cd284b6094585afc8cbdd0c1",
+    "summary_script_sha256": "c46e000bb17806c882d7c786bfcaa2bcf058e1dc2deb21afe2745d29d1394977",
+    "fixed_gates_wrapper_sha256": "11c77324934981319577746010f842c7e8df9d4b6b2a8a9a5f3ad4ef0186ec58",
+    "fixed_gates_source_sha256": "dfe25b8de2ff39c954a034beb4d50ed74769e26ee276faea7cb7ccb52bc012e1",
+    "summary_validation": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/summary-replay-check-ottzu_oa",
+      "all_aggregates_and_fixed_gates_equal": true
+    },
+    "commands": [
+      "acceptance_dir=\"$(realpath ../eska-playground/t89-acceptance-64abnlk1)\"",
+      "source_series=\"$acceptance_dir/series-fresh-x3nxjx6_\"",
+      "series_dir=\"$(mktemp -d \"$acceptance_dir/series-replay-XXXXXXXX\")\"",
+      "cp \"$source_series/run.py\" \"$source_series/probe.cjs\" \"$source_series/provenance.json\" \"$source_series/summarize.py\" \"$source_series/replay-summary.py\" \"$series_dir/\"",
+      "cp -a \"$source_series/tools\" \"$series_dir/tools\"",
+      "python3 -B \"$series_dir/run.py\"",
+      "python3 -B \"$series_dir/replay-summary.py\""
+    ]
+  }
 }

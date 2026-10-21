@@ -119,6 +119,25 @@
     "eska-vcs": true,
     "eska": true
   },
-  "after_live_verification": "running; final direct published-analyzer result is recorded separately in t89-functional.json",
-  "contract": "The total JSONL allowance increases to 512 MiB; event size, count validation, completeness, timeout and public JSON schema remain unchanged."
+  "after_live_verification": {
+    "passed": true,
+    "receipt": "t89-functional.json",
+    "root_revision": "ccb66d3357f7d01ffb819e6b759ee3988596fcf3",
+    "complete": true,
+    "scope": "full",
+    "exit": 1,
+    "status": "threshold_exceeded",
+    "files": 23162,
+    "total_diagnostics": 1362653,
+    "all_published_diagnostics_equal": true,
+    "report_sha256": "7c27a3fcc180e68d8fc799766508d5093764156d9470706eff84d0182f193b11",
+    "checker_sha256": "7425b0cf31924c1d81cf23be49c83bdff9e7f4cf1dc7b6c0847e2966a90c3f97"
+  },
+  "contract": "The total JSONL allowance increases to 512 MiB; event size, count validation, completeness, timeout and public JSON schema remain unchanged.",
+  "unchanged_release_binary_sha256": {
+    "eska-project": "196caaadb929690a1a29bfb4f8aba163b28351f04532bd7b2b0641254d9c6091",
+    "eska-build": "4844d9c10671d5074ff5877baa45dbace0a6b79155d6e76478d06765a4c84c84",
+    "eska-vcs": "e710e6be25aa6ad97535aa054c537c14710548fa1821dd9f9691a7ffff213e5a",
+    "eska": "f9856ad3e2ab01059a4df51f1bf1fe866bff3d93e787c0bf4743f7abe331753e"
+  }
 }

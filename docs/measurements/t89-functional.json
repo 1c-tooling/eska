@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "stage": "T89",
+  "platform": "Linux x86_64 GNU; VSCodium 1.109.5",
+  "root_revision": "ccb66d3357f7d01ffb819e6b759ee3988596fcf3",
+  "explorer_runtime_revision": "87d3cee1970f50ef9a1d233b9b695893df8f7937",
+  "rust_validation": "t89-stream.json",
+  "artifact_evidence": {
+    "native_build": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t96-native-5049hexm/result.json",
+      "sha256": "a30a1a3c6f5c103d888d66b2f2cbf710bc601fcd861da4279676500d4618284d"
+    },
+    "installed_components": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t97-installed-116p2sa0/report.json",
+      "sha256": "3abff8cffd7ab6d48277dbefcefbae48490fdaa56f1f865c3524868ac83fa87e"
+    },
+    "small_cli_lsp": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/profile-ljlsa_w8/parity-final.json",
+      "sha256": "80f6e64239de00dcc88feb7fedba0186bf4f4d92398e81e536dbfb70e9c3a48e"
+    },
+    "buhmfo_lifecycle": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/report-final.json",
+      "sha256": "70d808e7b8feab729e9ef45da75b978d0a43d77df7054871e51c4e454aa522d5"
+    },
+    "node": {
+      "path": "/tmp/eska-t89-explorer-final-node.log",
+      "sha256": "507c929625a7a19c88ee88c9c98f99ebba167071cde3841c24a8a8e8181785f9"
+    },
+    "bun": {
+      "path": "/tmp/eska-t89-explorer-final-bun.log",
+      "sha256": "d4f191e1d381133956fdf789a998c747ff3168130d872e915bf8d8df7dc62d17"
+    },
+    "large_cli_launch": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/cli-final-launch.json",
+      "sha256": "a81d6001ed52dce7d8e056384d726ff4a758841dbd4ede2fddce2eaad9b8f827"
+    },
+    "large_cli_audit": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/cli-final-audit.json",
+      "sha256": "70714192450564e84ce388c7d14d07cdb8086539b25096cd4cd86be0a56faec4"
+    },
+    "large_cli_report": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/cli-final-report.json",
+      "sha256": "7c27a3fcc180e68d8fc799766508d5093764156d9470706eff84d0182f193b11"
+    },
+    "published_source_audit": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/published-audit.json",
+      "sha256": "f388dd142ed9f28ccf2c9228c66fb03fa3136a55765eac1a836c923ee7f48de4"
+    },
+    "published_jsonl": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/published-full.jsonl.gz",
+      "sha256": "08bca2c71cafcf9d5faa5258ba93ced17df956264e6969fc7e2d21fccdc390f8"
+    }
+  },
+  "installed_components": {
+    "passed": true,
+    "commands": 73,
+    "profiles": 5,
+    "direct_shell_ru_en_equal": true,
+    "minimal_path": true,
+    "selective_remove": true,
+    "fresh_package_path": "/home/akalsin/Documents/Projects/eska-playground/t89-stream-packages-xnp7ayi0/release",
+    "source_revision": "ccb66d3357f7d01ffb819e6b759ee3988596fcf3",
+    "source_tree_dirty": false
+  },
+  "native_build": {
+    "complete": true,
+    "entry": "eska",
+    "platform_version": "8.3.27.2325",
+    "runner": "distrobox",
+    "cases": [
+      {
+        "project_type": "configuration",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "dff41ca80b4d65107882a4bfff83fc6c7d2449af10a3841101731f635b8a405d",
+        "artifact_bytes": 76063,
+        "identity": {
+          "name": "Configuration",
+          "project_type": "configuration",
+          "uuid": "0ef8fd4d-59be-4a29-9b92-94135869f3b4"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "7d1d21581ed04b64781160a4ca87c440dddcd38b6ea53b37da7a292b181904b8",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "extension",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "2c645be4a5cff2437ebe39d5fb724661c2588c1c0e9a9a1191970cb513b1e379",
+        "artifact_bytes": 4616,
+        "identity": {
+          "name": "EskaTestExtension",
+          "project_type": "extension",
+          "uuid": "98c97ab3-acf3-46a8-ab6d-c0dd30c4018c"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "d54161fbe506f56d68a0ef76e2e0cc0f778f598dbfdfd77783f7161af5aa6a42",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "processing",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "28f10586ee422466bac88d8c440b5692005d5f1657e7a28fd4e45d6a76d7db08",
+        "artifact_bytes": 4394,
+        "identity": {
+          "name": "EskaTestprocessing",
+          "project_type": "processing",
+          "uuid": "c08917c7-70e8-41b4-acab-580b0441b1c4"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "5c0ab9f5806a78bc8afebe0e736c7a57d1706db57ad524fa33405b91e5a67404",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "report",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "554b900a60a99aa60e6eb0e734fcbbd366ef1172b666e93302ec71a16f8f39ad",
+        "artifact_bytes": 4394,
+        "identity": {
+          "name": "EskaTestreport",
+          "project_type": "report",
+          "uuid": "62d06bc8-5491-4fb1-b93f-9af15ad4e0d7"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "650953b627ed2ba55192ecf86bad6219f333c67da9286cfa8a1c2df90f2e221f",
+        "repeated_artifact_bytes_equal": false
+      }
+    ],
+    "cancellation": {
+      "unpack": {
+        "status": "passed",
+        "exit": 130,
+        "native_pid_absent": true,
+        "staging_absent": true,
+        "input_unchanged": true
+      },
+      "build": {
+        "status": "passed",
+        "exit": 1,
+        "stage": "import-sources",
+        "native_pid_absent": true,
+        "previous_result_unchanged": true,
+        "source_unchanged": true,
+        "managed_infobase_preserved": true,
+        "staging_absent": true
+      }
+    },
+    "binary_equivalence_after_check_only_fix": "eska, eska-build, eska-vcs and eska-project are byte-identical to the native matrix; see t89-stream.json"
+  },
+  "small_cli_lsp": {
+    "passed": true,
+    "files": 2,
+    "diagnostics": 9,
+    "support_policy": true,
+    "complete": true,
+    "cli_exit": 1,
+    "source_bytes_unchanged": true,
+    "config_bytes_unchanged": true,
+    "message_projection": "Only LSP appends upstream standard links; codes, severities, ranges and core messages compare exactly.",
+    "upstream_source": "https://github.com/itrous/bsl-analyzer/blob/bdb221307b73f83f9401558e8013f3a1667969b9/crates/bsl-analyzer/src/lsp/to_proto.rs#L166"
+  },
+  "buhmfo_lifecycle": {
+    "passed": true,
+    "suite": "buhmfo-lifecycle",
+    "vscode": "1.109.5",
+    "sources": 6,
+    "support_policy": false,
+    "native_file_watcher_readiness_attempts": 35,
+    "xml_global_resolution": true,
+    "ordinary_xml_pid_preserved": true,
+    "branch_roundtrip": true,
+    "branch_diagnostics_fresh": true,
+    "root_fingerprint_roundtrip": true,
+    "metadata_pid_preserved": true,
+    "application_sources_roundtrip": [
+      6,
+      1,
+      6
+    ],
+    "excluded_extension_diagnostics_cleared": true
+  },
+  "explorer_validation": {
+    "typecheck": "passed",
+    "bundle": "passed; product runtime unchanged",
+    "node": {
+      "passed": 198,
+      "failed": 0,
+      "skipped": 0
+    },
+    "bun": {
+      "passed": 198,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "large_cli": {
+    "passed": true,
+    "files": 23162,
+    "exact_selected_source_set": true,
+    "all_published_diagnostics_equal": true,
+    "total_diagnostics": 1362653,
+    "counts": {
+      "errors": 68361,
+      "warnings": 383845,
+      "information": 475910,
+      "hints": 434537
+    },
+    "complete": true,
+    "scope": "full",
+    "status": "threshold_exceeded",
+    "exit": 1,
+    "seconds": 461.7321804759995,
+    "stdout_report_bytes_equal": true,
+    "stdout_report_sha256": "7c27a3fcc180e68d8fc799766508d5093764156d9470706eff84d0182f193b11",
+    "report_bytes": 378943950,
+    "selected_native_lsp": [
+      {
+        "file": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/project/src/ExternalSystems/src/WebServices/es_GetData/Ext/Module.bsl",
+        "diagnostics": 5,
+        "equal": true
+      },
+      {
+        "file": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/project/src/buhmfo/src/Catalogs/Номенклатура/Ext/ObjectModule.bsl",
+        "diagnostics": 3,
+        "equal": true
+      },
+      {
+        "file": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/project/src/buhmfo/src/CommonModules/GoogleПереводчик/Ext/Module.bsl",
+        "diagnostics": 4,
+        "equal": true
+      }
+    ],
+    "owned_pids_remaining": [],
+    "checker_sha256": "7425b0cf31924c1d81cf23be49c83bdff9e7f4cf1dc7b6c0847e2966a90c3f97",
+    "verification_script_sha256": "1df211a3a3e640c3c4e4b431acd26338a635467e7b57e3898a51c699148a7298",
+    "analyzer_version": "0.3.2",
+    "analyzer_sha256": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+    "launch": "Direct live invocation of the pinned published analyzer; no recording proxy or replay",
+    "source_counts": {
+      "buhmfo": 23003,
+      "external-systems": 23,
+      "dzp-auto-statements": 8,
+      "dzp-typical-code": 84,
+      "dzp-fill-bank-statements": 25,
+      "dzp-config-fixes": 19
+    },
+    "lsp_comparison_fields": [
+      "code",
+      "severity",
+      "start_line",
+      "start_column",
+      "end_line",
+      "end_column",
+      "message without upstream standard suffix"
+    ],
+    "native_lsp_tags": "Not captured by the native fixture; public CLI tags were compared against all upstream JSONL diagnostics"
+  },
+  "environments_unverified": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ],
+  "scope_excluded": [
+    "T98",
+    "T99",
+    "T100-T105"
+  ],
+  "date": "2026-10-22",
+  "status": "done_with_deferred_performance",
+  "functional_status": "passed",
+  "explorer_test_revision": "7d326c1",
+  "acceptance_decision": {
+    "date": "2026-10-22",
+    "source": "Direct human reply in this chat",
+    "user_quote": "Добавить как задачу оптимизации. Прогодим более сильной моделью",
+    "t89_acceptance": "accepted_with_documented_performance_deferral",
+    "performance_gates": "failed; original numeric results and tolerances preserved",
+    "follow_up_task": "T106",
+    "follow_up_status": "PLANNED",
+    "follow_up_execution": "Later with a stronger model; not started",
+    "scope": "Current Linux/VSCodium; other environments unverified by prior user decision"
+  },
+  "input_note": "Large native lifecycle uses a private copy with deliberate semantic probes in three BSL modules; original user buhmfo is not modified.",
+  "limitations": [
+    "No full build of the large buhmfo configuration",
+    "No claim of an exhaustive audit of user global caches; isolated project/profile and selected payload measurements are in t89-corrected.json",
+    "No publication or push performed"
+  ]
+}
