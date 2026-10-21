@@ -27,3 +27,5 @@ mod update;
 mod metadata;
 
 mod delegation;
+
+mod installation;

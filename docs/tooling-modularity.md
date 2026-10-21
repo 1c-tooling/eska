@@ -40,7 +40,7 @@ exit codes и отмену; таблица не разрешает упроща�
 остаются за пределами ядра. Presentation, локализация и `clap` туда не входят.
 
 Общая реализация находится в `crates/eska-project-core`, текущий CLI использует
-её через прежние Rust-пути. В normal dependency graph ядра
+её в пакетах-владельцах. В normal dependency graph ядра
 `gix`, `clap`, Tokio, HTTP-клиент, updater и BSL-ядро отсутствуют.
 `bstr`, `gix-path` и `gix-validate` взяты в уже закреплённых версиях:
 они сохраняют обратимые пути и существующую проверку Git-имён без repository
@@ -95,8 +95,10 @@ Native provenance/import-инспектор остаётся адаптером 
 и полный build; provenance и import preflight уже идут через VCS-процесс.
 `eska-tool-runtime` переиспользуется оболочкой и сборщиком; native cancellation
 на Unix больше не перезаписывает IPC subscriptions. `new/init/import` перенесены
-к владельцам, включая нативный onboarding и его отмену. Составные `patch/doctor`
-и окончательная очистка зависимостей оболочки ещё не завершены.
+к владельцам, включая нативный onboarding и его отмену. T96 завершена:
+составной patch принадлежит build, doctor — project; Rust-фасады и ссылки
+оболочки на runtime-библиотеки удалены. Все схемы CLI разделяются через
+presentation, прежние тесты вызывают библиотеки только из test target.
 
 Пока выделены внутренние crates с `publish = false`; раскладка публикуемых
 packages и выборочная поставка относятся к T97. Автоматизация релизов,

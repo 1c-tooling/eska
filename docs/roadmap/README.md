@@ -24,7 +24,7 @@ T93 — `DONE`: самостоятельный eska-check, полнота JSONL,
 T94 — `DONE`: самостоятельный build/unpack, общий runtime и нативная матрица 8.3.27.2325.
 T95 — `DONE`: самостоятельный VCS, общие обработчики и проверенная минимальная установка.
 T96 — `DONE`: делегирование общей команды, process-композиция и отделённые runtime-зависимости.
-T97 — `NEXT`: выборочные пакеты, установка и совместимость компонентов.
+T97 — `IN PROGRESS`: выборочные пакеты, установка и совместимость компонентов.
 Номера T83–T89 сохраняются, модульность добавлена в T90–T99.
 Экспериментальный формат ESKA в этот план не переносится; статусы прежних
 задач сохраняются.
@@ -364,7 +364,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T94 | DONE | Самостоятельный eska-build и проверки реальной платформой | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T95 | DONE | Самостоятельный eska-vcs с сохранением workflow | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T96 | DONE | Делегирование команд eska самостоятельным инструментам | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T97 | NEXT | Выборочные пакеты, установка и совместимость инструментов | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T97 | IN-PROGRESS | Выборочные пакеты, установка и совместимость инструментов | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T98 | PLANNED | Опциональная проверка DAP backend и контракт отладчика | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T99 | PLANNED | Опциональный самостоятельный eska-debug | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 

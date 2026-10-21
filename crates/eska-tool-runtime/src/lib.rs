@@ -1,6 +1,7 @@
 //! Lightweight component discovery and owned process I/O; no domain engines or localization.
 
 mod capture;
+pub mod contract;
 mod exchange;
 mod process;
 mod query;

@@ -136,6 +136,14 @@ pub struct InitArgs {
 #[must_use]
 pub fn run() -> ExitCode {
     let args: Vec<OsString> = std::env::args_os().collect();
+    if let Some(code) = eska_presentation::components::tool_contract(
+        &args,
+        "eska-project",
+        env!("CARGO_PKG_VERSION"),
+        Some((1, 12)),
+    ) {
+        return code;
+    }
     let requested = bootstrap_lang(&args);
     let locale = resolve_locale_from_environment(requested.as_deref());
     let localizer = match Localizer::try_new(locale) {

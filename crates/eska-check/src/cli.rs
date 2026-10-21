@@ -58,6 +58,14 @@ impl std::ops::Deref for Cli {
 /// Parse help before any project discovery; every real run has one owned cancellation flag.
 pub fn run() -> ExitCode {
     let args: Vec<OsString> = std::env::args_os().collect();
+    if let Some(code) = eska_presentation::components::tool_contract(
+        &args,
+        "eska-check",
+        env!("CARGO_PKG_VERSION"),
+        None,
+    ) {
+        return code;
+    }
     let locale = resolve_locale_from_environment(bootstrap_lang(&args).as_deref());
     let localizer = match Localizer::try_new(locale) {
         Ok(localizer) => localizer,

@@ -2,6 +2,7 @@
 
 use crate::localization::{LocalizationValue, Localizer};
 use eska_tool_runtime::Error;
+pub use eska_tool_runtime::contract::respond as tool_contract;
 
 /// Present structured client failures without putting transport diagnostics on stdout.
 #[must_use]

@@ -124,6 +124,14 @@ impl Drop for Client {
 #[test]
 fn standalone_metadata_server_has_its_own_identity_and_keeps_sources_read_only() {
     let fixture = support::TestDir::new();
+    let output = Command::new(env!("CARGO_BIN_EXE_eska-project"))
+        .arg("__tool-contract")
+        .current_dir(&fixture.0)
+        .env("PATH", "")
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let contract: Value = serde_json::from_slice(&output.stdout).unwrap();
     for (index, kind) in [
         ProjectType::Configuration,
         ProjectType::Extension,
@@ -161,6 +169,8 @@ fn standalone_metadata_server_has_its_own_identity_and_keeps_sources_read_only()
             let mut client = Client::new(&root, locale);
             let hello=client.request("initialize",&json!({"apiVersion":{"major":1,"minor":12},"client":{"name":"standalone-test","version":"1"}}));
             assert_eq!(hello["server"]["name"], "eska-project");
+            assert_eq!(hello["apiVersion"], contract["metadata_api"]);
+            assert_eq!(hello["server"]["version"], contract["version"]);
             assert_eq!(hello["capabilities"]["selfUpdate"], false);
             assert_eq!(hello["capabilities"]["analyzerConfiguration"], true);
             let start = json!({"value":root,"encoding":"utf-8"});
