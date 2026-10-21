@@ -1,6 +1,6 @@
 # Выборочная поставка компонентов
 
-T97 — `IN PROGRESS`. Общая версия релиза не заменяет проверку контрактов.
+T97 — `DONE` для принятой Linux-матрицы; остальные ОС/Remote отмечены в T89. Общая версия релиза не заменяет проверку контрактов.
 `eska`, `eska-project`, `eska-check`, `eska-build` и `eska-vcs` отвечают на точный
 машинный вход `__tool-contract` одной JSON-строкой, без project discovery,
 других executables, сети, локализации и native probes:
@@ -150,5 +150,40 @@ python3 -B BUNDLE/components.py recover --root PREFIX --transaction STAGING --fo
 ignored. Проверены обе локали, прямые executable и оболочка, read-only preview,
 выборочные update/remove, offline-повтор, ошибки контрактов/путей/checksum,
 rollback, конфликт восстановления и реальный SIGTERM с reap дочернего probe.
-Реальная установка собранных архивов и матрица минимальных комплектов ещё
-выполняются; Windows/macOS/Remote этим набором не приняты.
+[Нативный отчёт T97](measurements/t97-installation.json) сохраняет 73 process-сценария
+из установленных архивов. Каждый инструмент установлен отдельно при пустом PATH;
+прошли contract, RU/EN help, read-only preview, offline-повтор и проверка receipt.
+Приняты структурные new/validate и реальный Metadata API 1.12. Version совпал
+у direct/wrapper, VCS status — у minimal/direct/wrapper.
+
+Реальный bsl-analyzer 0.3.2 дал один warning и один hint на собственном BSL fixture.
+Шесть отчётов полного анализа совпали побайтно: minimal/direct/wrapper × RU/EN.
+С `max_warnings=0` четыре direct/wrapper отчёта совпали и вернули exit 1 при
+`complete=true`. XML, BSL и исходные байты manifest сохранены. Удаление project
+не изменило VCS binary и исходники. Тестовый клиент ждёт initialize/shutdown
+перед exit; ранняя отправка exit не используется как доказательство сервера.
+
+Повтор упаковки дал те же SHA-256 всех пяти ZIP. Установленный минимальный
+`eska-build` отдельно прошёл CF/CFE/EPF/ERF реальной 8.3.27.2325 в Distrobox:
+build/repeat/unpack/clean, сохранение identity/source, отмена и reap native PID.
+PATH содержал только `/usr/bin:/bin`, остальные ESKA-компоненты заданы
+несуществующими explicit overrides. Git provenance остался `unavailable`.
+Повторные native artifacts различаются по байтам; это прежнее ограничение
+платформенной сборки, отдельное от повторяемости ZIP.
+
+Повтор приёмки после подготовки полного bundle:
+
+```sh
+ESKA_TEST_ROOT="$(realpath ../eska-playground)" python3 -B tests/native_components.py \
+  --bundle "$stand_dir/release" --analyzer "$analyzer_binary"
+ESKA_TEST_ROOT="$(realpath ../eska-playground)" python3 -B -m unittest discover \
+  -s tests/components -v
+```
+
+`analyzer_binary` — явный абсолютный путь закреплённого upstream executable.
+Нативный скрипт обязательно требует реальный анализатор; пропуск CI не даёт
+общий `passed`. Bundle, script, raw streams, hashes и результаты сохраняются
+в новом собственном стенде. Ограничения: Linux x86_64 GNU, Distrobox runner,
+маленькие fixtures; Windows/macOS/Remote, host runner, клиент 1С, native build
+`buhmfo` и отказ питания этим результатом не подтверждены. Release assets
+не опубликованы, существующая automation не менялась.
