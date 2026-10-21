@@ -25,7 +25,7 @@ T94 — `DONE`: самостоятельный build/unpack, общий runtime 
 T95 — `DONE`: самостоятельный VCS, общие обработчики и проверенная минимальная установка.
 T96 — `DONE`: делегирование общей команды, process-композиция и отделённые runtime-зависимости.
 T97 — `DONE`: выборочные ZIP, receipts, совместимость и rollback; приняты минимальные Linux-установки.
-T85 — `NEXT`: установка project/analyzer и независимые индикаторы Explorer.
+T85 — `IN PROGRESS`: установка project/analyzer и независимые индикаторы Explorer.
 Номера T83–T89 сохраняются, модульность добавлена в T90–T99.
 Экспериментальный формат ESKA в этот план не переносится; статусы прежних
 задач сохраняются.
@@ -353,7 +353,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T82 | DONE | Создание и обновление из файлов 1С | [02-project-creation.md](02-project-creation.md) |
 | T83 | DONE | Контекст приложения в основном конфиге ESKA после выделения ядра | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T84 | DONE | Производный конфиг bsl-analyzer и миграция | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T85 | NEXT | Установка project/analyzer из Explorer, независимые индикаторы и обновления | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
+| T85 | IN-PROGRESS | Установка project/analyzer из Explorer, независимые индикаторы и обновления | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T86 | PLANNED | Базовая подсветка и собственный LSP-клиент Explorer | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T87 | PLANNED | Приостановка клиента при конфликте расширений | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T88 | PLANNED | Согласование LSP с изменениями и защитой исходников | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |

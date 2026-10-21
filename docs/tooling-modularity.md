@@ -140,11 +140,17 @@ Probe и launcher сохранены рядом с исходной копией
 
 ```sh
 run_dir="$(realpath ../eska-playground/t90-baseline-gzndpr3p)"
-python3 "$run_dir/run-baseline.py"
+python3 "$run_dir/run-frozen-baseline.py"
 ```
 
-Команда использует сохранённый baseline-бинарник, явные локальные сервер
-и расширение, отдельные профили и меняет только собственные каталоги стенда.
+Команда использует сохранённый baseline-бинарник, Explorer из точного Git archive
+`443134c`, frozen внешнее расширение и сервер, отдельные профили. Каждый повтор
+создаёт новый `frozen-baseline/series-*`; исходные raw T90-файлы не заменяются.
+Исходный `run-baseline.py` сохранён для provenance, но он ссылается на live
+checkout Explorer и не используется для новых сравнений. В исходной серии
+зафиксирована версия анализатора, без его checksum; для нового сравнения обе
+пары используют один frozen binary 0.3.2. Ни уменьшение RSS, ни точное совпадение
+этого binary с неизвестным исходным checksum этим не утверждаются.
 
 Исходные `cargo fmt --check`, `cargo check`, строгий Clippy и Rustdoc прошли.
 Unit: 266 passed, 1 ignored. Sandbox запрещает HTTP listener трём тестам

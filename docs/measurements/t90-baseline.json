@@ -3231,5 +3231,23 @@
         }
       }
     }
-  ]
+  ],
+  "frozen_reproduction": {
+    "directory": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p/frozen-baseline",
+    "command": "python3 run-frozen-baseline.py",
+    "explorer_revision": "443134c23d66a0b12902e185d9b4ea8032c42f92",
+    "archive_sha256": "6473090d469a8c7c83a610a1aeffae38d58e8fcde40a70ae768bad8fd89a84ea",
+    "files": {
+      "backend": "43be509ee0852bd5affc3effd6b2e63c11fd8e1916351f3cf73c1b274a3c050f",
+      "analyzer": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+      "original_launcher": "e9d1557d0d345b67a890d5f48b64a15f6683815eec511579e55abd7202b1c560",
+      "frozen_launcher": "5671c090a91844922f0864704f8ec16dcb7bd68bc7f9f11456b14ee0e1bae52a",
+      "probe": "95e0fe1e50369a557b519ef06f9e3e284ce2db221d523a09316c55287b6a8c68"
+    },
+    "external_extension_version": "0.1.12",
+    "analyzer_version": "bsl-analyzer 0.3.2",
+    "node_version": "v22.23.1",
+    "note": "Original raw T90 series and launcher remain unchanged. Every frozen replay creates a unique series directory and uses the exact archived Explorer, external extension and analyzer.",
+    "analyzer_identity_note": "Original series recorded analyzer version but not its checksum. The frozen copy is verified as 0.3.2 and is available for a fresh equal-server comparison."
+  }
 }
