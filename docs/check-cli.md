@@ -85,6 +85,15 @@ JSON schema 1 имеет `kind: "check"`. Завершённый отчёт со
 из JSONL. Human-вывод показывает строки и столбцы с единицы. Ошибка содержит
 `error: {code,data}` и не содержит неполного массива диагностик.
 
+Опубликованный JSONL 0.3.2 также выдаёт `Blocker`, `Critical` и `Major`.
+Как и [LSP upstream](https://github.com/itrous/bsl-analyzer/blob/bdb221307b73f83f9401558e8013f3a1667969b9/crates/bsl-analyzer/src/lsp/to_proto.rs#L44),
+отчёт нормализует их в `Error`: они увеличивают `counts.errors` и участвуют
+в пороге ошибок. Публичные четыре категории и схема отчёта сохраняются;
+неизвестный уровень по-прежнему означает незавершённый результат.
+Реальная проверка `CommonModuleInvalidType` с уровнем `Major` теперь даёт
+полный отчёт и превышение порога ошибок вместо `invalid_stream`;
+[проверки CLI и полного workspace](measurements/t89-severity.json).
+
 Времена не входят в отчёт. CLI locale не меняет JSON, выбор контекста или
 правила. Язык upstream-сообщений остаётся настройкой `[tools.bsl-analyzer.output]`.
 Локализованные объяснения и upstream-логи ошибок идут отдельно на stderr.

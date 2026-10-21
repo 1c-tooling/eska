@@ -34,8 +34,9 @@ elif command == "analyze":
     total = 0
     for index, path in enumerate(files):
         diagnostics = []
-        if mode == "warning" and index == 0:
-            diagnostics = [{"code": "FixtureRule", "severity": "Warning", "message": "fixture diagnostic", "start_line": 0, "start_column": 0, "end_line": 0, "end_column": 1}]
+        severities = {"warning": "Warning", "major": "Major", "critical": "Critical", "blocker": "Blocker"}
+        if mode in severities and index == 0:
+            diagnostics = [{"code": "FixtureRule", "severity": severities[mode], "message": "fixture diagnostic", "start_line": 0, "start_column": 0, "end_line": 0, "end_column": 1}]
             total += 1
         event = {"type": "file", "path": str(path), "diagnostics": diagnostics}
         if mode == "file-error":

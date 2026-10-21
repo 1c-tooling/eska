@@ -30,9 +30,11 @@ pub struct Diagnostic {
     pub tags: Vec<String>,
 }
 
-/// These names are the exact published JSONL severities, independent of the CLI locale.
+/// Public report categories follow upstream's LSP severity mapping, independent of the CLI locale.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Severity {
+    /// Published JSONL also uses these Sonar levels; upstream presents all three as LSP errors.
+    #[serde(alias = "Blocker", alias = "Critical", alias = "Major")]
     Error,
     Warning,
     Information,

@@ -20,8 +20,16 @@ fn delegated_check_preserves_complete_threshold_and_incomplete_results() {
     let original = "\u{feff}Процедура Пример()\r\n    А = 1;\r\nКонецПроцедуры\r\n";
     fs::write(&module, original).unwrap();
     let analyzer = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/analyzer-check.py");
-    for (mode, code, complete) in [("ok", 0, true), ("warning", 1, true), ("no-done", 3, false)] {
+    for (mode, code, complete) in [
+        ("ok", 0, true),
+        ("warning", 1, true),
+        ("major", 1, true),
+        ("critical", 1, true),
+        ("blocker", 1, true),
+        ("no-done", 3, false),
+    ] {
         fs::write(root.join("stream-mode"), mode).unwrap();
+        let mut localized = Vec::new();
         for locale in ["ru", "en"] {
             let mut outputs = Vec::new();
             for owner in ["eska", "eska-check"] {
@@ -46,12 +54,20 @@ fn delegated_check_preserves_complete_threshold_and_incomplete_results() {
                 assert_eq!(output.status.code(), Some(code), "{output:?}");
                 let document: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
                 assert_eq!(document["complete"], complete);
+                if matches!(mode, "major" | "critical" | "blocker") {
+                    assert_eq!(document["status"], "threshold_exceeded");
+                    assert_eq!(document["counts"]["errors"], 1);
+                    assert_eq!(document["counts"]["warnings"], 0);
+                    assert_eq!(document["files"][0]["diagnostics"][0]["severity"], "Error");
+                }
                 outputs.push(output);
             }
             assert_eq!(outputs[0].stdout, outputs[1].stdout);
             assert_eq!(outputs[0].stderr, outputs[1].stderr);
+            localized.push(outputs[0].stdout.clone());
             assert_eq!(fs::read(&module).unwrap(), original.as_bytes());
         }
+        assert_eq!(localized[0], localized[1]);
     }
 }
 

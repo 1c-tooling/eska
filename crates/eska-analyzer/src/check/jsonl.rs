@@ -183,6 +183,23 @@ mod tests {
         output
     }
 
+    /// Current upstream Sonar severities must survive complete stream validation as public errors.
+    #[test]
+    fn normalizes_published_error_severities() {
+        let expected = BTreeSet::from([PathBuf::from("/selected/Module.bsl")]);
+        for severity in ["Blocker", "Critical", "Major", "Error"] {
+            let mut values = events();
+            values[1]["diagnostics"][0]["severity"] = json!(severity);
+            let files = read(stream(&values).as_slice(), &expected).unwrap();
+            let diagnostic = &files[0].diagnostics[0];
+            assert_eq!(diagnostic.severity, super::super::Severity::Error);
+            assert_eq!(
+                serde_json::to_value(diagnostic).unwrap()["severity"],
+                "Error"
+            );
+        }
+    }
+
     /// A malformed coordinate, severity, order or trailing event can never become a clean result.
     #[test]
     fn validates_diagnostics_and_event_order() {
@@ -190,6 +207,9 @@ mod tests {
         let valid = events();
         assert!(read(stream(&valid).as_slice(), &expected).is_ok());
         let mut invalid = Vec::new();
+        let mut values = events();
+        values[1]["diagnostics"][0]["severity"] = json!("UnknownSeverity");
+        invalid.push(values);
         for field in ["code", "message", "severity"] {
             let mut values = events();
             values[1]["diagnostics"][0][field] = json!("");
