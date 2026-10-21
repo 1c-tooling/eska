@@ -27,7 +27,7 @@ schema 1 без target не принимается установщиком. ZIP
 имеют собственную schema 1; эти номера не связаны с Metadata API.
 
 `tools/package_components.py` создаёт по одному ZIP на выбранный инструмент,
-`release.json`, `SHA256SUMS` и три Python-файла установщика. Имя архива:
+`release.json`, `SHA256SUMS`, LICENSE и три Python-файла установщика. Имя архива:
 `<tool>-<version>-<target>.zip`. Установка не требует Cargo, Git, Node или
 оболочки `eska`; для этого bootstrap нужен Python 3.11+. Установленные Rust
 инструменты от Python не зависят. Платформа 1С и bsl-analyzer поставляются
@@ -146,7 +146,7 @@ python3 -B BUNDLE/components.py recover --root PREFIX --transaction STAGING --fo
 перед изменениями; ручная подмена binary вне установщика не считается принятой
 управляемой установкой. Help/version и `__tool-contract` доступны до этого gate.
 
-Текущий полный прогон: 902 Rust-теста и 12 Python-сценариев прошли, 12 Rust-проверок
+Текущий полный прогон: 902 Rust-теста и 13 Python-сценариев прошли, 12 Rust-проверок
 ignored. Проверены обе локали, прямые executable и оболочка, read-only preview,
 выборочные update/remove, offline-повтор, ошибки контрактов/путей/checksum,
 rollback, конфликт восстановления и реальный SIGTERM с reap дочернего probe.

@@ -62,6 +62,7 @@ def build(root, binaries, output, selected):
             releases[tool] = {"archive": name, "sha256": digest(stage / name), "size": (stage / name).stat().st_size, "contract": value}
         index = {"schema_version": 1, "version": common_version, "target": target, "components": releases}
         (stage / "release.json").write_bytes(json_bytes(index))
+        shutil.copyfile(root / "LICENSE", stage / "LICENSE")
         for name in ("components.py", "component_installation.py", "component_package.py"):
             shutil.copyfile(root / "tools" / name, stage / name)
         checksums = "".join(f"{digest(path)}  {path.name}\n" for path in sorted(stage.iterdir()) if path.is_file())
