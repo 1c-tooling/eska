@@ -259,6 +259,25 @@ class InstallationTests(unittest.TestCase):
         self.assertEqual({path.name for path in outside.iterdir()}, {"keep"})
         self.assertEqual((outside / "keep").read_bytes(), b"user data")
 
+    def test_shared_claim_recovery_never_evicts_a_live_or_unknown_owner(self):
+        """Explorer and CLI share one nonce claim; only explicit recovery may remove a dead owner."""
+        self.root.mkdir()
+        claim = self.root / ".eska-components.claim"
+        active = {"schema_version": 1, "pid": os.getpid(), "nonce": "a" * 32}
+        claim.write_bytes(package.json_bytes(active))
+        self.failure("busy", lambda: self.apply())
+        with self.assertRaises(package.Failure):
+            with package.installation_lock(self.root, recover_claim=True):
+                self.fail("live owner evicted")
+        self.assertEqual(json.loads(claim.read_bytes()), active)
+        child = subprocess.Popen([sys.executable, "-c", "pass"])
+        child.wait(timeout=5)
+        claim.write_bytes(package.json_bytes({**active, "pid": child.pid}))
+        with package.installation_lock(self.root, recover_claim=True):
+            self.assertEqual(json.loads(claim.read_bytes())["pid"], os.getpid())
+        self.assertFalse(claim.exists())
+        self.assertFalse((self.root / ".eska-components.recovering").exists())
+
     def test_cli_failure_json_is_locale_independent(self):
         """The same rejected archive has one machine result while help remains localized."""
         data, checksum = fixture()

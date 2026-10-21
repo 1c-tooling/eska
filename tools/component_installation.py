@@ -295,7 +295,7 @@ def remove(root, tool, check=False):
 def recover(root, stage):
     """Explicitly restore an interrupted owned transaction after validating all live hashes."""
     require(stage.parent == root and not root.is_symlink(), "path", stage)
-    with installation_lock(root):
+    with installation_lock(root, recover_claim=True):
         value = read_journal(stage)
         restore(root, stage)
         shutil.rmtree(stage)

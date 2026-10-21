@@ -7,6 +7,7 @@ import os
 from pathlib import Path, PurePosixPath
 import platform
 import re
+import secrets
 import stat
 import subprocess
 import tempfile
@@ -234,8 +235,8 @@ def probe(executable, directory):
 
 
 @contextmanager
-def installation_lock(root):
-    """Serialise component transactions with an OS lock released even after process termination."""
+def installation_lock(root, recover_claim=False):
+    """Coordinate native CLI writers and the Node-based Explorer through one exclusive claim."""
     root.mkdir(parents=True, exist_ok=True)
     path = root / ".eska-components.lock"
     require(not path.is_symlink(), "path", path)
@@ -253,11 +254,93 @@ def installation_lock(root):
                 fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError as error:
             raise Failure("busy", root) from error
+        claim = root / ".eska-components.claim"
+        token = json_bytes({"schema_version": 1, "pid": os.getpid(), "nonce": secrets.token_hex(16)})
+        claimed = False
+        identity = None
         try:
+            if recover_claim:
+                recover_dead_claim(root)
+            require(not os.path.lexists(root / ".eska-components.recovering"), "busy", root)
+            try:
+                with claim.open("xb") as owner:
+                    claimed = True
+                    info = os.fstat(owner.fileno())
+                    identity = (info.st_dev, info.st_ino)
+                    owner.write(token)
+                    owner.flush()
+                    os.fsync(owner.fileno())
+            except FileExistsError as error:
+                raise Failure("busy", claim) from error
+            require(not os.path.lexists(root / ".eska-components.recovering"), "busy", root)
             yield
         finally:
-            if os.name == "nt":
-                stream.seek(0)
-                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
-            else:
-                fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+            try:
+                if claimed and not claim.is_symlink() and claim.exists():
+                    info = claim.stat()
+                    if (info.st_dev, info.st_ino) == identity:
+                        claim.unlink()
+            finally:
+                if os.name == "nt":
+                    stream.seek(0)
+                    msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+
+
+def process_alive(pid):
+    """Inspect process existence without sending termination signals, including on Windows."""
+    if os.name != "nt":
+        try:
+            os.kill(pid, 0)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+    import ctypes
+    from ctypes import wintypes
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.GetExitCodeProcess.argtypes = (wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD))
+    kernel.CloseHandle.argtypes = (wintypes.HANDLE,)
+    handle = kernel.OpenProcess(0x1000, False, pid)
+    if not handle:
+        return ctypes.get_last_error() != 87
+    try:
+        status = wintypes.DWORD()
+        return not kernel.GetExitCodeProcess(handle, ctypes.byref(status)) or status.value == 259
+    finally:
+        kernel.CloseHandle(handle)
+
+
+def recover_dead_claim(root):
+    """Explicit recovery serializes claim removal; live or unidentifiable owners remain protected."""
+    marker, claim = root / ".eska-components.recovering", root / ".eska-components.claim"
+    token = json_bytes({"schema_version": 1, "pid": os.getpid(), "nonce": secrets.token_hex(16)})
+    try:
+        owner = marker.open("xb")
+    except FileExistsError as error:
+        raise Failure("busy", marker) from error
+    info = os.fstat(owner.fileno())
+    identity = (info.st_dev, info.st_ino)
+    try:
+        with owner:
+            owner.write(token)
+            owner.flush()
+            os.fsync(owner.fileno())
+        if not os.path.lexists(claim):
+            return
+        require(not claim.is_symlink() and claim.is_file() and claim.stat().st_size <= 1024, "busy", claim)
+        value = parse_json(claim.read_bytes())
+        keys(value, ("schema_version", "pid", "nonce"))
+        require(value["schema_version"] == 1 and type(value["pid"]) is int and 0 < value["pid"] <= 2**31 - 1
+                and isinstance(value["nonce"], str) and re.fullmatch("[0-9a-f]{32}", value["nonce"]), "busy", claim)
+        require(not process_alive(value["pid"]), "busy", claim)
+        claim.unlink()
+    finally:
+        if not marker.is_symlink() and marker.exists():
+            info = marker.stat()
+            if (info.st_dev, info.st_ino) == identity:
+                marker.unlink()
