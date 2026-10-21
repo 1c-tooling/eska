@@ -78,17 +78,19 @@ pub fn run() -> ExitCode {
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
     match cli.command {
         Commands::Bridge(args) => args.run(&cli.project_dir),
-        Commands::Clone(args) => args.run(&cli.project_dir, &localizer),
-        Commands::Diff(args) => args.run(&cli.project_dir, &localizer),
-        Commands::Finish(_) => commands::finish::FinishArgs::run(&cli.project_dir, &localizer),
-        Commands::History(args) => args.run(&cli.project_dir, &localizer),
-        Commands::Save(args) => args.run(&cli.project_dir, &localizer),
-        Commands::Shelve(args) => args.run(&cli.project_dir, &localizer),
-        Commands::Unshelve(args) => args.run(&cli.project_dir, &localizer),
-        Commands::Shelves(args) => args.run(&cli.project_dir, &localizer),
-        Commands::Start(args) => args.run(&cli.project_dir, &localizer),
-        Commands::Status(args) => args.run(&cli.project_dir, &localizer),
-        Commands::Switch(args) => args.run(&cli.project_dir, &localizer),
+        Commands::Clone(args) => commands::clone::run(&args, &cli.project_dir, &localizer),
+        Commands::Diff(args) => commands::diff::run(&args, &cli.project_dir, &localizer),
+        Commands::Finish(_) => commands::finish::run(&cli.project_dir, &localizer),
+        Commands::History(args) => commands::history::run(&args, &cli.project_dir, &localizer),
+        Commands::Save(args) => commands::save::run(&args, &cli.project_dir, &localizer),
+        Commands::Shelve(args) => commands::shelves::shelve(&args, &cli.project_dir, &localizer),
+        Commands::Unshelve(args) => {
+            commands::shelves::unshelve(&args, &cli.project_dir, &localizer)
+        }
+        Commands::Shelves(args) => commands::shelves::list(&args, &cli.project_dir, &localizer),
+        Commands::Start(args) => commands::start::run(&args, &cli.project_dir, &localizer),
+        Commands::Status(args) => commands::status::run(&args, &cli.project_dir, &localizer),
+        Commands::Switch(args) => commands::switch::run(&args, &cli.project_dir, &localizer),
     }
 }
 

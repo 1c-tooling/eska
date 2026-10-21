@@ -1,12 +1,8 @@
 //! Arguments, diagnostics and help for `eska clone`.
 
-use std::{
-    ffi::OsString,
-    path::{Path, PathBuf},
-    process::ExitCode,
-};
+pub use eska_presentation::arguments::vcs::clone::{CloneArgs, localize};
 
-use clap::{ArgAction, Args};
+use std::{path::Path, process::ExitCode};
 
 use crate::{
     cli::{
@@ -16,25 +12,19 @@ use crate::{
     project::clone::{self, CloneError},
 };
 
-#[derive(Debug, Args)]
-pub struct CloneArgs {
-    repository: OsString,
-    directory: Option<PathBuf>,
-    #[arg(long, default_value = "origin")]
-    remote: String,
-    #[arg(short, long, action = ArgAction::Help)]
-    help: Option<bool>,
+struct CloneHandler<'a> {
+    args: &'a CloneArgs,
 }
 
-impl CloneArgs {
+impl CloneHandler<'_> {
     /// Validate and execute one clone request.
     #[must_use]
     pub fn run(&self, base: &Path, localizer: &Localizer) -> ExitCode {
         let plan = match clone::inspect(
             base,
-            &self.repository,
-            self.directory.as_deref(),
-            &self.remote,
+            &self.args.repository,
+            self.args.directory.as_deref(),
+            &self.args.remote,
         ) {
             Ok(plan) => plan,
             Err(error) => {
@@ -120,29 +110,8 @@ fn path_message(localizer: &Localizer, key: &str, path: &Path) -> String {
     )
 }
 
-/// Attach localized arguments without changing the command contract.
+/// Execute parsed VCS options in the repository owner.
 #[must_use]
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("clone-about"))
-        .override_usage(localizer.text("clone-usage"))
-        .help_template(format!(
-            "{{about-with-newline}}\n{}: {{usage}}\n\n{}:\n{{positionals}}\n\n{}:\n{{options}}",
-            localizer.text("cli-usage"),
-            localizer.text("cli-arguments"),
-            localizer.text("cli-options")
-        ))
-        .mut_arg("repository", |arg| {
-            arg.help(localizer.text("clone-repository-help"))
-                .value_name(localizer.text("clone-repository-value"))
-        })
-        .mut_arg("directory", |arg| {
-            arg.help(localizer.text("clone-directory-help"))
-                .value_name(localizer.text("cli-project-dir-value"))
-        })
-        .mut_arg("remote", |arg| {
-            arg.help(localizer.text("clone-remote-help"))
-                .value_name(localizer.text("clone-remote-value"))
-        })
-        .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
+pub fn run(args: &CloneArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    CloneHandler { args }.run(directory, localizer)
 }

@@ -1,8 +1,8 @@
 //! Localized CLI presentation for completing the active workflow task.
 
-use std::{path::Path, process::ExitCode};
+pub use eska_presentation::arguments::vcs::finish::{FinishArgs, localize};
 
-use clap::Args;
+use std::{path::Path, process::ExitCode};
 
 use crate::{
     cli::{
@@ -12,57 +12,40 @@ use crate::{
     project::{discovery, finish},
 };
 
-#[derive(Debug, Args)]
-pub struct FinishArgs {
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-}
-
-impl FinishArgs {
-    /// Execute the selected VCS operation with localized presentation.
-    #[must_use]
-    pub fn run(project_dir: &Path, localizer: &Localizer) -> ExitCode {
-        let project = match discovery::discover(project_dir) {
-            Ok(project) => project,
-            Err(error) => {
-                eprintln!("{}", diagnostics::present_project_error(&error, localizer));
-                return ExitCode::FAILURE;
-            }
-        };
-        let result = match finish::execute(&project) {
-            Ok(result) => result,
-            Err(error) => {
-                eprintln!("{}", present_error(&error, localizer));
-                return ExitCode::FAILURE;
-            }
-        };
-        let key = if result.branch_deleted {
-            "finish-completed-deleted"
-        } else {
-            "finish-completed-preserved"
-        };
-        println!(
-            "{}",
-            localizer.format(
-                key,
-                &[
-                    ("task", LocalizationValue::Text(&result.task)),
-                    ("task_branch", LocalizationValue::Text(&result.task_branch)),
-                    ("base", LocalizationValue::Text(&result.base_branch)),
-                ],
-            )
-        );
-        ExitCode::SUCCESS
-    }
-}
-
-/// Attach localized arguments without changing the command contract.
+/// Execute the selected VCS operation with localized presentation.
 #[must_use]
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("finish-about"))
-        .override_usage(localizer.text("finish-usage"))
-        .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
+pub fn run(project_dir: &Path, localizer: &Localizer) -> ExitCode {
+    let project = match discovery::discover(project_dir) {
+        Ok(project) => project,
+        Err(error) => {
+            eprintln!("{}", diagnostics::present_project_error(&error, localizer));
+            return ExitCode::FAILURE;
+        }
+    };
+    let result = match finish::execute(&project) {
+        Ok(result) => result,
+        Err(error) => {
+            eprintln!("{}", present_error(&error, localizer));
+            return ExitCode::FAILURE;
+        }
+    };
+    let key = if result.branch_deleted {
+        "finish-completed-deleted"
+    } else {
+        "finish-completed-preserved"
+    };
+    println!(
+        "{}",
+        localizer.format(
+            key,
+            &[
+                ("task", LocalizationValue::Text(&result.task)),
+                ("task_branch", LocalizationValue::Text(&result.task_branch)),
+                ("base", LocalizationValue::Text(&result.base_branch)),
+            ],
+        )
+    );
+    ExitCode::SUCCESS
 }
 
 fn present_error(error: &finish::FinishError, localizer: &Localizer) -> String {

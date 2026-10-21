@@ -1,3 +1,3 @@
-//! Shared standalone VCS command presentation.
+//! Shared VCS metadata keeps help independent of repository execution.
 
-pub(super) use eska_vcs::cli::commands::status::*;
+pub(super) use eska_presentation::arguments::vcs::status::{StatusArgs, localize};

@@ -1,5 +1,8 @@
 //! Argument parsing, project selection and presentation dispatch for `eska diff`.
 
+use eska_presentation::arguments::vcs::diff::OutputFormat;
+pub use eska_presentation::arguments::vcs::diff::{DiffArgs, localize};
+
 mod analysis;
 mod human;
 mod json;
@@ -24,7 +27,6 @@ use analysis::{
     NamedSemanticDiff, analyze_revision_semantics, analyze_workspace_group,
     analyze_workspace_revision_group, analyze_workspace_semantics,
 };
-use clap::{Args, ValueEnum};
 use human::{
     render_human, render_revision_human, render_semantic_human, render_workspace_human,
     render_workspace_revision_human, render_workspace_semantic_human, styling_enabled,
@@ -40,47 +42,11 @@ use raw::{
 };
 use std::{path::Path, process::ExitCode};
 
-#[derive(Debug, Args)]
-pub struct DiffArgs {
-    #[arg(value_name = "REVISION", num_args = 0..=2)]
-    revisions: Vec<String>,
-
-    #[arg(long, requires = "revisions")]
-    since_branch_point: bool,
-
-    #[arg(long, conflicts_with = "format")]
-    raw: bool,
-
-    #[arg(long)]
-    semantic: bool,
-
-    #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
-    format: OutputFormat,
-
-    #[command(flatten)]
-    selectors: DiffSelectors,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct DiffHandler<'a> {
+    args: &'a DiffArgs,
 }
 
-#[derive(Debug, Args)]
-struct DiffSelectors {
-    #[arg(short = 'p', long)]
-    project: Vec<String>,
-
-    #[arg(long)]
-    workspace: bool,
-}
-
-#[derive(Clone, Copy, Debug, Default, ValueEnum)]
-enum OutputFormat {
-    #[default]
-    Human,
-    Json,
-}
-
-impl DiffArgs {
+impl DiffHandler<'_> {
     /// Discover the project, inspect its file changes and select one presentation.
     #[must_use]
     pub fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
@@ -93,8 +59,8 @@ impl DiffArgs {
         };
         let selection = match select_projects(
             &context,
-            &self.selectors.project,
-            self.selectors.workspace,
+            &self.args.selectors.project,
+            self.args.selectors.workspace,
             SelectionIntent::ReadOnly,
         ) {
             Ok(selection) => selection,
@@ -130,9 +96,9 @@ impl DiffArgs {
             eprintln!("{}", localizer.text("project-selector-single-required"));
             return ExitCode::FAILURE;
         }
-        let include_workspace_files = self.selectors.workspace
-            || (self.selectors.project.is_empty() && current_member.is_none());
-        if self.revisions.is_empty() {
+        let include_workspace_files = self.args.selectors.workspace
+            || (self.args.selectors.project.is_empty() && current_member.is_none());
+        if self.args.revisions.is_empty() {
             let changes =
                 match diff::inspect_workspace(workspace, &selected, include_workspace_files) {
                     Ok(changes) => changes,
@@ -140,15 +106,15 @@ impl DiffArgs {
                 };
             self.render_workspace_group(&changes, &selected, localizer)
         } else {
-            let from = &self.revisions[0];
-            let to = self.revisions.get(1).map_or("HEAD", String::as_str);
+            let from = &self.args.revisions[0];
+            let to = self.args.revisions.get(1).map_or("HEAD", String::as_str);
             let changes = match diff::compare_workspace(
                 workspace,
                 &selected,
                 include_workspace_files,
                 from,
                 to,
-                self.since_branch_point,
+                self.args.since_branch_point,
             ) {
                 Ok(changes) => changes,
                 Err(error) => return report_error(&error, localizer),
@@ -159,12 +125,12 @@ impl DiffArgs {
 
     /// Keep single-project comparison and output selection together.
     fn run_project(&self, project: &Project, localizer: &Localizer) -> ExitCode {
-        if self.revisions.is_empty() {
+        if self.args.revisions.is_empty() {
             let changes = match diff::inspect(project) {
                 Ok(changes) => changes,
                 Err(error) => return report_error(&error, localizer),
             };
-            if self.semantic {
+            if self.args.semantic {
                 let changes = match analyze_workspace_semantics(project, &changes, localizer) {
                     Ok(changes) => changes,
                     Err(error) => return self.report_semantic_error(&error, "semantic", localizer),
@@ -173,13 +139,13 @@ impl DiffArgs {
             }
             self.render_workspace(&changes, localizer)
         } else {
-            let from = &self.revisions[0];
-            let to = self.revisions.get(1).map_or("HEAD", String::as_str);
-            let changes = match diff::compare(project, from, to, self.since_branch_point) {
+            let from = &self.args.revisions[0];
+            let to = self.args.revisions.get(1).map_or("HEAD", String::as_str);
+            let changes = match diff::compare(project, from, to, self.args.since_branch_point) {
                 Ok(changes) => changes,
                 Err(error) => return report_error(&error, localizer),
             };
-            if self.semantic {
+            if self.args.semantic {
                 let semantic = match analyze_revision_semantics(project, &changes, localizer) {
                     Ok(changes) => changes,
                     Err(error) => return self.report_semantic_error(&error, "semantic", localizer),
@@ -192,11 +158,11 @@ impl DiffArgs {
 
     /// Render the unchanged workspace comparison contract.
     fn render_workspace(&self, changes: &ProjectDiff, localizer: &Localizer) -> ExitCode {
-        if self.raw {
+        if self.args.raw {
             print!("{}", render_raw(changes));
             return ExitCode::SUCCESS;
         }
-        match self.format {
+        match self.args.format {
             OutputFormat::Human => {
                 println!("{}", render_human(changes, localizer, styling_enabled()));
                 ExitCode::SUCCESS
@@ -207,11 +173,11 @@ impl DiffArgs {
 
     /// Render a committed revision comparison without workspace-stage terminology.
     fn render_revisions(&self, changes: &RevisionProjectDiff, localizer: &Localizer) -> ExitCode {
-        if self.raw {
+        if self.args.raw {
             print!("{}", render_revision_raw(changes));
             return ExitCode::SUCCESS;
         }
-        match self.format {
+        match self.args.format {
             OutputFormat::Human => {
                 println!(
                     "{}",
@@ -230,11 +196,11 @@ impl DiffArgs {
         revisions: Option<&RevisionProjectDiff>,
         localizer: &Localizer,
     ) -> ExitCode {
-        if self.raw {
+        if self.args.raw {
             print!("{}", render_semantic_raw(changes));
             return ExitCode::SUCCESS;
         }
-        match self.format {
+        match self.args.format {
             OutputFormat::Human => {
                 println!(
                     "{}",
@@ -255,7 +221,7 @@ impl DiffArgs {
         selected: &[&WorkspaceMember],
         localizer: &Localizer,
     ) -> ExitCode {
-        if self.semantic {
+        if self.args.semantic {
             let semantic = match analyze_workspace_group(changes, selected, localizer) {
                 Ok(changes) => changes,
                 Err(error) => {
@@ -263,7 +229,7 @@ impl DiffArgs {
                 }
             };
             return render_workspace_semantic(
-                self,
+                self.args,
                 &semantic,
                 changes
                     .workspace_files
@@ -273,11 +239,11 @@ impl DiffArgs {
                 localizer,
             );
         }
-        if self.raw {
+        if self.args.raw {
             print!("{}", render_workspace_raw(changes));
             return ExitCode::SUCCESS;
         }
-        match self.format {
+        match self.args.format {
             OutputFormat::Human => {
                 println!(
                     "{}",
@@ -296,7 +262,7 @@ impl DiffArgs {
         selected: &[&WorkspaceMember],
         localizer: &Localizer,
     ) -> ExitCode {
-        if self.semantic {
+        if self.args.semantic {
             let semantic = match analyze_workspace_revision_group(changes, selected, localizer) {
                 Ok(changes) => changes,
                 Err(error) => {
@@ -304,7 +270,7 @@ impl DiffArgs {
                 }
             };
             return render_workspace_semantic(
-                self,
+                self.args,
                 &semantic,
                 changes
                     .workspace_files
@@ -314,11 +280,11 @@ impl DiffArgs {
                 localizer,
             );
         }
-        if self.raw {
+        if self.args.raw {
             print!("{}", render_workspace_revision_raw(changes));
             return ExitCode::SUCCESS;
         }
-        match self.format {
+        match self.args.format {
             OutputFormat::Human => {
                 println!(
                     "{}",
@@ -340,7 +306,7 @@ impl DiffArgs {
         localizer: &Localizer,
     ) -> ExitCode {
         eprintln!("{}", localizer.text("diff-semantic-error"));
-        if !self.raw && matches!(self.format, OutputFormat::Json) {
+        if !self.args.raw && matches!(self.args.format, OutputFormat::Json) {
             let document = SemanticErrorDocument {
                 schema_version: 4,
                 kind,
@@ -398,42 +364,6 @@ fn render_workspace_semantic(
     ExitCode::SUCCESS
 }
 
-/// Apply localized help text after clap has parsed the bootstrap locale.
-#[must_use]
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("diff-about"))
-        .override_usage(localizer.text("diff-usage"))
-        .mut_arg("revisions", |argument| {
-            argument
-                .help(localizer.text("diff-revisions-help"))
-                .value_name(localizer.text("diff-revisions-value"))
-        })
-        .mut_arg("since_branch_point", |argument| {
-            argument.help(localizer.text("diff-since-branch-point-help"))
-        })
-        .mut_arg("raw", |argument| {
-            argument.help(localizer.text("diff-raw-help"))
-        })
-        .mut_arg("semantic", |argument| {
-            argument.help(localizer.text("diff-semantic-help"))
-        })
-        .mut_arg("format", |argument| {
-            argument
-                .help(localizer.text("diff-format-help"))
-                .value_name(localizer.text("diff-format-value"))
-        })
-        .mut_arg("project", |argument| {
-            argument
-                .help(localizer.text("diff-project-help"))
-                .value_name(localizer.text("diff-project-value"))
-        })
-        .mut_arg("workspace", |argument| {
-            argument.help(localizer.text("diff-workspace-help"))
-        })
-        .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
-}
-
 /// Localize a structured diff error without leaking dependency diagnostics.
 fn present_error(error: &DiffError, localizer: &Localizer) -> String {
     match error {
@@ -459,4 +389,10 @@ fn present_error(error: &DiffError, localizer: &Localizer) -> String {
 fn report_error(error: &DiffError, localizer: &Localizer) -> ExitCode {
     eprintln!("{}", present_error(error, localizer));
     ExitCode::FAILURE
+}
+
+/// Execute parsed VCS options in the repository owner.
+#[must_use]
+pub fn run(args: &DiffArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    DiffHandler { args }.run(directory, localizer)
 }

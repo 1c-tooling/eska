@@ -1,8 +1,8 @@
 //! Localized CLI presentation for switching between existing workflow branches.
 
-use std::{path::Path, process::ExitCode};
+pub use eska_presentation::arguments::vcs::switch::{SwitchArgs, localize};
 
-use clap::{ArgGroup, Args};
+use std::{path::Path, process::ExitCode};
 
 use crate::{
     cli::{
@@ -14,29 +14,11 @@ use crate::{
     project::{discovery, switch},
 };
 
-#[derive(Debug, Args)]
-#[command(group(
-    ArgGroup::new("target")
-        .required(true)
-        .args(["task", "base"])
-))]
-pub struct SwitchArgs {
-    task: Option<String>,
-
-    #[arg(long)]
-    base: bool,
-
-    #[arg(long)]
-    dry_run: bool,
-
-    #[arg(long, value_enum, default_value = "human")]
-    format: OutputFormat,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct SwitchHandler<'a> {
+    args: &'a SwitchArgs,
 }
 
-impl SwitchArgs {
+impl SwitchHandler<'_> {
     /// Present a repository-wide switch or its read-only preview.
     #[must_use]
     pub fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
@@ -44,30 +26,31 @@ impl SwitchArgs {
             Ok(project) => project,
             Err(error) => {
                 return shelves::fail(
-                    self.format,
+                    self.args.format,
                     "project-discovery",
                     &diagnostics::present_context_error(&error, localizer),
                 );
             }
         };
         let target = self
+            .args
             .task
             .as_deref()
             .map_or(switch::SwitchTarget::Base, switch::SwitchTarget::Task);
-        let result = match switch::execute_context(&project, target, self.dry_run) {
+        let result = match switch::execute_context(&project, target, self.args.dry_run) {
             Ok(result) => result,
             Err(error) => {
                 if let switch::SwitchError::Shelf(error) = &error {
-                    return shelves::write_error(self.format, error, localizer);
+                    return shelves::write_error(self.args.format, error, localizer);
                 }
                 return shelves::fail(
-                    self.format,
+                    self.args.format,
                     error_code(&error),
                     &present_error(&error, localizer),
                 );
             }
         };
-        if matches!(self.format, OutputFormat::Json) {
+        if matches!(self.args.format, OutputFormat::Json) {
             return shelves::write_json(
                 &serde_json::json!({
                     "schema_version": 1, "operation": "switch", "dry_run": result.dry_run,
@@ -79,12 +62,12 @@ impl SwitchArgs {
             );
         }
         if let Some(saved) = &result.saved {
-            shelves::write_human(saved, false, self.dry_run, localizer);
+            shelves::write_human(saved, false, self.args.dry_run, localizer);
         }
         if let Some(restored) = &result.restored {
-            shelves::write_human(restored, true, self.dry_run, localizer);
+            shelves::write_human(restored, true, self.args.dry_run, localizer);
         }
-        let key = if self.dry_run {
+        let key = if self.args.dry_run {
             "switch-preview"
         } else if result.task.is_some() {
             "switch-task-activated"
@@ -104,29 +87,6 @@ impl SwitchArgs {
         );
         ExitCode::SUCCESS
     }
-}
-
-/// Localize help without changing command and option identifiers.
-#[must_use]
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("switch-about"))
-        .override_usage(localizer.text("switch-usage"))
-        .mut_arg("task", |argument| {
-            argument
-                .help(localizer.text("switch-task-help"))
-                .value_name(localizer.text("switch-task-value"))
-        })
-        .mut_arg("base", |argument| {
-            argument.help(localizer.text("switch-base-help"))
-        })
-        .mut_arg("format", |argument| {
-            argument.help(localizer.text("shelf-format-help"))
-        })
-        .mut_arg("dry_run", |argument| {
-            argument.help(localizer.text("shelf-dry-run-help"))
-        })
-        .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
 }
 
 /// Translate domain failures at the presentation boundary.
@@ -176,4 +136,10 @@ const fn error_code(error: &switch::SwitchError) -> &'static str {
         switch::SwitchError::Shelf(error) => shelves::error_code(error),
         switch::SwitchError::Command(_) => "command",
     }
+}
+
+/// Execute parsed VCS options in the repository owner.
+#[must_use]
+pub fn run(args: &SwitchArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    SwitchHandler { args }.run(directory, localizer)
 }

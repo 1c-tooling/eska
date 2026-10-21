@@ -366,3 +366,16 @@ build-проверок, workspace strict Clippy и Rustdoc. Новых кома�
 строк эта часть не добавляет. Экспериментальный Rust CLI API теперь использует
 функции `commands::*::run(&Args, ...)` вместо методов выполнения на Args;
 машинные форматы и пользовательский CLI сохранены.
+
+## Общая схема VCS CLI
+
+Аргументы clone/status/diff/history/start/switch/save/finish и полок находятся
+в [чистом presentation-модуле](../crates/eska-presentation/src/arguments/vcs/mod.rs).
+Предел истории, selectors, clap groups и formats сохранены в единственном
+описании. VCS-обработчики заимствуют эти данные, а CLI оболочки больше не
+импортирует их из библиотеки repository/workflow. Runtime reexports оболочки
+пока остаются переходным потребителем VCS до общей очистки.
+
+Прошли 219 CLI-сценариев и 91 VCS unit/integration/standalone test, workspace
+strict Clippy и Rustdoc. Код исполнения и JSON-схемы не менялись; экспериментальные
+Rust-входы обработчиков стали функциями модуля с `&Args`.

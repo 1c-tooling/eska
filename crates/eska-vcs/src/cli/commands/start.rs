@@ -1,8 +1,8 @@
 //! Localized CLI presentation for starting work according to workflow policy.
 
-use std::{path::Path, process::ExitCode};
+pub use eska_presentation::arguments::vcs::start::{StartArgs, localize};
 
-use clap::Args;
+use std::{path::Path, process::ExitCode};
 
 use crate::{
     cli::{diagnostics, localization::Localizer},
@@ -12,15 +12,11 @@ use crate::{
 
 use crate::cli::localization::LocalizationValue;
 
-#[derive(Debug, Args)]
-pub struct StartArgs {
-    task: String,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct StartHandler<'a> {
+    args: &'a StartArgs,
 }
 
-impl StartArgs {
+impl StartHandler<'_> {
     /// Execute the selected VCS operation with localized presentation.
     #[must_use]
     pub fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
@@ -31,7 +27,7 @@ impl StartArgs {
                 return ExitCode::FAILURE;
             }
         };
-        let result = match start::execute(&project, &self.task) {
+        let result = match start::execute(&project, &self.args.task) {
             Ok(result) => result,
             Err(error) => {
                 eprintln!("{}", present_error(&error, localizer));
@@ -56,20 +52,6 @@ impl StartArgs {
         );
         ExitCode::SUCCESS
     }
-}
-
-/// Attach localized arguments without changing the command contract.
-#[must_use]
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("start-about"))
-        .override_usage(localizer.text("start-usage"))
-        .mut_arg("task", |argument| {
-            argument
-                .help(localizer.text("start-task-help"))
-                .value_name(localizer.text("start-task-value"))
-        })
-        .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
 }
 
 fn present_error(error: &start::StartError, localizer: &Localizer) -> String {
@@ -157,4 +139,10 @@ const fn command_error_key(error: &command::Error) -> &'static str {
             "start-repository-error"
         }
     }
+}
+
+/// Execute parsed VCS options in the repository owner.
+#[must_use]
+pub fn run(args: &StartArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    StartHandler { args }.run(directory, localizer)
 }

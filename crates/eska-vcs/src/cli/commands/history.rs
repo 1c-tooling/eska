@@ -1,12 +1,14 @@
 //! Localized human output and a stable JSON document for local commit history.
 
+use eska_presentation::arguments::vcs::history::OutputFormat;
+pub use eska_presentation::arguments::vcs::history::{HistoryArgs, localize};
+
 use std::{
     io::{self, IsTerminal},
     path::Path,
     process::ExitCode,
 };
 
-use clap::{Args, ValueEnum};
 use gix::bstr::{BStr, ByteSlice};
 use serde::Serialize;
 
@@ -22,35 +24,11 @@ use crate::{
     },
 };
 
-const DEFAULT_LIMIT: usize = 20;
-const MAX_LIMIT: usize = 1_000;
-
-#[derive(Debug, Args)]
-pub struct HistoryArgs {
-    #[arg(
-        short = 'n',
-        long,
-        default_value_t = DEFAULT_LIMIT,
-        value_parser = clap::builder::RangedU64ValueParser::<usize>::new()
-            .range(1..=MAX_LIMIT as u64)
-    )]
-    limit: usize,
-
-    #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
-    format: OutputFormat,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct HistoryHandler<'a> {
+    args: &'a HistoryArgs,
 }
 
-#[derive(Clone, Copy, Debug, Default, ValueEnum)]
-enum OutputFormat {
-    #[default]
-    Human,
-    Json,
-}
-
-impl HistoryArgs {
+impl HistoryHandler<'_> {
     /// Discover the project, read local history and select one presentation.
     /// Execute the selected VCS operation with localized presentation.
     #[must_use]
@@ -62,7 +40,7 @@ impl HistoryArgs {
                 return ExitCode::FAILURE;
             }
         };
-        let entries = match history::inspect(&project, self.limit) {
+        let entries = match history::inspect(&project, self.args.limit) {
             Ok(entries) => entries,
             Err(error) => {
                 eprintln!("{}", present_error(&error, localizer));
@@ -70,7 +48,7 @@ impl HistoryArgs {
             }
         };
 
-        match self.format {
+        match self.args.format {
             OutputFormat::Human => {
                 let interactive = io::stdout().is_terminal();
                 println!(
@@ -95,25 +73,6 @@ impl HistoryArgs {
         }
         ExitCode::SUCCESS
     }
-}
-
-/// Apply localized help after the bootstrap locale has been parsed.
-#[must_use]
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("history-about"))
-        .override_usage(localizer.text("history-usage"))
-        .mut_arg("limit", |argument| {
-            argument
-                .help(localizer.text("history-limit-help"))
-                .value_name(localizer.text("history-limit-value"))
-        })
-        .mut_arg("format", |argument| {
-            argument
-                .help(localizer.text("history-format-help"))
-                .value_name(localizer.text("history-format-value"))
-        })
-        .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
 }
 
 /// Map structured history failures to localized, dependency-independent diagnostics.
@@ -325,6 +284,12 @@ impl From<&HistoryEntry> for CommitDocument {
             task: entry.task.clone(),
         }
     }
+}
+
+/// Execute parsed VCS options in the repository owner.
+#[must_use]
+pub fn run(args: &HistoryArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    HistoryHandler { args }.run(directory, localizer)
 }
 
 #[cfg(test)]

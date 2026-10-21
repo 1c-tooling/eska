@@ -1,58 +1,49 @@
 //! Explicit repository-wide shelf commands and their localized arguments.
 
+use eska_presentation::arguments::vcs::shelves::MutationOptions;
+pub use eska_presentation::arguments::vcs::shelves::{
+    ShelveArgs, ShelvesArgs, UnshelveArgs, localize,
+};
+
 use crate::{
-    cli::{
-        localization::Localizer,
-        shelves::{self as presentation, OutputFormat},
-    },
+    cli::{localization::Localizer, shelves as presentation},
     vcs::shelves::{self, Session},
 };
-use clap::Args;
 use std::{path::Path, process::ExitCode};
 
-#[derive(Debug, Args)]
-pub struct ShelveArgs {
-    #[command(flatten)]
-    options: MutationOptions,
-}
-#[derive(Debug, Args)]
-pub struct UnshelveArgs {
-    id: Option<String>,
-    #[command(flatten)]
-    options: MutationOptions,
-}
-#[derive(Debug, Args)]
-struct MutationOptions {
-    #[arg(long)]
-    dry_run: bool,
-    #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
-    format: OutputFormat,
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-}
-#[derive(Debug, Args)]
-pub struct ShelvesArgs {
-    #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
-    format: OutputFormat,
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct ShelveHandler<'a> {
+    args: &'a ShelveArgs,
 }
 
-impl ShelveArgs {
+impl ShelveHandler<'_> {
     /// Save the current branch's repository-wide state or display its exact preview.
     #[must_use]
     pub fn run(&self, start: &Path, localizer: &Localizer) -> ExitCode {
-        self.options.run(start, false, None, localizer)
+        MutationOptionsHandler {
+            args: &self.args.options,
+        }
+        .run(start, false, None, localizer)
     }
 }
-impl UnshelveArgs {
+struct UnshelveHandler<'a> {
+    args: &'a UnshelveArgs,
+}
+
+impl UnshelveHandler<'_> {
     /// Restore the current branch's matching shelf without overwriting conflicts.
     #[must_use]
     pub fn run(&self, start: &Path, localizer: &Localizer) -> ExitCode {
-        self.options.run(start, true, self.id.as_deref(), localizer)
+        MutationOptionsHandler {
+            args: &self.args.options,
+        }
+        .run(start, true, self.args.id.as_deref(), localizer)
     }
 }
-impl MutationOptions {
+struct MutationOptionsHandler<'a> {
+    args: &'a MutationOptions,
+}
+
+impl MutationOptionsHandler<'_> {
     /// Dispatch one preflighted mutation with a shared read-only preview and error contract.
     fn run(
         &self,
@@ -61,11 +52,11 @@ impl MutationOptions {
         id: Option<&str>,
         localizer: &Localizer,
     ) -> ExitCode {
-        let repository = match presentation::repository(start, self.format, localizer) {
+        let repository = match presentation::repository(start, self.args.format, localizer) {
             Ok(repo) => repo,
             Err(code) => return code,
         };
-        let result = if self.dry_run {
+        let result = if self.args.dry_run {
             if restore {
                 shelves::restore_plan(&repository, id)
             } else {
@@ -81,45 +72,50 @@ impl MutationOptions {
             })
         };
         match result {
-            Ok(saved) => {
-                presentation::write_result(self.format, &saved, restore, self.dry_run, localizer)
-            }
-            Err(error) => presentation::write_error(self.format, &error, localizer),
+            Ok(saved) => presentation::write_result(
+                self.args.format,
+                &saved,
+                restore,
+                self.args.dry_run,
+                localizer,
+            ),
+            Err(error) => presentation::write_error(self.args.format, &error, localizer),
         }
     }
 }
-impl ShelvesArgs {
+struct ShelvesHandler<'a> {
+    args: &'a ShelvesArgs,
+}
+
+impl ShelvesHandler<'_> {
     /// List retained shelves without modifying the repository or filesystem.
     #[must_use]
     pub fn run(&self, start: &Path, localizer: &Localizer) -> ExitCode {
-        let repository = match presentation::repository(start, self.format, localizer) {
+        let repository = match presentation::repository(start, self.args.format, localizer) {
             Ok(repo) => repo,
             Err(code) => return code,
         };
         match shelves::list(&repository) {
-            Ok(saved) => presentation::write_list(self.format, &saved, localizer),
-            Err(error) => presentation::write_error(self.format, &error, localizer),
+            Ok(saved) => presentation::write_list(self.args.format, &saved, localizer),
+            Err(error) => presentation::write_error(self.args.format, &error, localizer),
         }
     }
 }
 
-/// Attach localized help only to the arguments supported by each shelf command.
+/// Execute parsed shelf options in the repository owner.
 #[must_use]
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    let name = command.get_name().to_owned();
-    let mut command = command
-        .about(localizer.text(&format!("{name}-about")))
-        .mut_arg("format", |arg| {
-            arg.help(localizer.text("shelf-format-help"))
-        })
-        .mut_arg("help", |arg| arg.help(localizer.text("cli-help")));
-    if name != "shelves" {
-        command = command.mut_arg("dry_run", |arg| {
-            arg.help(localizer.text("shelf-dry-run-help"))
-        });
-    }
-    if name == "unshelve" {
-        command = command.mut_arg("id", |arg| arg.help(localizer.text("shelf-id-help")));
-    }
-    command
+pub fn shelve(args: &ShelveArgs, start: &Path, localizer: &Localizer) -> ExitCode {
+    ShelveHandler { args }.run(start, localizer)
+}
+
+/// Execute parsed shelf options in the repository owner.
+#[must_use]
+pub fn unshelve(args: &UnshelveArgs, start: &Path, localizer: &Localizer) -> ExitCode {
+    UnshelveHandler { args }.run(start, localizer)
+}
+
+/// Execute parsed shelf options in the repository owner.
+#[must_use]
+pub fn list(args: &ShelvesArgs, start: &Path, localizer: &Localizer) -> ExitCode {
+    ShelvesHandler { args }.run(start, localizer)
 }

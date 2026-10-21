@@ -32,6 +32,7 @@ pub struct ConfigEditArgs {
     pub help: Option<bool>,
 }
 
+/// Localize native options without invoking the runtime owner.
 pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
     command
         .about(localizer.text("config-about"))

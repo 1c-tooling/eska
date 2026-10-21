@@ -1,12 +1,14 @@
 //! Localized and stable JSON presentation of the read-only project status.
 
+use eska_presentation::arguments::vcs::status::OutputFormat;
+pub use eska_presentation::arguments::vcs::status::{StatusArgs, localize};
+
 use std::{
     io::{self, IsTerminal},
     path::Path,
     process::ExitCode,
 };
 
-use clap::{Args, ValueEnum};
 use gix::bstr::ByteSlice;
 use serde::Serialize;
 
@@ -23,29 +25,11 @@ use crate::{
     },
 };
 
-#[derive(Debug, Args)]
-pub struct StatusArgs {
-    #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
-    format: OutputFormat,
-
-    #[arg(short = 'p', long)]
-    project: Vec<String>,
-
-    #[arg(long)]
-    workspace: bool,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct StatusHandler<'a> {
+    args: &'a StatusArgs,
 }
 
-#[derive(Clone, Copy, Debug, Default, ValueEnum)]
-enum OutputFormat {
-    #[default]
-    Human,
-    Json,
-}
-
-impl StatusArgs {
+impl StatusHandler<'_> {
     /// Execute the selected VCS operation with localized presentation.
     #[must_use]
     pub fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
@@ -58,8 +42,8 @@ impl StatusArgs {
         };
         let selection = match select_projects(
             &context,
-            &self.project,
-            self.workspace,
+            &self.args.project,
+            self.args.workspace,
             SelectionIntent::ReadOnly,
         ) {
             Ok(selection) => selection,
@@ -104,7 +88,7 @@ impl StatusArgs {
             return ExitCode::FAILURE;
         }
         let include_workspace_files =
-            self.workspace || (self.project.is_empty() && current_member.is_none());
+            self.args.workspace || (self.args.project.is_empty() && current_member.is_none());
         let status = match status::inspect_workspace(workspace, &selected, include_workspace_files)
         {
             Ok(status) => status,
@@ -117,7 +101,7 @@ impl StatusArgs {
     }
 
     fn render_project(&self, status: &ProjectStatus, localizer: &Localizer) -> ExitCode {
-        match self.format {
+        match self.args.format {
             OutputFormat::Human => {
                 println!("{}", render_human(status, localizer, styling_enabled()));
             }
@@ -133,7 +117,7 @@ impl StatusArgs {
     }
 
     fn render_workspace(&self, status: &WorkspaceStatus, localizer: &Localizer) -> ExitCode {
-        match self.format {
+        match self.args.format {
             OutputFormat::Human => println!(
                 "{}",
                 render_workspace_human(status, localizer, styling_enabled())
@@ -149,28 +133,6 @@ impl StatusArgs {
         }
         ExitCode::SUCCESS
     }
-}
-
-/// Attach localized arguments without changing the command contract.
-#[must_use]
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("status-about"))
-        .override_usage(localizer.text("status-usage"))
-        .mut_arg("format", |argument| {
-            argument
-                .help(localizer.text("status-format-help"))
-                .value_name(localizer.text("status-format-value"))
-        })
-        .mut_arg("project", |argument| {
-            argument
-                .help(localizer.text("status-project-help"))
-                .value_name(localizer.text("status-project-value"))
-        })
-        .mut_arg("workspace", |argument| {
-            argument.help(localizer.text("status-workspace-help"))
-        })
-        .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
 }
 
 fn present_error(error: &StatusError, localizer: &Localizer) -> String {
@@ -693,6 +655,12 @@ const fn head_name(head: HeadState) -> &'static str {
         HeadState::Detached => "detached",
         HeadState::Unborn => "unborn",
     }
+}
+
+/// Execute parsed VCS options in the repository owner.
+#[must_use]
+pub fn run(args: &StatusArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    StatusHandler { args }.run(directory, localizer)
 }
 
 #[cfg(test)]

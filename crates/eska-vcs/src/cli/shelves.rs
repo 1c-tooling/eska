@@ -13,17 +13,10 @@ use crate::{
         shelves::{Error, Shelf},
     },
 };
-use clap::ValueEnum;
+pub(super) use eska_presentation::arguments::vcs::shelves::OutputFormat;
 use gix::bstr::ByteSlice;
 use serde::Serialize;
 use std::{path::Path, process::ExitCode};
-
-#[derive(Clone, Copy, Debug, Default, ValueEnum)]
-pub(super) enum OutputFormat {
-    #[default]
-    Human,
-    Json,
-}
 
 #[derive(Serialize)]
 pub(super) struct ShelfDocument<'a> {

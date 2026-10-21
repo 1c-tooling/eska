@@ -2,6 +2,7 @@
 
 pub mod build;
 pub mod check;
+pub mod vcs;
 
 use std::ffi::OsStr;
 

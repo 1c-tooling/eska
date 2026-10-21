@@ -1,8 +1,9 @@
 //! Localized presentation and deterministic message drafts for saving a project `ChangeSet`.
 
+pub use eska_presentation::arguments::vcs::save::{SaveArgs, localize};
+
 use std::{collections::BTreeSet, path::Path, process::ExitCode};
 
-use clap::Args;
 use gix::bstr::ByteSlice;
 
 use crate::{
@@ -20,25 +21,11 @@ use crate::{
     vcs::command,
 };
 
-#[derive(Debug, Args)]
-pub struct SaveArgs {
-    #[arg(short, long, value_name = "MESSAGE")]
-    message: Option<String>,
-
-    #[arg(short = 'p', long)]
-    project: Vec<String>,
-
-    #[arg(long)]
-    workspace: bool,
-
-    #[arg(long)]
-    dry_run: bool,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct SaveHandler<'a> {
+    args: &'a SaveArgs,
 }
 
-impl SaveArgs {
+impl SaveHandler<'_> {
     /// Discover the project and save its complete current `ChangeSet`.
     #[must_use]
     pub fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
@@ -51,8 +38,8 @@ impl SaveArgs {
         };
         let selection = match select_projects(
             &context,
-            &self.project,
-            self.workspace,
+            &self.args.project,
+            self.args.workspace,
             SelectionIntent::ReadOnly,
         ) {
             Ok(selection) => selection,
@@ -66,7 +53,7 @@ impl SaveArgs {
         };
         let workspace_scope = match &context {
             DiscoveryContext::Workspace { current_member, .. } => {
-                self.workspace || (self.project.is_empty() && current_member.is_none())
+                self.args.workspace || (self.args.project.is_empty() && current_member.is_none())
             }
             DiscoveryContext::Standalone(_) => false,
         };
@@ -95,10 +82,10 @@ impl SaveArgs {
         name: Option<&str>,
         localizer: &Localizer,
     ) -> ExitCode {
-        if self.dry_run {
+        if self.args.dry_run {
             return self.preview_project(project, name, localizer);
         }
-        let result = if let Some(message) = self.message.as_deref() {
+        let result = if let Some(message) = self.args.message.as_deref() {
             save::execute(project, Some(message))
         } else {
             let draft = match generate_draft(project, localizer) {
@@ -114,10 +101,10 @@ impl SaveArgs {
     }
 
     fn save_workspace(&self, workspace: &Workspace, localizer: &Localizer) -> ExitCode {
-        if self.dry_run {
+        if self.args.dry_run {
             return self.preview_workspace(workspace, localizer);
         }
-        let result = if let Some(message) = self.message.as_deref() {
+        let result = if let Some(message) = self.args.message.as_deref() {
             save::execute_workspace(workspace, Some(message))
         } else {
             let draft = match generate_workspace_draft(workspace, localizer) {
@@ -138,7 +125,7 @@ impl SaveArgs {
         name: Option<&str>,
         localizer: &Localizer,
     ) -> ExitCode {
-        if let Some(message) = self.message.as_deref()
+        if let Some(message) = self.args.message.as_deref()
             && let Err(error) = save::validate_message(message)
         {
             return present_failure(&error, localizer);
@@ -147,7 +134,7 @@ impl SaveArgs {
             Ok(plan) => plan,
             Err(error) => return present_failure(&error, localizer),
         };
-        let message = match self.message.as_deref() {
+        let message = match self.args.message.as_deref() {
             Some(message) => message.to_owned(),
             None => match generate_draft(project, localizer) {
                 Ok(draft) => draft,
@@ -169,7 +156,7 @@ impl SaveArgs {
     }
 
     fn preview_workspace(&self, workspace: &Workspace, localizer: &Localizer) -> ExitCode {
-        if let Some(message) = self.message.as_deref()
+        if let Some(message) = self.args.message.as_deref()
             && let Err(error) = save::validate_message(message)
         {
             return present_failure(&error, localizer);
@@ -178,7 +165,7 @@ impl SaveArgs {
             Ok(plan) => plan,
             Err(error) => return present_failure(&error, localizer),
         };
-        let message = match self.message.as_deref() {
+        let message = match self.args.message.as_deref() {
             Some(message) => message.to_owned(),
             None => match generate_workspace_draft(workspace, localizer) {
                 Ok(draft) => draft,
@@ -622,31 +609,6 @@ fn present_diff_error(error: &diff::DiffError, localizer: &Localizer) -> String 
     }
 }
 
-/// Apply localized help text after clap has parsed the bootstrap locale.
-#[must_use]
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("save-about"))
-        .override_usage(localizer.text("save-usage"))
-        .mut_arg("message", |argument| {
-            argument
-                .help(localizer.text("save-message-help"))
-                .value_name(localizer.text("save-message-value"))
-        })
-        .mut_arg("project", |argument| {
-            argument
-                .help(localizer.text("save-project-help"))
-                .value_name(localizer.text("save-project-value"))
-        })
-        .mut_arg("workspace", |argument| {
-            argument.help(localizer.text("save-workspace-help"))
-        })
-        .mut_arg("dry_run", |argument| {
-            argument.help(localizer.text("save-dry-run-help"))
-        })
-        .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
-}
-
 fn present_error(error: &save::SaveError, localizer: &Localizer) -> String {
     match error {
         save::SaveError::Repository(_) => localizer.text("save-repository-error"),
@@ -714,4 +676,10 @@ fn path_error(localizer: &Localizer, key: &str, path: &str) -> String {
 
 fn short_id(id: &str) -> &str {
     &id[..id.len().min(7)]
+}
+
+/// Execute parsed VCS options in the repository owner.
+#[must_use]
+pub fn run(args: &SaveArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    SaveHandler { args }.run(directory, localizer)
 }
