@@ -83,7 +83,7 @@ struct Stored {
 /// One repository-wide mutation lock shared by all linked worktrees.
 pub struct Session<'a> {
     repository: &'a Repository,
-    _lock: File,
+    lock: File,
 }
 
 /// Enumerate fully captured shelves without creating directories or lock files.
@@ -180,6 +180,13 @@ fn select_restore(repository: &Repository, id: Option<&str>) -> Result<Shelf, Er
     Ok(shelf)
 }
 
+impl Drop for Session<'_> {
+    /// Release at the owner boundary; a concurrent fork may retain a duplicate until exec.
+    fn drop(&mut self) {
+        let _ = self.lock.unlock();
+    }
+}
+
 impl<'a> Session<'a> {
     /// Exclusively serialize eska shelf operations without waiting on a busy repository.
     ///
@@ -200,10 +207,7 @@ impl<'a> Session<'a> {
             TryLockError::WouldBlock => Error::Locked,
             TryLockError::Error(error) => Error::Io(error),
         })?;
-        Ok(Self {
-            repository,
-            _lock: lock,
-        })
+        Ok(Self { repository, lock })
     }
 
     /// Save exact bytes and staged objects before cleaning only the captured paths.
@@ -602,3 +606,6 @@ pub(crate) fn validate_saved(repository: &Repository, id: &str) -> Result<(), Er
     }
     validate_payloads(&stored, &directory)
 }
+
+#[cfg(test)]
+mod tests;
