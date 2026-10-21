@@ -1,8 +1,10 @@
 //! Arguments, prompts, diagnostics and help for `eska new`.
 
+pub use eska_presentation::arguments::project::new::{NewArgs, localize};
+
 use std::{
     io::{self, IsTerminal},
-    path::{Path, PathBuf},
+    path::Path,
     process::ExitCode,
 };
 
@@ -20,30 +22,16 @@ use crate::onboarding::{
     },
     vcs::workflow::WorkflowPreset,
 };
-use clap::{ArgAction, Args};
 
 use super::artifact;
 
 mod from;
 
-#[derive(Debug, Args)]
-pub struct NewArgs {
-    path: PathBuf,
-    #[arg(long, conflicts_with = "project_type")]
-    from: Option<PathBuf>,
-    #[command(flatten)]
-    platform: super::artifact::PlatformArgs,
-    #[arg(long = "type")]
-    project_type: Option<String>,
-    #[arg(long)]
-    workflow: Option<String>,
-    #[arg(long)]
-    no_vcs: bool,
-    #[arg(short, long, action = ArgAction::Help)]
-    help: Option<bool>,
+struct NewHandler<'a> {
+    args: &'a NewArgs,
 }
 
-impl NewArgs {
+impl NewHandler<'_> {
     /// Keep one cancellation owner alive until every file transaction has committed or rolled back.
     pub fn run(&self, base: &Path, localizer: &Localizer) -> ExitCode {
         let scope = match eska_tool_runtime::Operation::new() {
@@ -66,10 +54,10 @@ impl NewArgs {
         localizer: &Localizer,
         scope: &eska_tool_runtime::Operation,
     ) -> ExitCode {
-        if self.from.is_some() {
-            return from::run(self, base, localizer, scope);
+        if self.args.from.is_some() {
+            return from::run(self.args, base, localizer, scope);
         }
-        if self.platform.is_set() {
+        if self.args.platform.is_set() {
             artifact::report("✗", &localizer.text("artifact-from-required"), "31");
             return ExitCode::from(2);
         }
@@ -101,7 +89,7 @@ impl NewArgs {
         localizer: &Localizer,
         scope: &eska_tool_runtime::Operation,
     ) -> ExitCode {
-        let destination = base.join(&self.path);
+        let destination = base.join(&self.args.path);
         let destination = match create::resolve_destination(&destination) {
             Ok(path) => path,
             Err(error) => {
@@ -109,8 +97,8 @@ impl NewArgs {
                 return ExitCode::FAILURE;
             }
         };
-        let mut project_type = self.project_type.clone();
-        let mut workflow = self.workflow.clone();
+        let mut project_type = self.args.project_type.clone();
+        let mut workflow = self.args.workflow.clone();
         if project_type.as_ref().is_some_and(|value| {
             crate::onboarding::config::parse_project_type(value.clone()).is_err()
         }) {
@@ -164,9 +152,13 @@ impl NewArgs {
             artifact::report("✗", &localizer.text("new-workflow-invalid"), "31");
             return ExitCode::from(2);
         };
-        match create::create(&destination, project_type, workflow, !self.no_vcs, &|| {
-            scope.is_cancelled()
-        }) {
+        match create::create(
+            &destination,
+            project_type,
+            workflow,
+            !self.args.no_vcs,
+            &|| scope.is_cancelled(),
+        ) {
             Ok(project) => {
                 artifact::success(&localizer.format(
                     "new-created",
@@ -194,21 +186,21 @@ impl NewArgs {
         localizer: &Localizer,
         scope: &eska_tool_runtime::Operation,
     ) -> ExitCode {
-        let Some(name) = workspace_project_name(&self.path) else {
+        let Some(name) = workspace_project_name(&self.args.path) else {
             artifact::report(
                 "✗",
                 &localizer.format(
                     "new-member-name-invalid",
                     &[(
                         "name",
-                        LocalizationValue::Text(&self.path.to_string_lossy()),
+                        LocalizationValue::Text(&self.args.path.to_string_lossy()),
                     )],
                 ),
                 "31",
             );
             return ExitCode::from(2);
         };
-        if self.workflow.is_some() {
+        if self.args.workflow.is_some() {
             artifact::report(
                 "✗",
                 &localizer.text("workspace-onboarding-workflow-owned"),
@@ -223,7 +215,7 @@ impl NewArgs {
                 return ExitCode::FAILURE;
             }
         };
-        let mut project_type = self.project_type.clone();
+        let mut project_type = self.args.project_type.clone();
         if project_type.as_ref().is_some_and(|value| {
             crate::onboarding::config::parse_project_type(value.clone()).is_err()
         }) {
@@ -382,29 +374,7 @@ fn present(error: &CreationError, localizer: &Localizer) -> String {
     )
 }
 
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    super::artifact::localize(command, localizer)
-        .mut_arg("from", |arg| arg.help(localizer.text("artifact-from-help")))
-        .about(localizer.text("new-about"))
-        .override_usage(localizer.text("new-usage"))
-        .help_template(format!(
-            "{{about-with-newline}}\n{}: {{usage}}\n\n{}:\n{{positionals}}\n\n{}:\n{{options}}",
-            localizer.text("cli-usage"),
-            localizer.text("cli-arguments"),
-            localizer.text("cli-options")
-        ))
-        .mut_arg("path", |arg| {
-            arg.help(localizer.text("new-path-help"))
-                .value_name(localizer.text("cli-project-dir-value"))
-        })
-        .mut_arg("project_type", |arg| {
-            arg.help(localizer.text("new-type-help"))
-                .value_name(localizer.text("new-type-value"))
-        })
-        .mut_arg("workflow", |arg| {
-            arg.help(localizer.text("new-workflow-help"))
-                .value_name(localizer.text("new-workflow-value"))
-        })
-        .mut_arg("no_vcs", |arg| arg.help(localizer.text("new-no-vcs-help")))
-        .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
+/// Execute compatibility creation with the same transaction and component boundaries.
+pub fn run(args: &NewArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    NewHandler { args }.run(directory, localizer)
 }

@@ -1,3 +1,3 @@
-//! The standalone project tool owns project version presentation.
+//! Shared project metadata keeps help independent of project execution.
 
-pub(super) use eska_project::version::{VersionArgs, localize};
+pub(super) use eska_presentation::arguments::project::version::{VersionArgs, localize};

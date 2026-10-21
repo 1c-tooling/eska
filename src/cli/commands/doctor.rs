@@ -1,3 +1,3 @@
-//! The project component composes independent read-only diagnostic owners.
+//! Shared project metadata keeps help independent of project execution.
 
-pub(super) use eska_project::doctor::{DoctorArgs, localize};
+pub(super) use eska_presentation::arguments::project::doctor::{DoctorArgs, localize};

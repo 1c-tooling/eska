@@ -1,3 +1,3 @@
-//! Onboarding presentation belongs to the project component.
+//! Shared project metadata keeps help independent of project execution.
 
-pub(super) use eska_project::onboarding::new::{NewArgs, localize};
+pub(super) use eska_presentation::arguments::project::new::{NewArgs, localize};

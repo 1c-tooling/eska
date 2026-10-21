@@ -1,12 +1,14 @@
 //! Localized presentation of the read-only project environment diagnosis.
 
+use eska_presentation::arguments::project::doctor::OutputFormat;
+pub use eska_presentation::arguments::project::doctor::{DoctorArgs, localize};
+
 use std::{
     io::{self, IsTerminal},
-    path::{Path, PathBuf},
+    path::Path,
     process::ExitCode,
 };
 
-use clap::{Args, ValueEnum};
 use serde::Serialize;
 
 use eska_presentation::{
@@ -22,37 +24,6 @@ use eska_project_core::{
     },
 };
 mod client;
-
-#[derive(Debug, Args)]
-pub struct DoctorArgs {
-    #[arg(long)]
-    ibcmd: Option<PathBuf>,
-
-    #[arg(long)]
-    platform_arch: Option<String>,
-
-    #[arg(long)]
-    distrobox: Option<String>,
-
-    #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
-    format: OutputFormat,
-
-    #[arg(short = 'p', long)]
-    project: Vec<String>,
-
-    #[arg(long)]
-    workspace: bool,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-}
-
-#[derive(Clone, Copy, Debug, Default, ValueEnum)]
-enum OutputFormat {
-    #[default]
-    Human,
-    Json,
-}
 
 #[derive(Serialize)]
 struct DoctorDocument<'a> {
@@ -85,7 +56,11 @@ struct Diagnosis {
     scope: ScopeDocument,
 }
 
-impl DoctorArgs {
+struct DoctorHandler<'a> {
+    args: &'a DoctorArgs,
+}
+
+impl DoctorHandler<'_> {
     /// Discover the selected project scope and run every independent read-only check.
     pub fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
         let mut report = Report::default();
@@ -128,24 +103,24 @@ impl DoctorArgs {
     fn native_options(&self, localizer: &Localizer) -> Vec<std::ffi::OsString> {
         let mut options = vec!["--lang".into(), localizer.locale().as_str().into()];
         for (flag, value) in [
-            ("--ibcmd", self.ibcmd.as_deref().map(Path::as_os_str)),
+            ("--ibcmd", self.args.ibcmd.as_deref().map(Path::as_os_str)),
             (
                 "--platform-arch",
-                self.platform_arch.as_deref().map(std::ffi::OsStr::new),
+                self.args.platform_arch.as_deref().map(std::ffi::OsStr::new),
             ),
             (
                 "--distrobox",
-                self.distrobox.as_deref().map(std::ffi::OsStr::new),
+                self.args.distrobox.as_deref().map(std::ffi::OsStr::new),
             ),
         ] {
             if let Some(value) = value {
                 options.extend([flag.into(), value.to_owned()]);
             }
         }
-        for project in &self.project {
+        for project in &self.args.project {
             options.extend(["--project".into(), project.into()]);
         }
-        if self.workspace {
+        if self.args.workspace {
             options.push("--workspace".into());
         }
         options
@@ -162,8 +137,8 @@ impl DoctorArgs {
     ) -> Diagnosis {
         let selection = match select_projects(
             context,
-            &self.project,
-            self.workspace,
+            &self.args.project,
+            self.args.workspace,
             SelectionIntent::ReadOnly,
         ) {
             Ok(selection) => selection,
@@ -242,7 +217,7 @@ impl DoctorArgs {
         scope: &ScopeDocument,
         localizer: &Localizer,
     ) -> ExitCode {
-        match self.format {
+        match self.args.format {
             OutputFormat::Human => println!(
                 "{}",
                 render_human(report, details, localizer, styling_enabled())
@@ -389,35 +364,9 @@ fn number(value: usize) -> LocalizationValue<'static> {
     LocalizationValue::Number(i64::try_from(value).unwrap_or(i64::MAX))
 }
 
-/// Localize command help without changing option names or machine-facing values.
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("doctor-about"))
-        .override_usage(localizer.text("doctor-usage"))
-        .mut_arg("ibcmd", |arg| {
-            arg.help(localizer.text("build-ibcmd-help"))
-                .value_name(localizer.text("build-ibcmd-value"))
-        })
-        .mut_arg("platform_arch", |arg| {
-            arg.help(localizer.text("build-arch-help"))
-                .value_name(localizer.text("build-arch-value"))
-        })
-        .mut_arg("distrobox", |arg| {
-            arg.help(localizer.text("build-distrobox-help"))
-                .value_name(localizer.text("build-distrobox-value"))
-        })
-        .mut_arg("format", |arg| {
-            arg.help(localizer.text("doctor-format-help"))
-                .value_name(localizer.text("doctor-format-value"))
-        })
-        .mut_arg("project", |arg| {
-            arg.help(localizer.text("doctor-project-help"))
-                .value_name(localizer.text("doctor-project-value"))
-        })
-        .mut_arg("workspace", |arg| {
-            arg.help(localizer.text("doctor-workspace-help"))
-        })
-        .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
+/// Compose diagnostics for parsed project options using independent owners.
+pub fn run(args: &DoctorArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    DoctorHandler { args }.run(directory, localizer)
 }
 
 #[cfg(test)]

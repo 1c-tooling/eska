@@ -1,3 +1,3 @@
-//! The existing metadata CLI uses the standalone project tool implementation.
+//! Shared project metadata keeps help independent of project execution.
 
-pub(super) use eska_project::metadata::{MetadataArgs, localize};
+pub(super) use eska_presentation::arguments::project::metadata::{MetadataArgs, localize};

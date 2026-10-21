@@ -379,3 +379,18 @@ build-проверок, workspace strict Clippy и Rustdoc. Новых кома�
 Прошли 219 CLI-сценариев и 91 VCS unit/integration/standalone test, workspace
 strict Clippy и Rustdoc. Код исполнения и JSON-схемы не менялись; экспериментальные
 Rust-входы обработчиков стали функциями модуля с `&Args`.
+
+## Общая схема project CLI
+
+Аргументы metadata/version/doctor и compatibility new/init вынесены в
+[presentation](../crates/eska-presentation/src/arguments/project/mod.rs).
+Обычные структурные new/init standalone сохраняют собственный интерфейс T91.
+Обработчики metadata и файловых транзакций остались в project; передача
+аргументов в них использует заимствование. Конверсия вида bump в доменное
+значение осталась чистой и не добавила clap в ядро.
+
+Прошли 219 CLI-сценариев и 37 project unit/integration/standalone tests
+(один real-analyzer test ignored), workspace strict Clippy и Rustdoc.
+Экспериментальные Rust-обработчики теперь вызываются функциями модуля с `&Args`;
+неиспользуемый bool у внутреннего selector resolve удалён. Документированные
+CLI, Metadata API, JSON и транзакционные writers не изменены.

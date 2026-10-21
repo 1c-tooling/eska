@@ -116,7 +116,7 @@ fn execute(
     let inherited = workspace
         .as_ref()
         .and_then(|workspace| workspace.build_settings().platform_version());
-    let tool = args.platform.resolve(inherited, true, localizer, scope)?;
+    let tool = artifact::resolve(&args.platform, inherited, localizer, scope)?;
     let input = args
         .from
         .as_ref()

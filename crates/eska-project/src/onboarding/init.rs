@@ -1,8 +1,10 @@
 //! Arguments, prompts, diagnostics and help for `eska init`.
 
+pub use eska_presentation::arguments::project::init::{InitArgs, localize};
+
 use std::{
     io::{self, IsTerminal},
-    path::{Path, PathBuf},
+    path::Path,
     process::ExitCode,
 };
 
@@ -20,29 +22,14 @@ use crate::onboarding::{
     },
     vcs::workflow::WorkflowPreset,
 };
-use clap::{ArgAction, Args};
 
-use super::artifact::{self, Failure, PlatformArgs};
+use super::artifact::{self, Failure};
 
-#[derive(Debug, Args)]
-pub struct InitArgs {
-    #[arg(default_value = ".")]
-    path: PathBuf,
-    #[arg(long)]
-    source: Option<PathBuf>,
-    #[arg(long)]
-    name: Option<String>,
-    #[arg(long)]
-    workflow: Option<String>,
-    #[arg(long)]
-    no_vcs: bool,
-    #[command(flatten)]
-    platform: PlatformArgs,
-    #[arg(short, long, action = ArgAction::Help)]
-    help: Option<bool>,
+struct InitHandler<'a> {
+    args: &'a InitArgs,
 }
 
-impl InitArgs {
+impl InitHandler<'_> {
     /// Keep one cancellation owner alive until every file transaction has committed or rolled back.
     pub fn run(&self, base: &Path, localizer: &Localizer) -> ExitCode {
         let scope = match eska_tool_runtime::Operation::new() {
@@ -66,6 +53,7 @@ impl InitArgs {
         scope: &eska_tool_runtime::Operation,
     ) -> ExitCode {
         if self
+            .args
             .workflow
             .as_deref()
             .is_some_and(|value| WorkflowPreset::from_name(value).is_none())
@@ -73,7 +61,7 @@ impl InitArgs {
             eprintln!("{}", localizer.text("new-workflow-invalid"));
             return ExitCode::from(2);
         }
-        let plan = match init::inspect(&base.join(&self.path), self.source.as_deref()) {
+        let plan = match init::inspect(&base.join(&self.args.path), self.args.source.as_deref()) {
             Ok(plan) => plan,
             Err(error) => {
                 eprintln!("{}", present(&error, localizer));
@@ -100,7 +88,7 @@ impl InitArgs {
         localizer: &Localizer,
         scope: &eska_tool_runtime::Operation,
     ) -> ExitCode {
-        let mut workflow = match self.workflow.as_deref() {
+        let mut workflow = match self.args.workflow.as_deref() {
             Some(value) => {
                 let Some(preset) = WorkflowPreset::from_name(value) else {
                     eprintln!("{}", localizer.text("new-workflow-invalid"));
@@ -110,7 +98,7 @@ impl InitArgs {
             }
             None => None,
         };
-        if self.name.is_some() {
+        if self.args.name.is_some() {
             eprintln!("{}", localizer.text("init-name-workspace-only"));
             return ExitCode::from(2);
         }
@@ -146,7 +134,7 @@ impl InitArgs {
             Ok(build) => build,
             Err(error) => return platform_failure(&error),
         };
-        match init::apply(plan, workflow, build, !self.no_vcs, &|| {
+        match init::apply(plan, workflow, build, !self.args.no_vcs, &|| {
             scope.is_cancelled()
         }) {
             Ok(project) => {
@@ -177,7 +165,7 @@ impl InitArgs {
         localizer: &Localizer,
         scope: &eska_tool_runtime::Operation,
     ) -> ExitCode {
-        if self.workflow.is_some() {
+        if self.args.workflow.is_some() {
             eprintln!("{}", localizer.text("workspace-onboarding-workflow-owned"));
             return ExitCode::from(2);
         }
@@ -186,7 +174,7 @@ impl InitArgs {
             .file_name()
             .and_then(|name| name.to_str())
             .unwrap_or_default();
-        let raw_name = self.name.as_deref().unwrap_or(inferred);
+        let raw_name = self.args.name.as_deref().unwrap_or(inferred);
         let Ok(name) = ProjectName::parse(raw_name.to_owned()) else {
             eprintln!(
                 "{}",
@@ -204,8 +192,8 @@ impl InitArgs {
                 return ExitCode::FAILURE;
             }
         };
-        let plan = if self.platform.platform_version.is_some()
-            || self.platform.select_platform
+        let plan = if self.args.platform.platform_version.is_some()
+            || self.args.platform.select_platform
             || workspace.build_settings().platform_version().is_none()
         {
             match self.build_settings(localizer, scope) {
@@ -242,7 +230,7 @@ impl InitArgs {
         localizer: &Localizer,
         scope: &eska_tool_runtime::Operation,
     ) -> Result<BuildSettings, Failure> {
-        let tool = self.platform.resolve_for_init(localizer, scope)?;
+        let tool = artifact::resolve_for_init(&self.args.platform, localizer, scope)?;
         BuildSettings::new(tool.version().as_str(), "build".into()).map_err(|_| {
             Failure::new(
                 "platform-version-invalid",
@@ -331,36 +319,7 @@ fn present(error: &InitError, localizer: &Localizer) -> String {
     )
 }
 
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    artifact::localize(command, localizer)
-        .mut_arg("platform_version", |arg| {
-            arg.help(localizer.text("init-platform-version-help"))
-        })
-        .about(localizer.text("init-about"))
-        .override_usage(localizer.text("init-usage"))
-        .help_template(format!(
-            "{{about-with-newline}}\n{}: {{usage}}\n\n{}:\n{{positionals}}\n\n{}:\n{{options}}",
-            localizer.text("cli-usage"),
-            localizer.text("cli-arguments"),
-            localizer.text("cli-options")
-        ))
-        .mut_arg("path", |arg| {
-            arg.help(localizer.text("init-path-help"))
-                .value_name(localizer.text("cli-project-dir-value"))
-                .hide_default_value(true)
-        })
-        .mut_arg("source", |arg| {
-            arg.help(localizer.text("init-source-help"))
-                .value_name(localizer.text("cli-project-dir-value"))
-        })
-        .mut_arg("name", |arg| {
-            arg.help(localizer.text("init-name-help"))
-                .value_name(localizer.text("init-name-value"))
-        })
-        .mut_arg("workflow", |arg| {
-            arg.help(localizer.text("new-workflow-help"))
-                .value_name(localizer.text("new-workflow-value"))
-        })
-        .mut_arg("no_vcs", |arg| arg.help(localizer.text("new-no-vcs-help")))
-        .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
+/// Execute compatibility initialization through the existing project transaction.
+pub fn run(args: &InitArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    InitHandler { args }.run(directory, localizer)
 }

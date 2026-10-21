@@ -148,9 +148,13 @@ pub fn run() -> ExitCode {
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
     match cli.command.as_ref() {
-        Some(Commands::Doctor(args)) => args.run(&cli.project_dir, &localizer),
-        Some(Commands::ShellNew(args)) => args.run(&cli.project_dir, &localizer),
-        Some(Commands::ShellInit(args)) => args.run(&cli.project_dir, &localizer),
+        Some(Commands::Doctor(args)) => crate::doctor::run(args, &cli.project_dir, &localizer),
+        Some(Commands::ShellNew(args)) => {
+            crate::onboarding::new::run(args, &cli.project_dir, &localizer)
+        }
+        Some(Commands::ShellInit(args)) => {
+            crate::onboarding::init::run(args, &cli.project_dir, &localizer)
+        }
         Some(Commands::ShellValidate) => shell_validate(&cli.project_dir, &localizer),
         Some(Commands::Serve(args)) => {
             if args.stdio {
@@ -164,8 +168,8 @@ pub fn run() -> ExitCode {
             }
         }
         Some(Commands::AnalyzerConfig(args)) => args.run(&cli.project_dir, &localizer),
-        Some(Commands::Metadata(args)) => args.run(&cli.project_dir, &localizer),
-        Some(Commands::Version(args)) => args.run(&cli.project_dir, &localizer),
+        Some(Commands::Metadata(args)) => crate::metadata::run(args, &cli.project_dir, &localizer),
+        Some(Commands::Version(args)) => crate::version::run(args, &cli.project_dir, &localizer),
         Some(Commands::Context(args)) => context::run(&cli.project_dir, args, &localizer),
         Some(Commands::New(args)) => operations::new(&cli.project_dir, args, &localizer),
         Some(Commands::Init(args)) => operations::init(&cli.project_dir, args, &localizer),

@@ -1,14 +1,12 @@
 //! Machine-oriented property inspection and mutation using the same backend as the IDE.
 
-use std::{
-    io::Read,
-    path::{Path, PathBuf},
-    process::ExitCode,
-};
+use eska_presentation::arguments::project::metadata::MetadataCommand;
+pub use eska_presentation::arguments::project::metadata::{MetadataArgs, localize};
+
+use std::{io::Read, path::Path, process::ExitCode};
 
 mod renaming;
 
-use clap::{Args, Subcommand, ValueEnum};
 use serde_json::{Value, json};
 
 use crate::ide::{dto, editing};
@@ -19,59 +17,11 @@ use eska_project_core::project::{
     metadata_workspace::{MetadataWorkspace, ProjectSession},
 };
 
-#[derive(Debug, Args)]
-pub struct MetadataArgs {
-    #[command(subcommand)]
-    command: MetadataCommand,
-    #[arg(short = 'p', long, global = true)]
-    project: Option<String>,
-    #[arg(long, global = true, value_enum, default_value_t = OutputFormat::Json)]
-    format: OutputFormat,
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct MetadataHandler<'a> {
+    args: &'a MetadataArgs,
 }
 
-#[derive(Clone, Copy, Debug, ValueEnum)]
-enum OutputFormat {
-    Json,
-}
-
-#[derive(Debug, Subcommand)]
-enum MetadataCommand {
-    #[command(disable_help_flag = true)]
-    Inspect(InspectArgs),
-    #[command(disable_help_flag = true)]
-    Types(InputArgs),
-    #[command(disable_help_flag = true)]
-    Choices(InputArgs),
-    #[command(disable_help_flag = true)]
-    Check(InputArgs),
-    #[command(disable_help_flag = true)]
-    Apply(InputArgs),
-    #[command(disable_help_flag = true)]
-    RenamePreview(InputArgs),
-    #[command(disable_help_flag = true)]
-    RenameApply(InputArgs),
-    #[command(disable_help_flag = true)]
-    RenameRecovery(InputArgs),
-}
-
-#[derive(Debug, Args)]
-struct InspectArgs {
-    #[arg(long)]
-    object: Option<String>,
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-}
-
-#[derive(Debug, Args)]
-struct InputArgs {
-    input: PathBuf,
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-}
-
-impl MetadataArgs {
+impl MetadataHandler<'_> {
     /// Emit exactly one stable JSON envelope; source inspection never starts disk caching.
     #[must_use]
     pub fn run(&self, project_dir: &Path, _localizer: &Localizer) -> ExitCode {
@@ -93,7 +43,7 @@ impl MetadataArgs {
 
     /// Each process selects exactly one manifest-backed project, including workspace members.
     fn execute(&self, project_dir: &Path) -> Result<Value, Value> {
-        let selected: Vec<_> = self.project.iter().cloned().collect();
+        let selected: Vec<_> = self.args.project.iter().cloned().collect();
         let mut workspace = MetadataWorkspace::open(project_dir, &selected, false)
             .map_err(|error| editing::failure(error.into()))?;
         if workspace.projects().len() != 1 {
@@ -104,7 +54,7 @@ impl MetadataArgs {
             .project_mut(&scope)
             .map_err(|error| editing::failure(error.into()))?;
         let labels = dto::Labels::new().map_err(|_| failure("localization_failed"))?;
-        match &self.command {
+        match &self.args.command {
             MetadataCommand::RenamePreview(args) => {
                 let request = read_input(&args.input, &["schemaVersion", "objectId", "newName"])?;
                 renaming::preview(project, &request)
@@ -139,7 +89,7 @@ impl MetadataArgs {
             MetadataCommand::Types(args) | MetadataCommand::Choices(args) => {
                 let input = read_input(
                     &args.input,
-                    if matches!(self.command, MetadataCommand::Choices(_)) {
+                    if matches!(self.args.command, MetadataCommand::Choices(_)) {
                         &["schemaVersion", "objectId", "path", "key"]
                     } else {
                         &["schemaVersion", "objectId", "path"]
@@ -151,7 +101,7 @@ impl MetadataArgs {
                     serde_json::from_value(input["path"].clone())
                         .map_err(|_| failure("invalid_request"))?;
                 reveal(project, &id)?;
-                if matches!(self.command, MetadataCommand::Choices(_)) {
+                if matches!(self.args.command, MetadataCommand::Choices(_)) {
                     if let Some(key) = input.get("key") {
                         let key = serde_json::from_value(key.clone())
                             .map_err(|_| failure("invalid_request"))?;
@@ -178,7 +128,7 @@ impl MetadataArgs {
                 let request: editing::ChangeRequest =
                     serde_json::from_value(input).map_err(|_| failure("invalid_request"))?;
                 reveal(project, &request.object_id)?;
-                if matches!(self.command, MetadataCommand::Check(_)) {
+                if matches!(self.args.command, MetadataCommand::Check(_)) {
                     return editing::preview(project, &request);
                 }
                 apply(&labels, project, &request)
@@ -280,40 +230,7 @@ fn failure(code: &str) -> Value {
     json!({"kind":code,"details":{}})
 }
 
-/// Localize help while keeping every machine response independent of --lang.
-#[must_use]
-pub fn localize(mut command: clap::Command, locale: &Localizer) -> clap::Command {
-    command = command
-        .about(locale.text("metadata-about"))
-        .mut_arg("project", |arg| {
-            arg.help(locale.text("metadata-project-help"))
-        })
-        .mut_arg("format", |arg| {
-            arg.help(locale.text("metadata-format-help"))
-        })
-        .mut_arg("help", |arg| arg.help(locale.text("cli-help")));
-    for name in [
-        "inspect",
-        "types",
-        "choices",
-        "check",
-        "apply",
-        "rename-preview",
-        "rename-apply",
-        "rename-recovery",
-    ] {
-        command = command.mut_subcommand(name, |command| {
-            let command = command
-                .about(locale.text(&format!("metadata-{name}-about")))
-                .mut_arg("help", |arg| arg.help(locale.text("cli-help")));
-            if name == "inspect" {
-                command.mut_arg("object", |arg| {
-                    arg.help(locale.text("metadata-object-help"))
-                })
-            } else {
-                command.mut_arg("input", |arg| arg.help(locale.text("metadata-input-help")))
-            }
-        });
-    }
-    command
+/// Execute parsed metadata requests through the existing project session.
+pub fn run(args: &MetadataArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    MetadataHandler { args }.run(directory, localizer)
 }

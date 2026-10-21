@@ -1,6 +1,7 @@
 //! Onboarding exchanges typed results with the native owner without linking a platform runtime.
 
-use clap::Args;
+pub use eska_presentation::arguments::project::artifact::PlatformArgs;
+
 use eska_presentation::{
     components,
     localization::{LocalizationValue, Localizer},
@@ -14,26 +15,12 @@ use eska_terminal::{
     interactive::PromptError,
     process_output::{decorate_status, diagnostic_styling_enabled, result_styling_enabled},
 };
-use eska_tool_runtime::{Component, Error, Operation, exchange, resolve};
+use eska_tool_runtime::{Component, Error, Operation, exchange, resolve as resolve_component};
 use std::{
     ffi::OsString,
     io::{self, IsTerminal},
     path::{Path, PathBuf},
 };
-
-#[derive(Debug, Default, Args)]
-pub struct PlatformArgs {
-    #[arg(long)]
-    ibcmd: Option<PathBuf>,
-    #[arg(long)]
-    platform_arch: Option<String>,
-    #[arg(long)]
-    distrobox: Option<String>,
-    #[arg(long, conflicts_with = "select_platform")]
-    pub platform_version: Option<String>,
-    #[arg(long)]
-    pub select_platform: bool,
-}
 
 #[derive(Debug)]
 pub struct Failure {
@@ -102,20 +89,15 @@ impl PreparedSources {
     }
 }
 
-impl PlatformArgs {
-    /// Ordinary scaffold creation never silently consumes native-import options.
-    pub const fn is_set(&self) -> bool {
-        self.ibcmd.is_some()
-            || self.platform_arch.is_some()
-            || self.distrobox.is_some()
-            || self.platform_version.is_some()
-            || self.select_platform
-    }
+struct PlatformHandler<'a> {
+    args: &'a PlatformArgs,
+}
+
+impl PlatformHandler<'_> {
     /// Ask the build owner to select and verify a platform before claiming a project.
     pub fn resolve(
         &self,
         inherited: Option<&PlatformVersion>,
-        _: bool,
         localizer: &Localizer,
         scope: &Operation,
     ) -> Result<ToolSelection, Failure> {
@@ -143,7 +125,7 @@ impl PlatformArgs {
             "artifact-cancelled"
         };
         let failure = |error| component_failure(error, localizer, cancellation);
-        let binary = resolve(Component::Build).map_err(failure)?;
+        let binary = resolve_component(Component::Build).map_err(failure)?;
         let language = localizer.locale().as_str();
         let options = self.options();
         let mut args: Vec<OsString> = ["--lang", language, "__bridge", "select-platform"]
@@ -151,10 +133,10 @@ impl PlatformArgs {
             .map(Into::into)
             .collect();
         args.extend(options.iter().cloned());
-        if let Some(version) = &self.platform_version {
+        if let Some(version) = &self.args.platform_version {
             args.extend(["--platform-version".into(), version.as_str().into()]);
         }
-        if self.select_platform {
+        if self.args.select_platform {
             args.push("--select-platform".into());
         }
         if init {
@@ -184,14 +166,14 @@ impl PlatformArgs {
     fn options(&self) -> Vec<OsString> {
         let mut options = Vec::new();
         for (flag, value) in [
-            ("--ibcmd", self.ibcmd.as_deref().map(Path::as_os_str)),
+            ("--ibcmd", self.args.ibcmd.as_deref().map(Path::as_os_str)),
             (
                 "--platform-arch",
-                self.platform_arch.as_deref().map(std::ffi::OsStr::new),
+                self.args.platform_arch.as_deref().map(std::ffi::OsStr::new),
             ),
             (
                 "--distrobox",
-                self.distrobox.as_deref().map(std::ffi::OsStr::new),
+                self.args.distrobox.as_deref().map(std::ffi::OsStr::new),
             ),
         ] {
             if let Some(value) = value {
@@ -332,20 +314,28 @@ pub fn prompt_error(error: PromptError, localizer: &Localizer) -> Failure {
         }),
     )
 }
-/// Localized public flags stay identical when parsing moves to the component.
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .mut_arg("ibcmd", |arg| arg.help(localizer.text("build-ibcmd-help")))
-        .mut_arg("platform_arch", |arg| {
-            arg.help(localizer.text("build-arch-help"))
-        })
-        .mut_arg("distrobox", |arg| {
-            arg.help(localizer.text("build-distrobox-help"))
-        })
-        .mut_arg("platform_version", |arg| {
-            arg.help(localizer.text("artifact-platform-version-help"))
-        })
-        .mut_arg("select_platform", |arg| {
-            arg.help(localizer.text("artifact-select-platform-help"))
-        })
+
+/// Resolve a platform through the native owner while retaining caller cancellation.
+///
+/// # Errors
+/// Returns discovery, selection, protocol or cancellation failures without writing a project.
+pub fn resolve(
+    args: &PlatformArgs,
+    inherited: Option<&eska_project_core::project::build::PlatformVersion>,
+    localizer: &Localizer,
+    scope: &Operation,
+) -> Result<ToolSelection, Failure> {
+    PlatformHandler { args }.resolve(inherited, localizer, scope)
+}
+
+/// Resolve initialization's platform choice with the original cancellation behavior.
+///
+/// # Errors
+/// Returns the same native-owner selection failures as resolve.
+pub fn resolve_for_init(
+    args: &PlatformArgs,
+    localizer: &Localizer,
+    scope: &Operation,
+) -> Result<ToolSelection, Failure> {
+    PlatformHandler { args }.resolve_for_init(localizer, scope)
 }

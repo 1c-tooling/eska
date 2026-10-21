@@ -1,8 +1,10 @@
 //! Localized project-version CLI with a stable machine-readable contract.
 
+use eska_presentation::arguments::project::version::{OutputFormat, VersionCommand};
+pub use eska_presentation::arguments::project::version::{VersionArgs, localize};
+
 use std::{path::Path, process::ExitCode};
 
-use clap::{Args, Subcommand, ValueEnum};
 use serde::Serialize;
 
 use eska_presentation::{
@@ -16,64 +18,6 @@ use eska_project_core::project::{
     },
     version::{self, BumpKind, VersionError},
 };
-
-#[derive(Debug, Args)]
-pub struct VersionArgs {
-    #[command(subcommand)]
-    command: Option<VersionCommand>,
-
-    #[arg(long, global = true, value_enum, default_value_t = OutputFormat::Human)]
-    format: OutputFormat,
-
-    #[arg(short = 'p', long, global = true)]
-    project: Vec<String>,
-
-    #[arg(long, global = true)]
-    workspace: bool,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-}
-
-#[derive(Debug, Subcommand)]
-enum VersionCommand {
-    #[command(disable_help_flag = true)]
-    Bump(VersionBumpArgs),
-}
-
-#[derive(Debug, Args)]
-struct VersionBumpArgs {
-    #[arg(value_enum)]
-    kind: Bump,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-}
-
-#[derive(Clone, Copy, Debug, ValueEnum)]
-enum Bump {
-    Patch,
-    Minor,
-    Major,
-}
-
-impl From<Bump> for BumpKind {
-    /// Keep clap-specific values out of the project layer.
-    fn from(value: Bump) -> Self {
-        match value {
-            Bump::Patch => Self::Patch,
-            Bump::Minor => Self::Minor,
-            Bump::Major => Self::Major,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default, ValueEnum)]
-enum OutputFormat {
-    #[default]
-    Human,
-    Json,
-}
 
 #[derive(Serialize)]
 struct VersionDocument<'a> {
@@ -107,7 +51,11 @@ struct WorkspaceVersionEntry {
     descriptor: String,
 }
 
-impl VersionArgs {
+struct VersionHandler<'a> {
+    args: &'a VersionArgs,
+}
+
+impl VersionHandler<'_> {
     /// Discover the project and either inspect or narrowly update its version.
     #[must_use]
     pub fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
@@ -118,21 +66,22 @@ impl VersionArgs {
                 return ExitCode::FAILURE;
             }
         };
-        let intent = if self.command.is_some() {
+        let intent = if self.args.command.is_some() {
             SelectionIntent::SingleMutation
         } else {
             SelectionIntent::ReadOnly
         };
-        let selection = match select_projects(&context, &self.project, self.workspace, intent) {
-            Ok(selection) => selection,
-            Err(error) => return fail_selection(&error, localizer),
-        };
-        match &self.command {
-            None => inspect_selection(&selection, self.format, localizer),
+        let selection =
+            match select_projects(&context, &self.args.project, self.args.workspace, intent) {
+                Ok(selection) => selection,
+                Err(error) => return fail_selection(&error, localizer),
+            };
+        match &self.args.command {
+            None => inspect_selection(&selection, self.args.format, localizer),
             Some(VersionCommand::Bump(arguments)) => bump_selection(
                 &selection,
                 BumpKind::from(arguments.kind),
-                self.format,
+                self.args.format,
                 localizer,
             ),
         }
@@ -262,39 +211,6 @@ fn bump_selection(
     ExitCode::SUCCESS
 }
 
-/// Render localized help for the command and its mutating subcommand.
-#[must_use]
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("version-about"))
-        .override_usage(localizer.text("version-usage"))
-        .mut_arg("format", |argument| {
-            argument
-                .help(localizer.text("version-format-help"))
-                .value_name(localizer.text("version-format-value"))
-        })
-        .mut_arg("project", |argument| {
-            argument
-                .help(localizer.text("version-project-help"))
-                .value_name(localizer.text("version-project-value"))
-        })
-        .mut_arg("workspace", |argument| {
-            argument.help(localizer.text("version-workspace-help"))
-        })
-        .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
-        .mut_subcommand("bump", |command| {
-            command
-                .about(localizer.text("version-bump-about"))
-                .override_usage(localizer.text("version-bump-usage"))
-                .mut_arg("kind", |argument| {
-                    argument
-                        .help(localizer.text("version-bump-kind-help"))
-                        .value_name(localizer.text("version-bump-kind-value"))
-                })
-                .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
-        })
-}
-
 /// Return a stable project-relative descriptor path for presentation.
 fn relative_path(root: &Path, path: &Path) -> String {
     path.strip_prefix(root)
@@ -418,4 +334,9 @@ fn version_error_message(error: &VersionError, localizer: &Localizer) -> String 
 /// Format a diagnostic containing one filesystem path.
 fn path_message(localizer: &Localizer, key: &str, path: &str) -> String {
     localizer.format(key, &[("path", LocalizationValue::Text(path))])
+}
+
+/// Execute parsed version options through the project's existing safe writer.
+pub fn run(args: &VersionArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    VersionHandler { args }.run(directory, localizer)
 }
