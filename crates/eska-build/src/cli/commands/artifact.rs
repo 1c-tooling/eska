@@ -1,11 +1,11 @@
 //! Shared platform selection and diagnostics for project onboarding and native imports.
 
+pub use eska_presentation::arguments::build::artifact::{PlatformArgs, localize};
+
 use std::{
     io::{self, IsTerminal},
-    path::{Path, PathBuf},
+    path::Path,
 };
-
-use clap::Args;
 
 use crate::{
     cli::{
@@ -23,20 +23,6 @@ use crate::{
         build::{Ibcmd, PlatformVersion},
     },
 };
-
-#[derive(Debug, Default, Args)]
-pub struct PlatformArgs {
-    #[arg(long)]
-    ibcmd: Option<PathBuf>,
-    #[arg(long)]
-    platform_arch: Option<String>,
-    #[arg(long)]
-    distrobox: Option<String>,
-    #[arg(long, conflicts_with = "select_platform")]
-    pub platform_version: Option<String>,
-    #[arg(long)]
-    pub select_platform: bool,
-}
 
 /// Keep Unix cancellation alive across short VCS queries and native version probes.
 ///
@@ -198,17 +184,11 @@ pub fn report(marker: &str, message: &str, color: &str) {
     );
 }
 
-impl PlatformArgs {
-    /// Prevent native-import flags from silently affecting ordinary scaffold creation.
-    #[must_use]
-    pub const fn is_set(&self) -> bool {
-        self.ibcmd.is_some()
-            || self.platform_arch.is_some()
-            || self.distrobox.is_some()
-            || self.platform_version.is_some()
-            || self.select_platform
-    }
+struct PlatformHandler<'a> {
+    options: &'a PlatformArgs,
+}
 
+impl PlatformHandler<'_> {
     /// Resolve an explicit, inherited or interactively selected platform without hidden defaults.
     ///
     /// # Errors
@@ -248,9 +228,9 @@ impl PlatformArgs {
         scope: Option<&eska_tool_runtime::Operation>,
     ) -> Result<Ibcmd, Failure> {
         let options = platform::tool_options(
-            self.ibcmd.clone(),
-            self.platform_arch.clone(),
-            self.distrobox.clone(),
+            self.options.ibcmd.clone(),
+            self.options.platform_arch.clone(),
+            self.options.distrobox.clone(),
         )
         .map_err(|error| {
             Failure::new(
@@ -263,9 +243,9 @@ impl PlatformArgs {
             )
         })?;
         let options = scoped_options(options, scope);
-        let version = if let Some(value) = &self.platform_version {
+        let version = if let Some(value) = &self.options.platform_version {
             value.clone()
-        } else if !self.select_platform
+        } else if !self.options.select_platform
             && let Some(version) = inherited
         {
             version.as_str().to_owned()
@@ -461,20 +441,23 @@ pub fn present(error: &ArtifactError, localizer: &Localizer) -> Failure {
     )
 }
 
-/// Keep platform flag help aligned across creation and update commands.
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .mut_arg("ibcmd", |arg| arg.help(localizer.text("build-ibcmd-help")))
-        .mut_arg("platform_arch", |arg| {
-            arg.help(localizer.text("build-arch-help"))
-        })
-        .mut_arg("distrobox", |arg| {
-            arg.help(localizer.text("build-distrobox-help"))
-        })
-        .mut_arg("platform_version", |arg| {
-            arg.help(localizer.text("artifact-platform-version-help"))
-        })
-        .mut_arg("select_platform", |arg| {
-            arg.help(localizer.text("artifact-select-platform-help"))
-        })
+/// Resolve parsed platform choices while retaining the selector's cancellation scope.
+///
+/// # Errors
+/// Returns machine, selection, probe or cancellation failures before native work.
+pub fn resolve(
+    args: &PlatformArgs,
+    inherited: Option<&PlatformVersion>,
+    interactive: bool,
+    localizer: &Localizer,
+) -> Result<Ibcmd, Failure> {
+    PlatformHandler { options: args }.resolve(inherited, interactive, localizer)
+}
+
+/// Resolve initialization choices with their existing cancellation vocabulary.
+///
+/// # Errors
+/// Returns the same discovery and selection failures as resolve.
+pub fn resolve_for_init(args: &PlatformArgs, localizer: &Localizer) -> Result<Ibcmd, Failure> {
+    PlatformHandler { options: args }.resolve_for_init(localizer)
 }

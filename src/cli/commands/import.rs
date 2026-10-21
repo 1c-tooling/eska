@@ -1,3 +1,3 @@
-//! Import presentation belongs to the standalone build component.
+//! Shared option metadata keeps help available without the native implementation.
 
-pub(super) use eska_build::cli::commands::import::{ImportArgs, localize};
+pub(super) use eska_presentation::arguments::build::import::{ImportArgs, localize};

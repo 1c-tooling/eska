@@ -1,54 +1,18 @@
 //! Installed 1C platform discovery for the effective machine runner.
 
-use std::{path::PathBuf, process::ExitCode};
+pub use eska_presentation::arguments::build::platform::{PlatformArgs, localize};
+use eska_presentation::arguments::build::platform::{
+    PlatformCommand, PlatformListArgs, PlatformOutputFormat,
+};
 
-use clap::{Args, Subcommand, ValueEnum};
+use std::process::ExitCode;
+
 use serde::Serialize;
 
 use crate::{
     cli::{diagnostics, localization::Localizer, platform},
     project::build::{Ibcmd, ToolSource},
 };
-
-#[derive(Debug, Args)]
-pub struct PlatformArgs {
-    #[command(subcommand)]
-    command: PlatformCommand,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-}
-
-#[derive(Debug, Subcommand)]
-enum PlatformCommand {
-    #[command(disable_help_flag = true)]
-    List(PlatformListArgs),
-}
-
-#[derive(Debug, Args)]
-struct PlatformListArgs {
-    #[arg(long)]
-    ibcmd: Option<PathBuf>,
-
-    #[arg(long)]
-    platform_arch: Option<String>,
-
-    #[arg(long)]
-    distrobox: Option<String>,
-
-    #[arg(long, value_enum, default_value_t = PlatformOutputFormat::Human)]
-    format: PlatformOutputFormat,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-}
-
-#[derive(Clone, Copy, Debug, Default, ValueEnum)]
-enum PlatformOutputFormat {
-    #[default]
-    Human,
-    Json,
-}
 
 #[derive(Serialize)]
 struct PlatformDocument<'a> {
@@ -62,16 +26,24 @@ struct PlatformEntry<'a> {
     source: String,
 }
 
-impl PlatformArgs {
+struct PlatformHandler<'a> {
+    options: &'a PlatformArgs,
+}
+
+impl PlatformHandler<'_> {
     /// Scan platforms without requiring a project.
     pub fn run(&self, localizer: &Localizer) -> ExitCode {
-        match &self.command {
-            PlatformCommand::List(args) => args.run(localizer),
+        match &self.options.command {
+            PlatformCommand::List(args) => PlatformListHandler { options: args }.run(localizer),
         }
     }
 }
 
-impl PlatformListArgs {
+struct PlatformListHandler<'a> {
+    options: &'a PlatformListArgs,
+}
+
+impl PlatformListHandler<'_> {
     /// Print every verified platform visible through the selected runner.
     fn run(&self, localizer: &Localizer) -> ExitCode {
         let scope = match super::artifact::cancellation_scope(localizer) {
@@ -82,9 +54,9 @@ impl PlatformListArgs {
             }
         };
         let options = match platform::tool_options(
-            self.ibcmd.clone(),
-            self.platform_arch.clone(),
-            self.distrobox.clone(),
+            self.options.ibcmd.clone(),
+            self.options.platform_arch.clone(),
+            self.options.distrobox.clone(),
         ) {
             Ok(options) => options,
             Err(error) => {
@@ -110,7 +82,7 @@ impl PlatformListArgs {
             eprintln!("{}", localizer.text("component-cancelled"));
             return ExitCode::FAILURE;
         }
-        match self.format {
+        match self.options.format {
             PlatformOutputFormat::Human => {
                 if platforms.is_empty() {
                     println!("{}", localizer.text("platform-none"));
@@ -157,31 +129,7 @@ fn source_label(source: &ToolSource) -> String {
     }
 }
 
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("platform-about"))
-        .override_usage(localizer.text("platform-usage"))
-        .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
-        .mut_subcommand("list", |command| {
-            command
-                .about(localizer.text("platform-list-about"))
-                .override_usage(localizer.text("platform-list-usage"))
-                .mut_arg("ibcmd", |arg| {
-                    arg.help(localizer.text("build-ibcmd-help"))
-                        .value_name(localizer.text("build-ibcmd-value"))
-                })
-                .mut_arg("platform_arch", |arg| {
-                    arg.help(localizer.text("build-arch-help"))
-                        .value_name(localizer.text("build-arch-value"))
-                })
-                .mut_arg("distrobox", |arg| {
-                    arg.help(localizer.text("build-distrobox-help"))
-                        .value_name(localizer.text("build-distrobox-value"))
-                })
-                .mut_arg("format", |arg| {
-                    arg.help(localizer.text("build-format-help"))
-                        .value_name(localizer.text("build-format-value"))
-                })
-                .mut_arg("help", |argument| argument.help(localizer.text("cli-help")))
-        })
+/// Execute parsed platform inventory options in the native owner.
+pub fn run(args: &PlatformArgs, localizer: &Localizer) -> ExitCode {
+    PlatformHandler { options: args }.run(localizer)
 }

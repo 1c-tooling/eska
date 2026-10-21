@@ -70,7 +70,7 @@ impl UnpackArgs {
         let destination = artifact::new_destination(&absolute_from(base, &self.destination))
             .map_err(|error| failure(&error, localizer))?;
         let human = matches!(self.format, Format::Human);
-        let tool = self.platform.resolve(None, human, localizer)?;
+        let tool = output::resolve(&self.platform, None, human, localizer)?;
         let prepared = output::unpack(&input, &destination, &tool, human, localizer)
             .map_err(|error| failure(&error, localizer))?;
         let identity = prepared.identity().clone();

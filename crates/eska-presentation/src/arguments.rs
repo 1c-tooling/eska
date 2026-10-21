@@ -1,5 +1,6 @@
 //! Locale bootstrap before command-line parsing renders help or errors.
 
+pub mod build;
 pub mod check;
 
 use std::ffi::OsStr;

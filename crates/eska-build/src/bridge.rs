@@ -103,9 +103,9 @@ fn select(
             )
         })?;
     let tool = if init {
-        platform.resolve_for_init(localizer)
+        artifact::resolve_for_init(platform, localizer)
     } else {
-        platform.resolve(inherited.as_ref(), true, localizer)
+        artifact::resolve(platform, inherited.as_ref(), true, localizer)
     }?;
     Ok(json!({"platform_version":tool.version().as_str()}))
 }
@@ -120,7 +120,7 @@ fn unpack(
 ) -> Result<Value, Failure> {
     let destination = eska_build_runtime::artifact::new_destination(destination)
         .map_err(|error| artifact::present(&error, localizer))?;
-    let tool = platform.resolve(None, true, localizer)?;
+    let tool = artifact::resolve(platform, None, true, localizer)?;
     let prepared = artifact::unpack(input, stage_near, &tool, true, localizer)
         .map_err(|error| native_failure(&error, localizer))?;
     let identity = prepared.identity().clone();

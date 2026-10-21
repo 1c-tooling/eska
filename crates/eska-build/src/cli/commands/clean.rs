@@ -1,8 +1,8 @@
 //! Removal of reusable build infobases without touching published artifacts.
 
-use std::{path::Path, process::ExitCode};
+pub use eska_presentation::arguments::build::clean::{CleanArgs, localize};
 
-use clap::Args;
+use std::{path::Path, process::ExitCode};
 
 use crate::{
     cli::{diagnostics, localization::Localizer},
@@ -14,19 +14,11 @@ use crate::{
     },
 };
 
-#[derive(Debug, Args)]
-pub struct CleanArgs {
-    #[arg(short = 'p', long)]
-    project: Vec<String>,
-
-    #[arg(long)]
-    workspace: bool,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct CleanHandler<'a> {
+    options: &'a CleanArgs,
 }
 
-impl CleanArgs {
+impl CleanHandler<'_> {
     /// Remove managed infobases for the selected project scope.
     pub fn run(&self, project_dir: &Path, localizer: &Localizer) -> ExitCode {
         let context = match discovery::discover_context(project_dir) {
@@ -38,8 +30,8 @@ impl CleanArgs {
         };
         let selection = match select_projects(
             &context,
-            &self.project,
-            self.workspace,
+            &self.options.project,
+            self.options.workspace,
             SelectionIntent::MultipleMutation,
         ) {
             Ok(selection) => selection,
@@ -166,16 +158,7 @@ fn display_path(path: &Path) -> String {
     display
 }
 
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("clean-about"))
-        .override_usage(localizer.text("clean-usage"))
-        .mut_arg("project", |arg| {
-            arg.help(localizer.text("clean-project-help"))
-                .value_name(localizer.text("clean-project-value"))
-        })
-        .mut_arg("workspace", |arg| {
-            arg.help(localizer.text("clean-workspace-help"))
-        })
-        .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
+/// Execute parsed cleanup options without linking its runner into the shell.
+pub fn run(args: &CleanArgs, directory: &Path, localizer: &Localizer) -> ExitCode {
+    CleanHandler { options: args }.run(directory, localizer)
 }

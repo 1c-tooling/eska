@@ -1,12 +1,13 @@
 //! Build arguments, project selection and preflighted command execution.
 
+use eska_presentation::arguments::build::OutputFormat;
+pub use eska_presentation::arguments::build::{BuildArgs, localize};
+
 use std::{
     io::{self, IsTerminal},
     path::{Path, PathBuf},
     process::ExitCode,
 };
-
-use clap::{Args, ValueEnum};
 
 use crate::{
     cli::{
@@ -37,77 +38,17 @@ use errors::{
 use json::{WorkspaceBuildEntry, write_build_error, write_workspace_json};
 use output::{write_build_preview, write_build_result, write_build_started, write_diagnostic};
 
-#[derive(Debug, Default, Args)]
-pub struct BuildArgs {
-    #[arg(long)]
-    output: Option<PathBuf>,
-
-    #[arg(long)]
-    base_configuration: Option<PathBuf>,
-
-    #[arg(long)]
-    recreate_infobase: bool,
-
-    #[arg(long)]
-    ibcmd: Option<PathBuf>,
-
-    #[arg(long)]
-    platform_arch: Option<String>,
-
-    #[arg(long)]
-    distrobox: Option<String>,
-
-    #[arg(long, conflicts_with = "select_platform")]
-    platform_version: Option<String>,
-
-    #[arg(long, conflicts_with = "platform_version")]
-    select_platform: bool,
-
-    #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
-    format: OutputFormat,
-
-    #[arg(short = 'p', long)]
-    project: Vec<String>,
-
-    #[arg(long)]
-    workspace: bool,
-
-    #[command(flatten)]
-    mode: BuildModeArgs,
-
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
-}
-
-#[derive(Debug, Default, Args)]
-struct BuildModeArgs {
-    #[arg(long)]
-    dry_run: bool,
-
-    #[arg(long, conflicts_with = "dry_run")]
-    manifest: bool,
-}
-
-#[derive(Clone, Copy, Debug, Default, ValueEnum)]
-enum OutputFormat {
-    #[default]
-    Human,
-    Json,
-}
-
 struct PreparedBuild<'a> {
     name: Option<&'a ProjectName>,
     project: &'a Project,
     plan: BuildPlan,
 }
 
-impl BuildArgs {
-    /// The shell needs VCS only when execution will actually publish a provenance manifest.
-    #[must_use]
-    pub const fn needs_provenance(&self) -> bool {
-        self.mode.manifest && !self.mode.dry_run
-    }
+struct BuildHandler<'a> {
+    options: &'a BuildArgs,
+}
 
+impl BuildHandler<'_> {
     /// Discover, preflight and sequentially build the selected projects.
     pub fn run(
         &self,
@@ -169,22 +110,15 @@ impl BuildArgs {
         };
         let selection = match select_projects(
             &context,
-            &self.project,
-            self.workspace,
+            &self.options.project,
+            self.options.workspace,
             SelectionIntent::MultipleMutation,
         ) {
             Ok(selection) => selection,
             Err(error) => return self.fail_selection(&error, localizer),
         };
-        if self.output.is_some() && selection.projects().len() != 1 {
-            return self.fail(
-                "output-requires-single-project",
-                Some("selection"),
-                None,
-                &localizer.text("build-output-single-project"),
-                localizer,
-                ExitCode::FAILURE,
-            );
+        if let Err(code) = self.validate_output_scope(selection.projects().len(), localizer) {
+            return code;
         }
         let options = match self.tool_options(localizer, cancellation) {
             Ok(options) => options,
@@ -201,10 +135,10 @@ impl BuildArgs {
             let plan = match build_plan(
                 *selected,
                 workspace_root,
-                self.output.as_deref(),
+                self.options.output.as_deref(),
                 platform_override.clone(),
                 base_configuration.clone(),
-                self.recreate_infobase,
+                self.options.recreate_infobase,
             ) {
                 Ok(plan) => plan,
                 Err(error) => {
@@ -223,16 +157,21 @@ impl BuildArgs {
                 plan,
             });
         }
-        if let Err(code) = preflight_group(self.format, &prepared, self.mode.manifest, localizer) {
+        if let Err(code) = preflight_group(
+            self.options.format,
+            &prepared,
+            self.options.mode.manifest,
+            localizer,
+        ) {
             return code;
         }
         let tools = match self.operation_tools(&prepared, &options, cancellation, localizer) {
             Ok(tools) => tools,
             Err(code) => return code,
         };
-        if self.mode.dry_run {
+        if self.options.mode.dry_run {
             return write_build_preview(
-                self.format,
+                self.options.format,
                 &prepared,
                 &tools,
                 selection.is_aggregate(),
@@ -255,6 +194,21 @@ impl BuildArgs {
         }
     }
 
+    /// Reject a shared output before planning multiple selected projects.
+    fn validate_output_scope(&self, count: usize, localizer: &Localizer) -> Result<(), ExitCode> {
+        if self.options.output.is_some() && count != 1 {
+            return Err(self.fail(
+                "output-requires-single-project",
+                Some("selection"),
+                None,
+                &localizer.text("build-output-single-project"),
+                localizer,
+                ExitCode::FAILURE,
+            ));
+        }
+        Ok(())
+    }
+
     /// Bind each native runner to the caller's scope before preview or execution.
     fn operation_tools(
         &self,
@@ -263,7 +217,7 @@ impl BuildArgs {
         cancellation: Option<&eska_tool_runtime::Operation>,
         localizer: &Localizer,
     ) -> Result<Vec<Ibcmd>, ExitCode> {
-        let tools = discover_tools(self.format, prepared, options, localizer)?;
+        let tools = discover_tools(self.options.format, prepared, options, localizer)?;
         if cancellation.is_some_and(eska_tool_runtime::Operation::is_cancelled) {
             return Err(self.fail(
                 "interrupted",
@@ -282,7 +236,8 @@ impl BuildArgs {
 
     /// Resolve the optional base CF once so every selected plan uses the same host path.
     fn resolved_base_configuration(&self, context: &DiscoveryContext) -> Option<PathBuf> {
-        self.base_configuration
+        self.options
+            .base_configuration
             .as_deref()
             .map(|path| resolve_base_configuration(path, context))
     }
@@ -294,9 +249,9 @@ impl BuildArgs {
         scope: Option<&eska_tool_runtime::Operation>,
     ) -> Result<ToolOptions, ExitCode> {
         platform::tool_options(
-            self.ibcmd.clone(),
-            self.platform_arch.clone(),
-            self.distrobox.clone(),
+            self.options.ibcmd.clone(),
+            self.options.platform_arch.clone(),
+            self.options.distrobox.clone(),
         )
         .map(|options| super::artifact::scoped_options(options, scope))
         .map_err(|error| {
@@ -321,7 +276,9 @@ impl BuildArgs {
         provenance: &dyn Fn(&Path) -> Result<build::GitProvenance, eska_tool_runtime::Error>,
     ) -> ExitCode {
         match self.execute_plan(prepared, ibcmd, localizer, provenance) {
-            Ok(result) => write_build_result(self.format, &prepared.plan, &result, localizer),
+            Ok(result) => {
+                write_build_result(self.options.format, &prepared.plan, &result, localizer)
+            }
             Err(error) => self.fail_project(
                 execution_error_code(&error),
                 execution_error_stage(&error),
@@ -353,7 +310,7 @@ impl BuildArgs {
                     ExitCode::FAILURE,
                 );
             };
-            if matches!(self.format, OutputFormat::Human) {
+            if matches!(self.options.format, OutputFormat::Human) {
                 eprintln!(
                     "{}",
                     localizer.format(
@@ -364,7 +321,7 @@ impl BuildArgs {
             }
             match self.execute_plan(item, ibcmd, localizer, provenance) {
                 Ok(result) => {
-                    if matches!(self.format, OutputFormat::Human) {
+                    if matches!(self.options.format, OutputFormat::Human) {
                         let _ =
                             write_build_result(OutputFormat::Human, &item.plan, &result, localizer);
                     }
@@ -373,7 +330,7 @@ impl BuildArgs {
                 Err(error) => {
                     failed = true;
                     let interrupted = execution_was_interrupted(&error);
-                    if matches!(self.format, OutputFormat::Human) {
+                    if matches!(self.options.format, OutputFormat::Human) {
                         let detail = execution_error_message(&error, localizer);
                         let _ = self.fail_project(
                             execution_error_code(&error),
@@ -395,7 +352,9 @@ impl BuildArgs {
                 }
             }
         }
-        if matches!(self.format, OutputFormat::Json) && !write_workspace_json(entries, localizer) {
+        if matches!(self.options.format, OutputFormat::Json)
+            && !write_workspace_json(entries, localizer)
+        {
             return ExitCode::FAILURE;
         }
         if failed {
@@ -415,7 +374,7 @@ impl BuildArgs {
     ) -> Result<build::BuildResult, BuildExecutionError> {
         let project = prepared.project;
         let plan = &prepared.plan;
-        let human = matches!(self.format, OutputFormat::Human);
+        let human = matches!(self.options.format, OutputFormat::Human);
         let interactive = human && io::stderr().is_terminal();
         let styled = diagnostic_styling_enabled();
         let configured_version = project.configuration().build_settings().platform_version();
@@ -455,7 +414,7 @@ impl BuildArgs {
                 output_error = Some(error);
             }
         };
-        let result = if self.mode.manifest {
+        let result = if self.options.mode.manifest {
             let project_name = prepared
                 .name
                 .map(ProjectName::as_str)
@@ -527,7 +486,7 @@ impl BuildArgs {
         detail: &str,
         localizer: &Localizer,
     ) -> ExitCode {
-        write_project_failure(self.format, code, stage, name, detail, localizer)
+        write_project_failure(self.options.format, code, stage, name, detail, localizer)
     }
 
     /// Emit stable JSON on stdout and localized detail on stderr after argument parsing.
@@ -540,7 +499,7 @@ impl BuildArgs {
         localizer: &Localizer,
         exit_code: ExitCode,
     ) -> ExitCode {
-        write_failure(self.format, code, stage, project, detail, localizer);
+        write_failure(self.options.format, code, stage, project, detail, localizer);
         exit_code
     }
 
@@ -550,7 +509,7 @@ impl BuildArgs {
         options: &ToolOptions,
         localizer: &Localizer,
     ) -> Result<Option<PlatformVersion>, ExitCode> {
-        if let Some(value) = &self.platform_version {
+        if let Some(value) = &self.options.platform_version {
             return PlatformVersion::parse(value).map(Some).map_err(|error| {
                 self.fail(
                     "platform-version-invalid",
@@ -562,10 +521,10 @@ impl BuildArgs {
                 )
             });
         }
-        if !self.select_platform {
+        if !self.options.select_platform {
             return Ok(None);
         }
-        if matches!(self.format, OutputFormat::Json)
+        if matches!(self.options.format, OutputFormat::Json)
             || !io::stdin().is_terminal()
             || !io::stderr().is_terminal()
         {
@@ -792,57 +751,12 @@ fn write_failure(
     eprintln!("{detail}");
 }
 
-/// Attach localized help to the build command and its arguments.
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command
-        .about(localizer.text("build-about"))
-        .override_usage(localizer.text("build-usage"))
-        .mut_arg("output", |arg| {
-            arg.help(localizer.text("build-output-help"))
-                .value_name(localizer.text("build-output-value"))
-        })
-        .mut_arg("base_configuration", |arg| {
-            arg.help(localizer.text("build-base-configuration-help"))
-                .value_name(localizer.text("build-base-configuration-value"))
-        })
-        .mut_arg("recreate_infobase", |arg| {
-            arg.help(localizer.text("build-recreate-infobase-help"))
-        })
-        .mut_arg("ibcmd", |arg| {
-            arg.help(localizer.text("build-ibcmd-help"))
-                .value_name(localizer.text("build-ibcmd-value"))
-        })
-        .mut_arg("platform_arch", |arg| {
-            arg.help(localizer.text("build-arch-help"))
-                .value_name(localizer.text("build-arch-value"))
-        })
-        .mut_arg("distrobox", |arg| {
-            arg.help(localizer.text("build-distrobox-help"))
-                .value_name(localizer.text("build-distrobox-value"))
-        })
-        .mut_arg("platform_version", |arg| {
-            arg.help(localizer.text("build-platform-version-help"))
-                .value_name(localizer.text("build-platform-version-value"))
-        })
-        .mut_arg("select_platform", |arg| {
-            arg.help(localizer.text("build-select-platform-help"))
-        })
-        .mut_arg("format", |arg| {
-            arg.help(localizer.text("build-format-help"))
-                .value_name(localizer.text("build-format-value"))
-        })
-        .mut_arg("project", |arg| {
-            arg.help(localizer.text("build-project-help"))
-                .value_name(localizer.text("build-project-value"))
-        })
-        .mut_arg("workspace", |arg| {
-            arg.help(localizer.text("build-workspace-help"))
-        })
-        .mut_arg("dry_run", |arg| {
-            arg.help(localizer.text("build-dry-run-help"))
-        })
-        .mut_arg("manifest", |arg| {
-            arg.help(localizer.text("build-manifest-help"))
-        })
-        .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
+/// Execute parsed build options in their native owner.
+pub fn run(
+    args: &BuildArgs,
+    directory: &Path,
+    localizer: &Localizer,
+    provenance: &dyn Fn(&Path) -> Result<build::GitProvenance, eska_tool_runtime::Error>,
+) -> ExitCode {
+    BuildHandler { options: args }.run(directory, localizer, provenance)
 }

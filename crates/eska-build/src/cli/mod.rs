@@ -93,20 +93,25 @@ pub fn run() -> ExitCode {
     let provenance = |root: &Path| query_provenance(vcs_binary.as_deref(), root);
     match cli.command {
         Some(Commands::Bridge(args)) => args.run(&cli.project_dir, &localizer),
-        Some(Commands::Build(args)) => args.run(&cli.project_dir, &localizer, &provenance),
+        Some(Commands::Build(args)) => {
+            commands::build::run(&args, &cli.project_dir, &localizer, &provenance)
+        }
         Some(Commands::Patch(args)) => {
-            args.run(&cli.project_dir, &localizer, vcs_binary.as_deref())
+            commands::patch::run(&args, &cli.project_dir, &localizer, vcs_binary.as_deref())
         }
         Some(Commands::Unpack(args)) => args.run(&cli.project_dir, &localizer),
         Some(Commands::Import(args)) => {
-            args.run(&cli.project_dir, &localizer, vcs_binary.as_deref())
+            commands::import::run(&args, &cli.project_dir, &localizer, vcs_binary.as_deref())
         }
-        Some(Commands::Clean(args)) => args.run(&cli.project_dir, &localizer),
-        Some(Commands::Platform(args)) => args.run(&localizer),
-        Some(Commands::Config(args)) => args.run(&localizer),
-        None => {
-            commands::build::BuildArgs::default().run(&cli.project_dir, &localizer, &provenance)
-        }
+        Some(Commands::Clean(args)) => commands::clean::run(&args, &cli.project_dir, &localizer),
+        Some(Commands::Platform(args)) => commands::platform::run(&args, &localizer),
+        Some(Commands::Config(args)) => commands::config::run(&args, &localizer),
+        None => commands::build::run(
+            &commands::build::BuildArgs::default(),
+            &cli.project_dir,
+            &localizer,
+            &provenance,
+        ),
     }
 }
 

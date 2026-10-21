@@ -1,3 +1,3 @@
-//! Shared specialized build command presentation.
+//! Shared option metadata keeps help available without the native implementation.
 
-pub(super) use eska_build::cli::commands::build::*;
+pub(super) use eska_presentation::arguments::build::{BuildArgs, localize};

@@ -1,5 +1,8 @@
 //! Separate patch CLI with localized diagnostics and a versioned JSON plan/result.
 
+use eska_presentation::arguments::build::patch::Format;
+pub use eska_presentation::arguments::build::patch::{PatchArgs, localize};
+
 use crate::{
     cli::{
         diagnostics,
@@ -11,44 +14,19 @@ use crate::{
         discovery,
     },
 };
-use clap::{Args, ValueEnum};
 use serde_json::json;
 use std::{
-    path::{Component, Path, PathBuf},
+    path::{Component, Path},
     process::ExitCode,
 };
 
 mod client;
 
-#[derive(Debug, Args)]
-pub struct PatchArgs {
-    #[arg(long)]
-    base: Option<String>,
-    #[arg(long)]
-    output: Option<PathBuf>,
-    #[arg(long)]
-    dry_run: bool,
-    #[arg(long)]
-    ibcmd: Option<PathBuf>,
-    #[arg(long)]
-    platform_arch: Option<String>,
-    #[arg(long)]
-    distrobox: Option<String>,
-    #[arg(long)]
-    platform_version: Option<String>,
-    #[arg(long, value_enum, default_value_t = Format::Human)]
-    format: Format,
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct PatchHandler<'a> {
+    options: &'a PatchArgs,
 }
 
-#[derive(Clone, Copy, Debug, ValueEnum)]
-enum Format {
-    Human,
-    Json,
-}
-
-impl PatchArgs {
+impl PatchHandler<'_> {
     /// Plan the complete committed delta before selecting or invoking platform tools.
     pub fn run(&self, directory: &Path, localizer: &Localizer, vcs: Option<&Path>) -> ExitCode {
         let cancellation = match super::artifact::cancellation_scope(localizer) {
@@ -76,22 +54,23 @@ impl PatchArgs {
                 );
             }
         };
-        let client = match client::Client::new(project.root(), self.base.as_deref(), vcs, localizer)
-        {
-            Ok(client) => client,
-            Err(error) => return self.fail(&error.code, &error.detail, localizer),
-        };
+        let client =
+            match client::Client::new(project.root(), self.options.base.as_deref(), vcs, localizer)
+            {
+                Ok(client) => client,
+                Err(error) => return self.fail(&error.code, &error.detail, localizer),
+            };
         let mut plan = match client.plan(localizer) {
             Ok(plan) => plan,
             Err(error) => return self.fail(&error.code, &error.detail, localizer),
         };
-        if let Some(version) = &self.platform_version {
+        if let Some(version) = &self.options.platform_version {
             match PlatformVersion::parse(version) {
                 Ok(version) => plan.platform_version = Some(version),
                 Err(_) => return self.fail("platform", version, localizer),
             }
         }
-        let output = self.output.as_ref().map_or_else(
+        let output = self.options.output.as_ref().map_or_else(
             || {
                 project
                     .root()
@@ -120,7 +99,7 @@ impl PatchArgs {
         }
         let state = if plan.description.modules.is_empty() {
             "empty"
-        } else if self.dry_run {
+        } else if self.options.dry_run {
             "planned"
         } else {
             "built"
@@ -129,13 +108,13 @@ impl PatchArgs {
             return self.fail("tool", &localizer.text("component-cancelled"), localizer);
         }
         self.preview(&plan.description, localizer);
-        if !self.dry_run
+        if !self.options.dry_run
             && !plan.description.modules.is_empty()
             && let Err(code) = self.build(&plan, &client, &output, cancellation, localizer)
         {
             return code;
         }
-        if matches!(self.format, Format::Json) {
+        if matches!(self.options.format, Format::Json) {
             println!(
                 "{}",
                 json!({"schema_version": 1, "status": state, "plan": plan.description,
@@ -157,7 +136,7 @@ impl PatchArgs {
 
     /// Render the same human preview independently from native execution.
     fn preview(&self, plan: &eska_project_core::patch::PatchDescription, localizer: &Localizer) {
-        if matches!(self.format, Format::Human) {
+        if matches!(self.options.format, Format::Human) {
             println!(
                 "{}",
                 localizer.format(
@@ -188,9 +167,9 @@ impl PatchArgs {
             .as_ref()
             .ok_or_else(|| self.fail("platform", "", localizer))?;
         let options = platform::tool_options(
-            self.ibcmd.clone(),
-            self.platform_arch.clone(),
-            self.distrobox.clone(),
+            self.options.ibcmd.clone(),
+            self.options.platform_arch.clone(),
+            self.options.distrobox.clone(),
         )
         .map_err(|e| {
             self.fail(
@@ -222,7 +201,7 @@ impl PatchArgs {
 
     /// Keep JSON error codes independent of locale while presenting human details separately.
     fn fail(&self, code: &str, detail: &str, localizer: &Localizer) -> ExitCode {
-        if matches!(self.format, Format::Json) {
+        if matches!(self.options.format, Format::Json) {
             println!(
                 "{}",
                 json!({"schema_version": 1, "status": "error", "error": {"code": code}})
@@ -237,22 +216,12 @@ impl PatchArgs {
     }
 }
 
-/// Localize every new help field without translating argument names or machine values.
-pub fn localize(mut command: clap::Command, localizer: &Localizer) -> clap::Command {
-    command = command.about(localizer.text("patch-about"));
-    for name in [
-        "base",
-        "output",
-        "dry_run",
-        "ibcmd",
-        "platform_arch",
-        "distrobox",
-        "platform_version",
-        "format",
-    ] {
-        command = command.mut_arg(name, |arg| {
-            arg.help(localizer.text(&format!("patch-help-{}", name.replace('_', "-"))))
-        });
-    }
-    command.mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
+/// Execute parsed patch options using the native and VCS owners.
+pub fn run(
+    args: &PatchArgs,
+    directory: &Path,
+    localizer: &Localizer,
+    vcs: Option<&Path>,
+) -> ExitCode {
+    PatchHandler { options: args }.run(directory, localizer, vcs)
 }

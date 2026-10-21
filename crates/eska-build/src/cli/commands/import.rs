@@ -1,12 +1,14 @@
 //! Update one project's sources from a native artifact after preview and consent.
 
+use eska_presentation::arguments::build::import::Format;
+pub use eska_presentation::arguments::build::import::{ImportArgs, localize};
+
 use std::{
     io::{self, IsTerminal, Write},
     path::{Path, PathBuf},
     process::ExitCode,
 };
 
-use clap::{Args, ValueEnum};
 use serde_json::{Value, json};
 
 use crate::{
@@ -23,33 +25,13 @@ use crate::{
     },
 };
 
-use super::artifact::{self, Failure, PlatformArgs};
+use super::artifact::{self, Failure};
 
-#[derive(Debug, Args)]
-pub struct ImportArgs {
-    file: PathBuf,
-    #[arg(short = 'p', long)]
-    project: Option<String>,
-    #[arg(long)]
-    force: bool,
-    #[arg(long, conflicts_with = "force")]
-    dry_run: bool,
-    #[arg(long, value_enum, default_value_t = Format::Human)]
-    format: Format,
-    #[command(flatten)]
-    platform: PlatformArgs,
-    #[arg(short, long, action = clap::ArgAction::Help)]
-    help: Option<bool>,
+struct ImportHandler<'a> {
+    options: &'a ImportArgs,
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
-enum Format {
-    #[default]
-    Human,
-    Json,
-}
-
-impl ImportArgs {
+impl ImportHandler<'_> {
     /// Emit one versioned JSON result on stdout and localized diagnostics on stderr.
     pub fn run(&self, base: &Path, localizer: &Localizer, vcs: Option<&Path>) -> ExitCode {
         let (document, code) = match self.execute(base, localizer, vcs) {
@@ -62,7 +44,7 @@ impl ImportArgs {
                 )
             }
         };
-        if self.format == Format::Json {
+        if self.options.format == Format::Json {
             let result = serde_json::to_writer(io::stdout().lock(), &document)
                 .map_err(io::Error::other)
                 .and_then(|()| writeln!(io::stdout().lock()));
@@ -81,9 +63,10 @@ impl ImportArgs {
         cancellation: Option<&eska_tool_runtime::Operation>,
         localizer: &Localizer,
     ) -> Result<crate::project::build::Ibcmd, Failure> {
-        let tool_result = self.platform.resolve(
+        let tool_result = artifact::resolve(
+            &self.options.platform,
             project.configuration().build_settings().platform_version(),
-            self.format == Format::Human,
+            self.options.format == Format::Human,
             localizer,
         );
         if cancellation.is_some_and(eska_tool_runtime::Operation::is_cancelled) {
@@ -113,7 +96,7 @@ impl ImportArgs {
                 ),
             )
         })?;
-        let names = self.project.iter().cloned().collect::<Vec<_>>();
+        let names = self.options.project.iter().cloned().collect::<Vec<_>>();
         let selected =
             selection::select_projects(&context, &names, false, SelectionIntent::SingleMutation)
                 .map_err(|error| {
@@ -137,10 +120,10 @@ impl ImportArgs {
             .map_err(|error| artifact::present(&error, localizer))?;
         let tool = self.resolve_import_tool(project, cancellation.as_ref(), localizer)?;
         let prepared = artifact::unpack(
-            &base.join(&self.file),
+            &base.join(&self.options.file),
             project.source(),
             &tool,
-            self.format == Format::Human,
+            self.options.format == Format::Human,
             localizer,
         )
         .map_err(|error| artifact::present(&error, localizer))?;
@@ -153,17 +136,17 @@ impl ImportArgs {
         let confirmation = plan
             .requires_confirmation(prepared.identity())
             .map_err(|error| artifact::present(&error, localizer).with_details(document.clone()))?;
-        if self.format == Format::Human {
+        if self.options.format == Format::Human {
             present_preview(&plan, &prepared, project.source(), localizer);
         }
-        if self.dry_run {
-            if self.format == Format::Human {
+        if self.options.dry_run {
+            if self.options.format == Format::Human {
                 artifact::report("ℹ", &localizer.text("artifact-dry-run-completed"), "36");
             }
             return Ok(document);
         }
-        if confirmation && !self.force {
-            confirm(self.format, localizer, &tool)
+        if confirmation && !self.options.force {
+            confirm(self.options.format, localizer, &tool)
                 .map_err(|error| error.with_details(document.clone()))?;
         }
         if tool.was_interrupted() {
@@ -193,7 +176,7 @@ impl ImportArgs {
             );
             document["retained_backup"] = path_document(&backup);
         }
-        if self.format == Format::Human {
+        if self.options.format == Format::Human {
             artifact::success(&localizer.text("artifact-imported"));
         }
         Ok(document)
@@ -347,33 +330,12 @@ fn confirm(
     }
 }
 
-/// Localize every public option while retaining machine-facing flag names.
-pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
-    artifact::localize(command, localizer)
-        .about(localizer.text("artifact-import-about"))
-        .override_usage(localizer.text("artifact-import-usage"))
-        .help_template(format!(
-            "{{about-with-newline}}\n{}: {{usage}}\n\n{}:\n{{positionals}}\n\n{}:\n{{options}}",
-            localizer.text("cli-usage"),
-            localizer.text("cli-arguments"),
-            localizer.text("cli-options")
-        ))
-        .mut_arg("file", |arg| {
-            arg.help(localizer.text("artifact-file-help"))
-                .value_name(localizer.text("artifact-file-value"))
-        })
-        .mut_arg("project", |arg| {
-            arg.help(localizer.text("artifact-project-help"))
-                .value_name(localizer.text("version-project-value"))
-        })
-        .mut_arg("force", |arg| {
-            arg.help(localizer.text("artifact-force-help"))
-        })
-        .mut_arg("dry_run", |arg| {
-            arg.help(localizer.text("artifact-dry-run-help"))
-        })
-        .mut_arg("format", |arg| {
-            arg.help(localizer.text("build-format-help"))
-        })
-        .mut_arg("help", |arg| arg.help(localizer.text("cli-help")))
+/// Execute parsed import options while this process retains transaction ownership.
+pub fn run(
+    args: &ImportArgs,
+    directory: &Path,
+    localizer: &Localizer,
+    vcs: Option<&Path>,
+) -> ExitCode {
+    ImportHandler { options: args }.run(directory, localizer, vcs)
 }
