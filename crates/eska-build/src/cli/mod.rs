@@ -83,6 +83,10 @@ pub fn run() -> ExitCode {
     };
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
+    if let Err(code) = eska_presentation::components::verify_installation("eska-build", &localizer)
+    {
+        return code;
+    }
     let vcs_binary = match cli
         .vcs_binary
         .as_deref()

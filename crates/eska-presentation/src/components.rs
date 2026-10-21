@@ -27,6 +27,16 @@ pub fn present(error: &Error, localizer: &Localizer) -> String {
                 ("reason", LocalizationValue::Text(&source.to_string())),
             ],
         ),
+        Error::Incompatible { tool, receipt } => localizer.format(
+            "component-incompatible",
+            &[
+                ("tool", LocalizationValue::Text(tool)),
+                (
+                    "receipt",
+                    LocalizationValue::Text(&receipt.to_string_lossy()),
+                ),
+            ],
+        ),
         Error::Signal(source) => localizer.format(
             "component-signal-error",
             &[("reason", LocalizationValue::Text(&source.to_string()))],
@@ -64,4 +74,21 @@ pub fn present(error: &Error, localizer: &Localizer) -> String {
             ],
         ),
     }
+}
+
+/// Refuse an incompatible managed installation after help/version parsing, before project writes.
+///
+/// # Errors
+/// Prints the localized installation error and returns the failure status.
+pub fn verify_installation(
+    tool: &str,
+    localizer: &Localizer,
+) -> Result<(), std::process::ExitCode> {
+    let result = std::env::current_exe()
+        .map_err(|_| Error::Failed)
+        .and_then(|binary| eska_tool_runtime::installation::verify(&binary, tool));
+    result.map_err(|error| {
+        eprintln!("{}", present(&error, localizer));
+        std::process::ExitCode::FAILURE
+    })
 }

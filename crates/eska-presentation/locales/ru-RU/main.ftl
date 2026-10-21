@@ -1016,3 +1016,5 @@ component-output-too-large = Ответ компонента превышает 
 component-failed = Компонент завершился с ошибкой.
 
 component-rejected = Компонент { $tool } отклонил операцию: { $code }.
+
+component-incompatible = Компонент { $tool } установлен с несовместимым receipt: { $receipt }. Проверьте установку выбранного компонента.

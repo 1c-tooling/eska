@@ -3,6 +3,7 @@
 mod capture;
 pub mod contract;
 mod exchange;
+pub mod installation;
 mod process;
 mod query;
 mod resolver;
@@ -63,6 +64,10 @@ pub enum Error {
         component: Component,
         path: PathBuf,
     },
+    Incompatible {
+        tool: String,
+        receipt: PathBuf,
+    },
     Signal(io::Error),
     Process {
         component: Component,
@@ -87,6 +92,7 @@ impl Error {
         match self {
             Self::Missing { .. } => "component_missing",
             Self::Invalid { .. } | Self::Selection { .. } => "component_invalid",
+            Self::Incompatible { .. } => "component_incompatible",
             Self::Signal(_) => "signal_handler",
             Self::Process { .. } => "component_process",
             Self::Timeout => "component_timeout",

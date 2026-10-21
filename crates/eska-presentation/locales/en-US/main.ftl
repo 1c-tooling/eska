@@ -1016,3 +1016,5 @@ component-output-too-large = The component response exceeds the size limit.
 component-failed = The component exited with an error.
 
 component-rejected = Component { $tool } rejected the operation: { $code }.
+
+component-incompatible = Component { $tool } has an incompatible installation receipt: { $receipt }. Check the selected component installation.

@@ -35,6 +35,9 @@ pub fn run() -> ExitCode {
 impl Cli {
     /// Runs the selected command, or validates a project, in the UI locale.
     pub fn run(&self, localizer: &Localizer) -> ExitCode {
+        if let Err(code) = eska_presentation::components::verify_installation("eska", localizer) {
+            return code;
+        }
         commands::run(self.command.as_ref(), localizer, &self.process_args)
     }
 }

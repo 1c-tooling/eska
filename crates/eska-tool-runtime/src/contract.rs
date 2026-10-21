@@ -7,6 +7,8 @@ use std::{
     process::ExitCode,
 };
 
+pub const SCHEMA_VERSION: u64 = 2;
+pub const TARGET: &str = env!("ESKA_BUILD_TARGET");
 pub const CONFIG_SCHEMA: &str = "designer-xml-1";
 pub const BRIDGE_SCHEMA: u64 = 1;
 
@@ -22,8 +24,9 @@ pub fn respond(
         return None;
     }
     let value = json!({
-        "schema_version": 1,
+        "schema_version": SCHEMA_VERSION,
         "tool": tool,
+        "target": TARGET,
         "version": version,
         "config_schema": CONFIG_SCHEMA,
         "bridge_schema": BRIDGE_SCHEMA,
@@ -46,10 +49,11 @@ pub fn compatible(value: &Value, expected_tool: &str) -> bool {
     let Some(object) = value.as_object() else {
         return false;
     };
-    object.len() == 6
+    object.len() == 7
         && [
             "schema_version",
             "tool",
+            "target",
             "version",
             "config_schema",
             "bridge_schema",
@@ -57,8 +61,9 @@ pub fn compatible(value: &Value, expected_tool: &str) -> bool {
         ]
         .iter()
         .all(|key| object.contains_key(*key))
-        && value["schema_version"] == 1
+        && value["schema_version"] == SCHEMA_VERSION
         && value["tool"] == expected_tool
+        && value["target"] == TARGET
         && value["version"].as_str().is_some_and(stable_version)
         && value["config_schema"] == CONFIG_SCHEMA
         && value["bridge_schema"] == BRIDGE_SCHEMA
@@ -95,11 +100,12 @@ mod tests {
     /// Compatible minor releases remain selectable; changed schemas and partial replies do not.
     #[test]
     fn contract_checks_capabilities_and_exact_identity() {
-        let value = json!({"schema_version":1,"tool":"eska-project","version":"0.14.3",
+        let value = json!({"schema_version":SCHEMA_VERSION,"tool":"eska-project","target":TARGET,"version":"0.14.3",
             "config_schema":CONFIG_SCHEMA,"bridge_schema":1,"metadata_api":{"major":1,"minor":12}});
         assert!(compatible(&value, "eska-project"));
         for (key, replacement) in [
-            ("schema_version", json!(2)),
+            ("schema_version", json!(3)),
+            ("schema_version", json!(1)),
             ("tool", json!("eska")),
             ("version", json!("0.14.3-dev")),
             ("config_schema", json!("designer-xml-2")),

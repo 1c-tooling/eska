@@ -23,6 +23,7 @@ pub fn resolve_at(component: Component, path: &Path) -> Result<PathBuf, Error> {
             path: path.to_owned(),
         });
     }
+    crate::installation::verify(&canonical, component.name())?;
     Ok(canonical)
 }
 

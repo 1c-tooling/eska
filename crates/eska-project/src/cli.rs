@@ -155,6 +155,11 @@ pub fn run() -> ExitCode {
     };
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
+    if let Err(code) =
+        eska_presentation::components::verify_installation("eska-project", &localizer)
+    {
+        return code;
+    }
     match cli.command.as_ref() {
         Some(Commands::Doctor(args)) => crate::doctor::run(args, &cli.project_dir, &localizer),
         Some(Commands::ShellNew(args)) => {

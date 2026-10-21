@@ -76,6 +76,10 @@ pub fn run() -> ExitCode {
     };
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
+    if let Err(code) = eska_presentation::components::verify_installation("eska-check", &localizer)
+    {
+        return code;
+    }
     let initial =
         configuration::inspect(&cli.project_dir, cli.application.as_deref()).map_err(Failure::from);
     let mut report_file = match initial

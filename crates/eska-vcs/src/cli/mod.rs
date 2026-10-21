@@ -84,6 +84,9 @@ pub fn run() -> ExitCode {
     };
     let matches = localized(&localizer).get_matches_from(args);
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
+    if let Err(code) = eska_presentation::components::verify_installation("eska-vcs", &localizer) {
+        return code;
+    }
     match cli.command {
         Commands::Bridge(args) => args.run(&cli.project_dir),
         Commands::Clone(args) => commands::clone::run(&args, &cli.project_dir, &localizer),
