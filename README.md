@@ -33,6 +33,35 @@ ESKA подключает выгрузку Конфигуратора, пред�
 [`bsl-analyzer-app` 0.3.2](https://github.com/itrous/bsl-analyzer/releases/tag/v0.3.2),
 машинный контракт 3.4; другой сервер автоматически не подставляется.
 
+## Полная ESKA или мини-программы
+
+**Через общую `eska`** выполняйте `eska build`, `eska check`, `eska status`,
+`eska save`. **Напрямую** используйте соответствующие мини-программы:
+
+| Действие | Общая команда | Мини-программа |
+| --- | --- | --- |
+| Сборка | `eska build` | `eska-build build` |
+| Полная проверка XML/BSL | `eska check` | `eska-check` |
+| Состояние Git | `eska status` | `eska-vcs status` |
+| Semantic diff | `eska diff --semantic` | `eska-vcs diff --semantic` |
+| Сохранение commit | `eska save -m "Сообщение"` | `eska-vcs save -m "Сообщение"` |
+| Метаданные | `eska metadata …` | `eska-project metadata …` |
+| Версия проекта | `eska version` | `eska-project version` |
+
+Это альтернативные входы для одного проекта и одного `eska.toml`.
+Полный комплект содержит оболочку и четыре компонента: `eska` запускает
+нужный executable, поэтому установка только crate `eska` не заменяет установку
+владельцев операций. Мини-программы работают без оболочки.
+
+**Общий CLI пока покрывает не все мини-команды.** `context`, `analyzer-config`
+и явный `validate` доступны в `eska-project`, `unpack` — в `eska-build`.
+Текущий Explorer использует `eska-project serve --stdio`;
+`eska ide --stdio` остаётся legacy-входом. `eska new/init` настраивают платформу
+и Git-workflow, а `eska-project new/init` создают только структуру проекта.
+
+[Полная таблица существующих команд и различий](docs/user-guide.md#components) ·
+[Девять сценариев с примерами](docs/user-guide.md#scenarios)
+
 ## Установка
 
 ### Текущие компоненты
@@ -166,11 +195,19 @@ BSL-клиент предоставляет диагностики, completion, 
 
 ```sh
 eska-project analyzer-config prepare --analyzer /path/to/bsl-analyzer-app
+eska check --analyzer /path/to/bsl-analyzer-app --format json
+```
+
+Для проверки без оболочки замените вторую команду на:
+
+```sh
 eska-check --analyzer /path/to/bsl-analyzer-app --format json
 ```
 
-Замените путь на настоящий. Для оболочки доступно `eska check` с теми же
-параметрами. `validate` проверяет корневые дескрипторы;
+Замените путь на настоящий. Явные команды управления конфигом анализатора
+доступны через `eska-project`. Сама проверка умеет подготовить управляемый
+конфиг автоматически; пользовательский файл требует миграции.
+`validate` проверяет корневые дескрипторы;
 `eska-check` проверяет объявленные XML и выполняет полный BSL-анализ.
 Компиляцию и поведение на платформе 1С они не подтверждают.
 
@@ -211,19 +248,32 @@ eska save -m "fix: Исправлен расчёт суммы"
 
 ## Сборка
 
+Через общую ESKA:
+
+```sh
+eska platform list
+eska build --dry-run
+eska build --manifest
+```
+
+Альтернатива для того же проекта — мини-программа:
+
 ```sh
 eska-build platform list
 eska-build build --dry-run
 eska-build build --manifest
-eska-build clean
 ```
+
+Выберите один вариант. Обычная сборка без паспорта — `eska build` или
+`eska-build build`. Для `eska build --manifest` нужен `eska-vcs`, который
+предоставляет Git-сведения. Прямой build с паспортом работает без VCS
+и отмечает Git как `unavailable`.
 
 Укажите точную установленную версию в `[build].platform_version`.
 Нужен `ibcmd` той же версии; для patch также нужен `1cv8`.
 Distrobox нужен только при размещении платформы в Linux-контейнере.
-Артефакты по умолчанию попадают в `build/`; `clean` удаляет управляемую
-служебную ИБ, сохраняя опубликованные результаты.
-Общие команды — `eska build`, `eska platform list`, `eska clean`.
+Артефакты по умолчанию попадают в `build/`. Команды `eska clean` или
+`eska-build clean` удаляют управляемую служебную ИБ, сохраняя опубликованные результаты.
 
 [Платформа, сборка EPF/ERF, паспорт и ограничения patch](docs/user-guide.md#build) ·
 [Самостоятельный сборщик](docs/build-tool.md) · [Проверки сборки](docs/build-validation.md)
@@ -245,7 +295,7 @@ Distrobox нужен только при размещении платформы
 [Настройка платформы](docs/user-guide.md#build) ·
 [Диагностика](docs/user-guide.md#troubleshooting)
 
-## Все команды
+## Разделы CLI
 
 | Сценарий | Команды |
 | --- | --- |
@@ -258,6 +308,7 @@ Distrobox нужен только при размещении платформы
 
 Точный интерфейс каждого установленного компонента показывает `--help`.
 Аргументы самостоятельного project CLI и составных `eska new/init` различаются.
+[Соответствие всех публичных команд](docs/user-guide.md#components).
 
 ## Документация и ограничения
 
