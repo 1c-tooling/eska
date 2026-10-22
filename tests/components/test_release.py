@@ -10,8 +10,10 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "tests"))
 import publish_release
 import release_bundle
+import release_installer_smoke
 from component_package import Failure, digest
 from test_installation import capabilities
 
@@ -39,6 +41,19 @@ class ReleaseTests(unittest.TestCase):
             with self.assertRaises(Failure):
                 publish_release.publish(self.root, "v1.2.3")
             gh.assert_not_called()
+
+    def test_downloaded_assets_reject_omitted_upload_before_installation(self):
+        """Every checksummed file, including cargo-dist's sha256.sum, must survive artifact upload."""
+        self.assertEqual(release_installer_smoke.verify_assets(self.assets), 1)
+        (self.assets / "tool.zip").unlink()
+        with self.assertRaises(AssertionError):
+            release_installer_smoke.verify_assets(self.assets)
+
+    def test_downloaded_assets_reject_changed_bytes_before_installation(self):
+        """Native smoke tests must validate downloaded bytes rather than only run their installers."""
+        (self.assets / "tool.zip").write_bytes(b"changed")
+        with self.assertRaises(AssertionError):
+            release_installer_smoke.verify_assets(self.assets)
 
     def test_modified_artifact_never_reaches_github(self):
         """Checksums apply to uploaded bytes, not only the earlier packaging stage."""

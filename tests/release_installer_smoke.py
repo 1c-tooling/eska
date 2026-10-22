@@ -3,6 +3,7 @@
 
 import argparse
 from functools import partial
+import hashlib
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
@@ -14,12 +15,30 @@ import threading
 from native_components import metadata_session
 
 
+def verify_assets(artifacts):
+    """Detect upload omissions and altered bytes before invoking any native installer."""
+    expected = {}
+    for line in (artifacts / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
+        checksum, name = line.split("  ", 1)
+        assert name not in expected, name
+        expected[name] = checksum
+    files = list(artifacts.iterdir())
+    assert all(path.is_file() and not path.is_symlink() for path in files)
+    actual = {path.name for path in files} - {"SHA256SUMS"}
+    assert set(expected) == actual, {"missing": sorted(set(expected) - actual), "unexpected": sorted(actual - set(expected))}
+    for name, checksum in expected.items():
+        with (artifacts / name).open("rb") as stream:
+            assert hashlib.file_digest(stream, "sha256").hexdigest() == checksum, name
+    return len(expected)
+
+
 def main():
     """Install twice with isolated binaries, receipt and cache, then probe every installed command."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifacts", type=Path)
     args = parser.parse_args()
     artifacts = args.artifacts.resolve()
+    verified_assets = verify_assets(artifacts)
     repository = Path(__file__).resolve().parent.parent
     playground = Path(os.environ["ESKA_TEST_ROOT"]).resolve()
     assert playground == (repository.parent / "eska-playground").resolve()
@@ -68,7 +87,8 @@ def main():
                 assert "component-installation-conflict" in rejected.stdout + rejected.stderr, rejected
                 assert {path.relative_to(stand): path.read_bytes() for path in stand.rglob("*") if path.is_file()} == before
             print(json.dumps({"passed": True, "version": version, "components": sorted(tools),
-                              "receipt_isolated": True, "component_ownership_preserved": True}))
+                              "receipt_isolated": True, "component_ownership_preserved": True,
+                              "verified_assets": verified_assets}))
         finally:
             server.shutdown()
             worker.join(timeout=10)

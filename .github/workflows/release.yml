@@ -140,6 +140,7 @@ jobs:
             target/distrib/*.sh
             target/distrib/*.ps1
             target/distrib/LICENSE
+            target/distrib/sha256.sum
             target/distrib/SHA256SUMS
             target/release-notes.md
           if-no-files-found: error
