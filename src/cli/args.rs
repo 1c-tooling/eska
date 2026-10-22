@@ -1,6 +1,6 @@
 //! Global options, argument parsing and localized top-level help.
 
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsString;
 use std::path::PathBuf;
 
 use clap::{ArgAction, CommandFactory, FromArgMatches, Parser};
@@ -19,6 +19,9 @@ use super::{
     disable_help_subcommand = true
 )]
 pub struct Cli {
+    #[arg(skip)]
+    pub(super) process_args: Vec<OsString>,
+
     /// Selected UI locale.
     #[arg(long, global = true)]
     pub lang: Option<String>,
@@ -43,8 +46,11 @@ impl Cli {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let matches = Self::localized_command(localizer).get_matches_from(args);
-        Self::from_arg_matches(&matches).unwrap_or_else(|error| error.exit())
+        let args: Vec<OsString> = args.into_iter().map(Into::into).collect();
+        let matches = Self::localized_command(localizer).get_matches_from(&args);
+        let mut cli = Self::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
+        cli.process_args = args.into_iter().skip(1).collect();
+        cli
     }
 
     fn localized_command(localizer: &Localizer) -> clap::Command {
@@ -75,29 +81,7 @@ impl Cli {
     }
 }
 
-/// Extracts only the global `--lang` value needed before clap renders help.
-#[must_use]
-pub(super) fn bootstrap_lang<T: AsRef<OsStr>>(args: &[T]) -> Option<String> {
-    let mut arguments = args.iter().skip(1);
-    while let Some(argument) = arguments.next() {
-        let argument = argument.as_ref();
-        if argument == "--" {
-            break;
-        }
-        if argument == "--lang" {
-            return arguments
-                .next()
-                .and_then(|value| value.as_ref().to_str())
-                .map(str::to_owned);
-        }
-        if let Some(argument) = argument.to_str()
-            && let Some(value) = argument.strip_prefix("--lang=")
-        {
-            return Some(value.to_owned());
-        }
-    }
-    None
-}
+pub(super) use eska_presentation::arguments::bootstrap_lang;
 
 #[cfg(test)]
 mod tests {
@@ -116,10 +100,10 @@ mod tests {
             assert_eq!(
                 names,
                 [
-                    "metadata", "update", "ide", "build", "clean", "clone", "config", "new",
-                    "init", "import", "platform", "patch", "diff", "doctor", "finish", "history",
-                    "save", "start", "status", "switch", "shelve", "unshelve", "shelves",
-                    "version"
+                    "metadata", "update", "ide", "build", "check", "clean", "clone", "config",
+                    "new", "init", "import", "platform", "patch", "diff", "doctor", "finish",
+                    "history", "save", "start", "status", "switch", "shelve", "unshelve",
+                    "shelves", "version"
                 ]
             );
             command.debug_assert();

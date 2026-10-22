@@ -1,5 +1,7 @@
+mod application;
 mod artifact;
 mod build;
+mod check;
 mod clean;
 mod clone;
 mod config;
@@ -23,3 +25,7 @@ mod shelves;
 mod update;
 
 mod metadata;
+
+mod delegation;
+
+mod installation;

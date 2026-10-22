@@ -8,6 +8,104 @@ use serde_json::Value;
 
 use crate::support::TestDir;
 
+/// Resolve a standalone owner alongside the shell without relying on PATH.
+fn owner_binary(owner: &str) -> PathBuf {
+    Path::new(env!("CARGO_BIN_EXE_eska"))
+        .with_file_name(format!("{owner}{}", std::env::consts::EXE_SUFFIX))
+}
+
+/// The delegated and direct composition must preserve the exact existing JSON document.
+#[test]
+fn direct_and_general_doctor_reports_match_for_both_locales() {
+    let (_fixture, root) = scaffold();
+    for locale in ["ru", "en"] {
+        let expected = doctor(&root, locale, &["--format", "json"], Path::new(""));
+        let actual = Command::new(owner_binary("eska-project"))
+            .current_dir(&root)
+            .env("PATH", "")
+            .env("ESKA_CONFIG_DIR", root.join("machine-config"))
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("GIT_CONFIG_GLOBAL", root.join("absent-git-config"))
+            .args(["--lang", locale, "doctor", "--format", "json"])
+            .output()
+            .unwrap();
+        assert_eq!(actual.status.code(), expected.status.code());
+        assert_eq!(actual.stdout, expected.stdout);
+        assert_eq!(actual.stderr, expected.stderr);
+    }
+}
+
+/// Missing optional owners are reported without suppressing the remaining independent checks.
+#[test]
+fn unavailable_doctor_owners_do_not_hide_other_checks() {
+    let (_fixture, root) = scaffold();
+    let before = fs::read(root.join("eska.toml")).unwrap();
+    for (variable, id, independent) in [
+        ("ESKA_BUILD_BINARY", "component.build", "vcs.git"),
+        ("ESKA_VCS_BINARY", "component.vcs", "build.ibcmd"),
+    ] {
+        for locale in ["ru", "en"] {
+            let output = Command::new(owner_binary("eska-project"))
+                .current_dir(&root)
+                .env(variable, root.join("missing-component"))
+                .env("ESKA_CONFIG_DIR", root.join("machine-config"))
+                .args(["--lang", locale, "doctor", "--format", "json"])
+                .output()
+                .unwrap();
+            assert_eq!(output.status.code(), Some(1), "{output:?}");
+            assert!(output.stderr.is_empty(), "{output:?}");
+            let document: Value = serde_json::from_slice(&output.stdout).unwrap();
+            let checks = document["checks"].as_array().unwrap();
+            assert!(
+                checks
+                    .iter()
+                    .any(|check| check["id"] == id && check["status"] == "fail")
+            );
+            assert!(checks.iter().any(|check| check["id"] == independent));
+            assert!(
+                checks
+                    .iter()
+                    .any(|check| check["id"] == "project.descriptor")
+            );
+            assert_eq!(fs::read(root.join("eska.toml")).unwrap(), before);
+        }
+    }
+}
+
+/// A successful process with an incomplete report cannot silently omit prerequisite failures.
+#[cfg(unix)]
+#[test]
+fn partial_doctor_packets_are_component_failures() {
+    let (fixture, root) = scaffold();
+    for (variable, id, check_id) in [
+        ("ESKA_BUILD_BINARY", "component.build", "machine.config"),
+        ("ESKA_VCS_BINARY", "component.vcs", "vcs.git"),
+    ] {
+        let frame = serde_json::json!({"schema_version":1,"operation":"doctor","error":null,
+            "data":{"checks":[{"id":check_id,"status":"pass","code":"valid","commands":[]}],"details":[null]}});
+        let binary = fixture.0.join("partial-owner");
+        executable(&binary, &format!("#!/bin/sh\nprintf '%s\\n' '{frame}'\n"));
+        let output = Command::new(owner_binary("eska-project"))
+            .current_dir(&root)
+            .env(variable, binary)
+            .env("ESKA_CONFIG_DIR", root.join("machine-config"))
+            .args(["--lang", "en", "doctor", "--format", "json"])
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(1), "{output:?}");
+        let document: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert!(
+            document["checks"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|check| check["id"] == id
+                    && check["code"] == "component-failed"
+                    && check["status"] == "fail")
+        );
+    }
+}
+
 /// Run doctor with isolated machine and Git configuration.
 fn doctor(root: &Path, locale: &str, arguments: &[&str], path: &Path) -> Output {
     Command::new(env!("CARGO_BIN_EXE_eska"))

@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "stage": "T106",
+  "part": "one checked XML root snapshot for analysis context",
+  "status": "implemented; full performance gates remain in progress",
+  "parent_revision": "2092fe71cb05c078bf84042b65f30b38e29b56b9",
+  "source_files": {
+    "crates/eska-project-core/src/application/context.rs": "363f5910a3023b4c7d1415cb00341d44487e69468e38b90208501b809e98560f",
+    "crates/eska-project-core/src/application/tests.rs": "ff21e7d25123d66dde3927ce768d34d1e118e23ffd5623f855ec2d42aeb11bff",
+    "crates/eska-project-core/src/project/designer_source/mod.rs": "62ecdb7a4e923a55c1d4a2ac71ec3ae39c0a732405abc35a3ee47b140a523302",
+    "crates/eska-project-core/src/project/designer_source/opening.rs": "ce47b2ba02b049802bed8d9240c401441326c4e08344d9756d62698472ba5ade",
+    "crates/eska-project-core/src/project/metadata_parser.rs": "f413d620c6fe6ce8164cb38bee0ee69c2f8da1e3ad3d72b790f15ab6f4312681"
+  },
+  "behavior": {
+    "analysis_root_reads": 1,
+    "analysis_cache": false,
+    "metadata_cache_contract_unchanged": true,
+    "lease_rechecks_unchanged": true,
+    "child_declarations_materialized_for_context": false
+  },
+  "validation": {
+    "directory": "/home/akalsin/Documents/Projects/eska-playground/t106-completion-lbwfolmo/rust-gates",
+    "steps": {
+      "fmt": {
+        "exit": 0,
+        "seconds": 0.7731641979989945
+      },
+      "check": {
+        "exit": 0,
+        "seconds": 1.864132000002428
+      },
+      "clippy": {
+        "exit": 0,
+        "seconds": 4.512047694999637
+      },
+      "build-debug": {
+        "exit": 0,
+        "seconds": 6.465512328999466
+      },
+      "test": {
+        "exit": 0,
+        "seconds": 30.559138298001926
+      },
+      "rustdoc": {
+        "exit": 0,
+        "seconds": 13.440387202001148
+      },
+      "build-release": {
+        "exit": 0,
+        "seconds": 110.42479849299707
+      }
+    },
+    "tests": {
+      "passed": 908,
+      "failed": 0,
+      "ignored": 12
+    },
+    "logs": {
+      "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "check.log": "2ad876b18a9aa142d52d30b4bff6ffe43b76500de88c08223bd4736698bf549a",
+      "clippy.log": "b71d3c0bf8237417810f86c67f92df3d737ca3c038de2e047f480ccc5ce638b5",
+      "build-debug.log": "6283c82b29d1200b0e619169a1280af87b6ff4b986318621ff4d100f6dc9af2b",
+      "test.log": "a08058bd1204c4adb584855b956f5af291b76b129f2ba9f4616e32f7d2abfbf5",
+      "rustdoc.log": "70e529e8270451e63b77cb8fbdd723d2a3e506919980b4c2611eab4f6fbe3891",
+      "build-release.log": "49a2f97ac73457b2387697545f36b37e831e98f08d06ab3060c2335aa5d707e5"
+    }
+  },
+  "cli_contract": {
+    "directory": "/home/akalsin/Documents/Projects/eska-playground/t106-completion-lbwfolmo/context-contract",
+    "source_count": 6,
+    "before_after_ru_en_json_bytes_equal": true,
+    "json_sha256": "49ccb188e7ccba7a4e3f582f38f376b40b7f23ce865023ac5715df76a6529e3f",
+    "human_locales_passed": [
+      "ru-RU",
+      "en-US"
+    ]
+  },
+  "project_binary": {
+    "before_sha256": "196caaadb929690a1a29bfb4f8aba163b28351f04532bd7b2b0641254d9c6091",
+    "after_sha256": "bd38d8af13e1481b1e7a75f53b5b29f95fbedfdd84ae03cf4abb02d60db46768"
+  }
+}

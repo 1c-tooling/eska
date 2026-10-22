@@ -1,0 +1,260 @@
+{
+  "schema_version": 1,
+  "source_commit": "5c955ff7f8f3f1be77b1ceba92fd07fc7a4c356d",
+  "host": "linux-x86_64",
+  "runner": "distrobox",
+  "container": "1c-ubuntu-env",
+  "platform_version": "8.3.27.2325",
+  "build_stand": "t96-native-36nkw390",
+  "onboarding_stand": "t96-onboarding-51vit1v_",
+  "binary_identity": {
+    "eska": {
+      "sha256": "7808960e181654c3b739978210e7870df23518ff0594b50b59d86be857eda8ed",
+      "predates_build_matrix": true
+    },
+    "eska-project": {
+      "sha256": "850f8b77be6408b4a5dfa068d23c5ae39f11892a9fcea52e75e3530347fc2826",
+      "predates_build_matrix": true
+    },
+    "eska-build": {
+      "sha256": "c70b1fd858c90d5937c73348d41b12e0170e090a0b928ce516287f88ab6aa093",
+      "predates_build_matrix": true
+    },
+    "eska-vcs": {
+      "sha256": "8565a1c4246a3cfc148bdf6852bd991f5e6b58b15ee7f59eefd71461f777c307",
+      "predates_build_matrix": true
+    }
+  },
+  "probe_control_directories_empty": true,
+  "build_matrix": {
+    "complete": true,
+    "entry": "eska",
+    "platform_version": "8.3.27.2325",
+    "runner": "distrobox",
+    "cases": [
+      {
+        "project_type": "configuration",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "a9ec20dffb63cfd25a2ca0809391a63a1f271c7da714f32f348746bd76b6218d",
+        "artifact_bytes": 76061,
+        "identity": {
+          "name": "Configuration",
+          "project_type": "configuration",
+          "uuid": "1ebee022-fad5-4bee-9018-c17b8a972623"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "7dbc04b23474fd0481b3ef3ced7a807df5ddc1574d3a6b73c38cfa4180a567c4",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "extension",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "210ace424ff304aa8ef33d2e7b77624499547b53c778d0a769c9966388449269",
+        "artifact_bytes": 4621,
+        "identity": {
+          "name": "EskaTestExtension",
+          "project_type": "extension",
+          "uuid": "b9c069c9-a1a9-422b-8bb9-eb07e4db83e5"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "127a5773fa4b27c71f614fc098b6ccbda0da9f8f695be48059e0e25a07f673a2",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "processing",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "6b1e7c6dd498669a10700c6751a9487feadf973bdd41c9ddc0c07238bdade9dd",
+        "artifact_bytes": 4394,
+        "identity": {
+          "name": "EskaTestprocessing",
+          "project_type": "processing",
+          "uuid": "6cd6ed0f-7b33-42c7-8512-9ad07c6999e1"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "5cbfd99b883783f67bbf4297ba1c57785105d78e114047abb91144ac06fceae7",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "report",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "cfae46567cf5ccdbd0c7413f95995e383e25f69280cf5200589aefa4e4dfad55",
+        "artifact_bytes": 4394,
+        "identity": {
+          "name": "EskaTestreport",
+          "project_type": "report",
+          "uuid": "e7e987eb-93f0-4c23-b713-670ba42e0290"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "1cbb6f3209fbae639972a74afcc93b23da660c4ea526b04d1f0cd36e75fe8789",
+        "repeated_artifact_bytes_equal": false
+      }
+    ],
+    "cancellation": {
+      "unpack": {
+        "status": "passed",
+        "exit": 130,
+        "native_pid_absent": true,
+        "staging_absent": true,
+        "input_unchanged": true
+      },
+      "build": {
+        "status": "passed",
+        "exit": 1,
+        "stage": "import-sources",
+        "native_pid_absent": true,
+        "previous_result_unchanged": true,
+        "source_unchanged": true,
+        "managed_infobase_preserved": true,
+        "staging_absent": true
+      }
+    }
+  },
+  "onboarding_matrix": {
+    "complete": true,
+    "platform_version": "8.3.27.2325",
+    "runner": "1c-ubuntu-env",
+    "binary_sha256": {
+      "eska": "7808960e181654c3b739978210e7870df23518ff0594b50b59d86be857eda8ed",
+      "eska-project": "850f8b77be6408b4a5dfa068d23c5ae39f11892a9fcea52e75e3530347fc2826",
+      "eska-build": "c70b1fd858c90d5937c73348d41b12e0170e090a0b928ce516287f88ab6aa093",
+      "eska-vcs": "8565a1c4246a3cfc148bdf6852bd991f5e6b58b15ee7f59eefd71461f777c307"
+    },
+    "fixture_stand": "t96-native-c22ssl6v",
+    "fixture_unchanged": true,
+    "wrapper_direct_manifests_equal": true,
+    "cases": [
+      {
+        "entry": "wrapper",
+        "project_type": "configuration",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "identity_matches": true,
+        "input_unchanged": true,
+        "init_source_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "entry": "direct",
+        "project_type": "configuration",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "identity_matches": true,
+        "input_unchanged": true,
+        "init_source_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "entry": "wrapper",
+        "project_type": "extension",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "identity_matches": true,
+        "input_unchanged": true,
+        "init_source_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "entry": "direct",
+        "project_type": "extension",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "identity_matches": true,
+        "input_unchanged": true,
+        "init_source_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "entry": "wrapper",
+        "project_type": "processing",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "identity_matches": true,
+        "input_unchanged": true,
+        "init_source_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "entry": "direct",
+        "project_type": "processing",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "identity_matches": true,
+        "input_unchanged": true,
+        "init_source_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "entry": "wrapper",
+        "project_type": "report",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "identity_matches": true,
+        "input_unchanged": true,
+        "init_source_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "entry": "direct",
+        "project_type": "report",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "identity_matches": true,
+        "input_unchanged": true,
+        "init_source_unchanged": true,
+        "staging_absent": true
+      }
+    ],
+    "cancellation": {
+      "status": "passed",
+      "exit": 1,
+      "native_pid_absent": true,
+      "owned_project_absent": true,
+      "input_unchanged": true
+    }
+  },
+  "unverified": [
+    "Windows",
+    "macOS",
+    "Remote",
+    "host runner",
+    "buhmfo native build",
+    "1C client behavior"
+  ],
+  "artifact_byte_equality": "Not established: all four repeated native artifacts differ; prior standalone control also differed."
+}

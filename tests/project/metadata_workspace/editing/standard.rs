@@ -1,8 +1,8 @@
 //! Standard fields use the same public editing workflow, byte patches and history as ordinary attributes.
 
 use super::*;
-use eska::project::metadata_edit::{EditableField, ScalarSchema};
-use eska::project::metadata_model::PropertyKey;
+use crate::backend::project::metadata_edit::{EditableField, ScalarSchema};
+use crate::backend::project::metadata_model::PropertyKey;
 
 const XS: &str = "http://www.w3.org/2001/XMLSchema";
 

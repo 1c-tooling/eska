@@ -1,6 +1,6 @@
 use std::{fs, path::Path, process::Command};
 
-use eska::vcs::{
+use crate::backend::vcs::{
     repository::{Error, Operation, Repository},
     status::{Change, Status},
 };

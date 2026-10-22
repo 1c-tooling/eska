@@ -1,6 +1,5 @@
 use super::{bytes, fixture, object};
-use crate::support::TestDir;
-use eska::project::{
+use crate::backend::project::{
     configurator::TreeOptions,
     metadata_model::{MetadataKind, NodeId, ProjectScope},
     metadata_workspace::{
@@ -8,6 +7,7 @@ use eska::project::{
         search::{IndexState, SearchOptions},
     },
 };
+use crate::support::TestDir;
 use std::{fs, path::Path};
 
 /// Build all declared metadata without relying on visible navigation branches.

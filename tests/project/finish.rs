@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use eska::{
+use crate::backend::{
     project::{Project, ProjectConfiguration, ProjectType, SourceFormat, finish},
     vcs::workflow::{
         FinishRequirement, PolicyOverrides, PublishBehavior, SyncStrategy, WorkflowPreset,

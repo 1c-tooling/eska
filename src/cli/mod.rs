@@ -3,19 +3,10 @@
 use std::{env, process::ExitCode};
 
 mod args;
-mod changes;
 mod commands;
-mod diagnostics;
-mod encoding;
-mod ide;
-mod interactive;
-pub mod localization;
-mod path_output;
-mod platform;
-mod process_output;
-mod shelves;
 
 pub use args::Cli;
+pub use eska_presentation::localization;
 
 use localization::{Localizer, resolve_locale_from_environment};
 
@@ -23,6 +14,11 @@ use localization::{Localizer, resolve_locale_from_environment};
 #[must_use]
 pub fn run() -> ExitCode {
     let args: Vec<_> = env::args_os().collect();
+    if let Some(code) =
+        eska_presentation::components::tool_contract(&args, "eska", env!("CARGO_PKG_VERSION"), None)
+    {
+        return code;
+    }
     let cli_locale = args::bootstrap_lang(&args);
     let locale = resolve_locale_from_environment(cli_locale.as_deref());
     let localizer = match Localizer::try_new(locale) {
@@ -39,6 +35,9 @@ pub fn run() -> ExitCode {
 impl Cli {
     /// Runs the selected command, or validates a project, in the UI locale.
     pub fn run(&self, localizer: &Localizer) -> ExitCode {
-        commands::run(self.command.as_ref(), &self.project_dir, localizer)
+        if let Err(code) = eska_presentation::components::verify_installation("eska", localizer) {
+            return code;
+        }
+        commands::run(self.command.as_ref(), localizer, &self.process_args)
     }
 }

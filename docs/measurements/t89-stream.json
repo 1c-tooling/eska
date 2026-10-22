@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "part": "T89 large JSONL capacity",
+  "parent_revision": "8b7b0e2",
+  "source_files": {
+    "crates/eska-analyzer/src/check/jsonl.rs": "7dba2ca13f18a227f457fed6025205375a0549731e112eca24137474d9661d93",
+    "docs/check-cli.md": "405e442a3c07509deb1ce2669dda5e9c72c24d4aa235be39762552bdd29a6e84"
+  },
+  "before": {
+    "exit": 3,
+    "complete": false,
+    "reason": "output_limit",
+    "max_report_bytes": 268435456
+  },
+  "after_limits": {
+    "max_report_bytes": 536870912,
+    "max_event_bytes": 8388608
+  },
+  "published_input": {
+    "bytes": 380241135,
+    "lines": 23164,
+    "max_line_bytes": 2160033,
+    "max_line_path": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/project/src/buhmfo/src/DataProcessors/ДокументооборотСКонтролирующимиОрганами/Ext/ObjectModule.bsl",
+    "start": {
+      "type": "start",
+      "total_files": 23162,
+      "version": "0.3.2"
+    },
+    "done": {
+      "type": "done",
+      "elapsed_secs": 363.123801446,
+      "total_files": 23162,
+      "total_diagnostics": 1362653,
+      "failed_files": 0,
+      "baseline": {
+        "state": "disabled",
+        "complete": true
+      }
+    },
+    "unterminated_bytes": 0,
+    "exit": 0,
+    "sha256": "3f734d67e0838bd9bfb392b8a27c513654aae52bfd3274c346dd3121dd06f511"
+  },
+  "raw_gzip": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/published-full.jsonl.gz",
+    "sha256": "08bca2c71cafcf9d5faa5258ba93ced17df956264e6969fc7e2d21fccdc390f8"
+  },
+  "large_native_semantic_comparison": {
+    "all_equal": true,
+    "full_upstream_source_set": 23162,
+    "selected_files": [
+      {
+        "file": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/project/src/buhmfo/src/CommonModules/GoogleПереводчик/Ext/Module.bsl",
+        "diagnostics": 4,
+        "equal": true
+      },
+      {
+        "file": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/project/src/buhmfo/src/Catalogs/Номенклатура/Ext/ObjectModule.bsl",
+        "diagnostics": 3,
+        "equal": true
+      },
+      {
+        "file": "/home/akalsin/Documents/Projects/eska-playground/t89-buhmfo-lifecycle-o7u5kx1s/project/src/ExternalSystems/src/WebServices/es_GetData/Ext/Module.bsl",
+        "diagnostics": 5,
+        "equal": true
+      }
+    ]
+  },
+  "validation": {
+    "directory": "/home/akalsin/Documents/Projects/eska-playground/t89-stream-gates-2vh2lr52",
+    "steps": {
+      "fmt": {
+        "exit": 0,
+        "seconds": 0.82152054800099
+      },
+      "check": {
+        "exit": 0,
+        "seconds": 1.1215412990004552
+      },
+      "clippy": {
+        "exit": 0,
+        "seconds": 2.2782093079986225
+      },
+      "build-debug": {
+        "exit": 0,
+        "seconds": 1.333541903000878
+      },
+      "test": {
+        "exit": 0,
+        "seconds": 24.312277549999635
+      },
+      "rustdoc": {
+        "exit": 0,
+        "seconds": 5.50708168500023
+      },
+      "build-release": {
+        "exit": 0,
+        "seconds": 47.50633082799868
+      }
+    },
+    "rust_tests": {
+      "passed": 904,
+      "failed": 0,
+      "ignored": 12
+    },
+    "logs": {
+      "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "check.log": "2a6d94cffb64b2a2507e903aa68383676bc40b1f022d85833bb29e0dba51f846",
+      "clippy.log": "67f7c25c8c69b651a9c1c1caab79a57fc86df8f40ea9694fa285b93da06a12bb",
+      "build-debug.log": "456d3ab506cff39544258385de36f5543adb96a1c679b18e333f3f9ea0638e71",
+      "test.log": "60d7e5cc844749303499052e886c1ffc97baaac582cd75b3f6f11049b80b2aef",
+      "rustdoc.log": "de563a1ea4278446838cd238ef1423bebe7d15ffa72deaff9bb96b5f8d0459cd",
+      "build-release.log": "f70b5910fe60e92e642ebe5f63aed380f05b9957c46206e0bc4d57df2f555416"
+    }
+  },
+  "unchanged_release_binaries": {
+    "eska-project": true,
+    "eska-build": true,
+    "eska-vcs": true,
+    "eska": true
+  },
+  "after_live_verification": {
+    "passed": true,
+    "receipt": "t89-functional.json",
+    "root_revision": "ccb66d3357f7d01ffb819e6b759ee3988596fcf3",
+    "complete": true,
+    "scope": "full",
+    "exit": 1,
+    "status": "threshold_exceeded",
+    "files": 23162,
+    "total_diagnostics": 1362653,
+    "all_published_diagnostics_equal": true,
+    "report_sha256": "7c27a3fcc180e68d8fc799766508d5093764156d9470706eff84d0182f193b11",
+    "checker_sha256": "7425b0cf31924c1d81cf23be49c83bdff9e7f4cf1dc7b6c0847e2966a90c3f97"
+  },
+  "contract": "The total JSONL allowance increases to 512 MiB; event size, count validation, completeness, timeout and public JSON schema remain unchanged.",
+  "unchanged_release_binary_sha256": {
+    "eska-project": "196caaadb929690a1a29bfb4f8aba163b28351f04532bd7b2b0641254d9c6091",
+    "eska-build": "4844d9c10671d5074ff5877baa45dbace0a6b79155d6e76478d06765a4c84c84",
+    "eska-vcs": "e710e6be25aa6ad97535aa054c537c14710548fa1821dd9f9691a7ffff213e5a",
+    "eska": "f9856ad3e2ab01059a4df51f1bf1fe866bff3d93e787c0bf4743f7abe331753e"
+  }
+}

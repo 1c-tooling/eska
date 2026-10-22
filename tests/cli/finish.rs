@@ -81,7 +81,7 @@ fn finishes_an_integrated_local_task_in_both_locales() {
         let output = eska(&root, locale, &["finish"]);
 
         assert!(output.status.success(), "{}", text(&output.stderr));
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         assert!(text(&output.stdout).contains(expected));
         assert_eq!(current_branch(&root), b"main");
         assert!(

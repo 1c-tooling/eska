@@ -20,7 +20,7 @@ fn unknown_install_and_invalid_version_are_locale_independent_without_a_project(
         let document: Value = serde_json::from_slice(&output.stdout).unwrap();
         assert_eq!(document["status"], "unsupported-installation");
         assert_eq!(document["method"], "unknown");
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         outputs.push(output.stdout);
         let invalid = Command::new(env!("CARGO_BIN_EXE_eska"))
             .current_dir(&root.0)

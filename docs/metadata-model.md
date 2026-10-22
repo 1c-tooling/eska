@@ -1,6 +1,6 @@
 # Модель метаданных для IDE
 
-Реализованная основа T60 находится в `src/project/metadata_model`.
+Реализованная основа T60 находится в `crates/eska-project-core/src/project/metadata_model`.
 Это библиотечная модель; команды `eska ide` и расширения VS Code пока нет.
 
 `MetadataObject` хранит тип, имя, UUID, родителя и `ObjectId`, без XML DOM и

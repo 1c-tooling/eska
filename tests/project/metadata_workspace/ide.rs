@@ -11,6 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+mod analyzer;
 mod editing;
 mod numbering;
 mod picture;
@@ -169,7 +170,7 @@ fn targeted_support_protocol_is_bounded_and_locale_independent() {
         let mut client = Client::new(locale);
         let initialize = client.initialize(locale);
         assert_eq!(initialize["capabilities"]["supportFiles"], true);
-        assert_eq!(initialize["apiVersion"]["minor"], 11);
+        assert_eq!(initialize["apiVersion"]["minor"], 12);
         let open = client.open(&directory.0);
         let result = client.ok(
             "metadata/supportFiles",
@@ -232,7 +233,10 @@ fn process_navigates_four_types_and_preserves_sources() {
             "metadata/children",
             context(&open, json!({"node":root,"hideEmptyRootSections":false})),
         );
-        assert!(!children["nodes"].as_array().unwrap().is_empty());
+        assert_ne!(
+            children["nodes"].as_array().unwrap().as_slice(),
+            [] as [serde_json::Value; 0]
+        );
         let object = client.ok(
             "metadata/get",
             context(&open, json!({"objectId":root["objectId"]})),
@@ -242,7 +246,10 @@ fn process_navigates_four_types_and_preserves_sources() {
             "metadata/properties",
             context(&open, json!({"objectId":root["objectId"]})),
         );
-        assert!(!properties["properties"].as_array().unwrap().is_empty());
+        assert_ne!(
+            properties["properties"].as_array().unwrap().as_slice(),
+            [] as [serde_json::Value; 0]
+        );
         let sources = client.ok("metadata/source", context(&open, json!({"node":root})));
         assert!(
             sources["sources"]
@@ -291,7 +298,10 @@ fn process_search_reveal_refresh_and_file_sequence_recovery() {
         context(&open, json!({"objectId":hit["objectId"]})),
     );
     let errors = client.ok("metadata/indexErrors", context(&open, json!({})));
-    assert!(!errors["errors"].as_array().unwrap().is_empty());
+    assert_ne!(
+        errors["errors"].as_array().unwrap().as_slice(),
+        [] as [serde_json::Value; 0]
+    );
     client.send(&json!({"jsonrpc":"2.0","method":"workspace/didChangeFiles","params":{"sessionId":open["sessionId"],"projectId":open["projects"][0]["projectId"],"sequence":"2","paths":[{"value":"Catalogs/Контрагенты.xml","encoding":"utf-8"}]}}));
     let rejected = client.request("metadata/root", context(&open, json!({})));
     assert_eq!(rejected["error"]["data"]["kind"], "resync_required");
@@ -651,7 +661,7 @@ fn process_disk_cache_is_the_only_allowed_write() {
         .keys()
         .filter(|path| !before.contains_key(*path))
         .collect();
-    assert!(!added.is_empty());
+    assert_ne!(added, [] as [&std::path::PathBuf; 0]);
     assert!(
         added
             .iter()

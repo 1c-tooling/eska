@@ -10,7 +10,7 @@ use crate::support::TestDir;
 
 /// Run eska with an explicit locale in an isolated project fixture.
 fn eska(current_dir: &Path, locale: &str, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_eska"))
+    Command::new(crate::vcs_cli())
         .current_dir(current_dir)
         .env_remove("ESKA_LANG")
         .args(["--lang", locale])
@@ -21,7 +21,7 @@ fn eska(current_dir: &Path, locale: &str, args: &[&str]) -> Output {
 
 /// Run redirected semantic output with explicit color suppression.
 fn eska_no_color(current_dir: &Path, locale: &str, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_eska"))
+    Command::new(crate::vcs_cli())
         .current_dir(current_dir)
         .env_remove("ESKA_LANG")
         .env("NO_COLOR", "1")
@@ -139,7 +139,7 @@ fn json_is_locale_independent_and_project_scoped() {
     for locale in ["ru", "en"] {
         let output = eska(&root, locale, &["diff", "--format", "json"]);
         assert!(output.status.success(), "{output:?}");
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         let actual: Value = serde_json::from_slice(&output.stdout).expect("valid JSON diff");
         assert_eq!(actual, expected);
     }
@@ -251,7 +251,7 @@ fn human_and_raw_modes_report_file_states() {
         String::from_utf8(raw.stdout).unwrap(),
         ".M\tsrc/module.bsl\n.?\tsrc/new.bsl\n"
     );
-    assert!(raw.stderr.is_empty());
+    assert_eq!(raw.stderr, [] as [u8; 0]);
 }
 
 /// A clean project has explicit human text and an empty raw stream.
@@ -285,7 +285,7 @@ fn clean_output_and_help_are_localized() {
     }
     let raw = eska(&root, "en", &["diff", "--raw"]);
     assert!(raw.status.success(), "{raw:?}");
-    assert!(raw.stdout.is_empty());
+    assert_eq!(raw.stdout, [] as [u8; 0]);
 }
 
 /// Repository failures use exit code 1 and localized diagnostics.
@@ -307,7 +307,7 @@ fn missing_repository_error_is_localized() {
     ] {
         let output = eska(&fixture.0, locale, &["diff"]);
         assert_eq!(output.status.code(), Some(1), "{output:?}");
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(String::from_utf8_lossy(&output.stderr).contains(expected));
     }
 }
@@ -318,7 +318,7 @@ fn raw_and_format_cannot_be_combined() {
     let fixture = TestDir::new();
     let output = eska(&fixture.0, "en", &["diff", "--raw", "--format", "json"]);
     assert_eq!(output.status.code(), Some(2), "{output:?}");
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     assert!(String::from_utf8_lossy(&output.stderr).contains("cannot be used with"));
 }
 
@@ -620,7 +620,7 @@ fn revision_diff_errors_are_localized_and_usage_is_bounded() {
     ] {
         let output = eska(&root, locale, &["diff", "missing"]);
         assert_eq!(output.status.code(), Some(1), "{output:?}");
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         let stderr = String::from_utf8_lossy(&output.stderr);
         assert!(stderr.contains(expected), "{stderr}");
         assert!(stderr.contains("missing"), "{stderr}");

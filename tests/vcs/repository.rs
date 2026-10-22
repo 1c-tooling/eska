@@ -1,6 +1,8 @@
 use std::fs;
 
-use eska::vcs::repository::{Divergence, Error, Head, OpenError, ReferenceTarget, Repository};
+use crate::backend::vcs::repository::{
+    Divergence, Error, Head, OpenError, ReferenceTarget, Repository,
+};
 
 use super::support::{commit, git, git_output, repository};
 use crate::support::TestDir;
@@ -18,8 +20,8 @@ fn discovery_and_unborn_head() {
             reference: "refs/heads/main".into()
         }
     );
-    assert!(repo.references().unwrap().is_empty());
-    assert!(repo.history(10).unwrap().is_empty());
+    assert_eq!(repo.references().unwrap(), []);
+    assert_eq!(repo.history(10).unwrap(), []);
 }
 
 #[test]
@@ -125,9 +127,9 @@ fn bounded_history_traverses_both_merge_parents_once() {
     assert_eq!(history[1].id, main);
     assert_eq!(history[2].id, feature);
     assert_eq!(history[3].id, base);
-    assert!(history[3].parents.is_empty());
+    assert_eq!(history[3].parents, [] as [gix::ObjectId; 0]);
     assert_eq!(repo.history(2).unwrap(), history[..2]);
-    assert!(repo.history(0).unwrap().is_empty());
+    assert_eq!(repo.history(0).unwrap(), []);
 }
 
 #[test]

@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "kind": "analyzer-configuration-validation",
+  "project": "/home/akalsin/Documents/Projects/eska-playground/t84-analyzer-config-nxc4lm62/buhmfo",
+  "baseline_unchanged": true,
+  "source_descriptors_unchanged": 6,
+  "analyzer_version": "0.3.2",
+  "contract_version": "3.4",
+  "platform_started": false,
+  "bsl_analysis_run": false,
+  "preview_locale_independent": true,
+  "preview_originals_unchanged": true,
+  "backup_sha256": "30311ddb9b6f75f3b30b2599a60914648df15491ea7509c4ff3288a8350edf71",
+  "idempotent_prepare": true,
+  "context_sources": 6,
+  "result": {
+    "changed": false,
+    "kind": "analyzer-configuration",
+    "limited_context": false,
+    "ownership": {
+      "analyzer_version": "0.3.2",
+      "body_sha256": "5899e6adf9fc152752a11cbdd3bff5fceb812ab4001e68e8bd25750d88d5c4a3",
+      "context": "buhmfo",
+      "generator_version": 1,
+      "input_fingerprint": "8c5673025a14d451e956338c6b7c51cfb85b2f8ba30b6ecaf8f0d0d0fa0c8891",
+      "schema_version": 1
+    },
+    "path": {
+      "encoding": "utf-8",
+      "value": "/home/akalsin/Documents/Projects/eska-playground/t84-analyzer-config-nxc4lm62/buhmfo/bsl-analyzer.toml"
+    },
+    "preview_token": "a2fb0d9146b4cb70e99d3021bcd685c564315174dab842babf8b8060a97434fe",
+    "schema_version": 1,
+    "status": "current"
+  },
+  "commands": [
+    {
+      "step": "context",
+      "exit": 0,
+      "duration_ms": 343.938
+    },
+    {
+      "step": "initial-status",
+      "exit": 1,
+      "duration_ms": 353.236
+    },
+    {
+      "step": "preview-en",
+      "exit": 0,
+      "duration_ms": 1123.077
+    },
+    {
+      "step": "preview-ru",
+      "exit": 0,
+      "duration_ms": 1103.095
+    },
+    {
+      "step": "migration",
+      "exit": 0,
+      "duration_ms": 1735.702
+    },
+    {
+      "step": "prepare",
+      "exit": 0,
+      "duration_ms": 1327.839
+    },
+    {
+      "step": "status",
+      "exit": 0,
+      "duration_ms": 288.171
+    }
+  ],
+  "checks": {
+    "fmt": "passed",
+    "workspace_check": "passed",
+    "strict_workspace_clippy": "passed",
+    "workspace_tests": {
+      "passed": 782,
+      "ignored": 9,
+      "failed": 0
+    },
+    "explicit_published_analyzer_tests": {
+      "passed": 3,
+      "failed": 0
+    },
+    "manual_rpc_cli_preview_equal": true,
+    "manual_rpc_migration_backup_and_lease": "passed",
+    "workspace_rustdoc": "passed",
+    "explorer_real_backend_node_tests": {
+      "passed": 138,
+      "skipped": 0,
+      "failed": 0
+    },
+    "extension_host_properties": "passed",
+    "dependency_boundaries": "passed"
+  }
+}

@@ -9,7 +9,7 @@ use crate::{
 
 /// Run the built CLI with an explicit locale and isolated project directory.
 fn eska(current_dir: &Path, locale: &str, args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_eska"))
+    Command::new(crate::vcs_cli())
         .current_dir(current_dir)
         .env_remove("ESKA_LANG")
         .args(["--lang", locale])
@@ -44,7 +44,7 @@ fn json_output_is_stable_locale_independent_and_honors_limit() {
             &["history", "--limit", "1", "--format", "json"],
         );
         assert!(output.status.success(), "{output:?}");
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         documents.push(serde_json::from_slice::<Value>(&output.stdout).expect("valid JSON"));
     }
 
@@ -101,7 +101,7 @@ fn human_output_and_help_are_localized() {
 
         let output = eska(&fixture.0, locale, &["history", "-n", "1"]);
         assert!(output.status.success(), "{output:?}");
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         let text = String::from_utf8(output.stdout)
             .expect("UTF-8 human output")
             .replace(['\u{2068}', '\u{2069}'], "");

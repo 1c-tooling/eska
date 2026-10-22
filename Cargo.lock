@@ -472,7 +472,7 @@ dependencies = [
  "mio",
  "parking_lot",
  "rustix",
- "signal-hook",
+ "signal-hook 0.3.18",
  "signal-hook-mio",
  "winapi",
 ]
@@ -701,25 +701,156 @@ dependencies = [
  "axoupdater",
  "base64 0.23.1",
  "clap",
- "crossterm",
- "ctrlc",
- "directories",
- "fluent",
+ "eska-presentation",
+ "eska-project",
+ "eska-project-core",
+ "eska-tool-runtime",
+ "eska-vcs",
  "gix",
- "quick-xml",
+ "nix 0.31.3",
  "reqwest",
  "roxmltree",
  "self-replace",
  "semver",
  "serde",
  "serde_json",
- "sha2",
- "sys-locale",
  "tokio",
+ "toml",
+ "zip",
+]
+
+[[package]]
+name = "eska-analyzer"
+version = "0.14.3"
+dependencies = [
+ "eska-project-core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "toml",
+ "toml_edit",
+]
+
+[[package]]
+name = "eska-build"
+version = "0.14.3"
+dependencies = [
+ "bstr",
+ "clap",
+ "eska-build-runtime",
+ "eska-presentation",
+ "eska-project-core",
+ "eska-terminal",
+ "eska-tool-runtime",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "eska-build-runtime"
+version = "0.14.3"
+dependencies = [
+ "ctrlc",
+ "directories",
+ "eska-project-core",
+ "eska-tool-runtime",
+ "gix-path",
+ "roxmltree",
+ "serde",
+ "serde_json",
+ "sha2",
+ "signal-hook 0.4.5",
+ "toml",
+]
+
+[[package]]
+name = "eska-check"
+version = "0.14.3"
+dependencies = [
+ "clap",
+ "ctrlc",
+ "eska-analyzer",
+ "eska-presentation",
+ "eska-project-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "eska-presentation"
+version = "0.14.3"
+dependencies = [
+ "clap",
+ "eska-project-core",
+ "eska-tool-runtime",
+ "fluent",
+ "sys-locale",
+]
+
+[[package]]
+name = "eska-project"
+version = "0.14.3"
+dependencies = [
+ "base64 0.23.1",
+ "clap",
+ "ctrlc",
+ "eska-analyzer",
+ "eska-presentation",
+ "eska-project-core",
+ "eska-terminal",
+ "eska-tool-runtime",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "eska-project-core"
+version = "0.14.3"
+dependencies = [
+ "bstr",
+ "gix-path",
+ "gix-validate",
+ "quick-xml",
+ "roxmltree",
+ "serde",
+ "serde_json",
+ "sha2",
  "toml",
  "toml_edit",
  "unicode-general-category",
  "zip",
+]
+
+[[package]]
+name = "eska-terminal"
+version = "0.14.3"
+dependencies = [
+ "crossterm",
+ "eska-presentation",
+]
+
+[[package]]
+name = "eska-tool-runtime"
+version = "0.14.3"
+dependencies = [
+ "ctrlc",
+ "nix 0.31.3",
+ "serde_json",
+ "signal-hook 0.4.5",
+]
+
+[[package]]
+name = "eska-vcs"
+version = "0.14.3"
+dependencies = [
+ "clap",
+ "eska-presentation",
+ "eska-project-core",
+ "gix",
+ "roxmltree",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -3098,6 +3229,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "signal-hook"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b29ffa27d3d59a049bb328258de100f8012848d1b08d444e08bbc02ac468435e"
+dependencies = [
+ "libc",
+ "signal-hook-registry",
+]
+
+[[package]]
 name = "signal-hook-mio"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3105,7 +3246,7 @@ checksum = "b75a19a7a740b25bc7944bdee6172368f988763b744e3d4dfe753f6b4ece40cc"
 dependencies = [
  "libc",
  "mio",
- "signal-hook",
+ "signal-hook 0.3.18",
 ]
 
 [[package]]

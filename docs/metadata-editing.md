@@ -290,7 +290,7 @@ UUID и других внутренних идентификаторов, язы
 редактирование самих предопределённых данных и числовые свойства без проверенного диапазона остаются
 для чтения. Наличие свойства в модели EDT само по себе не разрешает запись.
 
-`fields.tsv` и `enums.tsv` в `src/project/metadata_edit` содержат технические
+`fields.tsv` и `enums.tsv` в `crates/eska-project-core/src/project/metadata_edit` содержат технические
 идентичности модели EDT, не переводы. Основание — те же активные bundles и
 SHA-256, что в [каталоге платформы](platform-catalog.md). Профили: 8.3.27 и 8.5.1;
 последний выбирается при `build.platform_version = "8.5.1.*"`, иначе используется
@@ -415,7 +415,7 @@ UTF-16 единиц, буква/подчёркивание в начале, да
 до его переименования. Проверка импорта не заменяет проверку BSL-вызовов.
 Исходные пары извлекает `tools/platform-catalog/extract_edt.py` в
 `global-properties-<profile>.tsv`; проверенный поднабор хранится в
-`src/project/metadata_rename/reserved_common_modules.tsv`.
+`crates/eska-project-core/src/project/metadata_rename/reserved_common_modules.tsv`.
 
 Вывод типов переменных, обработка запросов
 и подключение поля «Имя» к этому плану пока не реализованы. Предопределённые

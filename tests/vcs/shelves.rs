@@ -1,7 +1,7 @@
 //! Shelf integration tests against real repositories and native filesystem paths.
 
 use super::support::{commit, git, repository};
-use eska::vcs::{
+use crate::backend::vcs::{
     repository::Repository,
     shelves::{self, Session},
 };
@@ -44,7 +44,7 @@ fn round_trip_preserves_raw_index_and_worktree() {
         fs::read(root.0.join("новый файл.bsl")).unwrap(),
         b"untracked\r\n"
     );
-    assert!(shelves::list(&repo).unwrap().is_empty());
+    assert_eq!(shelves::list(&repo).unwrap(), []);
 }
 
 /// Retain a shelf when its original branch commit no longer matches.
@@ -123,7 +123,7 @@ fn lock_and_operation_preflight_is_read_only() {
         shelves::plan(&repo),
         Err(shelves::Error::InProgress)
     ));
-    assert!(shelves::list(&repo).unwrap().is_empty());
+    assert_eq!(shelves::list(&repo).unwrap(), []);
     assert_eq!(fs::read(root.0.join("pending")).unwrap(), b"saved");
 }
 
@@ -223,7 +223,7 @@ fn ambiguous_git_states_leave_index_and_files_untouched() {
         assert!(shelves::plan(&repo).is_err(), "{state} must be refused");
         assert_eq!(fs::read(repo.index_path()).unwrap(), index);
         assert_eq!(fs::read(root.0.join("pending")).unwrap(), b"keep");
-        assert!(shelves::list(&repo).unwrap().is_empty());
+        assert_eq!(shelves::list(&repo).unwrap(), []);
     }
 }
 
@@ -265,7 +265,7 @@ fn failed_restore_can_be_retried_without_losing_the_shelf() {
     fs::remove_file(root.0.join("new")).unwrap();
     session.restore(None).unwrap();
     assert_eq!(fs::read(root.0.join("new")).unwrap(), b"original");
-    assert!(shelves::list(&repo).unwrap().is_empty());
+    assert_eq!(shelves::list(&repo).unwrap(), []);
 }
 
 /// A partial worktree restore retains its journal and can resume after permissions are fixed.
@@ -295,5 +295,5 @@ fn partial_restore_resumes_after_write_failure() {
     assert_eq!(fs::read(root.0.join("a")).unwrap(), b"saved a");
     assert_eq!(fs::read(root.0.join("z/file")).unwrap(), b"saved z");
     assert_eq!(fs::read(repo.index_path()).unwrap(), index);
-    assert!(shelves::list(&repo).unwrap().is_empty());
+    assert_eq!(shelves::list(&repo).unwrap(), []);
 }

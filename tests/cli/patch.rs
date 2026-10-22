@@ -2,7 +2,7 @@
 
 use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf, process::Command};
 
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::{
     support::TestDir,
@@ -55,6 +55,98 @@ fn dry_run(root: &std::path::Path, locale: &str) -> Value {
     assert!(output.status.success(), "{output:?}");
     assert!(output.stderr.is_empty(), "{output:?}");
     serde_json::from_slice(&output.stdout).expect("patch JSON")
+}
+
+/// Execute the real VCS owner using an empty PATH; planning never needs a native runtime.
+fn bridge(root: &std::path::Path, locale: &str, args: &[&str]) -> std::process::Output {
+    Command::new(
+        std::path::Path::new(env!("CARGO_BIN_EXE_eska"))
+            .with_file_name(format!("eska-vcs{}", std::env::consts::EXE_SUFFIX)),
+    )
+    .current_dir(root)
+    .env("PATH", "")
+    .args(["--lang", locale, "--project-dir"])
+    .arg(root)
+    .arg("__bridge")
+    .args(args)
+    .output()
+    .unwrap()
+}
+
+/// Both locales describe the same plan, and preparation accepts only its unchanged fingerprint.
+#[test]
+fn process_plan_and_snapshot_reject_stale_state_without_writing() {
+    let (fixture, root) = project();
+    let mut replies = Vec::new();
+    for locale in ["ru", "en"] {
+        let output = bridge(&root, locale, &["patch-plan"]);
+        assert!(output.status.success(), "{output:?}");
+        assert_eq!(output.stderr, [] as [u8; 0]);
+        replies.push(serde_json::from_slice::<Value>(&output.stdout).unwrap());
+    }
+    assert_eq!(replies[0], replies[1]);
+    let data = &replies[0]["data"];
+    assert_eq!(data["plan"], dry_run(&root, "en")["plan"]);
+    let fingerprint = data["fingerprint"].as_str().unwrap();
+    let staging = fixture.0.join("empty transfer");
+    fs::create_dir(&staging).unwrap();
+    let wrong = bridge(
+        &root,
+        "en",
+        &[
+            "prepare-patch",
+            "--workspace",
+            staging.to_str().unwrap(),
+            "--expected",
+            &"0".repeat(64),
+        ],
+    );
+    assert_eq!(wrong.status.code(), Some(1));
+    let document: Value = serde_json::from_slice(&wrong.stdout).unwrap();
+    assert_eq!(document["error"]["code"], "plan-changed");
+    assert!(document["data"].is_null());
+    assert!(fs::read_dir(&staging).unwrap().next().is_none());
+    let prepared = bridge(
+        &root,
+        "en",
+        &[
+            "prepare-patch",
+            "--workspace",
+            staging.to_str().unwrap(),
+            "--expected",
+            fingerprint,
+        ],
+    );
+    assert!(prepared.status.success(), "{prepared:?}");
+    let document: Value = serde_json::from_slice(&prepared.stdout).unwrap();
+    assert_eq!(document["data"]["prepared"], true);
+    assert_eq!(document["data"]["fingerprint"], fingerprint);
+    assert!(staging.join("base/Configuration.xml").is_file());
+    assert!(staging.join("modules/Math/Ext/Module.bsl").is_file());
+    fs::remove_dir_all(&staging).unwrap();
+    fs::create_dir(&staging).unwrap();
+    fs::write(
+        root.join("src/CommonModules/Math/Ext/Module.bsl"),
+        "Function AddOne(Value) Export\n Return Value + 3;\nEndFunction\n",
+    )
+    .unwrap();
+    git(&fixture.0, &["add", "--all"]);
+    git(&fixture.0, &["commit", "-m", "moved head"]);
+    let stale = bridge(
+        &root,
+        "ru",
+        &[
+            "prepare-patch",
+            "--workspace",
+            staging.to_str().unwrap(),
+            "--expected",
+            fingerprint,
+        ],
+    );
+    assert_eq!(stale.status.code(), Some(1));
+    let document: Value = serde_json::from_slice(&stale.stdout).unwrap();
+    assert_eq!(document["error"]["code"], "plan-changed");
+    assert!(fs::read_dir(&staging).unwrap().next().is_none());
 }
 
 /// Install a fake paired ibcmd and Designer that exercises every pipeline transition.
@@ -121,6 +213,26 @@ fn dry_run_json_is_stable_and_does_not_create_artifacts() {
     assert_eq!(ru["plan"]["base"], "refs/heads/main");
     assert_eq!(ru["plan"]["modules"][0]["name"], "Math");
     assert_eq!(ru["plan"]["modules"][0]["methods"][0], "AddOne");
+    let fields: Vec<_> = ru["plan"]
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    assert_eq!(
+        fields,
+        [
+            "base",
+            "base_commit",
+            "changes",
+            "head",
+            "ignored_paths",
+            "merge_base",
+            "modules",
+            "name"
+        ]
+    );
+    assert_eq!(ru["plan"]["modules"][0].as_object().unwrap().len(), 2);
     assert_eq!(ru["runtime_verified"], false);
     assert_eq!(ru["requires_safe_mode_disabled"], true);
     assert!(!root.join("build").exists());
@@ -154,12 +266,24 @@ fn build_pipeline_publishes_once_without_leaving_workspace() {
     let (_fixture, root) = project();
     let platform = TestDir::new();
     let ibcmd = fake_platform(&platform);
-    let output_path = platform.0.join("result.cfe");
+    for owner in ["eska", "eska-build"] {
+        assert_pipeline(&root, &platform, &ibcmd, owner);
+    }
+}
+
+/// Each entry point publishes once, cleans its workspace and preserves the existing output.
+fn assert_pipeline(
+    root: &std::path::Path,
+    platform: &TestDir,
+    ibcmd: &std::path::Path,
+    owner: &str,
+) {
+    let output_path = platform.0.join(format!("{owner}-result.cfe"));
     let run = || {
-        Command::new(env!("CARGO_BIN_EXE_eska"))
-            .current_dir(&root)
+        Command::new(owner_binary(owner))
+            .current_dir(root)
             .args(["--lang", "en", "patch", "--format", "json", "--ibcmd"])
-            .arg(&ibcmd)
+            .arg(ibcmd)
             .arg("--output")
             .arg(&output_path)
             .output()
@@ -175,13 +299,17 @@ fn build_pipeline_publishes_once_without_leaving_workspace() {
         fs::read(&output_path).expect("artifact"),
         b"extension-artifact"
     );
-    assert!(fs::read_dir(&root).expect("project entries").all(|entry| {
-        !entry
-            .expect("project entry")
-            .file_name()
-            .to_string_lossy()
-            .starts_with(".eska-patch-")
-    }));
+    assert!(
+        fs::read_dir(&platform.0)
+            .expect("output entries")
+            .all(|entry| {
+                !entry
+                    .expect("project entry")
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(".eska-patch-")
+            })
+    );
 
     let second = run();
     assert!(!second.status.success(), "{second:?}");
@@ -191,4 +319,109 @@ fn build_pipeline_publishes_once_without_leaving_workspace() {
         fs::read(output_path).expect("unchanged artifact"),
         b"extension-artifact"
     );
+}
+
+/// Locate a component built alongside the shell, independently from the caller's PATH.
+fn owner_binary(owner: &str) -> PathBuf {
+    std::path::Path::new(env!("CARGO_BIN_EXE_eska"))
+        .with_file_name(format!("{owner}{}", std::env::consts::EXE_SUFFIX))
+}
+
+/// Planning needs only the two installed owners, with no shell, project server or analyzer.
+#[test]
+fn minimal_build_and_vcs_installation_preserves_public_plan() {
+    let (_fixture, root) = project();
+    let installation = TestDir::new();
+    for owner in ["eska-build", "eska-vcs"] {
+        fs::copy(owner_binary(owner), installation.0.join(owner)).unwrap();
+    }
+    let expected = dry_run(&root, "en");
+    for locale in ["ru", "en"] {
+        let output = Command::new(installation.0.join("eska-build"))
+            .current_dir(&root)
+            .env("PATH", "")
+            .env_remove("ESKA_VCS_BINARY")
+            .env_remove("ESKA_LANG")
+            .env("ESKA_CONFIG_DIR", installation.0.join("machine"))
+            .args(["--lang", locale, "patch", "--dry-run", "--format", "json"])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{output:?}");
+        assert!(output.stderr.is_empty(), "{output:?}");
+        assert_eq!(
+            serde_json::from_slice::<Value>(&output.stdout).unwrap(),
+            expected
+        );
+    }
+    assert!(!root.join("build").exists());
+}
+
+/// Print the selected complete frame without external programs, including when PATH is empty.
+fn fake_vcs(fixture: &TestDir, plan: &Value, prepared: &Value, status: u8) -> PathBuf {
+    let path = fixture.0.join("vcs-fixture");
+    let plan = plan.to_string().replace('\'', "'\\''");
+    let prepared = prepared.to_string().replace('\'', "'\\''");
+    fs::write(&path, format!(
+        "#!/bin/sh\ncase \"$2\" in\npatch-plan) printf '%s\\n' '{plan}';;\n*) printf '%s\\n' '{prepared}'; exit {status};;\nesac\n"
+    )).unwrap();
+    let mut permissions = fs::metadata(&path).unwrap().permissions();
+    permissions.set_mode(0o755);
+    fs::set_permissions(&path, permissions).unwrap();
+    path
+}
+
+/// A malformed or stale projection must fail before native work and clean only owned staging.
+#[test]
+fn failed_patch_component_keeps_sources_and_previous_artifact() {
+    let (_fixture, root) = project();
+    let platform = TestDir::new();
+    let ibcmd = fake_platform(&platform);
+    let actual = bridge(&root, "en", &["patch-plan"]);
+    let plan: Value = serde_json::from_slice(&actual.stdout).unwrap();
+    let mut invalid = plan.clone();
+    invalid["data"]["plan"]["modules"][0]["name"] = json!("../escape");
+    let wrong = json!({"schema_version":1,"operation":"prepare_patch",
+        "data":{"prepared":true,"fingerprint":"0".repeat(64)},"error":null});
+    let rejected = json!({"schema_version":1,"operation":"prepare_patch",
+        "data":null,"error":{"code":"plan-changed","detail":"moved HEAD"}});
+    let source = root.join("src/CommonModules/Math/Ext/Module.bsl");
+    let source_before = fs::read(&source).unwrap();
+    fs::write(platform.0.join("keep.cfe"), b"previous artifact").unwrap();
+    for (plan, prepared, status, code) in [
+        (&invalid, &wrong, 0, "component"),
+        (&plan, &wrong, 0, "component"),
+        (&plan, &rejected, 1, "plan-changed"),
+    ] {
+        let vcs = fake_vcs(&platform, plan, prepared, status);
+        for owner in ["eska", "eska-build"] {
+            for locale in ["ru", "en"] {
+                let output = Command::new(owner_binary(owner))
+                    .current_dir(&root)
+                    .env("ESKA_VCS_BINARY", &vcs)
+                    .env("ESKA_CONFIG_DIR", platform.0.join("machine"))
+                    .args(["--lang", locale, "patch", "--format", "json", "--ibcmd"])
+                    .arg(&ibcmd)
+                    .arg("--output")
+                    .arg(platform.0.join("candidate.cfe"))
+                    .output()
+                    .unwrap();
+                assert_eq!(output.status.code(), Some(1), "{output:?}");
+                let document: Value = serde_json::from_slice(&output.stdout).unwrap();
+                assert_eq!(document["error"]["code"], code, "{output:?}");
+                assert!(!platform.0.join("candidate.cfe").exists());
+                assert_eq!(fs::read(&source).unwrap(), source_before);
+                assert_eq!(
+                    fs::read(platform.0.join("keep.cfe")).unwrap(),
+                    b"previous artifact"
+                );
+                assert!(fs::read_dir(&platform.0).unwrap().all(|entry| {
+                    !entry
+                        .unwrap()
+                        .file_name()
+                        .to_string_lossy()
+                        .starts_with(".eska-patch-")
+                }));
+            }
+        }
+    }
 }

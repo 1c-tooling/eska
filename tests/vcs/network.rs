@@ -1,4 +1,4 @@
-use eska::vcs::{
+use crate::backend::vcs::{
     network::{self, CapabilityGap, FetchBackend, FetchError},
     repository::Repository,
 };

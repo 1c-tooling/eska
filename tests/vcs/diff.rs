@@ -1,6 +1,6 @@
 use std::fs;
 
-use eska::vcs::{repository::Repository, status::Change};
+use crate::backend::vcs::{repository::Repository, status::Change};
 
 use super::support::{commit, git, repository};
 

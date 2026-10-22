@@ -10,7 +10,7 @@ use std::os::unix::fs::PermissionsExt;
 use crate::support::TestDir;
 
 fn eska(current_dir: &Path, locale: &str, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_eska"))
+    Command::new(crate::vcs_cli())
         .current_dir(current_dir)
         .env_remove("ESKA_LANG")
         .args(["--lang", locale])
@@ -132,7 +132,7 @@ fn dry_run_matches_the_subsequent_commit_and_is_byte_read_only() {
         );
 
         assert!(output.status.success(), "{}", text(&output.stderr));
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         let stdout = text(&output.stdout);
         for expected in [title, scope, included, deleted, modified, untracked] {
             assert!(
@@ -355,7 +355,7 @@ fn saves_project_changes_with_an_explicit_message_in_both_locales() {
         let output = eska(&root, locale, &["save", "-m", "project changes"]);
 
         assert!(output.status.success(), "{}", text(&output.stderr));
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         assert!(text(&output.stdout).contains(expected));
         assert_eq!(
             git_ok(&fixture.0, &["log", "-1", "--format=%s"]),
@@ -667,7 +667,7 @@ fn generated_draft_editor_inherits_the_caller_locale() {
     let editor_command = format!("'{}'", editor.display());
     git_ok(&fixture.0, &["config", "core.editor", &editor_command]);
 
-    let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+    let output = Command::new(crate::vcs_cli())
         .current_dir(&root)
         .env_remove("ESKA_LANG")
         .env("LC_ALL", "C.UTF-8")

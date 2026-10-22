@@ -1,13 +1,14 @@
 //! Command registration and dispatch. Each handler owns its arguments and help.
 
-use std::{path::Path, process::ExitCode};
+use crate::component::{self, Component, Invocation};
+use std::{ffi::OsString, process::ExitCode};
 
 use clap::Subcommand;
 
 use super::localization::Localizer;
 
-mod artifact;
 mod build;
+mod check;
 mod clean;
 mod clone;
 mod config;
@@ -28,7 +29,6 @@ mod start;
 mod status;
 mod switch;
 mod update;
-mod validate;
 mod version;
 
 #[derive(Debug, Subcommand)]
@@ -41,6 +41,8 @@ pub(super) enum Commands {
     Ide(ide::IdeArgs),
     #[command(disable_help_flag = true)]
     Build(build::BuildArgs),
+    #[command(disable_help_flag = true)]
+    Check(check::CheckArgs),
     #[command(disable_help_flag = true)]
     Clean(clean::CleanArgs),
     #[command(disable_help_flag = true)]
@@ -83,37 +85,80 @@ pub(super) enum Commands {
     Version(version::VersionArgs),
 }
 
+/// Routes the parsed intent while preserving the original native process arguments.
 pub(super) fn run(
     command: Option<&Commands>,
-    project_dir: &Path,
     localizer: &Localizer,
+    process_args: &[OsString],
 ) -> ExitCode {
     match command {
         Some(Commands::Update(args)) => args.run(localizer),
-        Some(Commands::Metadata(args)) => args.run(project_dir, localizer),
-        Some(Commands::Ide(args)) => args.run(),
-        Some(Commands::Shelve(args)) => args.run(project_dir, localizer),
-        Some(Commands::Unshelve(args)) => args.run(project_dir, localizer),
-        Some(Commands::Shelves(args)) => args.run(project_dir, localizer),
-        Some(Commands::Build(args)) => args.run(project_dir, localizer),
-        Some(Commands::Clean(args)) => args.run(project_dir, localizer),
-        Some(Commands::Clone(args)) => args.run(project_dir, localizer),
-        Some(Commands::Config(args)) => args.run(localizer),
-        Some(Commands::New(args)) => args.run(project_dir, localizer),
-        Some(Commands::Init(args)) => args.run(project_dir, localizer),
-        Some(Commands::Import(args)) => args.run(project_dir, localizer),
-        Some(Commands::Platform(args)) => args.run(localizer),
-        Some(Commands::Patch(args)) => args.run(project_dir, localizer),
-        Some(Commands::Diff(args)) => args.run(project_dir, localizer),
-        Some(Commands::Doctor(args)) => args.run(project_dir, localizer),
-        Some(Commands::Finish(_)) => finish::FinishArgs::run(project_dir, localizer),
-        Some(Commands::History(args)) => args.run(project_dir, localizer),
-        Some(Commands::Save(args)) => args.run(project_dir, localizer),
-        Some(Commands::Start(args)) => args.run(project_dir, localizer),
-        Some(Commands::Status(args)) => args.run(project_dir, localizer),
-        Some(Commands::Switch(args)) => args.run(project_dir, localizer),
-        Some(Commands::Version(args)) => args.run(project_dir, localizer),
-        None => validate::run(project_dir, localizer),
+        Some(Commands::Check(_)) => {
+            component::run(Component::Check, process_args, Invocation::Check, localizer)
+        }
+        Some(Commands::Metadata(_) | Commands::Version(_) | Commands::Doctor(_)) => component::run(
+            Component::Project,
+            process_args,
+            Invocation::Direct,
+            localizer,
+        ),
+        Some(Commands::Ide(_)) => component::run(
+            Component::Project,
+            process_args,
+            Invocation::LegacyIde,
+            localizer,
+        ),
+        Some(
+            Commands::Shelve(_)
+            | Commands::Unshelve(_)
+            | Commands::Shelves(_)
+            | Commands::Clone(_)
+            | Commands::Diff(_)
+            | Commands::Finish(_)
+            | Commands::History(_)
+            | Commands::Save(_)
+            | Commands::Start(_)
+            | Commands::Status(_)
+            | Commands::Switch(_),
+        ) => component::run(Component::Vcs, process_args, Invocation::Direct, localizer),
+        Some(
+            Commands::Clean(_)
+            | Commands::Config(_)
+            | Commands::Platform(_)
+            | Commands::Import(_)
+            | Commands::Patch(_),
+        ) => component::run(
+            Component::Build,
+            process_args,
+            Invocation::Direct,
+            localizer,
+        ),
+        Some(Commands::Build(args)) => component::run(
+            Component::Build,
+            process_args,
+            Invocation::Build {
+                provenance: args.needs_provenance(),
+            },
+            localizer,
+        ),
+        Some(Commands::New(_)) => component::run(
+            Component::Project,
+            process_args,
+            Invocation::LegacyNew,
+            localizer,
+        ),
+        Some(Commands::Init(_)) => component::run(
+            Component::Project,
+            process_args,
+            Invocation::LegacyInit,
+            localizer,
+        ),
+        None => component::run(
+            Component::Project,
+            process_args,
+            Invocation::LegacyValidate,
+            localizer,
+        ),
     }
 }
 
@@ -123,6 +168,7 @@ pub(super) fn localize(command: clap::Command, localizer: &Localizer) -> clap::C
         .mut_subcommand("update", |command| update::localize(command, localizer))
         .mut_subcommand("ide", |command| ide::localize(command, localizer))
         .mut_subcommand("build", |command| build::localize(command, localizer))
+        .mut_subcommand("check", |command| check::localize(command, localizer))
         .mut_subcommand("clean", |command| clean::localize(command, localizer))
         .mut_subcommand("clone", |command| clone::localize(command, localizer))
         .mut_subcommand("config", |command| config::localize(command, localizer))

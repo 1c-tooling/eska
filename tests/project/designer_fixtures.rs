@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use eska::project::{
+use crate::backend::project::{
     designer_source::{SourceError, SourceRole, open_projects},
     metadata_model::{MetadataKind, MetadataObject, ModuleRole},
     metadata_parser::{self, PropertiesMode},
@@ -114,7 +114,7 @@ fn designer_fixture_snapshots_cover_four_project_types_and_source_ownership() {
                 None,
             )
             .unwrap();
-            assert!(source.sources(missing.id()).unwrap().is_empty());
+            assert_eq!(source.sources(missing.id()).unwrap(), []);
             let binary = MetadataObject::new(
                 MetadataKind::CommonModule,
                 "ЗащищенныйМодуль".into(),
@@ -265,7 +265,7 @@ fn designer_parser_loads_only_requested_descriptors_and_checks_inline_identity()
     )
     .unwrap();
     let parsed = metadata_parser::load(&source, owner.id(), PropertiesMode::Summary).unwrap();
-    assert!(parsed.diagnostics.is_empty());
+    assert_eq!(parsed.diagnostics, []);
     assert!(
         parsed
             .references
@@ -293,5 +293,5 @@ fn designer_parser_loads_only_requested_descriptors_and_checks_inline_identity()
             .iter()
             .any(|reference| reference.name == "БезФайла")
     );
-    assert!(root.diagnostics.is_empty());
+    assert_eq!(root.diagnostics, []);
 }

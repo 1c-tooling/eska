@@ -4,7 +4,7 @@ use std::{
     process::{Command, Output},
 };
 
-use eska::{
+use crate::backend::{
     config::ProjectConfig,
     project::discovery,
     vcs::workflow::{FinishRequirement, PublishPlan, SyncStrategy},
@@ -246,7 +246,7 @@ fn policy_errors_are_localized_and_do_not_write_files() {
         for (locale, expected) in [("ru", ru), ("en", en)] {
             let result = validate(&dir.0, locale);
             assert_eq!(result.status.code(), Some(1));
-            assert!(result.stdout.is_empty());
+            assert_eq!(result.stdout, [] as [u8; 0]);
             let error = String::from_utf8(result.stderr).unwrap();
             assert!(error.contains(expected) && error.contains(field), "{error}");
             assert!(!error.contains("PolicyError") && !error.contains("panicked"));

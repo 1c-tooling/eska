@@ -1,25 +1,23 @@
-# Changelog
+# История изменений
 
-All notable changes to this project will be documented in this file.
+В этом файле перечислены значимые изменения проекта.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
+Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
+версии соответствуют [семантическому версионированию](https://semver.org/lang/ru/).
 
 ## [0.14.3](https://github.com/1c-tooling/eska/compare/v0.14.2...v0.14.3) - 2026-10-19
 
-### Fixed
+### Исправлено
 
 - *(support)* Разрешено редактирование внешних обработок и отчетов
 
-### Other
+### Прочее
 
 - Merge pull request #63 from 1c-tooling/codex/fix-external-editing
 
 ## [0.14.2](https://github.com/1c-tooling/eska/compare/v0.14.1...v0.14.2) - 2026-10-01
 
-### Added
+### Добавлено
 
 - *(metadata)* Добавлено редактирование связи по типу
 - *(metadata)* Добавлено редактирование существующих параметров выбора
@@ -44,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *(metadata)* Добавлен проверяемый выбор ролей и ссылочных свойств
 - *(metadata)* Добавлено точечное редактирование свойств через JSON и IDE
 
-### Fixed
+### Исправлено
 
 - *(metadata)* Проверены общие имена полей регистров при переименовании
 - *(metadata)* Учтены BSL-поля с именами ключевых слов
@@ -52,47 +50,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *(metadata)* Добавлен разбор ссылок в крупных XML при переименовании
 - *(metadata)* Запрещена смена типа с несовместимыми свойствами
 
-### Other
+### Прочее
 
 - *(metadata)* Описана проверка переименования в Explorer
 
 ## [0.14.1](https://github.com/1c-tooling/eska/compare/v0.14.0...v0.14.1) - 2026-09-30
 
-### Added
+### Добавлено
 
 - *(ide)* Добавлено читаемое представление ссылок и типов свойств
 
-### Fixed
+### Исправлено
 
 - *(ide)* Расширено распознавание ссылок и типов свойств
 - *(metadata)* Исправлено открытие свойств и модулей вложенных команд
 
 ## [0.14.0](https://github.com/1c-tooling/eska/compare/v0.13.0...v0.14.0) - 2026-09-30
 
-### Added
+### Добавлено
 
 - *(ide)* Добавлен предпросмотр общих картинок из Designer XML
 - *(init)* Добавлен выбор и сохранение версии платформы
 - *(cli)* Добавлены маркеры и ссылки в сообщения new/import
 
-### Fixed
+### Исправлено
 
 - *(ide)* Исправлен выбор превью при ошибке манифеста ZIP
 - *(ide)* Группа модулей свернута по умолчанию
 
-### Other
+### Прочее
 
 - Merge pull request #57 from 1c-tooling/feat/cli
 
 ## [0.13.0](https://github.com/1c-tooling/eska/compare/v0.12.1...v0.13.0) - 2026-09-30
 
-### Fixed
+### Исправлено
 
 - *(new)* Служебные файлы создаются внутри нового проекта
 
 ## [0.12.1](https://github.com/1c-tooling/eska/compare/v0.12.0...v0.12.1) - 2026-09-30
 
-### Fixed
+### Исправлено
 
 - *(cli)* Вывод импорта приведён к стилю сборки
 - *(import)* Временные данные и резервные копии исключены из Git
@@ -100,38 +98,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.12.0](https://github.com/1c-tooling/eska/compare/v0.11.6...v0.12.0) - 2026-09-29
 
-### Added
+### Добавлено
 
 - *(metadata)* Добавлены переводы значений свойств платформы
 - *(metadata)* Добавлены словари свойств 1С 8.3.27 и 8.5.1
 
-### Fixed
+### Исправлено
 
 - *(metadata)* Булевы свойства определяются по XML-типу и модели платформы
 
-### Other
+### Прочее
 
 - *(roadmap)* Уточнено открытие свойств форм
 - *(roadmap)* Зафиксировано открытие свойств по клику
 
 ## [0.11.6](https://github.com/1c-tooling/eska/compare/v0.11.5...v0.11.6) - 2026-09-28
 
-### Added
+### Добавлено
 
 - *(project)* Добавлено обновление исходников из файлов 1С
 - *(project)* Добавлено создание проектов из CF, CFE, EPF и ERF
 
 ## [0.11.5](https://github.com/1c-tooling/eska/compare/v0.11.4...v0.11.5) - 2026-09-24
 
-### Added
+### Добавлено
 
 - *(ide)* Добавлено чтение правил поддержки и ограничений исходников
 
-### Fixed
+### Исправлено
 
 - *(semantic)* Исправлено структурное сравнение XML-свойств
 
-### Other
+### Прочее
 
 - *(diff)* Разделены анализ изменений и форматы вывода
 - *(diff)* Устранена гонка очистки fixture с Git maintenance
@@ -142,30 +140,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.11.4](https://github.com/1c-tooling/eska/compare/v0.11.3...v0.11.4) - 2026-09-21
 
-### Fixed
+### Исправлено
 
 - *(ide)* Конечные узлы определяются без загрузки XML
 
 ## [0.11.3](https://github.com/1c-tooling/eska/compare/v0.11.2...v0.11.3) - 2026-09-19
 
-### Other
+### Прочее
 
 - *(metadata)* Ускорены полное обновление дерева и перестроение поиска
 - *(ide)* Устранены периодические пробуждения простаивающего процесса
 
 ## [0.11.2](https://github.com/1c-tooling/eska/compare/v0.11.1...v0.11.2) - 2026-09-19
 
-### Fixed
+### Исправлено
 
 - *(update)* Версии Cargo проверяются через индекс crates.io
 
 ## [0.11.1](https://github.com/1c-tooling/eska/compare/v0.11.0...v0.11.1) - 2026-09-19
 
-### Added
+### Добавлено
 
 - *(update)* Добавлено обновление ESKA с сохранением способа установки
 
-### Other
+### Прочее
 
 - *(update)* Проверена установка и миграция CLI на Linux
 - *(explorer)* Описано скрытие пустых контейнеров проектов
@@ -176,21 +174,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.11.0](https://github.com/1c-tooling/eska/compare/v0.10.1...v0.11.0) - 2026-09-18
 
-### Added
+### Добавлено
 
 - *(ide)* Добавлены предопределённые данные в дерево и поиск
 
-### Fixed
+### Исправлено
 
 - *(ide)* Исправлены исходники и модуль перерасчёта в Designer XML
 
-### Other
+### Прочее
 
 - *(ide)* Уточнены схема дерева и фильтр разделов «Общие»
 
 ## [0.10.1](https://github.com/1c-tooling/eska/compare/v0.10.0...v0.10.1) - 2026-09-18
 
-### Added
+### Добавлено
 
 - *(ide)* Добавлен тип метаданных в узлы дерева для иконок
 - *(ide)* Добавлен постоянный stdio-сервер дерева и поиска метаданных
@@ -203,12 +201,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *(metadata)* Добавлено разрешение исходников Designer XML через manifest
 - *(metadata)* Выделена модель объектов и идентификаторов дерева IDE
 
-### Fixed
+### Исправлено
 
 - *(metadata)* Исправлены схемы дерева по Конфигуратору 8.3.27
 - *(metadata)* Сохранена иерархия отдельных команд и внешних форм
 
-### Other
+### Прочее
 
 - *(ide)* Зафиксированы упаковка VSIX и результаты приёмки на Linux
 - *(ide)* Зафиксирован образец иконок для согласования T80
@@ -229,23 +227,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.0](https://github.com/1c-tooling/eska/compare/v0.9.0...v0.10.0) - 2026-09-17
 
-### Added
+### Добавлено
 
 - *(vcs)* Добавлены команды полок и автоматическое восстановление при switch
 - *(vcs)* Добавлены полки с точным сохранением index и файлов
 
 ## [0.9.0](https://github.com/1c-tooling/eska/compare/v0.8.0...v0.9.0) - 2026-09-16
 
-### Added
+### Добавлено
 
 - *(diff)* Добавлены координаты методов и устранены дубли
 - *(workflow)* Добавлена настройка основной ветки Git Flow
 
-### Fixed
+### Исправлено
 
 - *(diff)* Методы отсортированы по строкам исходного файла
 
-### Other
+### Прочее
 
 - *(build)* Разделены выполнение команды, JSON, диагностика и прогресс
 - *(cli)* Объединено обратимое кодирование JSON-путей и Git-строк
@@ -258,15 +256,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.8.0](https://github.com/1c-tooling/eska/compare/v0.7.0...v0.8.0) - 2026-09-10
 
-### Added
+### Добавлено
 
 - Добавлена команда clean
 
-### Fixed
+### Исправлено
 
 - *(build)* Сборка EPF и ERF использует базовую конфигурацию
 
-### Other
+### Прочее
 
 - *(agents)* Исключены проверки Rust для документации
 - *(roadmap)* Определён контракт команды eska update
@@ -275,7 +273,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.0](https://github.com/1c-tooling/eska/compare/v0.6.1...v0.7.0) - 2026-09-09
 
-### Added
+### Добавлено
 
 - *(build)* Добавлен паспорт артефакта из снимка исходников
 - *(build)* Добавлен предварительный просмотр плана сборки
@@ -285,11 +283,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *(doctor)* Добавлены цветные маркеры статусов
 - *(doctor)* Добавлена диагностика окружения проекта
 
-### Fixed
+### Исправлено
 
 - *(status)* Сохранены байты путей и веток в JSON
 
-### Other
+### Прочее
 
 - *(build)* Добавлен переносимый процессный стенд ibcmd
 - *(roadmap)* Завершена задача T51
@@ -304,7 +302,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.1](https://github.com/1c-tooling/eska/compare/v0.6.0...v0.6.1) - 2026-09-08
 
-### Other
+### Прочее
 
 - *(semantic)* Сокращены выделения памяти при анализе XML и BSL
 - *(vcs)* Устранено повторное чтение HEAD и проверки индекса при diff
@@ -313,7 +311,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.0](https://github.com/1c-tooling/eska/compare/v0.5.2...v0.6.0) - 2026-09-07
 
-### Added
+### Добавлено
 
 - *(init)* Добавлено подключение workspace members
 - *(new)* Добавлено создание workspace members
@@ -324,7 +322,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *(version)* Добавлена работа с версиями workspace
 - *(project)* Добавлена модель workspace и discovery
 
-### Other
+### Прочее
 
 - *(roadmap)* Завершён onboarding workspace members
 - *(roadmap)* Завершён VCS UX workspace members
@@ -335,18 +333,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.2](https://github.com/1c-tooling/eska/compare/v0.5.1...v0.5.2) - 2026-09-07
 
-### Added
+### Добавлено
 
 - *(release)* Добавлена установка готовых бинарников
 
 ## [0.5.1](https://github.com/1c-tooling/eska/compare/v0.5.0...v0.5.1) - 2026-09-07
 
-### Added
+### Добавлено
 
 - *(version)* Добавлено версионирование проектов 1С
 - *(patch)* Добавлена генерация patch-extension из Git delta
 
-### Other
+### Прочее
 
 - *(roadmap)* Добавлен план монорепозиториев проектов
 - *(structure)* Разделены общие обязанности модулей
@@ -356,30 +354,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.0](https://github.com/1c-tooling/eska/compare/v0.4.0...v0.5.0) - 2026-09-06
 
-### Added
+### Добавлено
 
 - *(build)* Добавлен локальный выбор платформы
 - *(build)* Добавлена ссылка на каталог артефакта
 - *(build)* Улучшено отображение процесса сборки
 - *(build)* Добавлен потоковый вывод диагностики
 
-### Fixed
+### Исправлено
 
 - *(build)* Удалена скрытая версия платформы
 
 ## [0.4.0](https://github.com/1c-tooling/eska/compare/v0.3.0...v0.4.0) - 2026-09-05
 
-### Added
+### Добавлено
 
 - *(build)* Реализована сборка нативных артефактов через ibcmd
 - *(build)* Добавлены настройки и план артефакта
 - *(finish)* Добавлено локальное завершение задачи
 
-### Fixed
+### Исправлено
 
 - *(build)* Восстановлен вывод диагностики ibcmd
 
-### Other
+### Прочее
 
 - *(roadmap)* Завершена сборка через ibcmd
 - *(roadmap)* Начата реализация сборки через ibcmd
@@ -388,7 +386,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0](https://github.com/1c-tooling/eska/compare/v0.2.1...v0.3.0) - 2026-09-05
 
-### Added
+### Добавлено
 
 - *(vcs)* Добавлено переключение между задачами
 - *(save)* Добавлен deterministic semantic draft
@@ -404,7 +402,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *(vcs)* Переведён запуск задачи на gix-first слой
 - *(project)* Добавлено клонирование проекта через gix
 
-### Fixed
+### Исправлено
 
 - *(workflow)* Разрешена настройка имён веток preset
 - *(save)* Добавлена отмена неизменённого draft
@@ -412,7 +410,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *(history)* Изменён порядок полей
 - *(history)* Дата сделана человекочитаемой
 
-### Other
+### Прочее
 
 - *(roadmap)* Начата реализация завершения задачи
 - *(roadmap)* Завершено переключение задач
@@ -436,7 +434,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1](https://github.com/1c-tooling/eska/compare/v0.1.1...v0.2.1) - 2026-09-04
 
-### Added
+### Добавлено
 
 - *(diff)* Сгруппирован вывод по состояниям
 - *(save)* Добавлено сохранение изменений проекта
@@ -467,7 +465,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *(fmt)* интеграция tree-sitter-bsl и базовая архитектура форматтера
 - добавил команду fmt, удалил init
 
-### Fixed
+### Исправлено
 
 - *(diff)* Учтены служебные файлы метаданных
 - *(start)* Разделена обработка отсутствующего и недоступного remote
@@ -478,7 +476,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *(test)* Устранены коллизии временных каталогов
 - *(cli)* Локализована строка использования в справке
 
-### Other
+### Прочее
 
 - Включил публикацию на crates.io
 - *(diff)* Описано оформление групп изменений
@@ -505,16 +503,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0](https://github.com/1c-tooling/eska/releases/tag/v0.1.0) - 2025-10-30
 
-### Added
+### Добавлено
 
 - *(ci)* add release-plz GitHub Actions workflow
 - initialize Rust project with hello world
 - add lefthook configuration file
 
-### Fixed
+### Исправлено
 
 - *(ci)* изменить скрипт ci
 
-### Other
+### Прочее
 
 - Initial commit

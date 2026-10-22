@@ -11,6 +11,465 @@ use serde_json::Value;
 
 const UUID: &str = "12345678-1234-1234-1234-123456789012";
 
+/// Cancelling a composed diagnostic must let the native owner reap its active version probe.
+#[cfg(unix)]
+#[test]
+fn cancellation_during_platform_probes_reaps_native_processes() {
+    use nix::sys::signal::Signal;
+    for command in ["doctor", "build", "import", "unpack", "platform"] {
+        for locale in ["ru", "en"] {
+            for signal in [Signal::SIGINT, Signal::SIGTERM, Signal::SIGHUP] {
+                assert_probe_reaped(command, locale, signal);
+            }
+        }
+    }
+}
+
+/// The signal alone must stop the probe; no fixture release or native work is allowed.
+#[cfg(unix)]
+fn assert_probe_reaped(command: &str, locale: &str, signal: nix::sys::signal::Signal) {
+    use nix::{sys::signal::kill, unistd::Pid};
+    use std::{
+        process::Stdio,
+        thread,
+        time::{Duration, Instant},
+    };
+    let fixture = TestDir::new();
+    let config = eska_project_core::config::ProjectConfig::new(
+        eska_project_core::project::ProjectType::Configuration,
+    )
+    .with_build_settings(
+        eska_project_core::project::build::BuildSettings::new("8.3.27.2325", "build".into())
+            .unwrap(),
+    );
+    let project =
+        eska_project_core::project::create::create(&fixture.0.join("project"), &config).unwrap();
+    let descriptor = project.source().join("Configuration.xml");
+    let xml = "<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><Configuration uuid=\"12345678-1234-1234-1234-123456789012\"><Properties><Name>Current</Name></Properties></Configuration></MetaDataObject>";
+    fs::write(&descriptor, xml).unwrap();
+    let binary = Path::new(env!("CARGO_BIN_EXE_eska"));
+    let binary = if command == "unpack" {
+        binary.with_file_name(format!("eska-build{}", std::env::consts::EXE_SUFFIX))
+    } else {
+        binary.to_owned()
+    };
+    let mut invocation = Command::new(binary);
+    invocation.args(["--lang", locale, command]);
+    if command == "platform" {
+        invocation.arg("list");
+    }
+    invocation.args(["--format", "json"]);
+    if command == "import" || command == "unpack" {
+        invocation.arg(artifact(&fixture.0, "cf", "Configuration", "Current", UUID));
+        if command == "import" {
+            invocation.arg("--force");
+        } else {
+            invocation
+                .arg(fixture.0.join("unpacked"))
+                .args(["--platform-version", "8.3.27.2325"]);
+        }
+    }
+    let ready = fixture.0.join("probe-ready");
+    let mut child = PreflightChild(
+        invocation
+            .current_dir(project.root())
+            .env("ESKA_CONFIG_DIR", fixture.0.join("machine"))
+            .env("FAKE_IBCMD_VERSION_READY", &ready)
+            .env(
+                "FAKE_IBCMD_VERSION_CONTINUE",
+                fixture.0.join("never-released"),
+            )
+            .arg("--ibcmd")
+            .arg(super::build::fake_ibcmd(&fixture))
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap(),
+    );
+    let mut probe = ProbePid(Some(ready_pid(&mut child.0, &ready)));
+    kill(Pid::from_raw(i32::try_from(child.0.id()).unwrap()), signal).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while child.0.try_wait().unwrap().is_none() {
+        assert!(Instant::now() < deadline, "{command}: cancellation hung");
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert_eq!(child.0.try_wait().unwrap().unwrap().code(), Some(1));
+    assert_eq!(
+        kill(Pid::from_raw(probe.0.unwrap()), None),
+        Err(nix::errno::Errno::ESRCH),
+        "native version probe outlived its owner"
+    );
+    probe.0 = None;
+    assert_eq!(fs::read_to_string(descriptor).unwrap(), xml);
+    assert!(!project.root().join("build").exists());
+    assert!(!fixture.0.join("unpacked").exists());
+}
+
+#[cfg(unix)]
+struct ProbePid(Option<i32>);
+
+#[cfg(unix)]
+impl Drop for ProbePid {
+    /// A failed lifecycle assertion must still terminate only the fixture's recorded process.
+    fn drop(&mut self) {
+        if let Some(pid) = self.0 {
+            let _ = nix::sys::signal::kill(
+                nix::unistd::Pid::from_raw(pid),
+                nix::sys::signal::Signal::SIGKILL,
+            );
+        }
+    }
+}
+
+/// Cancellation between VCS inspection and native setup cannot be reset by the version probe.
+#[cfg(unix)]
+#[test]
+fn cancellation_during_import_platform_probe_keeps_existing_sources() {
+    for locale in ["ru", "en"] {
+        assert_import_probe_cancelled(locale);
+    }
+}
+
+/// Exercise the race through the public shell and verify exact filesystem preservation.
+#[cfg(unix)]
+fn assert_import_probe_cancelled(locale: &str) {
+    use nix::{
+        sys::signal::{Signal, kill},
+        unistd::Pid,
+    };
+    use std::{
+        io::Read,
+        process::Stdio,
+        thread,
+        time::{Duration, Instant},
+    };
+    let fixture = TestDir::new();
+    let input = artifact(&fixture.0, "cf", "Configuration", "Incoming", UUID);
+    let original = fs::read(&input).unwrap();
+    let config = eska_project_core::config::ProjectConfig::new(
+        eska_project_core::project::ProjectType::Configuration,
+    )
+    .with_build_settings(
+        eska_project_core::project::build::BuildSettings::new("8.3.27.2325", "build".into())
+            .unwrap(),
+    );
+    let project =
+        eska_project_core::project::create::create(&fixture.0.join("project"), &config).unwrap();
+    let manifest = fs::read(project.root().join("eska.toml")).unwrap();
+    let ready = fixture.0.join("version-ready");
+    let proceed = fixture.0.join("version-continue");
+    let mut child = PreflightChild(
+        Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(project.root())
+            .env("ESKA_CONFIG_DIR", fixture.0.join("machine"))
+            .env("FAKE_IBCMD_VERSION_READY", &ready)
+            .env("FAKE_IBCMD_VERSION_CONTINUE", &proceed)
+            .args([
+                "--lang", locale, "import", "--format", "json", "--force", "--ibcmd",
+            ])
+            .arg(super::build::fake_ibcmd(&fixture))
+            .arg(&input)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap(),
+    );
+    let probe_pid = ready_pid(&mut child.0, &ready);
+    kill(
+        Pid::from_raw(i32::try_from(child.0.id()).unwrap()),
+        Signal::SIGINT,
+    )
+    .unwrap();
+    fs::write(proceed, b"").unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let status = loop {
+        if let Some(status) = child.0.try_wait().unwrap() {
+            break status;
+        }
+        assert!(Instant::now() < deadline, "probe cancellation was lost");
+        thread::sleep(Duration::from_millis(10));
+    };
+    assert_eq!(status.code(), Some(1));
+    let mut stdout = Vec::new();
+    child
+        .0
+        .stdout
+        .take()
+        .unwrap()
+        .read_to_end(&mut stdout)
+        .unwrap();
+    let document: Value = serde_json::from_slice(&stdout).unwrap();
+    assert_eq!(document["error"]["code"], "cancelled", "{document}");
+    assert_eq!(
+        fs::read(project.root().join("eska.toml")).unwrap(),
+        manifest
+    );
+    assert!(project.source().join(".gitkeep").is_file());
+    assert_eq!(fs::read_dir(project.source()).unwrap().count(), 1);
+    assert_eq!(fs::read(input).unwrap(), original);
+    assert_eq!(
+        kill(Pid::from_raw(probe_pid), None),
+        Err(nix::errno::Errno::ESRCH)
+    );
+}
+
+/// A signal to the project PID must reach the build owner and its exact native child.
+#[cfg(unix)]
+#[test]
+fn cancelled_native_onboarding_reaps_both_children_and_removes_owned_project() {
+    use nix::{
+        sys::signal::{Signal, kill},
+        unistd::Pid,
+    };
+    use std::{
+        io::Read,
+        process::Stdio,
+        thread,
+        time::{Duration, Instant},
+    };
+    for locale in ["ru", "en"] {
+        for signal in [Signal::SIGINT, Signal::SIGTERM, Signal::SIGHUP] {
+            let fixture = TestDir::new();
+            let input = artifact(&fixture.0, "epf", "ExternalDataProcessor", "Current", UUID);
+            let original = fs::read(&input).unwrap();
+            fs::create_dir(fixture.0.join(".eska")).unwrap();
+            fs::write(fixture.0.join(".eska/keep"), b"user service bytes").unwrap();
+            let ready = fixture.0.join("ready");
+            let mut child = PreflightChild(
+                Command::new(env!("CARGO_BIN_EXE_eska"))
+                    .current_dir(&fixture.0)
+                    .env("ESKA_CONFIG_DIR", fixture.0.join("machine"))
+                    .env("FAKE_IBCMD_IMPORT_READY", &ready)
+                    .env("FAKE_IBCMD_IMPORT_CONTINUE", fixture.0.join("continue"))
+                    .args([
+                        "--lang",
+                        locale,
+                        "new",
+                        "project",
+                        "--from",
+                        "incoming.epf",
+                        "--workflow",
+                        "trunk",
+                        "--platform-version",
+                        "8.3.27.2325",
+                        "--no-vcs",
+                        "--ibcmd",
+                    ])
+                    .arg(super::build::fake_ibcmd(&fixture))
+                    .stdin(Stdio::null())
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .spawn()
+                    .unwrap(),
+            );
+            let native_pid = ready_pid(&mut child.0, &ready);
+            let root = fixture.0.join("project");
+            let build_pid = native_workspace_pid(&root);
+            kill(Pid::from_raw(i32::try_from(child.0.id()).unwrap()), signal).unwrap();
+            let deadline = Instant::now() + Duration::from_secs(10);
+            let status = loop {
+                if let Some(status) = child.0.try_wait().unwrap() {
+                    break status;
+                }
+                assert!(
+                    Instant::now() < deadline,
+                    "onboarding cancellation was lost"
+                );
+                thread::sleep(Duration::from_millis(10));
+            };
+            assert_eq!(status.code(), Some(1));
+            let mut stderr = String::new();
+            child
+                .0
+                .stderr
+                .take()
+                .unwrap()
+                .read_to_string(&mut stderr)
+                .unwrap();
+            assert_eq!(
+                stderr.lines().filter(|line| line.starts_with('↩')).count(),
+                1,
+                "{stderr}"
+            );
+            assert!(!root.exists());
+            assert_eq!(fs::read(&input).unwrap(), original);
+            assert_eq!(
+                fs::read(fixture.0.join(".eska/keep")).unwrap(),
+                b"user service bytes"
+            );
+            assert_eq!(fs::read_dir(fixture.0.join(".eska")).unwrap().count(), 1);
+            for pid in [native_pid, build_pid] {
+                assert_eq!(
+                    kill(Pid::from_raw(pid), None),
+                    Err(nix::errno::Errno::ESRCH)
+                );
+            }
+        }
+    }
+}
+
+#[cfg(unix)]
+struct PreflightChild(std::process::Child);
+#[cfg(unix)]
+impl Drop for PreflightChild {
+    /// The fixture's query process also exits if its parent disappears during a failed test.
+    fn drop(&mut self) {
+        if !matches!(self.0.try_wait(), Ok(Some(_))) {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+}
+
+/// Read the native owner's PID from its exclusively claimed workspace while export is paused.
+#[cfg(unix)]
+fn native_workspace_pid(root: &Path) -> i32 {
+    let native = fs::read_dir(root.join(".eska/import"))
+        .unwrap()
+        .map(Result::unwrap)
+        .find(|entry| entry.path().join("input.epf").is_file())
+        .unwrap();
+    native
+        .file_name()
+        .to_str()
+        .unwrap()
+        .strip_prefix(".eska-import-")
+        .unwrap()
+        .split('-')
+        .next()
+        .unwrap()
+        .parse()
+        .unwrap()
+}
+
+/// Wait for an atomically usable PID value rather than racing the ready file's creation.
+#[cfg(unix)]
+fn ready_pid(child: &mut std::process::Child, ready: &Path) -> i32 {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    loop {
+        if let Some(pid) = fs::read_to_string(ready)
+            .ok()
+            .and_then(|value| value.parse().ok())
+        {
+            return pid;
+        }
+        assert!(child.try_wait().unwrap().is_none());
+        assert!(
+            std::time::Instant::now() < deadline,
+            "native readiness timeout"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+}
+
+/// Cancel the second VCS preflight after native export, preserving the previous source and input.
+#[cfg(unix)]
+#[test]
+fn cancellation_during_repeated_vcs_preflight_keeps_source_unchanged() {
+    use nix::{
+        sys::signal::{Signal, kill},
+        unistd::Pid,
+    };
+    use std::{
+        io::Read,
+        process::Stdio,
+        thread,
+        time::{Duration, Instant},
+    };
+
+    for locale in ["ru", "en"] {
+        let fixture = TestDir::new();
+        let source = artifact(&fixture.0, "cf", "Configuration", "Incoming", UUID);
+        let original_input = fs::read(&source).unwrap();
+        let config = eska_project_core::config::ProjectConfig::new(
+            eska_project_core::project::ProjectType::Configuration,
+        )
+        .with_build_settings(
+            eska_project_core::project::build::BuildSettings::new("8.3.27.2325", "build".into())
+                .unwrap(),
+        );
+        let project =
+            eska_project_core::project::create::create(&fixture.0.join("project"), &config)
+                .unwrap();
+        let manifest = fs::read(project.root().join("eska.toml")).unwrap();
+        let ready = fixture.0.join("query-ready");
+        let mut child = PreflightChild(
+            Command::new(env!("CARGO_BIN_EXE_eska"))
+                .current_dir(project.root())
+                .env("ESKA_CONFIG_DIR", fixture.0.join("machine-config"))
+                .env(
+                    "ESKA_VCS_BINARY",
+                    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/component.py"),
+                )
+                .env("ESKA_COMPONENT_FIXTURE_MODE", "bridge-import-cancel")
+                .env("ESKA_COMPONENT_FIXTURE_READY", &ready)
+                .env("ESKA_COMPONENT_FIXTURE_COUNTER", fixture.0.join("counter"))
+                .args(["--lang", locale, "import", "--format", "json", "--force"])
+                .arg(&source)
+                .arg("--ibcmd")
+                .arg(super::build::fake_ibcmd(&fixture))
+                .stdin(Stdio::null())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .unwrap(),
+        );
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while !ready.is_file() {
+            assert!(child.0.try_wait().unwrap().is_none());
+            assert!(
+                Instant::now() < deadline,
+                "repeated VCS preflight was not reached"
+            );
+            thread::sleep(Duration::from_millis(10));
+        }
+        kill(
+            Pid::from_raw(i32::try_from(child.0.id()).unwrap()),
+            Signal::SIGINT,
+        )
+        .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let status = loop {
+            if let Some(status) = child.0.try_wait().unwrap() {
+                break status;
+            }
+            assert!(Instant::now() < deadline, "VCS cancellation was lost");
+            thread::sleep(Duration::from_millis(10));
+        };
+        assert_eq!(status.code(), Some(1));
+        let mut stdout = Vec::new();
+        child
+            .0
+            .stdout
+            .take()
+            .unwrap()
+            .read_to_end(&mut stdout)
+            .unwrap();
+        let document: Value = serde_json::from_slice(&stdout).unwrap();
+        assert_eq!(document["error"]["code"], "cancelled", "{document}");
+        assert_eq!(
+            fs::read(project.root().join("eska.toml")).unwrap(),
+            manifest
+        );
+        assert!(project.source().join(".gitkeep").is_file());
+        assert_eq!(fs::read_dir(project.source()).unwrap().count(), 1);
+        assert_eq!(fs::read(&source).unwrap(), original_input);
+        assert_eq!(
+            fs::read_dir(project.root().join(".eska/import"))
+                .unwrap()
+                .count(),
+            1
+        );
+        let pid: i32 = fs::read_to_string(ready).unwrap().parse().unwrap();
+        assert_eq!(
+            kill(Pid::from_raw(pid), None),
+            Err(nix::errno::Errno::ESRCH)
+        );
+    }
+}
+
 /// Carry a controlled root descriptor through the fake binary unpacking boundary.
 fn artifact(root: &Path, extension: &str, tag: &str, name: &str, uuid: &str) -> std::path::PathBuf {
     let path = root.join(format!("incoming.{extension}"));
@@ -229,6 +688,27 @@ fn clean_matching_import_replaces_sources_and_preserves_git() {
     let index = fs::read(root.join(".git/index")).unwrap();
     let head = fs::read(root.join(".git/HEAD")).unwrap();
     fs::write(root.join("outside-source.txt"), "preserve unrelated change").unwrap();
+    for locale in ["ru", "en"] {
+        let preview = ["import", "../incoming.cf", "--dry-run", "--format", "json"];
+        let wrapper = run(&root, &fixture, locale, &preview);
+        let direct = Command::new(
+            Path::new(env!("CARGO_BIN_EXE_eska"))
+                .with_file_name(format!("eska-build{}", std::env::consts::EXE_SUFFIX)),
+        )
+        .current_dir(&root)
+        .args(["--lang", locale])
+        .args(preview)
+        .arg("--ibcmd")
+        .arg(super::build::fake_ibcmd(&fixture))
+        .output()
+        .unwrap();
+        assert!(
+            wrapper.status.success() && direct.status.success(),
+            "{wrapper:?} {direct:?}"
+        );
+        assert_eq!(wrapper.stdout, direct.stdout);
+        assert_eq!(wrapper.stderr, direct.stderr);
+    }
     let output = run(
         &root,
         &fixture,
@@ -687,15 +1167,21 @@ fn standalone_unpacking_uses_the_new_project_directory() {
     }
     assert!(root.is_dir());
     let storage = root.join(".eska/import");
-    let staging = fs::read_dir(&storage)
+    let staging: Vec<_> = fs::read_dir(&storage)
         .unwrap()
-        .find_map(|entry| {
+        .filter_map(|entry| {
             let entry = entry.unwrap();
             entry.file_type().unwrap().is_dir().then(|| entry.path())
         })
+        .collect();
+    // Project owns one transfer directory while build owns the separate native workspace.
+    assert_eq!(staging.len(), 2);
+    let native = staging
+        .iter()
+        .find(|path| path.join("input.epf").is_file())
         .unwrap();
     assert_eq!(
-        fs::read(staging.join("input.epf")).unwrap(),
+        fs::read(native.join("input.epf")).unwrap(),
         fs::read(fixture.0.join("incoming.epf")).unwrap()
     );
     assert!(!root.join("eska.toml").exists());
@@ -775,7 +1261,7 @@ fn human_results_preserve_plain_paths_and_markers_in_both_locales() {
             &["import", "../incoming.cf", "--dry-run"],
         );
         assert!(preview.status.success(), "{preview:?}");
-        assert!(preview.stdout.is_empty());
+        assert_eq!(preview.stdout, [] as [u8; 0]);
         let stderr = String::from_utf8(preview.stderr).unwrap();
         assert!(stderr.lines().last().unwrap().starts_with("ℹ "));
         assert!(stderr.contains(if locale == "ru" {
@@ -790,7 +1276,7 @@ fn human_results_preserve_plain_paths_and_markers_in_both_locales() {
             &["import", "missing.txt", "--dry-run"],
         );
         assert_eq!(failed.status.code(), Some(1));
-        assert!(failed.stdout.is_empty());
+        assert_eq!(failed.stdout, [] as [u8; 0]);
         let stderr = String::from_utf8(failed.stderr).unwrap();
         assert!(stderr.lines().last().unwrap().starts_with("✗ "), "{stderr}");
         assert!(stderr.contains("missing.txt"), "{stderr}");

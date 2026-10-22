@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "kind": "application-context-validation",
+  "source": "Private reflink copy of provided buhmfo; temporary application declaration removed and original root manifest restored byte-for-byte.",
+  "target_platform_version": "8.3.27.2325",
+  "sources": [
+    {
+      "member": "buhmfo",
+      "metadata_name": "УправлениеМикрофинансовойОрганизациейИКредитнымПотребительскимКооперативомКОРП",
+      "compatibility_mode": "Version8_3_27",
+      "source": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p/buhmfo/src/buhmfo/src"
+    },
+    {
+      "member": "external-systems",
+      "metadata_name": "ExternalSystems",
+      "compatibility_mode": "Version8_3_17",
+      "source": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p/buhmfo/src/ExternalSystems/src"
+    },
+    {
+      "member": "dzp-auto-statements",
+      "metadata_name": "dzp_АвтоматическаяЗагрузкаВыписок",
+      "compatibility_mode": "Version8_3_24",
+      "source": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p/buhmfo/src/dzp_АвтоматическаяЗагрузкаВыписок/src"
+    },
+    {
+      "member": "dzp-typical-code",
+      "metadata_name": "dzp_АдаптацияКодаТиповойКонфигурации",
+      "compatibility_mode": "Version8_3_17",
+      "source": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p/buhmfo/src/dzp_АдаптацияКодаТиповойКонфигурации/src"
+    },
+    {
+      "member": "dzp-fill-bank-statements",
+      "metadata_name": "dzp_ЗаполнениеБанковскихВыписок",
+      "compatibility_mode": "Version8_3_17",
+      "source": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p/buhmfo/src/dzp_ЗаполнениеБанковскихВыписок/src"
+    },
+    {
+      "member": "dzp-config-fixes",
+      "metadata_name": "dzp_ИсправлениеОшибокКонфигурации",
+      "compatibility_mode": "Version8_3_17",
+      "source": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p/buhmfo/src/dzp_ИсправлениеОшибокКонфигурации/src"
+    }
+  ],
+  "platform_started": false,
+  "analyzer_started": false,
+  "bsl_analyzed": false,
+  "checks": {
+    "fmt": "passed",
+    "workspace_check": "passed",
+    "strict_workspace_clippy": "passed",
+    "workspace_tests": {
+      "passed": 762,
+      "ignored": 6,
+      "failed": 0
+    },
+    "workspace_rustdoc": "passed",
+    "explorer_real_backend_node_tests": {
+      "passed": 138,
+      "failed": 0,
+      "skipped": 0
+    },
+    "manual_cli": {
+      "locales": [
+        "ru",
+        "en"
+      ],
+      "valid_exit": 0,
+      "dependency_cycle_exit": 1,
+      "metadata_json_locale_independent": true
+    }
+  }
+}

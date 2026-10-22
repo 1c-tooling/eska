@@ -4,7 +4,7 @@ use std::{
     process::{Command, Output},
 };
 
-use eska::{
+use crate::backend::{
     config::{ProjectConfig, WorkspaceConfig},
     project::ProjectType,
     project::create::{self, CreationError},
@@ -33,7 +33,7 @@ fn success(output: &Output) -> String {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     String::from_utf8(output.stdout.clone()).expect("UTF-8")
 }
 
@@ -138,8 +138,8 @@ fn workspace_new_rejects_paths_workflow_and_collisions_before_writing() {
                 .output()
                 .expect("invalid workspace new");
             assert_eq!(output.status.code(), Some(2));
-            assert!(output.stdout.is_empty());
-            assert!(!output.stderr.is_empty());
+            assert_eq!(output.stdout, [] as [u8; 0]);
+            assert_ne!(output.stderr, [] as [u8; 0]);
             assert_eq!(fs::read(fixture.0.join("eska.toml")).unwrap(), before);
             assert!(!fixture.0.join("src").exists());
         }
@@ -213,7 +213,10 @@ fn cli_creates_all_types_and_presets_in_both_locales() {
                 );
                 let project = discovery::discover(&root.join("src")).expect("discover");
                 assert_eq!(project.configuration(), config.configuration());
-                assert!(success(&command(&root, locale).output().expect("validate")).is_empty());
+                assert_eq!(
+                    success(&command(&root, locale).output().expect("validate")),
+                    ""
+                );
             }
         }
     }
@@ -278,7 +281,7 @@ fn collisions_preserve_existing_files_and_directories() {
                 .output()
                 .expect("collision");
             assert_eq!(output.status.code(), Some(1));
-            assert!(output.stdout.is_empty());
+            assert_eq!(output.stdout, [] as [u8; 0]);
             let error = String::from_utf8(output.stderr).expect("UTF-8");
             assert!(
                 error.contains(if locale == "ru" {
@@ -326,7 +329,13 @@ fn destination_symlinks_are_never_followed_or_replaced() {
         let link = fixture.0.join(name);
         symlink(&destination, &link).expect("symlink");
         assert!(matches!(
-            create::create(&link, ProjectType::Report, WorkflowPreset::Trunk, true),
+            create::create(
+                &link,
+                ProjectType::Report,
+                WorkflowPreset::Trunk,
+                true,
+                &|| false
+            ),
             Err(CreationError::AlreadyExists { .. })
         ));
         assert_eq!(fs::read_link(&link).expect("unchanged link"), destination);
@@ -352,8 +361,8 @@ fn invalid_or_missing_options_fail_without_creating_any_files() {
                 .output()
                 .expect("invalid arguments");
             assert_eq!(output.status.code(), Some(2));
-            assert!(output.stdout.is_empty());
-            assert!(!output.stderr.is_empty());
+            assert_eq!(output.stdout, [] as [u8; 0]);
+            assert_ne!(output.stderr, [] as [u8; 0]);
             let error = String::from_utf8(output.stderr).expect("UTF-8");
             assert_eq!(
                 error.chars().any(|ch| ('А'..='я').contains(&ch)),
@@ -380,8 +389,8 @@ fn invalid_paths_do_not_create_partial_parents() {
             .output()
             .expect("invalid path");
         assert_eq!(output.status.code(), Some(1));
-        assert!(output.stdout.is_empty());
-        assert!(!output.stderr.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
+        assert_ne!(output.stderr, [] as [u8; 0]);
     }
     assert_eq!(
         fs::read_dir(&fixture.0)

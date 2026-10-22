@@ -1,9 +1,9 @@
-use crate::support::TestDir;
-use eska::project::{
+use crate::backend::project::{
     metadata_model::ProjectScope,
     metadata_workspace::MetadataWorkspace,
     support::{Reason, State},
 };
+use crate::support::TestDir;
 use std::{fs, path::Path};
 const ROOT: &str = "11111111-1111-1111-1111-111111111111";
 const CHILD: &str = "22222222-2222-2222-2222-222222222222";
@@ -330,7 +330,7 @@ fn support_separates_mixed_xml_from_module_and_invalidates_without_writes() {
         .changed_paths(&["Ext/ParentConfigurations.bin".into()])
         .unwrap();
     let broken = session.support_page(0).unwrap();
-    assert!(!broken.diagnostics.is_empty());
+    assert_ne!(broken.diagnostics, [] as [String; 0]);
     assert!(broken.objects.iter().all(|o| o.state == State::Unknown));
     assert!(broken.files.iter().all(|f| f.read_only));
     fs::write(&path, rules(0, 2)).unwrap();
@@ -380,12 +380,12 @@ fn identical_uuids_in_different_sessions_do_not_share_policy() {
     assert!(locked.files.iter().all(|f| f.read_only));
     assert!(missing.objects.iter().all(|o| o.state == State::Unknown));
     assert!(missing.files.iter().all(|f| !f.read_only));
-    assert!(!missing.diagnostics.is_empty());
+    assert_ne!(missing.diagnostics, [] as [String; 0]);
 }
 
 #[test]
 fn background_reuses_loaded_descriptors_and_refresh_checks_rule_contents() {
-    use eska::project::{configurator::TreeOptions, metadata_model::NodeId};
+    use crate::backend::project::{configurator::TreeOptions, metadata_model::NodeId};
     use std::fmt::Write;
     let dir = TestDir::new();
     fixture(&dir.0);
@@ -409,7 +409,7 @@ fn background_reuses_loaded_descriptors_and_refresh_checks_rule_contents() {
     fs::write(dir.0.join("src/Ext/ParentConfigurations.bin"), rules(0, 0)).unwrap();
     let mut workspace = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
     let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
-    let priority: eska::project::metadata_model::ObjectId =
+    let priority: crate::backend::project::metadata_model::ObjectId =
         serde_json::from_value(serde_json::json!("common-module:M000")).unwrap();
     // Expanding this reference populates the regular lazy-tree descriptor cache.
     session
@@ -455,7 +455,7 @@ fn background_reuses_loaded_descriptors_and_refresh_checks_rule_contents() {
         .changed_paths(&["Ext/ParentConfigurations.bin".into()])
         .unwrap();
     assert_eq!(unchanged.generation, generation);
-    assert!(unchanged.affected.is_empty());
+    assert_eq!(unchanged.affected, []);
     assert!(std::sync::Arc::ptr_eq(
         &first,
         &session.support_page(0).unwrap()

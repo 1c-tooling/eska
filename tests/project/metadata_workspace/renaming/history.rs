@@ -1,7 +1,7 @@
 //! Structural history round trips real source paths, exact bytes and per-object editing sequences.
 
 use super::*;
-use eska::project::{
+use crate::backend::project::{
     metadata_edit::{EditError, PropertyChange},
     metadata_workspace::{ProjectSession, PropertyEditError},
 };

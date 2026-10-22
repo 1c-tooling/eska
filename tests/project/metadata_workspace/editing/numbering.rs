@@ -1,5 +1,5 @@
 use super::*;
-use eska::project::metadata_edit::{EditableField, ScalarSchema};
+use crate::backend::project::metadata_edit::{EditableField, ScalarSchema};
 
 /// A real source preserves BOM, CRLF and unrelated values across an owner-domain change.
 fn fixture(

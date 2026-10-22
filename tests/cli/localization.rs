@@ -90,7 +90,7 @@ fn usage_syntax_is_localized_for_both_help_flags() {
             let output = eska(&["--lang", locale, flag], None);
             let help = stdout(&output);
 
-            assert!(output.stderr.is_empty());
+            assert_eq!(output.stderr, [] as [u8; 0]);
             assert!(help.lines().any(|line| line == expected), "{help}");
             assert!(!help.contains(unexpected), "{help}");
         }

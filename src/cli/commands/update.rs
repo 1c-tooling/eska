@@ -1,10 +1,9 @@
 //! Localized self-update command with a locale-independent JSON contract.
 
+use eska_presentation::encoding::json_path;
+
 use crate::{
-    cli::{
-        encoding::json_path,
-        localization::{LocalizationValue, Localizer},
-    },
+    cli::localization::{LocalizationValue, Localizer},
     update::{self, Status},
 };
 use clap::{Args, ValueEnum};

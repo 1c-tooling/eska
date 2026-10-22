@@ -1,0 +1,934 @@
+{
+  "schema_version": 1,
+  "stage": "T89",
+  "status": "done_with_deferred_performance",
+  "performance_acceptance": "failed",
+  "source_revision": "4cbdde3db6d5b36c0bd81595661da030f67c6688",
+  "explorer_runtime_revision": "87d3cee1970f50ef9a1d233b9b695893df8f7937",
+  "platform": "Linux x86_64 GNU; VSCodium 1.109.5",
+  "corrected_series": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_",
+  "provenance": {
+    "purpose": "T89 full repeat with semantic freshness sentinel, five second idle, additional steady hover",
+    "analyzer": "0.3.2",
+    "old_series_preserved": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series.json",
+    "root_revision": "4cbdde3",
+    "explorer_revision": "87d3cee",
+    "repeats": 5,
+    "operations_per_launch": 30,
+    "files": {
+      "run.py": "5a2b01068d994effadf170aa6afb6ea2d0af3152a499c9d15745b0d5facbffc6",
+      "probe.cjs": "a1eeb5297288d98392db852691a4aa3631936fe4cd284b6094585afc8cbdd0c1",
+      "tools/eska-project": "196caaadb929690a1a29bfb4f8aba163b28351f04532bd7b2b0641254d9c6091"
+    }
+  },
+  "method_correction": "Original repair-empty diagnostic waiting could finish before the repaired semantic result. Only a fresh unique unused-variable diagnostic now ends a repair. Original results remain preserved; interleaved timing still includes background editor/server tasks.",
+  "resource_note": "RSS/PSS includes all tracked launch descendants. Idle excludes its first second and precedes the additional 30 steady hovers. PSS once per ten samples, RSS every 100 ms. OS page cache is not flushed.",
+  "aggregates": {
+    "cold": {
+      "baseline": {
+        "treeReadyMs": {
+          "n": 5,
+          "median": 420.45453899999995,
+          "p95": 561.7191220000001,
+          "min": 401.15604900000005,
+          "max": 561.7191220000001
+        },
+        "languageReadyMs": {
+          "n": 5,
+          "median": 5243.739549,
+          "p95": 5502.245273,
+          "min": 4935.021962999999,
+          "max": 5502.245273
+        },
+        "launchToLanguageMs": {
+          "n": 5,
+          "median": 7605.775634765625,
+          "p95": 7946.532470703125,
+          "min": 7309.176513671875,
+          "max": 7946.532470703125
+        },
+        "openToLanguageMs": {
+          "n": 5,
+          "median": 4842.24365234375,
+          "p95": 4940.114501953125,
+          "min": 4513.969482421875,
+          "max": 4940.114501953125
+        },
+        "latency": {
+          "hover": {
+            "n": 150,
+            "median": 61.83280400000058,
+            "p95": 113.70695699999942,
+            "min": 48.15314999999828,
+            "max": 135.6665809999995
+          },
+          "completion": {
+            "n": 150,
+            "median": 71.80983250000008,
+            "p95": 215.2850180000005,
+            "min": 58.60858499999813,
+            "max": 501.11033600000155
+          },
+          "definition": {
+            "n": 150,
+            "median": 143.1372724999983,
+            "p95": 347.78316799999993,
+            "min": 45.63542800000141,
+            "max": 398.3148370000017
+          },
+          "editDiagnostics": {
+            "n": 150,
+            "median": 153.97579300000007,
+            "p95": 274.1988419999998,
+            "min": 64.38574400000016,
+            "max": 296.4070950000023
+          },
+          "steadyHover": {
+            "n": 150,
+            "median": 47.89601399999992,
+            "p95": 56.71637099999862,
+            "min": 44.343691999998555,
+            "max": 60.20884400000068
+          }
+        },
+        "resources": {
+          "peakRssMiB": {
+            "n": 5,
+            "median": 2121.08984375,
+            "p95": 2243.609375,
+            "min": 2111.87890625,
+            "max": 2243.609375
+          },
+          "peakPssMiB": {
+            "n": 5,
+            "median": 1389.2470703125,
+            "p95": 1416.458984375,
+            "min": 1383.857421875,
+            "max": 1416.458984375
+          },
+          "cpuSeconds": {
+            "n": 5,
+            "median": 62.43,
+            "p95": 70.9,
+            "min": 61.5,
+            "max": 70.9
+          },
+          "physicalReadBytes": {
+            "n": 5,
+            "median": 68055040,
+            "p95": 344166400,
+            "min": 44314624,
+            "max": 344166400
+          },
+          "physicalWriteBytes": {
+            "n": 5,
+            "median": 59932672,
+            "p95": 83013632,
+            "min": 55693312,
+            "max": 83013632
+          },
+          "idleRssMiB": {
+            "n": 5,
+            "median": 2075.4921875,
+            "p95": 2184.0,
+            "min": 2067.49609375,
+            "max": 2184.0
+          },
+          "idlePssMiB": {
+            "n": 5,
+            "median": 1350.3955078125,
+            "p95": 1368.353515625,
+            "min": 1347.8681640625,
+            "max": 1368.353515625
+          }
+        }
+      },
+      "candidate": {
+        "treeReadyMs": {
+          "n": 5,
+          "median": 532.584786,
+          "p95": 717.954437,
+          "min": 309.69088899999997,
+          "max": 717.954437
+        },
+        "languageReadyMs": {
+          "n": 5,
+          "median": 6241.481592,
+          "p95": 7705.377600999999,
+          "min": 6071.529798,
+          "max": 7705.377600999999
+        },
+        "launchToLanguageMs": {
+          "n": 5,
+          "median": 8352.865966796875,
+          "p95": 10474.13427734375,
+          "min": 8258.639404296875,
+          "max": 10474.13427734375
+        },
+        "openToLanguageMs": {
+          "n": 5,
+          "median": 5760.429443359375,
+          "p95": 6986.847412109375,
+          "min": 5559.437255859375,
+          "max": 6986.847412109375
+        },
+        "latency": {
+          "hover": {
+            "n": 150,
+            "median": 60.82144899999912,
+            "p95": 121.99537100000089,
+            "min": 47.33038999999917,
+            "max": 152.80915300000197
+          },
+          "completion": {
+            "n": 150,
+            "median": 71.11727950000022,
+            "p95": 115.38934900000095,
+            "min": 59.213692000001174,
+            "max": 350.5375759999988
+          },
+          "definition": {
+            "n": 150,
+            "median": 239.81321749999915,
+            "p95": 333.81159299999854,
+            "min": 46.34924500000125,
+            "max": 373.7236320000011
+          },
+          "editDiagnostics": {
+            "n": 150,
+            "median": 203.65006899999935,
+            "p95": 241.35191699999996,
+            "min": 103.58632200000284,
+            "max": 297.0173369999975
+          },
+          "steadyHover": {
+            "n": 150,
+            "median": 48.568515499999194,
+            "p95": 57.67437499999869,
+            "min": 44.49965299999894,
+            "max": 62.569243999998434
+          }
+        },
+        "resources": {
+          "peakRssMiB": {
+            "n": 5,
+            "median": 2266.46484375,
+            "p95": 2279.2578125,
+            "min": 2236.18359375,
+            "max": 2279.2578125
+          },
+          "peakPssMiB": {
+            "n": 5,
+            "median": 1434.796875,
+            "p95": 1456.125,
+            "min": 1409.5439453125,
+            "max": 1456.125
+          },
+          "cpuSeconds": {
+            "n": 5,
+            "median": 67.39,
+            "p95": 77.14,
+            "min": 66.82,
+            "max": 77.14
+          },
+          "physicalReadBytes": {
+            "n": 5,
+            "median": 275464192,
+            "p95": 576286720,
+            "min": 42065920,
+            "max": 576286720
+          },
+          "physicalWriteBytes": {
+            "n": 5,
+            "median": 45682688,
+            "p95": 60616704,
+            "min": 45449216,
+            "max": 60616704
+          },
+          "idleRssMiB": {
+            "n": 5,
+            "median": 2210.421875,
+            "p95": 2230.9765625,
+            "min": 2191.9921875,
+            "max": 2230.9765625
+          },
+          "idlePssMiB": {
+            "n": 5,
+            "median": 1377.34375,
+            "p95": 1410.734375,
+            "min": 1366.904296875,
+            "max": 1410.734375
+          }
+        }
+      }
+    },
+    "repeat": {
+      "baseline": {
+        "treeReadyMs": {
+          "n": 5,
+          "median": 411.862573,
+          "p95": 460.8658929999999,
+          "min": 353.6338149999999,
+          "max": 460.8658929999999
+        },
+        "languageReadyMs": {
+          "n": 5,
+          "median": 5120.604467,
+          "p95": 5188.292415,
+          "min": 5029.236702,
+          "max": 5188.292415
+        },
+        "launchToLanguageMs": {
+          "n": 5,
+          "median": 7457.980712890625,
+          "p95": 7581.265380859375,
+          "min": 7351.2099609375,
+          "max": 7581.265380859375
+        },
+        "openToLanguageMs": {
+          "n": 5,
+          "median": 4708.376220703125,
+          "p95": 4833.859130859375,
+          "min": 4568.18017578125,
+          "max": 4833.859130859375
+        },
+        "latency": {
+          "hover": {
+            "n": 150,
+            "median": 61.42778749999934,
+            "p95": 116.9038679999976,
+            "min": 48.434643000000506,
+            "max": 134.41920500000015
+          },
+          "completion": {
+            "n": 150,
+            "median": 70.02015600000004,
+            "p95": 210.56786400000055,
+            "min": 59.2253189999974,
+            "max": 321.8778879999991
+          },
+          "definition": {
+            "n": 150,
+            "median": 111.27208949999977,
+            "p95": 307.29435999999987,
+            "min": 45.70989700000064,
+            "max": 360.161059
+          },
+          "editDiagnostics": {
+            "n": 150,
+            "median": 151.92307999999957,
+            "p95": 275.44246700000076,
+            "min": 65.92816299999959,
+            "max": 294.1930710000015
+          },
+          "steadyHover": {
+            "n": 150,
+            "median": 49.7506400000002,
+            "p95": 60.11470900000131,
+            "min": 45.160618999998405,
+            "max": 67.98303099999976
+          }
+        },
+        "resources": {
+          "peakRssMiB": {
+            "n": 5,
+            "median": 2226.00390625,
+            "p95": 2233.72265625,
+            "min": 2124.34375,
+            "max": 2233.72265625
+          },
+          "peakPssMiB": {
+            "n": 5,
+            "median": 1398.349609375,
+            "p95": 1453.2666015625,
+            "min": 1384.91015625,
+            "max": 1453.2666015625
+          },
+          "cpuSeconds": {
+            "n": 5,
+            "median": 62.34,
+            "p95": 63.34,
+            "min": 61.57,
+            "max": 63.34
+          },
+          "physicalReadBytes": {
+            "n": 5,
+            "median": 56565760,
+            "p95": 87490560,
+            "min": 7294976,
+            "max": 87490560
+          },
+          "physicalWriteBytes": {
+            "n": 5,
+            "median": 26820608,
+            "p95": 51363840,
+            "min": 26558464,
+            "max": 51363840
+          },
+          "idleRssMiB": {
+            "n": 5,
+            "median": 2174.796875,
+            "p95": 2182.9375,
+            "min": 2064.53515625,
+            "max": 2182.9375
+          },
+          "idlePssMiB": {
+            "n": 5,
+            "median": 1353.6162109375,
+            "p95": 1361.74609375,
+            "min": 1343.0078125,
+            "max": 1361.74609375
+          }
+        }
+      },
+      "candidate": {
+        "treeReadyMs": {
+          "n": 5,
+          "median": 528.620318,
+          "p95": 545.8889419999999,
+          "min": 511.76397899999995,
+          "max": 545.8889419999999
+        },
+        "languageReadyMs": {
+          "n": 5,
+          "median": 6207.3608890000005,
+          "p95": 6376.34913,
+          "min": 6092.230203,
+          "max": 6376.34913
+        },
+        "launchToLanguageMs": {
+          "n": 5,
+          "median": 8478.206298828125,
+          "p95": 8595.704833984375,
+          "min": 8396.02197265625,
+          "max": 8595.704833984375
+        },
+        "openToLanguageMs": {
+          "n": 5,
+          "median": 5683.6162109375,
+          "p95": 5829.711181640625,
+          "min": 5558.17724609375,
+          "max": 5829.711181640625
+        },
+        "latency": {
+          "hover": {
+            "n": 150,
+            "median": 61.123540499997944,
+            "p95": 125.06793499999912,
+            "min": 46.0894389999994,
+            "max": 374.69435499999963
+          },
+          "completion": {
+            "n": 150,
+            "median": 70.78867900000023,
+            "p95": 88.44956300000013,
+            "min": 57.61767099999997,
+            "max": 365.28066599999875
+          },
+          "definition": {
+            "n": 150,
+            "median": 239.8852039999997,
+            "p95": 325.16611400000147,
+            "min": 45.2847929999989,
+            "max": 348.2113360000003
+          },
+          "editDiagnostics": {
+            "n": 150,
+            "median": 202.13520750000043,
+            "p95": 233.39663100000325,
+            "min": 62.09761200000048,
+            "max": 325.29821699999957
+          },
+          "steadyHover": {
+            "n": 150,
+            "median": 48.02809250000064,
+            "p95": 57.148700000001554,
+            "min": 44.29974300000322,
+            "max": 61.45477900000333
+          }
+        },
+        "resources": {
+          "peakRssMiB": {
+            "n": 5,
+            "median": 2246.61328125,
+            "p95": 2255.234375,
+            "min": 2145.6953125,
+            "max": 2255.234375
+          },
+          "peakPssMiB": {
+            "n": 5,
+            "median": 1417.720703125,
+            "p95": 1430.40234375,
+            "min": 1407.5166015625,
+            "max": 1430.40234375
+          },
+          "cpuSeconds": {
+            "n": 5,
+            "median": 66.74,
+            "p95": 67.73,
+            "min": 64.84,
+            "max": 67.73
+          },
+          "physicalReadBytes": {
+            "n": 5,
+            "median": 95698944,
+            "p95": 205737984,
+            "min": 45486080,
+            "max": 205737984
+          },
+          "physicalWriteBytes": {
+            "n": 5,
+            "median": 26980352,
+            "p95": 54358016,
+            "min": 25735168,
+            "max": 54358016
+          },
+          "idleRssMiB": {
+            "n": 5,
+            "median": 2190.5625,
+            "p95": 2204.9921875,
+            "min": 2088.6328125,
+            "max": 2204.9921875
+          },
+          "idlePssMiB": {
+            "n": 5,
+            "median": 1368.087890625,
+            "p95": 1382.962890625,
+            "min": 1356.61328125,
+            "max": 1382.962890625
+          }
+        }
+      }
+    }
+  },
+  "fixed_t90_gates": [
+    {
+      "mode": "cold",
+      "metric": "treeReadyMs",
+      "overhead_percent": 26.66881591210508,
+      "fixed_t90_limit_percent": 10.622,
+      "passed": false
+    },
+    {
+      "mode": "cold",
+      "metric": "languageReadyMs",
+      "overhead_percent": 19.027299767210472,
+      "fixed_t90_limit_percent": 10,
+      "passed": false
+    },
+    {
+      "mode": "cold",
+      "metric": "hover",
+      "overhead_percent": -1.635628557296942,
+      "fixed_t90_limit_percent": 12.79,
+      "passed": true,
+      "method_changed": false
+    },
+    {
+      "mode": "cold",
+      "metric": "completion",
+      "overhead_percent": -0.964426424473086,
+      "fixed_t90_limit_percent": 10,
+      "passed": true,
+      "method_changed": false
+    },
+    {
+      "mode": "cold",
+      "metric": "definition",
+      "overhead_percent": 67.5407203948238,
+      "fixed_t90_limit_percent": 10,
+      "passed": false,
+      "method_changed": false
+    },
+    {
+      "mode": "cold",
+      "metric": "editDiagnostics",
+      "overhead_percent": 32.26109444359171,
+      "fixed_t90_limit_percent": 40.759,
+      "passed": true,
+      "method_changed": true
+    },
+    {
+      "mode": "repeat",
+      "metric": "treeReadyMs",
+      "overhead_percent": 28.34871451162424,
+      "fixed_t90_limit_percent": 17.113,
+      "passed": false
+    },
+    {
+      "mode": "repeat",
+      "metric": "languageReadyMs",
+      "overhead_percent": 21.223205756344953,
+      "fixed_t90_limit_percent": 10,
+      "passed": false
+    },
+    {
+      "mode": "repeat",
+      "metric": "hover",
+      "overhead_percent": -0.49529213468969546,
+      "fixed_t90_limit_percent": 10,
+      "passed": true,
+      "method_changed": false
+    },
+    {
+      "mode": "repeat",
+      "metric": "completion",
+      "overhead_percent": 1.097573961417897,
+      "fixed_t90_limit_percent": 10,
+      "passed": true,
+      "method_changed": false
+    },
+    {
+      "mode": "repeat",
+      "metric": "definition",
+      "overhead_percent": 115.58434381696428,
+      "fixed_t90_limit_percent": 10,
+      "passed": false,
+      "method_changed": false
+    },
+    {
+      "mode": "repeat",
+      "metric": "editDiagnostics",
+      "overhead_percent": 33.05101996352431,
+      "fixed_t90_limit_percent": 41.069,
+      "passed": true,
+      "method_changed": true
+    }
+  ],
+  "raw_runs": [
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/baseline-cold-0",
+      "hashes": {
+        "launch.json": "af4e0c3f1482861040139d808e17a22d086fd87d9e3a8cfe0aff11f75f87b3f6",
+        "resources.json": "35e2e915a75b57a3dbbef9914de86033c8c1c4c12133656dc192d8de208c2fd2",
+        "summary.json": "a75f292fc9a8bda79fcce8ebb37eb5e6c4e087471e36d2c11ad1846d9187c7a0",
+        "editor-cold-0.json": "3a39e9b3894e487e8dcbb46d4677aa7c2024b6b37ee862462c9e65bab95e5aec"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/candidate-cold-0",
+      "hashes": {
+        "launch.json": "37ac9453158df3869af418626ebdfebb016ceb0985123e7a25736975003aa841",
+        "resources.json": "64dae15860ce790232ce30c22a4d8c52084cc91bdc320ca70192fa72130bd967",
+        "summary.json": "56c8f237d0dac5254776f977bc45086fb4ccfc3de937e07adac4ab29be106d13",
+        "editor-cold-0.json": "06225b6f768654f53de1137fc83b07503c2db10e580056482d67498a027b82b7"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/baseline-cold-1",
+      "hashes": {
+        "launch.json": "a1ce1912f135453eb368c2bf6c311505220cfe432d2bd67e1fc3df108bf0af84",
+        "resources.json": "9bb9ed2ef7d91152c673b9f0859e0d0ac29a827e09157811d3f76f1686ce9b59",
+        "summary.json": "0eafff8db47ef3598c8e8e42d2fb40c26953f61ff1adb3237c3a0001ee960292",
+        "editor-cold-1.json": "3954edb25f2d3d1e3603be4f82a0381debc0dd2aaae87a2c775464576a67d883"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/candidate-cold-1",
+      "hashes": {
+        "launch.json": "a7d2d566fd9c2588009dcd37e080ad63e618c852324ca1157aee070386d2afba",
+        "resources.json": "50e8f6305ecf5f782793133389f6948c2313c8e74ac28507e766bbc2cff563ad",
+        "summary.json": "fc422bbbfdaa46054702283deddee56a1f39fa6e726f1850736f2bfe06925ba0",
+        "editor-cold-1.json": "04682bc4967f0bd643daa1311c1e4502d8c01168dfb82708fbb643a5317ff4d9"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/baseline-cold-2",
+      "hashes": {
+        "launch.json": "fa16aff8659bc820755ebaa944bb3c5ddf19b27668fb2d074249745fad0131cc",
+        "resources.json": "fc14999eabd65d248d49ccf90ced216c6508a3c82b448ce74df9602d052b0bae",
+        "summary.json": "d912c21796080e2e450ab8ad6bf6971747f2be19ca990e10f9ec4f31fbcb7c05",
+        "editor-cold-2.json": "0696cc8d2d0d5cc180238a89075cda200ac870af76ed994b3b24f64d0bc97c28"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/candidate-cold-2",
+      "hashes": {
+        "launch.json": "c836fe0673c8aba2cd07e809a2f3ed231dd8b221a57be7e7f0b8669f04ee2ede",
+        "resources.json": "de6a4c19ede675bfb1af017dbb501cec9a7a1fe766a48bf45906637196d7686f",
+        "summary.json": "eb5ad9fb7ec8f3e61d2fb81dcc842ec4fbf174951703f9e67649717ad916ee4b",
+        "editor-cold-2.json": "04477424c8ab02482a69c189fda687f72f679975220c1ad622975f2a452a5f20"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/baseline-cold-3",
+      "hashes": {
+        "launch.json": "bba7e57ba8750b008dc9783670166cb6577c0a58a636c5cb9e806d51eac3c662",
+        "resources.json": "bc80356dd102c71d373ff1b6dea056fbec178cfe716037fe210f8ec1603d589f",
+        "summary.json": "469f1ea4d07b0850e74236c485869e9ece177b3503384740b8e6cc3c8e17bb13",
+        "editor-cold-3.json": "b9bb5c4050a4527af4c65988e80e3e0b598cc5deab54d567d9e294dc122d0a14"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/candidate-cold-3",
+      "hashes": {
+        "launch.json": "8f1d5486f57fdfc491d5b13d676fcde62fcc683d02a52a61a579468d0efc597f",
+        "resources.json": "7519d203ca5b0b3422a7c3f647cfc03bb8bca285d9d8cf5f0e798357c23d9feb",
+        "summary.json": "4e94c694b578fac4ca9edc9c54bb3d6ef5c849ad8724fcc39fefb7a506e7631d",
+        "editor-cold-3.json": "bed63965453a85ae00d5bf558d6a984b301de74d23ff67143579a640bb9ab2fa"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/baseline-cold-4",
+      "hashes": {
+        "launch.json": "b99de4d28730ddcb766bee3eff02c754f9fcf1491648b343bf92ae89b1fa55d8",
+        "resources.json": "0d12e88fba4a7a0a6bdb879588557b2079bf6eae0e5abad5d3bb18381455f975",
+        "summary.json": "20f630faf448b6588d5395274a94aa46c518cd9d9daa70e4447549f5eb8ede7f",
+        "editor-cold-4.json": "6572f21dab9ffc836c1b03b9a28006aac9976bf88b1e81ead787434a9f6e2a23"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/candidate-cold-4",
+      "hashes": {
+        "launch.json": "1cc7392353c6883338bda7db4d3bb5540ead834be6d30916c040ac6dd7df09b4",
+        "resources.json": "dee3338dc6ef6aeef7809fd0666011d40527b35b27ba11778420ca0ebd1b6869",
+        "summary.json": "555331946a888c4538fde67601109e58cba04bc9d3850614f8086d2b485310dd",
+        "editor-cold-4.json": "2dcd5ff5539d757c80ecf3a58e85abeae2c2020bfdb1ccc9bd9cc6a870e0a32c"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/baseline-repeat-0",
+      "hashes": {
+        "launch.json": "44637e6fb4defd99df4ac800e3b1f73397470fc84c5a1d803b133c5cb80e8a65",
+        "resources.json": "4c8e6c3303577bef258ccb4798407b61d9a830c0ff241dd0ad18a9971546725f",
+        "summary.json": "120857bfd126f02aacaa6f72fca043fd3d019b5e39dec96a2726b26d4d4c4a6b",
+        "editor-repeat-0.json": "a97de30b864c9e4643c53d182a0f91863d5236d48929f78c8950029ebf75f817"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/candidate-repeat-0",
+      "hashes": {
+        "launch.json": "60d2056d1394d2f3b4b035e0dbec368dc65ea881b1b16bf9a1c09c9f1091e0e4",
+        "resources.json": "190849e191de91134ca8e9a2bad7d9ff7253c2c23a74d7e9fee0f02e09b39fe1",
+        "summary.json": "276bb4f3b23d2f644fc654d98a8d7792f46f78adb2e17d0451aa906b3929a1a3",
+        "editor-repeat-0.json": "a8583bf3deaafff11a9e26a56aba6f30364d314def0df68f71bdcb456124e79a"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/baseline-repeat-1",
+      "hashes": {
+        "launch.json": "51c487d5b70de31f386d2ba96c82dd0e7d4b58daf7a3b545f5a50026eaeb2c81",
+        "resources.json": "93e8294b59da8452a53771104670c5566759811a8f1ca98c6cf5d922558e2517",
+        "summary.json": "52bdf36f34f6bdf3a6948778ee93ce7dff95364bbcff44c37633bf3a461ef30a",
+        "editor-repeat-1.json": "18c11b6211fabc3fdb1307e4d7e0c8c2c29060ecd6eeee18acd44d5839b7a751"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/candidate-repeat-1",
+      "hashes": {
+        "launch.json": "e6bd9fc9245134a8e42e8da5328532a39c2019e2d1a0d0b40fdacbfb004b4c41",
+        "resources.json": "6da09ad47e33dc4d50ec7163fa821fbefa114febc4d926cfec7793454a2e3513",
+        "summary.json": "32810567fc8f963361eae353e030c7bc2568b60544636a98dad26489a1958f53",
+        "editor-repeat-1.json": "19856c05ad0066f35d5cf96281eff5ce476be3e31446370378bfb0b538d05ee0"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/baseline-repeat-2",
+      "hashes": {
+        "launch.json": "dbc970e9bc8e3d5870845fa5e083d981167b44f44cc846b9c8f8372454e466ef",
+        "resources.json": "8935ed73fdc75aca9e1c29ea8bd4231a1f8f49134f96c2872f86d741043c131f",
+        "summary.json": "c5ede6b45de520559679f138c738a86a3642a34ff149e7eee2e7afa4f4a5e510",
+        "editor-repeat-2.json": "91f1182e99242df322369f030618207f33770faf0377abf58437ddd02c038ce2"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/candidate-repeat-2",
+      "hashes": {
+        "launch.json": "ad4037279893e87f04739b5597115eef60e8a4acbec39a3d48e7f039fc083913",
+        "resources.json": "30a1357f52de6b649c4520f5a90350410add8d5c18c4c277af99061d58f3cb45",
+        "summary.json": "827b1706cd62452e6c5c161f834cf961d175170b500422018844e362cfd75fc7",
+        "editor-repeat-2.json": "49ac765ab48119910ffebc1cc77034a507dc93af438d6751ab04d205c1e485fc"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/baseline-repeat-3",
+      "hashes": {
+        "launch.json": "8e9ece7362cb74f1d3c5461033be99c7cf17492e613f9f901315ee0efa3aeab6",
+        "resources.json": "63f716b12cd329762235ac4b6205646cd555cf00e3f7a492051e3c95a047dc3a",
+        "summary.json": "816cfd794877d2aada2d88e1b70428cc57279968298a7a6a2072ed2932dffe3d",
+        "editor-repeat-3.json": "9f3c0adf4fc57a3a127c4e581ca7f5c1adf9cf18ec3a4d750017d50858e8b42b"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/candidate-repeat-3",
+      "hashes": {
+        "launch.json": "a955f41bf45e8def0853c855c6acef960b821e6c960ccac1c19ff6e772b93bd0",
+        "resources.json": "4d9ccb0a57a842a778df47a6c5fa0be3f28743ee711ab830580b72f648b21bcc",
+        "summary.json": "e518a56ec93e23cf75244a9d197e556858b55fd7d21147bebea97e12a8c2b83a",
+        "editor-repeat-3.json": "5c2a7426b19067afd1fa03f776178f82cea4a2198b33b651e8dbcb26bd04c331"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/baseline-repeat-4",
+      "hashes": {
+        "launch.json": "2aad309742caf685f35f17a47cfc35b0f2a7069f5366a37e0f990106db5925cd",
+        "resources.json": "7259bfe153012a08e2b8d14d7c30992b1874e26acca7520811a923f46b7ecd24",
+        "summary.json": "8355918997d1c2b0850bc458613363804142307ed30366bc51e62f5516b6e8a8",
+        "editor-repeat-4.json": "70a4512b247f34e2618ae504fb319eb32b8637f6bd8f3b6c1553370e665bbdfa"
+      }
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/series-fresh-x3nxjx6_/candidate-repeat-4",
+      "hashes": {
+        "launch.json": "8e4a92a454738e0d475a31041b4f89bf36c130e93ed4700beddd335044791aac",
+        "resources.json": "b3180f5ef830842492740e9f167ced0fe456ed7627c76f9de29964961c51d65c",
+        "summary.json": "d5ef2da965ab3d6aa6a21b30446193245b23b4967828d0350e192cd231c477f5",
+        "editor-repeat-4.json": "84efcad02afb6634883dee7ce85ad91fff8e76197c153f49d3db162671fb2d8f"
+      }
+    }
+  ],
+  "input_after": {
+    "baseline": {
+      "files": 103719,
+      "bytes": 6202842333,
+      "aggregate_sha256": "b5570ab7422f6d98d868b5d013066303db40cec81f6c247a3646265e86d66eb9"
+    },
+    "candidate": {
+      "files": 103719,
+      "bytes": 6202842333,
+      "aggregate_sha256": "b5570ab7422f6d98d868b5d013066303db40cec81f6c247a3646265e86d66eb9"
+    }
+  },
+  "input_hash_algorithm": "Paths sorted relative to each copy; SHA256(path UTF8 + NUL + binary SHA256(file)) concatenated into SHA256. This hash uses a different encoding from the original input fingerprint, whose raw data remains preserved.",
+  "footprint": {
+    "baseline": {
+      "explorer_vsix": {
+        "bytes": 1446103,
+        "files": 1294,
+        "unpacked_bytes": 2506591,
+        "sha256": "4305218be64a1853ec11deea5771a645900c1d8e2d81413161e22ad228701162"
+      },
+      "external_installed_extension": {
+        "files": 11,
+        "bytes": 2307355
+      },
+      "eska_binary_bytes": 22195048,
+      "analyzer_binary_bytes": 75963744,
+      "selected_unpacked_file_bytes": 102972738
+    },
+    "candidate": {
+      "explorer_vsix": {
+        "bytes": 1779424,
+        "files": 1313,
+        "unpacked_bytes": 4211429,
+        "sha256": "6ea9657d30f684ad022208d7d8733b3ff6d088262d344c0751cd6fa28db7ea87"
+      },
+      "project_binary_bytes": 7663696,
+      "analyzer_binary_bytes": 75963744,
+      "selected_unpacked_file_bytes": 87838869
+    },
+    "scope": "Logical file lengths; VSIX extraction payload includes manifests. Editor, 1C, filesystem allocation, package receipts and unrelated extension profiles excluded.",
+    "project_caches": {
+      "baseline": [
+        {
+          "path": "src/buhmfo/.eska",
+          "files": 3,
+          "bytes": 9026772
+        },
+        {
+          "path": "src/ExternalSystems/.eska",
+          "files": 3,
+          "bytes": 26524
+        },
+        {
+          "path": "src/dzp_АвтоматическаяЗагрузкаВыписок/.eska",
+          "files": 3,
+          "bytes": 11173
+        },
+        {
+          "path": "src/dzp_АдаптацияКодаТиповойКонфигурации/.eska",
+          "files": 3,
+          "bytes": 47336
+        },
+        {
+          "path": "src/dzp_ЗаполнениеБанковскихВыписок/.eska",
+          "files": 3,
+          "bytes": 16534
+        },
+        {
+          "path": "src/dzp_ИсправлениеОшибокКонфигурации/.eska",
+          "files": 3,
+          "bytes": 10274
+        }
+      ],
+      "candidate": [
+        {
+          "path": ".eska",
+          "files": 1,
+          "bytes": 0
+        },
+        {
+          "path": "src/buhmfo/.eska",
+          "files": 3,
+          "bytes": 9026772
+        },
+        {
+          "path": "src/ExternalSystems/.eska",
+          "files": 3,
+          "bytes": 26524
+        },
+        {
+          "path": "src/dzp_АвтоматическаяЗагрузкаВыписок/.eska",
+          "files": 3,
+          "bytes": 11173
+        },
+        {
+          "path": "src/dzp_АдаптацияКодаТиповойКонфигурации/.eska",
+          "files": 3,
+          "bytes": 47336
+        },
+        {
+          "path": "src/dzp_ЗаполнениеБанковскихВыписок/.eska",
+          "files": 3,
+          "bytes": 16534
+        },
+        {
+          "path": "src/dzp_ИсправлениеОшибокКонфигурации/.eska",
+          "files": 3,
+          "bytes": 10274
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "OS page cache is not flushed. Cold removes only own project .eska directories.",
+    "Interleaved definition still exceeds the fixed original T90 tolerance.",
+    "Tree and language readiness still exceed the fixed original T90 tolerance.",
+    "Original hover/repair results are preserved but are not the final acceptance evidence.",
+    "Windows, macOS, VS Code and Remote are unverified by user-agreed scope."
+  ],
+  "acceptance_decision": {
+    "date": "2026-10-22",
+    "source": "Direct human reply in this chat",
+    "user_quote": "Добавить как задачу оптимизации. Прогодим более сильной моделью",
+    "t89_acceptance": "accepted_with_documented_performance_deferral",
+    "performance_gates": "failed; original numeric results and tolerances preserved",
+    "follow_up_task": "T106",
+    "follow_up_status": "PLANNED",
+    "follow_up_execution": "Later with a stronger model; not started",
+    "scope": "Current Linux/VSCodium; other environments unverified by prior user decision"
+  },
+  "reproduction": {
+    "cwd": "eska repository root",
+    "playground": "../eska-playground",
+    "method": "Copy frozen launch/probe/provenance/tools to a unique series directory under the same acceptance stand; preserve original results.",
+    "launch_script_sha256": "5a2b01068d994effadf170aa6afb6ea2d0af3152a499c9d15745b0d5facbffc6",
+    "probe_sha256": "a1eeb5297288d98392db852691a4aa3631936fe4cd284b6094585afc8cbdd0c1",
+    "summary_script_sha256": "c46e000bb17806c882d7c786bfcaa2bcf058e1dc2deb21afe2745d29d1394977",
+    "fixed_gates_wrapper_sha256": "11c77324934981319577746010f842c7e8df9d4b6b2a8a9a5f3ad4ef0186ec58",
+    "fixed_gates_source_sha256": "dfe25b8de2ff39c954a034beb4d50ed74769e26ee276faea7cb7ccb52bc012e1",
+    "summary_validation": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t89-acceptance-64abnlk1/summary-replay-check-ottzu_oa",
+      "all_aggregates_and_fixed_gates_equal": true
+    },
+    "commands": [
+      "acceptance_dir=\"$(realpath ../eska-playground/t89-acceptance-64abnlk1)\"",
+      "source_series=\"$acceptance_dir/series-fresh-x3nxjx6_\"",
+      "series_dir=\"$(mktemp -d \"$acceptance_dir/series-replay-XXXXXXXX\")\"",
+      "cp \"$source_series/run.py\" \"$source_series/probe.cjs\" \"$source_series/provenance.json\" \"$source_series/summarize.py\" \"$source_series/replay-summary.py\" \"$series_dir/\"",
+      "cp -a \"$source_series/tools\" \"$series_dir/tools\"",
+      "python3 -B \"$series_dir/run.py\"",
+      "python3 -B \"$series_dir/replay-summary.py\""
+    ]
+  }
+}

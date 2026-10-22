@@ -1,0 +1,1338 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "source_revision": "659beb6bce116b3b85cbcae2513626f4cc169581",
+  "package_stand": "/home/akalsin/Documents/Projects/eska-playground/t97-packages-4tilolll",
+  "installed_stand": "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy",
+  "native_stand": "/home/akalsin/Documents/Projects/eska-playground/t94-native-wqe2_j7i",
+  "component_archives": {
+    "eska": {
+      "archive": "eska-0.14.3-x86_64-unknown-linux-gnu.zip",
+      "contract": {
+        "bridge_schema": 1,
+        "config_schema": "designer-xml-1",
+        "metadata_api": null,
+        "schema_version": 2,
+        "target": "x86_64-unknown-linux-gnu",
+        "tool": "eska",
+        "version": "0.14.3"
+      },
+      "sha256": "f298a91c83359f2971efbc4e51073c9e5c1919eea07b78f2775d9092ce958659",
+      "size": 38767176,
+      "size_mib": 36.971
+    },
+    "eska-build": {
+      "archive": "eska-build-0.14.3-x86_64-unknown-linux-gnu.zip",
+      "contract": {
+        "bridge_schema": 1,
+        "config_schema": "designer-xml-1",
+        "metadata_api": null,
+        "schema_version": 2,
+        "target": "x86_64-unknown-linux-gnu",
+        "tool": "eska-build",
+        "version": "0.14.3"
+      },
+      "sha256": "9b045cabfdfb9cd3f46679ae43acef27e5bc7534bb18f88af29788987d548586",
+      "size": 24000327,
+      "size_mib": 22.888
+    },
+    "eska-check": {
+      "archive": "eska-check-0.14.3-x86_64-unknown-linux-gnu.zip",
+      "contract": {
+        "bridge_schema": 1,
+        "config_schema": "designer-xml-1",
+        "metadata_api": null,
+        "schema_version": 2,
+        "target": "x86_64-unknown-linux-gnu",
+        "tool": "eska-check",
+        "version": "0.14.3"
+      },
+      "sha256": "cdfdfa6024cabdff4e5555d0f535bd689014b8a725f0de538f7c2051fc0c4c13",
+      "size": 21343299,
+      "size_mib": 20.355
+    },
+    "eska-project": {
+      "archive": "eska-project-0.14.3-x86_64-unknown-linux-gnu.zip",
+      "contract": {
+        "bridge_schema": 1,
+        "config_schema": "designer-xml-1",
+        "metadata_api": {
+          "major": 1,
+          "minor": 12
+        },
+        "schema_version": 2,
+        "target": "x86_64-unknown-linux-gnu",
+        "tool": "eska-project",
+        "version": "0.14.3"
+      },
+      "sha256": "295470b3812e2e7930a6ee36dccdeedb80dfb2bad85f4f6f60d11165b29460f7",
+      "size": 29186996,
+      "size_mib": 27.835
+    },
+    "eska-vcs": {
+      "archive": "eska-vcs-0.14.3-x86_64-unknown-linux-gnu.zip",
+      "contract": {
+        "bridge_schema": 1,
+        "config_schema": "designer-xml-1",
+        "metadata_api": null,
+        "schema_version": 2,
+        "target": "x86_64-unknown-linux-gnu",
+        "tool": "eska-vcs",
+        "version": "0.14.3"
+      },
+      "sha256": "cd0d0841a4f8705a460d23d7e4c9a4e387b4c6642f0b44c47ef41e06c66c4b7c",
+      "size": 62051382,
+      "size_mib": 59.177
+    }
+  },
+  "identical_archive_reproduction": [
+    "eska",
+    "eska-build",
+    "eska-check",
+    "eska-project",
+    "eska-vcs"
+  ],
+  "minimal_installation": {
+    "schema_version": 1,
+    "status": "passed",
+    "source_revision": "659beb6bce116b3b85cbcae2513626f4cc169581",
+    "source_tree_dirty": true,
+    "script_sha256": "98a230c943cf2347343f458cfafa1ca716534de37f4401e571649c876339beec",
+    "target": "x86_64-unknown-linux-gnu",
+    "version": "0.14.3",
+    "stand": "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy",
+    "bundle_sha256": {
+      "LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "component_installation.py": "e1327c2dccd0c71b1a4b7bae5277d9e8b9e3a510bb1e5d6a9b8a27f170776770",
+      "component_package.py": "28ad9a0951fefa1457e12ed98ae13317407af8b3c0aede25fbf6b3d233949d8a",
+      "components.py": "148592179fc23e44eba68a81fb02023a2765d63601957b56390062082e4e317e",
+      "eska-0.14.3-x86_64-unknown-linux-gnu.zip": "f298a91c83359f2971efbc4e51073c9e5c1919eea07b78f2775d9092ce958659",
+      "eska-build-0.14.3-x86_64-unknown-linux-gnu.zip": "9b045cabfdfb9cd3f46679ae43acef27e5bc7534bb18f88af29788987d548586",
+      "eska-check-0.14.3-x86_64-unknown-linux-gnu.zip": "cdfdfa6024cabdff4e5555d0f535bd689014b8a725f0de538f7c2051fc0c4c13",
+      "eska-project-0.14.3-x86_64-unknown-linux-gnu.zip": "295470b3812e2e7930a6ee36dccdeedb80dfb2bad85f4f6f60d11165b29460f7",
+      "eska-vcs-0.14.3-x86_64-unknown-linux-gnu.zip": "cd0d0841a4f8705a460d23d7e4c9a4e387b4c6642f0b44c47ef41e06c66c4b7c",
+      "release.json": "c269eac40d4355055a6b95135171aeb06ee465b0071d81bd27de95bc8ed4e381"
+    },
+    "minimal_profiles": [
+      "eska-project",
+      "eska-check",
+      "eska-build",
+      "eska-vcs",
+      "eska"
+    ],
+    "metadata_api": "1.12",
+    "analyzer": "/home/akalsin/.local/bin/bsl-analyzer-app",
+    "check_reports_identical": true,
+    "source_preserved": true,
+    "selective_remove": "passed",
+    "commands": [
+      {
+        "label": "eska-project-preview",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-project",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project",
+          "--format",
+          "json",
+          "--check"
+        ]
+      },
+      {
+        "label": "eska-project-install",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-project",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-project-contract",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project/bin/eska-project",
+          "__tool-contract"
+        ]
+      },
+      {
+        "label": "eska-project-help-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project/bin/eska-project",
+          "--lang",
+          "ru",
+          "--help"
+        ]
+      },
+      {
+        "label": "eska-project-help-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project/bin/eska-project",
+          "--lang",
+          "en",
+          "--help"
+        ]
+      },
+      {
+        "label": "eska-project-offline-repeat",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-project",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-project-status",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "status",
+          "--component",
+          "eska-project",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-check-preview",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-check",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-check",
+          "--format",
+          "json",
+          "--check"
+        ]
+      },
+      {
+        "label": "eska-check-install",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-check",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-check",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-check-contract",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-check/bin/eska-check",
+          "__tool-contract"
+        ]
+      },
+      {
+        "label": "eska-check-help-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-check/bin/eska-check",
+          "--lang",
+          "ru",
+          "--help"
+        ]
+      },
+      {
+        "label": "eska-check-help-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-check/bin/eska-check",
+          "--lang",
+          "en",
+          "--help"
+        ]
+      },
+      {
+        "label": "eska-check-offline-repeat",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-check",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-check",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-check-status",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "status",
+          "--component",
+          "eska-check",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-check",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-build-preview",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-build",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-build",
+          "--format",
+          "json",
+          "--check"
+        ]
+      },
+      {
+        "label": "eska-build-install",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-build",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-build",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-build-contract",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-build/bin/eska-build",
+          "__tool-contract"
+        ]
+      },
+      {
+        "label": "eska-build-help-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-build/bin/eska-build",
+          "--lang",
+          "ru",
+          "--help"
+        ]
+      },
+      {
+        "label": "eska-build-help-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-build/bin/eska-build",
+          "--lang",
+          "en",
+          "--help"
+        ]
+      },
+      {
+        "label": "eska-build-offline-repeat",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-build",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-build",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-build-status",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "status",
+          "--component",
+          "eska-build",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-build",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-vcs-preview",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-vcs",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-vcs",
+          "--format",
+          "json",
+          "--check"
+        ]
+      },
+      {
+        "label": "eska-vcs-install",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-vcs",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-vcs",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-vcs-contract",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-vcs/bin/eska-vcs",
+          "__tool-contract"
+        ]
+      },
+      {
+        "label": "eska-vcs-help-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-vcs/bin/eska-vcs",
+          "--lang",
+          "ru",
+          "--help"
+        ]
+      },
+      {
+        "label": "eska-vcs-help-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-vcs/bin/eska-vcs",
+          "--lang",
+          "en",
+          "--help"
+        ]
+      },
+      {
+        "label": "eska-vcs-offline-repeat",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-vcs",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-vcs",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-vcs-status",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "status",
+          "--component",
+          "eska-vcs",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-vcs",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-preview",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska",
+          "--format",
+          "json",
+          "--check"
+        ]
+      },
+      {
+        "label": "eska-install",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-contract",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska/bin/eska",
+          "__tool-contract"
+        ]
+      },
+      {
+        "label": "eska-help-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska/bin/eska",
+          "--lang",
+          "ru",
+          "--help"
+        ]
+      },
+      {
+        "label": "eska-help-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska/bin/eska",
+          "--lang",
+          "en",
+          "--help"
+        ]
+      },
+      {
+        "label": "eska-offline-repeat",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "eska-status",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "status",
+          "--component",
+          "eska",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "project-new",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project/bin/eska-project",
+          "new",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "--type",
+          "configuration",
+          "--source",
+          "Исходники",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "project-validate-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project/bin/eska-project",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "validate",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "project-serve-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project/bin/eska-project",
+          "--lang",
+          "ru",
+          "serve",
+          "--stdio"
+        ]
+      },
+      {
+        "label": "build-clean-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-build/bin/eska-build",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "clean"
+        ]
+      },
+      {
+        "label": "project-validate-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project/bin/eska-project",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "validate",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "project-serve-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-project/bin/eska-project",
+          "--lang",
+          "en",
+          "serve",
+          "--stdio"
+        ]
+      },
+      {
+        "label": "build-clean-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-build/bin/eska-build",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "clean"
+        ]
+      },
+      {
+        "label": "shell-missing-project",
+        "exit": 1,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska/bin/eska",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "version",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "full-install-eska-project",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-project",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "full-install-eska-check",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-check",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "full-install-eska-build",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-build",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "full-install-eska-vcs",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska-vcs",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "full-install-eska",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "install",
+          "--manifest",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/release.json",
+          "--component",
+          "eska",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "version-direct-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska-project",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "version",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "version-wrapper-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "version",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "version-direct-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska-project",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "version",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "version-wrapper-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "version",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "analyzer-version",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app",
+          "--version"
+        ]
+      },
+      {
+        "label": "check-minimal-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-check/bin/eska-check",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "--format",
+          "json",
+          "--analyzer",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app"
+        ]
+      },
+      {
+        "label": "check-direct-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska-check",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "--format",
+          "json",
+          "--analyzer",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app"
+        ]
+      },
+      {
+        "label": "check-wrapper-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "check",
+          "--format",
+          "json",
+          "--analyzer",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app"
+        ]
+      },
+      {
+        "label": "check-minimal-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-check/bin/eska-check",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "--format",
+          "json",
+          "--analyzer",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app"
+        ]
+      },
+      {
+        "label": "check-direct-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska-check",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "--format",
+          "json",
+          "--analyzer",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app"
+        ]
+      },
+      {
+        "label": "check-wrapper-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "check",
+          "--format",
+          "json",
+          "--analyzer",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app"
+        ]
+      },
+      {
+        "label": "threshold-direct-ru",
+        "exit": 1,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska-check",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "--format",
+          "json",
+          "--analyzer",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app"
+        ]
+      },
+      {
+        "label": "threshold-wrapper-ru",
+        "exit": 1,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "check",
+          "--format",
+          "json",
+          "--analyzer",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app"
+        ]
+      },
+      {
+        "label": "threshold-direct-en",
+        "exit": 1,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska-check",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "--format",
+          "json",
+          "--analyzer",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app"
+        ]
+      },
+      {
+        "label": "threshold-wrapper-en",
+        "exit": 1,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "check",
+          "--format",
+          "json",
+          "--analyzer",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/external/bsl-analyzer-app"
+        ]
+      },
+      {
+        "label": "git-init",
+        "exit": 0,
+        "command": [
+          "/usr/bin/git",
+          "-C",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "init",
+          "--initial-branch=main"
+        ]
+      },
+      {
+        "label": "git-add",
+        "exit": 0,
+        "command": [
+          "/usr/bin/git",
+          "-C",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "add",
+          "."
+        ]
+      },
+      {
+        "label": "git-commit",
+        "exit": 0,
+        "command": [
+          "/usr/bin/git",
+          "-C",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "-c",
+          "commit.gpgsign=false",
+          "-c",
+          "core.hooksPath=",
+          "commit",
+          "-m",
+          "acceptance fixture"
+        ]
+      },
+      {
+        "label": "vcs-minimal-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-vcs/bin/eska-vcs",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "status",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "vcs-direct-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska-vcs",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "status",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "vcs-wrapper-ru",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska",
+          "--lang",
+          "ru",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "status",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "vcs-minimal-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/profiles/eska-vcs/bin/eska-vcs",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "status",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "vcs-direct-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska-vcs",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "status",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "vcs-wrapper-en",
+        "exit": 0,
+        "command": [
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full/bin/eska",
+          "--lang",
+          "en",
+          "--project-dir",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/Проект XML",
+          "status",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "label": "remove-project",
+        "exit": 0,
+        "command": [
+          "/usr/bin/python3",
+          "-B",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/bundle/components.py",
+          "remove",
+          "--component",
+          "eska-project",
+          "--root",
+          "/home/akalsin/Documents/Projects/eska-playground/t97-installed-st5ibsoy/full",
+          "--format",
+          "json"
+        ]
+      }
+    ],
+    "limitations": [
+      "Linux native run only; Windows/macOS/Remote not verified",
+      "1C build/unpack is a separate native matrix",
+      "No release assets published"
+    ]
+  },
+  "real_static_analysis": {
+    "analyzer_version": "0.3.2",
+    "complete": true,
+    "counts": {
+      "errors": 0,
+      "hints": 1,
+      "information": 0,
+      "warnings": 1
+    },
+    "policy": {
+      "max_errors": 1000,
+      "max_warnings": 1000
+    },
+    "identical_json_runs": 6,
+    "report_sha256": "205ee694a8deae3ab1aebd88ca698d1bcdeb1b2a9cff0293099a991c95a61201",
+    "identical_threshold_json_runs": 4,
+    "threshold_exit": 1,
+    "threshold_policy": {
+      "max_errors": 1000,
+      "max_warnings": 0
+    }
+  },
+  "installed_native_builder": {
+    "binary": "/home/akalsin/Documents/Projects/eska-playground/t97-installed-gns_6c1n/profiles/eska-build/bin/eska-build",
+    "sha256": "a14f23418f6eb85b574fa519c6a69207a9524df68f68118d59d72983de4747a3",
+    "path": "/usr/bin:/bin",
+    "other_eska_components": "explicitly unavailable",
+    "platform": "8.3.27.2325",
+    "container": "1c-ubuntu-env",
+    "matrix": {
+      "complete": true,
+      "entry": "eska-build",
+      "platform_version": "8.3.27.2325",
+      "runner": "distrobox",
+      "cases": [
+        {
+          "project_type": "configuration",
+          "build": "passed",
+          "repeat": "reused_infobase",
+          "unpack": "passed",
+          "clean": "passed",
+          "artifact_sha256": "eba66a7771ddde0746f066147a5a9ce981ef2affc51f72c4e14884230bed5c52",
+          "artifact_bytes": 76063,
+          "identity": {
+            "name": "Configuration",
+            "project_type": "configuration",
+            "uuid": "981d225e-ee3b-4649-bed5-de8063b39776"
+          },
+          "source_unchanged": true,
+          "export_identity_matches_source": true,
+          "git_status": "unavailable",
+          "direct_wrapper_json_equal_except_duration": null,
+          "direct_wrapper_manifest_metadata_equal": null,
+          "first_artifact_sha256": "c6093f4028d983c05165b485b002754b05b3f231652ff9217fa7d01e6f0fc1c7",
+          "repeated_artifact_bytes_equal": false
+        },
+        {
+          "project_type": "extension",
+          "build": "passed",
+          "repeat": "reused_infobase",
+          "unpack": "passed",
+          "clean": "passed",
+          "artifact_sha256": "c0bae223aaca48bbdd55162db484aca3aa9d97cdaa06f94c0f096ed5e0795a8e",
+          "artifact_bytes": 4616,
+          "identity": {
+            "name": "EskaTestExtension",
+            "project_type": "extension",
+            "uuid": "2dbb3954-7ac9-4173-8730-9c90794aa9b8"
+          },
+          "source_unchanged": true,
+          "export_identity_matches_source": true,
+          "git_status": "unavailable",
+          "direct_wrapper_json_equal_except_duration": null,
+          "direct_wrapper_manifest_metadata_equal": null,
+          "first_artifact_sha256": "d4a41bf9025da5f5b59e30065fb09368e6f7da7423bdbb435f1f19d378a7f48e",
+          "repeated_artifact_bytes_equal": false
+        },
+        {
+          "project_type": "processing",
+          "build": "passed",
+          "repeat": "reused_infobase",
+          "unpack": "passed",
+          "clean": "passed",
+          "artifact_sha256": "0ca29c75d5a82ddcb2ad43a867fd081768bd056be8ebdc03b57adda326f156a8",
+          "artifact_bytes": 4394,
+          "identity": {
+            "name": "EskaTestprocessing",
+            "project_type": "processing",
+            "uuid": "37e05887-e485-48a4-bc10-61ed17e51bda"
+          },
+          "source_unchanged": true,
+          "export_identity_matches_source": true,
+          "git_status": "unavailable",
+          "direct_wrapper_json_equal_except_duration": null,
+          "direct_wrapper_manifest_metadata_equal": null,
+          "first_artifact_sha256": "fceb007b2064ed6d75725891534eb3d7b557ff6746498fcfbb41af873d92175c",
+          "repeated_artifact_bytes_equal": false
+        },
+        {
+          "project_type": "report",
+          "build": "passed",
+          "repeat": "reused_infobase",
+          "unpack": "passed",
+          "clean": "passed",
+          "artifact_sha256": "502eaf727206272132942a9497f51f8eceac3e82344e353d85dcae86b0b00426",
+          "artifact_bytes": 4394,
+          "identity": {
+            "name": "EskaTestreport",
+            "project_type": "report",
+            "uuid": "9a9fddab-6afd-4446-bfa8-5fc2838f1059"
+          },
+          "source_unchanged": true,
+          "export_identity_matches_source": true,
+          "git_status": "unavailable",
+          "direct_wrapper_json_equal_except_duration": null,
+          "direct_wrapper_manifest_metadata_equal": null,
+          "first_artifact_sha256": "e6df694783f102714989ea22d23481e155cb76407d1a8fc4aa05b6029298d6dc",
+          "repeated_artifact_bytes_equal": false
+        }
+      ],
+      "cancellation": {
+        "unpack": {
+          "status": "passed",
+          "exit": 130,
+          "native_pid_absent": true,
+          "staging_absent": true,
+          "input_unchanged": true
+        },
+        "build": {
+          "status": "passed",
+          "exit": 1,
+          "stage": "import-sources",
+          "native_pid_absent": true,
+          "previous_result_unchanged": true,
+          "source_unchanged": true,
+          "managed_infobase_preserved": true,
+          "staging_absent": true
+        }
+      }
+    },
+    "same_bytes_as_current_minimal_profile": true
+  },
+  "automated_checks": {
+    "rust_passed": 902,
+    "rust_ignored": 12,
+    "python_passed": 13,
+    "fmt": "passed",
+    "check": "passed",
+    "clippy": "passed",
+    "rustdoc": "passed"
+  },
+  "limitations": [
+    "Linux x86_64 GNU only; Windows/macOS/Remote not verified",
+    "1C tested through Distrobox, no host runner or functional client acceptance",
+    "Small native fixtures only; no native buhmfo build",
+    "Native artifact bytes differ between repeated builds; ZIP reproducibility does not imply native reproducibility",
+    "Release automation and publication unchanged; no modular assets published",
+    "Power-loss and network-filesystem durability not verified"
+  ],
+  "rust_binary_source_revision": "6d7611e36428b9e4213965c49b024da5736c6ca5"
+}

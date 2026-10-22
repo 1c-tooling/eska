@@ -1,4 +1,4 @@
-use eska::{
+use crate::backend::{
     config::{ProjectConfig, WorkspaceConfig},
     project::ProjectType,
     project::build::{BuildSettings, PlatformVersion},
@@ -64,17 +64,17 @@ fn success(output: &Output) -> String {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     assert!(!output.stdout.contains(&0x1b));
     String::from_utf8(output.stdout.clone()).expect("UTF-8")
 }
 
 fn failure(output: &Output, code: i32, locale: &str) -> String {
     assert_eq!(output.status.code(), Some(code));
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     let error = String::from_utf8(output.stderr.clone()).expect("UTF-8");
     // Test paths may contain Cyrillic; compare against English/Russian sentences.
-    assert!(!error.is_empty());
+    assert_ne!(error, "");
     assert!(!error.contains('\u{1b}'));
     if locale == "en" {
         assert!(!error.contains("Не удалось"));
@@ -384,11 +384,11 @@ fn detects_all_types_locations_and_locales_without_touching_sources() {
                 let config = ProjectConfig::load(&root.join("eska.toml")).expect("config");
                 assert_eq!(
                     fs::read(root.join(".gitattributes")).expect("attributes"),
-                    include_bytes!("../../assets/project/.gitattributes")
+                    include_bytes!("../../crates/eska-project-core/assets/project/.gitattributes")
                 );
                 assert_eq!(
                     fs::read(root.join(".gitignore")).expect("ignore rules"),
-                    include_bytes!("../../assets/project/.gitignore")
+                    include_bytes!("../../crates/eska-project-core/assets/project/.gitignore")
                 );
                 assert_eq!(config.source(), Path::new(location));
                 assert_eq!(
@@ -445,7 +445,8 @@ fn creates_only_missing_git_files_and_preserves_existing_files() {
         assert_eq!(
             fs::read(root.join(".gitattributes")).expect("attributes"),
             if missing == Some(".gitattributes") {
-                include_bytes!("../../assets/project/.gitattributes").as_slice()
+                include_bytes!("../../crates/eska-project-core/assets/project/.gitattributes")
+                    .as_slice()
             } else {
                 b"user attributes\n"
             }
@@ -453,7 +454,8 @@ fn creates_only_missing_git_files_and_preserves_existing_files() {
         assert_eq!(
             fs::read(root.join(".gitignore")).expect("ignore rules"),
             if missing == Some(".gitignore") {
-                include_bytes!("../../assets/project/.gitignore").as_slice()
+                include_bytes!("../../crates/eska-project-core/assets/project/.gitignore")
+                    .as_slice()
             } else {
                 b"user ignore rules\n"
             }
@@ -657,7 +659,13 @@ fn rejects_missing_sources_unsafe_paths_and_changes_after_detection() {
     let plan = init::inspect(&fixture.0, None).expect("plan");
     descriptor(&fixture.0.join("src"), "extension");
     assert!(matches!(
-        init::apply(&plan, WorkflowPreset::Trunk, BuildSettings::default(), true),
+        init::apply(
+            &plan,
+            WorkflowPreset::Trunk,
+            BuildSettings::default(),
+            true,
+            &|| false
+        ),
         Err(InitError::ChangedSource { .. })
     ));
     assert!(!fixture.0.join("eska.toml").exists());
@@ -685,11 +693,16 @@ fn rejects_unsupported_roots_config_directories_and_bare_repositories() {
     gix::init_bare(&bare).expect("bare repo");
     descriptor(&bare.join("src"), "report");
     let before = snapshot(&bare);
-    let plan = init::inspect(&bare, None).expect("XML");
-    assert!(matches!(
-        init::apply(&plan, WorkflowPreset::Trunk, BuildSettings::default(), true),
-        Err(InitError::ExistingGit { .. })
-    ));
+    init::inspect(&bare, None).expect("XML");
+    let output = configured_command(&bare, "en", &fixture)
+        .args(["--workflow", "trunk"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("Cannot use the existing Git metadata"),
+        "{output:?}"
+    );
     assert_eq!(snapshot(&bare), before);
 }
 
@@ -707,6 +720,7 @@ fn internal_source_symlink_is_canonicalized_without_becoming_ambiguous() {
         WorkflowPreset::Trunk,
         BuildSettings::default(),
         false,
+        &|| false,
     )
     .expect("init");
     assert_eq!(

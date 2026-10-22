@@ -1,0 +1,193 @@
+//! TOML field layout, defaults and machine-facing value conversions.
+
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
+
+use serde::{Deserialize, Serialize};
+
+use super::ProjectConfigError;
+use crate::application::{
+    AnalysisOptions, Application, RawAnalysis, RawApplication, RawTools, ToolSettings,
+};
+use crate::project::{ProjectName, ProjectType, SourceFormat};
+
+pub(super) const DEFAULT_SOURCE: &str = "src";
+const DEFAULT_SOURCE_FORMAT: &str = "designer-xml";
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct RawDocument {
+    pub(super) project: RawProject,
+    pub(super) build: Option<RawBuild>,
+    pub(super) vcs: Option<RawVcs>,
+    pub(super) analysis: Option<RawAnalysis>,
+    pub(super) tools: Option<RawTools>,
+    #[serde(default)]
+    pub(super) applications: BTreeMap<String, RawApplication>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct RawBuild {
+    pub(super) platform_version: Option<String>,
+    pub(super) artifacts_directory: Option<PathBuf>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct RawVcs {
+    pub(super) workflow: RawWorkflow,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct RawWorkflow {
+    pub(super) preset: String,
+    pub(super) extends: Option<String>,
+    pub(super) policy: Option<RawPolicy>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct RawPolicy {
+    pub(super) base_branch: Option<String>,
+    pub(super) main_branch: Option<String>,
+    pub(super) working_branch: Option<String>,
+    pub(super) task_branch_template: Option<String>,
+    pub(super) remote: Option<String>,
+    pub(super) sync_strategy: Option<String>,
+    pub(super) integration_target: Option<String>,
+    pub(super) publish: Option<String>,
+    pub(super) finish: Option<String>,
+    pub(super) delete_local_branch: Option<bool>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct RawProject {
+    pub(super) name: Option<String>,
+    #[serde(rename = "type")]
+    pub(super) project_type: String,
+    #[serde(default = "default_source")]
+    pub(super) source: PathBuf,
+    #[serde(default = "default_source_format")]
+    pub(super) source_format: String,
+}
+
+#[derive(Serialize)]
+pub(super) struct SerializedDocument<'a> {
+    pub(super) project: SerializedProject<'a>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) build: Option<SerializedBuild<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) vcs: Option<SerializedVcs<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) analysis: Option<&'a AnalysisOptions>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(super) applications: &'a BTreeMap<ProjectName, Application>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) tools: Option<&'a ToolSettings>,
+}
+
+#[derive(Serialize)]
+pub(super) struct SerializedBuild<'a> {
+    pub(super) platform_version: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) artifacts_directory: Option<&'a Path>,
+}
+
+#[derive(Serialize)]
+pub(super) struct SerializedVcs<'a> {
+    pub(super) workflow: SerializedWorkflow<'a>,
+}
+
+#[derive(Serialize)]
+pub(super) struct SerializedWorkflow<'a> {
+    pub(super) preset: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) extends: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) policy: Option<SerializedPolicy<'a>>,
+}
+
+#[derive(Serialize)]
+pub(super) struct SerializedPolicy<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) base_branch: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) main_branch: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) working_branch: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) task_branch_template: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) remote: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) sync_strategy: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) integration_target: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) publish: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) finish: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) delete_local_branch: Option<bool>,
+}
+
+#[derive(Serialize)]
+pub(super) struct SerializedProject<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) name: Option<&'a str>,
+    #[serde(rename = "type")]
+    pub(super) project_type: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) source: Option<&'a Path>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) source_format: Option<&'static str>,
+}
+
+pub(super) fn default_source() -> PathBuf {
+    PathBuf::from(DEFAULT_SOURCE)
+}
+
+pub(super) fn default_source_format() -> String {
+    DEFAULT_SOURCE_FORMAT.to_owned()
+}
+
+/// Parse the stable machine-facing project type name.
+///
+/// # Errors
+/// Returns the original value when the project type is unsupported.
+pub fn parse_project_type(value: String) -> Result<ProjectType, ProjectConfigError> {
+    match value.as_str() {
+        "configuration" => Ok(ProjectType::Configuration),
+        "extension" => Ok(ProjectType::Extension),
+        "processing" => Ok(ProjectType::Processing),
+        "report" => Ok(ProjectType::Report),
+        _ => Err(ProjectConfigError::UnknownProjectType { value }),
+    }
+}
+
+pub(super) fn parse_source_format(value: String) -> Result<SourceFormat, ProjectConfigError> {
+    match value.as_str() {
+        DEFAULT_SOURCE_FORMAT => Ok(SourceFormat::DesignerXml),
+        _ => Err(ProjectConfigError::UnknownSourceFormat { value }),
+    }
+}
+
+pub(super) const fn project_type_name(project_type: ProjectType) -> &'static str {
+    match project_type {
+        ProjectType::Configuration => "configuration",
+        ProjectType::Extension => "extension",
+        ProjectType::Processing => "processing",
+        ProjectType::Report => "report",
+    }
+}
+
+pub(super) const fn source_format_name(source_format: SourceFormat) -> &'static str {
+    match source_format {
+        SourceFormat::DesignerXml => DEFAULT_SOURCE_FORMAT,
+    }
+}

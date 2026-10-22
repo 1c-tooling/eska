@@ -76,7 +76,7 @@ fn version_json_is_stable_locale_independent_and_read_only() {
     for locale in ["ru", "en"] {
         let output = eska(&fixture.0, locale, &["version", "--format", "json"]);
         assert!(output.status.success(), "{output:?}");
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         documents.push(serde_json::from_slice::<Value>(&output.stdout).expect("JSON"));
     }
     assert_eq!(documents[0], documents[1]);
@@ -285,7 +285,7 @@ fn bump_json_reports_the_transition_and_updates_the_descriptor() {
         &["version", "bump", "patch", "--format", "json"],
     );
     assert!(output.status.success(), "{output:?}");
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     let document: Value = serde_json::from_slice(&output.stdout).expect("JSON");
     assert_eq!(document["schema_version"], 1);
     assert_eq!(document["operation"], "bump");
@@ -328,7 +328,7 @@ fn human_output_and_nested_help_are_localized() {
         .expect("reset version");
         let output = eska(&fixture.0, locale, &["version", "bump", "minor"]);
         assert!(output.status.success(), "{output:?}");
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         let stdout = String::from_utf8(output.stdout)
             .expect("UTF-8")
             .replace(['\u{2068}', '\u{2069}'], "");
@@ -348,7 +348,7 @@ fn invalid_project_version_fails_without_modifying_the_descriptor() {
     ] {
         let output = eska(&fixture.0, locale, &["version", "bump", "patch"]);
         assert_eq!(output.status.code(), Some(1), "{output:?}");
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(String::from_utf8_lossy(&output.stderr).contains(expected));
         assert_eq!(fs::read(&path).unwrap(), before);
     }

@@ -1,5 +1,5 @@
 use super::*;
-use eska::project::metadata_edit::{EditableField, ScalarSchema, TextDomain};
+use crate::backend::project::metadata_edit::{EditableField, ScalarSchema, TextDomain};
 
 /// Real inline attributes retain BOM, CRLF, comments and two existing link records.
 fn fixture(standard: bool) -> (TestDir, MetadataWorkspace, ObjectId, PathBuf, String) {

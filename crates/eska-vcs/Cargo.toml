@@ -1,0 +1,25 @@
+[package]
+name = "eska-vcs"
+version.workspace = true
+edition = "2024"
+publish = true
+description = "Standalone Git workflow and semantic Designer XML comparisons"
+license = "Apache-2.0"
+repository = "https://github.com/1c-tooling/eska"
+readme = "../../README.md"
+keywords = ["1c-enterprise", "cli", "git"]
+categories = ["command-line-utilities", "development-tools"]
+authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
+
+[lints]
+workspace = true
+
+[dependencies]
+eska-presentation = { workspace = true }
+clap = { version = "4.6.6", features = ["derive", "string"] }
+eska-project-core = { workspace = true }
+gix = { version = "0.87.1", default-features = false, features = ["blocking-http-transport-curl-rustls", "max-performance", "revision", "sha1", "status", "worktree-mutation"] }
+roxmltree = { version = "0.21.1", default-features = false, features = ["std", "positions"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sha2 = "0.11.0"

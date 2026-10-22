@@ -1,5 +1,5 @@
 use super::*;
-use eska::project::{
+use crate::backend::project::{
     metadata_edit::{FieldStep, ScalarSchema},
     metadata_model::PropertyKey,
 };

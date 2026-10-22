@@ -1,0 +1,341 @@
+//! Update one project's sources from a native artifact after preview and consent.
+
+use eska_presentation::arguments::build::import::Format;
+pub use eska_presentation::arguments::build::import::{ImportArgs, localize};
+
+use std::{
+    io::{self, IsTerminal, Write},
+    path::{Path, PathBuf},
+    process::ExitCode,
+};
+
+use serde_json::{Value, json};
+
+use crate::{
+    cli::{
+        diagnostics,
+        encoding::json_path,
+        localization::{LocalizationValue, Localizer},
+        path_output,
+    },
+    project::{
+        artifact::{Identity, ImportPlan, PreparedArtifact},
+        discovery,
+        selection::{self, SelectionIntent},
+    },
+};
+
+use super::artifact::{self, Failure};
+
+struct ImportHandler<'a> {
+    options: &'a ImportArgs,
+}
+
+impl ImportHandler<'_> {
+    /// Emit one versioned JSON result on stdout and localized diagnostics on stderr.
+    pub fn run(&self, base: &Path, localizer: &Localizer, vcs: Option<&Path>) -> ExitCode {
+        let (document, code) = match self.execute(base, localizer, vcs) {
+            Ok(document) => (document, ExitCode::SUCCESS),
+            Err(error) => {
+                error.report();
+                (
+                    json!({"schema_version":1,"kind":"import","error":{"code":error.code},"preview":error.details}),
+                    ExitCode::FAILURE,
+                )
+            }
+        };
+        if self.options.format == Format::Json {
+            let result = serde_json::to_writer(io::stdout().lock(), &document)
+                .map_err(io::Error::other)
+                .and_then(|()| writeln!(io::stdout().lock()));
+            if result.is_err() {
+                artifact::report("✗", &localizer.text("artifact-output-error"), "31");
+                return ExitCode::FAILURE;
+            }
+        }
+        code
+    }
+
+    /// Preserve cancellation observed during version discovery before creating native staging.
+    fn resolve_import_tool(
+        &self,
+        project: &crate::project::Project,
+        cancellation: Option<&eska_tool_runtime::Operation>,
+        localizer: &Localizer,
+    ) -> Result<crate::project::build::Ibcmd, Failure> {
+        let tool_result = artifact::resolve(
+            &self.options.platform,
+            project.configuration().build_settings().platform_version(),
+            self.options.format == Format::Human,
+            localizer,
+        );
+        if cancellation.is_some_and(eska_tool_runtime::Operation::is_cancelled) {
+            return Err(Failure::new(
+                "cancelled",
+                localizer.text("artifact-cancelled"),
+            ));
+        }
+        Ok(artifact::attach_cancellation(tool_result?, cancellation))
+    }
+
+    /// Keep source selection, validation, confirmation and publication strictly ordered.
+    fn execute(
+        &self,
+        base: &Path,
+        localizer: &Localizer,
+        vcs: Option<&Path>,
+    ) -> Result<Value, Failure> {
+        let cancellation = artifact::cancellation_scope(localizer)?;
+        let context = discovery::discover_context(base).map_err(|error| {
+            Failure::new(
+                "discovery",
+                diagnostics::present_context_error_with_links(
+                    &error,
+                    localizer,
+                    io::stderr().is_terminal(),
+                ),
+            )
+        })?;
+        let names = self.options.project.iter().cloned().collect::<Vec<_>>();
+        let selected =
+            selection::select_projects(&context, &names, false, SelectionIntent::SingleMutation)
+                .map_err(|error| {
+                    Failure::new(
+                        "project-selection",
+                        diagnostics::present_selection_error(&error, localizer),
+                    )
+                })?;
+        let selected = selected.projects().first().ok_or_else(|| {
+            Failure::new(
+                "project-selection",
+                localizer.text("project-selector-single-required"),
+            )
+        })?;
+        let project = selected.project();
+        let vcs = resolve_vcs(vcs, localizer)?;
+        let inspect_changes = |project: &crate::project::Project, empty, files| {
+            inspect_source(&vcs, project, empty, files, cancellation.as_ref())
+        };
+        let plan = ImportPlan::inspect(project, &inspect_changes)
+            .map_err(|error| artifact::present(&error, localizer))?;
+        let tool = self.resolve_import_tool(project, cancellation.as_ref(), localizer)?;
+        let prepared = artifact::unpack(
+            &base.join(&self.options.file),
+            project.source(),
+            &tool,
+            self.options.format == Format::Human,
+            localizer,
+        )
+        .map_err(|error| artifact::present(&error, localizer))?;
+        let mut document = preview(
+            &plan,
+            &prepared,
+            selected.name().map(crate::project::ProjectName::as_str),
+            project.source(),
+        );
+        let confirmation = plan
+            .requires_confirmation(prepared.identity())
+            .map_err(|error| artifact::present(&error, localizer).with_details(document.clone()))?;
+        if self.options.format == Format::Human {
+            present_preview(&plan, &prepared, project.source(), localizer);
+        }
+        if self.options.dry_run {
+            if self.options.format == Format::Human {
+                artifact::report("ℹ", &localizer.text("artifact-dry-run-completed"), "36");
+            }
+            return Ok(document);
+        }
+        if confirmation && !self.options.force {
+            confirm(self.options.format, localizer, &tool)
+                .map_err(|error| error.with_details(document.clone()))?;
+        }
+        if tool.was_interrupted() {
+            return Err(Failure::new(
+                "cancelled",
+                localizer.text("artifact-cancelled"),
+            ));
+        }
+        let result = plan
+            .apply(&prepared, confirmation)
+            .map_err(|error| artifact::present(&error, localizer))?;
+        document["applied"] = json!(true);
+        if let Some(backup) = result.retained_backup {
+            artifact::report(
+                "⚠",
+                &localizer.format(
+                    "artifact-backup-retained",
+                    &[(
+                        "path",
+                        LocalizationValue::Text(&path_output::render(
+                            &backup,
+                            io::stderr().is_terminal(),
+                        )),
+                    )],
+                ),
+                "33",
+            );
+            document["retained_backup"] = path_document(&backup);
+        }
+        if self.options.format == Format::Human {
+            artifact::success(&localizer.text("artifact-imported"));
+        }
+        Ok(document)
+    }
+}
+
+/// Bind the required component before any native staging or source transaction begins.
+fn resolve_vcs(binary: Option<&Path>, localizer: &Localizer) -> Result<PathBuf, Failure> {
+    binary
+        .map_or_else(
+            || eska_tool_runtime::resolve(eska_tool_runtime::Component::Vcs),
+            |path| Ok(path.to_owned()),
+        )
+        .map_err(|error| {
+            Failure::new(
+                "vcs-component",
+                eska_presentation::components::present(&error, localizer),
+            )
+        })
+}
+
+/// Preserve cancellation while repository and protocol failures stop replacement conservatively.
+fn inspect_source(
+    binary: &Path,
+    project: &crate::project::Project,
+    empty: bool,
+    files: usize,
+    cancellation: Option<&eska_tool_runtime::Operation>,
+) -> Result<usize, crate::project::artifact::ArtifactError> {
+    let cancelled = || cancellation.is_some_and(eska_tool_runtime::Operation::is_cancelled);
+    if cancelled() {
+        return Err(crate::project::artifact::ArtifactError::Cancelled);
+    }
+    let result = eska_tool_runtime::vcs::source_changes(binary, project.root(), empty, files)
+        .map_err(|error| match error {
+            eska_tool_runtime::Error::Cancelled => {
+                crate::project::artifact::ArtifactError::Cancelled
+            }
+            _ => crate::project::artifact::ArtifactError::ChangeInspection,
+        });
+    if cancelled() {
+        return Err(crate::project::artifact::ArtifactError::Cancelled);
+    }
+    result
+}
+
+/// Render identity values with locale-independent keys and stable project-type names.
+fn identity_document(identity: &Identity) -> Value {
+    json!({"type":identity.project_type.as_str(),"uuid":identity.uuid,"name":identity.name})
+}
+
+/// Use the shared reversible encoding for non-Unicode filesystem paths.
+fn path_document(path: &Path) -> Value {
+    let (path, encoding) = json_path(path.as_os_str());
+    json!({"path":path,"path_encoding":encoding})
+}
+
+/// Describe the complete replacement scope before any filesystem mutation.
+fn preview(
+    plan: &ImportPlan<'_>,
+    artifact: &PreparedArtifact,
+    member: Option<&str>,
+    source: &Path,
+) -> Value {
+    json!({"schema_version":1,"kind":"import","applied":false,"project":member,
+        "source":path_document(source),"current":plan.current().map(identity_document),
+        "incoming":identity_document(artifact.identity()),"existing_files":plan.files(),
+        "local_changes":plan.local_changes(),"identity_changed":plan.current().is_some_and(|old| old != artifact.identity()),
+        "retained_backup":null})
+}
+
+/// Keep the destructive scope and both identities visible while the user answers.
+fn present_preview(
+    plan: &ImportPlan<'_>,
+    artifact: &PreparedArtifact,
+    source: &Path,
+    localizer: &Localizer,
+) {
+    artifact::report(
+        "↻",
+        &localizer.format(
+            "artifact-replace-preview",
+            &[
+                (
+                    "path",
+                    LocalizationValue::Text(&path_output::render(
+                        source,
+                        io::stderr().is_terminal(),
+                    )),
+                ),
+                ("count", LocalizationValue::Text(&plan.files().to_string())),
+            ],
+        ),
+        "36",
+    );
+    if let Some(current) = plan.current() {
+        artifact::report(
+            "•",
+            &localizer.format(
+                "artifact-current",
+                &[
+                    ("name", LocalizationValue::Text(&current.name)),
+                    ("uuid", LocalizationValue::Text(&current.uuid)),
+                ],
+            ),
+            "36",
+        );
+    }
+    let incoming = artifact.identity();
+    artifact::report(
+        "→",
+        &localizer.format(
+            "artifact-incoming",
+            &[
+                ("name", LocalizationValue::Text(&incoming.name)),
+                ("uuid", LocalizationValue::Text(&incoming.uuid)),
+            ],
+        ),
+        "36",
+    );
+    if plan.current().is_some_and(|current| current != incoming) {
+        artifact::report("⚠", &localizer.text("artifact-identity-warning"), "33");
+    }
+    if plan.local_changes() != 0 {
+        artifact::report("⚠", &localizer.text("artifact-local-warning"), "33");
+    }
+}
+
+/// Require a deliberate overwrite answer; Enter, EOF and every other answer cancel.
+fn confirm(
+    format: Format,
+    localizer: &Localizer,
+    tool: &crate::project::build::Ibcmd,
+) -> Result<(), Failure> {
+    if format == Format::Json || !artifact::terminal() {
+        return Err(Failure::new(
+            "confirmation-required",
+            localizer.text("artifact-confirmation-required"),
+        ));
+    }
+    artifact::report("?", &localizer.text("artifact-confirm"), "33");
+    let confirmed = crate::cli::interactive::confirm_overwrite(|| tool.was_interrupted())
+        .map_err(|error| artifact::prompt_error(error, localizer))?;
+    if confirmed {
+        Ok(())
+    } else {
+        Err(Failure::new(
+            "cancelled",
+            localizer.text("artifact-cancelled"),
+        ))
+    }
+}
+
+/// Execute parsed import options while this process retains transaction ownership.
+pub fn run(
+    args: &ImportArgs,
+    directory: &Path,
+    localizer: &Localizer,
+    vcs: Option<&Path>,
+) -> ExitCode {
+    ImportHandler { options: args }.run(directory, localizer, vcs)
+}

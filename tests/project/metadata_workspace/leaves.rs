@@ -1,10 +1,10 @@
 use super::{fixture, object};
-use crate::support::TestDir;
-use eska::project::{
-    configurator::{ChildrenState, TreeOptions},
+use crate::backend::project::{
+    configurator::{ChildrenState, TreeNode, TreeOptions},
     metadata_model::{MetadataKind, NodeId, ProjectScope},
     metadata_workspace::MetadataWorkspace,
 };
+use crate::support::TestDir;
 use std::{fmt::Write, fs, path::PathBuf};
 
 const LEAVES: &[&str] = &[
@@ -113,11 +113,9 @@ fn constant_expander_tracks_both_module_roles_without_eager_xml_reads() {
         .join("src/Constants/Leaf/Ext/ValueManagerModule.bsl");
     fs::write(path, "// module").unwrap();
     session.refresh(&id).unwrap();
-    assert!(
-        !session
-            .children(&id, TreeOptions::default())
-            .unwrap()
-            .is_empty()
+    assert_ne!(
+        session.children(&id, TreeOptions::default()).unwrap(),
+        [] as [&TreeNode; 0]
     );
     assert_eq!(session.cache_stats().parses, parses + 1);
 }

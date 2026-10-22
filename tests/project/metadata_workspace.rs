@@ -1,6 +1,5 @@
-use crate::support::TestDir;
-use eska::project::{
-    configurator::{ChildrenState, TreeOptions},
+use crate::backend::project::{
+    configurator::{ChildrenState, TreeNode, TreeOptions},
     designer_source::SourceRole,
     metadata_model::{
         CollectionKind, MetadataKind, MetadataObject, ModuleRole, NodeId, ObjectId, ProjectScope,
@@ -8,6 +7,7 @@ use eska::project::{
     metadata_parser::LoadError,
     metadata_workspace::{MetadataWorkspace, WorkspaceError},
 };
+use crate::support::TestDir;
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
@@ -119,9 +119,9 @@ fn workspace_walks_four_project_types_without_writing_files() {
             }
             let sources = session.source(&id).unwrap();
             if matches!(id, NodeId::Collection { .. }) {
-                assert!(sources.is_empty());
+                assert_eq!(sources, []);
             } else {
-                assert!(!sources.is_empty());
+                assert_ne!(sources, []);
                 for source in &sources {
                     assert!(session.project().source().join(&source.path).is_file());
                 }
@@ -414,11 +414,9 @@ fn incremental_module_events_and_missing_descriptor_recovery() {
     let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
     let owner = object(MetadataKind::CommonModule, "ЗащищенныйМодуль", None);
     let id = NodeId::Object(owner.clone());
-    assert!(
-        session
-            .children(&id, TreeOptions::default())
-            .unwrap()
-            .is_empty()
+    assert_eq!(
+        session.children(&id, TreeOptions::default()).unwrap(),
+        [] as [&TreeNode; 0]
     );
     let path = PathBuf::from("CommonModules/ЗащищенныйМодуль/Ext/Module.bsl");
     fs::write(session.project().source().join(&path), "// test").unwrap();
@@ -435,11 +433,9 @@ fn incremental_module_events_and_missing_descriptor_recovery() {
     );
     fs::remove_file(session.project().source().join(&path)).unwrap();
     session.changed_paths(&[path]).unwrap();
-    assert!(
-        session
-            .children(&id, TreeOptions::default())
-            .unwrap()
-            .is_empty()
+    assert_eq!(
+        session.children(&id, TreeOptions::default()).unwrap(),
+        [] as [&TreeNode; 0]
     );
     let descriptor = PathBuf::from("CommonModules/ЗащищенныйМодуль.xml");
     let file = session.project().source().join(&descriptor);
@@ -462,11 +458,9 @@ fn incremental_module_events_and_missing_descriptor_recovery() {
     ));
     fs::write(file, original).unwrap();
     session.changed_paths(&[descriptor]).unwrap();
-    assert!(
-        session
-            .children(&id, TreeOptions::default())
-            .unwrap()
-            .is_empty()
+    assert_eq!(
+        session.children(&id, TreeOptions::default()).unwrap(),
+        [] as [&TreeNode; 0]
     );
 }
 
@@ -521,7 +515,7 @@ fn incremental_root_membership_and_rename_are_consistent() {
 /// LRU eviction bounds the retained parse cache; explicit refresh handles missed events.
 #[test]
 fn incremental_cache_limits_and_full_refresh() {
-    use eska::project::metadata_workspace::CacheLimits;
+    use crate::backend::project::metadata_workspace::CacheLimits;
     let directory = TestDir::new();
     fixture(&directory.0, "configuration");
     let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
@@ -583,12 +577,12 @@ fn incremental_events_ignore_dump_info_and_reject_escaping_paths() {
     .unwrap();
     let generation = session.generation();
     let parses = session.cache_stats().parses;
-    assert!(
+    assert_eq!(
         session
             .changed_paths(&[PathBuf::from("ConfigDumpInfo.xml")])
             .unwrap()
-            .affected
-            .is_empty()
+            .affected,
+        []
     );
     assert_eq!(session.generation(), generation);
     assert_eq!(session.cache_stats().parses, parses);
@@ -639,11 +633,9 @@ fn incremental_external_root_replaces_inline_data_and_recovers_root_errors() {
     assert_eq!(session.node(&root).unwrap().state, ChildrenState::Error);
     fs::write(file, original).unwrap();
     session.changed_paths(&[path]).unwrap();
-    assert!(
-        !session
-            .children(&root, TreeOptions::default())
-            .unwrap()
-            .is_empty()
+    assert_ne!(
+        session.children(&root, TreeOptions::default()).unwrap(),
+        [] as [&TreeNode; 0]
     );
 }
 

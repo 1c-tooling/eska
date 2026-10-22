@@ -1,5 +1,5 @@
 use super::*;
-use eska::project::metadata_edit::{EditableField, ScalarSchema};
+use crate::backend::project::metadata_edit::{EditableField, ScalarSchema};
 
 /// Both actual writer contexts start with an empty singular link, never a missing collection item.
 fn fixture(standard: bool) -> (TestDir, MetadataWorkspace, ObjectId, PathBuf, String) {

@@ -198,7 +198,7 @@ remote registry сейчас запрещён.
 
 **Результат:** `project::templates::Template::built_in(ProjectType)` формирует
 locale-independent план каталогов и файлов для всех четырёх типов. Каждый план
-содержит `eska.toml`, встроенные из `assets/project/` универсальные
+содержит `eska.toml`, встроенные из `crates/eska-project-core/assets/project/` универсальные
 `.gitattributes` и `.gitignore`, каталог `src/` и пустой `src/.gitkeep`, чтобы Git
 сохранял исходный каталог до первой выгрузки XML. Config генерируется
 сериализатором T02 из `ProjectConfig::new`, без дублирования схемы и явной записи

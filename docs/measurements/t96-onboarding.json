@@ -1,0 +1,131 @@
+{
+  "complete": true,
+  "platform_version": "8.3.27.2325",
+  "runner": "1c-ubuntu-env",
+  "binary_sha256": {
+    "eska": "0833a0f3c7df64dfc5e377431579a5279b3c1e27c18648c1659903fa54c8deca",
+    "eska-project": "02bcc00083d2b30e3c4ec3850f82391a143e104a70d22bdb41c20e8db0d489a3",
+    "eska-build": "9f459a515308044edd63d22011513291f994d97bd90d96098a159ffc3190b837",
+    "eska-vcs": "fa1110e614c2b9e82d9dae2b60867e0a32039637730b4eacbf5fa1fe74446c61"
+  },
+  "fixture_stand": "t96-native-c22ssl6v",
+  "fixture_unchanged": true,
+  "wrapper_direct_manifests_equal": true,
+  "cases": [
+    {
+      "entry": "wrapper",
+      "project_type": "configuration",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "direct",
+      "project_type": "configuration",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "wrapper",
+      "project_type": "extension",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "direct",
+      "project_type": "extension",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "wrapper",
+      "project_type": "processing",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "direct",
+      "project_type": "processing",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "wrapper",
+      "project_type": "report",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    },
+    {
+      "entry": "direct",
+      "project_type": "report",
+      "new": "passed",
+      "import": "passed",
+      "init": "passed",
+      "identity_matches": true,
+      "input_unchanged": true,
+      "init_source_unchanged": true,
+      "staging_absent": true
+    }
+  ],
+  "cancellation": {
+    "status": "passed",
+    "exit": 1,
+    "native_pid_absent": true,
+    "owned_project_absent": true,
+    "input_unchanged": true
+  },
+  "evidence": {
+    "stand": "../eska-playground/t96-onboarding-9268d73h",
+    "source_base_commit": "3ea3099c2b9fbcaf9fcffae0899b45a19cc0a708",
+    "working_changes": true,
+    "source_files_sha256": "52b15d9200a657fa6ccce2c0a8c09c040e396caba0e80917a342fdf72cce55f2",
+    "harness_sha256": "4839b144a1744e615afaf8103ac106fc7d0032146abbcb3499912692727afe65",
+    "tested_binaries_preserved": "bin/",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)"
+  },
+  "late_cancellation_regressions": [
+    "member_creation_restores_root_manifest_and_new_parents",
+    "member_initialization_restores_both_manifests_preserving_xml_and_opaque_sources",
+    "standalone_initialization_restores_only_new_control_files_preserving_user_ignore_rules"
+  ],
+  "limitations": [
+    "Linux x86_64 Distrobox only; Windows, macOS, Remote and host runner not accepted here.",
+    "Direct compatibility onboarding uses private __shell-new/__shell-init; public structural new/init retains its Git-less contract.",
+    "Small native fixture configurations; not a native build or client validation of buhmfo."
+  ]
+}

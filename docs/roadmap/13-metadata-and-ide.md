@@ -53,11 +53,11 @@
 
 | Основа | Что переиспользовать | Чего пока нет |
 |---|---|---|
-| T01, T03, T06: [model.rs](../../src/project/model.rs), [designer_xml.rs](../../src/project/designer_xml.rs) | Четыре `ProjectType`, discovery и namespace-aware определение корневого descriptor | Сессии просмотра метаданных |
-| T19: [object_model.rs](../../src/project/object_model.rs), [metadata.rs](../../src/project/metadata.rs) | `ObjectId`, inline/standalone objects, ownership и mapping в обе стороны | Независимой модели свойств, явных узлов модулей и схем дерева |
+| T01, T03, T06: [model.rs](../../crates/eska-project-core/src/project/model.rs), [designer_xml.rs](../../crates/eska-project-core/src/project/designer_xml.rs) | Четыре `ProjectType`, discovery и namespace-aware определение корневого descriptor | Сессии просмотра метаданных |
+| T19: [object_model.rs](../../crates/eska-project-core/src/project/object_model.rs), [metadata.rs](../../crates/eska-project-core/src/project/metadata.rs) | `ObjectId`, inline/standalone objects, ownership и mapping в обе стороны | Независимой модели свойств, явных узлов модулей и схем дерева |
 | T50: `discover_affected` | Выбор descriptors по changed paths и локальные ошибки | Долгоживущего lazy workspace, cache и invalidation |
-| T59: [порядок semantic diff](04-core-vcs-ux.md) | Реализованная таблица порядка типов в [changes.rs](../../src/cli/changes.rs) | Дочерних коллекций и полного дерева; общий порядок предстоит выделить без зависимости core от CLI |
-| T25: [version.rs](../../src/project/version.rs) | Замена диапазона `Properties/Version`, сохранение остальных байтов | Общего mapping свойств и переносимой атомарной записи произвольных изменений |
+| T59: [порядок semantic diff](04-core-vcs-ux.md) | Реализованная таблица порядка типов в [changes.rs](../../crates/eska-vcs/src/cli/changes.rs) | Дочерних коллекций и полного дерева; общий порядок предстоит выделить без зависимости core от CLI |
+| T25: [version.rs](../../crates/eska-project-core/src/project/version.rs) | Замена диапазона `Properties/Version`, сохранение остальных байтов | Общего mapping свойств и переносимой атомарной записи произвольных изменений |
 | T41: [eska: 1C Explorer](10-delivery-and-integrations.md) | Место будущего тонкого клиента | Серверного metadata protocol; он выделен в T69–T70 |
 
 `ObjectModel::discover` сейчас явно обходит source и строит полный индекс;

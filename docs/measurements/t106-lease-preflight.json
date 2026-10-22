@@ -1,0 +1,798 @@
+{
+  "schema_version": 1,
+  "stage": "T106",
+  "part": "leased-acquisition-and-unused-cache-hash",
+  "status": "code-and-native-validated-editor-cohort-pending",
+  "source_parent": "9cc9b7b6d81a02edd59a20dd5fb0330d882dca15",
+  "source_files": {
+    "crates/eska-analyzer/src/configuration.rs": "492d06304c90d00a6c1fdccc8ff383d2b55b277b68ae2cdc97e3f3860788e849",
+    "crates/eska-analyzer/src/storage.rs": "76148dc26e33fc4c6b1502d394e4907cf6f8484d8d1b3faa385bc8160a4a34b6",
+    "crates/eska-analyzer/tests/configuration.rs": "ed81c33952067acff5e4ad2915537d93a3b2e4395b657ecc23ebe6683422978f",
+    "crates/eska-project-core/src/application/tests.rs": "fe85d703e0e18894eca05c899d3e579332fedae129b79db85227322ae24122de",
+    "crates/eska-project-core/src/project/designer_source/opening.rs": "324a9a44ff27114e1b7b56f0c0da53ab6bb519140ccca87ebae9cc9c96cff3e6",
+    "crates/eska-project/src/ide/analyzer.rs": "7967c776ac2494b527c459cd758174427b523d4043f6ec511fed1ce0db71f004"
+  },
+  "behavior": [
+    "analyzer/acquire locates the owning lock with manifest discovery, then inspects the complete current config once under the shared lock.",
+    "A changed owning root or noncurrent config fails; the language client still compares every prepared token/path/context/body/fingerprint before starting LSP.",
+    "Existing lease(plan) retains its snapshot reinspection for CLI previews.",
+    "XML root hashing is skipped only when no disk cache consumes it; normal enabled caches keep their validation.",
+    "ConfigLock explicitly unlocks on drop so duplicate or temporarily inherited file descriptors do not keep a retired lease alive.",
+    "IDE API remains 1.12; config/DTO schemas, CLI bytes, locale keys and analyzer pin remain unchanged."
+  ],
+  "validation": {
+    "rust": {
+      "fmt": {
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "exit": 0,
+        "seconds": 0.7898317889998907
+      },
+      "check": {
+        "command": [
+          "cargo",
+          "check"
+        ],
+        "exit": 0,
+        "seconds": 0.6142821540001933
+      },
+      "clippy": {
+        "command": [
+          "cargo",
+          "clippy",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit": 0,
+        "seconds": 2.3653816810001445
+      },
+      "build-debug": {
+        "command": [
+          "cargo",
+          "build",
+          "--workspace"
+        ],
+        "exit": 0,
+        "seconds": 1.4418426170000203
+      },
+      "test": {
+        "command": [
+          "cargo",
+          "test"
+        ],
+        "exit": 0,
+        "seconds": 31.27095714500001
+      },
+      "rustdoc": {
+        "command": [
+          "cargo",
+          "doc",
+          "--workspace",
+          "--no-deps"
+        ],
+        "exit": 0,
+        "seconds": 15.039348712999981
+      },
+      "published": {
+        "command": [
+          "cargo",
+          "test",
+          "-p",
+          "eska-analyzer",
+          "--test",
+          "configuration",
+          "published_analyzer_accepts_all_project_kinds_and_rejects_unknown_policy",
+          "--",
+          "--ignored",
+          "--exact"
+        ],
+        "exit": 0,
+        "seconds": 1.5575235240003167
+      },
+      "build-release": {
+        "command": [
+          "cargo",
+          "build",
+          "--release",
+          "-p",
+          "eska-project"
+        ],
+        "exit": 0,
+        "seconds": 53.38426726199987
+      }
+    },
+    "test_totals": {
+      "passed": 910,
+      "failed": 0,
+      "ignored": 12
+    },
+    "node": {
+      "passed": 214,
+      "failed": 0,
+      "skipped": 0
+    },
+    "bun": {
+      "passed": 214,
+      "failed": 0,
+      "skipped": 0
+    },
+    "native": {
+      "node": {
+        "command": [
+          "node",
+          "--test",
+          "test/backend-setup.test.mjs",
+          "test/diagnostics.test.mjs",
+          "test/event-handler.test.mjs",
+          "test/filter.test.mjs",
+          "test/git-status.test.mjs",
+          "test/icons.test.mjs",
+          "test/installation.test.mjs",
+          "test/integration.test.mjs",
+          "test/language-conflict.test.mjs",
+          "test/language-edits.test.mjs",
+          "test/language-lifecycle.test.mjs",
+          "test/language-progress.test.mjs",
+          "test/manifest.test.mjs",
+          "test/metadata-rename.test.mjs",
+          "test/picture-view.test.mjs",
+          "test/picture.test.mjs",
+          "test/properties-view.test.mjs",
+          "test/properties.test.mjs",
+          "test/property-editing.test.mjs",
+          "test/property-layout.test.mjs",
+          "test/property-presentation.test.mjs",
+          "test/property-value-picker.test.mjs",
+          "test/reveal.test.mjs",
+          "test/search.test.mjs",
+          "test/sorting.test.mjs",
+          "test/support-protocol.test.mjs",
+          "test/support-settings.test.mjs",
+          "test/tool-inspection.test.mjs",
+          "test/tool-installation.test.mjs",
+          "test/tool-setup.test.mjs",
+          "test/transport.test.mjs",
+          "test/tree.test.mjs",
+          "test/workspace-files.test.mjs"
+        ],
+        "exit": 0,
+        "seconds": 5.079387890000362,
+        "reports": []
+      },
+      "bun": {
+        "command": [
+          "../eska-playground/t88-tooling-yvc9vbiz/bun",
+          "test",
+          "test/backend-setup.test.mjs",
+          "test/diagnostics.test.mjs",
+          "test/event-handler.test.mjs",
+          "test/filter.test.mjs",
+          "test/git-status.test.mjs",
+          "test/icons.test.mjs",
+          "test/installation.test.mjs",
+          "test/integration.test.mjs",
+          "test/language-conflict.test.mjs",
+          "test/language-edits.test.mjs",
+          "test/language-lifecycle.test.mjs",
+          "test/language-progress.test.mjs",
+          "test/manifest.test.mjs",
+          "test/metadata-rename.test.mjs",
+          "test/picture-view.test.mjs",
+          "test/picture.test.mjs",
+          "test/properties-view.test.mjs",
+          "test/properties.test.mjs",
+          "test/property-editing.test.mjs",
+          "test/property-layout.test.mjs",
+          "test/property-presentation.test.mjs",
+          "test/property-value-picker.test.mjs",
+          "test/reveal.test.mjs",
+          "test/search.test.mjs",
+          "test/sorting.test.mjs",
+          "test/support-protocol.test.mjs",
+          "test/support-settings.test.mjs",
+          "test/tool-inspection.test.mjs",
+          "test/tool-installation.test.mjs",
+          "test/tool-setup.test.mjs",
+          "test/transport.test.mjs",
+          "test/tree.test.mjs",
+          "test/workspace-files.test.mjs"
+        ],
+        "exit": 0,
+        "seconds": 13.299505804000091,
+        "reports": []
+      },
+      "language": {
+        "command": [
+          "node",
+          "test/run-host.mjs",
+          "test/language-host.cjs"
+        ],
+        "exit": 0,
+        "seconds": 5.12652658099978,
+        "reports": [
+          {
+            "passed": true,
+            "suite": "own-language",
+            "vscode": "1.109.5",
+            "node": "22.21.1",
+            "capabilities": {
+              "callHierarchyProvider": true,
+              "codeActionProvider": {
+                "codeActionKinds": [
+                  "quickfix",
+                  "source.fixAll.bsl-analyzer"
+                ]
+              },
+              "completionProvider": {
+                "triggerCharacters": [
+                  "."
+                ]
+              },
+              "definitionProvider": true,
+              "documentFormattingProvider": true,
+              "documentHighlightProvider": true,
+              "documentOnTypeFormattingProvider": {
+                "firstTriggerCharacter": ";",
+                "moreTriggerCharacter": [
+                  "\n"
+                ]
+              },
+              "documentRangeFormattingProvider": true,
+              "documentSymbolProvider": true,
+              "foldingRangeProvider": true,
+              "hoverProvider": true,
+              "inlayHintProvider": true,
+              "positionEncoding": "utf-16",
+              "referencesProvider": true,
+              "renameProvider": {
+                "prepareProvider": true
+              },
+              "selectionRangeProvider": true,
+              "semanticTokensProvider": {
+                "full": true,
+                "legend": {
+                  "tokenModifiers": [
+                    "defaultLibrary",
+                    "deprecated",
+                    "async",
+                    "declaration",
+                    "definition",
+                    "documentation"
+                  ],
+                  "tokenTypes": [
+                    "keyword",
+                    "function",
+                    "parameter",
+                    "variable",
+                    "string",
+                    "number",
+                    "comment",
+                    "macro",
+                    "decorator",
+                    "property",
+                    "operator",
+                    "unresolvedReference",
+                    "type",
+                    "enumMember",
+                    "namespace",
+                    "class"
+                  ]
+                }
+              },
+              "signatureHelpProvider": {
+                "retriggerCharacters": [
+                  ","
+                ],
+                "triggerCharacters": [
+                  "(",
+                  ","
+                ]
+              },
+              "textDocumentSync": 2,
+              "typeDefinitionProvider": true,
+              "workspaceSymbolProvider": true
+            },
+            "hover": 1,
+            "definitions": 1,
+            "symbols": 1,
+            "completions": 26,
+            "semantic_integers": 60,
+            "broken_syntax_errors": 2,
+            "repaired_syntax_errors": 0,
+            "disk_unchanged": true,
+            "live_on_host_shutdown": true,
+            "shutdownPids": [
+              102695,
+              102754,
+              102809,
+              102629
+            ]
+          }
+        ]
+      },
+      "cancellation": {
+        "command": [
+          "node",
+          "test/run-host.mjs",
+          "test/language-cancellation-host.cjs"
+        ],
+        "exit": 0,
+        "seconds": 6.579684283999995,
+        "reports": [
+          {
+            "passed": true,
+            "suite": "language-cancellation",
+            "vscode": "1.109.5",
+            "validator_reaped": true,
+            "config_not_published_on_cancel": true,
+            "lease_handoff_released": true,
+            "metadata_preserved": true,
+            "shutdownPids": [
+              103261
+            ]
+          }
+        ]
+      },
+      "edits": {
+        "command": [
+          "node",
+          "test/run-host.mjs",
+          "test/language-edits-host.cjs"
+        ],
+        "exit": 0,
+        "seconds": 6.529854317999707,
+        "reports": [
+          {
+            "passed": true,
+            "suite": "language-edits",
+            "vscode": "1.109.5",
+            "real_backend_policy": true,
+            "mixed_xml_atomic_rejection": true,
+            "protected_uri_rejected": true,
+            "stale_version_rejected": true,
+            "unversioned_server_edit_rejected": true,
+            "resource_edit_rejected": true,
+            "versioned_server_text_edit_applied": true,
+            "server_apply_payloads": "injected through public middleware; native editor transaction",
+            "rename": true,
+            "formatter_edits": 1,
+            "code_action": true,
+            "late_code_action_rejected": true,
+            "user_readonly_preserved": true,
+            "disk_unchanged": true,
+            "shutdownPids": [
+              103709,
+              103680
+            ]
+          }
+        ]
+      },
+      "refresh": {
+        "command": [
+          "node",
+          "test/run-host.mjs",
+          "test/language-refresh-host.cjs"
+        ],
+        "exit": 0,
+        "seconds": 6.930554604000008,
+        "reports": [
+          {
+            "passed": true,
+            "suite": "language-refresh",
+            "vscode": "1.109.5",
+            "xml_global_resolution": true,
+            "incremental_xml_pid_preserved": true,
+            "branch_roundtrip": true,
+            "rapid_buffer_edits": 30,
+            "repaired_diagnostics": 0,
+            "root_fingerprint_reprepared": true,
+            "root_metadata_pid_preserved": true,
+            "same_config_bytes_no_restart": true,
+            "same_config_diagnostics_preserved": true,
+            "manifest_reconnect": true,
+            "managed_conflict_preserved": true,
+            "shutdownPids": [
+              104238,
+              104166,
+              104383,
+              104505,
+              104486
+            ]
+          }
+        ]
+      },
+      "protected-guards": {
+        "command": [
+          "node",
+          "test/run-host.mjs",
+          "test/protected-language-guards-host.cjs"
+        ],
+        "exit": 0,
+        "seconds": 4.173735126999873,
+        "reports": [
+          {
+            "passed": true,
+            "suite": "protected-language-guards",
+            "vscode": "1.109.5",
+            "nestedSymbols": true,
+            "literalPaths": true,
+            "dirtyBuffer": true,
+            "staleResponse": true,
+            "providerRestart": true
+          }
+        ]
+      },
+      "own-protected": {
+        "command": [
+          "node",
+          "test/run-host.mjs",
+          "test/protected-language-host.cjs"
+        ],
+        "exit": 0,
+        "seconds": 39.250071781000315,
+        "reports": [
+          {
+            "passed": true,
+            "suite": "protected-language",
+            "vscode": "1.109.5",
+            "analyzer": "0.3.2 (own LSP)",
+            "semanticTokens": 13,
+            "outline": true,
+            "hover": true,
+            "definitions": true,
+            "references": true,
+            "folding": true,
+            "diagnostics": true,
+            "readonly": true,
+            "own_lsp": true,
+            "late_real_hover_rejected": true,
+            "own_restart": true,
+            "native_alias_rename_denied": true,
+            "shutdownPids": [
+              105388,
+              105655,
+              105331
+            ]
+          }
+        ]
+      },
+      "windows": {
+        "command": [
+          "node",
+          "test/two-language-windows.mjs"
+        ],
+        "exit": 0,
+        "seconds": 8.392331243000172,
+        "reports": [
+          {
+            "passed": true,
+            "suite": "two-language-windows",
+            "stand": "../eska-playground/t88-two-language-windows-W8cXdQ",
+            "results": [
+              {
+                "passed": true,
+                "suite": "language-context-window",
+                "role": "a",
+                "vscode": "1.109.5",
+                "shared_context": true,
+                "conflicting_switch_rejected": true,
+                "retry_after_release": true,
+                "tree_preserved": true,
+                "config_bytes_preserved": true,
+                "application_diagnostics_replaced": true,
+                "remembered_context": true,
+                "failures": [
+                  "busy"
+                ],
+                "shutdownPids": [
+                  106801,
+                  106983,
+                  107155,
+                  107231,
+                  107287,
+                  106740
+                ]
+              },
+              {
+                "passed": true,
+                "suite": "language-context-window",
+                "role": "b",
+                "vscode": "1.109.5",
+                "shared_context": true,
+                "conflicting_switch_rejected": true,
+                "retry_after_release": true,
+                "tree_preserved": true,
+                "config_bytes_preserved": true,
+                "application_diagnostics_replaced": false,
+                "remembered_context": false,
+                "failures": [
+                  "busy"
+                ],
+                "shutdownPids": [
+                  106906,
+                  107056,
+                  106787
+                ]
+              }
+            ],
+            "failures": [],
+            "scope": "Two simultaneous native editor profiles, real project servers, published analyzer and OS config leases. Selection is supplied to the production controller; no keyboard automation."
+          }
+        ]
+      }
+    },
+    "cli": {
+      "before_after_bytes_identical": true,
+      "json_locale_independent": true,
+      "human_localized": true,
+      "context_sources": 6,
+      "runs": [
+        {
+          "phase": "before",
+          "locale": "ru-RU",
+          "operation": "context",
+          "format": "human",
+          "exit": 0,
+          "stdout_sha256": "95099d1e594bb7a02ba5653838236542ea68919db1812ebe3407d0a3cf4105ef",
+          "stderr_empty": true
+        },
+        {
+          "phase": "before",
+          "locale": "ru-RU",
+          "operation": "context",
+          "format": "json",
+          "exit": 0,
+          "stdout_sha256": "49ccb188e7ccba7a4e3f582f38f376b40b7f23ce865023ac5715df76a6529e3f",
+          "stderr_empty": true
+        },
+        {
+          "phase": "before",
+          "locale": "ru-RU",
+          "operation": "status",
+          "format": "human",
+          "exit": 0,
+          "stdout_sha256": "c5725a2f77d098e52f5e780fb6a4ce54cbacd9a9d0f476bf9eb50d0ec488ec64",
+          "stderr_empty": true
+        },
+        {
+          "phase": "before",
+          "locale": "ru-RU",
+          "operation": "status",
+          "format": "json",
+          "exit": 0,
+          "stdout_sha256": "1ad74901d4a33c892cb73d2c1e4731ab68bc7eb2b78442c6279c8d60e8c9f089",
+          "stderr_empty": true
+        },
+        {
+          "phase": "before",
+          "locale": "en-US",
+          "operation": "context",
+          "format": "human",
+          "exit": 0,
+          "stdout_sha256": "426995737f100d550c8d6c178fd82ac00c70ff0ed0765354abcf9af9ed420d2d",
+          "stderr_empty": true
+        },
+        {
+          "phase": "before",
+          "locale": "en-US",
+          "operation": "context",
+          "format": "json",
+          "exit": 0,
+          "stdout_sha256": "49ccb188e7ccba7a4e3f582f38f376b40b7f23ce865023ac5715df76a6529e3f",
+          "stderr_empty": true
+        },
+        {
+          "phase": "before",
+          "locale": "en-US",
+          "operation": "status",
+          "format": "human",
+          "exit": 0,
+          "stdout_sha256": "a60e6b8a33f4871f7221764c3e988a52c62ca459ccf30029147bfebd5114b76a",
+          "stderr_empty": true
+        },
+        {
+          "phase": "before",
+          "locale": "en-US",
+          "operation": "status",
+          "format": "json",
+          "exit": 0,
+          "stdout_sha256": "1ad74901d4a33c892cb73d2c1e4731ab68bc7eb2b78442c6279c8d60e8c9f089",
+          "stderr_empty": true
+        },
+        {
+          "phase": "after",
+          "locale": "ru-RU",
+          "operation": "context",
+          "format": "human",
+          "exit": 0,
+          "stdout_sha256": "95099d1e594bb7a02ba5653838236542ea68919db1812ebe3407d0a3cf4105ef",
+          "stderr_empty": true
+        },
+        {
+          "phase": "after",
+          "locale": "ru-RU",
+          "operation": "context",
+          "format": "json",
+          "exit": 0,
+          "stdout_sha256": "49ccb188e7ccba7a4e3f582f38f376b40b7f23ce865023ac5715df76a6529e3f",
+          "stderr_empty": true
+        },
+        {
+          "phase": "after",
+          "locale": "ru-RU",
+          "operation": "status",
+          "format": "human",
+          "exit": 0,
+          "stdout_sha256": "c5725a2f77d098e52f5e780fb6a4ce54cbacd9a9d0f476bf9eb50d0ec488ec64",
+          "stderr_empty": true
+        },
+        {
+          "phase": "after",
+          "locale": "ru-RU",
+          "operation": "status",
+          "format": "json",
+          "exit": 0,
+          "stdout_sha256": "1ad74901d4a33c892cb73d2c1e4731ab68bc7eb2b78442c6279c8d60e8c9f089",
+          "stderr_empty": true
+        },
+        {
+          "phase": "after",
+          "locale": "en-US",
+          "operation": "context",
+          "format": "human",
+          "exit": 0,
+          "stdout_sha256": "426995737f100d550c8d6c178fd82ac00c70ff0ed0765354abcf9af9ed420d2d",
+          "stderr_empty": true
+        },
+        {
+          "phase": "after",
+          "locale": "en-US",
+          "operation": "context",
+          "format": "json",
+          "exit": 0,
+          "stdout_sha256": "49ccb188e7ccba7a4e3f582f38f376b40b7f23ce865023ac5715df76a6529e3f",
+          "stderr_empty": true
+        },
+        {
+          "phase": "after",
+          "locale": "en-US",
+          "operation": "status",
+          "format": "human",
+          "exit": 0,
+          "stdout_sha256": "a60e6b8a33f4871f7221764c3e988a52c62ca459ccf30029147bfebd5114b76a",
+          "stderr_empty": true
+        },
+        {
+          "phase": "after",
+          "locale": "en-US",
+          "operation": "status",
+          "format": "json",
+          "exit": 0,
+          "stdout_sha256": "1ad74901d4a33c892cb73d2c1e4731ab68bc7eb2b78442c6279c8d60e8c9f089",
+          "stderr_empty": true
+        }
+      ]
+    }
+  },
+  "diagnostic_rpc_profile": {
+    "kind": "diagnostic-only",
+    "timers": "per-RPC wall time, not final acceptance",
+    "variants": {
+      "before": {
+        "samples": {
+          "analyzer/context": [
+            12.419201000000044,
+            10.470863000000008,
+            10.024079000000029,
+            9.994440999999938,
+            10.635172000000011,
+            9.734662999999955,
+            10.174323000000072,
+            10.42913400000009,
+            9.96819000000005,
+            10.967761999999993
+          ],
+          "analyzer/configStatus": [
+            12.249640999999997,
+            11.250968000000057,
+            11.271321999999941,
+            11.516807999999969,
+            11.235302000000047,
+            11.222639000000072,
+            11.378668000000062,
+            11.559031000000004,
+            11.706062999999972,
+            11.486477000000036
+          ],
+          "analyzer/acquire": [
+            21.783536000000026,
+            22.54889199999991,
+            21.92666100000008,
+            21.572371999999973,
+            21.939914000000044,
+            22.04997000000003,
+            21.827241999999956,
+            22.195681000000036,
+            21.75536699999998,
+            22.186172000000056
+          ]
+        },
+        "medians": {
+          "analyzer/context": 10.301728500000081,
+          "analyzer/configStatus": 11.432572500000049,
+          "analyzer/acquire": 21.933287500000063
+        }
+      },
+      "after": {
+        "samples": {
+          "analyzer/context": [
+            11.471080000000029,
+            14.47095000000013,
+            10.693476000000146,
+            10.697992999999997,
+            10.486754000000019,
+            9.62502100000006,
+            9.595608999999968,
+            9.345473000000084,
+            9.4357779999998,
+            9.262046000000055
+          ],
+          "analyzer/configStatus": [
+            10.565735000000132,
+            11.643522000000075,
+            12.26429300000018,
+            12.603897000000188,
+            10.46399099999985,
+            10.7006879999999,
+            10.233748000000105,
+            10.918427999999949,
+            10.556491000000051,
+            10.495134999999891
+          ],
+          "analyzer/acquire": [
+            11.711966999999959,
+            12.46297699999991,
+            12.731443000000127,
+            12.045230000000174,
+            10.73823399999992,
+            11.091347000000042,
+            10.642660999999862,
+            10.903257999999823,
+            10.608801000000085,
+            10.517319000000043
+          ]
+        },
+        "medians": {
+          "analyzer/context": 10.05588750000004,
+          "analyzer/configStatus": 10.633211500000016,
+          "analyzer/acquire": 10.997302499999932
+        }
+      }
+    },
+    "dto_unchanged": true
+  },
+  "binary": {
+    "path": "../eska-playground/t106-completion-lbwfolmo/series-leased/tools/eska-project",
+    "sha256": "7ff2d21d9d3f5300d49b8610c5f50bbf98a4c1b148d48e2e1e95e12c849dd93c"
+  },
+  "prior_failures": {
+    "full_suite": "leased-gates/first-test.log: new leased-inspection test observed Busy after a failed lease; the new deterministic duplicated-descriptor test reproduces the underlying lock-lifetime mechanism.",
+    "regression_before": "validation/lease-drop-before.log: failed without explicit unlock.",
+    "regression_after": "validation/lease-drop-after.log: passed with explicit unlock."
+  },
+  "performance_acceptance": "pending full new editor cohort; prior 40 unchanged-runtime launches remain reported in t106-inflight-stability.json",
+  "limitations": [
+    "Only Linux/VSCodium was checked; other OS, VS Code and Remote remain unverified.",
+    "The 10-call RPC profile is diagnostic and cannot replace fixed T90 editor gates."
+  ],
+  "sources": [
+    "https://doc.rust-lang.org/std/fs/struct.File.html#method.unlock",
+    "https://man7.org/linux/man-pages/man2/flock.2.html"
+  ]
+}

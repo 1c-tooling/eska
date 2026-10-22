@@ -1,0 +1,3253 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "kind": "pre-modularization-baseline",
+  "input": {
+    "source": "/home/akalsin/Documents/BasesXML/buhmfo",
+    "copy": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p/buhmfo",
+    "probe": "src/buhmfo/src/CommonModules/GoogleПереводчик/Ext/Module.bsl",
+    "analyzer_version": "0.3.2",
+    "external_extension_version": "0.1.12",
+    "eska_commit": "5a65cb1",
+    "explorer_commit": "443134c23d66a0b12902e185d9b4ea8032c42f92"
+  },
+  "host": {
+    "system": "Linux-7.2.11-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13420H",
+    "rust": "1.98.1",
+    "memory_kib": 16079728
+  },
+  "versions": {
+    "eska": "0.14.3",
+    "explorer": "0.0.12",
+    "external_extension": "0.1.12",
+    "analyzer": "0.3.2",
+    "vscodium": "1.109.5"
+  },
+  "binary_sha256": "43be509ee0852bd5affc3effd6b2e63c11fd8e1916351f3cf73c1b274a3c050f",
+  "measurement_notes": [
+    "Five independent editor launches per mode; each has its own user-data and extensions directories.",
+    "Cold removes only .eska in the private input copy; OS cache is not flushed. Repeat retains project caches.",
+    "One existing module in the copy contains a deterministic probe; the original is retained in the run directory.",
+    "Thirty requests per operation and thirty unsaved edit/diagnostics repair cycles per launch.",
+    "Times begin in the extension-test runner, excluding native editor startup and installation.",
+    "RSS sums can count shared pages repeatedly; PSS was not measured. CPU and IO cover owned descendant processes including renderer/GPU.",
+    "CPU/load tests and builds were not run concurrently with this series.",
+    "XML refresh and branch/context transitions are not benchmarked by this baseline suite.",
+    "Only Linux x86_64 and VSCodium were exercised; other OS, VS Code and Remote remain unverified.",
+    "Latency comparison uses variation of per-run medians; pooled request min/max is not the acceptance tolerance."
+  ],
+  "threshold": "10 percent or observed baseline variation, whichever is greater; correctness is required independently.",
+  "reproduction": {
+    "run_directory": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p",
+    "command": "python3 run-baseline.py",
+    "probe_sha256": "95e0fe1e50369a557b519ef06f9e3e284ce2db221d523a09316c55287b6a8c68",
+    "runner_sha256": "e9d1557d0d345b67a890d5f48b64a15f6683815eec511579e55abd7202b1c560"
+  },
+  "baseline_checks": {
+    "rust_fmt_check": true,
+    "rust_check": true,
+    "rust_clippy": true,
+    "rustdoc": true,
+    "rust_unit": {
+      "passed": 266,
+      "ignored": 1
+    },
+    "rust_integration_outside_sandbox": {
+      "passed": 472,
+      "failed": 8,
+      "ignored": 5,
+      "cause": "Readonly placeholder .git mounted at eska-playground is discovered by the existing nearest-marker logic."
+    },
+    "explorer_typecheck": true,
+    "explorer_node_outside_sandbox": {
+      "passed": 125,
+      "failed": 0,
+      "skipped": 13
+    }
+  },
+  "summary": {
+    "cold": {
+      "treeReadyMs": {
+        "count": 5,
+        "median": 612.085,
+        "p95": 649.173,
+        "min": 584.157,
+        "max": 649.173,
+        "range_percent_of_median": 10.622
+      },
+      "languageReadyMs": {
+        "count": 5,
+        "median": 6705.457,
+        "p95": 6743.727,
+        "min": 6571.219,
+        "max": 6743.727,
+        "range_percent_of_median": 2.573
+      },
+      "languageLatencyMs": {
+        "hover": {
+          "count": 150,
+          "median": 117.6,
+          "p95": 149.336,
+          "min": 86.771,
+          "max": 193.144,
+          "range_percent_of_median": 90.454,
+          "per_run_median_ms": [
+            120.28,
+            123.328,
+            110.043,
+            107.944,
+            122.306
+          ],
+          "comparison_variation_percent": 12.79
+        },
+        "completion": {
+          "count": 150,
+          "median": 87.892,
+          "p95": 106.355,
+          "min": 77.171,
+          "max": 218.088,
+          "range_percent_of_median": 160.33,
+          "per_run_median_ms": [
+            84.872,
+            88.297,
+            89.296,
+            88.499,
+            88.177
+          ],
+          "comparison_variation_percent": 5.01
+        },
+        "definition": {
+          "count": 150,
+          "median": 68.688,
+          "p95": 86.048,
+          "min": 58.923,
+          "max": 118.067,
+          "range_percent_of_median": 86.104,
+          "per_run_median_ms": [
+            67.781,
+            68.94,
+            68.964,
+            69.052,
+            68.719
+          ],
+          "comparison_variation_percent": 1.844
+        },
+        "editDiagnostics": {
+          "count": 150,
+          "median": 104.225,
+          "p95": 183.491,
+          "min": 100.803,
+          "max": 191.174,
+          "range_percent_of_median": 86.708,
+          "per_run_median_ms": [
+            168.984,
+            170.983,
+            103.517,
+            102.936,
+            166.95
+          ],
+          "comparison_variation_percent": 40.759
+        }
+      },
+      "peakTotalRssMiB": {
+        "count": 5,
+        "median": 2450.805,
+        "p95": 2493.648,
+        "min": 2401.18,
+        "max": 2493.648,
+        "range_percent_of_median": 3.773
+      },
+      "cpuSeconds": {
+        "count": 5,
+        "median": 80.47,
+        "p95": 81.44,
+        "min": 78.67,
+        "max": 81.44,
+        "range_percent_of_median": 3.442
+      }
+    },
+    "repeat": {
+      "treeReadyMs": {
+        "count": 5,
+        "median": 598.638,
+        "p95": 654.78,
+        "min": 552.334,
+        "max": 654.78,
+        "range_percent_of_median": 17.113
+      },
+      "languageReadyMs": {
+        "count": 5,
+        "median": 6670.812,
+        "p95": 6866.439,
+        "min": 6530.82,
+        "max": 6866.439,
+        "range_percent_of_median": 5.031
+      },
+      "languageLatencyMs": {
+        "hover": {
+          "count": 150,
+          "median": 125.976,
+          "p95": 155.526,
+          "min": 85.047,
+          "max": 196.896,
+          "range_percent_of_median": 88.786,
+          "per_run_median_ms": [
+            118.999,
+            131.094,
+            129.184,
+            130.284,
+            123.188
+          ],
+          "comparison_variation_percent": 9.362
+        },
+        "completion": {
+          "count": 150,
+          "median": 88.915,
+          "p95": 111.308,
+          "min": 79.225,
+          "max": 206.573,
+          "range_percent_of_median": 143.224,
+          "per_run_median_ms": [
+            91.955,
+            87.412,
+            88.808,
+            88.153,
+            90.747
+          ],
+          "comparison_variation_percent": 5.116
+        },
+        "definition": {
+          "count": 150,
+          "median": 69.763,
+          "p95": 85.393,
+          "min": 58.381,
+          "max": 97.113,
+          "range_percent_of_median": 55.521,
+          "per_run_median_ms": [
+            71.098,
+            67.986,
+            70.37,
+            73.0,
+            68.445
+          ],
+          "comparison_variation_percent": 7.126
+        },
+        "editDiagnostics": {
+          "count": 150,
+          "median": 169.522,
+          "p95": 189.738,
+          "min": 101.57,
+          "max": 203.088,
+          "range_percent_of_median": 59.884,
+          "per_run_median_ms": [
+            103.989,
+            168.562,
+            171.825,
+            173.216,
+            110.636
+          ],
+          "comparison_variation_percent": 41.069
+        }
+      },
+      "peakTotalRssMiB": {
+        "count": 5,
+        "median": 2436.09,
+        "p95": 2469.832,
+        "min": 2413.961,
+        "max": 2469.832,
+        "range_percent_of_median": 2.293
+      },
+      "cpuSeconds": {
+        "count": 5,
+        "median": 81.12,
+        "p95": 81.85,
+        "min": 80.47,
+        "max": 81.85,
+        "range_percent_of_median": 1.701
+      }
+    }
+  },
+  "rounds": [
+    {
+      "passed": true,
+      "suite": "t90-baseline",
+      "treeReadyMs": 613.057671,
+      "languageReadyMs": 6742.1470770000005,
+      "samples": {
+        "hover": [
+          123.17792399999962,
+          138.49915200000032,
+          103.75616100000116,
+          107.40772300000026,
+          116.58948400000008,
+          90.98067000000083,
+          131.85026800000014,
+          132.20162600000003,
+          92.36045199999899,
+          139.90707499999917,
+          125.77539699999943,
+          94.54812599999968,
+          129.4543909999993,
+          89.0373099999997,
+          102.24277800000164,
+          96.3944760000013,
+          125.64924500000052,
+          122.77272300000004,
+          107.19287299999996,
+          107.37096399999973,
+          93.97573600000032,
+          134.31808699999965,
+          130.84467399999994,
+          123.68996999999945,
+          128.95479700000215,
+          143.34973199999877,
+          101.055468999999,
+          97.09794300000067,
+          117.78716500000155,
+          126.508762999998
+        ],
+        "completion": [
+          218.08828300000096,
+          91.43796800000018,
+          92.4991170000012,
+          79.14552000000003,
+          94.0899759999993,
+          84.70201300000008,
+          86.17895200000021,
+          81.97607799999969,
+          81.0660599999992,
+          103.44342999999935,
+          77.17088599999988,
+          82.38050599999951,
+          84.03575499999897,
+          85.55432699999983,
+          86.34604099999888,
+          87.12121300000035,
+          85.59924300000057,
+          103.27667999999903,
+          82.37139300000126,
+          80.62035900000046,
+          81.70427700000073,
+          83.24160699999993,
+          87.27066199999899,
+          81.36289699999907,
+          85.0424239999993,
+          79.27577400000155,
+          83.23609699999724,
+          81.62649700000111,
+          89.63409700000193,
+          93.31102400000236
+        ],
+        "definition": [
+          74.31541099999959,
+          93.74399500000072,
+          74.08335799999986,
+          67.48779300000024,
+          61.91246299999875,
+          76.66150800000105,
+          65.48347699999977,
+          88.48461300000054,
+          66.14829699999973,
+          66.41531099999884,
+          65.959393000001,
+          70.97898500000156,
+          67.3528609999994,
+          62.284865999999965,
+          68.0737969999991,
+          73.75074700000005,
+          66.02116299999943,
+          70.95469799999955,
+          66.9569449999999,
+          63.908040000000256,
+          80.8172799999993,
+          70.29134599999816,
+          72.4096470000004,
+          61.011311999998725,
+          61.888355999999476,
+          63.89165199999843,
+          71.67676500000016,
+          67.28353400000196,
+          78.5933929999992,
+          74.11664799999926
+        ],
+        "editDiagnostics": [
+          188.83438000000024,
+          103.66185000000041,
+          102.70733399999881,
+          102.46633100000145,
+          103.84107200000108,
+          180.7993600000009,
+          171.66591399999925,
+          102.57666699999936,
+          169.23416899999938,
+          178.59763500000008,
+          103.11713500000042,
+          172.95002399999976,
+          104.54452300000048,
+          103.23087400000077,
+          102.11471800000072,
+          181.0988269999998,
+          171.01639200000136,
+          102.02042999999867,
+          101.45741400000043,
+          102.87355100000059,
+          168.73390300000028,
+          178.7827159999979,
+          177.9364600000008,
+          182.45727899999838,
+          176.32279500000004,
+          102.86921200000143,
+          103.4611389999991,
+          184.71769100000165,
+          178.98268500000268,
+          175.07618399999774
+        ]
+      },
+      "hostPid": 70067,
+      "backendPid": 70268,
+      "vscode": "1.109.5",
+      "explorerVersion": "0.0.12",
+      "externalExtensionVersion": "0.1.12",
+      "hostMemory": {
+        "rss": 234803200,
+        "heapTotal": 100438016,
+        "heapUsed": 58594732,
+        "external": 7665057,
+        "arrayBuffers": 0
+      },
+      "mode": "cold",
+      "round": 0,
+      "resources": {
+        "sample_interval_ms": 100,
+        "peak_total_rss_mib": 2450.8046875,
+        "cpu_seconds": 80.47,
+        "read_bytes": 414605312,
+        "write_bytes": 69378048,
+        "processes": {
+          "69898": {
+            "command": "node",
+            "peak_rss_bytes": 66064384,
+            "cpu_ticks": 36,
+            "read_bytes": 3301376,
+            "write_bytes": 73728
+          },
+          "69914": {
+            "command": "codium",
+            "peak_rss_bytes": 103424000,
+            "cpu_ticks": 38,
+            "read_bytes": 10825728,
+            "write_bytes": 0
+          },
+          "69909": {
+            "command": "sh",
+            "peak_rss_bytes": 3731456,
+            "cpu_ticks": 0,
+            "read_bytes": 188416,
+            "write_bytes": 0
+          },
+          "69928": {
+            "command": "codium",
+            "peak_rss_bytes": 280956928,
+            "cpu_ticks": 325,
+            "read_bytes": 123789312,
+            "write_bytes": 35876864
+          },
+          "69931": {
+            "command": "codium",
+            "peak_rss_bytes": 60751872,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "69932": {
+            "command": "codium",
+            "peak_rss_bytes": 60747776,
+            "cpu_ticks": 1,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "69934": {
+            "command": "codium",
+            "peak_rss_bytes": 15429632,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "69972": {
+            "command": "codium",
+            "peak_rss_bytes": 149139456,
+            "cpu_ticks": 146,
+            "read_bytes": 56127488,
+            "write_bytes": 0
+          },
+          "69976": {
+            "command": "codium",
+            "peak_rss_bytes": 84373504,
+            "cpu_ticks": 13,
+            "read_bytes": 0,
+            "write_bytes": 3895296
+          },
+          "70014": {
+            "command": "codium",
+            "peak_rss_bytes": 442507264,
+            "cpu_ticks": 1736,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "70044": {
+            "command": "exe",
+            "peak_rss_bytes": 173920256,
+            "cpu_ticks": 131,
+            "read_bytes": 4984832,
+            "write_bytes": 245760
+          },
+          "70045": {
+            "command": "exe",
+            "peak_rss_bytes": 236306432,
+            "cpu_ticks": 2267,
+            "read_bytes": 90112,
+            "write_bytes": 0
+          },
+          "70067": {
+            "command": "codium",
+            "peak_rss_bytes": 240431104,
+            "cpu_ticks": 606,
+            "read_bytes": 101470208,
+            "write_bytes": 11063296
+          },
+          "70111": {
+            "command": "codium",
+            "peak_rss_bytes": 110755840,
+            "cpu_ticks": 12,
+            "read_bytes": 11829248,
+            "write_bytes": 0
+          },
+          "70152": {
+            "command": "codium-tunnel",
+            "peak_rss_bytes": 0,
+            "cpu_ticks": 1,
+            "read_bytes": 24576,
+            "write_bytes": 0
+          },
+          "70166": {
+            "command": "bsl-analyzer-ap",
+            "peak_rss_bytes": 492687360,
+            "cpu_ticks": 2485,
+            "read_bytes": 99340288,
+            "write_bytes": 0
+          },
+          "70174": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 43581440,
+            "cpu_ticks": 37,
+            "read_bytes": 0,
+            "write_bytes": 9191424
+          },
+          "70268": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 106143744,
+            "cpu_ticks": 72,
+            "read_bytes": 2510848,
+            "write_bytes": 9031680
+          },
+          "70277": {
+            "command": "codium",
+            "peak_rss_bytes": 93728768,
+            "cpu_ticks": 21,
+            "read_bytes": 106496,
+            "write_bytes": 0
+          },
+          "70305": {
+            "command": "rg",
+            "peak_rss_bytes": 9822208,
+            "cpu_ticks": 118,
+            "read_bytes": 16384,
+            "write_bytes": 0
+          }
+        }
+      }
+    },
+    {
+      "passed": true,
+      "suite": "t90-baseline",
+      "treeReadyMs": 592.0252070000001,
+      "languageReadyMs": 6743.727493999999,
+      "samples": {
+        "hover": [
+          191.2302129999989,
+          117.41227799999979,
+          93.76755299999968,
+          133.86870199999976,
+          110.3320109999986,
+          126.37173399999847,
+          133.3653290000002,
+          119.63947800000096,
+          130.23806800000057,
+          115.65095699999983,
+          151.05293299999903,
+          97.13057900000058,
+          139.54094199999963,
+          98.12282400000004,
+          113.43623200000002,
+          135.81434900000022,
+          130.34771100000034,
+          146.1433450000004,
+          96.282138999999,
+          92.14154999999846,
+          93.76633900000161,
+          124.89174500000081,
+          121.76352800000313,
+          125.76656000000003,
+          125.18471300000238,
+          101.81381599999804,
+          139.19211300000097,
+          90.54776599999968,
+          97.21545500000138,
+          142.23102799999833
+        ],
+        "completion": [
+          151.53596599999946,
+          83.39837400000033,
+          78.4113780000007,
+          81.12341500000002,
+          100.05273400000078,
+          83.40940300000148,
+          99.02248099999997,
+          87.6915880000015,
+          93.78362500000003,
+          89.4933889999993,
+          85.62243800000033,
+          85.88934800000061,
+          91.12277800000084,
+          84.95854900000086,
+          83.85399600000164,
+          91.25638599999911,
+          87.81223299999874,
+          84.62376899999981,
+          85.54665299999942,
+          100.89881999999852,
+          104.47584899999856,
+          79.54039600000033,
+          90.29201599999942,
+          91.62307599999986,
+          86.69155399999727,
+          89.18769400000019,
+          91.81427199999962,
+          88.7824670000009,
+          84.26063799999974,
+          93.96081399999821
+        ],
+        "definition": [
+          77.83426599999984,
+          66.3256650000003,
+          63.826499999999214,
+          82.22430799999893,
+          69.96210000000065,
+          67.91863999999987,
+          71.281844000001,
+          64.85218900000109,
+          77.28088799999932,
+          65.06231599999956,
+          64.49731599999905,
+          66.23741699999846,
+          78.28120200000012,
+          71.95245299999988,
+          71.57038199999988,
+          75.29071099999965,
+          65.30078700000013,
+          63.10424700000112,
+          87.45035199999984,
+          67.08769200000097,
+          76.68364599999768,
+          65.32612999999765,
+          62.91451000000234,
+          67.88438299999689,
+          63.35529800000222,
+          72.70562399999835,
+          78.9301489999998,
+          70.48057799999879,
+          81.62640300000203,
+          67.3086710000025
+        ],
+        "editDiagnostics": [
+          106.66850499999964,
+          104.62183100000038,
+          174.43462499999987,
+          105.37561800000003,
+          181.25674499999877,
+          178.61948499999926,
+          102.35031600000002,
+          168.09502299999986,
+          103.13387300000068,
+          177.7799010000017,
+          104.07138499999928,
+          183.49071899999944,
+          101.53112200000032,
+          103.12141200000042,
+          185.26116000000002,
+          178.80618099999992,
+          179.2841040000003,
+          104.32252299999891,
+          101.84712899999977,
+          103.52549699999872,
+          177.00136900000143,
+          174.53797000000122,
+          175.12020300000222,
+          177.6517789999998,
+          103.99638899999991,
+          173.87113200000022,
+          102.3634970000021,
+          103.11973800000123,
+          174.9913090000009,
+          182.42992400000003
+        ]
+      },
+      "hostPid": 70607,
+      "backendPid": 70799,
+      "vscode": "1.109.5",
+      "explorerVersion": "0.0.12",
+      "externalExtensionVersion": "0.1.12",
+      "hostMemory": {
+        "rss": 232484864,
+        "heapTotal": 100757504,
+        "heapUsed": 50663864,
+        "external": 6359470,
+        "arrayBuffers": 0
+      },
+      "mode": "cold",
+      "round": 1,
+      "resources": {
+        "sample_interval_ms": 100,
+        "peak_total_rss_mib": 2433.80859375,
+        "cpu_seconds": 81.44,
+        "read_bytes": 272859136,
+        "write_bytes": 69591040,
+        "processes": {
+          "70433": {
+            "command": "node",
+            "peak_rss_bytes": 65921024,
+            "cpu_ticks": 33,
+            "read_bytes": 0,
+            "write_bytes": 73728
+          },
+          "70444": {
+            "command": "sh",
+            "peak_rss_bytes": 3526656,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "70449": {
+            "command": "codium",
+            "peak_rss_bytes": 102977536,
+            "cpu_ticks": 37,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "70465": {
+            "command": "codium",
+            "peak_rss_bytes": 60579840,
+            "cpu_ticks": 2,
+            "read_bytes": 16384,
+            "write_bytes": 0
+          },
+          "70466": {
+            "command": "codium",
+            "peak_rss_bytes": 60719104,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "70462": {
+            "command": "codium",
+            "peak_rss_bytes": 281047040,
+            "cpu_ticks": 331,
+            "read_bytes": 97067008,
+            "write_bytes": 36225024
+          },
+          "70468": {
+            "command": "codium",
+            "peak_rss_bytes": 15171584,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "70507": {
+            "command": "codium",
+            "peak_rss_bytes": 151068672,
+            "cpu_ticks": 148,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "70511": {
+            "command": "exe",
+            "peak_rss_bytes": 84848640,
+            "cpu_ticks": 12,
+            "read_bytes": 0,
+            "write_bytes": 3731456
+          },
+          "70557": {
+            "command": "codium",
+            "peak_rss_bytes": 465502208,
+            "cpu_ticks": 1754,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "70577": {
+            "command": "codium",
+            "peak_rss_bytes": 167194624,
+            "cpu_ticks": 132,
+            "read_bytes": 4734976,
+            "write_bytes": 278528
+          },
+          "70578": {
+            "command": "exe",
+            "peak_rss_bytes": 235442176,
+            "cpu_ticks": 2281,
+            "read_bytes": 81920,
+            "write_bytes": 0
+          },
+          "70607": {
+            "command": "codium",
+            "peak_rss_bytes": 240050176,
+            "cpu_ticks": 626,
+            "read_bytes": 85893120,
+            "write_bytes": 11075584
+          },
+          "70671": {
+            "command": "rg",
+            "peak_rss_bytes": 0,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "70687": {
+            "command": "codium",
+            "peak_rss_bytes": 110043136,
+            "cpu_ticks": 10,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "70697": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 43970560,
+            "cpu_ticks": 39,
+            "read_bytes": 0,
+            "write_bytes": 9175040
+          },
+          "70698": {
+            "command": "bsl-analyzer-ap",
+            "peak_rss_bytes": 455700480,
+            "cpu_ticks": 2485,
+            "read_bytes": 83996672,
+            "write_bytes": 0
+          },
+          "70799": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 106512384,
+            "cpu_ticks": 80,
+            "read_bytes": 962560,
+            "write_bytes": 9031680
+          },
+          "70834": {
+            "command": "codium",
+            "peak_rss_bytes": 93405184,
+            "cpu_ticks": 23,
+            "read_bytes": 106496,
+            "write_bytes": 0
+          },
+          "70869": {
+            "command": "rg",
+            "peak_rss_bytes": 10215424,
+            "cpu_ticks": 149,
+            "read_bytes": 0,
+            "write_bytes": 0
+          }
+        }
+      }
+    },
+    {
+      "passed": true,
+      "suite": "t90-baseline",
+      "treeReadyMs": 612.0848049999997,
+      "languageReadyMs": 6571.219043,
+      "samples": {
+        "hover": [
+          150.5329670000001,
+          139.27552999999898,
+          132.4295689999999,
+          130.9934599999997,
+          100.64591600000131,
+          100.67453600000044,
+          126.1132290000005,
+          152.1559100000013,
+          104.68806199999926,
+          108.51238600000033,
+          95.05888800000139,
+          100.59116600000016,
+          131.79727400000047,
+          96.14334800000142,
+          108.49777200000062,
+          106.64292800000112,
+          92.94732699999986,
+          102.48094800000035,
+          130.26353000000017,
+          108.21776899999895,
+          93.63089500000024,
+          111.57416000000012,
+          130.07223000000158,
+          124.68872899999769,
+          153.19375500000024,
+          93.12801799999943,
+          121.97798400000102,
+          149.33568699999887,
+          131.8524209999996,
+          93.87447500000053
+        ],
+        "completion": [
+          157.2755729999999,
+          87.22647700000016,
+          106.35499299999901,
+          82.61173699999927,
+          90.5385669999996,
+          90.09783799999968,
+          95.1957880000009,
+          90.68823200000043,
+          91.83185799999956,
+          83.55140499999834,
+          82.64029800000026,
+          87.23199199999908,
+          95.6796119999999,
+          86.65489800000068,
+          95.13713800000005,
+          86.99230800000078,
+          95.64705800000047,
+          83.36930100000063,
+          87.26211599999988,
+          94.2324209999988,
+          88.69576899999993,
+          89.33920899999794,
+          90.10599999999977,
+          87.97209400000065,
+          116.05860799999937,
+          89.25227599999926,
+          88.98625199999879,
+          100.95922299999802,
+          87.98192700000072,
+          85.3549869999988
+        ],
+        "definition": [
+          118.06673000000046,
+          72.44480600000134,
+          65.6774809999988,
+          64.63437599999997,
+          63.8403959999996,
+          66.56555600000138,
+          70.79400300000088,
+          68.03795699999864,
+          88.42389100000037,
+          64.65072500000133,
+          73.46790299999884,
+          66.04557199999908,
+          62.24165600000015,
+          64.53776300000027,
+          80.31648599999971,
+          62.485241000000315,
+          70.73853100000088,
+          69.86204299999918,
+          68.09204899999895,
+          72.79957800000011,
+          70.20621000000028,
+          69.5148360000021,
+          68.64670899999692,
+          68.07910500000071,
+          68.10857899999974,
+          73.41697300000305,
+          86.0482809999994,
+          69.28142300000036,
+          75.92529799999829,
+          66.06909599999926
+        ],
+        "editDiagnostics": [
+          190.8078719999994,
+          178.0640430000003,
+          169.997605999999,
+          101.78733399999874,
+          102.9363859999994,
+          189.63456299999962,
+          181.17448200000035,
+          103.2054449999996,
+          102.65210000000116,
+          102.7195840000004,
+          101.84136299999955,
+          172.44436499999938,
+          103.43410100000074,
+          102.89031699999941,
+          102.105332000001,
+          103.04385299999922,
+          101.60851899999943,
+          182.0478660000008,
+          103.70111300000099,
+          102.45961700000043,
+          102.73659000000043,
+          176.64723400000003,
+          178.46969900000113,
+          171.730904,
+          104.12797900000078,
+          173.262453000003,
+          103.5993610000005,
+          181.16100200000074,
+          103.08968800000002,
+          103.20479900000282
+        ]
+      },
+      "hostPid": 71186,
+      "backendPid": 71381,
+      "vscode": "1.109.5",
+      "explorerVersion": "0.0.12",
+      "externalExtensionVersion": "0.1.12",
+      "hostMemory": {
+        "rss": 234627072,
+        "heapTotal": 101859328,
+        "heapUsed": 58096620,
+        "external": 7850818,
+        "arrayBuffers": 0
+      },
+      "mode": "cold",
+      "round": 2,
+      "resources": {
+        "sample_interval_ms": 100,
+        "peak_total_rss_mib": 2478.33203125,
+        "cpu_seconds": 79.71,
+        "read_bytes": 346341376,
+        "write_bytes": 69324800,
+        "processes": {
+          "71014": {
+            "command": "node",
+            "peak_rss_bytes": 65892352,
+            "cpu_ticks": 33,
+            "read_bytes": 0,
+            "write_bytes": 57344
+          },
+          "71025": {
+            "command": "sh",
+            "peak_rss_bytes": 3674112,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71030": {
+            "command": "codium",
+            "peak_rss_bytes": 103313408,
+            "cpu_ticks": 37,
+            "read_bytes": 208896,
+            "write_bytes": 0
+          },
+          "71043": {
+            "command": "codium",
+            "peak_rss_bytes": 281735168,
+            "cpu_ticks": 316,
+            "read_bytes": 119885824,
+            "write_bytes": 35987456
+          },
+          "71046": {
+            "command": "codium",
+            "peak_rss_bytes": 60248064,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71047": {
+            "command": "codium",
+            "peak_rss_bytes": 60358656,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71049": {
+            "command": "codium",
+            "peak_rss_bytes": 15675392,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71088": {
+            "command": "codium",
+            "peak_rss_bytes": 150396928,
+            "cpu_ticks": 141,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71091": {
+            "command": "codium",
+            "peak_rss_bytes": 85221376,
+            "cpu_ticks": 11,
+            "read_bytes": 0,
+            "write_bytes": 3674112
+          },
+          "71137": {
+            "command": "codium",
+            "peak_rss_bytes": 487202816,
+            "cpu_ticks": 1727,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71157": {
+            "command": "exe",
+            "peak_rss_bytes": 159924224,
+            "cpu_ticks": 134,
+            "read_bytes": 1249280,
+            "write_bytes": 376832
+          },
+          "71158": {
+            "command": "exe",
+            "peak_rss_bytes": 231280640,
+            "cpu_ticks": 2210,
+            "read_bytes": 90112,
+            "write_bytes": 0
+          },
+          "71186": {
+            "command": "codium",
+            "peak_rss_bytes": 241360896,
+            "cpu_ticks": 596,
+            "read_bytes": 112267264,
+            "write_bytes": 11022336
+          },
+          "71222": {
+            "command": "codium",
+            "peak_rss_bytes": 112107520,
+            "cpu_ticks": 11,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71278": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 47173632,
+            "cpu_ticks": 39,
+            "read_bytes": 0,
+            "write_bytes": 9175040
+          },
+          "71282": {
+            "command": "bsl-analyzer-ap",
+            "peak_rss_bytes": 479277056,
+            "cpu_ticks": 2455,
+            "read_bytes": 108822528,
+            "write_bytes": 0
+          },
+          "71381": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 106430464,
+            "cpu_ticks": 82,
+            "read_bytes": 2473984,
+            "write_bytes": 9031680
+          },
+          "71394": {
+            "command": "codium",
+            "peak_rss_bytes": 94212096,
+            "cpu_ticks": 27,
+            "read_bytes": 106496,
+            "write_bytes": 0
+          },
+          "71420": {
+            "command": "rg",
+            "peak_rss_bytes": 10870784,
+            "cpu_ticks": 148,
+            "read_bytes": 1236992,
+            "write_bytes": 0
+          }
+        }
+      }
+    },
+    {
+      "passed": true,
+      "suite": "t90-baseline",
+      "treeReadyMs": 649.1725609999999,
+      "languageReadyMs": 6691.476500000001,
+      "samples": {
+        "hover": [
+          180.56974199999968,
+          110.84991100000116,
+          134.1169860000009,
+          104.03876599999967,
+          90.82992599999852,
+          89.09971399999995,
+          101.14120399999956,
+          106.21693899999991,
+          123.87142400000084,
+          119.4392970000008,
+          99.18066999999974,
+          136.34658600000148,
+          93.25118499999917,
+          98.38516100000015,
+          91.64442500000041,
+          93.84689699999944,
+          140.66284600000108,
+          88.65540800000053,
+          126.92954800000007,
+          117.41220199999952,
+          118.91473100000076,
+          109.67062699999951,
+          114.09718299999804,
+          115.49540400000114,
+          98.99191300000166,
+          125.00774699999965,
+          99.96161399999983,
+          96.53837600000043,
+          122.89264199999889,
+          96.50031999999919
+        ],
+        "completion": [
+          179.40531199999896,
+          88.32250399999975,
+          86.57709700000123,
+          92.86457399999927,
+          92.03009100000054,
+          83.68719099999907,
+          82.69482000000062,
+          78.91949399999976,
+          86.33884600000056,
+          98.05053500000031,
+          83.81352500000139,
+          88.67534999999953,
+          81.43794100000014,
+          83.38083899999947,
+          89.3683660000006,
+          83.90686499999902,
+          79.51182300000073,
+          93.7159730000003,
+          89.34960900000078,
+          95.8630290000001,
+          88.09015,
+          121.48502999999982,
+          92.41625500000009,
+          88.72690900000089,
+          84.28035699999964,
+          85.92453000000023,
+          92.11700400000336,
+          84.94298999999955,
+          95.98587600000246,
+          99.71993299999667
+        ],
+        "definition": [
+          69.3735400000005,
+          63.95523200000025,
+          69.52086899999995,
+          61.94585800000095,
+          70.67001799999889,
+          76.6818770000009,
+          63.91247199999998,
+          61.20018499999969,
+          63.63175600000068,
+          67.78280600000107,
+          71.76655100000062,
+          62.77676900000006,
+          70.25401199999942,
+          72.04749699999957,
+          73.4905920000001,
+          66.29762300000039,
+          65.149981999999,
+          66.7540169999993,
+          84.07513800000015,
+          88.94943899999998,
+          78.51798000000053,
+          89.91519100000005,
+          80.39939500000037,
+          66.16770299999916,
+          64.35470999999961,
+          63.279060000000754,
+          72.24419800000032,
+          68.13197199999922,
+          68.73006499999974,
+          70.19109700000263
+        ],
+        "editDiagnostics": [
+          106.3670660000007,
+          191.17443699999967,
+          102.52639900000031,
+          101.58853499999896,
+          105.28078099999948,
+          103.66707200000019,
+          103.0453209999996,
+          181.39726700000028,
+          166.0874729999996,
+          101.94636400000127,
+          179.1970450000008,
+          100.89830900000015,
+          102.60528899999917,
+          102.51759700000002,
+          103.35094000000026,
+          169.54356899999948,
+          101.80304799999976,
+          102.94815799999924,
+          101.59081000000151,
+          102.80348400000003,
+          102.87366499999916,
+          101.58341300000029,
+          102.92353400000138,
+          102.51337599999897,
+          187.0062450000005,
+          101.4635980000021,
+          101.7715649999991,
+          166.22153199999957,
+          103.5264019999995,
+          103.03084700000181
+        ]
+      },
+      "hostPid": 71708,
+      "backendPid": 71908,
+      "vscode": "1.109.5",
+      "explorerVersion": "0.0.12",
+      "externalExtensionVersion": "0.1.12",
+      "hostMemory": {
+        "rss": 229269504,
+        "heapTotal": 99057664,
+        "heapUsed": 43997832,
+        "external": 4875083,
+        "arrayBuffers": 0
+      },
+      "mode": "cold",
+      "round": 3,
+      "resources": {
+        "sample_interval_ms": 100,
+        "peak_total_rss_mib": 2401.1796875,
+        "cpu_seconds": 78.67,
+        "read_bytes": 260325376,
+        "write_bytes": 69140480,
+        "processes": {
+          "71533": {
+            "command": "node",
+            "peak_rss_bytes": 66367488,
+            "cpu_ticks": 32,
+            "read_bytes": 0,
+            "write_bytes": 73728
+          },
+          "71544": {
+            "command": "sh",
+            "peak_rss_bytes": 3760128,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71549": {
+            "command": "codium",
+            "peak_rss_bytes": 102010880,
+            "cpu_ticks": 36,
+            "read_bytes": 49152,
+            "write_bytes": 0
+          },
+          "71563": {
+            "command": "codium",
+            "peak_rss_bytes": 284684288,
+            "cpu_ticks": 318,
+            "read_bytes": 94859264,
+            "write_bytes": 35930112
+          },
+          "71566": {
+            "command": "codium",
+            "peak_rss_bytes": 59097088,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71567": {
+            "command": "codium",
+            "peak_rss_bytes": 59482112,
+            "cpu_ticks": 1,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71569": {
+            "command": "codium",
+            "peak_rss_bytes": 16019456,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71607": {
+            "command": "codium",
+            "peak_rss_bytes": 149819392,
+            "cpu_ticks": 142,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71609": {
+            "command": "codium",
+            "peak_rss_bytes": 84844544,
+            "cpu_ticks": 12,
+            "read_bytes": 0,
+            "write_bytes": 3751936
+          },
+          "71658": {
+            "command": "codium",
+            "peak_rss_bytes": 440762368,
+            "cpu_ticks": 1711,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71678": {
+            "command": "codium",
+            "peak_rss_bytes": 168222720,
+            "cpu_ticks": 128,
+            "read_bytes": 3166208,
+            "write_bytes": 311296
+          },
+          "71679": {
+            "command": "codium",
+            "peak_rss_bytes": 227217408,
+            "cpu_ticks": 2161,
+            "read_bytes": 1052672,
+            "write_bytes": 0
+          },
+          "71708": {
+            "command": "codium",
+            "peak_rss_bytes": 238866432,
+            "cpu_ticks": 609,
+            "read_bytes": 80609280,
+            "write_bytes": 10948608
+          },
+          "71760": {
+            "command": "rg",
+            "peak_rss_bytes": 0,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71774": {
+            "command": "rg",
+            "peak_rss_bytes": 0,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71789": {
+            "command": "codium",
+            "peak_rss_bytes": 110469120,
+            "cpu_ticks": 10,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "71802": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 38748160,
+            "cpu_ticks": 36,
+            "read_bytes": 1683456,
+            "write_bytes": 9093120
+          },
+          "71806": {
+            "command": "bsl-analyzer-ap",
+            "peak_rss_bytes": 465518592,
+            "cpu_ticks": 2394,
+            "read_bytes": 75083776,
+            "write_bytes": 0
+          },
+          "71908": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 105967616,
+            "cpu_ticks": 79,
+            "read_bytes": 2473984,
+            "write_bytes": 9031680
+          },
+          "71918": {
+            "command": "codium",
+            "peak_rss_bytes": 94003200,
+            "cpu_ticks": 22,
+            "read_bytes": 110592,
+            "write_bytes": 0
+          },
+          "72016": {
+            "command": "rg",
+            "peak_rss_bytes": 11395072,
+            "cpu_ticks": 174,
+            "read_bytes": 1236992,
+            "write_bytes": 0
+          }
+        }
+      }
+    },
+    {
+      "passed": true,
+      "suite": "t90-baseline",
+      "treeReadyMs": 584.157344,
+      "languageReadyMs": 6705.457418,
+      "samples": {
+        "hover": [
+          193.14433999999983,
+          107.08428000000094,
+          122.03958799999964,
+          119.79547000000093,
+          96.43871300000137,
+          125.39558800000123,
+          146.0717820000009,
+          106.26435500000116,
+          91.18369300000086,
+          95.49564499999906,
+          94.32416399999966,
+          109.11002100000042,
+          113.36834399999861,
+          91.14800300000024,
+          129.70799199999965,
+          125.7410319999999,
+          109.99775600000066,
+          122.57221899999968,
+          121.71477799999957,
+          128.08109400000103,
+          133.0667539999995,
+          123.11716899999738,
+          88.08271700000114,
+          132.73641700000007,
+          127.07207099999869,
+          86.7712019999999,
+          138.65960699999778,
+          134.11189300000115,
+          132.71936300000016,
+          129.33434800000032
+        ],
+        "completion": [
+          148.98789399999987,
+          85.66992799999935,
+          100.25297799999862,
+          82.31157200000052,
+          81.92886700000054,
+          95.16652499999873,
+          88.7427630000002,
+          83.5441520000004,
+          81.67027100000087,
+          84.66053900000043,
+          93.54984899999909,
+          85.37317499999881,
+          100.85245600000053,
+          90.02903399999923,
+          89.70942599999944,
+          89.85614200000055,
+          84.01932900000065,
+          84.6003180000007,
+          97.28319100000044,
+          87.7687590000005,
+          88.58569500000158,
+          96.43078900000182,
+          84.41976100000102,
+          81.41728199999852,
+          81.38388699999996,
+          81.7752619999992,
+          91.17454999999973,
+          88.85488800000167,
+          102.98995400000058,
+          85.14232700000139
+        ],
+        "definition": [
+          79.13929300000018,
+          66.84172399999989,
+          65.56655900000078,
+          67.06924900000013,
+          61.71007800000007,
+          75.61014900000009,
+          76.4639989999996,
+          64.9584990000003,
+          75.21891400000095,
+          66.58524600000055,
+          69.32760699999926,
+          64.30857599999945,
+          74.18851200000063,
+          80.01136000000042,
+          58.92326299999877,
+          65.90569999999934,
+          70.78383000000031,
+          73.03573899999901,
+          72.0445120000004,
+          68.10959100000036,
+          67.72789399999965,
+          64.19006400000217,
+          63.81634599999961,
+          70.78666599999997,
+          84.96055400000114,
+          70.11379099999976,
+          65.97246499999892,
+          83.71970500000316,
+          73.80153799999971,
+          62.48798199999874
+        ],
+        "editDiagnostics": [
+          105.69171800000004,
+          171.53983100000005,
+          166.59513700000025,
+          102.78729300000123,
+          168.72860199999923,
+          183.0496550000007,
+          101.95230700000138,
+          102.66964299999927,
+          102.80014899999878,
+          102.1996790000012,
+          102.2022820000002,
+          102.70690699999977,
+          102.00193200000103,
+          102.73095199999989,
+          171.6023180000011,
+          101.08484800000042,
+          181.795032,
+          167.3055059999988,
+          170.82254999999896,
+          181.2366290000009,
+          169.99913300000117,
+          101.51245700000072,
+          177.505631,
+          172.21343999999954,
+          102.84429699999964,
+          176.95086900000024,
+          175.58821899999748,
+          100.80327300000135,
+          172.58716600000116,
+          172.4263749999991
+        ]
+      },
+      "hostPid": 72385,
+      "backendPid": 72583,
+      "vscode": "1.109.5",
+      "explorerVersion": "0.0.12",
+      "externalExtensionVersion": "0.1.12",
+      "hostMemory": {
+        "rss": 235167744,
+        "heapTotal": 100904960,
+        "heapUsed": 61272364,
+        "external": 8618271,
+        "arrayBuffers": 0
+      },
+      "mode": "cold",
+      "round": 4,
+      "resources": {
+        "sample_interval_ms": 100,
+        "peak_total_rss_mib": 2493.6484375,
+        "cpu_seconds": 80.95,
+        "read_bytes": 139321344,
+        "write_bytes": 90025984,
+        "processes": {
+          "72201": {
+            "command": "node",
+            "peak_rss_bytes": 65888256,
+            "cpu_ticks": 37,
+            "read_bytes": 50163712,
+            "write_bytes": 36143104
+          },
+          "72212": {
+            "command": "sh",
+            "peak_rss_bytes": 3551232,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72217": {
+            "command": "codium",
+            "peak_rss_bytes": 103284736,
+            "cpu_ticks": 36,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72230": {
+            "command": "codium",
+            "peak_rss_bytes": 279826432,
+            "cpu_ticks": 316,
+            "read_bytes": 6144000,
+            "write_bytes": 20566016
+          },
+          "72234": {
+            "command": "codium",
+            "peak_rss_bytes": 61366272,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72233": {
+            "command": "codium",
+            "peak_rss_bytes": 60989440,
+            "cpu_ticks": 1,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72236": {
+            "command": "codium",
+            "peak_rss_bytes": 15597568,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72282": {
+            "command": "codium",
+            "peak_rss_bytes": 150814720,
+            "cpu_ticks": 142,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72285": {
+            "command": "codium",
+            "peak_rss_bytes": 84930560,
+            "cpu_ticks": 11,
+            "read_bytes": 0,
+            "write_bytes": 3772416
+          },
+          "72335": {
+            "command": "codium",
+            "peak_rss_bytes": 506130432,
+            "cpu_ticks": 1784,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72355": {
+            "command": "codium",
+            "peak_rss_bytes": 159887360,
+            "cpu_ticks": 131,
+            "read_bytes": 2818048,
+            "write_bytes": 278528
+          },
+          "72356": {
+            "command": "codium",
+            "peak_rss_bytes": 232996864,
+            "cpu_ticks": 2229,
+            "read_bytes": 1052672,
+            "write_bytes": 0
+          },
+          "72385": {
+            "command": "codium",
+            "peak_rss_bytes": 239357952,
+            "cpu_ticks": 613,
+            "read_bytes": 40075264,
+            "write_bytes": 11059200
+          },
+          "72469": {
+            "command": "codium",
+            "peak_rss_bytes": 110956544,
+            "cpu_ticks": 11,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72480": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 44556288,
+            "cpu_ticks": 41,
+            "read_bytes": 1503232,
+            "write_bytes": 9175040
+          },
+          "72483": {
+            "command": "bsl-analyzer-ap",
+            "peak_rss_bytes": 480468992,
+            "cpu_ticks": 2492,
+            "read_bytes": 33820672,
+            "write_bytes": 0
+          },
+          "72583": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 106123264,
+            "cpu_ticks": 80,
+            "read_bytes": 2473984,
+            "write_bytes": 9031680
+          },
+          "72593": {
+            "command": "codium",
+            "peak_rss_bytes": 93646848,
+            "cpu_ticks": 24,
+            "read_bytes": 36864,
+            "write_bytes": 0
+          },
+          "72617": {
+            "command": "rg",
+            "peak_rss_bytes": 10346496,
+            "cpu_ticks": 145,
+            "read_bytes": 1232896,
+            "write_bytes": 0
+          }
+        }
+      }
+    },
+    {
+      "passed": true,
+      "suite": "t90-baseline",
+      "treeReadyMs": 580.5507790000001,
+      "languageReadyMs": 6682.689614,
+      "samples": {
+        "hover": [
+          124.45029300000078,
+          147.1978849999996,
+          137.56019200000082,
+          107.74626499999977,
+          101.99209899999914,
+          124.83501699999943,
+          164.47763900000064,
+          129.33144299999913,
+          106.84942700000101,
+          102.78873899999962,
+          132.1929029999992,
+          137.595992999999,
+          115.10513900000115,
+          86.75559600000088,
+          122.89308600000004,
+          126.42302399999971,
+          105.55573999999979,
+          103.72801799999979,
+          105.70571100000052,
+          99.81269699999939,
+          100.3250369999987,
+          132.4228170000024,
+          96.53615399999762,
+          155.52577499999825,
+          109.40907700000025,
+          123.97866300000169,
+          164.81127500000002,
+          141.2764470000002,
+          111.84595700000136,
+          93.10948199999984
+        ],
+        "completion": [
+          206.57344199999898,
+          94.17387299999973,
+          99.00649499999963,
+          86.28014699999949,
+          104.28097399999933,
+          91.5776050000004,
+          80.99618199999895,
+          86.4173780000001,
+          97.1380250000002,
+          103.25863200000094,
+          91.67655700000068,
+          85.28676300000006,
+          95.9451939999999,
+          92.23437300000114,
+          83.12397599999895,
+          79.64613699999973,
+          85.32957700000043,
+          91.67171699999926,
+          92.86675999999898,
+          83.34862900000007,
+          86.85748700000113,
+          115.2130810000017,
+          96.57639100000233,
+          98.93213199999809,
+          93.16823199999999,
+          96.2367090000007,
+          104.10818999999901,
+          89.14751800000158,
+          86.38628199999948,
+          86.18134099999952
+        ],
+        "definition": [
+          73.48618700000043,
+          65.89399400000002,
+          66.02336300000024,
+          67.94144299999971,
+          68.8979959999997,
+          75.60960100000011,
+          76.84254800000053,
+          77.30151099999966,
+          87.55601600000045,
+          66.82710399999996,
+          69.26683899999989,
+          67.751123,
+          62.26519599999847,
+          68.0914789999988,
+          74.14867500000037,
+          85.23074199999974,
+          69.96989899999971,
+          73.23525299999892,
+          78.34836599999835,
+          84.48327999999856,
+          65.14575100000002,
+          69.48999799999729,
+          72.22629899999811,
+          79.36816700000054,
+          68.40255199999956,
+          82.8207799999982,
+          85.39258999999947,
+          76.0920929999993,
+          63.2951060000014,
+          67.1394990000008
+        ],
+        "editDiagnostics": [
+          108.43670300000122,
+          177.0594349999992,
+          103.28663799999958,
+          102.45900799999981,
+          197.512388000001,
+          175.97542299999986,
+          172.81125500000053,
+          101.72002599999905,
+          102.33985799999937,
+          176.88165200000003,
+          173.2177210000009,
+          103.77660199999991,
+          103.92805700000099,
+          103.22399699999914,
+          187.5937439999998,
+          104.1247999999996,
+          101.71568299999853,
+          103.76040999999896,
+          103.76900700000078,
+          103.26815600000009,
+          181.01514499999757,
+          103.28369200000088,
+          181.31079099999988,
+          103.24111099999936,
+          102.25862699999925,
+          203.08782300000166,
+          189.18621699999858,
+          104.05002999999851,
+          103.144559999997,
+          178.149518000002
+        ]
+      },
+      "hostPid": 73018,
+      "backendPid": 73219,
+      "vscode": "1.109.5",
+      "explorerVersion": "0.0.12",
+      "externalExtensionVersion": "0.1.12",
+      "hostMemory": {
+        "rss": 235814912,
+        "heapTotal": 101167104,
+        "heapUsed": 63535028,
+        "external": 8816746,
+        "arrayBuffers": 0
+      },
+      "mode": "repeat",
+      "round": 0,
+      "resources": {
+        "sample_interval_ms": 100,
+        "peak_total_rss_mib": 2413.9609375,
+        "cpu_seconds": 80.71,
+        "read_bytes": 147058688,
+        "write_bytes": 53719040,
+        "processes": {
+          "72844": {
+            "command": "node",
+            "peak_rss_bytes": 66097152,
+            "cpu_ticks": 37,
+            "read_bytes": 51445760,
+            "write_bytes": 27144192
+          },
+          "72858": {
+            "command": "sh",
+            "peak_rss_bytes": 3428352,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72863": {
+            "command": "codium",
+            "peak_rss_bytes": 102420480,
+            "cpu_ticks": 39,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72877": {
+            "command": "codium",
+            "peak_rss_bytes": 279531520,
+            "cpu_ticks": 315,
+            "read_bytes": 7811072,
+            "write_bytes": 20733952
+          },
+          "72880": {
+            "command": "codium",
+            "peak_rss_bytes": 60616704,
+            "cpu_ticks": 1,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72881": {
+            "command": "codium",
+            "peak_rss_bytes": 60993536,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72883": {
+            "command": "codium",
+            "peak_rss_bytes": 15581184,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72921": {
+            "command": "codium",
+            "peak_rss_bytes": 148021248,
+            "cpu_ticks": 145,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72925": {
+            "command": "codium",
+            "peak_rss_bytes": 84090880,
+            "cpu_ticks": 10,
+            "read_bytes": 0,
+            "write_bytes": 3653632
+          },
+          "72969": {
+            "command": "codium",
+            "peak_rss_bytes": 474816512,
+            "cpu_ticks": 1760,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "72989": {
+            "command": "codium",
+            "peak_rss_bytes": 160555008,
+            "cpu_ticks": 134,
+            "read_bytes": 524288,
+            "write_bytes": 409600
+          },
+          "72990": {
+            "command": "codium",
+            "peak_rss_bytes": 234520576,
+            "cpu_ticks": 2252,
+            "read_bytes": 90112,
+            "write_bytes": 0
+          },
+          "73018": {
+            "command": "codium",
+            "peak_rss_bytes": 240476160,
+            "cpu_ticks": 618,
+            "read_bytes": 42950656,
+            "write_bytes": 1777664
+          },
+          "73102": {
+            "command": "codium",
+            "peak_rss_bytes": 110211072,
+            "cpu_ticks": 9,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73119": {
+            "command": "bsl-analyzer-ap",
+            "peak_rss_bytes": 491581440,
+            "cpu_ticks": 2499,
+            "read_bytes": 38834176,
+            "write_bytes": 0
+          },
+          "73115": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 50946048,
+            "cpu_ticks": 35,
+            "read_bytes": 921600,
+            "write_bytes": 0
+          },
+          "73219": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 103120896,
+            "cpu_ticks": 78,
+            "read_bytes": 3248128,
+            "write_bytes": 0
+          },
+          "73227": {
+            "command": "codium",
+            "peak_rss_bytes": 93782016,
+            "cpu_ticks": 23,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73254": {
+            "command": "rg",
+            "peak_rss_bytes": 10215424,
+            "cpu_ticks": 114,
+            "read_bytes": 1232896,
+            "write_bytes": 0
+          }
+        }
+      }
+    },
+    {
+      "passed": true,
+      "suite": "t90-baseline",
+      "treeReadyMs": 552.333768,
+      "languageReadyMs": 6866.438506,
+      "samples": {
+        "hover": [
+          167.8114170000008,
+          130.98246400000062,
+          113.91362899999876,
+          133.51778600000034,
+          134.4330429999991,
+          131.20510599999943,
+          115.63730699999905,
+          101.47744600000078,
+          105.91597200000069,
+          94.96259900000041,
+          132.018422000001,
+          92.4818809999997,
+          134.41543400000046,
+          134.84867699999995,
+          141.569171000001,
+          122.70046600000023,
+          154.52174100000047,
+          135.70381499999894,
+          134.841398999999,
+          156.17721299999903,
+          109.7956950000007,
+          94.09121400000004,
+          133.43585099999837,
+          123.2705100000021,
+          101.85563900000125,
+          149.48848500000167,
+          101.34183199999825,
+          122.0641429999996,
+          120.00416899999982,
+          132.07597600000008
+        ],
+        "completion": [
+          108.62147100000038,
+          85.08302999999978,
+          87.0999980000015,
+          89.26022600000033,
+          81.35645300000033,
+          87.72493699999904,
+          81.27926800000023,
+          85.17972800000098,
+          100.65697200000068,
+          86.35424799999964,
+          88.25087499999972,
+          84.29142900000079,
+          85.75255099999958,
+          101.64216300000044,
+          101.08467399999972,
+          83.8254109999998,
+          111.30760499999997,
+          83.77944199999911,
+          80.27522300000055,
+          90.43469299999924,
+          92.54089999999997,
+          80.9047900000005,
+          99.36995299999762,
+          84.61816399999952,
+          90.44545699999799,
+          88.51793199999884,
+          82.63289500000246,
+          86.9741389999981,
+          88.59004300000015,
+          90.09727599999678
+        ],
+        "definition": [
+          67.59415499999886,
+          64.56259900000077,
+          69.0775709999998,
+          66.68633399999999,
+          67.0259870000009,
+          67.91085699999894,
+          74.80200100000002,
+          68.06091799999922,
+          67.82963500000005,
+          68.70583599999918,
+          65.51643399999921,
+          78.16183799999999,
+          74.0517660000005,
+          65.16784799999914,
+          85.65836599999966,
+          72.30689700000039,
+          73.52466699999968,
+          83.03003700000045,
+          64.94307300000219,
+          65.75090300000011,
+          79.25676999999996,
+          67.07794899999863,
+          76.12153200000103,
+          60.118093000000954,
+          72.92582500000208,
+          69.3427359999987,
+          65.06543000000238,
+          85.06934100000217,
+          62.72074599999905,
+          61.437871000001905
+        ],
+        "editDiagnostics": [
+          183.53982099999848,
+          104.04061599999841,
+          168.30411099999947,
+          191.80869000000166,
+          194.84431799999948,
+          103.39234700000088,
+          103.21238300000005,
+          102.91636000000108,
+          103.01708999999937,
+          177.56728499999917,
+          104.03599299999951,
+          183.5375329999988,
+          168.10487400000056,
+          180.71495400000094,
+          102.56869499999993,
+          175.58976999999868,
+          186.21950500000094,
+          174.2330290000009,
+          179.8273709999994,
+          102.42389700000058,
+          102.87352199999805,
+          169.56049800000255,
+          172.16095499999938,
+          101.88106699999844,
+          181.58269400000063,
+          103.0525439999983,
+          168.8207889999976,
+          172.61457700000028,
+          103.5960989999985,
+          103.14271999999983
+        ]
+      },
+      "hostPid": 73576,
+      "backendPid": 73782,
+      "vscode": "1.109.5",
+      "explorerVersion": "0.0.12",
+      "externalExtensionVersion": "0.1.12",
+      "hostMemory": {
+        "rss": 205869056,
+        "heapTotal": 76378112,
+        "heapUsed": 52413924,
+        "external": 6522725,
+        "arrayBuffers": 0
+      },
+      "mode": "repeat",
+      "round": 1,
+      "resources": {
+        "sample_interval_ms": 100,
+        "peak_total_rss_mib": 2436.08984375,
+        "cpu_seconds": 81.12,
+        "read_bytes": 125591552,
+        "write_bytes": 33013760,
+        "processes": {
+          "73369": {
+            "command": "node",
+            "peak_rss_bytes": 65896448,
+            "cpu_ticks": 36,
+            "read_bytes": 0,
+            "write_bytes": 57344
+          },
+          "73387": {
+            "command": "codium",
+            "peak_rss_bytes": 104128512,
+            "cpu_ticks": 39,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73382": {
+            "command": "sh",
+            "peak_rss_bytes": 3534848,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73400": {
+            "command": "codium",
+            "peak_rss_bytes": 284069888,
+            "cpu_ticks": 329,
+            "read_bytes": 46915584,
+            "write_bytes": 27209728
+          },
+          "73403": {
+            "command": "codium",
+            "peak_rss_bytes": 60461056,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73404": {
+            "command": "codium",
+            "peak_rss_bytes": 60596224,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73406": {
+            "command": "codium",
+            "peak_rss_bytes": 15294464,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73473": {
+            "command": "codium",
+            "peak_rss_bytes": 85409792,
+            "cpu_ticks": 12,
+            "read_bytes": 0,
+            "write_bytes": 3747840
+          },
+          "73469": {
+            "command": "codium",
+            "peak_rss_bytes": 158191616,
+            "cpu_ticks": 148,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73518": {
+            "command": "codium",
+            "peak_rss_bytes": 485003264,
+            "cpu_ticks": 1709,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73548": {
+            "command": "exe",
+            "peak_rss_bytes": 167854080,
+            "cpu_ticks": 134,
+            "read_bytes": 2871296,
+            "write_bytes": 278528
+          },
+          "73549": {
+            "command": "exe",
+            "peak_rss_bytes": 237400064,
+            "cpu_ticks": 2277,
+            "read_bytes": 987136,
+            "write_bytes": 0
+          },
+          "73576": {
+            "command": "codium",
+            "peak_rss_bytes": 209301504,
+            "cpu_ticks": 610,
+            "read_bytes": 36859904,
+            "write_bytes": 1720320
+          },
+          "73662": {
+            "command": "codium",
+            "peak_rss_bytes": 110383104,
+            "cpu_ticks": 11,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73678": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 45858816,
+            "cpu_ticks": 29,
+            "read_bytes": 2424832,
+            "write_bytes": 0
+          },
+          "73682": {
+            "command": "bsl-analyzer-ap",
+            "peak_rss_bytes": 508321792,
+            "cpu_ticks": 2516,
+            "read_bytes": 31014912,
+            "write_bytes": 0
+          },
+          "73782": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 102952960,
+            "cpu_ticks": 69,
+            "read_bytes": 3248128,
+            "write_bytes": 0
+          },
+          "73789": {
+            "command": "codium",
+            "peak_rss_bytes": 93618176,
+            "cpu_ticks": 19,
+            "read_bytes": 36864,
+            "write_bytes": 0
+          },
+          "73815": {
+            "command": "rg",
+            "peak_rss_bytes": 10608640,
+            "cpu_ticks": 170,
+            "read_bytes": 1232896,
+            "write_bytes": 0
+          }
+        }
+      }
+    },
+    {
+      "passed": true,
+      "suite": "t90-baseline",
+      "treeReadyMs": 630.7270960000001,
+      "languageReadyMs": 6670.812341000001,
+      "samples": {
+        "hover": [
+          196.8961309999995,
+          133.25271499999872,
+          112.19009000000005,
+          142.41354900000078,
+          106.95472599999994,
+          147.71362100000078,
+          126.37717299999895,
+          125.86394699999983,
+          103.55443200000082,
+          129.29122499999903,
+          134.36628700000074,
+          94.2619109999996,
+          144.4685499999996,
+          134.20155999999952,
+          145.6342540000005,
+          129.0766169999988,
+          137.45046900000125,
+          100.99471099999937,
+          103.99643300000025,
+          119.61397300000317,
+          95.84661000000051,
+          98.26693499999965,
+          85.04673900000125,
+          124.4365480000015,
+          133.11411299999963,
+          142.97415300000284,
+          138.18486800000028,
+          129.43311099999846,
+          150.8735400000005,
+          95.81649599999946
+        ],
+        "completion": [
+          144.98950399999922,
+          88.78079499999876,
+          92.10072199999922,
+          113.92638500000066,
+          99.58251999999993,
+          88.99491599999965,
+          106.43874499999947,
+          90.22507299999961,
+          95.9962489999998,
+          81.51553199999944,
+          86.42282299999897,
+          100.83254299999862,
+          87.37786199999937,
+          96.76093799999944,
+          84.17046999999911,
+          97.30682199999865,
+          87.12349200000062,
+          87.62868300000082,
+          85.80867500000022,
+          110.2886929999986,
+          86.70184599999993,
+          81.94465499999933,
+          86.1137439999984,
+          90.4126499999984,
+          86.51972200000091,
+          88.51858300000094,
+          87.98693400000047,
+          86.77187799999956,
+          114.51952600000004,
+          88.83533800000077
+        ],
+        "definition": [
+          62.95379299999877,
+          76.37065400000029,
+          74.23168000000078,
+          65.27744699999857,
+          83.17176300000028,
+          68.07463800000005,
+          70.3779770000001,
+          76.20376000000033,
+          77.52614200000062,
+          82.38223800000014,
+          64.84013199999936,
+          66.29755699999987,
+          74.34541200000058,
+          79.87334400000145,
+          60.19290699999874,
+          77.34787400000096,
+          77.41414499999883,
+          66.76679800000056,
+          67.1255600000004,
+          67.96013200000016,
+          79.21248500000002,
+          65.04272700000001,
+          75.71669900000052,
+          68.89707899999848,
+          67.1478300000017,
+          74.77837799999907,
+          68.01713100000052,
+          68.26511800000299,
+          74.1905110000007,
+          70.36160200000086
+        ],
+        "editDiagnostics": [
+          179.7304519999998,
+          102.86064499999884,
+          180.64500899999985,
+          103.5287780000017,
+          185.9673559999992,
+          173.1038040000003,
+          173.56638900000144,
+          103.18843799999922,
+          178.04130000000077,
+          170.54716199999893,
+          102.97930000000088,
+          178.6902280000013,
+          189.73826000000008,
+          189.18462399999953,
+          170.00985600000058,
+          173.12177499999962,
+          103.79718299999877,
+          103.25595900000008,
+          104.2505799999999,
+          102.67426599999817,
+          102.27148400000078,
+          102.66347800000221,
+          169.48394299999927,
+          179.49345399999947,
+          174.12837299999956,
+          186.7371839999978,
+          181.07951799999864,
+          179.84427399999913,
+          102.54204000000027,
+          101.82488499999818
+        ]
+      },
+      "hostPid": 74132,
+      "backendPid": 74336,
+      "vscode": "1.109.5",
+      "explorerVersion": "0.0.12",
+      "externalExtensionVersion": "0.1.12",
+      "hostMemory": {
+        "rss": 203083776,
+        "heapTotal": 75030528,
+        "heapUsed": 43574152,
+        "external": 4568169,
+        "arrayBuffers": 0
+      },
+      "mode": "repeat",
+      "round": 2,
+      "resources": {
+        "sample_interval_ms": 100,
+        "peak_total_rss_mib": 2455.2109375,
+        "cpu_seconds": 81.85,
+        "read_bytes": 94150656,
+        "write_bytes": 27353088,
+        "processes": {
+          "73937": {
+            "command": "node",
+            "peak_rss_bytes": 66125824,
+            "cpu_ticks": 36,
+            "read_bytes": 0,
+            "write_bytes": 73728
+          },
+          "73952": {
+            "command": "sh",
+            "peak_rss_bytes": 3710976,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73957": {
+            "command": "codium",
+            "peak_rss_bytes": 102404096,
+            "cpu_ticks": 38,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73970": {
+            "command": "codium",
+            "peak_rss_bytes": 282828800,
+            "cpu_ticks": 317,
+            "read_bytes": 7847936,
+            "write_bytes": 20959232
+          },
+          "73973": {
+            "command": "codium",
+            "peak_rss_bytes": 58122240,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73974": {
+            "command": "codium",
+            "peak_rss_bytes": 58445824,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "73976": {
+            "command": "codium",
+            "peak_rss_bytes": 15654912,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74018": {
+            "command": "codium",
+            "peak_rss_bytes": 85016576,
+            "cpu_ticks": 13,
+            "read_bytes": 0,
+            "write_bytes": 3993600
+          },
+          "74015": {
+            "command": "codium",
+            "peak_rss_bytes": 150036480,
+            "cpu_ticks": 146,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74063": {
+            "command": "codium",
+            "peak_rss_bytes": 469065728,
+            "cpu_ticks": 1759,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74103": {
+            "command": "codium",
+            "peak_rss_bytes": 237850624,
+            "cpu_ticks": 2338,
+            "read_bytes": 987136,
+            "write_bytes": 0
+          },
+          "74102": {
+            "command": "codium",
+            "peak_rss_bytes": 164110336,
+            "cpu_ticks": 134,
+            "read_bytes": 3624960,
+            "write_bytes": 475136
+          },
+          "74132": {
+            "command": "codium",
+            "peak_rss_bytes": 208203776,
+            "cpu_ticks": 596,
+            "read_bytes": 40779776,
+            "write_bytes": 1851392
+          },
+          "74191": {
+            "command": "codium",
+            "peak_rss_bytes": 112062464,
+            "cpu_ticks": 12,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74232": {
+            "command": "git",
+            "peak_rss_bytes": 0,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74241": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 46428160,
+            "cpu_ticks": 38,
+            "read_bytes": 2383872,
+            "write_bytes": 0
+          },
+          "74233": {
+            "command": "bsl-analyzer-ap",
+            "peak_rss_bytes": 494772224,
+            "cpu_ticks": 2532,
+            "read_bytes": 34009088,
+            "write_bytes": 0
+          },
+          "74336": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 102862848,
+            "cpu_ticks": 69,
+            "read_bytes": 3248128,
+            "write_bytes": 0
+          },
+          "74343": {
+            "command": "git",
+            "peak_rss_bytes": 0,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74344": {
+            "command": "codium",
+            "peak_rss_bytes": 93401088,
+            "cpu_ticks": 21,
+            "read_bytes": 36864,
+            "write_bytes": 0
+          },
+          "74371": {
+            "command": "rg",
+            "peak_rss_bytes": 10346496,
+            "cpu_ticks": 132,
+            "read_bytes": 1232896,
+            "write_bytes": 0
+          }
+        }
+      }
+    },
+    {
+      "passed": true,
+      "suite": "t90-baseline",
+      "treeReadyMs": 654.7802440000003,
+      "languageReadyMs": 6579.504564,
+      "samples": {
+        "hover": [
+          148.5640059999996,
+          165.6197890000003,
+          131.32386000000042,
+          97.16086599999835,
+          141.20934999999918,
+          144.51593700000012,
+          129.45504699999947,
+          95.16656300000068,
+          125.46940300000097,
+          123.69521499999973,
+          140.2006820000006,
+          122.16610000000037,
+          138.29478899999958,
+          142.87371200000052,
+          96.51176300000043,
+          106.18566100000135,
+          126.0882529999999,
+          109.72155900000143,
+          138.44431900000018,
+          131.9261149999984,
+          132.03155799999877,
+          133.2882389999977,
+          151.45947400000296,
+          94.3729459999995,
+          105.53360799999791,
+          103.22602499999994,
+          122.62951399999656,
+          131.11251300000004,
+          126.40050100000008,
+          131.89438000000155
+        ],
+        "completion": [
+          119.53259500000058,
+          114.69542699999874,
+          95.75085199999921,
+          91.6576810000006,
+          110.99715300000025,
+          91.97389099999964,
+          87.33544699999948,
+          82.3831769999997,
+          90.42710100000113,
+          90.87451299999884,
+          91.92935399999988,
+          92.0113139999994,
+          90.8880590000008,
+          80.50335199999972,
+          83.24489800000083,
+          88.33322099999896,
+          83.84256999999889,
+          87.25859900000069,
+          82.42943999999989,
+          87.97233899999992,
+          83.1583959999989,
+          85.70622100000037,
+          85.26223200000095,
+          82.56310400000075,
+          86.04553300000043,
+          80.23651299999983,
+          92.71258200000011,
+          94.49642099999983,
+          84.49883399999817,
+          96.08881999999721
+        ],
+        "definition": [
+          64.22739899999942,
+          66.30504400000063,
+          83.90758800000003,
+          70.4282430000003,
+          86.73564999999871,
+          77.60771999999997,
+          84.92295299999932,
+          70.63657400000011,
+          82.09652199999982,
+          66.03066100000069,
+          80.52204500000153,
+          71.29851099999905,
+          72.94606199999907,
+          74.49042699999882,
+          69.55716500000017,
+          65.11697399999866,
+          94.03913400000056,
+          67.80424800000037,
+          75.31431700000212,
+          88.7488740000008,
+          83.48208000000159,
+          63.617465999999695,
+          64.76678800000082,
+          70.35051000000021,
+          87.69785700000284,
+          64.17357200000333,
+          83.85505200000262,
+          73.05434400000013,
+          65.08761800000138,
+          73.55965399999695
+        ],
+        "editDiagnostics": [
+          111.97469900000033,
+          186.84048600000096,
+          103.29662199999984,
+          201.69188699999904,
+          185.83999500000027,
+          194.66383400000086,
+          103.48709299999973,
+          178.49912399999994,
+          185.1873650000016,
+          175.06839299999956,
+          102.09434300000066,
+          174.64113400000133,
+          180.1688009999998,
+          103.08951700000034,
+          102.79133899999943,
+          170.93977799999993,
+          104.14716100000078,
+          180.7486829999998,
+          167.44182200000068,
+          177.4494799999993,
+          174.72622499999852,
+          174.28137699999934,
+          103.23931100000118,
+          102.03837199999907,
+          101.57042999999976,
+          171.10649299999932,
+          184.04685600000084,
+          182.26656999999977,
+          172.15006100000028,
+          103.45153899999787
+        ]
+      },
+      "hostPid": 74656,
+      "backendPid": 74865,
+      "vscode": "1.109.5",
+      "explorerVersion": "0.0.12",
+      "externalExtensionVersion": "0.1.12",
+      "hostMemory": {
+        "rss": 205574144,
+        "heapTotal": 76378112,
+        "heapUsed": 50584940,
+        "external": 6378363,
+        "arrayBuffers": 0
+      },
+      "mode": "repeat",
+      "round": 3,
+      "resources": {
+        "sample_interval_ms": 100,
+        "peak_total_rss_mib": 2469.83203125,
+        "cpu_seconds": 81.27,
+        "read_bytes": 120832000,
+        "write_bytes": 53088256,
+        "processes": {
+          "74475": {
+            "command": "node",
+            "peak_rss_bytes": 68923392,
+            "cpu_ticks": 37,
+            "read_bytes": 39976960,
+            "write_bytes": 26759168
+          },
+          "74489": {
+            "command": "sh",
+            "peak_rss_bytes": 3723264,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74494": {
+            "command": "codium",
+            "peak_rss_bytes": 103833600,
+            "cpu_ticks": 36,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74507": {
+            "command": "codium",
+            "peak_rss_bytes": 281038848,
+            "cpu_ticks": 331,
+            "read_bytes": 6062080,
+            "write_bytes": 20639744
+          },
+          "74510": {
+            "command": "codium",
+            "peak_rss_bytes": 60338176,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74511": {
+            "command": "codium",
+            "peak_rss_bytes": 60837888,
+            "cpu_ticks": 1,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74513": {
+            "command": "codium",
+            "peak_rss_bytes": 15683584,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74553": {
+            "command": "codium",
+            "peak_rss_bytes": 149389312,
+            "cpu_ticks": 146,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74556": {
+            "command": "codium",
+            "peak_rss_bytes": 85389312,
+            "cpu_ticks": 11,
+            "read_bytes": 0,
+            "write_bytes": 3674112
+          },
+          "74602": {
+            "command": "codium",
+            "peak_rss_bytes": 490557440,
+            "cpu_ticks": 1689,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74626": {
+            "command": "codium",
+            "peak_rss_bytes": 162885632,
+            "cpu_ticks": 137,
+            "read_bytes": 5443584,
+            "write_bytes": 278528
+          },
+          "74627": {
+            "command": "exe",
+            "peak_rss_bytes": 239017984,
+            "cpu_ticks": 2331,
+            "read_bytes": 987136,
+            "write_bytes": 0
+          },
+          "74656": {
+            "command": "codium",
+            "peak_rss_bytes": 208416768,
+            "cpu_ticks": 619,
+            "read_bytes": 28471296,
+            "write_bytes": 1736704
+          },
+          "74754": {
+            "command": "bsl-analyzer-ap",
+            "peak_rss_bytes": 516624384,
+            "cpu_ticks": 2523,
+            "read_bytes": 21995520,
+            "write_bytes": 0
+          },
+          "74755": {
+            "command": "codium",
+            "peak_rss_bytes": 110129152,
+            "cpu_ticks": 10,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "74750": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 46477312,
+            "cpu_ticks": 31,
+            "read_bytes": 2105344,
+            "write_bytes": 0
+          },
+          "74865": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 102871040,
+            "cpu_ticks": 74,
+            "read_bytes": 3182592,
+            "write_bytes": 0
+          },
+          "74879": {
+            "command": "codium",
+            "peak_rss_bytes": 93855744,
+            "cpu_ticks": 25,
+            "read_bytes": 11386880,
+            "write_bytes": 0
+          },
+          "74910": {
+            "command": "rg",
+            "peak_rss_bytes": 10346496,
+            "cpu_ticks": 124,
+            "read_bytes": 1220608,
+            "write_bytes": 0
+          }
+        }
+      }
+    },
+    {
+      "passed": true,
+      "suite": "t90-baseline",
+      "treeReadyMs": 598.6379270000002,
+      "languageReadyMs": 6530.820452,
+      "samples": {
+        "hover": [
+          142.13751500000035,
+          128.1980599999988,
+          93.76353100000051,
+          156.43662399999994,
+          106.2805759999992,
+          106.01315400000021,
+          98.8718630000003,
+          93.43585899999925,
+          121.83322200000111,
+          136.85423699999956,
+          135.8942220000008,
+          137.73495600000024,
+          109.25535499999933,
+          153.59254900000087,
+          124.54284000000007,
+          113.59883400000035,
+          104.66827000000012,
+          124.90939000000071,
+          95.3129540000009,
+          119.81898600000022,
+          108.64822500000082,
+          149.86863900000026,
+          98.98863999999958,
+          105.3562290000009,
+          130.0936760000004,
+          147.88193899999897,
+          131.1514959999986,
+          129.1873489999998,
+          109.3968739999982,
+          143.8802399999986
+        ],
+        "completion": [
+          102.1780030000009,
+          104.45542999999998,
+          98.69544099999985,
+          93.29347400000006,
+          95.13103199999932,
+          81.69266500000049,
+          85.77561199999946,
+          90.55647700000009,
+          82.81483099999969,
+          85.08254699999998,
+          92.1490219999996,
+          94.38811499999974,
+          106.86585200000081,
+          94.25055999999859,
+          101.08999199999926,
+          88.07919299999958,
+          105.68841699999939,
+          79.22541300000012,
+          81.0110799999984,
+          79.51043500000014,
+          99.72707599999922,
+          85.831005,
+          89.31961800000136,
+          90.93825099999958,
+          101.58184899999833,
+          86.3588149999996,
+          88.6410210000031,
+          79.53882900000099,
+          93.11955200000011,
+          85.5748820000008
+        ],
+        "definition": [
+          97.1132579999994,
+          66.12951500000054,
+          64.2211470000002,
+          69.10071199999948,
+          72.88689200000044,
+          63.34942300000148,
+          60.816115000001446,
+          66.56514099999913,
+          74.72045000000071,
+          63.098259999998845,
+          82.02412299999924,
+          75.28137100000095,
+          80.3247109999993,
+          73.07531600000038,
+          78.99516399999993,
+          68.4970030000004,
+          58.38063699999839,
+          59.57998999999836,
+          63.01492600000165,
+          70.29673600000024,
+          62.97723000000042,
+          63.08109400000103,
+          76.42852200000198,
+          68.39937199999986,
+          65.63492599999881,
+          67.52799900000173,
+          68.49071000000185,
+          70.80998299999919,
+          62.755310999997164,
+          69.96812900000077
+        ],
+        "editDiagnostics": [
+          111.68148099999962,
+          103.53990300000078,
+          172.37445800000023,
+          103.18157500000052,
+          102.66978299999937,
+          102.87634199999957,
+          103.36238199999934,
+          177.12877600000138,
+          182.61908500000027,
+          173.27097399999911,
+          186.90328000000045,
+          103.54786299999978,
+          193.77586100000008,
+          172.72814199999993,
+          102.4724210000004,
+          103.80739899999935,
+          171.27730200000042,
+          109.5909189999984,
+          170.7178330000006,
+          101.75360900000123,
+          173.63830999999846,
+          101.962481999999,
+          104.03824899999745,
+          177.3061349999989,
+          179.397062,
+          102.16635699999824,
+          172.52571499999976,
+          104.39585699999952,
+          170.20115400000213,
+          102.7664079999995
+        ]
+      },
+      "hostPid": 75171,
+      "backendPid": 75426,
+      "vscode": "1.109.5",
+      "explorerVersion": "0.0.12",
+      "externalExtensionVersion": "0.1.12",
+      "hostMemory": {
+        "rss": 206913536,
+        "heapTotal": 75591680,
+        "heapUsed": 49996824,
+        "external": 6338971,
+        "arrayBuffers": 0
+      },
+      "mode": "repeat",
+      "round": 4,
+      "resources": {
+        "sample_interval_ms": 100,
+        "peak_total_rss_mib": 2419.09375,
+        "cpu_seconds": 80.47,
+        "read_bytes": 104767488,
+        "write_bytes": 26677248,
+        "processes": {
+          "75016": {
+            "command": "node",
+            "peak_rss_bytes": 65986560,
+            "cpu_ticks": 35,
+            "read_bytes": 3158016,
+            "write_bytes": 73728
+          },
+          "75034": {
+            "command": "codium",
+            "peak_rss_bytes": 103108608,
+            "cpu_ticks": 39,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "75029": {
+            "command": "sh",
+            "peak_rss_bytes": 3465216,
+            "cpu_ticks": 0,
+            "read_bytes": 454656,
+            "write_bytes": 0
+          },
+          "75048": {
+            "command": "codium",
+            "peak_rss_bytes": 279101440,
+            "cpu_ticks": 332,
+            "read_bytes": 16990208,
+            "write_bytes": 20676608
+          },
+          "75051": {
+            "command": "codium",
+            "peak_rss_bytes": 60866560,
+            "cpu_ticks": 3,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "75052": {
+            "command": "codium",
+            "peak_rss_bytes": 60944384,
+            "cpu_ticks": 2,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "75054": {
+            "command": "codium",
+            "peak_rss_bytes": 15798272,
+            "cpu_ticks": 0,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "75093": {
+            "command": "codium",
+            "peak_rss_bytes": 150405120,
+            "cpu_ticks": 143,
+            "read_bytes": 5910528,
+            "write_bytes": 0
+          },
+          "75097": {
+            "command": "codium",
+            "peak_rss_bytes": 85016576,
+            "cpu_ticks": 13,
+            "read_bytes": 0,
+            "write_bytes": 3891200
+          },
+          "75143": {
+            "command": "codium",
+            "peak_rss_bytes": 474050560,
+            "cpu_ticks": 1772,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "75163": {
+            "command": "exe",
+            "peak_rss_bytes": 166764544,
+            "cpu_ticks": 142,
+            "read_bytes": 11919360,
+            "write_bytes": 278528
+          },
+          "75164": {
+            "command": "exe",
+            "peak_rss_bytes": 231399424,
+            "cpu_ticks": 2223,
+            "read_bytes": 5513216,
+            "write_bytes": 0
+          },
+          "75171": {
+            "command": "codium",
+            "peak_rss_bytes": 209915904,
+            "cpu_ticks": 629,
+            "read_bytes": 31375360,
+            "write_bytes": 1757184
+          },
+          "75290": {
+            "command": "codium",
+            "peak_rss_bytes": 111394816,
+            "cpu_ticks": 12,
+            "read_bytes": 0,
+            "write_bytes": 0
+          },
+          "75315": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 52609024,
+            "cpu_ticks": 42,
+            "read_bytes": 1540096,
+            "write_bytes": 0
+          },
+          "75319": {
+            "command": "bsl-analyzer-ap",
+            "peak_rss_bytes": 480268288,
+            "cpu_ticks": 2452,
+            "read_bytes": 26537984,
+            "write_bytes": 0
+          },
+          "75426": {
+            "command": "eska-baseline",
+            "peak_rss_bytes": 103473152,
+            "cpu_ticks": 66,
+            "read_bytes": 61440,
+            "write_bytes": 0
+          },
+          "75434": {
+            "command": "codium",
+            "peak_rss_bytes": 93057024,
+            "cpu_ticks": 23,
+            "read_bytes": 86016,
+            "write_bytes": 0
+          },
+          "75460": {
+            "command": "rg",
+            "peak_rss_bytes": 10477568,
+            "cpu_ticks": 119,
+            "read_bytes": 1220608,
+            "write_bytes": 0
+          }
+        }
+      }
+    }
+  ],
+  "frozen_reproduction": {
+    "directory": "/home/akalsin/Documents/Projects/eska-playground/t90-baseline-gzndpr3p/frozen-baseline",
+    "command": "python3 run-frozen-baseline.py",
+    "explorer_revision": "443134c23d66a0b12902e185d9b4ea8032c42f92",
+    "archive_sha256": "6473090d469a8c7c83a610a1aeffae38d58e8fcde40a70ae768bad8fd89a84ea",
+    "files": {
+      "backend": "43be509ee0852bd5affc3effd6b2e63c11fd8e1916351f3cf73c1b274a3c050f",
+      "analyzer": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+      "original_launcher": "e9d1557d0d345b67a890d5f48b64a15f6683815eec511579e55abd7202b1c560",
+      "frozen_launcher": "5671c090a91844922f0864704f8ec16dcb7bd68bc7f9f11456b14ee0e1bae52a",
+      "probe": "95e0fe1e50369a557b519ef06f9e3e284ce2db221d523a09316c55287b6a8c68"
+    },
+    "external_extension_version": "0.1.12",
+    "analyzer_version": "bsl-analyzer 0.3.2",
+    "node_version": "v22.23.1",
+    "note": "Original raw T90 series and launcher remain unchanged. Every frozen replay creates a unique series directory and uses the exact archived Explorer, external extension and analyzer.",
+    "analyzer_identity_note": "Original series recorded analyzer version but not its checksum. The frozen copy is verified as 0.3.2 and is available for a fresh equal-server comparison."
+  }
+}

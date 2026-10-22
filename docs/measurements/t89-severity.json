@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "stage": "T89",
+  "part": "published JSONL severity normalization",
+  "status": "done",
+  "parent_revision": "7054794410c8bc063e5f5db64e3e43980d998e71",
+  "source_files": {
+    "crates/eska-analyzer/src/check.rs": "db7a816fb9506ae405aa07132718ed24fa08a9b03101236c4d92eefdd7a960f2",
+    "crates/eska-analyzer/src/check/jsonl.rs": "4031c2fe88ec336c33c4878d345bfab58c259064e880036f48c3eee12c7c6ac1",
+    "tests/cli/check.rs": "5240dc54c6e5726156537ef33942258f8c8bdc36a1023267349fa3c8b8b92d64",
+    "tests/fixtures/analyzer-check.py": "f36616f7cf095062621b01fdb7f50f4fcb20b542d088a58b3da603cb12fb46df",
+    "docs/check-cli.md": "dfac85903ebd91f7175154f72c35533760c26dead7c81e36b971fd96ee206d92"
+  },
+  "analyzer": {
+    "version": "0.3.2",
+    "sha256": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+    "upstream_commit": "bdb221307b73f83f9401558e8013f3a1667969b9",
+    "lsp_severity_source": "crates/bsl-analyzer/src/lsp/to_proto.rs:44-52",
+    "source_git_blob": "c86d02e5200e9a106da322a79a9bc859a2007a2d"
+  },
+  "native_stand": "/home/akalsin/Documents/Projects/eska-playground/t89-parity-cli-C5Kszj",
+  "raw_stream_sha256": "23a6813d3e05d632e45cbfe44726345507d556e0cc6f37a95ec11645364b1cfd",
+  "before": {
+    "exit": 3,
+    "complete": false,
+    "error": {
+      "code": "invalid_stream",
+      "data": {
+        "reason": "malformed_event"
+      }
+    },
+    "binary_sha256": "8b565184dd0f0c3ce6243b5e9e913720b577ce305c49993c050c590c844262bf"
+  },
+  "after": {
+    "exit": 1,
+    "complete": true,
+    "status": "threshold_exceeded",
+    "counts": {
+      "errors": 1,
+      "hints": 2,
+      "information": 1,
+      "warnings": 5
+    },
+    "direct_shell_ru_en_equal": true,
+    "files": 2,
+    "major_reported_as_error": true
+  },
+  "gates": {
+    "directory": "/home/akalsin/Documents/Projects/eska-playground/t89-severity-gates-d7uVqsZq",
+    "fmt": "passed",
+    "workspace_check": "passed",
+    "workspace_strict_clippy": "passed",
+    "workspace_build_debug": "passed",
+    "workspace_test": {
+      "passed": 903,
+      "failed": 0,
+      "ignored": 12,
+      "suites": 35
+    },
+    "workspace_rustdoc": "passed",
+    "workspace_build_release": "passed",
+    "logs": {
+      "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "check.log": "ca03cd25b031aaeb19a10f0f8538bd997d008e8e424c60fd6d85b62b03921477",
+      "clippy.log": "b2b4b2b0a715cf9a6fd51083ba34ad9fe9f7ca82c56854e3da43cf2ca44b698f",
+      "build-debug.log": "b518bdb441a3611fc7b216ccc1e91a5ece83b8d163b43e5637fea0fc047b87d0",
+      "test.log": "747e728b8033931c4b0fbc6a383517c9359c7bb676a781b60db771fa1aba65c5",
+      "rustdoc.log": "b78e2e80f48ff6285159b93ea9efcb42d261471212c6de1f03f02f9eb26cef6a",
+      "build-release.log": "7f2cdebfd54dafe03b2878049b4e3ead8d7b02d341057c08dc0861b1962e0a83"
+    }
+  },
+  "contract": "Public check schema remains 1 with Error/Warning/Information/Hint. Current upstream Blocker/Critical/Major normalize to Error as in LSP; unknown severities are still rejected.",
+  "remaining": "Full T89 acceptance, including native CLI/LSP equality and the corrected performance series, remains separate."
+}

@@ -4,7 +4,7 @@ use std::{
     process::{Command, Output},
 };
 
-use eska::{
+use crate::backend::{
     config::ProjectConfigError,
     project::ProjectType,
     project::discovery::{
@@ -526,13 +526,13 @@ fn help_and_version_do_not_require_a_project_and_usage_errors_exit_two() {
         for flag in ["--help", "-h", "--version", "-V"] {
             let output = cli(&fixture.0, locale, &["--project-dir", "missing", flag]);
             assert_eq!(output.status.code(), Some(0), "{output:?}");
-            assert!(output.stderr.is_empty());
-            assert!(!output.stdout.is_empty());
+            assert_eq!(output.stderr, [] as [u8; 0]);
+            assert_ne!(output.stdout, [] as [u8; 0]);
         }
         let output = cli(&fixture.0, locale, &["--project-dir"]);
         assert_eq!(output.status.code(), Some(2));
-        assert!(output.stdout.is_empty());
-        assert!(!output.stderr.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
+        assert_ne!(output.stderr, [] as [u8; 0]);
     }
 }
 
@@ -571,7 +571,7 @@ fn symlinks_resolve_without_escaping_the_project_or_skipping_broken_configs() {
         discover(&root),
         Err(DiscoveryError::Config {
             source: ProjectConfigError::ProjectPath(
-                eska::project::ProjectPathError::SourceOutsideRoot { .. }
+                crate::backend::project::ProjectPathError::SourceOutsideRoot { .. }
             ),
             ..
         })

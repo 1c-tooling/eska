@@ -1,3 +1,47 @@
 [workspace]
 # dist publishes the GitHub Release only after every binary artifact is ready.
 git_release_enable = false
+git_tag_enable = false
+release_always = false
+changelog_update = false
+
+[[package]]
+name = "eska"
+git_tag_enable = true
+git_tag_name = "v{{ version }}"
+changelog_update = true
+changelog_include = ["eska-analyzer", "eska-build", "eska-build-runtime", "eska-check", "eska-presentation", "eska-project", "eska-project-core", "eska-terminal", "eska-tool-runtime", "eska-vcs"]
+
+[changelog]
+header = """
+# История изменений
+
+В этом файле перечислены значимые изменения проекта.
+
+Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
+версии соответствуют [семантическому версионированию](https://semver.org/lang/ru/).
+
+"""
+body = """
+{% if version %}\
+## [{{ version }}](https://github.com/1c-tooling/eska/{% if previous.version %}compare/v{{ previous.version }}...v{{ version }}{% else %}releases/tag/v{{ version }}{% endif %}) - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+## Не выпущено
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+
+{% for commit in commits %}\
+- {% if commit.scope %}*({{ commit.scope }})* {% endif %}{% if commit.breaking %}[Несовместимое изменение] {% endif %}{{ commit.message }}
+{% endfor %}\
+{% endfor %}
+
+"""
+trim = false
+commit_parsers = [
+    { message = "^feat", group = "Добавлено" },
+    { message = "^fix", group = "Исправлено" },
+    { message = "^perf", group = "Производительность" },
+    { message = "^revert", group = "Отменено" },
+    { message = ".*", group = "Прочее" },
+]
