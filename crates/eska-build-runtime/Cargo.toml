@@ -1,8 +1,8 @@
 [package]
 name = "eska-build-runtime"
-version = "0.14.3"
+version.workspace = true
 edition = "2024"
-publish = false
+publish = true
 description = "Shared 1C platform runner and reversible native artifact execution"
 license = "Apache-2.0"
 repository = "https://github.com/1c-tooling/eska"
@@ -15,7 +15,7 @@ authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 workspace = true
 
 [dependencies]
-eska-project-core = { path = "../eska-project-core" }
+eska-project-core = { workspace = true }
 directories = "6.0.0"
 gix-path = "0.12.6"
 roxmltree = { version = "0.21.1", default-features = false, features = ["std", "positions"] }
@@ -25,7 +25,7 @@ sha2 = "0.11.0"
 toml = { version = "1.1.5", default-features = false, features = ["display", "parse", "serde"] }
 
 [target.'cfg(unix)'.dependencies]
-eska-tool-runtime = { path = "../eska-tool-runtime" }
+eska-tool-runtime = { workspace = true }
 signal-hook = { version = "0.4.5", default-features = false }
 
 [target.'cfg(windows)'.dependencies]

@@ -1,7 +1,7 @@
 [package]
 name = "eska"
 default-run = "eska"
-version = "0.14.3"
+version.workspace = true
 edition = "2024"
 publish = true
 description = "Утилита для разработчиков 1С Enterprise"
@@ -17,6 +17,21 @@ members = [".", "crates/*"]
 default-members = [".", "crates/*"]
 exclude = ["tests/fixtures/ibcmd"]
 resolver = "3"
+
+[workspace.package]
+version = "0.14.3"
+
+[workspace.dependencies]
+eska-analyzer = { path = "crates/eska-analyzer", version = "=0.14.3" }
+eska-build = { path = "crates/eska-build", version = "=0.14.3" }
+eska-build-runtime = { path = "crates/eska-build-runtime", version = "=0.14.3" }
+eska-check = { path = "crates/eska-check", version = "=0.14.3" }
+eska-presentation = { path = "crates/eska-presentation", version = "=0.14.3" }
+eska-project = { path = "crates/eska-project", version = "=0.14.3" }
+eska-project-core = { path = "crates/eska-project-core", version = "=0.14.3" }
+eska-terminal = { path = "crates/eska-terminal", version = "=0.14.3" }
+eska-tool-runtime = { path = "crates/eska-tool-runtime", version = "=0.14.3" }
+eska-vcs = { path = "crates/eska-vcs", version = "=0.14.3" }
 
 [profile.dev]
 opt-level = 0 # No optimization for fast compile times
@@ -43,8 +58,8 @@ cargo = { level = "warn", priority = -1 }
 multiple_crate_versions = { level = "allow", priority = 1 }
 
 [dependencies]
-eska-tool-runtime = { path = "crates/eska-tool-runtime" }
-eska-presentation = { path = "crates/eska-presentation" }
+eska-tool-runtime = { workspace = true }
+eska-presentation = { workspace = true }
 axoupdater = { version = "0.10.2", default-features = false, features = ["github_releases"] }
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json"] }
 semver = "1.0.28"
@@ -54,9 +69,9 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 
 [dev-dependencies]
-eska-vcs = { path = "crates/eska-vcs" }
-eska-project-core = { path = "crates/eska-project-core" }
-eska-project = { path = "crates/eska-project" }
+eska-vcs = { workspace = true }
+eska-project-core = { workspace = true }
+eska-project = { workspace = true }
 gix = { version = "0.87.1", default-features = false, features = ["blocking-http-transport-curl-rustls", "max-performance", "revision", "sha1", "status", "worktree-mutation"] }
 roxmltree = { version = "0.21.1", default-features = false, features = ["std", "positions"] }
 toml = { version = "1.1.5", default-features = false, features = ["display", "parse", "serde"] }

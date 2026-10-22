@@ -1,8 +1,8 @@
 [package]
 name = "eska-check"
-version = "0.14.3"
+version.workspace = true
 edition = "2024"
-publish = false
+publish = true
 description = "Complete Designer XML and external BSL analysis for CI"
 license = "Apache-2.0"
 repository = "https://github.com/1c-tooling/eska"
@@ -15,9 +15,9 @@ authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 workspace = true
 
 [dependencies]
-eska-project-core = { path = "../eska-project-core" }
-eska-analyzer = { path = "../eska-analyzer" }
-eska-presentation = { path = "../eska-presentation" }
+eska-project-core = { workspace = true }
+eska-analyzer = { workspace = true }
+eska-presentation = { workspace = true }
 clap = { version = "4.6.6", features = ["derive", "string"] }
 ctrlc = { version = "3.5.2", features = ["termination"] }
 serde = { version = "1.0.229", features = ["derive"] }

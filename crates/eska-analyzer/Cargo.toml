@@ -1,8 +1,8 @@
 [package]
 name = "eska-analyzer"
-version = "0.14.3"
+version.workspace = true
 edition = "2024"
-publish = false
+publish = true
 description = "External bsl-analyzer process contract and derived project configuration"
 license = "Apache-2.0"
 repository = "https://github.com/1c-tooling/eska"
@@ -15,7 +15,7 @@ authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 workspace = true
 
 [dependencies]
-eska-project-core = { path = "../eska-project-core" }
+eska-project-core = { workspace = true }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha2 = "0.11.0"

@@ -1,8 +1,8 @@
 [package]
 name = "eska-tool-runtime"
-version = "0.14.3"
+version.workspace = true
 edition = "2024"
-publish = false
+publish = true
 description = "Owned component processes and bounded internal tool protocols"
 license = "Apache-2.0"
 repository = "https://github.com/1c-tooling/eska"

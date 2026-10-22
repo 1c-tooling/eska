@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create selective local archives without changing release automation (Python 3.11+)."""
+"""Create verified component archives for local use and release jobs (Python 3.11+)."""
 
 import hashlib
 import os
@@ -88,11 +88,11 @@ def build(root, binaries, output, selected):
 
 
 def main():
-    """Packaging is an explicit local developer action, independent of Actions or publication."""
+    """Package built binaries without uploading or publishing any files."""
     language = option(sys.argv[1:], "--lang", "en-US")
     help_text = {
-        "en-US": "Usage: python3 package_components.py --bin-dir DIRECTORY --output NEW_DIRECTORY --component TOOL [--component TOOL ...] [--lang en-US|ru-RU]\nBuild binaries first with cargo build --workspace --bins --locked. No release workflow is changed.\n",
-        "ru-RU": "Использование: python3 package_components.py --bin-dir КАТАЛОГ --output НОВЫЙ_КАТАЛОГ --component ИНСТРУМЕНТ [--component ИНСТРУМЕНТ ...] [--lang en-US|ru-RU]\nСначала соберите бинарники: cargo build --workspace --bins --locked. Release workflow не изменяется.\n",
+        "en-US": "Usage: python3 package_components.py --bin-dir DIRECTORY --output NEW_DIRECTORY --component TOOL [--component TOOL ...] [--lang en-US|ru-RU]\nBuild binaries first with cargo build --workspace --bins --locked. Files are packaged locally without publication.\n",
+        "ru-RU": "Использование: python3 package_components.py --bin-dir КАТАЛОГ --output НОВЫЙ_КАТАЛОГ --component ИНСТРУМЕНТ [--component ИНСТРУМЕНТ ...] [--lang en-US|ru-RU]\nСначала соберите бинарники: cargo build --workspace --bins --locked. Файлы упаковываются локально без публикации.\n",
     }
     try:
         parser = Parser(add_help=False)

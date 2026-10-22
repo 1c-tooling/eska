@@ -1,8 +1,8 @@
 [package]
 name = "eska-project"
-version = "0.14.3"
+version.workspace = true
 edition = "2024"
-publish = false
+publish = true
 description = "Standalone Designer XML project operations and metadata presentation"
 license = "Apache-2.0"
 repository = "https://github.com/1c-tooling/eska"
@@ -15,11 +15,11 @@ authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 workspace = true
 
 [dependencies]
-eska-tool-runtime = { path = "../eska-tool-runtime" }
-eska-terminal = { path = "../eska-terminal" }
-eska-project-core = { path = "../eska-project-core" }
-eska-presentation = { path = "../eska-presentation" }
-eska-analyzer = { path = "../eska-analyzer" }
+eska-tool-runtime = { workspace = true }
+eska-terminal = { workspace = true }
+eska-project-core = { workspace = true }
+eska-presentation = { workspace = true }
+eska-analyzer = { workspace = true }
 ctrlc = { version = "3.5.2", features = ["termination"] }
 base64 = { version = "0.23.1", default-features = false, features = ["std"] }
 clap = { version = "4.6.6", features = ["derive", "string"] }

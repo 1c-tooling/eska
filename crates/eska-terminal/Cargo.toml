@@ -1,8 +1,8 @@
 [package]
 name = "eska-terminal"
-version = "0.14.3"
+version.workspace = true
 edition = "2024"
-publish = false
+publish = true
 description = "Shared keyboard selection and terminal progress for ESKA CLI tools"
 license = "Apache-2.0"
 repository = "https://github.com/1c-tooling/eska"
@@ -15,5 +15,5 @@ authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 workspace = true
 
 [dependencies]
-eska-presentation = { path = "../eska-presentation" }
+eska-presentation = { workspace = true }
 crossterm = { version = "0.29.0", default-features = false, features = ["events", "windows", "bracketed-paste"] }

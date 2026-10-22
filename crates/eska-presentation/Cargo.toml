@@ -1,8 +1,8 @@
 [package]
 name = "eska-presentation"
-version = "0.14.3"
+version.workspace = true
 edition = "2024"
-publish = false
+publish = true
 description = "Shared localization and path presentation for ESKA tools"
 license = "Apache-2.0"
 repository = "https://github.com/1c-tooling/eska"
@@ -16,7 +16,7 @@ workspace = true
 
 [dependencies]
 clap = { version = "4.6.6", features = ["derive", "string"] }
-eska-tool-runtime = { path = "../eska-tool-runtime" }
-eska-project-core = { path = "../eska-project-core" }
+eska-tool-runtime = { workspace = true }
+eska-project-core = { workspace = true }
 fluent = "0.17.0"
 sys-locale = "0.3.2"

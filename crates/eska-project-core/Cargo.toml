@@ -1,8 +1,8 @@
 [package]
 name = "eska-project-core"
-version = "0.14.3"
+version.workspace = true
 edition = "2024"
-publish = false
+publish = true
 description = "Shared Designer XML project model and checked metadata operations"
 license = "Apache-2.0"
 repository = "https://github.com/1c-tooling/eska"

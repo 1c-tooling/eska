@@ -100,10 +100,14 @@ fn options(bytes: &[u8], version: &str) -> Result<Option<Options>, Error> {
 }
 
 impl Installation {
-    /// Keep the installation root, target, profile and feature selection used by Cargo.
+    /// Update the complete CLI distribution while preserving Cargo's installation settings.
     fn arguments(&self, version: &Version) -> Vec<OsString> {
         let mut args: Vec<OsString> = [
             "install",
+            "eska-project",
+            "eska-check",
+            "eska-build",
+            "eska-vcs",
             "eska",
             "--locked",
             "--registry",
@@ -200,6 +204,17 @@ mod tests {
             options: settings,
         };
         let args = cargo.arguments(&Version::new(0, 11, 1));
+        assert_eq!(
+            &args[..6],
+            [
+                "install",
+                "eska-project",
+                "eska-check",
+                "eska-build",
+                "eska-vcs",
+                "eska"
+            ]
+        );
         assert!(
             args.windows(2)
                 .any(|pair| pair == ["--root", "root with spaces"])
