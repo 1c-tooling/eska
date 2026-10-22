@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Версия частичного выпуска для продолжения (например, 0.15.0)'
+        required: true
+        type: string
 
 jobs:
   check:
@@ -13,7 +19,10 @@ jobs:
     needs: check
     name: Publish crate
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == '1c-tooling' }}
+    if: ${{ github.repository_owner == '1c-tooling' && github.ref == 'refs/heads/main' }}
+    concurrency:
+      group: release-plz-publish
+      cancel-in-progress: false
     permissions:
       actions: write
       contents: write
@@ -33,38 +42,40 @@ jobs:
       - &install-rust
         name: Установка Rust из rust-toolchain.toml
         run: rustup show
+      - name: Подготовка повторной публикации
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: >-
+          python3 -B tools/release_bundle.py resume-config
+          --version "$RELEASE_VERSION"
+          --output "$RUNNER_TEMP/release-plz-resume.toml"
       - name: Run release-plz
         id: release-plz
         uses: release-plz/action@v0.5
         with:
           command: release
           version: 0.3.174
+          config: ${{ github.event_name == 'workflow_dispatch' && format('{0}/release-plz-resume.toml', runner.temp) || 'release-plz.toml' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      # A retry may publish only remaining dependencies, omitting eska from action outputs.
       - name: Start binary distribution
-        if: steps.release-plz.outputs.releases_created == 'true'
+        if: steps.release-plz.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASES: ${{ steps.release-plz.outputs.releases }}
         run: |
           set -euo pipefail
-
-          mapfile -t tags < <(jq -r '.[] | select(.package_name == "eska") | .tag' <<< "$RELEASES")
-          if (( ${#tags[@]} == 0 )); then
-            echo "::error ::release-plz reported a release without a tag"
-            exit 1
-          fi
-
-          for tag in "${tags[@]}"; do
-            gh workflow run release.yml --ref "$tag" -f tag="$tag"
-          done
+          tag="v$(python3 -B tools/release_bundle.py version)"
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --silent
+          gh workflow run release.yml --ref "$tag" -f tag="$tag"
 
   release-pr:
     needs: check
     name: Release PR
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == '1c-tooling' }}
+    if: ${{ github.repository_owner == '1c-tooling' && github.event_name == 'push' }}
     concurrency:
       group: release-plz-pr-${{ github.ref }}
       cancel-in-progress: false
