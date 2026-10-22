@@ -17,6 +17,12 @@ def gh(*args):
     return subprocess.check_output(["gh", *args], text=True).strip()
 
 
+def find_release(tag):
+    """Include drafts: GitHub's release-by-tag endpoint only returns published releases."""
+    pages = json.loads(gh("api", f"repos/{REPOSITORY}/releases", "--paginate", "--slurp"))
+    return next((item for page in pages for item in page if item["tag_name"] == tag), None)
+
+
 def remote_assets(release_id):
     """Read every page because a component release contains more than thirty assets."""
     pages = json.loads(gh("api", f"repos/{REPOSITORY}/releases/{release_id}/assets", "--paginate", "--slurp"))
@@ -48,11 +54,11 @@ def publish(directory, tag):
         require(name in local and name not in checksums and digest(local[name]) == checksum, "checksum", name)
         checksums[name] = checksum
     require(set(checksums) == set(local) - {"SHA256SUMS"}, "checksums")
-    pages = json.loads(gh("api", f"repos/{REPOSITORY}/releases", "--paginate", "--slurp"))
-    release = next((item for page in pages for item in page if item["tag_name"] == tag), None)
+    release = find_release(tag)
     if release is None:
         gh("release", "create", tag, "--repo", REPOSITORY, "--verify-tag", "--draft", "--title", f"ESKA {tag}", "--notes-file", str(notes))
-        release = json.loads(gh("api", f"repos/{REPOSITORY}/releases/tags/{tag}"))
+        release = find_release(tag)
+        require(release is not None, "release-not-found", tag)
     remote = remote_assets(release["id"])
     verified_assets(local, remote)
     missing = sorted(set(local) - set(remote))

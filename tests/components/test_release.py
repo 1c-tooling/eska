@@ -90,16 +90,27 @@ class ReleaseTests(unittest.TestCase):
             self.assertEqual(sum(call.args[:2] == ("release", "upload") for call in gh.call_args_list), 1)
 
     def test_new_release_stays_draft_until_all_assets_are_verified(self):
-        """The first release follows the same verification barrier as recovery of a partial draft."""
-        replies = ["[[]]", "", json.dumps({"tag_name": "v1.2.3", "draft": True, "id": 7}),
+        """Find a new draft through paginated listings; the published-tag endpoint returns 404."""
+        releases = [[{"tag_name": "v1.2.2", "draft": False, "id": 6}],
+                    [{"tag_name": "v1.2.3", "draft": True, "id": 7}]]
+        replies = ["[[]]", "", json.dumps(releases),
                    "[[]]", "", "", json.dumps([self.remote]), ""]
         with patch.dict(os.environ, self.environment), patch.object(publish_release, "gh", side_effect=replies) as gh:
             publish_release.publish(self.root, "v1.2.3")
             create = gh.call_args_list[1].args
             self.assertIn("--draft", create)
             self.assertIn("--verify-tag", create)
+            self.assertEqual(gh.call_args_list[2].args,
+                             ("api", f"repos/{publish_release.REPOSITORY}/releases", "--paginate", "--slurp"))
             self.assertEqual(gh.call_args.args[:2], ("release", "edit"))
             self.assertIn("--draft=false", gh.call_args.args)
+
+    def test_created_draft_missing_from_listing_stops_before_upload(self):
+        """A missing create result must stop safely rather than upload to an unidentified release."""
+        with patch.dict(os.environ, self.environment), patch.object(publish_release, "gh", side_effect=["[[]]", "", "[[]]"]) as gh:
+            with self.assertRaisesRegex(Failure, "release-not-found"):
+                publish_release.publish(self.root, "v1.2.3")
+            self.assertEqual(gh.call_count, 3)
 
     def test_missing_target_prevents_release_assembly(self):
         """A successful single runner is not a complete multi-platform release."""
