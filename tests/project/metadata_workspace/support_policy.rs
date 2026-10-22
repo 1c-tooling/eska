@@ -330,7 +330,7 @@ fn support_separates_mixed_xml_from_module_and_invalidates_without_writes() {
         .changed_paths(&["Ext/ParentConfigurations.bin".into()])
         .unwrap();
     let broken = session.support_page(0).unwrap();
-    assert!(!broken.diagnostics.is_empty());
+    assert_ne!(broken.diagnostics, [] as [String; 0]);
     assert!(broken.objects.iter().all(|o| o.state == State::Unknown));
     assert!(broken.files.iter().all(|f| f.read_only));
     fs::write(&path, rules(0, 2)).unwrap();
@@ -380,7 +380,7 @@ fn identical_uuids_in_different_sessions_do_not_share_policy() {
     assert!(locked.files.iter().all(|f| f.read_only));
     assert!(missing.objects.iter().all(|o| o.state == State::Unknown));
     assert!(missing.files.iter().all(|f| !f.read_only));
-    assert!(!missing.diagnostics.is_empty());
+    assert_ne!(missing.diagnostics, [] as [String; 0]);
 }
 
 #[test]
@@ -455,7 +455,7 @@ fn background_reuses_loaded_descriptors_and_refresh_checks_rule_contents() {
         .changed_paths(&["Ext/ParentConfigurations.bin".into()])
         .unwrap();
     assert_eq!(unchanged.generation, generation);
-    assert!(unchanged.affected.is_empty());
+    assert_eq!(unchanged.affected, []);
     assert!(std::sync::Arc::ptr_eq(
         &first,
         &session.support_page(0).unwrap()

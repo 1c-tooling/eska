@@ -73,19 +73,16 @@ impl LogicalObject {
     }
 
     /// Return every source path that stores or implements this logical object.
-    #[must_use]
     pub fn paths(&self) -> impl ExactSizeIterator<Item = &Path> {
         self.paths.iter().map(PathBuf::as_path)
     }
 
     /// Return implementation module paths directly owned by this object.
-    #[must_use]
     pub fn module_paths(&self) -> impl ExactSizeIterator<Item = &Path> {
         self.module_paths.iter().map(PathBuf::as_path)
     }
 
     /// Return descriptor paths of forms directly contained by this object.
-    #[must_use]
     pub fn form_paths(&self) -> impl ExactSizeIterator<Item = &Path> {
         self.form_paths.iter().map(PathBuf::as_path)
     }
@@ -130,7 +127,6 @@ impl AffectedObjectModel {
 
 impl ObjectModel {
     /// Return discovered objects in deterministic `ObjectId` order.
-    #[must_use]
     pub fn objects(&self) -> impl ExactSizeIterator<Item = &LogicalObject> {
         self.objects.values()
     }

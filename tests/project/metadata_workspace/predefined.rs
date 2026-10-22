@@ -1,6 +1,6 @@
 use super::{fixture, object};
 use crate::backend::project::{
-    configurator::{ChildrenState, TreeOptions},
+    configurator::{ChildrenState, TreeNode, TreeOptions},
     metadata_model::{CollectionKind, MetadataKind, NodeId, ProjectScope},
     metadata_workspace::{
         MetadataWorkspace, WorkspaceError,
@@ -95,11 +95,9 @@ fn predefined_items_load_on_group_expansion_and_refresh_with_their_owner() {
     fs::remove_file(&file).unwrap();
     session.changed_paths(&[PathBuf::from(PATH)]).unwrap();
     session.children(&node, TreeOptions::default()).unwrap();
-    assert!(
-        session
-            .children(&group, TreeOptions::default())
-            .unwrap()
-            .is_empty()
+    assert_eq!(
+        session.children(&group, TreeOptions::default()).unwrap(),
+        [] as [&TreeNode; 0]
     );
     assert_eq!(session.node(&group).unwrap().state, ChildrenState::Empty);
 }

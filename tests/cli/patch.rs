@@ -81,7 +81,7 @@ fn process_plan_and_snapshot_reject_stale_state_without_writing() {
     for locale in ["ru", "en"] {
         let output = bridge(&root, locale, &["patch-plan"]);
         assert!(output.status.success(), "{output:?}");
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         replies.push(serde_json::from_slice::<Value>(&output.stdout).unwrap());
     }
     assert_eq!(replies[0], replies[1]);

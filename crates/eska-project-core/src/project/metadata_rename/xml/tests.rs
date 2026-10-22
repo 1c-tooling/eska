@@ -58,7 +58,7 @@ fn namespace_rebinding_prevents_lookalike_references_from_becoming_edits() {
         "<r xmlns:xsi='{XSI}' xmlns:xr='urn:foreign' xmlns:v='{CORE}' xmlns:cfg='urn:foreign'><a xsi:type='xr:MDObjectRef'>Catalog.Old</a><v:Type>cfg:CatalogRef.Old</v:Type><xr:GeneratedType name='CatalogRef.Old'/></r>"
     );
     let analysis = catalog().analyze_xml(&input, &[]).expect("analysis");
-    assert!(analysis.replacements.is_empty());
+    assert_eq!(analysis.replacements, []);
     assert_eq!(analysis.uncertain.len(), 3);
 }
 
@@ -257,7 +257,7 @@ fn large_xml_keeps_exact_ranges_without_allocating_a_dom_for_every_cell() {
     input.push_str("<a xsi:type='xr:MDObjectRef'>Catalog.Old</a>\r\n</r>");
     let result = catalog().analyze_xml(&input, &[]).expect("large XML");
     assert_eq!(result.replacements.len(), 1);
-    assert!(result.uncertain.is_empty());
+    assert_eq!(result.uncertain, []);
     assert_eq!(
         apply(&input, &result),
         input.replace("Catalog.Old", "Catalog.Новый")

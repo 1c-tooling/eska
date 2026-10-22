@@ -170,7 +170,7 @@ fn recovery_preserves_external_edits_and_rejects_stale_tokens() {
     fs::write(&path, "external edit").unwrap();
     let before = bytes(&source);
     let status = guard.recovery_status(&source).unwrap();
-    assert!(!status.conflicts.is_empty());
+    assert_ne!(status.conflicts, [] as [PathBuf; 0]);
     assert!(matches!(
         guard.recover(&source, status.snapshot.as_deref().unwrap()),
         Err(EditError::Conflict)

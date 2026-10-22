@@ -101,7 +101,7 @@ fn starts_locally_without_a_configured_remote_in_both_locales() {
         let output = eska(&root, locale, &["start", "LOCAL-1"]);
 
         assert!(output.status.success(), "{}", text(&output.stderr));
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         assert!(text(&output.stdout).contains(expected));
         let head = git(&root, &["rev-parse", "--abbrev-ref", "HEAD"]);
         assert_eq!(head.stdout.trim_ascii(), b"task/LOCAL-1");
@@ -123,7 +123,7 @@ fn git_flow_main_branch_override_keeps_feature_base_on_develop() {
     let output = eska(&root, "ru", &["start", "P1C-3558"]);
 
     assert!(output.status.success(), "{}", text(&output.stderr));
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     assert!(text(&output.stdout).contains("от локальной develop"));
     let head = git(&root, &["rev-parse", "--abbrev-ref", "HEAD"]);
     assert_eq!(head.stdout.trim_ascii(), b"feature/P1C-3558");
@@ -146,7 +146,7 @@ fn inaccessible_remote_error_includes_remote_url_and_gix_reason() {
         let output = eska(&root, locale, &["start", "FI-9"]);
 
         assert_eq!(output.status.code(), Some(1));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         let error = text(&output.stderr);
         assert!(error.contains(expected), "{error}");
         assert!(error.contains(url), "{error}");
@@ -169,7 +169,7 @@ fn starts_policy_branch_and_localizes_success() {
         let (_fixture, root, _remote) = project(workflow);
         let output = eska(&root, locale, &["start", "FI-1234"]);
         assert!(output.status.success(), "{}", text(&output.stderr));
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         assert!(text(&output.stdout).contains(expected_message));
         let head = git(&root, &["rev-parse", "--abbrev-ref", "HEAD"]);
         assert_eq!(head.stdout.trim_ascii(), expected_branch.as_bytes());
@@ -191,7 +191,7 @@ fn dirty_preflight_is_localized_and_preserves_head() {
         fs::write(root.join("dirty.txt"), "dirty\n").expect("write dirty file");
         let output = eska(&root, locale, &["start", "FI-1"]);
         assert_eq!(output.status.code(), Some(1));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(text(&output.stderr).contains(expected));
         let head = git(&root, &["rev-parse", "--abbrev-ref", "HEAD"]);
         assert_eq!(head.stdout.trim_ascii(), b"main");

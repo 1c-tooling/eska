@@ -25,7 +25,7 @@ fn manager_and_metadata_roots_keep_exact_byte_ranges() {
     let input = "\u{feff}Procedure Run()\r\n A = Справочники.Товары.ПустаяСсылка();\r\n B = catalogs.товары;\r\n C = Metadata.Catalogs.Товары;\r\n D = Метаданные.Справочники.Товары;\r\nEndProcedure\r\n";
     let output = analyze(input);
     assert_eq!(output.replacements.len(), 4);
-    assert!(output.uncertain.is_empty());
+    assert_eq!(output.uncertain, []);
     for change in output.replacements {
         assert_eq!(input[change.range], change.before);
         assert_eq!(change.after, "Номенклатура");
@@ -37,7 +37,7 @@ fn manager_and_metadata_roots_keep_exact_byte_ranges() {
 fn foreign_receivers_and_different_collections_remain_uncertain() {
     let input = "A = Connection.Catalogs.Товары; B = ThisObject.Metadata.Catalogs.Товары; C = Documents.Товары; D = Catalogs.Другой.Товары; E = Get().Catalogs.Товары;";
     let output = analyze(input);
-    assert!(output.replacements.is_empty());
+    assert_eq!(output.replacements, []);
     assert_eq!(output.uncertain.len(), 5);
 }
 
@@ -136,12 +136,7 @@ fn common_module_calls_check_project_binding_and_shadowing() {
     assert_eq!(output.replacements.len(), 1);
     assert_eq!(output.uncertain.len(), 4); // Includes the same-spelled local declaration.
     bindings.common_modules.clear();
-    assert!(
-        reference
-            .analyze(input, &bindings, true)
-            .replacements
-            .is_empty()
-    );
+    assert_eq!(reference.analyze(input, &bindings, true).replacements, []);
 }
 
 /// Missing base/global context or unchecked form attributes cannot be replaced by assumptions.
@@ -149,34 +144,19 @@ fn common_module_calls_check_project_binding_and_shadowing() {
 fn unknown_contexts_and_global_collisions_remain_uncertain() {
     let reference = BslRename::new(&[("Catalog".into(), "Товары".into())], "Новые");
     let input = "A = Catalogs.Товары;";
-    assert!(
-        reference
-            .analyze(input, &globals(), false)
-            .replacements
-            .is_empty()
-    );
-    assert!(
+    assert_eq!(reference.analyze(input, &globals(), false).replacements, []);
+    assert_eq!(
         reference
             .analyze(input, &GlobalBindings::default(), true)
-            .replacements
-            .is_empty()
+            .replacements,
+        []
     );
     let mut bindings = globals();
     bindings.shadowed.insert("catalogs".into());
-    assert!(
-        reference
-            .analyze(input, &bindings, true)
-            .replacements
-            .is_empty()
-    );
+    assert_eq!(reference.analyze(input, &bindings, true).replacements, []);
     bindings.shadowed.clear();
     bindings.common_modules.insert("catalogs".into());
-    assert!(
-        reference
-            .analyze(input, &bindings, true)
-            .replacements
-            .is_empty()
-    );
+    assert_eq!(reference.analyze(input, &bindings, true).replacements, []);
 }
 
 /// Scope boundaries include parameter defaults and bilingual async declarations without external dependencies.
@@ -197,7 +177,7 @@ fn unicode_common_module_names_respect_case_equivalent_locals() {
     let mut bindings = globals();
     bindings.common_modules.insert("Σ".into());
     let output = reference.analyze("Procedure Run(ς) Σ.Method(); EndProcedure", &bindings, true);
-    assert!(output.replacements.is_empty());
+    assert_eq!(output.replacements, []);
     assert!(
         output
             .uncertain
@@ -217,7 +197,7 @@ fn common_module_destination_cannot_shadow_an_existing_binding() {
         &bindings,
         true,
     );
-    assert!(output.replacements.is_empty());
+    assert_eq!(output.replacements, []);
     assert_eq!(output.uncertain[0].reason, "bsl_destination_shadowed");
 }
 
@@ -226,7 +206,7 @@ fn common_module_destination_cannot_shadow_an_existing_binding() {
 fn bounded_lexer_preserves_uncertain_matches_when_it_reaches_its_limit() {
     let input = format!("{}Catalogs.Товары;", "A;".repeat(500_000));
     let output = analyze(&input);
-    assert!(output.replacements.is_empty());
+    assert_eq!(output.replacements, []);
     assert_eq!(output.uncertain.len(), 1);
     assert_eq!(output.uncertain[0].reason, "bsl_lexical_unavailable");
 }
@@ -237,7 +217,7 @@ fn keyword_members_do_not_change_lexical_scopes() {
     let input = "Procedure Run() Handler.Процедура = \"Handler\"; Handler.Function = 1; Value.EndProcedure = 2; A = Catalogs.Товары; EndProcedure";
     let output = analyze(input);
     assert_eq!(output.replacements.len(), 1);
-    assert!(output.uncertain.is_empty());
+    assert_eq!(output.uncertain, []);
 }
 
 /// Metadata collection methods can have the same spelling as a declared object's name.

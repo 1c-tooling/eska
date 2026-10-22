@@ -93,7 +93,7 @@ fn delegated_check_help_does_not_require_the_component() {
         ] {
             assert!(help.contains(flag), "{help}");
         }
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
     }
     assert!(fs::read_dir(&directory.0).unwrap().next().is_none());
 }

@@ -195,7 +195,7 @@ fn metadata_value_schema_and_typed_changes_are_locale_independent() {
             "{}",
             String::from_utf8_lossy(&output.stdout)
         );
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         serde_json::from_slice::<Value>(&output.stdout).unwrap()
     };
     let ru = inspect("ru-RU");
@@ -388,7 +388,7 @@ fn metadata_hierarchy_schema_changes_with_its_prerequisite_in_both_locales() {
             .output()
             .unwrap();
         assert!(output.status.success());
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         serde_json::from_slice::<Value>(&output.stdout).unwrap()
     };
     let before = inspect("ru-RU");
@@ -464,7 +464,7 @@ fn choice_parameter_schema_types_and_publication_share_the_json_contract() {
             .output()
             .unwrap();
         assert!(out.status.success());
-        assert!(out.stderr.is_empty());
+        assert_eq!(out.stderr, [] as [u8; 0]);
         serde_json::from_slice::<Value>(&out.stdout).unwrap()
     };
     let state = inspect("ru-RU");
@@ -554,7 +554,7 @@ fn type_link_source_choices_and_unsigned_index_are_locale_independent() {
             .output()
             .unwrap();
         assert!(output.status.success());
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         serde_json::from_slice::<Value>(&output.stdout).unwrap()
     };
     let state = inspect("ru-RU");

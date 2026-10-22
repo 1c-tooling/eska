@@ -210,7 +210,7 @@ mod tests {
 
             let placeholder = &template.files()[3];
             assert_eq!(placeholder.path(), Path::new("src/.gitkeep"));
-            assert!(placeholder.contents().is_empty());
+            assert_eq!(placeholder.contents(), "");
             assert_eq!(
                 Template::built_in(project_type).expect("repeat render"),
                 template

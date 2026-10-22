@@ -62,7 +62,7 @@ fn global_declarations_and_protected_exports_block_guessed_bindings() {
         .iter()
         .find(|file| file.path == module)
         .unwrap();
-    assert!(file.replacements.is_empty());
+    assert_eq!(file.replacements, []);
     assert!(
         file.uncertain
             .iter()
@@ -80,7 +80,7 @@ fn global_declarations_and_protected_exports_block_guessed_bindings() {
     fs::write(descriptor, input).unwrap();
     let third = project.preview_rename(&id, "Партнеры").unwrap();
     let file = third.files.iter().find(|file| file.path == module).unwrap();
-    assert!(file.replacements.is_empty());
+    assert_eq!(file.replacements, []);
     assert!(
         file.uncertain
             .iter()
@@ -116,13 +116,13 @@ fn common_module_binding_uses_descriptor_global_flag() {
         .replace("<Global>false</Global>", "<Global>true</Global>");
     fs::write(descriptor, input).unwrap();
     let plan = project.preview_rename(&id, "Сервис").unwrap();
-    assert!(
+    assert_eq!(
         plan.files
             .iter()
             .find(|file| file.path == path)
             .unwrap()
-            .replacements
-            .is_empty()
+            .replacements,
+        []
     );
 }
 

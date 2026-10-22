@@ -749,7 +749,7 @@ fn failed_build_preserves_existing_artifact_and_managed_infobase() {
     for (locale, expected) in [("ru", "завершился ошибкой"), ("en", "failed")] {
         let output = eska(&root, locale, &ibcmd, &["build"], true);
         assert_eq!(output.status.code(), Some(1));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(String::from_utf8_lossy(&output.stderr).contains(expected));
         assert_eq!(
             fs::read_to_string(&artifact).expect("old artifact"),

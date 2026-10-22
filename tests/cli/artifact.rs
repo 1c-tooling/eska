@@ -1261,7 +1261,7 @@ fn human_results_preserve_plain_paths_and_markers_in_both_locales() {
             &["import", "../incoming.cf", "--dry-run"],
         );
         assert!(preview.status.success(), "{preview:?}");
-        assert!(preview.stdout.is_empty());
+        assert_eq!(preview.stdout, [] as [u8; 0]);
         let stderr = String::from_utf8(preview.stderr).unwrap();
         assert!(stderr.lines().last().unwrap().starts_with("ℹ "));
         assert!(stderr.contains(if locale == "ru" {
@@ -1276,7 +1276,7 @@ fn human_results_preserve_plain_paths_and_markers_in_both_locales() {
             &["import", "missing.txt", "--dry-run"],
         );
         assert_eq!(failed.status.code(), Some(1));
-        assert!(failed.stdout.is_empty());
+        assert_eq!(failed.stdout, [] as [u8; 0]);
         let stderr = String::from_utf8(failed.stderr).unwrap();
         assert!(stderr.lines().last().unwrap().starts_with("✗ "), "{stderr}");
         assert!(stderr.contains("missing.txt"), "{stderr}");

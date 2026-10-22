@@ -138,7 +138,7 @@ fn standalone_reports_passed_and_threshold_exceeded_in_both_locales() {
             assert_eq!(report["counts"]["warnings"], 1);
             assert_eq!(report["files"].as_array().unwrap().len(), 1);
             assert_eq!(report["context"]["limited_context"], false);
-            assert!(output.stderr.is_empty());
+            assert_eq!(output.stderr, [] as [u8; 0]);
             assert_eq!(fs::read(path).unwrap(), output.stdout);
             if let Some(expected) = &expected {
                 assert_eq!(&output.stdout, expected);
@@ -170,7 +170,7 @@ fn incomplete_stream_and_wrong_version_are_never_green() {
             assert_eq!(report["status"], "incomplete");
             assert_eq!(report["complete"], false);
             assert!(report.get("files").is_none());
-            assert!(!output.stderr.is_empty());
+            assert_ne!(output.stderr, [] as [u8; 0]);
             if let Some(expected) = &expected {
                 assert_eq!(&output.stdout, expected);
             } else {
@@ -275,7 +275,7 @@ fn human_output_is_localized_in_both_languages() {
         } else {
             "warning FixtureRule"
         }));
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         let json = fixture.command(locale).output().unwrap();
         assert!(json.status.success());
         assert_eq!(fs::read(report_path).unwrap(), json.stdout);
@@ -290,7 +290,7 @@ fn human_output_is_localized_in_both_languages() {
             .output()
             .unwrap();
         assert_eq!(output.status.code(), Some(3));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         let text = String::from_utf8(output.stderr).unwrap();
         assert!(text.contains(if locale == "ru" {
             "неполный машинный результат"
@@ -402,11 +402,12 @@ fn published_analyzer_produces_the_same_real_report_for_ru_and_en() {
         );
         let report: Value = serde_json::from_slice(&output.stdout).unwrap();
         assert_eq!(report["complete"], true);
-        assert!(
-            !report["files"][0]["diagnostics"]
+        assert_ne!(
+            report["files"][0]["diagnostics"]
                 .as_array()
                 .unwrap()
-                .is_empty()
+                .as_slice(),
+            [] as [serde_json::Value; 0]
         );
         if let Some(expected) = &expected {
             assert_eq!(&output.stdout, expected);

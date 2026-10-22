@@ -31,7 +31,7 @@ fn summary_keeps_inline_objects_and_unopened_references() {
         ),
     ));
     let parsed = parse(&xml, None, PropertiesMode::Summary).unwrap();
-    assert!(parsed.diagnostics.is_empty());
+    assert_eq!(parsed.diagnostics, []);
     assert_eq!(parsed.objects.len(), 3);
     assert_eq!(
         parsed.objects[2].metadata.id().as_str(),
@@ -195,7 +195,7 @@ fn synonym_validation_also_runs_in_summary_mode() {
             "<m:Catalog uuid='id'><m:Properties><m:Name>A</m:Name><m:Synonym>{value}</m:Synonym></m:Properties></m:Catalog>"
         ));
         let parsed = parse(&xml, None, PropertiesMode::Summary).unwrap();
-        assert!(parsed.objects[0].synonyms.is_empty());
+        assert_eq!(parsed.objects[0].synonyms, []);
         assert_eq!(parsed.diagnostics.len(), 1);
     }
 }
@@ -250,7 +250,7 @@ fn all_metadata_kinds_share_the_descriptor_identity_contract() {
             PropertiesMode::All,
         )
         .unwrap();
-        assert!(parsed.diagnostics.is_empty());
+        assert_eq!(parsed.diagnostics, []);
         assert_eq!(parsed.objects[0].metadata.kind(), kind);
         assert_eq!(
             parsed.objects[0].metadata.id().as_str(),

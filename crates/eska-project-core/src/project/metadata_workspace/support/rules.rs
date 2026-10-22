@@ -115,7 +115,7 @@ mod tests {
         ));
         let (invalid, diagnostics) = cache.parse("damaged");
         assert!(invalid.is_none());
-        assert!(!diagnostics.is_empty());
+        assert_ne!(diagnostics, [] as [String; 0]);
         assert!(cache.parse("{6,0,0,0,0,0}").0.is_some());
     }
 }

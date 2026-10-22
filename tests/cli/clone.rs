@@ -104,7 +104,7 @@ fn clones_local_path_and_file_url_in_both_locales() {
         let output = eska(&destination_fixture.0, locale, &["clone", &source]);
 
         assert!(output.status.success(), "{}", text(&output.stderr));
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         assert!(text(&output.stdout).contains(expected));
         let destination = destination_fixture.0.join("source project");
         assert_eq!(
@@ -140,7 +140,7 @@ fn missing_local_transport_helper_is_localized_and_rolls_back() {
         );
 
         assert_eq!(output.status.code(), Some(1));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(text(&output.stderr).contains(expected));
         assert!(!destination_fixture.0.join("missing-helper").exists());
     }
@@ -189,7 +189,7 @@ fn invalid_project_rolls_back_only_new_destination() {
         );
 
         assert_eq!(output.status.code(), Some(1));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(text(&output.stderr).contains(expected));
         assert!(!destination_fixture.0.join("invalid-project").exists());
         assert_eq!(fs::read_to_string(sentinel).expect("sentinel"), "preserved");

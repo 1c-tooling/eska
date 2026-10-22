@@ -81,7 +81,7 @@ fn help_and_version_need_no_project_or_other_components() {
         ] {
             let output = tool(&fixture.0, OsStr::new(""), locale, &[command, "--help"]);
             assert!(output.status.success(), "{command}: {output:?}");
-            assert!(output.stderr.is_empty());
+            assert_eq!(output.stderr, [] as [u8; 0]);
             let text = String::from_utf8(output.stdout).unwrap();
             assert!(text.contains(&format!("eska-vcs {command}")), "{text}");
             assert!(text.contains(if locale == "ru" {
@@ -144,7 +144,10 @@ fn every_project_type_is_readable_in_a_minimal_installation() {
         }
         let missing_git = tool(&fixture.0, OsStr::new(""), "en", &["start", "NO-GIT"]);
         assert_eq!(missing_git.status.code(), Some(1));
-        assert!(git(&fixture.0, &["branch", "--list", "task/NO-GIT"]).is_empty());
+        assert_eq!(
+            git(&fixture.0, &["branch", "--list", "task/NO-GIT"]),
+            [] as [u8; 0]
+        );
         assert_eq!(fs::read(fixture.0.join(".git/HEAD")).unwrap(), head);
         assert_eq!(fs::read(fixture.0.join(".git/index")).unwrap(), index);
         assert_eq!(
@@ -257,7 +260,7 @@ fn source_bridge_distinguishes_absent_and_broken_git() {
             &["__bridge", "source-changes", "--files", "1"],
         );
         assert_eq!(output.status.code(), Some(1));
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         let error: Value = serde_json::from_slice(&output.stdout).unwrap();
         assert!(error["data"].is_null());
         assert_eq!(error["error"], "repository");
@@ -403,6 +406,9 @@ fn task_switch_and_shelves_preserve_both_stages_without_other_components() {
             git(&root, &["branch", "--show-current"]).trim_ascii(),
             b"main"
         );
-        assert!(git(&root, &["branch", "--list", &format!("task/{id}")]).is_empty());
+        assert_eq!(
+            git(&root, &["branch", "--list", &format!("task/{id}")]),
+            [] as [u8; 0]
+        );
     }
 }

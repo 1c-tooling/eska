@@ -88,7 +88,7 @@ fn produces_empty_plan_for_nonsemantic_method_edits() {
 
     let project = discovery::discover(&root).expect("discover project");
     let plan = patch::plan(&project, Some("main")).expect("empty patch plan");
-    assert!(plan.description.modules.is_empty());
+    assert_eq!(plan.description.modules, []);
     assert_eq!(plan.description.changes[0].reason, "nonsemantic");
 }
 

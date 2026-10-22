@@ -94,7 +94,7 @@ fn complete_stream_and_thresholds_keep_clean_files_and_policy() {
     let plan = prepare(&directory.0, &analyzer);
     let report = check::analyze(&plan, &analyzer).unwrap();
     assert_eq!(report.files.len(), 1);
-    assert!(report.files[0].diagnostics.is_empty());
+    assert_eq!(report.files[0].diagnostics, []);
     assert!(!report.counts.exceeds(&report.policy));
     let unchanged = fs::read(&module).unwrap();
     fs::write(directory.0.join("stream-mode"), "warning").unwrap();

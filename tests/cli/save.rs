@@ -132,7 +132,7 @@ fn dry_run_matches_the_subsequent_commit_and_is_byte_read_only() {
         );
 
         assert!(output.status.success(), "{}", text(&output.stderr));
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         let stdout = text(&output.stdout);
         for expected in [title, scope, included, deleted, modified, untracked] {
             assert!(
@@ -355,7 +355,7 @@ fn saves_project_changes_with_an_explicit_message_in_both_locales() {
         let output = eska(&root, locale, &["save", "-m", "project changes"]);
 
         assert!(output.status.success(), "{}", text(&output.stderr));
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         assert!(text(&output.stdout).contains(expected));
         assert_eq!(
             git_ok(&fixture.0, &["log", "-1", "--format=%s"]),

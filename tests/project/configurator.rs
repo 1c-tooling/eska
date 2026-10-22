@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, fs, path::Path};
 use crate::backend::project::{
     configurator::{
         ChildrenState, ConfiguratorSchema, ConfiguratorTree, ModuleAvailability, TreeLabel,
-        TreeOptions,
+        TreeNode, TreeOptions,
     },
     designer_source::{DesignerSource, open_projects},
     metadata_model::{CollectionKind, MetadataKind, MetadataObject, ModuleRole, NodeId, ObjectId},
@@ -196,11 +196,11 @@ fn configurator_keeps_unloaded_errors_and_hides_binary_only_modules() {
     )
     .unwrap();
     let projection = tree(&source, owner.id());
-    assert!(
+    assert_eq!(
         projection
             .children(projection.root(), TreeOptions::default())
-            .unwrap()
-            .is_empty()
+            .unwrap(),
+        [] as [&TreeNode; 0]
     );
     let schema = ConfiguratorSchema::for_source(&source);
     let parsed = metadata_parser::load(&source, owner.id(), PropertiesMode::Summary).unwrap();
@@ -220,7 +220,7 @@ fn configurator_keeps_unloaded_errors_and_hides_binary_only_modules() {
         assert_eq!(children.len(), 1);
         assert_eq!(children[0].state, state);
         assert!(!children[0].expanded_by_default);
-        assert!(children[0].children.is_empty());
+        assert_eq!(children[0].children, []);
     }
 }
 
@@ -457,7 +457,7 @@ fn manual_large_configurator_tree() {
     let schema = ConfiguratorSchema::for_source(&source);
     let parsed =
         metadata_parser::load(&source, source.root().id(), PropertiesMode::Summary).unwrap();
-    assert!(parsed.diagnostics.is_empty());
+    assert_eq!(parsed.diagnostics, []);
     let modules = BTreeMap::from([(
         source.root().id().clone(),
         ModuleAvailability::resolve(&source, &schema, source.root().id(), source.root().kind())
@@ -579,10 +579,10 @@ fn configurator_websocket_client_resolves_descriptor_and_existing_module() {
     fs::remove_file(base.join("Соединение/Ext/Module.bsl")).unwrap();
     fs::write(base.join("Соединение/Ext/Module.bin"), [0]).unwrap();
     let projection = tree(&source, owner.id());
-    assert!(
+    assert_eq!(
         projection
             .children(projection.root(), TreeOptions::default())
-            .unwrap()
-            .is_empty()
+            .unwrap(),
+        [] as [&TreeNode; 0]
     );
 }

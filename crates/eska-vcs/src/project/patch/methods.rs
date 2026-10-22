@@ -262,8 +262,8 @@ mod tests {
         let (generated, names) =
             replacements(base, &base.replace("Return", "// comment\nReturn"), "P_")
                 .expect("comments are presentation");
-        assert!(generated.is_empty());
-        assert!(names.is_empty());
+        assert_eq!(generated, "");
+        assert_eq!(names, [] as [String; 0]);
     }
 
     /// Reject every unproven construction rather than returning a partial patch.

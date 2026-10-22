@@ -56,8 +56,8 @@ fn native_onboarding_refuses_invalid_component_replies_and_rolls_back() {
                 .output()
                 .unwrap();
             assert_eq!(output.status.code(), Some(1), "{output:?}");
-            assert!(output.stdout.is_empty());
-            assert!(!output.stderr.is_empty());
+            assert_eq!(output.stdout, [] as [u8; 0]);
+            assert_ne!(output.stderr, [] as [u8; 0]);
             assert!(!root.exists());
             assert_eq!(fs::read(&input).unwrap(), bytes);
             assert_eq!(
@@ -101,7 +101,7 @@ fn success(output: &Output) -> Value {
 /// Reject an operation with a localized stderr and a stable machine category.
 fn failure(output: Output, code: &str) -> Vec<u8> {
     assert_eq!(output.status.code(), Some(1));
-    assert!(!output.stderr.is_empty());
+    assert_ne!(output.stderr, [] as [u8; 0]);
     assert!(!output.stderr.contains(&0x1b));
     let document: Value = serde_json::from_slice(&output.stdout).expect("failure JSON");
     assert_eq!(document["error"]["code"], code);

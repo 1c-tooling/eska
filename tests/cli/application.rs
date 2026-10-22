@@ -110,7 +110,7 @@ fn invalid_context_relationships_have_localized_errors() {
         for (language, expected) in [("ru", russian), ("en", english)] {
             let output = validate(&fixture.0, language);
             assert_eq!(output.status.code(), Some(1), "{output:?}");
-            assert!(output.stdout.is_empty());
+            assert_eq!(output.stdout, [] as [u8; 0]);
             let error = String::from_utf8(output.stderr)
                 .unwrap()
                 .replace(['\u{2068}', '\u{2069}'], "");

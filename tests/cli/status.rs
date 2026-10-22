@@ -138,7 +138,7 @@ fn json_output_has_a_stable_locale_independent_schema() {
             "{}",
             String::from_utf8_lossy(&output.stderr)
         );
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         let actual: Value = serde_json::from_slice(&output.stdout).expect("valid JSON status");
         assert_eq!(
             actual,
@@ -224,7 +224,7 @@ fn human_output_localizes_changes_and_conservative_readiness() {
     ] {
         let output = eska(&root, locale, &["status"]);
         assert!(output.status.success(), "{output:?}");
-        assert!(output.stderr.is_empty());
+        assert_eq!(output.stderr, [] as [u8; 0]);
         let text = String::from_utf8(output.stdout)
             .expect("UTF-8 human status")
             .replace(['\u{2068}', '\u{2069}'], "");
@@ -263,7 +263,7 @@ fn help_and_missing_workflow_errors_are_localized() {
         git(&root, &["init", "--initial-branch=main", "--template="]);
         let output = eska(&root, locale, &["status"]);
         assert_eq!(output.status.code(), Some(1), "{output:?}");
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(String::from_utf8_lossy(&output.stderr).contains(error));
     }
 }

@@ -248,7 +248,7 @@ fn explicit_missing_component_is_localized_and_help_remains_local() {
             .output()
             .unwrap();
         assert_eq!(output.status.code(), Some(1));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(
             String::from_utf8_lossy(&output.stderr).contains(expected),
             "{output:?}"
@@ -260,7 +260,7 @@ fn explicit_missing_component_is_localized_and_help_remains_local() {
             .output()
             .unwrap();
         assert!(help.status.success(), "{help:?}");
-        assert!(help.stderr.is_empty());
+        assert_eq!(help.stderr, [] as [u8; 0]);
     }
     assert!(fs::read_dir(&fixture.0).unwrap().next().is_none());
 }

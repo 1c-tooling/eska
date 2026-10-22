@@ -165,15 +165,15 @@ mod tests {
     fn empty_and_bounded_predefined_payloads() {
         let owner = MetadataObject::new(MetadataKind::Catalog, "Owner".into(), String::new(), None)
             .unwrap();
-        assert!(
+        assert_eq!(
             parse(
                 &format!("<PredefinedData xmlns='{NS}'/>"),
                 owner.id(),
                 PropertiesMode::Summary
             )
             .unwrap()
-            .objects
-            .is_empty()
+            .objects,
+            []
         );
         let deep = format!(
             "<PredefinedData xmlns='{NS}'>{}{}</PredefinedData>",

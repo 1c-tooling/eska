@@ -70,7 +70,7 @@ fn preview_rename_distinguishes_nested_fields_and_detects_new_source_files() {
         .iter()
         .find(|file| file.path == Path::new("Ext/SessionModule.bsl"))
         .unwrap();
-    assert!(code.replacements.is_empty());
+    assert_eq!(code.replacements, []);
     assert_eq!(code.uncertain.len(), 2);
     fs::write(directory.0.join("src/new.xml"), "<r/>").unwrap();
     assert_ne!(

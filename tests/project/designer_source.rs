@@ -211,7 +211,7 @@ fn maps_registered_types_inline_elements_and_missing_candidates() {
             continue;
         };
         let object = id(kind, "Пример", None);
-        assert!(source.sources(&object).unwrap().is_empty());
+        assert_eq!(source.sources(&object).unwrap(), []);
         let path = format!("{folder}/Пример.xml");
         write(
             source.project().source(),
@@ -449,7 +449,7 @@ fn recalculation_sources_preserve_descriptor_and_inline_dimension_ownership() {
     write(source.project().source(), module, b"// Demo\r\n");
     let location = source.object_descriptor(&recalc).unwrap().unwrap();
     assert_eq!(location.path, Path::new(descriptor));
-    assert!(location.inline.is_empty());
+    assert_eq!(location.inline, []);
     let location = source.object_descriptor(&dimension).unwrap().unwrap();
     assert_eq!(location.path, Path::new(descriptor));
     assert_eq!(location.inline.len(), 1);
@@ -508,7 +508,7 @@ fn maps_inline_command_descriptor_and_separate_module() {
         module.path,
         Path::new("Catalogs/Partners/Commands/Open/Ext/CommandModule.bsl")
     );
-    assert!(module.inline.is_empty());
+    assert_eq!(module.inline, []);
     let sources = source.sources(&command).unwrap();
     assert_eq!(sources.len(), 2);
     assert_eq!(sources[0], descriptor);

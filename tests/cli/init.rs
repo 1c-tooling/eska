@@ -64,17 +64,17 @@ fn success(output: &Output) -> String {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert!(output.stderr.is_empty());
+    assert_eq!(output.stderr, [] as [u8; 0]);
     assert!(!output.stdout.contains(&0x1b));
     String::from_utf8(output.stdout.clone()).expect("UTF-8")
 }
 
 fn failure(output: &Output, code: i32, locale: &str) -> String {
     assert_eq!(output.status.code(), Some(code));
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     let error = String::from_utf8(output.stderr.clone()).expect("UTF-8");
     // Test paths may contain Cyrillic; compare against English/Russian sentences.
-    assert!(!error.is_empty());
+    assert_ne!(error, "");
     assert!(!error.contains('\u{1b}'));
     if locale == "en" {
         assert!(!error.contains("Не удалось"));

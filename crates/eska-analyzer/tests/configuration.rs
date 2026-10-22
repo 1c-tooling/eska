@@ -232,7 +232,7 @@ fn migration_requires_exact_preview_and_keeps_all_policy_and_original_bytes() {
     fs::write(root.join("bsl-analyzer.toml"), original).unwrap();
     let original_manifest = fs::read(root.join("eska.toml")).unwrap();
     let preview = migration::preview(&root, None).unwrap();
-    assert!(preview.conflicts.is_empty());
+    assert_eq!(preview.conflicts, [] as [String; 0]);
     assert_eq!(
         preview.policy["formatting"]["indent_size"].as_integer(),
         Some(2)
