@@ -10,7 +10,11 @@ from component_package import Failure, digest, json_bytes, parse_json, require
 
 def cargo(root, *args):
     """Resolve only the already locked local Cargo graph, without changing releases or fetching crates."""
-    result = subprocess.run(["cargo", *args, "--locked", "--offline"], cwd=root, check=True, capture_output=True)
+    try:
+        result = subprocess.run(["cargo", *args, "--locked", "--offline"], cwd=root, check=True, capture_output=True)
+    except subprocess.CalledProcessError as error:
+        detail = error.stderr.decode("utf-8", errors="replace").strip() if error.stderr else str(error)
+        raise Failure("cargo", detail) from error
     return result.stdout
 
 

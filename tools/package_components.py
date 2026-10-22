@@ -91,8 +91,8 @@ def main():
     """Package built binaries without uploading or publishing any files."""
     language = option(sys.argv[1:], "--lang", "en-US")
     help_text = {
-        "en-US": "Usage: python3 package_components.py --bin-dir DIRECTORY --output NEW_DIRECTORY --component TOOL [--component TOOL ...] [--lang en-US|ru-RU]\nBuild binaries first with cargo build --workspace --bins --locked. Files are packaged locally without publication.\n",
-        "ru-RU": "Использование: python3 package_components.py --bin-dir КАТАЛОГ --output НОВЫЙ_КАТАЛОГ --component ИНСТРУМЕНТ [--component ИНСТРУМЕНТ ...] [--lang en-US|ru-RU]\nСначала соберите бинарники: cargo build --workspace --bins --locked. Файлы упаковываются локально без публикации.\n",
+        "en-US": "Usage: python3 package_components.py --bin-dir DIRECTORY --output NEW_DIRECTORY --component TOOL [--component TOOL ...] [--lang en-US|ru-RU]\nFetch the complete license graph with cargo fetch --locked, then build binaries with cargo build --workspace --bins --locked. Files are packaged locally without publication.\n",
+        "ru-RU": "Использование: python3 package_components.py --bin-dir КАТАЛОГ --output НОВЫЙ_КАТАЛОГ --component ИНСТРУМЕНТ [--component ИНСТРУМЕНТ ...] [--lang en-US|ru-RU]\nЗагрузите полный граф зависимостей для лицензий: cargo fetch --locked, затем соберите бинарники: cargo build --workspace --bins --locked. Файлы упаковываются локально без публикации.\n",
     }
     try:
         parser = Parser(add_help=False)
