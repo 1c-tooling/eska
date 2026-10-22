@@ -14,6 +14,14 @@ def stop(number, _frame):
     sys.exit(70 + number)
 
 
+def publish_ready():
+    """Publish the complete PID atomically before readers treat readiness as a signal barrier."""
+    ready = Path(os.environ["ESKA_COMPONENT_FIXTURE_READY"])
+    staged = ready.with_name(ready.name + ".tmp")
+    staged.write_text(str(os.getpid()))
+    staged.replace(ready)
+
+
 mode = os.environ.get("ESKA_COMPONENT_FIXTURE_MODE", "streams")
 if "--fixture-mode" in sys.argv:
     mode = sys.argv[sys.argv.index("--fixture-mode") + 1]
@@ -49,7 +57,7 @@ if mode.startswith("bridge-"):
                 Path(os.environ["ESKA_COMPONENT_FIXTURE_READY"] + ".stopped").write_text(str(number))
                 sys.exit(0)
             signal.signal(signal.SIGTERM, graceful_stop)
-        Path(os.environ["ESKA_COMPONENT_FIXTURE_READY"]).write_text(str(os.getpid()))
+        publish_ready()
         parent = os.getppid()
         while os.getppid() == parent:
             time.sleep(0.05)
@@ -70,7 +78,7 @@ if mode.startswith("bridge-"):
 elif mode == "signals":
     for number in [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]:
         signal.signal(number, stop)
-    Path(os.environ["ESKA_COMPONENT_FIXTURE_READY"]).write_text(str(os.getpid()))
+    publish_ready()
     parent = os.getppid()
     while os.getppid() == parent:
         time.sleep(0.05)

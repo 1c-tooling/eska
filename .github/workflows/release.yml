@@ -70,7 +70,7 @@ jobs:
           RUSTFLAGS: ${{ runner.os == 'Windows' && '-C target-feature=+crt-static' || '' }}
           CC_x86_64_unknown_linux_musl: musl-gcc
           CC_aarch64_unknown_linux_musl: musl-gcc
-          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
+          # x86_64 static PIE needs Rust's default linker, not the musl-gcc wrapper.
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
         run: |
           cargo build --workspace --bins --locked --profile dist --target "$TARGET"
@@ -140,6 +140,7 @@ jobs:
             target/distrib/*.sh
             target/distrib/*.ps1
             target/distrib/LICENSE
+            target/distrib/sha256.sum
             target/distrib/SHA256SUMS
             target/release-notes.md
           if-no-files-found: error
