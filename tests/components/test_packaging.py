@@ -5,6 +5,7 @@ import io
 import os
 from pathlib import Path
 import sys
+import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -12,7 +13,22 @@ import zipfile
 
 from test_installation import REPOSITORY, fixture
 import component_package
+import component_notices
 import package_components
+
+
+class NoticeErrorsTests(unittest.TestCase):
+    """Retain the actionable Cargo diagnostic instead of reporting only subprocess exit status."""
+
+    def test_offline_metadata_failure_preserves_cargo_stderr(self):
+        """A missing foreign-target dependency must be identifiable in the packaging JSON detail."""
+        diagnostic = b'error: failed to download `anstyle-wincon v3.0.11`\n\nattempting HTTP with --offline\n'
+        error = subprocess.CalledProcessError(101, ["cargo", "metadata"], stderr=diagnostic)
+        with mock.patch.object(component_notices.subprocess, "run", side_effect=error), \
+                self.assertRaises(component_package.Failure) as raised:
+            component_notices.metadata(REPOSITORY)
+        self.assertEqual(raised.exception.code, "cargo")
+        self.assertEqual(raised.exception.detail, diagnostic.decode().strip())
 
 
 @unittest.skipUnless(sys.platform.startswith("linux"), "Executable fixture requires Linux")

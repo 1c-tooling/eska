@@ -60,6 +60,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: irm https://github.com/axodotdev/cargo-dist/releases/download/v0.32.0/cargo-dist-installer.ps1 | iex
+      - name: Подготовка полного графа зависимостей для лицензий
+        run: |
+          cargo fetch --locked
+          cargo metadata --format-version 1 --locked --offline > /dev/null
       - name: Сборка и упаковка всех компонентов
         env:
           TARGET: ${{ matrix.target }}
