@@ -66,6 +66,13 @@ impl ConfigLock {
     }
 }
 
+impl Drop for ConfigLock {
+    /// Closing one handle is insufficient when a concurrent spawn inherited the open file description.
+    fn drop(&mut self) {
+        let _ = self.0.unlock();
+    }
+}
+
 /// Keep lock contention distinct from filesystem failures in machine output.
 fn lock_error(root: &Path, error: TryLockError) -> Error {
     let path = root.join(".eska/analyzer-config.lock");
@@ -176,5 +183,23 @@ pub fn read_optional(path: &Path) -> Result<Option<Vec<u8>>, Error> {
             path: path.into(),
             source,
         }),
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::ConfigLock;
+
+    /// A duplicate models a descriptor inherited briefly by a concurrently spawning child.
+    #[test]
+    fn dropping_lock_releases_lease_while_duplicate_descriptor_is_still_open() {
+        let fixture = crate::test_support::TestDir::new();
+        let lock = ConfigLock::shared(&fixture.0).unwrap();
+        let inherited = lock.0.try_clone().unwrap();
+        drop(lock);
+        let writer = ConfigLock::exclusive(&fixture.0)
+            .expect("the owner must release its lease before inherited handles close");
+        drop(writer);
+        drop(inherited);
     }
 }
