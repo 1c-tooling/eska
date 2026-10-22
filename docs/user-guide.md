@@ -1,17 +1,54 @@
 # Работа с ESKA и ESKA: 1C Explorer
 
-Руководство по текущим исходникам на **22 октября 2026**. Оно охватывает
+Руководство по текущим исходникам. Оно охватывает
 подготовку проекта Designer XML, редактор, BSL-анализ, Git и сборку файлов 1С.
-Версия checkout ESKA — `0.15.0`; доступность готовых пакетов проверяется отдельно.
+Версия checkout указана в `Cargo.toml`; доступность готовых пакетов проверяется отдельно.
 
-[Установка](#installation) · [Первый проект](#project) ·
+[Полная ESKA и мини-программы](#components) · [Установка](#installation) · [Первый проект](#project) ·
 [Explorer](#explorer) · [Свойства](#properties) · [BSL](#language) ·
 [Workspace](#workspace) · [CI](#check) · [Git](#daily-work) ·
-[Сборка](#build) · [Обновление](#updates) · [Проблемы](#troubleshooting)
+[Сборка](#build) · [Обновление](#updates) · [Проблемы](#troubleshooting) ·
+[Готовые сценарии](#scenarios)
 
 <a id="components"></a>
 
-## 1. Выберите нужные компоненты
+## 1. Полная ESKA и мини-программы
+
+У ESKA два способа запуска. **Общая команда `eska`** предоставляет единый вход:
+`eska build`, `eska check`, `eska status`, `eska save` и другие команды.
+**Мини-программы** запускают нужную часть напрямую: `eska-build`, `eska-check`,
+`eska-vcs`, `eska-project`. Для обычной сборки подходят оба варианта:
+
+```sh
+# Через общую ESKA
+eska build
+```
+
+```sh
+# Напрямую через мини-программу
+eska-build build
+```
+
+Это альтернативные вызовы: выполнять оба подряд для одной сборки не нужно.
+Они используют один сборщик, один `eska.toml` и те же XML/BSL. Переносить проект,
+конвертировать исходники или заводить второй конфиг при смене способа запуска
+не требуется. У `eska-build` запуск без подкоманды тоже выполняет сборку;
+в инструкции используется явное `eska-build build`, чтобы было видно действие.
+
+### Что означает полный комплект
+
+Полный комплект — `eska` и четыре исполняемых компонента. Оболочка выбирает
+владельца операции и запускает его отдельным процессом. Поэтому установка
+одного crate `eska` через Cargo не устанавливает остальные executable:
+для `eska build` нужен `eska-build`, для `eska check` — `eska-check`,
+для `eska status` — `eska-vcs`. Нужный комплект устанавливается в разделе ниже.
+
+Мини-программы можно использовать без оболочки. Это удобно, когда на рабочей
+машине нужен только Explorer, в CI — только проверка, а на сборочном агенте —
+только выпуск файлов 1С. Платформа, анализатор, Git и расширение редактора
+устанавливаются по потребности; сам полный CLI их не заменяет.
+
+### Какой набор выбрать
 
 | Задача | Достаточный набор |
 | --- | --- |
@@ -23,7 +60,10 @@
 | Пользоваться общими командами `eska …` | Оболочка `eska` и компоненты нужных операций |
 
 Для дерева платформа, Git, анализатор и оболочка не обязательны.
-Команды import и patch дополнительно используют VCS-компонент.
+Команды `import` и `patch` дополнительно используют VCS-компонент.
+Общий `eska build --manifest` также требует `eska-vcs` для сведений о Git;
+прямой `eska-build build --manifest` работает без него и отмечает Git
+в паспорте как `unavailable`.
 `eska-project` не является языковым сервером: он передаёт контекст и метаданные,
 а диагностики BSL вычисляет отдельный upstream-процесс. Текущая интеграция
 принимает `bsl-analyzer-app` **0.3.2**, CLI contract **3.4**.
@@ -32,15 +72,125 @@
 XML и BSL редактируются непосредственно; промежуточный формат ESKA не нужен.
 После изменения в Конфигураторе выгрузите исходники заново самостоятельно.
 
+### Соответствие существующих команд
+
+В таблицах перечислен публичный CLI текущего checkout. **Совпадение пока
+не полное**: у мини-программ есть команды без входа через `eska`.
+Отсутствующие входы общего CLI не следует считать реализованными.
+
+| Задача | Через `eska` | Прямой запуск | Особенности |
+| --- | --- | --- | --- |
+| Базовая проверка проекта | `eska` без подкоманды | `eska-project validate` или `eska-project` | У явного `validate` есть JSON и selectors; это не полная проверка BSL |
+| Создать каркас | `eska new NAME --type TYPE` | `eska-project new NAME --type TYPE` | Различаются настройка платформы и Git; см. ниже |
+| Подключить выгрузку | `eska init --source src` | `eska-project init --source src` | Общий вход — составная операция; прямой — структурная |
+| Прочитать контекст приложения | Нет отдельной команды | `eska-project context` | Поддерживает `--application` и `--format json` |
+| Управлять конфигом анализатора | Нет отдельной команды | `eska-project analyzer-config status/prepare/migrate` | Это подкоманды проектного компонента |
+| Метаданные | `eska metadata …` | `eska-project metadata …` | Общие подкоманды `inspect`, `types`, `choices`, `check`, `apply`, `rename-preview`, `rename-apply`, `rename-recovery` |
+| Версия проекта 1С | `eska version`, `eska version bump patch` | `eska-project version`, `eska-project version bump patch` | Чтение версии XML и увеличение `major/minor/patch` |
+| Диагностика окружения | `eska doctor` | `eska-project doctor` | Project собирает в том числе проверки build/VCS; отсутствие компонента отражается в отчёте |
+| Сервер для Explorer | `eska ide --stdio` | `eska-project serve --stdio` | Первый — legacy-вход; текущий backend Explorer использует второй |
+| Полная проверка XML/BSL | `eska check …` | `eska-check …` | Аргументы одинаковы; у мини-программы нет дополнительного слова `check` |
+| Сборка | `eska build …` | `eska-build build …` | Одинаковый native pipeline; различие Git-данных паспорта описано ниже |
+| Распаковка в новый каталог | Нет `eska unpack` | `eska-build unpack INPUT DESTINATION` | Не создаёт манифест и Git |
+| Новый проект из файла 1С | `eska new NAME --from FILE` | `eska-build unpack`, затем `eska-project init` | Это разные последовательности: прямой вариант не настраивает Git-workflow |
+| Замена source из файла 1С | `eska import FILE` | `eska-build import FILE` | Нужен `eska-vcs`; сначала используйте `--dry-run` |
+| Патч-расширение | `eska patch …` | `eska-build patch …` | Ограниченный сценарий committed-изменений общих модулей; VCS нужен и для плана |
+| Очистка служебной ИБ | `eska clean` | `eska-build clean` | Опубликованные файлы сборки сохраняются |
+| Поиск платформы | `eska platform list` | `eska-build platform list` | Показывает доступные установки |
+| Машинные настройки | `eska config init`, `eska config edit` | `eska-build config init`, `eska-build config edit` | Настройки runner и путей для этой машины |
+| Обновление CLI | `eska update --check`, `eska update` | Одноимённых команд у мини-программ нет | Используется поддерживаемый опубликованный канал; Cargo/checkout обновляются своим способом |
+
+Все публичные Git-команды доступны через оба входа:
+
+| Действие | Через `eska` | Через `eska-vcs` |
+| --- | --- | --- |
+| Клонировать проект | `eska clone URL DIRECTORY` | `eska-vcs clone URL DIRECTORY` |
+| Состояние проекта | `eska status` | `eska-vcs status` |
+| Изменения файлов или объектов | `eska diff`, `eska diff --semantic` | `eska-vcs diff`, `eska-vcs diff --semantic` |
+| История | `eska history --limit 10` | `eska-vcs history --limit 10` |
+| Начать задачу | `eska start TASK-123` | `eska-vcs start TASK-123` |
+| Переключить задачу | `eska switch TASK-123`, `eska switch --base` | `eska-vcs switch TASK-123`, `eska-vcs switch --base` |
+| Сохранить commit | `eska save -m "Сообщение"` | `eska-vcs save -m "Сообщение"` |
+| Завершить локальную задачу | `eska finish` | `eska-vcs finish` |
+| Отложить незавершённые изменения | `eska shelve` | `eska-vcs shelve` |
+| Показать полки | `eska shelves` | `eska-vcs shelves` |
+| Восстановить полку | `eska unshelve` | `eska-vcs unshelve` |
+
+### Где нельзя просто заменить имя программы
+
+`eska new/init` выбирают платформу, настраивают workflow и при необходимости
+инициализируют Git. У них есть `--workflow`, `--no-vcs` и параметры выбора
+платформы. `eska new --from` дополнительно распаковывает бинарный файл 1С.
+Это операции для полного рабочего цикла, которым нужны project/build,
+а без `--no-vcs` — также VCS.
+
+`eska-project new/init` создают структуру проекта без поиска установленной
+платформы и без Git-инициализации. У них нет `--workflow`, `--no-vcs` и `--from`.
+Если передать `--platform-version`, значение записывается в манифест;
+само наличие платформы этим не проверяется. `new` не генерирует XML объекта 1С.
+
+`eska build --manifest` запрашивает Git-сведения у `eska-vcs` и включает их
+в паспорт. `eska-build build --manifest` самостоятельно к Git не обращается;
+`source.git.status = "unavailable"` означает отсутствие полученных сведений,
+а не доказанное отсутствие repository. Исходники и проверка результата сборки
+используют общий механизм у обоих входов.
+
+`eska check --format json` соответствует `eska-check --format json`.
+Запись `eska-check check` ошибочна. У `eska-build` действие, наоборот,
+сохраняется: `eska-build build`, `eska-build clean`, `eska-build platform list`.
+
+В текущем общем CLI нет `eska validate`, `eska context`, `eska analyzer-config`,
+`eska serve` и `eska unpack`. Используйте соответствующий прямой вход из таблицы.
+Для обычной проверки корня у общей программы есть запуск `eska` без подкоманды;
+для подключения текущего Explorer — `eska-project serve --stdio`.
+
+### Как читать и запускать примеры
+
+В разделах сборки, анализа и Git сначала показана общая `eska`, затем прямой
+вариант. Выбирайте один вариант для каждого действия. Можно смешивать входы:
+например, подготовить контекст через `eska-project`, а проверять и собирать
+через `eska check` и `eska build`.
+
+Команды над существующим проектом запускаются из каталога с `eska.toml`
+или с глобальным `--project-dir`. Его аргумент — каталог, не путь к манифесту:
+
+```sh
+eska --project-dir ./accounting build --dry-run
+eska-build --project-dir ./accounting build --dry-run
+eska-project --project-dir ./accounting context --format json
+```
+
+Для workspace `--project-dir` задаёт корень поиска, `--project NAME` выбирает
+участника для поддерживающей этот флаг команды, а `--application NAME`
+выбирает контекст анализа. Это разные параметры. `eska check` использует
+`--application`, но не `--project` и не `--workspace`.
+
+Имена каталогов, `TASK-123`, пути `/path/to/…` и версия платформы
+`8.3.27.2325` в примерах заменяются вашими значениями. Флаги `--dry-run`
+есть только у конкретных операций: их наличие проверяется в справке.
+
+```sh
+eska --help
+eska build --help
+eska-project --help
+eska-build build --help
+eska-check --help
+eska-vcs --help
+```
+
+`--version` показывает версию программы; `version` без двух дефисов читает
+версию проекта 1С. `--lang ru|en` меняет human-вывод, машинные JSON keys
+не локализуются.
+
 <a id="installation"></a>
 
 ## 2. Установите текущую сборку
 
 ### Публичный пакет и текущий checkout
 
-На дату проверки GitHub latest ESKA — `0.14.3`, Explorer — `0.0.12`.
-Комплект ESKA `0.14.3` ещё не содержит отдельного project ZIP.
-Все пять компонентов `0.15.0` уже опубликованы в Cargo registry.
+Компонентная поставка появилась в ESKA `0.15.0`; для готовых бинарников проверяйте
+Assets выбранного [GitHub Release](https://github.com/1c-tooling/eska/releases).
+Все пять компонентов также доступны в Cargo registry.
 Установите их через Cargo либо соберите checkout, а Explorer упакуйте из текущих
 исходников: новый backend со старым VSIX сам по себе не добавит новый клиент.
 Номер расширения в checkout пока также `0.0.12`, поэтому проверяйте происхождение
@@ -51,10 +201,10 @@ VSIX, выбранный путь backend и его возможности, а �
 С установленным Rust/Cargo можно установить весь текущий набор:
 
 ```sh
-cargo install --locked eska-project@0.15.0 eska-check@0.15.0 eska-build@0.15.0 eska-vcs@0.15.0 eska@0.15.0
+cargo install --locked eska-project eska-check eska-build eska-vcs eska
 ```
 
-Для одного дерева достаточно `cargo install --locked eska-project@0.15.0`.
+Для одного дерева достаточно `cargo install --locked eska-project`.
 Cargo собирает бинарник из опубликованного crate. Его каталог `bin` должен быть
 в PATH редактора; либо задайте полный путь к установленному executable.
 BSL Analyzer и VSIX устанавливаются отдельно.
@@ -656,7 +806,7 @@ checkout. При ручном удалении shell-установки убер
 
 | Симптом | Что проверить |
 | --- | --- |
-| Нет `eska-project` или project ZIP | Источник установки: публичный `0.14.3` старше текущей компонентной сборки; используйте checkout |
+| Нет `eska-project` или project ZIP | Версию и Assets выбранного релиза; установите компонент через Cargo либо соберите checkout |
 | Не подключается дерево | Доверие папке, `eska.toml`, абсолютный executable, режим `project` и Metadata API 1.12 |
 | Backend новый, UI старый | Перепакуйте и переустановите текущий VSIX; номер `0.0.12` может совпадать со старым релизом |
 | Есть подсветка, но нет диагностики | Путь и версия app 0.3.2, `languageFeatures`, состояние LSP, Output и конфликт BSL-расширений |
