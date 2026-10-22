@@ -505,6 +505,7 @@ fn analysis_root_snapshot_reads_identity_and_compatibility_once() {
     assert_eq!(mode.as_deref(), Some("Version8_3_20"));
     assert_eq!(source.io_stats().xml_reads, 1);
     assert_eq!(source.io_stats().root_parses, 1);
+    assert_eq!(source.io_stats().root_hash_nanos, 0);
     assert_eq!(
         source.io_stats().xml_bytes,
         fs::metadata(path).unwrap().len()

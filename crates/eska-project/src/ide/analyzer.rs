@@ -95,21 +95,21 @@ impl Server {
                     failure_value(&eska_analyzer::Error::Context(Box::new(failure)), events)
                 });
         }
-        let plan = configuration::inspect(&start, input.application.as_deref())
-            .map_err(|failure| failure_value(&failure, events))?;
-        if method == "analyzer/configStatus" {
-            return Ok(crate::analyzer_config::document(&plan, false));
-        }
         if method == "analyzer/acquire" {
             if self.analyzer_lease.is_some() {
                 return Err(domain("analyzer_already_leased", json!({})));
             }
-            let lease =
-                configuration::lease(&plan).map_err(|failure| failure_value(&failure, events))?;
+            let (plan, lease) = configuration::inspect_leased(&start, input.application.as_deref())
+                .map_err(|failure| failure_value(&failure, events))?;
             let mut document = crate::analyzer_config::document(&plan, false);
             document["leaseId"] = json!(plan.token);
             self.analyzer_lease = Some((plan.token, lease));
             return Ok(document);
+        }
+        let plan = configuration::inspect(&start, input.application.as_deref())
+            .map_err(|failure| failure_value(&failure, events))?;
+        if method == "analyzer/configStatus" {
+            return Ok(crate::analyzer_config::document(&plan, false));
         }
         let binary = input
             .analyzer

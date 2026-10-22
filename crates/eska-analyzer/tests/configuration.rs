@@ -392,14 +392,65 @@ fn active_context_is_protected_across_processes() {
     assert_eq!(second.ownership.context.as_deref(), Some("two"));
 }
 
+/// Acquisition reads current inputs under its lease and releases failed attempts before later preparation.
+#[cfg(unix)]
+#[test]
+fn leased_inspection_checks_fresh_inputs_and_preserves_config_bytes() {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("project");
+    project(&root, ProjectType::Configuration);
+    let cancelled = AtomicBool::new(false);
+    let analyzer = Analyzer {
+        binary: fake_analyzer(&fixture.0),
+        timeout: Duration::from_secs(5),
+        cancelled: &cancelled,
+        connection_closed: None,
+    };
+    let first = configuration::inspect(&root, None).unwrap();
+    assert!(matches!(
+        configuration::inspect_leased(&root, None),
+        Err(Error::StalePreview)
+    ));
+    let prepared = configuration::prepare(&first, &analyzer, false).unwrap();
+    let original = fs::read(prepared.path()).unwrap();
+    let (current, lease) = configuration::inspect_leased(&root.join("src"), None).unwrap();
+    assert_eq!(current.contents, prepared.contents);
+    assert_eq!(current.token, prepared.token);
+    assert_eq!(current.context.root(), prepared.context.root());
+    assert_eq!(fs::read(current.path()).unwrap(), original);
+    drop(lease);
+
+    let descriptor = root.join("src/Configuration.xml");
+    let text = fs::read_to_string(&descriptor).unwrap();
+    fs::write(&descriptor, text.replace("Version8_3_27", "Version8_3_17")).unwrap();
+    assert!(matches!(
+        configuration::inspect_leased(&root, None),
+        Err(Error::StalePreview)
+    ));
+    let stale = configuration::inspect(&root, None).unwrap();
+    let updated = configuration::prepare(&stale, &analyzer, false).unwrap();
+    let (current, lease) = configuration::inspect_leased(&root, None).unwrap();
+    assert_eq!(current.token, updated.token);
+    assert_ne!(current.token, prepared.token);
+    drop(lease);
+    fs::write(
+        current.path(),
+        [current.contents.as_slice(), b"# manual\n"].concat(),
+    )
+    .unwrap();
+    assert!(matches!(
+        configuration::inspect_leased(&root, None),
+        Err(Error::StalePreview)
+    ));
+}
+
 /// Run in a separate process so advisory-lock behavior cannot be inferred from in-process mocks.
 #[test]
 fn lease_child() {
     let Some(root) = std::env::var_os("ESKA_TEST_LEASE_ROOT").map(PathBuf::from) else {
         return;
     };
-    let plan = configuration::inspect(&root, Some("one")).unwrap();
-    let _lease = configuration::lease(&plan).unwrap();
+    let (_plan, _lease) = configuration::inspect_leased(&root, Some("one")).unwrap();
     fs::write(root.join("lease-ready"), b"").unwrap();
     let deadline = std::time::Instant::now() + Duration::from_secs(10);
     while !root.join("release-lease").exists() {

@@ -133,15 +133,23 @@ fn read_root(
         let input = read_descriptor(&physical)?;
         stats.xml_bytes += input.len() as u64;
         stats.xml_read_nanos += started.elapsed().as_nanos();
-        let started = std::time::Instant::now();
-        let hash = Sha256::digest(input.as_bytes()).into();
-        stats.root_hash_nanos += started.elapsed().as_nanos();
-        let key = format!(
-            "root:{:?}:{}",
-            path.as_os_str().as_encoded_bytes(),
-            project.configuration().project_type().as_str()
-        );
-        if let Some(root) = cache.and_then(|cache| cache.get::<MetadataObject>(&key, hash)) {
+        // Analysis has no disk cache. Hashing its root again cannot validate or
+        // reuse anything; the analyzer configuration fingerprints its own inputs.
+        let cache_input = cache.map(|_| {
+            let started = std::time::Instant::now();
+            let hash: [u8; 32] = Sha256::digest(input.as_bytes()).into();
+            stats.root_hash_nanos += started.elapsed().as_nanos();
+            let key = format!(
+                "root:{:?}:{}",
+                path.as_os_str().as_encoded_bytes(),
+                project.configuration().project_type().as_str()
+            );
+            (key, hash)
+        });
+        if let Some(root) = cache
+            .zip(cache_input.as_ref())
+            .and_then(|(cache, (key, hash))| cache.get::<MetadataObject>(key, *hash))
+        {
             roots.push((path, root, None));
             continue;
         }
@@ -185,8 +193,8 @@ fn read_root(
         } else {
             None
         };
-        if let Some(cache) = cache {
-            cache.put(&key, hash, &root);
+        if let Some((cache, (key, hash))) = cache.zip(cache_input.as_ref()) {
+            cache.put(key, *hash, &root);
         }
         roots.push((path, root, compatibility));
     }

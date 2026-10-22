@@ -6,6 +6,7 @@ use std::{
 };
 
 use eska_project_core::application::{self, AnalysisContext, AnalyzerPolicy, SourceRole};
+use eska_project_core::project::discovery::{self, DiscoveryContext};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -180,6 +181,32 @@ pub fn lease(plan: &Plan) -> Result<Lease, Error> {
     }
     ensure_snapshot(plan)?;
     Ok(Lease { _lock: lock })
+}
+
+/// Inspect a current configuration once under its shared lease, without accepting an earlier preview.
+///
+/// # Errors
+/// Rejects invalid contexts, writer contention, changed ownership roots and noncurrent configurations.
+pub fn inspect_leased(start: &Path, application: Option<&str>) -> Result<(Plan, Lease), Error> {
+    // Manifest discovery locates the lock without parsing source XML. The complete
+    // inspection happens only after acquiring it; callers still compare its token
+    // with their prepared configuration before starting the language process.
+    let discovered = discovery::discover_context(start).map_err(|failure| {
+        Error::Context(Box::new(application::ContextError::Discovery(Box::new(
+            failure,
+        ))))
+    })?;
+    let root = match discovered {
+        DiscoveryContext::Standalone(project) => project.root().to_owned(),
+        DiscoveryContext::Workspace { workspace, .. } => workspace.root().to_owned(),
+    };
+    let lock = ConfigLock::shared(&root)?;
+    let plan = inspect(start, application)?;
+    if plan.context.root() != root || plan.status != Status::Current {
+        return Err(Error::StalePreview);
+    }
+    storage::unchanged(&plan.path(), plan.previous.as_deref())?;
+    Ok((plan, Lease { _lock: lock }))
 }
 
 /// Detect manifest/root edits even if the generated file itself has not changed.
