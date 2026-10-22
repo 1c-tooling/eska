@@ -1,3 +1,5 @@
 # Bootstrap files are shared byte-for-byte by all native release jobs.
 /LICENSE text eol=lf
 /tools/*.py text eol=lf
+# Upstream notices are verified against byte-exact provenance checksums.
+/tools/license-overrides/** -text

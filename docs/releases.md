@@ -49,6 +49,9 @@ gh workflow run release-plz.yml --ref main -f version=0.15.0
 метаданные всего workspace; одной загрузки зависимостей текущей платформы
 для этого недостаточно. Сама упаковка остаётся полностью offline, а ошибка
 Cargo сохраняет исходный stderr в поле `detail`.
+Upstream-файлы в `tools/license-overrides` сохраняются побайтно: `.gitattributes`
+отключает преобразование концов строк, чтобы checkout Windows не менял SHA-256
+из `provenance.json`.
 Каждый runner исполняет собственные бинарники: проверяет контракты, устанавливает
 и повторно устанавливает все пять компонентных ZIP в пустой каталог, проверяет
 help на двух языках и initialize/shutdown Metadata API. Это проверка поставки,

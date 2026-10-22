@@ -4,6 +4,7 @@ import hashlib
 import io
 import os
 from pathlib import Path
+import shutil
 import sys
 import subprocess
 import tempfile
@@ -29,6 +30,36 @@ class NoticeErrorsTests(unittest.TestCase):
             component_notices.metadata(REPOSITORY)
         self.assertEqual(raised.exception.code, "cargo")
         self.assertEqual(raised.exception.detail, diagnostic.decode().strip())
+
+
+class NoticeCheckoutTests(unittest.TestCase):
+    """Exercise Windows-style Git checkout without changing upstream notice bytes."""
+
+    def test_autocrlf_preserves_upstream_checksums(self):
+        """A fresh CRLF checkout must retain every exact checksum recorded in provenance."""
+        playground = Path(os.environ["ESKA_TEST_ROOT"]).resolve()
+        self.assertEqual(playground, (REPOSITORY.parent / "eska-playground").resolve())
+        with tempfile.TemporaryDirectory(prefix="eska-notice-checkout-", dir=playground) as temporary:
+            checkout = Path(temporary)
+            shutil.copy2(REPOSITORY / ".gitattributes", checkout)
+            notices = checkout / "tools/license-overrides"
+            shutil.copytree(REPOSITORY / "tools/license-overrides", notices)
+            control = checkout / "control.txt"
+            control.write_bytes(b"ordinary text\n")
+            subprocess.run(["git", "init", "--quiet"], cwd=checkout, check=True, capture_output=True)
+            subprocess.run(["git", "-c", "core.autocrlf=false", "add", "."],
+                           cwd=checkout, check=True, capture_output=True)
+            shutil.rmtree(notices)
+            control.unlink()
+            subprocess.run(["git", "-c", "core.autocrlf=true", "checkout-index", "--all"],
+                           cwd=checkout, check=True, capture_output=True)
+            self.assertEqual(control.read_bytes(), b"ordinary text\r\n")
+            provenances = list(notices.glob("*/provenance.json"))
+            self.assertTrue(provenances)
+            for provenance in provenances:
+                for filename, declaration in component_package.parse_json(provenance.read_bytes())["files"].items():
+                    with self.subTest(crate=provenance.parent.name, filename=filename):
+                        self.assertEqual(component_package.digest(provenance.parent / filename), declaration["sha256"])
 
 
 @unittest.skipUnless(sys.platform.startswith("linux"), "Executable fixture requires Linux")
