@@ -32,3 +32,4 @@ jobs:
           cargo test --locked
           python3 -B -m unittest discover -s tests/components -p 'test_*.py'
           cargo package --workspace --locked
+          python3 -B tools/release_bundle.py verify-crates

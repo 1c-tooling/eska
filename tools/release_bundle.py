@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tomllib
 import zipfile
 
@@ -29,6 +30,37 @@ def release_version():
     for dependency in manifest["workspace"]["dependencies"].values():
         require(dependency["version"] == "=" + version, "version", dependency)
     return version
+
+
+def verify_crates(directory):
+    """Inspect normalized manifests because workspace packaging hides registry-only dev dependencies."""
+    version = release_version()
+    manifests = [ROOT / "Cargo.toml", *sorted((ROOT / "crates").glob("*/Cargo.toml"))]
+    packages = {tomllib.loads(path.read_text(encoding="utf-8"))["package"]["name"] for path in manifests}
+    for name in sorted(packages):
+        archive = directory / f"{name}-{version}.crate"
+        require(archive.is_file(), "missing-crate", archive)
+        with tarfile.open(archive, "r:gz") as source:
+            with source.extractfile(f"{name}-{version}/Cargo.toml") as manifest_file:
+                manifest = tomllib.loads(manifest_file.read().decode("utf-8"))
+        require(manifest["package"]["name"] == name and manifest["package"]["version"] == version,
+                "version", archive)
+        for table in [manifest, *manifest.get("target", {}).values()]:
+            for alias, dependency in table.get("dev-dependencies", {}).items():
+                package = dependency.get("package", alias) if isinstance(dependency, dict) else alias
+                require(package not in packages, "registry-dev-dependency", f"{name} -> {package}")
+
+
+def resume_config(version, output):
+    """Permit an explicit retry of the current version without changing normal release-PR gating."""
+    require(version == release_version(), "version", version)
+    content = (ROOT / "release-plz.toml").read_text(encoding="utf-8")
+    expected = tomllib.loads(content)
+    require(expected["workspace"]["release_always"] is False, "release-config")
+    content, count = re.subn(r"^release_always = false$", "release_always = true", content, flags=re.M)
+    expected["workspace"]["release_always"] = True
+    require(count == 1 and tomllib.loads(content) == expected, "release-config")
+    output.write_text(content, encoding="utf-8")
 
 
 def targets():
@@ -217,7 +249,9 @@ def finalize(output, notes_path):
 def main():
     """Release helpers only prepare local files; GitHub publication belongs to the gated workflow."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("version", "prepare", "copy-binaries", "collect", "finalize"))
+    parser.add_argument("command", choices=("version", "verify-crates", "resume-config", "prepare",
+                                            "copy-binaries", "collect", "finalize"))
+    parser.add_argument("--version")
     parser.add_argument("--bin-dir", type=Path)
     parser.add_argument("--components", type=Path)
     parser.add_argument("--parts", type=Path)
@@ -226,6 +260,11 @@ def main():
     args = parser.parse_args()
     if args.command == "version":
         print(release_version())
+    elif args.command == "verify-crates":
+        verify_crates(args.parts or ROOT / "target/package")
+    elif args.command == "resume-config":
+        require(args.version and args.output, "arguments", "--version, --output")
+        resume_config(args.version, args.output)
     elif args.command == "prepare":
         prepare(args.bin_dir or ROOT / "target/release", args.components)
     elif args.command == "copy-binaries":
