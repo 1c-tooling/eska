@@ -222,11 +222,13 @@ def probe(executable, directory):
                 require(time.monotonic() < deadline, "probe-timeout")
                 require(max(os.fstat(stdout.fileno()).st_size, os.fstat(stderr.fileno()).st_size) <= 65536, "probe-output")
                 time.sleep(0.02)
-            require(child.returncode == 0, "probe", executable)
             require(max(os.fstat(stdout.fileno()).st_size, os.fstat(stderr.fileno()).st_size) <= 65536, "probe-output")
             stdout.seek(0)
             stderr.seek(0)
-            require(not stderr.read(), "probe", executable)
+            diagnostic = stderr.read().decode("utf-8", errors="replace")
+            require(child.returncode == 0 and not diagnostic, "probe", json.dumps({
+                "executable": str(executable), "returncode": child.returncode, "stderr": diagnostic,
+            }, ensure_ascii=False))
             return parse_json(stdout.read())
         finally:
             if child.poll() is None:

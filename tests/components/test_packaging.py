@@ -66,6 +66,26 @@ class NoticeCheckoutTests(unittest.TestCase):
 class PackagingTests(unittest.TestCase):
     """The graph fixture avoids Cargo/network while exercising the real producer and process probe."""
 
+    def test_failed_probe_preserves_exit_status_and_stderr(self):
+        """A runtime crash must expose its process result instead of only the executable path."""
+        playground = Path(os.environ["ESKA_TEST_ROOT"]).resolve()
+        self.assertEqual(playground, (REPOSITORY.parent / "eska-playground").resolve())
+        with tempfile.TemporaryDirectory(prefix="eska-probe-test-", dir=playground) as temporary:
+            base = Path(temporary)
+            for returncode in (0, 7):
+                with self.subTest(returncode=returncode):
+                    data, _checksum = fixture(probe_code=f"sys.stderr.buffer.write(b'runtime failure\\xff'); sys.exit({returncode})")
+                    executable = base / "eska-project"
+                    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                        executable.write_bytes(archive.read("bin/eska-project"))
+                    executable.chmod(0o755)
+                    with self.assertRaises(component_package.Failure) as raised:
+                        component_package.probe(executable, base)
+                    self.assertEqual(raised.exception.code, "probe")
+                    self.assertEqual(component_package.parse_json(raised.exception.detail), {
+                        "executable": str(executable), "returncode": returncode, "stderr": "runtime failure\ufffd",
+                    })
+
     def test_selected_package_reproduces_bytes_and_carries_the_bootstrap_license(self):
         """A local bundle includes only requested tools and never replaces an existing output directory."""
         playground = Path(os.environ["ESKA_TEST_ROOT"]).resolve()
