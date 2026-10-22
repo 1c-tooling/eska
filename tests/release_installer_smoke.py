@@ -40,7 +40,8 @@ def main():
         try:
             for _ in range(2):
                 result = subprocess.run(command, cwd=stand, env=environment,
-                                        check=True, capture_output=True, text=True, timeout=120)
+                                        capture_output=True, text=True, timeout=120)
+                assert result.returncode == 0, result
                 assert "no checksums to verify" not in result.stdout + result.stderr
             receipt = json.loads((stand / "config/eska/eska-receipt.json").read_bytes())
             assert set(receipt["binaries"]) == {tool + suffix for tool in tools}, receipt
@@ -62,7 +63,9 @@ def main():
             for locale in ("ru_RU.UTF-8", "en_US.UTF-8"):
                 rejected = subprocess.run(command, cwd=stand,
                                           env={**environment, "LC_ALL": locale}, capture_output=True, text=True, timeout=120)
-                assert rejected.returncode != 0 and "component-installation-conflict" in rejected.stderr
+                # cargo-dist's PowerShell catch writes diagnostics to the information/stdout stream.
+                assert rejected.returncode != 0, rejected
+                assert "component-installation-conflict" in rejected.stdout + rejected.stderr, rejected
                 assert {path.relative_to(stand): path.read_bytes() for path in stand.rglob("*") if path.is_file()} == before
             print(json.dumps({"passed": True, "version": version, "components": sorted(tools),
                               "receipt_isolated": True, "component_ownership_preserved": True}))
