@@ -231,3 +231,39 @@ fn common_source_snapshots_reject_aliased_source_files() {
     let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
     assert!(project.source_snapshot(&path, None).is_err());
 }
+
+/// Reading current policy before a delayed file notification must not consume that notification's invalidation.
+#[test]
+fn source_snapshot_read_cannot_hide_a_later_support_rules_event() {
+    for initially_present in [true, false] {
+        let (directory, mut workspace, _, path) = setup();
+        let rules = directory.0.join("src/Ext/ParentConfigurations.bin");
+        if !initially_present {
+            fs::remove_file(&rules).unwrap();
+        }
+        let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+        project.source_snapshot(&path, None).unwrap();
+        let generation = project.generation();
+        let root = "11111111-1111-1111-1111-111111111111";
+        fs::write(&rules, format!("{{6,0,1,{root},0,{root},\"1\",\"Vendor\",\"Test\",1,0,0,{root},{root},0,0,0,1,0,0,0,1,0,1,0,1,1,1,1}}")).unwrap();
+        assert!(
+            project
+                .source_snapshot(&path, None)
+                .unwrap()
+                .protection
+                .support
+                .read_only
+        );
+        let event = [PathBuf::from("Ext/ParentConfigurations.bin")];
+        let changed = project.changed_paths(&event).unwrap();
+        assert!(
+            changed.generation > generation,
+            "a policy read cannot acknowledge an undispatched event"
+        );
+        assert_eq!(
+            project.changed_paths(&event).unwrap().generation,
+            changed.generation,
+            "identical bytes are still a duplicate after the event has been acknowledged"
+        );
+    }
+}
