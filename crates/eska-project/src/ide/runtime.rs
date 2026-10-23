@@ -379,6 +379,7 @@ fn process_one(
                     && !server.closing
                     && (super::metadata::is_method(method)
                         || super::analyzer::is_method(method)
+                        || super::query::is_method(method)
                         || matches!(
                             method,
                             "initialize"
@@ -415,22 +416,7 @@ fn process_one(
         )
     }))
     .unwrap_or_else(|_| Err(error(-32603)));
-    let committed = matches!(
-        request.method,
-        "initialize"
-            | "workspace/open"
-            | "workspace/close"
-            | "shutdown"
-            | "metadata/refresh"
-            | "metadata/index"
-            | "metadata/updateProperty"
-            | "metadata/undoProperty"
-            | "metadata/renameApply"
-            | "analyzer/configPrepare"
-            | "analyzer/migrationApply"
-            | "analyzer/acquire"
-            | "analyzer/release"
-    );
+    let committed = commits_state(request.method);
     if request.method == "metadata/refresh"
         && result.is_ok()
         && request.params["resetFileSequence"] == true
@@ -445,6 +431,31 @@ fn process_one(
             result
         },
     ))
+}
+
+/// Once an operation commits lifecycle, source or retained state, its acknowledgement cannot be hidden by late cancellation.
+fn commits_state(method: &str) -> bool {
+    matches!(
+        method,
+        "initialize"
+            | "workspace/open"
+            | "workspace/close"
+            | "shutdown"
+            | "metadata/refresh"
+            | "metadata/index"
+            | "metadata/updateProperty"
+            | "metadata/undoProperty"
+            | "metadata/renameApply"
+            | "analyzer/configPrepare"
+            | "analyzer/migrationApply"
+            | "analyzer/acquire"
+            | "analyzer/release"
+            | "query/bufferBegin"
+            | "query/bufferAppend"
+            | "query/bufferClose"
+            | "query/open"
+            | "query/close"
+    )
 }
 
 /// Reset removes only queued file notifications for this session/project, including batch entries.

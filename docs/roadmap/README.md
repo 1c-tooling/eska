@@ -42,7 +42,8 @@ CLI прошли. По решению пользователя от 2026-10-22 �
 По запросу от 2026-10-21 добавлен [редактор запросов T100–T105](16-query-editing.md):
 СКД, динамические списки и BSL в отдельных вкладках, блокировка BSL-владельца,
 контекстный анализ черновика и конструктор с сохранением комментариев.
-T100 — `IN-PROGRESS`, T101–T105 — `PLANNED`, независимо от опциональной отладки.
+T100 — `DONE`: извлечение/планы XML/BSL, снимки и Metadata API 1.13.
+T101 — `IN-PROGRESS`, T102–T105 — `PLANNED`, независимо от опциональной отладки.
 Designer XML/BSL остаются исходниками; текущая очередь не меняется.
 
 По решению от 2026-10-22 добавлена [оптимизация T106](17-language-performance.md),
@@ -405,8 +406,8 @@ BSL LSP и визуальный редактор форм в это направ
 | T97 | DONE | Выборочные пакеты, установка и совместимость инструментов | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T98 | PLANNED | Опциональная проверка DAP backend и контракт отладчика | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
 | T99 | PLANNED | Опциональный самостоятельный eska-debug | [15-designer-xml-analyzer.md](15-designer-xml-analyzer.md) |
-| T100 | IN-PROGRESS | Извлечение запросов XML/BSL и обратная запись без потерь | [16-query-editing.md](16-query-editing.md) |
-| T101 | PLANNED | Вкладки запросов СКД и динамических списков | [16-query-editing.md](16-query-editing.md) |
+| T100 | DONE | Извлечение запросов XML/BSL и обратная запись без потерь | [16-query-editing.md](16-query-editing.md) |
+| T101 | IN-PROGRESS | Вкладки запросов СКД и динамических списков | [16-query-editing.md](16-query-editing.md) |
 | T102 | PLANNED | BSL-черновики, блокировка владельца и явное применение | [16-query-editing.md](16-query-editing.md) |
 | T103 | PLANNED | Контекстный анализ черновика внешним bsl-analyzer | [16-query-editing.md](16-query-editing.md) |
 | T104 | PLANNED | Конструктор запросов с сохранением комментариев | [16-query-editing.md](16-query-editing.md) |

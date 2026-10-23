@@ -10,13 +10,58 @@ const SCHEMA: &str = "http://v8.1c.ru/8.1/data-composition-system/schema";
 const FORM: &str = "http://v8.1c.ru/8.3/xcf/logform";
 const XSI: &str = "http://www.w3.org/2001/XMLSchema-instance";
 
+/// Empty payloads still retain their schema kind for a logical owner check.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum XmlKind {
+    DataComposition,
+    Form,
+}
+
+/// Nested dataset paths must not amplify a small document into unbounded repeated identities.
+#[derive(Default)]
+struct Queries {
+    values: Vec<Query>,
+    identity_bytes: usize,
+    mappings: usize,
+}
+
+impl Queries {
+    /// Bound aggregate output, not only each individual scalar's map.
+    fn push(&mut self, value: Query) -> Result<(), QueryError> {
+        let bytes = match &value.identity {
+            QueryIdentity::DataSet(path) => path.iter().map(String::len).sum(),
+            QueryIdentity::DynamicList { name, id } => name.len() + id.len(),
+            QueryIdentity::BslLiteral(_) => return Err(QueryError::UnsupportedStructure),
+        };
+        self.identity_bytes += bytes;
+        self.mappings += value.map.spans().len();
+        if self.values.len() == 1024
+            || self.identity_bytes > super::MAX_SNAPSHOT_BYTES
+            || self.mappings > 65_536
+        {
+            return Err(QueryError::TooLarge);
+        }
+        self.values.push(value);
+        Ok(())
+    }
+}
+
 /// Find saved query values in a single SCD/form payload, without inventing automatic queries.
 ///
 /// # Errors
 /// Rejects oversized, malformed or ambiguous XML before returning any query candidates.
 pub fn read_xml(input: &str) -> Result<Vec<Query>, QueryError> {
+    read_with_kind(input).map(|(_, values)| values)
+}
+
+/// Return the validated schema kind together with queries, including automatic forms with none.
+pub fn read_with_kind(input: &str) -> Result<(XmlKind, Vec<Query>), QueryError> {
     super::check_size(input)?;
-    crate::project::metadata_parser::check_envelope(input).map_err(|_| QueryError::InvalidXml)?;
+    crate::project::metadata_parser::check_envelope(input).map_err(|error| match error {
+        crate::project::metadata_parser::ParseError::TooLarge
+        | crate::project::metadata_parser::ParseError::TooDeep => QueryError::TooLarge,
+        _ => QueryError::InvalidXml,
+    })?;
     let document = Document::parse_with_options(
         input,
         roxmltree::ParsingOptions {
@@ -26,15 +71,17 @@ pub fn read_xml(input: &str) -> Result<Vec<Query>, QueryError> {
     )
     .map_err(|_| QueryError::InvalidXml)?;
     let root = document.root_element();
-    let mut queries = Vec::new();
-    if root.has_tag_name((SCHEMA, "DataCompositionSchema")) {
+    let mut queries = Queries::default();
+    let kind = if root.has_tag_name((SCHEMA, "DataCompositionSchema")) {
         data_sets(input, root, &[], &mut queries)?;
+        XmlKind::DataComposition
     } else if root.has_tag_name((FORM, "Form")) {
         dynamic_lists(input, root, &mut queries)?;
+        XmlKind::Form
     } else {
         return Err(QueryError::UnsupportedStructure);
-    }
-    Ok(queries)
+    };
+    Ok((kind, queries.values))
 }
 
 /// Dataset names are structural identity, including every union dataset ancestor.
@@ -42,7 +89,7 @@ fn data_sets(
     input: &str,
     parent: Node<'_, '_>,
     ancestors: &[String],
-    queries: &mut Vec<Query>,
+    queries: &mut Queries,
 ) -> Result<(), QueryError> {
     let mut names = BTreeSet::new();
     for data_set in parent
@@ -53,6 +100,9 @@ fn data_sets(
         if name.is_empty() || !names.insert(name.clone()) {
             return Err(QueryError::UnsupportedStructure);
         }
+        if ancestors.iter().map(String::len).sum::<usize>() + name.len() > 65_536 {
+            return Err(QueryError::TooLarge);
+        }
         let mut path = ancestors.to_vec();
         path.push(name);
         if schema_type(data_set, SCHEMA, "DataSetQuery") {
@@ -60,7 +110,7 @@ fn data_sets(
                 input,
                 one(data_set, SCHEMA, "query")?,
                 QueryIdentity::DataSet(path),
-            )?);
+            )?)?;
         } else if schema_type(data_set, SCHEMA, "DataSetUnion") {
             data_sets(input, data_set, &path, queries)?;
         }
@@ -69,11 +119,7 @@ fn data_sets(
 }
 
 /// Only a manual dynamic list with an actual saved `QueryText` has editable source bytes.
-fn dynamic_lists(
-    input: &str,
-    root: Node<'_, '_>,
-    queries: &mut Vec<Query>,
-) -> Result<(), QueryError> {
+fn dynamic_lists(input: &str, root: Node<'_, '_>, queries: &mut Queries) -> Result<(), QueryError> {
     let containers = children(root, FORM, "Attributes");
     if containers.len() > 1 {
         return Err(QueryError::UnsupportedStructure);
@@ -124,7 +170,7 @@ fn dynamic_lists(
                 name: name.to_owned(),
                 id: id.to_owned(),
             },
-        )?);
+        )?)?;
     }
     Ok(())
 }
@@ -190,6 +236,9 @@ fn value(input: &str, node: Node<'_, '_>, identity: QueryIdentity) -> Result<Que
     while offset < inner.end {
         let rest = &input[offset..inner.end];
         if rest.starts_with("<!--") {
+            if comments.len() == super::MAX_SOURCE_COMMENTS {
+                return Err(QueryError::TooLarge);
+            }
             let end = offset + rest.find("-->").ok_or(QueryError::InvalidXml)? + 3;
             comments.push(SourceComment {
                 source: offset..end,

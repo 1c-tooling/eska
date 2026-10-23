@@ -84,6 +84,12 @@ impl QueryDocument {
         &self.snapshot
     }
 
+    /// Detect external disk writes independently of dirty editor text and editor versions.
+    #[must_use]
+    pub fn disk_snapshot(&self) -> &str {
+        &self.disk_snapshot
+    }
+
     /// This version belongs to the editor buffer, independently of metadata generations.
     #[must_use]
     pub const fn version(&self) -> u64 {
@@ -116,8 +122,15 @@ impl QueryDocument {
         if self.kind == QueryDocumentKind::Bsl {
             return Err(QueryError::UnsupportedStructure);
         }
-        let queries = query::read_xml(&self.input)?;
-        if queries.iter().any(|query| !self.accepts(&query.identity)) {
+        let (kind, queries) = query::read_xml_with_kind(&self.input)?;
+        if !matches!(
+            (self.kind, kind),
+            (
+                QueryDocumentKind::DataComposition,
+                query::XmlKind::DataComposition
+            ) | (QueryDocumentKind::Form, query::XmlKind::Form)
+        ) || queries.iter().any(|query| !self.accepts(&query.identity))
+        {
             return Err(QueryError::UnsupportedStructure);
         }
         Ok(queries)
@@ -197,6 +210,21 @@ impl ProjectSession {
         document: &QueryDocument,
         revision: QueryRevision<'_>,
     ) -> Result<(), QueryDocumentError> {
+        if !self.check_query_read(document, revision)? {
+            return Err(QueryDocumentError::ReadOnly);
+        }
+        Ok(())
+    }
+
+    /// A forbidden source can be inspected without turning that read into permission to edit.
+    ///
+    /// # Errors
+    /// Rejects stale editor/metadata state, changed ownership and external source writes.
+    pub fn check_query_read(
+        &mut self,
+        document: &QueryDocument,
+        revision: QueryRevision<'_>,
+    ) -> Result<bool, QueryDocumentError> {
         if revision.version != document.version || revision.snapshot != document.snapshot {
             return Err(QueryDocumentError::StaleVersion);
         }
@@ -214,13 +242,10 @@ impl ProjectSession {
         if uuid.as_deref() != Some(document.owner_uuid.as_str()) {
             return Err(QueryDocumentError::OwnerChanged);
         }
-        if !document.writable || !writable {
-            return Err(QueryDocumentError::ReadOnly);
-        }
         if snapshot(&self.query_disk(&document.path)?) != document.disk_snapshot {
             return Err(QueryError::Conflict.into());
         }
-        Ok(())
+        Ok(document.writable && writable)
     }
 
     /// Issue a byte plan after fresh source/policy checks; the caller owns editor application.

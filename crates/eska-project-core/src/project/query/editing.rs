@@ -119,27 +119,30 @@ fn placements(
     value: &str,
     decisions: &[CommentPlacement],
 ) -> Result<Vec<CommentPlacement>, QueryError> {
-    let mut seen = std::collections::BTreeSet::new();
+    let mut decisions_by_comment = std::collections::BTreeMap::new();
     for decision in decisions {
-        if decision.comment >= query.comments.len() || !seen.insert(decision.comment) {
+        if decision.comment >= query.comments.len()
+            || decisions_by_comment
+                .insert(decision.comment, decision.query_offset)
+                .is_some()
+        {
             return Err(QueryError::InvalidValue);
         }
     }
     let (old, new) = difference(&query.text, value);
     let mut placed = Vec::new();
     for (index, comment) in query.comments.iter().enumerate() {
-        let offset =
-            if let Some(decision) = decisions.iter().find(|decision| decision.comment == index) {
-                decision.query_offset
-            } else if old.is_empty() && comment.query_offset == old.start && query.text != value {
-                return Err(QueryError::CommentsRequireDecision);
-            } else if comment.query_offset <= old.start {
-                Some(comment.query_offset)
-            } else if comment.query_offset >= old.end {
-                Some(new.end + comment.query_offset - old.end)
-            } else {
-                return Err(QueryError::CommentsRequireDecision);
-            };
+        let offset = if let Some(offset) = decisions_by_comment.get(&index) {
+            *offset
+        } else if old.is_empty() && comment.query_offset == old.start && query.text != value {
+            return Err(QueryError::CommentsRequireDecision);
+        } else if comment.query_offset <= old.start {
+            Some(comment.query_offset)
+        } else if comment.query_offset >= old.end {
+            Some(new.end + comment.query_offset - old.end)
+        } else {
+            return Err(QueryError::CommentsRequireDecision);
+        };
         if let Some(offset) = offset {
             if !value.is_char_boundary(offset) {
                 return Err(QueryError::InvalidValue);

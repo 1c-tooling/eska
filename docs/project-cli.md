@@ -53,7 +53,7 @@ BSL и непрозрачных файлов. Git не инициализиру�
 ownership снимков и существующих JSON-схем.
 
 `serve --stdio` запускает самостоятельный сервер [Metadata API](ide-protocol.md).
-Он объявляет identity `eska-project`, API 1.12 и `selfUpdate: false`; языковой
+Он объявляет identity `eska-project`, API 1.13 и `selfUpdate: false`; языковой
 сервер не запускается при открытии дерева. Полная ESKA, Git, платформа и analyzer
 в PATH не требуются. Прежний `eska ide --stdio` сохраняет identity `eska` и прежнее
 поведение CLI. Это два входа одной реализации сервера, без второго дерева или индекса.

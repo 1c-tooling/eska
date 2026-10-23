@@ -699,3 +699,159 @@ commit boundary: пришедшая после неё отмена не пере
 Миграция публикует оба конфига под одной exclusive lock с откатом обычной
 ошибки второй записи. Не участвующие в блокировке внешние редакторы проверяются
 по точным исходным байтам перед заменой.
+
+### API 1.13: снимки и планы правок запросов
+
+При запросе minor 13 capability `queryEditing` содержит `schemaVersion:1`,
+`planOnly:true`, `writesOwner:false`, `sourceKinds:["dataCompositionSchema","form","bsl"]`
+и лимиты ниже. Эти методы доступны после `workspace/open`. Они не запускают
+анализатор, не исполняют SDBL, не записывают XML/BSL и не меняют metadata generation.
+`allowPropertyEdits` управляет прежними командами записи свойств; получение
+query-плана само по себе не публикует правку.
+
+Для каждого request обязательны `sessionId`, `projectId`, `generation` из текущего
+metadata context. Обычные проверки `reopen_required`, `resync_required`,
+`stale_generation` применяются до чтения. Все методы request-only.
+
+| Ресурс | Предел |
+|---|---:|
+| Снимок владельца или текст запроса | 8 MiB UTF-8 |
+| Inline `text` или один upload chunk | 128 KiB UTF-8 |
+| Сумма снимков документов и зарезервированных uploads | 32 MiB на connection |
+| Открытые документы | 16 на connection |
+| Документы и uploads вместе | 64 на connection |
+| `query/list` | 64 элемента на страницу |
+| `query/map` | 64 позиции за вызов |
+| Комментарии XML/BSL вне SDBL | 8192 на запрос |
+
+В XML дополнительно ограничены 1024 запроса на документ, суммарные карты
+65 536 участками и суммарные повторяемые identity-строки 8 MiB; один dataset path
+не больше 65 536 байт. Парсер ограничен 250 000 nodes и глубиной 64.
+BSL scanner ограничен 131 072 токенами и 65 536 частями/участками карты.
+Базовые transport limits 1 MiB/frame и 4 MiB queued bodies остаются прежними.
+
+Большой буфер передаётся частями:
+
+* `query/bufferBegin`: `{...context,bytes,snapshot}`. `snapshot` — SHA-256 полных
+  UTF-8 bytes, 64 lowercase hex digits. Ответ: `{bufferId,receivedBytes:0,ready}`.
+  Место резервируется сразу; пустой буфер готов только с SHA-256 пустой строки.
+* `query/bufferAppend`: `{...context,bufferId,offset,text}`. `offset` — ровно
+  уже принятое число байтов; chunk — непустая UTF-8 строка до 128 KiB. Ответ:
+  `{bufferId,receivedBytes,ready}`. При завершении проверяется SHA-256; неверный
+  upload удаляется. Частичный буфер использовать нельзя.
+* `query/bufferClose`: `{...context,bufferId}` → `{released:boolean}`.
+
+Uploads принадлежат создавшим их session/member/generation. Чужой или ещё
+не готовый id даёт `query_failed/unknown_buffer`; неверный offset —
+`upload_offset`; неверный SHA-256 — `snapshot_mismatch`. Буфер не потребляется
+чтением или планированием: клиент освобождает его явно.
+
+`query/open` принимает `{...context,node,source:Path,version,application?,text?,bufferId?}`.
+`source` — путь относительно source выбранного member; backend сверяет его
+с источниками `node`, а не с расширением файла. `version` — положительный
+десятичный u64 в строке, версия редакторского буфера. `text` и `bufferId`
+взаимоисключающие; при отсутствии обоих читается диск. `application` выбирается
+общим resolver из `eska.toml`; выбранный member обязан входить в это приложение.
+
+Ответ: `{documentId,version,snapshot,diskSnapshot,source,sourceKind,application,
+contextFingerprint,writable,limitedContext,...context}`. `application` содержит
+разрешённое имя контекста, либо null для standalone. `snapshot` относится к
+полному исходному буферу, `diskSnapshot` — к дисковой копии под ним. Fingerprint
+включает реальные manifests, корневые XML и состав приложения через тот же
+resolver, что использует конфигурация анализатора; готовый derived config не требуется.
+Сам `bsl-analyzer.toml` не читается и не входит в query fingerprint: это отдельный
+снимок Core `application::resolve_snapshot`, а не token производного конфига.
+Один owner path в одном member нельзя открыть дважды (`already_open`).
+
+Backend сохраняет полные исходные bytes буфера. Координаты относятся именно
+к нему: BOM, если он передан, считается символом. Если `TextDocument.getText()`
+редактора не содержит дисковый BOM, клиент передаёт этот точный текст при открытии,
+а не применяет координаты сырой дисковой копии к другому буферу. Сохранность BOM
+при последующем сохранении редактором проверяется отдельно в UI-приёмке.
+
+Для `query/list`, `query/read`, `query/map`, `query/plan` дополнительно обязательны
+`documentId`, `version`, `snapshot`, `contextFingerprint` из `query/open`.
+Документ привязан к metadata generation; после refresh клиент закрывает его
+и явно получает новый снимок, сохраняя свой черновик. Проверяются версия и полный
+буфер, UUID, дисковые bytes и текущая support policy без зависимости от watcher.
+Приложение повторно разрешается до и после запроса. Изменение контекста не
+перепривязывает документ автоматически.
+
+Query identity имеет одну из форм:
+
+```json
+{"kind":"dataSet","path":["Union","DataSet"]}
+{"kind":"dynamicList","name":"Список","id":"1"}
+{"kind":"bslLiteral","range":{"start":120,"end":340}}
+```
+
+Dataset path включает union-предков. Имя вкладки и XML/BSL byte range не являются
+identity вне проверенного owner snapshot. BSL range backend получает scanner'ом
+и при повторном обращении требует совпадения всего литерала.
+
+`query/list`: `{...binding,offset?,limit?}` → `{queries:[{identity,sourceRange}],nextOffset,...}`.
+Это XML-запросы в порядке исходника: только `DataSetQuery` в namespace СКД и
+`DynamicList` с `ManualQuery=true|1` и сохранённым `QueryText` в namespace формы.
+Автоматический список без текста не получает синтезированного запроса.
+
+`query/read`: `{...binding,query?:Identity,at?:{line,character}}`.
+Нужно ровно одно из `query` и `at`; `at` — исходная BSL-позиция в UTF-16.
+Ответ содержит `query:{identity,text,sourceRange,sourceRangeUtf16,map,comments}`.
+`text` — чистый SDBL; весь пакет и расширения `{…}` остаются целыми. BSL поддерживает
+прямые значения литералов при присваивании/возврате и текст конструктора
+`Новый Запрос`/`New Query`, включая внешние скобки. Конкатенации, соседние отдельные
+литералы, преобразования и неоднозначные вызовы дают `unsupported_expression`;
+код и имена переменных не вычисляются.
+
+`map:{encoding:"utf-8",spans:[{query:{start,end},source:{start,end},direct}],anchors}`.
+Обычные bytes объединены в direct spans; entities, удвоенные кавычки и
+нормализованные CRLF имеют отдельные интервалы. Внутренность escape и пропущенные
+комментарии/отступы не округляются к соседнему токену. `anchors` содержит
+`startBefore`, `startAfter`, `endBefore`, `endAfter`, в том числе для пустого текста
+и последней пустой строки. `comments:[{comment,source,queryOffset,text}]` хранит
+комментарии XML/BSL отдельно от SDBL и сохраняет их исходное написание.
+
+`query/map`: `{...binding,query:Identity,direction:"queryToSource"|"sourceToQuery",
+positions:[{line,character}],affinity?:"before"|"after"}`.
+Все входные/выходные позиции — UTF-16; ответ `positions` сохраняет порядок.
+Пропущенная source syntax даёт null, неверная позиция или половина surrogate pair —
+`invalid_position`. Affinity выбирает сторону source-only gap; default `after`.
+Этот метод работает с зафиксированным оригиналом владельца.
+
+`query/plan`: `{...binding,query:Identity,text?,bufferId?,comments:[{comment,queryOffset}]}`.
+Нужно ровно одно значение `text`/`bufferId`. `comments` — массив явных решений:
+`queryOffset` — UTF-8 позиция в новом тексте, null означает явное удаление.
+Это обязательное поле решения; его отсутствие не означает удаление. Пропущенные
+решения сохраняют комментарии на однозначных местах неизменённого текста;
+неоднозначность даёт `comments_require_decision`. Для BSL назначение возможно
+только перед строкой после LF, внутри многострочного литерала.
+
+Ответ: `{noOp,outputSnapshot,replacements,projectedQuery,...binding}`.
+`replacements:[{range,rangeUtf16,text}]` адресуют исходный owner snapshot;
+`projectedQuery` и его карта адресуют результат применения этих правок в памяти.
+Его новый BSL range нельзя использовать как identity оригинала до применения
+и повторного открытия документа. Backend повторно извлекает значение после
+замены и сверяет текст/комментарии. No-op возвращает пустой список правок и
+побайтно прежний источник. XML использует существующий scalar patch; при правке
+CDATA может стать escaped text, XML вокруг значения не сериализуется. Для BSL
+чистый текст использует LF, CRLF черновика нормализуется в LF; comment offsets
+задаются в этом нормализованном тексте. Физический стиль исходника сохраняется.
+
+Клиент проверяет актуальные version/snapshot/context перед `WorkspaceEdit` и
+применяет план только к этому буферу. План не является командой сохранения файла
+и не заменяет блокировку BSL-владельца в T102. Запрещённый источник можно читать,
+но план для него даёт `read_only`; последующее снятие запрета требует нового open.
+
+`query/close`: `{...context,documentId}` → `{released:boolean}`. Оба метода close
+работают при устаревшей generation и не требуют актуального приложения; session
+и member должны оставаться владельцами id. `workspace/close`, `shutdown`, EOF
+освобождают все retained snapshots. Поздняя отмена не скрывает acknowledgement
+завершённого begin/append/open/close; отмена read/map/plan не публикует правку.
+
+Domain `query_failed` содержит только `details.reason`: `too_large`, `invalid_xml`,
+`unsupported_structure`, `invalid_literal`, `unsupported_expression`, `not_found`,
+`invalid_position`, `invalid_value`, `conflict`, `comments_require_decision`,
+`read_only`, `owner_changed`, `stale_version`, `context_changed`, `context_member_mismatch`,
+`already_open`, `unknown_document`, `unknown_buffer`, `upload_offset`, `snapshot_mismatch`.
+`query_context_unavailable` содержит прежний `{code,data}` resolver/config error.
+`resource_limit` называет конкретный ресурс и его предел. JSON не зависит от locale.

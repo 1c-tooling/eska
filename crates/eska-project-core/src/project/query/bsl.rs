@@ -53,6 +53,9 @@ pub fn read_bsl(input: &str, offset: usize) -> Result<Query, QueryError> {
             Piece::Text(range) => decode_part(input, range, &mut mapped)?,
             Piece::Newline(range) => mapped.push('\n', range.clone(), &input[range] == "\n")?,
             Piece::Comment(range) => {
+                if comments.len() == super::MAX_SOURCE_COMMENTS {
+                    return Err(QueryError::TooLarge);
+                }
                 if range.contains(&offset) {
                     return Err(QueryError::NotFound);
                 }

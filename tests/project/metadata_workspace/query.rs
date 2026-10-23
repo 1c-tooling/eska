@@ -255,6 +255,18 @@ fn query_xml_plans_bind_form_and_template_values_to_their_declared_owner() {
             document.xml_queries(),
             Err(QueryError::UnsupportedStructure)
         );
+        let empty_wrong = if kind == MetadataKind::CommonForm {
+            "<DataCompositionSchema xmlns='http://v8.1c.ru/8.1/data-composition-system/schema'/>"
+        } else {
+            "<Form xmlns='http://v8.1c.ru/8.3/xcf/logform'/>"
+        };
+        let document = project
+            .query_document(&node, &path, 5, Some(empty_wrong))
+            .unwrap();
+        assert_eq!(
+            document.xml_queries(),
+            Err(QueryError::UnsupportedStructure)
+        );
     }
 }
 

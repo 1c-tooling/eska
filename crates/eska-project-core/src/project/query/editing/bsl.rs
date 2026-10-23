@@ -110,13 +110,17 @@ fn encode(value: &str, style: &Style) -> String {
 fn with_comments(query: &Query, value: &str, placed: &[CommentPlacement], style: &Style) -> String {
     let mut result = String::from("\"");
     let mut offset = 0;
+    let mut comments = placed.iter().peekable();
     for (line, text) in value.split('\n').enumerate() {
         if line > 0 {
             result.push_str(style.newline);
-            for placement in placed
-                .iter()
-                .filter(|placement| placement.query_offset == Some(offset))
+            while comments
+                .peek()
+                .is_some_and(|placement| placement.query_offset == Some(offset))
             {
+                let Some(placement) = comments.next() else {
+                    break;
+                };
                 result.push_str(&query.comments[placement.comment].text);
                 result.push_str(style.newline);
             }

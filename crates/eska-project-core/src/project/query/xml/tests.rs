@@ -134,3 +134,41 @@ fn empty_and_split_cdata_values_have_valid_read_maps() {
     assert_eq!(query.text, "AB&&");
     assert_eq!(query.comments[0].query_offset, 1);
 }
+
+/// A shared ancestor name cannot multiply into unbounded repeated dataset identities.
+#[test]
+fn bounds_aggregate_xml_query_maps_counts_and_identity_expansion() {
+    use std::fmt::Write;
+    let mut many = String::new();
+    for index in 0..1025 {
+        write!(
+            many,
+            "<dataSet xsi:type='DataSetQuery'><name>{index}</name><query/></dataSet>"
+        )
+        .expect("fixture string");
+    }
+    assert_eq!(read_xml(&scd(&many)), Err(QueryError::TooLarge));
+    let long = format!(
+        "<dataSet xsi:type='DataSetQuery'><name>{}</name><query/></dataSet>",
+        "x".repeat(65_537)
+    );
+    assert_eq!(read_xml(&scd(&long)), Err(QueryError::TooLarge));
+    let escaped = "&amp;".repeat(32_769);
+    let maps = format!(
+        "<dataSet xsi:type='DataSetQuery'><name>A</name><query>{escaped}</query></dataSet><dataSet xsi:type='DataSetQuery'><name>B</name><query>{escaped}</query></dataSet>"
+    );
+    assert_eq!(read_xml(&scd(&maps)), Err(QueryError::TooLarge));
+}
+
+/// A bounded owner must also admit a bounded explicit-comment decision request.
+#[test]
+fn bounds_source_comment_expansion_for_both_literal_and_xml_views() {
+    let count = crate::project::query::MAX_SOURCE_COMMENTS + 1;
+    let bsl = format!("x = \"a\n{}|b\";", "// keep\n".repeat(count));
+    assert_eq!(
+        crate::project::query::read_bsl(&bsl, 5),
+        Err(QueryError::TooLarge)
+    );
+    let xml = form("true", &format!("A{}B", "<!--keep-->".repeat(count)));
+    assert_eq!(read_xml(&xml), Err(QueryError::TooLarge));
+}

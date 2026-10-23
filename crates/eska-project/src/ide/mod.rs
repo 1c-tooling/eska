@@ -11,9 +11,12 @@ mod metadata;
 mod params;
 mod property_presentation;
 mod property_types;
+mod query;
 pub(crate) mod renaming;
 mod runtime;
 mod server;
+
+pub(crate) const API_MINOR: u32 = 13;
 
 /// Run a persistent framed protocol session without human output on stdout.
 #[must_use]

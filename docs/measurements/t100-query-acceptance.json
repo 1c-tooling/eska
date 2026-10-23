@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "task": "T100",
+  "date": "2026-10-23",
+  "scope": "Backend extraction, position mapping, guarded source plans and Metadata API 1.13. Explorer/UI acceptance belongs to T101-T105.",
+  "status": "passed",
+  "environment": {
+    "os": "Linux",
+    "target": "x86_64-unknown-linux-gnu",
+    "runtime": "standalone private debug eska-project; PATH empty",
+    "locales": [
+      "ru-RU",
+      "en-US"
+    ]
+  },
+  "source": {
+    "base_commit": "210a5fedd37a134a13859dd576999f5f0b661b7e",
+    "rust_files_sha256": {
+      "crates/eska-project-core/src/application.rs": "12766f724711453dc9e6fcf1ededa7559b3f405e472d5891e6464111cfc80725",
+      "crates/eska-project-core/src/application/snapshot.rs": "f06f3a8f17b51d2ef769650a67577c5c71402dc9a6e26267057820ab790fad20",
+      "crates/eska-project-core/src/application/tests.rs": "2003402570af0eae310a04a1134ef85cd9d5969ed16f0ffdc7659c76ac3567c3",
+      "crates/eska-project-core/src/project/metadata_workspace/query.rs": "d436d46d8d75739c2013f780f1596729d20608b6b6adc156ca5eef83f5ac2fe6",
+      "crates/eska-project-core/src/project/query/bsl.rs": "2b505479ecef56f7b2be3b396ac1393e94fb462ce0461f9b71cc6df9d0101c3f",
+      "crates/eska-project-core/src/project/query/editing.rs": "f38e256d67d6f283e882dc25fefd934ed0afbe7fb9abc299f3f58a51b0658419",
+      "crates/eska-project-core/src/project/query/editing/bsl.rs": "2a7fb213cf31f50941430f3a0b1f6e5c02875eafc1dc48dad21e3c587848e285",
+      "crates/eska-project-core/src/project/query/editing/tests.rs": "d4db685a86aef54920587d69175b63e39a955f538645c0404f8ccd80a932488a",
+      "crates/eska-project-core/src/project/query/mod.rs": "99228ed09411c05d0979f18cc72504563fee406a677adda38366068e0b367a82",
+      "crates/eska-project-core/src/project/query/xml.rs": "140bd51bac5540d04ac37aa6d9ea3319928faa80c6f28d5e8e09f87bfa5064ca",
+      "crates/eska-project-core/src/project/query/xml/tests.rs": "9b6538de6a1cd68a3e368854e7d2395d83229dcbfdf5587ca26311f3adae6882",
+      "crates/eska-project/src/cli.rs": "9bee62a839d1b4d04d764a4f3dbcf0a2d47dcb0a9641cbba8840774b76b67ee4",
+      "crates/eska-project/src/ide/mod.rs": "50ee363ac25dd65c3133943468cd422e911be1969a789ff26ba94ccb76cf0260",
+      "crates/eska-project/src/ide/query/buffers.rs": "2fe1d80cfe3b1127c269ef39cf8645333e40c886b01015a20a6a5d56ed5f2b32",
+      "crates/eska-project/src/ide/query/documents.rs": "306a50b40b38e6af0922d94b1931b336de7de3080f26aeb5a828db02dfbe518e",
+      "crates/eska-project/src/ide/query/dto.rs": "e9fefd980cf58a98f32a8287b5a5495f10242c514e15a020fb249cc9e6b03931",
+      "crates/eska-project/src/ide/query/mod.rs": "de99a82c81c5c7fd339464884bdd59d9df97aa09e58cda7533ded928c38f9ab3",
+      "crates/eska-project/src/ide/query/params.rs": "ca1e6c3df93adc4f9fd071694d1628985255ec459c70b40983d96db77493b238",
+      "crates/eska-project/src/ide/runtime.rs": "2000472cea6a45ab9c0358a643993a32e29bf4c53eb56b1dcabd96a24dc89c60",
+      "crates/eska-project/src/ide/server.rs": "4410ad00aa9874078e7e922c4e91aa8b4e73460dbcf57e05f7315c26665134dd",
+      "tests/project/metadata_workspace/ide.rs": "0405b20458da05c543621c3efc450a2ec6a54420c1f1f53ecdbf87e89fa4ff97",
+      "tests/project/metadata_workspace/ide/picture.rs": "55b160765b3b13485f8e2c792ea19aac1b0fe3b68fe6a929ee112cc6868fc9eb",
+      "tests/project/metadata_workspace/ide/query.rs": "89f264eb322c2007a7e3b87bd651bb36454896a2c5373a11b955e11ba601ad13",
+      "tests/project/metadata_workspace/ide/query/buffers.rs": "d2206f1315f56b4f6d979a54c97029c50af3d7d60d01f67e015902a0b595a392",
+      "tests/project/metadata_workspace/ide/query/contexts.rs": "ee1e49c6bf895e5b102f13ce8d9b0674a937be2457edba9cf928e9d7e91548d6",
+      "tests/project/metadata_workspace/ide/query/xml.rs": "633a9931f3edd1f6d7a7fee8ca063c43b028b0ac0513cc98f94c4ed81487e1f8",
+      "tests/project/metadata_workspace/query.rs": "1894a3a2d147de75fb90289508d472d47a653c83677d398607584ab72aad3dcb"
+    },
+    "native_binary_sha256": "e06ce3b6707664d4ad21bfdc560a74867b6cdafe9d1815c17ed6ba16008048e0"
+  },
+  "protocol": {
+    "api_version": {
+      "major": 1,
+      "minor": 13
+    },
+    "query_schema_version": 1,
+    "source_kinds": [
+      "dataCompositionSchema",
+      "form",
+      "bsl"
+    ],
+    "writes_owner": false,
+    "max_snapshot_bytes": 8388608,
+    "max_inline_bytes": 131072,
+    "max_retained_bytes": 33554432,
+    "max_documents": 16,
+    "max_source_comments": 8192
+  },
+  "gates": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8355462551116943
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.17475223541259766
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2389514446258545
+    },
+    {
+      "name": "build",
+      "command": [
+        "cargo",
+        "build",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2062528133392334
+    },
+    {
+      "name": "test",
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exit_code": 0,
+      "seconds": 27.147412300109863
+    },
+    {
+      "name": "rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--workspace",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "seconds": 6.281376600265503
+    }
+  ],
+  "tests": {
+    "passed": 954,
+    "failed": 0,
+    "ignored": 12,
+    "focused_passed": [
+      "project::metadata_workspace::ide::query::buffers::query_rpc_rejects_partial_and_corrupt_uploads_without_losing_the_connection",
+      "project::metadata_workspace::ide::query::buffers::query_rpc_bounds_retained_storage_and_releases_it_on_workspace_close",
+      "project::metadata_workspace::ide::query::contexts::query_rpc_does_not_require_readable_derived_analyzer_configuration",
+      "project::metadata_workspace::ide::query::contexts::query_rpc_read_only_support_policy_cannot_be_bypassed_by_a_plan",
+      "project::metadata_workspace::ide::query::contexts::query_rpc_rejects_stale_versions_fingerprints_and_external_source_changes",
+      "project::metadata_workspace::ide::query::query_rpc_requires_explicit_source_comment_destinations",
+      "project::metadata_workspace::ide::query::contexts::query_rpc_isolates_application_members_and_their_retained_buffers",
+      "project::metadata_workspace::ide::query::xml::query_rpc_lists_scd_datasets_and_plans_only_the_selected_xml_scalar",
+      "project::metadata_workspace::ide::query::xml::query_rpc_reads_and_plans_manual_dynamic_list_without_inventing_automatic_text",
+      "project::metadata_workspace::ide::query::query_rpc_reads_and_plans_dirty_bsl_with_locale_independent_maps",
+      "project::metadata_workspace::query::query_cannot_edit_after_support_policy_locks_the_owner",
+      "project::metadata_workspace::query::query_checks_current_disk_bytes_and_owner_uuid_without_events",
+      "project::metadata_workspace::query::query_bounds_disk_and_unsaved_owner_snapshots",
+      "project::metadata_workspace::query::query_unknown_policy_and_aliased_sources_fail_closed",
+      "project::metadata_workspace::query::query_plans_use_unsaved_owner_without_writing_or_refreshing_the_project",
+      "project::metadata_workspace::query::query_rejects_stale_editor_and_metadata_revisions",
+      "project::metadata_workspace::query::query_rejects_foreign_projects_and_unresolved_source_paths",
+      "project::metadata_workspace::query::query_xml_plans_bind_form_and_template_values_to_their_declared_owner",
+      "project::metadata_workspace::ide::query::buffers::query_rpc_uploads_large_unicode_owner_and_draft_in_bounded_frames",
+      "application::tests::context_snapshot_tracks_declared_inputs_without_reading_derived_config",
+      "application::tests::context_snapshot_distinguishes_application_selection_for_identical_sources",
+      "project::query::bsl::tests::accepts_bilingual_constructors_returns_and_parenthesized_direct_values",
+      "project::query::bsl::tests::decodes_quotes_bars_empty_lines_and_source_only_comments",
+      "project::query::bsl::tests::ignores_comment_quotes_and_rejects_incomplete_or_invalid_selection",
+      "project::query::bsl::tests::rejects_composed_transformed_adjacent_and_conditional_expressions",
+      "project::query::editing::tests::bsl_changes_only_differing_bytes_and_preserves_comment_lines_and_undo",
+      "project::query::editing::tests::bsl_handles_inserted_removed_and_empty_final_lines_without_leaking_service_bars",
+      "project::query::editing::tests::relocates_multiple_source_comments_without_losing_or_duplicating_them",
+      "project::query::editing::tests::source_comment_relocation_requires_explicit_valid_decisions",
+      "project::query::editing::tests::split_xml_comments_are_preserved_or_require_a_decision_when_crossed",
+      "project::query::editing::tests::stale_ranges_invalid_values_and_forged_comment_targets_never_return_a_plan",
+      "project::query::editing::tests::unchanged_apply_preserves_every_source_byte_and_creates_no_replacements",
+      "project::query::editing::tests::xml_changes_only_the_query_scalar_and_escapes_values_with_existing_patch",
+      "project::query::mapping::tests::escapes_and_gaps_are_not_guessed_and_ordinary_runs_are_compact",
+      "project::query::mapping::tests::utf16_round_trips_boundaries_with_bom_crlf_cyrillic_and_non_bmp",
+      "project::query::tests::bounds_mapping_expansion_independently_of_source_size",
+      "project::query::tests::bounds_unsaved_owner_size",
+      "project::query::xml::tests::dataset_paths_and_namespaces_distinguish_union_children_and_unrelated_extensions",
+      "project::query::xml::tests::decodes_entities_cdata_crlf_comments_and_non_bmp_with_exact_coordinates",
+      "project::query::xml::tests::empty_and_split_cdata_values_have_valid_read_maps",
+      "project::query::xml::tests::manual_dynamic_list_requires_saved_query_and_never_synthesizes_main_table",
+      "project::query::xml::tests::rejects_duplicate_identity_nested_values_dtd_and_wrong_payload_roots",
+      "project::query::xml::tests::bounds_source_comment_expansion_for_both_literal_and_xml_views",
+      "project::query::xml::tests::bounds_aggregate_xml_query_maps_counts_and_identity_expansion"
+    ]
+  },
+  "native": {
+    "contract": {
+      "bridge_schema": 1,
+      "config_schema": "designer-xml-1",
+      "metadata_api": {
+        "major": 1,
+        "minor": 13
+      },
+      "schema_version": 2,
+      "target": "x86_64-unknown-linux-gnu",
+      "tool": "eska-project",
+      "version": "0.15.0"
+    },
+    "binary_sha256": "e06ce3b6707664d4ad21bfdc560a74867b6cdafe9d1815c17ed6ba16008048e0",
+    "path_empty": true,
+    "locale_output_equal": true,
+    "results": [
+      {
+        "locale": "ru-RU",
+        "requests": 9,
+        "exit_code": 0,
+        "no_op_exact": true,
+        "dirty_buffer_preserved": true,
+        "stale_version_rejected": true,
+        "owner_files_unchanged": true
+      },
+      {
+        "locale": "en-US",
+        "requests": 9,
+        "exit_code": 0,
+        "no_op_exact": true,
+        "dirty_buffer_preserved": true,
+        "stale_version_rejected": true,
+        "owner_files_unchanged": true
+      }
+    ],
+    "owner_inventory_unchanged": true
+  },
+  "evidence": {
+    "gates": "eska-playground/t100-query-y11h194u/api-gates-jsg2fie1",
+    "native": "eska-playground/t100-query-y11h194u/native-api-l_i1nw4f",
+    "runner": "eska-playground/t100-query-y11h194u/validate-api.py",
+    "native_runner": "eska-playground/t100-query-y11h194u/native-smoke.py"
+  },
+  "observed_transient": {
+    "test": "cli::update::unix::current_release_is_read_only_and_concurrent_update_is_rejected",
+    "failure": "ETXTBSY / ExecutableFileBusy in tests/cli/update.rs:152",
+    "failed_log": "eska-playground/t100-query-y11h194u/api-gates-x2w10sjc/test.log",
+    "targeted_repeats": [
+      {
+        "repeat": 1,
+        "exit_code": 0,
+        "seconds": 0.3170967102050781,
+        "log": "update-fixture-repeat-1.log"
+      },
+      {
+        "repeat": 2,
+        "exit_code": 0,
+        "seconds": 0.2686448097229004,
+        "log": "update-fixture-repeat-2.log"
+      },
+      {
+        "repeat": 3,
+        "exit_code": 0,
+        "seconds": 0.26395249366760254,
+        "log": "update-fixture-repeat-3.log"
+      }
+    ],
+    "subsequent_full_suite_passed": true,
+    "unrelated_test_implementation_changed": false,
+    "cause_established": false
+  },
+  "limitations": [
+    "Query views, dirty owner UI/recovery and owner locks are not implemented by T100.",
+    "No query-draft LSP or builder acceptance is claimed.",
+    "Actual 1C XML/BSL load belongs to T105 and was not run here.",
+    "Windows, macOS, VS Code and Remote were not tested.",
+    "BSL supports whole literal assignments/returns and Query constructor text; constructed/ambiguous expressions fail explicitly."
+  ]
+}

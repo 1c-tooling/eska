@@ -53,6 +53,7 @@ pub(super) struct Server {
     pub session: Option<Session>,
     pub labels: dto::Labels,
     pub(super) client_minor: u32,
+    pub(super) queries: super::query::State,
     property_editing: bool,
     serial: u64,
     round_robin: usize,
@@ -71,6 +72,7 @@ impl Server {
             session: None,
             labels: dto::Labels::new()?,
             client_minor: 0,
+            queries: super::query::State::default(),
             property_editing: false,
             serial: 0,
             round_robin: 0,
@@ -125,16 +127,21 @@ impl Server {
             "workspace/close" => {
                 self.check_session(args)?;
                 self.analyzer_lease = None;
+                self.queries = super::query::State::default();
                 self.session = None;
                 Ok(Value::Null)
             }
             "shutdown" => {
                 self.analyzer_lease = None;
+                self.queries = super::query::State::default();
                 self.session = None;
                 self.closing = true;
                 Ok(Value::Null)
             }
             method if super::metadata::is_method(method) => self.metadata(method, args, events),
+            method if super::query::is_method(method) && self.client_minor >= 13 => {
+                self.query(method, args)
+            }
             method if super::analyzer::is_method(method) && self.client_minor >= 12 => {
                 self.analyzer(method, args, cancelled, connection_closed, events)
             }
@@ -176,19 +183,21 @@ impl Server {
         {
             return Err(error(-32602));
         }
-        if input.api_version.major != 1 || input.api_version.minor > 12 {
+        if input.api_version.major != 1 || input.api_version.minor > super::API_MINOR {
             return Err(domain(
                 "unsupported_version",
-                json!({"requested":args["apiVersion"],"supported":{"major":1,"minor":12}}),
+                json!({"requested":args["apiVersion"],"supported":{"major":1,"minor":super::API_MINOR}}),
             ));
         }
         self.initialized = true;
         self.client_minor = input.api_version.minor;
         self.property_editing =
             input.api_version.minor >= 6 && input.allow_property_edits == Some(true);
-        Ok(
-            json!({"apiVersion":{"major":1,"minor":12},"server":{"name":self.identity.name(),"version":env!("CARGO_PKG_VERSION")},"capabilities":{"analyzerConfiguration":self.client_minor>=12,"propertyEditing":self.property_editing,"unsignedIntegerProperties":self.property_editing && self.client_minor >= 11,"linkedPropertyEdits":self.property_editing && self.client_minor >= 10,"metadataRename":self.property_editing && self.client_minor >= 9,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":matches!(self.identity,Identity::Legacy),"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}}),
-        )
+        let mut result = json!({"apiVersion":{"major":1,"minor":super::API_MINOR},"server":{"name":self.identity.name(),"version":env!("CARGO_PKG_VERSION")},"capabilities":{"analyzerConfiguration":self.client_minor>=12,"propertyEditing":self.property_editing,"unsignedIntegerProperties":self.property_editing && self.client_minor >= 11,"linkedPropertyEdits":self.property_editing && self.client_minor >= 10,"metadataRename":self.property_editing && self.client_minor >= 9,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":matches!(self.identity,Identity::Legacy),"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}});
+        if self.client_minor >= 13 {
+            result["capabilities"]["queryEditing"] = super::query::capability();
+        }
+        Ok(result)
     }
 
     /// Publish a session only after all selected projects have opened successfully.

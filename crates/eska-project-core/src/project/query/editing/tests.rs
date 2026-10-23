@@ -148,6 +148,61 @@ fn source_comment_relocation_requires_explicit_valid_decisions() {
     );
 }
 
+/// Several explicit relocations retain stable order at shared destinations and across later lines.
+#[test]
+fn relocates_multiple_source_comments_without_losing_or_duplicating_them() {
+    let input = "x = \"a\n\t// first\n\t|b\n\t// second\n\t|c\";";
+    let value = "new\ntext\nlast";
+    let result = edit(
+        input,
+        value,
+        &[
+            CommentPlacement {
+                comment: 0,
+                query_offset: Some(9),
+            },
+            CommentPlacement {
+                comment: 1,
+                query_offset: Some(4),
+            },
+        ],
+    )
+    .expect("relocate");
+    let decoded = query(result.output());
+    assert_eq!(decoded.text, value);
+    assert_eq!(
+        decoded
+            .comments
+            .iter()
+            .map(|comment| comment.text.as_str())
+            .collect::<Vec<_>>(),
+        ["\t// second", "\t// first"]
+    );
+    let result = edit(
+        input,
+        value,
+        &[
+            CommentPlacement {
+                comment: 1,
+                query_offset: Some(4),
+            },
+            CommentPlacement {
+                comment: 0,
+                query_offset: Some(4),
+            },
+        ],
+    )
+    .expect("shared destination");
+    assert_eq!(
+        query(result.output())
+            .comments
+            .iter()
+            .map(|comment| comment.text.as_str())
+            .collect::<Vec<_>>(),
+        ["\t// first", "\t// second"]
+    );
+}
+
 #[test]
 fn split_xml_comments_are_preserved_or_require_a_decision_when_crossed() {
     let input = xml("A<!--keep-->B<![CDATA[&]]>&amp;");
