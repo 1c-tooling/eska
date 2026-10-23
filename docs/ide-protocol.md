@@ -986,8 +986,8 @@ ESKA проверяет текущую дисковую revision и общую �
 maxRetainedBytes:33554432,nativeApplicationReceipt:true,explicitResume:true,
 preparedStateDurable:false,bslEditing:false,sourceKinds:["dataCompositionSchema","form"]}`.
 Клиенты 1.14 сохраняют прежнее поведение; методы session для них недоступны.
-Рабочий Explorer пока использует клиентские сессии с recovery 1.14.
-Этот контракт проверен прямым клиентом `eska-project`, без API конкретной IDE.
+Режим 1.15 проверен прямым клиентом `eska-project`, без API конкретной IDE.
+Текущий рабочий Explorer требует устойчивый вариант 1.16 ниже.
 
 Core `QuerySession` владеет полным owner snapshot, base, draft, identity,
 выбранным приложением и fingerprint, проверками версии/дескриптора/прав,
@@ -1107,7 +1107,12 @@ JSON-схема и машинные причины одинаковы в ru-RU �
 Методы сессии сохраняют имена и параметры. Клиент 1.15 получает прежнюю
 capability с false и прежнюю подготовку/отмену в памяти. `bslEditing:false`
 действует в обоих режимах; эти проверки не принимают нативную блокировку IDE.
-Рабочий Explorer пока использует API 1.14 для recovery и клиентский lifecycle.
+Рабочий Explorer использует `query/session*` для XML вместо клиентского lifecycle
+и прежнего `query/plan`. Core проверяет источник, контекст и восстановление;
+адаптер передаёт факты Native-модели, применяет план и подтверждает результат.
+Новый Native-ввод во время подтверждения переносится на подтверждённые owner/base
+общей очередью recovery. Оборванное применение остаётся в журнале до явного resume.
+[Проверка установленного адаптера](measurements/t102-session-adapter.json).
 
 В режиме 1.16 sessionPrepare атомарно сохраняет исходные owner/base/draft
 вместе с точным output и декодированным применяемым запросом **до** выдачи плана.
