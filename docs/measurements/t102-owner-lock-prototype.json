@@ -82,7 +82,31 @@
         "sourceDiskUnchanged": true,
         "productionBslEditingEnabled": false
       }
-    ]
+    ],
+    "twoInitiallyWritableModes": {
+      "passed": true,
+      "suite": "query-lock-native-override-counterexamples",
+      "vscode": "1.109.5",
+      "inheritedProbes": {
+        "emptyEdit": true,
+        "permissions": null,
+        "writableFileSystem": true
+      },
+      "grantedProbes": {
+        "emptyEdit": true,
+        "permissions": null,
+        "writableFileSystem": true
+      },
+      "publicReadonlyProbesEqual": true,
+      "defaultModeHonorsFutureConfig": true,
+      "explicitUserWritableOverridesFutureConfig": true,
+      "resetLosesPriorWritable": true,
+      "forceWritableLosesDefaultConfigInheritance": true,
+      "productionBslEditingEnabled": false,
+      "sourceDiskUnchanged": true,
+      "osPermissionsUnchanged": true,
+      "privateSettingsRestoredExactly": true
+    }
   },
   "assessment": [
     {
@@ -125,6 +149,17 @@
       "notSatisfied": [
         "these observations cannot determine the previous session override"
       ]
+    },
+    {
+      "candidate": "choose Reset or Writeable when releasing a native flag",
+      "proven": [
+        "both initially writable modes have identical tested readonly getter results",
+        "Reset loses an earlier explicit Writeable",
+        "Writeable loses default inheritance of future readonlyInclude restrictions"
+      ],
+      "notSatisfied": [
+        "neither cleanup rule restores both initial modes; a verified way to identify/retain the previous mode is still needed"
+      ]
     }
   ],
   "restartAssessment": [
@@ -165,20 +200,23 @@
   "logs": {
     "public": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-public-complete-result.log",
     "hostRestartAndWindow": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-restart-observed-result.log",
-    "earlierColdOwnerAssertion": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-restart-result.log"
+    "earlierColdOwnerAssertion": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-restart-result.log",
+    "twoWritableModes": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-native-overrides-result.log"
   },
   "testedFiles": {
     "test/query-lock-host.cjs": "ef8718540442ed4931c4be20610c4b2451266b7f5892e0be7dc99b1dbe255be3",
     "test/query-lock-restart-host.cjs": "69b3374bba45b10fccc843cc938dcdff1fb16a31cc2d5c78d7cec0ea3ac1b9dd",
-    "test/run-host.mjs": "a5cb95c3d741328e1c708abea61bd8455c68002e810b37ba6f06a8f0853f9754"
+    "test/run-host.mjs": "a5cb95c3d741328e1c708abea61bd8455c68002e810b37ba6f06a8f0853f9754",
+    "test/query-lock-overrides-host.cjs": "4b9ed08269d96dc75e5566661a336c95e2339ba6058f60762fa637b02b72f734"
   },
-  "explorerCommit": "73d7c8a55fc5ef40da8611f12e83aa3cc6ec2983",
+  "explorerCommit": "cf46713614492a05bb8af9ca589df8ddd6653bfe",
   "checks": {
     "nodeSyntax": true,
     "nativePublicApiProbeCompleted": true,
     "nativeHostAndWindowProbeCompleted": true,
     "applicationCodeChanged": false,
-    "rustChecksRequired": false
+    "rustChecksRequired": false,
+    "nativeWritableModesCounterexamplesCompleted": true
   },
   "remaining": [
     "A verified public mechanism to preserve/reinstate previous native readonly state and release only the owned lock, or an explicit change to the T102 requirement.",
@@ -191,5 +229,6 @@
     "macOS",
     "VS Code",
     "Remote"
-  ]
+  ],
+  "settingsScope": "The override counterexample changes only readonlyInclude in its owned private workspace, then restores exact original settings bytes. No global user settings are changed."
 }
