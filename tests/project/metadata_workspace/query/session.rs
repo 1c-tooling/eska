@@ -92,6 +92,7 @@ fn saved(project: &ProjectSession, session: &QuerySession) -> QuerySessionRestor
         base,
         draft,
         writable: document.writable(),
+        prepared: session.prepared(),
     }
 }
 
@@ -360,6 +361,22 @@ fn query_session_bsl_can_reapply_and_restore_after_normalizing_draft_line_ending
         .unwrap();
     assert_eq!(prepared.query.text, "ВЫБРАТЬ 2\nКАК Значение");
     let output = snapshot(prepared.plan.output());
+    let mut pending =
+        QuerySession::restore(project, saved(project, &session), QueryOwnerFormat::Source).unwrap();
+    assert!(!pending.resumed());
+    assert!(pending.applying());
+    pending
+        .resume(
+            project,
+            editor(1, &output, true, Some(20)),
+            QueryOwnerRestrictions {
+                user_read_only: false,
+                owner_lock: Some(20),
+            },
+        )
+        .unwrap();
+    assert_eq!(pending.base(), "ВЫБРАТЬ 2\nКАК Значение");
+    assert_eq!(pending.draft(), "ВЫБРАТЬ 2\r\nКАК Значение");
     session
         .applied(project, prepared.token, editor(8, &output, true, Some(19)))
         .unwrap();

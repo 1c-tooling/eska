@@ -1,8 +1,10 @@
 //! Private query checkpoints are shared by IDE adapters and never authorize a source write.
 
+mod prepared;
 mod record;
 mod store;
 
+pub use prepared::Prepared;
 pub use record::{Part, Record, is_id};
 pub use store::{Contents, Store, Stored};
 

@@ -8,7 +8,7 @@ use std::{
 };
 
 use eska_project_core::project::query::recovery::{self as core, Record, Store, Stored};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::ide::{
@@ -34,6 +34,7 @@ pub(super) fn is_method(method: &str) -> bool {
         method,
         "query/recoveryOpen"
             | "query/recoveryRead"
+            | "query/recoveryPreparedRead"
             | "query/recoveryBegin"
             | "query/recoveryAppend"
             | "query/recoveryCommit"
@@ -84,6 +85,7 @@ impl State {
         }
         let mut result = match method {
             "query/recoveryRead" => self.read(args),
+            "query/recoveryPreparedRead" => self.read_prepared(args),
             "query/recoveryBegin" => self.begin(args),
             "query/recoveryAppend" => self.append(args),
             "query/recoveryCommit" => self.commit(args, queries),
@@ -168,17 +170,39 @@ impl State {
             .record
             .part(input.part.core())
             .map_err(|error| storage_error(&error))?;
-        if input.offset > text.len() || !text.is_char_boundary(input.offset) {
-            return Err(error(-32602));
+        chunk(stored, &json!(input.part), &text, input.offset)
+    }
+
+    /// Prepared output remains inspectable even when a broken manifest prevents source-session restoration.
+    fn read_prepared(&self, args: &Value) -> Result<Value, Value> {
+        #[derive(Deserialize, Serialize)]
+        #[serde(rename_all = "camelCase")]
+        enum Part {
+            Output,
+            AppliedDraft,
         }
-        let mut end = input.offset.saturating_add(CHUNK_BYTES).min(text.len());
-        while !text.is_char_boundary(end) {
-            end -= 1;
+        #[derive(Deserialize)]
+        struct Read {
+            id: String,
+            revision: String,
+            part: Part,
+            offset: usize,
         }
-        Ok(
-            json!({"id":input.id,"revision":input.revision,"part":input.part,"offset":input.offset,
-            "text":&text[input.offset..end],"nextOffset":end,"complete":end==text.len()}),
-        )
+        let input: Read = decode(args)?;
+        let stored = self
+            .records
+            .get(&input.id)
+            .filter(|stored| stored.revision == input.revision)
+            .ok_or_else(|| failure("recovery_conflict"))?;
+        let prepared = stored
+            .record
+            .prepared()
+            .ok_or_else(|| failure("unknown_apply"))?;
+        let text = match input.part {
+            Part::Output => &prepared.output,
+            Part::AppliedDraft => &prepared.applied_draft,
+        };
+        chunk(stored, &json!(input.part), text, input.offset)
     }
 
     /// A new upload reuses unchanged acknowledged parts; only changed text crosses the pipe.
@@ -235,7 +259,21 @@ impl State {
             .take()
             .ok_or_else(|| failure("unknown_update"))?;
         let expected = upload.expected_revision.clone();
-        let record = upload.record()?;
+        let mut record = upload.record()?;
+        if let Some(previous) = self.records.get(record.id())
+            && let Some(prepared) = previous.record.prepared()
+        {
+            if record.metadata() != previous.record.metadata()
+                || [core::Part::Owner, core::Part::Base]
+                    .iter()
+                    .any(|part| record.part(*part).ok() != previous.record.part(*part).ok())
+            {
+                return Err(failure("recovery_conflict"));
+            }
+            record = record
+                .with_prepared(Some(prepared.clone()))
+                .map_err(|error| storage_error(&error))?;
+        }
         let staged = queries.stage_checkpoint(&record, expected.as_deref())?;
         let store = &self
             .store
@@ -249,6 +287,24 @@ impl State {
         queries.accept_checkpoint(staged, &stored);
         self.records.insert(stored.record.id().to_owned(), stored);
         Ok(result)
+    }
+
+    /// A forgotten session cannot bypass its own durable intent by opening another handle for the same owner.
+    pub(super) fn pending_owner(
+        &self,
+        project_key: &str,
+        source: &Value,
+        except: Option<&str>,
+    ) -> Option<&str> {
+        self.records
+            .values()
+            .find(|stored| {
+                stored.record.prepared().is_some()
+                    && Some(stored.record.id()) != except
+                    && stored.record.metadata()["projectKey"] == project_key
+                    && stored.record.metadata()["source"] == *source
+            })
+            .map(|stored| stored.record.id())
     }
 
     /// Source-session mutations reuse the exact selected private store and never choose a fallback path.
@@ -321,6 +377,8 @@ impl State {
         struct Remove {
             id: String,
             revision: String,
+            #[serde(default, rename = "discardPrepared")]
+            discard_prepared: bool,
         }
         let input: Remove = decode(args)?;
         if !core::is_id(&input.id) {
@@ -331,6 +389,9 @@ impl State {
         };
         if previous.revision != input.revision {
             return Err(failure("recovery_conflict"));
+        }
+        if previous.record.prepared().is_some() && !input.discard_prepared {
+            return Err(failure("pending_apply"));
         }
         let store = &self
             .store
@@ -375,9 +436,29 @@ struct UpdateId {
 
 /// Headers keep startup responses bounded; complete owner text is read only in small requested chunks.
 pub(super) fn header(stored: &Stored) -> Result<Value, Value> {
+    let mut header = json!({"id":stored.record.id(),"metadata":stored.record.metadata(),"revision":stored.revision,
+        "parts":transfer::descriptions(&stored.record)?});
+    if let Some(prepared) = stored.record.prepared() {
+        let description = |text: &str| json!({"bytes":text.len(),"snapshot":eska_project_core::project::metadata_edit::snapshot(text)});
+        header["prepared"] = json!({"applyToken":prepared.token.to_string(),"format":prepared.format,
+            "saveOwner":prepared.save_owner,"noOp":prepared.no_op,
+            "parts":{"output":description(&prepared.output),"appliedDraft":description(&prepared.applied_draft)}});
+    }
+    Ok(header)
+}
+
+/// Both recovery readers preserve UTF-8 boundaries and the original 128 KiB framed transfer limit.
+fn chunk(stored: &Stored, part: &Value, text: &str, offset: usize) -> Result<Value, Value> {
+    if offset > text.len() || !text.is_char_boundary(offset) {
+        return Err(error(-32602));
+    }
+    let mut end = offset.saturating_add(CHUNK_BYTES).min(text.len());
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
     Ok(
-        json!({"id":stored.record.id(),"metadata":stored.record.metadata(),"revision":stored.revision,
-        "parts":transfer::descriptions(&stored.record)?}),
+        json!({"id":stored.record.id(),"revision":stored.revision,"part":part,"offset":offset,
+        "text":&text[offset..end],"nextOffset":end,"complete":end==text.len()}),
     )
 }
 

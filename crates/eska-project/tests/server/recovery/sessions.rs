@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "sessions/prepared.rs"]
+mod prepared;
+
 const SOURCE: &str = "CommonForms/Queries/Ext/Form.xml";
 const XML: &str = "\u{feff}<Form xmlns='http://v8.1c.ru/8.3/xcf/logform' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\r\n<Attributes><Attribute name='List' id='1'><Settings xsi:type='DynamicList'><ManualQuery>true</ManualQuery><QueryText>SELECT 1</QueryText></Settings></Attribute></Attributes><other>keep</other>\r\n</Form>";
 
@@ -67,10 +70,25 @@ fn owner_node(client: &mut Client, binding: &Value, root: &Value) -> Value {
 
 /// The session contract is opt-in and shares the existing bounded recovery store.
 fn source_connect(client: &mut Client, root: &Path, private: &Path, locale: &str) -> Value {
-    let hello = client.request("initialize",&json!({"apiVersion":{"major":1,"minor":15},"client":{"name":"session-test","version":"1"},"locale":locale}));
+    source_connect_version(client, root, private, locale, 15)
+}
+
+/// Version negotiation preserves memory-only 1.15 preparation while 1.16 opts into the durable journal.
+fn source_connect_version(
+    client: &mut Client,
+    root: &Path,
+    private: &Path,
+    locale: &str,
+    minor: u32,
+) -> Value {
+    let hello = client.request("initialize",&json!({"apiVersion":{"major":1,"minor":minor},"client":{"name":"session-test","version":"1"},"locale":locale}));
     assert_eq!(hello["capabilities"]["querySessions"]["schemaVersion"], 1);
     assert_eq!(hello["capabilities"]["querySessions"]["writesOwner"], false);
     assert_eq!(hello["capabilities"]["querySessions"]["bslEditing"], false);
+    assert_eq!(
+        hello["capabilities"]["querySessions"]["preparedStateDurable"],
+        minor >= 16
+    );
     let workspace = client.request("workspace/open",&json!({"start":{"value":root,"encoding":"utf-8"},"selection":{"kind":"current"},"diskCache":false}));
     let opened = client.request(
         "query/recoveryOpen",
@@ -153,6 +171,11 @@ fn standalone_query_session_checkpoints_and_acknowledges_dirty_owner_without_sou
             "revision":state["revision"],"owner":native(7,&input,true,false),"comments":[],"lineEnding":"crlf"})));
         assert_eq!(prepared["applyPending"], true);
         assert_eq!(prepared["plan"]["saveOwner"], false);
+        assert_eq!(
+            prepared["record"]["revision"], state["record"]["revision"],
+            "API 1.15 preparation remains memory-only"
+        );
+        assert!(prepared["record"].get("prepared").is_none());
         let busy = client.response(
             "query/sessionPrepare",
             &source_args(
@@ -449,6 +472,7 @@ fn standalone_query_session_budget_keeps_the_draft_awaiting_application_receipt(
         ),
     );
     let output = applied_text(input, &prepared["plan"]);
+    let state = prepared;
     let bytes = PARTS[1..]
         .iter()
         .map(|part| state["record"]["parts"][*part]["bytes"].as_u64().unwrap())

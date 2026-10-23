@@ -12,12 +12,7 @@ use super::{
     QueryDocumentKind, QueryError, QueryIdentity, QueryRevision, snapshot,
 };
 
-/// The encoding signature is independent from the exact characters exposed by an editor model.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum QueryOwnerFormat {
-    Editor,
-    Source,
-}
+pub use query::QueryOwnerFormat;
 
 /// User restrictions and this query's temporary restriction have separate owners and lifetimes.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -56,6 +51,7 @@ pub struct QuerySessionRestore {
     pub base: Arc<str>,
     pub draft: Arc<str>,
     pub writable: bool,
+    pub prepared: Option<query::recovery::Prepared>,
 }
 
 /// A plan is not a source write; its token must be acknowledged against the resulting native model.
@@ -114,6 +110,7 @@ enum Phase {
     Paused,
     Ready,
     Applying(Pending),
+    Recovering(Pending),
     Closed,
 }
 
@@ -206,6 +203,11 @@ impl QuerySession {
         document.descriptor_snapshot = saved.descriptor_snapshot;
         document.disk_snapshot = saved.disk_snapshot;
         document.writable = saved.writable;
+        let pending = saved
+            .prepared
+            .map(|prepared| restore_pending(&document, &saved.identity, format, prepared))
+            .transpose()?;
+        let plan_serial = pending.as_ref().map_or(0, |pending| pending.token);
         Ok(Self {
             document,
             application: saved.application,
@@ -215,9 +217,9 @@ impl QuerySession {
             draft: saved.draft,
             format,
             restrictions: QueryOwnerRestrictions::default(),
-            phase: Phase::Paused,
+            phase: pending.map_or(Phase::Paused, Phase::Recovering),
             revision: 1,
-            plan_serial: 0,
+            plan_serial,
         })
     }
 
@@ -292,7 +294,23 @@ impl QuerySession {
     /// Only one native application may await a receipt for this session.
     #[must_use]
     pub const fn applying(&self) -> bool {
-        matches!(self.phase, Phase::Applying(_))
+        matches!(self.phase, Phase::Applying(_) | Phase::Recovering(_))
+    }
+
+    /// A durable intent describes exact past preparation; recovery never turns it into automatic source application.
+    #[must_use]
+    pub fn prepared(&self) -> Option<query::recovery::Prepared> {
+        let (Phase::Applying(pending) | Phase::Recovering(pending)) = &self.phase else {
+            return None;
+        };
+        Some(query::recovery::Prepared {
+            token: pending.token,
+            format: self.format,
+            output: Arc::clone(&pending.output),
+            applied_draft: Arc::clone(&pending.applied_draft),
+            save_owner: pending.save_owner,
+            no_op: pending.no_op,
+        })
     }
 
     /// The adapter declares how its exact native buffer represents the encoding signature.
@@ -314,7 +332,7 @@ impl QuerySession {
             + self.base.len()
             + self.draft.len()
             + match &self.phase {
-                Phase::Applying(pending) => {
+                Phase::Applying(pending) | Phase::Recovering(pending) => {
                     let retained_draft = if Arc::ptr_eq(&pending.applied_draft, &self.draft)
                         || Arc::ptr_eq(&pending.applied_draft, &self.base)
                     {
@@ -363,7 +381,14 @@ impl QuerySession {
         if matches!(self.phase, Phase::Applying(_)) {
             return Err(QuerySessionError::ApplyBusy);
         }
-        self.phase = Phase::Paused;
+        let recovered = if let Phase::Recovering(pending) = &self.phase {
+            Some(pending.clone())
+        } else {
+            None
+        };
+        if recovered.is_none() {
+            self.phase = Phase::Paused;
+        }
         self.restrictions.user_read_only = restrictions.user_read_only;
         if self.restrictions.owner_lock.is_some()
             && self.restrictions.owner_lock != restrictions.owner_lock
@@ -377,6 +402,17 @@ impl QuerySession {
         }
         if restrictions.owner_lock != current.owner_lock {
             return Err(QuerySessionError::OwnerLockRequired);
+        }
+        if let Some(pending) = recovered
+            && current.snapshot != self.document.snapshot
+        {
+            self.restrictions = restrictions;
+            self.phase = Phase::Applying(pending.clone());
+            let result = self.acknowledge(project, pending.token, current, true);
+            if result.is_err() {
+                self.phase = Phase::Recovering(pending);
+            }
+            return result;
         }
         let document = self.checked_document(project, current, true)?;
         self.advance()?;
@@ -400,7 +436,7 @@ impl QuerySession {
     ) -> Result<QueryApplyPlan, QuerySessionError> {
         self.check_revision(expected)?;
         match self.phase {
-            Phase::Paused => return Err(QuerySessionError::ResumeRequired),
+            Phase::Paused | Phase::Recovering(_) => return Err(QuerySessionError::ResumeRequired),
             Phase::Applying(_) => return Err(QuerySessionError::ApplyBusy),
             Phase::Closed => return Err(QuerySessionError::Closed),
             Phase::Ready => (),
@@ -432,6 +468,8 @@ impl QuerySession {
             identity: projected.identity.clone(),
             applied_draft: if projected.text.as_str() == self.draft.as_ref() {
                 Arc::clone(&self.draft)
+            } else if projected.text.as_str() == self.base.as_ref() {
+                Arc::clone(&self.base)
             } else {
                 Arc::from(projected.text.as_str())
             },
@@ -457,6 +495,17 @@ impl QuerySession {
         token: u64,
         current: QueryEditorState<'_>,
     ) -> Result<(), QuerySessionError> {
+        self.acknowledge(project, token, current, false)
+    }
+
+    /// Explicit crash reconciliation accepts fresh native counters, including an applied but unsaved XML model.
+    fn acknowledge(
+        &mut self,
+        project: &mut ProjectSession,
+        token: u64,
+        current: QueryEditorState<'_>,
+        recovered: bool,
+    ) -> Result<(), QuerySessionError> {
         self.not_closed()?;
         if current.user_read_only {
             self.restrictions.user_read_only = true;
@@ -467,8 +516,9 @@ impl QuerySession {
             _ => return Err(QuerySessionError::UnknownApply),
         };
         if current.snapshot != snapshot(&pending.output)
-            || current.version < self.document.version
-            || (!pending.no_op && current.version == self.document.version)
+            || (!recovered
+                && (current.version < self.document.version
+                    || (!pending.no_op && current.version == self.document.version)))
         {
             return Err(QuerySessionError::InvalidReceipt);
         }
@@ -485,8 +535,12 @@ impl QuerySession {
             return Err(QueryDocumentError::ReadOnly.into());
         }
         let output_disk = disk_snapshot(&pending.output, self.document.disk_bom, self.format);
-        if (pending.save_owner && document.disk_snapshot != output_disk)
-            || (!pending.save_owner
+        if !current.is_dirty && document.disk_snapshot != output_disk {
+            return Err(QueryError::Conflict.into());
+        }
+        let saved = pending.save_owner && !(recovered && current.is_dirty);
+        if (saved && document.disk_snapshot != output_disk)
+            || (!saved
                 && document.disk_snapshot != self.document.disk_snapshot
                 && (current.is_dirty || document.disk_snapshot != output_disk))
         {
@@ -509,7 +563,8 @@ impl QuerySession {
     /// Rejects a token belonging to a different or already released application.
     pub fn abort_apply(&mut self, token: u64) -> Result<(), QuerySessionError> {
         self.not_closed()?;
-        if !matches!(&self.phase, Phase::Applying(pending) if pending.token == token) {
+        if !matches!(&self.phase, Phase::Applying(pending) | Phase::Recovering(pending) if pending.token == token)
+        {
             return Err(QuerySessionError::UnknownApply);
         }
         self.phase = Phase::Paused;
@@ -518,9 +573,13 @@ impl QuerySession {
 
     /// A source connection replacement invalidates authority while keeping both dirty snapshots intact.
     pub fn pause(&mut self) {
-        if !matches!(self.phase, Phase::Closed) {
-            self.phase = Phase::Paused;
-        }
+        self.phase = match &self.phase {
+            Phase::Applying(pending) | Phase::Recovering(pending) => {
+                Phase::Recovering(pending.clone())
+            }
+            Phase::Closed => Phase::Closed,
+            _ => Phase::Paused,
+        };
     }
 
     /// Only the owned query restriction is released; the user's independent restriction remains unchanged.
@@ -722,13 +781,46 @@ fn selected(document: &QueryDocument, identity: &QueryIdentity) -> Result<Query,
 
 /// The BSL identity's end changes after an edit; XML logical identity remains stable.
 fn projected(plan: &EditPlan, identity: &QueryIdentity) -> Result<Query, QueryError> {
+    projected_text(plan.output(), identity)
+}
+
+/// Saved output is re-extracted through the same codec; a remembered range cannot inject a different baseline.
+fn projected_text(text: &str, identity: &QueryIdentity) -> Result<Query, QueryError> {
     match identity {
-        QueryIdentity::BslLiteral(range) => query::read_bsl(plan.output(), range.start),
-        _ => query::read_xml(plan.output())?
+        QueryIdentity::BslLiteral(range) => query::read_bsl(text, range.start),
+        _ => query::read_xml(text)?
             .into_iter()
             .find(|query| &query.identity == identity)
             .ok_or(QueryError::NotFound),
     }
+}
+
+/// Inert storage cannot supply a contradictory output, a foreign encoding model or an invented applied query.
+fn restore_pending(
+    document: &QueryDocument,
+    identity: &QueryIdentity,
+    format: QueryOwnerFormat,
+    prepared: query::recovery::Prepared,
+) -> Result<Pending, QuerySessionError> {
+    prepared.validate().map_err(|_| QueryError::Conflict)?;
+    if prepared.format != format
+        || prepared.no_op != (prepared.output == document.input)
+        || (prepared.save_owner && document.kind == QueryDocumentKind::Bsl)
+    {
+        return Err(QueryError::Conflict.into());
+    }
+    let projected = projected_text(&prepared.output, identity)?;
+    if projected.text.as_str() != prepared.applied_draft.as_ref() {
+        return Err(QueryError::Conflict.into());
+    }
+    Ok(Pending {
+        token: prepared.token,
+        output: prepared.output,
+        identity: projected.identity,
+        applied_draft: prepared.applied_draft,
+        save_owner: prepared.save_owner,
+        no_op: prepared.no_op,
+    })
 }
 
 /// An encoding signature is restored only when the supplied editor model deliberately omits it.

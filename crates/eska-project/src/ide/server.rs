@@ -150,7 +150,9 @@ impl Server {
             }
             method if super::metadata::is_method(method) => self.metadata(method, args, events),
             method if super::query::is_recovery_method(method) => {
-                if self.client_minor < 14 {
+                if self.client_minor < 14
+                    || (method == "query/recoveryPreparedRead" && self.client_minor < 16)
+                {
                     Err(error(-32601))
                 } else {
                     self.query_recovery(method, args)
@@ -221,7 +223,8 @@ impl Server {
             result["capabilities"]["queryRecovery"] = super::query::recovery_capability();
         }
         if self.client_minor >= 15 {
-            result["capabilities"]["querySessions"] = super::query::session_capability();
+            result["capabilities"]["querySessions"] =
+                super::query::session_capability(self.client_minor >= 16);
         }
         Ok(result)
     }

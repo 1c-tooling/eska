@@ -171,7 +171,7 @@ fn targeted_support_protocol_is_bounded_and_locale_independent() {
         let mut client = Client::new(locale);
         let initialize = client.initialize(locale);
         assert_eq!(initialize["capabilities"]["supportFiles"], true);
-        assert_eq!(initialize["apiVersion"]["minor"], 15);
+        assert_eq!(initialize["apiVersion"]["minor"], 16);
         let open = client.open(&directory.0);
         let result = client.ok(
             "metadata/supportFiles",

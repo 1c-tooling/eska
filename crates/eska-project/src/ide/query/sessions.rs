@@ -50,10 +50,14 @@ pub(super) fn is_method(method: &str) -> bool {
 }
 
 /// Native BSL admission remains disabled until a production adapter proves the required owner lock.
-pub(super) fn capability() -> Value {
-    json!({"schemaVersion":1,"writesOwner":false,"checkpointStorageVersion":1,"maxSessions":16,
+pub(super) fn capability(durable: bool) -> Value {
+    let mut capability = json!({"schemaVersion":1,"writesOwner":false,"checkpointStorageVersion":1,"maxSessions":16,
         "maxRetainedBytes":super::RETAINED_BYTES,"nativeApplicationReceipt":true,
-        "explicitResume":true,"preparedStateDurable":false,"bslEditing":false,"sourceKinds":["dataCompositionSchema","form"]})
+        "explicitResume":true,"preparedStateDurable":durable,"bslEditing":false,"sourceKinds":["dataCompositionSchema","form"]});
+    if durable {
+        capability["preparedStorageVersion"] = json!(2);
+    }
+    capability
 }
 
 impl State {
@@ -206,7 +210,10 @@ impl State {
             )?;
         }
         self.admit_change(entry.core.retained_bytes(), core.retained_bytes())?;
-        let stored = if matches!(method, "query/sessionResume" | "query/sessionApplied") {
+        let stored = if matches!(method, "query/sessionResume" | "query/sessionApplied")
+            || (self.durable_sessions
+                && matches!(method, "query/sessionPrepare" | "query/sessionAbort"))
+        {
             let record = record(&core, entry.stored.record.id(), &project_key(project)?)?;
             recovery.publish(
                 &entry.store_id,
@@ -254,6 +261,16 @@ impl State {
             return Err(failure("owner_lock_required"));
         }
         self.session_slot(key, document.document.path())?;
+        if let Some(id) = recovery.pending_owner(
+            &project_key(project)?,
+            &metadata_dto::path(document.document.path()),
+            None,
+        ) {
+            return Err(domain(
+                "query_failed",
+                json!({"reason":"pending_apply","id":id}),
+            ));
+        }
         let core = QuerySession::open(
             project,
             document.document.clone(),
@@ -296,8 +313,21 @@ impl State {
         let input: Restore = params::decode(args)?;
         let stored =
             recovery.checked_record(&input.store_id, &input.id, Some(&input.revision), false)?;
+        if stored.record.prepared().is_some() && !self.durable_sessions {
+            return Err(failure("pending_apply"));
+        }
         let saved = restored(project, &stored.record)?;
         self.session_slot(key, &saved.path)?;
+        if let Some(id) = recovery.pending_owner(
+            &project_key(project)?,
+            &metadata_dto::path(&saved.path),
+            Some(&input.id),
+        ) {
+            return Err(domain(
+                "query_failed",
+                json!({"reason":"pending_apply","id":id}),
+            ));
+        }
         let core =
             QuerySession::restore(project, saved, input.format.core()).map_err(session_error)?;
         self.admit(core.retained_bytes())?;
@@ -424,7 +454,9 @@ fn record(core: &QuerySession, id: &str, project_key: &str) -> Result<Record, Va
         "source":metadata_dto::path(document.path()),"descriptor":metadata_dto::path(descriptor),"descriptorSnapshot":descriptor_snapshot,
         "diskSnapshot":document.disk_snapshot(),"ownerSnapshot":document.snapshot(),"ownerVersion":document.version().to_string(),
         "contextFingerprint":core.context_fingerprint(),"application":core.application(),"identity":dto::identity(core.identity()),"writable":document.writable()});
-    Record::new(metadata, core.texts()).map_err(|_| failure("recovery_invalid"))
+    Record::new(metadata, core.texts())
+        .and_then(|record| record.with_prepared(core.prepared()))
+        .map_err(|_| failure("recovery_invalid"))
 }
 
 /// Existing checkpoint keys become backend-produced identities while keeping the v1 data readable.
@@ -477,6 +509,7 @@ fn restored(project: &ProjectSession, record: &Record) -> Result<QuerySessionRes
         writable: metadata["writable"]
             .as_bool()
             .ok_or_else(|| failure("recovery_invalid"))?,
+        prepared: record.prepared().cloned(),
     })
 }
 

@@ -20,6 +20,14 @@ pub const MAX_SNAPSHOT_BYTES: usize = 8 * 1024 * 1024;
 /// Explicit placement decisions must fit the existing bounded RPC frame alongside a query value.
 pub const MAX_SOURCE_COMMENTS: usize = 8192;
 
+/// An editor model may deliberately omit the file's UTF-8 encoding signature.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum QueryOwnerFormat {
+    Editor,
+    Source,
+}
+
 /// Identity is meaningful only in its checked owner snapshot, never across arbitrary edits.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum QueryIdentity {

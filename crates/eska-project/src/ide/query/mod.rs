@@ -34,6 +34,7 @@ pub(super) struct State {
     documents: BTreeMap<String, documents::Entry>,
     sessions: BTreeMap<String, sessions::Entry>,
     serial: u64,
+    durable_sessions: bool,
 }
 
 /// Request-only routing prevents notifications from allocating retained source snapshots.
@@ -60,8 +61,8 @@ pub(super) fn is_session_method(method: &str) -> bool {
 }
 
 /// Existing query extraction remains independent from optional lifecycle/checkpoint ownership.
-pub(super) fn session_capability() -> Value {
-    sessions::capability()
+pub(super) fn session_capability(durable: bool) -> Value {
+    sessions::capability(durable)
 }
 
 /// Recovery is independent of source generations and never writes a project owner.
@@ -154,10 +155,32 @@ impl State {
 impl Server {
     /// A broken manifest cannot prevent inspection or preservation of an inert private checkpoint.
     pub(super) fn query_recovery(&mut self, method: &str, args: &Value) -> Result<Value, Value> {
+        if method == "query/recoveryRemove"
+            && args["discardPrepared"] == true
+            && self.client_minor < 16
+        {
+            return Err(error(-32602));
+        }
         let forbidden = self.recovery_forbidden();
-        let result = self
+        let mut result = self
             .recovery
             .request(method, args, &forbidden, &mut self.queries)?;
+        if method == "query/recoveryOpen" && self.client_minor < 16 {
+            let mut pending = Vec::new();
+            if let Some(records) = result["records"].as_array_mut() {
+                records.retain(|record| {
+                    if record["prepared"].is_object() {
+                        pending.push(record["id"].clone());
+                        false
+                    } else {
+                        true
+                    }
+                });
+            }
+            if let Some(damaged) = result["damaged"].as_array_mut() {
+                damaged.extend(pending);
+            }
+        }
         if matches!(method, "query/recoveryOpen" | "query/recoveryClose") {
             self.queries.sessions.clear();
         }
@@ -185,6 +208,7 @@ impl Server {
 
     /// Share the metadata session's refresh/reopen boundary while retaining query state separately.
     pub(super) fn query(&mut self, method: &str, args: &Value) -> Result<Value, Value> {
+        self.queries.durable_sessions = self.client_minor >= 16;
         let forbidden = self.recovery_forbidden();
         let key = Key::decode(args)?;
         self.check_session(args)?;

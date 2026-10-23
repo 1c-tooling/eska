@@ -1089,8 +1089,8 @@ recoveryOpen, recoveryClose, workspace/close, shutdown и EOF инвалидир
 `preparedStateDurable:false` означает, что точный незавершённый output и
 применяемая версия draft не журналируются отдельно. При остановке процесса
 сохраняются исходные owner/base и последний подтверждённый draft, который уже
-может отличаться от применяемого. Поэтому рабочий адаптер ещё не переключён
-на эти методы: сначала нужен устойчивый журнал незавершённого применения.
+может отличаться от применяемого. Устойчивый вариант доступен в API 1.16 ниже;
+рабочий адаптер ещё не переключён на общий жизненный цикл.
 Восстановление никогда автоматически не применяет исходник.
 
 Добавлены reasons `unknown_query_session`, `resume_required`, `owner_lock_required`,
@@ -1098,3 +1098,76 @@ recoveryOpen, recoveryClose, workspace/close, shutdown и EOF инвалидир
 `closed_session`, `session_limit`; действуют прежние source/context/recovery errors.
 `resource_limit` использует `query_sessions` или прежний `query_snapshots`.
 JSON-схема и машинные причины одинаковы в ru-RU и en-US.
+
+### API 1.16: устойчивый журнал применения
+
+При handshake 1.16 `querySessions` сохраняет прежнюю форму и объявляет
+`preparedStateDurable:true,preparedStorageVersion:2`. `checkpointStorageVersion:1`
+относится к прежней проекции binding и четырём обычным recovery parts.
+Методы сессии сохраняют имена и параметры. Клиент 1.15 получает прежнюю
+capability с false и прежнюю подготовку/отмену в памяти. `bslEditing:false`
+действует в обоих режимах; эти проверки не принимают нативную блокировку IDE.
+Рабочий Explorer пока использует API 1.14 для recovery и клиентский lifecycle.
+
+В режиме 1.16 sessionPrepare атомарно сохраняет исходные owner/base/draft
+вместе с точным output и декодированным применяемым запросом **до** выдачи плана.
+Успешный ответ содержит новую `record.revision`; последующие draft uploads
+используют именно её. Применяемый запрос не заменяется новым draft во время
+ожидания IDE. Лимит общего хранилища учитывает оба дополнительных текста,
+включая intent без активного source handle. Source save по-прежнему выполняет
+адаптер; backend пишет только приватный журнал.
+
+Record Header дополнен необязательным
+`prepared:{applyToken,format,saveOwner,noOp,parts:{output,appliedDraft}}`.
+Descriptions имеют прежние `{bytes,snapshot}`. Обычный `parts` содержит
+те же четыре ключа; поля binding metadata v1 не меняются.
+Checkpoint без намерения остаётся storageVersion 1. С намерением файл использует
+storageVersion 2 и отдельный `prepared` envelope с canonical base64 текстами
+или локальными ссылками на совпадающие обычные части этой же записи.
+Ссылки не указывают на paths, другие записи или другие ссылки. Общие копии
+не раздувают файл за существующий предел сканирования хранилища 64 MiB.
+Обе версии читаются без перезаписи. После проверенной сверки или отмены
+запись возвращается к v1; предыдущие поля и последний draft сохраняются.
+Неизвестный/повреждённый envelope сохраняется и отмечается в damaged.
+
+`query/recoveryPreparedRead`: `{storeId,id,revision,part:"output"|"appliedDraft",offset}`.
+Ответ имеет прежние `{storeId,id,revision,part,offset,text,nextOffset,complete}`.
+Чтение request-only, до 128 KiB по границам UTF-8, доступно после initialize
+без workspace/open, в том числе при невалидном manifest. Чужая revision
+отклоняется. Отсутствие намерения даёт `unknown_apply`.
+
+SessionRestore с намерением возвращает `resumed:false,applyPending:true`.
+SessionPrepare до явного resume даёт `resume_required`; sessionApplied
+не заменяет действие возобновления и не принимает прежний токен автоматически.
+SessionResume сверяет актуальные права, контекст, полный дескриптор и одно из:
+
+- Native snapshot равен исходному owner: подготовленная правка не повторяется,
+  намерение снимается, исходные owner/base и последний draft сохраняются.
+- Native snapshot равен точному output: backend принимает уже выполненную
+  правку как новый owner/base и сохраняет более новый draft. Счётчик IDE после
+  перезапуска может начаться заново. Dirty output с прежним диском, включая
+  остановку между правкой чистого XML и его сохранением, остаётся dirty и
+  не сохраняется backend автоматически. Для чистой модели диск обязан точно
+  соответствовать output с учётом BOM.
+
+Любое другое содержимое оставляет конфликт и всё намерение. Успешное resume
+публикует очищенный checkpoint до разрешения следующего плана. Обычное
+recoveryBegin/Append/Commit при наличии intent может заменить только draft;
+binding, owner и base остаются прежними даже без активной source-сессии.
+SessionOpen другого handle для того же известного владельца даёт
+`pending_apply` с recovery id: сначала требуется сверить или явно отбросить intent.
+
+SessionAbort в режиме 1.16 снимает намерение через дисковый CAS и переводит
+сессию в paused; ошибка IO/CAS не объявляется успешной очисткой. SessionClose
+всегда может освободить собственный handle, оставляя checkpoint/intent для
+восстановления. Проверка независимых пользовательских ограничений сохраняется.
+RecoveryRemove без дополнительного решения возвращает `pending_apply`.
+Явный `discardPrepared:true` в recoveryRemove разрешает удалить весь checkpoint
+по точной revision, в том числе без metadata context; исходник не изменяется.
+Этот флаг и recoveryPreparedRead доступны только клиенту 1.16.
+
+При recoveryOpen клиентам 1.14–1.15 записи с intent не выдаются как обычные
+черновики: их id попадают в damaged как неподдержанная версия данных,
+файлы остаются прежними. Это не отсутствие сохранённой работы. Остальные v1
+записи и методы прежних версий сохраняют поведение. T101-клиент, читающий
+файлы самостоятельно, также не принимает storageVersion 2 за v1.

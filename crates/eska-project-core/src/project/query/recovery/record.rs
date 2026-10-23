@@ -5,7 +5,7 @@ use std::sync::Arc;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde_json::Value;
 
-use super::{Error, MAX_FILE_BYTES, MAX_METADATA_BYTES};
+use super::{Error, MAX_FILE_BYTES, MAX_METADATA_BYTES, Prepared};
 use crate::project::{metadata_edit::snapshot, query::MAX_SNAPSHOT_BYTES};
 
 const METADATA_FIELDS: [&str; 14] = [
@@ -51,6 +51,7 @@ pub struct Record {
     id: String,
     metadata: Value,
     texts: [Arc<str>; 3],
+    prepared: Option<Prepared>,
 }
 
 impl Record {
@@ -71,7 +72,43 @@ impl Record {
             id,
             metadata,
             texts,
+            prepared: None,
         })
+    }
+
+    /// Attach or clear a checked intent while retaining the complete original checkpoint.
+    ///
+    /// # Errors
+    /// Rejects inconsistent no-op output, a BSL disk-save request or invalid intent bounds.
+    pub fn with_prepared(mut self, prepared: Option<Prepared>) -> Result<Self, Error> {
+        self.prepared = prepared
+            .map(|mut intent| {
+                intent.validate()?;
+                if intent.no_op != (intent.output == self.texts[0])
+                    || (intent.save_owner && self.metadata["identity"]["kind"] == "bslLiteral")
+                {
+                    return Err(Error::InvalidRecord);
+                }
+                if intent.no_op {
+                    intent.output = Arc::clone(&self.texts[0]);
+                }
+                if let Some(shared) = self
+                    .texts
+                    .iter()
+                    .find(|text| **text == intent.applied_draft)
+                {
+                    intent.applied_draft = Arc::clone(shared);
+                }
+                Ok(intent)
+            })
+            .transpose()?;
+        Ok(self)
+    }
+
+    /// An unfinished intent survives generic draft uploads and requires explicit reconciliation or abort.
+    #[must_use]
+    pub const fn prepared(&self) -> Option<&Prepared> {
+        self.prepared.as_ref()
     }
 
     /// The filename is derived only from the validated checkpoint ID, never from a source path.
@@ -86,10 +123,23 @@ impl Record {
         &self.metadata
     }
 
-    /// Count all three independent UTF-8 texts rather than their escaped on-disk representation.
+    /// Count ordinary texts and independently retained intent texts, excluding shared immutable copies.
     #[must_use]
     pub fn retained_bytes(&self) -> usize {
-        self.texts.iter().map(|text| text.len()).sum()
+        self.texts.iter().map(|text| text.len()).sum::<usize>()
+            + self.prepared.as_ref().map_or(0, |intent| {
+                let output = if intent.no_op { 0 } else { intent.output.len() };
+                output
+                    + if self
+                        .texts
+                        .iter()
+                        .any(|text| Arc::ptr_eq(text, &intent.applied_draft))
+                    {
+                        0
+                    } else {
+                        intent.applied_draft.len()
+                    }
+            })
     }
 
     /// Metadata is projected on demand; shared immutable owner/base strings avoid copies during uploads.
@@ -107,11 +157,17 @@ impl Record {
         }
     }
 
-    /// Keep the previous client's base64 format so existing unsaved work requires no destructive migration.
+    /// Keep ordinary checkpoints in v1; only an unfinished intent needs the separate v2 envelope.
     pub(super) fn encode(&self) -> Result<Vec<u8>, Error> {
         let mut value = self.metadata.clone();
         let fields = value.as_object_mut().ok_or(Error::InvalidRecord)?;
-        fields.insert("storageVersion".into(), Value::from(1));
+        fields.insert(
+            "storageVersion".into(),
+            Value::from(if self.prepared.is_some() { 2 } else { 1 }),
+        );
+        if let Some(intent) = &self.prepared {
+            fields.insert("prepared".into(), intent.encode(&self.texts));
+        }
         for (name, text) in ["ownerText", "base", "draft"].into_iter().zip(&self.texts) {
             fields.insert(name.into(), Value::String(STANDARD.encode(text.as_bytes())));
         }
@@ -131,15 +187,23 @@ impl Record {
         let Value::Object(mut fields) = value else {
             return Err(Error::InvalidRecord);
         };
-        if fields.remove("storageVersion") != Some(Value::from(1)) {
-            return Err(Error::InvalidRecord);
-        }
+        let prepared = match fields.remove("storageVersion") {
+            Some(Value::Number(version)) if version.as_u64() == Some(1) => None,
+            Some(Value::Number(version)) if version.as_u64() == Some(2) => {
+                Some(fields.remove("prepared").ok_or(Error::InvalidRecord)?)
+            }
+            _ => return Err(Error::InvalidRecord),
+        };
         let texts = ["ownerText", "base", "draft"].map(|name| decode_text(fields.remove(name)));
         let [owner, base, draft] = texts;
-        Self::new(
+        let record = Self::new(
             Value::Object(fields),
             [owner?.into(), base?.into(), draft?.into()],
-        )
+        )?;
+        let prepared = prepared
+            .map(|value| Prepared::decode(value, &record.texts))
+            .transpose()?;
+        record.with_prepared(prepared)
     }
 }
 
@@ -160,7 +224,7 @@ pub fn is_id(id: &str) -> bool {
 }
 
 /// Canonical base64 plus UTF-8 validation preserves BOM, NUL and unfinished source text exactly.
-fn decode_text(value: Option<Value>) -> Result<String, Error> {
+pub(super) fn decode_text(value: Option<Value>) -> Result<String, Error> {
     let Some(Value::String(text)) = value else {
         return Err(Error::InvalidRecord);
     };

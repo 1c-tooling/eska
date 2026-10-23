@@ -6,8 +6,8 @@ use crate::{
     backend::project::{
         metadata_edit::snapshot,
         query::{
-            MAX_SNAPSHOT_BYTES,
-            recovery::{Error, Part, Record, Store},
+            MAX_SNAPSHOT_BYTES, QueryOwnerFormat,
+            recovery::{Error, Part, Prepared, Record, Store},
         },
     },
     support::TestDir,
@@ -38,6 +38,179 @@ fn record(index: usize) -> Record {
         [owner.into(), "SELECT 1".into(), "SELECT 2\nFROM T".into()],
     )
     .unwrap()
+}
+
+/// The private v2 envelope preserves pending text exactly and returns to v1 only after explicit reconciliation.
+#[test]
+fn backend_recovery_round_trips_and_clears_prepared_intent_without_changing_original_parts() {
+    let directory = TestDir::new();
+    let store = Store::new(directory.0.clone()).unwrap();
+    let original = record(9);
+    let intent = Prepared {
+        token: u64::MAX - 1,
+        format: QueryOwnerFormat::Editor,
+        output: Arc::from("\u{feff}prepared 😀\r\n\0"),
+        applied_draft: Arc::from("SELECT applied\r\n// 😀"),
+        save_owner: true,
+        no_op: false,
+    };
+    let prepared = original
+        .clone()
+        .with_prepared(Some(intent.clone()))
+        .unwrap();
+    let stored = store.save(prepared, None).unwrap();
+    let path = directory.0.join(format!("{}.json", original.id()));
+    let raw = fs::read(&path).unwrap();
+    assert_eq!(
+        serde_json::from_slice::<Value>(&raw).unwrap()["storageVersion"],
+        2
+    );
+    let loaded = store.load().unwrap();
+    assert_eq!(loaded.damaged, [] as [String; 0]);
+    assert_eq!(fs::read(&path).unwrap(), raw);
+    let checkpoint = &loaded.records[0].record;
+    let saved = checkpoint.prepared().unwrap();
+    assert_eq!(saved.token, intent.token);
+    assert_eq!(saved.output, intent.output);
+    assert_eq!(saved.applied_draft, intent.applied_draft);
+    assert_eq!(
+        checkpoint.retained_bytes(),
+        original.retained_bytes() + intent.output.len() + intent.applied_draft.len()
+    );
+    for part in [Part::Metadata, Part::Owner, Part::Base, Part::Draft] {
+        assert_eq!(checkpoint.part(part).unwrap(), original.part(part).unwrap());
+    }
+    store
+        .save(
+            checkpoint.clone().with_prepared(None).unwrap(),
+            Some(&stored.revision),
+        )
+        .unwrap();
+    let cleared: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+    assert_eq!(cleared["storageVersion"], 1);
+    assert!(cleared.get("prepared").is_none());
+}
+
+/// Invalid durable fields never get interpreted as an applied source or silently rewritten during startup.
+#[test]
+fn backend_recovery_preserves_malformed_prepared_envelopes() {
+    let directory = TestDir::new();
+    let store = Store::new(directory.0.clone()).unwrap();
+    let prepared = record(9)
+        .with_prepared(Some(Prepared {
+            token: 1,
+            format: QueryOwnerFormat::Source,
+            output: Arc::from("output"),
+            applied_draft: Arc::from("SELECT 3"),
+            save_owner: false,
+            no_op: false,
+        }))
+        .unwrap();
+    let stored = store.save(prepared, None).unwrap();
+    let path = directory.0.join(format!("{}.json", stored.record.id()));
+    let original: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    for (key, value) in [
+        ("applyToken", json!("01")),
+        ("schemaVersion", json!(2)),
+        ("output", Value::Null),
+        ("output", json!({"part":"output"})),
+        ("appliedDraft", json!({"part":"../../source"})),
+        ("format", json!("native")),
+        ("noOp", json!(true)),
+        ("future", json!(true)),
+    ] {
+        let mut invalid = original.clone();
+        invalid["prepared"][key] = value;
+        let raw = serde_json::to_vec(&invalid).unwrap();
+        fs::write(&path, &raw).unwrap();
+        let loaded = store.load().unwrap();
+        assert!(loaded.records.is_empty(), "accepted {key}");
+        assert_eq!(loaded.damaged, vec![stored.record.id()]);
+        assert_eq!(fs::read(&path).unwrap(), raw);
+    }
+}
+
+/// Disk-store admission counts pending output even when no source session currently retains it in memory.
+#[test]
+fn backend_recovery_includes_prepared_output_in_the_shared_store_quota() {
+    let directory = TestDir::new();
+    let store = Store::new(directory.0.clone()).unwrap();
+    let large: Arc<str> = "x".repeat(MAX_SNAPSHOT_BYTES).into();
+    let full = Record::new(
+        metadata(8, &large),
+        [Arc::clone(&large), Arc::clone(&large), Arc::clone(&large)],
+    )
+    .unwrap();
+    store.save(full, None).unwrap();
+    let stored = store.save(record(9), None).unwrap();
+    let pending = stored
+        .record
+        .clone()
+        .with_prepared(Some(Prepared {
+            token: 1,
+            format: QueryOwnerFormat::Editor,
+            output: large,
+            applied_draft: stored.record.part(Part::Draft).unwrap(),
+            save_owner: false,
+            no_op: false,
+        }))
+        .unwrap();
+    assert!(matches!(
+        store.save(pending, Some(&stored.revision)),
+        Err(Error::ResourceLimit)
+    ));
+    let current = store.load().unwrap();
+    assert_eq!(current.records.len(), 2);
+    assert_eq!(
+        current
+            .records
+            .iter()
+            .find(|value| value.record.id() == stored.record.id())
+            .unwrap()
+            .revision,
+        stored.revision
+    );
+}
+
+/// Shared no-op/apply texts cannot inflate canonical disk data beyond the bounded store startup scan.
+#[test]
+fn backend_recovery_shared_prepared_parts_stay_readable_with_multiple_large_owners() {
+    let directory = TestDir::new();
+    let store = Store::new(directory.0.clone()).unwrap();
+    let owner: Arc<str> = "x".repeat(7 * 1024 * 1024).into();
+    for index in 1..=3 {
+        let value = Record::new(
+            metadata(index, &owner),
+            [Arc::clone(&owner), Arc::from(""), Arc::from("")],
+        )
+        .unwrap()
+        .with_prepared(Some(Prepared {
+            token: 1,
+            format: QueryOwnerFormat::Source,
+            output: Arc::clone(&owner),
+            applied_draft: Arc::clone(&owner),
+            no_op: true,
+            save_owner: false,
+        }))
+        .unwrap();
+        store.save(value, None).unwrap();
+    }
+    let loaded = store.load().unwrap();
+    assert!(!loaded.limited);
+    assert_eq!(loaded.damaged, [] as [String; 0]);
+    assert_eq!(loaded.records.len(), 3);
+    for stored in loaded.records {
+        let value: Value = serde_json::from_slice(
+            &fs::read(directory.0.join(format!("{}.json", stored.record.id()))).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(value["prepared"]["output"], json!({"part":"ownerText"}));
+        assert_eq!(
+            value["prepared"]["appliedDraft"],
+            json!({"part":"ownerText"})
+        );
+        assert_eq!(stored.record.prepared().unwrap().output, owner);
+    }
 }
 
 /// A cold backend recovers all dirty bytes, the application binding and the independent draft.
