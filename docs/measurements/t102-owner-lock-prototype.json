@@ -106,6 +106,31 @@
       "sourceDiskUnchanged": true,
       "osPermissionsUnchanged": true,
       "privateSettingsRestoredExactly": true
+    },
+    "existingSupportMode": {
+      "passed": true,
+      "suite": "query-owner-lock-existing-support-prototype",
+      "vscode": "1.109.5",
+      "locale": "en",
+      "observations": {
+        "supportPolicyComesFromBackend": true,
+        "dirtyOwnerPreserved": true,
+        "dirtyNativeViews": 2,
+        "dirtyNativeTabs": 2,
+        "nativeTypingWithPriorWritable": true,
+        "protectedReadsDisk": true,
+        "protectedIncludesDirtySnapshot": false,
+        "protectedFileSystemReadonly": true,
+        "protectedDirectWriteRejected": true,
+        "reopenedNativeSharesDirtyOwner": true,
+        "reopenedNativeTypingAllowed": true,
+        "nativeDirtyTextRetainedAfterPolicyChange": true,
+        "existingProtectedUriStaysReadonly": true
+      },
+      "diskUnchanged": true,
+      "osPermissionsUnchanged": true,
+      "ownerLockAccepted": false,
+      "productionBslEditingEnabled": false
     }
   },
   "assessment": [
@@ -160,6 +185,19 @@
       "notSatisfied": [
         "neither cleanup rule restores both initial modes; a verified way to identify/retain the previous mode is still needed"
       ]
+    },
+    {
+      "candidate": "existing support policy and eska-protected provider",
+      "proven": [
+        "real backend supportFiles policy confirms the rule for the same owner",
+        "two dirty native views and their unsaved text are preserved",
+        "the protected filesystem is readonly and rejects direct writes, including after the fixture policy becomes editable"
+      ],
+      "notSatisfied": [
+        "the protected document reads disk bytes rather than the unsaved native owner snapshot",
+        "a prior native Writeable permits typing in the dirty native owner, including after opening its ordinary file URI",
+        "existing support mode does not provide a per-query protection owner or query-session recovery"
+      ]
     }
   ],
   "restartAssessment": [
@@ -201,25 +239,31 @@
     "public": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-public-complete-result.log",
     "hostRestartAndWindow": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-restart-observed-result.log",
     "earlierColdOwnerAssertion": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-restart-result.log",
-    "twoWritableModes": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-native-overrides-result.log"
+    "twoWritableModes": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-native-overrides-result.log",
+    "existingSupport": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-existing-support-contract-result.log",
+    "earlierSupportReopenAssertion": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-existing-support-result.log",
+    "earlierSupportFocusAssertion": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-existing-support-focus-result.log"
   },
   "testedFiles": {
     "test/query-lock-host.cjs": "ef8718540442ed4931c4be20610c4b2451266b7f5892e0be7dc99b1dbe255be3",
     "test/query-lock-restart-host.cjs": "69b3374bba45b10fccc843cc938dcdff1fb16a31cc2d5c78d7cec0ea3ac1b9dd",
     "test/run-host.mjs": "a5cb95c3d741328e1c708abea61bd8455c68002e810b37ba6f06a8f0853f9754",
-    "test/query-lock-overrides-host.cjs": "4b9ed08269d96dc75e5566661a336c95e2339ba6058f60762fa637b02b72f734"
+    "test/query-lock-overrides-host.cjs": "4b9ed08269d96dc75e5566661a336c95e2339ba6058f60762fa637b02b72f734",
+    "test/query-lock-support-host.cjs": "a773741fb5ad707cad54626681d8be8414ab0590f297019de2df37fd29b1b5f4"
   },
-  "explorerCommit": "cf46713614492a05bb8af9ca589df8ddd6653bfe",
+  "explorerCommit": "0ab017518891725eff7d974dfb8f95601e4a5214",
   "checks": {
     "nodeSyntax": true,
     "nativePublicApiProbeCompleted": true,
     "nativeHostAndWindowProbeCompleted": true,
     "applicationCodeChanged": false,
     "rustChecksRequired": false,
-    "nativeWritableModesCounterexamplesCompleted": true
+    "nativeWritableModesCounterexamplesCompleted": true,
+    "existingSupportNativePrototypeCompleted": true
   },
   "remaining": [
-    "A verified public mechanism to preserve/reinstate previous native readonly state and release only the owned lock, or an explicit change to the T102 requirement.",
+    "A verified owner-lock mechanism that preserves prior user restrictions, including dirty/split/reopened native views. Existing support mode alone does not satisfy it; version checks do not substitute for a lock.",
+    "Move session/draft state, owner snapshots and recovery, protection ownership and domain transitions into ESKA; expose a reusable IDE-independent contract before enabling the BSL adapter.",
     "Production BSL sessions, selection/unavailable-expression UI, explicit Apply/Cancel, unchanged dirty owner on cancel, one-edit Undo/Redo and close-cancellation flow.",
     "Full locked-owner rejection for Explorer/LSP mutations, support/context/source conflicts, independent windows and fail-safe journal recovery.",
     "T103, T104 and T105 remain in the requested sequence after T102; their completion is not claimed."
@@ -230,5 +274,44 @@
     "VS Code",
     "Remote"
   ],
-  "settingsScope": "The override counterexample changes only readonlyInclude in its owned private workspace, then restores exact original settings bytes. No global user settings are changed."
+  "settingsScope": "The override counterexample changes only readonlyInclude in its owned private workspace, then restores exact original settings bytes. No global user settings are changed.",
+  "architectureRequirement": {
+    "date": "2026-10-23",
+    "source": "direct user instruction",
+    "backendOwns": [
+      "source policy and protection reasons",
+      "owner and draft session",
+      "snapshots and recovery",
+      "apply validation and text projection",
+      "query constructor model and operations"
+    ],
+    "ideAdapterOwns": [
+      "tabs and presentation",
+      "native input prevention",
+      "applying checked plans through native Undo/Redo",
+      "LSP client transport"
+    ],
+    "contract": "One core/RPC behavior across IDE adapters; URI schemes are adapter details. Releasing a query restriction must retain independent support and user restrictions.",
+    "existingPolicyInBackend": true,
+    "sessionRecoveryMigrationComplete": false,
+    "ownerLockAccepted": false
+  },
+  "supportPrototypeScope": "The completed test observes the live dirty native editor and the protected filesystem contract separately. Earlier combined view-switching attempts failed an expected reopen edit and an active-editor focus assertion; these logs remain available. Their cause is not claimed as a production defect or as a verified focus fix. Protected-view native typing is covered by the separate existing support-protected-host suite, not newly accepted by this filesystem observation.",
+  "testedRuntime": {
+    "backend": {
+      "path": "/home/akalsin/Documents/Projects/eska/target/debug/eska-project",
+      "sha256": "28ac0e7e48b728079757d3d115cb3de78d1550cb623349e6aa094e3ce76f7b10"
+    },
+    "vsix": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eska-query-t101-shutdown.vsix",
+      "sha256": "37999358b05d3e9c59d7cacdfe996ff2a530d036cb63bc416fb35b145976667e"
+    },
+    "explorerProductionSourceUnchangedSince": "d2601ed",
+    "diffCheckedPaths": [
+      "src",
+      "package.json",
+      "package-lock.json",
+      "bun.lockb"
+    ]
+  }
 }
